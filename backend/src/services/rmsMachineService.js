@@ -992,6 +992,194 @@ async function moveRmsLeadPhase(businessId, user, payload = {}) {
   return result;
 }
 
+const RMS_EVALUATION_ROUTES = {
+  NEGOTIATION: {
+    phase: "accion_correctiva",
+    label: "Negociación",
+    action: "Continuar la conversación y acordar condiciones",
+  },
+  PAID_SALE: {
+    phase: "cierre",
+    label: "Ventas atribuidas",
+    action: "Registrar pago, producto, costos y atribución de la venta",
+  },
+  MISSING_INFORMATION: {
+    phase: "clasificacion",
+    label: "Activación 1",
+    action: "Resolver la información pendiente y reenviar el material correcto",
+  },
+  NURTURE: {
+    phase: "control_anti_fuga",
+    label: "Riesgos de fuga",
+    action: "Programar nutrición y seguimiento sin presionar la compra",
+  },
+  NOT_QUALIFIED: {
+    phase: "inteligencia",
+    label: "Inteligencia RMS",
+    action: "Conservar el aprendizaje y excluir el caso de la presión comercial",
+  },
+};
+
+function rmsEvaluationSummary(response, route) {
+  if (response === "PAID_SALE") return "El cliente confirmó la compra desde Activación 1; falta dejar la venta atribuida.";
+  if (response === "NEGOTIATION") return "El cliente tiene intención de compra y requiere acordar condiciones.";
+  if (response === "MISSING_INFORMATION") return "El cliente necesita información antes de tomar la decisión.";
+  if (response === "NURTURE") return "El cliente no compra ahora; se conserva en una ruta de nutrición y seguimiento.";
+  return `El caso no califica por ahora y queda documentado en ${route.label}.`;
+}
+
+async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  const response = String(payload.response || "").toUpperCase();
+  const route = RMS_EVALUATION_ROUTES[response];
+  if (!route) throw badRequest("Selecciona una decisión comercial válida.");
+  const note = String(payload.note || "").trim();
+  if (!note) throw badRequest("Registra la respuesta del lead antes de decidir la ruta.");
+  const evaluation = {
+    response,
+    route: route.phase,
+    route_label: route.label,
+    need: String(payload.need || "").trim() || null,
+    desired_outcome: String(payload.desired_outcome || "").trim() || null,
+    recommended_product: String(payload.recommended_product || "").trim() || null,
+    budget_amount: payload.budget_amount === null || payload.budget_amount === undefined ? null : moneyNumber(payload.budget_amount),
+    currency: String(payload.currency || "COP").trim().toUpperCase().slice(0, 8) || "COP",
+    decision_maker: String(payload.decision_maker || "").trim() || null,
+    urgency: String(payload.urgency || "MEDIUM").toUpperCase(),
+    objections: String(payload.objections || "").trim() || null,
+    next_action: String(payload.next_action || "").trim() || null,
+    next_action_at: payload.next_action_at || null,
+    note,
+    evaluated_at: new Date().toISOString(),
+    evaluated_by: user.id,
+  };
+  const historyNote = await createLeadNote(businessId, user, payload.source_id, sourceType, {
+    note: `Evaluación · ${route.label}. ${rmsEvaluationSummary(response, route)}`,
+    note_type: "commercial",
+    metadata: {
+      source_module: "rms_evaluation",
+      rms_evaluation: evaluation,
+    },
+  });
+  let agenda = null;
+  if (evaluation.next_action || evaluation.next_action_at) {
+    agenda = await createRmsAgendaTask(businessId, user, {
+      source_id: payload.source_id,
+      source_type: sourceType,
+      lead_id: item.lead_id || payload.lead_id || null,
+      stage: route.phase,
+      action_title: evaluation.next_action || route.action,
+      note: `Evaluación RMS: ${note}`,
+      due_at: evaluation.next_action_at || undefined,
+      priority_score: evaluation.urgency === "URGENT" ? 95 : evaluation.urgency === "HIGH" ? 75 : evaluation.urgency === "LOW" ? 35 : 55,
+      revenue_potential: evaluation.budget_amount ?? item.revenue_potential,
+      metadata: { rms_evaluation_note_id: historyNote.id, rms_evaluation_response: response },
+    });
+  }
+  const movement = await moveRmsLeadPhase(businessId, user, {
+    source_type: sourceType,
+    source_id: payload.source_id,
+    lead_id: item.lead_id || payload.lead_id || null,
+    to_phase: route.phase,
+    priority: evaluation.urgency,
+    recommended_action: route.action,
+    last_operation: response === "PAID_SALE" ? "evaluation_paid_sale" : `evaluation_${response.toLowerCase()}`,
+    last_material_sent: response === "PAID_SALE" ? "venta_confirmada" : "evaluacion_comercial",
+    revenue_potential: evaluation.budget_amount ?? item.revenue_potential,
+    reason: rmsEvaluationSummary(response, route),
+    metadata: {
+      rms_evaluation: evaluation,
+      rms_evaluation_note_id: historyNote.id,
+      rms_evaluation_agenda_note_id: agenda?.item?.id || null,
+    },
+  });
+  return { evaluation, route, note: historyNote, agenda, ...movement };
+}
+
+function roundedMoney(value) {
+  return Math.round((Number(value) || 0) * 100) / 100;
+}
+
+async function recordRmsAttributedSale(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  const quantity = Math.max(0.01, Number(payload.quantity || 1));
+  const saleAmount = roundedMoney(payload.sale_amount);
+  const benefitCost = Math.max(0, roundedMoney(payload.benefit_cost));
+  const acquisitionCost = Math.max(0, roundedMoney(payload.acquisition_cost));
+  const idempotencyKey = String(payload.idempotency_key || "").trim() || null;
+  if (saleAmount <= 0) throw badRequest("El valor pagado debe ser mayor a cero.");
+  const product = payload.inventory_product_id
+    ? await query(
+      `select id, name, cost_price from business_inventory_products
+       where business_id = $1 and id = $2 and status <> 'ARCHIVED'`,
+      [businessId, payload.inventory_product_id]
+    )
+    : { rows: [] };
+  if (payload.inventory_product_id && !product.rows[0]) throw notFound("No encontramos ese producto en el inventario.");
+  const productRow = product.rows[0] || null;
+  const productName = String(payload.product_name || productRow?.name || "").trim();
+  if (!productName) throw badRequest("Indica el producto o servicio vendido.");
+  const unitCost = Math.max(0, roundedMoney(payload.unit_cost ?? productRow?.cost_price ?? 0));
+  const productCostTotal = roundedMoney(unitCost * quantity);
+  const grossProfit = roundedMoney(saleAmount - productCostTotal - benefitCost);
+  const netProfit = roundedMoney(grossProfit - acquisitionCost);
+  const invested = roundedMoney(productCostTotal + benefitCost + acquisitionCost);
+  const roi = invested > 0 ? Math.round((netProfit / invested) * 1000000) / 1000000 : null;
+  const paidAt = payload.paid_at || new Date().toISOString();
+  const currency = String(payload.currency || "COP").trim().toUpperCase().slice(0, 8) || "COP";
+  const economics = { quantity, unit_cost: unitCost, product_cost_total: productCostTotal, benefit_cost: benefitCost, acquisition_cost: acquisitionCost, gross_profit: grossProfit, net_profit: netProfit, roi, currency };
+  const metadata = {
+    source_module: "rms_machine",
+    rms_source_type: sourceType,
+    rms_source_id: payload.source_id,
+    rms_opportunity_id: item.id,
+    benefit_description: String(payload.benefit_description || "").trim() || null,
+    economics,
+  };
+  const result = await withTransaction(async (client) => {
+    const sale = await client.query(
+      `insert into business_sales
+        (business_id, campaign_id, customer_name, customer_phone, customer_email, customer_document_id,
+         product_name, sale_amount, currency, seller_user_id, acquisition_source, acquisition_channel, notes,
+         metadata, rms_source_type, rms_source_id, inventory_product_id, quantity, unit_cost, product_cost_total,
+         benefit_type, benefit_cost, acquisition_cost, gross_profit, net_profit, roi, payment_method, paid_at, sale_status, idempotency_key)
+       values
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'RMS', 'RMS / Ventas atribuidas', $11,
+         $12::jsonb, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, 'PAID', $27)
+       on conflict (business_id, idempotency_key) where idempotency_key is not null do nothing
+       returning *`,
+      [businessId, item.campaign_id || null, item.name || null, item.phone || null, item.email || null,
+        item.document_id || null, productName, saleAmount, currency, user.id, String(payload.notes || "").trim() || null,
+        JSON.stringify(metadata), sourceType, payload.source_id, productRow?.id || null, quantity, unitCost,
+        productCostTotal, String(payload.benefit_type || "NONE").toUpperCase(), benefitCost, acquisitionCost,
+        grossProfit, netProfit, roi, String(payload.payment_method || "OTHER").toUpperCase(), paidAt, idempotencyKey]
+    );
+    if (sale.rows[0]) return { sale: sale.rows[0], duplicate: false };
+    const existing = await client.query(
+      `select * from business_sales where business_id = $1 and idempotency_key = $2 limit 1`,
+      [businessId, idempotencyKey]
+    );
+    return { sale: existing.rows[0], duplicate: true };
+  });
+  if (result.duplicate) return { sale: result.sale, economics: result.sale?.metadata?.economics || economics, duplicate: true };
+  const movement = await moveRmsLeadPhase(businessId, user, {
+    source_type: sourceType,
+    source_id: payload.source_id,
+    lead_id: item.lead_id || payload.lead_id || null,
+    to_phase: "revenue_generado",
+    priority: "HIGH",
+    recommended_action: "Validar calidad de venta atribuida y activar postventa",
+    last_operation: "attributed_sale_registered",
+    last_material_sent: productName,
+    revenue_potential: saleAmount,
+    reason: "Venta cobrada y atribuida desde la estación de Ventas atribuidas.",
+    metadata: { rms_attributed_sale_id: result.sale.id, rms_sale_recorded_at: new Date().toISOString(), rms_sale_product: productName, rms_sale_amount: saleAmount, rms_sale_economics: economics },
+  });
+  return { sale: result.sale, economics, movement, duplicate: false };
+}
+
 async function createRmsAgendaTask(businessId, user, payload = {}) {
   if (!payload.source_id) throw badRequest("Falta el lead para crear la tarea RMS.");
   const sourceType = crmSourceType({ source_type: payload.source_type });
@@ -1288,5 +1476,7 @@ module.exports = {
   listRmsOpportunities,
   moveRmsLeadPhase,
   recordActivationDelivery,
+  recordRmsAttributedSale,
+  recordRmsEvaluationResponse,
   rmsMetrics,
 };

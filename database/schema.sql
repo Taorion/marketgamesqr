@@ -577,7 +577,23 @@ create table if not exists business_sales (
   referral_points_awarded integer not null default 0,
   notes text,
   created_at timestamptz not null default now(),
-  metadata jsonb not null default '{}'::jsonb
+  metadata jsonb not null default '{}'::jsonb,
+  rms_source_type text,
+  rms_source_id uuid,
+  inventory_product_id uuid,
+  quantity numeric(12, 2) not null default 1,
+  unit_cost numeric(14, 2) not null default 0,
+  product_cost_total numeric(14, 2) not null default 0,
+  benefit_type text,
+  benefit_cost numeric(14, 2) not null default 0,
+  acquisition_cost numeric(14, 2) not null default 0,
+  gross_profit numeric(14, 2) not null default 0,
+  net_profit numeric(14, 2) not null default 0,
+  roi numeric(14, 6),
+  payment_method text,
+  paid_at timestamptz,
+  sale_status text not null default 'PAID',
+  idempotency_key text
 );
 
 create table if not exists business_inventory_products (
@@ -603,6 +619,13 @@ create table if not exists business_inventory_products (
   unique (business_id, sku),
   unique (business_id, barcode)
 );
+
+do $$ begin
+  alter table business_sales
+    add constraint business_sales_inventory_product_id_fkey
+    foreign key (inventory_product_id) references business_inventory_products(id) on delete set null;
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists qr_claims (
   id uuid primary key default gen_random_uuid(),
@@ -843,6 +866,9 @@ create index if not exists idx_business_sales_business_created on business_sales
 create index if not exists idx_business_sales_business_source_created on business_sales(business_id, acquisition_source, created_at desc);
 create index if not exists idx_business_sales_business_channel_created on business_sales(business_id, acquisition_channel, created_at desc);
 create index if not exists idx_business_sales_referred_affiliate on business_sales(referred_affiliate_id, created_at desc);
+create index if not exists business_sales_rms_source_created_idx on business_sales(business_id, rms_source_type, rms_source_id, created_at desc) where rms_source_id is not null;
+create index if not exists business_sales_inventory_product_idx on business_sales(inventory_product_id) where inventory_product_id is not null;
+create unique index if not exists business_sales_idempotency_key_idx on business_sales(business_id, idempotency_key) where idempotency_key is not null;
 create index if not exists idx_business_inventory_products_business_status on business_inventory_products(business_id, status, updated_at desc);
 create index if not exists idx_business_inventory_products_search
   on business_inventory_products using gin (

@@ -11,6 +11,8 @@ const {
   listRmsOpportunities,
   moveRmsLeadPhase,
   recordActivationDelivery,
+  recordRmsAttributedSale,
+  recordRmsEvaluationResponse,
   rmsMetrics,
 } = require("../services/rmsMachineService");
 
@@ -78,6 +80,44 @@ const activationDeliverySchema = z.object({
   delivery_state: z.enum(["PREPARED", "SENT"]).optional().default("PREPARED"),
   contacted_at: z.string().datetime().optional().nullable(),
   contact_consent_confirmed: z.boolean(),
+});
+
+const evaluationResponseSchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+  lead_id: z.string().uuid().optional().nullable(),
+  response: z.enum(["NEGOTIATION", "PAID_SALE", "MISSING_INFORMATION", "NURTURE", "NOT_QUALIFIED"]),
+  note: z.string().trim().min(2).max(3000),
+  need: z.string().trim().max(1200).optional().nullable(),
+  desired_outcome: z.string().trim().max(1200).optional().nullable(),
+  recommended_product: z.string().trim().max(500).optional().nullable(),
+  budget_amount: z.number().min(0).max(100000000000).optional().nullable(),
+  currency: z.string().trim().min(3).max(8).optional().nullable(),
+  decision_maker: z.string().trim().max(500).optional().nullable(),
+  urgency: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).optional().default("MEDIUM"),
+  objections: z.string().trim().max(1500).optional().nullable(),
+  next_action: z.string().trim().max(700).optional().nullable(),
+  next_action_at: z.string().datetime().optional().nullable(),
+});
+
+const attributedSaleSchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+  lead_id: z.string().uuid().optional().nullable(),
+  inventory_product_id: z.string().uuid().optional().nullable(),
+  product_name: z.string().trim().max(240).optional().nullable(),
+  quantity: z.number().positive().max(100000).optional().default(1),
+  unit_cost: z.number().min(0).max(100000000000).optional().nullable(),
+  sale_amount: z.number().positive().max(100000000000),
+  currency: z.string().trim().min(3).max(8).optional().default("COP"),
+  benefit_type: z.enum(["NONE", "DISCOUNT", "GIFT", "BONUS", "OTHER"]).optional().default("NONE"),
+  benefit_description: z.string().trim().max(1000).optional().nullable(),
+  benefit_cost: z.number().min(0).max(100000000000).optional().default(0),
+  acquisition_cost: z.number().min(0).max(100000000000).optional().default(0),
+  payment_method: z.enum(["CASH", "TRANSFER", "CARD", "PAYMENT_LINK", "OTHER"]).optional().default("OTHER"),
+  paid_at: z.string().datetime().optional().nullable(),
+  notes: z.string().trim().max(5000).optional().nullable(),
+  idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
 
 const bulkActionSchema = actionSchema.omit({ source_id: true, source_type: true }).extend({
@@ -153,6 +193,24 @@ async function recordActivationDeliveryAction(req, res, next) {
   }
 }
 
+async function recordEvaluationResponse(req, res, next) {
+  try {
+    const body = validate(evaluationResponseSchema, req.body);
+    res.json(await recordRmsEvaluationResponse(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function recordAttributedSale(req, res, next) {
+  try {
+    const body = validate(attributedSaleSchema, req.body);
+    res.status(201).json(await recordRmsAttributedSale(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function publicAttachmentDownload(req, res, next) {
   try {
     const file = await downloadActivationAttachment(req.params.publicToken);
@@ -194,4 +252,6 @@ module.exports = {
   movePhase,
   publicAttachmentDownload,
   recordActivationDeliveryAction,
+  recordAttributedSale,
+  recordEvaluationResponse,
 };
