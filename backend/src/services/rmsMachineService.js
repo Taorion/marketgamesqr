@@ -4,23 +4,32 @@ const { badRequest, notFound } = require("../utils/http");
 const { createLeadAgendaItem, createLeadNote, listLeadCrmRows } = require("./leadCrmService");
 const { randomBytes } = require("crypto");
 
-const RMS_PHASES = [
+// Fuente única de verdad: conserva los IDs y ordena las transiciones comerciales.
+const RMS_FLOW_ORDER = [
   { key: "recoleccion", label: "Leads recolectados", short_label: "Recolectar" },
   { key: "alimentacion", label: "Curaduría", short_label: "Curaduría" },
   { key: "curaduria", label: "Clasificador", short_label: "Clasificador" },
   { key: "clasificacion", label: "Activación 1", short_label: "Activación 1" },
   { key: "preprocesamiento", label: "Control de calidad 1", short_label: "Control calidad 1" },
   { key: "procesamiento", label: "Evaluación", short_label: "Evaluación" },
-  { key: "control_anti_fuga", label: "Riesgos de fuga", short_label: "Riesgos de fuga" },
   { key: "accion_correctiva", label: "Negociación", short_label: "Negociación" },
+  { key: "control_anti_fuga", label: "Riesgos de fuga", short_label: "Riesgos de fuga" },
   { key: "cierre", label: "Ventas atribuidas", short_label: "Ventas atribuidas" },
   { key: "revenue_generado", label: "Control de calidad 2", short_label: "Control calidad 2" },
   { key: "postventa", label: "Activación 2", short_label: "Activación 2" },
   { key: "inteligencia", label: "Inteligencia RMS", short_label: "Inteligencia" },
 ];
 
+const RMS_PHASES = RMS_FLOW_ORDER;
 const STAGES = RMS_PHASES;
 const PHASE_KEYS = new Set(RMS_PHASES.map((phase) => phase.key));
+const RMS_FLOW_NEXT_PHASE = Object.freeze({
+  recoleccion: "alimentacion", alimentacion: "curaduria", curaduria: "clasificacion",
+  clasificacion: "preprocesamiento", preprocesamiento: "procesamiento",
+  procesamiento: "accion_correctiva", accion_correctiva: "control_anti_fuga",
+  control_anti_fuga: "cierre", cierre: "revenue_generado",
+  revenue_generado: "postventa", postventa: "inteligencia", inteligencia: "recoleccion",
+});
 
 const LEGACY_PHASE_ALIASES = {
   entrada: "alimentacion",
@@ -48,7 +57,7 @@ const INDUSTRIAL_PROCESS = [
   { key: "revenue", label: "Control de calidad 2", phase: "revenue_generado", description: "Venta, redencion, renovacion, recompra, referido o suscripcion medible." },
   { key: "postventa", label: "Postventa", phase: "postventa", description: "Agradecimiento, garantia, ticket proxima compra, encuesta o programa VIP." },
   { key: "optimizar", label: "Inteligencia RMS", phase: "inteligencia", description: "El resultado vuelve a la inteligencia RMS para optimizar campanas, ganchos y operaciones." },
-];
+].sort((left, right) => RMS_FLOW_ORDER.findIndex((phase) => phase.key === left.phase) - RMS_FLOW_ORDER.findIndex((phase) => phase.key === right.phase));
 
 const PHASE_OPERATIONS = {
   recoleccion: {
@@ -87,47 +96,47 @@ const PHASE_OPERATIONS = {
     suggestedMaterialType: "oferta_canal_mensaje_seguimiento",
     materialLabel: "Oferta, canal, mensaje, seguimiento y respuesta",
     buttonLabel: "Activar contacto",
-    nextPhase: "procesamiento",
+    nextPhase: "preprocesamiento",
     agendaTaskType: "activation_follow_up",
     whatsappTemplateKey: "send_catalog",
   },
   preprocesamiento: {
-    primaryAction: "Activar gancho gamificado anti-fuga",
-    primaryActionKey: "gamified_preprocess",
-    suggestedMaterialType: "ticket_reward_trivia",
-    materialLabel: "Ticket, beneficio, puntos, trivia o reward pass",
-    buttonLabel: "Activar gancho",
+    primaryAction: "Validar claridad antes de Evaluación",
+    primaryActionKey: "quality_gate_1",
+    suggestedMaterialType: "contacto_propuesta_origen_siguiente_paso",
+    materialLabel: "Contacto, consentimiento, propuesta, oferta, origen y siguiente paso",
+    buttonLabel: "Revisar calidad 1",
     nextPhase: "procesamiento",
     agendaTaskType: "ticket_reminder",
     whatsappTemplateKey: "send_ticket",
   },
   procesamiento: {
-    primaryAction: "Ejecutar operacion comercial",
-    primaryActionKey: "commercial_process",
+    primaryAction: "Evaluar respuesta y abrir negociación",
+    primaryActionKey: "evaluate_commercial_response",
     suggestedMaterialType: "propuesta_catalogo_cotizacion",
     materialLabel: "Propuesta, catalogo, ticket, cotizacion o factura",
-    buttonLabel: "Procesar",
-    nextPhase: "control_anti_fuga",
+    buttonLabel: "Enviar a Negociación",
+    nextPhase: "accion_correctiva",
     agendaTaskType: "proposal",
     whatsappTemplateKey: "send_quote",
   },
   control_anti_fuga: {
-    primaryAction: "Detectar fuga o atasco",
-    primaryActionKey: "quality_control",
+    primaryAction: "Validar riesgo antes de atribuir venta",
+    primaryActionKey: "risk_review",
     suggestedMaterialType: "alerta_operativa",
     materialLabel: "Ticket por vencer, sin tarea, sin respuesta o fase saturada",
-    buttonLabel: "Controlar fuga",
-    nextPhase: "accion_correctiva",
+    buttonLabel: "Liberar a Ventas atribuidas",
+    nextPhase: "cierre",
     agendaTaskType: "control",
     whatsappTemplateKey: "recovery",
   },
   accion_correctiva: {
-    primaryAction: "Corregir, reprocesar o recuperar",
-    primaryActionKey: "corrective_action",
-    suggestedMaterialType: "recordatorio_ultimo_beneficio",
-    materialLabel: "Recordatorio, reenviar ticket, llamada o ultimo beneficio",
-    buttonLabel: "Corregir",
-    nextPhase: "cierre",
+    primaryAction: "Negociar condición comercial",
+    primaryActionKey: "commercial_negotiation",
+    suggestedMaterialType: "objecion_contraoferta_condicion",
+    materialLabel: "Objeción, propuesta, contraoferta, beneficio o descuento",
+    buttonLabel: "Enviar a Riesgos de fuga",
+    nextPhase: "control_anti_fuga",
     agendaTaskType: "recovery",
     whatsappTemplateKey: "recovery",
   },
@@ -142,11 +151,11 @@ const PHASE_OPERATIONS = {
     whatsappTemplateKey: "send_payment",
   },
   revenue_generado: {
-    primaryAction: "Registrar resultado comercial",
-    primaryActionKey: "register_revenue",
-    suggestedMaterialType: "venta_redencion_renovacion",
-    materialLabel: "Venta, redencion, recompra, referido o suscripcion",
-    buttonLabel: "Registrar revenue",
+    primaryAction: "Validar integridad del revenue y continuidad",
+    primaryActionKey: "quality_gate_2",
+    suggestedMaterialType: "venta_valor_fuente_evidencia_postventa",
+    materialLabel: "Cliente, venta, valor, producto, fuente, evidencia y postventa",
+    buttonLabel: "Revisar calidad 2",
     nextPhase: "postventa",
     agendaTaskType: "post_sale",
     whatsappTemplateKey: "post_sale",
@@ -919,6 +928,24 @@ async function findOpportunity(businessId, sourceType, sourceId) {
   return item;
 }
 
+function assertRmsPhaseTransition(fromPhase, toPhase, payload = {}) {
+  const from = normalizePhase(fromPhase, "");
+  if (!from || from === toPhase) return;
+  if (toPhase === "inteligencia" && String(payload.reason || "").trim()) return;
+  const allowed = from === "control_anti_fuga"
+    ? ["cierre", "accion_correctiva"]
+    : [RMS_FLOW_NEXT_PHASE[from]].filter(Boolean);
+  if (!allowed.includes(toPhase)) {
+    throw badRequest(`${phaseLabel(from)} solo puede continuar a ${allowed.map(phaseLabel).join(" o ")}.`);
+  }
+  if (from === "control_anti_fuga" && toPhase === "accion_correctiva") {
+    const recovery = payload.metadata?.recovery_decision === "NEGOTIATION";
+    if (!recovery || !String(payload.reason || "").trim()) {
+      throw badRequest("El regreso a Negociación exige una decisión de recuperación y su razón.");
+    }
+  }
+}
+
 async function moveRmsLeadPhase(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const sourceId = payload.source_id;
@@ -930,6 +957,7 @@ async function moveRmsLeadPhase(businessId, user, payload = {}) {
   );
   const fromPhase = current.rows[0]?.rms_phase || null;
   const metadata = payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {};
+  assertRmsPhaseTransition(fromPhase, toPhase, { ...payload, metadata });
   const result = await withTransaction(async (client) => {
     const state = await client.query(
       `insert into rms_lead_state
@@ -999,18 +1027,18 @@ const RMS_EVALUATION_ROUTES = {
     action: "Continuar la conversación y acordar condiciones",
   },
   PAID_SALE: {
-    phase: "cierre",
-    label: "Ventas atribuidas",
+    phase: "accion_correctiva",
+    label: "Negociación",
     action: "Registrar pago, producto, costos y atribución de la venta",
   },
   MISSING_INFORMATION: {
-    phase: "clasificacion",
-    label: "Activación 1",
-    action: "Resolver la información pendiente y reenviar el material correcto",
+    phase: "accion_correctiva",
+    label: "Negociación",
+    action: "Acordar qué información falta y el siguiente compromiso",
   },
   NURTURE: {
-    phase: "control_anti_fuga",
-    label: "Riesgos de fuga",
+    phase: "accion_correctiva",
+    label: "Negociación",
     action: "Programar nutrición y seguimiento sin presionar la compra",
   },
   NOT_QUALIFIED: {
@@ -1022,7 +1050,6 @@ const RMS_EVALUATION_ROUTES = {
 
 const RMS_EVALUATION_DESTINATIONS = {
   NEGOTIATION: RMS_EVALUATION_ROUTES.NEGOTIATION,
-  ATTRIBUTED_SALES: RMS_EVALUATION_ROUTES.PAID_SALE,
 };
 
 function rmsEvaluationSummary(response, route) {
@@ -1099,8 +1126,8 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
     to_phase: route.phase,
     priority: evaluation.urgency,
     recommended_action: route.action,
-    last_operation: route.phase === "cierre" ? "evaluation_to_attributed_sales" : route.phase === "accion_correctiva" ? "evaluation_to_negotiation" : `evaluation_${response.toLowerCase()}`,
-    last_material_sent: route.phase === "cierre" ? "venta_confirmada" : "evaluacion_comercial",
+    last_operation: route.phase === "accion_correctiva" ? "evaluation_to_negotiation" : `evaluation_${response.toLowerCase()}`,
+    last_material_sent: "evaluacion_comercial",
     revenue_potential: evaluation.budget_amount ?? item.revenue_potential,
     reason: rmsEvaluationSummary(response, route),
     metadata: {

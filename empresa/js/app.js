@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-evaluation-station-open-v237";
+const APP_VERSION = "empresa-20260803-rms-canonical-flow-v238";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -30850,8 +30850,8 @@ const LEAD_DIRECTORY_RMS_STATIONS = {
   clasificacion: { label: "Estación 04 · Activación 1", short: "04 Activación 1" },
   preprocesamiento: { label: "Tablero auxiliar · Control de calidad 1", short: "Control calidad 1" },
   procesamiento: { label: "Estación 06 · Evaluación", short: "06 Evaluación" },
-  control_anti_fuga: { label: "Estación 07 · Riesgos de fuga", short: "07 Riesgos fuga" },
-  accion_correctiva: { label: "Estación 08 · Negociación", short: "08 Negociación" },
+  accion_correctiva: { label: "Estación 07 · Negociación", short: "07 Negociación" },
+  control_anti_fuga: { label: "Estación 08 · Riesgos de fuga", short: "08 Riesgos fuga" },
   cierre: { label: "Estación 09 · Ventas atribuidas", short: "09 Ventas atribuidas" },
   revenue_generado: { label: "Tablero auxiliar · Control de calidad 2", short: "Control calidad 2" },
   postventa: { label: "Estación 11 · Activación 2", short: "11 Activación 2" },
@@ -34312,13 +34312,13 @@ const LEAD_RMS_CONVERSION_PATH = [
   { key: "clasificacion", label: "Activación 1", progress: 48 },
   { key: "preprocesamiento", label: "Revisión auxiliar 1", progress: 56, auxiliary: true },
   { key: "procesamiento", label: "Evaluación", progress: 68 },
-  { key: "control_anti_fuga", label: "Riesgos de fuga", progress: 76 },
-  { key: "accion_correctiva", label: "Negociación", progress: 84 },
+  { key: "accion_correctiva", label: "Negociación", progress: 76 },
+  { key: "control_anti_fuga", label: "Riesgos de fuga", progress: 84 },
   { key: "cierre", label: "Ventas atribuidas", progress: 94 },
   { key: "revenue_generado", label: "Revisión auxiliar 2", progress: 97, auxiliary: true },
   { key: "postventa", label: "Activación 2", progress: 100 },
   { key: "inteligencia", label: "Inteligencia RMS", progress: 100 },
-];
+].sort((left, right) => rmsFlowIndex(left.key) - rmsFlowIndex(right.key));
 
 function leadRmsJourneyModel(detail = {}) {
   const lead = detail.lead || {};
@@ -38199,6 +38199,25 @@ function channelEffortPayload() {
   };
 }
 
+// Fuente única de verdad para la navegación, progreso, etiquetas y salidas RMS.
+const RMS_FLOW_ORDER = Object.freeze([
+  "recoleccion", "alimentacion", "curaduria", "clasificacion", "preprocesamiento",
+  "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre",
+  "revenue_generado", "postventa", "inteligencia",
+]);
+const RMS_FLOW_INDEX = Object.freeze(Object.fromEntries(RMS_FLOW_ORDER.map((key, index) => [key, index])));
+const RMS_FLOW_NEXT_PHASE = Object.freeze(Object.fromEntries(RMS_FLOW_ORDER.map((key, index) => [key, RMS_FLOW_ORDER[(index + 1) % RMS_FLOW_ORDER.length]])));
+const RMS_QUALITY_CONTROL_KEYS = ["preprocesamiento", "revenue_generado"];
+
+function rmsFlowIndex(phase = "") {
+  return RMS_FLOW_INDEX[phase] ?? Number.MAX_SAFE_INTEGER;
+}
+
+function rmsNextPrimaryPhase(phase = "") {
+  const start = rmsFlowIndex(phase);
+  return RMS_FLOW_ORDER.slice(start + 1).find((key) => !RMS_QUALITY_CONTROL_KEYS.includes(key)) || "";
+}
+
 const RMS_FACTORY_STAGE_BLUEPRINT = [
   {
     key: "recoleccion",
@@ -38249,7 +38268,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
       primaryAction: "Preparar, confirmar y dar seguimiento al primer contacto",
       materialLabel: "Oferta, canal, mensaje, seguimiento y respuesta",
       buttonLabel: "Activar contacto",
-      nextPhase: "procesamiento",
+      nextPhase: "preprocesamiento",
     },
   },
   {
@@ -38275,7 +38294,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
       primaryAction: "Ejecutar operacion comercial",
       materialLabel: "Propuesta, catalogo, ticket, cotizacion o factura",
       buttonLabel: "Procesar",
-      nextPhase: "control_anti_fuga",
+      nextPhase: "accion_correctiva",
     },
   },
   {
@@ -38288,7 +38307,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
       primaryAction: "Detectar fuga o atasco",
       materialLabel: "Ticket por vencer, sin tarea, sin respuesta o fase saturada",
       buttonLabel: "Controlar fuga",
-      nextPhase: "accion_correctiva",
+      nextPhase: "cierre",
     },
   },
   {
@@ -38301,7 +38320,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
       primaryAction: "Corregir, reprocesar o recuperar",
       materialLabel: "Recordatorio, reenviar ticket, llamada o ultimo beneficio",
       buttonLabel: "Corregir",
-      nextPhase: "cierre",
+      nextPhase: "control_anti_fuga",
     },
   },
   {
@@ -38362,12 +38381,13 @@ function rmsFactoryStages(data = {}) {
   const serverStages = Array.isArray(data.stages) && data.stages.length ? data.stages : [];
   const operations = data.operations || {};
   const source = serverStages.length ? serverStages : RMS_FACTORY_STAGE_BLUEPRINT;
-  return source.map((stage) => {
+  return [...source].sort((left, right) => rmsFlowIndex(left.key) - rmsFlowIndex(right.key)).map((stage) => {
     const blueprint = RMS_FACTORY_STAGE_BLUEPRINT.find((item) => item.key === stage.key) || {};
     const mergedOperation = {
       ...(blueprint.operation || {}),
       ...(operations[stage.key] || {}),
       ...(stage.operation || {}),
+      nextPhase: RMS_FLOW_NEXT_PHASE[stage.key] || stage.operation?.nextPhase || operations[stage.key]?.nextPhase || blueprint.operation?.nextPhase,
     };
     return {
       ...blueprint,
@@ -39056,8 +39076,6 @@ function openBranchFormModal() {
   branchFormPanel?.classList.add("is-branch-modal-open");
 }
 
-const RMS_QUALITY_CONTROL_KEYS = ["preprocesamiento", "revenue_generado"];
-
 function rmsPrimaryFactoryStages(data = {}) {
   return rmsFactoryStages(data).filter((stage) => !RMS_QUALITY_CONTROL_KEYS.includes(stage.key));
 }
@@ -39067,12 +39085,7 @@ function rmsQualityControlStages(data = {}) {
 }
 
 function rmsPrimaryStationNextPhase(stage = {}, stages = []) {
-  const operation = stage.operation || (state.rmsMachine?.operations || {})[stage.key] || {};
-  const nextKey = stage.key === "clasificacion"
-    ? "procesamiento"
-    : stage.key === "cierre"
-      ? "postventa"
-      : operation.nextPhase;
+  const nextKey = rmsNextPrimaryPhase(stage.key);
   return stages.find((candidate) => candidate.key === nextKey) || null;
 }
 
@@ -39093,7 +39106,7 @@ const RMS_QUALITY_CONTROL_CONFIG = {
     title: "Venta lista para Postventa",
     subtitle: "Control 2 · validación previa a Postventa",
     description: "Consulta el tramo comercial final: evaluación, riesgos, negociación, venta y atribución de revenue.",
-    phases: ["procesamiento", "control_anti_fuga", "accion_correctiva", "cierre", "revenue_generado"],
+    phases: ["procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "revenue_generado"],
     focus: "Verifica que la venta tenga valor, fuente, producto y evidencia antes de enviarla a Postventa.",
     checkpoint: "Control 2 · venta y trazabilidad",
     banner: "CONTROL DE CALIDAD 2",
@@ -39903,15 +39916,15 @@ const RMS_TUTORIAL_STEPS = [
     action: "station",
     input: "Leads protegidos con interés activo, oferta y siguiente paso claro.",
     operation: "Ejecuta catálogo, WhatsApp, cotización, llamada, agenda, demostración, propuesta o factura.",
-    output: "Oportunidad evaluada para Riesgos de fuga, Negociación o cierre.",
+    output: "Oportunidad evaluada y preparada para Negociación.",
     operatorHint: "Toda acción debe quedar registrada para saber qué movimiento generó o detuvo el avance comercial.",
   },
   {
     key: "control_anti_fuga",
     phase: "control_anti_fuga",
     icon: "monitor_heart",
-    title: "Estación 07 · Riesgos de fuga",
-    subtitle: "Detectar atascos",
+    title: "Estación 08 · Riesgos de fuga",
+    subtitle: "Controlar el acuerdo",
     actionLabel: "Abrir Riesgos de fuga",
     action: "station",
     input: "Oportunidades operadas con posible enfriamiento, vencimiento o falta de seguimiento.",
@@ -39923,8 +39936,8 @@ const RMS_TUTORIAL_STEPS = [
     key: "accion_correctiva",
     phase: "accion_correctiva",
     icon: "handshake",
-    title: "Estación 08 · Negociación",
-    subtitle: "Recuperar oportunidad",
+    title: "Estación 07 · Negociación",
+    subtitle: "Acordar condiciones",
     actionLabel: "Abrir Negociación",
     action: "station",
     input: "Leads en riesgo o con una objeción, condición o decisión pendiente.",
@@ -39984,7 +39997,7 @@ const RMS_TUTORIAL_STEPS = [
     output: "Aprendizajes accionables para alimentar mejor la siguiente ronda de Leads recolectados.",
     operatorHint: "La máquina se vuelve más eficiente cuando el aprendizaje vuelve al inicio del ciclo.",
   },
-].filter((step) => !RMS_QUALITY_CONTROL_KEYS.includes(step.key));
+].filter((step) => !RMS_QUALITY_CONTROL_KEYS.includes(step.key)).sort((left, right) => rmsFlowIndex(left.phase) - rmsFlowIndex(right.phase));
 
 function renderRmsTutorial() {
   if (!rmsTutorialSteps || !rmsTutorialPanel) return;
@@ -40370,7 +40383,6 @@ const RMS_EVALUATION_RESPONSES = [
 
 const RMS_EVALUATION_DESTINATIONS = [
   { value: "NEGOTIATION", label: "Negociación", eyebrow: "Acordar", icon: "handshake", hint: "Precio, alcance, plazos o forma de pago." },
-  { value: "ATTRIBUTED_SALES", label: "Ventas atribuidas", eyebrow: "Registrar", icon: "paid", hint: "Pago, producto, costos y evidencia de la venta." },
 ];
 
 const RMS_CURRENCIES = ["COP", "USD", "EUR", "MXN", "PEN", "CLP", "ARS", "BRL"];
@@ -42960,7 +42972,7 @@ function bindRmsMachineActions(root) {
       response.dispatchEvent(new Event("change", { bubbles: true }));
       const destination = rmsCommercialNode(root, "[data-rms-evaluation-destination]", id);
       if (destination && !destination.value) {
-        destination.value = response.value === "PAID_SALE" ? "ATTRIBUTED_SALES" : "NEGOTIATION";
+        destination.value = "NEGOTIATION";
       }
       const nextAction = rmsCommercialNode(root, "[data-rms-evaluation-next-action]", id);
       if (nextAction && !nextAction.value.trim()) nextAction.value = rmsEvaluationDefaultNextAction(response.value);
@@ -44949,17 +44961,16 @@ function persistRmsEvaluationDraft(root, id = "") {
 function rmsEvaluationRoute(response = "", destination = "") {
   const directDestinations = {
     NEGOTIATION: { label: "Negociación", detail: "Continuar el acuerdo de precio, alcance, plazos o forma de pago.", icon: "handshake" },
-    ATTRIBUTED_SALES: { label: "Ventas atribuidas", detail: "Registrar pago, producto, costos y evidencia de una compra real.", icon: "paid" },
   };
   if (directDestinations[destination]) return directDestinations[destination];
   const routes = {
-    PAID_SALE: { label: "Pasa a Ventas atribuidas", detail: "Registra el pago, producto, costos y evidencia de una compra real.", icon: "paid" },
+    PAID_SALE: { label: "Pasa a Negociación", detail: "Confirma la condición comercial antes de controlar el riesgo del acuerdo.", icon: "handshake" },
     NEGOTIATION: { label: "Pasa a Negociación", detail: "Continúa el acuerdo de precio, alcance, plazos o forma de pago.", icon: "handshake" },
-    MISSING_INFORMATION: { label: "Vuelve a Activación 1", detail: "Prepara y reenvía el material o la información que falta.", icon: "send" },
-    NURTURE: { label: "Pasa a Riesgos de fuga", detail: "Programa nutrición y seguimiento sin perder el contexto.", icon: "schedule" },
+    MISSING_INFORMATION: { label: "Pasa a Negociación", detail: "Acorda la información que falta y el siguiente compromiso comercial.", icon: "handshake" },
+    NURTURE: { label: "Pasa a Negociación", detail: "Acorda el siguiente compromiso comercial y programa el seguimiento.", icon: "handshake" },
     NOT_QUALIFIED: { label: "Pasa a Inteligencia RMS", detail: "Conserva el aprendizaje sin seguir presionando al contacto.", icon: "psychology" },
   };
-  return routes[response] || { label: "Elige una estación de destino", detail: "Negociación y Ventas atribuidas son decisiones independientes de la respuesta.", icon: "alt_route" };
+  return routes[response] || { label: "Enviar a Negociación", detail: "La Evaluación abre la conversación comercial antes de Riesgos de fuga.", icon: "alt_route" };
 }
 
 function updateRmsEvaluationRoutePreview(root, id) {
@@ -45062,7 +45073,7 @@ async function saveRmsEvaluationResponse(item, root) {
     body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft }),
   });
   if (state.rmsEvaluationDrafts) delete state.rmsEvaluationDrafts[item.id];
-  const destination = draft.destination === "ATTRIBUTED_SALES" ? "cierre" : "accion_correctiva";
+  const destination = "accion_correctiva";
   state.rmsMachineLoaded = false;
   await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
   const warning = result?.agenda_warning ? " La tarea automática no se pudo crear, pero el lead sí fue dirigido." : "";
