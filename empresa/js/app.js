@@ -43228,15 +43228,32 @@ function rmsActivationDraftFromDom(root, id) {
     paymentInstructions: byData("data-rms-activation-payment-instructions")?.value?.trim() || "",
     paymentReference: byData("data-rms-activation-payment-reference")?.value?.trim() || "",
     paymentAmount: Number(byData("data-rms-activation-payment-amount")?.value || 0) || null,
+    paymentCurrency: byData("data-rms-activation-payment-currency")?.value || "COP",
     files: Array.from(byData("data-rms-activation-files")?.files || []).slice(0, 4),
     consent: Boolean(byData("data-rms-activation-consent")?.checked),
   };
 }
 
+function rmsActivationPaymentMessage(message = "", payment = {}) {
+  if (!payment || payment.paymentMode === "NONE") return message;
+  const amount = Number(payment.paymentAmount);
+  const currency = String(payment.paymentCurrency || "COP").toUpperCase();
+  const lines = [
+    message,
+    "",
+    `Cobro: ${{ PAYMENT_LINK: "Link de pago", INVOICE: "Factura", COLLECTION_ACCOUNT: "Cuenta de cobro", SIMPLE_COLLECTION: "Cobro simple" }[payment.paymentMode] || "Pago"}.`,
+    Number.isFinite(amount) && amount >= 0 ? `Valor: ${currency} ${amount.toLocaleString("es-CO")}.` : "",
+    payment.paymentReference ? `Referencia: ${payment.paymentReference}.` : "",
+    payment.paymentUrl ? `Pagar aquí: ${payment.paymentUrl}` : "",
+    payment.paymentInstructions || "",
+  ].filter(Boolean);
+  return lines.join("\n");
+}
+
 function openRmsActivationMessage(item = {}, options = {}) {
   const delivery = rmsActivationDelivery(item);
   const targetChannel = options.channel || delivery.channel || (item.phone ? "whatsapp" : "email");
-  const message = options.message || rmsActivationMessage(item, delivery);
+  const message = options.message || rmsActivationPaymentMessage(rmsActivationMessage(item, delivery), options);
   if (targetChannel === "whatsapp" && !item.phone) {
     showFeedback("Este lead no tiene WhatsApp. Selecciona email o completa el teléfono.", "info", { title: "Activación 1" });
     return false;
@@ -43328,7 +43345,7 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
       const uploaded = await api("/api/business/digital-assets", { method: "POST", headers: authHeaders(), body: JSON.stringify({ title: file.name.replace(/\.[^.]+$/, "") || "Documento comercial", description: `Adjunto comercial de Activación 1 para ${item.name || "lead"}.`, category: "comercial", file_name: file.name, file_data_url: await readFileAsDataUrl(file, 5 * 1024 * 1024, ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/png", "image/jpeg", "image/webp"]), download_button_text: "Descargar documento" }) });
       if (uploaded.asset?.id) attachmentAssetIds.push(uploaded.asset.id);
     }
-    const deliveryRecord = await api("/api/business/rms-machine/activation-delivery", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", attachment_asset_ids: attachmentAssetIds, ticket_url: draft.ticketUrl || null, payment: { mode: draft.paymentMode, url: draft.paymentUrl || null, instructions: draft.paymentInstructions || null, reference: draft.paymentReference || null, amount: draft.paymentAmount, currency: "COP" }, message, channel: targetChannel, contact_consent_confirmed: true }) });
+    const deliveryRecord = await api("/api/business/rms-machine/activation-delivery", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", attachment_asset_ids: attachmentAssetIds, ticket_url: draft.ticketUrl || null, payment: { mode: draft.paymentMode, url: draft.paymentUrl || null, instructions: draft.paymentInstructions || null, reference: draft.paymentReference || null, amount: draft.paymentAmount, currency: draft.paymentCurrency }, message, channel: targetChannel, contact_consent_confirmed: true }) });
     const deliveredMessage = deliveryRecord.whatsapp_message || message;
     openRmsActivationMessage(item, { channel: targetChannel, message: deliveredMessage });
     await api("/api/business/rms-machine/lead/phase", {
@@ -44550,7 +44567,8 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
       </div>
       <div class="rms-activation-delivery-controls rms-activation-plan-controls">
         <label><span>Cobro</span><select data-rms-activation-payment-mode="${escapeHtml(item.id)}"><option value="NONE">Sin cobro</option><option value="PAYMENT_LINK">Link de cobro</option><option value="INVOICE">Factura</option><option value="COLLECTION_ACCOUNT">Cuenta de cobro</option><option value="SIMPLE_COLLECTION">Cobro simple</option></select></label>
-        <label><span>Valor COP</span><input type="number" min="0" step="100" data-rms-activation-payment-amount="${escapeHtml(item.id)}"></label>
+        <label><span>Valor</span><input type="number" min="0" step="0.01" data-rms-activation-payment-amount="${escapeHtml(item.id)}"></label>
+        <label><span>Moneda</span><select data-rms-activation-payment-currency="${escapeHtml(item.id)}"><option value="COP">COP · Peso colombiano</option><option value="USD">USD · Dólar estadounidense</option><option value="EUR">EUR · Euro</option><option value="MXN">MXN · Peso mexicano</option><option value="BRL">BRL · Real brasileño</option><option value="PEN">PEN · Sol peruano</option><option value="CLP">CLP · Peso chileno</option><option value="ARS">ARS · Peso argentino</option></select></label>
         <label><span>Link de pago</span><input type="url" placeholder="https://checkout..." data-rms-activation-payment-url="${escapeHtml(item.id)}"></label>
         <label><span>Referencia</span><input type="text" placeholder="Factura o referencia" data-rms-activation-payment-reference="${escapeHtml(item.id)}"></label>
       </div>
