@@ -42661,6 +42661,7 @@ function bindRmsMachineActions(root) {
         const result = await sendRmsActivationOffer(item, { ...draft, prepareOnly: true });
         if (result?.message && messageInput) {
           messageInput.value = result.message;
+          updateRmsActivationLinkBox(root, activationId, result);
           if (status) status.textContent = "Mensaje actualizado. Revisa el ticket, documentos, valor, moneda y cobro antes de enviarlo.";
         } else if (status) {
           status.textContent = "No se pudo actualizar. Revisa los campos obligatorios y vuelve a intentarlo.";
@@ -42674,7 +42675,11 @@ function bindRmsMachineActions(root) {
     if (field.matches("[data-rms-activation-message]")) return;
     field.addEventListener("change", () => {
       const card = field.closest("[data-rms-activation-delivery]");
-      if (card?.dataset.rmsActivationDelivery) rmsActivationPreparedDeliveries.delete(card.dataset.rmsActivationDelivery);
+      if (card?.dataset.rmsActivationDelivery) {
+        const id = card.dataset.rmsActivationDelivery;
+        rmsActivationPreparedDeliveries.delete(id);
+        updateRmsActivationLinkBox(root, id);
+      }
     });
   });
   root.querySelectorAll("[data-rms-confirm-activation]").forEach((button) => {
@@ -43300,6 +43305,18 @@ function rmsActivationDraftFromDom(root, id) {
   };
 }
 
+function updateRmsActivationLinkBox(root, id, delivery = {}) {
+  const box = Array.from(root.querySelectorAll("[data-rms-activation-links]")).find((node) => node.getAttribute("data-rms-activation-links") === id);
+  if (!box) return;
+  const draft = rmsActivationDraftFromDom(root, id);
+  const attachments = Array.isArray(delivery.attachments) ? delivery.attachments : [];
+  box.value = [
+    draft.ticketUrl ? `Ticket / activación:\n${draft.ticketUrl}` : "",
+    attachments.length ? `Documentos seguros:\n${attachments.map((asset) => `${asset.title || asset.file_name || "Documento"}: ${asset.url}`).join("\n")}` : "",
+    draft.paymentUrl ? `Link de pago:\n${draft.paymentUrl}` : "",
+  ].filter(Boolean).join("\n\n") || "Completa un ticket, adjunto o link de pago y pulsa Actualizar mensaje.";
+}
+
 function rmsActivationPaymentMessage(message = "", payment = {}) {
   const ticketLine = payment?.ticketUrl ? `Activación / ticket: ${payment.ticketUrl}` : "";
   if (!payment || payment.paymentMode === "NONE") return [message, ticketLine].filter(Boolean).join("\n\n");
@@ -43423,7 +43440,7 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
     const deliveryRecord = prepared || await api("/api/business/rms-machine/activation-delivery", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", attachment_asset_ids: attachmentAssetIds, ticket_url: draft.ticketUrl || null, payment: { mode: draft.paymentMode, url: draft.paymentUrl || null, instructions: draft.paymentInstructions || null, reference: draft.paymentReference || null, amount: draft.paymentAmount, currency: draft.paymentCurrency }, message: rmsActivationMessage(item, delivery), channel: targetChannel, contact_consent_confirmed: true }) });
     const deliveredMessage = draft.message || deliveryRecord.whatsapp_message || message;
     rmsActivationPreparedDeliveries.set(item.id, deliveryRecord);
-    if (draft.prepareOnly) return { prepared: true, message: deliveryRecord.whatsapp_message || deliveredMessage };
+    if (draft.prepareOnly) return { prepared: true, message: deliveryRecord.whatsapp_message || deliveredMessage, attachments: deliveryRecord.attachments || [] };
     if (!draft.skipOpen) openRmsActivationMessage(item, { channel: targetChannel, message: deliveredMessage });
     await api("/api/business/rms-machine/lead/phase", {
       method: "PATCH",
@@ -44647,6 +44664,11 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
       </div>
       <label class="rms-activation-message-field"><span>Instrucciones de cobro</span><textarea rows="2" data-rms-activation-payment-instructions="${escapeHtml(item.id)}" placeholder="Cuenta, factura o instrucciones para pagar"></textarea></label>
       <label class="rms-activation-message-field"><span><input type="checkbox" data-rms-activation-consent="${escapeHtml(item.id)}"> Confirmo que el lead autorizó el contacto comercial.</span></label>
+      <label class="rms-activation-message-field">
+        <span>Links listos para copiar o pegar</span>
+        <textarea rows="3" readonly data-rms-activation-links="${escapeHtml(item.id)}" aria-label="Links preparados para ${escapeHtml(item.name || "lead")}">Completa un ticket, adjunto o link de pago y pulsa Actualizar mensaje.</textarea>
+        <small>Esta caja reúne el enlace de ticket, los documentos seguros y el link de pago para que puedas reutilizarlos al editar el mensaje.</small>
+      </label>
       <label class="rms-activation-message-field">
         <span>Mensaje final para ${escapeHtml(item.first_name || item.name || "el lead")}</span>
         <textarea rows="6" data-rms-activation-message="${escapeHtml(item.id)}" aria-label="Mensaje de activación para ${escapeHtml(item.name || "lead")}">${escapeHtml(rmsActivationMessage(item, delivery))}</textarea>
