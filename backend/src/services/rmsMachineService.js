@@ -1175,12 +1175,18 @@ function activationDeliveryPayment(payload = {}) {
 
 function activationDeliveryPaymentText(payment) {
   if (!payment || payment.mode === "NONE") return "";
+  const modeCopy = {
+    PAYMENT_LINK: "Te compartimos una forma rápida y segura de completar el pago.",
+    INVOICE: "Te compartimos la factura y los datos para realizar el pago.",
+    COLLECTION_ACCOUNT: "Te compartimos la cuenta de cobro y los datos para realizar el pago.",
+    SIMPLE_COLLECTION: "Te compartimos los datos para completar tu pago.",
+  }[payment.mode] || "Te compartimos los datos para completar tu pago.";
   return [
-    `Cobro: ${payment.label}.`,
-    payment.amount !== null ? `Valor: ${payment.currency} ${payment.amount.toLocaleString("es-CO")}.` : "",
-    payment.reference ? `Referencia: ${payment.reference}.` : "",
-    payment.url ? `Pagar aquí: ${payment.url}` : "",
-    payment.instructions,
+    modeCopy,
+    payment.amount !== null ? `El valor de esta oferta es ${payment.currency} ${payment.amount.toLocaleString("es-CO")}.` : "",
+    payment.reference ? `Por favor usa la referencia ${payment.reference}.` : "",
+    payment.url ? `Puedes pagar aquí: ${payment.url}` : "",
+    payment.instructions ? `Instrucciones de pago: ${payment.instructions}` : "",
   ].filter(Boolean).join("\n");
 }
 
@@ -1207,7 +1213,12 @@ async function recordActivationDelivery(businessId, user, payload = {}) {
     const created = await query(`insert into rms_activation_attachments (business_id, source_type, source_id, lead_id, activation_note_id, asset_id, public_token, metadata) values ($1,$2,$3,$4,$5,$6,$7,$8::jsonb) returning id, public_token`, [businessId, sourceType, sourceId, item.lead_id || null, note.id, asset.id, token, JSON.stringify({ title: asset.title, file_name: asset.file_name, sent_by: user.id })]);
     attachments.push({ id: created.rows[0].id, asset_id: asset.id, title: asset.title, file_name: asset.file_name, file_type: asset.file_type, url: activationAttachmentUrl(token) });
   }
-  const deliveryMessage = [baseMessage, attachments.length ? `Documentos para descargar:\n${attachments.map((asset) => `• ${asset.title || asset.file_name}: ${asset.url}`).join("\n")}` : "", ticketUrl ? `Ticket: ${ticketUrl}` : "", activationDeliveryPaymentText(payment)].filter(Boolean).join("\n\n").slice(0, 5000);
+  const deliveryMessage = [
+    baseMessage,
+    ticketUrl ? `Tu beneficio está listo para ti. Ábrelo aquí y revisa cómo disfrutarlo: ${ticketUrl}` : "",
+    attachments.length ? `También te compartimos los documentos de esta propuesta:\n${attachments.map((asset) => `• ${asset.title || asset.file_name}: ${asset.url}`).join("\n")}` : "",
+    activationDeliveryPaymentText(payment),
+  ].filter(Boolean).join("\n\n").slice(0, 5000);
   await query(`update lead_notes set metadata = metadata || $2::jsonb where id = $1`, [note.id, JSON.stringify({ activation_delivery: { attachments, payment, ticket_url: ticketUrl || null, message: deliveryMessage } })]);
   return { note, attachments, payment, whatsapp_message: deliveryMessage, whatsapp_url: whatsappUrl(item.phone, deliveryMessage) };
 }
