@@ -88,7 +88,7 @@ const evaluationResponseSchema = z.object({
   lead_id: z.string().uuid().optional().nullable(),
   response: z.enum(["NEGOTIATION", "PAID_SALE", "MISSING_INFORMATION", "NURTURE", "NOT_QUALIFIED"]),
   destination: z.enum(["NEGOTIATION", "ATTRIBUTED_SALES"]).optional().nullable(),
-  note: z.string().trim().min(2).max(3000),
+  note: z.string().trim().max(3000).optional().nullable(),
   need: z.string().trim().max(1200).optional().nullable(),
   desired_outcome: z.string().trim().max(1200).optional().nullable(),
   recommended_product: z.string().trim().max(500).optional().nullable(),

@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-evaluation-hero-inline-white-v233";
+const APP_VERSION = "empresa-20260803-rms-evaluation-save-routing-v234";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -40415,7 +40415,7 @@ function rmsEvaluationStationCardMarkup(item = {}) {
         <section class="rms-evaluation-decision-panel" aria-label="Respuesta del cliente"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 2 · Lo que pasó</span><h5>¿Cuál fue el resultado de este contacto?</h5></div><small>Describe la realidad; la ruta la eliges después.</small></div><div class="rms-evaluation-decision-grid">${RMS_EVALUATION_RESPONSES.map((option) => `<button class="rms-evaluation-choice ${selectedResponse === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-choice="${escapeHtml(item.id)}" data-rms-evaluation-value="${option.value}" aria-pressed="${selectedResponse === option.value ? "true" : "false"}"><span class="material-symbols-outlined rms-evaluation-choice-icon" aria-hidden="true">${option.icon}</span><span class="rms-evaluation-choice-copy"><em>${escapeHtml(option.eyebrow)}</em><strong>${escapeHtml(option.title)}</strong><small>${escapeHtml(option.hint)}</small></span><span class="material-symbols-outlined rms-evaluation-choice-check" aria-hidden="true">check</span></button>`).join("")}</div></section>
         <section class="rms-evaluation-destination-panel" aria-label="Estación de destino"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 3 · Tu decisión</span><h5>¿A qué estación envías este lead?</h5></div><small>La respuesta sugiere; tú decides</small></div><div class="rms-evaluation-destination-grid">${RMS_EVALUATION_DESTINATIONS.map((option) => `<button class="rms-evaluation-destination-choice ${selectedDestination === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-destination-choice="${escapeHtml(item.id)}" data-rms-evaluation-destination-value="${option.value}" aria-pressed="${selectedDestination === option.value ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">${option.icon}</span><span><em>${escapeHtml(option.eyebrow)}</em><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.hint)}</small></span><span class="material-symbols-outlined rms-evaluation-destination-arrow" aria-hidden="true">arrow_forward</span></button>`).join("")}</div></section>
         <aside class="rms-evaluation-route-preview" data-rms-evaluation-route="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">alt_route</span><div><span class="mono-label">Ruta que se guardará</span><strong>Elige una estación de destino</strong><small>La respuesta del cliente seguirá documentada en su historial.</small></div></aside>
-        <section class="rms-evaluation-next-panel ${selectedResponse && selectedDestination ? "is-visible" : ""}" data-rms-evaluation-next-panel="${escapeHtml(item.id)}"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 4 · Contexto de continuidad</span><h5>Deja el contexto mínimo útil</h5></div><small>Obligatorio: resumen de la respuesta</small></div><div class="rms-evaluation-form-grid">
+        <section class="rms-evaluation-next-panel ${selectedResponse && selectedDestination ? "is-visible" : ""}" data-rms-evaluation-next-panel="${escapeHtml(item.id)}"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 4 · Contexto de continuidad</span><h5>Deja el contexto mínimo útil</h5></div><small>El resumen es opcional; el sistema registra uno si no lo escribes.</small></div><div class="rms-evaluation-form-grid">
           <label data-rms-evaluation-detail="commercial"><span>Producto o servicio</span><input type="text" value="${escapeHtml(draft.recommended_product || defaultProduct)}" data-rms-evaluation-product="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Oferta evaluada"></label>
           <label data-rms-evaluation-detail="commercial"><span>Presupuesto</span><input type="number" min="0" step="0.01" value="${escapeHtml(draft.budget_amount ?? "")}" data-rms-evaluation-budget="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Opcional"></label>
           <label data-rms-evaluation-detail="commercial"><span>Moneda</span><select data-rms-evaluation-currency="${escapeHtml(item.id)}" data-rms-evaluation-draft-field>${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${(draft.currency || "COP") === currency ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
@@ -40427,7 +40427,7 @@ function rmsEvaluationStationCardMarkup(item = {}) {
           <label data-rms-evaluation-detail="context"><span>Necesidad</span><input type="text" value="${escapeHtml(draft.need || "")}" data-rms-evaluation-need="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Qué necesita resolver"></label>
           <label data-rms-evaluation-detail="context"><span>Resultado esperado</span><input type="text" value="${escapeHtml(draft.desired_outcome || "")}" data-rms-evaluation-outcome="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Qué cambio espera"></label>
         </div>
-        <label class="rms-commercial-note-field"><span>Resumen de lo que dijo el cliente</span><textarea rows="4" data-rms-evaluation-note="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Escribe la respuesta, condiciones y promesas hechas. Quedará en el historial del contacto.">${escapeHtml(draft.note || "")}</textarea></label></section>
+        <label class="rms-commercial-note-field"><span>Resumen de lo que dijo el cliente <small>(opcional)</small></span><textarea rows="4" data-rms-evaluation-note="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Opcional: respuesta, condiciones y promesas hechas. Quedará en el historial del contacto.">${escapeHtml(draft.note || "")}</textarea></label></section>
         <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">history</span>El historial de Activación 1 se conserva; el borrador solo vive durante esta sesión del portal.</small><button class="solid-button compact" type="button" data-rms-save-evaluation="${escapeHtml(item.id)}" ${selectedResponse && selectedDestination ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Guardar y dirigir</button></div>
       </section>
     </article>
@@ -42972,7 +42972,14 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-save-evaluation]").forEach((button) => {
     button.addEventListener("click", () => {
       const item = rmsOpportunityById(button.dataset.rmsSaveEvaluation || "");
-      if (item) saveRmsEvaluationResponse(item, root).catch((error) => showFeedback(error.message || "No pudimos guardar la evaluación.", "error", { title: "Evaluación" }));
+      if (!item) {
+        showFeedback("No pudimos identificar este lead. Actualiza la estación e inténtalo de nuevo.", "error", { title: "Evaluación" });
+        return;
+      }
+      saveRmsEvaluationResponse(item, root).catch((error) => {
+        button.disabled = false;
+        showFeedback(error.message || "No pudimos guardar la evaluación.", "error", { title: "Evaluación" });
+      });
     });
   });
   root.querySelectorAll("[data-rms-sale-product]").forEach((select) => {
@@ -44997,11 +45004,14 @@ function rmsEvaluationDraftFromDom(root, id) {
 
 async function saveRmsEvaluationResponse(item, root) {
   const draft = rmsEvaluationDraftFromDom(root, item.id);
-  if (!draft.response || !draft.destination || !draft.note) {
-    showFeedback("Registra la respuesta, elige Negociación o Ventas atribuidas y deja el resumen antes de dirigirlo.", "info", { title: "Evaluación" });
+  if (!draft.response || !draft.destination) {
+    showFeedback("Selecciona el resultado y elige Negociación o Ventas atribuidas para dirigir el lead.", "info", { title: "Evaluación" });
     return;
   }
-  await api("/api/business/rms-machine/evaluation-response", {
+  const saveButton = rmsCommercialNode(root, "[data-rms-save-evaluation]", item.id);
+  if (saveButton) saveButton.disabled = true;
+  showFeedback("Guardando la evaluación y dirigiendo el lead…", "info", { title: "Evaluación" });
+  const result = await api("/api/business/rms-machine/evaluation-response", {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft }),
@@ -45010,7 +45020,8 @@ async function saveRmsEvaluationResponse(item, root) {
   const destination = draft.destination === "ATTRIBUTED_SALES" ? "cierre" : "accion_correctiva";
   state.rmsMachineLoaded = false;
   await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
-  showFeedback(`Evaluación registrada: el lead fue enviado a ${rmsEvaluationRoute(draft.response, draft.destination).label}.`, "success", { title: "Evaluación" });
+  const warning = result?.agenda_warning ? " La tarea automática no se pudo crear, pero el lead sí fue dirigido." : "";
+  showFeedback(`Evaluación registrada: el lead fue enviado a ${rmsEvaluationRoute(draft.response, draft.destination).label}.${warning}`, result?.agenda_warning ? "info" : "success", { title: "Evaluación" });
   openRmsStation(destination, { source: "evaluation" });
 }
 

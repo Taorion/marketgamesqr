@@ -1043,8 +1043,8 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
   const route = destination ? RMS_EVALUATION_DESTINATIONS[destination] : RMS_EVALUATION_ROUTES[response];
   if (!RMS_EVALUATION_ROUTES[response]) throw badRequest("Selecciona una decisión comercial válida.");
   if (destination && !route) throw badRequest("Selecciona Negociación o Ventas atribuidas como estación de destino.");
-  const note = String(payload.note || "").trim();
-  if (!note) throw badRequest("Registra la respuesta del lead antes de decidir la ruta.");
+  const note = String(payload.note || "").trim()
+    || `Resultado de Evaluación: ${response}. Destino elegido: ${route.label}.`;
   const evaluation = {
     response,
     destination: destination || (route.phase === "cierre" ? "ATTRIBUTED_SALES" : route.phase === "accion_correctiva" ? "NEGOTIATION" : null),
@@ -1073,19 +1073,24 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
     },
   });
   let agenda = null;
+  let agendaWarning = null;
   if (evaluation.next_action || evaluation.next_action_at) {
-    agenda = await createRmsAgendaTask(businessId, user, {
-      source_id: payload.source_id,
-      source_type: sourceType,
-      lead_id: item.lead_id || payload.lead_id || null,
-      stage: route.phase,
-      action_title: evaluation.next_action || route.action,
-      note: `Evaluación RMS: ${note}`,
-      due_at: evaluation.next_action_at || undefined,
-      priority_score: evaluation.urgency === "URGENT" ? 95 : evaluation.urgency === "HIGH" ? 75 : evaluation.urgency === "LOW" ? 35 : 55,
-      revenue_potential: evaluation.budget_amount ?? item.revenue_potential,
-      metadata: { rms_evaluation_note_id: historyNote.id, rms_evaluation_response: response, rms_evaluation_destination: evaluation.destination },
-    });
+    try {
+      agenda = await createRmsAgendaTask(businessId, user, {
+        source_id: payload.source_id,
+        source_type: sourceType,
+        lead_id: item.lead_id || payload.lead_id || null,
+        stage: route.phase,
+        action_title: evaluation.next_action || route.action,
+        note: `Evaluación RMS: ${note}`,
+        due_at: evaluation.next_action_at || undefined,
+        priority_score: evaluation.urgency === "URGENT" ? 95 : evaluation.urgency === "HIGH" ? 75 : evaluation.urgency === "LOW" ? 35 : 55,
+        revenue_potential: evaluation.budget_amount ?? item.revenue_potential,
+        metadata: { rms_evaluation_note_id: historyNote.id, rms_evaluation_response: response, rms_evaluation_destination: evaluation.destination },
+      });
+    } catch (error) {
+      agendaWarning = error?.message || "No se pudo crear la tarea automática.";
+    }
   }
   const movement = await moveRmsLeadPhase(businessId, user, {
     source_type: sourceType,
@@ -1102,10 +1107,11 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
       rms_evaluation: evaluation,
       rms_evaluation_note_id: historyNote.id,
       rms_evaluation_agenda_note_id: agenda?.item?.id || null,
+      rms_evaluation_agenda_warning: agendaWarning,
       rms_evaluation_destination: evaluation.destination,
     },
   });
-  return { evaluation, route, note: historyNote, agenda, ...movement };
+  return { evaluation, route, note: historyNote, agenda, agenda_warning: agendaWarning, ...movement };
 }
 
 function roundedMoney(value) {
