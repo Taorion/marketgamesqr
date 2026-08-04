@@ -10003,3 +10003,188 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-risk-metrics artic
 html body[data-current-view="rms-machine"] .portal-shell .rms-risk-metrics strong { display:block; color:#0c5794; font-size:1.15rem; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-risk-metrics span { color:#526d84; font-size:.74rem; }
 @media (max-width:620px) { html body[data-current-view="rms-machine"] .portal-shell .rms-recycling-queue header,.portal-shell .rms-recycling-list article { grid-template-columns:1fr; display:grid; } }
+
+/* Estación 07 · Negociación — claridad comercial Qori: promesa, evidencia y decisión. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item {
+  overflow:hidden;
+  border:1px solid #cddde8;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 12px 28px rgba(17,55,82,.08);
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-work-lead {
+  border:0;
+  background:#103b5e;
+  color:#fff;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-work-lead :is(h3,h4,strong,p,small,span) {
+  color:inherit;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-work-console {
+  padding:28px;
+  background:#f7fafc;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-work-console > header {
+  margin:0;
+  padding:0 0 18px;
+  border:0;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-work-console > header h4 {
+  color:#123a59;
+  letter-spacing:-.018em;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-work-console > header p {
+  max-width:66ch;
+  color:#49677d;
+  line-height:1.55;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-intent-strip {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  gap:11px 13px;
+  align-items:start;
+  margin:0 0 18px;
+  padding:14px 16px;
+  border:1px solid #c7dfed;
+  border-left:4px solid #1677b8;
+  border-radius:12px;
+  background:#eaf5fb;
+  color:#173f5d;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-intent-strip .material-symbols-outlined {
+  color:#0d669f;
+  font-size:1.32rem;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-intent-strip strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-intent-strip small {
+  display:block;
+  color:inherit;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-intent-strip small {
+  margin-top:3px;
+  color:#41657d;
+  line-height:1.45;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-context-block,
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-condition-block,
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-decision-block {
+  margin:0;
+  padding:20px 0;
+  border:0;
+  border-top:1px solid #d9e5ed;
+  border-radius:0;
+  background:transparent;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-decision-block {
+  margin-top:4px;
+  padding:18px;
+  border:1px solid #c7ddeb;
+  border-radius:14px;
+  background:#eef7fc;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item :is(.rms-negotiation-context-block,.rms-negotiation-condition-block,.rms-negotiation-decision-block) > header {
+  margin:0 0 13px;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item :is(.rms-negotiation-context-block,.rms-negotiation-condition-block,.rms-negotiation-decision-block) > header h5 {
+  color:#173f5d;
+  font-size:1rem;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item :is(.rms-negotiation-context-block,.rms-negotiation-condition-block,.rms-negotiation-decision-block) > header p {
+  color:#537187;
+  line-height:1.48;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-context-list {
+  gap:10px;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-context-list > div {
+  padding:11px 12px;
+  border:1px solid #dbe6ed;
+  border-radius:10px;
+  background:#fff;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-context-list dt {
+  color:#5e778a;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-context-list dd {
+  margin-top:4px;
+  color:#193d59;
+  line-height:1.42;
+  overflow-wrap:anywhere;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item :is(input,select,textarea) {
+  border-color:#b8cddc;
+  background:#fff;
+  color:#163c59;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item :is(input,select,textarea):focus-visible {
+  border-color:#1677b8;
+  outline:3px solid rgba(22,119,184,.2);
+  outline-offset:1px;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item label {
+  color:#254c68;
+  font-weight:700;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-health {
+  margin:0;
+  padding:19px 0;
+  border:0;
+  border-top:1px solid #d9e5ed;
+  border-radius:0;
+  background:transparent;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-health > header {
+  margin:0 0 12px;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-health h5 {
+  color:#173f5d;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-clean-checklist,
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-signals article {
+  background:#fff;
+  border-color:#d5e3eb;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-route-preview {
+  border:0;
+  background:#164e77;
+  color:#fff;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-route-preview :is(strong,small) {
+  color:#fff;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-route-preview small {
+  color:#d8ebf6;
+  line-height:1.42;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-action-row {
+  margin-top:16px;
+  padding:14px;
+  border:1px solid #c8dce9;
+  border-radius:12px;
+  background:#fff;
+  box-shadow:none;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .solid-button {
+  border-color:#0d659f;
+  background:#0d659f;
+  color:#fff;
+  box-shadow:none;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .solid-button:hover {
+  border-color:#084d7b;
+  background:#084d7b;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .outline-button {
+  border-color:#8eacbf;
+  background:#fff;
+  color:#174a70;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item :is(button,a):focus-visible {
+  outline:3px solid rgba(22,119,184,.34);
+  outline-offset:3px;
+}
+@media (max-width:760px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-work-console { padding:19px 16px; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-negotiation-intent-strip { grid-template-columns:1fr; gap:7px; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-decision-block { padding:15px; }
+}
