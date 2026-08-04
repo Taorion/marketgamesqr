@@ -146,7 +146,21 @@ const commercialConfirmationSchema = z.object({
   summary: z.string().trim().max(5000).optional().nullable(),
   reason: z.string().trim().max(3000).optional().nullable(),
   commercial_route: z.enum(["NEGOTIATION_CLEAN", "NEEDS_RISK_REVIEW"]).optional().default("NEEDS_RISK_REVIEW"),
-  risk_signals: z.array(z.string().trim().min(2).max(240)).max(20).optional().default([]),
+  risk_signals: z.array(z.union([
+    z.string().trim().min(2).max(240),
+    z.object({
+      code: z.string().trim().min(2).max(120),
+      severity: z.enum(["INFO", "ATTENTION", "REQUIRES_RISK"]),
+      title: z.string().trim().min(2).max(240),
+      source: z.string().trim().max(500),
+      impact: z.string().trim().max(800),
+      action: z.string().trim().max(800),
+      status: z.enum(["OPEN", "RESOLVED", "NOT_APPLICABLE"]).optional().default("OPEN"),
+    }),
+  ])).max(20).optional().default([]),
+  objection_status: z.enum(["PENDING", "RESOLVED", "NEEDS_VALIDATION", "NOT_APPLICABLE"]).optional().default("NOT_APPLICABLE"),
+  objection_resolution: z.string().trim().max(3000).optional().nullable(),
+  idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
 
 const riskReviewSchema = z.object({
@@ -188,6 +202,8 @@ const negotiationResultSchema = z.object({
   reprocess_phase: z.enum(["procesamiento", "clasificacion"]).optional().nullable(),
   recycle_reason: z.enum(["BUDGET", "TIMING", "NO_RESPONSE", "EXPIRED_TICKET", "WAITING_DECISION", "NOT_VIABLE_NOW", "OTHER"]).optional().nullable(),
   recycle_strategy: z.enum(["NEW_CONTACT", "NEW_PROPOSAL", "NEW_ACTIVATION", "PERMITTED_BENEFIT", "NURTURE"]).optional().nullable(),
+  recycle_consent: z.enum(["CONFIRMED", "NOT_REQUIRED"]).optional().nullable(),
+  lost_classification: z.enum(["DEFINITIVE", "NOT_NOW", "NO_BUDGET", "PROLONGED_NO_RESPONSE", "NO_CONSENT", "OTHER"]).optional().nullable(),
   idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
 

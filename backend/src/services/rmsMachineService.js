@@ -1207,6 +1207,7 @@ function rmsCommercialConfirmationFromPayload(payload = {}, user = {}) {
     responsible: String(payload.responsible || user.name || user.email || "").trim() || null,
     confirmed_at: payload.confirmed_at || new Date().toISOString(),
     note: String(payload.note || "").trim() || null,
+    idempotency_key: String(payload.idempotency_key || "").trim() || null,
     negotiation: {
       objective: String(payload.objective || "").trim() || null,
       objection_type: String(payload.objection_type || "").trim() || null,
@@ -1216,12 +1217,27 @@ function rmsCommercialConfirmationFromPayload(payload = {}, user = {}) {
       channel: String(payload.channel || "").trim() || null,
       summary: String(payload.summary || "").trim() || null,
       reason: String(payload.reason || "").trim() || null,
+      objection_status: String(payload.objection_status || "NOT_APPLICABLE").trim() || "NOT_APPLICABLE",
+      objection_resolution: String(payload.objection_resolution || "").trim() || null,
     },
   };
 }
 
 async function recordRmsCommercialConfirmation(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
+  const priorState = await query(
+    `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
+    [businessId, sourceType, payload.source_id]
+  );
+  const priorMetadata = priorState.rows[0]?.metadata || {};
+  const priorConfirmation = priorMetadata.commercial_confirmation || {};
+  if (payload.idempotency_key && priorConfirmation.idempotency_key === payload.idempotency_key) {
+    return {
+      confirmation: priorConfirmation,
+      duplicate: true,
+      destination: priorMetadata.commercial_route === "NEGOTIATION_CLEAN" ? "cierre" : "control_anti_fuga",
+    };
+  }
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
   if (item.stage !== "accion_correctiva") throw badRequest("La confirmación comercial solo se registra desde Negociación.");
   const confirmation = rmsCommercialConfirmationFromPayload(payload, user);
@@ -1233,11 +1249,23 @@ async function recordRmsCommercialConfirmation(businessId, user, payload = {}) {
     !(confirmation.payment_reference || confirmation.evidence || confirmation.note) && "evidencia, referencia o nota de confirmación",
   ].filter(Boolean);
   if (missing.length) throw badRequest(`Antes de continuar confirma: ${missing.join(", ")}.`);
-  const priorState = await query(
-    `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
-    [businessId, sourceType, payload.source_id]
-  );
-  const priorMetadata = priorState.rows[0]?.metadata || {};
+  if (confirmation.negotiation.objection_status === "RESOLVED" && !confirmation.negotiation.objection_resolution) {
+    throw badRequest("Explica cómo se resolvió la objeción antes de marcarla como resuelta.");
+  }
+  if (commercialRoute === "NEGOTIATION_CLEAN" && ["PENDING", "NEEDS_VALIDATION"].includes(confirmation.negotiation.objection_status)) {
+    throw badRequest("Una objeción pendiente o sin validar debe mantenerse en Negociación o pasar a Riesgos de fuga.");
+  }
+  if (commercialRoute === "NEGOTIATION_CLEAN") {
+    const cleanMissing = [
+      !(item.name && (item.phone || item.email)) && "cliente y contacto identificables",
+      !confirmation.negotiation.customer_condition && "condición comercial confirmada",
+      !confirmation.negotiation.channel && "canal de contacto",
+      !confirmation.negotiation.summary && "resumen verificable de la conversación",
+      confirmation.negotiation.concession && "validación de la condición especial",
+      confirmation.negotiation.objection_type && confirmation.negotiation.objection_type !== "OTHER" && confirmation.negotiation.objection_status !== "RESOLVED" && "objeción resuelta",
+    ].filter(Boolean);
+    if (cleanMissing.length) throw badRequest(`La venta limpia requiere: ${cleanMissing.join(", ")}.`);
+  }
   const confirmationRound = {
     result: "ACCEPTED",
     ...confirmation.negotiation,
@@ -1282,6 +1310,17 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
   if (result === "REPROCESS" && !["procesamiento", "clasificacion"].includes(payload.reprocess_phase)) {
     throw badRequest("El reproceso debe volver explícitamente a Evaluación o Activación 1.");
   }
+  if (result === "RECYCLE") {
+    if (!payload.recycle_reason || !payload.recycle_strategy || !payload.recycle_consent || !payload.channel) {
+      throw badRequest("Para Reciclaje indica motivo, estrategia, canal permitido y consentimiento confirmado.");
+    }
+    if (new Date(nextAt).getTime() <= Date.now()) {
+      throw badRequest("La fecha de reactivación debe estar en el futuro.");
+    }
+  }
+  if (result === "LOST" && !payload.lost_classification) {
+    throw badRequest("Clasifica la pérdida antes de cerrar la oportunidad.");
+  }
   const current = await query(`select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`, [businessId, sourceType, payload.source_id]);
   const priorMetadata = current.rows[0]?.metadata || {};
   const round = {
@@ -1297,12 +1336,31 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
     reason,
     next_action_at: nextAt,
     reprocess_phase: payload.reprocess_phase || null,
+    recycle: result === "RECYCLE" ? {
+      reason: payload.recycle_reason,
+      strategy: payload.recycle_strategy,
+      consent: payload.recycle_consent,
+      channel: String(payload.channel || "").trim(),
+    } : null,
+    lost_classification: result === "LOST" ? payload.lost_classification : null,
     recorded_at: new Date().toISOString(),
     recorded_by: user.id,
   };
   const history = Array.isArray(priorMetadata.negotiation_history) ? priorMetadata.negotiation_history.slice(-19) : [];
   const priorRound = payload.idempotency_key ? history.find((entry) => entry.id === payload.idempotency_key) : null;
   if (priorRound) return { round: priorRound, duplicate: true };
+  let cancelledAgendaCount = 0;
+  if (result === "LOST") {
+    const cancelled = await query(
+      `update lead_notes
+          set agenda_status = 'CANCELLED', updated_at = now(),
+              metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object('rms_cancelled_reason', $4, 'rms_cancelled_at', now()::text)
+        where business_id = $1 and source_type = $2 and source_id = $3
+          and note_type = 'follow_up' and coalesce(agenda_status, 'OPEN') = 'OPEN'`,
+      [businessId, sourceType, payload.source_id, reason]
+    );
+    cancelledAgendaCount = Number(cancelled.rowCount || 0);
+  }
   const toPhase = result === "REPROCESS" ? payload.reprocess_phase : result === "RECYCLE" ? "reciclaje" : result === "LOST" ? "inteligencia" : "accion_correctiva";
   let agenda = null;
   if (["WAITING", "NO_RESPONSE", "RECYCLE"].includes(result)) {
@@ -1319,7 +1377,7 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
     to_phase: toPhase, priority: result === "LOST" ? "LOW" : result === "NO_RESPONSE" ? "HIGH" : "MEDIUM",
     recommended_action: result === "LOST" ? "Conservar aprendizaje comercial" : result === "REPROCESS" ? "Actualizar propuesta antes de retomar el acuerdo" : "Confirmar condición comercial",
     last_operation: `negotiation_${result.toLowerCase()}`, revenue_potential: item.revenue_potential, reason,
-    metadata: { negotiation_current: round, negotiation_history: [...history, round], negotiation_result: result, negotiation_task_id: agenda?.item?.id || null, recycling: result === "RECYCLE" ? { reason: payload.recycle_reason || reason, strategy: payload.recycle_strategy || "NEW_CONTACT", reactivate_at: nextAt, responsible: user.id, note: reason } : null, commercial_status: result === "LOST" ? "LOST" : result === "WAITING" ? "WAITING" : result === "NO_RESPONSE" ? "RECOVERY" : result === "RECYCLE" ? "RECYCLE" : "REPROCESS" },
+    metadata: { negotiation_current: round, negotiation_history: [...history, round], negotiation_result: result, negotiation_task_id: agenda?.item?.id || null, recycling: result === "RECYCLE" ? { reason: payload.recycle_reason || reason, strategy: payload.recycle_strategy || "NEW_CONTACT", reactivate_at: nextAt, responsible: user.id, consent: payload.recycle_consent, channel: String(payload.channel || "").trim(), note: reason } : null, commercial_status: result === "LOST" ? "LOST" : result === "WAITING" ? "WAITING" : result === "NO_RESPONSE" ? "RECOVERY" : result === "RECYCLE" ? "RECYCLE" : "REPROCESS", lost_classification: result === "LOST" ? payload.lost_classification : null, cancelled_agenda_count: cancelledAgendaCount },
   });
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
