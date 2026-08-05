@@ -20373,6 +20373,7 @@ async function submitCustomerAcquisitionSale(event) {
     return;
   }
   const productSummary = customerSaleProductSummary(products);
+  const acquisitionChannel = acquisitionChannelSelection("customer-sale");
   const metadata = {
     products,
     sale_entry: "sales_module",
@@ -20396,7 +20397,7 @@ async function submitCustomerAcquisitionSale(event) {
         customer_phone: customerAcquisitionPhoneInput.value.trim() || null,
         customer_email: customerAcquisitionEmailInput.value.trim() || null,
         acquisition_source: customerAcquisitionSourceInput.value,
-        acquisition_channel: customerAcquisitionChannelInput.value.trim() || null,
+        ...acquisitionChannel,
         referred_affiliate_id: null,
         notes: customerAcquisitionNotesInput.value.trim() || null,
         metadata,
@@ -26467,7 +26468,7 @@ function buildStrategyCampaignPayload(answers = state.strategyWizardAnswers || {
     expected_redemptions_goal: totals.redemptions,
     starts_at: answers.startDate ? `${answers.startDate}T09:00` : "",
     ends_at: answers.endDate ? `${answers.endDate}T18:00` : "",
-    launch_channels: answers.channels?.length ? answers.channels : ["Instagram", "WhatsApp"],
+    launch_channels: answers.channels?.length ? answers.channels : [],
     client_notes: strategyClientNotes(answers),
     delivered_assets: {
       landing_url: answers.hasLanding === "No" ? "" : urls.landing_url,
@@ -27009,8 +27010,9 @@ async function submitCampaignModal(event) {
     return;
   }
 
-  const campaignChannels = selectedCheckedValues(campaignFormLaunchChannels);
-  if (!campaignChannels.length) {
+  const campaignChannelRefs = acquisitionChannelRefsForGrid(campaignFormLaunchChannels, "campaign");
+  const campaignChannels = campaignChannelRefs.map((channel) => channel.acquisition_channel || "").filter(Boolean);
+  if (!campaignChannelRefs.length) {
     campaignModalMessage.textContent = "Selecciona al menos una red o canal antes de guardar.";
     campaignFormLaunchChannels.scrollIntoView({ block: "center", behavior: "smooth" });
     return;
@@ -27030,6 +27032,7 @@ async function submitCampaignModal(event) {
     starts_at: campaignFormStartsAt.value ? new Date(campaignFormStartsAt.value).toISOString() : null,
     ends_at: campaignFormEndsAt.value ? new Date(campaignFormEndsAt.value).toISOString() : null,
     launch_channels: campaignChannels,
+    launch_channel_refs: campaignChannelRefs,
     campaign_cost_calculator: {
       ...((state.campaignModalMode === "edit" ? (state.selectedCampaign?.metadata?.campaign_cost_calculator || state.selectedCampaign?.metadata?.cost_calculator || {}) : {})),
       channel_investments: readCampaignChannelInvestments(),
@@ -30487,6 +30490,7 @@ async function importManualLeadsCsv(event) {
 async function createManualLead(event) {
   event?.preventDefault();
   if (!manualLeadForm) return;
+  const acquisitionChannel = acquisitionChannelSelection("manual-lead");
   const payload = {
     name: String(manualLeadNameInput?.value || "").trim(),
     company: optionalInputValue(manualLeadCompanyInput),
@@ -30495,6 +30499,7 @@ async function createManualLead(event) {
     email: optionalInputValue(manualLeadEmailInput),
     source: String(manualLeadSourceInput?.value || "Manual").trim(),
     source_detail: optionalInputValue(manualLeadSourceDetailInput),
+    ...acquisitionChannel,
     priority: manualLeadPriorityInput?.value || "MEDIUM",
     status: manualLeadStatusInput?.value || "NEW",
     preferred_channel: optionalInputValue(manualLeadPreferredChannelInput),
@@ -30522,6 +30527,7 @@ async function createManualLead(event) {
     if (manualLeadSourceInput) manualLeadSourceInput.value = "Formulario home";
     if (manualLeadPriorityInput) manualLeadPriorityInput.value = "MEDIUM";
     if (manualLeadStatusInput) manualLeadStatusInput.value = "NEW";
+    renderAcquisitionChannelPickers();
     state.contactFeedLoaded = false;
     state.leadCrmLoaded = false;
     state.manualContactsLoaded = false;
@@ -30616,14 +30622,15 @@ function exportSales() {
 }
 
 function selectedLaunchChannels() {
-  return selectedCheckedValues(launchChannelGrid);
+  return acquisitionChannelRefsForGrid(launchChannelGrid, "launch");
 }
 
 async function saveClientLaunchSetup(event) {
   event.preventDefault();
   if (!state.selectedCampaignId) return;
-  const launchChannels = selectedLaunchChannels();
-  if (!launchChannels.length) {
+  const launchChannelRefs = selectedLaunchChannels();
+  const launchChannels = launchChannelRefs.map((channel) => channel.acquisition_channel || "").filter(Boolean);
+  if (!launchChannelRefs.length) {
     launchSetupMessage.textContent = "Selecciona al menos una red o canal para guardar la preparacion.";
     launchChannelGrid.scrollIntoView({ block: "center", behavior: "smooth" });
     return;
@@ -30642,6 +30649,7 @@ async function saveClientLaunchSetup(event) {
         ends_at: new Date(launchEndsAtInput.value).toISOString(),
         objective: launchObjectiveInput.value.trim() || null,
         launch_channels: launchChannels,
+        launch_channel_refs: launchChannelRefs,
         expected_sales_goal: launchSalesGoalInput.value ? Number(launchSalesGoalInput.value) : null,
         expected_leads_goal: launchLeadsGoalInput.value ? Number(launchLeadsGoalInput.value) : null,
         expected_redemptions_goal: launchRedemptionsGoalInput.value ? Number(launchRedemptionsGoalInput.value) : null,
@@ -34859,7 +34867,7 @@ function renderLeadTab(detail) {
         <label><span>Valor</span><input id="leadPurchaseAmountInput" type="number" min="1" step="100" required placeholder="0"></label>
         <label><span>Categoria</span><input id="leadPurchaseCategoryInput" type="text" maxlength="160" placeholder="Categoria o linea"></label>
         <label><span>Fecha</span><input id="leadPurchaseDateInput" type="datetime-local"></label>
-        <label><span>Canal</span><input id="leadPurchaseChannelInput" type="text" maxlength="120" value="Base de contactos" placeholder="Tienda, WhatsApp, feria..."></label>
+        ${acquisitionChannelPickerMarkup({ selectAttribute: 'data-lead-purchase-acquisition-channel', manualAttribute: 'data-lead-purchase-acquisition-channel-manual', helpAttribute: 'data-lead-purchase-acquisition-channel-help' })}
         <label><span>Moneda</span><input id="leadPurchaseCurrencyInput" type="text" maxlength="8" value="COP"></label>
         <label class="span-2"><span>Notas</span><textarea id="leadPurchaseNotesInput" rows="2" maxlength="1200" placeholder="Detalle de la compra, referencia, vendedor o contexto"></textarea></label>
         <p class="form-message span-2" id="leadPurchaseMessage"></p>
@@ -35276,7 +35284,10 @@ async function createLeadPurchaseFromForm(event) {
     sale_amount: amount,
     currency: String(document.getElementById("leadPurchaseCurrencyInput")?.value || "COP").trim() || "COP",
     category: String(document.getElementById("leadPurchaseCategoryInput")?.value || "").trim() || null,
-    acquisition_channel: String(document.getElementById("leadPurchaseChannelInput")?.value || "").trim() || "Base de contactos",
+    ...acquisitionChannelSelectionFromElements(
+      document.querySelector("[data-lead-purchase-acquisition-channel]"),
+      document.querySelector("[data-lead-purchase-acquisition-channel-manual]")
+    ),
     notes: String(document.getElementById("leadPurchaseNotesInput")?.value || "").trim() || null,
     created_at: dateValue ? new Date(dateValue).toISOString() : null,
     metadata: {
@@ -38261,7 +38272,7 @@ function selectedAcquisitionChannel() {
 }
 
 function acquisitionChannelNames() {
-  return Array.from(new Set((state.acquisitionChannels || [])
+  return Array.from(new Set(activeAcquisitionChannels()
     .map((channel) => channel.name || channel.platform)
     .filter(Boolean)));
 }
@@ -38272,12 +38283,119 @@ function renderAcquisitionChannelDatalist() {
   acquisitionChannelDatalist.innerHTML = names
     .map((name) => `<option value="${escapeHtml(name)}"></option>`)
     .join("");
+  renderAcquisitionChannelPickers();
+  renderAcquisitionChannelGrids();
+}
+
+function activeAcquisitionChannels() {
+  return (state.acquisitionChannels || []).filter((channel) => channel?.id && channel.status === "ACTIVE");
+}
+
+function acquisitionChannelPickerNodes(key, root = document) {
+  const ids = {
+    "customer-sale": ["customerAcquisitionChannelPicker", "customerAcquisitionChannelInput", "customerAcquisitionChannelHelp"],
+    "manual-lead": ["manualLeadAcquisitionChannelPicker", "manualLeadAcquisitionChannelInput", "manualLeadAcquisitionChannelHelp"],
+  }[key] || [];
+  return ids.map((id) => root.getElementById ? root.getElementById(id) : root.querySelector(`#${id}`));
+}
+
+function renderAcquisitionChannelPickers(root = document) {
+  root.querySelectorAll?.("[data-acquisition-channel-picker]").forEach((picker) => {
+    const key = picker.dataset.acquisitionChannelPicker || "";
+    const [select, manual, help] = acquisitionChannelPickerNodes(key, root);
+    if (!select || !manual) return;
+    const currentId = select.value || select.dataset.historicalChannelId || "";
+    const currentManual = manual.value || select.dataset.historicalChannelName || "";
+    const channels = activeAcquisitionChannels();
+    const historic = currentId && (state.acquisitionChannels || []).find((channel) => String(channel.id) === String(currentId));
+    const options = ["<option value=\"\">Selecciona un canal de adquisición</option>"];
+    if (historic && historic.status !== "ACTIVE") {
+      options.push(`<option value="${escapeHtml(historic.id)}">Canal archivado: ${escapeHtml(historic.name || historic.platform || "Canal")}</option>`);
+    }
+    options.push(...channels.map((channel) => `<option value="${escapeHtml(channel.id)}">${escapeHtml(channel.name || channel.platform || "Canal")}${channel.platform ? ` · ${escapeHtml(channel.platform)}` : ""}</option>`));
+    options.push('<option value="__MANUAL__">Otro / canal aún no configurado</option>');
+    select.innerHTML = options.join("");
+    const isKnown = Boolean(currentId) && [...channels, historic].filter(Boolean).some((channel) => String(channel.id) === String(currentId));
+    select.value = isKnown ? currentId : currentManual ? "__MANUAL__" : "";
+    manual.hidden = select.value !== "__MANUAL__";
+    if (select.value === "__MANUAL__") manual.value = currentManual;
+    if (help) {
+      help.textContent = channels.length
+        ? "Selecciona un canal activo configurado en GOS. El modo temporal conserva el texto sin inventar un canal."
+        : "Aún no tienes canales de adquisición configurados. Puedes escribir uno para esta operación o crearlo en GOS.";
+    }
+  });
+}
+
+function acquisitionChannelSelection(key, root = document) {
+  const [select, manual] = acquisitionChannelPickerNodes(key, root);
+  if (!select) return { acquisition_channel_id: null, acquisition_channel: null };
+  if (select.value === "__MANUAL__") {
+    return { acquisition_channel_id: null, acquisition_channel: String(manual?.value || "").trim() || null };
+  }
+  const channel = (state.acquisitionChannels || []).find((item) => String(item.id) === String(select.value));
+  return {
+    acquisition_channel_id: channel?.id || null,
+    acquisition_channel: channel?.name || null,
+  };
+}
+
+function acquisitionChannelPickerMarkup({ selectAttribute, manualAttribute, helpAttribute, selectedId = "", selectedName = "" } = {}) {
+  const channels = activeAcquisitionChannels();
+  const current = (state.acquisitionChannels || []).find((channel) => String(channel.id) === String(selectedId));
+  const options = ["<option value=\"\">Selecciona un canal de adquisición</option>"];
+  if (current && current.status !== "ACTIVE") {
+    options.push(`<option value="${escapeHtml(current.id)}" selected>Canal archivado: ${escapeHtml(current.name || current.platform || "Canal")}</option>`);
+  }
+  options.push(...channels.map((channel) => `<option value="${escapeHtml(channel.id)}" ${String(channel.id) === String(selectedId) ? "selected" : ""}>${escapeHtml(channel.name || channel.platform || "Canal")}</option>`));
+  options.push(`<option value="__MANUAL__" ${!selectedId && selectedName ? "selected" : ""}>Otro / canal aún no configurado</option>`);
+  const help = channels.length
+    ? "Selecciona un canal activo configurado en GOS."
+    : "Aún no tienes canales de adquisición configurados. Puedes escribir uno para esta operación o crearlo en GOS.";
+  return `<label class="acquisition-channel-picker" data-acquisition-channel-picker="dynamic"><span>Canal de adquisición</span><select ${selectAttribute || ""}>${options.join("")}</select><input ${manualAttribute || ""} type="text" maxlength="180" value="${escapeHtml(selectedName || "")}" placeholder="Escribe el canal temporal" ${selectedId || !selectedName ? "hidden" : ""}><small ${helpAttribute || ""} class="field-help">${escapeHtml(help)}</small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar canales en GOS</button></label>`;
+}
+
+function acquisitionChannelSelectionFromElements(select, manual) {
+  if (!select) return { acquisition_channel_id: null, acquisition_channel: null };
+  if (select.value === "__MANUAL__") {
+    return { acquisition_channel_id: null, acquisition_channel: String(manual?.value || "").trim() || null };
+  }
+  const channel = (state.acquisitionChannels || []).find((item) => String(item.id) === String(select.value));
+  return { acquisition_channel_id: channel?.id || null, acquisition_channel: channel?.name || null };
+}
+
+function renderAcquisitionChannelGrids() {
+  document.querySelectorAll("[data-acquisition-channel-grid]").forEach((grid) => {
+    const key = grid.dataset.acquisitionChannelGrid || "";
+    const previous = new Set(Array.from(grid.querySelectorAll("input:checked")).map((input) => input.value));
+    if (!previous.size && state.selectedCampaign && ["launch", "campaign"].includes(key)) {
+      (state.selectedCampaign.launch_channels || []).forEach((name) => previous.add(name));
+    }
+    const channels = activeAcquisitionChannels();
+    grid.innerHTML = channels.map((channel) => `
+      <label class="channel-option"><input type="checkbox" value="${escapeHtml(channel.name || channel.platform || "Canal")}" data-acquisition-channel-id="${escapeHtml(channel.id)}" ${previous.has(channel.name) ? "checked" : ""}> <span>${escapeHtml(channel.name || channel.platform || "Canal")}</span></label>
+    `).join("");
+    const help = document.querySelector(`[data-acquisition-channel-grid-help="${key}"]`);
+    if (help) help.textContent = channels.length
+      ? "Canales reales configurados en GOS."
+      : "Aún no tienes canales de adquisición configurados. Puedes usar el canal temporal o crear uno en GOS.";
+  });
+}
+
+function acquisitionChannelRefsForGrid(grid, key = "") {
+  const refs = Array.from(grid?.querySelectorAll("input[type='checkbox']:checked") || []).map((input) => ({
+    acquisition_channel_id: input.dataset.acquisitionChannelId || null,
+    acquisition_channel: input.value || null,
+  }));
+  const manual = document.querySelector(`[data-acquisition-channel-grid-manual="${key}"]`)?.value?.trim();
+  if (manual) refs.push({ acquisition_channel_id: null, acquisition_channel: manual });
+  return refs;
 }
 
 function renderChannelEffortOptions() {
   if (channelEffortChannelInput) {
     const current = channelEffortChannelInput.value;
-    const channels = (state.acquisitionChannels || []).filter((channel) => channel.id && channel.status !== "DETECTED");
+    const channels = activeAcquisitionChannels();
     channelEffortChannelInput.innerHTML = channels.length
       ? channels.map((channel) => `<option value="${escapeHtml(channel.id)}">${escapeHtml(channel.name || channel.platform || "Canal")}</option>`).join("")
       : '<option value="">Primero crea un canal</option>';
@@ -38678,7 +38796,7 @@ async function loadAcquisitionChannels(options = {}) {
   state.acquisitionChannelsLoading = true;
   const scopeKey = businessScopeKey();
   try {
-    const data = await apiSafe("/api/business/channels", { headers: authHeaders() }, { channels: [], totals: null });
+    const data = await apiSafe("/api/business/channels?include_archived=true", { headers: authHeaders() }, { channels: [], totals: null });
     if (!isCurrentBusinessScope(scopeKey)) return state.acquisitionChannels;
     state.acquisitionChannels = Array.isArray(data.channels) ? data.channels : [];
     state.acquisitionChannelTotals = data.totals || null;
@@ -47954,6 +48072,26 @@ customerSaleAddItemButton?.addEventListener("click", () => {
 [customerAcquisitionCustomerLookupInput, customerAcquisitionNameInput, customerAcquisitionDocumentInput, customerAcquisitionPhoneInput, customerAcquisitionEmailInput, customerAcquisitionSourceInput, customerAcquisitionChannelInput, customerAcquisitionCampaignInput, customerAcquisitionAffiliateInput].forEach((input) => {
   input?.addEventListener("input", renderCustomerSaleOperationFeed);
   input?.addEventListener("change", renderCustomerSaleOperationFeed);
+});
+
+document.addEventListener("change", (event) => {
+  const select = event.target.closest?.("[data-acquisition-channel-picker] select");
+  if (!select) return;
+  const picker = select.closest("[data-acquisition-channel-picker]");
+  const [, knownManual] = acquisitionChannelPickerNodes(picker?.dataset.acquisitionChannelPicker || "");
+  const manual = knownManual || picker?.querySelector("input[type='text']");
+  if (manual) {
+    manual.hidden = select.value !== "__MANUAL__";
+    if (select.value !== "__MANUAL__") manual.value = "";
+    if (select.value === "__MANUAL__") manual.focus();
+  }
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest?.("[data-open-acquisition-channels]");
+  if (!button) return;
+  event.preventDefault();
+  setView("channels");
 });
 customerAcquisitionCustomerLookupInput?.addEventListener("change", () => {
   handleSalesCustomerSearchCommit();

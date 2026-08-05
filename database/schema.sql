@@ -750,6 +750,10 @@ alter table business_sales add column if not exists metadata jsonb not null defa
 alter table business_sales add column if not exists customer_document_id text;
 alter table business_sales add column if not exists acquisition_source text;
 alter table business_sales add column if not exists acquisition_channel text;
+alter table business_sales add column if not exists acquisition_channel_id uuid;
+alter table business_sales add column if not exists acquisition_channel_name_snapshot text;
+alter table business_sales add column if not exists acquisition_channel_slug_snapshot text;
+alter table business_sales add column if not exists acquisition_channel_source text;
 alter table business_sales add column if not exists referred_affiliate_id uuid references affiliates(id) on delete set null;
 alter table business_sales add column if not exists referral_points_awarded integer not null default 0;
 
@@ -883,6 +887,7 @@ create index if not exists idx_qr_claims_business_claimed on qr_claims(business_
 create index if not exists idx_business_sales_business_created on business_sales(business_id, created_at desc);
 create index if not exists idx_business_sales_business_source_created on business_sales(business_id, acquisition_source, created_at desc);
 create index if not exists idx_business_sales_business_channel_created on business_sales(business_id, acquisition_channel, created_at desc);
+create index if not exists idx_business_sales_business_acquisition_channel_id_created on business_sales(business_id, acquisition_channel_id, created_at desc);
 create index if not exists idx_business_sales_referred_affiliate on business_sales(referred_affiliate_id, created_at desc);
 create index if not exists business_sales_rms_source_created_idx on business_sales(business_id, rms_source_type, rms_source_id, created_at desc) where rms_source_id is not null;
 create index if not exists business_sales_inventory_product_idx on business_sales(inventory_product_id) where inventory_product_id is not null;
@@ -990,6 +995,24 @@ create table if not exists business_acquisition_channels (
 
 create index if not exists idx_business_acquisition_channels_business_status
   on business_acquisition_channels(business_id, status, updated_at desc);
+
+do $$ begin
+  alter table business_sales
+    add constraint business_sales_acquisition_channel_id_fkey
+    foreign key (acquisition_channel_id) references business_acquisition_channels(id) on delete set null;
+exception when duplicate_object then null;
+end $$;
+alter table business_manual_leads add column if not exists acquisition_channel_id uuid;
+alter table business_manual_leads add column if not exists acquisition_channel_name_snapshot text;
+alter table business_manual_leads add column if not exists acquisition_channel_slug_snapshot text;
+alter table business_manual_leads add column if not exists acquisition_channel_source text;
+do $$ begin
+  alter table business_manual_leads
+    add constraint business_manual_leads_acquisition_channel_id_fkey
+    foreign key (acquisition_channel_id) references business_acquisition_channels(id) on delete set null;
+exception when duplicate_object then null;
+end $$;
+alter table campaigns add column if not exists launch_channel_refs jsonb not null default '[]'::jsonb;
 
 create table if not exists business_acquisition_channel_efforts (
   id uuid primary key default gen_random_uuid(),

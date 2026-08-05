@@ -9,6 +9,7 @@ const {
   referralPointsForAmount,
 } = require("./affiliatePointRulesService");
 const { syncSaleProductsWithCatalog } = require("./productCatalogService");
+const { resolveAcquisitionChannelReference } = require("./acquisitionChannelService");
 const { recordLifecycleEvent } = require("./lifecycleAuditService");
 
 const OPERATIONAL_AGENDA_SOURCE_TYPES = new Set(["GENERAL", "CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"]);
@@ -2253,6 +2254,7 @@ async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER"
 async function createLeadPurchase(businessId, user, leadId, sourceType, payload) {
   return withTransaction(async (client) => {
     const lead = await resolveLead(businessId, leadId, sourceType, client);
+    const acquisitionChannel = await resolveAcquisitionChannelReference(client, businessId, payload);
     if (payload.campaign_id) {
       const campaign = await client.query("select id from campaigns where id = $1 and business_id = $2", [payload.campaign_id, businessId]);
       if (!campaign.rowCount) throw badRequest("La campana seleccionada no pertenece a este negocio.");
@@ -2306,6 +2308,12 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
     });
     const metadata = {
       ...(payload.metadata || {}),
+      acquisition_channel: {
+        id: acquisitionChannel.acquisition_channel_id,
+        name_snapshot: acquisitionChannel.acquisition_channel_name_snapshot,
+        slug_snapshot: acquisitionChannel.acquisition_channel_slug_snapshot,
+        source: acquisitionChannel.acquisition_channel_source,
+      },
       category: payload.category || payload.metadata?.category || null,
       products: catalogSync.products,
       auto_created_products: catalogSync.autoCreatedProducts,
@@ -2324,10 +2332,11 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
       `insert into business_sales
         (business_id, campaign_id, qr_code_id, customer_name, customer_phone, customer_email,
          customer_document_id, product_name, sale_amount, currency, seller_user_id, branch_id,
-         acquisition_source, acquisition_channel, referred_affiliate_id, referral_points_awarded,
-         notes, created_at, metadata)
-       values ($1, $2, null, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-               coalesce($17::timestamptz, now()), $18::jsonb)
+         acquisition_source, acquisition_channel, acquisition_channel_id, acquisition_channel_name_snapshot,
+         acquisition_channel_slug_snapshot, acquisition_channel_source, referred_affiliate_id,
+         referral_points_awarded, notes, created_at, metadata)
+       values ($1, $2, null, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+               $18, $19, coalesce($20::timestamptz, now()), $21::jsonb)
        returning *`,
       [
         businessId,
@@ -2342,7 +2351,11 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
         user?.id || null,
         payload.branch_id || null,
         payload.acquisition_source || (relatedAffiliate ? "FRIEND_REFERRAL" : "CONTACT_LEAD"),
-        payload.acquisition_channel || (relatedAffiliate ? "Afiliados" : lead.channel || "Base de contactos"),
+        acquisitionChannel.acquisition_channel || (relatedAffiliate ? "Afiliados" : lead.channel || null),
+        acquisitionChannel.acquisition_channel_id,
+        acquisitionChannel.acquisition_channel_name_snapshot || (relatedAffiliate ? "Afiliados" : lead.channel || null),
+        acquisitionChannel.acquisition_channel_slug_snapshot,
+        acquisitionChannel.acquisition_channel_source || (relatedAffiliate ? "SYSTEM_SPECIAL" : null),
         relatedAffiliate?.id || null,
         referralPoints,
         payload.notes || null,

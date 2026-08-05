@@ -785,7 +785,11 @@ function opportunityFromRow(row = {}, stateRow = null, inventoryProducts = []) {
     email: row.email || "",
     campaign_id: row.campaign_id || null,
     campaign_name: entry.campaign_name || row.campaign_name || "",
-    channel: entry.channel || row.channel || row.acquisition_channel || "",
+    acquisition_channel_id: row.acquisition_channel_id || null,
+    acquisition_channel_name_snapshot: row.acquisition_channel_name_snapshot || row.acquisition_channel || null,
+    acquisition_channel_slug_snapshot: row.acquisition_channel_slug_snapshot || null,
+    acquisition_channel_source: row.acquisition_channel_source || null,
+    channel: entry.channel || row.acquisition_channel_name_snapshot || row.channel || row.acquisition_channel || "",
     source_label: entry.source_label,
     source_detail: entry.source_detail,
     entry_summary: entry.summary,
@@ -2032,22 +2036,36 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     },
     benefit_description: String(payload.benefit_description || "").trim() || null,
     economics,
+    acquisition_channel: {
+      id: item.acquisition_channel_id || null,
+      name_snapshot: item.acquisition_channel_name_snapshot || item.channel || null,
+      slug_snapshot: item.acquisition_channel_slug_snapshot || null,
+      source: item.acquisition_channel_source || (item.channel ? "MANUAL_UNCONFIGURED" : null),
+    },
   };
   const result = await withTransaction(async (client) => {
     const sale = await client.query(
       `insert into business_sales
         (business_id, campaign_id, customer_name, customer_phone, customer_email, customer_document_id,
-         product_name, sale_amount, currency, seller_user_id, acquisition_source, acquisition_channel, notes,
+         product_name, sale_amount, currency, seller_user_id, acquisition_source, acquisition_channel,
+         acquisition_channel_id, acquisition_channel_name_snapshot, acquisition_channel_slug_snapshot,
+         acquisition_channel_source, notes,
          metadata, rms_source_type, rms_source_id, inventory_product_id, quantity, unit_cost, product_cost_total,
          benefit_type, benefit_cost, acquisition_cost, gross_profit, net_profit, roi, payment_method, paid_at, sale_status, idempotency_key,
          product_name_snapshot, product_price_snapshot, product_currency_snapshot, product_source)
        values
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'RMS', 'RMS / Ventas atribuidas', $11,
-         $12::jsonb, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, 'PAID', $27, $28, $29, $30, $31)
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'RMS', $11, $12, $13, $14, $15, $16,
+         $17::jsonb, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, 'PAID', $32, $33, $34, $35, $36)
        on conflict (business_id, idempotency_key) where idempotency_key is not null do nothing
        returning *`,
       [businessId, item.campaign_id || null, item.name || null, item.phone || null, item.email || null,
-        item.document_id || null, productName, saleAmount, currency, user.id, String(payload.notes || "").trim() || null,
+        item.document_id || null, productName, saleAmount, currency, user.id,
+        item.acquisition_channel_name_snapshot || item.channel || "RMS / Ventas atribuidas",
+        item.acquisition_channel_id || null,
+        item.acquisition_channel_name_snapshot || item.channel || null,
+        item.acquisition_channel_slug_snapshot || null,
+        item.acquisition_channel_source || (item.channel ? "MANUAL_UNCONFIGURED" : null),
+        String(payload.notes || "").trim() || null,
         JSON.stringify(metadata), sourceType, payload.source_id, productRow?.id || null, quantity, unitCost,
         productCostTotal, String(payload.benefit_type || "NONE").toUpperCase(), benefitCost, acquisitionCost,
         grossProfit, netProfit, roi, String(payload.payment_method || "OTHER").toUpperCase(), paidAt, idempotencyKey,

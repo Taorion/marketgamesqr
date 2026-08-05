@@ -92,6 +92,7 @@ const purchaseSchema = z.object({
   campaign_id: z.string().uuid().optional().nullable(),
   branch_id: z.string().uuid().optional().nullable(),
   acquisition_source: z.string().trim().max(120).optional().nullable(),
+  acquisition_channel_id: z.string().uuid().optional().nullable(),
   acquisition_channel: z.string().trim().max(120).optional().nullable(),
   notes: z.string().trim().max(1200).optional().nullable(),
   created_at: z.string().datetime().optional().nullable(),

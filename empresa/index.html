@@ -3992,17 +3992,9 @@
                       </label>
                       <label class="span-2">
                         <span>Canales de distribucion</span>
-                        <div class="channel-grid" id="launchChannelGrid">
-                          <label class="channel-option"><input type="checkbox" value="Instagram"> <span>Instagram</span></label>
-                          <label class="channel-option"><input type="checkbox" value="Facebook"> <span>Facebook</span></label>
-                          <label class="channel-option"><input type="checkbox" value="TikTok"> <span>TikTok</span></label>
-                          <label class="channel-option"><input type="checkbox" value="Volantes"> <span>Volantes</span></label>
-                          <label class="channel-option"><input type="checkbox" value="Influencer"> <span>Influencer</span></label>
-                          <label class="channel-option"><input type="checkbox" value="Evento fisico"> <span>Evento físico</span></label>
-                          <label class="channel-option"><input type="checkbox" value="WhatsApp"> <span>WhatsApp</span></label>
-                          <label class="channel-option"><input type="checkbox" value="Punto de venta"> <span>Punto de venta</span></label>
-                          <label class="channel-option"><input type="checkbox" value="Otro"> <span>Otro</span></label>
-                        </div>
+                        <div class="channel-grid acquisition-channel-grid" id="launchChannelGrid" data-acquisition-channel-grid="launch"></div>
+                        <input class="acquisition-channel-grid-manual" data-acquisition-channel-grid-manual="launch" type="text" maxlength="180" placeholder="Otro canal temporal (si aún no está configurado)">
+                        <small class="field-help" data-acquisition-channel-grid-help="launch"></small>
                       </label>
                       <label>
                         <span>Meta de leads</span>
@@ -4836,6 +4828,7 @@
                   </select>
                 </label>
                 <label><span>Detalle origen</span><input id="manualLeadSourceDetailInput" type="text" maxlength="220" placeholder="Asunto del correo, campaña, referido..."></label>
+                <label class="acquisition-channel-picker" data-acquisition-channel-picker="manual-lead"><span>Canal de adquisición</span><select id="manualLeadAcquisitionChannelPicker" aria-describedby="manualLeadAcquisitionChannelHelp"></select><input id="manualLeadAcquisitionChannelInput" type="text" maxlength="180" placeholder="Escribe el canal temporal" hidden><small id="manualLeadAcquisitionChannelHelp" class="field-help"></small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar canales en GOS</button></label>
                 <label><span>Prioridad</span>
                   <select id="manualLeadPriorityInput">
                     <option value="HIGH">Alta</option>
@@ -5141,7 +5134,7 @@
                         <option value="OTHER">Otro</option>
                       </select>
                     </label>
-                    <label class="sale-field"><span>Canal específico</span><input id="customerAcquisitionChannelInput" type="text" list="acquisitionChannelDatalist" placeholder="Instagram, Google, WhatsApp, web..."></label>
+                    <label class="sale-field acquisition-channel-picker" data-acquisition-channel-picker="customer-sale"><span>Canal de adquisición</span><select id="customerAcquisitionChannelPicker" aria-describedby="customerAcquisitionChannelHelp"></select><input id="customerAcquisitionChannelInput" type="text" maxlength="180" placeholder="Escribe el canal temporal" hidden><small id="customerAcquisitionChannelHelp" class="field-help"></small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar canales en GOS</button></label>
                     <label class="sale-field affiliate-only-config hidden"><span>Afiliado que recomendo</span><select id="customerAcquisitionAffiliateInput"></select></label>
                     <label class="sale-field sale-field-notes"><span>Observaciones</span><textarea id="customerAcquisitionNotesInput" rows="3" placeholder="Ej: volante, gamificacion, stand, anuncio o contexto puntual."></textarea></label>
                   </div>
@@ -7290,22 +7283,9 @@
         </label>
         <div class="campaign-channel-field span-2">
           <span>Canales</span>
-          <div class="channel-grid" id="campaignFormLaunchChannels">
-            <label class="channel-option"><input type="checkbox" value="Instagram"> <span>Instagram</span></label>
-            <label class="channel-option"><input type="checkbox" value="Facebook"> <span>Facebook</span></label>
-            <label class="channel-option"><input type="checkbox" value="TikTok"> <span>TikTok</span></label>
-            <label class="channel-option"><input type="checkbox" value="Pagina web"> <span>Página web</span></label>
-            <label class="channel-option"><input type="checkbox" value="Google"> <span>Google</span></label>
-            <label class="channel-option"><input type="checkbox" value="Google Ads"> <span>Google Ads</span></label>
-            <label class="channel-option"><input type="checkbox" value="Google Maps"> <span>Google Maps</span></label>
-            <label class="channel-option"><input type="checkbox" value="Evento fisico"> <span>Evento físico</span></label>
-            <label class="channel-option"><input type="checkbox" value="WhatsApp"> <span>WhatsApp</span></label>
-            <label class="channel-option"><input type="checkbox" value="Landing"> <span>Landing</span></label>
-            <label class="channel-option"><input type="checkbox" value="Email"> <span>Email</span></label>
-            <label class="channel-option"><input type="checkbox" value="Referido"> <span>Referido</span></label>
-            <label class="channel-option"><input type="checkbox" value="Punto de venta"> <span>Punto de venta</span></label>
-            <label class="channel-option"><input type="checkbox" value="Otro"> <span>Otro</span></label>
-          </div>
+          <div class="channel-grid acquisition-channel-grid" id="campaignFormLaunchChannels" data-acquisition-channel-grid="campaign"></div>
+          <input class="acquisition-channel-grid-manual" data-acquisition-channel-grid-manual="campaign" type="text" maxlength="180" placeholder="Otro canal temporal (si aún no está configurado)">
+          <small class="field-help" data-acquisition-channel-grid-help="campaign"></small>
           <div class="channel-investment-list" id="campaignChannelBudgetRows"></div>
         </div>
         <label class="span-2">

@@ -31,24 +31,7 @@ const { getIndividualQrDownload } = require("../services/strategicQrService");
 const { getLeadCrmDetail } = require("../services/leadCrmService");
 const { assertStorageQuotaForUpload } = require("../services/storageQuotaService");
 const { recordLifecycleEvent } = require("../services/lifecycleAuditService");
-
-const launchChannelOptions = [
-  "Instagram",
-  "Facebook",
-  "TikTok",
-  "Pagina web",
-  "Google",
-  "Google Ads",
-  "Google Maps",
-  "Landing",
-  "Email",
-  "Referido",
-  "QR",
-  "Evento fisico",
-  "WhatsApp",
-  "Punto de venta",
-  "Otro",
-];
+const { resolveAcquisitionChannelReference } = require("../services/acquisitionChannelService");
 
 function slugify(value) {
   return String(value || "")
@@ -65,11 +48,39 @@ const slugSchema = z.preprocess(
   z.string().min(2).max(120).regex(/^[a-z0-9-]+$/)
 );
 
+const acquisitionChannelReferenceSchema = z.object({
+  acquisition_channel_id: z.string().uuid().optional().nullable(),
+  acquisition_channel: z.string().trim().min(2).max(180).optional().nullable(),
+}).superRefine((value, context) => {
+  if (!value.acquisition_channel_id && !value.acquisition_channel) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Selecciona un canal o escribe uno temporal." });
+  }
+});
+
+async function resolveCampaignChannelReferences(client, businessId, refs = [], legacyNames = []) {
+  const rawRefs = Array.isArray(refs) && refs.length
+    ? refs
+    : (Array.isArray(legacyNames) ? legacyNames.map((acquisition_channel) => ({ acquisition_channel })) : []);
+  const resolved = [];
+  for (const raw of rawRefs) {
+    const parsed = validate(acquisitionChannelReferenceSchema, raw || {});
+    const channel = await resolveAcquisitionChannelReference(client, businessId, parsed);
+    resolved.push({
+      id: channel.acquisition_channel_id,
+      name_snapshot: channel.acquisition_channel_name_snapshot,
+      slug_snapshot: channel.acquisition_channel_slug_snapshot,
+      source: channel.acquisition_channel_source,
+    });
+  }
+  return resolved;
+}
+
 const clientSetupSchema = z.object({
   budget_total: z.number().min(0),
   starts_at: z.string().datetime(),
   ends_at: z.string().datetime(),
-  launch_channels: z.array(z.enum(launchChannelOptions)).min(1),
+  launch_channels: z.array(z.string().trim().min(2).max(180)).min(1),
+  launch_channel_refs: z.array(acquisitionChannelReferenceSchema).min(1).optional(),
   expected_sales_goal: z.number().min(0).optional().nullable(),
   expected_leads_goal: z.number().min(0).optional().nullable(),
   expected_redemptions_goal: z.number().min(0).optional().nullable(),
@@ -91,6 +102,7 @@ const ownerCampaignSchema = z.object({
   expected_leads_goal: z.number().min(0).optional().nullable(),
   expected_redemptions_goal: z.number().min(0).optional().nullable(),
   launch_channels: z.array(z.string().trim().min(2).max(80)).optional(),
+  launch_channel_refs: z.array(acquisitionChannelReferenceSchema).optional(),
   starts_at: z.string().datetime().optional().nullable(),
   ends_at: z.string().datetime().optional().nullable(),
   client_notes: z.string().trim().max(2000).optional().nullable(),
@@ -173,6 +185,7 @@ const customerAcquisitionSaleSchema = z.object({
   sale_amount: z.number().positive(),
   currency: z.string().trim().max(12).default("COP"),
   acquisition_source: z.enum(acquisitionSourceOptions),
+  acquisition_channel_id: z.string().uuid().optional().nullable(),
   acquisition_channel: z.string().trim().max(180).optional().nullable(),
   referred_affiliate_id: z.string().uuid().optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
@@ -467,6 +480,8 @@ const manualLeadSchema = z.object({
   job_title: nullableText(160),
   source: z.string().trim().min(2).max(120).default("Manual"),
   source_detail: nullableText(220),
+  acquisition_channel_id: z.string().uuid().optional().nullable(),
+  acquisition_channel: nullableText(180),
   interest: nullableText(500),
   importance_reason: nullableText(1000),
   preferred_channel: nullableText(120),
@@ -2253,6 +2268,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
     const body = validate(customerAcquisitionSaleSchema, req.body);
 
     const result = await withTransaction(async (client) => {
+      const acquisitionChannel = await resolveAcquisitionChannelReference(client, businessId, body);
       if (body.campaign_id) {
         const campaign = await client.query(
           "select id from campaigns where id = $1 and business_id = $2",
@@ -2322,6 +2338,12 @@ async function createCustomerAcquisitionSale(req, res, next) {
       });
       const saleMetadata = {
         ...body.metadata,
+        acquisition_channel: {
+          id: acquisitionChannel.acquisition_channel_id,
+          name_snapshot: acquisitionChannel.acquisition_channel_name_snapshot,
+          slug_snapshot: acquisitionChannel.acquisition_channel_slug_snapshot,
+          source: acquisitionChannel.acquisition_channel_source,
+        },
         products: catalogSync.products,
         auto_created_products: catalogSync.autoCreatedProducts,
         matched_products: catalogSync.matchedProducts,
@@ -2337,8 +2359,10 @@ async function createCustomerAcquisitionSale(req, res, next) {
         `insert into business_sales
           (business_id, campaign_id, customer_name, customer_phone, customer_email, customer_document_id,
            product_name, sale_amount, currency, seller_user_id, branch_id, acquisition_source,
-           acquisition_channel, referred_affiliate_id, referral_points_awarded, notes, metadata)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+           acquisition_channel, acquisition_channel_id, acquisition_channel_name_snapshot,
+           acquisition_channel_slug_snapshot, acquisition_channel_source, referred_affiliate_id,
+           referral_points_awarded, notes, metadata)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
          returning *`,
         [
           businessId,
@@ -2353,7 +2377,11 @@ async function createCustomerAcquisitionSale(req, res, next) {
           req.user.id,
           saleBranchId,
           body.acquisition_source,
-          body.acquisition_channel || null,
+          acquisitionChannel.acquisition_channel,
+          acquisitionChannel.acquisition_channel_id,
+          acquisitionChannel.acquisition_channel_name_snapshot,
+          acquisitionChannel.acquisition_channel_slug_snapshot,
+          acquisitionChannel.acquisition_channel_source,
           referredAffiliate?.id || null,
           referralPoints,
           body.notes || null,
@@ -2414,7 +2442,8 @@ async function createCustomerAcquisitionSale(req, res, next) {
             {
               sale_id: saleResult.rows[0].id,
               acquisition_source: body.acquisition_source,
-              acquisition_channel: body.acquisition_channel || null,
+              acquisition_channel: acquisitionChannel.acquisition_channel,
+              acquisition_channel_id: acquisitionChannel.acquisition_channel_id,
               referred_customer: body.customer_name || null,
               affiliate_match_source: autoMatchedAffiliate ? "customer_identity" : "manual_selection",
               ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
@@ -3801,17 +3830,24 @@ async function createCampaign(req, res, next) {
       Number(activeCount.rows[0]?.total || 0),
       "campanas activas"
     );
+    const launchChannelRefs = await withTransaction((client) => resolveCampaignChannelReferences(
+      client,
+      businessId,
+      body.launch_channel_refs,
+      body.launch_channels || []
+    ));
+    const launchChannelNames = launchChannelRefs.map((channel) => channel.name_snapshot).filter(Boolean);
 
     const result = await query(
       `insert into campaigns
         (business_id, name, slug, public_slug, type, objective, strategy_summary, status,
          starts_at, ends_at, budget_total, expected_sales_goal, expected_leads_goal,
          expected_redemptions_goal, launch_channels, client_notes, delivered_assets,
-         client_setup_completed_at, activated_at, metadata)
+         client_setup_completed_at, activated_at, launch_channel_refs, metadata)
        values ($1, $2, $3, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15, $16::jsonb,
          case when $7 in ('SCHEDULED', 'ACTIVE') then now() else null end,
          case when $7 = 'ACTIVE' then now() else null end,
-         $17::jsonb)
+         $17::jsonb, $18::jsonb)
        returning id`,
       [
         businessId,
@@ -3827,9 +3863,10 @@ async function createCampaign(req, res, next) {
         body.expected_sales_goal ?? null,
         body.expected_leads_goal ?? null,
         body.expected_redemptions_goal ?? null,
-        JSON.stringify(body.launch_channels || []),
+        JSON.stringify(launchChannelNames),
         body.client_notes || null,
         JSON.stringify(body.delivered_assets || {}),
+        JSON.stringify(launchChannelRefs),
         JSON.stringify({
           owner_created: true,
           creation_source: "business_portal",
@@ -3851,6 +3888,12 @@ async function updateCampaign(req, res, next) {
     await assertFeatureForRequest(req, businessId, "campaign_reports");
     await requireCampaignForBusiness(req.params.id, businessId);
     const body = validate(ownerCampaignPatchSchema, req.body);
+    const hasLaunchChannels = Object.prototype.hasOwnProperty.call(body, "launch_channels")
+      || Object.prototype.hasOwnProperty.call(body, "launch_channel_refs");
+    const launchChannelRefs = hasLaunchChannels
+      ? await withTransaction((client) => resolveCampaignChannelReferences(client, businessId, body.launch_channel_refs, body.launch_channels || []))
+      : null;
+    const launchChannelNames = launchChannelRefs ? launchChannelRefs.map((channel) => channel.name_snapshot).filter(Boolean) : null;
     const deliveredAssets = Object.prototype.hasOwnProperty.call(body, "delivered_assets")
       ? JSON.stringify(body.delivered_assets || {})
       : null;
@@ -3901,12 +3944,19 @@ async function updateCampaign(req, res, next) {
         body.expected_sales_goal ?? null,
         body.expected_leads_goal ?? null,
         body.expected_redemptions_goal ?? null,
-        Object.prototype.hasOwnProperty.call(body, "launch_channels") ? JSON.stringify(body.launch_channels || []) : null,
+        hasLaunchChannels ? JSON.stringify(launchChannelNames || []) : null,
         body.client_notes ?? null,
         deliveredAssets,
         Object.prototype.hasOwnProperty.call(body, "campaign_cost_calculator") ? JSON.stringify(body.campaign_cost_calculator || {}) : null,
       ]
     );
+
+    if (launchChannelRefs) {
+      await query(
+        "update campaigns set launch_channel_refs = $3::jsonb where id = $1 and business_id = $2",
+        [req.params.id, businessId, JSON.stringify(launchChannelRefs)]
+      );
+    }
 
     res.json({ campaign: await getCampaignMetrics(result.rows[0].id, businessId) });
   } catch (error) {
@@ -3934,8 +3984,16 @@ async function patchClientSetup(req, res, next) {
     const current = await requireCampaignForBusiness(req.params.id, businessId);
     assertClientSetupEditable(current.status);
 
-    if (body.launch_channels.includes("Otro") && !body.client_notes) {
-      throw badRequest("client_notes is required when launch_channels includes 'Otro'.");
+    const launchChannelRefs = await withTransaction((client) => resolveCampaignChannelReferences(
+      client,
+      businessId,
+      body.launch_channel_refs,
+      body.launch_channels || []
+    ));
+    const launchChannelNames = launchChannelRefs.map((channel) => channel.name_snapshot).filter(Boolean);
+
+    if (launchChannelRefs.some((channel) => channel.source === "MANUAL_UNCONFIGURED") && !body.client_notes) {
+      throw badRequest("Describe el canal temporal en las observaciones de la campaña.");
     }
 
     const result = await query(
@@ -3944,15 +4002,16 @@ async function patchClientSetup(req, res, next) {
            starts_at = $4,
            ends_at = $5,
            launch_channels = $6::jsonb,
-           expected_sales_goal = $7,
-           expected_leads_goal = $8,
-           expected_redemptions_goal = $9,
-           client_notes = $10,
-           objective = coalesce($11, objective),
+           launch_channel_refs = $7::jsonb,
+           expected_sales_goal = $8,
+           expected_leads_goal = $9,
+           expected_redemptions_goal = $10,
+           client_notes = $11,
+           objective = coalesce($12, objective),
            metadata = jsonb_set(
-             jsonb_set(coalesce(metadata, '{}'::jsonb), '{additional_budget}', to_jsonb($12::numeric), true),
+             jsonb_set(coalesce(metadata, '{}'::jsonb), '{additional_budget}', to_jsonb($13::numeric), true),
              '{campaign_cost_calculator}',
-             $13::jsonb,
+             $14::jsonb,
              true
            ),
            client_setup_completed_at = now()
@@ -3964,7 +4023,8 @@ async function patchClientSetup(req, res, next) {
         body.budget_total,
         body.starts_at,
         body.ends_at,
-        JSON.stringify(body.launch_channels),
+        JSON.stringify(launchChannelNames),
+        JSON.stringify(launchChannelRefs),
         body.expected_sales_goal ?? null,
         body.expected_leads_goal ?? null,
         body.expected_redemptions_goal ?? null,
@@ -4135,11 +4195,14 @@ async function createManualLead(req, res, next) {
       throw badRequest("Agrega al menos telefono o correo para poder contactar el prospecto.");
     }
     const lead = await withTransaction(async (client) => {
+      const acquisitionChannel = await resolveAcquisitionChannelReference(client, businessId, body);
       const result = await client.query(
         `insert into business_manual_leads
            (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
-            interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb)
+            acquisition_channel_id, acquisition_channel_name_snapshot, acquisition_channel_slug_snapshot,
+            acquisition_channel_source, interest, importance_reason, preferred_channel, preferred_contact_time,
+            status, priority, notes, metadata)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21::jsonb)
          returning *`,
         [
           businessId,
@@ -4151,6 +4214,10 @@ async function createManualLead(req, res, next) {
           body.job_title,
           body.source || "Manual",
           body.source_detail,
+          acquisitionChannel.acquisition_channel_id,
+          acquisitionChannel.acquisition_channel_name_snapshot,
+          acquisitionChannel.acquisition_channel_slug_snapshot,
+          acquisitionChannel.acquisition_channel_source,
           body.interest,
           body.importance_reason,
           body.preferred_channel,
@@ -4160,6 +4227,12 @@ async function createManualLead(req, res, next) {
           body.notes,
           JSON.stringify({
             source: "manual_portal_entry",
+            acquisition_channel: {
+              id: acquisitionChannel.acquisition_channel_id,
+              name_snapshot: acquisitionChannel.acquisition_channel_name_snapshot,
+              slug_snapshot: acquisitionChannel.acquisition_channel_slug_snapshot,
+              source: acquisitionChannel.acquisition_channel_source,
+            },
             created_by_email: req.user.email || null,
             manual_job_title: body.job_title || null,
             manual_importance_reason: body.importance_reason || null,

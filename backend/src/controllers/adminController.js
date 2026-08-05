@@ -3,6 +3,7 @@ const { z } = require("zod");
 const { query, withTransaction } = require("../config/db");
 const { badRequest, forbidden, notFound } = require("../utils/http");
 const { validate } = require("../utils/validators");
+const { resolveAcquisitionChannelReference } = require("../services/acquisitionChannelService");
 const { getBusinessSummary, getBusinessCampaignMetrics, getCampaignMetrics } = require("../services/metricsService");
 const {
   QR_PACKAGES,
@@ -75,6 +76,10 @@ const campaignSchema = z.object({
   expected_leads_goal: z.number().min(0).optional().nullable(),
   expected_redemptions_goal: z.number().min(0).optional().nullable(),
   launch_channels: z.array(z.string().trim().min(2).max(80)).optional(),
+  launch_channel_refs: z.array(z.object({
+    acquisition_channel_id: z.string().uuid().optional().nullable(),
+    acquisition_channel: z.string().trim().min(2).max(180).optional().nullable(),
+  })).optional(),
   client_notes: z.string().trim().max(2000).optional().nullable(),
   activated_at: z.string().datetime().optional().nullable(),
   client_setup_completed_at: z.string().datetime().optional().nullable(),
@@ -84,6 +89,16 @@ const campaignSchema = z.object({
 });
 
 const patchCampaignSchema = campaignSchema.partial().omit({ business_id: true });
+
+async function resolveAdminCampaignChannelRefs(client, businessId, refs, legacyNames) {
+  const input = Array.isArray(refs) && refs.length
+    ? refs
+    : (legacyNames || []).map((acquisition_channel) => ({ acquisition_channel }));
+  return Promise.all(input.map(async (item) => {
+    const channel = await resolveAcquisitionChannelReference(client, businessId, item);
+    return { id: channel.acquisition_channel_id, name_snapshot: channel.acquisition_channel_name_snapshot, slug_snapshot: channel.acquisition_channel_slug_snapshot, source: channel.acquisition_channel_source };
+  }));
+}
 
 const creditPackageSchema = z.object({
   package_size: z.number().int(),
@@ -565,6 +580,10 @@ async function patchUser(req, res, next) {
     }
 
     const current = existing.rows[0];
+    const hasLaunchChannels = body.launch_channels !== undefined || body.launch_channel_refs !== undefined;
+    const launchChannelRefs = hasLaunchChannels
+      ? await withTransaction((client) => resolveAdminCampaignChannelRefs(client, current.business_id, body.launch_channel_refs, body.launch_channels || []))
+      : null;
     const nextRole = body.role || current.role;
     const nextBusinessId = nextRole === "ADMIN_MARKET_GAMES" ? null : (body.business_id === undefined ? current.business_id : body.business_id);
     const nextActive = body.is_active === undefined ? current.is_active : body.is_active;
@@ -663,13 +682,15 @@ async function createCampaign(req, res, next) {
       );
     }
     const deliveredAssets = normalizeDeliveredAssets(body.delivered_assets);
+    const channelRefs = await withTransaction((client) => resolveAdminCampaignChannelRefs(client, body.business_id, body.launch_channel_refs, body.launch_channels));
+    const channelNames = channelRefs.map((channel) => channel.name_snapshot).filter(Boolean);
     const result = await query(
       `insert into campaigns
         (business_id, game_id, reward_id, name, slug, public_slug, type, objective, strategy_summary,
          starts_at, ends_at, budget_total, expected_sales_goal, expected_leads_goal, expected_redemptions_goal,
          launch_channels, client_notes, activated_at, client_setup_completed_at, delivered_assets,
-         status, created_by_admin_id, metadata)
-       values ($1, $2, $3, $4, $5, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb, $16, $17, $18, $19::jsonb, $20, $21, $22::jsonb)
+         status, created_by_admin_id, launch_channel_refs, metadata)
+       values ($1, $2, $3, $4, $5, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb, $16, $17, $18, $19::jsonb, $20, $21, $22::jsonb, $23::jsonb)
        returning *`,
       [
         body.business_id,
@@ -686,13 +707,14 @@ async function createCampaign(req, res, next) {
         body.expected_sales_goal || null,
         body.expected_leads_goal || null,
         body.expected_redemptions_goal || null,
-        JSON.stringify(body.launch_channels || []),
+        JSON.stringify(channelNames),
         body.client_notes || null,
         body.activated_at || null,
         body.client_setup_completed_at || null,
         JSON.stringify(deliveredAssets),
         body.status,
         req.user.id,
+        JSON.stringify(channelRefs),
         JSON.stringify(body.metadata || {}),
       ]
     );
@@ -725,7 +747,7 @@ async function patchCampaign(req, res, next) {
       expected_sales_goal: body.expected_sales_goal === undefined ? current.expected_sales_goal : body.expected_sales_goal,
       expected_leads_goal: body.expected_leads_goal === undefined ? current.expected_leads_goal : body.expected_leads_goal,
       expected_redemptions_goal: body.expected_redemptions_goal === undefined ? current.expected_redemptions_goal : body.expected_redemptions_goal,
-      launch_channels: body.launch_channels === undefined ? (current.launch_channels || []) : body.launch_channels,
+      launch_channels: launchChannelRefs ? launchChannelRefs.map((channel) => channel.name_snapshot).filter(Boolean) : (current.launch_channels || []),
       client_notes: body.client_notes === undefined ? current.client_notes : body.client_notes,
       activated_at: body.activated_at === undefined ? current.activated_at : body.activated_at,
       client_setup_completed_at: body.client_setup_completed_at === undefined ? current.client_setup_completed_at : body.client_setup_completed_at,
@@ -769,6 +791,9 @@ async function patchCampaign(req, res, next) {
         JSON.stringify(nextValues.metadata || {}),
       ]
     );
+    if (launchChannelRefs) {
+      await query("update campaigns set launch_channel_refs = $2::jsonb where id = $1", [req.params.id, JSON.stringify(launchChannelRefs)]);
+    }
     res.json({ campaign: result.rows[0] });
   } catch (error) {
     next(error);
