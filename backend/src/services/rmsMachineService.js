@@ -32,6 +32,40 @@ const RMS_FLOW_NEXT_PHASE = Object.freeze({
   revenue_generado: "postventa", postventa: "inteligencia", inteligencia: "recoleccion",
 });
 
+// These are server-only capabilities.  The generic phase endpoint must never
+// be able to manufacture the commercial evidence that the final stations
+// require just by sending metadata in its request body.
+const RMS_TRANSITION_AUTHORITY = Object.freeze({
+  EVALUATION: Symbol("rms-evaluation"),
+  COMMERCIAL_CONFIRMATION: Symbol("rms-commercial-confirmation"),
+  NEGOTIATION_RESULT: Symbol("rms-negotiation-result"),
+  RISK_REVIEW: Symbol("rms-risk-review"),
+  ATTRIBUTED_SALE: Symbol("rms-attributed-sale"),
+});
+
+const RMS_PROTECTED_TRANSITIONS = Object.freeze({
+  procesamiento: Object.freeze({
+    accion_correctiva: RMS_TRANSITION_AUTHORITY.EVALUATION,
+  }),
+  accion_correctiva: Object.freeze({
+    procesamiento: RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT,
+    clasificacion: RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT,
+    reciclaje: RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT,
+    inteligencia: RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT,
+    control_anti_fuga: RMS_TRANSITION_AUTHORITY.COMMERCIAL_CONFIRMATION,
+    cierre: RMS_TRANSITION_AUTHORITY.COMMERCIAL_CONFIRMATION,
+  }),
+  control_anti_fuga: Object.freeze({
+    cierre: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
+    accion_correctiva: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
+    reciclaje: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
+    inteligencia: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
+  }),
+  cierre: Object.freeze({
+    revenue_generado: RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE,
+  }),
+});
+
 const LEGACY_PHASE_ALIASES = {
   entrada: "alimentacion",
   atencion_inicial: "curaduria",
@@ -963,19 +997,28 @@ function assertRmsPhaseTransition(fromPhase, toPhase, payload = {}) {
   }
 }
 
-async function moveRmsLeadPhase(businessId, user, payload = {}) {
+function assertRmsTransitionAuthority(fromPhase, toPhase, authority = null) {
+  const required = RMS_PROTECTED_TRANSITIONS[fromPhase]?.[toPhase];
+  if (!required || required === authority) return;
+  throw badRequest("Esta transicion exige completar la operacion verificada de la estacion actual.");
+}
+
+async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const sourceId = payload.source_id;
   const toPhase = normalizePhase(payload.to_phase || payload.rms_phase, "");
   if (!sourceId || !toPhase) throw badRequest("Faltan source_id o fase RMS.");
-  const current = await query(
-    `select * from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
-    [businessId, sourceType, sourceId]
-  );
-  const fromPhase = current.rows[0]?.rms_phase || null;
   const metadata = payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {};
-  assertRmsPhaseTransition(fromPhase, toPhase, { ...payload, metadata });
   const result = await withTransaction(async (client) => {
+    // Lock and validate inside the same transaction so a stale browser tab
+    // cannot advance a lead after another operator already moved it.
+    const current = await client.query(
+      `select rms_phase from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3 for update`,
+      [businessId, sourceType, sourceId]
+    );
+    const fromPhase = current.rows[0]?.rms_phase || null;
+    assertRmsPhaseTransition(fromPhase, toPhase, { ...payload, metadata });
+    assertRmsTransitionAuthority(fromPhase, toPhase, authority);
     const state = await client.query(
       `insert into rms_lead_state
         (business_id, source_type, source_id, lead_id, rms_phase, priority, recommended_action, last_operation, last_material_sent, revenue_potential, metadata, created_by, updated_by)
@@ -1170,7 +1213,7 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
       rms_evaluation_agenda_warning: agendaWarning,
       rms_evaluation_destination: evaluation.destination,
     },
-  });
+  }, RMS_TRANSITION_AUTHORITY.EVALUATION);
   if (response === "PAID_SALE") {
     await recordRmsWorkflowEvent(businessId, user, {
       source_type: sourceType,
@@ -1287,7 +1330,7 @@ async function recordRmsCommercialConfirmation(businessId, user, payload = {}) {
     revenue_potential: confirmation.amount,
     reason: commercialRoute === "NEGOTIATION_CLEAN" ? "Venta limpia confirmada desde Negociación." : "Condición comercial confirmada; pasa a validación final anti-fuga.",
     metadata: { commercial_confirmation: { ...confirmation, route: commercialRoute }, commercial_confirmation_note_id: note.id, negotiation_current: confirmationRound, negotiation_history: [...negotiationHistory, confirmationRound], negotiation_result: "ACCEPTED", commercial_route: commercialRoute, risk_signals: payload.risk_signals || [] },
-  });
+  }, RMS_TRANSITION_AUTHORITY.COMMERCIAL_CONFIRMATION);
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     event_type: commercialRoute === "NEGOTIATION_CLEAN" ? "clean_sale_confirmed" : "agreement_requires_risk_review", event_title: commercialRoute === "NEGOTIATION_CLEAN" ? "Venta limpia confirmada" : "Acuerdo enviado a Riesgos de fuga",
@@ -1378,7 +1421,7 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
     recommended_action: result === "LOST" ? "Conservar aprendizaje comercial" : result === "REPROCESS" ? "Actualizar propuesta antes de retomar el acuerdo" : "Confirmar condición comercial",
     last_operation: `negotiation_${result.toLowerCase()}`, revenue_potential: item.revenue_potential, reason,
     metadata: { negotiation_current: round, negotiation_history: [...history, round], negotiation_result: result, negotiation_task_id: agenda?.item?.id || null, recycling: result === "RECYCLE" ? { reason: payload.recycle_reason || reason, strategy: payload.recycle_strategy || "NEW_CONTACT", reactivate_at: nextAt, responsible: user.id, consent: payload.recycle_consent, channel: String(payload.channel || "").trim(), note: reason } : null, commercial_status: result === "LOST" ? "LOST" : result === "WAITING" ? "WAITING" : result === "NO_RESPONSE" ? "RECOVERY" : result === "RECYCLE" ? "RECYCLE" : "REPROCESS", lost_classification: result === "LOST" ? payload.lost_classification : null, cancelled_agenda_count: cancelledAgendaCount },
-  });
+  }, RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT);
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     event_type: "negotiation_round_recorded", event_title: "Resultado de Negociación registrado", event_description: reason,
@@ -1452,7 +1495,7 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     last_operation: isCleared ? "risk_review_passed" : result === "RECYCLE" ? "lead_sent_to_recycling" : result === "LOST" ? "lead_marked_lost" : result === "WAITING" ? "risk_follow_up_scheduled" : "risk_review_returned_to_negotiation",
     last_material_sent: confirmation?.product_name || null, revenue_potential: confirmation?.amount || item.revenue_potential,
     reason, metadata: { risk_review: review, risk_result: result, recovery_decision: result === "RETURN_TO_NEGOTIATION" ? "NEGOTIATION" : null, risk_return_task_id: agenda?.item?.id || null, recycling: review.recycle, commercial_status: result === "LOST" ? "LOST" : null },
-  });
+  }, RMS_TRANSITION_AUTHORITY.RISK_REVIEW);
   const eventType = isCleared ? "risk_cleared_for_attribution" : result === "RECYCLE" ? "lead_sent_to_recycling" : result === "LOST" ? "lead_marked_lost" : result === "WAITING" ? "risk_follow_up_scheduled" : "risk_returned_to_negotiation";
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
@@ -1575,7 +1618,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     revenue_potential: saleAmount,
     reason: "Venta cobrada y atribuida desde la estación de Ventas atribuidas.",
     metadata: { rms_attributed_sale_id: result.sale.id, rms_sale_recorded_at: new Date().toISOString(), rms_sale_product: productName, rms_sale_amount: saleAmount, rms_sale_economics: economics },
-  });
+  }, RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE);
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     event_type: "sale_attributed", event_title: "Venta atribuida correctamente",
