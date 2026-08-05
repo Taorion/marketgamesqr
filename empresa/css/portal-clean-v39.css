@@ -14361,7 +14361,12 @@ body[data-current-view="account"] .portal-shell .account-admin-nav { display: gr
 body[data-current-view="account"] .portal-shell .account-admin-nav a { display: grid !important; grid-template-columns: 36px minmax(0, 1fr); gap: 3px 10px; min-width: 0; min-height: 86px; padding: 13px !important; border: 1px solid var(--account-line) !important; border-radius: 16px !important; color: var(--account-ink) !important; background: var(--account-panel) !important; text-decoration: none; }
 body[data-current-view="account"] .portal-shell .account-admin-nav a:hover,
 body[data-current-view="account"] .portal-shell .account-admin-nav a:focus-visible,
-body[data-current-view="account"] .portal-shell .account-admin-nav a[href="#accountSectionCompany"] { border-color: #8bc7e9 !important; color: #034e9f !important; background: #f1f9ff !important; box-shadow: 0 8px 18px rgba(8, 104, 215, .08) !important; }
+body[data-current-view="account"] .portal-shell .view-section:not(:has([id^="accountSection"]:target)) .account-admin-nav a[href="#accountSectionCompany"],
+body[data-current-view="account"] .portal-shell .view-section:has(#accountSectionCompany:target) .account-admin-nav a[href="#accountSectionCompany"],
+body[data-current-view="account"] .portal-shell .view-section:has(#accountSectionAssets:target) .account-admin-nav a[href="#accountSectionAssets"],
+body[data-current-view="account"] .portal-shell .view-section:has(#accountSectionUsers:target) .account-admin-nav a[href="#accountSectionUsers"],
+body[data-current-view="account"] .portal-shell .view-section:has(#accountSectionData:target) .account-admin-nav a[href="#accountSectionData"],
+body[data-current-view="account"] .portal-shell .view-section:has(#accountSectionSecurity:target) .account-admin-nav a[href="#accountSectionSecurity"] { border-color: #8bc7e9 !important; color: #034e9f !important; background: #f1f9ff !important; box-shadow: 0 8px 18px rgba(8, 104, 215, .08) !important; }
 body[data-current-view="account"] .portal-shell .account-admin-nav .material-symbols-outlined { grid-row: span 2; display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; color: var(--account-accent); background: #eaf5ff; }
 body[data-current-view="account"] .portal-shell .account-admin-nav :is(strong, small) { min-width: 0; overflow-wrap: anywhere; }
 body[data-current-view="account"] .portal-shell .account-admin-nav strong { color: inherit !important; font-size: .84rem; line-height: 1.2; }
@@ -14402,11 +14407,14 @@ body[data-current-view="account"] .portal-shell .account-users-card table { min-
 body[data-current-view="account"] .portal-shell :is(td, th) { overflow-wrap: anywhere; }
 body[data-current-view="account"] .portal-shell .account-users-card td:last-child { white-space: nowrap; }
 body[data-current-view="account"] .portal-shell .account-users-card td:last-child .ghost-button { border-color: #e6caca !important; color: #9b3535 !important; }
+body[data-current-view="account"] .portal-shell .account-users-card .ghost-button:disabled { opacity: .52; cursor: not-allowed; }
+body[data-current-view="account"] .portal-shell .modal-actions .error-line { min-width: 0; overflow-wrap: anywhere; }
 
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell .view-section[data-view="account"] { --account-ink: #eaf4ff; --account-muted: #adc0d4; --account-line: rgba(151, 206, 244, .2); --account-soft: #0a2342; --account-panel: #071a33; --account-accent: #6bbdff; }
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell :is(.view-section[data-view="account"] > .view-head, .account-profile-card:first-child, .account-profile-card:nth-child(3), .account-settings-card, .account-billing-card, .portal-pricing-card, .qr-credit-shop-card, .account-deal-card) { background: #071a33 !important; }
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell :is(.account-profile-card, .account-admin-nav a, .account-meta-grid > div, .account-deal-grid > div, .account-billing-panel) { background: #0a2342 !important; }
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell :is(input, select, textarea) { color: var(--account-ink) !important; background: #06172d !important; border-color: #294d72 !important; }
+html[data-theme="dark"] body[data-current-view="account"] .portal-shell :is(.business-logo-preview, .ticket-frame-preview, .table-wrap) { background: #06172d !important; }
 
 @media (max-width: 1180px) {
   body[data-current-view="account"] .portal-shell .account-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
