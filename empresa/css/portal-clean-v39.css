@@ -14745,7 +14745,7 @@ html body[data-current-view="account"] .portal-shell .account-users-card td:last
 
 @media (max-width: 560px) {
   /* Restituye el scroll intencional frente al guard global de overflow textual. */
-  html body[data-current-view="account"] #workspace.app-shell .portal-shell .account-admin-nav {
+  html body[data-current-view="account"] #workspace.app-shell .portal-shell .view-section.active[data-view="account"] .account-admin-nav {
     overflow: auto !important;
     overflow-y: hidden !important;
   }
