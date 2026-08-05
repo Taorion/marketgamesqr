@@ -25,6 +25,7 @@ const {
   createIntelligenceAgendaTask,
   intelligencePatterns,
   learningCase,
+  listIntelligenceCases,
   listIntelligenceInsights,
   saveIntelligenceInsight,
 } = require("../services/rmsIntelligenceService");
@@ -119,7 +120,9 @@ const attributedSaleSchema = z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
   lead_id: z.string().uuid().optional().nullable(),
-  inventory_product_id: z.string().uuid(),
+  // A stale browser may submit null. Let the service return the actionable domain
+  // requirement instead of exposing a raw Zod type error to the operator.
+  inventory_product_id: z.string().uuid().optional().nullable(),
   product_name: z.string().trim().max(240).optional().nullable(),
   quantity: z.number().positive().max(100000).optional().default(1),
   unit_cost: z.number().min(0).max(100000000000).optional().nullable(),
@@ -138,6 +141,12 @@ const attributedSaleSchema = z.object({
 const intelligenceCaseQuerySchema = z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+});
+
+const intelligenceCasesQuerySchema = z.object({
+  lifecycle_status: z.enum(["ACTIVE", "RECYCLED", "LOST_ANALYZED", "CYCLE_ANALYZED"]).optional(),
+  phase: z.string().trim().max(80).optional(),
+  limit: z.coerce.number().int().min(1).max(500).optional(),
 });
 
 const intelligenceInsightSchema = z.object({
@@ -471,6 +480,14 @@ async function intelligenceCase(req, res, next) {
   }
 }
 
+async function intelligenceCases(req, res, next) {
+  try {
+    res.json(await listIntelligenceCases(businessIdFor(req), validate(intelligenceCasesQuerySchema, req.query)));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function intelligencePatternReport(req, res, next) {
   try {
     res.json(await intelligencePatterns(businessIdFor(req), req.query));
@@ -510,6 +527,7 @@ module.exports = {
   dailyQueue,
   events,
   intelligenceCase,
+  intelligenceCases,
   intelligenceInsights,
   intelligencePatternReport,
   createInsightAgendaTask,

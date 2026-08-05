@@ -30,6 +30,7 @@ const { syncSaleProductsWithCatalog } = require("../services/productCatalogServi
 const { getIndividualQrDownload } = require("../services/strategicQrService");
 const { getLeadCrmDetail } = require("../services/leadCrmService");
 const { assertStorageQuotaForUpload } = require("../services/storageQuotaService");
+const { recordLifecycleEvent } = require("../services/lifecycleAuditService");
 
 const launchChannelOptions = [
   "Instagram",
@@ -106,6 +107,11 @@ const salesSnapshotSchema = z.object({
   total_sales_amount: z.number().min(0),
   total_orders: z.number().int().min(0).default(0),
   notes: z.string().trim().max(2000).optional().nullable(),
+});
+
+const lifecycleReasonSchema = z.object({
+  reason: z.string().trim().min(3).max(1000),
+  idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
 
 const businessProfileSchema = z.object({
@@ -3725,15 +3731,31 @@ async function archiveInventoryProduct(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     await assertFeatureForRequest(req, businessId, "gift_inventory");
-    const result = await query(
-      `update business_inventory_products
-       set status = 'ARCHIVED', updated_at = now()
-       where id = $1 and business_id = $2
-       returning id`,
-      [req.params.productId, businessId]
-    );
-    if (!result.rowCount) throw badRequest("Producto de inventario no encontrado.");
-    res.json({ ok: true, id: req.params.productId });
+    const body = validate(lifecycleReasonSchema, req.body || {});
+    const result = await withTransaction(async (client) => {
+      const existing = await client.query(
+        "select id, name, status from business_inventory_products where id = $1 and business_id = $2 for update",
+        [req.params.productId, businessId]
+      );
+      if (!existing.rowCount) throw badRequest("Producto de inventario no encontrado.");
+      const product = existing.rows[0];
+      if (product.status === "ARCHIVED") return { product, duplicate: true };
+      const updated = await client.query(
+        `update business_inventory_products
+           set status = 'ARCHIVED', updated_at = now()
+         where id = $1 and business_id = $2
+         returning id, name, status`,
+        [req.params.productId, businessId]
+      );
+      await recordLifecycleEvent({
+        business_id: businessId, entity_type: "INVENTORY_PRODUCT", entity_id: product.id,
+        action: "ARCHIVED", previous_status: product.status, next_status: "ARCHIVED", reason: body.reason,
+        idempotency_key: body.idempotency_key || `inventory-archive:${product.id}:${product.status}`,
+        actor_user_id: req.user.id, metadata: { product_name: product.name },
+      }, client);
+      return { product: updated.rows[0], duplicate: false };
+    });
+    res.json({ ok: true, product: result.product, archived: true, duplicate: result.duplicate });
   } catch (error) {
     next(error);
   }
@@ -5322,11 +5344,8 @@ async function campaignRedemptions(req, res, next) {
   }
 }
 
-async function campaignSales(req, res, next) {
-  try {
-    const businessId = businessIdFor(req);
-    const limit = boundedLimit(req.query.limit, 150, 500);
-    const result = await query(
+async function canonicalAttributedSalesForBusiness(businessId, campaignId, limit) {
+  const result = await query(
       `select *
        from (
          select
@@ -5343,6 +5362,7 @@ async function campaignSales(req, res, next) {
            s.payment_method,
            s.product_or_service,
            s.notes,
+           'PAID'::text as sale_status,
            null::jsonb as metadata,
            null::uuid as referred_affiliate_id,
            0::int as referral_points_awarded,
@@ -5359,7 +5379,7 @@ async function campaignSales(req, res, next) {
          left join players p on p.id = s.player_id
          left join branches br on br.id = s.branch_id
          left join app_users u on u.id = s.sale_confirmed_by_user_id
-         where s.business_id = $1 and s.campaign_id = $2
+         where s.business_id = $1 and ($2::uuid is null or s.campaign_id = $2)
 
          union all
 
@@ -5377,6 +5397,7 @@ async function campaignSales(req, res, next) {
            bs.acquisition_source as payment_method,
            bs.product_name as product_or_service,
            bs.notes,
+           coalesce(bs.sale_status, 'PAID') as sale_status,
            bs.metadata,
            bs.referred_affiliate_id,
            bs.referral_points_awarded,
@@ -5393,13 +5414,86 @@ async function campaignSales(req, res, next) {
          left join branches br on br.id = bs.branch_id
          left join app_users u on u.id = bs.seller_user_id
          left join affiliates a on a.id = bs.referred_affiliate_id
-         where bs.business_id = $1 and bs.campaign_id = $2
+         where bs.business_id = $1 and ($2::uuid is null or bs.campaign_id = $2)
        ) sales
        order by created_at desc
        limit $3`,
-      [businessId, req.params.id, limit]
-    );
-    res.json({ sales: result.rows });
+      [businessId, campaignId || null, limit]
+  );
+  return result.rows;
+}
+
+async function attributedSales(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const limit = boundedLimit(req.query.limit, 300, 500);
+    const sales = await canonicalAttributedSalesForBusiness(businessId, null, limit);
+    res.json({ sales });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function voidAttributedSale(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "sales_tracker");
+    const body = validate(lifecycleReasonSchema, req.body || {});
+    const result = await withTransaction(async (client) => {
+      const existing = await client.query(
+        `select id, sale_status, sale_amount, currency, product_name, metadata
+           from business_sales
+          where id = $1 and business_id = $2
+          for update`,
+        [req.params.saleId, businessId]
+      );
+      if (!existing.rowCount) throw notFound("Venta atribuida no encontrada.");
+      const sale = existing.rows[0];
+      if (sale.sale_status === "VOIDED") return { sale, duplicate: true };
+      const updated = await client.query(
+        `update business_sales
+            set sale_status = 'VOIDED',
+                metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+                  'voided_at', now(),
+                  'voided_by_user_id', $3::text,
+                  'void_reason', $4::text,
+                  'original_sale_amount', sale_amount,
+                  'original_currency', currency
+                )
+          where id = $1 and business_id = $2
+          returning *`,
+        [sale.id, businessId, req.user.id, body.reason]
+      );
+      await recordLifecycleEvent({
+        business_id: businessId,
+        entity_type: "ATTRIBUTED_SALE",
+        entity_id: sale.id,
+        action: "VOIDED",
+        previous_status: sale.sale_status || "PAID",
+        next_status: "VOIDED",
+        reason: body.reason,
+        idempotency_key: body.idempotency_key || `sale-void:${sale.id}:${sale.sale_status || "PAID"}`,
+        actor_user_id: req.user.id,
+        metadata: {
+          product_name: sale.product_name,
+          original_sale_amount: sale.sale_amount,
+          original_currency: sale.currency,
+        },
+      }, client);
+      return { sale: updated.rows[0], duplicate: false };
+    });
+    res.json({ ok: true, sale: result.sale, voided: true, duplicate: result.duplicate });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function campaignSales(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const limit = boundedLimit(req.query.limit, 150, 500);
+    const sales = await canonicalAttributedSalesForBusiness(businessId, req.params.id, limit);
+    res.json({ sales });
   } catch (error) {
     next(error);
   }
@@ -5577,6 +5671,8 @@ module.exports = {
   downloadActiveLeadQr,
   downloadLeadQrById,
   campaignRedemptions,
+  attributedSales,
+  voidAttributedSale,
   campaignSales,
   createSalesSnapshot,
   updateSalesSnapshot,

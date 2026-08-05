@@ -9,6 +9,7 @@ const {
   referralPointsForAmount,
 } = require("./affiliatePointRulesService");
 const { syncSaleProductsWithCatalog } = require("./productCatalogService");
+const { recordLifecycleEvent } = require("./lifecycleAuditService");
 
 const OPERATIONAL_AGENDA_SOURCE_TYPES = new Set(["GENERAL", "CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"]);
 
@@ -477,6 +478,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          limit 1
        ) li on true
        where p.business_id = $1
+         and coalesce(p.metadata->>'lifecycle_status', 'ACTIVE') <> 'ARCHIVED'
      ),
      manual_rows as (
        select
@@ -577,6 +579,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
            and la.source_id = ml.id
        ) q on true
        where ml.business_id = $1
+         and ml.status <> 'ARCHIVED'
      ),
      affiliate_rows as (
        select
@@ -1896,8 +1899,9 @@ async function updateLeadAgendaItem(businessId, user, noteId, payload = {}) {
   return getLeadAgendaItem(businessId, noteId);
 }
 
-async function deleteLeadAgendaItem(businessId, user, noteId) {
-  const existing = await query(
+async function deleteLeadAgendaItem(businessId, user, noteId, payload = {}) {
+  const result = await withTransaction(async (client) => {
+    const existing = await client.query(
     `select *
        from lead_notes
       where id = $1
@@ -1905,32 +1909,41 @@ async function deleteLeadAgendaItem(businessId, user, noteId) {
         and reminder_at is not null`,
     [noteId, businessId]
   );
-  if (!existing.rowCount) {
-    throw notFound("Tarea de agenda no encontrada.");
-  }
-  const item = existing.rows[0];
-  await query(
+    if (!existing.rowCount) throw notFound("Tarea de agenda no encontrada.");
+    const item = existing.rows[0];
+    if (item.agenda_status === "CANCELLED") return { item, duplicate: true };
+    await client.query(
     `insert into lead_events
       (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
-     values ($1, $2, $3, $4, 'agenda_deleted', 'Agenda eliminada', $5, $6, $7::jsonb)`,
-    [
+     values ($1, $2, $3, $4, 'agenda_cancelled', 'Agenda cancelada', $5, $6, $7::jsonb)`,
+      [
       businessId,
       item.lead_id || null,
       item.source_type,
       item.source_id,
       item.next_action || item.note,
       user.id,
-      JSON.stringify({ note_id: noteId, agenda_status: item.agenda_status, reminder_at: item.reminder_at }),
-    ]
-  );
-  await query(
-    `delete from lead_notes
-      where id = $1
-        and business_id = $2
-        and reminder_at is not null`,
-    [noteId, businessId]
-  );
-  return { deleted: true, id: noteId };
+        JSON.stringify({ note_id: noteId, agenda_status: item.agenda_status, reminder_at: item.reminder_at, cancellation_reason: payload.reason }),
+      ]
+    );
+    const updated = await client.query(
+      `update lead_notes
+          set agenda_status = 'CANCELLED', completed_at = now(),
+              metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object('cancellation_reason', $3, 'cancelled_at', now(), 'cancelled_by', $4::text),
+              updated_at = now()
+        where id = $1 and business_id = $2
+        returning *`,
+      [noteId, businessId, payload.reason, user.id]
+    );
+    await recordLifecycleEvent({
+      business_id: businessId, entity_type: "AGENDA_TASK", entity_id: item.id,
+      action: "CANCELLED", previous_status: item.agenda_status, next_status: "CANCELLED",
+      reason: payload.reason, idempotency_key: payload.idempotency_key || `agenda-cancel:${item.id}`,
+      actor_user_id: user.id, metadata: { source_type: item.source_type, source_id: item.source_id, reminder_at: item.reminder_at },
+    }, client);
+    return { item: updated.rows[0], duplicate: false };
+  });
+  return { cancelled: true, id: noteId, agenda_item: result.item, duplicate: result.duplicate };
 }
 
 async function addLeadInterest(businessId, user, leadId, sourceType, payload) {
@@ -1969,7 +1982,64 @@ async function deleteLeadInterest(businessId, leadId, interestId, sourceType = "
   return { id: interestId };
 }
 
-async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER") {
+async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER", payload = {}) {
+  // Compatibility endpoint: it is deliberately an archive command, never a physical lead delete.
+  return withTransaction(async (client) => {
+    const lead = await resolveLead(businessId, leadId, sourceType, client);
+    const source = String(lead.source_type || sourceType || "PLAYER").toUpperCase();
+    if (source === "AFFILIATE") {
+      throw badRequest("Los afiliados se desactivan desde Afiliados; no se archivan como contactos.");
+    }
+    const entityId = source === "MANUAL" ? lead.id : (lead.lead_id || lead.id);
+    const currentStatus = source === "MANUAL" ? lead.stored_status : lead.metadata?.lifecycle_status || "ACTIVE";
+    if (String(currentStatus).toUpperCase() === "ARCHIVED") {
+      return { archived: true, duplicate: true, lead_id: leadId, source_type: source };
+    }
+    if (source === "MANUAL") {
+      await client.query(
+        `update business_manual_leads
+            set status = 'ARCHIVED',
+                metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+                  'lifecycle_status', 'ARCHIVED', 'archived_at', now(),
+                  'archived_by_user_id', $3::text, 'archive_reason', $4::text
+                ),
+                updated_at = now()
+          where id = $1 and business_id = $2`,
+        [lead.id, businessId, user.id, payload.reason]
+      );
+    } else {
+      await client.query(
+        `update players
+            set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+              'lifecycle_status', 'ARCHIVED', 'archived_at', now(),
+              'archived_by_user_id', $3::text, 'archive_reason', $4::text
+            )
+          where id = $1 and business_id = $2`,
+        [entityId, businessId, user.id, payload.reason]
+      );
+    }
+    await client.query(
+      `insert into lead_events
+        (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
+       values ($1, $2, $3, $4, 'contact_archived', 'Contacto archivado', $5, $6, $7::jsonb)`,
+      [
+        businessId, source === "PLAYER" ? entityId : lead.lead_id || null, source, lead.id,
+        `${lead.name || "Contacto"} fue archivado; su historial comercial permanece disponible.`, user.id,
+        JSON.stringify({ reason: payload.reason, previous_status: currentStatus }),
+      ]
+    );
+    await recordLifecycleEvent({
+      business_id: businessId, entity_type: "LEAD_CONTACT", entity_id: entityId,
+      action: "ARCHIVED", previous_status: currentStatus, next_status: "ARCHIVED", reason: payload.reason,
+      idempotency_key: payload.idempotency_key || `lead-archive:${source}:${entityId}:${currentStatus}`,
+      actor_user_id: user.id, metadata: { source_type: source, source_id: lead.id, lead_name: lead.name || null },
+    }, client);
+    return { archived: true, duplicate: false, lead_id: leadId, source_type: source };
+  });
+
+  /* Legacy physical-delete implementation kept below only to minimize the diff during
+     this compatible change. It is unreachable and will be removed after legacy callers
+     have migrated to the explicit privacy-erasure workflow. */
   return withTransaction(async (client) => {
     const lead = await resolveLead(businessId, leadId, sourceType, client);
     const source = String(lead.source_type || sourceType || "PLAYER").toUpperCase();

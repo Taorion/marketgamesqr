@@ -17,7 +17,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=rms-quality-control-architecture-20260730-v191">
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-closing-console-20260805-v249">
   <link rel="stylesheet" href="css/dashboard-open-flow.css?v=20260727-v156">
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159">
   <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=activation-builder-catalog-fix-20260728-v177">
@@ -26,6 +25,8 @@
   <link rel="stylesheet" href="css/mobile-shell-guard.css?v=20260729-v1">
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
+  <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-layout-safety-20260805-v253">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -862,11 +863,7 @@
                     <strong id="rmsBulkSelectionCount">0 seleccionados</strong>
                     <small>Selecciona leads dentro de una estación y aplica una acción por lote.</small>
                   </div>
-                  <select id="rmsBulkPhaseInput">
-                    <option value="">Mover a fase...</option>
-                  </select>
                   <button class="ghost-button" id="rmsBulkCreateTasksButton" type="button">Crear tareas</button>
-                  <button class="solid-button" id="rmsBulkExecuteButton" type="button">Ejecutar operación</button>
                   <button class="ghost-button" id="rmsBulkClearButton" type="button">Limpiar selección</button>
                 </div>
               </section>

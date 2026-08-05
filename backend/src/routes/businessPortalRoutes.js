@@ -79,6 +79,8 @@ const {
   downloadActiveLeadQr,
   downloadLeadQrById,
   campaignRedemptions,
+  attributedSales,
+  voidAttributedSale,
   campaignSales,
   createSalesSnapshot,
   updateSalesSnapshot,
@@ -102,6 +104,7 @@ const {
   dailyQueue: rmsDailyQueue,
   events: rmsEvents,
   intelligenceCase: rmsIntelligenceCase,
+  intelligenceCases: rmsIntelligenceCases,
   intelligenceInsights: rmsIntelligenceInsights,
   intelligencePatternReport: rmsIntelligencePatternReport,
   createInsightAgendaTask: rmsCreateInsightAgendaTask,
@@ -186,6 +189,7 @@ router.get("/rms-machine/journeys", standardBusinessCache, rmsJourneys);
 router.get("/rms-machine/metrics", standardBusinessCache, rmsMetrics);
 router.get("/rms-machine/events", shortBusinessCache, rmsEvents);
 router.get("/rms-machine/intelligence/case", shortBusinessCache, rmsIntelligenceCase);
+router.get("/rms-machine/intelligence/cases", shortBusinessCache, rmsIntelligenceCases);
 router.get("/rms-machine/intelligence/patterns", standardBusinessCache, rmsIntelligencePatternReport);
 router.get("/rms-machine/intelligence/insights", shortBusinessCache, rmsIntelligenceInsights);
 router.post("/rms-machine/intelligence/insights", rmsSaveInsight);
@@ -286,6 +290,8 @@ router.get("/campaigns/:id/leads", standardBusinessCache, campaignLeads);
 router.get("/campaigns/:id/leads/export.csv", exportCampaignLeads);
 router.get("/campaigns/:id/leads/:qrId/active-qr", downloadActiveLeadQr);
 router.get("/campaigns/:id/redemptions", standardBusinessCache, campaignRedemptions);
+router.get("/sales/attributed", attributedSales);
+router.post("/sales/:saleId/void", voidAttributedSale);
 router.get("/campaigns/:id/sales", standardBusinessCache, campaignSales);
 router.post("/campaigns/:id/sales-snapshot", createSalesSnapshot);
 router.patch("/campaigns/:id/sales-snapshots/:snapshotId", updateSalesSnapshot);

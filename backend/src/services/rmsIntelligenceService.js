@@ -64,10 +64,11 @@ async function learningCase(businessId, params = {}) {
   const type = sourceType(params.source_type);
   const sourceId = String(params.source_id || "").trim();
   if (!sourceId) throw badRequest("Selecciona un caso RMS para revisar su aprendizaje.");
-  const [stateResult, movementsResult, eventsResult, salesResult, postSaleResult, notesResult] = await Promise.all([
+  const [stateResult, movementsResult, eventsResult, analyticalEventsResult, salesResult, postSaleResult, notesResult] = await Promise.all([
     query("select * from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3", [businessId, type, sourceId]),
     query("select * from rms_phase_movements where business_id = $1 and source_type = $2 and source_id = $3 order by created_at asc", [businessId, type, sourceId]),
     query("select * from rms_machine_events where business_id = $1 and source_type = $2 and source_id = $3 order by created_at asc", [businessId, type, sourceId]),
+    query("select * from rms_intelligence_case_events where business_id = $1 and source_type = $2 and source_id = $3 order by created_at asc", [businessId, type, sourceId]),
     query("select * from business_sales where business_id = $1 and rms_source_type = $2 and rms_source_id = $3 order by paid_at desc nulls last, created_at desc", [businessId, type, sourceId]),
     query(`select a.*, s.product_name as sale_product_name, s.sale_amount, s.currency
              from rms_post_sale_actions a join business_sales s on s.id = a.sale_id and s.business_id = a.business_id
@@ -88,11 +89,13 @@ async function learningCase(businessId, params = {}) {
   ]);
   const movements = movementsResult.rows;
   const events = eventsResult.rows;
+  const analyticalEvents = analyticalEventsResult.rows;
   const durations = phaseDurations(movements, state);
   const longest = [...durations].sort((left, right) => right.milliseconds - left.milliseconds)[0] || null;
   const timeline = [
     ...movements.map((row) => ({ kind: "phase", at: row.created_at, phase: row.to_phase, title: `${row.from_phase || "Origen"} → ${row.to_phase}`, detail: row.reason || "Movimiento RMS registrado", evidence_id: row.id })),
     ...events.map((row) => ({ kind: "event", at: row.created_at, phase: row.rms_phase, title: row.event_title, detail: row.event_description || "Hecho RMS registrado", evidence_id: row.id })),
+    ...analyticalEvents.map((row) => ({ kind: "intelligence", at: row.created_at, phase: row.operational_phase, title: "Inteligencia actualizada", detail: row.event_type, evidence_id: row.id })),
     ...sales.map((sale) => ({ kind: "sale", at: sale.paid_at || sale.created_at, phase: "cierre", title: "Venta atribuida", detail: `${sale.currency || "COP"} ${sale.sale_amount} · ${sale.product_name || "Producto sin nombre"}`, evidence_id: sale.id })),
     ...postSaleResult.rows.map((action) => ({ kind: "post_sale", at: action.updated_at || action.created_at, phase: "postventa", title: `Activación 2 · ${action.action_type}`, detail: `${action.status}${action.result_note ? ` · ${action.result_note}` : ""}`, evidence_id: action.id })),
   ].sort((left, right) => new Date(left.at) - new Date(right.at));
@@ -107,8 +110,11 @@ async function learningCase(businessId, params = {}) {
     phone: sales[0]?.customer_phone || opportunity.phone || null, email: sales[0]?.customer_email || opportunity.email || null,
   };
   return {
-    case: { source_type: type, source_id: sourceId, current_phase: state?.rms_phase || "sin_estado", profile },
-    facts: { state, movements, events, sales, post_sale_actions: postSaleResult.rows, tickets: qrResult.rows, reward_passes: rewardPassResult.rows, agenda_and_notes: notesResult.rows },
+    case: {
+      source_type: type, source_id: sourceId, current_operational_phase: state?.rms_phase || "sin_estado",
+      lifecycle_status: state?.lifecycle_status || "ACTIVE", profile,
+    },
+    facts: { state, movements, events, analytical_events: analyticalEvents, sales, post_sale_actions: postSaleResult.rows, tickets: qrResult.rows, reward_passes: rewardPassResult.rows, agenda_and_notes: notesResult.rows },
     learning: {
       timeline, phase_durations: durations, longest_phase: longest,
       reprocess_count: movements.filter((row) => ["clasificacion", "procesamiento", "accion_correctiva", "reciclaje"].includes(row.to_phase)).length,
@@ -120,6 +126,29 @@ async function learningCase(businessId, params = {}) {
     },
     insights: insightsResult.rows,
   };
+}
+
+async function listIntelligenceCases(businessId, filters = {}) {
+  const data = await listRmsOpportunities(businessId, { limit: Math.min(Math.max(Number(filters.limit || 240), 1), 500) });
+  const states = await query(
+    `select source_type, source_id, rms_phase, lifecycle_status, intelligence_updated_at, updated_at
+       from rms_lead_state where business_id = $1`,
+    [businessId]
+  );
+  const byCase = new Map(states.rows.map((row) => [`${row.source_type}:${row.source_id}`, row]));
+  const lifecycle = String(filters.lifecycle_status || "").toUpperCase();
+  const operationalPhase = String(filters.phase || "").trim();
+  const cases = (data.opportunities || []).map((item) => {
+    const state = byCase.get(`${item.source_type}:${item.source_id}`) || {};
+    return {
+      ...item,
+      operational_phase: state.rms_phase || item.stage || "sin_estado",
+      lifecycle_status: state.lifecycle_status || "ACTIVE",
+      intelligence_updated_at: state.intelligence_updated_at || null,
+    };
+  }).filter((item) => (!lifecycle || item.lifecycle_status === lifecycle)
+    && (!operationalPhase || item.operational_phase === operationalPhase));
+  return { cases, total: cases.length, analytical_only: true };
 }
 
 function sampleLabel(count) {
@@ -248,4 +277,4 @@ async function createIntelligenceAgendaTask(businessId, user, payload = {}) {
   return { task, insight: row };
 }
 
-module.exports = { createIntelligenceAgendaTask, intelligencePatterns, learningCase, listIntelligenceInsights, saveIntelligenceInsight };
+module.exports = { createIntelligenceAgendaTask, intelligencePatterns, learningCase, listIntelligenceCases, listIntelligenceInsights, saveIntelligenceInsight };

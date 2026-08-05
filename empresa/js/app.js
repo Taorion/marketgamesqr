@@ -126,9 +126,7 @@ const rmsIndustrialFlow = document.getElementById("rmsIndustrialFlow");
 const rmsMachineAlerts = document.getElementById("rmsMachineAlerts");
 const rmsBulkToolbar = document.getElementById("rmsBulkToolbar");
 const rmsBulkSelectionCount = document.getElementById("rmsBulkSelectionCount");
-const rmsBulkPhaseInput = document.getElementById("rmsBulkPhaseInput");
 const rmsBulkCreateTasksButton = document.getElementById("rmsBulkCreateTasksButton");
-const rmsBulkExecuteButton = document.getElementById("rmsBulkExecuteButton");
 const rmsBulkClearButton = document.getElementById("rmsBulkClearButton");
 const rmsLeadInspector = document.getElementById("rmsLeadInspector");
 const rmsMachineEventLog = document.getElementById("rmsMachineEventLog");
@@ -2459,6 +2457,8 @@ let state = {
   selectedRedemptions: [],
   redemptionStatusFilter: "all",
   selectedSales: [],
+  attributedSalesView: [],
+  attributedSalesViewLoaded: false,
   salesAnalysisFilters: {
     search: "",
     customer: "",
@@ -3609,6 +3609,8 @@ function resetBusinessScopedState(options = {}) {
   state.selectedRedemptions = [];
   state.redemptionStatusFilter = "all";
   state.selectedSales = [];
+  state.attributedSalesView = [];
+  state.attributedSalesViewLoaded = false;
   state.selectedAffiliateId = null;
   state.selectedAffiliate = null;
   state.selectedAffiliateLedger = [];
@@ -6164,6 +6166,7 @@ function setView(view) {
   }
   if (view === "sales") {
     renderSalesView();
+    loadAttributedSalesView({ quiet: true }).catch(() => {});
     if (!state.inventoryLoaded) {
       loadInventoryProducts({ quiet: true }).then(() => {
         renderInventoryProductOptions();
@@ -6688,6 +6691,8 @@ async function loadWorkspace() {
         state.selectedRedemptions = [];
         state.redemptionStatusFilter = "all";
         state.selectedSales = [];
+        state.attributedSalesView = [];
+        state.attributedSalesViewLoaded = false;
         state.loadedBusinessId = null;
         renderNoCampaignState();
         setView("admin");
@@ -14609,16 +14614,32 @@ function renderRedemptionsView() {
     : "Sin datos suficientes";
 }
 
+function salesRowsForAttributedSalesView() {
+  return state.attributedSalesViewLoaded ? (state.attributedSalesView || []) : (state.selectedSales || []);
+}
+
+async function loadAttributedSalesView(options = {}) {
+  if (!session?.user?.business_id) return [];
+  const scopeKey = businessScopeKey();
+  const fallback = { sales: state.attributedSalesViewLoaded ? state.attributedSalesView : state.selectedSales };
+  const data = await apiSafe("/api/business/sales/attributed?limit=500", { headers: authHeaders() }, fallback);
+  if (!isCurrentBusinessScope(scopeKey)) return [];
+  state.attributedSalesView = Array.isArray(data?.sales) ? data.sales : [];
+  state.attributedSalesViewLoaded = true;
+  if (state.currentView === "sales") renderSalesView();
+  return state.attributedSalesView;
+}
+
 function renderSalesView() {
   ensureSalesAnalysisStyles();
   const campaign = state.selectedCampaign || {};
-  const allSales = state.selectedSales || [];
+  const allSales = salesRowsForAttributedSalesView();
   renderSalesAnalysisControls(allSales);
   const sales = filteredSalesForAnalysis(allSales);
   const totalRevenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
   const avgTicket = sales.length ? totalRevenue / sales.length : 0;
   const allRevenue = allSales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
-  const topGroup = groupedSalesAnalysis(sales, state.salesAnalysisFilters?.group_by || "customer")[0];
+  const topGroup = groupedSalesAnalysis(reportingSales, state.salesAnalysisFilters?.group_by || "customer")[0];
   const items = [
     ["Ventas filtradas", sales.length, money(totalRevenue)],
     ["Ticket promedio", money(avgTicket), "Promedio por venta"],
@@ -14639,7 +14660,7 @@ function renderSalesView() {
   renderSalesCustomerOptions();
   renderCustomerSaleItems();
   renderAcquisitionChannelDatalist();
-  renderSalesAnalysisGrid(sales, allSales);
+  renderSalesAnalysisGrid(reportingSales, reportingAllSales);
   state.salesDetailRows = sales;
 
   campaignSalesTable.innerHTML = sales.map((item, index) => `
@@ -17570,6 +17591,8 @@ function ensureSalesDetailModal() {
   `;
   modal.addEventListener("click", (event) => {
     if (event.target.closest("[data-sales-detail-close]")) closeSalesDetailModal();
+    const voidButton = event.target.closest("[data-sales-void]");
+    if (voidButton) voidAttributedSale(voidButton.dataset.salesVoid || "");
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !modal.classList.contains("hidden")) closeSalesDetailModal();
@@ -17584,6 +17607,26 @@ function closeSalesDetailModal() {
   document.body.classList.remove("has-sales-detail-modal");
 }
 
+async function voidAttributedSale(saleId = "") {
+  const sale = salesRowsForAttributedSalesView().find((item) => String(item.id) === String(saleId));
+  if (!sale || String(sale.sale_source || "").toUpperCase() !== "CONTACT_CENTER") return;
+  const label = sale.player_name || sale.customer_name || "esta venta";
+  const reason = window.prompt(`Anular ${label}. La venta y su evidencia se conservarán para auditoría; las métricas dejarán de contarla. Motivo obligatorio:`);
+  if (!String(reason || "").trim()) return;
+  try {
+    await api(`/api/business/sales/${encodeURIComponent(saleId)}/void`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ reason: String(reason).trim() }),
+    });
+    closeSalesDetailModal();
+    await loadAttributedSalesView({ quiet: true });
+    showFeedback("Venta anulada. El registro original permanece trazable.", "success", { title: "Ventas atribuidas" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo anular la venta" });
+  }
+}
+
 function openSalesDetailModal(key = "") {
   const item = saleByDetailKey(key);
   if (!item) return;
@@ -17595,6 +17638,7 @@ function openSalesDetailModal(key = "") {
     <header class="sales-detail-head">
       <span class="mono-label">Detalle de venta</span>
       <h3 id="salesDetailTitle">${escapeHtml(item.player_name || item.customer_name || "Venta atribuida")}</h3>
+      ${String(item.sale_status || "PAID").toUpperCase() === "VOIDED" ? '<p><strong>Venta anulada</strong> · Se conserva para auditoría y no suma a revenue.</p>' : ""}
       <p>${escapeHtml(formatDate(item.created_at))} · ${escapeHtml(amount)} · ${escapeHtml(saleCampaignText(item))}</p>
     </header>
     <section class="sales-detail-hero">
@@ -17632,6 +17676,13 @@ function openSalesDetailModal(key = "") {
         ${saleDetailField("Notas", item.notes || saleMetadata(item).notes)}
       </div>
     </section>
+    ${String(item.sale_source || "").toUpperCase() === "CONTACT_CENTER" && String(item.sale_status || "PAID").toUpperCase() !== "VOIDED" ? `
+      <section class="sales-detail-section sales-detail-danger-zone">
+        <h4>Anulación</h4>
+        <p>Esta acción no borra la venta ni su evidencia. Exige un motivo y la excluye de las métricas de revenue.</p>
+        <button class="ghost-button compact" type="button" data-sales-void="${escapeHtml(item.id)}">Anular venta</button>
+      </section>
+    ` : ""}
     <details class="sales-detail-raw">
       <summary>Ver todos los datos técnicos de la venta</summary>
       <div class="table-wrap">
@@ -20356,6 +20407,7 @@ async function submitCustomerAcquisitionSale(event) {
       loadLeadCrmData({ force: true, quiet: true }),
       loadAcquisitionChannels({ force: true, quiet: true }),
       loadChannelEfforts({ force: true, quiet: true }),
+      loadAttributedSalesView({ quiet: true }),
     ]);
     renderSalesCustomerOptions();
     renderAcquisitionChannelDatalist();
@@ -21165,11 +21217,13 @@ async function submitInventoryProduct(event) {
 async function archiveInventoryProduct(productId) {
   const product = (state.inventoryProducts || []).find((item) => item.id === productId);
   if (!product) return;
-  if (!window.confirm(`Archivar ${product.name}? Seguirá disponible historicamente, pero no como producto activo.`)) return;
+  const reason = window.prompt(`Archivar ${product.name}. Se conservará en ventas e históricos, pero dejará de aparecer en nuevos selectores. Motivo obligatorio:`);
+  if (!String(reason || "").trim()) return;
   try {
     await api(`/api/business/inventory/products/${productId}`, {
       method: "DELETE",
       headers: authHeaders(),
+      body: JSON.stringify({ reason: String(reason).trim() }),
     });
     state.inventoryProducts = (state.inventoryProducts || []).map((item) => (
       item.id === productId ? { ...item, status: "ARCHIVED" } : item
@@ -30463,7 +30517,7 @@ function exportRedemptions() {
 function exportSales() {
   downloadCsv("campaign-sales", [
     ["Cliente", "Cédula", "Teléfono", "Valor", "Pago", "Producto o servicio", "Productos detallados", "Sucursal", "Fecha"],
-    ...state.selectedSales.map((item) => [
+    ...salesRowsForAttributedSalesView().map((item) => [
       item.player_name,
       item.document_id,
       item.phone,
@@ -31682,7 +31736,7 @@ function renderLeadCrmTable() {
               <button class="ghost-button" type="button" data-lead-action="ticket-download">Enviar ticket</button>
               <button class="ghost-button" type="button" data-lead-action="ticket-whatsapp">WhatsApp</button>
             ` : `<button class="ghost-button" type="button" data-lead-action="activation">Activar</button>`}
-            <button class="ghost-button danger-button" type="button" data-lead-action="delete">Eliminar</button>
+            <button class="ghost-button danger-button" type="button" data-lead-action="delete">Archivar contacto</button>
           </div>
         </div>
       </td>
@@ -31724,13 +31778,14 @@ function renderLeadCrmTable() {
 async function deleteLeadContact(leadRef, label = "este contacto") {
   if (!leadRef?.id) return;
   const sourceType = leadRef.source_type || "PLAYER";
-  const confirmation = window.prompt(`Vas a eliminar ${label} del centro de contactos. Escribe ELIMINAR para confirmar.`);
-  if (confirmation !== "ELIMINAR") return;
+  const reason = window.prompt(`Archivar ${label}. Dejará de aparecer en contactos activos, pero su historial comercial se conservará. Motivo obligatorio:`);
+  if (!String(reason || "").trim()) return;
   try {
-    showFeedback("Eliminando contacto y limpiando la base unificada.", "loading", { title: "Contactos", timeout: 0 });
+    showFeedback("Archivando contacto sin borrar su historial.", "loading", { title: "Contactos", timeout: 0 });
     await api(`/api/business/leads/${encodeURIComponent(leadRef.id)}?source_type=${encodeURIComponent(sourceType)}`, {
       method: "DELETE",
       headers: authHeaders(),
+      body: JSON.stringify({ reason: String(reason).trim() }),
     });
     state.leadCrmRows = (state.leadCrmRows || []).filter((item) => String(item.id) !== String(leadRef.id) || String(item.source_type || "PLAYER") !== String(sourceType));
     state.contactFeed = (state.contactFeed || []).filter((item) => String(item.id) !== String(leadRef.id));
@@ -31753,9 +31808,9 @@ async function deleteLeadContact(leadRef, label = "este contacto") {
         : Promise.resolve(),
     ]);
     renderLeadsView();
-    showFeedback("Contacto eliminado del centro unificado.", "success", { title: "Contactos" });
+    showFeedback("Contacto archivado; su historial comercial permanece protegido.", "success", { title: "Contactos" });
   } catch (error) {
-    showFeedback(error.message, "error", { title: "No se pudo eliminar" });
+    showFeedback(error.message, "error", { title: "No se pudo archivar" });
   }
 }
 
@@ -32326,7 +32381,7 @@ function agendaCardMarkup(item = {}, options = {}) {
           <div class="lead-agenda-edit-actions">
             <button class="solid-button" type="submit">Guardar</button>
             <button class="ghost-button" type="button" data-agenda-cancel-edit>Cancelar</button>
-            <button class="ghost-button danger" type="button" data-agenda-delete="${escapeHtml(item.id || "")}">Eliminar</button>
+            <button class="ghost-button danger" type="button" data-agenda-delete="${escapeHtml(item.id || "")}">Cancelar tarea</button>
           </div>
         </form>
       </article>
@@ -32372,7 +32427,7 @@ function agendaCardMarkup(item = {}, options = {}) {
           ${done
             ? `<button class="ghost-button" type="button" data-agenda-status="${escapeHtml(item.id)}" data-next-status="OPEN">Reabrir</button>`
             : `<button class="solid-button" type="button" data-agenda-status="${escapeHtml(item.id)}" data-next-status="DONE">Hecha</button>`}
-          <button class="ghost-button danger" type="button" data-agenda-delete="${escapeHtml(item.id || "")}">Eliminar</button>
+          <button class="ghost-button danger" type="button" data-agenda-delete="${escapeHtml(item.id || "")}">Cancelar tarea</button>
         </div>
       </div>
     </article>
@@ -32437,7 +32492,7 @@ function agendaCompactCardMarkup(item = {}) {
       <div class="lead-agenda-mini-actions">
         <button class="ghost-button" type="button" data-agenda-edit="${escapeHtml(item.id || "")}">Editar</button>
         <button class="${isDone ? "ghost-button" : "solid-button"}" type="button" data-agenda-status="${escapeHtml(item.id || "")}" data-next-status="${isDone ? "OPEN" : "DONE"}">${isDone ? "Reabrir" : "Hecha"}</button>
-        <button class="ghost-button danger" type="button" data-agenda-delete="${escapeHtml(item.id || "")}">Eliminar</button>
+        <button class="ghost-button danger" type="button" data-agenda-delete="${escapeHtml(item.id || "")}">Cancelar tarea</button>
       </div>
     </article>
   `;
@@ -32776,18 +32831,19 @@ async function updateAgendaChecklistItem(noteId, index, checked) {
 
 async function deleteAgendaItem(noteId) {
   if (!noteId) return;
-  const confirmation = window.confirm("¿Eliminar esta tarea de la agenda?");
-  if (!confirmation) return;
+  const reason = window.prompt("Cancelar tarea de Agenda. La tarea y su historial se conservarán como cancelados. Motivo obligatorio:");
+  if (!String(reason || "").trim()) return;
   try {
     await api(`/api/business/leads/agenda/${encodeURIComponent(noteId)}`, {
       method: "DELETE",
       headers: authHeaders(),
+      body: JSON.stringify({ reason: String(reason).trim(), idempotency_key: `agenda-cancel-${noteId}` }),
     });
     state.editingAgendaId = null;
     await refreshLeadAgendaAfterMutation();
-    showFeedback("Tarea eliminada de la agenda.", "success");
+    showFeedback("Tarea cancelada; su historial se conserva.", "success");
   } catch (error) {
-    showFeedback(error.message || "No se pudo eliminar la tarea.", "error");
+    showFeedback(error.message || "No se pudo cancelar la tarea.", "error");
   }
 }
 
@@ -38847,15 +38903,17 @@ function renderAcquisitionChannelsView() {
 function renderSalesView() {
   ensureSalesAnalysisStyles();
   const campaign = state.selectedCampaign || {};
-  const allSales = state.selectedSales || [];
+  const allSales = salesRowsForAttributedSalesView();
   renderSalesAnalysisControls(allSales);
   const sales = filteredSalesForAnalysis(allSales);
-  const totalRevenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
-  const avgTicket = sales.length ? totalRevenue / sales.length : 0;
-  const allRevenue = allSales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
+  const reportingSales = sales.filter((item) => String(item.sale_status || "PAID").toUpperCase() !== "VOIDED");
+  const reportingAllSales = allSales.filter((item) => String(item.sale_status || "PAID").toUpperCase() !== "VOIDED");
+  const totalRevenue = reportingSales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
+  const avgTicket = reportingSales.length ? totalRevenue / reportingSales.length : 0;
+  const allRevenue = reportingAllSales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
   const topGroup = groupedSalesAnalysis(sales, state.salesAnalysisFilters?.group_by || "customer")[0];
   const items = [
-    ["Ventas filtradas", sales.length, money(totalRevenue)],
+    ["Ventas filtradas", reportingSales.length, money(totalRevenue)],
     ["Ticket promedio", money(avgTicket), "Promedio por venta"],
     ["Meta comercial", money(campaign.expected_sales_goal), `${safeRate(totalRevenue, campaign.expected_sales_goal || 1)}% cumplido`],
     ["Revenue visible", money(allRevenue), `${safeRate(totalRevenue, allRevenue || 1)}% en filtros`],
@@ -40568,7 +40626,9 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
   const confirmation = workflow.confirmation;
   const saleOrigin = confirmation.route === "NEGOTIATION_CLEAN" ? "Venta limpia confirmada desde Negociación" : "Venta protegida y liberada desde Riesgos de fuga";
   const defaultProduct = confirmation.product_name || rmsClassifiedProductName(item) || item.product_interest || "";
-  const inventory = (state.inventoryProducts || []).filter((product) => product.status !== "ARCHIVED").slice(0, 300);
+  // Cierre never guesses a catalog reference from a label. The confirmation is the
+  // canonical handoff and must be preselected before an operator can attribute payment.
+  const confirmedInventoryProductId = String(confirmation.inventory_product_id || "");
   return `
     <article class="rms-commercial-work-item rms-sale-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
       ${rmsCommercialLeadAsideMarkup(item, "Ventas atribuidas · evidencia de una compra real")}
@@ -40577,8 +40637,8 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
         <section class="rms-sale-trust-ribbon"><span class="material-symbols-outlined" aria-hidden="true">verified</span><div><strong>Venta lista para atribuir</strong><small>${escapeHtml(saleOrigin)}. Producto, valor y evidencia fueron precargados.</small></div></section>
         <header class="rms-commercial-console-head"><div><span class="mono-label">Compra confirmada</span><h4>Registra el pago y su rentabilidad</h4><p>La venta se atribuye a este contacto y a la ruta de Activación 1. Los costos son los que declare tu equipo.</p></div><span class="rms-commercial-state is-sale">Pago por registrar</span></header>
         <div class="rms-sale-form-grid">
-          <label><span>Producto del inventario</span><select data-rms-sale-product="${escapeHtml(item.id)}"><option value="">Producto o servicio no está en inventario</option>${inventory.map((product) => `<option value="${escapeHtml(product.id)}">${escapeHtml(product.name || "Producto")} · costo ${escapeHtml(money(product.cost_price || 0))}</option>`).join("")}</select></label>
-          <label><span>Producto o servicio vendido</span><input type="text" value="${escapeHtml(defaultProduct)}" data-rms-sale-product-name="${escapeHtml(item.id)}" placeholder="Ej.: Plan anual"></label>
+          <label><span>Producto del inventario</span><select data-rms-sale-product="${escapeHtml(item.id)}" aria-describedby="rms-sale-product-hint-${escapeHtml(item.id)}">${rmsInventoryProductPickerOptions(confirmedInventoryProductId, defaultProduct)}</select><small id="rms-sale-product-hint-${escapeHtml(item.id)}">${confirmedInventoryProductId ? "Producto confirmado en la negociación; verifica que corresponde al pago." : "Antes de registrar el pago, vincula el producto real desde el inventario."}</small></label>
+          <input type="hidden" value="${escapeHtml(defaultProduct)}" data-rms-sale-product-name="${escapeHtml(item.id)}">
           <label><span>Cantidad</span><input type="number" min="0.01" step="0.01" value="1" data-rms-sale-quantity="${escapeHtml(item.id)}"></label>
           <label><span>Dinero recibido</span><input type="number" min="1" step="0.01" value="${escapeHtml(confirmation.amount ?? "")}" data-rms-sale-amount="${escapeHtml(item.id)}" placeholder="0"></label>
           <label><span>Moneda</span><select data-rms-sale-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${currency === (confirmation.currency || "COP") ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
@@ -40603,14 +40663,21 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
 function rmsInventoryProductPickerOptions(selectedId = "", historicName = "") {
   const selected = String(selectedId || "");
   const option = (value, label, extra = "") => `<option value="${escapeHtml(value)}" ${selected === String(value) ? "selected" : ""} ${extra}>${escapeHtml(label)}</option>`;
-  const products = activeInventoryProducts().filter((product) => product.status === "ACTIVE");
+  const activeProducts = activeInventoryProducts().filter((product) => product.status === "ACTIVE");
+  // A product already committed in a commercial confirmation remains a valid
+  // historical reference even if the catalog entry was archived afterwards.
+  const selectedProduct = (state.inventoryProducts || []).find((product) => String(product.id) === selected);
+  const products = selectedProduct && !activeProducts.some((product) => String(product.id) === selected)
+    ? [selectedProduct, ...activeProducts]
+    : activeProducts;
   const historic = String(historicName || "").trim();
   return [
     option("", products.length ? "Selecciona producto o servicio del inventario" : "No hay productos activos en el inventario", "disabled"),
     ...products.map((product) => {
       const refs = [product.sku, product.category].filter(Boolean).join(" · ");
       const stock = product.stock_quantity === null || product.stock_quantity === undefined ? "" : ` · disponible ${Number(product.stock_quantity || 0).toLocaleString("es-CO")}`;
-      return option(product.id, `${product.name}${refs ? ` · ${refs}` : ""} · ${money(product.unit_price || 0)} ${product.currency || "COP"}${stock}`);
+      const archived = product.status && product.status !== "ACTIVE" ? " · histórico no disponible para nuevas selecciones" : "";
+      return option(product.id, `${product.name}${refs ? ` · ${refs}` : ""} · ${money(product.unit_price || 0)} ${product.currency || "COP"}${stock}${archived}`);
     }),
     ...(!selected && historic ? [option("", `Producto histórico sin vincular: ${historic}`, "disabled")] : []),
   ].join("");
@@ -40717,7 +40784,7 @@ function rmsIntelligenceStationMarkup(rows = []) {
   const durations = (learning.phase_durations || []).map((entry) => `<li><strong>${escapeHtml(entry.phase || "Fase")}</strong><span>${escapeHtml(entry.label || "Sin duración")}${entry.is_open ? " · en curso" : ""}</span></li>`).join("");
   const card = selectedItem ? `
     <section class="rms-intelligence-case-sheet">
-      <header><div><span class="mono-label">CASO INDIVIDUAL · HECHOS CONSOLIDADOS</span><h4>${escapeHtml(selectedItem.name || "Caso RMS")}</h4><p>${escapeHtml([profile.campaign_name || selectedItem.campaign_name, profile.channel || selectedItem.channel, profile.product_interest || selectedItem.product_interest].filter(Boolean).join(" · ") || "La ficha usa únicamente hechos guardados por la máquina.")}</p></div><span class="rms-commercial-state">${escapeHtml(caseData?.case?.current_phase || selectedItem.stage || "inteligencia")}</span></header>
+      <header><div><span class="mono-label">CASO INDIVIDUAL · HECHOS CONSOLIDADOS</span><h4>${escapeHtml(selectedItem.name || "Caso RMS")}</h4><p>${escapeHtml([profile.campaign_name || selectedItem.campaign_name, profile.channel || selectedItem.channel, profile.product_interest || selectedItem.product_interest].filter(Boolean).join(" · ") || "La ficha usa únicamente hechos guardados por la máquina.")}</p></div><span class="rms-commercial-state">${escapeHtml(caseData?.case?.current_operational_phase || selectedItem.operational_phase || selectedItem.stage || "sin estación")}</span></header>
       ${caseData ? `
         <dl class="rms-intelligence-facts"><div><dt>Mayor demora</dt><dd>${escapeHtml(learning.longest_phase ? `${learning.longest_phase.phase} · ${learning.longest_phase.label}` : "Aún no calculable")}</dd></div><div><dt>Reprocesos</dt><dd>${escapeHtml(String(learning.reprocess_count || 0))}</dd></div><div><dt>Objeción principal</dt><dd>${escapeHtml(learning.primary_objection || "No registrada")}</dd></div><div><dt>Riesgo o pérdida</dt><dd>${escapeHtml(learning.loss_or_risk_reason || "No registrado")}</dd></div><div><dt>Condición que permitió vender</dt><dd>${escapeHtml(learning.winning_condition || "No registrada")}</dd></div><div><dt>Valor atribuido</dt><dd>${escapeHtml(money(learning.attributed_value || 0))}</dd></div><div><dt>Activación 2</dt><dd>${escapeHtml((facts.post_sale_actions || []).map((action) => `${action.action_type} · ${rmsPostSaleActionStatusLabel(action.status)}`).join(" | ") || "Sin resultado registrado")}</dd></div><div><dt>Calidad del aprendizaje</dt><dd>${escapeHtml((learning.missing_fields || []).length ? `Faltan: ${(learning.missing_fields || []).join(", ")}` : "Ficha con hechos suficientes")}</dd></div></dl>
         <div class="rms-intelligence-case-columns"><section><h5>Línea de tiempo</h5><ol class="rms-intelligence-timeline">${timeline || "<li><strong>Sin eventos</strong><span>El caso aún no tiene eventos RMS legibles.</span></li>"}</ol></section><section><h5>Tiempo por estación</h5><ol class="rms-intelligence-durations">${durations || "<li><strong>Sin movimientos</strong><span>No hay duración disponible.</span></li>"}</ol></section></div>
@@ -40801,7 +40868,7 @@ function renderRmsStationLeanOnly() {
         </div>
         <div class="rms-lean-station-actions">
           ${phase === "recoleccion" ? `<button class="ghost-button compact" type="button" data-rms-open-collector><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Nuevo lead</button>` : ""}
-          ${isCommercialStation ? "" : `<button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> Listos</button><button class="solid-button compact" type="button" data-rms-lean-send="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente")} <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>`}
+          ${isCommercialStation ? "" : `<button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> Seleccionar con tarea pendiente</button>`}
         </div>
       </header>
       ${isCurationStation ? `
@@ -40845,7 +40912,7 @@ function renderRmsStationLeanOnly() {
         <span>${selectedRows.length.toLocaleString("es-CO")} seleccionados · ${eligibleRows.length.toLocaleString("es-CO")} listos · ${rows.length.toLocaleString("es-CO")} total</span>
       </div>
       ${isCommercialStation ? `
-        ${phase === "inteligencia" ? rmsIntelligenceStationMarkup(rows) : ""}
+        ${phase === "inteligencia" ? rmsIntelligenceStationMarkup(state.rmsIntelligenceCases || rows) : ""}
         ${phase !== "inteligencia" ? `
         ${phase === "control_anti_fuga" ? rmsRiskStationMetricsMarkup(rows, allOpportunities) : ""}
         ${phase === "control_anti_fuga" ? rmsRecyclingQueueMarkup(allOpportunities) : ""}
@@ -40892,11 +40959,6 @@ function renderRmsStationLeanOnly() {
     state.rmsMachineSelectedIds = eligibleRows.map((item) => item.id);
     renderRmsStationOnly();
   });
-  rmsStationWorkspace.querySelector("[data-rms-lean-send]")?.addEventListener("click", async () => {
-    if (!selectedRows.length || !nextPhase) return;
-    if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = nextPhase.key;
-    await moveSelectedRmsPhase();
-  });
   renderRmsBulkToolbar();
 }
 
@@ -40937,13 +40999,6 @@ function renderRmsMachineFilterOptions(stages = []) {
     const selected = state.rmsMachineFilters?.phase || "";
     rmsMachinePhaseFilter.innerHTML = options.join("");
     rmsMachinePhaseFilter.value = selected;
-  }
-  if (rmsBulkPhaseInput) {
-    const selected = rmsBulkPhaseInput.value || "";
-    rmsBulkPhaseInput.innerHTML = '<option value="">Mover a fase...</option>' + (stages || []).map((stage) => (
-      `<option value="${escapeHtml(stage.key)}">${escapeHtml(stage.label)}</option>`
-    )).join("");
-    if (selected) rmsBulkPhaseInput.value = selected;
   }
 }
 
@@ -42300,12 +42355,10 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   const commandActionsMarkup = isCollectorStation
     ? `
           <button class="ghost-button" type="button" data-rms-open-collector><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Ingresar lead manual</button>
-          <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar seleccionados a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente estación")}</button>
         `
     : `
           <button class="ghost-button compact" type="button" data-rms-station-clear-selection ${selectedRows.length ? "" : "disabled"}>Limpiar selección</button>
           <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">${escapeHtml(selectAllLabel)}</button>
-          <button class="solid-button" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin siguiente estación")}</button>
         `;
   rmsStationWorkspace.classList.remove("hidden");
   rmsStationWorkspace.hidden = false;
@@ -42385,20 +42438,6 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   rmsStationWorkspace.querySelector("[data-rms-station-select-all]")?.addEventListener("click", () => {
     selectRmsPhaseForBulk(phase);
   });
-  rmsStationWorkspace.querySelectorAll("[data-rms-station-bulk-next]").forEach((button) => button.addEventListener("click", async () => {
-    if (!rows.length || !nextPhase) return;
-    const selectedRows = rmsStationSelectedRows(phase, rows);
-    if (!selectedRows.length) {
-      const message = phase === "alimentacion"
-        ? "Primero asigna calidad alta, media o baja para poner leads en salida."
-        : "Primero chulea los leads hábiles en la entrada para ponerlos en salida.";
-      showFeedback(message, "info", { title: stage.label || "Estación RMS" });
-      return;
-    }
-    state.rmsMachineSelectedIds = selectedRows.map((item) => item.id);
-    if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = nextPhase.key;
-    await moveSelectedRmsPhase();
-  }));
   rmsStationWorkspace.querySelectorAll("[data-rms-move-next]").forEach((button) => {
     button.addEventListener("click", async () => {
       const item = rmsOpportunityById(button.dataset.rmsMoveNext);
@@ -42515,9 +42554,6 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
           <strong>${Number(selectedRows.length || 0).toLocaleString("es-CO")} ${escapeHtml(outputVerb)}</strong>
           <small>${escapeHtml(nextPhase ? `${eligibleRows.length} de ${rows.length} cumplen condiciones para ${nextPhase.label}.` : "Esta estación no tiene salida configurada.")}</small>
         </div>
-        ${showInlineSend ? `<button class="solid-button compact" type="button" data-rms-station-bulk-next="${escapeHtml(phase)}" ${selectedRows.length && nextPhase ? "" : "disabled"}>
-          ${escapeHtml(nextPhase ? `Enviar a ${nextPhase.short_label || nextPhase.label}` : "Sin salida")}
-        </button>` : ""}
       </div>
       ${selectedRows.length ? `
         <div class="rms-station-output-pills" aria-label="Leads seleccionados para salida">
@@ -43376,6 +43412,7 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-sale-product]").forEach((select) => {
     const id = select.dataset.rmsSaleProduct || "";
     select.addEventListener("change", () => {
+      select.setCustomValidity("");
       const product = findInventoryProductById(select.value || "");
       const nameInput = rmsCommercialNode(root, "[data-rms-sale-product-name]", id);
       const costInput = rmsCommercialNode(root, "[data-rms-sale-unit-cost]", id);
@@ -43622,7 +43659,7 @@ function openRmsStation(phase = "", options = {}) {
   if (phase === "inteligencia") {
     loadRmsIntelligenceData()
       .then(async () => {
-        const rows = rmsStationRows("inteligencia", state.rmsMachine?.opportunities || []);
+        const rows = state.rmsIntelligenceCases || [];
         const selected = rows.find((item) => rmsIntelligenceCaseKey(item) === state.rmsIntelligenceCaseKey) || rows[0];
         if (selected && state.rmsIntelligenceCaseKey !== rmsIntelligenceCaseKey(selected)) await loadRmsIntelligenceCase(selected);
       })
@@ -43638,7 +43675,7 @@ function openRmsStation(phase = "", options = {}) {
       .then(() => {
         if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
         if (phase === "inteligencia" && !state.rmsIntelligenceCaseKey) {
-          const selected = rmsStationRows("inteligencia", state.rmsMachine?.opportunities || [])[0];
+          const selected = (state.rmsIntelligenceCases || [])[0];
           if (selected) {
             loadRmsIntelligenceCase(selected)
               .then(() => renderRmsStationOnly())
@@ -43742,23 +43779,6 @@ function bindRmsStationOutputAction(container = rmsStationWorkspace) {
   const stage = stages.find((item) => item.key === phase) || {};
   const rows = rmsStationRows(phase, state.rmsMachine?.opportunities || []);
   const nextPhase = rmsStationNextPhase(stage, stages);
-  container?.querySelectorAll("[data-rms-station-bulk-next]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const selectedRows = rmsStationSelectedRows(phase, rows);
-      if (!selectedRows.length || !nextPhase) {
-        const message = phase === "alimentacion"
-          ? "Primero cualifica leads con calidad alta, media o baja."
-          : phase === "clasificacion"
-            ? "Primero envía y registra la oferta por WhatsApp o email antes de pasar a Evaluación."
-            : "Primero chulea los leads hábiles en la entrada.";
-        showFeedback(message, "info", { title: stage.label || "Estación RMS" });
-        return;
-      }
-      state.rmsMachineSelectedIds = selectedRows.map((item) => item.id);
-      if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = nextPhase.key;
-      await moveSelectedRmsPhase();
-    });
-  });
 }
 
 function updateRmsStationOutputPreview() {
@@ -44008,7 +44028,6 @@ function selectRmsPhaseForBulk(phase = "") {
     return;
   }
   state.rmsMachineSelectedIds = ids;
-  if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = "";
   if (state.rmsStationScreenOpen) renderRmsStationOnly();
   else renderRmsMachineView();
   showFeedback(`${ids.length.toLocaleString("es-CO")} clientes listos para: ${operation.primaryAction || "operar estación"}.`, "success", { title: stage?.label || "Estación RMS" });
@@ -44437,7 +44456,7 @@ async function executeRmsOperation(item = {}, options = {}) {
   }
 }
 
-async function executeRmsBulkOperation(options = {}) {
+async function executeRmsBulkOperation() {
   const ids = state.rmsMachineSelectedIds || [];
   if (!ids.length) {
     showFeedback("Selecciona clientes dentro de una estación.", "info", { title: "Máquina RMS" });
@@ -44445,26 +44464,34 @@ async function executeRmsBulkOperation(options = {}) {
   }
   try {
     showFeedback("Ejecutando operación masiva RMS...", "loading", { title: "Máquina RMS", timeout: 0 });
-    await api("/api/business/rms-machine/bulk-action", {
+    const result = await api("/api/business/rms-machine/bulk-action", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
         opportunity_ids: ids,
-        create_task: options.createTask !== false,
-        advance_phase: Boolean(options.advancePhase),
+        create_task: true,
       }),
     });
-    state.rmsMachineSelectedIds = [];
+    const failures = (result?.results || []).filter((entry) => entry?.error);
+    const completed = Number(result?.count || 0) - failures.length;
+    state.rmsMachineSelectedIds = failures.length ? ids : [];
     state.rmsMachineLoaded = false;
     await loadRmsMachineData({ force: true, quiet: true });
     renderRmsMachineView();
-    showFeedback("Operación masiva registrada. Las tareas quedaron en agenda.", "success", { title: "Máquina RMS" });
+    if (failures.length) {
+      const summary = failures.slice(0, 2).map((entry) => entry.error).filter(Boolean).join(" · ");
+      showFeedback(`${completed} tarea${completed === 1 ? "" : "s"} creada${completed === 1 ? "" : "s"}. ${failures.length} caso${failures.length === 1 ? "" : "s"} no se pudo procesar: ${summary || "revisa los requisitos."}`, "error", { title: "Máquina RMS" });
+      return;
+    }
+    showFeedback(`${completed} tarea${completed === 1 ? "" : "s"} creada${completed === 1 ? "" : "s"} en Agenda. Las decisiones de fase se confirman caso por caso.`, "success", { title: "Máquina RMS" });
   } catch (error) {
     showFeedback(error.message || "No se pudo ejecutar la operación masiva.", "error", { title: "Máquina RMS" });
   }
 }
 
 async function moveSelectedRmsPhase() {
+  showFeedback("Las transiciones RMS se confirman individualmente con la decisión y evidencia del caso.", "info", { title: "Máquina RMS" });
+  return;
   const ids = state.rmsMachineSelectedIds || [];
   const toPhase = rmsBulkPhaseInput?.value || "";
   if (!ids.length || !toPhase) {
@@ -44696,12 +44723,6 @@ function renderRmsLeadInspector() {
       <button class="ghost-button" type="button" data-rms-task="${escapeHtml(item.id)}">Crear tarea</button>
       <button class="ghost-button" type="button" data-rms-detail="${escapeHtml(item.id)}">Abrir ficha completa</button>
     </div>
-    <label class="rms-inspector-move">
-      <span>Mover a fase</span>
-      <select data-rms-inspector-move="${escapeHtml(item.id)}">
-        ${stages.map((stage) => `<option value="${escapeHtml(stage.key)}" ${stage.key === item.stage ? "selected" : ""}>${escapeHtml(stage.label)}</option>`).join("")}
-      </select>
-    </label>
     </section>
   `;
   bindRmsMachineActions(rmsLeadInspector);
@@ -44716,11 +44737,6 @@ function renderRmsLeadInspector() {
   };
   requestAnimationFrame(() => rmsLeadInspector.querySelector(".rms-inspector-modal-card")?.focus());
   rmsLeadInspector.querySelector("[data-rms-inspector-action]")?.addEventListener("click", () => executeRmsOperation(item, { createTask: true }));
-  rmsLeadInspector.querySelector("[data-rms-inspector-move]")?.addEventListener("change", async (event) => {
-    state.rmsMachineSelectedIds = [item.id];
-    if (rmsBulkPhaseInput) rmsBulkPhaseInput.value = event.target.value;
-    await moveSelectedRmsPhase();
-  });
 }
 
 function renderRmsEventLog(events = []) {
@@ -45886,10 +45902,17 @@ function rmsCommercialOperationKey(scope = "commercial", item = {}, signature = 
 
 async function saveRmsAttributedSale(item, root) {
   const draft = rmsSaleDraftFromDom(root, item.id);
+  const productSelect = rmsCommercialNode(root, "[data-rms-sale-product]", item.id);
   if (!draft.inventory_product_id || draft.sale_amount <= 0) {
+    if (!draft.inventory_product_id && productSelect) {
+      productSelect.setCustomValidity("Selecciona el producto real del inventario antes de atribuir la venta.");
+      productSelect.reportValidity();
+      productSelect.focus();
+    }
     showFeedback("Selecciona el producto confirmado del inventario y el dinero recibido para atribuir la venta.", "info", { title: "Ventas atribuidas" });
     return;
   }
+  if (productSelect) productSelect.setCustomValidity("");
   const result = await api("/api/business/rms-machine/attributed-sales", {
     method: "POST",
     headers: authHeaders(),
@@ -45897,7 +45920,10 @@ async function saveRmsAttributedSale(item, root) {
   });
   if (state.rmsAttributedSaleKeys) delete state.rmsAttributedSaleKeys[item.id];
   state.rmsMachineLoaded = false;
-  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "postventa" });
+  await Promise.all([
+    loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "postventa" }),
+    loadAttributedSalesView({ quiet: true }),
+  ]);
   showFeedback(result?.duplicate ? "Esta venta ya estaba registrada; no se duplicó." : "Venta atribuida registrada con sus costos, utilidad y ROI.", "success", { title: "Ventas atribuidas" });
   openRmsStation("postventa", { source: "attributed-sale" });
 }
@@ -45953,13 +45979,15 @@ function rmsIntelligenceInsightKey(source = {}) {
 
 async function loadRmsIntelligenceData(options = {}) {
   const patternParams = new URLSearchParams(Object.entries(state.rmsIntelligenceFilters || {}).filter(([, value]) => String(value || "").trim()));
-  const [patterns, insightData] = await Promise.all([
+  const [patterns, insightData, caseData] = await Promise.all([
     apiSafe(`/api/business/rms-machine/intelligence/patterns${patternParams.size ? `?${patternParams.toString()}` : ""}`, { headers: authHeaders() }, null),
     apiSafe("/api/business/rms-machine/intelligence/insights", { headers: authHeaders() }, { insights: [] }),
+    apiSafe("/api/business/rms-machine/intelligence/cases", { headers: authHeaders() }, { cases: [] }),
   ]);
   state.rmsIntelligencePatterns = patterns;
   state.rmsIntelligenceInsights = Array.isArray(insightData?.insights) ? insightData.insights : [];
-  return { patterns, insights: state.rmsIntelligenceInsights };
+  state.rmsIntelligenceCases = Array.isArray(caseData?.cases) ? caseData.cases : [];
+  return { patterns, insights: state.rmsIntelligenceInsights, cases: state.rmsIntelligenceCases };
 }
 
 async function loadRmsIntelligenceCase(itemOrKey) {
@@ -46038,10 +46066,10 @@ async function saveRmsPostSaleAction(item, root) {
   if (state.rmsPostSaleActionKeys) delete state.rmsPostSaleActionKeys[item.id];
   await Promise.all([
     loadRmsPostSaleActions({ force: true }),
-    loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: draft.send_to_intelligence ? "inteligencia" : "postventa" }),
+    loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "postventa" }),
   ]);
   showFeedback(result?.duplicate ? "Esta acción ya estaba registrada; no se duplicó el recurso ni la venta." : "Activación 2 registrada sobre la venta original.", "success", { title: "Activación 2" });
-  openRmsStation(draft.send_to_intelligence ? "inteligencia" : "postventa", { source: "post-sale-action" });
+  openRmsStation("postventa", { source: "post-sale-action" });
 }
 
 function rmsActivationDelivery(item = {}) {
@@ -47395,11 +47423,7 @@ rmsMachinePriorityFilter?.addEventListener("change", () => {
   state.rmsMachineLoaded = false;
   loadRmsMachineData({ force: true, quiet: true }).then(renderRmsMachineView);
 });
-rmsBulkExecuteButton?.addEventListener("click", () => executeRmsBulkOperation({ createTask: true, advancePhase: true }));
-rmsBulkCreateTasksButton?.addEventListener("click", () => executeRmsBulkOperation({ createTask: true, advancePhase: false }));
-rmsBulkPhaseInput?.addEventListener("change", () => {
-  if (rmsBulkPhaseInput.value) moveSelectedRmsPhase();
-});
+rmsBulkCreateTasksButton?.addEventListener("click", () => executeRmsBulkOperation());
 rmsBulkClearButton?.addEventListener("click", clearRmsSelection);
 rmsApplyRuleButton?.addEventListener("click", () => {
   const hasOpportunities = (state.rmsMachine?.opportunities || []).length > 0;

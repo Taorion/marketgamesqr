@@ -11721,6 +11721,30 @@ body[data-current-view="sales"] #salesDetailModal .sales-detail-section h4 {
   font-size: .98rem;
 }
 
+body[data-current-view="sales"] #salesDetailModal .sales-detail-danger-zone {
+  padding: 13px 14px;
+  border: 1px solid #f0c9c2;
+  border-radius: 12px;
+  background: #fff9f7;
+}
+
+body[data-current-view="sales"] #salesDetailModal .sales-detail-danger-zone p {
+  margin: 0;
+  color: #76514d;
+  line-height: 1.45;
+}
+
+body[data-current-view="sales"] #salesDetailModal .sales-detail-danger-zone [data-sales-void] {
+  margin-top: 4px;
+  border-color: #c96a5c;
+  color: #963e33;
+}
+
+body[data-current-view="sales"] #salesDetailModal .sales-detail-danger-zone [data-sales-void]:focus-visible {
+  outline: 3px solid rgba(201, 106, 92, .34);
+  outline-offset: 3px;
+}
+
 body[data-current-view="sales"] #salesDetailModal .sales-detail-products {
   gap: 8px;
 }
@@ -14085,3 +14109,94 @@ html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] 
 html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console :is(p, small, span, .rms-intelligence-facts dt) { color: #b9cbd6; }
 html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console :is(select, input, textarea) { border-color: #395c70; background: #091a28; color: #edf7fb; }
 html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-filter-grid { border-color: #315166; background: #102a3c; }
+
+/* Portal layout safety contract: shared final layer, no behavior changes. */
+:root {
+  --portal-content-max: 1520px;
+  --portal-gutter: clamp(16px, 2.2vw, 32px);
+  --portal-control-height: 42px;
+  --portal-line: rgba(20, 55, 90, .16);
+  --portal-popover: 1040;
+  --portal-modal: 1100;
+  --portal-toast: 1200;
+}
+
+html, body { max-width: 100%; }
+html body .portal-shell,
+html body .portal-shell *,
+html body > .modal-shell,
+html body > .modal-shell * { box-sizing: border-box; }
+
+/* Safe flex/grid children prevent long names, URLs and action labels from forcing a page width. */
+html body .portal-shell :is(.app-main, .content-shell, .view-section, .view-head, .campaign-head, .table-card-head, .surface-card, .data-table-card, .chart-card, .modal-card, .modal-head, .modal-form, .modal-actions, .lead-detail-card, .rms-commercial-work-console) { min-width: 0; }
+html body .portal-shell :is(.view-head, .campaign-head, .table-card-head, .modal-head, .modal-actions, .head-actions, .view-head-actions, .rms-station-row-actions, .rms-commercial-action-row) > * { min-width: 0; }
+html body .portal-shell :is(img, svg, video, canvas) { max-width: 100%; }
+html body .portal-shell .app-shell,
+html body .portal-shell .app-main { min-width: 0; max-width: 100%; }
+html body .portal-shell .content-shell { width: min(100%, var(--portal-content-max)); margin-inline: auto; padding-inline: var(--portal-gutter); }
+html body .portal-shell .view-section.active { min-width: 0; }
+
+html body .portal-shell :is(.view-head, .campaign-head, .table-card-head, .dashboard-builder-head, .lead-directory-head, .contact-center-head) { align-items: flex-start; gap: 14px; }
+html body .portal-shell :is(.view-head-actions, .campaign-head .head-actions, .lead-export-actions, .topbar-actions, .modal-actions, .table-actions, .rms-station-row-actions, .rms-commercial-action-row) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+html body .portal-shell :is(button, .solid-button, .ghost-button, .request-button, .nav-link-button, .link-button) { min-height: var(--portal-control-height); max-width: 100%; }
+html body .portal-shell :is(button, .solid-button, .ghost-button, .request-button, .nav-link-button, .link-button) > span:last-child { min-width: 0; }
+
+/* Tables retain readable column widths and expose an intentional horizontal scroll surface. */
+html body .portal-shell :is(.table-wrap, .data-table-scroll, .table-responsive) { display: block; max-width: 100%; overflow-x: auto; overflow-y: visible; overscroll-behavior-inline: contain; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; }
+html body .portal-shell :is(.table-wrap, .data-table-scroll, .table-responsive) > table { min-width: 720px; width: max-content; }
+html body .portal-shell table :is(th, td) { min-width: 110px; vertical-align: top; white-space: normal; overflow-wrap: normal; word-break: normal; }
+html body .portal-shell table :is(th:last-child, td:last-child) { min-width: 150px; }
+html body .portal-shell :is(.table-secondary, .table-muted, td small, td .muted) { overflow-wrap: anywhere; }
+
+html body .portal-shell :is(.form-grid, .modal-form, .sales-create-form, .sales-entry-modal-body, .rms-sale-form-grid, .rms-commercial-grid, .lead-form-grid) { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); min-width: 0; }
+html body .portal-shell :is(label, .form-field) { min-width: 0; }
+html body .portal-shell :is(input, select, textarea) { width: 100%; min-width: 0; max-width: 100%; min-height: var(--portal-control-height); }
+html body .portal-shell textarea { resize: vertical; }
+html body .portal-shell :is(.error-line, .form-message, .field-error, .validation-message) { position: static; overflow-wrap: anywhere; }
+
+/* One predictable overlay scale. Body-mounted selectors cover runtime modals. */
+html body .portal-shell :is(.dropdown, .select-menu, .autocomplete-menu, .tooltip, .popover) { z-index: var(--portal-popover); max-width: min(420px, calc(100vw - 24px)); }
+html body :is(.modal-shell, .modal-overlay, [role="dialog"]) { z-index: var(--portal-modal); }
+html body :is(.toast-container, .toast-stack, .feedback-stack, .notification-stack) { z-index: var(--portal-toast); }
+html body :is(.modal-shell:not(.hidden), .modal-overlay:not(.hidden)) { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+html body :is(.modal-shell .modal-card, .modal-overlay .modal-card, #salesEntryModalOverlay .sales-entry-modal-card, #salesDetailModal .sales-detail-card, #rmsNegotiationModal .rms-negotiation-card) { width: min(960px, 100%); max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); min-width: 0; overflow: hidden; }
+html body :is(.modal-shell .modal-form, .modal-overlay .modal-form, #salesEntryModalOverlay .sales-entry-modal-body, #salesDetailModal .sales-detail-body, #rmsNegotiationModal .rms-negotiation-form) { min-width: 0; max-height: min(70dvh, 760px); overflow: auto; overscroll-behavior: contain; }
+html body :is(.modal-shell .modal-head, .modal-overlay .modal-head, #salesEntryModalOverlay .sales-entry-modal-head) { flex-wrap: wrap; }
+
+/* RMS rails scroll locally; lead cards and commercial consoles remain shrink-safe. */
+html body[data-current-view="rms-machine"] .portal-shell :is(.rms-station-journey-nav, .rms-machine-stage-rail, .rms-stage-rail, .rms-station-clean-list) { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-gutter: stable; }
+html body[data-current-view="rms-machine"] .portal-shell :is(.rms-station-journey-track, .rms-stage-track, .rms-machine-stage-track) { width: max-content; min-width: 100%; }
+html body[data-current-view="rms-machine"] .portal-shell :is(.rms-station-entry-card, .rms-stage-column, .rms-station-lead-row, .rms-commercial-work-item, .rms-commercial-work-lead, .rms-commercial-work-console) { min-width: 0; }
+html body[data-current-view="rms-machine"] .portal-shell :is(.rms-station-lead-main strong, .rms-station-lead-main small, .rms-station-lead-context, .rms-station-lead-status, .rms-commercial-work-person, .rms-commercial-info-block dd, .rms-negotiation-signals small) { overflow-wrap: anywhere; white-space: normal; }
+html body[data-current-view="rms-machine"] .portal-shell :is(.rms-station-row-actions, .rms-commercial-action-row) { justify-content: flex-end; }
+
+html[data-theme="dark"] { --portal-line: rgba(190, 221, 244, .2); }
+html[data-theme="dark"] body .portal-shell :is(input, select, textarea) { border-color: var(--portal-line); }
+
+@media (max-width: 980px) {
+  html body .portal-shell .content-shell { padding-inline: clamp(14px, 3vw, 24px); }
+  html body .portal-shell :is(.view-head, .campaign-head, .table-card-head, .dashboard-builder-head, .lead-directory-head, .contact-center-head) { flex-direction: column; }
+  html body .portal-shell :is(.view-head-actions, .campaign-head .head-actions, .lead-export-actions, .topbar-actions) { width: 100%; }
+  html body[data-current-view="rms-machine"] .portal-shell :is(.rms-commercial-work-item, .rms-commercial-work-console, .rms-commercial-action-row) { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 620px) {
+  /* Overrides a legacy !important grid so credentials are reachable first on mobile. */
+  html body .portal-shell .login-experience { display: flex !important; flex-direction: column !important; }
+  html body .portal-shell .content-shell { padding-inline: 14px; }
+  html body .portal-shell .login-access-panel { order: -1 !important; }
+  html body .portal-shell :is(.topbar, .topbar-actions) { min-width: 0; }
+  html body .portal-shell .search-shell { min-width: 0; width: min(100%, 30rem); }
+  html body .portal-shell :is(.view-head-actions, .campaign-head .head-actions, .lead-export-actions, .modal-actions, .table-actions, .rms-station-row-actions, .rms-commercial-action-row) > :is(button, a) { flex: 1 1 150px; }
+  html body .portal-shell :is(.form-grid, .modal-form, .sales-create-form, .sales-entry-modal-body, .rms-sale-form-grid, .rms-commercial-grid, .lead-form-grid) { grid-template-columns: minmax(0, 1fr); }
+  html body .portal-shell :is(.table-wrap, .data-table-scroll, .table-responsive) > table { min-width: 640px; }
+  html body :is(.modal-shell .modal-card, .modal-overlay .modal-card, #salesEntryModalOverlay .sales-entry-modal-card, #salesDetailModal .sales-detail-card, #rmsNegotiationModal .rms-negotiation-card) { max-width: 100%; max-height: calc(100dvh - 16px); border-radius: 16px; }
+  html body :is(.modal-shell .modal-form, .modal-overlay .modal-form, #salesEntryModalOverlay .sales-entry-modal-body, #salesDetailModal .sales-detail-body, #rmsNegotiationModal .rms-negotiation-form) { max-height: calc(100dvh - 150px); }
+  html body[data-current-view="rms-machine"] .portal-shell :is(.rms-station-journey-track, .rms-stage-track, .rms-machine-stage-track) { min-width: max-content; }
+  html body[data-current-view="rms-machine"] .portal-shell :is(.rms-station-entry-card, .rms-stage-column) { width: min(78vw, 286px); }
+  html body[data-current-view="rms-machine"] .portal-shell :is(.rms-station-row-actions, .rms-commercial-action-row) { justify-content: stretch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body .portal-shell *, html body :is(.modal-shell, .modal-overlay) * { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}

@@ -10,6 +10,7 @@ const {
   requiresContactConsent,
   requiresResultForIntelligence,
 } = require("./rmsPostSalePolicy");
+const { normalizeIntelligenceLifecycleStatus } = require("./rmsIntelligenceLifecyclePolicy");
 const { randomBytes } = require("crypto");
 
 // Fuente única de verdad: conserva los IDs y ordena las transiciones comerciales.
@@ -38,7 +39,7 @@ const RMS_FLOW_NEXT_PHASE = Object.freeze({
   clasificacion: "procesamiento", preprocesamiento: "procesamiento",
   procesamiento: "accion_correctiva", accion_correctiva: "control_anti_fuga",
   control_anti_fuga: "cierre", cierre: "postventa",
-  revenue_generado: "postventa", postventa: "inteligencia",
+  revenue_generado: "postventa",
 });
 
 // These are server-only capabilities.  The generic phase endpoint must never
@@ -61,7 +62,6 @@ const RMS_PROTECTED_TRANSITIONS = Object.freeze({
     procesamiento: RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT,
     clasificacion: RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT,
     reciclaje: RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT,
-    inteligencia: RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT,
     control_anti_fuga: RMS_TRANSITION_AUTHORITY.COMMERCIAL_CONFIRMATION,
     cierre: RMS_TRANSITION_AUTHORITY.COMMERCIAL_CONFIRMATION,
   }),
@@ -69,13 +69,9 @@ const RMS_PROTECTED_TRANSITIONS = Object.freeze({
     cierre: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
     accion_correctiva: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
     reciclaje: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
-    inteligencia: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
   }),
   cierre: Object.freeze({
     postventa: RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE,
-  }),
-  postventa: Object.freeze({
-    inteligencia: RMS_TRANSITION_AUTHORITY.POST_SALE_ACTION,
   }),
 });
 
@@ -87,8 +83,8 @@ const LEGACY_PHASE_ALIASES = {
   decision: "procesamiento",
   convertido: "revenue_generado",
   recompra: "postventa",
-  fidelizacion: "inteligencia",
-  referido: "inteligencia",
+  fidelizacion: "postventa",
+  referido: "postventa",
   recuperacion: "accion_correctiva",
 };
 
@@ -214,7 +210,9 @@ const PHASE_OPERATIONS = {
     suggestedMaterialType: "agradecimiento_ticket_reward",
     materialLabel: "Agradecimiento, garantia, encuesta o ticket proxima compra",
     buttonLabel: "Activar postventa",
-    nextPhase: "inteligencia",
+    // Intelligence receives an analytical event; Postventa remains the lead's
+    // physical station until its own continuity work is complete.
+    nextPhase: null,
     agendaTaskType: "rebuy",
     whatsappTemplateKey: "rebuy",
   },
@@ -224,7 +222,8 @@ const PHASE_OPERATIONS = {
     suggestedMaterialType: "aprendizaje_metricas",
     materialLabel: "Campana, gancho, vendedor, ticket, fuga y recompra",
     buttonLabel: "Optimizar",
-    nextPhase: "recoleccion",
+    // This is a read-only analytical workspace, never a restart route.
+    nextPhase: null,
     agendaTaskType: "intelligence",
     whatsappTemplateKey: "loyalty",
   },
@@ -505,7 +504,7 @@ function deriveRmsPhase(row = {}) {
 
   if ((expiredTickets > 0 && purchases === 0) || staleDays > 60 || ["INACTIVE", "LOST"].includes(status)) return "accion_correctiva";
   if (activeTickets > 0 && staleDays >= 2 && purchases === 0) return "control_anti_fuga";
-  if (purchases >= 3 || redeemedTickets >= 3 || moneyNumber(row.total_spent) >= 3000000 || (row.is_affiliate && purchases > 0)) return "inteligencia";
+  if (purchases >= 3 || redeemedTickets >= 3 || moneyNumber(row.total_spent) >= 3000000 || (row.is_affiliate && purchases > 0)) return "postventa";
   if (purchases > 0) return "postventa";
   if (["CONVERTED", "BUYER"].includes(status) || redeemedTickets > 0) return "revenue_generado";
   if (["FOLLOW_UP", "CONTACTED"].includes(status) && hasContact) return "procesamiento";
@@ -1005,11 +1004,9 @@ function assertRmsPhaseTransition(fromPhase, toPhase, payload = {}) {
   const negotiatedException = from === "accion_correctiva"
     && ((payload.metadata?.negotiation_result === "REPROCESS" && ["procesamiento", "clasificacion"].includes(toPhase))
       || (payload.metadata?.negotiation_result === "RECYCLE" && toPhase === "reciclaje")
-      || (payload.metadata?.negotiation_result === "LOST" && toPhase === "inteligencia")
       || (payload.metadata?.commercial_route === "NEGOTIATION_CLEAN" && toPhase === "cierre"));
   const riskException = from === "control_anti_fuga"
-    && ((payload.metadata?.risk_result === "RECYCLE" && toPhase === "reciclaje")
-      || (payload.metadata?.risk_result === "LOST" && toPhase === "inteligencia"));
+    && (payload.metadata?.risk_result === "RECYCLE" && toPhase === "reciclaje");
   const recycleException = from === "reciclaje"
     && payload.metadata?.recycle_result === "REACTIVATED" && toPhase === "procesamiento";
   const allowed = from === "control_anti_fuga"
@@ -1024,7 +1021,7 @@ function assertRmsPhaseTransition(fromPhase, toPhase, payload = {}) {
       throw badRequest("El regreso a Negociación exige una decisión de recuperación y su razón.");
     }
   }
-  if (from === "accion_correctiva" && ["procesamiento", "clasificacion", "inteligencia", "reciclaje", "cierre"].includes(toPhase)) {
+  if (from === "accion_correctiva" && ["procesamiento", "clasificacion", "reciclaje", "cierre"].includes(toPhase)) {
     const allowed = payload.metadata?.negotiation_result === "REPROCESS" || payload.metadata?.negotiation_result === "RECYCLE" || payload.metadata?.negotiation_result === "LOST" || payload.metadata?.commercial_route === "NEGOTIATION_CLEAN";
     if (!allowed || !String(payload.reason || "").trim()) {
       throw badRequest("La salida de Negociación exige una decisión documentada y su razón.");
@@ -1043,8 +1040,8 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
   const sourceId = payload.source_id;
   const toPhase = normalizePhase(payload.to_phase || payload.rms_phase, "");
   if (!sourceId || !toPhase) throw badRequest("Faltan source_id o fase RMS.");
-  if (["preprocesamiento", "revenue_generado"].includes(toPhase)) {
-    throw badRequest("Los controles de calidad son solo visuales y no reciben movimientos RMS.");
+  if (["preprocesamiento", "revenue_generado", "inteligencia"].includes(toPhase)) {
+    throw badRequest("Los controles de calidad e Inteligencia son de consulta; no reciben movimientos RMS.");
   }
   const metadata = payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {};
   const result = await withTransaction(async (client) => {
@@ -1113,6 +1110,16 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
         JSON.stringify({ ...metadata, from_phase: fromPhase, to_phase: toPhase, movement_id: movement.rows[0].id }),
       ]
     );
+    await client.query(
+      `insert into rms_intelligence_case_events
+        (business_id, source_type, source_id, lead_id, event_type, operational_phase, lifecycle_status, payload, idempotency_key, created_by)
+       values ($1,$2,$3,$4,'phase_moved',$5,$6,$7::jsonb,$8,$9)
+       on conflict (business_id, idempotency_key) do nothing`,
+      [businessId, sourceType, sourceId, payload.lead_id || null, toPhase,
+        state.rows[0].lifecycle_status || "ACTIVE",
+        JSON.stringify({ from_phase: fromPhase, to_phase: toPhase, movement_id: movement.rows[0].id, reason: payload.reason || null }),
+        `rms-movement:${movement.rows[0].id}`, user.id]
+    );
     return { state: state.rows[0], movement: movement.rows[0] };
   });
   return result;
@@ -1120,10 +1127,10 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
 
 async function recordRmsWorkflowEvent(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
-  await query(
+  const event = await query(
     `insert into rms_machine_events
       (business_id, source_type, source_id, lead_id, event_type, event_title, event_description, rms_phase, operation_key, created_by, metadata)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)`,
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb) returning id`,
     [
       businessId, sourceType, payload.source_id, payload.lead_id || null,
       payload.event_type, payload.event_title, payload.event_description || null,
@@ -1131,6 +1138,81 @@ async function recordRmsWorkflowEvent(businessId, user, payload = {}) {
       JSON.stringify(payload.metadata || {}),
     ]
   );
+  const state = await query(
+    `select lifecycle_status from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
+    [businessId, sourceType, payload.source_id]
+  );
+  await query(
+    `insert into rms_intelligence_case_events
+      (business_id, source_type, source_id, lead_id, sale_id, event_type, operational_phase, lifecycle_status, payload, idempotency_key, created_by)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11)
+     on conflict (business_id, idempotency_key) do nothing`,
+    [businessId, sourceType, payload.source_id, payload.lead_id || null, payload.metadata?.sale_id || null,
+      payload.event_type, payload.rms_phase || null, state.rows[0]?.lifecycle_status || "ACTIVE",
+      JSON.stringify({ event_id: event.rows[0]?.id || null, ...(payload.metadata || {}) }),
+      `rms-event:${event.rows[0]?.id || `${sourceType}:${payload.source_id}:${Date.now()}`}`, user.id]
+  );
+  return event.rows[0] || null;
+}
+
+// Intelligence records lifecycle evidence without changing the lead's real
+// operating phase. That distinction prevents active cases from being absorbed
+// by an analytical screen.
+async function markRmsLifecycleStatus(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const sourceId = payload.source_id;
+  if (!sourceId) throw badRequest("Falta el caso para actualizar su ciclo analítico.");
+  let lifecycleStatus;
+  try {
+    lifecycleStatus = normalizeIntelligenceLifecycleStatus(payload.lifecycle_status);
+  } catch (error) {
+    throw badRequest(error.message);
+  }
+  return withTransaction(async (client) => {
+    const current = await client.query(
+      `select * from rms_lead_state
+        where business_id = $1 and source_type = $2 and source_id = $3 for update`,
+      [businessId, sourceType, sourceId]
+    );
+    if (!current.rowCount) throw notFound("No encontramos el estado RMS de este caso.");
+    const operationalPhase = current.rows[0].rms_phase;
+    const detail = String(payload.reason || payload.description || "Resultado analítico actualizado.").trim();
+    const eventKey = String(payload.idempotency_key || `lifecycle:${sourceType}:${sourceId}:${lifecycleStatus}:${payload.event_type || "updated"}`);
+    const duplicate = await client.query(
+      `select id from rms_intelligence_case_events where business_id = $1 and idempotency_key = $2 for update`,
+      [businessId, eventKey]
+    );
+    if (duplicate.rowCount) {
+      return { state: current.rows[0], operational_phase: operationalPhase, lifecycle_status: current.rows[0].lifecycle_status, duplicate: true };
+    }
+    const state = await client.query(
+      `update rms_lead_state set lifecycle_status = $4, intelligence_updated_at = now(),
+          metadata = coalesce(metadata, '{}'::jsonb) || $5::jsonb, updated_by = $6, updated_at = now()
+       where business_id = $1 and source_type = $2 and source_id = $3 returning *`,
+      [businessId, sourceType, sourceId, lifecycleStatus, JSON.stringify({
+        lifecycle_status: lifecycleStatus, lifecycle_reason: detail, lifecycle_updated_at: new Date().toISOString(),
+      }), user.id]
+    );
+    await client.query(
+      `insert into rms_machine_events
+        (business_id, source_type, source_id, lead_id, event_type, event_title, event_description, rms_phase, operation_key, created_by, metadata)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,'intelligence_projection',$9,$10::jsonb)`,
+      [businessId, sourceType, sourceId, payload.lead_id || current.rows[0].lead_id || null,
+        payload.event_type || "intelligence_lifecycle_updated", payload.event_title || "Ficha de Inteligencia actualizada",
+        detail, operationalPhase, user.id,
+        JSON.stringify({ lifecycle_status: lifecycleStatus, sale_id: payload.sale_id || null, analytical_only: true })]
+    );
+    await client.query(
+      `insert into rms_intelligence_case_events
+        (business_id, source_type, source_id, lead_id, sale_id, event_type, operational_phase, lifecycle_status, payload, idempotency_key, created_by)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11)
+       on conflict (business_id, idempotency_key) do nothing`,
+      [businessId, sourceType, sourceId, payload.lead_id || current.rows[0].lead_id || null, payload.sale_id || null,
+        payload.event_type || "intelligence_lifecycle_updated", operationalPhase, lifecycleStatus,
+        JSON.stringify({ reason: detail, ...(payload.metadata || {}) }), eventKey, user.id]
+    );
+    return { state: state.rows[0], operational_phase: operationalPhase, lifecycle_status: lifecycleStatus };
+  });
 }
 
 const RMS_EVALUATION_ROUTES = {
@@ -1155,8 +1237,8 @@ const RMS_EVALUATION_ROUTES = {
     action: "Programar nutrición y seguimiento sin presionar la compra",
   },
   NOT_QUALIFIED: {
-    phase: "inteligencia",
-    label: "Inteligencia RMS",
+    phase: "procesamiento",
+    label: "Evaluación cerrada",
     action: "Conservar el aprendizaje y excluir el caso de la presión comercial",
   },
 };
@@ -1262,6 +1344,15 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
       rms_evaluation_destination: evaluation.destination,
     },
   }, RMS_TRANSITION_AUTHORITY.EVALUATION);
+  if (response === "NOT_QUALIFIED") {
+    await markRmsLifecycleStatus(businessId, user, {
+      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+      lifecycle_status: "LOST_ANALYZED", event_type: "evaluation_loss_analyzed",
+      event_title: "Pérdida documentada para Inteligencia", reason: note,
+      idempotency_key: `evaluation-loss:${payload.idempotency_key || `${sourceType}:${payload.source_id}`}`,
+      metadata: { rms_evaluation: evaluation },
+    });
+  }
   if (response === "PAID_SALE") {
     await recordRmsWorkflowEvent(businessId, user, {
       source_type: sourceType,
@@ -1458,7 +1549,7 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
     );
     cancelledAgendaCount = Number(cancelled.rowCount || 0);
   }
-  const toPhase = result === "REPROCESS" ? payload.reprocess_phase : result === "RECYCLE" ? "reciclaje" : result === "LOST" ? "inteligencia" : "accion_correctiva";
+  const toPhase = result === "REPROCESS" ? payload.reprocess_phase : result === "RECYCLE" ? "reciclaje" : "accion_correctiva";
   let agenda = null;
   if (["WAITING", "NO_RESPONSE", "RECYCLE"].includes(result)) {
     agenda = await createRmsAgendaTask(businessId, user, {
@@ -1486,6 +1577,21 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
       source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
       event_type: "lead_sent_to_recycling", event_title: "Lead enviado a Reciclaje comercial", event_description: reason,
       rms_phase: "reciclaje", metadata: { reactivate_at: nextAt, strategy: payload.recycle_strategy || "NEW_CONTACT", movement_id: movement.movement?.id || null },
+    });
+  }
+  if (result === "LOST") {
+    await markRmsLifecycleStatus(businessId, user, {
+      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+      lifecycle_status: "LOST_ANALYZED", event_type: "negotiation_loss_analyzed",
+      event_title: "Pérdida de Negociación analizada", reason,
+      idempotency_key: `negotiation-loss:${payload.idempotency_key || `${sourceType}:${payload.source_id}`}`,
+      metadata: { negotiation_round: round, lost_classification: payload.lost_classification },
+    });
+    await markRmsLifecycleStatus(businessId, user, {
+      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+      lifecycle_status: "RECYCLED", event_type: "negotiation_recycled_analyzed",
+      event_title: "Reciclaje incorporado a Inteligencia", reason,
+      idempotency_key: `negotiation-recycle:${round.id}`, metadata: { negotiation_round: round },
     });
   }
   return { round, agenda, ...movement };
@@ -1541,7 +1647,7 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
       revenue_potential: confirmation?.amount || item.revenue_potential, metadata: { rms_risk_review: review },
     });
   }
-  const toPhase = isCleared ? "cierre" : result === "RETURN_TO_NEGOTIATION" ? "accion_correctiva" : result === "RECYCLE" ? "reciclaje" : result === "LOST" ? "inteligencia" : "control_anti_fuga";
+  const toPhase = isCleared ? "cierre" : result === "RETURN_TO_NEGOTIATION" ? "accion_correctiva" : result === "RECYCLE" ? "reciclaje" : "control_anti_fuga";
   const movement = await moveRmsLeadPhase(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     to_phase: toPhase, priority: isCleared ? "HIGH" : result === "LOST" ? "LOW" : "URGENT",
@@ -1558,6 +1664,15 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     event_description: reason, rms_phase: toPhase,
     metadata: { risk_review: review, movement_id: movement.movement?.id || null, task_id: agenda?.item?.id || null },
   });
+  if (result === "LOST") {
+    await markRmsLifecycleStatus(businessId, user, {
+      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+      lifecycle_status: "LOST_ANALYZED", event_type: "risk_loss_analyzed",
+      event_title: "Pérdida en Riesgos de fuga analizada", reason,
+      idempotency_key: `risk-loss:${payload.idempotency_key || `${sourceType}:${payload.source_id}`}`,
+      metadata: { risk_review: review },
+    });
+  }
   return { review, agenda, ...movement };
 }
 
@@ -1580,6 +1695,13 @@ async function reactivateRmsRecycledLead(businessId, user, payload = {}) {
     event_type: "recycled_lead_reactivated", event_title: `Lead reciclado reactivado hacia ${destinationLabel}`, event_description: note,
     rms_phase: destination, metadata: { movement_id: movement.movement?.id || null, destination },
   });
+  await markRmsLifecycleStatus(businessId, user, {
+    source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+    lifecycle_status: "ACTIVE", event_type: "recycled_lead_reactivated_analyzed",
+    event_title: "Reciclaje reactivado", reason: note,
+    idempotency_key: `recycle-reactivated:${movement.movement?.id || `${sourceType}:${payload.source_id}:${destination}`}`,
+    metadata: { destination },
+  });
   return movement;
 }
 
@@ -1591,6 +1713,9 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
   if (item.stage !== "cierre") throw badRequest("La venta solo puede atribuirse desde una venta limpia confirmada o una revisión anti-fuga liberada.");
+  if (!payload.inventory_product_id) {
+    throw badRequest("Selecciona el producto o servicio real del inventario antes de registrar la venta atribuida.");
+  }
   const currentState = await query(
     `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
     [businessId, sourceType, payload.source_id]
@@ -1913,16 +2038,21 @@ async function recordRmsPostSaleAction(businessId, user, payload = {}) {
     );
   }
   const current = (await listRmsPostSaleActions(businessId, { sale_id: created.sale.id })).actions.find((entry) => entry.id === created.action.id) || created.action;
-  let movement = null;
+  let intelligence = null;
   if (payload.send_to_intelligence) {
-    if (!requiresResultForIntelligence(current)) throw badRequest("Registra un resultado verificable antes de enviar este caso a Inteligencia.");
-    movement = await moveRmsLeadPhase(businessId, user, {
-      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || null, to_phase: "inteligencia",
-      reason: current.result_note || current.evidence, last_operation: "activation_2_result_sent_to_intelligence",
+    if (!requiresResultForIntelligence(current)) throw badRequest("Registra un resultado verificable antes de actualizar Inteligencia.");
+    intelligence = await markRmsLifecycleStatus(businessId, user, {
+      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || null, sale_id: created.sale.id,
+      lifecycle_status: "CYCLE_ANALYZED", event_type: "activation_2_result_analyzed",
+      event_title: "Resultado de Activación 2 incorporado a Inteligencia",
+      reason: current.result_note || current.evidence,
+      idempotency_key: `post-sale-analysis:${current.id}:${current.status}`,
       metadata: { rms_post_sale_action_id: current.id, sale_id: created.sale.id, activation_2_status: current.status },
-    }, RMS_TRANSITION_AUTHORITY.POST_SALE_ACTION);
+    });
   }
-  return { ...created, action: current, resource, movement };
+  // Keep the former response field for API compatibility. It is always null:
+  // Intelligence no longer owns a phase movement.
+  return { ...created, action: current, resource, movement: null, intelligence };
 }
 
 async function createRmsAgendaTask(businessId, user, payload = {}) {
@@ -2065,6 +2195,9 @@ async function executeRmsAction(businessId, user, payload = {}) {
 }
 
 async function executeRmsBulkAction(businessId, user, payload = {}) {
+  if (payload.advance_phase) {
+    throw badRequest("Las transiciones RMS requieren una decisión individual con evidencia; la operación masiva solo puede crear tareas.");
+  }
   const ids = Array.isArray(payload.opportunity_ids) ? payload.opportunity_ids.slice(0, 40) : [];
   if (!ids.length) throw badRequest("Selecciona al menos una oportunidad RMS.");
   const results = [];

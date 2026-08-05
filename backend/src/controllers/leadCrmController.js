@@ -65,6 +65,16 @@ const agendaUpdateSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
+const agendaCancelSchema = z.object({
+  reason: z.string().trim().min(3).max(1000),
+  idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
+});
+
+const contactArchiveSchema = z.object({
+  reason: z.string().trim().min(3).max(1000),
+  idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
+});
+
 const interestSchema = z.object({
   interest_name: z.string().trim().min(2).max(120),
   source: z.enum(["manual", "purchase", "game", "trivia", "campaign", "benefit", "system"]).default("manual"),
@@ -187,7 +197,8 @@ async function updateAgendaItem(req, res, next) {
 
 async function deleteAgendaItem(req, res, next) {
   try {
-    res.json(await deleteLeadAgendaItem(businessIdFor(req), req.user, req.params.noteId));
+    const body = validate(agendaCancelSchema, req.body || {});
+    res.json(await deleteLeadAgendaItem(businessIdFor(req), req.user, req.params.noteId, body));
   } catch (error) {
     next(error);
   }
@@ -256,11 +267,13 @@ async function removeInterest(req, res, next) {
 
 async function deleteContact(req, res, next) {
   try {
+    const body = validate(contactArchiveSchema, req.body || {});
     res.json(await deleteLeadContact(
       businessIdFor(req),
       req.user,
       req.params.leadId,
-      String(req.query.source_type || "PLAYER").toUpperCase()
+      String(req.query.source_type || "PLAYER").toUpperCase(),
+      body
     ));
   } catch (error) {
     next(error);
