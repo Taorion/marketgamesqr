@@ -12536,6 +12536,125 @@ html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="closing"] :is(i
 }
 
 /* Estacion 07 · Negociacion. Alcance exclusivo: accion_correctiva / recovery. */
+/* Cierre: evita cruces entre iconos, etiquetas, métricas y la acción final. */
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-work-console {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-deal-progress ol {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-deal-progress li,
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-trust-ribbon {
+  display: grid !important;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: start !important;
+  min-width: 0;
+  gap: 8px !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item :is(.rms-deal-progress li span, .rms-sale-trust-ribbon > div, .rms-commercial-action-row small, [data-rms-save-attributed-sale] > span:last-child) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item :is(.rms-deal-progress li b, .rms-sale-trust-ribbon > .material-symbols-outlined, .rms-commercial-action-row .material-symbols-outlined, [data-rms-save-attributed-sale] > .material-symbols-outlined) {
+  flex: 0 0 auto;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-trust-ribbon small {
+  display: block;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid > label {
+  min-width: 0;
+  grid-column: span 3;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid > label:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(7)) {
+  grid-column: span 6;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid :is(input, select) {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-economics {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-economics div {
+  min-width: 0;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-action-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 330px);
+  align-items: center !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-action-row small {
+  display: grid !important;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] [data-rms-save-attributed-sale] {
+  min-width: 0;
+  white-space: normal;
+}
+
+@media (max-width: 1120px) {
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid > label {
+    grid-column: span 3;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid > label:is(:nth-child(1), :nth-child(2), :nth-child(4), :nth-child(7)) {
+    grid-column: span 6;
+  }
+}
+
+@media (max-width: 768px) {
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-deal-progress ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-action-row {
+    grid-template-columns: 1fr;
+    align-items: stretch !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] [data-rms-save-attributed-sale] {
+    width: 100%;
+  }
+}
+
+@media (max-width: 620px) {
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-deal-progress ol,
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid,
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-economics {
+    grid-template-columns: 1fr !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid > label {
+    grid-column: auto;
+  }
+}
+
 #rmsStationWorkspace[data-station-theme="recovery"] {
   --rms-recovery-ink: #183a59;
   --rms-recovery-muted: #63798b;
