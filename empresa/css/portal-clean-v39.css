@@ -12534,3 +12534,567 @@ html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="closing"] :is(i
   background: #091d2c !important;
   color: #edf7fa !important;
 }
+
+/* Estacion 07 · Negociacion. Alcance exclusivo: accion_correctiva / recovery. */
+#rmsStationWorkspace[data-station-theme="recovery"] {
+  --rms-recovery-ink: #183a59;
+  --rms-recovery-muted: #63798b;
+  --rms-recovery-line: #d7e2e9;
+  --rms-recovery-blue: #0b5eaa;
+  --rms-recovery-copper: #a85b32;
+  --rms-recovery-copper-soft: #fff3ea;
+  --rms-recovery-gold-soft: #fff8e8;
+  --rms-recovery-canvas: #f7fafc;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station {
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--rms-recovery-line);
+  border-top: 4px solid #b36a3d;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fffdfa 0%, var(--rms-recovery-canvas) 56%, #f8fbfd 100%);
+  color: var(--rms-recovery-ink);
+  box-shadow: 0 16px 36px rgba(25, 53, 76, .08);
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-head {
+  align-items: center;
+  padding-bottom: 17px;
+  border-bottom-color: #dce5ea;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-title {
+  min-width: 0;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-title .mono-label {
+  color: #9a542e !important;
+  font-weight: 850;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-title h3 {
+  color: var(--rms-recovery-ink) !important;
+  letter-spacing: -.025em;
+}
+
+/* El objetivo real activo: acordar una condicion verificable. */
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-title p {
+  max-width: 66ch;
+  margin-top: 7px;
+  padding-left: 12px;
+  border-left: 3px solid var(--rms-recovery-copper);
+  color: #486579 !important;
+  font-weight: 700;
+  line-height: 1.48;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-media {
+  border-color: rgba(168, 91, 50, .25) !important;
+  background: radial-gradient(circle at 72% 22%, #ffe9d5 0 18%, transparent 19%), #f6fbff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-symbol {
+  color: #a75b32 !important;
+}
+
+/* Barra de mando: preparacion y trazabilidad, sin salida masiva. */
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-tools {
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #d9e4ea;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 5px 14px rgba(26, 55, 77, .04);
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-tools label {
+  min-width: min(330px, 100%);
+  border-color: #c1d1dc !important;
+  background: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-tools > select {
+  min-width: 210px;
+  border-color: #c1d1dc !important;
+  background: #fff !important;
+  color: #244861 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-tools > span {
+  align-self: center;
+  padding: 7px 10px;
+  border: 1px solid #e6c7aa;
+  border-radius: 999px;
+  background: var(--rms-recovery-copper-soft);
+  color: #7b492a !important;
+  font-size: .76rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] :is(input, select, textarea) {
+  border-color: #bdced8 !important;
+  background: #fff !important;
+  color: #1b405b !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] :is(input, select, textarea):focus-visible,
+#rmsStationWorkspace[data-station-theme="recovery"] :is(button, a):focus-visible {
+  outline: 3px solid rgba(34, 113, 169, .36) !important;
+  outline-offset: 2px;
+}
+
+/* Mesa efectiva: contexto heredado, condicion, salud y decision en una secuencia legible. */
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item {
+  overflow: hidden;
+  border: 1px solid #d5e2e9 !important;
+  border-radius: 17px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 20px rgba(27, 55, 77, .06) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item:hover {
+  border-color: #d3a574 !important;
+  box-shadow: 0 13px 27px rgba(116, 69, 36, .09) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-work-lead {
+  position: relative;
+  border: 0 !important;
+  border-right: 1px solid rgba(214, 192, 166, .42) !important;
+  background: linear-gradient(160deg, #103e67 0%, #14536d 100%) !important;
+  color: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-work-lead::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #d18a52;
+  content: "";
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-work-lead :is(strong, dd) {
+  color: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-work-lead :is(small, dt, .rms-commercial-work-kicker) {
+  color: #e3f0f5 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-activation-work-actions .ghost-button {
+  border-color: rgba(233, 244, 248, .46) !important;
+  background: transparent !important;
+  color: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-activation-work-actions .ghost-button:hover {
+  border-color: #f3d5bc !important;
+  background: rgba(255, 255, 255, .12) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-work-console {
+  padding: 25px !important;
+  background: #fbfdfe !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-deal-progress {
+  margin: 0 0 16px !important;
+  padding: 0 0 15px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #dae5eb !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-deal-progress li.is-done b {
+  background: #e5f4f1 !important;
+  color: #17756d !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-deal-progress li.is-active {
+  color: #a25930 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-deal-progress li.is-active b {
+  background: #a85b32 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-intent-strip {
+  margin: 0 0 16px !important;
+  border-color: #e3c5a4 !important;
+  border-left-color: #af6638 !important;
+  border-radius: 11px !important;
+  background: linear-gradient(90deg, #fff4ea, #fffdfa) !important;
+  color: #724527 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-intent-strip .material-symbols-outlined {
+  color: #a45a30 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-console-head {
+  padding-bottom: 16px !important;
+  border-bottom-color: #dae5eb !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-console-head h4 {
+  color: #193e5b !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-console-head p {
+  color: #5b7486 !important;
+  line-height: 1.52 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-state.is-pending {
+  border-color: #e2c29a !important;
+  background: #fff6e9 !important;
+  color: #835027 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item :is(.rms-negotiation-context-block, .rms-negotiation-condition-block, .rms-negotiation-decision-block) {
+  padding: 17px 0 !important;
+  border-top-color: #dce6eb !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-decision-block {
+  margin-top: 5px !important;
+  padding: 16px !important;
+  border: 1px solid #d7bd9d !important;
+  border-radius: 13px !important;
+  background: #fffaf5 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item :is(.rms-negotiation-context-block, .rms-negotiation-condition-block, .rms-negotiation-decision-block) h5 {
+  color: #254d68 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-context-block dl > div {
+  border-color: #dce7ec !important;
+  background: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-context-block :is(dt, dd) {
+  overflow-wrap: anywhere;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-context-block dt {
+  color: #648095 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-context-block dd {
+  color: #234860 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-sale-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px 14px !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item :is(.rms-sale-form-grid label, .rms-commercial-note-field) {
+  color: #577286 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item :is(.rms-sale-form-grid label, .rms-commercial-note-field) > span {
+  font-size: .69rem;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item :is(.rms-sale-form-grid :is(input, select), .rms-commercial-note-field textarea) {
+  min-height: 42px;
+  border-color: #bfced8 !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item :is(.rms-sale-form-grid :is(input, select), .rms-commercial-note-field textarea):hover {
+  border-color: #9ab9cc !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-health {
+  padding: 17px 0 !important;
+  border-top-color: #dce6eb !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-clean-checklist li {
+  border-color: #d6e4e8 !important;
+  background: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-clean-checklist li.is-ready {
+  border-color: #b9ded2 !important;
+  background: #f1faf7 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-clean-checklist li.is-risk {
+  border-color: #e5c79d !important;
+  background: #fff9ee !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-route-preview {
+  border-color: #d9bb99 !important;
+  border-left: 4px solid #ac6236 !important;
+  border-radius: 11px !important;
+  background: #fff7ef !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-route-preview :is(strong, small) {
+  color: #6a472c !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-history {
+  border-top-color: #dce6eb !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-negotiation-history li::before {
+  background: #b56b3e !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-action-row {
+  gap: 13px !important;
+  margin-top: 16px !important;
+  padding: 13px 14px !important;
+  border: 1px solid #d5c09e !important;
+  border-radius: 12px !important;
+  background: #fffdf9 !important;
+  box-shadow: none !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-action-row small {
+  color: #5a7182 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] [data-rms-save-negotiation-decision],
+#rmsStationWorkspace[data-station-theme="recovery"] [data-rms-negotiation-case] {
+  border-color: #0b5d9f !important;
+  background: #0b5d9f !important;
+  color: #fff !important;
+  box-shadow: 0 8px 16px rgba(11, 93, 159, .18) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] :is([data-rms-save-negotiation-decision], [data-rms-negotiation-case]):hover {
+  border-color: #084575 !important;
+  background: #084575 !important;
+}
+
+/* Cola compacta y estados solicitados: solo se aplican si esa variante se monta. */
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-station-lead-row.is-accion_correctiva {
+  border-color: #d6e3ea !important;
+  background: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-station-lead-row.is-accion_correctiva:hover,
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-station-lead-row.is-accion_correctiva:focus-visible {
+  border-color: #d3a274 !important;
+  background: #fffaf5 !important;
+  box-shadow: inset 3px 0 0 #b76c3e, 0 9px 18px rgba(113, 68, 37, .07) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-station-lead-row.is-accion_correctiva :is(.rms-station-lead-name, .rms-station-lead-context span) {
+  color: #234a65 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-station-lead-row.is-accion_correctiva small {
+  color: #6a8191 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-row-action {
+  border: 1px solid #d8e2e8 !important;
+  border-radius: 999px !important;
+  background: #f6f9fb !important;
+  color: #557083 !important;
+  font-weight: 800;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-row-action.status-waiting {
+  border-color: #e6c98d !important;
+  background: #fff8e8 !important;
+  color: #8a601b !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-row-action.status-accepted {
+  border-color: #b8ddcf !important;
+  background: #f0faf6 !important;
+  color: #177056 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-row-action.status-risk {
+  border-color: #e5c49c !important;
+  background: #fff4e8 !important;
+  color: #99562f !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-row-action.status-lost {
+  border-color: #dfc7c4 !important;
+  background: #fbf5f4 !important;
+  color: #7d5b59 !important;
+}
+
+/* El modal no existe en el render actual; estas reglas quedan acotadas a su ID si se monta. */
+#rmsNegotiationModal .rms-negotiation-card {
+  width: min(1040px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  border: 1px solid #cbdce6;
+  border-top: 4px solid #b66a3c;
+  border-radius: 19px;
+  background: #fbfdfe;
+  box-shadow: 0 28px 72px rgba(14, 41, 61, .32);
+}
+
+#rmsNegotiationModal .rms-negotiation-context {
+  border-color: #d7e3e9;
+  border-left: 4px solid #a96035;
+  border-radius: 12px;
+  background: #fff8f1;
+  color: #385b71;
+}
+
+#rmsNegotiationModal :is(.rms-negotiation-form, .rms-commercial-grid) {
+  gap: 13px;
+}
+
+#rmsNegotiationModal :is(input, select, textarea) {
+  border-color: #bdced8;
+  border-radius: 10px;
+  background: #fff;
+  color: #1c425d;
+}
+
+#rmsNegotiationModal :is(input, select, textarea):focus-visible,
+#rmsNegotiationModal :is(button, a):focus-visible {
+  outline: 3px solid rgba(35, 112, 165, .38);
+  outline-offset: 2px;
+}
+
+#rmsNegotiationModal .solid-button[type="submit"] {
+  border-color: #0b5d9f;
+  background: #0b5d9f;
+  box-shadow: 0 8px 16px rgba(11, 93, 159, .18);
+}
+
+#rmsNegotiationModal .ghost-button {
+  border-color: #c6d6df;
+  background: #fff;
+  color: #426276;
+}
+
+@media (max-width: 1120px) {
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-work-lead {
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(214, 192, 166, .42) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-title {
+    grid-template-columns: 48px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-media {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-head,
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-tools {
+    align-items: stretch;
+  }
+
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station-tools > select {
+    min-width: 0;
+  }
+
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-work-console {
+    padding: 19px 16px !important;
+  }
+}
+
+@media (max-width: 620px) {
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item :is(.rms-sale-form-grid, .rms-negotiation-context-block dl, .rms-negotiation-clean-checklist) {
+    grid-template-columns: 1fr !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-confirmation-work-item .rms-commercial-action-row button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-station-lead-row.is-accion_correctiva {
+    min-width: 700px;
+  }
+
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-station-lead-table-wrap {
+    overflow-x: auto;
+    scrollbar-color: #c58b5f transparent;
+  }
+
+  #rmsNegotiationModal .rms-negotiation-card {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #rmsStationWorkspace[data-station-theme="recovery"] *,
+  #rmsStationWorkspace[data-station-theme="recovery"] *::before,
+  #rmsStationWorkspace[data-station-theme="recovery"] *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] {
+  --rms-recovery-ink: #e5f1f5;
+  --rms-recovery-muted: #acbfca;
+  --rms-recovery-line: #2b4d60;
+  --rms-recovery-canvas: #091e2d;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] .rms-lean-station {
+  background: linear-gradient(135deg, #112939, #091e2d) !important;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] :is(.rms-lean-station-tools, .rms-confirmation-work-item, .rms-confirmation-work-item .rms-commercial-work-console, .rms-confirmation-work-item .rms-negotiation-decision-block, .rms-confirmation-work-item .rms-commercial-action-row) {
+  border-color: #304f61 !important;
+  background: #0c2434 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] :is(.rms-negotiation-intent-strip, .rms-confirmation-work-item .rms-negotiation-route-preview) {
+  border-color: #765239 !important;
+  background: #30241d !important;
+  color: #f0d0b5 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] :is(.rms-lean-station-title h3, .rms-confirmation-work-item .rms-commercial-console-head h4, .rms-confirmation-work-item .rms-negotiation-context-block dd) {
+  color: #e8f3f6 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] :is(.rms-lean-station-title p, .rms-confirmation-work-item .rms-commercial-console-head p, .rms-confirmation-work-item .rms-commercial-action-row small) {
+  color: #b6c8d1 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] :is(input, select, textarea) {
+  border-color: #385b6d !important;
+  background: #091d2b !important;
+  color: #edf7fa !important;
+}
+
+html[data-theme="dark"] #rmsNegotiationModal .rms-negotiation-card {
+  border-color: #365669;
+  background: #0b2232;
+  color: #e8f3f6;
+}
