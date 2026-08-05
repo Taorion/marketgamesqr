@@ -14455,7 +14455,7 @@ html body[data-current-view="account"] .portal-shell .view-section[data-view="ac
 }
 
 /* applyAccountScreen() es la única autoridad que decide qué panel se muestra. */
-html body[data-current-view="account"] .portal-shell [data-view="account"] [data-account-screen].account-screen-hidden {
+body:not(#qoriOpenA#qoriOpenB#qoriOpenC#qoriOpenD)[data-current-view="account"] .portal-shell .view-section.active[data-view="account"] [data-account-screen].account-screen-hidden {
   display: none !important;
 }
 
