@@ -10422,3 +10422,562 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-
   html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-signals article { grid-template-columns:1fr!important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-console-head h4 { font-size:1.12rem!important; }
 }
+
+/* Estacion 08 · Riesgos de fuga. Alcance exclusivo: control_anti_fuga. */
+#rmsStationWorkspace[data-station-theme="control"] {
+  --rms-control-ink: #17364c;
+  --rms-control-muted: #607487;
+  --rms-control-line: #d7e1e8;
+  --rms-control-surface: #ffffff;
+  --rms-control-canvas: #f5f8fa;
+  --rms-control-amber: #9a5718;
+  --rms-control-amber-soft: #fff4df;
+  --rms-control-coral: #b64b36;
+  --rms-control-coral-soft: #fff0eb;
+  --rms-control-focus: #176f9f;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station {
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--rms-control-line);
+  border-top: 4px solid #d89037;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fffdf9 0%, var(--rms-control-canvas) 54%, #f8fbfc 100%);
+  color: var(--rms-control-ink);
+  box-shadow: 0 16px 36px rgba(24, 53, 72, .08);
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-head {
+  align-items: center;
+  padding: 0 0 16px;
+  border-bottom-color: #d9e2e7;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-title {
+  min-width: 0;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-title .mono-label {
+  color: var(--rms-control-amber) !important;
+  font-weight: 800;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-title h3 {
+  color: var(--rms-control-ink) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-title p {
+  max-width: 66ch;
+  margin-top: 7px;
+  padding-left: 12px;
+  border-left: 3px solid #d89037;
+  color: #415e72 !important;
+  font-weight: 650;
+  line-height: 1.48;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-media {
+  border-color: rgba(182, 75, 54, .24) !important;
+  background: radial-gradient(circle at 72% 22%, #fff5df 0 18%, transparent 19%), #fffaf2 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-symbol {
+  color: #934c16 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-actions,
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-tools {
+  min-width: 0;
+}
+
+/* Barra de mando: consulta de estado separada de la operacion por caso. */
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-tools {
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #d5e0e7;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .78);
+  box-shadow: 0 5px 14px rgba(25, 54, 74, .04);
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-tools label {
+  min-width: min(320px, 100%);
+  border-color: #bdced9 !important;
+  background: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-tools > span,
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-tools > small {
+  align-self: center;
+  padding: 7px 10px;
+  border: 1px solid #ecd6af;
+  border-radius: 999px;
+  background: var(--rms-control-amber-soft);
+  color: #6f481d !important;
+  font-size: .76rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] :is(input, select, textarea) {
+  border-color: #b9cad5 !important;
+  background: #fff !important;
+  color: var(--rms-control-ink) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] :is(input, select, textarea):focus-visible,
+#rmsStationWorkspace[data-station-theme="control"] :is(button, a):focus-visible {
+  outline: 3px solid rgba(23, 111, 159, .38) !important;
+  outline-offset: 2px;
+}
+
+/* La prioridad real de la estacion es revisar hoy; no se agregan metricas nuevas. */
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics {
+  gap: 10px;
+  padding: 2px;
+  margin-bottom: 2px;
+  scrollbar-color: #c9904a transparent;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics article {
+  position: relative;
+  min-width: 142px;
+  padding: 12px 13px;
+  border-color: #d5e0e7;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: none;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics article:first-child {
+  min-width: 176px;
+  border-color: #e2b66e;
+  background: linear-gradient(135deg, #fff8eb, #fff 72%);
+  box-shadow: inset 3px 0 0 #c97927;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics article:nth-child(2),
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics article:nth-child(3) {
+  border-color: #ead5b7;
+  background: #fffdfa;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics article:first-child strong {
+  color: #804012 !important;
+  font-size: 1.48rem;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics strong {
+  color: #24536d !important;
+  font-variant-numeric: tabular-nums;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics span {
+  color: #526c7e !important;
+  font-weight: 700;
+}
+
+/* Casos: senal lateral discreta, legible y sin convertir la lista en tarjetas pesadas. */
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item {
+  overflow: hidden;
+  border: 1px solid #d6e0e6 !important;
+  border-radius: 16px !important;
+  background: var(--rms-control-surface) !important;
+  box-shadow: 0 7px 18px rgba(26, 53, 70, .055) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item:hover {
+  border-color: #d6a86c !important;
+  box-shadow: 0 11px 23px rgba(111, 70, 27, .1) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-work-lead {
+  position: relative;
+  border: 0 !important;
+  border-right: 1px solid #ecdcc5 !important;
+  background: linear-gradient(160deg, #fff7eb 0%, #fffdf9 78%) !important;
+  color: var(--rms-control-ink) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-work-lead::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #c8742b;
+  content: "";
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-work-kicker {
+  color: #9a5718 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-activation-work-person strong,
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-activation-work-facts dd {
+  color: var(--rms-control-ink) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-activation-work-person small,
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-activation-work-facts dt {
+  color: #63798a !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-work-console {
+  padding: 24px !important;
+  background: #fbfcfd !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-deal-progress {
+  margin: 0 0 16px !important;
+  padding: 0 0 15px !important;
+  border-bottom: 1px solid #dbe4e9;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-deal-progress p {
+  color: #607788 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-console-head {
+  padding-bottom: 16px !important;
+  border-bottom-color: #d8e2e7 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-console-head h4 {
+  color: #1c3f56 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-console-head p {
+  color: #526f82 !important;
+  line-height: 1.54 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-state.is-pending {
+  border-color: #e2b76d !important;
+  background: var(--rms-control-amber-soft) !important;
+  color: #754413 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-state.is-sale {
+  border-color: #a9d6c2 !important;
+  background: #effaf4 !important;
+  color: #23664a !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block {
+  padding: 16px 0 !important;
+  border: 0 !important;
+  border-top: 1px solid #dce5ea !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block h5 {
+  color: #274d65 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block dl > div {
+  border-color: #dbe5ea !important;
+  background: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block :is(dt, label) {
+  color: #587186 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block dd {
+  color: #24475e !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist {
+  gap: 8px;
+  padding: 2px 0 16px;
+  border-bottom: 1px solid #dce5ea;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist > div {
+  min-width: 0;
+  padding: 10px 11px !important;
+  border: 1px solid #dbe5ea !important;
+  border-left: 3px solid #87aebf !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist > div.is-pending {
+  border-color: #ead0ad !important;
+  border-left-color: #c66a35 !important;
+  background: #fffaf5 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist > div.is-ready {
+  border-left-color: #4e9873 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist > div.is-pending .material-symbols-outlined {
+  color: #a95024 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist :is(strong, small) {
+  overflow-wrap: anywhere;
+}
+
+/* Compuerta: cada decision se toma por caso; no hay una salida masiva. */
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-negotiation-route-preview,
+#rmsStationWorkspace[data-station-theme="control"] .rms-station-decision-gate-note {
+  border: 1px solid #e2b77c !important;
+  border-left: 4px solid #b65b2d !important;
+  border-radius: 11px !important;
+  background: linear-gradient(90deg, #fff2e8, #fffaf5) !important;
+  color: #633d25 !important;
+  box-shadow: none !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-negotiation-route-preview :is(strong, small),
+#rmsStationWorkspace[data-station-theme="control"] .rms-station-decision-gate-note :is(strong, small, span) {
+  color: inherit !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-negotiation-route-preview small,
+#rmsStationWorkspace[data-station-theme="control"] .rms-station-decision-gate-note small {
+  display: block;
+  margin-top: 3px;
+  line-height: 1.42;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-action-row {
+  gap: 12px !important;
+  margin-top: 15px !important;
+  padding: 13px 14px !important;
+  border: 1px solid #dfc8a8 !important;
+  border-radius: 12px !important;
+  background: #fffdf9 !important;
+  box-shadow: none !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-action-row small {
+  color: #5c6872 !important;
+  line-height: 1.42;
+}
+
+/* Recuperar o revisar conserva sus eventos; solo recibe una senal visual y foco inequívoco. */
+#rmsStationWorkspace[data-station-theme="control"] :is([data-rms-risk-recovery], .rms-station-row-operate) {
+  border-color: #d49a57 !important;
+  background: #fff7ea !important;
+  color: #7d4313 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] :is([data-rms-risk-recovery], .rms-station-row-operate) .material-symbols-outlined {
+  color: currentColor !important;
+  font-size: 1.08rem !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] :is([data-rms-risk-recovery], .rms-station-row-operate):hover {
+  border-color: #a9571d !important;
+  background: #ffedcf !important;
+  color: #703710 !important;
+  transform: translateY(-1px);
+}
+
+#rmsStationWorkspace[data-station-theme="control"] [data-rms-save-risk-decision] {
+  border-color: #98501a !important;
+  background: #98501a !important;
+  color: #fff !important;
+  box-shadow: 0 7px 14px rgba(128, 66, 19, .18) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] [data-rms-save-risk-decision]:hover {
+  border-color: #71370f !important;
+  background: #71370f !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-recycling-queue {
+  border-color: #dcc9ad !important;
+  background: #fffaf2 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-recycling-queue h4 {
+  color: #654021 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-recycling-list article {
+  border-color: #e1d6c5 !important;
+  background: rgba(255, 255, 255, .88) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .empty-state.compact {
+  border: 1px dashed #d0a264 !important;
+  border-radius: 12px;
+  background: #fffaf2 !important;
+  color: #5c7282 !important;
+}
+
+/* Compatibilidad visual para la vista de compuerta anterior, sin tocar su comportamiento. */
+#rmsStationWorkspace[data-station-theme="control"] .rms-station-primary-brief {
+  border-color: #e2ba7d !important;
+  background: linear-gradient(135deg, #fff7e8, #fffdfa) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-station-primary-brief :is(h3, strong) {
+  color: #713c16 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-station-brief-metrics > span:last-child {
+  border-color: #e2b36c !important;
+  background: #fff0d5 !important;
+  color: #754113 !important;
+  font-size: 1.05em;
+  font-weight: 800;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-table-wrap {
+  overflow-x: auto;
+  scrollbar-color: #c9904a transparent;
+}
+
+#rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-table {
+  min-width: 780px !important;
+}
+
+@media (max-width: 768px) {
+  #rmsStationWorkspace[data-station-theme="control"] .rms-lean-station {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  #rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-head,
+  #rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-tools {
+    align-items: stretch;
+  }
+
+  #rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-title {
+    grid-template-columns: 48px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-media {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics {
+    grid-template-columns: repeat(7, minmax(142px, 1fr));
+    padding-bottom: 6px;
+  }
+
+  #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-work-lead {
+    border-right: 0 !important;
+    border-bottom: 1px solid #ecdcc5 !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-work-console {
+    padding: 19px 16px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  #rmsStationWorkspace[data-station-theme="control"] .rms-lean-station {
+    padding: 13px;
+  }
+
+  #rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-title p {
+    padding-left: 10px;
+  }
+
+  #rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-tools > :is(span, small),
+  #rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-actions > * {
+    max-width: 100%;
+  }
+
+  #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-action-row {
+    align-items: stretch !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-action-row button {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #rmsStationWorkspace[data-station-theme="control"] *,
+  #rmsStationWorkspace[data-station-theme="control"] *::before,
+  #rmsStationWorkspace[data-station-theme="control"] *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="control"] :is([data-rms-risk-recovery], .rms-station-row-operate):hover {
+    transform: none;
+  }
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] {
+  --rms-control-ink: #e8f3f8;
+  --rms-control-muted: #a9c0cf;
+  --rms-control-line: #29485c;
+  --rms-control-surface: #0b2030;
+  --rms-control-canvas: #071a29;
+  --rms-control-amber-soft: #342815;
+  --rms-control-coral-soft: #35201d;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] .rms-lean-station {
+  background: linear-gradient(135deg, #102638, #071a29) !important;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] .rms-lean-station-title p,
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-console-head p,
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-deal-progress p,
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-action-row small {
+  color: #b8ccd7 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] :is(.rms-lean-station-tools, .rms-risk-metrics article, .rms-risk-work-item, .rms-risk-work-item .rms-commercial-work-console, .rms-risk-work-item .rms-commercial-info-block dl > div, .rms-risk-work-item .rms-risk-checklist > div, .rms-recycling-list article) {
+  border-color: #2b4b5d !important;
+  background: #0c2233 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics article:first-child,
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist > div.is-pending,
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-action-row,
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] .rms-recycling-queue,
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] .empty-state.compact {
+  border-color: #70532c !important;
+  background: #2a2218 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-work-lead {
+  border-color: #5b432a !important;
+  background: #1b2b36 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] :is(.rms-lean-station-title h3, .rms-risk-metrics strong, .rms-risk-work-item .rms-commercial-console-head h4, .rms-risk-work-item .rms-commercial-info-block h5, .rms-risk-work-item .rms-commercial-info-block dd, .rms-risk-work-item .rms-activation-work-person strong, .rms-risk-work-item .rms-activation-work-facts dd) {
+  color: #e8f3f8 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] :is(.rms-risk-metrics span, .rms-risk-work-item .rms-commercial-info-block :is(dt, label), .rms-risk-work-item .rms-activation-work-person small, .rms-risk-work-item .rms-activation-work-facts dt) {
+  color: #aac2d0 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-state.is-pending {
+  border-color: #a77438 !important;
+  background: #382914 !important;
+  color: #ffd79a !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="control"] :is(input, select, textarea) {
+  border-color: #36566a !important;
+  background: #091c2a !important;
+  color: #edf7fb !important;
+}
