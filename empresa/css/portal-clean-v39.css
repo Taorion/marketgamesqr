@@ -12027,3 +12027,510 @@ html[data-theme="dark"] body[data-current-view="sales"] #salesEntryModalOverlay 
 html[data-theme="dark"] body[data-current-view="sales"] :is(#salesEntryModalOverlay, #salesDetailModal) :is(h3, h4, strong) {
   color: #e7f3f8 !important;
 }
+
+/* Estacion 09 · Ventas atribuidas. Alcance exclusivo: cierre comercial RMS. */
+#rmsStationWorkspace[data-station-theme="closing"] {
+  --rms-closing-ink: #123654;
+  --rms-closing-muted: #60778a;
+  --rms-closing-line: #d4e2ea;
+  --rms-closing-blue: #075db6;
+  --rms-closing-teal: #087f82;
+  --rms-closing-teal-soft: #eaf8f7;
+  --rms-closing-blue-soft: #eef7ff;
+  --rms-closing-canvas: #f5f9fb;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station {
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--rms-closing-line);
+  border-top: 4px solid #1377bf;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fbfdff 0%, var(--rms-closing-canvas) 58%, #f5fbfb 100%);
+  color: var(--rms-closing-ink);
+  box-shadow: 0 16px 36px rgba(19, 57, 83, .08);
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-head {
+  align-items: center;
+  padding-bottom: 17px;
+  border-bottom-color: #d8e4eb;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-title {
+  min-width: 0;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-title .mono-label {
+  color: var(--rms-closing-teal) !important;
+  font-weight: 850;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-title h3 {
+  color: var(--rms-closing-ink) !important;
+  letter-spacing: -.025em;
+}
+
+/* Equivale al objetivo activo: Ensamblar cierre comercial, sin anadir texto. */
+#rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-title p {
+  max-width: 65ch;
+  margin-top: 7px;
+  padding-left: 12px;
+  border-left: 3px solid var(--rms-closing-teal);
+  color: #385f77 !important;
+  font-weight: 700;
+  line-height: 1.48;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-media {
+  border-color: rgba(7, 93, 182, .21) !important;
+  background: radial-gradient(circle at 72% 22%, #dff5f3 0 17%, transparent 18%), #eff8ff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-symbol {
+  color: #087983 !important;
+}
+
+/* Barra de mando: estado de preparacion separado de la ficha de cierre. */
+#rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-tools {
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #d5e3ea;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 5px 14px rgba(22, 57, 79, .04);
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-tools label {
+  min-width: min(330px, 100%);
+  border-color: #bed1dc !important;
+  background: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-tools > select {
+  min-width: 210px;
+  border-color: #bed1dc !important;
+  background: #fff !important;
+  color: #214967 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-tools > span {
+  align-self: center;
+  padding: 7px 10px;
+  border: 1px solid #b9dfdc;
+  border-radius: 999px;
+  background: var(--rms-closing-teal-soft);
+  color: #176b70 !important;
+  font-size: .76rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] :is(input, select, textarea) {
+  border-color: #b9ceda !important;
+  background: #fff !important;
+  color: #173e5a !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] :is(input, select, textarea):focus-visible,
+#rmsStationWorkspace[data-station-theme="closing"] :is(button, a):focus-visible {
+  outline: 3px solid rgba(7, 118, 180, .36) !important;
+  outline-offset: 2px;
+}
+
+/* Consola real de cierre: contexto confirmado a la izquierda, venta verificable a la derecha. */
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item {
+  overflow: hidden;
+  border: 1px solid #d3e1e8 !important;
+  border-radius: 17px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 20px rgba(22, 54, 78, .06) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item:hover {
+  border-color: #91bfd5 !important;
+  box-shadow: 0 13px 27px rgba(11, 87, 133, .1) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-work-lead {
+  position: relative;
+  border: 0 !important;
+  border-right: 1px solid rgba(181, 215, 230, .42) !important;
+  background: linear-gradient(160deg, #0d426d 0%, #0c5878 100%) !important;
+  color: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-work-lead::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #57c2bf;
+  content: "";
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-work-lead :is(strong, dd) {
+  color: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-work-lead :is(small, dt, .rms-commercial-work-kicker) {
+  color: #d8eef2 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-work-kicker {
+  letter-spacing: .085em !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-activation-work-actions .ghost-button {
+  border-color: rgba(217, 246, 245, .45) !important;
+  background: transparent !important;
+  color: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-activation-work-actions .ghost-button:hover {
+  border-color: #a9eee9 !important;
+  background: rgba(255, 255, 255, .12) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-work-console {
+  padding: 25px !important;
+  background: #fbfdfe !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-deal-progress {
+  margin: 0 0 15px !important;
+  padding: 0 0 15px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #d9e5eb !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-deal-progress li.is-done b {
+  background: #dff5f1 !important;
+  color: #08796f !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-deal-progress li.is-active {
+  color: #075a9d !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-deal-progress li.is-active b {
+  background: #0a689e !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-deal-progress p {
+  color: #587286 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-trust-ribbon {
+  margin: 0 0 16px !important;
+  padding: 13px 14px !important;
+  border-color: #b9dfdc !important;
+  border-left: 4px solid #11928d !important;
+  border-radius: 11px !important;
+  background: linear-gradient(90deg, #eaf8f7, #f8fcfc) !important;
+  color: #175e67 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-trust-ribbon > .material-symbols-outlined {
+  color: #087f82 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-trust-ribbon strong {
+  color: #155968 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-trust-ribbon small {
+  color: #4b737a !important;
+  line-height: 1.42;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-console-head {
+  padding-bottom: 16px !important;
+  border-bottom-color: #d9e5eb !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-console-head .mono-label {
+  color: #0c7b85 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-console-head h4 {
+  color: #173e5b !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-console-head p {
+  color: #5a7487 !important;
+  line-height: 1.52 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-state.is-sale {
+  border-color: #b8dfd5 !important;
+  background: #eefaf7 !important;
+  color: #177153 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin-top: 16px !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid label,
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-note-field {
+  color: #567187 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid label > span,
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-note-field > span {
+  font-size: .69rem;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid :is(input, select),
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-note-field textarea {
+  min-height: 42px;
+  border-color: #bfd1dc !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid :is(input, select):hover,
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-note-field textarea:hover {
+  border-color: #8dbbd2 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-economics {
+  gap: 9px !important;
+  padding-top: 2px;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-economics div {
+  padding: 11px 12px !important;
+  border: 1px solid #c9e1e4;
+  border-radius: 10px !important;
+  background: #f4fbfb !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-economics span {
+  color: #587980 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-economics strong {
+  color: #145b63 !important;
+  font-size: .9rem !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-action-row {
+  gap: 13px !important;
+  margin-top: 16px !important;
+  padding: 13px 14px !important;
+  border: 1px solid #c7dfe3 !important;
+  border-radius: 12px !important;
+  background: #f9fcfc !important;
+  box-shadow: none !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-action-row small {
+  color: #597587 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] [data-rms-save-attributed-sale] {
+  border-color: #08757a !important;
+  background: #08757a !important;
+  color: #fff !important;
+  box-shadow: 0 8px 16px rgba(8, 117, 122, .18) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] [data-rms-save-attributed-sale]:hover {
+  border-color: #075961 !important;
+  background: #075961 !important;
+}
+
+/* Compuerta heredada: trazabilidad, no error. */
+#rmsStationWorkspace[data-station-theme="closing"] .rms-station-decision-gate-note {
+  border: 1px solid #b9dcdf !important;
+  border-left: 4px solid #168d91 !important;
+  border-radius: 11px !important;
+  background: #effafa !important;
+  color: #245d68 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-station-decision-gate-note :is(strong, small, span) {
+  color: inherit !important;
+}
+
+/* Compatibilidad si la estacion usa la cola compacta en lugar de la consola comercial. */
+#rmsStationWorkspace[data-station-theme="closing"] .rms-station-lead-row.is-cierre {
+  border-color: #d4e3eb !important;
+  background: #fff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-station-lead-row.is-cierre:hover,
+#rmsStationWorkspace[data-station-theme="closing"] .rms-station-lead-row.is-cierre:focus-visible {
+  border-color: #8cc5ca !important;
+  background: #f4fbfb !important;
+  box-shadow: inset 3px 0 0 #118b8d, 0 9px 18px rgba(17, 86, 99, .07) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-station-lead-row.is-cierre :is(strong, .rms-station-lead-open) {
+  color: #1b4563 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-station-lead-row.is-cierre small {
+  color: #688094 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-station-row-detail,
+#rmsStationWorkspace[data-station-theme="closing"] .rms-station-row-operate {
+  border-color: #b8d9df !important;
+  background: #f0fafa !important;
+  color: #176a73 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-station-row-detail:hover {
+  border-color: #86bac9 !important;
+  background: #eef7ff !important;
+  color: #0a5d9d !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-station-row-operate:hover {
+  border-color: #64b4b2 !important;
+  background: #ddf4f2 !important;
+  color: #075f67 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] :is(.rms-station-lead-toolbar, .rms-station-command-dock) {
+  border-color: #c7dce6 !important;
+  background: #fafdff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-station-view-filters > button.is-active {
+  border-color: #77bbb9 !important;
+  background: #eaf8f7 !important;
+  color: #17656d !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .empty-state.compact {
+  border: 1px dashed #8fc7cd !important;
+  border-radius: 12px;
+  background: #f3fbfb !important;
+  color: #527684 !important;
+}
+
+@media (max-width: 1120px) {
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-work-lead {
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(182, 222, 230, .42) !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-title {
+    grid-template-columns: 48px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-media {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-head,
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-tools {
+    align-items: stretch;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station-tools > select {
+    min-width: 0;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-work-console {
+    padding: 19px 16px !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-action-row {
+    align-items: stretch !important;
+  }
+}
+
+@media (max-width: 620px) {
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-form-grid,
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-economics {
+    grid-template-columns: 1fr !important;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-action-row button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-station-lead-row.is-cierre {
+    min-width: 700px;
+  }
+
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-station-lead-table-wrap {
+    overflow-x: auto;
+    scrollbar-color: #72b9bf transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #rmsStationWorkspace[data-station-theme="closing"] *,
+  #rmsStationWorkspace[data-station-theme="closing"] *::before,
+  #rmsStationWorkspace[data-station-theme="closing"] *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="closing"] {
+  --rms-closing-ink: #e5f2f6;
+  --rms-closing-muted: #a9bfca;
+  --rms-closing-line: #294b5f;
+  --rms-closing-canvas: #081d2c;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="closing"] .rms-lean-station {
+  background: linear-gradient(135deg, #102a3b, #081d2c) !important;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="closing"] :is(.rms-lean-station-tools, .rms-sale-work-item, .rms-sale-work-item .rms-commercial-work-console, .rms-sale-work-item .rms-sale-economics div, .rms-sale-work-item .rms-commercial-action-row) {
+  border-color: #2d5063 !important;
+  background: #0b2435 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-sale-trust-ribbon,
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="closing"] .rms-station-decision-gate-note,
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="closing"] .empty-state.compact {
+  border-color: #33777a !important;
+  background: #102f35 !important;
+  color: #b7e3e0 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="closing"] :is(.rms-lean-station-title h3, .rms-sale-work-item .rms-commercial-console-head h4, .rms-sale-work-item .rms-sale-economics strong) {
+  color: #e5f2f6 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="closing"] :is(.rms-lean-station-title p, .rms-sale-work-item .rms-commercial-console-head p, .rms-sale-work-item .rms-deal-progress p, .rms-sale-work-item .rms-commercial-action-row small) {
+  color: #b4c8d1 !important;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="closing"] :is(input, select, textarea) {
+  border-color: #365a6d !important;
+  background: #091d2c !important;
+  color: #edf7fa !important;
+}
