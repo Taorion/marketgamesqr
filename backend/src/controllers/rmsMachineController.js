@@ -9,6 +9,7 @@ const {
   getDailyQueue,
   listRmsEvents,
   listRmsPostSaleActions,
+  listRmsRecyclingCases,
   listRmsOpportunities,
   moveRmsLeadPhase,
   recordActivationDelivery,
@@ -19,6 +20,7 @@ const {
   recordRmsRiskReview,
   recordRmsPostSaleAction,
   reactivateRmsRecycledLead,
+  updateRmsRecyclingCase,
   rmsMetrics,
 } = require("../services/rmsMachineService");
 const {
@@ -274,6 +276,26 @@ const recycleReactivateSchema = z.object({
   lead_id: z.string().uuid().optional().nullable(),
   note: z.string().trim().min(4).max(3000),
   destination: z.enum(["procesamiento", "clasificacion"]).optional().default("procesamiento"),
+  idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
+});
+
+const recyclingQueueQuerySchema = z.object({
+  status: z.enum(["ALL", "SCHEDULED", "DUE", "OVERDUE", "REACTIVATED", "CONVERTED", "LOST", "CANCELLED"]).optional(),
+  owner: z.string().trim().max(500).optional(),
+  reason: z.string().trim().max(120).optional(),
+  strategy: z.string().trim().max(120).optional(),
+});
+
+const recyclingActionSchema = z.object({
+  recycling_case_id: z.string().uuid(),
+  action: z.enum(["REACTIVATE", "RESCHEDULE", "CHANGE_STRATEGY", "LOST", "CANCEL"]),
+  note: z.string().trim().min(4).max(3000),
+  recycle_at: z.string().datetime().optional().nullable(),
+  recycle_owner: z.string().trim().max(500).optional().nullable(),
+  recycle_channel: z.string().trim().max(120).optional().nullable(),
+  recycle_strategy: z.enum(["NEW_CONTACT", "NEW_PROPOSAL", "NEW_ACTIVATION", "PERMITTED_BENEFIT", "NURTURE"]).optional().nullable(),
+  destination: z.enum(["procesamiento", "clasificacion"]).optional().nullable(),
+  idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
 
 const negotiationResultSchema = z.object({
@@ -295,6 +317,7 @@ const negotiationResultSchema = z.object({
   recycle_strategy: z.enum(["NEW_CONTACT", "NEW_PROPOSAL", "NEW_ACTIVATION", "PERMITTED_BENEFIT", "NURTURE"]).optional().nullable(),
   recycle_consent: z.enum(["CONFIRMED", "NOT_REQUIRED"]).optional().nullable(),
   recycle_responsible: z.string().trim().max(500).optional().nullable(),
+  recycle_target_phase: z.enum(["procesamiento", "clasificacion"]).optional().nullable(),
   lost_classification: z.enum(["DEFINITIVE", "NOT_NOW", "NO_BUDGET", "PROLONGED_NO_RESPONSE", "NO_CONSENT", "OTHER"]).optional().nullable(),
   idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
@@ -472,6 +495,24 @@ async function events(req, res, next) {
   }
 }
 
+async function recyclingQueue(req, res, next) {
+  try {
+    const filters = validate(recyclingQueueQuerySchema, req.query);
+    res.json(await listRmsRecyclingCases(businessIdFor(req), filters));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateRecyclingCase(req, res, next) {
+  try {
+    const body = validate(recyclingActionSchema, req.body);
+    res.json(await updateRmsRecyclingCase(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function intelligenceCase(req, res, next) {
   try {
     res.json(await learningCase(businessIdFor(req), validate(intelligenceCaseQuerySchema, req.query)));
@@ -547,5 +588,7 @@ module.exports = {
   recordNegotiationResult,
   recordRiskReview,
   reactivateRecycledLead,
+  recyclingQueue,
   saveInsight,
+  updateRecyclingCase,
 };

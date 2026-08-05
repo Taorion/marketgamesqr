@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-layout-safety-20260805-v253">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=recycling-queue-20260805-v254">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -265,6 +265,10 @@
             <button class="nav-item" data-view="missions" type="button">
               <span class="material-symbols-outlined">emoji_events</span>
               <span><strong>Temporadas</strong><small>Misiones y aprendizaje</small></span>
+            </button>
+            <button class="nav-item" data-view="recycling" type="button">
+              <span class="material-symbols-outlined">restart_alt</span>
+              <span><strong>Reciclaje</strong><small>Reactivaciones comerciales</small></span>
             </button>
             </div>
           </section>
@@ -1154,6 +1158,24 @@
                 </div>
               </div>
             </div>
+          </section>
+
+          <section class="view-section" data-view="recycling" aria-labelledby="recyclingTitle">
+            <header class="view-head recycling-view-head">
+              <div>
+                <span class="mono-label">OPTIMIZA · OPERACIÓN TRANSVERSAL</span>
+                <h2 id="recyclingTitle">Reciclaje</h2>
+                <p>Planifica y ejecuta reactivaciones sin sacar al lead de su estación comercial real.</p>
+              </div>
+              <button class="ghost-button" type="button" data-recycling-refresh>Actualizar</button>
+            </header>
+            <nav class="recycling-subnav" aria-label="Optimiza">
+              <button type="button" data-recycling-section="intelligence">Inteligencia</button>
+              <button type="button" class="active" aria-current="page" data-recycling-section="recycling">Reciclaje</button>
+              <button type="button" data-recycling-section="recoverable">Oportunidades recuperables</button>
+              <button type="button" data-recycling-section="learning">Aprendizajes</button>
+            </nav>
+            <section id="recyclingWorkspace" class="recycling-workspace" aria-live="polite"></section>
           </section>
 
           <section class="view-section" data-view="missions">
@@ -7490,7 +7512,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=rms-activation2-20260805-v250" defer></script>
+<script src="js/app.js?v=recycling-queue-20260805-v255" defer></script>
     <script src="js/communications.js?v=communications-recipient-checks-v4-20260730" defer></script>
 </body>
 </html>

@@ -14442,3 +14442,46 @@ html[data-theme="dark"] body[data-current-view="account"] .portal-shell :is(.bus
   body[data-current-view="account"] .portal-shell .modal-actions .solid-button { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { body[data-current-view="account"] .portal-shell .account-admin-nav a { transition: none !important; } }
+/* Optimiza > Reciclaje: queue UI only; no RMS phase is introduced here. */
+body[data-current-view="recycling"] .view-section[data-view="recycling"] {
+  width: min(100%, 1480px);
+  margin-inline: auto;
+  min-width: 0;
+}
+.recycling-view-head,
+.recycling-view-head > div,
+.recycling-workspace,
+.recycling-table-wrap { min-width: 0; }
+.recycling-subnav { display: flex; gap: .5rem; flex-wrap: wrap; margin: 0 0 1rem; padding: .5rem; border: 1px solid var(--portal-border, #dce5ef); border-radius: .9rem; background: var(--portal-surface, #fff); }
+.recycling-subnav button { min-height: 2.5rem; padding: .55rem .8rem; border: 0; border-radius: .65rem; background: transparent; color: var(--portal-text-muted, #5b6c82); font: inherit; cursor: pointer; }
+.recycling-subnav button.active, .recycling-subnav button:focus-visible { background: #e9f5fb; color: #073a63; outline: 3px solid #65bde7; outline-offset: 2px; }
+.recycling-metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+.recycling-metrics article { min-width: 0; padding: 1rem; border: 1px solid var(--portal-border, #dce5ef); border-radius: .9rem; background: var(--portal-surface, #fff); }
+.recycling-metrics strong, .recycling-metrics span { display: block; }
+.recycling-metrics strong { color: #073a63; font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1; }
+.recycling-metrics span { margin-top: .4rem; color: var(--portal-text-muted, #5b6c82); font-size: .82rem; }
+.recycling-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin: 1rem 0; }
+.recycling-toolbar label { display: grid; gap: .35rem; min-width: min(100%, 15rem); }
+.recycling-toolbar select, .recycling-row-actions select, .recycling-row-actions input, .recycling-row-actions textarea { max-width: 100%; min-width: 0; box-sizing: border-box; }
+.recycling-toolbar p { margin: 0; color: var(--portal-text-muted, #5b6c82); }
+.recycling-table-wrap { overflow-x: auto; border: 1px solid var(--portal-border, #dce5ef); border-radius: 1rem; background: var(--portal-surface, #fff); }
+.recycling-table { width: 100%; min-width: 980px; border-collapse: collapse; }
+.recycling-table th, .recycling-table td { min-width: 0; padding: .9rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--portal-border, #dce5ef); }
+.recycling-table th { color: var(--portal-text-muted, #5b6c82); font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.recycling-table td > strong, .recycling-table td > small { display: block; overflow-wrap: anywhere; }
+.recycling-table td > small { margin-top: .35rem; color: var(--portal-text-muted, #5b6c82); }
+.recycling-status { display: inline-flex; width: max-content; max-width: 100%; margin-bottom: .45rem; padding: .22rem .48rem; border-radius: 999px; background: #eef4f8; color: #244866; font-size: .75rem; font-weight: 700; }
+.recycling-status.status-overdue { background: #fff0e7; color: #994113; }
+.recycling-status.status-reactivated, .recycling-status.status-converted { background: #eaf7f3; color: #11664f; }
+.recycling-status.status-lost, .recycling-status.status-cancelled { background: #f2f3f5; color: #56616f; }
+.recycling-row-actions { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(8rem, 1fr); gap: .45rem; min-width: 22rem; }
+.recycling-row-actions textarea { grid-column: 1 / -1; resize: vertical; }
+.recycling-row-actions button { white-space: normal; text-wrap: balance; }
+.recycling-row-actions .danger { color: #9b2f2f; }
+@media (max-width: 840px) {
+  .recycling-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .recycling-toolbar { align-items: stretch; flex-direction: column; }
+  .recycling-table { min-width: 860px; }
+}
+@media (max-width: 460px) { .recycling-metrics { grid-template-columns: 1fr 1fr; } .recycling-row-actions { grid-template-columns: 1fr; min-width: 16rem; } }
+@media (prefers-reduced-motion: reduce) { .recycling-subnav button { transition: none; } }

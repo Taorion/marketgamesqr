@@ -124,7 +124,9 @@ const {
   postSaleActions: rmsPostSaleActions,
   recordPostSaleAction: rmsRecordPostSaleAction,
   reactivateRecycledLead,
+  recyclingQueue,
   saveInsight: rmsSaveInsight,
+  updateRecyclingCase,
 } = require("../controllers/rmsMachineController");
 const {
   activate: activateGamificationSeason,
@@ -204,6 +206,8 @@ router.post("/rms-machine/negotiation-result", recordNegotiationResult);
 router.post("/rms-machine/risk-review", recordRiskReview);
 router.get("/rms-machine/post-sale-actions", shortBusinessCache, rmsPostSaleActions);
 router.post("/rms-machine/post-sale-actions", rmsRecordPostSaleAction);
+router.get("/rms-machine/recycling", shortBusinessCache, recyclingQueue);
+router.post("/rms-machine/recycling/action", updateRecyclingCase);
 router.post("/rms-machine/recycling/reactivate", reactivateRecycledLead);
 router.post("/rms-machine/attributed-sales", rmsRecordAttributedSale);
 router.post("/rms-machine/bulk-action", executeRmsBulkAction);
