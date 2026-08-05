@@ -39342,11 +39342,11 @@ function rmsPrimaryStationNextPhase(stage = {}, stages = []) {
 
 const RMS_QUALITY_CONTROL_CONFIG = {
   preprocesamiento: {
-    title: "Lead listo para Evaluación",
-    subtitle: "Control 1 · validación previa a Evaluación",
-    description: "Lee el recorrido inicial de cada oportunidad: calidad, producto, activación y siguiente paso, sin detener la operación.",
-    phases: ["recoleccion", "alimentacion", "curaduria", "clasificacion"],
-    focus: "Verifica que el lead tenga contacto, calidad, oferta y primera activación antes de enviarlo a Evaluación.",
+    title: "Preparación comercial",
+    subtitle: "Control de calidad 1 · observatorio antes de Evaluación",
+    description: "Observa la preparación ya registrada en Activación 1. No aprueba, bloquea, crea tareas ni mueve oportunidades.",
+    phases: ["clasificacion", "procesamiento"],
+    focus: "Señala contacto, consentimiento, origen, producto, material, responsable y seguimiento que la estación dueña debe completar.",
     checkpoint: "Control 1 · datos y activación",
     banner: "CONTROL DE CALIDAD 1",
     explainer: "Muestra faltantes y evidencia; la estación dueña corrige los datos y decide el movimiento.",
@@ -39354,11 +39354,11 @@ const RMS_QUALITY_CONTROL_CONFIG = {
     decision: "No aprueba ni mueve leads",
   },
   revenue_generado: {
-    title: "Venta lista para Postventa",
-    subtitle: "Control 2 · validación previa a Postventa",
-    description: "Consulta el tramo comercial final: evaluación, riesgos, negociación, venta y atribución de revenue.",
-    phases: ["procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "postventa"],
-    focus: "Verifica que la venta tenga valor, fuente, producto y evidencia antes de enviarla a Postventa.",
+    title: "Integridad de venta y continuidad",
+    subtitle: "Control de calidad 2 · observatorio de venta y Postventa",
+    description: "Observa ventas canónicas y continuidad ya registrada. No aprueba, devuelve, anula ni mueve ventas o leads.",
+    phases: ["cierre", "postventa"],
+    focus: "Señala cliente, venta canónica, producto, valor, atribución, evidencia y continuidad que debe corregirse desde Ventas o Postventa.",
     checkpoint: "Control 2 · venta y trazabilidad",
     banner: "CONTROL DE CALIDAD 2",
     explainer: "Muestra integridad de atribución y continuidad; no aprueba, bloquea ni mueve ventas.",
@@ -39577,6 +39577,8 @@ function openRmsQualityControl(key = "") {
   const config = rmsQualityControlConfig(key);
   if (!config) return;
   state.rmsQualityControlKey = key;
+  state.rmsQualityControlFilters = { status: "", owner: "", campaign: "", channel: "", product: "", period: "" };
+  state.rmsQualityControlCaseId = "";
   state.rmsStationScreenOpen = true;
   state.rmsStationSearch = "";
   renderRmsStationOnly();
@@ -39600,7 +39602,7 @@ function rmsActivationQualityEvidenceMarkup(item = {}) {
   </div>`;
 }
 
-function renderRmsQualityControlDashboard(key = "") {
+function renderRmsQualityControlDashboardLegacy(key = "") {
   const config = rmsQualityControlConfig(key);
   if (!config || !rmsStationWorkspace) return;
   const data = state.rmsMachine || {};
@@ -39679,6 +39681,188 @@ function renderRmsQualityControlDashboard(key = "") {
   `;
   bindRmsMachineActions(rmsStationWorkspace);
   rmsStationWorkspace.querySelector("[data-rms-close-station]")?.addEventListener("click", closeRmsStation);
+}
+
+function rmsQualityMetadata(item = {}) {
+  return item.state_metadata || item.metadata || item.rms_metadata || {};
+}
+
+function rmsQualityValue(...values) {
+  return values.find((value) => value !== undefined && value !== null && String(value).trim() !== "") || "";
+}
+
+function rmsQualityContact(item = {}) {
+  return [item.phone, item.email].filter(Boolean).join(" · ");
+}
+
+function rmsQualityProduct(item = {}) {
+  const metadata = rmsQualityMetadata(item);
+  const confirmation = metadata.commercial_confirmation || {};
+  return rmsQualityValue(
+    metadata.rms_sale_product,
+    confirmation.product_name_snapshot,
+    confirmation.product_name,
+    rmsClassifiedProductName(item),
+    item.activation_name,
+    item.product_interest,
+  );
+}
+
+function rmsQualityOwner(item = {}) {
+  const metadata = rmsQualityMetadata(item);
+  const confirmation = metadata.commercial_confirmation || {};
+  return rmsQualityValue(
+    confirmation.responsible,
+    metadata.activation_responsible,
+    metadata.responsible,
+    item.responsible_name,
+    item.owner_name,
+    item.assigned_to_name,
+  );
+}
+
+function rmsQualityCriterion(label, ready, missing, impact, ownerPhase) {
+  return { label, ready: Boolean(ready), missing, impact, ownerPhase };
+}
+
+function rmsQualityAuditForItem(key, item = {}) {
+  const metadata = rmsQualityMetadata(item);
+  const confirmation = metadata.commercial_confirmation || {};
+  const product = rmsQualityProduct(item);
+  const owner = rmsQualityOwner(item);
+  const contact = rmsQualityContact(item);
+  const source = rmsQualityValue(item.campaign_name, item.channel, item.entry_summary, item.source_label, metadata.acquisition_channel_name_snapshot, metadata.source);
+  const activationMaterial = rmsQualityValue(metadata.activation_ticket_url, metadata.activation_message, item.activation_name, item.last_material_sent, Array.isArray(metadata.activation_attachments) && metadata.activation_attachments.length);
+  const nextStep = rmsQualityValue(metadata.activation_follow_up_at, metadata.next_action_at, metadata.next_contact_at, item.next_action_at, item.follow_up_at, item.last_operation);
+  const hasConsent = metadata.activation_contact_consent_confirmed === true || metadata.contact_consent_confirmed === true || metadata.consent_confirmed === true || !rmsQualityValue(metadata.activation_channel, item.channel);
+  const saleId = rmsQualityValue(metadata.rms_attributed_sale_id, metadata.rms_sale_id, item.rms_attributed_sale_id, item.sale_id);
+  const saleAmount = Number(rmsQualityValue(metadata.rms_sale_amount, confirmation.amount, confirmation.final_amount, item.sale_amount, 0));
+  const saleCurrency = rmsQualityValue(confirmation.currency, item.sale_currency, metadata.rms_sale_currency);
+  const saleEvidence = rmsQualityValue(confirmation.evidence, confirmation.payment_reference, confirmation.note, metadata.rms_sale_evidence, metadata.rms_sale_reference);
+  const postSaleActions = (state.rmsPostSaleActions || []).filter((action) => String(action.source_type || "") === String(item.source_type || "") && String(action.source_id || "") === String(item.source_id || ""));
+  const postSaleDefined = postSaleActions.length > 0 || Boolean(metadata.rms_post_sale_action_id || metadata.post_sale_action_id);
+  const duplicateSignal = Boolean(metadata.rms_sale_duplicate || metadata.sale_duplicate_suspected || metadata.duplicate_sale_risk);
+  const criteria = key === "preprocesamiento"
+    ? [
+      rmsQualityCriterion("Lead identificable", Boolean(item.name && contact), "Falta nombre o un canal de contacto.", "Sin identidad no es posible interpretar una respuesta comercial.", "recoleccion"),
+      rmsQualityCriterion("Consentimiento y canal", hasConsent && Boolean(rmsQualityValue(metadata.activation_channel, item.channel)), "Falta confirmar consentimiento o el canal usado.", "El contacto debe ser demostrable y permitido.", "clasificacion"),
+      rmsQualityCriterion("Origen atribuible", Boolean(source), "Falta campaña, canal de adquisición, QR, referido u origen.", "Sin origen se pierde la atribución del resultado.", "recoleccion"),
+      rmsQualityCriterion("Producto u oferta", Boolean(product), "Falta producto de inventario, oferta, ticket o activación.", "Evaluación no puede contrastar el interés con una propuesta concreta.", "curaduria"),
+      rmsQualityCriterion("Material enviado o programado", Boolean(activationMaterial), "Falta evidencia de activación, propuesta, ticket o material.", "No hay soporte para evaluar qué recibió el lead.", "clasificacion"),
+      rmsQualityCriterion("Responsable", Boolean(owner), "Falta responsable de la siguiente acción.", "No hay una persona trazable para continuar el caso.", "clasificacion"),
+      rmsQualityCriterion("Próximo paso", Boolean(nextStep), "Falta tarea, fecha o seguimiento.", "La oportunidad puede quedar sin continuidad.", "clasificacion"),
+    ]
+    : [
+      rmsQualityCriterion("Cliente identificable", Boolean(item.name && contact), "Falta cliente o dato de contacto verificable.", "La atribución no puede relacionarse con una persona real.", "cierre"),
+      rmsQualityCriterion("Venta canónica", Boolean(saleId), "No hay una venta canónica vinculada al caso.", "Solo Ventas atribuidas puede registrar la venta original.", "cierre"),
+      rmsQualityCriterion("Producto de inventario", Boolean(confirmation.inventory_product_id || metadata.inventory_product_id || product), "Falta el producto o servicio vinculado.", "No es posible contrastar qué se vendió.", "cierre"),
+      rmsQualityCriterion("Valor, moneda y responsable", saleAmount > 0 && Boolean(saleCurrency) && Boolean(owner), "Falta valor, moneda o responsable.", "La venta no tiene una atribución comercial completa.", "cierre"),
+      rmsQualityCriterion("Fuente atribuible", Boolean(source), "Falta campaña, canal u origen comercial.", "El revenue no se podrá analizar por fuente.", "cierre"),
+      rmsQualityCriterion("Evidencia válida", Boolean(saleEvidence), "Falta factura, referencia, comprobante o nota verificable.", "La venta debe corregirse desde su estación responsable.", "cierre"),
+      rmsQualityCriterion("Sin duplicidad evidente", !duplicateSignal && Boolean(saleId), duplicateSignal ? "Existe una señal de posible duplicidad." : "Aún no hay venta canónica para contrastar duplicidad.", "Una venta duplicada debe revisarse desde Ventas atribuidas.", "cierre"),
+      rmsQualityCriterion("Continuidad definida", postSaleDefined, "Falta una acción de Postventa, ticket, Reward Pass, activación o tarea de continuidad.", "La relación posterior a la compra aún no está definida.", "postventa"),
+    ];
+  const pending = criteria.filter((criterion) => !criterion.ready);
+  const status = !criteria.some((criterion) => criterion.ready) ? "insufficient"
+    : (key === "revenue_generado" && (!saleId || duplicateSignal)) || (key === "preprocesamiento" && !criteria[0].ready) ? "critical"
+      : pending.length ? "attention" : "complete";
+  const primary = pending[0] || criteria[0];
+  return {
+    item, criteria, pending, status, primary,
+    product: product || "Sin producto u oferta",
+    source: source || "Origen sin documentar",
+    owner: owner || "Responsable pendiente",
+    destination: primary.ownerPhase,
+    action: `Corregir en ${primary.ownerPhase === "cierre" ? "Ventas atribuidas" : primary.ownerPhase === "clasificacion" ? "Activación 1" : primary.ownerPhase === "procesamiento" ? "Evaluación" : primary.ownerPhase === "postventa" ? "Postventa" : primary.ownerPhase === "curaduria" ? "Curaduría" : "Recolección"}`,
+  };
+}
+
+function rmsQualityStatusLabel(status = "") {
+  return ({ complete: "Completo", attention: "Atención requerida", critical: "Crítico", insufficient: "Sin datos suficientes" })[status] || "Sin datos suficientes";
+}
+
+function rmsQualitySelectOptions(values = [], selected = "", emptyLabel = "Todos") {
+  return [`<option value="">${escapeHtml(emptyLabel)}</option>`, ...values.filter(Boolean).map((value) => {
+    const [rawValue, label] = String(value).split("|");
+    return `<option value="${escapeHtml(rawValue)}"${String(rawValue) === String(selected) ? " selected" : ""}>${escapeHtml(label || rawValue)}</option>`;
+  })].join("");
+}
+
+function renderRmsQualityControlDashboard(key = "") {
+  const config = rmsQualityControlConfig(key);
+  if (!config || !rmsStationWorkspace) return;
+  const data = state.rmsMachine || {};
+  const stages = rmsFactoryStages(data);
+  const stageName = (phase) => stages.find((stage) => stage.key === phase)?.short_label || phase || "-";
+  const visual = rmsStationVisualMeta(key);
+  const audits = (data.opportunities || []).filter((item) => config.phases.includes(item.stage)).map((item) => rmsQualityAuditForItem(key, item));
+  const filters = state.rmsQualityControlFilters || { status: "", owner: "", campaign: "", channel: "", product: "", period: "" };
+  const now = Date.now();
+  const filtered = audits.filter((audit) => {
+    const item = audit.item;
+    const updated = new Date(item.updated_at || item.last_interaction_at || 0).getTime();
+    return (!filters.status || audit.status === filters.status)
+      && (!filters.owner || audit.owner === filters.owner)
+      && (!filters.campaign || String(item.campaign_name || "") === filters.campaign)
+      && (!filters.channel || String(item.channel || "") === filters.channel)
+      && (!filters.product || audit.product === filters.product)
+      && (!filters.period || (updated && updated >= now - Number(filters.period) * 86400000));
+  });
+  const totals = ["complete", "attention", "critical", "insufficient"].map((status) => ({ status, count: audits.filter((audit) => audit.status === status).length }));
+  const priority = audits.find((audit) => audit.status === "critical") || audits.find((audit) => audit.status === "attention") || audits[0];
+  const missingOwner = audits.filter((audit) => audit.pending.length).reduce((counts, audit) => {
+    counts[audit.primary.ownerPhase] = (counts[audit.primary.ownerPhase] || 0) + 1;
+    return counts;
+  }, {});
+  const mostMissing = Object.entries(missingOwner).sort((a, b) => b[1] - a[1])[0];
+  const selected = audits.find((audit) => String(audit.item.id) === String(state.rmsQualityControlCaseId || ""));
+  const consoleShell = rmsStationWorkspace.closest(".rms-factory-console");
+  consoleShell?.classList.add("is-station-mode");
+  rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.hidden = false;
+  rmsStationWorkspace.dataset.stationTheme = visual.tone || "default";
+  rmsStationWorkspace.innerHTML = `
+    <section class="rms-quality-dashboard" aria-label="${escapeHtml(config.title)}">
+      <header class="rms-quality-dashboard-head">
+        <button class="ghost-button compact" type="button" data-rms-close-station><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Estaciones</button>
+        <div><span class="mono-label">Panel auxiliar de solo lectura</span><h3>${escapeHtml(config.title)}</h3><p>${escapeHtml(config.description)}</p></div>
+        <figure><img src="${escapeHtml(visual.image || "")}" alt="${escapeHtml(visual.imageAlt || config.title)}" decoding="async"></figure>
+      </header>
+      <section class="rms-quality-dashboard-context">
+        <div><span class="mono-label">Alcance revisado</span><strong>${escapeHtml(config.subtitle)}</strong><p>${escapeHtml(config.focus)}</p></div>
+        <dl class="rms-quality-dashboard-summary">
+          <div><dt>Casos observados</dt><dd>${audits.length.toLocaleString("es-CO")}</dd></div>
+          ${totals.map((entry) => `<div><dt>${escapeHtml(rmsQualityStatusLabel(entry.status))}</dt><dd>${entry.count.toLocaleString("es-CO")}</dd></div>`).join("")}
+        </dl>
+      </section>
+      <section class="rms-quality-dashboard-context rms-quality-executive-summary">
+        <div><span class="mono-label">Hallazgo principal</span><strong>${escapeHtml(priority ? priority.primary.missing : "Sin hallazgos pendientes")}</strong><p>${escapeHtml(priority ? `${priority.item.name || "Caso"}: ${priority.primary.impact}` : "No hay casos en el alcance actual.")}</p></div>
+        <div><span class="mono-label">Estación con más faltantes</span><strong>${escapeHtml(mostMissing ? stageName(mostMissing[0]) : "Sin faltantes")}</strong><p>${mostMissing ? `${mostMissing[1]} caso(s) requieren corrección allí.` : "La observación no modifica ninguna estación."}</p></div>
+      </section>
+      <section class="rms-quality-dashboard-filters" aria-label="Filtros de calidad">
+        <label><span>Estado</span><select data-rms-quality-filter="status">${rmsQualitySelectOptions(["complete", "attention", "critical", "insufficient"].map((status) => `${status}|${rmsQualityStatusLabel(status)}`), "", "Todos")}</select></label>
+        <label><span>Responsable</span><select data-rms-quality-filter="owner">${rmsQualitySelectOptions([...new Set(audits.map((audit) => audit.owner))], filters.owner, "Todos")}</select></label>
+        <label><span>Campaña</span><select data-rms-quality-filter="campaign">${rmsQualitySelectOptions([...new Set(audits.map((audit) => audit.item.campaign_name).filter(Boolean))], filters.campaign, "Todas")}</select></label>
+        <label><span>Canal</span><select data-rms-quality-filter="channel">${rmsQualitySelectOptions([...new Set(audits.map((audit) => audit.item.channel).filter(Boolean))], filters.channel, "Todos")}</select></label>
+        <label><span>Producto / servicio</span><select data-rms-quality-filter="product">${rmsQualitySelectOptions([...new Set(audits.map((audit) => audit.product))], filters.product, "Todos")}</select></label>
+        <label><span>Periodo</span><select data-rms-quality-filter="period"><option value="">Todo el historial</option><option value="30"${filters.period === "30" ? " selected" : ""}>Últimos 30 días</option><option value="90"${filters.period === "90" ? " selected" : ""}>Últimos 90 días</option></select></label>
+      </section>
+      ${selected ? `<section class="rms-quality-case-detail" aria-label="Detalle de observación"><header><div><span class="mono-label">Detalle automático</span><h4>${escapeHtml(selected.item.name || "Contacto")}</h4><p>${escapeHtml(rmsQualityStatusLabel(selected.status))} · ${escapeHtml(selected.primary.impact)}</p></div><button class="ghost-button compact" type="button" data-rms-quality-close-detail>Cerrar detalle</button></header><ol>${selected.criteria.map((criterion) => `<li class="${criterion.ready ? "is-ready" : "is-pending"}"><strong>${escapeHtml(criterion.label)}</strong><span>${escapeHtml(criterion.ready ? "Registrado en las fuentes del caso." : criterion.missing)}</span><small>${escapeHtml(criterion.ready ? "Sin acción desde Calidad." : `Impacto: ${criterion.impact}`)}</small>${criterion.ready ? "" : `<button class="ghost-button compact" type="button" data-rms-quality-navigate="${escapeHtml(criterion.ownerPhase)}">Ir a ${escapeHtml(stageName(criterion.ownerPhase))}</button>`}</li>`).join("")}</ol><div class="rms-quality-case-evidence"><strong>Datos heredados</strong><span>${escapeHtml([selected.product, selected.source, selected.owner, selected.item.last_operation || "Sin operación reciente"].filter(Boolean).join(" · "))}</span><small>La evidencia y el historial se conservan en las estaciones y ficha del lead; este panel no los edita.</small></div></section>` : ""}
+      <section class="rms-quality-dashboard-list" aria-label="Casos observados">
+        <div class="rms-quality-dashboard-table-wrap"><table class="rms-quality-dashboard-table"><thead><tr><th>Lead / cliente</th><th>Estado real</th><th>Producto / fuente</th><th>Calidad</th><th>Faltante principal</th><th>Responsable</th><th>Última actualización</th><th><span class="sr-only">Acción</span></th></tr></thead><tbody>
+          ${filtered.map((audit) => `<tr><td data-label="Lead / cliente"><strong>${escapeHtml(audit.item.name || "Contacto")}</strong><small>${escapeHtml(rmsQualityContact(audit.item) || "Sin contacto")}</small></td><td data-label="Estado real">${escapeHtml(stageName(audit.item.stage))}</td><td data-label="Producto / fuente"><strong>${escapeHtml(audit.product)}</strong><small>${escapeHtml(audit.source)}</small></td><td data-label="Calidad"><span class="rms-quality-status is-${escapeHtml(audit.status)}">${escapeHtml(rmsQualityStatusLabel(audit.status))}</span></td><td data-label="Faltante principal">${escapeHtml(audit.pending.length ? audit.primary.missing : "Sin faltantes detectados")}</td><td data-label="Responsable">${escapeHtml(audit.owner)}</td><td data-label="Última actualización">${escapeHtml(formatDate(audit.item.updated_at || audit.item.last_interaction_at) || "Sin fecha")}</td><td class="rms-quality-table-action"><button class="ghost-button compact" type="button" data-rms-quality-detail="${escapeHtml(audit.item.id)}">Ver observación</button>${audit.pending.length ? `<button class="solid-button compact" type="button" data-rms-quality-navigate="${escapeHtml(audit.destination)}">${escapeHtml(audit.action)}</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="8"><p class="empty-state compact">No hay casos que coincidan con estos filtros.</p></td></tr>'}
+        </tbody></table></div>
+      </section>
+    </section>`;
+  rmsStationWorkspace.querySelector("[data-rms-close-station]")?.addEventListener("click", closeRmsStation);
+  rmsStationWorkspace.querySelectorAll("[data-rms-quality-filter]").forEach((control) => control.addEventListener("change", () => {
+    const next = { ...filters, [control.dataset.rmsQualityFilter]: control.value || "" };
+    state.rmsQualityControlFilters = next;
+    renderRmsQualityControlDashboard(key);
+  }));
+  rmsStationWorkspace.querySelectorAll("[data-rms-quality-detail]").forEach((control) => control.addEventListener("click", () => { state.rmsQualityControlCaseId = control.dataset.rmsQualityDetail || ""; renderRmsQualityControlDashboard(key); }));
+  rmsStationWorkspace.querySelector("[data-rms-quality-close-detail]")?.addEventListener("click", () => { state.rmsQualityControlCaseId = ""; renderRmsQualityControlDashboard(key); });
+  rmsStationWorkspace.querySelectorAll("[data-rms-quality-navigate]").forEach((control) => control.addEventListener("click", () => openRmsStation(control.dataset.rmsQualityNavigate || "")));
 }
 
 function closeBranchFormModal() {
@@ -40145,23 +40329,10 @@ const RMS_TUTORIAL_STEPS = [
     operatorHint: "Esta estación organiza la primera acción comercial antes de invertir más esfuerzo en el lead.",
   },
   {
-    key: "preprocesamiento",
-    phase: "preprocesamiento",
-    icon: "verified_user",
-    title: "Estación 05 · Control de calidad 1",
-    subtitle: "Validar activación",
-    actionLabel: "Abrir Control 1",
-    action: "station",
-    input: "Oportunidades activadas que necesitan validar cobertura, vencimiento y siguiente paso.",
-    operation: "Comprueba que la activación tenga datos suficientes, material claro y una acción medible antes de continuar.",
-    output: "Lead validado y listo para Evaluación.",
-    operatorHint: "Evita que una activación incompleta avance y se convierta en una fuga silenciosa.",
-  },
-  {
     key: "procesamiento",
     phase: "procesamiento",
     icon: "send",
-    title: "Estación 06 · Evaluación",
+    title: "Estación 05 · Evaluación",
     subtitle: "Evaluación",
     actionLabel: "Abrir Evaluación",
     action: "station",
@@ -40174,7 +40345,7 @@ const RMS_TUTORIAL_STEPS = [
     key: "control_anti_fuga",
     phase: "control_anti_fuga",
     icon: "monitor_heart",
-    title: "Estación 08 · Riesgos de fuga",
+    title: "Estación 07 · Riesgos de fuga",
     subtitle: "Controlar el acuerdo",
     actionLabel: "Abrir Riesgos de fuga",
     action: "station",
@@ -40187,7 +40358,7 @@ const RMS_TUTORIAL_STEPS = [
     key: "accion_correctiva",
     phase: "accion_correctiva",
     icon: "handshake",
-    title: "Estación 07 · Negociación",
+    title: "Estación 06 · Negociación",
     subtitle: "Acordar condiciones",
     actionLabel: "Abrir Negociación",
     action: "station",
@@ -40200,7 +40371,7 @@ const RMS_TUTORIAL_STEPS = [
     key: "cierre",
     phase: "cierre",
     icon: "payments",
-    title: "Estación 09 · Ventas atribuidas",
+    title: "Estación 08 · Ventas atribuidas",
     subtitle: "Ventas atribuidas",
     actionLabel: "Abrir Ventas atribuidas",
     action: "station",
@@ -40208,19 +40379,6 @@ const RMS_TUTORIAL_STEPS = [
     operation: "Ensambla el cierre comercial y deja la venta vinculada a su fuente, campaña, ticket o acción.",
     output: "Venta atribuida y lista para Activación 2.",
     operatorHint: "Cerrar no es solo cobrar: es dejar evidencia de qué produjo el revenue.",
-  },
-  {
-    key: "revenue_generado",
-    phase: "revenue_generado",
-    icon: "query_stats",
-    title: "Estación 10 · Control de calidad 2",
-    subtitle: "Validar revenue",
-    actionLabel: "Abrir Control 2",
-    action: "station",
-    input: "Ventas atribuidas, redenciones, recompras, referidos o suscripciones registradas.",
-    operation: "Valida valor, fuente, producto, campaña y resultado comercial antes de pasar a postventa.",
-    output: "Revenue validado y cliente listo para Activación 2.",
-    operatorHint: "Confirma que el resultado sea medible y atribuible antes de aprender de él.",
   },
   {
     key: "postventa",
@@ -41472,12 +41630,10 @@ function rmsStageEmptyMarkup(stage = {}) {
     alimentacion: ["Sin leads en Alimentar.", "Esta estacion almacena leads filtrados. La operacion Alimentar asigna calidad alta, media o baja.", "Cargar leads", "contacts-manual"],
     curaduria: ["Sin leads en Curados.", "Esta estacion almacena leads con calidad heredada y dato defendible antes de clasificar producto.", "Ver contactos", "contacts-manual"],
     clasificacion: ["Sin leads en Clasificar.", "Esta estacion asigna producto o servicio interno antes de Gamificar.", "Ver leads", "contacts-manual"],
-    preprocesamiento: ["Sin leads en Gamificar.", "Esta estacion prepara ticket, beneficio o dinámica anti-fuga.", "Crear ticket", "reward-passes"],
     procesamiento: ["Sin leads en Evaluación.", "Esta estacion almacena oportunidades accionadas para revisar respuesta y siguiente paso.", "Ver leads", "contacts-manual"],
     control_anti_fuga: ["Sin riesgos de fuga.", "Esta estacion almacena oportunidades con posible atasco para corregir antes de perderlas.", "Ver leads", "contacts-manual"],
     accion_correctiva: ["Sin leads en Corregir.", "Esta estacion almacena oportunidades que necesitan negociación, condición o último beneficio.", "Ver leads", "contacts-manual"],
     cierre: ["Sin leads en Cerrar.", "Esta estacion almacena cierres para registrar la fuente real del revenue.", "Registrar venta", "sales"],
-    revenue_generado: ["Sin Revenue.", "Esta estacion valida ventas atribuidas antes de pasar a Postventa.", "Ver ventas", "sales"],
     postventa: ["Sin Postventa.", "Esta estacion almacena clientes despues de comprar para garantia, encuesta, recompra o referido.", "Activar recompra", "reward-passes"],
     inteligencia: ["Sin Optimizar.", "Esta estacion almacena senales para entender que produjo revenue o fuga.", "Ver leads", "contacts-manual"],
   };
@@ -41838,12 +41994,12 @@ function rmsStationVisualMeta(phase = "") {
       tone: "gamified",
       image: "/empresa/img/qori-station-05-control-calidad-1.jpg",
       imageAlt: "Estacion 05 Control de calidad 1",
-      screenTitle: "Estacion de almacenamiento: Control de calidad 1",
-      visualLabel: "Inventario: validación inicial",
-      input: "Oportunidades activadas que necesitan validación antes de avanzar.",
-      output: "Lead validado y listo para Evaluación.",
-      focus: "Revisar que la primera activación tenga dato suficiente, cobertura clara y siguiente paso medible.",
-      checklist: ["Dato suficiente", "Cobertura aplicada", "Vencimiento", "Material corto", "Control anti-fuga"],
+      screenTitle: "Panel auxiliar: Control de calidad 1",
+      visualLabel: "Observatorio de preparación comercial",
+      input: "Datos heredados de Activación 1 y del lead.",
+      output: "Faltantes explicados con enlace a la estación responsable.",
+      focus: "Observar evidencia y continuidad sin aprobar, bloquear ni mover casos.",
+      checklist: ["Contacto", "Consentimiento", "Origen", "Oferta", "Seguimiento"],
     },
     procesamiento: {
       icon: "precision_manufacturing",
@@ -41898,12 +42054,12 @@ function rmsStationVisualMeta(phase = "") {
       tone: "revenue",
       image: "/empresa/img/qori-station-10-control-calidad-2.jpg",
       imageAlt: "Estacion 10 Control de calidad 2",
-      screenTitle: "Estacion de almacenamiento: Revenue",
-      visualLabel: "Inventario: revenue generado",
-      input: "Ventas atribuidas, redenciones, recompras o suscripciones.",
-      output: "Revenue validado y listo para Activación 2.",
-      focus: "Validar que la venta atribuida tenga valor, fuente, producto y siguiente acción de Activación 2.",
-      checklist: ["Venta", "Redención", "Valor", "Campaña", "Validación final"],
+      screenTitle: "Panel auxiliar: Control de calidad 2",
+      visualLabel: "Observatorio de integridad y continuidad",
+      input: "Datos heredados de Venta atribuida y Postventa.",
+      output: "Hallazgos explicados con enlace a la estación responsable.",
+      focus: "Observar evidencia y continuidad sin aprobar, devolver ni mover ventas.",
+      checklist: ["Venta", "Producto", "Valor", "Evidencia", "Continuidad"],
     },
     postventa: {
       icon: "redeem",

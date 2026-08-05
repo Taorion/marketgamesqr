@@ -180,16 +180,6 @@ const PHASE_OPERATIONS = {
     agendaTaskType: "activation_follow_up",
     whatsappTemplateKey: "send_catalog",
   },
-  preprocesamiento: {
-    primaryAction: "Validar claridad antes de Evaluación",
-    primaryActionKey: "quality_gate_1",
-    suggestedMaterialType: "contacto_propuesta_origen_siguiente_paso",
-    materialLabel: "Contacto, consentimiento, propuesta, oferta, origen y siguiente paso",
-    buttonLabel: "Revisar calidad 1",
-    nextPhase: "procesamiento",
-    agendaTaskType: "ticket_reminder",
-    whatsappTemplateKey: "send_ticket",
-  },
   procesamiento: {
     primaryAction: "Evaluar respuesta y abrir negociación",
     primaryActionKey: "evaluate_commercial_response",
@@ -229,16 +219,6 @@ const PHASE_OPERATIONS = {
     nextPhase: "postventa",
     agendaTaskType: "payment",
     whatsappTemplateKey: "send_payment",
-  },
-  revenue_generado: {
-    primaryAction: "Validar integridad del revenue y continuidad",
-    primaryActionKey: "quality_gate_2",
-    suggestedMaterialType: "venta_valor_fuente_evidencia_postventa",
-    materialLabel: "Cliente, venta, valor, producto, fuente, evidencia y postventa",
-    buttonLabel: "Revisar calidad 2",
-    nextPhase: "postventa",
-    agendaTaskType: "post_sale",
-    whatsappTemplateKey: "post_sale",
   },
   postventa: {
     primaryAction: "Empacar postventa gamificada",

@@ -14118,6 +14118,147 @@ body.chart-focus-open .command-center {
   }
 }
 
+/* RMS quality controls are read-only observatories.  Their corrective links always
+   point back to an operational station; these styles keep the diagnosis scannable. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-filters {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid rgba(14, 81, 148, .14);
+  border-radius: 16px;
+  background: #f8fcff;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-filters label,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-executive-summary > div,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-evidence {
+  min-width: 0;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-filters label {
+  display: grid;
+  gap: 5px;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-filters label > span,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail .mono-label {
+  color: #426783;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-filters select {
+  min-width: 0;
+  min-height: 40px;
+  border: 1px solid rgba(14, 81, 148, .22);
+  border-radius: 10px;
+  background: #fff;
+  color: #143e66;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-filters select:focus-visible,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail button:focus-visible {
+  outline: 3px solid rgba(3, 112, 183, .3);
+  outline-offset: 2px;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-executive-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-executive-summary > div + div {
+  padding-left: 18px;
+  border-left: 1px solid rgba(14, 81, 148, .13);
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-status.is-complete { background: #e6f7f0; color: #126343; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-status.is-attention { background: #fff4dc; color: #8a5610; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-status.is-critical { background: #fff0ee; color: #a5362d; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-status.is-insufficient { background: #edf1f5; color: #516274; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail {
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid rgba(14, 81, 148, .16);
+  border-radius: 16px;
+  background: #fff;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail h4,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail p { margin: 4px 0 0; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail > ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin: 16px 0;
+  padding: 0;
+  list-style: none;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail li {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(14, 81, 148, .12);
+  border-radius: 12px;
+  background: #fbfdff;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail li.is-pending { border-left: 3px solid #d08a21; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail li.is-ready { border-left: 3px solid #26946a; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail li span,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail li small,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-evidence small { color: #55718b; line-height: 1.4; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail li button { justify-self: start; margin-top: 4px; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-evidence {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #eff8fc;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 980px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-filters,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail > ol,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-executive-summary { grid-template-columns: minmax(0, 1fr); }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-executive-summary > div + div { padding: 14px 0 0; border-top: 1px solid rgba(14, 81, 148, .13); border-left: 0; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail > header { display: grid; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard *,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard *::before,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard *::after { transition-duration: .01ms !important; }
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-filters,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail { border-color: rgba(155, 205, 238, .22); background: #102337; }
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-quality-dashboard-filters select,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-detail li { border-color: rgba(155, 205, 238, .2); background: #152d45; color: #edf7ff; }
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-quality-case-evidence { background: #12364e; }
+
 @media (prefers-reduced-motion: reduce) {
   body.chart-focus-open .command-center {
     filter: none;

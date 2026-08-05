@@ -712,7 +712,7 @@ async function syncIntentWithRms(client, intent, lead, phase = "procesamiento", 
       lead.id,
       phase,
       phase === "postventa" ? "Enviar encuesta, garantia o beneficio de recompra" : "Contactar por WhatsApp y cerrar pedido",
-      phase === "revenue_generado" ? "Venta marcada desde Catalogos Qori" : "Intencion de pedido detectada desde Catalogos Qori",
+      phase === "postventa" ? "Venta canónica registrada desde Catalogos Qori" : "Intencion de pedido detectada desde Catalogos Qori",
       revenuePotential,
       JSON.stringify(meta),
       userId,
@@ -725,11 +725,11 @@ async function syncIntentWithRms(client, intent, lead, phase = "procesamiento", 
     [
       intent.business_id,
       lead.id,
-      phase === "revenue_generado" ? "sale_attributed" : phase === "postventa" ? "post_sale_ticket_sent" : "catalog_order_intent",
-      phase === "revenue_generado" ? "Venta atribuida desde catalogo" : phase === "postventa" ? "Ticket postventa preparado desde catalogo" : "Intencion de pedido desde catalogo",
-      phase === "revenue_generado" ? "La intencion del catalogo fue marcada como vendida." : "El catalogo genero una accion comercial para WhatsApp.",
+      phase === "postventa" ? "sale_attributed" : "catalog_order_intent",
+      phase === "postventa" ? "Venta atribuida desde catalogo" : "Intencion de pedido desde catalogo",
+      phase === "postventa" ? "La intencion del catalogo fue marcada como vendida y quedó disponible para Postventa." : "El catalogo genero una accion comercial para WhatsApp.",
       phase,
-      phase === "revenue_generado" ? "register_revenue" : "commercial_process",
+      phase === "postventa" ? "register_revenue" : "commercial_process",
       userId,
       JSON.stringify(meta),
     ]
@@ -952,7 +952,7 @@ async function markWon(businessId, intentId, body = {}, user) {
         "update business_manual_leads set status = 'CONVERTED', updated_at = now() where id = $1 and business_id = $2",
         [row.lead_row_id, businessId]
       );
-      await syncIntentWithRms(client, { ...updated.rows[0], product_name: row.product_name, product_price: saleAmount }, { id: row.lead_row_id }, "revenue_generado", user.id);
+      await syncIntentWithRms(client, { ...updated.rows[0], product_name: row.product_name, product_price: saleAmount }, { id: row.lead_row_id }, "postventa", user.id);
     }
     return { intent: updated.rows[0], sale: sale.rows[0] };
   });
