@@ -2438,6 +2438,23 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
 async function createLeadActivation(businessId, user, leadId, sourceType, payload) {
   return withTransaction(async (client) => {
     const lead = await ensurePlayerForAction(client, businessId, leadId, sourceType);
+    const implicitRmsKey = payload.metadata?.source === "rms_activation_1" && payload.interactive_activation_id
+      ? `rms-activation-1:${lead.source_type}:${lead.id}:${payload.interactive_activation_id}`
+      : "";
+    const idempotencyKey = String(payload.idempotency_key || implicitRmsKey || "").trim() || null;
+    if (idempotencyKey) {
+      await client.query("select pg_advisory_xact_lock(hashtext($1))", [`lead-activation:${businessId}:${lead.id}:${idempotencyKey}`]);
+      const existing = await client.query(
+        `select la.*, al.public_url
+           from lead_activations la
+           left join activation_links al on al.activation_id = la.id and al.business_id = la.business_id
+          where la.business_id = $1 and la.source_type = $2 and la.source_id = $3
+            and la.metadata->>'idempotency_key' = $4
+          order by la.created_at desc limit 1`,
+        [businessId, lead.source_type, lead.id, idempotencyKey]
+      );
+      if (existing.rowCount) return { activation: existing.rows[0], public_url: existing.rows[0].public_url, reused: true };
+    }
     if (payload.campaign_id) {
       const campaign = await client.query("select id from campaigns where id = $1 and business_id = $2", [payload.campaign_id, businessId]);
       if (!campaign.rowCount) throw badRequest("La campaña seleccionada no pertenece a este negocio.");
@@ -2449,10 +2466,49 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
       throw badRequest("No se puede enviar correo porque el lead no tiene email valido.");
     }
 
-    const needsTicket = LEAD_ACTIVATION_TYPES_WITH_TICKET.has(payload.activation_type);
+    let interactiveActivation = null;
+    if (payload.interactive_activation_id) {
+      const activationResult = await client.query(
+        `select ia.id, ia.title, ia.description, ia.activation_type, ia.campaign_id, ia.public_slug, c.status as campaign_status
+           from interactive_activations ia
+           left join campaigns c on c.id = ia.campaign_id and c.business_id = ia.company_id
+          where ia.id = $1 and ia.company_id = $2 and ia.status = 'active'
+            and (ia.starts_at is null or ia.starts_at <= now())
+            and (ia.ends_at is null or ia.ends_at > now())`,
+        [payload.interactive_activation_id, businessId]
+      );
+      if (!activationResult.rowCount) throw badRequest("La activacion seleccionada no esta activa, vigente o no pertenece a este negocio.");
+      interactiveActivation = activationResult.rows[0];
+      if (["FINISHED", "ARCHIVED", "CANCELLED"].includes(String(interactiveActivation.campaign_status || "").toUpperCase())) {
+        throw badRequest("La campana de esta activacion ya no permite nuevos envios.");
+      }
+      const rmsConsentAlreadyValidated = payload.metadata?.source === "rms_activation_1";
+      if (["whatsapp", "email", "sms"].includes(String(payload.channel || "manual").toLowerCase()) && !payload.contact_consent_confirmed && !rmsConsentAlreadyValidated) {
+        throw badRequest("Confirma el consentimiento comercial del lead antes de enviar esta activacion.");
+      }
+    }
+
+    const needsTicket = LEAD_ACTIVATION_TYPES_WITH_TICKET.has(payload.activation_type) && !interactiveActivation;
     let qr = null;
     let token = createSecureToken();
-    let publicUrl = buildActivationUrl(payload.activation_type, token);
+    let publicUrl = interactiveActivation
+      ? `${String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "")}/activacion/${encodeURIComponent(interactiveActivation.public_slug)}`
+      : buildActivationUrl(payload.activation_type, token);
+    const activationName = interactiveActivation?.title || payload.name;
+    const activationDescription = interactiveActivation?.description || payload.description || null;
+    const campaignId = interactiveActivation?.campaign_id || payload.campaign_id || null;
+    const activationMetadata = {
+      ...(payload.metadata || {}),
+      source_module: payload.source_module || "contacts",
+      idempotency_key: idempotencyKey,
+      delivery_status: "ASSOCIATED",
+      ...(interactiveActivation ? {
+        interactive_activation_id: interactiveActivation.id,
+        interactive_activation_title: interactiveActivation.title,
+        interactive_activation_type: interactiveActivation.activation_type,
+        interactive_activation_public_slug: interactiveActivation.public_slug,
+      } : {}),
+    };
 
     const activation = await client.query(
       `insert into lead_activations
@@ -2465,16 +2521,16 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
         lead.lead_id,
         lead.source_type,
         lead.id,
-        payload.campaign_id || null,
+        campaignId,
         payload.activation_type,
-        payload.name,
-        payload.description || null,
+        activationName,
+        activationDescription,
         payload.benefit_type || "CUSTOM",
         JSON.stringify(payload.benefit_value || {}),
         payload.channel || "manual",
         payload.expires_at || null,
         payload.score_min || null,
-        JSON.stringify(payload.metadata || {}),
+        JSON.stringify(activationMetadata),
         user.id,
       ]
     );
@@ -2489,7 +2545,7 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
          returning *`,
         [
           businessId,
-          payload.campaign_id || null,
+          campaignId,
           lead.lead_id,
           token,
           JSON.stringify({
@@ -2523,7 +2579,7 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
         businessId,
         lead.lead_id,
         activation.rows[0].id,
-        payload.campaign_id || null,
+        campaignId,
         qr?.id || null,
         payload.activation_type,
         payload.channel || "manual",
@@ -2535,7 +2591,6 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
       ]
     );
 
-    const emailPending = String(payload.channel || "").toLowerCase() === "email";
     const communication = await client.query(
       `insert into lead_communications
         (business_id, lead_id, source_type, source_id, campaign_id, activation_id, ticket_id,
@@ -2548,15 +2603,15 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
         lead.lead_id,
         lead.source_type,
         lead.id,
-        payload.campaign_id || null,
+        campaignId,
         activation.rows[0].id,
         qr?.id || null,
         payload.activation_type,
         payload.channel || "manual",
-        payload.subject || payload.name,
+        payload.subject || activationName,
         payload.message || "",
-        emailPending ? "pending" : "sent",
-        JSON.stringify({ public_url: publicUrl, email_pending: emailPending, consent_warning: Boolean(payload.consent_warning) }),
+        "pending",
+        JSON.stringify({ public_url: publicUrl, delivery_status: "ASSOCIATED", consent_confirmed: Boolean(payload.contact_consent_confirmed), source_module: payload.source_module || "contacts" }),
         user.id,
       ]
     );
@@ -2565,18 +2620,18 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
       `insert into lead_events
         (business_id, lead_id, source_type, source_id, event_type, event_title, event_description,
          campaign_id, qr_code_id, communication_id, metadata, created_by)
-       values ($1, $2, $3, $4, 'activation_sent', $5, $6, $7, $8, $9, $10::jsonb, $11)`,
+       values ($1, $2, $3, $4, 'activation_associated', $5, $6, $7, $8, $9, $10::jsonb, $11)`,
       [
         businessId,
         lead.lead_id,
         lead.source_type,
         lead.id,
-        payload.name,
+        activationName,
         payload.description || `Activación ${payload.activation_type} creada desde seguimiento.`,
-        payload.campaign_id || null,
+        campaignId,
         qr?.id || null,
         communication.rows[0].id,
-        JSON.stringify({ activation_id: activation.rows[0].id, public_url: publicUrl, channel: payload.channel || "manual" }),
+        JSON.stringify({ activation_id: activation.rows[0].id, public_url: publicUrl, channel: payload.channel || "manual", delivery_status: "ASSOCIATED", source_module: payload.source_module || "contacts" }),
         user.id,
       ]
     );
@@ -2591,9 +2646,38 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
   });
 }
 
+async function markLeadActivationOpened(businessId, user, leadId, sourceType, activationId) {
+  return withTransaction(async (client) => {
+    const lead = await ensurePlayerForAction(client, businessId, leadId, sourceType);
+    const result = await client.query(
+      `update lead_activations
+          set status = case when status = 'CREATED' then 'OPENED' else status end,
+              metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object('delivery_status', 'WHATSAPP_OPENED_MANUALLY', 'opened_at', now()::text),
+              updated_at = now()
+        where id = $1 and business_id = $2 and source_type = $3 and source_id = $4
+        returning *`,
+      [activationId, businessId, lead.source_type, lead.id]
+    );
+    if (!result.rowCount) throw notFound("La asociacion de activacion no pertenece a este lead.");
+    await client.query(
+      `update lead_communications
+          set status = 'opened', opened_at = now(), metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object('delivery_status', 'WHATSAPP_OPENED_MANUALLY')
+        where business_id = $1 and activation_id = $2 and status = 'pending'`,
+      [businessId, activationId]
+    );
+    await client.query(
+      `insert into lead_events (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, metadata, created_by)
+       values ($1, $2, $3, $4, 'activation_whatsapp_opened', 'WhatsApp abierto para envio manual', 'La activacion quedo asociada; la entrega no se confirma automaticamente.', $5::jsonb, $6)`,
+      [businessId, lead.lead_id || null, lead.source_type, lead.id, JSON.stringify({ activation_id: activationId }), user.id]
+    );
+    return { activation: result.rows[0], delivery_status: "WHATSAPP_OPENED_MANUALLY" };
+  });
+}
+
 module.exports = {
   addLeadInterest,
   createLeadActivation,
+  markLeadActivationOpened,
   createLeadAgendaItem,
   createLeadNote,
   deleteLeadAgendaItem,

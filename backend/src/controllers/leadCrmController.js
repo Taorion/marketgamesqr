@@ -13,6 +13,7 @@ const {
   getLeadCrmDetail,
   listLeadAgenda,
   listLeadCrmRows,
+  markLeadActivationOpened,
   updateLeadAgendaItem,
 } = require("../services/leadCrmService");
 
@@ -103,6 +104,7 @@ const purchaseSchema = z.object({
 
 const activationSchema = z.object({
   source_type: sourceTypeSchema.optional(),
+  interactive_activation_id: z.string().uuid().optional().nullable(),
   activation_type: z.enum([
     "MICROGAME",
     "TRIVIA",
@@ -145,6 +147,9 @@ const activationSchema = z.object({
   product_category: z.string().trim().max(160).optional().nullable(),
   conditions: z.string().trim().max(1200).optional().nullable(),
   consent_warning: z.boolean().optional(),
+  contact_consent_confirmed: z.boolean().optional().default(false),
+  source_module: z.enum(["contacts", "campaign", "rms_activation_1", "other"]).optional().default("contacts"),
+  idempotency_key: z.string().trim().min(8).max(180).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
@@ -296,6 +301,15 @@ async function sendActivation(req, res, next) {
   }
 }
 
+async function markActivationOpened(req, res, next) {
+  try {
+    const sourceType = String(req.body?.source_type || req.query.source_type || "PLAYER").toUpperCase();
+    res.json(await markLeadActivationOpened(businessIdFor(req), req.user, req.params.leadId, sourceType, req.params.activationId));
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   addInterest,
   addPurchase,
@@ -305,6 +319,7 @@ module.exports = {
   deleteAgendaItem,
   deleteContact,
   leadDetail,
+  markActivationOpened,
   listLeadsCrm,
   removeInterest,
   sendActivation,

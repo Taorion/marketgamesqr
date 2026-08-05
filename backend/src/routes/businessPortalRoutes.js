@@ -95,6 +95,7 @@ const {
   deleteContact,
   leadDetail,
   listLeadsCrm,
+  markActivationOpened,
   removeInterest,
   sendActivation,
   updateAgendaItem,
@@ -228,6 +229,7 @@ router.post("/leads/:leadId/interests", addInterest);
 router.delete("/leads/:leadId/interests/:interestId", removeInterest);
 router.post("/leads/:leadId/purchases", addPurchase);
 router.post("/leads/:leadId/activations", sendActivation);
+router.post("/leads/:leadId/activations/:activationId/opened", markActivationOpened);
 
 router.use(requirePortalAccess);
 router.get("/communications/audience", shortBusinessCache, communicationAudience);

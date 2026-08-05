@@ -71,7 +71,9 @@ async function create(req, res, next) {
 async function list(req, res, next) {
   try {
     const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 120, 1), 300);
-    const activations = await listInteractiveActivations(businessIdFor(req), { limit });
+    const includeArchived = ["1", "true", "yes"].includes(String(req.query.include_archived || "").toLowerCase());
+    const availableOnly = ["1", "true", "yes"].includes(String(req.query.available_only || "").toLowerCase());
+    const activations = await listInteractiveActivations(businessIdFor(req), { limit, includeArchived, availableOnly });
     res.json({ activations, trivias: activations });
   } catch (error) {
     next(error);

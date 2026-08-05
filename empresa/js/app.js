@@ -901,6 +901,7 @@ const activationShareManualName = document.getElementById("activationShareManual
 const activationShareManualPhone = document.getElementById("activationShareManualPhone");
 const activationShareSelectedContact = document.getElementById("activationShareSelectedContact");
 const activationShareMessagePreview = document.getElementById("activationShareMessagePreview");
+const activationShareConsentInput = document.getElementById("activationShareConsentInput");
 const activationShareMessage = document.getElementById("activationShareMessage");
 const activationShareOpenWhatsAppButton = document.getElementById("activationShareOpenWhatsAppButton");
 const activationShareCopyMessageButton = document.getElementById("activationShareCopyMessageButton");
@@ -4193,7 +4194,7 @@ async function loadStrategicQrData(options = {}) {
       state.strategicQrHistory = data.history || [];
     }
     if (group === "activations") {
-      const data = await apiSafe("/api/business/interactive-activations?limit=120", { headers: authHeaders() }, { activations: [], trivias: [] });
+      const data = await apiSafe("/api/business/interactive-activations?limit=120&include_archived=true", { headers: authHeaders() }, { activations: [], trivias: [] });
       if (!isCurrentBusinessScope(scopeKey)) return;
       state.triviaLaunchers = data.activations || data.trivias || [];
     }
@@ -24586,6 +24587,14 @@ async function showInteractiveActivationData(id) {
   }
 }
 
+function activationIsUsable(activation) {
+  if (!activation || String(activation.status || "").toLowerCase() !== "active" || !activation.public_url) return false;
+  const now = Date.now();
+  const startsAt = activation.starts_at ? new Date(activation.starts_at).getTime() : null;
+  const endsAt = activation.ends_at ? new Date(activation.ends_at).getTime() : null;
+  return (!Number.isFinite(startsAt) || startsAt <= now) && (!Number.isFinite(endsAt) || endsAt > now);
+}
+
 function activationStatusLabel(status) {
   return {
     draft: "Borrador",
@@ -24754,7 +24763,7 @@ function renderActivationShareModal() {
       : "<strong>Selecciona un contacto</strong><small>O escribe el WhatsApp del comprador para enviarlo desde caja.</small>";
   }
   const hasPhone = Boolean(whatsappPhoneFromInput(recipient?.phone || recipient?.whatsapp || recipient?.mobile || ""));
-  if (activationShareOpenWhatsAppButton) activationShareOpenWhatsAppButton.disabled = !activation || !recipient || !hasPhone;
+  if (activationShareOpenWhatsAppButton) activationShareOpenWhatsAppButton.disabled = !activationIsUsable(activation) || !recipient || !hasPhone;
   setFormMessage(
     activationShareMessage,
     recipient && !hasPhone ? "WhatsApp necesita un numero valido para abrir el envio." : "",
@@ -24812,6 +24821,8 @@ async function openActivationShareModal(id) {
   state.activationShareRecipientMode = "contact";
   state.activationShareManualName = "";
   state.activationShareManualPhone = "";
+  if (activationShareConsentInput) activationShareConsentInput.checked = false;
+  if (activationShareOpenWhatsAppButton) delete activationShareOpenWhatsAppButton.dataset.activationAssociationKey;
   if (activationShareSearchInput) activationShareSearchInput.value = "";
   if (activationShareContactMode) activationShareContactMode.onclick = () => setActivationShareRecipientMode("contact");
   if (activationSharePhoneMode) activationSharePhoneMode.onclick = () => setActivationShareRecipientMode("manual");
@@ -24830,17 +24841,74 @@ async function searchActivationShareLeads() {
   await loadActivationShareLeads(String(activationShareSearchInput?.value || "").trim());
 }
 
-function openActivationShareWhatsApp() {
+async function openActivationShareWhatsApp() {
   const activation = activationById(state.activationShareId);
   const recipient = activationShareRecipient();
-  if (!activation || !recipient) return;
+  if (!activationIsUsable(activation) || !recipient) {
+    setFormMessage(activationShareMessage, "Esta activacion no esta disponible para un nuevo envio.", "error");
+    return;
+  }
   const phone = whatsappPhoneFromInput(recipient.phone || recipient.whatsapp || recipient.mobile || "");
   if (!phone) {
     setFormMessage(activationShareMessage, "Este lead no tiene telefono para abrir WhatsApp.", "error");
     return;
   }
-  window.open(activationShareWhatsAppUrl(activation, recipient), "_blank", "noopener");
-  closeActivationShareModal();
+  if (!activationShareConsentInput?.checked) {
+    setFormMessage(activationShareMessage, "Confirma el consentimiento comercial antes de abrir WhatsApp.", "error");
+    return;
+  }
+  if (!recipient.id) {
+    const popup = window.open(activationShareWhatsAppUrl(activation, recipient), "_blank", "noopener");
+    if (!popup) {
+      setFormMessage(activationShareMessage, "El navegador bloqueo la apertura de WhatsApp.", "error");
+      return;
+    }
+    showFeedback("WhatsApp se abrio para envio manual. No se asocio una activacion porque no se eligio un lead del CRM.", "info", { title: "Envio no trazable" });
+    closeActivationShareModal();
+    return;
+  }
+  const sourceType = String(recipient.source_type || "PLAYER").toUpperCase();
+  const idempotencyKey = activationShareOpenWhatsAppButton?.dataset.activationAssociationKey
+    || `activation-share:${activation.id}:${sourceType}:${recipient.id}:${Date.now()}`;
+  if (activationShareOpenWhatsAppButton) {
+    activationShareOpenWhatsAppButton.dataset.activationAssociationKey = idempotencyKey;
+    activationShareOpenWhatsAppButton.disabled = true;
+  }
+  try {
+    const association = await api(`/api/business/leads/${encodeURIComponent(recipient.id)}/activations`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_type: sourceType,
+        interactive_activation_id: activation.id,
+        activation_type: "MICROGAME",
+        name: activation.title || "Activacion interactiva",
+        channel: "whatsapp",
+        message: activationPostSaleMessage(activation, recipient),
+        contact_consent_confirmed: true,
+        source_module: "contacts",
+        idempotency_key: idempotencyKey,
+        metadata: { source: "contacts", interactive_activation_id: activation.id },
+      }),
+    });
+    const popup = window.open(activationShareWhatsAppUrl(activation, recipient), "_blank", "noopener");
+    if (!popup) throw new Error("El navegador bloqueo la apertura de WhatsApp.");
+    if (association?.activation?.id) {
+      await api(`/api/business/leads/${encodeURIComponent(recipient.id)}/activations/${encodeURIComponent(association.activation.id)}/opened`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ source_type: sourceType }),
+      });
+    }
+    showFeedback("Activacion asociada al lead. WhatsApp se abrio para envio manual; la entrega no se confirma automaticamente.", "success", { title: "Envio preparado" });
+    closeActivationShareModal();
+    markTicketCenterDataStale(["activations"]);
+    await Promise.all([loadLeadCrmData({ force: true }), loadStrategicQrData({ groups: ["activations"], force: true })]);
+  } catch (error) {
+    setFormMessage(activationShareMessage, error.message || "No fue posible asociar la activacion. WhatsApp no se abrio.", "error");
+  } finally {
+    if (activationShareOpenWhatsAppButton) activationShareOpenWhatsAppButton.disabled = false;
+  }
 }
 
 async function copyActivationShareMessage() {
@@ -43591,7 +43659,7 @@ function bindRmsMachineActions(root) {
   });
   root.querySelectorAll("[data-rms-activation-created-ticket]").forEach(async (select) => {
     try {
-      const data = await apiSafe("/api/business/interactive-activations?limit=120", { headers: authHeaders() }, { activations: [], trivias: [] });
+      const data = await apiSafe("/api/business/interactive-activations?limit=120&available_only=true", { headers: authHeaders() }, { activations: [], trivias: [] });
       const activations = (data.activations || data.trivias || []).filter((activation) => {
         const status = String(activation.status || "ACTIVE").toUpperCase();
         return ["ACTIVE", "PUBLISHED", "LIVE"].includes(status) && (activation.public_url || activation.share_url || activation.claim_url);

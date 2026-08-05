@@ -722,11 +722,20 @@ async function insertTouchZones(client, activationId, zones) {
 
 async function listInteractiveActivations(businessId, options = {}) {
   const limit = Math.min(Math.max(Number(options.limit || 120), 1), 300);
+  const includeArchived = Boolean(options.includeArchived);
+  const availableOnly = Boolean(options.availableOnly);
   const result = await query(
     `with recent_activations as (
        select *
        from interactive_activations
-       where company_id = $1 and status <> 'archived'
+       where company_id = $1
+         and ($3::boolean or status <> 'archived')
+         and (
+           not $4::boolean
+           or (status = 'active'
+               and (starts_at is null or starts_at <= now())
+               and (ends_at is null or ends_at > now()))
+         )
        order by created_at desc
        limit $2
      ),
@@ -755,12 +764,33 @@ async function listInteractiveActivations(businessId, options = {}) {
      left join participant_counts p on p.activation_id = a.id
      left join reward_counts r on r.activation_id = a.id
      order by a.created_at desc`,
-    [businessId, limit]
+    [businessId, limit, includeArchived, availableOnly]
   );
   return result.rows.map(mapActivation);
 }
 
 async function updateInteractiveActivation(businessId, activationId, body) {
+  const currentResult = await query(
+    "select id, status from interactive_activations where id = $1 and company_id = $2",
+    [activationId, businessId]
+  );
+  if (!currentResult.rowCount) throw notFound("Activacion no encontrada.");
+  const currentStatus = currentResult.rows[0].status;
+  const nextStatus = body.status || currentStatus;
+  if (currentStatus === "archived") {
+    throw badRequest("Una activacion archivada se conserva solo para consulta; no puede reactivarse desde este contrato.");
+  }
+  if (body.status) {
+    const allowed = {
+      draft: new Set(["draft", "active", "archived"]),
+      active: new Set(["active", "paused", "closed", "archived"]),
+      paused: new Set(["paused", "active", "closed", "archived"]),
+      closed: new Set(["closed", "archived"]),
+    };
+    if (!allowed[currentStatus]?.has(nextStatus)) {
+      throw badRequest(`No se puede cambiar una activacion ${currentStatus} a ${nextStatus}.`);
+    }
+  }
   const fields = [];
   const values = [activationId, businessId];
   const allowed = [
@@ -898,7 +928,7 @@ async function deleteInteractiveActivation(businessId, activationId) {
       || Number(usage.rewards || 0) > 0
       || Number(usage.transactions || 0) > 0;
 
-    if (hasCommercialHistory) {
+    if (hasCommercialHistory || activation.status !== "draft") {
       const archived = await client.query(
         `update interactive_activations
          set status = 'archived', updated_at = now()
@@ -910,7 +940,9 @@ async function deleteInteractiveActivation(businessId, activationId) {
         deleted: false,
         archived: true,
         activation: mapActivation(archived.rows[0]),
-        message: "La activacion tenia historial comercial. Se archivo y se retiro de la lista visible para conservar trazabilidad.",
+        message: hasCommercialHistory
+          ? "La activacion tenia historial comercial. Se archivo para conservar trazabilidad."
+          : "Solo los borradores sin uso se eliminan. Esta activacion se archivo para conservar su historial.",
       };
     }
 
@@ -957,6 +989,7 @@ async function getPublicInteractiveActivation(slug) {
   if (!activation) {
     throw notFound("Activacion no encontrada.");
   }
+  assertActivationOpen(activation);
   const [questions, scoreRules, touchZones] = await Promise.all([
     query("select * from interactive_activation_questions where activation_id = $1 order by order_index asc", [activation.id]),
     query("select * from interactive_score_reward_rules where activation_id = $1 order by min_score asc", [activation.id]),
