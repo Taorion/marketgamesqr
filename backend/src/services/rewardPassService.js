@@ -451,14 +451,14 @@ async function createRewardPass(user, payload) {
          beneficiary_name, beneficiary_document, beneficiary_email, beneficiary_phone,
          initial_value_cop, current_balance_cop, issued_at, valid_from, expires_at, status,
          qr_token, public_code, security_pin, transferable, partial_redemption_allowed,
-         authorized_branch, terms, internal_notes, payment_method_received
+         authorized_branch, terms, internal_notes, payment_method_received, source_sale_id, rms_post_sale_action_id
        )
        values (
          $1, $2, $3, $4, $5, $6, $7,
          $8, $9, $10, $11,
          $12, $12, $13, $14, $15, $16,
          $17, $18, $19, $20, $21,
-         $22, $23, $24, $25
+         $22, $23, $24, $25, $26, $27
        )
        returning *`,
       [
@@ -487,6 +487,8 @@ async function createRewardPass(user, payload) {
         terms,
         payload.internal_notes || null,
         payload.payment_method_received || null,
+        payload.source_sale_id || null,
+        payload.rms_post_sale_action_id || null,
       ]
     );
     const pass = passResult.rows[0];

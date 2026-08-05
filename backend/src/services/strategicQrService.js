@@ -307,6 +307,10 @@ async function createPostSaleQr(businessId, user, body) {
     const attributionSource = body.metadata?.attribution_source || "POST_SALE";
     const attributionSubject = body.metadata?.attribution_subject || body.product_name || null;
     const existingSaleId = body.existing_sale_id || body.metadata?.existing_sale_id || null;
+    const isRmsActivation2 = body.metadata?.qr_creation_context === "rms_activation_2" || Boolean(body.metadata?.rms_post_sale_action_id);
+    if (isRmsActivation2 && !existingSaleId) {
+      throw badRequest("Activación 2 debe vincular el ticket a la venta atribuida original.");
+    }
     let sale;
     if (existingSaleId) {
       const existingSale = await client.query(
@@ -380,7 +384,11 @@ async function createPostSaleQr(businessId, user, body) {
     );
     const qr = qrResult.rows[0];
 
-    await client.query("update business_sales set qr_code_id = $2 where id = $1", [sale.id, qr.id]);
+    // A sale has one legacy qr_code_id slot. Post-sale RMS tickets are related through
+    // their own sale_id and action record; they must not overwrite the canonical sale QR.
+    if (!isRmsActivation2) {
+      await client.query("update business_sales set qr_code_id = $2 where id = $1", [sale.id, qr.id]);
+    }
     await ensureCreditAccount(client, businessId);
     const creditAccount = await consumeQrCredit(client, businessId, qr.id, user.id);
 

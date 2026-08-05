@@ -2387,6 +2387,7 @@ let state = {
   rmsOpportunityIndex: new Map(),
   rmsMachineLoaded: false,
   rmsMachineLoading: false,
+  rmsPostSaleActions: [],
   rmsMachineSelectedIds: [],
   rmsMachineInspectorId: "",
   rmsLeadQualityDraft: {},
@@ -40340,6 +40341,7 @@ function rmsActivationStationCardMarkup(item = {}) {
   if (state.rmsStationPhase === "accion_correctiva") return rmsCommercialConfirmationStationCardMarkup(item);
   if (state.rmsStationPhase === "control_anti_fuga") return rmsRiskValidationStationCardMarkup(item);
   if (state.rmsStationPhase === "cierre") return rmsAttributedSaleStationCardMarkup(item);
+  if (state.rmsStationPhase === "postventa") return rmsPostSaleStationCardMarkup(item);
   const selected = state.rmsMachineSelectedIds.includes(item.id);
   const origin = item.entry_summary || item.source_detail || item.campaign_name || item.channel || item.source_label || item.source_type || "Origen sin definir";
   const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "Sin interés declarado";
@@ -40576,6 +40578,30 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
   `;
 }
 
+function rmsPostSaleActionStatusLabel(status = "PLANNED") {
+  return ({ PLANNED: "Pendiente", SCHEDULED: "Programada", ISSUED: "Emitida", DELIVERED: "Entregada", CLAIMED: "Reclamada", COMPLETED: "Completada", REDEEMED: "Redimida", EXPIRED: "Vencida", CANCELLED: "Cancelada", NOT_APPLICABLE: "No aplica", FAILED: "Fallida" })[String(status || "").toUpperCase()] || status;
+}
+
+function rmsPostSaleStationCardMarkup(item = {}) {
+  const metadata = item.state_metadata || {};
+  const saleId = metadata.rms_attributed_sale_id || metadata.rms_sale_id || "";
+  const actions = (state.rmsPostSaleActions || []).filter((action) => action.source_type === item.source_type && String(action.source_id) === String(item.source_id));
+  const saleProduct = metadata.rms_sale_product || item.product_interest || item.top_product || "Producto registrado";
+  const saleAmount = metadata.rms_sale_amount || item.total_spent || 0;
+  return `
+    <article class="rms-commercial-work-item rms-post-sale-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
+      ${rmsCommercialLeadAsideMarkup(item, "Activación 2 · continuidad sobre una venta canónica")}
+      <section class="rms-commercial-work-console">
+        ${rmsDealProgressMarkup("post_sale", "La venta ya existe. Elige una sola acción de continuidad y conserva su trazabilidad.")}
+        <header class="rms-commercial-console-head"><div><span class="mono-label">ESTACIÓN 09 · ACTIVACIÓN 2</span><h4>Convierte una compra en continuidad verificable</h4><p>La venta original queda vinculada: esta operación prepara una tarea, ticket, Reward Pass, encuesta, referido o seguimiento sin crear otra venta.</p></div><span class="rms-commercial-state is-sale">Venta canónica</span></header>
+        <section class="rms-commercial-info-block"><h5>A. Venta y cliente de origen</h5><dl><div><dt>Cliente</dt><dd>${escapeHtml(item.name || "Contacto")}</dd></div><div><dt>Producto</dt><dd>${escapeHtml(saleProduct)}</dd></div><div><dt>Valor atribuido</dt><dd>${escapeHtml(money(saleAmount))}</dd></div><div><dt>Campaña / canal</dt><dd>${escapeHtml([item.campaign_name, item.channel].filter(Boolean).join(" · ") || "Sin dato adicional")}</dd></div><div><dt>Venta original</dt><dd>${escapeHtml(saleId ? `#${String(saleId).slice(0, 8)}` : "Se resolverá desde la oportunidad RMS")}</dd></div><div><dt>Acciones previas</dt><dd>${escapeHtml(`${actions.length} registrada${actions.length === 1 ? "" : "s"}`)}</dd></div></dl></section>
+        <section class="rms-commercial-info-block rms-post-sale-action-form"><h5>B. Elige una acción de continuidad</h5><div class="rms-sale-form-grid"><label><span>Acción principal</span><select data-rms-post-sale-type="${escapeHtml(item.id)}"><option value="THANK_YOU">Agradecimiento</option><option value="WARRANTY">Garantía o instrucciones</option><option value="SURVEY">Encuesta de satisfacción</option><option value="REBUY_TICKET">Ticket de próxima compra</option><option value="REWARD_PASS">Reward Pass</option><option value="REFERRAL">Invitación de referido</option><option value="FOLLOW_UP">Seguimiento</option><option value="INCIDENT">Incidencia</option><option value="NO_ACTION_NEEDED">Sin acción aplicable</option></select></label><label><span>Usar recurso</span><select data-rms-post-sale-mode="${escapeHtml(item.id)}"><option value="TASK">Solo tarea / mensaje preparado</option><option value="EXISTING_RESOURCE">Recurso existente</option><option value="NEW_TICKET">Crear ticket postventa</option><option value="NEW_REWARD_PASS">Crear Reward Pass</option></select></label><label><span>Responsable</span><input type="text" data-rms-post-sale-responsible="${escapeHtml(item.id)}" placeholder="Quien ejecuta la acción"></label><label><span>Fecha programada</span><input type="datetime-local" data-rms-post-sale-scheduled="${escapeHtml(item.id)}" value="${escapeHtml(rmsSaleDatetimeLocal())}"></label><label><span>Canal permitido</span><select data-rms-post-sale-channel="${escapeHtml(item.id)}"><option value="">No se contactará ahora</option><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="CALL">Llamada</option><option value="IN_PERSON">Presencial</option></select></label><label><span>Estado inicial</span><select data-rms-post-sale-status="${escapeHtml(item.id)}"><option value="PLANNED">Pendiente</option><option value="SCHEDULED">Programada</option><option value="COMPLETED">Completada</option><option value="NOT_APPLICABLE">No aplica</option></select></label><label><span>Tipo de recurso existente</span><input type="text" data-rms-post-sale-resource-type="${escapeHtml(item.id)}" placeholder="Ticket, encuesta, campaña o beneficio"></label><label><span>ID o enlace del recurso</span><input type="text" data-rms-post-sale-resource-url="${escapeHtml(item.id)}" placeholder="Selecciona o pega el enlace existente"></label><label><span>Beneficio para nuevo ticket</span><input type="text" data-rms-post-sale-ticket-label="${escapeHtml(item.id)}" placeholder="Ej.: 10% próxima compra"></label><label><span>Valor Reward Pass (COP)</span><input type="number" min="1" step="1" data-rms-post-sale-pass-value="${escapeHtml(item.id)}" placeholder="Solo si lo seleccionas"></label></div><label class="rms-commercial-note-field"><span>Contenido, instrucciones o resumen</span><textarea rows="3" data-rms-post-sale-content="${escapeHtml(item.id)}" placeholder="Qué se prepara; no se envía comunicación automáticamente."></textarea></label><label class="rms-commercial-note-field"><span>Resultado, razón o evidencia</span><textarea rows="3" data-rms-post-sale-result="${escapeHtml(item.id)}" placeholder="Obligatorio si no aplica o si se enviará a Inteligencia."></textarea></label><label class="rms-post-sale-consent"><input type="checkbox" data-rms-post-sale-consent="${escapeHtml(item.id)}"> <span>Confirmo consentimiento y canal válido si habrá contacto.</span></label><label class="rms-post-sale-consent"><input type="checkbox" data-rms-post-sale-intelligence="${escapeHtml(item.id)}"> <span>Enviar a Inteligencia solo con resultado registrable.</span></label></section>
+        <section class="rms-commercial-info-block rms-post-sale-history"><h5>C. Historial de Activación 2</h5><ol>${actions.map((action) => `<li><strong>${escapeHtml(rmsPostSaleActionStatusLabel(action.status))} · ${escapeHtml(action.action_type)}</strong><span>${escapeHtml(action.result_note || action.content || "Sin detalle adicional")}</span><small>${escapeHtml(action.resource_type || "Sin recurso")}${action.resource_url ? ` · ${escapeHtml(action.resource_url)}` : ""}</small></li>`).join("") || "<li><strong>Aún no hay acciones</strong><span>Elige una acción principal; las posteriores se registran de forma explícita.</span></li>"}</ol></section>
+        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">link</span>La venta original es obligatoria y nunca se duplica al emitir un ticket, Reward Pass, encuesta o seguimiento.</small><button class="solid-button compact" type="button" data-rms-save-post-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span>Registrar Activación 2</button></div>
+      </section>
+    </article>`;
+}
+
 function renderRmsStationLeanOnly() {
   if (!state.rmsStationScreenOpen) {
     hideRmsStationWorkspace();
@@ -40601,7 +40627,7 @@ function renderRmsStationLeanOnly() {
   const isCurationStation = phase === "alimentacion";
   const isClassifierStation = phase === "curaduria";
   const isActivationStation = phase === "clasificacion";
-  const isCommercialStation = ["clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre"].includes(phase);
+  const isCommercialStation = ["clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "postventa"].includes(phase);
   const pendingQualityCount = isCurationStation
     ? rows.filter((item) => !rmsLeadQualityValue(item)).length
     : 0;
@@ -43241,6 +43267,16 @@ function bindRmsMachineActions(root) {
       if (item) saveRmsAttributedSale(item, root).catch((error) => showFeedback(error.message || "No pudimos registrar la venta atribuida.", "error", { title: "Ventas atribuidas" }));
     });
   });
+  root.querySelectorAll("[data-rms-save-post-sale]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = rmsOpportunityById(button.dataset.rmsSavePostSale || "");
+      if (!item) return;
+      button.disabled = true;
+      saveRmsPostSaleAction(item, root)
+        .catch((error) => showFeedback(error.message || "No pudimos registrar la Activación 2.", "error", { title: "Activación 2" }))
+        .finally(() => { button.disabled = false; });
+    });
+  });
   root.querySelectorAll("[data-rms-activation-ticket-select]").forEach(async (select) => {
     const item = rmsOpportunityById(select.dataset.rmsActivationTicketSelect || "");
     if (!item?.source_id) return;
@@ -45633,9 +45669,82 @@ async function saveRmsAttributedSale(item, root) {
   });
   if (state.rmsAttributedSaleKeys) delete state.rmsAttributedSaleKeys[item.id];
   state.rmsMachineLoaded = false;
-  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "revenue_generado" });
+  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "postventa" });
   showFeedback(result?.duplicate ? "Esta venta ya estaba registrada; no se duplicó." : "Venta atribuida registrada con sus costos, utilidad y ROI.", "success", { title: "Ventas atribuidas" });
-  openRmsStation("revenue_generado", { source: "attributed-sale" });
+  openRmsStation("postventa", { source: "attributed-sale" });
+}
+
+function rmsPostSaleActionKey(id) {
+  if (!state.rmsPostSaleActionKeys) state.rmsPostSaleActionKeys = {};
+  if (!state.rmsPostSaleActionKeys[id]) state.rmsPostSaleActionKeys[id] = globalThis.crypto?.randomUUID?.() || `post-sale-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return state.rmsPostSaleActionKeys[id];
+}
+
+function rmsPostSaleDraftFromDom(root, id) {
+  const value = (selector) => rmsCommercialNode(root, selector, id)?.value || "";
+  const checked = (selector) => Boolean(rmsCommercialNode(root, selector, id)?.checked);
+  const mode = value("[data-rms-post-sale-mode]") || "TASK";
+  const actionType = value("[data-rms-post-sale-type]") || "THANK_YOU";
+  const ticketLabel = String(value("[data-rms-post-sale-ticket-label]") || "").trim();
+  const passValue = Number(value("[data-rms-post-sale-pass-value]") || 0);
+  return {
+    action_type: actionType,
+    execution_mode: mode,
+    responsible: String(value("[data-rms-post-sale-responsible]") || "").trim() || null,
+    scheduled_for: rmsCommercialLocalToIso(value("[data-rms-post-sale-scheduled]")) || null,
+    contact_channel: String(value("[data-rms-post-sale-channel]") || "").trim() || null,
+    status: value("[data-rms-post-sale-status]") || "PLANNED",
+    resource_type: String(value("[data-rms-post-sale-resource-type]") || "").trim() || null,
+    resource_url: String(value("[data-rms-post-sale-resource-url]") || "").trim() || null,
+    content: String(value("[data-rms-post-sale-content]") || "").trim() || null,
+    result_note: String(value("[data-rms-post-sale-result]") || "").trim() || null,
+    contact_consent_confirmed: checked("[data-rms-post-sale-consent]"),
+    send_to_intelligence: checked("[data-rms-post-sale-intelligence]"),
+    ticket: mode === "NEW_TICKET" ? {
+      benefit: { benefit_type: "CUSTOM", benefit_label: ticketLabel, benefit_value: {} },
+      expires_mode: "30_DAYS",
+    } : {},
+    reward_pass: mode === "NEW_REWARD_PASS" ? { initial_value_cop: passValue } : {},
+  };
+}
+
+async function loadRmsPostSaleActions(options = {}) {
+  const data = await apiSafe("/api/business/rms-machine/post-sale-actions", { headers: authHeaders() }, { actions: [] });
+  state.rmsPostSaleActions = Array.isArray(data.actions) ? data.actions : [];
+  return state.rmsPostSaleActions;
+}
+
+async function saveRmsPostSaleAction(item, root) {
+  const draft = rmsPostSaleDraftFromDom(root, item.id);
+  if (draft.execution_mode === "NEW_TICKET" && !draft.ticket.benefit.benefit_label) {
+    throw new Error("Indica el beneficio antes de crear un ticket postventa.");
+  }
+  if (phase === "postventa") {
+    loadRmsPostSaleActions()
+      .then(() => {
+        if (state.rmsStationScreenOpen && state.rmsStationPhase === phase && state.rmsStationOpenSeq === openSeq) renderRmsStationOnly();
+      })
+      .catch(() => { state.rmsPostSaleActions = []; });
+  }
+  if (draft.execution_mode === "NEW_REWARD_PASS" && Number(draft.reward_pass.initial_value_cop || 0) <= 0) {
+    throw new Error("Indica el valor del Reward Pass antes de emitirlo.");
+  }
+  const saleId = item.state_metadata?.rms_attributed_sale_id || null;
+  const result = await api("/api/business/rms-machine/post-sale-actions", {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null,
+      sale_id: saleId, ...draft, idempotency_key: rmsPostSaleActionKey(item.id),
+    }),
+  });
+  if (state.rmsPostSaleActionKeys) delete state.rmsPostSaleActionKeys[item.id];
+  await Promise.all([
+    loadRmsPostSaleActions({ force: true }),
+    loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: draft.send_to_intelligence ? "inteligencia" : "postventa" }),
+  ]);
+  showFeedback(result?.duplicate ? "Esta acción ya estaba registrada; no se duplicó el recurso ni la venta." : "Activación 2 registrada sobre la venta original.", "success", { title: "Activación 2" });
+  openRmsStation(draft.send_to_intelligence ? "inteligencia" : "postventa", { source: "post-sale-action" });
 }
 
 function rmsActivationDelivery(item = {}) {

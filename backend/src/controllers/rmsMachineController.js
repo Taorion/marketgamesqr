@@ -8,6 +8,7 @@ const {
   executeRmsBulkAction,
   getDailyQueue,
   listRmsEvents,
+  listRmsPostSaleActions,
   listRmsOpportunities,
   moveRmsLeadPhase,
   recordActivationDelivery,
@@ -16,6 +17,7 @@ const {
   recordRmsEvaluationResponse,
   recordRmsNegotiationResult,
   recordRmsRiskReview,
+  recordRmsPostSaleAction,
   reactivateRmsRecycledLead,
   rmsMetrics,
 } = require("../services/rmsMachineService");
@@ -123,6 +125,42 @@ const attributedSaleSchema = z.object({
   paid_at: z.string().datetime().optional().nullable(),
   notes: z.string().trim().max(5000).optional().nullable(),
   idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
+});
+
+const postSaleActionSchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+  lead_id: z.string().uuid().optional().nullable(),
+  sale_id: z.string().uuid().optional().nullable(),
+  action_type: z.enum(["THANK_YOU", "WARRANTY", "SURVEY", "REBUY_TICKET", "REWARD_PASS", "REFERRAL", "FOLLOW_UP", "INCIDENT", "NO_ACTION_NEEDED"]),
+  status: z.enum(["PLANNED", "SCHEDULED", "ISSUED", "DELIVERED", "CLAIMED", "COMPLETED", "REDEEMED", "EXPIRED", "CANCELLED", "NOT_APPLICABLE", "FAILED"]).optional(),
+  execution_mode: z.enum(["TASK", "CONTACT", "EXISTING_RESOURCE", "NEW_TICKET", "NEW_REWARD_PASS"]).optional().default("TASK"),
+  responsible: z.string().trim().max(500).optional().nullable(),
+  contact_channel: z.string().trim().max(120).optional().nullable(),
+  contact_consent_confirmed: z.boolean().optional().default(false),
+  scheduled_for: z.string().datetime().optional().nullable(),
+  content: z.string().trim().max(5000).optional().nullable(),
+  result_note: z.string().trim().max(5000).optional().nullable(),
+  reason: z.string().trim().max(3000).optional().nullable(),
+  evidence: z.string().trim().max(5000).optional().nullable(),
+  resource_type: z.string().trim().max(120).optional().nullable(),
+  resource_id: z.string().uuid().optional().nullable(),
+  resource_url: z.string().trim().max(1800).optional().nullable(),
+  campaign_id: z.string().uuid().optional().nullable(),
+  ticket: z.record(z.string(), z.unknown()).optional().default({}),
+  reward_pass: z.record(z.string(), z.unknown()).optional().default({}),
+  referred_contact: z.object({
+    name: z.string().trim().max(240).optional().nullable(),
+    email: z.string().email().max(240).optional().nullable(),
+    phone: z.string().trim().max(80).optional().nullable(),
+    interest: z.string().trim().max(500).optional().nullable(),
+    preferred_channel: z.string().trim().max(80).optional().nullable(),
+    note: z.string().trim().max(1500).optional().nullable(),
+    contact_consent_confirmed: z.boolean().optional().default(false),
+  }).optional().default({}),
+  send_to_intelligence: z.boolean().optional().default(false),
+  idempotency_key: z.string().trim().min(8).max(160),
+  metadata: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 const commercialConfirmationSchema = z.object({
@@ -298,6 +336,23 @@ async function recordAttributedSale(req, res, next) {
   }
 }
 
+async function postSaleActions(req, res, next) {
+  try {
+    res.json(await listRmsPostSaleActions(businessIdFor(req), req.query));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function recordPostSaleAction(req, res, next) {
+  try {
+    const body = validate(postSaleActionSchema, req.body);
+    res.status(201).json(await recordRmsPostSaleAction(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function recordCommercialConfirmation(req, res, next) {
   try {
     const body = validate(commercialConfirmationSchema, req.body);
@@ -376,6 +431,8 @@ module.exports = {
   publicAttachmentDownload,
   recordActivationDeliveryAction,
   recordAttributedSale,
+  postSaleActions,
+  recordPostSaleAction,
   recordCommercialConfirmation,
   recordEvaluationResponse,
   recordNegotiationResult,

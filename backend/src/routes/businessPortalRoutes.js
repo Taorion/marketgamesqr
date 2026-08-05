@@ -113,6 +113,8 @@ const {
   recordEvaluationResponse: rmsRecordEvaluationResponse,
   recordNegotiationResult,
   recordRiskReview,
+  postSaleActions: rmsPostSaleActions,
+  recordPostSaleAction: rmsRecordPostSaleAction,
   reactivateRecycledLead,
 } = require("../controllers/rmsMachineController");
 const {
@@ -185,6 +187,8 @@ router.post("/rms-machine/evaluation-response", rmsRecordEvaluationResponse);
 router.post("/rms-machine/commercial-confirmation", recordCommercialConfirmation);
 router.post("/rms-machine/negotiation-result", recordNegotiationResult);
 router.post("/rms-machine/risk-review", recordRiskReview);
+router.get("/rms-machine/post-sale-actions", shortBusinessCache, rmsPostSaleActions);
+router.post("/rms-machine/post-sale-actions", rmsRecordPostSaleAction);
 router.post("/rms-machine/recycling/reactivate", reactivateRecycledLead);
 router.post("/rms-machine/attributed-sales", rmsRecordAttributedSale);
 router.post("/rms-machine/bulk-action", executeRmsBulkAction);

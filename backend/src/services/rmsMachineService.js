@@ -2,6 +2,14 @@ const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
 const { createLeadAgendaItem, createLeadNote, listLeadCrmRows } = require("./leadCrmService");
+const { createPostSaleQr } = require("./strategicQrService");
+const { createRewardPass } = require("./rewardPassService");
+const {
+  normalizePostSaleActionType,
+  normalizePostSaleStatus,
+  requiresContactConsent,
+  requiresResultForIntelligence,
+} = require("./rmsPostSalePolicy");
 const { randomBytes } = require("crypto");
 
 // Fuente única de verdad: conserva los IDs y ordena las transiciones comerciales.
@@ -26,9 +34,10 @@ const PHASE_KEYS = new Set(RMS_PHASES.map((phase) => phase.key));
 const RMS_AUXILIARY_PHASES = new Set(["reciclaje"]);
 const RMS_FLOW_NEXT_PHASE = Object.freeze({
   recoleccion: "alimentacion", alimentacion: "curaduria", curaduria: "clasificacion",
-  clasificacion: "preprocesamiento", preprocesamiento: "procesamiento",
+  // Quality controls are visible diagnostics, not operational phases.
+  clasificacion: "procesamiento", preprocesamiento: "procesamiento",
   procesamiento: "accion_correctiva", accion_correctiva: "control_anti_fuga",
-  control_anti_fuga: "cierre", cierre: "revenue_generado",
+  control_anti_fuga: "cierre", cierre: "postventa",
   revenue_generado: "postventa", postventa: "inteligencia", inteligencia: "recoleccion",
 });
 
@@ -41,6 +50,7 @@ const RMS_TRANSITION_AUTHORITY = Object.freeze({
   NEGOTIATION_RESULT: Symbol("rms-negotiation-result"),
   RISK_REVIEW: Symbol("rms-risk-review"),
   ATTRIBUTED_SALE: Symbol("rms-attributed-sale"),
+  POST_SALE_ACTION: Symbol("rms-post-sale-action"),
 });
 
 const RMS_PROTECTED_TRANSITIONS = Object.freeze({
@@ -62,7 +72,10 @@ const RMS_PROTECTED_TRANSITIONS = Object.freeze({
     inteligencia: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
   }),
   cierre: Object.freeze({
-    revenue_generado: RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE,
+    postventa: RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE,
+  }),
+  postventa: Object.freeze({
+    inteligencia: RMS_TRANSITION_AUTHORITY.POST_SALE_ACTION,
   }),
 });
 
@@ -131,7 +144,7 @@ const PHASE_OPERATIONS = {
     suggestedMaterialType: "oferta_canal_mensaje_seguimiento",
     materialLabel: "Oferta, canal, mensaje, seguimiento y respuesta",
     buttonLabel: "Activar contacto",
-    nextPhase: "preprocesamiento",
+    nextPhase: "procesamiento",
     agendaTaskType: "activation_follow_up",
     whatsappTemplateKey: "send_catalog",
   },
@@ -181,7 +194,7 @@ const PHASE_OPERATIONS = {
     suggestedMaterialType: "cuenta_cobro_factura_pago",
     materialLabel: "Propuesta, factura, link de pago o cuenta de cobro",
     buttonLabel: "Cerrar",
-    nextPhase: "revenue_generado",
+    nextPhase: "postventa",
     agendaTaskType: "payment",
     whatsappTemplateKey: "send_payment",
   },
@@ -1008,6 +1021,9 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
   const sourceId = payload.source_id;
   const toPhase = normalizePhase(payload.to_phase || payload.rms_phase, "");
   if (!sourceId || !toPhase) throw badRequest("Faltan source_id o fase RMS.");
+  if (["preprocesamiento", "revenue_generado"].includes(toPhase)) {
+    throw badRequest("Los controles de calidad son solo visuales y no reciben movimientos RMS.");
+  }
   const metadata = payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {};
   const result = await withTransaction(async (client) => {
     // Lock and validate inside the same transaction so a stale browser tab
@@ -1605,14 +1621,23 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     );
     return { sale: existing.rows[0], duplicate: true };
   });
-  if (result.duplicate) return { sale: result.sale, economics: result.sale?.metadata?.economics || economics, duplicate: true };
+  if (result.duplicate) {
+    const duplicateMovement = item.stage === "cierre" ? await moveRmsLeadPhase(businessId, user, {
+      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+      to_phase: "postventa", priority: "HIGH", recommended_action: "Elegir y ejecutar una acción de Activación 2",
+      last_operation: "attributed_sale_recovered_from_idempotency", last_material_sent: productName,
+      revenue_potential: saleAmount, reason: "Reintento idempotente: la venta canónica ya existía.",
+      metadata: { rms_attributed_sale_id: result.sale?.id || null, rms_sale_recorded_at: new Date().toISOString() },
+    }, RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE) : null;
+    return { sale: result.sale, economics: result.sale?.metadata?.economics || economics, movement: duplicateMovement, duplicate: true };
+  }
   const movement = await moveRmsLeadPhase(businessId, user, {
     source_type: sourceType,
     source_id: payload.source_id,
     lead_id: item.lead_id || payload.lead_id || null,
-    to_phase: "revenue_generado",
+    to_phase: "postventa",
     priority: "HIGH",
-    recommended_action: "Validar calidad de venta atribuida y activar postventa",
+    recommended_action: "Elegir y ejecutar una acción de Activación 2",
     last_operation: "attributed_sale_registered",
     last_material_sent: productName,
     revenue_potential: saleAmount,
@@ -1623,9 +1648,236 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     event_type: "sale_attributed", event_title: "Venta atribuida correctamente",
     event_description: "La condición comercial y la validación anti-fuga quedaron trazadas antes del registro final.",
-    rms_phase: "revenue_generado", metadata: { sale_id: result.sale.id, movement_id: movement.movement?.id || null },
+    rms_phase: "postventa", metadata: { sale_id: result.sale.id, movement_id: movement.movement?.id || null, quality_control: "revenue_generado_visual" },
   });
   return { sale: result.sale, economics, movement, duplicate: false };
+}
+
+async function canonicalAttributedSaleFor(client, businessId, sourceType, sourceId, requestedSaleId = null) {
+  const result = await client.query(
+    `select *
+       from business_sales
+      where business_id = $1
+        and sale_status = 'PAID'
+        and (
+          ($4::uuid is not null and id = $4)
+          or ($4::uuid is null and rms_source_type = $2 and rms_source_id = $3)
+        )
+      order by paid_at desc nulls last, created_at desc
+      limit 1
+      for update`,
+    [businessId, sourceType, sourceId, requestedSaleId || null]
+  );
+  const sale = result.rows[0];
+  if (!sale) throw badRequest("Activación 2 exige una venta atribuida canónica de este negocio.");
+  if (!String(sale.product_name || "").trim() || moneyNumber(sale.sale_amount) <= 0) {
+    throw badRequest("La venta atribuida debe tener producto o servicio y un valor mayor a cero.");
+  }
+  if (requestedSaleId && (sale.rms_source_type !== sourceType || String(sale.rms_source_id) !== String(sourceId))) {
+    throw badRequest("La venta indicada no pertenece a la oportunidad RMS de esta Activación 2.");
+  }
+  return sale;
+}
+
+async function createPostSaleAgendaInTransaction(client, businessId, user, item, action) {
+  const dueAt = action.scheduled_for || new Date().toISOString();
+  const title = {
+    THANK_YOU: "Preparar agradecimiento postventa",
+    WARRANTY: "Confirmar garantía o instrucciones",
+    SURVEY: "Solicitar satisfacción postventa",
+    REBUY_TICKET: "Compartir ticket de próxima compra",
+    REWARD_PASS: "Preparar Reward Pass postventa",
+    REFERRAL: "Preparar invitación de referido",
+    FOLLOW_UP: "Realizar seguimiento postventa",
+    INCIDENT: "Dar seguimiento a incidencia postventa",
+  }[action.action_type] || "Registrar resultado de Activación 2";
+  const note = await client.query(
+    `insert into lead_notes
+      (business_id, lead_id, source_type, source_id, note, note_type, next_action, reminder_at, agenda_priority, progress_percent, checklist, metadata, created_by)
+     values ($1, $2, $3, $4, $5, 'follow_up', $6, $7, 'MEDIUM', 0, $8::jsonb, $9::jsonb, $10)
+     returning id, reminder_at, agenda_status`,
+    [
+      businessId, item.lead_id || null, item.source_type, item.source_id,
+      action.content || title, title, dueAt,
+      JSON.stringify([{ label: title, done: false }, { label: "Registrar resultado verificable", done: false }]),
+      JSON.stringify({ source_module: "rms_activation_2", rms_post_sale_action_id: action.id, sale_id: action.sale_id, action_type: action.action_type, contact_channel: action.contact_channel || null }),
+      user.id,
+    ]
+  );
+  return note.rows[0];
+}
+
+async function createReferredOpportunityInTransaction(client, businessId, user, action, referred = {}) {
+  const name = String(referred.name || "").trim();
+  const email = String(referred.email || "").trim() || null;
+  const phone = String(referred.phone || "").trim() || null;
+  if (!name && !email && !phone) return null;
+  if (!name || (!email && !phone) || !referred.contact_consent_confirmed) {
+    throw badRequest("Un referido solo entra a Recolección con nombre, contacto válido y consentimiento confirmado.");
+  }
+  const lead = await client.query(
+    `insert into business_manual_leads
+      (business_id, created_by_user_id, name, email, phone, source, source_detail, interest, importance_reason, preferred_channel, status, priority, notes, metadata)
+     values ($1, $2, $3, $4, $5, 'Referido postventa', $6, $7, $8, $9, 'NEW', 'MEDIUM', $10, $11::jsonb)
+     returning id, name, email, phone`,
+    [
+      businessId, user.id, name, email, phone,
+      `Venta ${String(action.sale_id).slice(0, 8)} · Activación 2`,
+      String(referred.interest || "").trim() || null,
+      "Referido identificado después de una venta atribuida",
+      String(referred.preferred_channel || (phone ? "WhatsApp" : "Email")).trim(),
+      String(referred.note || "").trim() || null,
+      JSON.stringify({ source_module: "rms_activation_2", referred_from_sale_id: action.sale_id, rms_post_sale_action_id: action.id, contact_consent_confirmed: true }),
+    ]
+  );
+  const contact = lead.rows[0];
+  await client.query(
+    `insert into rms_lead_state (business_id, source_type, source_id, rms_phase, priority, recommended_action, last_operation, metadata, created_by, updated_by)
+     values ($1, 'MANUAL', $2, 'recoleccion', 'MEDIUM', 'Validar la nueva oportunidad referida', 'post_sale_referral_captured', $3::jsonb, $4, $4)
+     on conflict (business_id, source_type, source_id) do nothing`,
+    [businessId, contact.id, JSON.stringify({ source_module: "rms_activation_2", parent_sale_id: action.sale_id, parent_action_id: action.id }), user.id]
+  );
+  return contact;
+}
+
+async function listRmsPostSaleActions(businessId, filters = {}) {
+  const sourceType = filters.source_type ? crmSourceType({ source_type: filters.source_type }) : null;
+  const sourceId = filters.source_id || null;
+  const saleId = filters.sale_id || null;
+  const result = await query(
+    `select a.*, s.product_name as sale_product_name, s.sale_amount, s.currency, s.paid_at,
+            coalesce(json_agg(e order by e.created_at desc) filter (where e.id is not null), '[]'::json) as events
+       from rms_post_sale_actions a
+       join business_sales s on s.id = a.sale_id and s.business_id = a.business_id
+       left join lateral (
+         select id, event_type, event_description, status, metadata, created_at
+           from rms_post_sale_action_events
+          where business_id = a.business_id and post_sale_action_id = a.id
+          order by created_at desc limit 12
+       ) e on true
+      where a.business_id = $1
+        and ($2::text is null or a.source_type = $2)
+        and ($3::uuid is null or a.source_id = $3)
+        and ($4::uuid is null or a.sale_id = $4)
+      group by a.id, s.id
+      order by a.updated_at desc
+      limit 120`,
+    [businessId, sourceType, sourceId, saleId]
+  );
+  return { actions: result.rows };
+}
+
+async function recordRmsPostSaleAction(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const actionType = normalizePostSaleActionType(payload.action_type);
+  const executionMode = String(payload.execution_mode || "TASK").trim().toUpperCase();
+  const idempotencyKey = String(payload.idempotency_key || "").trim();
+  if (!payload.source_id || !idempotencyKey) throw badRequest("Activación 2 exige oportunidad e idempotency_key.");
+  if (requiresContactConsent(actionType, executionMode) && (!payload.contact_consent_confirmed || !String(payload.contact_channel || "").trim())) {
+    throw badRequest("Para preparar un contacto debes confirmar consentimiento y canal permitido; el sistema no enviará nada automáticamente.");
+  }
+  if (actionType === "NO_ACTION_NEEDED" && !String(payload.result_note || payload.reason || "").trim()) {
+    throw badRequest("Explica por qué no aplica una acción de continuidad.");
+  }
+  const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  if (item.stage !== "postventa") throw badRequest("Activación 2 solo opera casos que ya están en Postventa.");
+  const created = await withTransaction(async (client) => {
+    const duplicate = await client.query(
+      "select * from rms_post_sale_actions where business_id = $1 and idempotency_key = $2 for update",
+      [businessId, idempotencyKey]
+    );
+    if (duplicate.rowCount) return { action: duplicate.rows[0], duplicate: true, agenda: null, referral: null };
+    const sale = await canonicalAttributedSaleFor(client, businessId, sourceType, payload.source_id, payload.sale_id || null);
+    const status = actionType === "NO_ACTION_NEEDED"
+      ? "NOT_APPLICABLE"
+      : normalizePostSaleStatus(payload.status, payload.scheduled_for ? "SCHEDULED" : "PLANNED");
+    const actionResult = await client.query(
+      `insert into rms_post_sale_actions
+        (business_id, sale_id, source_type, source_id, lead_id, action_type, status, responsible, contact_channel,
+         contact_consent_confirmed, scheduled_for, completed_at, content, result_note, evidence, resource_type,
+         resource_id, resource_url, campaign_id, product_name, idempotency_key, metadata, created_by, updated_by)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22::jsonb,$23,$23)
+       returning *`,
+      [
+        businessId, sale.id, sourceType, payload.source_id, item.lead_id || payload.lead_id || null, actionType, status,
+        String(payload.responsible || "").trim() || null, String(payload.contact_channel || "").trim() || null,
+        Boolean(payload.contact_consent_confirmed), payload.scheduled_for || null,
+        ["COMPLETED", "NOT_APPLICABLE"].includes(status) ? new Date().toISOString() : null,
+        String(payload.content || "").trim() || null, String(payload.result_note || payload.reason || "").trim() || null,
+        String(payload.evidence || "").trim() || null, String(payload.resource_type || "").trim() || null,
+        payload.resource_id || null, String(payload.resource_url || "").trim() || null,
+        payload.campaign_id || sale.campaign_id || item.campaign_id || null, sale.product_name, idempotencyKey,
+        JSON.stringify({ source_module: "rms_activation_2", execution_mode: executionMode, sale_currency: sale.currency, sale_amount: sale.sale_amount, ...(payload.metadata || {}) }), user.id,
+      ]
+    );
+    const action = actionResult.rows[0];
+    const agenda = actionType === "NO_ACTION_NEEDED" ? null : await createPostSaleAgendaInTransaction(client, businessId, user, item, action);
+    const referral = actionType === "REFERRAL"
+      ? await createReferredOpportunityInTransaction(client, businessId, user, action, payload.referred_contact || {})
+      : null;
+    await client.query(
+      `insert into rms_post_sale_action_events (business_id, post_sale_action_id, event_type, event_description, status, metadata, created_by)
+       values ($1,$2,'post_sale_action_created',$3,$4,$5::jsonb,$6)`,
+      [businessId, action.id, "Acción de Activación 2 registrada sobre la venta original.", status, JSON.stringify({ sale_id: sale.id, agenda_note_id: agenda?.id || null, referral_contact_id: referral?.id || null }), user.id]
+    );
+    await client.query(
+      `insert into rms_machine_events
+        (business_id, source_type, source_id, lead_id, event_type, event_title, event_description, rms_phase, operation_key, created_by, metadata)
+       values ($1,$2,$3,$4,'post_sale_action_created','Activación 2 registrada',$5,'postventa','activation_2',$6,$7::jsonb)`,
+      [businessId, sourceType, payload.source_id, item.lead_id || null, actionType, user.id, JSON.stringify({ post_sale_action_id: action.id, sale_id: sale.id, status, agenda_note_id: agenda?.id || null, referral_contact_id: referral?.id || null })]
+    );
+    return { action, sale, duplicate: false, agenda, referral };
+  });
+  if (created.duplicate) return created;
+  let resource = null;
+  if (executionMode === "NEW_TICKET") {
+    if (!payload.ticket?.benefit?.benefit_type || !payload.ticket?.benefit?.benefit_label) {
+      throw badRequest("Selecciona el beneficio del ticket de recompra o referido.");
+    }
+    resource = await createPostSaleQr(businessId, user, {
+      ...(payload.ticket || {}),
+      campaign_id: payload.ticket?.campaign_id || created.sale.campaign_id || created.action.campaign_id || null,
+      sale_amount: moneyNumber(created.sale.sale_amount), currency: created.sale.currency || "COP",
+      customer_name: created.sale.customer_name || item.name, customer_phone: created.sale.customer_phone || item.phone || null,
+      customer_email: created.sale.customer_email || item.email || null, document_id: created.sale.customer_document_id || null,
+      product_name: created.sale.product_name, existing_sale_id: created.sale.id,
+      metadata: { ...(payload.ticket?.metadata || {}), qr_creation_context: "rms_activation_2", rms_post_sale_action_id: created.action.id, existing_sale_id: created.sale.id, ticket_use_case: actionType === "REFERRAL" ? "referral" : "rebuy" },
+    });
+    const ticketId = resource?.qr_code?.id || resource?.ticket?.id || null;
+    await query(
+      `update rms_post_sale_actions set status = 'ISSUED', resource_type = 'QR_TICKET', resource_id = $3, resource_url = $4, updated_by = $5 where business_id = $1 and id = $2`,
+      [businessId, created.action.id, ticketId, resource?.public_ticket_url || resource?.public_url || null, user.id]
+    );
+  } else if (executionMode === "NEW_REWARD_PASS") {
+    resource = await createRewardPass(user, {
+      ...(payload.reward_pass || {}), campaign_id: payload.reward_pass?.campaign_id || created.sale.campaign_id || created.action.campaign_id || null,
+      buyer_name: created.sale.customer_name || item.name, buyer_email: created.sale.customer_email || item.email || null,
+      buyer_phone: created.sale.customer_phone || item.phone || null, source_sale_id: created.sale.id, rms_post_sale_action_id: created.action.id,
+      internal_notes: [payload.reward_pass?.internal_notes, `Activación 2 ${created.action.id}; venta original ${created.sale.id}`].filter(Boolean).join("\n"),
+    });
+    await query(
+      `update rms_post_sale_actions set status = 'ISSUED', resource_type = 'REWARD_PASS', resource_id = $3, resource_url = $4, updated_by = $5 where business_id = $1 and id = $2`,
+      [businessId, created.action.id, resource?.id || null, resource?.public_url || resource?.public_link || null, user.id]
+    );
+  }
+  if (resource) {
+    await query(
+      `insert into rms_post_sale_action_events (business_id, post_sale_action_id, event_type, event_description, status, metadata, created_by)
+       values ($1,$2,'post_sale_resource_linked',$3,'ISSUED',$4::jsonb,$5)`,
+      [businessId, created.action.id, "Recurso de Activación 2 vinculado a la venta original.", JSON.stringify({ resource_type: executionMode, resource_id: resource?.id || resource?.qr_code?.id || null, sale_id: created.sale.id }), user.id]
+    );
+  }
+  const current = (await listRmsPostSaleActions(businessId, { sale_id: created.sale.id })).actions.find((entry) => entry.id === created.action.id) || created.action;
+  let movement = null;
+  if (payload.send_to_intelligence) {
+    if (!requiresResultForIntelligence(current)) throw badRequest("Registra un resultado verificable antes de enviar este caso a Inteligencia.");
+    movement = await moveRmsLeadPhase(businessId, user, {
+      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || null, to_phase: "inteligencia",
+      reason: current.result_note || current.evidence, last_operation: "activation_2_result_sent_to_intelligence",
+      metadata: { rms_post_sale_action_id: current.id, sale_id: created.sale.id, activation_2_status: current.status },
+    }, RMS_TRANSITION_AUTHORITY.POST_SALE_ACTION);
+  }
+  return { ...created, action: current, resource, movement };
 }
 
 async function createRmsAgendaTask(businessId, user, payload = {}) {
@@ -1695,6 +1947,9 @@ async function executeRmsAction(businessId, user, payload = {}) {
   if (!sourceId) throw badRequest("Falta source_id para operar la oportunidad.");
   const item = await findOpportunity(businessId, sourceType, sourceId);
   const phase = normalizePhase(payload.rms_phase || item.stage);
+  if (["preprocesamiento", "revenue_generado"].includes(phase)) {
+    throw badRequest("Los controles de calidad solo muestran diagnóstico; no ejecutan acciones ni cambian fases.");
+  }
   const operation = getPhaseRecommendedOperation(phase, item);
   const materialType = payload.material_type || operation.suggestedMaterialType;
   const template = WHATSAPP_TEMPLATES[payload.whatsapp_template_key || operation.whatsappTemplateKey] || WHATSAPP_TEMPLATES.initial_proposal;
@@ -1921,6 +2176,7 @@ module.exports = {
   getDailyQueue,
   getPhaseRecommendedOperation,
   listRmsEvents,
+  listRmsPostSaleActions,
   listRmsOpportunities,
   moveRmsLeadPhase,
   recordActivationDelivery,
@@ -1929,6 +2185,7 @@ module.exports = {
   recordRmsEvaluationResponse,
   recordRmsNegotiationResult,
   recordRmsRiskReview,
+  recordRmsPostSaleAction,
   reactivateRmsRecycledLead,
   rmsMetrics,
 };
