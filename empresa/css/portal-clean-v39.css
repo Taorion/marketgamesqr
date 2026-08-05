@@ -13128,13 +13128,16 @@ html[data-theme="dark"] #rmsNegotiationModal .rms-negotiation-card {
   grid-column: 1 / -1;
 }
 
-#rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console > .rms-negotiation-condition-block {
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console > :is(.rms-negotiation-condition-block, .rms-negotiation-health) {
+  grid-column: 1 / -1;
+  align-self: start;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console > .rms-negotiation-decision-block {
   grid-column: 1;
   align-self: start;
 }
 
-#rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console > .rms-negotiation-health,
-#rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console > .rms-negotiation-decision-block,
 #rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console > .rms-negotiation-route-preview {
   grid-column: 2;
   align-self: start;
