@@ -14737,9 +14737,9 @@ html body[data-current-view="account"] .portal-shell .account-users-card td:last
   html body[data-current-view="account"] .portal-shell .account-summary-grid { gap: 12px; margin-bottom: 18px !important; }
   html body[data-current-view="account"] .portal-shell .account-profile-card { padding: 18px !important; }
   html body[data-current-view="account"] .portal-shell .account-profile-card:first-child { padding: 76px 18px 18px !important; }
-  html body[data-current-view="account"] .portal-shell .account-admin-nav { gap: 10px; margin-inline: -2px; padding: 11px; border-radius: 18px; }
+  html body[data-current-view="account"] .portal-shell .account-admin-nav { display: flex !important; width: 100% !important; max-width: 100%; min-width: 0; gap: 10px; margin-inline: -2px; padding: 11px; overflow-x: auto !important; overscroll-behavior-inline: contain; border-radius: 18px; scroll-snap-type: x proximity; }
   html body[data-current-view="account"] .portal-shell .account-admin-nav::before { flex-basis: 100%; }
-  html body[data-current-view="account"] .portal-shell .account-admin-nav a { flex-basis: min(260px, 82vw); min-height: 96px; }
+  html body[data-current-view="account"] .portal-shell .account-admin-nav a { flex: 0 0 min(260px, 82vw); min-width: min(260px, 82vw); min-height: 96px; scroll-snap-align: start; }
   html body[data-current-view="account"] .portal-shell .account-profile-card:nth-child(3) .account-meta-grid { grid-template-columns: 1fr !important; }
 }
 
