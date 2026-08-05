@@ -38,7 +38,7 @@ const RMS_FLOW_NEXT_PHASE = Object.freeze({
   clasificacion: "procesamiento", preprocesamiento: "procesamiento",
   procesamiento: "accion_correctiva", accion_correctiva: "control_anti_fuga",
   control_anti_fuga: "cierre", cierre: "postventa",
-  revenue_generado: "postventa", postventa: "inteligencia", inteligencia: "recoleccion",
+  revenue_generado: "postventa", postventa: "inteligencia",
 });
 
 // These are server-only capabilities.  The generic phase endpoint must never
@@ -291,7 +291,7 @@ function normalizeProductLookup(value = "") {
 
 async function inventoryProductsForBusiness(businessId) {
   const result = await query(
-    `select id, name, sku, barcode, category, brand, unit_price, status
+    `select id, name, sku, barcode, category, brand, unit_price, cost_price, currency, stock_quantity, status
      from business_inventory_products
      where business_id = $1 and status <> 'ARCHIVED'
      order by updated_at desc, name asc
@@ -299,6 +299,28 @@ async function inventoryProductsForBusiness(businessId) {
     [businessId]
   );
   return result.rows;
+}
+
+async function rmsInventoryProductSnapshot(businessId, inventoryProductId) {
+  if (!inventoryProductId) throw badRequest("Selecciona un producto o servicio activo del inventario.");
+  const result = await query(
+    `select id, name, sku, category, unit_price, cost_price, currency, stock_quantity, status
+       from business_inventory_products
+      where business_id = $1 and id = $2 and status = 'ACTIVE'
+      limit 1`,
+    [businessId, inventoryProductId]
+  );
+  const product = result.rows[0];
+  if (!product) throw badRequest("El producto seleccionado no está activo o no pertenece a este negocio.");
+  return {
+    inventory_product_id: product.id,
+    product_name: String(product.name || "").trim(),
+    product_name_snapshot: String(product.name || "").trim(),
+    product_price_snapshot: moneyNumber(product.unit_price),
+    product_currency_snapshot: String(product.currency || "COP").trim().toUpperCase().slice(0, 8) || "COP",
+    product_source: "INVENTORY",
+    inventory_product: product,
+  };
 }
 
 function productClassificationFor(row = {}, stateRow = null, inventoryProducts = []) {
@@ -818,7 +840,7 @@ async function listRmsOpportunities(businessId, filters = {}) {
     ...recentStateRows.map((row) => [`${crmSourceType(row)}:${row.source_id}`, row]),
     ...Array.from((await stateRowsFor(businessId, mergedRows)).entries()),
   ]);
-  const needsInventory = !phaseFilter || ["curaduria", "clasificacion"].includes(phaseFilter);
+  const needsInventory = true;
   const inventoryProducts = needsInventory ? await inventoryProductsForBusiness(businessId) : [];
   const opportunities = mergedRows.map((row) => (
     opportunityFromRow(row, stateMap.get(`${crmSourceType(row)}:${row.id}`), inventoryProducts)
@@ -1163,6 +1185,9 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
   if (destination && !route) throw badRequest("Evaluación solo abre un caso en Negociación.");
   const note = String(payload.note || "").trim()
     || `Resultado de Evaluación: ${response}. Destino elegido: ${route.label}.`;
+  const recommendedProduct = payload.recommended_inventory_product_id
+    ? await rmsInventoryProductSnapshot(businessId, payload.recommended_inventory_product_id)
+    : null;
   const evaluation = {
     response,
     scenario: ["PAID_SALE", "NEGOTIATION"].includes(response) ? (response === "PAID_SALE" ? "EASY_CLOSE" : "ASSISTED_NEGOTIATION") : "ASSISTED_NEGOTIATION",
@@ -1171,7 +1196,14 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
     route_label: route.label,
     need: String(payload.need || "").trim() || null,
     desired_outcome: String(payload.desired_outcome || "").trim() || null,
-    recommended_product: String(payload.recommended_product || "").trim() || null,
+    recommended_inventory_product_id: recommendedProduct?.inventory_product_id || null,
+    recommended_product: recommendedProduct?.product_name || null,
+    recommended_product_snapshot: recommendedProduct ? {
+      name: recommendedProduct.product_name_snapshot,
+      price: recommendedProduct.product_price_snapshot,
+      currency: recommendedProduct.product_currency_snapshot,
+      source: recommendedProduct.product_source,
+    } : null,
     budget_amount: payload.budget_amount === null || payload.budget_amount === undefined ? null : moneyNumber(payload.budget_amount),
     currency: String(payload.currency || "COP").trim().toUpperCase().slice(0, 8) || "COP",
     decision_maker: String(payload.decision_maker || "").trim() || null,
@@ -1255,10 +1287,15 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
   return { evaluation, route, note: historyNote, agenda, agenda_warning: agendaWarning, ...movement };
 }
 
-function rmsCommercialConfirmationFromPayload(payload = {}, user = {}) {
+function rmsCommercialConfirmationFromPayload(payload = {}, user = {}, product = {}) {
   return {
     status: "CONFIRMED",
-    product_name: String(payload.product_name || "").trim(),
+    inventory_product_id: product.inventory_product_id || null,
+    product_name: product.product_name || "",
+    product_name_snapshot: product.product_name_snapshot || product.product_name || "",
+    product_price_snapshot: product.product_price_snapshot ?? null,
+    product_currency_snapshot: product.product_currency_snapshot || null,
+    product_source: product.product_source || "INVENTORY",
     amount: moneyNumber(payload.amount),
     currency: String(payload.currency || "COP").trim().toUpperCase().slice(0, 8) || "COP",
     payment_reference: String(payload.payment_reference || "").trim(),
@@ -1299,10 +1336,11 @@ async function recordRmsCommercialConfirmation(businessId, user, payload = {}) {
   }
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
   if (item.stage !== "accion_correctiva") throw badRequest("La confirmación comercial solo se registra desde Negociación.");
-  const confirmation = rmsCommercialConfirmationFromPayload(payload, user);
+  const product = await rmsInventoryProductSnapshot(businessId, payload.inventory_product_id);
+  const confirmation = rmsCommercialConfirmationFromPayload(payload, user, product);
   const commercialRoute = payload.commercial_route === "NEGOTIATION_CLEAN" ? "NEGOTIATION_CLEAN" : "NEEDS_RISK_REVIEW";
   const missing = [
-    !confirmation.product_name && "producto o servicio",
+    !confirmation.inventory_product_id && "producto o servicio del inventario",
     confirmation.amount <= 0 && "valor acordado",
     !confirmation.responsible && "responsable",
     !(confirmation.payment_reference || confirmation.evidence || confirmation.note) && "evidencia, referencia o nota de confirmación",
@@ -1320,7 +1358,6 @@ async function recordRmsCommercialConfirmation(businessId, user, payload = {}) {
       !confirmation.negotiation.customer_condition && "condición comercial confirmada",
       !confirmation.negotiation.channel && "canal de contacto",
       !confirmation.negotiation.summary && "resumen verificable de la conversación",
-      confirmation.negotiation.concession && "validación de la condición especial",
       confirmation.negotiation.objection_type && confirmation.negotiation.objection_type !== "OTHER" && confirmation.negotiation.objection_status !== "RESOLVED" && "objeción resuelta",
     ].filter(Boolean);
     if (cleanMissing.length) throw badRequest(`La venta limpia requiere: ${cleanMissing.join(", ")}.`);
@@ -1370,8 +1407,8 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
     throw badRequest("El reproceso debe volver explícitamente a Evaluación o Activación 1.");
   }
   if (result === "RECYCLE") {
-    if (!payload.recycle_reason || !payload.recycle_strategy || !payload.recycle_consent || !payload.channel) {
-      throw badRequest("Para Reciclaje indica motivo, estrategia, canal permitido y consentimiento confirmado.");
+    if (!payload.recycle_reason || !payload.recycle_strategy || !payload.recycle_consent || !payload.channel || !payload.recycle_responsible) {
+      throw badRequest("Para Reciclaje indica motivo, estrategia, responsable, canal permitido y consentimiento confirmado.");
     }
     if (new Date(nextAt).getTime() <= Date.now()) {
       throw badRequest("La fecha de reactivación debe estar en el futuro.");
@@ -1398,6 +1435,7 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
     recycle: result === "RECYCLE" ? {
       reason: payload.recycle_reason,
       strategy: payload.recycle_strategy,
+      responsible: String(payload.recycle_responsible || "").trim(),
       consent: payload.recycle_consent,
       channel: String(payload.channel || "").trim(),
     } : null,
@@ -1436,7 +1474,7 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
     to_phase: toPhase, priority: result === "LOST" ? "LOW" : result === "NO_RESPONSE" ? "HIGH" : "MEDIUM",
     recommended_action: result === "LOST" ? "Conservar aprendizaje comercial" : result === "REPROCESS" ? "Actualizar propuesta antes de retomar el acuerdo" : "Confirmar condición comercial",
     last_operation: `negotiation_${result.toLowerCase()}`, revenue_potential: item.revenue_potential, reason,
-    metadata: { negotiation_current: round, negotiation_history: [...history, round], negotiation_result: result, negotiation_task_id: agenda?.item?.id || null, recycling: result === "RECYCLE" ? { reason: payload.recycle_reason || reason, strategy: payload.recycle_strategy || "NEW_CONTACT", reactivate_at: nextAt, responsible: user.id, consent: payload.recycle_consent, channel: String(payload.channel || "").trim(), note: reason } : null, commercial_status: result === "LOST" ? "LOST" : result === "WAITING" ? "WAITING" : result === "NO_RESPONSE" ? "RECOVERY" : result === "RECYCLE" ? "RECYCLE" : "REPROCESS", lost_classification: result === "LOST" ? payload.lost_classification : null, cancelled_agenda_count: cancelledAgendaCount },
+    metadata: { negotiation_current: round, negotiation_history: [...history, round], negotiation_result: result, negotiation_task_id: agenda?.item?.id || null, recycling: result === "RECYCLE" ? { status: "RECYCLED", reason: payload.recycle_reason || reason, strategy: payload.recycle_strategy || "NEW_CONTACT", reactivate_at: nextAt, responsible: String(payload.recycle_responsible || user.id), consent: payload.recycle_consent, channel: String(payload.channel || "").trim(), note: reason } : null, commercial_status: result === "LOST" ? "LOST" : result === "WAITING" ? "WAITING" : result === "NO_RESPONSE" ? "RECOVERY" : result === "RECYCLE" ? "RECYCLED" : "REPROCESS", lost_classification: result === "LOST" ? payload.lost_classification : null, cancelled_agenda_count: cancelledAgendaCount },
   }, RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT);
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
@@ -1471,7 +1509,7 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
   if (!["CLEARED", "RETURN_TO_NEGOTIATION", "WAITING", "RECYCLE", "LOST"].includes(result)) throw badRequest("Selecciona una decisión de Riesgos de fuga válida.");
   if (!reason) throw badRequest("Explica la decisión antes de guardar la revisión de riesgo.");
   const hasSupport = Boolean(confirmation?.evidence || confirmation?.payment_reference || confirmation?.note);
-  const canClear = Boolean(item.name && (item.phone || item.email) && confirmation?.product_name && Number(confirmation.amount) > 0 && confirmation?.responsible && hasSupport);
+  const canClear = Boolean(item.name && (item.phone || item.email) && confirmation?.inventory_product_id && Number(confirmation.amount) > 0 && confirmation?.responsible && hasSupport);
   if (result === "CLEARED" && !canClear) throw badRequest("No se puede liberar la venta: faltan contacto, producto, valor, responsable o soporte verificable.");
   if (["WAITING", "RECYCLE"].includes(result) && !payload.next_action_at) throw badRequest("Programa la fecha de seguimiento o reactivación antes de guardar.");
   const review = {
@@ -1529,16 +1567,18 @@ async function reactivateRmsRecycledLead(businessId, user, payload = {}) {
   if (item.stage !== "reciclaje") throw badRequest("El lead solo puede reactivarse desde Reciclaje comercial.");
   const note = String(payload.note || "").trim();
   if (!note) throw badRequest("Explica el contexto actualizado antes de reactivar el lead.");
+  const destination = payload.destination === "clasificacion" ? "clasificacion" : "procesamiento";
+  const destinationLabel = destination === "clasificacion" ? "Activación 1" : "Evaluación";
   const movement = await moveRmsLeadPhase(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
-    to_phase: "procesamiento", priority: "MEDIUM", recommended_action: "Reevaluar contexto y propuesta antes de contactar",
+    to_phase: destination, priority: "MEDIUM", recommended_action: destination === "clasificacion" ? "Preparar una nueva Activación 1" : "Reevaluar contexto y propuesta antes de contactar",
     last_operation: "recycled_lead_reactivated", reason: note,
-    metadata: { recycle_result: "REACTIVATED", recycling: { ...(item.state_metadata?.recycling || {}), reactivated_at: new Date().toISOString(), reactivated_by: user.id, reactivation_note: note } },
+    metadata: { recycle_result: "REACTIVATED", recycling: { ...(item.state_metadata?.recycling || {}), status: "REACTIVATED", reactivation_destination: destination, reactivated_at: new Date().toISOString(), reactivated_by: user.id, reactivation_note: note } },
   });
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
-    event_type: "recycled_lead_reactivated", event_title: "Lead reciclado reactivado hacia Evaluación", event_description: note,
-    rms_phase: "procesamiento", metadata: { movement_id: movement.movement?.id || null },
+    event_type: "recycled_lead_reactivated", event_title: `Lead reciclado reactivado hacia ${destinationLabel}`, event_description: note,
+    rms_phase: destination, metadata: { movement_id: movement.movement?.id || null, destination },
   });
   return movement;
 }
@@ -1559,7 +1599,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const validSaleOrigin = workflowMetadata.commercial_route === "NEGOTIATION_CLEAN"
     || (workflowMetadata.commercial_confirmation?.route === "NEGOTIATION_CLEAN")
     || workflowMetadata.risk_review?.result === "CLEARED";
-  if (!workflowMetadata.commercial_confirmation?.product_name || !validSaleOrigin) {
+  if (!workflowMetadata.commercial_confirmation?.inventory_product_id || !validSaleOrigin) {
     throw badRequest("Aún falta una procedencia válida: venta limpia desde Negociación o Riesgo de fuga liberado.");
   }
   const quantity = Math.max(0.01, Number(payload.quantity || 1));
@@ -1568,17 +1608,13 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const acquisitionCost = Math.max(0, roundedMoney(payload.acquisition_cost));
   const idempotencyKey = String(payload.idempotency_key || "").trim() || null;
   if (saleAmount <= 0) throw badRequest("El valor pagado debe ser mayor a cero.");
-  const product = payload.inventory_product_id
-    ? await query(
-      `select id, name, cost_price from business_inventory_products
-       where business_id = $1 and id = $2 and status <> 'ARCHIVED'`,
-      [businessId, payload.inventory_product_id]
-    )
-    : { rows: [] };
-  if (payload.inventory_product_id && !product.rows[0]) throw notFound("No encontramos ese producto en el inventario.");
-  const productRow = product.rows[0] || null;
-  const productName = String(payload.product_name || productRow?.name || "").trim();
-  if (!productName) throw badRequest("Indica el producto o servicio vendido.");
+  const confirmation = workflowMetadata.commercial_confirmation;
+  if (String(payload.inventory_product_id) !== String(confirmation.inventory_product_id)) {
+    throw badRequest("La venta debe conservar el producto de inventario confirmado en Negociación.");
+  }
+  const productSnapshot = await rmsInventoryProductSnapshot(businessId, confirmation.inventory_product_id);
+  const productRow = productSnapshot.inventory_product;
+  const productName = productSnapshot.product_name;
   const unitCost = Math.max(0, roundedMoney(payload.unit_cost ?? productRow?.cost_price ?? 0));
   const productCostTotal = roundedMoney(unitCost * quantity);
   const grossProfit = roundedMoney(saleAmount - productCostTotal - benefitCost);
@@ -1593,6 +1629,13 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     rms_source_type: sourceType,
     rms_source_id: payload.source_id,
     rms_opportunity_id: item.id,
+    product_snapshot: {
+      inventory_product_id: productSnapshot.inventory_product_id,
+      product_name_snapshot: productSnapshot.product_name_snapshot,
+      product_price_snapshot: productSnapshot.product_price_snapshot,
+      product_currency_snapshot: productSnapshot.product_currency_snapshot,
+      product_source: productSnapshot.product_source,
+    },
     benefit_description: String(payload.benefit_description || "").trim() || null,
     economics,
   };
@@ -1602,17 +1645,19 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
         (business_id, campaign_id, customer_name, customer_phone, customer_email, customer_document_id,
          product_name, sale_amount, currency, seller_user_id, acquisition_source, acquisition_channel, notes,
          metadata, rms_source_type, rms_source_id, inventory_product_id, quantity, unit_cost, product_cost_total,
-         benefit_type, benefit_cost, acquisition_cost, gross_profit, net_profit, roi, payment_method, paid_at, sale_status, idempotency_key)
+         benefit_type, benefit_cost, acquisition_cost, gross_profit, net_profit, roi, payment_method, paid_at, sale_status, idempotency_key,
+         product_name_snapshot, product_price_snapshot, product_currency_snapshot, product_source)
        values
         ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'RMS', 'RMS / Ventas atribuidas', $11,
-         $12::jsonb, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, 'PAID', $27)
+         $12::jsonb, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, 'PAID', $27, $28, $29, $30, $31)
        on conflict (business_id, idempotency_key) where idempotency_key is not null do nothing
        returning *`,
       [businessId, item.campaign_id || null, item.name || null, item.phone || null, item.email || null,
         item.document_id || null, productName, saleAmount, currency, user.id, String(payload.notes || "").trim() || null,
         JSON.stringify(metadata), sourceType, payload.source_id, productRow?.id || null, quantity, unitCost,
         productCostTotal, String(payload.benefit_type || "NONE").toUpperCase(), benefitCost, acquisitionCost,
-        grossProfit, netProfit, roi, String(payload.payment_method || "OTHER").toUpperCase(), paidAt, idempotencyKey]
+        grossProfit, netProfit, roi, String(payload.payment_method || "OTHER").toUpperCase(), paidAt, idempotencyKey,
+        productSnapshot.product_name_snapshot, productSnapshot.product_price_snapshot, productSnapshot.product_currency_snapshot, productSnapshot.product_source]
     );
     if (sale.rows[0]) return { sale: sale.rows[0], duplicate: false };
     const existing = await client.query(

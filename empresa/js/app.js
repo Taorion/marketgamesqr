@@ -2388,6 +2388,13 @@ let state = {
   rmsMachineLoaded: false,
   rmsMachineLoading: false,
   rmsPostSaleActions: [],
+  rmsIntelligencePatterns: null,
+  rmsIntelligenceInsights: [],
+  rmsIntelligenceCase: null,
+  rmsIntelligenceCaseKey: "",
+  rmsIntelligenceView: "case",
+  rmsIntelligenceSaving: false,
+  rmsIntelligenceFilters: { days: "30", campaign: "", channel: "", product: "", seller: "", branch: "", source_type: "" },
   rmsMachineSelectedIds: [],
   rmsMachineInspectorId: "",
   rmsLeadQualityDraft: {},
@@ -30875,8 +30882,17 @@ const LEAD_DIRECTORY_RMS_STATIONS = {
   cierre: { label: "Estación 09 · Ventas atribuidas", short: "09 Ventas atribuidas" },
   revenue_generado: { label: "Tablero auxiliar · Control de calidad 2", short: "Control calidad 2" },
   postventa: { label: "Estación 11 · Activación 2", short: "11 Activación 2" },
-  inteligencia: { label: "Estación 12 · Inteligencia RMS", short: "12 Inteligencia" },
+  inteligencia: { label: "Estación 10 · Inteligencia RMS", short: "10 Inteligencia" },
 };
+
+// Visual controls are intentionally excluded from operational numbering.
+Object.assign(LEAD_DIRECTORY_RMS_STATIONS, {
+  procesamiento: { label: "Estación 05 · Evaluación", short: "05 Evaluación" },
+  accion_correctiva: { label: "Estación 06 · Negociación", short: "06 Negociación" },
+  control_anti_fuga: { label: "Estación 07 · Riesgos de fuga", short: "07 Riesgos fuga" },
+  cierre: { label: "Estación 08 · Ventas atribuidas", short: "08 Ventas atribuidas" },
+  postventa: { label: "Estación 09 · Activación 2", short: "09 Activación 2" },
+});
 
 function leadDirectoryStationInfo(item = {}) {
   const metadata = leadDirectoryMetadata(item);
@@ -39989,7 +40005,7 @@ const RMS_TUTORIAL_STEPS = [
     key: "inteligencia",
     phase: "inteligencia",
     icon: "psychology",
-    title: "Estación 12 · Inteligencia RMS",
+    title: "Estación 10 · Inteligencia RMS",
     subtitle: "Optimizar",
     actionLabel: "Abrir Inteligencia RMS",
     action: "station",
@@ -40414,6 +40430,7 @@ function rmsEvaluationStationCardMarkup(item = {}) {
   const delivery = rmsActivationDelivery(item);
   const defaultProduct = rmsClassifiedProductName(item) || item.product_interest || "";
   const draft = rmsEvaluationCachedDraft(item.id);
+  const evaluationProductId = draft.recommended_inventory_product_id || item.classified_product_id || "";
   const selectedResponse = draft.response || "";
   const selectedDestination = draft.destination || "";
   const selectedResponseLabel = RMS_EVALUATION_RESPONSES.find((option) => option.value === selectedResponse)?.short || "Pendiente";
@@ -40436,7 +40453,7 @@ function rmsEvaluationStationCardMarkup(item = {}) {
         <section class="rms-evaluation-destination-panel" aria-label="Estación de destino"><div class="rms-evaluation-panel-head"><div><span class="mono-label" style="color:#ffffff !important;opacity:1 !important;">Paso 3 · Tu decisión</span><h5 style="color:#ffffff !important;opacity:1 !important;">¿A qué estación envías este lead?</h5></div><small style="color:#ffffff !important;opacity:1 !important;">La respuesta sugiere; tú decides</small></div><div class="rms-evaluation-destination-grid">${RMS_EVALUATION_DESTINATIONS.map((option) => `<button class="rms-evaluation-destination-choice ${selectedDestination === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-destination-choice="${escapeHtml(item.id)}" data-rms-evaluation-destination-value="${option.value}" aria-pressed="${selectedDestination === option.value ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true" style="color:#ffffff !important;opacity:1 !important;">${option.icon}</span><span><em style="color:#ffffff !important;opacity:1 !important;">${escapeHtml(option.eyebrow)}</em><strong style="color:#ffffff !important;opacity:1 !important;">${escapeHtml(option.label)}</strong><small style="color:#ffffff !important;opacity:1 !important;">${escapeHtml(option.hint)}</small></span><span class="material-symbols-outlined rms-evaluation-destination-arrow" aria-hidden="true" style="color:#ffffff !important;opacity:1 !important;">arrow_forward</span></button>`).join("")}</div></section>
         <aside class="rms-evaluation-route-preview" data-rms-evaluation-route="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">alt_route</span><div><span class="mono-label">Confirmación de ruta</span><strong>Elige una estación de destino</strong><small>La respuesta y el destino quedarán registrados en el historial del contacto.</small></div><span class="rms-evaluation-route-state" data-rms-evaluation-route-state="${escapeHtml(item.id)}">Pendiente</span></aside>
         <section class="rms-evaluation-next-panel ${selectedResponse && selectedDestination ? "is-visible" : ""}" data-rms-evaluation-next-panel="${escapeHtml(item.id)}"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 4 · Contexto de continuidad</span><h5>Deja el contexto mínimo útil</h5></div><small>El resumen es opcional; el sistema registra uno si no lo escribes.</small></div><div class="rms-evaluation-form-grid">
-          <label data-rms-evaluation-detail="commercial"><span>Producto o servicio</span><input type="text" value="${escapeHtml(draft.recommended_product || defaultProduct)}" data-rms-evaluation-product="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Oferta evaluada"></label>
+          <label data-rms-evaluation-detail="commercial"><span>Producto o servicio</span><select data-rms-evaluation-product-id="${escapeHtml(item.id)}" data-rms-evaluation-draft-field>${rmsInventoryProductPickerOptions(evaluationProductId, draft.recommended_product || defaultProduct)}</select><small>Elige el producto activo que se evaluó. Los textos históricos no se vinculan automáticamente.</small></label>
           <label data-rms-evaluation-detail="commercial"><span>Presupuesto</span><input type="number" min="0" step="0.01" value="${escapeHtml(draft.budget_amount ?? "")}" data-rms-evaluation-budget="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Opcional"></label>
           <label data-rms-evaluation-detail="commercial"><span>Moneda</span><select data-rms-evaluation-currency="${escapeHtml(item.id)}" data-rms-evaluation-draft-field>${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${(draft.currency || "COP") === currency ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
           <label data-rms-evaluation-detail="commercial"><span>Decisor o influenciador</span><input type="text" value="${escapeHtml(draft.decision_maker || "")}" data-rms-evaluation-decision-maker="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Nombre, rol o pendiente"></label>
@@ -40472,12 +40489,14 @@ function rmsCommercialConfirmationStationCardMarkup(item = {}) {
   const negotiation = (item.state_metadata || {}).negotiation_current || {};
   const history = Array.isArray((item.state_metadata || {}).negotiation_history) ? (item.state_metadata || {}).negotiation_history.slice(-4).reverse() : [];
   const product = confirmation.product_name || evaluation.recommended_product || rmsClassifiedProductName(item) || item.product_interest || "";
+  const productId = confirmation.inventory_product_id || evaluation.recommended_inventory_product_id || item.classified_product_id || "";
   const amount = confirmation.amount ?? evaluation.budget_amount ?? "";
   const currency = confirmation.currency || evaluation.currency || "COP";
   const paymentReported = evaluation.response === "PAID_SALE";
   const scenarioLabel = evaluation.scenario === "EASY_CLOSE" ? "Venta fácil por Activación 1" : "Negociación asistida";
   const status = confirmation.status === "CONFIRMED" ? "Acuerdo confirmado" : negotiation.result === "WAITING" ? "Esperando respuesta" : negotiation.result === "REPROCESS" ? "Requiere nueva propuesta" : negotiation.result === "LOST" ? "Perdido" : paymentReported ? "Pago informado" : "En negociación";
   const initialDraft = {
+    inventory_product_id: productId,
     product_name: product,
     amount: Number(amount || 0),
     payment_reference: confirmation.payment_reference || "",
@@ -40578,6 +40597,76 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
   `;
 }
 
+// RMS never treats a free-text product as a current catalog reference. This
+// reusable native picker keeps keyboard type-ahead, shows catalog context, and
+// deliberately leaves historic text as evidence instead of silently matching it.
+function rmsInventoryProductPickerOptions(selectedId = "", historicName = "") {
+  const selected = String(selectedId || "");
+  const option = (value, label, extra = "") => `<option value="${escapeHtml(value)}" ${selected === String(value) ? "selected" : ""} ${extra}>${escapeHtml(label)}</option>`;
+  const products = activeInventoryProducts().filter((product) => product.status === "ACTIVE");
+  const historic = String(historicName || "").trim();
+  return [
+    option("", products.length ? "Selecciona producto o servicio del inventario" : "No hay productos activos en el inventario", "disabled"),
+    ...products.map((product) => {
+      const refs = [product.sku, product.category].filter(Boolean).join(" · ");
+      const stock = product.stock_quantity === null || product.stock_quantity === undefined ? "" : ` · disponible ${Number(product.stock_quantity || 0).toLocaleString("es-CO")}`;
+      return option(product.id, `${product.name}${refs ? ` · ${refs}` : ""} · ${money(product.unit_price || 0)} ${product.currency || "COP"}${stock}`);
+    }),
+    ...(!selected && historic ? [option("", `Producto histórico sin vincular: ${historic}`, "disabled")] : []),
+  ].join("");
+}
+
+function upgradeRmsInventoryProductInputs(root) {
+  if (!root) return;
+  const replaceFreeInput = (input, attribute) => {
+    if (!input || input.dataset.rmsInventoryPickerReady === "true") return;
+    const historicName = String(input.value || "").trim();
+    const known = findInventoryProduct(historicName);
+    const select = document.createElement("select");
+    select.setAttribute(attribute, input.getAttribute(attribute) || "");
+    select.dataset.rmsInventoryPickerReady = "true";
+    select.innerHTML = rmsInventoryProductPickerOptions(known?.id || "", historicName);
+    input.replaceWith(select);
+    const hint = document.createElement("small");
+    hint.className = "rms-inventory-picker-hint";
+    hint.textContent = historicName && !known
+      ? `Producto histórico sin vincular: ${historicName}. Selecciona el producto real antes de continuar.`
+      : "Producto activo del inventario; el nombre y precio quedan guardados como evidencia histórica.";
+    select.insertAdjacentElement("afterend", hint);
+  };
+  root.querySelectorAll("[data-rms-evaluation-product]").forEach((input) => replaceFreeInput(input, "data-rms-evaluation-product-id"));
+  root.querySelectorAll("[data-rms-confirm-product]").forEach((input) => replaceFreeInput(input, "data-rms-confirm-product-id"));
+  root.querySelectorAll("[data-rms-sale-product-name]").forEach((input) => {
+    const card = input.closest("[data-rms-station-lead]");
+    const item = rmsOpportunityById(card?.dataset.rmsStationLead || "");
+    const selected = rmsCommercialWorkflow(item || {}).confirmation?.inventory_product_id || "";
+    const saleSelect = card?.querySelector("[data-rms-sale-product]");
+    if (saleSelect && selected) saleSelect.value = selected;
+    const historicName = String(input.value || "").trim();
+    const hint = document.createElement("small");
+    hint.className = "rms-inventory-picker-hint";
+    hint.textContent = historicName ? `Producto confirmado: ${historicName}` : "Selecciona el producto confirmado del inventario.";
+    input.replaceWith(hint);
+  });
+  root.querySelectorAll("[data-rms-negotiation-recycle-strategy]").forEach((field) => {
+    const id = field.getAttribute("data-rms-negotiation-recycle-strategy") || "";
+    if (root.querySelector(`[data-rms-negotiation-recycle-responsible="${CSS.escape(id)}"]`)) return;
+    const label = document.createElement("label");
+    label.dataset.rmsNegotiationRecycleWrap = id;
+    label.innerHTML = `<span>Responsable de reactivación</span><input type="text" data-rms-negotiation-recycle-responsible="${escapeHtml(id)}" placeholder="Quién retoma el caso">`;
+    field.closest("label")?.insertAdjacentElement("afterend", label);
+  });
+  root.querySelectorAll("[data-rms-recycle-note]").forEach((field) => {
+    const id = field.getAttribute("data-rms-recycle-note") || "";
+    if (root.querySelector(`[data-rms-recycle-destination="${CSS.escape(id)}"]`)) return;
+    const select = document.createElement("select");
+    select.dataset.rmsRecycleDestination = id;
+    select.setAttribute("aria-label", "Destino de reactivación");
+    select.innerHTML = '<option value="procesamiento">Reactivar en Evaluación</option><option value="clasificacion">Reactivar en Activación 1</option>';
+    field.insertAdjacentElement("afterend", select);
+  });
+}
+
 function rmsPostSaleActionStatusLabel(status = "PLANNED") {
   return ({ PLANNED: "Pendiente", SCHEDULED: "Programada", ISSUED: "Emitida", DELIVERED: "Entregada", CLAIMED: "Reclamada", COMPLETED: "Completada", REDEEMED: "Redimida", EXPIRED: "Vencida", CANCELLED: "Cancelada", NOT_APPLICABLE: "No aplica", FAILED: "Fallida" })[String(status || "").toUpperCase()] || status;
 }
@@ -40600,6 +40689,44 @@ function rmsPostSaleStationCardMarkup(item = {}) {
         <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">link</span>La venta original es obligatoria y nunca se duplica al emitir un ticket, Reward Pass, encuesta o seguimiento.</small><button class="solid-button compact" type="button" data-rms-save-post-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span>Registrar Activación 2</button></div>
       </section>
     </article>`;
+}
+
+function rmsIntelligenceCaseKey(item = {}) {
+  return `${item.source_type || "PLAYER"}:${item.source_id || item.id || ""}`;
+}
+
+function rmsIntelligenceCaseRefMarkup(ref = "") {
+  const [sourceType, sourceId] = String(ref || "").split(":");
+  if (!sourceType || !sourceId) return "";
+  return `<button class="ghost-button compact" type="button" data-rms-intelligence-case-ref="${escapeHtml(ref)}">Ver caso</button>`;
+}
+
+function rmsIntelligenceStationMarkup(rows = []) {
+  const selectedKey = state.rmsIntelligenceCaseKey || rmsIntelligenceCaseKey(rows[0]);
+  const selectedItem = rows.find((item) => rmsIntelligenceCaseKey(item) === selectedKey) || rows[0] || null;
+  const caseData = state.rmsIntelligenceCaseKey === selectedKey ? state.rmsIntelligenceCase : null;
+  const learning = caseData?.learning || {};
+  const facts = caseData?.facts || {};
+  const profile = caseData?.case?.profile || {};
+  const patterns = state.rmsIntelligencePatterns || {};
+  const insights = state.rmsIntelligenceInsights || [];
+  const intelligenceFilters = state.rmsIntelligenceFilters || {};
+  const view = ["case", "patterns", "decisions"].includes(state.rmsIntelligenceView) ? state.rmsIntelligenceView : "case";
+  const caseOptions = rows.map((item) => `<option value="${escapeHtml(rmsIntelligenceCaseKey(item))}" ${rmsIntelligenceCaseKey(item) === selectedKey ? "selected" : ""}>${escapeHtml(item.name || item.source_label || "Caso RMS")} · ${escapeHtml(item.campaign_name || item.product_interest || "Sin detalle")}</option>`).join("");
+  const timeline = (learning.timeline || []).map((event) => `<li><strong>${escapeHtml(event.title || "Hecho RMS")}</strong><span>${escapeHtml(event.detail || "Sin detalle adicional")}</span><small>${escapeHtml(event.phase || "origen")} · ${escapeHtml(event.at ? formatDate(event.at) : "Fecha no registrada")}</small></li>`).join("");
+  const durations = (learning.phase_durations || []).map((entry) => `<li><strong>${escapeHtml(entry.phase || "Fase")}</strong><span>${escapeHtml(entry.label || "Sin duración")}${entry.is_open ? " · en curso" : ""}</span></li>`).join("");
+  const card = selectedItem ? `
+    <section class="rms-intelligence-case-sheet">
+      <header><div><span class="mono-label">CASO INDIVIDUAL · HECHOS CONSOLIDADOS</span><h4>${escapeHtml(selectedItem.name || "Caso RMS")}</h4><p>${escapeHtml([profile.campaign_name || selectedItem.campaign_name, profile.channel || selectedItem.channel, profile.product_interest || selectedItem.product_interest].filter(Boolean).join(" · ") || "La ficha usa únicamente hechos guardados por la máquina.")}</p></div><span class="rms-commercial-state">${escapeHtml(caseData?.case?.current_phase || selectedItem.stage || "inteligencia")}</span></header>
+      ${caseData ? `
+        <dl class="rms-intelligence-facts"><div><dt>Mayor demora</dt><dd>${escapeHtml(learning.longest_phase ? `${learning.longest_phase.phase} · ${learning.longest_phase.label}` : "Aún no calculable")}</dd></div><div><dt>Reprocesos</dt><dd>${escapeHtml(String(learning.reprocess_count || 0))}</dd></div><div><dt>Objeción principal</dt><dd>${escapeHtml(learning.primary_objection || "No registrada")}</dd></div><div><dt>Riesgo o pérdida</dt><dd>${escapeHtml(learning.loss_or_risk_reason || "No registrado")}</dd></div><div><dt>Condición que permitió vender</dt><dd>${escapeHtml(learning.winning_condition || "No registrada")}</dd></div><div><dt>Valor atribuido</dt><dd>${escapeHtml(money(learning.attributed_value || 0))}</dd></div><div><dt>Activación 2</dt><dd>${escapeHtml((facts.post_sale_actions || []).map((action) => `${action.action_type} · ${rmsPostSaleActionStatusLabel(action.status)}`).join(" | ") || "Sin resultado registrado")}</dd></div><div><dt>Calidad del aprendizaje</dt><dd>${escapeHtml((learning.missing_fields || []).length ? `Faltan: ${(learning.missing_fields || []).join(", ")}` : "Ficha con hechos suficientes")}</dd></div></dl>
+        <div class="rms-intelligence-case-columns"><section><h5>Línea de tiempo</h5><ol class="rms-intelligence-timeline">${timeline || "<li><strong>Sin eventos</strong><span>El caso aún no tiene eventos RMS legibles.</span></li>"}</ol></section><section><h5>Tiempo por estación</h5><ol class="rms-intelligence-durations">${durations || "<li><strong>Sin movimientos</strong><span>No hay duración disponible.</span></li>"}</ol></section></div>
+      ` : `<div class="empty-state compact"><strong>Ficha aún sin cargar</strong><p>Selecciona el caso para consultar sus eventos, venta y Activación 2 sin duplicar datos.</p></div>`}
+      <section class="rms-intelligence-insight-form"><h5>Guardar aprendizaje respaldado</h5><div class="rms-sale-form-grid"><label><span>Observación</span><textarea rows="3" data-rms-intelligence-observation placeholder="Hecho visible en el historial; no una conclusión inventada."></textarea></label><label><span>Hipótesis</span><textarea rows="3" data-rms-intelligence-hypothesis placeholder="Qué conviene validar con más casos."></textarea></label><label><span>Recomendación concreta</span><textarea rows="3" data-rms-intelligence-recommendation placeholder="Qué debe repetirse, corregirse, detenerse o probarse."></textarea></label><label><span>Evidencia</span><textarea rows="3" data-rms-intelligence-evidence placeholder="Eventos, venta, resultado de Activación 2 o referencias que la sustentan."></textarea></label><label><span>Responsable</span><input type="text" data-rms-intelligence-owner placeholder="Quien revisará el aprendizaje"></label><label><span>Prioridad</span><select data-rms-intelligence-priority><option value="LOW">Baja</option><option value="MEDIUM" selected>Media</option><option value="HIGH">Alta</option><option value="URGENT">Urgente</option></select></label><label><span>Estado</span><select data-rms-intelligence-status><option value="PENDING" selected>Pendiente</option><option value="MEASURING">Por medir</option><option value="APPLIED">Aplicada</option><option value="DISCARDED">Descartada</option></select></label><label><span>Métrica esperada</span><input type="text" data-rms-intelligence-metric placeholder="Ej.: reducir espera en negociación"></label><label><span>Fecha de revisión</span><input type="datetime-local" data-rms-intelligence-review-at></label></div><button class="solid-button compact" type="button" data-rms-save-intelligence-insight="${escapeHtml(rmsIntelligenceCaseKey(selectedItem))}"><span class="material-symbols-outlined" aria-hidden="true">lightbulb</span>Guardar aprendizaje</button></section>
+    </section>` : `<div class="empty-state compact"><strong>No hay casos listos para aprender</strong><p>Inteligencia recibe resultados reales de Activación 2; no reinicia clientes ni inventa oportunidades.</p></div>`;
+  const patternsView = `<section class="rms-intelligence-patterns"><header><div><span class="mono-label">PATRONES DE LA FÁBRICA</span><h4>${escapeHtml(patterns.period?.label || "Últimos 30 días")}</h4><p>${escapeHtml(patterns.caveat || "Las agrupaciones muestran hechos, no causalidad automática.")}</p></div><button class="ghost-button compact" type="button" data-rms-refresh-intelligence-patterns>Actualizar</button></header><div class="rms-intelligence-filter-grid"><label><span>Período</span><select data-rms-intelligence-filter="days"><option value="7" ${intelligenceFilters.days === "7" ? "selected" : ""}>7 días</option><option value="30" ${intelligenceFilters.days === "30" ? "selected" : ""}>30 días</option><option value="90" ${intelligenceFilters.days === "90" ? "selected" : ""}>90 días</option><option value="365" ${intelligenceFilters.days === "365" ? "selected" : ""}>365 días</option></select></label><label><span>Campaña</span><input data-rms-intelligence-filter="campaign" value="${escapeHtml(intelligenceFilters.campaign || "")}" placeholder="Nombre o parte"></label><label><span>Canal</span><input data-rms-intelligence-filter="channel" value="${escapeHtml(intelligenceFilters.channel || "")}" placeholder="WhatsApp, QR..."></label><label><span>Producto</span><input data-rms-intelligence-filter="product" value="${escapeHtml(intelligenceFilters.product || "")}" placeholder="Producto o servicio"></label><label><span>Vendedor</span><input data-rms-intelligence-filter="seller" value="${escapeHtml(intelligenceFilters.seller || "")}" placeholder="Nombre o ID"></label><label><span>Sede</span><input data-rms-intelligence-filter="branch" value="${escapeHtml(intelligenceFilters.branch || "")}" placeholder="Sede o ID"></label><label><span>Tipo de lead</span><select data-rms-intelligence-filter="source_type"><option value="">Todos</option><option value="PLAYER" ${intelligenceFilters.source_type === "PLAYER" ? "selected" : ""}>Jugador</option><option value="MANUAL" ${intelligenceFilters.source_type === "MANUAL" ? "selected" : ""}>Manual</option><option value="BUYER" ${intelligenceFilters.source_type === "BUYER" ? "selected" : ""}>Comprador</option><option value="AFFILIATE" ${intelligenceFilters.source_type === "AFFILIATE" ? "selected" : ""}>Afiliado</option></select></label></div><div class="rms-intelligence-pattern-grid"><section><h5>Cuellos de botella</h5><ol>${(patterns.bottlenecks || []).map((row) => `<li><strong>${escapeHtml(row.key || "Sin fase")}</strong><span>${escapeHtml(row.sample_label || `Muestra: ${row.sample_size || 0}`)}</span>${rmsIntelligenceCaseRefMarkup(row.case_refs?.[0])}</li>`).join("") || "<li><strong>Sin datos suficientes</strong><span>Se requiere historial RMS para agrupar.</span></li>"}</ol></section><section><h5>Objeciones registradas</h5><ol>${(patterns.objections || []).map((row) => `<li><strong>${escapeHtml(row.key || "No registrada")}</strong><span>${escapeHtml(row.sample_label || `Muestra: ${row.sample_size || 0}`)}</span>${rmsIntelligenceCaseRefMarkup(row.case_refs?.[0])}</li>`).join("") || "<li><strong>Sin datos suficientes</strong><span>Registra la objeción al evaluar o negociar.</span></li>"}</ol></section><section><h5>Ventas atribuidas</h5><ol>${(patterns.attributed_sales || []).map((row) => `<li><strong>${escapeHtml(`${row.campaign || "Sin campaña"} · ${row.product || "Sin producto"}`)}</strong><span>${escapeHtml(`${money(row.attributed_value || 0)} · ${row.sample_label || `Muestra: ${row.sample_size || 0}`}`)}</span>${rmsIntelligenceCaseRefMarkup(row.case_refs?.[0])}</li>`).join("") || "<li><strong>Sin datos suficientes</strong><span>No hay ventas RMS en este período.</span></li>"}</ol></section><section><h5>Resultados de Activación 2</h5><ol>${(patterns.activation_2 || []).map((row) => `<li><strong>${escapeHtml(`${row.key || "Acción"} · ${rmsPostSaleActionStatusLabel(row.status)}`)}</strong><span>${escapeHtml(row.sample_label || `Muestra: ${row.sample_size || 0}`)}</span>${rmsIntelligenceCaseRefMarkup(row.case_refs?.[0])}</li>`).join("") || "<li><strong>Sin datos suficientes</strong><span>Los resultados llegarán desde Postventa.</span></li>"}</ol></section></div></section>`;
+  const decisionsView = `<section class="rms-intelligence-decisions"><header><div><span class="mono-label">EXPERIMENTOS Y DECISIONES</span><h4>Aprendizajes que esperan una acción explícita</h4><p>Guardar un insight no crea campañas, mensajes, descuentos ni leads. Una tarea se crea solo al confirmarla.</p></div></header><ol>${insights.map((insight) => `<li><div><strong>${escapeHtml(insight.recommendation || insight.observation || "Aprendizaje")}</strong><span>${escapeHtml(`${insight.status || "PENDING"} · ${insight.priority || "MEDIUM"}${insight.expected_metric ? ` · ${insight.expected_metric}` : ""}`)}</span><small>${escapeHtml(insight.evidence_note || "Sin evidencia narrativa adicional")}</small></div>${insight.source_id ? `<button class="ghost-button compact" type="button" data-rms-intelligence-create-task="${escapeHtml(insight.id)}">Crear tarea explícita</button>` : ""}</li>`).join("") || "<li><div><strong>Aún no hay recomendaciones guardadas</strong><span>Selecciona un caso y documenta una observación respaldada.</span></div></li>"}</ol></section>`;
+  return `<section class="rms-intelligence-console" aria-label="Inteligencia RMS"><header class="rms-intelligence-console-head"><div><span class="mono-label">ESTACIÓN 10 · MEMORIA OPERATIVA</span><h3>Inteligencia convierte hechos en decisiones verificables</h3><p>Conecta la historia del lead, la venta y Activación 2; no reinicia clientes ni ejecuta cambios automáticos.</p></div><label><span>Caso</span><select data-rms-intelligence-case-select>${caseOptions || "<option>Sin casos</option>"}</select></label></header><nav class="rms-intelligence-tabs" aria-label="Vistas de Inteligencia"><button type="button" data-rms-intelligence-view="case" class="${view === "case" ? "is-active" : ""}">Caso individual</button><button type="button" data-rms-intelligence-view="patterns" class="${view === "patterns" ? "is-active" : ""}">Patrones de la fábrica</button><button type="button" data-rms-intelligence-view="decisions" class="${view === "decisions" ? "is-active" : ""}">Experimentos y decisiones</button></nav>${view === "case" ? card : view === "patterns" ? patternsView : decisionsView}</section>`;
 }
 
 function renderRmsStationLeanOnly() {
@@ -40627,7 +40754,7 @@ function renderRmsStationLeanOnly() {
   const isCurationStation = phase === "alimentacion";
   const isClassifierStation = phase === "curaduria";
   const isActivationStation = phase === "clasificacion";
-  const isCommercialStation = ["clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "postventa"].includes(phase);
+  const isCommercialStation = ["clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "postventa", "inteligencia"].includes(phase);
   const pendingQualityCount = isCurationStation
     ? rows.filter((item) => !rmsLeadQualityValue(item)).length
     : 0;
@@ -40718,11 +40845,14 @@ function renderRmsStationLeanOnly() {
         <span>${selectedRows.length.toLocaleString("es-CO")} seleccionados · ${eligibleRows.length.toLocaleString("es-CO")} listos · ${rows.length.toLocaleString("es-CO")} total</span>
       </div>
       ${isCommercialStation ? `
+        ${phase === "inteligencia" ? rmsIntelligenceStationMarkup(rows) : ""}
+        ${phase !== "inteligencia" ? `
         ${phase === "control_anti_fuga" ? rmsRiskStationMetricsMarkup(rows, allOpportunities) : ""}
         ${phase === "control_anti_fuga" ? rmsRecyclingQueueMarkup(allOpportunities) : ""}
         <div class="rms-activation-work-list" aria-label="Consolas comerciales RMS">
           ${renderedRows.map((item) => rmsActivationStationCardMarkup(item)).join("") || `<div class="empty-state compact">${escapeHtml(isEmpty ? "No hay leads todavía." : "No hay leads con este filtro.")}</div>`}
         </div>
+        ` : ""}
       ` : `
       <div class="rms-lean-station-table-wrap">
         <table class="rms-lean-station-table">
@@ -41420,9 +41550,9 @@ function rmsStationVisualMeta(phase = "") {
       icon: "psychology",
       tone: "intelligence",
       image: "/empresa/img/qori-station-12-inteligencia-rms.jpg",
-      imageAlt: "Estacion 12 Inteligencia RMS",
-      screenTitle: "Estacion de almacenamiento: Optimizar",
-      visualLabel: "Inventario: aprendizaje RMS",
+      imageAlt: "Estación 10 Inteligencia RMS",
+      screenTitle: "Estación de Inteligencia: aprendizaje operativo",
+      visualLabel: "Memoria operativa: aprendizaje RMS",
       input: "Datos de campañas, ganchos, vendedores, tickets, fugas y ventas.",
       output: "Aprendizaje para alimentar mejor el siguiente ciclo.",
       focus: "Entender qué produce revenue, dónde se fuga y qué se debe optimizar.",
@@ -42418,7 +42548,7 @@ function renderRmsRecyclingWorkspace() {
   rmsStationWorkspace.hidden = false;
   rmsStationWorkspace.dataset.stationTheme = "recycling";
   rmsStationWorkspace.innerHTML = `<section class="rms-lean-station rms-recycling-station" aria-label="Reciclaje comercial"><header class="rms-lean-station-head"><button class="ghost-button compact" type="button" data-rms-close-station><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Estaciones</button><div class="rms-lean-station-title"><figure class="rms-lean-station-media"><span class="rms-lean-station-symbol material-symbols-outlined" aria-hidden="true">restart_alt</span></figure><div><span class="mono-label">COLA SECUNDARIA · RMS</span><h3>Reciclaje comercial</h3><p>Oportunidades recuperables programadas para volver a Evaluación con todo su contexto.</p></div></div><div class="rms-lean-station-actions"><span class="rms-commercial-state is-pending">${recycled.length} por reactivar</span></div></header>${rmsRecyclingQueueMarkup(opportunities)}</section>`;
-  bindRmsMachineActions(rmsStationWorkspace);
+  upgradeRmsInventoryProductInputs(rmsStationWorkspace);
   rmsStationWorkspace.querySelectorAll("[data-rms-close-station]").forEach((button) => button.addEventListener("click", closeRmsStation));
   rmsStationWorkspace.querySelectorAll("[data-rms-reactivate-recycled]").forEach((button) => button.addEventListener("click", () => {
     const item = rmsOpportunityById(button.dataset.rmsReactivateRecycled || "");
@@ -42428,7 +42558,8 @@ function renderRmsRecyclingWorkspace() {
       return;
     }
     button.disabled = true;
-    reactivateRmsRecycled(item, note).catch((error) => {
+    const destination = rmsCommercialNode(rmsStationWorkspace, "[data-rms-recycle-destination]", button.dataset.rmsReactivateRecycled || "")?.value || "procesamiento";
+    reactivateRmsRecycled(item, note, destination).catch((error) => {
       button.disabled = false;
       showFeedback(error.message || "No pudimos reactivar el lead.", "error", { title: "Reciclaje comercial" });
     });
@@ -42898,6 +43029,7 @@ function rmsStageLeadUnitMarkup(item = {}) {
 }
 
 function bindRmsMachineActions(root) {
+  upgradeRmsInventoryProductInputs(root);
   root.querySelectorAll("[data-rms-open-collector]").forEach((button) => {
     button.addEventListener("click", openRmsCollectorModal);
   });
@@ -43202,7 +43334,7 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-negotiation-route]").forEach((select) => {
     select.addEventListener("change", () => updateRmsNegotiationDecisionUi(root, select.dataset.rmsNegotiationRoute || ""));
   });
-  root.querySelectorAll("[data-rms-negotiation-objective], [data-rms-negotiation-objection], [data-rms-negotiation-objection-status], [data-rms-negotiation-objection-resolution], [data-rms-negotiation-condition], [data-rms-negotiation-proposal], [data-rms-negotiation-concession], [data-rms-negotiation-channel], [data-rms-confirm-product], [data-rms-confirm-amount], [data-rms-confirm-reference], [data-rms-confirm-responsible], [data-rms-confirm-evidence], [data-rms-confirm-note]").forEach((field) => {
+  root.querySelectorAll("[data-rms-negotiation-objective], [data-rms-negotiation-objection], [data-rms-negotiation-objection-status], [data-rms-negotiation-objection-resolution], [data-rms-negotiation-condition], [data-rms-negotiation-proposal], [data-rms-negotiation-concession], [data-rms-negotiation-channel], [data-rms-confirm-product-id], [data-rms-confirm-amount], [data-rms-confirm-reference], [data-rms-confirm-responsible], [data-rms-confirm-evidence], [data-rms-confirm-note]").forEach((field) => {
     const id = Object.values(field.dataset || {}).find((value) => rmsOpportunityById(value)) || "";
     const refresh = () => id && updateRmsNegotiationDecisionUi(root, id);
     field.addEventListener("input", refresh);
@@ -43237,7 +43369,8 @@ function bindRmsMachineActions(root) {
         showFeedback("Escribe el contexto actualizado antes de reactivar el lead.", "info", { title: "Reciclaje comercial" });
         return;
       }
-      reactivateRmsRecycled(item, note).catch((error) => showFeedback(error.message || "No pudimos reactivar el lead.", "error", { title: "Reciclaje comercial" }));
+      const destination = rmsCommercialNode(root, "[data-rms-recycle-destination]", button.dataset.rmsReactivateRecycled || "")?.value || "procesamiento";
+      reactivateRmsRecycled(item, note, destination).catch((error) => showFeedback(error.message || "No pudimos reactivar el lead.", "error", { title: "Reciclaje comercial" }));
     });
   });
   root.querySelectorAll("[data-rms-sale-product]").forEach((select) => {
@@ -43274,6 +43407,76 @@ function bindRmsMachineActions(root) {
       button.disabled = true;
       saveRmsPostSaleAction(item, root)
         .catch((error) => showFeedback(error.message || "No pudimos registrar la Activación 2.", "error", { title: "Activación 2" }))
+        .finally(() => { button.disabled = false; });
+    });
+  });
+  root.querySelectorAll("[data-rms-intelligence-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.rmsIntelligenceView = button.dataset.rmsIntelligenceView || "case";
+      renderRmsStationOnly();
+    });
+  });
+  root.querySelectorAll("[data-rms-intelligence-case-select]").forEach((select) => {
+    select.addEventListener("change", () => {
+      loadRmsIntelligenceCase(select.value)
+        .then(() => renderRmsStationOnly())
+        .catch((error) => showFeedback(error.message || "No pudimos cargar la ficha de aprendizaje.", "error", { title: "Inteligencia RMS" }));
+    });
+  });
+  root.querySelectorAll("[data-rms-intelligence-case-ref]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.rmsIntelligenceView = "case";
+      loadRmsIntelligenceCase(button.dataset.rmsIntelligenceCaseRef || "")
+        .then(() => renderRmsStationOnly())
+        .catch((error) => showFeedback(error.message || "No pudimos abrir el caso que respalda este patrón.", "error", { title: "Inteligencia RMS" }));
+    });
+  });
+  root.querySelectorAll("[data-rms-refresh-intelligence-patterns]").forEach((button) => {
+    button.addEventListener("click", () => {
+      button.disabled = true;
+      loadRmsIntelligenceData({ force: true })
+        .then(() => renderRmsStationOnly())
+        .catch((error) => showFeedback(error.message || "No pudimos actualizar los patrones.", "error", { title: "Inteligencia RMS" }))
+        .finally(() => { button.disabled = false; });
+    });
+  });
+  root.querySelectorAll("[data-rms-intelligence-filter]").forEach((field) => {
+    const apply = () => {
+      const key = field.dataset.rmsIntelligenceFilter || "";
+      if (!key) return;
+      state.rmsIntelligenceFilters = { ...(state.rmsIntelligenceFilters || {}), [key]: field.value || "" };
+    };
+    field.addEventListener("change", () => {
+      apply();
+      loadRmsIntelligenceData({ force: true })
+        .then(() => renderRmsStationOnly())
+        .catch((error) => showFeedback(error.message || "No pudimos aplicar los filtros de Inteligencia.", "error", { title: "Inteligencia RMS" }));
+    });
+    field.addEventListener("input", () => {
+      apply();
+      window.clearTimeout(state.rmsIntelligenceFilterTimer);
+      state.rmsIntelligenceFilterTimer = window.setTimeout(() => {
+        loadRmsIntelligenceData({ force: true })
+          .then(() => renderRmsStationOnly())
+          .catch((error) => showFeedback(error.message || "No pudimos aplicar los filtros de Inteligencia.", "error", { title: "Inteligencia RMS" }));
+      }, 350);
+    });
+  });
+  root.querySelectorAll("[data-rms-save-intelligence-insight]").forEach((button) => {
+    button.addEventListener("click", () => {
+      button.disabled = true;
+      saveRmsIntelligenceInsight(root, button.dataset.rmsSaveIntelligenceInsight || "")
+        .then(() => renderRmsStationOnly())
+        .catch((error) => showFeedback(error.message || "No pudimos guardar el aprendizaje.", "error", { title: "Inteligencia RMS" }))
+        .finally(() => { button.disabled = false; });
+    });
+  });
+  root.querySelectorAll("[data-rms-intelligence-create-task]").forEach((button) => {
+    button.addEventListener("click", () => {
+      button.disabled = true;
+      createRmsIntelligenceAgendaTask(button.dataset.rmsIntelligenceCreateTask || "")
+        .then(() => renderRmsStationOnly())
+        .catch((error) => showFeedback(error.message || "No pudimos crear la tarea explícita.", "error", { title: "Inteligencia RMS" }))
         .finally(() => { button.disabled = false; });
     });
   });
@@ -43408,7 +43611,7 @@ function openRmsStation(phase = "", options = {}) {
   const openSeq = ++state.rmsStationOpenSeq;
   document.getElementById("rmsMachineTutorial")?.classList.remove("is-open");
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = phase;
-  if (["curaduria", "clasificacion"].includes(phase) && !state.inventoryLoaded) {
+  if (["curaduria", "clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre"].includes(phase) && !state.inventoryLoaded) {
     loadInventoryProducts({ quiet: true })
       .then(() => {
         if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
@@ -43416,12 +43619,32 @@ function openRmsStation(phase = "", options = {}) {
       })
       .catch(() => {});
   }
+  if (phase === "inteligencia") {
+    loadRmsIntelligenceData()
+      .then(async () => {
+        const rows = rmsStationRows("inteligencia", state.rmsMachine?.opportunities || []);
+        const selected = rows.find((item) => rmsIntelligenceCaseKey(item) === state.rmsIntelligenceCaseKey) || rows[0];
+        if (selected && state.rmsIntelligenceCaseKey !== rmsIntelligenceCaseKey(selected)) await loadRmsIntelligenceCase(selected);
+      })
+      .then(() => {
+        if (state.rmsStationScreenOpen && state.rmsStationPhase === phase && state.rmsStationOpenSeq === openSeq) renderRmsStationOnly();
+      })
+      .catch((error) => console.warn("RMS intelligence preload failed", error));
+  }
   try {
     renderRmsStationOnly();
     rmsStationWorkspace?.scrollIntoView({ behavior: "auto", block: "start" });
     loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: phase })
       .then(() => {
         if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
+        if (phase === "inteligencia" && !state.rmsIntelligenceCaseKey) {
+          const selected = rmsStationRows("inteligencia", state.rmsMachine?.opportunities || [])[0];
+          if (selected) {
+            loadRmsIntelligenceCase(selected)
+              .then(() => renderRmsStationOnly())
+              .catch((error) => console.warn("RMS intelligence case preload failed", error));
+          }
+        }
         renderRmsStationOnly();
       })
       .catch((renderError) => {
@@ -45289,12 +45512,14 @@ function rmsCommercialMoney(value, currency = "COP") {
 }
 
 function rmsEvaluationDraftFromDom(root, id) {
+  const product = findInventoryProductById(rmsCommercialNode(root, "[data-rms-evaluation-product-id]", id)?.value || "");
   return {
     response: rmsCommercialNode(root, "[data-rms-evaluation-response]", id)?.value || "",
     destination: rmsCommercialNode(root, "[data-rms-evaluation-destination]", id)?.value || "",
     need: String(rmsCommercialNode(root, "[data-rms-evaluation-need]", id)?.value || "").trim(),
     desired_outcome: String(rmsCommercialNode(root, "[data-rms-evaluation-outcome]", id)?.value || "").trim(),
-    recommended_product: String(rmsCommercialNode(root, "[data-rms-evaluation-product]", id)?.value || "").trim(),
+    recommended_inventory_product_id: product?.id || null,
+    recommended_product: product?.name || null,
     budget_amount: rmsCommercialNode(root, "[data-rms-evaluation-budget]", id)?.value === "" ? null : rmsCommercialNumber(root, "[data-rms-evaluation-budget]", id),
     currency: rmsCommercialNode(root, "[data-rms-evaluation-currency]", id)?.value || "COP",
     decision_maker: String(rmsCommercialNode(root, "[data-rms-evaluation-decision-maker]", id)?.value || "").trim(),
@@ -45330,8 +45555,10 @@ async function saveRmsEvaluationResponse(item, root) {
 }
 
 function rmsCommercialConfirmationDraft(root, id) {
+  const product = findInventoryProductById(rmsCommercialNode(root, "[data-rms-confirm-product-id]", id)?.value || "");
   return {
-    product_name: String(rmsCommercialNode(root, "[data-rms-confirm-product]", id)?.value || "").trim(),
+    inventory_product_id: product?.id || null,
+    product_name: product?.name || "",
     amount: rmsCommercialNumber(root, "[data-rms-confirm-amount]", id),
     currency: rmsCommercialNode(root, "[data-rms-confirm-currency]", id)?.value || "COP",
     payment_reference: String(rmsCommercialNode(root, "[data-rms-confirm-reference]", id)?.value || "").trim(),
@@ -45344,7 +45571,7 @@ function rmsCommercialConfirmationDraft(root, id) {
 
 async function saveRmsCommercialConfirmation(item, root) {
   const draft = rmsCommercialConfirmationDraft(root, item.id);
-  const missing = [!draft.product_name && "producto", draft.amount <= 0 && "valor", !draft.responsible && "responsable", !(draft.payment_reference || draft.evidence || draft.note) && "evidencia, referencia o nota"].filter(Boolean);
+  const missing = [!draft.inventory_product_id && "producto del inventario", draft.amount <= 0 && "valor", !draft.responsible && "responsable", !(draft.payment_reference || draft.evidence || draft.note) && "evidencia, referencia o nota"].filter(Boolean);
   if (missing.length) {
     showFeedback(`Falta confirmar: ${missing.join(", ")}.`, "info", { title: "Confirmación comercial" });
     return;
@@ -45380,6 +45607,7 @@ function rmsNegotiationDraft(root, id) {
     recycle_reason: rmsCommercialNode(root, "[data-rms-negotiation-recycle-reason]", id)?.value || null,
     recycle_strategy: rmsCommercialNode(root, "[data-rms-negotiation-recycle-strategy]", id)?.value || null,
     recycle_consent: rmsCommercialNode(root, "[data-rms-negotiation-recycle-consent]", id)?.value || null,
+    recycle_responsible: String(rmsCommercialNode(root, "[data-rms-negotiation-recycle-responsible]", id)?.value || "").trim(),
     lost_classification: rmsCommercialNode(root, "[data-rms-negotiation-lost-classification]", id)?.value || null,
   };
 }
@@ -45398,9 +45626,9 @@ function rmsNegotiationRiskSignals(item = {}, draft = {}) {
   const support = Boolean(draft.payment_reference || draft.evidence || draft.summary);
   const add = (code, severity, title, source, impact, action, status = "OPEN") => signals.push({ code, severity, title, source, impact, action, status });
   if (!support) add("MISSING_SUPPORT", "REQUIRES_RISK", "Pago o evidencia sin soporte", "Referencia, comprobante y resumen de la ronda", "No es posible verificar el acuerdo sin protegerlo.", "Adjunta una referencia, evidencia o nota verificable.");
-  if (!draft.product_name || Number(draft.amount) <= 0) add("UNCONFIRMED_VALUE", "REQUIRES_RISK", "Producto o valor sin confirmar", "Condición comercial actual", "La atribución no puede contrastar qué se vendió ni por cuánto.", "Confirma producto y valor final con el cliente.");
+  if (!draft.inventory_product_id || Number(draft.amount) <= 0) add("UNCONFIRMED_VALUE", "REQUIRES_RISK", "Producto o valor sin confirmar", "Condición comercial actual", "La atribución no puede contrastar qué se vendió ni por cuánto.", "Confirma producto y valor final con el cliente.");
   if (!draft.responsible) add("MISSING_OWNER", "REQUIRES_RISK", "Falta responsable", "Ficha comercial", "No hay quién sostenga el siguiente compromiso.", "Asigna a la persona responsable antes de confirmar.");
-  if (draft.concession) add("SPECIAL_CONDITION", "REQUIRES_RISK", "Condición especial o concesión", "Ronda de Negociación", "La venta requiere verificar que el beneficio y la condición siguen vigentes.", "Documenta la concesión y envíala a Riesgos de fuga.");
+  if (draft.concession) add("SPECIAL_CONDITION", "ATTENTION", "Condición especial o concesión", "Ronda de Negociación", "Requiere evidencia clara, pero no bloquea por sí sola la decisión del operador.", "Documenta la concesión y revisa la ruta elegida.");
   if (["PENDING", "NEEDS_VALIDATION"].includes(draft.objection_status) || (draft.objection_type && draft.objection_type !== "OTHER" && draft.objection_status === "NOT_APPLICABLE")) add("OPEN_OBJECTION", "REQUIRES_RISK", "Objeción comercial abierta", "Estado de objeción definido por el operador", "El acuerdo puede enfriarse o cambiar antes de la atribución.", "Resuélvela con nota verificable o protégela en Riesgos de fuga.");
   const ticket = rmsNegotiationTicketContext(item);
   if (ticket.status === "ACTIVE") add("ACTIVE_TICKET", "ATTENTION", ticket.label, ticket.source, "Puede requerir una confirmación de vigencia, pero no bloquea por sí solo una venta limpia.", ticket.action);
@@ -45501,7 +45729,7 @@ async function saveRmsNegotiationDecision(item, root) {
     return;
   }
   if (draft.result === "ACCEPTED") {
-    const missing = [!draft.customer_condition && "condición acordada", !draft.product_name && "producto", draft.amount <= 0 && "valor", !draft.channel && "canal", !(draft.payment_reference || draft.evidence || draft.summary) && "evidencia, referencia o nota", !draft.summary && "resumen", !draft.responsible && "responsable"].filter(Boolean);
+    const missing = [!draft.customer_condition && "condición acordada", !draft.inventory_product_id && "producto del inventario", draft.amount <= 0 && "valor", !draft.channel && "canal", !(draft.payment_reference || draft.evidence || draft.summary) && "evidencia, referencia o nota", !draft.summary && "resumen", !draft.responsible && "responsable"].filter(Boolean);
     if (missing.length) {
       showFeedback(`Para confirmar el acuerdo falta: ${missing.join(", ")}.`, "info", { title: "Negociación" });
       return;
@@ -45526,8 +45754,8 @@ async function saveRmsNegotiationDecision(item, root) {
     showFeedback("Programa el próximo contacto antes de conservar este caso en Negociación.", "info", { title: "Negociación" });
     return;
   }
-  if (draft.result === "RECYCLE" && (!draft.recycle_reason || !draft.recycle_strategy || !draft.recycle_consent || !draft.channel || !draft.next_action_at)) {
-    showFeedback("Para Reciclaje define motivo, estrategia, canal permitido, consentimiento y fecha de reactivación.", "info", { title: "Negociación" });
+  if (draft.result === "RECYCLE" && (!draft.recycle_reason || !draft.recycle_strategy || !draft.recycle_consent || !draft.recycle_responsible || !draft.channel || !draft.next_action_at)) {
+    showFeedback("Para Reciclaje define motivo, estrategia, responsable, canal permitido, consentimiento y fecha de reactivación.", "info", { title: "Negociación" });
     return;
   }
   if (draft.result === "LOST" && !draft.lost_classification) {
@@ -45598,15 +45826,15 @@ async function saveRmsRiskDecision(item, root) {
   if (destination !== "reciclaje") openRmsStation(destination, { source: "risk-decision" });
 }
 
-async function reactivateRmsRecycled(item, note) {
+async function reactivateRmsRecycled(item, note, destination = "procesamiento") {
   await api("/api/business/rms-machine/recycling/reactivate", {
     method: "POST", headers: authHeaders(),
-    body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, note }),
+    body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, note, destination }),
   });
   state.rmsMachineLoaded = false;
-  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "procesamiento" });
-  showFeedback("Lead reactivado: volvió a Evaluación con su historial preservado.", "success", { title: "Reciclaje comercial" });
-  openRmsStation("procesamiento", { source: "recycling" });
+  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
+  showFeedback(`Lead reactivado: volvió a ${destination === "clasificacion" ? "Activación 1" : "Evaluación"} con su historial preservado.`, "success", { title: "Reciclaje comercial" });
+  openRmsStation(destination, { source: "recycling" });
 }
 
 function rmsSaleDraftFromDom(root, id) {
@@ -45614,7 +45842,7 @@ function rmsSaleDraftFromDom(root, id) {
   const inventoryProduct = findInventoryProductById(productSelect?.value || "");
   return {
     inventory_product_id: inventoryProduct?.id || null,
-    product_name: String(rmsCommercialNode(root, "[data-rms-sale-product-name]", id)?.value || inventoryProduct?.name || "").trim(),
+    product_name: inventoryProduct?.name || "",
     quantity: Math.max(0.01, rmsCommercialNumber(root, "[data-rms-sale-quantity]", id) || 1),
     sale_amount: rmsCommercialNumber(root, "[data-rms-sale-amount]", id),
     currency: rmsCommercialNode(root, "[data-rms-sale-currency]", id)?.value || "COP",
@@ -45658,8 +45886,8 @@ function rmsCommercialOperationKey(scope = "commercial", item = {}, signature = 
 
 async function saveRmsAttributedSale(item, root) {
   const draft = rmsSaleDraftFromDom(root, item.id);
-  if (!draft.product_name || draft.sale_amount <= 0) {
-    showFeedback("Registra el producto o servicio y el dinero recibido para atribuir la venta.", "info", { title: "Ventas atribuidas" });
+  if (!draft.inventory_product_id || draft.sale_amount <= 0) {
+    showFeedback("Selecciona el producto confirmado del inventario y el dinero recibido para atribuir la venta.", "info", { title: "Ventas atribuidas" });
     return;
   }
   const result = await api("/api/business/rms-machine/attributed-sales", {
@@ -45714,17 +45942,86 @@ async function loadRmsPostSaleActions(options = {}) {
   return state.rmsPostSaleActions;
 }
 
+function rmsIntelligenceSourceFromKey(key = "") {
+  const [sourceType, sourceId] = String(key || "").split(":");
+  return { source_type: sourceType || "PLAYER", source_id: sourceId || "" };
+}
+
+function rmsIntelligenceInsightKey(source = {}) {
+  return globalThis.crypto?.randomUUID?.() || `rms-insight-${source.source_id || "pattern"}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function loadRmsIntelligenceData(options = {}) {
+  const patternParams = new URLSearchParams(Object.entries(state.rmsIntelligenceFilters || {}).filter(([, value]) => String(value || "").trim()));
+  const [patterns, insightData] = await Promise.all([
+    apiSafe(`/api/business/rms-machine/intelligence/patterns${patternParams.size ? `?${patternParams.toString()}` : ""}`, { headers: authHeaders() }, null),
+    apiSafe("/api/business/rms-machine/intelligence/insights", { headers: authHeaders() }, { insights: [] }),
+  ]);
+  state.rmsIntelligencePatterns = patterns;
+  state.rmsIntelligenceInsights = Array.isArray(insightData?.insights) ? insightData.insights : [];
+  return { patterns, insights: state.rmsIntelligenceInsights };
+}
+
+async function loadRmsIntelligenceCase(itemOrKey) {
+  const key = typeof itemOrKey === "string" ? itemOrKey : rmsIntelligenceCaseKey(itemOrKey || {});
+  const source = rmsIntelligenceSourceFromKey(key);
+  if (!source.source_id) return null;
+  state.rmsIntelligenceCaseKey = key;
+  state.rmsIntelligenceCase = await api(`/api/business/rms-machine/intelligence/case?source_id=${encodeURIComponent(source.source_id)}&source_type=${encodeURIComponent(source.source_type)}`, { headers: authHeaders() });
+  return state.rmsIntelligenceCase;
+}
+
+function rmsIntelligenceDraftFromDom(root, key) {
+  const value = (selector) => root.querySelector(selector)?.value || "";
+  const source = rmsIntelligenceSourceFromKey(key);
+  const evidence = String(value("[data-rms-intelligence-evidence]") || "").trim();
+  return {
+    source_type: source.source_type,
+    source_id: source.source_id,
+    insight_scope: "CASE",
+    observation: String(value("[data-rms-intelligence-observation]") || "").trim(),
+    hypothesis: String(value("[data-rms-intelligence-hypothesis]") || "").trim() || null,
+    recommendation: String(value("[data-rms-intelligence-recommendation]") || "").trim(),
+    evidence_refs: evidence ? evidence.split(/\n|,/).map((item) => item.trim()).filter(Boolean).slice(0, 40) : [],
+    evidence_note: evidence || null,
+    owner_name: String(value("[data-rms-intelligence-owner]") || "").trim() || null,
+    priority: value("[data-rms-intelligence-priority]") || "MEDIUM",
+    status: value("[data-rms-intelligence-status]") || "PENDING",
+    expected_metric: String(value("[data-rms-intelligence-metric]") || "").trim() || null,
+    review_at: rmsCommercialLocalToIso(value("[data-rms-intelligence-review-at]")) || null,
+    idempotency_key: rmsIntelligenceInsightKey(source),
+  };
+}
+
+async function saveRmsIntelligenceInsight(root, key) {
+  const draft = rmsIntelligenceDraftFromDom(root, key);
+  if (!draft.observation || !draft.recommendation) {
+    throw new Error("Registra una observación y una recomendación concreta respaldada por hechos.");
+  }
+  state.rmsIntelligenceSaving = true;
+  try {
+    const result = await api("/api/business/rms-machine/intelligence/insights", {
+      method: "POST", headers: authHeaders(), body: JSON.stringify(draft),
+    });
+    await loadRmsIntelligenceData({ force: true });
+    showFeedback(result?.duplicate ? "Ese aprendizaje ya estaba guardado; no se duplicó." : "Aprendizaje guardado. No se creó ninguna campaña, venta ni lead.", "success", { title: "Inteligencia RMS" });
+  } finally {
+    state.rmsIntelligenceSaving = false;
+  }
+}
+
+async function createRmsIntelligenceAgendaTask(insightId) {
+  const result = await api("/api/business/rms-machine/intelligence/agenda-task", {
+    method: "POST", headers: authHeaders(), body: JSON.stringify({ insight_id: insightId, confirm: true }),
+  });
+  await loadRmsIntelligenceData({ force: true });
+  showFeedback(result?.task ? "Tarea creada por tu confirmación explícita." : "No se pudo crear la tarea.", "success", { title: "Inteligencia RMS" });
+}
+
 async function saveRmsPostSaleAction(item, root) {
   const draft = rmsPostSaleDraftFromDom(root, item.id);
   if (draft.execution_mode === "NEW_TICKET" && !draft.ticket.benefit.benefit_label) {
     throw new Error("Indica el beneficio antes de crear un ticket postventa.");
-  }
-  if (phase === "postventa") {
-    loadRmsPostSaleActions()
-      .then(() => {
-        if (state.rmsStationScreenOpen && state.rmsStationPhase === phase && state.rmsStationOpenSeq === openSeq) renderRmsStationOnly();
-      })
-      .catch(() => { state.rmsPostSaleActions = []; });
   }
   if (draft.execution_mode === "NEW_REWARD_PASS" && Number(draft.reward_pass.initial_value_cop || 0) <= 0) {
     throw new Error("Indica el valor del Reward Pass antes de emitirlo.");

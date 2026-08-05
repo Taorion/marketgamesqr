@@ -101,6 +101,10 @@ const {
   createAgendaTask: createRmsAgendaTask,
   dailyQueue: rmsDailyQueue,
   events: rmsEvents,
+  intelligenceCase: rmsIntelligenceCase,
+  intelligenceInsights: rmsIntelligenceInsights,
+  intelligencePatternReport: rmsIntelligencePatternReport,
+  createInsightAgendaTask: rmsCreateInsightAgendaTask,
   executeAction: executeRmsAction,
   executeBulkAction: executeRmsBulkAction,
   journeys: rmsJourneys,
@@ -116,6 +120,7 @@ const {
   postSaleActions: rmsPostSaleActions,
   recordPostSaleAction: rmsRecordPostSaleAction,
   reactivateRecycledLead,
+  saveInsight: rmsSaveInsight,
 } = require("../controllers/rmsMachineController");
 const {
   activate: activateGamificationSeason,
@@ -180,6 +185,11 @@ router.get("/rms-machine/daily-queue", standardBusinessCache, rmsDailyQueue);
 router.get("/rms-machine/journeys", standardBusinessCache, rmsJourneys);
 router.get("/rms-machine/metrics", standardBusinessCache, rmsMetrics);
 router.get("/rms-machine/events", shortBusinessCache, rmsEvents);
+router.get("/rms-machine/intelligence/case", shortBusinessCache, rmsIntelligenceCase);
+router.get("/rms-machine/intelligence/patterns", standardBusinessCache, rmsIntelligencePatternReport);
+router.get("/rms-machine/intelligence/insights", shortBusinessCache, rmsIntelligenceInsights);
+router.post("/rms-machine/intelligence/insights", rmsSaveInsight);
+router.post("/rms-machine/intelligence/agenda-task", rmsCreateInsightAgendaTask);
 router.post("/rms-machine/actions/create-task", createRmsAgendaTask);
 router.post("/rms-machine/action", executeRmsAction);
 router.post("/rms-machine/activation-delivery", recordActivationDeliveryAction);

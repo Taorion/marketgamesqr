@@ -21,6 +21,13 @@ const {
   reactivateRmsRecycledLead,
   rmsMetrics,
 } = require("../services/rmsMachineService");
+const {
+  createIntelligenceAgendaTask,
+  intelligencePatterns,
+  learningCase,
+  listIntelligenceInsights,
+  saveIntelligenceInsight,
+} = require("../services/rmsIntelligenceService");
 
 function businessIdFor(req) {
   if (!req.user.business_id) {
@@ -97,6 +104,7 @@ const evaluationResponseSchema = z.object({
   note: z.string().trim().max(3000).optional().nullable(),
   need: z.string().trim().max(1200).optional().nullable(),
   desired_outcome: z.string().trim().max(1200).optional().nullable(),
+  recommended_inventory_product_id: z.string().uuid().optional().nullable(),
   recommended_product: z.string().trim().max(500).optional().nullable(),
   budget_amount: z.number().min(0).max(100000000000).optional().nullable(),
   currency: z.string().trim().min(3).max(8).optional().nullable(),
@@ -111,7 +119,7 @@ const attributedSaleSchema = z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
   lead_id: z.string().uuid().optional().nullable(),
-  inventory_product_id: z.string().uuid().optional().nullable(),
+  inventory_product_id: z.string().uuid(),
   product_name: z.string().trim().max(240).optional().nullable(),
   quantity: z.number().positive().max(100000).optional().default(1),
   unit_cost: z.number().min(0).max(100000000000).optional().nullable(),
@@ -125,6 +133,39 @@ const attributedSaleSchema = z.object({
   paid_at: z.string().datetime().optional().nullable(),
   notes: z.string().trim().max(5000).optional().nullable(),
   idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
+});
+
+const intelligenceCaseQuerySchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+});
+
+const intelligenceInsightSchema = z.object({
+  source_id: z.string().uuid().optional().nullable(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).optional().nullable(),
+  lead_id: z.string().uuid().optional().nullable(),
+  sale_id: z.string().uuid().optional().nullable(),
+  insight_scope: z.enum(["CASE", "PATTERN"]).optional().default("CASE"),
+  observation: z.string().trim().min(2).max(5000),
+  hypothesis: z.string().trim().max(5000).optional().nullable(),
+  recommendation: z.string().trim().min(2).max(5000),
+  evidence_refs: z.array(z.union([z.string().trim().max(240), z.record(z.string(), z.unknown())])).max(40).optional().default([]),
+  evidence_note: z.string().trim().max(5000).optional().nullable(),
+  owner_name: z.string().trim().max(240).optional().nullable(),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).optional().default("MEDIUM"),
+  status: z.enum(["PENDING", "APPLIED", "DISCARDED", "MEASURING"]).optional().default("PENDING"),
+  expected_metric: z.string().trim().max(1000).optional().nullable(),
+  review_at: z.string().datetime().optional().nullable(),
+  idempotency_key: z.string().trim().min(8).max(240),
+  metadata: z.record(z.string(), z.unknown()).optional().default({}),
+});
+
+const intelligenceAgendaTaskSchema = z.object({
+  insight_id: z.string().uuid(),
+  confirm: z.literal(true),
+  title: z.string().trim().min(2).max(500).optional().nullable(),
+  note: z.string().trim().max(3000).optional().nullable(),
+  due_at: z.string().datetime().optional().nullable(),
 });
 
 const postSaleActionSchema = z.object({
@@ -167,7 +208,9 @@ const commercialConfirmationSchema = z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
   lead_id: z.string().uuid().optional().nullable(),
-  product_name: z.string().trim().min(2).max(500),
+  inventory_product_id: z.string().uuid(),
+  // The server derives the persisted name and snapshots from inventory.
+  product_name: z.string().trim().max(500).optional().nullable(),
   amount: z.number().positive().max(100000000000),
   currency: z.string().trim().min(3).max(8).optional().default("COP"),
   payment_reference: z.string().trim().max(500).optional().nullable(),
@@ -221,6 +264,7 @@ const recycleReactivateSchema = z.object({
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
   lead_id: z.string().uuid().optional().nullable(),
   note: z.string().trim().min(4).max(3000),
+  destination: z.enum(["procesamiento", "clasificacion"]).optional().default("procesamiento"),
 });
 
 const negotiationResultSchema = z.object({
@@ -241,6 +285,7 @@ const negotiationResultSchema = z.object({
   recycle_reason: z.enum(["BUDGET", "TIMING", "NO_RESPONSE", "EXPIRED_TICKET", "WAITING_DECISION", "NOT_VIABLE_NOW", "OTHER"]).optional().nullable(),
   recycle_strategy: z.enum(["NEW_CONTACT", "NEW_PROPOSAL", "NEW_ACTIVATION", "PERMITTED_BENEFIT", "NURTURE"]).optional().nullable(),
   recycle_consent: z.enum(["CONFIRMED", "NOT_REQUIRED"]).optional().nullable(),
+  recycle_responsible: z.string().trim().max(500).optional().nullable(),
   lost_classification: z.enum(["DEFINITIVE", "NOT_NOW", "NO_BUDGET", "PROLONGED_NO_RESPONSE", "NO_CONSENT", "OTHER"]).optional().nullable(),
   idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
@@ -418,10 +463,56 @@ async function events(req, res, next) {
   }
 }
 
+async function intelligenceCase(req, res, next) {
+  try {
+    res.json(await learningCase(businessIdFor(req), validate(intelligenceCaseQuerySchema, req.query)));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function intelligencePatternReport(req, res, next) {
+  try {
+    res.json(await intelligencePatterns(businessIdFor(req), req.query));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function intelligenceInsights(req, res, next) {
+  try {
+    res.json(await listIntelligenceInsights(businessIdFor(req), req.query));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function saveInsight(req, res, next) {
+  try {
+    const body = validate(intelligenceInsightSchema, req.body);
+    res.status(201).json(await saveIntelligenceInsight(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createInsightAgendaTask(req, res, next) {
+  try {
+    const body = validate(intelligenceAgendaTaskSchema, req.body);
+    res.status(201).json(await createIntelligenceAgendaTask(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   createAgendaTask,
   dailyQueue,
   events,
+  intelligenceCase,
+  intelligenceInsights,
+  intelligencePatternReport,
+  createInsightAgendaTask,
   executeAction,
   executeBulkAction,
   journeys,
@@ -438,4 +529,5 @@ module.exports = {
   recordNegotiationResult,
   recordRiskReview,
   reactivateRecycledLead,
+  saveInsight,
 };

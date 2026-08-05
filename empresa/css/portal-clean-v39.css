@@ -13835,3 +13835,253 @@ html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] .rms
   background: #091d2b !important;
   color: #edf7fa !important;
 }
+
+/* Station 10 is a read-first memory of the factory: evidence, patterns, then explicit decisions. */
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console {
+  max-width: 1240px;
+  margin: 18px auto 8px;
+  padding: 26px;
+  border: 1px solid #d9e4ed;
+  border-radius: 20px;
+  background: linear-gradient(165deg, #fbfdff 0%, #f5f9fc 100%);
+  color: #17324a;
+  box-shadow: 0 14px 36px rgba(20, 54, 88, .08);
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console-head,
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-case-sheet > header,
+#rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-patterns, .rms-intelligence-decisions) > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console h3,
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console h4,
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console h5 {
+  margin: 3px 0 7px;
+  color: #0f3556;
+  letter-spacing: -.02em;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console h3 { font-size: 1.35rem; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console h4 { font-size: 1.08rem; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console p,
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console small { color: #60758a; line-height: 1.48; }
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console-head > label {
+  display: grid;
+  flex: 0 1 330px;
+  min-width: 230px;
+  gap: 6px;
+  color: #527088;
+  font-size: .73rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console :is(select, input, textarea) {
+  min-width: 0;
+  border: 1px solid #cbdbe7;
+  border-radius: 10px;
+  background: #fff;
+  color: #17324a;
+  box-shadow: none;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 23px 0 18px;
+  padding: 5px;
+  overflow-x: auto;
+  border: 1px solid #dbe6ee;
+  border-radius: 12px;
+  background: #edf3f7;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-tabs button {
+  flex: 1 0 max-content;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #4b657a;
+  cursor: pointer;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-tabs button.is-active {
+  background: #fff;
+  color: #0b5590;
+  box-shadow: 0 3px 9px rgba(20, 61, 93, .12);
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-case-sheet, .rms-intelligence-patterns, .rms-intelligence-decisions) {
+  padding: 21px;
+  border: 1px solid #dbe6ee;
+  border-radius: 15px;
+  background: #fff;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin: 20px 0;
+  overflow: hidden;
+  border: 1px solid #dbe6ee;
+  border-radius: 12px;
+  background: #dbe6ee;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-facts > div {
+  min-width: 0;
+  padding: 13px;
+  background: #fafdff;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-facts dt {
+  margin-bottom: 5px;
+  color: #718397;
+  font-size: .68rem;
+  font-weight: 850;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #173b59;
+  font-size: .84rem;
+  font-weight: 700;
+  line-height: 1.42;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-case-columns,
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-case-columns, .rms-intelligence-pattern-grid) > section {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #e1eaf1;
+  border-radius: 11px;
+  background: #fcfeff;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-timeline, .rms-intelligence-durations, .rms-intelligence-pattern-grid ol, .rms-intelligence-decisions > ol) {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-timeline, .rms-intelligence-durations, .rms-intelligence-pattern-grid ol) li,
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-decisions > ol > li {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 11px 0;
+  border-top: 1px solid #e5edf2;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-timeline, .rms-intelligence-durations, .rms-intelligence-pattern-grid ol) li:first-child,
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-decisions > ol > li:first-child { border-top: 0; }
+#rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-timeline, .rms-intelligence-durations, .rms-intelligence-pattern-grid ol, .rms-intelligence-decisions > ol) strong { overflow-wrap: anywhere; color: #183c59; font-size: .84rem; }
+#rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-timeline, .rms-intelligence-durations, .rms-intelligence-pattern-grid ol, .rms-intelligence-decisions > ol) span { overflow-wrap: anywhere; color: #587187; font-size: .78rem; line-height: 1.42; }
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-insight-form {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #dce7ee;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-insight-form .rms-sale-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 12px 0;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-insight-form .rms-sale-form-grid > label:nth-child(-n + 4) { grid-column: span 1; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-insight-form textarea { min-height: 96px; resize: vertical; }
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+  padding: 13px;
+  border: 1px solid #e0eaf1;
+  border-radius: 11px;
+  background: #f8fbfd;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-filter-grid label {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  color: #698095;
+  font-size: .67rem;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-decisions > ol > li {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console :is(button, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(13, 104, 171, .35);
+  outline-offset: 2px;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console button { transition: background-color .16s ease, color .16s ease, border-color .16s ease, transform .16s ease; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console button:hover { transform: translateY(-1px); }
+
+@media (max-width: 760px) {
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console { padding: 17px; border-radius: 15px; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-console-head, .rms-intelligence-case-sheet > header, .rms-intelligence-patterns > header, .rms-intelligence-decisions > header) { flex-direction: column; gap: 13px; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console-head > label { width: 100%; min-width: 0; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-case-columns, .rms-intelligence-pattern-grid, .rms-intelligence-insight-form .rms-sale-form-grid) { grid-template-columns: 1fr; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-insight-form .rms-sale-form-grid > label:nth-child(n) { grid-column: auto; }
+}
+
+@media (max-width: 440px) {
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console { padding: 14px; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-case-sheet, .rms-intelligence-patterns, .rms-intelligence-decisions) { padding: 14px; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-facts { grid-template-columns: 1fr; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-filter-grid { grid-template-columns: 1fr; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-decisions > ol > li { grid-template-columns: 1fr; align-items: stretch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console button { transition: none; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console button:hover { transform: none; }
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console,
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-case-sheet, .rms-intelligence-patterns, .rms-intelligence-decisions, .rms-intelligence-case-columns > section, .rms-intelligence-pattern-grid > section, .rms-intelligence-facts > div) {
+  border-color: #315166;
+  background: #0b2233;
+  color: #dbeaf3;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console :is(h3, h4, h5, strong, .rms-intelligence-facts dd) { color: #e8f3f8; }
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console :is(p, small, span, .rms-intelligence-facts dt) { color: #b9cbd6; }
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console :is(select, input, textarea) { border-color: #395c70; background: #091a28; color: #edf7fb; }
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-filter-grid { border-color: #315166; background: #102a3c; }
