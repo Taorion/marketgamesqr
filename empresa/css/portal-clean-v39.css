@@ -14743,6 +14743,14 @@ html body[data-current-view="account"] .portal-shell .account-users-card td:last
   html body[data-current-view="account"] .portal-shell .account-profile-card:nth-child(3) .account-meta-grid { grid-template-columns: 1fr !important; }
 }
 
+@media (max-width: 560px) {
+  /* Restituye el scroll intencional frente al guard global de overflow textual. */
+  html body[data-current-view="account"] #workspace.app-shell .portal-shell .account-admin-nav {
+    overflow: auto !important;
+    overflow-y: hidden !important;
+  }
+}
+
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .view-head { border-color: #244c70 !important; background: linear-gradient(120deg, #071a33, #092643) !important; }
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .view-head::before { border-color: #2d658f; color: #91d6ff; background: rgba(6, 23, 45, .72); }
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell .account-admin-nav { border-color: #244b70; background: rgba(7, 26, 51, .75); }
