@@ -14200,3 +14200,35 @@ html[data-theme="dark"] body .portal-shell :is(input, select, textarea) { border
 @media (prefers-reduced-motion: reduce) {
   html body .portal-shell *, html body :is(.modal-shell, .modal-overlay) * { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* Negotiation: show only the evidence that applies to the decision selected. */
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-decision-guide,
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-applicability {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid #d6e2eb;
+  border-radius: 12px;
+  background: #f7fafc;
+  color: #19334a;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-decision-guide {
+  margin: 0 0 14px;
+  border-left: 3px solid #b67a46;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-decision-guide small,
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-applicability small {
+  color: #526c80;
+  line-height: 1.45;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] :is(.rms-negotiation-decision-guide, .rms-negotiation-applicability) {
+  border-color: #395c70;
+  background: #102a3c;
+  color: #e8f3f8;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] :is(.rms-negotiation-decision-guide, .rms-negotiation-applicability) small { color: #b9cbd6; }

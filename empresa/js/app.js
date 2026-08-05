@@ -40732,6 +40732,39 @@ function upgradeRmsInventoryProductInputs(root) {
     select.innerHTML = '<option value="procesamiento">Reactivar en Evaluación</option><option value="clasificacion">Reactivar en Activación 1</option>';
     field.insertAdjacentElement("afterend", select);
   });
+  upgradeRmsNegotiationDecisionFields(root);
+}
+
+function upgradeRmsNegotiationDecisionFields(root) {
+  if (!root) return;
+  root.querySelectorAll("[data-rms-negotiation-concession]").forEach((field) => {
+    const id = field.getAttribute("data-rms-negotiation-concession") || "";
+    const fieldLabel = field.closest("label");
+    if (!id || !fieldLabel) return;
+    fieldLabel.dataset.rmsNegotiationConcessionWrap = id;
+    let mode = root.querySelector(`[data-rms-negotiation-concession-mode="${CSS.escape(id)}"]`);
+    if (!mode) {
+      const modeLabel = document.createElement("label");
+      modeLabel.className = "rms-negotiation-applicability";
+      modeLabel.innerHTML = `<span>¿Hubo condición especial o concesión?</span><select data-rms-negotiation-concession-mode="${escapeHtml(id)}"><option value="NOT_APPLICABLE">No aplica · no hubo concesión</option><option value="APPLIES">Sí · documentar la concesión</option></select><small>Una concesión no obliga por sí sola a Riesgos de fuga; debe quedar clara y vigente en la evidencia del acuerdo.</small>`;
+      fieldLabel.insertAdjacentElement("beforebegin", modeLabel);
+      mode = modeLabel.querySelector("select");
+      mode.value = field.value.trim() ? "APPLIES" : "NOT_APPLICABLE";
+      mode.addEventListener("change", () => updateRmsNegotiationDecisionUi(root, id));
+    }
+  });
+  root.querySelectorAll("[data-rms-negotiation-next-at]").forEach((field) => {
+    const id = field.getAttribute("data-rms-negotiation-next-at") || "";
+    const label = field.closest("label");
+    if (id && label) label.dataset.rmsNegotiationFollowupWrap = id;
+  });
+  root.querySelectorAll(".rms-negotiation-decision-block").forEach((block) => {
+    if (block.querySelector(".rms-negotiation-decision-guide")) return;
+    const guide = document.createElement("aside");
+    guide.className = "rms-negotiation-decision-guide";
+    guide.innerHTML = "<strong>Completa solo la ruta que elijas</strong><small>Venta limpia: condición, producto, valor, canal, responsable y evidencia. Riesgos de fuga: acuerdo frágil. Espera, reproceso, reciclaje y pérdida revelan únicamente sus propios campos; los demás no aplican.</small>";
+    block.querySelector("h5")?.insertAdjacentElement("afterend", guide);
+  });
 }
 
 function rmsPostSaleActionStatusLabel(status = "PLANNED") {
@@ -45611,7 +45644,9 @@ function rmsNegotiationDraft(root, id) {
     objection_type: rmsCommercialNode(root, "[data-rms-negotiation-objection]", id)?.value || "OTHER",
     customer_condition: String(rmsCommercialNode(root, "[data-rms-negotiation-condition]", id)?.value || "").trim(),
     proposal: String(rmsCommercialNode(root, "[data-rms-negotiation-proposal]", id)?.value || "").trim(),
-    concession: String(rmsCommercialNode(root, "[data-rms-negotiation-concession]", id)?.value || "").trim(),
+    concession: rmsCommercialNode(root, "[data-rms-negotiation-concession-mode]", id)?.value === "APPLIES"
+      ? String(rmsCommercialNode(root, "[data-rms-negotiation-concession]", id)?.value || "").trim()
+      : "",
     channel: rmsCommercialNode(root, "[data-rms-negotiation-channel]", id)?.value || "OTHER",
     objection_status: rmsCommercialNode(root, "[data-rms-negotiation-objection-status]", id)?.value || "NOT_APPLICABLE",
     objection_resolution: String(rmsCommercialNode(root, "[data-rms-negotiation-objection-resolution]", id)?.value || "").trim(),
@@ -45644,7 +45679,7 @@ function rmsNegotiationRiskSignals(item = {}, draft = {}) {
   if (!support) add("MISSING_SUPPORT", "REQUIRES_RISK", "Pago o evidencia sin soporte", "Referencia, comprobante y resumen de la ronda", "No es posible verificar el acuerdo sin protegerlo.", "Adjunta una referencia, evidencia o nota verificable.");
   if (!draft.inventory_product_id || Number(draft.amount) <= 0) add("UNCONFIRMED_VALUE", "REQUIRES_RISK", "Producto o valor sin confirmar", "Condición comercial actual", "La atribución no puede contrastar qué se vendió ni por cuánto.", "Confirma producto y valor final con el cliente.");
   if (!draft.responsible) add("MISSING_OWNER", "REQUIRES_RISK", "Falta responsable", "Ficha comercial", "No hay quién sostenga el siguiente compromiso.", "Asigna a la persona responsable antes de confirmar.");
-  if (draft.concession) add("SPECIAL_CONDITION", "ATTENTION", "Condición especial o concesión", "Ronda de Negociación", "Requiere evidencia clara, pero no bloquea por sí sola la decisión del operador.", "Documenta la concesión y revisa la ruta elegida.");
+  if (draft.concession) add("SPECIAL_CONDITION", "ATTENTION", "Condición especial o concesión", "Ronda de Negociación", "No bloquea por sí sola una venta limpia; la condición y su vigencia deben quedar claras en la evidencia.", "Documenta qué se concedió y confirma que la condición sigue vigente. Si no hubo concesión, marca No aplica.");
   if (["PENDING", "NEEDS_VALIDATION"].includes(draft.objection_status) || (draft.objection_type && draft.objection_type !== "OTHER" && draft.objection_status === "NOT_APPLICABLE")) add("OPEN_OBJECTION", "REQUIRES_RISK", "Objeción comercial abierta", "Estado de objeción definido por el operador", "El acuerdo puede enfriarse o cambiar antes de la atribución.", "Resuélvela con nota verificable o protégela en Riesgos de fuga.");
   const ticket = rmsNegotiationTicketContext(item);
   if (ticket.status === "ACTIVE") add("ACTIVE_TICKET", "ATTENTION", ticket.label, ticket.source, "Puede requerir una confirmación de vigencia, pero no bloquea por sí solo una venta limpia.", ticket.action);
@@ -45724,6 +45759,11 @@ function updateRmsNegotiationDecisionUi(root, id) {
   if (route) route.hidden = result !== "ACCEPTED";
   const lost = rmsCommercialNode(root, "[data-rms-negotiation-lost-wrap]", id);
   if (lost) lost.hidden = result !== "LOST";
+  const followup = rmsCommercialNode(root, "[data-rms-negotiation-followup-wrap]", id);
+  if (followup) followup.hidden = !["WAITING", "NO_RESPONSE", "RECYCLE"].includes(result);
+  const concessionMode = rmsCommercialNode(root, "[data-rms-negotiation-concession-mode]", id);
+  const concession = rmsCommercialNode(root, "[data-rms-negotiation-concession-wrap]", id);
+  if (concession) concession.hidden = concessionMode?.value !== "APPLIES";
   const objectionResolution = rmsCommercialNode(root, "[data-rms-objection-resolution-wrap]", id);
   if (objectionResolution) objectionResolution.hidden = draft.objection_status !== "RESOLVED";
   const healthNode = rmsCommercialNode(root, "[data-rms-negotiation-health]", id);
