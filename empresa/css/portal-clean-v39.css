@@ -14232,3 +14232,58 @@ html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] :is(
 }
 
 html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] :is(.rms-negotiation-decision-guide, .rms-negotiation-applicability) small { color: #b9cbd6; }
+
+/* Optimiza reads recycling as evidence without taking ownership of its operational queue. */
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-recycling > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-recycling > header p { max-width: 72ch; }
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-recycling .rms-intelligence-pattern-grid > section:first-child { border-top: 3px solid #b67a46; }
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-recycling .rms-intelligence-pattern-grid > section:last-child { border-top: 3px solid #71899d; }
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-recycling li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 620px) {
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-recycling > header,
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-recycling li { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* RMS handoff summary: every row states the inherited context, remaining work and real destination. */
+#rmsStationWorkspace .rms-station-lead-main { min-width: 0; }
+
+#rmsStationWorkspace .rms-station-lead-guidance,
+#rmsStationWorkspace .rms-station-lead-inherited {
+  display: block;
+  min-width: 0;
+  margin-top: 4px;
+  color: #526c80;
+  font-size: .72rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+#rmsStationWorkspace .rms-station-lead-guidance b { color: #0b4f80; }
+
+#rmsStationWorkspace .rms-station-lead-inherited { color: #72879a; }
+
+html[data-theme="dark"] #rmsStationWorkspace .rms-station-lead-guidance,
+html[data-theme="dark"] #rmsStationWorkspace .rms-station-lead-inherited { color: #b4c8d7; }
+
+html[data-theme="dark"] #rmsStationWorkspace .rms-station-lead-guidance b { color: #8dd8ed; }
+
+@media (max-width: 760px) {
+  #rmsStationWorkspace .rms-station-lead-guidance,
+  #rmsStationWorkspace .rms-station-lead-inherited { font-size: .7rem; }
+}

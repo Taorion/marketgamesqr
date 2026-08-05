@@ -30907,12 +30907,15 @@ function leadDirectorySalesSummary(item = {}) {
 
 // Debe declararse antes del directorio y del progreso: ambos se inicializan al cargar app.js.
 const RMS_FLOW_ORDER = Object.freeze([
-  "recoleccion", "alimentacion", "curaduria", "clasificacion", "preprocesamiento",
-  "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre",
-  "revenue_generado", "postventa", "inteligencia",
+  "recoleccion", "alimentacion", "curaduria", "clasificacion", "procesamiento",
+  "accion_correctiva", "control_anti_fuga", "cierre", "postventa", "inteligencia",
 ]);
 const RMS_FLOW_INDEX = Object.freeze(Object.fromEntries(RMS_FLOW_ORDER.map((key, index) => [key, index])));
-const RMS_FLOW_NEXT_PHASE = Object.freeze(Object.fromEntries(RMS_FLOW_ORDER.map((key, index) => [key, RMS_FLOW_ORDER[(index + 1) % RMS_FLOW_ORDER.length]])));
+const RMS_FLOW_NEXT_PHASE = Object.freeze({
+  recoleccion: "alimentacion", alimentacion: "curaduria", curaduria: "clasificacion",
+  clasificacion: "procesamiento", procesamiento: "accion_correctiva", accion_correctiva: "control_anti_fuga",
+  control_anti_fuga: "cierre", cierre: "postventa",
+});
 const RMS_QUALITY_CONTROL_KEYS = ["preprocesamiento", "revenue_generado"];
 
 function rmsFlowIndex(phase = "") {
@@ -30925,28 +30928,19 @@ function rmsNextPrimaryPhase(phase = "") {
 }
 
 const LEAD_DIRECTORY_RMS_STATIONS = {
-  recoleccion: { label: "Estación 01 · Recolectar", short: "01 Recolectar" },
-  alimentacion: { label: "Estación 02 · Curaduría", short: "02 Curaduría" },
-  curaduria: { label: "Estación 03 · Clasificador", short: "03 Clasificador" },
+  recoleccion: { label: "Estación 01 · Recolección", short: "01 Recolección" },
+  alimentacion: { label: "Estación 02 · Alimentación", short: "02 Alimentación" },
+  curaduria: { label: "Estación 03 · Curaduría", short: "03 Curaduría" },
   clasificacion: { label: "Estación 04 · Activación 1", short: "04 Activación 1" },
   preprocesamiento: { label: "Tablero auxiliar · Control de calidad 1", short: "Control calidad 1" },
-  procesamiento: { label: "Estación 06 · Evaluación", short: "06 Evaluación" },
-  accion_correctiva: { label: "Estación 07 · Negociación", short: "07 Negociación" },
-  control_anti_fuga: { label: "Estación 08 · Riesgos de fuga", short: "08 Riesgos fuga" },
-  cierre: { label: "Estación 09 · Ventas atribuidas", short: "09 Ventas atribuidas" },
-  revenue_generado: { label: "Tablero auxiliar · Control de calidad 2", short: "Control calidad 2" },
-  postventa: { label: "Estación 11 · Activación 2", short: "11 Activación 2" },
-  inteligencia: { label: "Estación 10 · Inteligencia RMS", short: "10 Inteligencia" },
-};
-
-// Visual controls are intentionally excluded from operational numbering.
-Object.assign(LEAD_DIRECTORY_RMS_STATIONS, {
   procesamiento: { label: "Estación 05 · Evaluación", short: "05 Evaluación" },
   accion_correctiva: { label: "Estación 06 · Negociación", short: "06 Negociación" },
   control_anti_fuga: { label: "Estación 07 · Riesgos de fuga", short: "07 Riesgos fuga" },
   cierre: { label: "Estación 08 · Ventas atribuidas", short: "08 Ventas atribuidas" },
-  postventa: { label: "Estación 09 · Activación 2", short: "09 Activación 2" },
-});
+  revenue_generado: { label: "Tablero auxiliar · Control de calidad 2", short: "Control calidad 2" },
+  postventa: { label: "Estación 09 · Postventa / Activación 2", short: "09 Postventa" },
+  inteligencia: { label: "Estación 10 · Inteligencia RMS", short: "10 Inteligencia" },
+};
 
 function leadDirectoryStationInfo(item = {}) {
   const metadata = leadDirectoryMetadata(item);
@@ -38341,19 +38335,6 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
       primaryAction: "Preparar, confirmar y dar seguimiento al primer contacto",
       materialLabel: "Oferta, canal, mensaje, seguimiento y respuesta",
       buttonLabel: "Activar contacto",
-      nextPhase: "preprocesamiento",
-    },
-  },
-  {
-    key: "preprocesamiento",
-    label: "Control de calidad 1",
-    short_label: "Control calidad 1",
-    storageLabel: "Almacena oportunidades activadas para validar",
-    operation: {
-      name: "Gamificar",
-      primaryAction: "Activar gancho gamificado anti-fuga",
-      materialLabel: "Ticket, beneficio, puntos, trivia o reward pass",
-      buttonLabel: "Activar gancho",
       nextPhase: "procesamiento",
     },
   },
@@ -38410,19 +38391,6 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
     },
   },
   {
-    key: "revenue_generado",
-    label: "Control de calidad 2",
-    short_label: "Control calidad 2",
-    storageLabel: "Almacena ventas atribuidas para validar",
-    operation: {
-      name: "Atribuir revenue",
-      primaryAction: "Registrar resultado comercial",
-      materialLabel: "Venta, redencion, recompra, referido o suscripcion",
-      buttonLabel: "Registrar revenue",
-      nextPhase: "postventa",
-    },
-  },
-  {
     key: "postventa",
     label: "Activación 2",
     short_label: "Activación 2",
@@ -38432,7 +38400,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
       primaryAction: "Ejecutar activación 2",
       materialLabel: "Agradecimiento, garantia, encuesta o ticket proxima compra",
       buttonLabel: "Activar 2",
-      nextPhase: "inteligencia",
+      nextPhase: null,
     },
   },
   {
@@ -38445,7 +38413,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
       primaryAction: "Retroalimentar inteligencia RMS",
       materialLabel: "Campana, gancho, vendedor, ticket, fuga y recompra",
       buttonLabel: "Optimizar",
-      nextPhase: "recoleccion",
+      nextPhase: null,
     },
   },
 ];
@@ -39156,7 +39124,13 @@ function rmsPrimaryFactoryStages(data = {}) {
 }
 
 function rmsQualityControlStages(data = {}) {
-  return rmsFactoryStages(data).filter((stage) => RMS_QUALITY_CONTROL_KEYS.includes(stage.key));
+  const controls = Array.isArray(data.quality_controls) && data.quality_controls.length
+    ? data.quality_controls
+    : [
+      { key: "preprocesamiento", label: "Control de calidad 1", short_label: "Calidad 1", visual_only: true },
+      { key: "revenue_generado", label: "Control de calidad 2", short_label: "Calidad 2", visual_only: true },
+    ];
+  return controls.filter((stage) => RMS_QUALITY_CONTROL_KEYS.includes(stage.key));
 }
 
 function rmsPrimaryStationNextPhase(stage = {}, stages = []) {
@@ -39169,25 +39143,25 @@ const RMS_QUALITY_CONTROL_CONFIG = {
     title: "Lead listo para Evaluación",
     subtitle: "Control 1 · validación previa a Evaluación",
     description: "Lee el recorrido inicial de cada oportunidad: calidad, producto, activación y siguiente paso, sin detener la operación.",
-    phases: ["recoleccion", "alimentacion", "curaduria", "clasificacion", "preprocesamiento"],
+    phases: ["recoleccion", "alimentacion", "curaduria", "clasificacion"],
     focus: "Verifica que el lead tenga contacto, calidad, oferta y primera activación antes de enviarlo a Evaluación.",
     checkpoint: "Control 1 · datos y activación",
     banner: "CONTROL DE CALIDAD 1",
-    explainer: "Sirve para impedir que un lead incompleto entre a Evaluación.",
+    explainer: "Muestra faltantes y evidencia; la estación dueña corrige los datos y decide el movimiento.",
     controls: "Contacto, calidad, oferta y primera activación",
-    decision: "Salida: lead listo para Evaluación",
+    decision: "No aprueba ni mueve leads",
   },
   revenue_generado: {
     title: "Venta lista para Postventa",
     subtitle: "Control 2 · validación previa a Postventa",
     description: "Consulta el tramo comercial final: evaluación, riesgos, negociación, venta y atribución de revenue.",
-    phases: ["procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "revenue_generado"],
+    phases: ["procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "postventa"],
     focus: "Verifica que la venta tenga valor, fuente, producto y evidencia antes de enviarla a Postventa.",
     checkpoint: "Control 2 · venta y trazabilidad",
     banner: "CONTROL DE CALIDAD 2",
-    explainer: "Sirve para impedir que una venta sin soporte pase a Postventa.",
+    explainer: "Muestra integridad de atribución y continuidad; no aprueba, bloquea ni mueve ventas.",
     controls: "Valor, fuente, producto y evidencia de venta",
-    decision: "Salida: venta trazable lista para Postventa",
+    decision: "No aprueba ni mueve leads",
   },
 };
 
@@ -40050,7 +40024,7 @@ const RMS_TUTORIAL_STEPS = [
     key: "postventa",
     phase: "postventa",
     icon: "redeem",
-    title: "Estación 11 · Activación 2",
+    title: "Estación 09 · Postventa / Activación 2",
     subtitle: "Fidelizar",
     actionLabel: "Abrir Activación 2",
     action: "station",
@@ -40580,7 +40554,7 @@ function rmsCommercialConfirmationStationCardMarkup(item = {}) {
         <header class="rms-commercial-console-head"><div><span class="mono-label">Estación 07 · Negociación · ${escapeHtml(scenarioLabel)}</span><h4>${escapeHtml(paymentReported ? "Pago informado · pendiente de confirmación comercial" : status)}</h4><p>${escapeHtml(paymentReported ? "El cliente reportó un pago. Confirma producto, valor, condición acordada y soporte antes de decidir entre venta limpia o protección anti-fuga." : "Confirma la condición comercial y decide si la venta puede atribuirse limpia o requiere protección anti-fuga.")}</p></div><span class="rms-commercial-state ${status === "Perdido" ? "is-risk" : paymentReported ? "is-pending" : ""}">${escapeHtml(status)}</span></header>
         <aside class="rms-negotiation-intent-strip"><span class="material-symbols-outlined" aria-hidden="true">handshake</span><div><span>Lo importante ahora</span><strong>Confirma que la promesa y el soporte coinciden.</strong><small>Negociar no es presionar: es dejar una condición clara que el cliente pueda reconocer y el equipo pueda cumplir.</small></div></aside>
         <section class="rms-commercial-info-block rms-negotiation-context-block"><h5>A. Contexto heredado</h5><dl><div><dt>Respuesta u objeción</dt><dd>${escapeHtml(paymentReported ? "Reportó que ya realizó el pago" : evaluation.objections || evaluation.note || "Sin respuesta registrada")}</dd></div><div><dt>Oferta o producto</dt><dd>${escapeHtml(product || "Pendiente de confirmar")}</dd></div><div><dt>Valor previo</dt><dd>${escapeHtml(amount ? `${amount} ${currency}` : "Pendiente")}</dd></div><div><dt>Canal y último contacto</dt><dd>${escapeHtml(rmsActivationDelivery(item).channel === "email" ? "Email" : "WhatsApp")}</dd></div><div><dt>Campaña u origen</dt><dd>${escapeHtml(item.campaign_name || item.source_detail || item.source_type || "Sin origen definido")}</dd></div><div><dt>Retorno de Riesgos</dt><dd>${escapeHtml(flow.risk?.result === "RETURN_TO_NEGOTIATION" ? `Caso devuelto: ${flow.risk.reason || "requiere ajuste"}` : "No aplica")}</dd></div></dl></section>
-        <section class="rms-commercial-info-block rms-negotiation-condition-block"><h5>B. Condición comercial y ronda actual</h5><div class="rms-sale-form-grid"><label><span>Objetivo de la ronda</span><input type="text" value="${escapeHtml(negotiation.objective || "Confirmar condición comercial")}" data-rms-negotiation-objective="${escapeHtml(item.id)}"></label><label><span>Tipo de objeción</span><select data-rms-negotiation-objection="${escapeHtml(item.id)}"><option value="PRICE" ${initialDraft.objection_type === "PRICE" ? "selected" : ""}>Precio</option><option value="PAYMENT" ${initialDraft.objection_type === "PAYMENT" ? "selected" : ""}>Condiciones de pago</option><option value="TIME" ${initialDraft.objection_type === "TIME" ? "selected" : ""}>Tiempo</option><option value="SCOPE" ${initialDraft.objection_type === "SCOPE" ? "selected" : ""}>Alcance o producto</option><option value="TRUST" ${initialDraft.objection_type === "TRUST" ? "selected" : ""}>Confianza</option><option value="COMPETITION" ${initialDraft.objection_type === "COMPETITION" ? "selected" : ""}>Competencia</option><option value="OTHER" ${initialDraft.objection_type === "OTHER" ? "selected" : ""}>Otra / sin objeción</option></select></label><label><span>Estado de la objeción</span><select data-rms-negotiation-objection-status="${escapeHtml(item.id)}"><option value="NOT_APPLICABLE" ${initialDraft.objection_status === "NOT_APPLICABLE" ? "selected" : ""}>No aplica</option><option value="PENDING" ${initialDraft.objection_status === "PENDING" ? "selected" : ""}>Pendiente</option><option value="RESOLVED" ${initialDraft.objection_status === "RESOLVED" ? "selected" : ""}>Resuelta</option><option value="NEEDS_VALIDATION" ${initialDraft.objection_status === "NEEDS_VALIDATION" ? "selected" : ""}>Requiere validación adicional</option></select></label><label><span>Condición inicial del cliente</span><input type="text" value="${escapeHtml(initialDraft.customer_condition)}" data-rms-negotiation-condition="${escapeHtml(item.id)}" placeholder="Qué pidió o confirmó"></label><label><span>Propuesta o contraoferta</span><input type="text" value="${escapeHtml(initialDraft.proposal)}" data-rms-negotiation-proposal="${escapeHtml(item.id)}" placeholder="Qué se ofreció"></label><label><span>Beneficio o concesión</span><input type="text" value="${escapeHtml(initialDraft.concession)}" data-rms-negotiation-concession="${escapeHtml(item.id)}" placeholder="Opcional"></label><label><span>Canal de contacto</span><select data-rms-negotiation-channel="${escapeHtml(item.id)}"><option value="WHATSAPP" ${initialDraft.channel === "WHATSAPP" ? "selected" : ""}>WhatsApp</option><option value="EMAIL" ${initialDraft.channel === "EMAIL" ? "selected" : ""}>Email</option><option value="CALL" ${initialDraft.channel === "CALL" ? "selected" : ""}>Llamada</option><option value="MEETING" ${initialDraft.channel === "MEETING" ? "selected" : ""}>Reunión</option><option value="OTHER" ${initialDraft.channel === "OTHER" || !initialDraft.channel ? "selected" : ""}>Otro</option></select></label><label><span>Producto o servicio final</span><input type="text" value="${escapeHtml(product)}" data-rms-confirm-product="${escapeHtml(item.id)}" placeholder="Producto o servicio"></label><label><span>Valor final esperado</span><input type="number" min="1" step="0.01" value="${escapeHtml(amount)}" data-rms-confirm-amount="${escapeHtml(item.id)}" placeholder="0"></label><label><span>Moneda</span><select data-rms-confirm-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((code) => `<option value="${code}" ${currency === code ? "selected" : ""}>${code}</option>`).join("")}</select></label><label><span>Referencia de pago</span><input type="text" value="${escapeHtml(confirmation.payment_reference || "")}" data-rms-confirm-reference="${escapeHtml(item.id)}" placeholder="Factura, link o referencia"></label><label><span>Responsable</span><input type="text" value="${escapeHtml(confirmation.responsible || "")}" data-rms-confirm-responsible="${escapeHtml(item.id)}" placeholder="Quien confirmó"></label><label><span>Próximo contacto</span><input type="datetime-local" value="${escapeHtml(rmsActivationDatetimeLocal(negotiation.next_action_at || "", 2))}" data-rms-negotiation-next-at="${escapeHtml(item.id)}"></label></div><label class="rms-commercial-note-field" data-rms-objection-resolution-wrap="${escapeHtml(item.id)}"><span>Cómo se resolvió la objeción</span><textarea rows="2" data-rms-negotiation-objection-resolution="${escapeHtml(item.id)}" placeholder="Propuesta, evidencia o condición verificable">${escapeHtml(initialDraft.objection_resolution)}</textarea></label><label class="rms-commercial-note-field"><span>Evidencia, referencia o comprobante</span><textarea rows="3" data-rms-confirm-evidence="${escapeHtml(item.id)}" placeholder="Link, número de factura, soporte o detalle verificable">${escapeHtml(confirmation.evidence || "")}</textarea></label><label class="rms-commercial-note-field"><span>Resumen de conversación y condición acordada</span><textarea rows="3" data-rms-confirm-note="${escapeHtml(item.id)}" placeholder="Qué dijo el cliente, qué se acordó y qué falta">${escapeHtml(confirmation.note || negotiation.summary || "")}</textarea></label></section>
+        <section class="rms-commercial-info-block rms-negotiation-condition-block"><h5>B. Condición comercial y ronda actual</h5><div class="rms-sale-form-grid"><label><span>Objetivo de la ronda</span><input type="text" value="${escapeHtml(negotiation.objective || "Confirmar condición comercial")}" data-rms-negotiation-objective="${escapeHtml(item.id)}"></label><label><span>Tipo de objeción</span><select data-rms-negotiation-objection="${escapeHtml(item.id)}"><option value="PRICE" ${initialDraft.objection_type === "PRICE" ? "selected" : ""}>Precio</option><option value="PAYMENT" ${initialDraft.objection_type === "PAYMENT" ? "selected" : ""}>Condiciones de pago</option><option value="TIME" ${initialDraft.objection_type === "TIME" ? "selected" : ""}>Tiempo</option><option value="SCOPE" ${initialDraft.objection_type === "SCOPE" ? "selected" : ""}>Alcance o producto</option><option value="TRUST" ${initialDraft.objection_type === "TRUST" ? "selected" : ""}>Confianza</option><option value="COMPETITION" ${initialDraft.objection_type === "COMPETITION" ? "selected" : ""}>Competencia</option><option value="OTHER" ${initialDraft.objection_type === "OTHER" ? "selected" : ""}>Otra / sin objeción</option></select></label><label><span>Estado de la objeción</span><select data-rms-negotiation-objection-status="${escapeHtml(item.id)}"><option value="NOT_APPLICABLE" ${initialDraft.objection_status === "NOT_APPLICABLE" ? "selected" : ""}>No aplica</option><option value="PENDING" ${initialDraft.objection_status === "PENDING" ? "selected" : ""}>Pendiente</option><option value="RESOLVED" ${initialDraft.objection_status === "RESOLVED" ? "selected" : ""}>Resuelta</option><option value="NEEDS_VALIDATION" ${initialDraft.objection_status === "NEEDS_VALIDATION" ? "selected" : ""}>Requiere validación adicional</option></select></label><label><span>Condición inicial del cliente</span><input type="text" value="${escapeHtml(initialDraft.customer_condition)}" data-rms-negotiation-condition="${escapeHtml(item.id)}" placeholder="Qué pidió o confirmó"></label><label><span>Propuesta o contraoferta</span><input type="text" value="${escapeHtml(initialDraft.proposal)}" data-rms-negotiation-proposal="${escapeHtml(item.id)}" placeholder="Qué se ofreció"></label><label><span>Beneficio o concesión</span><input type="text" value="${escapeHtml(initialDraft.concession)}" data-rms-negotiation-concession="${escapeHtml(item.id)}" placeholder="Opcional"></label><label><span>Canal de contacto</span><select data-rms-negotiation-channel="${escapeHtml(item.id)}"><option value="WHATSAPP" ${initialDraft.channel === "WHATSAPP" ? "selected" : ""}>WhatsApp</option><option value="EMAIL" ${initialDraft.channel === "EMAIL" ? "selected" : ""}>Email</option><option value="CALL" ${initialDraft.channel === "CALL" ? "selected" : ""}>Llamada</option><option value="MEETING" ${initialDraft.channel === "MEETING" ? "selected" : ""}>Reunión</option><option value="OTHER" ${initialDraft.channel === "OTHER" || !initialDraft.channel ? "selected" : ""}>Otro</option></select></label><label><span>Producto o servicio final</span><select data-rms-confirm-product="${escapeHtml(item.id)}">${rmsInventoryProductPickerOptions(productId, product)}</select><small>Selecciona el producto activo del inventario; el nombre y precio histórico quedan como evidencia.</small></label><label><span>Valor final esperado</span><input type="number" min="1" step="0.01" value="${escapeHtml(amount)}" data-rms-confirm-amount="${escapeHtml(item.id)}" placeholder="0"></label><label><span>Moneda</span><select data-rms-confirm-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((code) => `<option value="${code}" ${currency === code ? "selected" : ""}>${code}</option>`).join("")}</select></label><label><span>Referencia de pago</span><input type="text" value="${escapeHtml(confirmation.payment_reference || "")}" data-rms-confirm-reference="${escapeHtml(item.id)}" placeholder="Factura, link o referencia"></label><label><span>Responsable</span><input type="text" value="${escapeHtml(confirmation.responsible || "")}" data-rms-confirm-responsible="${escapeHtml(item.id)}" placeholder="Quien confirmó"></label><label><span>Próximo contacto</span><input type="datetime-local" value="${escapeHtml(rmsActivationDatetimeLocal(negotiation.next_action_at || "", 2))}" data-rms-negotiation-next-at="${escapeHtml(item.id)}"></label></div><label class="rms-commercial-note-field" data-rms-objection-resolution-wrap="${escapeHtml(item.id)}"><span>Cómo se resolvió la objeción</span><textarea rows="2" data-rms-negotiation-objection-resolution="${escapeHtml(item.id)}" placeholder="Propuesta, evidencia o condición verificable">${escapeHtml(initialDraft.objection_resolution)}</textarea></label><label class="rms-commercial-note-field"><span>Evidencia, referencia o comprobante</span><textarea rows="3" data-rms-confirm-evidence="${escapeHtml(item.id)}" placeholder="Link, número de factura, soporte o detalle verificable">${escapeHtml(confirmation.evidence || "")}</textarea></label><label class="rms-commercial-note-field"><span>Resumen de conversación y condición acordada</span><textarea rows="3" data-rms-confirm-note="${escapeHtml(item.id)}" placeholder="Qué dijo el cliente, qué se acordó y qué falta">${escapeHtml(confirmation.note || negotiation.summary || "")}</textarea></label></section>
         <section class="rms-commercial-info-block rms-negotiation-health" data-rms-negotiation-health="${escapeHtml(item.id)}">${rmsNegotiationCleanHealthMarkup(item, initialDraft)}</section>
         <section class="rms-commercial-info-block rms-negotiation-decision-block"><h5>D. Decisión y destino</h5><label><span>Resultado de esta ronda</span><select data-rms-negotiation-result="${escapeHtml(item.id)}"><option value="ACCEPTED">Acuerdo confirmado</option><option value="WAITING">Esperar respuesta</option><option value="REPROCESS">Requiere nueva propuesta</option><option value="NO_RESPONSE">Sin respuesta</option><option value="RECYCLE">No convierte hoy, pero es recuperable</option><option value="LOST">Pérdida definitiva</option></select></label><label data-rms-negotiation-route-wrap="${escapeHtml(item.id)}"><span>Ruta de acuerdo</span><select data-rms-negotiation-route="${escapeHtml(item.id)}"><option value="NEGOTIATION_CLEAN" ${recommendedRoute === "NEGOTIATION_CLEAN" ? "selected" : ""}>Venta limpia · enviar a Ventas atribuidas</option><option value="NEEDS_RISK_REVIEW" ${recommendedRoute === "NEEDS_RISK_REVIEW" ? "selected" : ""}>Acuerdo frágil · enviar a Riesgos de fuga</option></select><small>${riskSuggested ? "Hay una señal que exige proteger el acuerdo antes de atribuir." : "No hay señal crítica abierta; puedes confirmar una venta limpia cuando completes el checklist."}</small></label><label data-rms-negotiation-reprocess-wrap="${escapeHtml(item.id)}"><span>Destino de reproceso</span><select data-rms-negotiation-reprocess="${escapeHtml(item.id)}"><option value="procesamiento">Evaluación</option><option value="clasificacion">Activación 1</option></select></label><label data-rms-negotiation-recycle-wrap="${escapeHtml(item.id)}"><span>Motivo de reciclaje</span><select data-rms-negotiation-recycle-reason="${escapeHtml(item.id)}"><option value="TIMING">Momento inadecuado</option><option value="BUDGET">Presupuesto</option><option value="NO_RESPONSE">Sin respuesta</option><option value="WAITING_DECISION">Espera de decisión</option><option value="NOT_VIABLE_NOW">Condición no viable hoy</option><option value="OTHER">Otro</option></select></label><label data-rms-negotiation-recycle-wrap="${escapeHtml(item.id)}"><span>Estrategia de reactivación</span><select data-rms-negotiation-recycle-strategy="${escapeHtml(item.id)}"><option value="NEW_CONTACT">Nuevo contacto</option><option value="NEW_PROPOSAL">Nueva propuesta</option><option value="NEW_ACTIVATION">Nueva activación</option><option value="PERMITTED_BENEFIT">Beneficio permitido</option><option value="NURTURE">Nutrición comercial</option></select></label><label data-rms-negotiation-recycle-wrap="${escapeHtml(item.id)}"><span>Consentimiento y canal permitido</span><select data-rms-negotiation-recycle-consent="${escapeHtml(item.id)}"><option value="CONFIRMED">Consentimiento confirmado</option><option value="NOT_REQUIRED">No requiere nuevo contacto</option></select></label><label data-rms-negotiation-lost-wrap="${escapeHtml(item.id)}"><span>Clasificación de pérdida</span><select data-rms-negotiation-lost-classification="${escapeHtml(item.id)}"><option value="DEFINITIVE">Rechazo definitivo</option><option value="NOT_NOW">No es el momento</option><option value="NO_BUDGET">Sin presupuesto</option><option value="PROLONGED_NO_RESPONSE">Sin respuesta prolongada</option><option value="NO_CONSENT">Sin consentimiento</option><option value="OTHER">Otro</option></select></label><label class="rms-commercial-note-field"><span>Motivo de la decisión</span><textarea rows="3" data-rms-negotiation-reason="${escapeHtml(item.id)}" placeholder="Obligatorio: explica acuerdo, espera, retorno, reciclaje o pérdida"></textarea></label></section>
         <aside class="rms-negotiation-route-preview" data-rms-negotiation-preview="${escapeHtml(item.id)}"><strong>Siguiente paso: Riesgos de fuga</strong><small>Se validará evidencia, condición, contacto y posibles bloqueos antes de atribuir la venta.</small></aside>
@@ -40799,6 +40773,57 @@ function rmsIntelligenceCaseRefMarkup(ref = "") {
   const [sourceType, sourceId] = String(ref || "").split(":");
   if (!sourceType || !sourceId) return "";
   return `<button class="ghost-button compact" type="button" data-rms-intelligence-case-ref="${escapeHtml(ref)}">Ver caso</button>`;
+}
+
+function rmsIntelligenceRecyclingMarkup(rows = []) {
+  const recycled = rows.filter((item) => item.lifecycle_status === "RECYCLED" || item.operational_phase === "reciclaje");
+  const discarded = rows.filter((item) => item.lifecycle_status === "LOST_ANALYZED");
+  const list = (items, kind) => items.map((item) => {
+    const pending = kind === "recycled";
+    const detail = item.next_action?.description || item.why_now || item.recommended_action || "Sin motivo adicional legible.";
+    const reference = rmsIntelligenceCaseKey(item);
+    return `<li><div><strong>${escapeHtml(item.name || "Contacto sin nombre")}</strong><span>${escapeHtml(item.campaign_name || item.channel || item.product_interest || "Sin origen, canal o producto registrado")}</span><small>${escapeHtml(pending ? `Reciclaje pendiente · ${detail}` : `Conversión no completada · ${detail}`)}</small></div><button class="ghost-button compact" type="button" data-rms-intelligence-recycling-case="${escapeHtml(reference)}">Abrir expediente</button></li>`;
+  }).join("") || `<li><div><strong>${kind === "recycled" ? "No hay reciclajes pendientes" : "No hay conversiones descartadas"}</strong><span>${kind === "recycled" ? "Los casos con reactivación programada aparecerán aquí sin salir de su cola." : "Las pérdidas documentadas aparecerán como aprendizaje, sin volver a Recolección."}</span></div></li>`;
+  return `<section class="rms-intelligence-recycling" aria-label="Reciclaje y conversiones descartadas"><header><div><span class="mono-label">RECICLAJE · MEMORIA DE OPORTUNIDADES NO CONVERTIDAS</span><h4>Qué no convirtió y qué puede recuperarse</h4><p>Reciclaje conserva su cola operativa. Los descartados quedan aquí para aprender de la no conversión; esta vista no contacta, no mueve ni reactiva leads.</p></div><span class="rms-commercial-state is-pending">${recycled.length} por reactivar</span></header><div class="rms-intelligence-pattern-grid"><section><h5>Reciclaje programado</h5><ol>${list(recycled, "recycled")}</ol></section><section><h5>Conversión descartada</h5><ol>${list(discarded, "discarded")}</ol></section></div></section>`;
+}
+
+function upgradeRmsIntelligenceRecyclingView(root) {
+  const consoleNode = root?.querySelector?.(".rms-intelligence-console");
+  const tabs = consoleNode?.querySelector?.(".rms-intelligence-tabs");
+  if (!consoleNode || !tabs || consoleNode.querySelector("[data-rms-intelligence-recycling-view]")) return;
+  const button = document.createElement("button");
+  const isActive = state.rmsIntelligenceView === "recycling";
+  button.type = "button";
+  button.dataset.rmsIntelligenceRecyclingView = "true";
+  button.className = isActive ? "is-active" : "";
+  button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  button.textContent = "Reciclaje y descartados";
+  button.addEventListener("click", () => {
+    state.rmsIntelligenceView = "recycling";
+    renderRmsStationOnly();
+  });
+  tabs.appendChild(button);
+  if (isActive) {
+    tabs.querySelectorAll("[data-rms-intelligence-view]").forEach((tab) => {
+      tab.classList.remove("is-active");
+      tab.setAttribute("aria-pressed", "false");
+    });
+  }
+  const previousViews = Array.from(consoleNode.children).filter((node) => node !== tabs && !node.matches(".rms-intelligence-console-head"));
+  const recyclingView = document.createElement("div");
+  recyclingView.dataset.rmsIntelligenceRecyclingPanel = "true";
+  recyclingView.hidden = !isActive;
+  recyclingView.innerHTML = rmsIntelligenceRecyclingMarkup(state.rmsIntelligenceCases || []);
+  consoleNode.appendChild(recyclingView);
+  previousViews.forEach((node) => { node.hidden = isActive; });
+  recyclingView.querySelectorAll("[data-rms-intelligence-recycling-case]").forEach((control) => {
+    control.addEventListener("click", () => {
+      state.rmsIntelligenceView = "case";
+      loadRmsIntelligenceCase(control.dataset.rmsIntelligenceRecyclingCase || "")
+        .then(() => renderRmsStationOnly())
+        .catch((error) => showFeedback(error.message || "No pudimos abrir el expediente de reciclaje.", "error", { title: "Inteligencia RMS" }));
+    });
+  });
 }
 
 function rmsIntelligenceStationMarkup(rows = []) {
@@ -41279,20 +41304,8 @@ function rmsClassifiedProductName(item = {}) {
 
 function rmsHasConfirmedProductClassification(item = {}) {
   const draft = rmsClassifiedProductDraft(item);
-  if (draft?.product_select && draft.product_select !== OPEN_PRODUCT_VALUE) return true;
-  if (draft?.open_product_name) return true;
-  if (item.classified_product_id) return true;
-  const source = String(item.classification_source || "").toLowerCase();
-  if (item.classification_is_manual) return true;
-  return [
-    "auto_activation_product",
-    "auto_inventory_match",
-    "manual_curados",
-    "manual_inventory",
-    "manual_open_product",
-    "station_output_inventory",
-    "station_output_open_interest",
-  ].includes(source);
+  if (draft?.product_select && draft.product_select !== OPEN_PRODUCT_VALUE) return Boolean(findInventoryProduct(draft.product_select));
+  return Boolean(item.classified_product_id && findInventoryProductById(item.classified_product_id));
 }
 
 function rmsClassificationSourceLabel(item = {}) {
@@ -42777,6 +42790,16 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
   const quality = rmsLeadQualityLabel(item);
   const curationAudit = rmsCurationAudit(item);
   const qualityValue = rmsLeadQualityValue(item);
+  const handoff = item.state_metadata?.handoff || {};
+  const inherited = handoff.from_phase
+    ? `Recibido de ${LEAD_DIRECTORY_RMS_STATIONS[handoff.from_phase]?.short || handoff.from_phase}: ${handoff.reason || handoff.decision || "sin nota adicional"}`
+    : `Origen: ${origin}`;
+  const requirement = stage.key === "recoleccion" ? readiness.detail
+    : stage.key === "curaduria" ? curationAudit.label
+      : stage.key === "clasificacion" ? (rmsActivationReady(item) ? "Activación y seguimiento listos" : "Falta evidencia de envío o seguimiento")
+        : stage.key === "alimentacion" ? (rmsLeadQualityValue(item) ? "Datos operativos listos" : "Define la calidad operativa")
+          : item.next_action?.description || item.recommended_action || "Revisa la decisión comercial pendiente";
+  const destination = nextPhase?.label || (stage.key === "postventa" ? "Inteligencia (expediente analítico)" : "Sin traslado automático");
   const statusMarkup = stage.key === "alimentacion"
     ? `${rmsLeadQualitySelectMarkup(item)}<small>${escapeHtml(rmsLeadQualityValue(item) ? `${quality}: listo para salida de Curaduría` : "Selecciona calidad para enviarlo a salida")}</small>`
     : `<span>${escapeHtml(stage.key === "recoleccion" ? readiness.label : stage.key === "curaduria" ? curationAudit.label : classification)}</span>
@@ -42797,6 +42820,8 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
       <div class="rms-station-lead-main">
         <strong class="rms-station-lead-name">${escapeHtml(item.name || "Contacto")}</strong>
         <small>${escapeHtml([item.phone || "Sin WhatsApp", item.email || "Sin correo"].join(" · "))}</small>
+        <small class="rms-station-lead-guidance"><b>Ahora:</b> ${escapeHtml(stage.label || "Estación RMS")}. <b>Falta:</b> ${escapeHtml(requirement)}. <b>Al confirmar:</b> ${escapeHtml(destination)}.</small>
+        <small class="rms-station-lead-inherited">${escapeHtml(inherited)}</small>
       </div>
       <div class="rms-station-lead-context">
         <span>${escapeHtml(interest)}</span>
@@ -43597,6 +43622,7 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-phase-operation]").forEach((button) => {
     button.addEventListener("click", () => selectRmsPhaseForBulk(button.dataset.rmsPhaseOperation));
   });
+  upgradeRmsIntelligenceRecyclingView(root);
 }
 
 function renderRmsStationInstantShell(phase = "", stages = []) {
@@ -43835,21 +43861,20 @@ function rmsClassificationDraftFromDom(item = {}) {
   const openInput = Array.from(document.querySelectorAll("[data-rms-product-open]")).find((node) => node.dataset.rmsProductOpen === item.id);
   const selected = select?.value || rmsClassifiedProductValue(item);
   const selectedProduct = findInventoryProduct(selected);
-  const openName = String(openInput?.value || "").trim();
   return {
     product_select: selected,
     inventory_product_id: selectedProduct?.id || null,
-    product_name: selectedProduct?.name || openName || item.classified_product_name || item.product_interest || "",
+    product_name: selectedProduct?.name || item.classified_product_name || item.product_interest || "",
     product_category: selectedProduct?.category || "",
-    open_product_name: openName,
+    open_product_name: String(openInput?.value || "").trim(),
   };
 }
 
 async function saveRmsProductClassification(item = {}, draft = null, options = {}) {
   if (!item?.source_id) return;
   const nextDraft = draft || rmsClassificationDraftFromDom(item);
-  if (!nextDraft.product_name && !options.clear) {
-    showFeedback("Selecciona un producto del inventario o escribe uno nuevo.", "info", { title: "Clasificador" });
+  if (!nextDraft.inventory_product_id && !options.clear) {
+    showFeedback("Selecciona un producto activo del inventario. Si no existe, créalo primero desde Inventario y vuelve a vincular este lead.", "info", { title: "Clasificador" });
     return;
   }
   await api("/api/business/rms-machine/lead/phase", {
@@ -43876,7 +43901,7 @@ async function saveRmsProductClassification(item = {}, draft = null, options = {
         classified_product_id: options.clear ? null : nextDraft.inventory_product_id,
         classified_product_name: options.clear ? null : nextDraft.product_name,
         classified_product_category: options.clear ? null : nextDraft.product_category,
-        classification_source: options.clear ? "manual_clear" : (nextDraft.inventory_product_id ? "manual_inventory" : "manual_open_product"),
+        classification_source: options.clear ? "manual_clear" : "manual_inventory",
         classification_confidence: options.clear ? 0 : 1,
         classified_at: options.clear ? null : new Date().toISOString(),
         product_interest: item.product_interest || null,
@@ -43891,13 +43916,15 @@ function rmsProductClassificationMetadata(item = {}) {
   const selectedProduct = draft?.product_select ? findInventoryProduct(draft.product_select) : findInventoryProductById(item.classified_product_id);
   const source = String(item.classification_source || "").toLowerCase();
   if (!draft && !item.classified_product_id && source === "interest_without_inventory_match") return {};
-  const productName = draft?.open_product_name || selectedProduct?.name || item.classified_product_name || item.product_interest || "";
+  // Product text is retained only as historical context. A current handoff
+  // carries an inventory ID and immutable snapshots from the selected item.
+  const productName = selectedProduct?.name || item.classified_product_name || "";
   return productName ? {
     classified_product_id: selectedProduct?.id || item.classified_product_id || null,
     classified_product_name: productName,
     classified_product_category: selectedProduct?.category || item.classified_product_category || "",
-    classification_source: selectedProduct?.id ? "station_output_inventory" : (item.classification_source || "station_output_open_interest"),
-    classification_confidence: selectedProduct?.id ? 1 : Number(item.classification_confidence || 0.35),
+    classification_source: selectedProduct?.id ? "station_output_inventory" : "HISTORICAL_UNLINKED",
+    classification_confidence: selectedProduct?.id ? 1 : Number(item.classification_confidence || 0),
     classified_at: item.state_metadata?.classified_at || new Date().toISOString(),
   } : {};
 }
@@ -43920,50 +43947,8 @@ async function handleRmsSaveClassification(id = "") {
 async function handleRmsCreateProductClassification(id = "") {
   const item = rmsOpportunityById(id);
   if (!item) return;
-  const draft = rmsClassificationDraftFromDom(item);
-  const productName = draft.open_product_name || draft.product_name;
-  if (!productName) {
-    showFeedback("Escribe el nombre del producto o servicio nuevo.", "info", { title: "Clasificador" });
-    return;
-  }
-  try {
-    showFeedback("Creando producto y clasificando lead...", "loading", { title: "Clasificador", timeout: 0 });
-    const data = await api("/api/business/inventory/products", {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({
-        name: productName,
-        category: "RMS Clasificador",
-        unit_price: 0,
-        stock_quantity: 0,
-        min_stock_quantity: 0,
-        unit_label: "unidad",
-        status: "ACTIVE",
-        metadata: {
-          source_module: "rms_machine",
-          source_flow: "curados_create_product",
-          rms_opportunity_id: item.id || null,
-          lead_interest: item.product_interest || null,
-        },
-      }),
-    });
-    const saved = data.product;
-    state.inventoryProducts = [saved, ...(state.inventoryProducts || []).filter((product) => product.id !== saved.id)];
-    state.inventoryLoaded = true;
-    await saveRmsProductClassification(item, {
-      product_select: inventoryProductSelectValue(saved),
-      inventory_product_id: saved.id,
-      product_name: saved.name,
-      product_category: saved.category || "",
-      open_product_name: "",
-    });
-    state.rmsMachineLoaded = false;
-    await loadRmsMachineData({ force: true, quiet: true });
-    renderRmsMachineView();
-    showFeedback("Producto creado y lead clasificado.", "success", { title: "Clasificador" });
-  } catch (error) {
-    showFeedback(error.message || "No se pudo crear el producto.", "error", { title: "Clasificador" });
-  }
+  setView("inventory");
+  showFeedback("Crea el producto explícitamente en Inventario; luego vuelve a Clasificación para vincularlo a este lead.", "info", { title: "Clasificador" });
 }
 
 async function handleRmsClearClassification(id = "") {
@@ -45821,7 +45806,10 @@ async function saveRmsNegotiationDecision(item, root) {
   if (actionButton) actionButton.disabled = true;
   const operationKey = rmsCommercialOperationKey("negotiation", item, `${draft.result}|${draft.reprocess_phase}|${draft.next_action_at || ""}|${draft.reason}|${draft.recycle_reason || ""}|${draft.lost_classification || ""}`);
   await api("/api/business/rms-machine/negotiation-result", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft, idempotency_key: operationKey }) });
-  const destination = draft.result === "REPROCESS" ? draft.reprocess_phase : draft.result === "RECYCLE" ? "reciclaje" : draft.result === "LOST" ? "inteligencia" : "accion_correctiva";
+  // Inteligencia recibe el evento analítico, pero no es la ubicación física
+  // del lead. Una pérdida queda documentada en su estación y se abre como
+  // expediente desde Inteligencia, sin moverla artificialmente.
+  const destination = draft.result === "REPROCESS" ? draft.reprocess_phase : draft.result === "RECYCLE" ? "reciclaje" : "accion_correctiva";
   state.rmsMachineLoaded = false;
   if (destination === "reciclaje") {
     await openRmsRecyclingSection({ source: "negotiation-recycle" });
@@ -45871,7 +45859,9 @@ async function saveRmsRiskDecision(item, root) {
     responsible: rmsCommercialWorkflow(item).confirmation?.responsible || null,
   };
   await api("/api/business/rms-machine/risk-review", { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
-  const destination = result === "CLEARED" ? "cierre" : result === "RETURN_TO_NEGOTIATION" ? "accion_correctiva" : result === "RECYCLE" ? "reciclaje" : result === "LOST" ? "inteligencia" : "control_anti_fuga";
+  // Una pérdida genera aprendizaje, no una transición física hacia
+  // Inteligencia. El expediente analítico se actualiza en segundo plano.
+  const destination = result === "CLEARED" ? "cierre" : result === "RETURN_TO_NEGOTIATION" ? "accion_correctiva" : result === "RECYCLE" ? "reciclaje" : "control_anti_fuga";
   state.rmsMachineLoaded = false;
   if (destination === "reciclaje") {
     await openRmsRecyclingSection({ source: "risk-recycle" });

@@ -14,33 +14,64 @@ const { normalizeIntelligenceLifecycleStatus } = require("./rmsIntelligenceLifec
 const { randomBytes } = require("crypto");
 
 // Fuente única de verdad: conserva los IDs y ordena las transiciones comerciales.
-const RMS_FLOW_ORDER = [
-  { key: "recoleccion", label: "Leads recolectados", short_label: "Recolectar" },
-  { key: "alimentacion", label: "Curaduría", short_label: "Curaduría" },
-  { key: "curaduria", label: "Clasificador", short_label: "Clasificador" },
-  { key: "clasificacion", label: "Activación 1", short_label: "Activación 1" },
-  { key: "preprocesamiento", label: "Control de calidad 1", short_label: "Control calidad 1" },
-  { key: "procesamiento", label: "Evaluación", short_label: "Evaluación" },
-  { key: "accion_correctiva", label: "Negociación", short_label: "Negociación" },
-  { key: "control_anti_fuga", label: "Riesgos de fuga", short_label: "Riesgos de fuga" },
-  { key: "cierre", label: "Ventas atribuidas", short_label: "Ventas atribuidas" },
-  { key: "revenue_generado", label: "Control de calidad 2", short_label: "Control calidad 2" },
-  { key: "postventa", label: "Activación 2", short_label: "Activación 2" },
-  { key: "inteligencia", label: "Inteligencia RMS", short_label: "Inteligencia" },
-];
-
-const RMS_PHASES = RMS_FLOW_ORDER;
-const STAGES = RMS_PHASES;
-const PHASE_KEYS = new Set(RMS_PHASES.map((phase) => phase.key));
+const RMS_OPERATIONAL_STAGES = Object.freeze([
+  { key: "recoleccion", order: 1, label: "Recolección", short_label: "Recolección" },
+  { key: "alimentacion", order: 2, label: "Alimentación", short_label: "Alimentación" },
+  { key: "curaduria", order: 3, label: "Curaduría", short_label: "Curaduría" },
+  { key: "clasificacion", order: 4, label: "Clasificación · Activación 1", short_label: "Activación 1" },
+  { key: "procesamiento", order: 5, label: "Evaluación", short_label: "Evaluación" },
+  { key: "accion_correctiva", order: 6, label: "Negociación", short_label: "Negociación" },
+  { key: "control_anti_fuga", order: 7, label: "Riesgos de fuga", short_label: "Riesgos de fuga" },
+  { key: "cierre", order: 8, label: "Ventas atribuidas", short_label: "Ventas atribuidas" },
+  { key: "postventa", order: 9, label: "Postventa · Activación 2", short_label: "Postventa" },
+  { key: "inteligencia", order: 10, label: "Inteligencia RMS", short_label: "Inteligencia", analytical_only: true },
+]);
+const RMS_QUALITY_CONTROLS = Object.freeze([
+  { key: "preprocesamiento", label: "Control de calidad 1", observes_after: "clasificacion", observes_before: "procesamiento", visual_only: true },
+  { key: "revenue_generado", label: "Control de calidad 2", observes_after: "cierre", observes_before: "postventa", visual_only: true },
+]);
+const RMS_FLOW_ORDER = RMS_OPERATIONAL_STAGES;
+const RMS_PHASES = RMS_OPERATIONAL_STAGES;
+const STAGES = RMS_OPERATIONAL_STAGES;
+const PHASE_KEYS = new Set(RMS_OPERATIONAL_STAGES.filter((stage) => !stage.analytical_only).map((phase) => phase.key));
+const RMS_LEGACY_QUALITY_PHASES = new Set(RMS_QUALITY_CONTROLS.map((control) => control.key));
 const RMS_AUXILIARY_PHASES = new Set(["reciclaje"]);
 const RMS_FLOW_NEXT_PHASE = Object.freeze({
   recoleccion: "alimentacion", alimentacion: "curaduria", curaduria: "clasificacion",
-  // Quality controls are visible diagnostics, not operational phases.
-  clasificacion: "procesamiento", preprocesamiento: "procesamiento",
+  clasificacion: "procesamiento",
   procesamiento: "accion_correctiva", accion_correctiva: "control_anti_fuga",
   control_anti_fuga: "cierre", cierre: "postventa",
-  revenue_generado: "postventa",
 });
+
+const RMS_TRANSITION_CONTRACT = Object.freeze([
+  { from: "recoleccion", decision: "VALID_LEAD", to: "alimentacion" },
+  { from: "recoleccion", decision: "DUPLICATE", to: "recoleccion", documentary_only: true },
+  { from: "alimentacion", decision: "COMPLETE_OPERATING_DATA", to: "curaduria" },
+  { from: "alimentacion", decision: "MISSING_DATA", to: "alimentacion", creates_agenda_task: true },
+  { from: "curaduria", decision: "PRODUCT_PRIORITY_AND_NEED", to: "clasificacion" },
+  { from: "curaduria", decision: "NOT_FIT", to: "curaduria", lifecycle_status: "LOST_ANALYZED" },
+  { from: "clasificacion", decision: "ACTIVATION_DELIVERED", to: "procesamiento" },
+  { from: "clasificacion", decision: "MISSING_ACTIVATION_EVIDENCE", to: "clasificacion" },
+  { from: "procesamiento", decision: "INTEREST_OR_OBJECTION", to: "accion_correctiva" },
+  { from: "procesamiento", decision: "WAITING", to: "procesamiento" },
+  { from: "procesamiento", decision: "NEW_ACTIVATION", to: "clasificacion" },
+  { from: "accion_correctiva", decision: "COMPLETE_AGREEMENT", to: "cierre" },
+  { from: "accion_correctiva", decision: "FRAGILE_AGREEMENT", to: "control_anti_fuga" },
+  { from: "accion_correctiva", decision: "WAITING", to: "accion_correctiva" },
+  { from: "accion_correctiva", decision: "REPROCESS", to: "procesamiento" },
+  { from: "accion_correctiva", decision: "REPROCESS_ACTIVATION", to: "clasificacion" },
+  { from: "accion_correctiva", decision: "RECYCLE", to: "reciclaje" },
+  { from: "accion_correctiva", decision: "LOST", to: "accion_correctiva", lifecycle_status: "LOST_ANALYZED" },
+  { from: "control_anti_fuga", decision: "CLEARED", to: "cierre" },
+  { from: "control_anti_fuga", decision: "RETURN_TO_NEGOTIATION", to: "accion_correctiva" },
+  { from: "control_anti_fuga", decision: "WAITING", to: "control_anti_fuga" },
+  { from: "control_anti_fuga", decision: "RECYCLE", to: "reciclaje" },
+  { from: "control_anti_fuga", decision: "LOST", to: "control_anti_fuga", lifecycle_status: "LOST_ANALYZED" },
+  { from: "cierre", decision: "CANONICAL_SALE_RECORDED", to: "postventa" },
+  { from: "postventa", decision: "RESULT_RECORDED", to: "postventa", lifecycle_status: "CYCLE_ANALYZED", analytical_only: true },
+  { from: "reciclaje", decision: "REACTIVATE_EVALUATION", to: "procesamiento" },
+  { from: "reciclaje", decision: "REACTIVATE_ACTIVATION", to: "clasificacion" },
+]);
 
 // These are server-only capabilities.  The generic phase endpoint must never
 // be able to manufacture the commercial evidence that the final stations
@@ -79,9 +110,9 @@ const LEGACY_PHASE_ALIASES = {
   entrada: "alimentacion",
   atencion_inicial: "curaduria",
   interes: "clasificacion",
-  activacion: "preprocesamiento",
+  activacion: "clasificacion",
   decision: "procesamiento",
-  convertido: "revenue_generado",
+  convertido: "postventa",
   recompra: "postventa",
   fidelizacion: "postventa",
   referido: "postventa",
@@ -93,12 +124,10 @@ const INDUSTRIAL_PROCESS = [
   { key: "alimentacion", label: "Alimentacion", phase: "alimentacion", description: "La persona entra oficialmente como materia prima comercial RMS." },
   { key: "curaduria", label: "Clasificador", phase: "curaduria", description: "Se asigna producto o servicio interno para contactar al lead con una oferta clara." },
   { key: "clasificacion", label: "Activación 1", phase: "clasificacion", description: "Se prepara el primer contacto, se confirma el envío de una oferta y se programa el seguimiento para medir respuesta." },
-  { key: "preprocesamiento", label: "Control de calidad 1", phase: "preprocesamiento", description: "Ticket, beneficio, trivia, ranking o reward pass reducen fuga antes del cierre." },
   { key: "procesamiento", label: "Evaluación", phase: "procesamiento", description: "Se ejecuta propuesta, catalogo, ticket, cotizacion, factura o tarea de venta." },
-  { key: "control", label: "Riesgos de fuga", phase: "control_anti_fuga", description: "Se detectan tickets por vencer, clientes sin tarea, redenciones sin venta y fases saturadas." },
   { key: "correccion", label: "Negociación", phase: "accion_correctiva", description: "Reactivar, recordar, reenviar beneficio, llamar, posponer o marcar perdido." },
+  { key: "control", label: "Riesgos de fuga", phase: "control_anti_fuga", description: "Se protege un acuerdo frágil con soporte, responsable y seguimiento verificables." },
   { key: "cierre", label: "Ventas atribuidas", phase: "cierre", description: "Interes, propuesta, beneficio, cobro y pago se ensamblan en venta." },
-  { key: "revenue", label: "Control de calidad 2", phase: "revenue_generado", description: "Venta, redencion, renovacion, recompra, referido o suscripcion medible." },
   { key: "postventa", label: "Postventa", phase: "postventa", description: "Agradecimiento, garantia, ticket proxima compra, encuesta o programa VIP." },
   { key: "optimizar", label: "Inteligencia RMS", phase: "inteligencia", description: "El resultado vuelve a la inteligencia RMS para optimizar campanas, ganchos y operaciones." },
 ].sort((left, right) => RMS_FLOW_ORDER.findIndex((phase) => phase.key === left.phase) - RMS_FLOW_ORDER.findIndex((phase) => phase.key === right.phase));
@@ -266,12 +295,16 @@ function crmSourceType(row = {}) {
 function normalizePhase(value, fallback = "alimentacion") {
   const phase = String(value || "").trim().toLowerCase();
   if (LEGACY_PHASE_ALIASES[phase]) return LEGACY_PHASE_ALIASES[phase];
-  return PHASE_KEYS.has(phase) || RMS_AUXILIARY_PHASES.has(phase) ? phase : fallback;
+  // Keep historical control rows readable until the compatible migration moves
+  // them. They are never accepted as new transition destinations.
+  return PHASE_KEYS.has(phase) || RMS_AUXILIARY_PHASES.has(phase) || RMS_LEGACY_QUALITY_PHASES.has(phase) ? phase : fallback;
 }
 
 function phaseLabel(phase) {
   if (phase === "reciclaje") return "Reciclaje comercial";
-  return RMS_PHASES.find((item) => item.key === phase)?.label || phase;
+  return RMS_PHASES.find((item) => item.key === phase)?.label
+    || RMS_QUALITY_CONTROLS.find((control) => control.key === phase)?.label
+    || phase;
 }
 
 function metadataObject(row = {}) {
@@ -506,9 +539,10 @@ function deriveRmsPhase(row = {}) {
   if (activeTickets > 0 && staleDays >= 2 && purchases === 0) return "control_anti_fuga";
   if (purchases >= 3 || redeemedTickets >= 3 || moneyNumber(row.total_spent) >= 3000000 || (row.is_affiliate && purchases > 0)) return "postventa";
   if (purchases > 0) return "postventa";
-  if (["CONVERTED", "BUYER"].includes(status) || redeemedTickets > 0) return "revenue_generado";
+  if (["CONVERTED", "BUYER"].includes(status)) return "postventa";
   if (["FOLLOW_UP", "CONTACTED"].includes(status) && hasContact) return "procesamiento";
-  if (activeTickets > 0) return "preprocesamiento";
+  // A ticket or activation is evidence for Evaluación, not a quality phase.
+  if (activeTickets > 0 || redeemedTickets > 0) return "procesamiento";
   if (hasContact && (score >= 80 || String(row.care_priority || "").toUpperCase() === "HIGH")) return "clasificacion";
   if (hasContact && interactions > 0) return "curaduria";
   if (hasContact) return "alimentacion";
@@ -534,12 +568,10 @@ function operationDescription(phase, product, channel) {
     alimentacion: `Introducir el lead al embudo RMS con dato minimo y canal ${channel}.`,
     curaduria: `Clasificar el lead contra inventario interno segun su interes en ${product}.`,
     clasificacion: "Preparar el primer contacto, confirmar la oferta enviada y agendar el seguimiento para medir respuesta.",
-    preprocesamiento: "Aplicar gancho gamificado anti-fuga antes de que la oportunidad se enfrie.",
     procesamiento: `Ejecutar propuesta, catalogo, ticket, cotizacion o factura relacionada con ${product}.`,
     control_anti_fuga: "Detectar clientes atascados, tickets por vencer, redenciones sin venta o falta de tarea.",
     accion_correctiva: "Crear tarea urgente, recordar, reenviar beneficio, llamar, recuperar o descartar.",
     cierre: "Ensamblar interes, propuesta, beneficio, cuenta de cobro y pago.",
-    revenue_generado: "Registrar venta, redencion, renovacion, recompra, referido o suscripcion.",
     postventa: "Enviar agradecimiento, garantia, encuesta, reward pass o ticket de proxima compra.",
     inteligencia: "Medir campana, gancho, vendedor, ticket, fuga, recompra y referidos para optimizar.",
   };
@@ -848,6 +880,8 @@ async function listRmsOpportunities(businessId, filters = {}) {
     opportunities,
     pagination: data.pagination || { total: opportunities.length, limit, offset: 0, has_more: false },
     stages: RMS_PHASES,
+    quality_controls: RMS_QUALITY_CONTROLS,
+    transition_contract: RMS_TRANSITION_CONTRACT,
     operations: PHASE_OPERATIONS,
     funnel: lite ? [] : buildIntakeFunnel(opportunities),
     process_flow: lite ? [] : buildIndustrialProcess(opportunities),
@@ -857,7 +891,7 @@ async function listRmsOpportunities(businessId, filters = {}) {
 }
 
 async function getDailyQueue(businessId, filters = {}) {
-  const { opportunities, pagination, stages, operations, funnel, process_flow, alerts, scope } = await listRmsOpportunities(businessId, filters);
+  const { opportunities, pagination, stages, quality_controls, transition_contract, operations, funnel, process_flow, alerts, scope } = await listRmsOpportunities(businessId, filters);
   const lite = ["1", "true", true].includes(filters.lite);
   const labels = sectionLabels();
   const sections = Object.keys(labels).map((key) => ({
@@ -873,6 +907,8 @@ async function getDailyQueue(businessId, filters = {}) {
     opportunities,
     metrics,
     stages,
+    quality_controls,
+    transition_contract,
     operations,
     funnel,
     process_flow,
@@ -949,8 +985,8 @@ function rmsMetrics(opportunities = []) {
     };
   });
   const totalRevenuePotential = opportunities.reduce((sum, item) => sum + moneyNumber(item.revenue_potential), 0);
-  const intake = opportunities.filter((item) => ["recoleccion", "alimentacion", "curaduria", "clasificacion", "preprocesamiento", "procesamiento", "control_anti_fuga", "accion_correctiva", "cierre"].includes(item.stage)).length;
-  const converted = opportunities.filter((item) => ["revenue_generado", "postventa", "inteligencia"].includes(item.stage)).length;
+  const intake = opportunities.filter((item) => ["recoleccion", "alimentacion", "curaduria", "clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre"].includes(item.stage)).length;
+  const converted = opportunities.filter((item) => item.stage === "postventa").length;
   return {
     total_opportunities: opportunities.length,
     operate_now: opportunities.filter((item) => item.section === "operate_now").length,
@@ -1001,17 +1037,12 @@ async function findOpportunity(businessId, sourceType, sourceId) {
 function assertRmsPhaseTransition(fromPhase, toPhase, payload = {}) {
   const from = normalizePhase(fromPhase, "");
   if (!from || from === toPhase) return;
-  const negotiatedException = from === "accion_correctiva"
-    && ((payload.metadata?.negotiation_result === "REPROCESS" && ["procesamiento", "clasificacion"].includes(toPhase))
-      || (payload.metadata?.negotiation_result === "RECYCLE" && toPhase === "reciclaje")
-      || (payload.metadata?.commercial_route === "NEGOTIATION_CLEAN" && toPhase === "cierre"));
-  const riskException = from === "control_anti_fuga"
-    && (payload.metadata?.risk_result === "RECYCLE" && toPhase === "reciclaje");
-  const recycleException = from === "reciclaje"
-    && payload.metadata?.recycle_result === "REACTIVATED" && toPhase === "procesamiento";
-  const allowed = from === "control_anti_fuga"
-    ? ["cierre", "accion_correctiva", ...(riskException ? [toPhase] : [])]
-    : [...[RMS_FLOW_NEXT_PHASE[from]].filter(Boolean), ...(negotiatedException || recycleException ? [toPhase] : [])];
+  if (RMS_LEGACY_QUALITY_PHASES.has(from)) {
+    throw badRequest(`${phaseLabel(from)} es un control histórico de consulta. Migra el caso a su estación operativa antes de moverlo.`);
+  }
+  const allowed = RMS_TRANSITION_CONTRACT
+    .filter((transition) => transition.from === from)
+    .map((transition) => transition.to);
   if (!allowed.includes(toPhase)) {
     throw badRequest(`${phaseLabel(from)} solo puede continuar a ${allowed.map(phaseLabel).join(" o ")}.`);
   }
@@ -1025,6 +1056,11 @@ function assertRmsPhaseTransition(fromPhase, toPhase, payload = {}) {
     const allowed = payload.metadata?.negotiation_result === "REPROCESS" || payload.metadata?.negotiation_result === "RECYCLE" || payload.metadata?.negotiation_result === "LOST" || payload.metadata?.commercial_route === "NEGOTIATION_CLEAN";
     if (!allowed || !String(payload.reason || "").trim()) {
       throw badRequest("La salida de Negociación exige una decisión documentada y su razón.");
+    }
+  }
+  if (from === "reciclaje" && ["procesamiento", "clasificacion"].includes(toPhase)) {
+    if (payload.metadata?.recycle_result !== "REACTIVATED" || !String(payload.reason || "").trim()) {
+      throw badRequest("La reactivación exige una decisión humana y contexto actualizado.");
     }
   }
 }
@@ -1043,7 +1079,19 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
   if (["preprocesamiento", "revenue_generado", "inteligencia"].includes(toPhase)) {
     throw badRequest("Los controles de calidad e Inteligencia son de consulta; no reciben movimientos RMS.");
   }
-  const metadata = payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {};
+  const metadata = payload.metadata && typeof payload.metadata === "object" ? { ...payload.metadata } : {};
+  const isClassificationWrite = String(metadata.source_flow || "").startsWith("clasificador_product_classification");
+  if (isClassificationWrite && !metadata.classified_product_id && metadata.classification_source !== "manual_clear") {
+    throw badRequest("La Clasificación requiere un producto o servicio activo del inventario.");
+  }
+  if (metadata.classified_product_id) {
+    const product = await rmsInventoryProductSnapshot(businessId, metadata.classified_product_id);
+    metadata.classified_product_id = product.inventory_product_id;
+    metadata.classified_product_name = product.product_name_snapshot;
+    metadata.classified_product_price_snapshot = product.product_price_snapshot;
+    metadata.classified_product_currency_snapshot = product.product_currency_snapshot;
+    metadata.classification_source = "manual_inventory";
+  }
   const result = await withTransaction(async (client) => {
     // Lock and validate inside the same transaction so a stale browser tab
     // cannot advance a lead after another operator already moved it.
@@ -1054,6 +1102,20 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
     const fromPhase = current.rows[0]?.rms_phase || null;
     assertRmsPhaseTransition(fromPhase, toPhase, { ...payload, metadata });
     assertRmsTransitionAuthority(fromPhase, toPhase, authority);
+    const transitionMetadata = {
+      ...metadata,
+      handoff: {
+        ...(metadata.handoff && typeof metadata.handoff === "object" ? metadata.handoff : {}),
+        from_phase: fromPhase,
+        to_phase: toPhase,
+        decision: metadata.decision || payload.last_operation || `move_to_${toPhase}`,
+        responsible: user.id,
+        reason: String(payload.reason || "").trim() || null,
+        evidence: [payload.last_material_sent, metadata.commercial_confirmation?.evidence, metadata.commercial_confirmation?.payment_reference].filter(Boolean),
+        next_action: payload.recommended_action || null,
+        recorded_at: new Date().toISOString(),
+      },
+    };
     const state = await client.query(
       `insert into rms_lead_state
         (business_id, source_type, source_id, lead_id, rms_phase, priority, recommended_action, last_operation, last_material_sent, revenue_potential, metadata, created_by, updated_by)
@@ -1082,7 +1144,7 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
         payload.last_operation || `move_to_${toPhase}`,
         payload.last_material_sent || null,
         moneyNumber(payload.revenue_potential),
-        JSON.stringify(metadata),
+        JSON.stringify(transitionMetadata),
         user.id,
       ]
     );
@@ -1091,7 +1153,7 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
         (business_id, source_type, source_id, lead_id, from_phase, to_phase, moved_by, reason, metadata)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
        returning *`,
-      [businessId, sourceType, sourceId, payload.lead_id || null, fromPhase, toPhase, user.id, payload.reason || null, JSON.stringify(metadata)]
+      [businessId, sourceType, sourceId, payload.lead_id || null, fromPhase, toPhase, user.id, payload.reason || null, JSON.stringify(transitionMetadata)]
     );
     await client.query(
       `insert into rms_machine_events
@@ -1107,7 +1169,7 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
         payload.last_operation || `move_to_${toPhase}`,
         payload.last_material_sent || null,
         user.id,
-        JSON.stringify({ ...metadata, from_phase: fromPhase, to_phase: toPhase, movement_id: movement.rows[0].id }),
+        JSON.stringify({ ...transitionMetadata, from_phase: fromPhase, to_phase: toPhase, movement_id: movement.rows[0].id }),
       ]
     );
     await client.query(
@@ -1117,7 +1179,7 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
        on conflict (business_id, idempotency_key) do nothing`,
       [businessId, sourceType, sourceId, payload.lead_id || null, toPhase,
         state.rows[0].lifecycle_status || "ACTIVE",
-        JSON.stringify({ from_phase: fromPhase, to_phase: toPhase, movement_id: movement.rows[0].id, reason: payload.reason || null }),
+        JSON.stringify({ from_phase: fromPhase, to_phase: toPhase, movement_id: movement.rows[0].id, reason: payload.reason || null, handoff: transitionMetadata.handoff }),
         `rms-movement:${movement.rows[0].id}`, user.id]
     );
     return { state: state.rows[0], movement: movement.rows[0] };
@@ -1578,6 +1640,12 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
       event_type: "lead_sent_to_recycling", event_title: "Lead enviado a Reciclaje comercial", event_description: reason,
       rms_phase: "reciclaje", metadata: { reactivate_at: nextAt, strategy: payload.recycle_strategy || "NEW_CONTACT", movement_id: movement.movement?.id || null },
     });
+    await markRmsLifecycleStatus(businessId, user, {
+      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+      lifecycle_status: "RECYCLED", event_type: "negotiation_recycled_analyzed",
+      event_title: "Reciclaje incorporado a Inteligencia", reason,
+      idempotency_key: `negotiation-recycle:${round.id}`, metadata: { negotiation_round: round },
+    });
   }
   if (result === "LOST") {
     await markRmsLifecycleStatus(businessId, user, {
@@ -1586,12 +1654,6 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
       event_title: "Pérdida de Negociación analizada", reason,
       idempotency_key: `negotiation-loss:${payload.idempotency_key || `${sourceType}:${payload.source_id}`}`,
       metadata: { negotiation_round: round, lost_classification: payload.lost_classification },
-    });
-    await markRmsLifecycleStatus(businessId, user, {
-      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
-      lifecycle_status: "RECYCLED", event_type: "negotiation_recycled_analyzed",
-      event_title: "Reciclaje incorporado a Inteligencia", reason,
-      idempotency_key: `negotiation-recycle:${round.id}`, metadata: { negotiation_round: round },
     });
   }
   return { round, agenda, ...movement };
@@ -1670,6 +1732,15 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
       lifecycle_status: "LOST_ANALYZED", event_type: "risk_loss_analyzed",
       event_title: "Pérdida en Riesgos de fuga analizada", reason,
       idempotency_key: `risk-loss:${payload.idempotency_key || `${sourceType}:${payload.source_id}`}`,
+      metadata: { risk_review: review },
+    });
+  }
+  if (result === "RECYCLE") {
+    await markRmsLifecycleStatus(businessId, user, {
+      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+      lifecycle_status: "RECYCLED", event_type: "risk_recycled_analyzed",
+      event_title: "Reciclaje desde Riesgos incorporado a Inteligencia", reason,
+      idempotency_key: `risk-recycle:${payload.idempotency_key || `${sourceType}:${payload.source_id}:${review.reviewed_at}`}`,
       metadata: { risk_review: review },
     });
   }
@@ -2344,6 +2415,9 @@ async function downloadActivationAttachment(publicToken) {
 }
 
 module.exports = {
+  RMS_OPERATIONAL_STAGES,
+  RMS_QUALITY_CONTROLS,
+  RMS_TRANSITION_CONTRACT,
   STAGES,
   RMS_PHASES,
   WHATSAPP_TEMPLATES,
