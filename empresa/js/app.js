@@ -5607,6 +5607,9 @@ function ensureAccountAdminUxStyles() {
       }
     }
   `;
+  // Los estilos de Cuenta viven en portal-clean-v39.css. Se limpia la capa
+  // heredada antes de conservar las reglas históricas no relacionadas.
+  style.textContent = "";
   document.head.appendChild(style);
   style.textContent += `
     .view-section[data-view="reward-passes"] .reward-pass-kpis,
