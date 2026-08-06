@@ -47783,11 +47783,18 @@ document.querySelector(".account-admin-nav")?.addEventListener("click", (event) 
   const screen = ACCOUNT_SECTION_SCREEN[sectionId];
   if (!screen) return;
   event.preventDefault();
+  window.history.replaceState(null, "", `#${sectionId}`);
+  state.accountHashApplied = true;
+  openAccountSection(screen);
+  window.requestAnimationFrame(() => document.getElementById(sectionId)?.scrollIntoView({ block: "start", behavior: "smooth" }));
+});
+window.addEventListener("hashchange", () => {
+  if (state.currentView !== "account") return;
+  const screen = accountScreenFromHash();
+  if (!screen) return;
   state.accountScreen = screen;
   state.accountHashApplied = true;
   applyAccountScreen();
-  window.history.replaceState(null, "", `#${sectionId}`);
-  window.requestAnimationFrame(() => document.getElementById(sectionId)?.scrollIntoView({ block: "start", behavior: "smooth" }));
 });
 document.querySelector(".sidebar")?.addEventListener("click", (event) => {
   const button = event.target.closest(".nav-item[data-view]");
