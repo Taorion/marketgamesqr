@@ -15329,3 +15329,130 @@ html body[data-current-view="account"] .portal-shell .business-logo-profile-slot
     margin-bottom: 28px !important;
   }
 }
+
+/* Cuenta v267: capa definitiva. Debe permanecer al final del archivo para
+   neutralizar las reglas históricas que estiraban las filas y quitaban gutters. */
+html body[data-current-view="account"] .portal-shell .view-section[data-view="account"] {
+  box-sizing: border-box;
+  padding-inline: clamp(20px, 3vw, 48px) !important;
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileOverview {
+  box-sizing: border-box;
+  padding: 0 clamp(24px, 3vw, 44px) !important;
+  margin: 0 0 36px !important;
+  align-items: start !important;
+  grid-auto-rows: min-content !important;
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileOverview > .account-profile-card {
+  box-sizing: border-box;
+  align-self: start !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 28px !important;
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileOverview > .account-profile-card:first-child {
+  padding-left: 28px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-admin-nav {
+  box-sizing: border-box;
+  margin: 0 clamp(24px, 3vw, 44px) 38px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-settings-grid {
+  box-sizing: border-box;
+  padding: 0 clamp(24px, 3vw, 44px) 56px !important;
+  grid-auto-rows: min-content !important;
+  align-items: start !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-settings-grid > *,
+html body[data-current-view="account"] .portal-shell :is(.account-settings-card, .account-billing-card, .portal-pricing-card, .qr-credit-shop-card, .account-deal-card) {
+  align-self: start !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-settings-card {
+  display: block !important;
+  padding: 28px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-settings-card .table-card-head {
+  min-height: 0 !important;
+  margin-bottom: 20px !important;
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileForm {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 18px 16px !important;
+}
+
+html body[data-current-view="account"] .portal-shell #accountPasswordForm {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 18px !important;
+}
+
+html body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) .modal-actions {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 0 !important;
+  padding: 16px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid #e1ebf3 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .error-line:empty {
+  display: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .business-logo-profile-slot {
+  display: grid !important;
+  grid-template-columns: 132px minmax(0, 1fr) !important;
+  gap: 18px;
+  align-items: center !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 900px) {
+  html body[data-current-view="account"] .portal-shell #accountProfileOverview,
+  html body[data-current-view="account"] .portal-shell .account-settings-grid {
+    padding-inline: 24px !important;
+  }
+  html body[data-current-view="account"] .portal-shell .account-admin-nav {
+    margin-inline: 24px !important;
+  }
+  html body[data-current-view="account"] .portal-shell #accountProfileForm {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 620px) {
+  html body[data-current-view="account"] .portal-shell #accountProfileOverview,
+  html body[data-current-view="account"] .portal-shell .account-settings-grid {
+    padding-inline: 16px !important;
+  }
+  html body[data-current-view="account"] .portal-shell .account-admin-nav {
+    margin-inline: 16px !important;
+  }
+  html body[data-current-view="account"] .portal-shell #accountProfileOverview > .account-profile-card,
+  html body[data-current-view="account"] .portal-shell .account-settings-card {
+    padding: 20px !important;
+  }
+  html body[data-current-view="account"] .portal-shell #accountProfileForm,
+  html body[data-current-view="account"] .portal-shell .business-logo-profile-slot {
+    grid-template-columns: 1fr !important;
+  }
+}
