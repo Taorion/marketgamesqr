@@ -1335,11 +1335,30 @@ const ACCOUNT_SCREEN_COPY = Object.freeze({
   },
 });
 
+const ACCOUNT_SECTION_SCREEN = Object.freeze({
+  accountSectionCompany: "profile",
+  accountSectionSecurity: "profile",
+  accountSectionData: "billing",
+  accountSectionBilling: "billing",
+  accountSectionAssets: "assets",
+  accountSectionUsers: "admin",
+});
+
 function normalizeAccountScreen(screen = "") {
   return ACCOUNT_SCREEN_COPY[screen] ? screen : "profile";
 }
 
+function accountScreenFromHash() {
+  const sectionId = String(window.location.hash || "").replace(/^#/, "");
+  return ACCOUNT_SECTION_SCREEN[sectionId] || "";
+}
+
 function applyAccountScreen() {
+  if (!state.accountHashApplied) {
+    const screenFromHash = accountScreenFromHash();
+    if (screenFromHash) state.accountScreen = screenFromHash;
+    state.accountHashApplied = true;
+  }
   const screen = normalizeAccountScreen(state.accountScreen);
   state.accountScreen = screen;
   const copy = ACCOUNT_SCREEN_COPY[screen];
@@ -47751,6 +47770,19 @@ navButtons.forEach((button) => {
     }
     setView(button.dataset.view);
   });
+});
+document.querySelector(".account-admin-nav")?.addEventListener("click", (event) => {
+  const link = event.target.closest("a[href^='#accountSection']");
+  if (!link) return;
+  const sectionId = String(link.getAttribute("href") || "").replace(/^#/, "");
+  const screen = ACCOUNT_SECTION_SCREEN[sectionId];
+  if (!screen) return;
+  event.preventDefault();
+  state.accountScreen = screen;
+  state.accountHashApplied = true;
+  applyAccountScreen();
+  window.history.replaceState(null, "", `#${sectionId}`);
+  window.requestAnimationFrame(() => document.getElementById(sectionId)?.scrollIntoView({ block: "start", behavior: "smooth" }));
 });
 document.querySelector(".sidebar")?.addEventListener("click", (event) => {
   const button = event.target.closest(".nav-item[data-view]");

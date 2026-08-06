@@ -14783,6 +14783,26 @@ html body[data-current-view="account"] .portal-shell .account-users-card td:last
   }
 }
 
+/* Estado activo visible: cada área muestra una sola decisión a la vez. */
+html body[data-current-view="account"] .portal-shell .view-section.account-screen-profile .account-admin-nav a[href="#accountSectionCompany"],
+html body[data-current-view="account"] .portal-shell .view-section.account-screen-profile .account-admin-nav a[href="#accountSectionSecurity"],
+html body[data-current-view="account"] .portal-shell .view-section.account-screen-billing .account-admin-nav a[href="#accountSectionData"],
+html body[data-current-view="account"] .portal-shell .view-section.account-screen-assets .account-admin-nav a[href="#accountSectionAssets"],
+html body[data-current-view="account"] .portal-shell .view-section.account-screen-admin .account-admin-nav a[href="#accountSectionUsers"] {
+  border-color: #81c4e9 !important;
+  color: #064d96 !important;
+  background: #eef8ff !important;
+  box-shadow: 0 10px 22px rgba(8, 83, 152, .1) !important;
+}
+
+html body[data-current-view="account"] .portal-shell .view-section.account-screen-profile .account-summary-grid > [data-account-screen="profile"] {
+  min-width: 0;
+}
+
+html body[data-current-view="account"] .portal-shell .view-section.account-screen-billing .account-summary-grid {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .view-head { border-color: #244c70 !important; background: linear-gradient(120deg, #071a33, #092643) !important; }
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .view-head::before { border-color: #2d658f; color: #91d6ff; background: rgba(6, 23, 45, .72); }
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell .account-admin-nav { border-color: #244b70; background: rgba(7, 26, 51, .75); }
