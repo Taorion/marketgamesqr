@@ -12509,6 +12509,112 @@ html[data-theme="dark"] body[data-current-view="sales"] :is(#salesEntryModalOver
   }
 }
 
+/* Cuenta: elimina el estiramiento de filas que dejaba paneles vacíos. */
+html body[data-current-view="account"] .portal-shell .account-summary-grid {
+  align-items: start !important;
+  grid-auto-rows: min-content !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-profile-card,
+html body[data-current-view="account"] .portal-shell .account-settings-grid > *,
+html body[data-current-view="account"] .portal-shell :is(.account-settings-card, .account-billing-card, .portal-pricing-card, .qr-credit-shop-card, .account-deal-card) {
+  align-self: start !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-settings-grid {
+  grid-auto-rows: min-content !important;
+  align-items: start !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-settings-card {
+  display: block !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-settings-card .table-card-head {
+  min-height: 0 !important;
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileForm {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 18px 16px !important;
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileForm label,
+html body[data-current-view="account"] .portal-shell #accountPasswordForm label {
+  min-width: 0;
+  margin: 0 !important;
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileForm label > span,
+html body[data-current-view="account"] .portal-shell #accountPasswordForm label > span {
+  display: block;
+  margin-bottom: 7px;
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileForm :is(input, select),
+html body[data-current-view="account"] .portal-shell #accountPasswordForm input {
+  min-height: 44px !important;
+}
+
+html body[data-current-view="account"] .portal-shell #accountPasswordForm {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 18px !important;
+}
+
+html body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) .modal-actions {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 0 !important;
+  padding: 16px 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid #e1ebf3 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .error-line:empty {
+  display: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .business-logo-profile-slot {
+  display: grid !important;
+  grid-template-columns: 132px minmax(0, 1fr) !important;
+  gap: 18px;
+  align-items: center !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .business-logo-preview {
+  min-height: 128px !important;
+}
+
+@media (max-width: 820px) {
+  html body[data-current-view="account"] .portal-shell #accountProfileForm {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 620px) {
+  html body[data-current-view="account"] .portal-shell #accountProfileForm,
+  html body[data-current-view="account"] .portal-shell .business-logo-profile-slot {
+    grid-template-columns: 1fr !important;
+  }
+  html body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) .modal-actions {
+    justify-content: stretch;
+  }
+  html body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) .modal-actions .solid-button {
+    width: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   #rmsStationWorkspace[data-station-theme="closing"] *,
   #rmsStationWorkspace[data-station-theme="closing"] *::before,
