@@ -14995,3 +14995,231 @@ html body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #d
     padding-top: 20px !important;
   }
 }
+
+/* Cuenta: composición sobria. Una decisión por superficie, sin tarjetas anidadas. */
+html body[data-current-view="account"] .portal-shell .view-section.active[data-view="account"] {
+  width: min(100%, 1240px) !important;
+  padding: clamp(22px, 3vw, 42px) clamp(16px, 3vw, 40px) 72px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .view-head {
+  min-height: 0 !important;
+  margin-bottom: 32px !important;
+  padding: 0 0 22px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #d8e4ee !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .view-head::before,
+html body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .view-head::after {
+  display: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .view-head h2 {
+  max-width: none;
+  font-size: clamp(2rem, 4vw, 3rem) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -.055em !important;
+}
+
+html body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .view-head p {
+  max-width: 62ch;
+  margin-top: 10px !important;
+  font-size: .95rem !important;
+  line-height: 1.55 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-summary-grid {
+  gap: 24px !important;
+  margin-bottom: 36px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-profile-card,
+html body[data-current-view="account"] .portal-shell :is(.account-settings-card, .account-billing-card, .portal-pricing-card, .qr-credit-shop-card, .account-deal-card) {
+  min-height: 0;
+  padding: 24px !important;
+  border: 1px solid #d8e4ee !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-profile-card:first-child,
+html body[data-current-view="account"] .portal-shell .account-profile-card:nth-child(2),
+html body[data-current-view="account"] .portal-shell .account-profile-card:nth-child(3),
+html body[data-current-view="account"] .portal-shell .account-security-card {
+  padding-left: 24px !important;
+  border-color: #d8e4ee !important;
+  background: #fff !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-profile-card::before,
+html body[data-current-view="account"] .portal-shell .account-profile-card::after {
+  display: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-profile-card h3 {
+  font-size: 1.2rem !important;
+  line-height: 1.2 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-meta-grid,
+html body[data-current-view="account"] .portal-shell .account-deal-grid {
+  gap: 0 !important;
+  border-top: 1px solid #e5edf4;
+}
+
+html body[data-current-view="account"] .portal-shell .account-meta-grid > div,
+html body[data-current-view="account"] .portal-shell .account-deal-grid > div {
+  min-height: 0;
+  padding: 13px 12px 13px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e5edf4 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-meta-grid > div:nth-child(even),
+html body[data-current-view="account"] .portal-shell .account-deal-grid > div:nth-child(even) {
+  padding-left: 12px !important;
+  border-left: 1px solid #e5edf4 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-meta-grid span,
+html body[data-current-view="account"] .portal-shell .account-deal-grid span {
+  margin-bottom: 4px !important;
+  color: #61748a !important;
+  font-size: .66rem !important;
+  letter-spacing: .08em;
+}
+
+html body[data-current-view="account"] .portal-shell .account-meta-grid strong,
+html body[data-current-view="account"] .portal-shell .account-deal-grid strong {
+  color: #17334f !important;
+  font-size: .86rem !important;
+  line-height: 1.42 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-admin-nav {
+  display: flex !important;
+  gap: 6px !important;
+  margin: 0 0 38px !important;
+  padding: 0 0 10px !important;
+  overflow-x: auto;
+  border: 0 !important;
+  border-bottom: 1px solid #d8e4ee !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-admin-nav::before {
+  display: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-admin-nav a {
+  display: inline-flex !important;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 0;
+  padding: 9px 11px !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  white-space: nowrap;
+}
+
+html body[data-current-view="account"] .portal-shell .account-admin-nav .material-symbols-outlined {
+  display: inline !important;
+  width: auto;
+  height: auto;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 18px;
+}
+
+html body[data-current-view="account"] .portal-shell .account-admin-nav a small {
+  display: none;
+}
+
+html body[data-current-view="account"] .portal-shell .account-admin-nav a:hover,
+html body[data-current-view="account"] .portal-shell .account-admin-nav a:focus-visible,
+html body[data-current-view="account"] .portal-shell .view-section.account-screen-profile .account-admin-nav a[href="#accountSectionCompany"],
+html body[data-current-view="account"] .portal-shell .view-section.account-screen-billing .account-admin-nav a[href="#accountSectionData"],
+html body[data-current-view="account"] .portal-shell .view-section.account-screen-assets .account-admin-nav a[href="#accountSectionAssets"],
+html body[data-current-view="account"] .portal-shell .view-section.account-screen-admin .account-admin-nav a[href="#accountSectionUsers"] {
+  color: #075cae !important;
+  border-color: #b9dcef !important;
+  background: #edf7ff !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-settings-grid {
+  gap: 34px 20px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-section-divider {
+  gap: 6px;
+  margin: 0 !important;
+  padding: 0 0 16px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #d8e4ee !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-section-divider::after {
+  display: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-section-divider h3 {
+  font-size: 1.45rem !important;
+  line-height: 1.16;
+}
+
+html body[data-current-view="account"] .portal-shell .account-section-divider p {
+  max-width: 64ch;
+  font-size: .92rem;
+  line-height: 1.55;
+}
+
+html body[data-current-view="account"] .portal-shell .table-card-head {
+  margin-bottom: 20px !important;
+  padding-bottom: 14px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-billing-grid {
+  gap: 20px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-billing-panel,
+html body[data-current-view="account"] .portal-shell .business-logo-profile-slot {
+  padding: 18px !important;
+  border: 1px solid #e1ebf3 !important;
+  border-radius: 10px !important;
+  background: #f8fbfd !important;
+}
+
+@media (max-width: 620px) {
+  html body[data-current-view="account"] .portal-shell .view-section.active[data-view="account"] {
+    padding-inline: 16px !important;
+  }
+  html body[data-current-view="account"] .portal-shell .account-profile-card,
+  html body[data-current-view="account"] .portal-shell .account-profile-card:first-child {
+    padding: 20px !important;
+  }
+  html body[data-current-view="account"] .portal-shell .account-meta-grid > div:nth-child(even),
+  html body[data-current-view="account"] .portal-shell .account-deal-grid > div:nth-child(even) {
+    padding-left: 0 !important;
+    border-left: 0 !important;
+  }
+  html body[data-current-view="account"] .portal-shell .account-admin-nav {
+    margin-bottom: 28px !important;
+  }
+}
