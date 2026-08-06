@@ -15765,3 +15765,167 @@ html[data-theme="dark"] body[data-current-view="account"] .portal-shell :is(.acc
     padding: 20px !important;
   }
 }
+
+/* Cuenta v272: composición ejecutiva y superficies de configuración. */
+html body[data-current-view="account"] .portal-shell #accountProfileOverview {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  border: 1px solid #dce9f2;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .74);
+  box-shadow: 0 18px 38px rgba(8, 45, 97, .045);
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileOverview > .account-profile-card {
+  overflow: hidden;
+  border-radius: 14px !important;
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileOverview > .account-profile-card:first-child {
+  border-top: 3px solid #1688d8 !important;
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileOverview > .account-profile-card:nth-child(2) {
+  border-top: 3px solid #1aa0a7 !important;
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileOverview > .account-profile-card[data-account-screen="billing"] {
+  border-top: 3px solid #3778c9 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-profile-card h3 {
+  margin-top: -2px !important;
+  font-size: clamp(1.24rem, 1.7vw, 1.5rem) !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-meta-grid > div {
+  position: relative;
+  transition: border-color .18s ease, background-color .18s ease;
+}
+
+html body[data-current-view="account"] .portal-shell .account-meta-grid > div:hover {
+  border-color: #b8d9ec !important;
+  background: #f7fbfe !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-section-divider {
+  position: relative;
+  padding: 20px 0 18px 18px !important;
+  border-bottom: 0 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-section-divider::before {
+  content: "";
+  position: absolute;
+  top: 21px;
+  bottom: 19px;
+  left: 0;
+  width: 4px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #1688d8, #56c2ce);
+}
+
+html body[data-current-view="account"] .portal-shell .account-section-divider p {
+  max-width: 68ch;
+}
+
+html body[data-current-view="account"] .portal-shell .account-company-card,
+html body[data-current-view="account"] .portal-shell .account-security-card,
+html body[data-current-view="account"] .portal-shell .account-logo-card,
+html body[data-current-view="account"] .portal-shell .account-ticket-frame-card,
+html body[data-current-view="account"] .portal-shell .digital-asset-library-card,
+html body[data-current-view="account"] .portal-shell .account-users-card {
+  position: relative;
+  border-top-width: 3px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-company-card { border-top-color: #1688d8 !important; }
+html body[data-current-view="account"] .portal-shell .account-security-card { border-top-color: #8f68bf !important; }
+html body[data-current-view="account"] .portal-shell .account-logo-card,
+html body[data-current-view="account"] .portal-shell .account-ticket-frame-card { border-top-color: #1aa0a7 !important; }
+html body[data-current-view="account"] .portal-shell .digital-asset-library-card { border-top-color: #2f82c8 !important; }
+html body[data-current-view="account"] .portal-shell .account-users-card { border-top-color: #466ad4 !important; }
+
+html body[data-current-view="account"] .portal-shell .account-settings-card .table-card-head > div::before {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  margin-bottom: 9px;
+  border-radius: 10px;
+  color: #0a6ece;
+  background: #eaf6ff;
+  font-family: "Material Symbols Outlined";
+  font-size: 18px;
+}
+
+html body[data-current-view="account"] .portal-shell .account-company-card .table-card-head > div::before { content: "domain"; }
+html body[data-current-view="account"] .portal-shell .account-logo-card .table-card-head > div::before { content: "storefront"; color: #087f87; background: #e9fbf9; }
+html body[data-current-view="account"] .portal-shell .account-ticket-frame-card .table-card-head > div::before { content: "crop_free"; color: #087f87; background: #e9fbf9; }
+html body[data-current-view="account"] .portal-shell .digital-asset-library-card .table-card-head > div::before { content: "perm_media"; }
+html body[data-current-view="account"] .portal-shell .account-security-card .table-card-head > div::before { content: "shield_lock"; color: #8057ad; background: #f5effb; }
+html body[data-current-view="account"] .portal-shell .account-users-card .table-card-head > div::before { content: "groups"; color: #4565c9; background: #eef1ff; }
+
+html body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) label {
+  display: grid;
+  align-content: start;
+  gap: 0;
+  padding: 11px;
+  border: 1px solid #e0eaf1;
+  border-radius: 11px;
+  background: #fbfdff;
+}
+
+html body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) label:focus-within {
+  border-color: #9fcbe6;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(9, 105, 218, .07);
+}
+
+html body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) :is(input, select, textarea) {
+  margin-top: 6px;
+  border-color: #d3e3ee !important;
+  background: #fff !important;
+}
+
+html body[data-current-view="account"] .portal-shell .modal-actions .solid-button {
+  min-height: 44px;
+  padding-inline: 18px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .business-logo-profile-slot {
+  border-color: #dce9f1 !important;
+  background: linear-gradient(135deg, #f8fcff, #f3fafb) !important;
+}
+
+html body[data-current-view="account"] .portal-shell .business-logo-preview,
+html body[data-current-view="account"] .portal-shell .ticket-frame-preview {
+  border: 1px dashed #b9d8e9 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+}
+
+html body[data-current-view="account"] .portal-shell .table-wrap {
+  border: 1px solid #dce8f1 !important;
+  border-radius: 12px !important;
+}
+
+@media (max-width: 900px) {
+  html body[data-current-view="account"] .portal-shell #accountProfileOverview {
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 620px) {
+  html body[data-current-view="account"] .portal-shell #accountProfileOverview {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    border-radius: 14px;
+  }
+  html body[data-current-view="account"] .portal-shell .account-section-divider {
+    padding-left: 14px !important;
+  }
+  html body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) label {
+    padding: 9px;
+  }
+}
