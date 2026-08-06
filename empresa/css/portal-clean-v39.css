@@ -15536,3 +15536,10 @@ html body[data-current-view="account"] .portal-shell .view-section.account-scree
     padding: 9px 10px !important;
   }
 }
+
+html body[data-current-view="account"] .portal-shell .view-section.account-screen-security .account-admin-nav a[href="#accountSectionSecurity"] {
+  border-color: #a9d4ea !important;
+  background: #fff !important;
+  color: #075cae !important;
+  box-shadow: 0 5px 12px rgba(7, 92, 174, .08) !important;
+}

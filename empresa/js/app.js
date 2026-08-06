@@ -1329,6 +1329,10 @@ const ACCOUNT_SCREEN_COPY = Object.freeze({
     title: "Activos digitales",
     subtitle: "Administra logo, marco QR y archivos para entregar a tus clientes.",
   },
+  security: {
+    title: "Seguridad",
+    subtitle: "Actualiza la contraseña de acceso a tu cuenta.",
+  },
   admin: {
     title: "Administración",
     subtitle: "Gestiona usuarios y permisos del equipo con acceso al portal.",
@@ -1337,7 +1341,7 @@ const ACCOUNT_SCREEN_COPY = Object.freeze({
 
 const ACCOUNT_SECTION_SCREEN = Object.freeze({
   accountSectionCompany: "profile",
-  accountSectionSecurity: "profile",
+  accountSectionSecurity: "security",
   accountSectionData: "billing",
   accountSectionBilling: "billing",
   accountSectionAssets: "assets",
@@ -1368,6 +1372,7 @@ function applyAccountScreen() {
   document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-profile", screen === "profile");
   document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-billing", screen === "billing");
   document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-assets", screen === "assets");
+  document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-security", screen === "security");
   document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-admin", screen === "admin");
   const title = document.getElementById("accountViewTitle");
   const subtitle = document.getElementById("accountViewSubtitle");
