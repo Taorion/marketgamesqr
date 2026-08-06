@@ -47783,8 +47783,11 @@ document.querySelector(".account-admin-nav")?.addEventListener("click", (event) 
   const screen = ACCOUNT_SECTION_SCREEN[sectionId];
   if (!screen) return;
   event.preventDefault();
-  window.history.replaceState(null, "", `#${sectionId}`);
   state.accountHashApplied = true;
+  if (window.location.hash !== `#${sectionId}`) {
+    window.location.hash = sectionId;
+    return;
+  }
   openAccountSection(screen);
   window.requestAnimationFrame(() => document.getElementById(sectionId)?.scrollIntoView({ block: "start", behavior: "smooth" }));
 });
@@ -47795,6 +47798,8 @@ window.addEventListener("hashchange", () => {
   state.accountScreen = screen;
   state.accountHashApplied = true;
   applyAccountScreen();
+  const sectionId = String(window.location.hash || "").replace(/^#/, "");
+  window.requestAnimationFrame(() => document.getElementById(sectionId)?.scrollIntoView({ block: "start", behavior: "smooth" }));
 });
 document.querySelector(".sidebar")?.addEventListener("click", (event) => {
   const button = event.target.closest(".nav-item[data-view]");
