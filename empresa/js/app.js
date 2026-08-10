@@ -48010,6 +48010,10 @@ navButtons.forEach((button) => {
       openContactCenterSection(button.dataset.contactCenterNav);
       return;
     }
+    if (button.dataset.view === "rms-machine" && state.currentView === "rms-machine" && state.rmsStationScreenOpen) {
+      closeRmsStation();
+      return;
+    }
     setView(button.dataset.view);
   });
 });
@@ -48053,6 +48057,10 @@ document.querySelector(".sidebar")?.addEventListener("click", (event) => {
   }
   if (button.dataset.contactCenterNav && button.dataset.view !== "sales") {
     openContactCenterSection(button.dataset.contactCenterNav);
+    return;
+  }
+  if (button.dataset.view === "rms-machine" && state.currentView === "rms-machine" && state.rmsStationScreenOpen) {
+    closeRmsStation();
     return;
   }
   setView(button.dataset.view);
