@@ -994,7 +994,7 @@ async function listBusinessUsers(req, res, next) {
     requireBusinessOwner(req);
     const result = await query(
       `select id, business_id, email, full_name, role, branch_id,
-              can_redeem_cross_business, is_active, created_at, updated_at
+              can_redeem_cross_business, is_active, deactivated_at, created_at, updated_at
        from app_users
        where business_id = $1
          and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')
@@ -1075,12 +1075,13 @@ async function updateBusinessUser(req, res, next) {
     const result = await query(
       `update app_users
        set is_active = $3,
+           deactivated_at = case when $3 then null else coalesce(deactivated_at, now()) end,
            updated_at = now()
        where id = $1
          and business_id = $2
          and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')
        returning id, business_id, email, full_name, role, branch_id,
-                 can_redeem_cross_business, is_active, created_at, updated_at`,
+                 can_redeem_cross_business, is_active, deactivated_at, created_at, updated_at`,
       [req.params.userId, businessId, body.is_active]
     );
     if (!result.rowCount) {

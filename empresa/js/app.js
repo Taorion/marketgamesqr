@@ -5460,6 +5460,14 @@ function accountRoleLabel(role) {
   return role || "-";
 }
 
+function deactivatedUserRemovalLabel(user = {}) {
+  if (user.is_active || !user.deactivated_at) return "";
+  const deactivatedAt = new Date(user.deactivated_at);
+  if (Number.isNaN(deactivatedAt.getTime())) return "Eliminación automática pendiente";
+  deactivatedAt.setDate(deactivatedAt.getDate() + 7);
+  return `Se elimina automáticamente el ${formatDate(deactivatedAt.toISOString())}`;
+}
+
 function renderBusinessUsers() {
   if (!accountUsersTable) return;
   const canManage = isBusinessOwnerUser();
@@ -5474,12 +5482,13 @@ function renderBusinessUsers() {
   accountUsersTable.innerHTML = users.map((user) => {
     const isSelf = user.id === session?.user?.id;
     const active = Boolean(user.is_active);
+    const removalLabel = deactivatedUserRemovalLabel(user);
     return `
       <tr>
         <td>${escapeHtml(user.full_name || "-")}${isSelf ? '<br><span class="table-secondary">Sesión actual</span>' : ""}</td>
         <td>${escapeHtml(user.email || "-")}</td>
         <td>${escapeHtml(accountRoleLabel(user.role))}</td>
-        <td><span class="status-chip ${active ? "ok" : "danger"}">${active ? "Activo" : "Inactivo"}</span></td>
+        <td><span class="status-chip ${active ? "ok" : "danger"}">${active ? "Activo" : "Inactivo"}</span>${removalLabel ? `<br><span class="table-secondary">${escapeHtml(removalLabel)}</span>` : ""}</td>
         <td>${escapeHtml(formatDate(user.created_at))}</td>
         <td>
           <button class="ghost-button" type="button" data-account-user-toggle="${escapeHtml(user.id)}" data-active="${active ? "0" : "1"}" ${!canManage || !canDeactivate || isSelf ? "disabled" : ""}>
@@ -28964,22 +28973,27 @@ async function submitAccountProfile(event) {
   setInlineMessage(accountProfileMessage, "Guardando datos...", "info");
   setButtonLoading(accountProfileSaveButton, true, "Guardando...");
   try {
+    const affiliateConfigVisible = Array.from(document.querySelectorAll("#accountProfileForm .affiliate-only-config"))
+      .some((element) => !element.classList.contains("hidden"));
+    const profilePayload = {
+      name: accountNameInput.value.trim(),
+      slogan: optionalInputValue(accountSloganInput),
+      contact_name: optionalInputValue(accountContactInput),
+      contact_email: optionalInputValue(accountEmailInput),
+      phone: optionalInputValue(accountPhoneInput),
+      website: optionalInputValue(accountWebsiteInput),
+      city: optionalInputValue(accountCityInput),
+      address: optionalInputValue(accountAddressInput),
+    };
+    if (affiliateConfigVisible) {
+      profilePayload.affiliate_point_amount_cop = Number(accountAffiliatePointAmountInput?.value || 0);
+      profilePayload.affiliate_referral_points_rate = Number(accountAffiliatePointRateInput?.value || 0);
+      profilePayload.affiliate_referral_points_rounding = accountAffiliatePointRoundingInput?.value || "floor";
+    }
     const data = await api("/api/business/profile", {
       method: "PATCH",
       headers: authHeaders(),
-      body: JSON.stringify({
-        name: accountNameInput.value.trim(),
-        slogan: optionalInputValue(accountSloganInput),
-        contact_name: optionalInputValue(accountContactInput),
-        contact_email: optionalInputValue(accountEmailInput),
-        phone: optionalInputValue(accountPhoneInput),
-        website: optionalInputValue(accountWebsiteInput),
-        city: optionalInputValue(accountCityInput),
-        address: optionalInputValue(accountAddressInput),
-        affiliate_point_amount_cop: Number(accountAffiliatePointAmountInput?.value || 1000),
-        affiliate_referral_points_rate: Number(accountAffiliatePointRateInput?.value || 1),
-        affiliate_referral_points_rounding: accountAffiliatePointRoundingInput?.value || "floor",
-      }),
+      body: JSON.stringify(profilePayload),
     });
     mergeBusinessProfile(data.business || null);
     if (data.business?.affiliate_points) {
@@ -47556,18 +47570,8 @@ async function submitRmsCollector(event) {
       hasLeadDraft ? loadLeadCrmData({ force: true, quiet: true }).catch(() => null) : Promise.resolve(null),
       hasLeadDraft ? loadManualContactsData({ force: true, quiet: true }).catch(() => null) : Promise.resolve(null),
     ]);
-    if (hasLeadDraft && createdLead?.id) {
-      const opportunityId = `MANUAL:${createdLead.id}`;
-      state.rmsStationPhase = "recoleccion";
-      state.rmsStationScreenOpen = true;
-      state.rmsMachineSelectedIds = [opportunityId];
-      state.rmsMachineInspectorId = opportunityId;
-    }
     renderRmsCollectorActivation();
     renderRmsMachineView();
-    if (hasLeadDraft && createdLead?.id) {
-      rmsStationWorkspace?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
     showFeedback(
       hasLeadDraft
         ? `${createdLead?.name || leadName} entró a Leads recolectados.`
