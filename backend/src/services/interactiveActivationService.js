@@ -839,9 +839,13 @@ async function updateInteractiveActivation(businessId, activationId, body) {
   const fields = [];
   const values = [activationId, businessId];
   const allowed = [
+    "activation_type",
+    "category",
     "title",
     "description",
     "status",
+    "reward_ticket_cost",
+    "reward_mode",
     "reward_config",
     "game_config",
     "interaction_config",
@@ -874,6 +878,20 @@ async function updateInteractiveActivation(businessId, activationId, body) {
     values
   );
   if (!result.rowCount) throw notFound("Activacion no encontrada.");
+  if (currentStatus === "draft") {
+    if (Array.isArray(body.questions)) {
+      await query("delete from interactive_activation_questions where activation_id = $1", [activationId]);
+      await insertQuestions({ query }, activationId, body.questions);
+    }
+    if (Array.isArray(body.score_rewards)) {
+      await query("delete from interactive_score_reward_rules where activation_id = $1", [activationId]);
+      await insertScoreRules({ query }, activationId, body.score_rewards);
+    }
+    if (Array.isArray(body.touch_zones)) {
+      await query("delete from interactive_touch_reward_zones where activation_id = $1", [activationId]);
+      await insertTouchZones({ query }, activationId, body.touch_zones);
+    }
+  }
   return { activation: mapActivation(result.rows[0]) };
 }
 

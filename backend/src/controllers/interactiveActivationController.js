@@ -91,7 +91,9 @@ async function list(req, res, next) {
 async function update(req, res, next) {
   try {
     const body = validate(interactiveActivationUpdateSchema, req.body);
-    res.json(await updateInteractiveActivation(businessIdFor(req), req.params.id, body));
+    const businessId = businessIdFor(req);
+    if (body.activation_type) await assertInteractiveActivationTypeForBusiness(businessId, body.activation_type);
+    res.json(await updateInteractiveActivation(businessId, req.params.id, body));
   } catch (error) {
     next(error);
   }

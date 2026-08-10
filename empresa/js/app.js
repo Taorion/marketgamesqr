@@ -3668,6 +3668,7 @@ function resetBusinessScopedState(options = {}) {
   state.strategicQrHistory = [];
   state.triviaLaunchers = [];
   state.currentLauncherActivationId = null;
+  state.gamingActivationDraftId = null;
   state.activationShareId = null;
   state.activationShareLeads = [];
   state.activationShareSelectedKey = "";
@@ -15427,6 +15428,11 @@ function ensureGamingActivationBuilderModal(view = document.querySelector('.view
         if (validateGamingActivationWizard()) triviaLauncherForm?.requestSubmit();
         return;
       }
+      if (event.target.closest("[data-gaming-wizard-save-draft]")) {
+        event.preventDefault();
+        saveGamingActivationDraft();
+        return;
+      }
       const categoryButton = event.target.closest("[data-gaming-activation-category]");
       if (categoryButton) {
         state.gamingActivationCategory = categoryButton.dataset.gamingActivationCategory || "all";
@@ -15467,7 +15473,10 @@ function openGamingActivationBuilderModal(options = {}) {
   setTicketCenterTab("trivia");
   const modal = ensureGamingActivationBuilderModal();
   if (!modal) return;
-  if (options.reset !== false) state.gamingActivationWizardStep = 0;
+  if (options.reset !== false) {
+    state.gamingActivationWizardStep = 0;
+    state.gamingActivationDraftId = null;
+  }
   modal.classList.remove("hidden");
   modal.removeAttribute("hidden");
   const body = modal.querySelector(".gaming-activation-builder-modal-body");
@@ -16000,6 +16009,7 @@ function ensureGamingCenterUx() {
     triviaLauncherForm?.insertAdjacentHTML("beforeend", `
       <section class="full gaming-activation-review is-gaming-wizard-hidden" data-gaming-activation-review aria-hidden="true"></section>
       <footer class="full gaming-activation-wizard-footer">
+        <button class="ghost-button" type="button" data-gaming-wizard-save-draft>Guardar borrador</button>
         <button class="ghost-button" type="button" data-gaming-wizard-previous>← Volver</button>
         <div><button class="solid-button" type="button" data-gaming-wizard-next>Continuar →</button><button class="solid-button hidden" type="button" data-gaming-wizard-publish>Publicar activación</button></div>
       </footer>
@@ -24634,7 +24644,7 @@ function renderTriviaLaunchers() {
         </td>
         <td>
           <div class="activation-row-actions">
-            <button class="ghost-button compact" type="button" data-open-activation-detail="${escapeHtml(item.id)}">Abrir</button>
+            ${item.status === "draft" ? `<button class="solid-button compact" type="button" data-continue-activation-draft="${escapeHtml(item.id)}">Continuar</button>` : `<button class="ghost-button compact" type="button" data-open-activation-detail="${escapeHtml(item.id)}">Abrir</button>`}
             <button class="ghost-button compact danger" type="button" data-delete-activation="${escapeHtml(item.id)}">Eliminar</button>
           </div>
         </td>
@@ -24648,6 +24658,7 @@ function renderTriviaLaunchers() {
       if (row.matches("button")) {
         event.preventDefault();
         event.stopPropagation();
+        if (row.dataset.continueActivationDraft) return;
         openGamingActivationDetail(row.dataset.openActivationDetail);
         return;
       }
@@ -24678,6 +24689,14 @@ function renderTriviaLaunchers() {
 
   updateGamingPublishedFilters();
 }
+
+triviaLauncherTable?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-continue-activation-draft]");
+  if (!button) return;
+  event.preventDefault();
+  event.stopPropagation();
+  continueGamingActivationDraft(button.dataset.continueActivationDraft);
+});
 
 async function showInteractiveActivationData(id) {
   const activation = activationById(id);
@@ -25287,6 +25306,119 @@ async function archivePreviousLauncherActivation(previousId, nextId) {
   }
 }
 
+function gamingActivationDraftSnapshot() {
+  const form = triviaLauncherForm;
+  const elements = Array.from(form?.querySelectorAll("input, select, textarea") || [])
+    .filter((field) => !["submit", "button", "file"].includes(field.type));
+  return {
+    version: 1,
+    type: currentActivationType(),
+    fields: elements.map((field, index) => ({
+      index,
+      id: field.id || null,
+      value: field.type === "checkbox" ? null : field.value,
+      checked: field.type === "checkbox" ? Boolean(field.checked) : null,
+    })),
+    custom_fields: collectActivationCustomFields(),
+    saved_at: new Date().toISOString(),
+  };
+}
+
+function restoreGamingActivationDraft(snapshot = {}) {
+  if (!snapshot || typeof snapshot !== "object") return false;
+  const type = snapshot.type || "TRIVIA";
+  setActivationType(type);
+  if (activationFormBuilder && Array.isArray(snapshot.custom_fields) && snapshot.custom_fields.length) {
+    activationFormBuilder.innerHTML = snapshot.custom_fields.map((field, index) => activationFormRowMarkup(index + 1, field)).join("");
+  }
+  const elements = Array.from(triviaLauncherForm?.querySelectorAll("input, select, textarea") || [])
+    .filter((field) => !["submit", "button", "file"].includes(field.type));
+  const byId = new Map(elements.filter((field) => field.id).map((field) => [field.id, field]));
+  (snapshot.fields || []).forEach((saved) => {
+    const field = (saved.id && byId.get(saved.id)) || elements[saved.index];
+    if (!field) return;
+    if (field.type === "checkbox") field.checked = Boolean(saved.checked);
+    else if (saved.value !== undefined && saved.value !== null) field.value = saved.value;
+  });
+
+  setActivationType(type);
+  updateTriviaQuestionVisibility();
+  updateActivationQuestionCountControls();
+  syncActivationFormBuilder();
+  syncBenefitFulfillmentFields();
+  updateGamingBuilderProgress();
+  return true;
+}
+
+async function saveGamingActivationDraft() {
+  const type = currentActivationType();
+  const snapshot = gamingActivationDraftSnapshot();
+  const draftTitle = triviaTitleInput?.value.trim() || `Borrador ${activationTypeLabel(type)}`;
+  const payload = {
+    status: "draft",
+    activation_type: interactiveTypeForLegacyType(type),
+    category: interactiveCategoryForType(type),
+    title: draftTitle.length >= 4 ? draftTitle : "Borrador de activacion",
+    description: triviaDescriptionInput?.value.trim() || null,
+    reward_ticket_cost: 1,
+    reward_mode: "fixed",
+    reward_config: {
+      reward_type: triviaBenefitTypeInput?.value || "CUSTOM",
+      reward_label: triviaBenefitLabelInput?.value.trim() || "Beneficio por definir",
+    },
+    capture_config: {
+      required_fields: ["name", "phone", "email", "document"],
+      optional_fields: [],
+      custom_fields: snapshot.custom_fields,
+    },
+    visual_config: {
+      source: "ticket_center_activation_builder",
+      invite_message_template: triviaInviteMessageInput?.value.trim() || "",
+      builder_draft: snapshot,
+    },
+  };
+  const saveButton = triviaLauncherForm?.querySelector("[data-gaming-wizard-save-draft]");
+  setButtonLoading(saveButton, true, "Guardando...");
+  try {
+    const data = state.gamingActivationDraftId
+      ? await api(`/api/business/interactive-activations/${encodeURIComponent(state.gamingActivationDraftId)}`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      })
+      : await api("/api/business/interactive-activations", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      });
+    const activation = data.activation || data.trivia;
+    state.gamingActivationDraftId = activation.id;
+    state.triviaLaunchers = [activation, ...(state.triviaLaunchers || []).filter((item) => String(item.id) !== String(activation.id))];
+    renderTriviaLaunchers();
+    setInlineMessage(triviaLauncherMessage, "Borrador guardado. Puedes cerrarlo y retomarlo desde la tabla.", "success");
+    showFeedback("Borrador de activacion guardado.", "success", { title: "Gaming Center" });
+  } catch (error) {
+    setInlineMessage(triviaLauncherMessage, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo guardar el borrador" });
+  } finally {
+    setButtonLoading(saveButton, false);
+  }
+}
+
+function continueGamingActivationDraft(id) {
+  const activation = activationById(id);
+  const snapshot = activation?.visual_config?.builder_draft;
+  if (!activation || activation.status !== "draft") return;
+  if (!snapshot || !restoreGamingActivationDraft(snapshot)) {
+    showFeedback("Este borrador no tiene el formulario completo guardado. Puedes editar sus datos básicos desde Abrir.", "error", { title: "Borrador incompleto" });
+    return;
+  }
+  if (triviaTitleInput && !triviaTitleInput.value.trim()) triviaTitleInput.value = activation.title || "";
+  state.gamingActivationDraftId = activation.id;
+  openGamingActivationBuilderModal({ reset: false });
+  showFeedback("Borrador recuperado. Completa lo que falta y publícalo cuando esté listo.", "success", { title: "Borrador abierto" });
+}
+
 async function submitTriviaLauncher(event) {
   event.preventDefault();
   if (!validateGamingActivationWizard()) return;
@@ -25294,20 +25426,29 @@ async function submitTriviaLauncher(event) {
   if (!activationPayload) return;
   const type = currentActivationType();
   const submitButton = triviaLauncherForm.querySelector("button[type='submit']");
-  const previousLauncherActivationId = state.currentLauncherActivationId;
+  const draftId = state.gamingActivationDraftId;
+  const previousLauncherActivationId = draftId ? null : state.currentLauncherActivationId;
   setButtonLoading(submitButton, true, "Lanzando...");
   triviaLauncherResult?.classList.add("hidden");
   if (triviaLauncherResult) triviaLauncherResult.innerHTML = "";
   setInlineMessage(triviaLauncherMessage, `Creando activación ${activationTypeLabel(type).toLowerCase()} y generando link público.`, "info");
   try {
-    const data = await api("/api/business/interactive-activations", {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify(buildInteractiveActivationPayload(type, activationPayload)),
-    });
+    const payload = { ...buildInteractiveActivationPayload(type, activationPayload), status: "active" };
+    const data = draftId
+      ? await api(`/api/business/interactive-activations/${encodeURIComponent(draftId)}`, {
+        method: "PATCH",
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      })
+      : await api("/api/business/interactive-activations", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      });
 
     const activation = data.activation || data.trivia;
     state.currentLauncherActivationId = activation.id;
+    state.gamingActivationDraftId = null;
     const archivedPrevious = await archivePreviousLauncherActivation(previousLauncherActivationId, activation.id);
     state.triviaLaunchers = [activation, ...(state.triviaLaunchers || []).filter((item) => item.id !== activation.id)];
     renderTriviaLaunchers();
