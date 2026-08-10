@@ -7,11 +7,25 @@ function serviceUnavailable(message) {
   return error;
 }
 
-function deliveryError(message) {
+function deliveryError(message, publicMessage = "No se pudo enviar este correo. Revisa la configuración o inténtalo de nuevo.") {
   const error = new Error(message);
   error.status = 502;
-  error.publicMessage = "No se pudo enviar este correo. Revisa la configuración o inténtalo de nuevo.";
+  error.publicMessage = publicMessage;
   return error;
+}
+
+function resendDeliveryMessage(status, detail = "") {
+  const normalized = String(detail || "").toLowerCase();
+  if (/verify|verified|domain|from address|sender/.test(normalized)) {
+    return "El remitente o su dominio aún no está verificado en Resend. Verifica el dominio y usa una dirección de ese dominio en Cuenta.";
+  }
+  if (status === 401 || status === 403 || /api key|authorization|unauthorized|forbidden/.test(normalized)) {
+    return "Resend rechazó la credencial del servidor. Configura una RESEND_API_KEY válida en Render y vuelve a intentar.";
+  }
+  if (status === 429) {
+    return "Resend aplicó un límite temporal de envío. Espera unos minutos y vuelve a intentar.";
+  }
+  return "Resend rechazó el correo. Revisa la verificación del dominio remitente y la configuración de envío.";
 }
 
 async function sendBusinessCommunicationEmail({ from, to, subject, text, html, replyTo, attachments = [] }) {
@@ -43,7 +57,7 @@ async function sendBusinessCommunicationEmail({ from, to, subject, text, html, r
 
   if (!response.ok) {
     const detail = await response.text();
-    throw deliveryError(`Resend rechazó el correo: ${response.status} ${detail}`);
+    throw deliveryError(`Resend rechazó el correo: ${response.status} ${detail}`, resendDeliveryMessage(response.status, detail));
   }
 
   return response.json();

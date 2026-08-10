@@ -632,6 +632,7 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
     sent: 0,
     failed: 0,
     skipped: 0,
+    failure_reasons: [],
   };
   for (const contact of duplicateEmailRecipients) {
     await saveRecipient({
@@ -671,6 +672,10 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
       await saveRecipient({ businessId, communicationId: id, contact, status: 'FAILED', errorMessage: error.message, userId });
       await logLeadCommunication({ businessId, contact, communication, status: 'FAILED', message, errorMessage: error.message, userId });
       results.failed += 1;
+      const reason = String(error.publicMessage || "No se pudo entregar el correo. Revisa la configuración del envío.").slice(0, 280);
+      const knownReason = results.failure_reasons.find((item) => item.message === reason);
+      if (knownReason) knownReason.count += 1;
+      else results.failure_reasons.push({ message: reason, count: 1 });
     }
   }
   const updated = await query("update business_communications set status = $3, updated_by = $4, updated_at = now() where id = $1 and business_id = $2 returning *", [id, businessId, results.sent ? 'SENT' : communication.status, userId]);
