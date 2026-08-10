@@ -6773,6 +6773,12 @@
                       <p>Registra sus datos para reconocerlo y enviarle beneficios sin confusiones.</p>
                     </div>
                   </div>
+                  <label class="span-2">
+                    <span>Convertir un contacto existente</span>
+                    <select id="affiliateContactInput"><option value="">Crear afiliado nuevo</option></select>
+                    <small id="affiliateContactHelp" class="field-help">Puedes elegir un cliente o lead de Contactos. Sus datos se conservan como origen del afiliado.</small>
+                    <button class="text-button compact" id="affiliateContactRefreshButton" type="button">Actualizar contactos</button>
+                  </label>
                   <label>
                     <span>Nombre completo</span>
                     <input id="affiliateFullNameInput" type="text" autocomplete="name" minlength="3" maxlength="160" required>
@@ -7533,7 +7539,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=branch-attribution-v281-20260810" defer></script>
+<script src="js/app.js?v=affiliate-contact-v282-20260810" defer></script>
     <script src="js/communications.js?v=branch-attribution-v281-20260810" defer></script>
 </body>
 </html>

@@ -438,6 +438,9 @@ const affiliateCreateTitle = document.getElementById("affiliateCreateTitle");
 const affiliateCreateSubmitButton = document.getElementById("affiliateCreateSubmitButton");
 const affiliateCreateCloseButton = document.getElementById("affiliateCreateCloseButton");
 const affiliateCreateCancelButton = document.getElementById("affiliateCreateCancelButton");
+const affiliateContactInput = document.getElementById("affiliateContactInput");
+const affiliateContactHelp = document.getElementById("affiliateContactHelp");
+const affiliateContactRefreshButton = document.getElementById("affiliateContactRefreshButton");
 const affiliateFullNameInput = document.getElementById("affiliateFullNameInput");
 const affiliateDocumentInput = document.getElementById("affiliateDocumentInput");
 const affiliatePhoneInput = document.getElementById("affiliatePhoneInput");
@@ -29094,6 +29097,7 @@ function syncAffiliateFormChrome() {
 
 function resetAffiliateForm(options = {}) {
   affiliateCreateForm?.reset();
+  if (affiliateContactInput) affiliateContactInput.value = "";
   affiliateCapturedPhotoDataUrl = "";
   affiliatePhotoExplicitlyCleared = false;
   if (affiliatePhotoInput) affiliatePhotoInput.value = "";
@@ -29102,6 +29106,99 @@ function resetAffiliateForm(options = {}) {
   if (!options.preserveMode) state.affiliateEditingId = null;
   syncAffiliateFormChrome();
   if (affiliateCreateMessage) affiliateCreateMessage.textContent = "";
+  if (affiliateContactHelp) affiliateContactHelp.textContent = "Puedes elegir un cliente o lead de Contactos. Sus datos se conservan como origen del afiliado.";
+}
+
+function affiliateContactRef(contact) {
+  return `${String(contact?.stage || contact?.source_type || "CONTACT").toUpperCase()}:${contact?.id || contact?.source_id || ""}`;
+}
+
+function affiliateContactLabel(contact) {
+  const stage = String(contact?.stage || contact?.source_type || "CONTACT").toUpperCase();
+  const type = stage === "MANUAL" ? "Contacto" : stage === "LEAD" ? "Lead" : "Cliente";
+  return [contact?.name || "Contacto sin nombre", type, contact?.phone || contact?.email || "Sin teléfono ni correo"].filter(Boolean).join(" · ");
+}
+
+function affiliateContactChoices() {
+  return (state.affiliateContactChoices || state.contactFeed || [])
+    .filter((contact) => contact?.id && String(contact.stage || "").toUpperCase() !== "AFFILIATE")
+    .filter((contact) => !isAffiliateContact(contact))
+    .filter((contact, index, rows) => rows.findIndex((item) => affiliateContactRef(item) === affiliateContactRef(contact)) === index);
+}
+
+function isAffiliateContact(contact) {
+  const documentId = String(contact?.document_id || "").trim();
+  const email = String(contact?.email || "").trim().toLowerCase();
+  const phone = String(contact?.phone || "").replace(/\D/g, "");
+  return (state.affiliates || []).some((affiliate) => {
+    const affiliateDocument = String(affiliate?.document_id || "").trim();
+    const affiliateEmail = String(affiliate?.email || "").trim().toLowerCase();
+    const affiliatePhone = String(affiliate?.phone || "").replace(/\D/g, "");
+    return (documentId && affiliateDocument === documentId)
+      || (email && affiliateEmail === email)
+      || (phone && affiliatePhone === phone);
+  });
+}
+
+function renderAffiliateContactChoices() {
+  if (!affiliateContactInput) return;
+  const selected = affiliateContactInput.value || "";
+  const contacts = affiliateContactChoices();
+  affiliateContactInput.innerHTML = [
+    '<option value="">Crear afiliado nuevo</option>',
+    ...contacts.map((contact) => `<option value="${escapeHtml(affiliateContactRef(contact))}">${escapeHtml(affiliateContactLabel(contact))}</option>`),
+  ].join("");
+  if (selected && contacts.some((contact) => affiliateContactRef(contact) === selected)) affiliateContactInput.value = selected;
+  if (affiliateContactHelp) {
+    affiliateContactHelp.textContent = contacts.length
+      ? `${contacts.length} contactos disponibles. Al elegir uno se completan sus datos sin modificar su ficha original.`
+      : "No hay contactos disponibles todavía. Puedes crear el afiliado manualmente o actualizar la lista.";
+  }
+}
+
+async function loadAffiliateContactChoices(options = {}) {
+  if (!session?.user?.business_id) return [];
+  if (!options.force && Array.isArray(state.affiliateContactChoices) && state.affiliateContactChoices.length) {
+    renderAffiliateContactChoices();
+    return state.affiliateContactChoices;
+  }
+  if (affiliateContactInput) affiliateContactInput.disabled = true;
+  if (affiliateContactHelp) affiliateContactHelp.textContent = "Cargando contactos disponibles...";
+  try {
+    const data = await apiSafe("/api/business/contacts/feed?limit=1000", { headers: authHeaders() }, { contacts: [] });
+    state.affiliateContactChoices = data.contacts || [];
+    renderAffiliateContactChoices();
+    return state.affiliateContactChoices;
+  } finally {
+    if (affiliateContactInput) affiliateContactInput.disabled = Boolean(state.affiliateEditingId);
+  }
+}
+
+function selectedAffiliateContact() {
+  const selected = affiliateContactInput?.value || "";
+  return affiliateContactChoices().find((contact) => affiliateContactRef(contact) === selected) || null;
+}
+
+function applyAffiliateContact(contact) {
+  if (!contact) return;
+  affiliateFullNameInput.value = contact.name || "";
+  affiliateDocumentInput.value = contact.document_id || "";
+  affiliatePhoneInput.value = contact.phone || "";
+  affiliateEmailInput.value = contact.email || "";
+  if (!affiliateNotesInput.value.trim() && contact.interest) {
+    affiliateNotesInput.value = `Contacto existente. Interés: ${contact.interest}`.slice(0, 500);
+  }
+  const missing = [
+    !contact.document_id ? "documento" : "",
+    !contact.phone ? "teléfono" : "",
+    !contact.email ? "email" : "",
+  ].filter(Boolean);
+  if (affiliateContactHelp) {
+    affiliateContactHelp.textContent = missing.length
+      ? `Datos copiados. Completa: ${missing.join(", ")} antes de crear el afiliado.`
+      : "Datos copiados desde Contactos. La ficha original se conserva y este perfil quedará marcado como afiliado.";
+  }
+  affiliateFullNameInput?.focus();
 }
 
 function findAffiliateById(affiliateId) {
@@ -29134,8 +29231,13 @@ function openAffiliateCreateModal(options = {}) {
   state.affiliateEditingId = affiliate?.id || null;
   if (affiliate) {
     fillAffiliateForm(affiliate);
+    if (affiliateContactInput) affiliateContactInput.disabled = true;
   } else {
     resetAffiliateForm();
+    renderAffiliateContactChoices();
+    loadAffiliateContactChoices().catch(() => {
+      if (affiliateContactHelp) affiliateContactHelp.textContent = "No se pudieron cargar los contactos ahora. Puedes crear el afiliado manualmente.";
+    });
   }
   affiliateViewSection()?.classList.add("affiliate-modal-open");
   ensureAffiliateCreateBackdrop().classList.add("is-open");
@@ -29608,6 +29710,16 @@ async function submitAffiliateForm(event) {
       notes: affiliateNotesInput.value.trim() || null,
       card_metadata: {
         source: "portal",
+        source_contact: (() => {
+          const contact = selectedAffiliateContact();
+          return contact ? {
+            id: contact.id || contact.source_id || null,
+            stage: String(contact.stage || contact.source_type || "CONTACT").toUpperCase(),
+            name: contact.name || null,
+            email: contact.email || null,
+            phone: contact.phone || null,
+          } : null;
+        })(),
         profile: {
           company: affiliateCompanyInput?.value.trim() || "",
           position: affiliatePositionInput?.value.trim() || "",
@@ -49334,6 +49446,12 @@ window.addEventListener("beforeunload", () => {
   stopAffiliateFinderScanner();
 });
 affiliateCreateForm?.addEventListener("submit", submitAffiliateForm);
+affiliateContactInput?.addEventListener("change", () => applyAffiliateContact(selectedAffiliateContact()));
+affiliateContactRefreshButton?.addEventListener("click", () => {
+  loadAffiliateContactChoices({ force: true }).catch((error) => {
+    if (affiliateContactHelp) affiliateContactHelp.textContent = error.message || "No se pudieron actualizar los contactos.";
+  });
+});
 resetAffiliateFormButton?.addEventListener("click", resetAffiliateForm);
 affiliateRewardRuleForm?.addEventListener("submit", submitAffiliateRewardRule);
 inventoryProductForm?.addEventListener("submit", submitInventoryProduct);
