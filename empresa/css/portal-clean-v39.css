@@ -16011,6 +16011,460 @@ html body .portal-shell .smart-catalog-product-image-preview figcaption {
   }
 }
 
+/* Radar competitivo — espacio de inteligencia comercial Qori. */
+html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] {
+  display: grid !important;
+  gap: 22px !important;
+  padding-bottom: 34px !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head {
+  position: relative !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  margin: 0 !important;
+  padding: 31px 32px 29px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(17, 89, 151, .22) !important;
+  border-radius: 26px !important;
+  background:
+    radial-gradient(circle at 88% 10%, rgba(107, 222, 234, .28), transparent 28%),
+    radial-gradient(circle at 76% 112%, rgba(8, 124, 183, .34), transparent 46%),
+    linear-gradient(128deg, #062b5f 0%, #07529a 55%, #087e9e 100%) !important;
+  box-shadow: 0 22px 48px rgba(2, 48, 111, .16) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head::after {
+  content: "" !important;
+  position: absolute !important;
+  width: 220px !important;
+  height: 220px !important;
+  right: -72px !important;
+  bottom: -132px !important;
+  border: 1px solid rgba(213, 251, 255, .25) !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 0 26px rgba(213, 251, 255, .06), 0 0 0 52px rgba(213, 251, 255, .035) !important;
+  pointer-events: none !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head > div:first-child {
+  position: relative !important;
+  z-index: 1 !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head > div:first-child::before {
+  content: "INTELIGENCIA DE MERCADO" !important;
+  display: block !important;
+  margin-bottom: 8px !important;
+  color: rgba(221, 251, 255, .82) !important;
+  font-size: .68rem !important;
+  font-weight: 850 !important;
+  letter-spacing: .15em !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head h2 {
+  margin: 0 !important;
+  color: #fff !important;
+  font-size: clamp(1.9rem, 3.5vw, 2.8rem) !important;
+  font-weight: 780 !important;
+  letter-spacing: -.052em !important;
+  line-height: .98 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head p {
+  max-width: 690px !important;
+  margin: 10px 0 0 !important;
+  color: rgba(231, 247, 255, .86) !important;
+  font-size: .95rem !important;
+  line-height: 1.55 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head .head-actions {
+  position: relative !important;
+  z-index: 1 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+  gap: 9px !important;
+  max-width: 510px !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head .head-actions :is(.solid-button, .ghost-button) {
+  min-height: 42px !important;
+  padding: 9px 13px !important;
+  border-radius: 12px !important;
+  font-size: .82rem !important;
+  font-weight: 780 !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head .head-actions .solid-button {
+  color: #073e75 !important;
+  border-color: #d7fbfb !important;
+  background: #edffff !important;
+  box-shadow: 0 9px 20px rgba(1, 37, 82, .18) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head .head-actions .ghost-button {
+  color: #fff !important;
+  border-color: rgba(224, 250, 255, .42) !important;
+  background: rgba(255, 255, 255, .11) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell #competitionKpiGrid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell #competitionKpiGrid > * {
+  position: relative !important;
+  min-width: 0 !important;
+  min-height: 124px !important;
+  padding: 19px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(175, 207, 230, .76) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(145deg, #fff 0%, #f6fbff 100%) !important;
+  box-shadow: 0 10px 24px rgba(11, 61, 110, .07) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell #competitionKpiGrid > *::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 auto 0 0 !important;
+  width: 4px !important;
+  background: #0a89ae !important;
+}
+
+html body[data-current-view="competition"] .portal-shell #competitionKpiGrid > *:nth-child(2)::before { background: #1a66bd !important; }
+html body[data-current-view="competition"] .portal-shell #competitionKpiGrid > *:nth-child(3)::before { background: #b98728 !important; }
+html body[data-current-view="competition"] .portal-shell #competitionKpiGrid > *:nth-child(4)::before { background: #ad4c58 !important; }
+
+html body[data-current-view="competition"] .portal-shell #competitionKpiGrid :is(span, small, .kpi-label) {
+  color: #658099 !important;
+  font-size: .71rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .045em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="competition"] .portal-shell #competitionKpiGrid :is(strong, .kpi-value) {
+  display: block !important;
+  margin-top: 9px !important;
+  color: #093967 !important;
+  font-size: clamp(1.45rem, 2.5vw, 2rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: -.045em !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .contact-center-tabs {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 7px !important;
+  overflow-x: auto !important;
+  scrollbar-width: thin !important;
+  border: 1px solid rgba(183, 211, 231, .84) !important;
+  border-radius: 17px !important;
+  background: rgba(244, 250, 255, .9) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .contact-center-tabs .segment-tab {
+  flex: 0 0 auto !important;
+  min-height: 38px !important;
+  padding: 8px 13px !important;
+  color: #54718b !important;
+  border: 1px solid transparent !important;
+  border-radius: 11px !important;
+  background: transparent !important;
+  font-size: .78rem !important;
+  font-weight: 780 !important;
+  white-space: nowrap !important;
+  transition: background-color .18s ease, color .18s ease, box-shadow .18s ease !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .contact-center-tabs .segment-tab:hover {
+  color: #0b5d97 !important;
+  background: rgba(222, 243, 252, .78) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .contact-center-tabs .segment-tab.active {
+  color: #fff !important;
+  border-color: #075692 !important;
+  background: linear-gradient(135deg, #07538c, #0787a2) !important;
+  box-shadow: 0 7px 16px rgba(2, 84, 139, .2) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] {
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel].hidden {
+  display: none !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel]:not(.hidden) {
+  display: grid !important;
+  gap: 18px !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] .inventory-layout {
+  display: grid !important;
+  grid-template-columns: minmax(300px, .84fr) minmax(0, 1.45fr) !important;
+  align-items: start !important;
+  gap: 18px !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel="competitors"] .inventory-layout {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell :is(#competitorFormPanel, #competitionProductFormPanel):not(.is-competition-modal-open) {
+  display: none !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] :is(.surface-card, .data-table-card) {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(179, 209, 230, .82) !important;
+  border-radius: 20px !important;
+  background: #fff !important;
+  box-shadow: 0 14px 31px rgba(10, 61, 109, .075) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] .table-card-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  min-height: 75px !important;
+  padding: 18px 20px !important;
+  border-bottom: 1px solid rgba(201, 222, 237, .86) !important;
+  background: linear-gradient(180deg, #fff 0%, #f8fcff 100%) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] .table-card-head > div:first-child {
+  display: grid !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] .mono-label {
+  color: #0d7f9a !important;
+  font-size: .67rem !important;
+  font-weight: 850 !important;
+  letter-spacing: .11em !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] .table-card-head strong {
+  color: #0a385f !important;
+  font-size: 1rem !important;
+  line-height: 1.25 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] :is(input[type="search"], .competition-table-filters input) {
+  min-height: 40px !important;
+  padding: 9px 12px !important;
+  color: #173f5f !important;
+  border: 1px solid #cadde9 !important;
+  border-radius: 11px !important;
+  background: #fff !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .competition-table-filters {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(190px, 1fr)) !important;
+  gap: 8px !important;
+  min-width: min(515px, 100%) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] .table-wrap {
+  max-width: 100% !important;
+  overflow: auto !important;
+  background: #fff !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel="competitors"] .table-wrap {
+  max-height: min(560px, calc(100vh - 320px)) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] table {
+  min-width: 720px !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1 !important;
+  padding: 12px 14px !important;
+  color: #557590 !important;
+  border-bottom: 1px solid #d7e6ef !important;
+  background: #f4f9fc !important;
+  font-size: .67rem !important;
+  font-weight: 850 !important;
+  letter-spacing: .055em !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] tbody td {
+  padding: 14px !important;
+  color: #34546d !important;
+  border-bottom: 1px solid #e6eff5 !important;
+  vertical-align: top !important;
+  font-size: .82rem !important;
+  line-height: 1.42 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] tbody tr:hover td {
+  background: #f4fbfe !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .competition-radar-product-cell {
+  gap: 5px !important;
+  min-width: 190px !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .competition-radar-counts {
+  gap: 5px !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .competition-radar-counts span {
+  min-height: 25px !important;
+  padding: 4px 8px !important;
+  color: #38617e !important;
+  border: 1px solid #d8e7f0 !important;
+  background: #f6fafc !important;
+  font-size: .69rem !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] .inventory-form-card:not(#competitorFormPanel):not(#competitionProductFormPanel) .inventory-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 13px 15px !important;
+  padding: 20px !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] .inventory-form label {
+  min-width: 0 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] .inventory-form label > span {
+  color: #41637d !important;
+  font-size: .73rem !important;
+  font-weight: 780 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] .inventory-form :is(input, select, textarea) {
+  color: #173e5c !important;
+  border-color: #cadde9 !important;
+  background: #fbfdff !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel] .inventory-form :is(input, select, textarea):focus {
+  border-color: #0b88aa !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(10, 147, 177, .12) !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel="comparison"] .insight-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel="dashboard"] .data-table-card,
+html body[data-current-view="competition"] .portal-shell [data-competition-panel="swot"] .inventory-form-card {
+  width: 100% !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .competition-detail-card {
+  border: 1px solid rgba(148, 193, 221, .7) !important;
+  border-radius: 24px !important;
+  background: #fff !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .competition-detail-head {
+  padding: 23px 25px 18px !important;
+  background: linear-gradient(135deg, #073c78, #087f9c) !important;
+  border-bottom: 0 !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .competition-detail-head :is(h3, p) { color: #fff !important; }
+html body[data-current-view="competition"] .portal-shell .competition-detail-head p { color: rgba(232, 250, 255, .82) !important; }
+html body[data-current-view="competition"] .portal-shell .competition-detail-head .mono-label { color: rgba(218, 250, 255, .8) !important; }
+
+html body[data-current-view="competition"] .portal-shell .competition-detail-tabs {
+  padding: 10px 16px !important;
+  background: #f6fbfe !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .competition-detail-tabs button.active {
+  color: #fff !important;
+  border-color: #087494 !important;
+  background: #087494 !important;
+}
+
+@media (max-width: 1080px) {
+  html body[data-current-view="competition"] .portal-shell #competitionKpiGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body[data-current-view="competition"] .portal-shell [data-competition-panel] .inventory-layout,
+  html body[data-current-view="competition"] .portal-shell [data-competition-panel="comparison"] .insight-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] { gap: 15px !important; }
+
+  html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+    padding: 24px 20px !important;
+    border-radius: 21px !important;
+  }
+
+  html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head .head-actions {
+    justify-content: flex-start !important;
+  }
+
+  html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head .head-actions :is(.solid-button, .ghost-button) {
+    flex: 1 1 180px !important;
+  }
+
+  html body[data-current-view="competition"] .portal-shell #competitionKpiGrid { grid-template-columns: minmax(0, 1fr) !important; }
+  html body[data-current-view="competition"] .portal-shell #competitionKpiGrid > * { min-height: 102px !important; }
+
+  html body[data-current-view="competition"] .portal-shell .contact-center-tabs { margin-inline: -2px !important; }
+
+  html body[data-current-view="competition"] .portal-shell [data-competition-panel] .table-card-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+    padding: 17px !important;
+  }
+
+  html body[data-current-view="competition"] .portal-shell .competition-table-filters {
+    grid-template-columns: minmax(0, 1fr) !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  html body[data-current-view="competition"] .portal-shell [data-competition-panel] .inventory-form-card:not(#competitorFormPanel):not(#competitionProductFormPanel) .inventory-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 17px !important;
+  }
+}
+
 /* Reward Pass: the issuing workspace must remain readable inside its modal. */
 html body > #rewardPassCreateModal.modal-shell:not(.hidden) {
   z-index: 10050;
@@ -17280,4 +17734,23 @@ html body[data-current-view="channels"] .portal-shell .channel-effort-results-ca
     padding: 18px !important;
     border-radius: 16px !important;
   }
+}
+
+/* Final cascade guard: Radar must never lose its intelligence navigation. */
+html body[data-current-view="competition"] .portal-shell #competitionKpiGrid {
+  display: grid !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .contact-center-tabs {
+  display: flex !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel].hidden {
+  display: none !important;
+}
+
+html body[data-current-view="competition"] .portal-shell [data-competition-panel]:not(.hidden) {
+  display: grid !important;
+  height: auto !important;
+  overflow: visible !important;
 }

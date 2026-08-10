@@ -21677,9 +21677,9 @@ function recommendedActionForFinding(finding = {}) {
 }
 
 function ensureCompetitiveRadarUxStyles() {
-  if (document.getElementById("competitiveRadarUxStylesV77")) return;
+  if (document.getElementById("competitiveRadarUxStylesV78")) return;
   const style = document.createElement("style");
-  style.id = "competitiveRadarUxStylesV77";
+  style.id = "competitiveRadarUxStylesV78";
   style.textContent = `
     body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head {
       align-items: center;
@@ -21695,29 +21695,6 @@ function ensureCompetitiveRadarUxStyles() {
       max-width: 760px;
       margin-top: .45rem;
       color: #64748b;
-    }
-    body[data-current-view="competition"] .portal-shell #competitionKpiGrid,
-    body[data-current-view="competition"] .portal-shell .contact-center-tabs {
-      display: none !important;
-    }
-    body[data-current-view="competition"] .portal-shell [data-competition-panel]:not([data-competition-panel="competitors"]) {
-      display: block !important;
-      height: 0 !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      overflow: visible !important;
-    }
-    body[data-current-view="competition"] .portal-shell [data-competition-panel]:not([data-competition-panel="competitors"]) > * {
-      display: none !important;
-    }
-    body[data-current-view="competition"] .portal-shell [data-competition-panel="products"] > .inventory-layout {
-      display: block !important;
-    }
-    body[data-current-view="competition"] .portal-shell [data-competition-panel="products"] .inventory-table-card {
-      display: none !important;
-    }
-    body[data-current-view="competition"] .portal-shell [data-competition-panel="competitors"] .inventory-layout {
-      display: block !important;
     }
     body[data-current-view="competition"] .portal-shell #competitorFormPanel,
     body[data-current-view="competition"] .portal-shell #competitionProductFormPanel {
@@ -21941,6 +21918,7 @@ function closeCompetitorFormModal() {
 }
 
 function openCompetitionProductModal() {
+  setCompetitionTab("products");
   competitionViewSection()?.classList.add("competition-modal-open");
   competitionProductFormPanel?.classList.add("is-competition-modal-open");
 }
