@@ -21,6 +21,10 @@ function personalize(value, contact) {
     .replace(/{{\s*interes\s*}}/gi, contact.top_interest || "nuestra oferta");
 }
 
+function normalizedRecipientEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
 function normalizeMediaAssets(communication) {
   const saved = Array.isArray(communication?.metadata?.media_assets) ? communication.metadata.media_assets : [];
   const unique = [];
@@ -386,8 +390,38 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
   if (!selected.length) throw badRequest("No encontramos contactos válidos para este envío.");
   if (selected.length !== requestedRecipients.length) throw badRequest("Uno o más contactos ya no están disponibles para este envío.");
 
-  const results = { attempted: selected.length, sent: 0, failed: 0, skipped: 0 };
+  const seenEmails = new Set();
+  const recipientsForDelivery = [];
+  const duplicateEmailRecipients = [];
   for (const contact of selected) {
+    const email = normalizedRecipientEmail(contact.email);
+    if (email && seenEmails.has(email)) {
+      duplicateEmailRecipients.push(contact);
+      continue;
+    }
+    if (email) seenEmails.add(email);
+    recipientsForDelivery.push(contact);
+  }
+  const results = {
+    attempted: selected.length,
+    unique_emails: seenEmails.size,
+    duplicate_emails: duplicateEmailRecipients.length,
+    sent: 0,
+    failed: 0,
+    skipped: 0,
+  };
+  for (const contact of duplicateEmailRecipients) {
+    await saveRecipient({
+      businessId,
+      communicationId: id,
+      contact,
+      status: 'SKIPPED',
+      errorMessage: 'Correo duplicado en la audiencia: se envió una sola copia a esta dirección.',
+      userId,
+    });
+    results.skipped += 1;
+  }
+  for (const contact of recipientsForDelivery) {
     if (!contact.email) {
       await saveRecipient({ businessId, communicationId: id, contact, status: 'SKIPPED', errorMessage: 'Sin correo electrónico', userId });
       results.skipped += 1;
