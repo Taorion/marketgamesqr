@@ -16283,3 +16283,15 @@ body[data-current-view="validator"] .portal-shell .validator-operator-step:not(:
   body[data-current-view="validator"] .portal-shell .validator-operator-step:not(:last-child)::after { top: auto; right: 20px; bottom: -16px; transform: rotate(90deg); }
   body[data-current-view="validator"] .portal-shell .validator-operator-step:nth-child(2)::after { display: grid; }
 }
+
+/* En caja se confirma primero el beneficio; el cierre comercial sigue debajo. */
+body[data-current-view="validator"] .portal-shell .validator-result-grid {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-auto-flow: row;
+  gap: 16px !important;
+  align-items: stretch !important;
+}
+
+body[data-current-view="validator"] .portal-shell .validator-result-grid > .validator-panel {
+  width: 100% !important;
+}
