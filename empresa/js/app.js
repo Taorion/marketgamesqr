@@ -2427,6 +2427,7 @@ let state = {
   rmsRecycling: null,
   rmsRecyclingLoading: false,
   rmsRecyclingStatus: "ALL",
+  recyclingSection: "recycling",
   rmsPostSaleActions: [],
   rmsIntelligencePatterns: null,
   rmsIntelligenceInsights: [],
@@ -41590,7 +41591,7 @@ function recyclingDateTimeValue(value) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function renderRmsRecyclingView() {
+function renderRmsRecyclingQueue() {
   const root = document.getElementById("recyclingWorkspace");
   if (!root) return;
   const data = state.rmsRecycling || { cases: [], metrics: {} };
@@ -41632,6 +41633,109 @@ function renderRmsRecyclingView() {
       showFeedback(action === "REACTIVATE" ? "Lead reactivado y enviado al destino seleccionado." : "Reciclaje actualizado con trazabilidad.", "success", { title: "Reciclaje" });
     } catch (error) { button.disabled = false; showFeedback(error.message || "No pudimos actualizar el reciclaje.", "error", { title: "Reciclaje" }); }
   }));
+}
+
+function recyclingReasonLabel(reason = "") {
+  return ({ TIMING: "Momento inadecuado", BUDGET: "Presupuesto", NO_RESPONSE: "Sin respuesta", WAITING_DECISION: "Espera de decision", NOT_VIABLE_NOW: "Condicion no viable", OTHER: "Otro" })[String(reason).toUpperCase()] || reason || "Sin motivo";
+}
+
+function recyclingStrategyLabel(strategy = "") {
+  return ({ NEW_CONTACT: "Nuevo contacto", NEW_PROPOSAL: "Nueva propuesta", NEW_ACTIVATION: "Nueva activacion", PERMITTED_BENEFIT: "Beneficio permitido", NURTURE: "Nutricion comercial" })[String(strategy).toUpperCase()] || strategy || "Sin estrategia";
+}
+
+function recyclingCaseIdentity(item = {}) {
+  const opportunity = item.opportunity || {};
+  return {
+    name: opportunity.name || "Contacto historico",
+    context: [opportunity.product_interest || "Producto pendiente", opportunity.campaign_name || "Sin campana"].join(" · "),
+    lastInteraction: opportunity.last_interaction_at ? `Ultima interaccion: ${formatDate(opportunity.last_interaction_at)}` : "Sin interaccion reciente",
+  };
+}
+
+function recyclingTabMarkup(section = "recycling") {
+  return [["intelligence", "Inteligencia"], ["recycling", "Reciclaje"], ["recoverable", "Oportunidades recuperables"], ["learning", "Aprendizajes"]]
+    .map(([key, label]) => `<button type="button" data-recycling-section="${key}" class="${section === key ? "active" : ""}" ${section === key ? 'aria-current="page"' : ""}>${label}</button>`).join("");
+}
+
+function recyclingActionPanelMarkup(item = {}) {
+  if (!["SCHEDULED", "DUE", "OVERDUE"].includes(item.recycle_status)) return `<small class="recycling-history-note">Historial conservado · ${escapeHtml(recyclingStatusLabel(item.recycle_status))}</small>`;
+  return `<div class="recycling-row-actions"><label><span>Destino al reactivar</span><select data-recycling-destination><option value="procesamiento" ${item.recycle_target_phase === "procesamiento" ? "selected" : ""}>Evaluacion</option><option value="clasificacion" ${item.recycle_target_phase === "clasificacion" ? "selected" : ""}>Activacion 1</option></select></label><label class="recycling-action-note"><span>Nota de decision</span><textarea rows="2" data-recycling-note placeholder="Contexto o motivo de la decision"></textarea></label><div class="recycling-action-buttons"><button class="solid-button compact" type="button" data-recycling-action="REACTIVATE">Reactivar ahora</button><button class="ghost-button compact danger" type="button" data-recycling-action="LOST">Cerrar como perdida</button></div><details class="recycling-more-actions"><summary>Programacion y estrategia</summary><label><span>Proximo intento</span><input type="datetime-local" value="${escapeHtml(recyclingDateTimeValue(item.recycle_at))}" data-recycling-at></label><button class="ghost-button compact" type="button" data-recycling-action="RESCHEDULE">Reprogramar</button><label><span>Estrategia</span><select data-recycling-strategy><option value="NEW_CONTACT">Nuevo contacto</option><option value="NEW_PROPOSAL">Nueva propuesta</option><option value="NEW_ACTIVATION">Nueva Activacion 1</option><option value="PERMITTED_BENEFIT">Beneficio permitido</option><option value="NURTURE">Nutricion comercial</option></select></label><button class="ghost-button compact" type="button" data-recycling-action="CHANGE_STRATEGY">Actualizar estrategia</button><button class="ghost-button compact danger" type="button" data-recycling-action="CANCEL">Cancelar</button></details></div>`;
+}
+
+function recyclingGroupEntries(cases = [], key, labelFor) {
+  const groups = new Map();
+  cases.forEach((item) => { const value = String(item[key] || "OTHER").toUpperCase(); groups.set(value, (groups.get(value) || 0) + 1); });
+  return Array.from(groups.entries()).sort((a, b) => b[1] - a[1]).map(([value, count]) => ({ label: labelFor(value), count }));
+}
+
+function selectRecyclingSection(target = "recycling") {
+  state.recyclingSection = ["intelligence", "recycling", "recoverable", "learning"].includes(target) ? target : "recycling";
+  if (state.recyclingSection !== "recycling" && state.rmsRecyclingStatus !== "ALL") {
+    state.rmsRecyclingStatus = "ALL";
+    loadRmsRecyclingData({ status: "ALL" }).then(renderRmsRecyclingView).catch((error) => {
+      showFeedback(error.message || "No pudimos actualizar la lectura de Reciclaje.", "error", { title: "Reciclaje" });
+      renderRmsRecyclingView();
+    });
+    return;
+  }
+  renderRmsRecyclingView();
+}
+
+function bindRecyclingActions(root) {
+  root.querySelectorAll("[data-recycling-go-to]").forEach((button) => button.addEventListener("click", () => {
+    selectRecyclingSection(button.dataset.recyclingGoTo || "recycling");
+  }));
+  root.querySelectorAll("[data-recycling-action]").forEach((button) => button.addEventListener("click", async () => {
+    const row = button.closest("[data-recycling-case]");
+    const recyclingCaseId = row?.dataset.recyclingCase;
+    const action = button.dataset.recyclingAction;
+    const note = String(row?.querySelector("[data-recycling-note]")?.value || "").trim();
+    if (!recyclingCaseId || !note) return showFeedback("Escribe el contexto o motivo antes de confirmar esta accion.", "info", { title: "Reciclaje" });
+    if (!window.confirm(`${action === "REACTIVATE" ? "Reactivar este lead manualmente" : "Confirmar esta decision de Reciclaje"}?`)) return;
+    button.disabled = true;
+    try {
+      await api("/api/business/rms-machine/recycling/action", { method: "POST", headers: authHeaders(), body: JSON.stringify({ recycling_case_id: recyclingCaseId, action, note, destination: row.querySelector("[data-recycling-destination]")?.value || null, recycle_at: row.querySelector("[data-recycling-at]")?.value ? new Date(row.querySelector("[data-recycling-at]").value).toISOString() : null, recycle_strategy: row.querySelector("[data-recycling-strategy]")?.value || null, idempotency_key: `recycling:${recyclingCaseId}:${action}:${Date.now()}` }) });
+      state.rmsMachineLoaded = false;
+      await loadRmsRecyclingData({ status: state.rmsRecyclingStatus });
+      renderRmsRecyclingView();
+      showFeedback(action === "REACTIVATE" ? "Lead reactivado y enviado al destino seleccionado." : "Reciclaje actualizado con trazabilidad.", "success", { title: "Reciclaje" });
+    } catch (error) { button.disabled = false; showFeedback(error.message || "No pudimos actualizar el reciclaje.", "error", { title: "Reciclaje" }); }
+  }));
+}
+
+function renderRmsRecyclingView() {
+  const root = document.getElementById("recyclingWorkspace");
+  if (!root) return;
+  const section = ["intelligence", "recycling", "recoverable", "learning"].includes(state.recyclingSection) ? state.recyclingSection : "recycling";
+  const subnav = document.querySelector(".recycling-subnav");
+  if (subnav) {
+    subnav.innerHTML = recyclingTabMarkup(section);
+    subnav.querySelectorAll("[data-recycling-section]").forEach((button) => button.addEventListener("click", () => {
+      selectRecyclingSection(button.dataset.recyclingSection || "recycling");
+    }));
+  }
+  if (section === "recycling") return renderRmsRecyclingQueue();
+
+  const data = state.rmsRecycling || { cases: [], metrics: {} };
+  const cases = data.cases || [];
+  const metrics = data.metrics || {};
+  const openCases = cases.filter((item) => ["SCHEDULED", "DUE", "OVERDUE"].includes(item.recycle_status));
+  const reasonGroups = recyclingGroupEntries(cases, "recycle_reason", recyclingReasonLabel);
+  const strategyGroups = recyclingGroupEntries(cases, "recycle_strategy", recyclingStrategyLabel);
+  const closed = Math.max(1, Number(metrics.converted || 0) + Number(metrics.lost || 0));
+
+  if (section === "intelligence") {
+    root.innerHTML = `<section class="recycling-intelligence-hero"><div><span class="mono-label">INTELIGENCIA COMERCIAL</span><h3>Una cola que conserva contexto y ensena</h3><p>Reciclaje no es una estacion RMS. Aqui se coordina la recuperacion transversal: se lee el estado, se decide el siguiente contacto y se aprende sin perder la historia comercial.</p></div><aside><strong>${openCases.length}</strong><span>oportunidades activas</span></aside></section><section class="recycling-intelligence-grid"><article><span class="material-symbols-outlined" aria-hidden="true">schedule</span><h4>Prioriza por momento</h4><p>${metrics.overdue || 0} vencido${Number(metrics.overdue || 0) === 1 ? "" : "s"} requiere${Number(metrics.overdue || 0) === 1 ? "" : "n"} una decision hoy. Las demas mantienen fecha y responsable visibles.</p><button class="ghost-button compact" type="button" data-recycling-go-to="recoverable">Abrir recuperables</button></article><article><span class="material-symbols-outlined" aria-hidden="true">history_edu</span><h4>Protege la trazabilidad</h4><p>Cada accion exige una nota: el contexto se conserva y solo una reactivacion confirmada devuelve el lead a su fase comercial.</p><button class="ghost-button compact" type="button" data-recycling-go-to="recycling">Ver cola operativa</button></article><article><span class="material-symbols-outlined" aria-hidden="true">auto_graph</span><h4>Convierte casos en criterio</h4><p>Los motivos y estrategias se acumulan como aprendizaje para que la siguiente propuesta no empiece de cero.</p><button class="ghost-button compact" type="button" data-recycling-go-to="learning">Abrir aprendizajes</button></article></section>`;
+    return bindRecyclingActions(root);
+  }
+
+  if (section === "recoverable") {
+    root.innerHTML = `<section class="recycling-section-intro"><div><span class="mono-label">PRIORIZACION COMERCIAL</span><h3>Oportunidades recuperables</h3><p>Estas conversaciones siguen siendo recuperables. Cada decision queda aqui; solo al reactivar vuelve el lead a Evaluacion o Activacion 1.</p></div><span class="recycling-focus-badge">${openCases.length} abiertas</span></section><section class="recycling-opportunity-grid" aria-label="Oportunidades recuperables">${openCases.map((item) => { const contact = recyclingCaseIdentity(item); return `<article class="recycling-opportunity-card ${escapeHtml(String(item.recycle_status).toLowerCase())}" data-recycling-case="${escapeHtml(item.id)}"><header><div><span class="recycling-status status-${escapeHtml(String(item.recycle_status).toLowerCase())}">${escapeHtml(recyclingStatusLabel(item.recycle_status))}</span><h4>${escapeHtml(contact.name)}</h4><p>${escapeHtml(contact.context)}</p></div><strong>${escapeHtml(formatDate(item.recycle_at))}</strong></header><dl><div><dt>Por que vuelve</dt><dd>${escapeHtml(recyclingReasonLabel(item.recycle_reason))}</dd></div><div><dt>Plan actual</dt><dd>${escapeHtml(recyclingStrategyLabel(item.recycle_strategy))}</dd></div><div><dt>Responsable</dt><dd>${escapeHtml(item.recycle_owner || "Por asignar")}</dd></div><div><dt>Contexto</dt><dd>${escapeHtml(contact.lastInteraction)}</dd></div></dl>${recyclingActionPanelMarkup(item)}</article>`; }).join("") || `<section class="recycling-empty-insight"><span class="material-symbols-outlined" aria-hidden="true">verified</span><div><h3>No hay oportunidades pendientes por recuperar</h3><p>Cuando un acuerdo sea recuperable, aparecera aqui con su motivo, estrategia y proximo intento.</p></div></section>`}</section>`;
+    return bindRecyclingActions(root);
+  }
+
+  root.innerHTML = `<section class="recycling-section-intro"><div><span class="mono-label">MEMORIA DE NO CONVERSION</span><h3>Aprendizajes que ayudan a decidir mejor</h3><p>Lectura de los casos documentados. No mueve leads ni ejecuta contactos: sirve para mejorar la siguiente intervencion.</p></div><span class="recycling-focus-badge">${cases.length} casos analizados</span></section><section class="recycling-learning-kpis"><article><span class="material-symbols-outlined" aria-hidden="true">restart_alt</span><div><strong>${escapeHtml(String(metrics.reactivated || 0))}</strong><span>reactivados con trazabilidad</span></div></article><article><span class="material-symbols-outlined" aria-hidden="true">paid</span><div><strong>${escapeHtml(String(metrics.converted || 0))}</strong><span>convertidos despues de reciclar</span></div></article><article><span class="material-symbols-outlined" aria-hidden="true">insights</span><div><strong>${escapeHtml(`${Math.round((Number(metrics.converted || 0) / closed) * 100)}%`)}</strong><span>conversion sobre resultados cerrados</span></div></article></section><section class="recycling-learning-grid"><article class="recycling-learning-card"><header><span class="material-symbols-outlined" aria-hidden="true">flag</span><div><h4>Motivos que se repiten</h4><p>Base para ajustar oferta, momento o seguimiento.</p></div></header><ol>${reasonGroups.map((entry) => `<li><span>${escapeHtml(entry.label)}</span><strong>${escapeHtml(String(entry.count))}</strong></li>`).join("") || "<li><span>Aun no hay motivos documentados</span><strong>0</strong></li>"}</ol></article><article class="recycling-learning-card"><header><span class="material-symbols-outlined" aria-hidden="true">route</span><div><h4>Estrategias que el equipo intenta</h4><p>Contrasta el plan aplicado antes de programar el siguiente caso.</p></div></header><ol>${strategyGroups.map((entry) => `<li><span>${escapeHtml(entry.label)}</span><strong>${escapeHtml(String(entry.count))}</strong></li>`).join("") || "<li><span>Aun no hay estrategias documentadas</span><strong>0</strong></li>"}</ol></article><article class="recycling-learning-card recycling-learning-guidance"><header><span class="material-symbols-outlined" aria-hidden="true">psychology</span><div><h4>Senal operativa</h4><p>Una regla simple basada en el estado real de la cola.</p></div></header><p>${openCases.length ? `${openCases.length} caso${openCases.length === 1 ? "" : "s"} sigue${openCases.length === 1 ? "" : "n"} abierto${openCases.length === 1 ? "" : "s"}. Prioriza primero los vencidos y deja una nota verificable en cada decision.` : "La cola no tiene casos abiertos. Usa esta lectura para revisar los resultados cerrados antes de planear una nueva activacion."}</p><button class="ghost-button compact" type="button" data-recycling-go-to="recoverable">Ver oportunidades recuperables</button></article></section>`;
+  bindRecyclingActions(root);
 }
 
 // RMS never treats a free-text product as a current catalog reference. This
@@ -48731,15 +48835,7 @@ document.querySelector("[data-recycling-refresh]")?.addEventListener("click", ()
   });
 });
 document.querySelectorAll("[data-recycling-section]").forEach((button) => button.addEventListener("click", () => {
-  const target = button.dataset.recyclingSection;
-  if (target === "recycling") return setView("recycling");
-  if (target === "recoverable") {
-    setView("recycling");
-    state.rmsRecyclingStatus = "ALL";
-    loadRmsRecyclingData({ status: "ALL" }).then(renderRmsRecyclingView);
-    return;
-  }
-  setView("rms-machine");
+  selectRecyclingSection(button.dataset.recyclingSection || "recycling");
 }));
 rmsMachineOpenAgendaButton?.addEventListener("click", () => {
   setContactCenterTab("agenda");

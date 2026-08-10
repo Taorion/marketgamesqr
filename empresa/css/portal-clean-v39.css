@@ -16149,6 +16149,350 @@ html body > #missionWizardModal .mission-wizard-form {
   }
 }
 
+/* Reciclaje es una mesa de trabajo transversal: los cuatro paneles comparten
+   jerarquia y contexto sin convertir la navegacion en un salto a RMS. */
+.recycling-subnav {
+  align-items: center;
+  padding: .42rem;
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(15, 47, 71, .05);
+}
+
+.recycling-subnav button {
+  flex: 1 1 max-content;
+  font-weight: 750;
+}
+
+.recycling-subnav button.active {
+  color: #053a57;
+  background: linear-gradient(135deg, rgba(77, 207, 210, .24), rgba(229, 248, 246, .96));
+  box-shadow: inset 0 0 0 1px rgba(16, 130, 135, .14), 0 6px 14px rgba(16, 130, 135, .08);
+}
+
+.recycling-intelligence-hero,
+.recycling-section-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: clamp(1.2rem, 2.8vw, 2rem);
+  border: 1px solid rgba(38, 131, 140, .18);
+  border-radius: 24px;
+  background: radial-gradient(circle at 100% 0%, rgba(76, 208, 207, .2), transparent 38%), linear-gradient(135deg, #f3fbfa, #fff);
+}
+
+.recycling-intelligence-hero h3,
+.recycling-section-intro h3 {
+  margin: .25rem 0 .4rem;
+  color: #073a57;
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
+}
+
+.recycling-intelligence-hero p,
+.recycling-section-intro p {
+  max-width: 760px;
+  margin: 0;
+  color: #506477;
+  line-height: 1.55;
+}
+
+.recycling-intelligence-hero aside,
+.recycling-focus-badge {
+  display: grid;
+  flex: 0 0 auto;
+  min-width: 132px;
+  gap: .16rem;
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  color: #063d55;
+  background: rgba(255, 255, 255, .8);
+  box-shadow: 0 10px 20px rgba(18, 81, 98, .1);
+  text-align: center;
+}
+
+.recycling-intelligence-hero aside strong {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.recycling-intelligence-hero aside span,
+.recycling-focus-badge {
+  font-size: .8rem;
+  font-weight: 750;
+}
+
+.recycling-intelligence-grid,
+.recycling-opportunity-grid,
+.recycling-learning-grid,
+.recycling-learning-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.recycling-intelligence-grid > article,
+.recycling-learning-card,
+.recycling-opportunity-card,
+.recycling-learning-kpis article,
+.recycling-empty-insight {
+  min-width: 0;
+  border: 1px solid rgba(99, 126, 150, .18);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(15, 45, 70, .055);
+}
+
+.recycling-intelligence-grid > article {
+  display: grid;
+  align-content: start;
+  gap: .72rem;
+  padding: 1.2rem;
+}
+
+.recycling-intelligence-grid .material-symbols-outlined,
+.recycling-learning-card header .material-symbols-outlined,
+.recycling-learning-kpis .material-symbols-outlined {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  color: #075d68;
+  background: #e5f6f4;
+}
+
+.recycling-intelligence-grid h4,
+.recycling-learning-card h4 {
+  margin: 0;
+  color: #073a57;
+}
+
+.recycling-intelligence-grid p,
+.recycling-learning-card p {
+  margin: 0;
+  color: #5d7080;
+  line-height: 1.5;
+}
+
+.recycling-intelligence-grid .ghost-button,
+.recycling-learning-guidance .ghost-button {
+  justify-self: start;
+  margin-top: .2rem;
+}
+
+.recycling-opportunity-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.recycling-opportunity-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.15rem;
+}
+
+.recycling-opportunity-card.overdue {
+  border-color: rgba(220, 105, 47, .36);
+  background: linear-gradient(180deg, rgba(255, 248, 243, .88), #fff 38%);
+}
+
+.recycling-opportunity-card > header,
+.recycling-learning-card > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: .8rem;
+}
+
+.recycling-opportunity-card h4 {
+  margin: .25rem 0;
+  color: #073a57;
+  font-size: 1.05rem;
+}
+
+.recycling-opportunity-card header p {
+  margin: 0;
+  color: #637688;
+  font-size: .86rem;
+}
+
+.recycling-opportunity-card > header > strong {
+  color: #31556a;
+  font-size: .82rem;
+  white-space: nowrap;
+}
+
+.recycling-opportunity-card dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin: 0;
+}
+
+.recycling-opportunity-card dl > div {
+  min-width: 0;
+  padding: .7rem;
+  border-radius: 13px;
+  background: #f7fafb;
+}
+
+.recycling-opportunity-card dt {
+  color: #718395;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.recycling-opportunity-card dd {
+  margin: .3rem 0 0;
+  color: #183e55;
+  font-size: .88rem;
+  overflow-wrap: anywhere;
+}
+
+.recycling-row-actions {
+  display: grid;
+  gap: .65rem;
+  min-width: 240px;
+}
+
+.recycling-row-actions label {
+  display: grid;
+  gap: .3rem;
+  min-width: 0;
+  color: #516578;
+  font-size: .76rem;
+  font-weight: 750;
+}
+
+.recycling-row-actions :is(select, input, textarea) {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(96, 127, 150, .24);
+  border-radius: 10px;
+  padding: .52rem .6rem;
+  color: #173d54;
+  background: #fff;
+  font: inherit;
+}
+
+.recycling-row-actions textarea { resize: vertical; }
+
+.recycling-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+}
+
+.recycling-more-actions {
+  padding-top: .15rem;
+  color: #496277;
+}
+
+.recycling-more-actions summary {
+  cursor: pointer;
+  font-size: .8rem;
+  font-weight: 750;
+}
+
+.recycling-more-actions[open] {
+  display: grid;
+  gap: .55rem;
+  padding: .7rem;
+  border-radius: 12px;
+  background: #f6fafb;
+}
+
+.recycling-history-note { color: #647a8a; }
+
+.recycling-learning-kpis article {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: 1rem;
+}
+
+.recycling-learning-kpis strong,
+.recycling-learning-kpis span { display: block; }
+.recycling-learning-kpis strong { color: #073a57; font-size: 1.45rem; }
+.recycling-learning-kpis div span { color: #647687; font-size: .82rem; }
+
+.recycling-learning-card {
+  padding: 1.1rem;
+}
+
+.recycling-learning-card > header {
+  justify-content: flex-start;
+  gap: .7rem;
+}
+
+.recycling-learning-card header p { margin-top: .22rem; font-size: .84rem; }
+
+.recycling-learning-card ol {
+  display: grid;
+  gap: .45rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recycling-learning-card li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .65rem .72rem;
+  border-radius: 11px;
+  background: #f7fafb;
+  color: #34556a;
+  font-size: .88rem;
+}
+
+.recycling-learning-card li strong {
+  display: grid;
+  place-items: center;
+  min-width: 1.65rem;
+  min-height: 1.65rem;
+  border-radius: 999px;
+  color: #075b65;
+  background: #dff4ef;
+}
+
+.recycling-learning-guidance > p { margin: 1rem 0; }
+
+.recycling-empty-insight {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: 1.3rem;
+  color: #365b70;
+}
+
+.recycling-empty-insight .material-symbols-outlined {
+  color: #08716e;
+  font-size: 2rem;
+}
+
+.recycling-empty-insight h3 { margin: 0 0 .25rem; color: #073a57; }
+.recycling-empty-insight p { margin: 0; }
+
+@media (max-width: 900px) {
+  .recycling-intelligence-grid,
+  .recycling-learning-grid,
+  .recycling-learning-kpis { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .recycling-intelligence-hero,
+  .recycling-section-intro { align-items: start; flex-direction: column; }
+  .recycling-intelligence-hero aside,
+  .recycling-focus-badge { width: 100%; }
+  .recycling-opportunity-card dl { grid-template-columns: 1fr; }
+  .recycling-action-buttons > * { flex: 1 1 100%; }
+}
+
 /* El formulario puede superar la altura visible. El encabezado permanece
    visible y el cuerpo del modal es el que se desplaza, para mantener
    alcanzables los campos y las acciones finales. */
