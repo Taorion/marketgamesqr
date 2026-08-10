@@ -16100,7 +16100,7 @@ html body > #rewardPassCreateModal .reward-pass-create-modal-card {
 
 @media (max-width: 620px) {
   html body > #rewardPassCreateModal.modal-shell:not(.hidden) { align-items: stretch; padding: 0; }
-  html body > #rewardPassCreateModal .reward-pass-create-modal-card { width: 100% !important; max-height: 100dvh !important; border-radius: 0 !important; }
+  html body > #rewardPassCreateModal .reward-pass-create-modal-card { width: 100% !important; height: 100dvh !important; max-height: 100dvh !important; border-radius: 0 !important; }
   #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head { padding: 22px 20px 19px; }
   #rewardPassCreateModal .reward-pass-layout { gap: 16px; padding: 20px 16px 24px; }
   #rewardPassCreateModal .reward-pass-form { grid-template-columns: minmax(0, 1fr) !important; }
@@ -16108,4 +16108,22 @@ html body > #rewardPassCreateModal .reward-pass-create-modal-card {
   #rewardPassCreateModal .reward-pass-form .modal-button-row { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
   #rewardPassCreateModal .reward-pass-form .modal-button-row .solid-button { grid-column: span 2; }
   #rewardPassCreateModal .reward-pass-preview-card .affiliate-card-actions { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+/* El formulario puede superar la altura visible. El encabezado permanece
+   visible y el cuerpo del modal es el que se desplaza, para mantener
+   alcanzables los campos y las acciones finales. */
+@media (min-width: 621px) {
+  html body > #rewardPassCreateModal .reward-pass-create-modal-card {
+    height: min(92dvh, 980px) !important;
+  }
+}
+
+#rewardPassCreateModal .reward-pass-layout {
+  min-height: 0 !important;
+  align-self: stretch;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+  padding-bottom: 42px;
 }
