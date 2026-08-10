@@ -49604,6 +49604,19 @@ smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
     showFeedback(error.message || "No se pudo crear la plantilla.", "error", { title: "Catálogos Qori" });
   }
 });
+function isQoriModalBackdrop(target) {
+  if (!(target instanceof Element)) return false;
+  if (target.matches(".modal-shell, .modal-overlay, .modal-backdrop, [data-modal-overlay]")) return true;
+  const id = String(target.id || "");
+  return /(modal|overlay)/i.test(id)
+    && Boolean(target.querySelector('[role="dialog"], .modal-card, .modal-head, .modal-body'));
+}
+
+document.addEventListener("click", (event) => {
+  if (!isQoriModalBackdrop(event.target)) return;
+  event.stopImmediatePropagation();
+}, true);
+
 smartCatalogForm?.addEventListener("submit", submitSmartCatalog);
 smartCatalogProductForm?.addEventListener("submit", submitSmartCatalogProduct);
 smartCatalogProductImageFileInput?.addEventListener("change", () => uploadSmartCatalogProductImage(smartCatalogProductImageFileInput.files?.[0]));
