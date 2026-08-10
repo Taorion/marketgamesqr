@@ -6162,12 +6162,24 @@ function setView(view) {
         `;
       }
     }
-    Promise.all([
+    Promise.allSettled([
       loadDashboardData({ quiet: true }),
       loadAcquisitionChannels({ quiet: true }),
       loadChannelEfforts({ quiet: true }),
-    ]).then(renderDashboard).catch((error) => {
-      showFeedback(error.message || "No se pudo cargar el Centro de Revenue.", "error", { title: "Dashboard" });
+    ]).then((results) => {
+      const failed = results.find((result) => result.status === "rejected");
+      try {
+        renderDashboard();
+      } catch (error) {
+        console.error("Dashboard render failed", error);
+        renderDashboardKpiFallback();
+        showFeedback("No pudimos completar una visualizacion del dashboard. Los KPI basicos siguen disponibles.", "error", { title: "Dashboard" });
+        return;
+      }
+      if (failed) {
+        console.warn("Dashboard auxiliary data failed", failed.reason);
+        showFeedback("El Centro de Revenue cargo los KPI disponibles; una fuente secundaria no respondio y puedes actualizarla despues.", "info", { title: "Dashboard" });
+      }
     });
     if (!state.missionsLoaded) {
       loadGamificationDashboard({ quiet: true }).then(renderRevenueWorkspace).catch(() => {});
@@ -11694,7 +11706,6 @@ function dashboardWidgetsForWorkspaceTab(layout, tab) {
 
 function renderDashboardBuilder() {
   renderDashboardBusinessEconomics();
-  state.dashboardBuilderExpanded = false;
   if (!dashboardBuilderShell || !dashboardWidgetGrid || !dashboardWidgetLibrary) return;
   ensureRevenueCenterUxStyles();
   ensureRevenueCenterWorkspacePolish();
@@ -11881,9 +11892,26 @@ function toggleDashboardAdvancedView() {
   dashboardBuilderShell?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function renderDashboardKpiFallback() {
+  if (!businessKpiGrid) return;
+  const summary = state.summary || {};
+  const items = [
+    ["Estado del dashboard", "Datos parciales", "Actualiza para reintentar las fuentes pendientes."],
+    ["Campanas activas", summary.active_campaigns || 0, "La operacion comercial sigue disponible."],
+    ["Leads capturados", summary.total_leads || 0, "Total registrado para la empresa."],
+    ["Ventas reales", summary.observed_sales_count || summary.direct_sales_count || 0, "Ventas atribuidas disponibles."],
+  ];
+  businessKpiGrid.innerHTML = items.map(([label, value, meta]) => `
+    <article class="kpi-card">
+      <span class="mono-label">${escapeHtml(label)}</span>
+      <strong>${escapeHtml(String(value))}</strong>
+      <div class="kpi-meta">${escapeHtml(meta)}</div>
+    </article>
+  `).join("");
+}
+
 function renderDashboard() {
   renderDashboardBuilder();
-  if (!state.dashboardBuilderExpanded) return;
   renderCommandCenter();
   const summary = state.summary || {};
   const dashboard = state.dashboard || {};
