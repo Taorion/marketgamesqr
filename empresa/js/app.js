@@ -1090,6 +1090,9 @@ const refreshCompetitionButton = document.getElementById("refreshCompetitionButt
 const competitionFormTitle = document.getElementById("competitionFormTitle");
 const competitionSearchInput = document.getElementById("competitionSearchInput");
 const competitionTable = document.getElementById("competitionTable");
+const competitionProductServiceTable = document.getElementById("competitionProductServiceTable");
+const competitionProductViewTabs = Array.from(document.querySelectorAll("[data-competition-product-view]"));
+const competitionProductViewPanels = Array.from(document.querySelectorAll("[data-competition-product-view-panel]"));
 const competitionFindingForm = document.getElementById("competitionFindingForm");
 const competitorCampaignForm = document.getElementById("competitorCampaignForm");
 const competitorCampaignIdInput = document.getElementById("competitorCampaignIdInput");
@@ -1187,6 +1190,7 @@ const competitionCampaignComparisonTable = document.getElementById("competitionC
 const competitionStrategicComparisonTable = document.getElementById("competitionStrategicComparisonTable");
 const competitorDetailModal = document.getElementById("competitorDetailModal");
 const competitorDetailCloseButton = document.getElementById("competitorDetailCloseButton");
+const competitorDetailAddProductButton = document.getElementById("competitorDetailAddProductButton");
 const competitorDetailTitle = document.getElementById("competitorDetailTitle");
 const competitorDetailSummary = document.getElementById("competitorDetailSummary");
 const competitorDetailTabs = document.getElementById("competitorDetailTabs");
@@ -2611,6 +2615,7 @@ let state = {
   competitorCampaignSearch: "",
   competitorEventSearch: "",
   competitionTab: "competitors",
+  competitionProductView: "competitor",
   competitionEditingId: null,
   competitorEditingId: null,
   findingEditingId: null,
@@ -21488,6 +21493,12 @@ function setCompetitionTab(tab = "competitors") {
   competitionPanels.forEach((panel) => panel.classList.toggle("hidden", panel.dataset.competitionPanel !== state.competitionTab));
 }
 
+function setCompetitionProductView(view = "competitor") {
+  state.competitionProductView = view === "product" ? "product" : "competitor";
+  competitionProductViewTabs.forEach((button) => button.classList.toggle("active", button.dataset.competitionProductView === state.competitionProductView));
+  competitionProductViewPanels.forEach((panel) => panel.classList.toggle("hidden", panel.dataset.competitionProductViewPanel !== state.competitionProductView));
+}
+
 function threatLabel(value = "") {
   return { LOW: "Baja", MEDIUM: "Media", HIGH: "Alta", CRITICAL: "Crítica" }[String(value || "").toUpperCase()] || value || "-";
 }
@@ -21930,6 +21941,19 @@ function closeCompetitionProductModal() {
   }
 }
 
+function addCompetitionProductForCompetitor(competitorId = "") {
+  const competitor = competitorById(competitorId);
+  if (!competitor) return;
+  closeCompetitorDetailModal();
+  resetCompetitionForm();
+  renderCompetitionSelectOptions();
+  if (competitionCompetitorSelect) competitionCompetitorSelect.value = competitor.id;
+  if (competitionFormTitle) competitionFormTitle.textContent = `Nuevo producto de ${competitor.name}`;
+  setInlineMessage(competitionMessage, `Registrarás un producto, servicio, precio o evidencia para ${competitor.name}.`, "info");
+  openCompetitionProductModal();
+  competitionProductNameInput?.focus();
+}
+
 function competitorProductsFor(competitor = {}) {
   const key = String(competitor.id || "");
   const name = String(competitor.name || "").trim().toLowerCase();
@@ -22124,6 +22148,7 @@ function renderCompetitorDetailModal() {
 function renderCompetitionView() {
   ensureCompetitiveRadarUxStyles();
   setCompetitionTab("competitors");
+  setCompetitionProductView(state.competitionProductView || "competitor");
   renderCompetitionSelectOptions();
   if (competitionKpiGrid) {
     competitionKpiGrid.innerHTML = competitionKpis().map((item) => `
@@ -22207,6 +22232,7 @@ function renderCompetitionProductsTable() {
   if (!competitionTable) return;
   if (!state.competitionLoaded) {
     competitionTable.innerHTML = '<tr><td colspan="9">Cargando productos y precios...</td></tr>';
+    if (competitionProductServiceTable) competitionProductServiceTable.innerHTML = '<tr><td colspan="6">Cargando mapa de productos y servicios...</td></tr>';
     return;
   }
   const rows = filteredCompetitionProducts();
@@ -22229,6 +22255,61 @@ function renderCompetitionProductsTable() {
   }).join("") || '<tr><td colspan="9">Sin productos de competidores registrados.</td></tr>';
   competitionTable.querySelectorAll("[data-competition-edit]").forEach((button) => button.addEventListener("click", () => editCompetitionProduct(button.dataset.competitionEdit)));
   competitionTable.querySelectorAll("[data-competition-delete]").forEach((button) => button.addEventListener("click", () => archiveCompetitionProduct(button.dataset.competitionDelete)));
+  renderCompetitionProductServiceTable(rows);
+}
+
+function normalizedCompetitionProductName(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function renderCompetitionProductServiceTable(products = []) {
+  if (!competitionProductServiceTable) return;
+  const groups = new Map();
+  products.forEach((product) => {
+    const key = normalizedCompetitionProductName(product.product_name);
+    if (!key) return;
+    if (!groups.has(key)) groups.set(key, { label: product.product_name, products: [] });
+    groups.get(key).products.push(product);
+  });
+
+  const rows = Array.from(groups.values())
+    .sort((a, b) => a.label.localeCompare(b.label, "es"))
+    .map((group) => {
+      const competitors = Array.from(new Map(group.products.map((product) => {
+        const competitor = competitorById(product.competitor_id);
+        const name = product.linked_competitor_name || product.competitor_name || competitor?.name || "Competidor sin nombre";
+        return [String(product.competitor_id || name).toLowerCase(), name];
+      })).values());
+      const prices = group.products
+        .map((product) => Number(product.competitor_price))
+        .filter((value) => Number.isFinite(value) && value >= 0)
+        .sort((a, b) => a - b);
+      const ownReferences = Array.from(new Set(group.products.map((product) => product.own_product_name).filter(Boolean)));
+      const latest = group.products
+        .slice()
+        .sort((a, b) => new Date(b.observed_at || b.created_at || 0) - new Date(a.observed_at || a.created_at || 0))[0];
+      const priceLabel = !prices.length
+        ? "Sin precio"
+        : prices[0] === prices[prices.length - 1]
+          ? money(prices[0])
+          : `${money(prices[0])} — ${money(prices[prices.length - 1])}`;
+      return `
+        <tr>
+          <td><strong>${escapeHtml(group.label)}</strong><span class="table-secondary">${escapeHtml(group.products[0]?.category || "Sin categoría")}</span></td>
+          <td><span class="competition-radar-counts">${competitors.map((name) => `<span>${escapeHtml(name)}</span>`).join("")}</span></td>
+          <td><strong>${escapeHtml(priceLabel)}</strong><span class="table-secondary">${escapeHtml(String(prices.length))} precio${prices.length === 1 ? "" : "s"} registrado${prices.length === 1 ? "" : "s"}</span></td>
+          <td>${escapeHtml(ownReferences.join(" · ") || "Sin referente propio")}</td>
+          <td>${escapeHtml(formatDate(latest?.observed_at || latest?.created_at))}</td>
+          <td><span class="competition-radar-counts"><span>${escapeHtml(String(group.products.length))} observación${group.products.length === 1 ? "" : "es"}</span><span>${escapeHtml(String(competitors.length))} competidor${competitors.length === 1 ? "" : "es"}</span></span></td>
+        </tr>
+      `;
+    });
+  competitionProductServiceTable.innerHTML = rows.join("") || '<tr><td colspan="6">Sin productos o servicios para comparar todavía.</td></tr>';
 }
 
 function renderCompetitorCampaignsTable() {
@@ -49708,6 +49789,7 @@ competitorEventSearchInput?.addEventListener("input", () => {
   renderCompetitorEventsTable();
 });
 competitorDetailCloseButton?.addEventListener("click", closeCompetitorDetailModal);
+competitorDetailAddProductButton?.addEventListener("click", () => addCompetitionProductForCompetitor(state.competitorDetailId || ""));
 competitorDetailModal?.addEventListener("click", (event) => {
   if (event.target === competitorDetailModal) closeCompetitorDetailModal();
 });
@@ -49716,6 +49798,9 @@ competitorDetailTabs?.addEventListener("click", (event) => {
   if (!button) return;
   state.competitorDetailTab = button.dataset.competitorDetailTab || "prices";
   renderCompetitorDetailModal();
+});
+competitionProductViewTabs.forEach((button) => {
+  button.addEventListener("click", () => setCompetitionProductView(button.dataset.competitionProductView || "competitor"));
 });
 customerAcquisitionProductInput?.addEventListener("change", () => {
   applyInventoryProductToSaleInput(customerAcquisitionProductInput, customerAcquisitionAmountInput, customerAcquisitionCurrencyInput);

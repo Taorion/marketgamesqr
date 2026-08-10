@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=competitive-radar-qori-v294-20260810">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=competitive-radar-products-v295-20260810">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -5734,28 +5734,51 @@
               <article class="surface-card data-table-card inventory-table-card">
                 <div class="table-card-head">
                   <div>
-                    <span class="mono-label">Directorio</span>
-                    <strong>Productos y precios de competidores</strong>
+                    <span class="mono-label">Mapa de oferta</span>
+                    <strong>Productos y servicios observados</strong>
                   </div>
                   <input id="competitionSearchInput" type="search" placeholder="Buscar competidor, producto, categoría o canal">
                 </div>
-                <div class="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Competidor</th>
-                        <th>Producto</th>
-                        <th>Categoría</th>
-                        <th>Precio competidor</th>
-                        <th>Producto propio</th>
-                        <th>Precio propio</th>
-                        <th>Diferencia</th>
-                        <th>Fuente</th>
-                        <th>Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody id="competitionTable"></tbody>
-                  </table>
+                <div class="competition-product-view-tabs" role="tablist" aria-label="Forma de leer productos competidores">
+                  <button class="active" type="button" data-competition-product-view="competitor">Por competidor</button>
+                  <button type="button" data-competition-product-view="product">Por producto o servicio</button>
+                </div>
+                <div class="competition-product-view-panel" data-competition-product-view-panel="competitor">
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Competidor</th>
+                          <th>Producto</th>
+                          <th>Categoría</th>
+                          <th>Precio competidor</th>
+                          <th>Producto propio</th>
+                          <th>Precio propio</th>
+                          <th>Diferencia</th>
+                          <th>Fuente</th>
+                          <th>Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody id="competitionTable"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="competition-product-view-panel hidden" data-competition-product-view-panel="product">
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Producto o servicio</th>
+                          <th>Competidores que lo tienen</th>
+                          <th>Precios observados</th>
+                          <th>Referente propio</th>
+                          <th>Última observación</th>
+                          <th>Registros</th>
+                        </tr>
+                      </thead>
+                      <tbody id="competitionProductServiceTable"></tbody>
+                    </table>
+                  </div>
                 </div>
               </article>
             </section>
@@ -5978,9 +6001,12 @@
                     <h3 id="competitorDetailTitle">Competidor</h3>
                     <p id="competitorDetailSummary">Precios, productos, campañas, eventos, hallazgos, DOFA y análisis comparativo.</p>
                   </div>
-                  <button class="icon-button" id="competitorDetailCloseButton" type="button" aria-label="Cerrar detalle competitivo">
-                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
-                  </button>
+                  <div class="competition-detail-actions">
+                    <button class="ghost-button" id="competitorDetailAddProductButton" type="button">Agregar producto</button>
+                    <button class="icon-button" id="competitorDetailCloseButton" type="button" aria-label="Cerrar detalle competitivo">
+                      <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                    </button>
+                  </div>
                 </div>
                 <div class="competition-detail-tabs" id="competitorDetailTabs" aria-label="Secciones del detalle competitivo"></div>
                 <div class="competition-detail-body" id="competitorDetailBody"></div>
@@ -7562,7 +7588,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=competitive-radar-qori-v294-20260810" defer></script>
+<script src="js/app.js?v=competitive-radar-products-v295-20260810" defer></script>
     <script src="js/communications.js?v=branch-attribution-v281-20260810" defer></script>
 </body>
 </html>
