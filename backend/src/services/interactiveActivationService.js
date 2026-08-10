@@ -977,17 +977,46 @@ async function listDeletedInteractiveActivations(businessId) {
   return result.rows.map(mapActivation);
 }
 
-async function communicationAttribution(client, activation, token) {
+function communicationTrackingSource(value) {
+  return String(value || "").toLowerCase() === "email" ? "email" : "social";
+}
+async function communicationAttribution(client, activation, token, source = "social") {
   if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(String(token || ""))) return null;
-  const result = await client.query("select id from business_communications where business_id=$1 and activation_id=$2 and tracking_token=$3 and publication_status='PUBLISHED'", [activation.company_id, activation.id, token]);
-  return result.rows[0] || null;
+  const trackingSource = communicationTrackingSource(source);
+  const result = await client.query(
+    `select bc.id, bc.campaign_id, bc.channel_id, c.name as campaign_name, ch.name as channel_name
+     from business_communications bc
+     left join campaigns c on c.id = bc.campaign_id and c.business_id = bc.business_id
+     left join business_acquisition_channels ch on ch.id = bc.channel_id and ch.business_id = bc.business_id
+     where bc.business_id=$1 and bc.activation_id=$2 and bc.tracking_token=$3
+       and (publication_status='PUBLISHED' or ($4 = 'email' and communication_type in ('EMAIL', 'MIXED')))`,
+    [activation.company_id, activation.id, token, trackingSource]
+  );
+  return result.rowCount ? { ...result.rows[0], tracking_source: trackingSource } : null;
+}
+function communicationAttributionMetadata(attribution) {
+  if (!attribution?.id) return {};
+  return {
+    communication_attribution: {
+      communication_id: attribution.id,
+      tracking_source: attribution.tracking_source,
+      campaign_id: attribution.campaign_id || null,
+      channel_id: attribution.channel_id || null,
+    },
+    communication_campaign_id: attribution.campaign_id || null,
+    communication_campaign_name: attribution.campaign_name || null,
+    acquisition_channel_id: attribution.channel_id || null,
+    acquisition_channel_name_snapshot: attribution.channel_name || null,
+    acquisition_channel_source: "COMMUNICATION",
+    channel: attribution.channel_name || null,
+  };
 }
 async function recordCommunicationEvent(client, activation, attribution, eventType, extra = {}) {
   if (!attribution?.id) return;
-  await client.query("insert into business_communication_events (business_id, communication_id, activation_id, participant_id, qr_code_id, event_type, metadata) values ($1,$2,$3,$4,$5,$6,$7::jsonb)", [activation.company_id, attribution.id, activation.id, extra.participant_id || null, extra.qr_code_id || null, eventType, JSON.stringify(extra.metadata || {})]);
+  await client.query("insert into business_communication_events (business_id, communication_id, activation_id, participant_id, qr_code_id, event_type, metadata) values ($1,$2,$3,$4,$5,$6,$7::jsonb)", [activation.company_id, attribution.id, activation.id, extra.participant_id || null, extra.qr_code_id || null, eventType, JSON.stringify({ tracking_source: attribution.tracking_source || null, ...(extra.metadata || {}) })]);
 }
 
-async function getPublicInteractiveActivation(slug, trackingToken = null) {
+async function getPublicInteractiveActivation(slug, trackingToken = null, trackingSource = null) {
   const activationResult = await query(
     `select a.*, b.name as business_name, b.slug as business_slug, b.settings as business_settings
      from interactive_activations a
@@ -1000,7 +1029,7 @@ async function getPublicInteractiveActivation(slug, trackingToken = null) {
     throw notFound("Activacion no encontrada.");
   }
   assertActivationOpen(activation);
-  const attribution = await communicationAttribution({ query }, activation, trackingToken);
+  const attribution = await communicationAttribution({ query }, activation, trackingToken, trackingSource);
   await recordCommunicationEvent({ query }, activation, attribution, "ACTIVATION_VIEWED");
   const [questions, scoreRules, touchZones] = await Promise.all([
     query("select * from interactive_activation_questions where activation_id = $1 order by order_index asc", [activation.id]),
@@ -1018,11 +1047,11 @@ async function startInteractiveParticipant(slug, body) {
     const existingReward = await existingRewardResponseForIdentity(client, activation, body);
     if (existingReward) return existingReward;
     await assertDuplicateParticipant(client, activation, body);
+    const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token, body.metadata?.communication_tracking_source);
+    const attributionMetadata = communicationAttributionMetadata(attribution);
     const gameSessionToken = createSecureToken();
-    const player = await createPlayer(client, activation, body, { status: "started" });
-    const metadata = activationFormMetadata(activation, body, { status: "started" });
-    const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token);
-    if (attribution) metadata.communication_attribution = { communication_id: attribution.id };
+    const player = await createPlayer(client, activation, body, { status: "started", ...attributionMetadata });
+    const metadata = activationFormMetadata(activation, body, { status: "started", ...attributionMetadata });
     const participantResult = await client.query(
       `insert into interactive_activation_participants
         (activation_id, company_id, player_id, name, document, phone, email, metadata, status,
@@ -1084,8 +1113,13 @@ async function completeInteractiveParticipant(slug, body) {
     const metadata = activationFormMetadata(activation, body, {
       anti_abuse: antiAbuseSummary(activation, participant, body, score),
     });
-    const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token || participant.metadata?.communication_tracking_token);
-    if (attribution) metadata.communication_attribution = { communication_id: attribution.id };
+    const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token || participant.metadata?.communication_tracking_token, body.metadata?.communication_tracking_source || participant.metadata?.communication_tracking_source);
+    if (attribution) Object.assign(metadata, communicationAttributionMetadata(attribution));
+
+    if (!body.participant_id) {
+      await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_STARTED", { participant_id: participant.id });
+      await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participant.id });
+    }
 
     await client.query(
       `update interactive_activation_participants
@@ -1402,8 +1436,10 @@ async function lockParticipant(client, activation, participantId) {
 
 async function createParticipantInsideCompletion(client, activation, body) {
   await assertDuplicateParticipant(client, activation, body);
-  const player = await createPlayer(client, activation, body, { status: "completed" });
-  const metadata = activationFormMetadata(activation, body, { status: "completed" });
+  const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token, body.metadata?.communication_tracking_source);
+  const attributionMetadata = communicationAttributionMetadata(attribution);
+  const player = await createPlayer(client, activation, body, { status: "completed", ...attributionMetadata });
+  const metadata = activationFormMetadata(activation, body, { status: "completed", ...attributionMetadata });
   const result = await client.query(
     `insert into interactive_activation_participants
       (activation_id, company_id, player_id, name, document, phone, email, metadata, status)

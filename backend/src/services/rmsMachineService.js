@@ -467,8 +467,8 @@ function entryContext(row = {}, sourceType = crmSourceType(row)) {
     metadata.activation_title
   );
   const activationType = firstPresent(metadata.interactive_activation_type, metadata.activation_type);
-  const campaignName = firstPresent(row.campaign_name, metadata.campaign_name);
-  const channel = firstPresent(row.channel, metadata.channel, metadata.preferred_channel, metadata.source);
+  const campaignName = firstPresent(metadata.communication_campaign_name, row.campaign_name, metadata.campaign_name);
+  const channel = firstPresent(metadata.acquisition_channel_name_snapshot, row.acquisition_channel_name_snapshot, row.channel, metadata.channel, metadata.preferred_channel, metadata.source);
   const sourceLabel = firstPresent(
     metadata.source_label,
     metadata.lead_source,
@@ -763,12 +763,13 @@ function opportunityFromRow(row = {}, stateRow = null, inventoryProducts = []) {
     created_at: row.created_at || null,
     phone: row.phone || "",
     email: row.email || "",
-    campaign_id: row.campaign_id || null,
+    campaign_id: metadataObject(row).communication_campaign_id || metadataObject(row).communication_attribution?.campaign_id || row.campaign_id || null,
+    communication_id: metadataObject(row).communication_attribution?.communication_id || null,
     campaign_name: entry.campaign_name || row.campaign_name || "",
-    acquisition_channel_id: row.acquisition_channel_id || null,
-    acquisition_channel_name_snapshot: row.acquisition_channel_name_snapshot || row.acquisition_channel || null,
-    acquisition_channel_slug_snapshot: row.acquisition_channel_slug_snapshot || null,
-    acquisition_channel_source: row.acquisition_channel_source || null,
+    acquisition_channel_id: metadataObject(row).acquisition_channel_id || metadataObject(row).communication_attribution?.channel_id || row.acquisition_channel_id || null,
+    acquisition_channel_name_snapshot: metadataObject(row).acquisition_channel_name_snapshot || row.acquisition_channel_name_snapshot || row.acquisition_channel || null,
+    acquisition_channel_slug_snapshot: metadataObject(row).acquisition_channel_slug_snapshot || row.acquisition_channel_slug_snapshot || null,
+    acquisition_channel_source: metadataObject(row).acquisition_channel_source || row.acquisition_channel_source || null,
     channel: entry.channel || row.acquisition_channel_name_snapshot || row.channel || row.acquisition_channel || "",
     source_label: entry.source_label,
     source_detail: entry.source_detail,
@@ -2084,6 +2085,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     rms_source_type: sourceType,
     rms_source_id: payload.source_id,
     rms_opportunity_id: item.id,
+    communication_id: item.communication_id || null,
     product_snapshot: {
       inventory_product_id: productSnapshot.inventory_product_id,
       product_name_snapshot: productSnapshot.product_name_snapshot,

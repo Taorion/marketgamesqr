@@ -144,9 +144,11 @@ async function listBusinessCommunications(businessId) {
        where bs.business_id = bc.business_id and (q.metadata->>'communication_id' = bc.id::text or bs.metadata->>'communication_id' = bc.id::text)
      ) sm on true
      left join lateral (
-       select coalesce(sum(e.budget_amount), 0)::numeric as investment
+       select coalesce(e.budget_amount, 0)::numeric as investment
        from business_acquisition_channel_efforts e
        where e.business_id = bc.business_id and e.metadata->>'communication_id' = bc.id::text and e.status <> 'ARCHIVED'
+       order by e.updated_at desc nulls last, e.created_at desc
+       limit 1
      ) pm on true
      where bc.business_id = $1 and bc.status <> 'ARCHIVED'
      order by bc.updated_at desc`,
@@ -154,12 +156,21 @@ async function listBusinessCommunications(businessId) {
   );
   return { communications: result.rows.map((row) => {
     const investment = Number(row.investment || 0); const revenue = Number(row.revenue || 0); const customers = Number(row.customers || 0);
-    return { ...row, tracking_url: row.activation_public_slug ? publicActivationUrl(row.activation_public_slug, row.tracking_token) : null, views: Number(row.views || 0), starts: Number(row.starts || 0), leads: Number(row.leads || 0), completions: Number(row.completions || 0), rewards: Number(row.rewards || 0), sales: Number(row.sales || 0), revenue, investment, cac: customers ? investment / customers : null, roi: investment ? (revenue - investment) / investment : null };
+    return { ...row, ...trackingUrls(row), views: Number(row.views || 0), starts: Number(row.starts || 0), leads: Number(row.leads || 0), completions: Number(row.completions || 0), rewards: Number(row.rewards || 0), sales: Number(row.sales || 0), revenue, investment, cac: customers ? investment / customers : null, roi: investment ? (revenue - investment) / investment : null };
   }) };
 }
 
-function publicActivationUrl(slug, trackingToken) {
-  return `${String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "")}/activacion/${encodeURIComponent(slug)}?qori_ref=${encodeURIComponent(trackingToken)}`;
+function publicActivationUrl(slug, trackingToken, source = "social") {
+  const trackingSource = String(source || "social").toLowerCase() === "email" ? "email" : "social";
+  return `${String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "")}/activacion/${encodeURIComponent(slug)}?qori_ref=${encodeURIComponent(trackingToken)}&qori_source=${trackingSource}`;
+}
+
+function trackingUrls(row) {
+  if (!row?.activation_public_slug || !row?.tracking_token) return { tracking_url: null, email_tracking_url: null };
+  return {
+    tracking_url: publicActivationUrl(row.activation_public_slug, row.tracking_token, "social"),
+    email_tracking_url: publicActivationUrl(row.activation_public_slug, row.tracking_token, "email"),
+  };
 }
 
 async function publishBusinessCommunication(businessId, userId, id, payload = {}) {
@@ -170,17 +181,35 @@ async function publishBusinessCommunication(businessId, userId, id, payload = {}
   if (!communication.activation_id || !communication.channel_id) throw badRequest("Conecta una activación y un canal antes de registrar esta publicación medida.");
   const activation = await query("select public_slug from interactive_activations where id = $1 and company_id = $2", [communication.activation_id, businessId]);
   if (!activation.rowCount) throw badRequest("La activación seleccionada ya no está disponible.");
-  const trackingUrl = publicActivationUrl(activation.rows[0].public_slug, communication.tracking_token);
+  const trackingUrl = publicActivationUrl(activation.rows[0].public_slug, communication.tracking_token, "social");
   const investment = Number(payload.investment_amount || 0);
   if (!Number.isFinite(investment) || investment < 0) throw badRequest("La inversión debe ser un valor válido mayor o igual a cero.");
-  await query(
-    `insert into business_acquisition_channel_efforts (business_id, channel_id, campaign_id, title, description, content_type, status, published_at, budget_amount, source_url, metadata, created_by_user_id)
-     values ($1,$2,$3,$4,$5,'POST','ACTIVE',now(),$6,$7,$8::jsonb,$9)`,
-    [businessId, communication.channel_id, communication.campaign_id || null, communication.title, communication.social_copy || null, investment, payload.external_publication_url || trackingUrl, JSON.stringify({ communication_id: communication.id, tracking_token: communication.tracking_token, tracking_url: trackingUrl, activation_id: communication.activation_id }), userId]
+  const effortMetadata = JSON.stringify({ communication_id: communication.id, tracking_token: communication.tracking_token, tracking_url: trackingUrl, activation_id: communication.activation_id });
+  const existingEffort = await query(
+    `select id from business_acquisition_channel_efforts
+     where business_id = $1 and metadata->>'communication_id' = $2 and status <> 'ARCHIVED'
+     order by updated_at desc nulls last, created_at desc
+     limit 1`,
+    [businessId, communication.id]
   );
+  if (existingEffort.rowCount) {
+    await query(
+      `update business_acquisition_channel_efforts
+       set channel_id=$3, campaign_id=$4, title=$5, description=$6, content_type='POST', status='ACTIVE',
+           published_at=coalesce(published_at, now()), budget_amount=$7, source_url=$8, metadata=$9::jsonb
+       where id=$1 and business_id=$2`,
+      [existingEffort.rows[0].id, businessId, communication.channel_id, communication.campaign_id || null, communication.title, communication.social_copy || null, investment, payload.external_publication_url || trackingUrl, effortMetadata]
+    );
+  } else {
+    await query(
+      `insert into business_acquisition_channel_efforts (business_id, channel_id, campaign_id, title, description, content_type, status, published_at, budget_amount, source_url, metadata, created_by_user_id)
+       values ($1,$2,$3,$4,$5,'POST','ACTIVE',now(),$6,$7,$8::jsonb,$9)`,
+      [businessId, communication.channel_id, communication.campaign_id || null, communication.title, communication.social_copy || null, investment, payload.external_publication_url || trackingUrl, effortMetadata, userId]
+    );
+  }
   const updated = await query("update business_communications set publication_status='PUBLISHED', published_at=coalesce(published_at, now()), published_by=$3, external_publication_url=coalesce($4, external_publication_url), updated_by=$3, updated_at=now() where id=$1 and business_id=$2 returning *", [id, businessId, userId, payload.external_publication_url || null]);
   await query("insert into business_communication_events (business_id, communication_id, activation_id, event_type, metadata) values ($1,$2,$3,'PUBLISHED',$4::jsonb)", [businessId, id, communication.activation_id, JSON.stringify({ tracking_url: trackingUrl, investment })]);
-  return { communication: { ...updated.rows[0], tracking_url: trackingUrl } };
+  return { communication: { ...updated.rows[0], tracking_url: trackingUrl, email_tracking_url: publicActivationUrl(activation.rows[0].public_slug, communication.tracking_token, "email") } };
 }
 
 async function createBusinessCommunication(businessId, userId, payload) {
@@ -253,6 +282,12 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
   const communication = found.rows[0];
   if (!['EMAIL', 'MIXED'].includes(communication.communication_type)) throw badRequest("Esta comunicación no está configurada para email.");
   if (!communication.subject || !communication.email_body) throw badRequest("Completa asunto y mensaje antes de enviar.");
+  let emailTrackingUrl = null;
+  if (communication.activation_id) {
+    const activation = await query("select public_slug from interactive_activations where id = $1 and company_id = $2", [communication.activation_id, businessId]);
+    if (!activation.rowCount) throw badRequest("La activación seleccionada ya no está disponible.");
+    emailTrackingUrl = publicActivationUrl(activation.rows[0].public_slug, communication.tracking_token, "email");
+  }
   const requestedRecipients = [];
   const requestedKeys = new Set();
   for (const item of recipientRefs || []) {
@@ -292,7 +327,7 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
         to: contact.email,
         subject,
         text: message,
-        html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(attachments.length), actionUrl: communication.action_url }),
+        html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(attachments.length), actionUrl: emailTrackingUrl || communication.action_url }),
         attachments,
       });
       await saveRecipient({ businessId, communicationId: id, contact, status: 'SENT', providerMessageId: provider.id, userId });

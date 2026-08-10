@@ -363,6 +363,7 @@ function participantPayload() {
       source_url: window.location.href,
       user_agent: navigator.userAgent,
       communication_tracking_token: new URLSearchParams(window.location.search).get("qori_ref") || null,
+      communication_tracking_source: new URLSearchParams(window.location.search).get("qori_source") || null,
       activation_form: enriched.activationForm,
       rms_intake: enriched.rmsIntake,
     },
