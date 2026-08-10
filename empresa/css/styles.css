@@ -68159,9 +68159,9 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-main
 }
 
 #gamingActivationBuilderModal .gaming-builder-assistant {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 7 !important;
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
   display: grid !important;
   grid-template-columns: minmax(170px, .85fr) minmax(0, 2.2fr) auto !important;
   align-items: center !important;
@@ -68394,9 +68394,9 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-main
 }
 
 #gamingActivationBuilderModal .gaming-activation-wizard-footer {
-  position: sticky !important;
-  bottom: 0 !important;
-  z-index: 8 !important;
+  position: static !important;
+  bottom: auto !important;
+  z-index: auto !important;
   display: flex !important;
   justify-content: space-between !important;
   gap: 14px !important;
