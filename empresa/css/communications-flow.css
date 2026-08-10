@@ -110,6 +110,26 @@
    the primary actions are always available without nesting a second panel. */
 body.communication-composer-open { overflow: hidden; }
 
+body.communication-delivery-summary-open { overflow: hidden; }
+#communicationDeliverySummaryModal.modal-shell:not(.hidden) { z-index: 10060; padding: 20px; background: rgba(4, 30, 78, .64); backdrop-filter: blur(10px); }
+#communicationDeliverySummaryModal .communication-delivery-summary-card { width: min(920px, calc(100vw - 32px)); max-height: min(88dvh, 860px); overflow: auto; padding: 0; border: 0; border-radius: 24px; background: #fff; box-shadow: 0 30px 90px rgba(0, 29, 86, .34); }
+#communicationDeliverySummaryModal header { display: flex; justify-content: space-between; gap: 20px; padding: 28px 32px 24px; color: #fff; background: linear-gradient(125deg, #063a91, #0872cf 55%, #09afd9); }
+#communicationDeliverySummaryModal h3 { margin: 6px 0 0; color: #fff; font-size: clamp(1.35rem, 3vw, 2rem); }
+#communicationDeliverySummaryModal header p { margin: 6px 0 0; color: rgba(255,255,255,.85); }
+#communicationDeliverySummaryModal header .mono-label { color: rgba(255,255,255,.78); }
+#communicationDeliverySummaryModal header .icon-button { color: #fff; border-color: rgba(255,255,255,.42); background: rgba(255,255,255,.12); }
+.communication-delivery-summary-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 24px 32px 8px; }
+.communication-delivery-summary-metrics article { display: grid; gap: 4px; min-height: 104px; padding: 14px; border: 1px solid #dceaf6; border-radius: 14px; background: linear-gradient(145deg, #fbfdff, #eff9ff); }
+.communication-delivery-summary-metrics span,.communication-delivery-summary-context .mono-label,.communication-delivery-summary-message .mono-label { color: #64809f; font-size: .72rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.communication-delivery-summary-metrics strong { color: #073b84; font-size: 1.25rem; }
+.communication-delivery-summary-metrics small,.communication-delivery-summary-context small { color: #65809d; line-height: 1.4; }
+.communication-delivery-summary-context { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 16px 32px; }
+.communication-delivery-summary-context > div { display: grid; gap: 5px; padding: 14px 0; border-top: 1px solid #e1ecf5; }
+.communication-delivery-summary-context strong { color: #123e72; }
+.communication-delivery-summary-message { display: grid; gap: 9px; margin: 0 32px 32px; padding: 18px; border-radius: 16px; background: #f5fbff; }
+.communication-delivery-summary-message pre { margin: 0; color: #294b6e; font: inherit; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 620px) { #communicationDeliverySummaryModal.modal-shell:not(.hidden) { padding: 8px; } #communicationDeliverySummaryModal .communication-delivery-summary-card { width: 100%; max-height: calc(100dvh - 16px); } #communicationDeliverySummaryModal header { padding: 22px 20px; } .communication-delivery-summary-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 18px 20px 6px; } .communication-delivery-summary-context { grid-template-columns: 1fr; padding: 12px 20px; } .communication-delivery-summary-message { margin: 0 20px 24px; } }
+
 /* Publication and email are independent delivery routes for a mixed piece. */
 [data-view="communications"] .communication-delivery-routes {
   display: grid;

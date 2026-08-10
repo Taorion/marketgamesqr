@@ -69,6 +69,45 @@
     return "copied";
   }
 
+  function communicationDeliveryCopy(item = {}) {
+    if (isWhatsAppCommunication(item)) return item.whatsapp_body || "Sin mensaje registrado.";
+    if (isEmailCommunication(item)) return [item.subject, item.email_body].filter(Boolean).join("\n\n") || "Sin contenido registrado.";
+    return item.social_copy || "Sin contenido registrado.";
+  }
+
+  function ensureCommunicationDeliverySummaryModal() {
+    let modal = document.getElementById("communicationDeliverySummaryModal");
+    if (modal) return modal;
+    modal = document.createElement("div");
+    modal.id = "communicationDeliverySummaryModal";
+    modal.className = "modal-shell hidden communication-delivery-summary-modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "communicationDeliverySummaryTitle");
+    document.body.appendChild(modal);
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal || event.target.closest("[data-close-communication-delivery-summary]")) {
+        modal.classList.add("hidden");
+        document.body.classList.remove("communication-delivery-summary-open");
+      }
+    });
+    return modal;
+  }
+
+  function openCommunicationDeliverySummary(item) {
+    if (!item) return;
+    const modal = ensureCommunicationDeliverySummaryModal();
+    const isWhatsApp = isWhatsAppCommunication(item);
+    const deliveryLabel = isWhatsApp ? "WhatsApp preparado manualmente" : isEmailCommunication(item) ? "Email masivo" : "Publicación medida";
+    const deliveryState = isWhatsApp
+      ? `${Number(item.recipients_prepared || 0)} preparados · ${Number(item.recipients_queued || 0)} en cola`
+      : `${Number(item.recipients_sent || 0)} enviados · ${Number(item.recipients_failed || 0)} fallidos`;
+    modal.innerHTML = `<article class="modal-card communication-delivery-summary-card"><header><div><span class="mono-label">Resumen de comunicación</span><h3 id="communicationDeliverySummaryTitle">${esc(item.title || "Comunicación")}</h3><p>${esc(deliveryLabel)} · ${esc(statusLabel(item.status))}</p></div><button class="icon-button" type="button" data-close-communication-delivery-summary aria-label="Cerrar resumen"><span class="material-symbols-outlined">close</span></button></header><section class="communication-delivery-summary-metrics"><article><span>Audiencia</span><strong>${Number(item.recipients_total || 0)}</strong><small>contactos del lote</small></article><article><span>${isWhatsApp ? "Preparados" : "Enviados"}</span><strong>${isWhatsApp ? Number(item.recipients_prepared || 0) : Number(item.recipients_sent || 0)}</strong><small>${isWhatsApp ? "WhatsApps abiertos" : "emails enviados"}</small></article><article><span>Leads</span><strong>${Number(item.leads || 0)}</strong><small>desde la pieza</small></article><article><span>Ventas</span><strong>${Number(item.sales || 0)}</strong><small>${metricMoney(item.revenue)}</small></article><article><span>CAC</span><strong>${item.cac === null ? "—" : metricMoney(item.cac)}</strong><small>por cliente</small></article><article><span>ROI</span><strong>${item.roi === null ? "—" : `${(Number(item.roi) * 100).toFixed(0)}%`}</strong><small>resultado atribuido</small></article></section><section class="communication-delivery-summary-context"><div><span class="mono-label">Estado de entrega</span><strong>${esc(deliveryState)}</strong><small>${isWhatsApp ? "La entrega y lectura se confirman únicamente dentro de WhatsApp." : "Los fallidos se registran para poder revisar la audiencia."}</small></div><div><span class="mono-label">Conexión comercial</span><strong>${esc(item.campaign_name || "Sin campaña")}</strong><small>${esc(item.channel_name || "Sin canal")} · ${esc(item.activation_name || "Sin activación")}</small></div></section><section class="communication-delivery-summary-message"><span class="mono-label">Mensaje enviado o preparado</span><pre>${esc(communicationDeliveryCopy(item))}</pre></section></article>`;
+    modal.classList.remove("hidden");
+    document.body.classList.add("communication-delivery-summary-open");
+    modal.querySelector("[data-close-communication-delivery-summary]")?.focus();
+  }
+
   async function loadCommunications(options = {}) {
     if (!session?.user?.business_id || state.communicationsLoading || (state.communicationsLoaded && !options.force)) return;
     state.communicationsLoading = true;
@@ -239,6 +278,10 @@
     if (!active) { sendBar.innerHTML = '<span class="material-symbols-outlined">touch_app</span><p>Elige una comunicación para preparar su envío.</p>'; return; }
     const media = mediaFor(active);
     if (selectedPiece && active) selectedPiece.innerHTML = `<div><span class="mono-label">Pieza seleccionada</span><strong>${esc(active.title)}</strong><p>${esc(active.subject || active.social_copy || "Aún sin texto de salida.")}</p><div class="communication-delivery-metrics"><span><b>${Number(active.recipients_total || 0)}</b> destinatarios</span><span><b>${Number(active.recipients_sent || 0)}</b> enviados</span><span><b>${Number(active.recipients_failed || 0)}</b> fallidos</span><span><b>${Number(active.views || 0)}</b> visitas</span><span><b>${Number(active.leads || 0)}</b> leads</span><span><b>${Number(active.completions || 0)}</b> activaciones</span><span><b>${Number(active.sales || 0)}</b> ventas</span><span><b>${metricMoney(active.revenue)}</b> revenue</span><span><b>${active.cac === null ? "—" : metricMoney(active.cac)}</b> CAC</span><span><b>${active.roi === null ? "—" : `${(Number(active.roi) * 100).toFixed(0)}%`}</b> ROI</span></div></div><div class="communication-selected-actions"><button class="ghost-button compact" type="button" data-edit-communication="${esc(active.id)}">Editar</button><button class="ghost-button compact" type="button" data-duplicate-communication="${esc(active.id)}">Duplicar</button><button class="ghost-button compact" type="button" data-archive-communication="${esc(active.id)}" ${String(active.status).toUpperCase() === "ARCHIVED" ? "disabled" : ""}>Archivar</button></div>`;
+    if (selectedPiece && Number(active.recipients_total || 0) > 0) {
+      const actions = selectedPiece.querySelector(".communication-selected-actions");
+      if (actions && !actions.querySelector("[data-open-communication-delivery-summary]")) actions.insertAdjacentHTML("afterbegin", `<button class="ghost-button compact" type="button" data-open-communication-delivery-summary="${esc(active.id)}">Ver resumen</button>`);
+    }
     const mediaNote = media.length ? `${media.length} imagen${media.length === 1 ? "" : "es"} adjunta${media.length === 1 ? "" : "s"}.` : "Sin adjuntos.";
     if (String(active.status).toUpperCase() === "ARCHIVED") { sendBar.innerHTML = '<span class="material-symbols-outlined">inventory_2</span><div><strong>Comunicación archivada</strong><p>Conserva su historial de entrega. Duplícala para crear una nueva versión enviable.</p></div>'; return; }
     if (isWhatsAppCommunication(active)) {
@@ -430,12 +473,20 @@
     if (archive) { const item = state.communications.find((row) => String(row.id) === String(archive.dataset.archiveCommunication)); if (!item || !window.confirm(`¿Archivar “${item.title}”? Se conserva el historial, pero deja de quedar disponible para nuevos envíos.`)) return; await api(`/api/business/communications/${item.id}`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status: "ARCHIVED" }) }); state.communicationsLoaded = false; await loadCommunications({ force: true }); state.selectedCommunicationId = state.communications.find((row) => String(row.status).toUpperCase() !== "ARCHIVED")?.id || state.communications[0]?.id || null; render(); showFeedback(item.channel_id ? "La comunicación y su esfuerzo asociado quedaron archivados." : "La comunicación quedó archivada.", "success", { title: "Comunicación archivada" }); return; }
     if (removeMedia) { const media = uploadedMedia(); media.splice(Number(removeMedia.dataset.removeCommunicationMedia), 1); setUploadedMedia(media); renderComposerPreview(); return; }
     if (clearUrl) { const input = document.getElementById("communicationImageInput"); if (input) input.value = ""; toggleComposer(); return; }
-    if (pick) { state.selectedCommunicationId = pick.dataset.communicationSelect; render(); return; }
+    if (pick) { const nextId = pick.dataset.communicationSelect; if (String(state.selectedCommunicationId) === String(nextId)) { openCommunicationDeliverySummary(state.communications.find((item) => String(item.id) === String(nextId))); return; } state.selectedCommunicationId = nextId; render(); return; }
     if (download) { const item = state.communications.find((row) => String(row.id) === String(download.dataset.downloadCommunicationMedia)); downloadMedia(item); return; }
     if (copy) { const item = state.communications.find((row) => String(row.id) === String(copy.dataset.copyCommunicationSocial)); const content = [item?.social_copy, item?.tracking_url || item?.action_url].filter(Boolean).join("\n\n"); try { await navigator.clipboard.writeText(content); showFeedback("Publicación copiada con su enlace medido.", "success", { title: "Texto copiado" }); } catch { window.prompt("Copia esta publicación", content); } return; }
     if (share) { const item = state.communications.find((row) => String(row.id) === String(share.dataset.shareCommunicationSocial)); try { const result = await shareSocialPublication(item); showFeedback(result === "shared" ? "Se abrió el selector de compartir del dispositivo." : "La publicación medida quedó copiada para compartirla.", "success", { title: "Compartir publicación" }); } catch (error) { if (error?.name !== "AbortError") showFeedback(error.message || "No se pudo preparar la publicación para compartir.", "error", { title: "Compartir publicación" }); } return; }
     if (publish) { try { const investment = document.getElementById("communicationPublicationInvestment")?.value || 0; const externalUrl = document.getElementById("communicationPublicationUrl")?.value.trim() || ""; const data = await api(`/api/business/communications/${publish.dataset.publishCommunication}/publish`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ investment_amount: Number(investment), external_publication_url: externalUrl }) }); const item = state.communications.find((row) => String(row.id) === String(publish.dataset.publishCommunication)); if (item) Object.assign(item, data.communication); state.communicationsLoaded = false; await loadCommunications({ force: true }); render(); showFeedback("Publicación registrada. Usa el texto copiado con el enlace medido de Qori.", "success", { title: "Publicación medida" }); } catch (error) { showFeedback(error.message || "No se pudo registrar la publicación.", "error", { title: "Publicación" }); } return; }
     if (send) { const recipients = selectedRecipients(); if (!recipients.length) { showFeedback("Selecciona al menos un contacto que tenga email.", "info", { title: "Destinatarios" }); return; } if (!document.getElementById("communicationConsentInput")?.checked) { showFeedback("Confirma el consentimiento antes de enviar.", "info", { title: "Consentimiento requerido" }); return; } try { showFeedback("Enviando emails…", "loading", { title: "Comunicación", timeout: 0 }); const data = await api(`/api/business/communications/${send.dataset.sendCommunication}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) }); state.communicationSelectedRefs = []; state.communicationsLoaded = false; await loadCommunications({ force: true }); render(); const results = data.results || {}; const feedbackType = Number(results.sent || 0) ? "success" : "error"; const duplicateNote = Number(results.duplicate_emails || 0) ? ` ${results.duplicate_emails} contacto${Number(results.duplicate_emails) === 1 ? "" : "s"} con correo duplicado se omitieron.` : ""; showFeedback(`Envío finalizado: ${results.sent || 0} enviados, ${results.failed || 0} fallidos y ${results.skipped || 0} omitidos.${duplicateNote}`, feedbackType, { title: Number(results.sent || 0) ? "Comunicación enviada" : "No se enviaron correos" }); } catch (error) { showFeedback(error.message || "No se pudo completar el envío.", "error", { title: "Comunicación" }); } }
+  });
+
+  document.addEventListener("click", (event) => {
+    const summary = event.target.closest("[data-open-communication-delivery-summary]");
+    if (!summary) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openCommunicationDeliverySummary(state.communications.find((item) => String(item.id) === String(summary.dataset.openCommunicationDeliverySummary)));
   });
 
   document.addEventListener("change", (event) => {
