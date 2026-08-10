@@ -855,6 +855,7 @@ const triviaBenefitFulfillmentModeInput = document.getElementById("triviaBenefit
 const triviaEcommerceCodeInput = document.getElementById("triviaEcommerceCodeInput");
 const triviaEcommerceUrlInput = document.getElementById("triviaEcommerceUrlInput");
 const triviaEcommerceInstructionsInput = document.getElementById("triviaEcommerceInstructionsInput");
+const triviaDigitalAssetInput = document.getElementById("triviaDigitalAssetInput");
 const triviaExpiresModeInput = document.getElementById("triviaExpiresModeInput");
 const triviaExpiresAtInput = document.getElementById("triviaExpiresAtInput");
 const triviaQuestionCountInput = document.getElementById("triviaQuestionCountInput");
@@ -4543,6 +4544,18 @@ function benefitFulfillmentFromInputs(modeInput, codeInput, urlInput, instructio
   const code = String(codeInput?.value || "").trim();
   const ecommerceUrl = String(urlInput?.value || "").trim();
   const instructions = String(instructionsInput?.value || "").trim();
+  if (mode === "DIGITAL_ASSET") {
+    const asset = (state.digitalAssets || []).find((item) => item.id === triviaDigitalAssetInput?.value);
+    return {
+      mode: "DIGITAL_ASSET",
+      channel: "digital_download",
+      label: "Activo digital al cumplir el juego",
+      asset_id: asset?.id || null,
+      asset_title: asset?.title || null,
+      asset_file_name: asset?.file_name || null,
+      instructions: instructions || "Completaste la dinámica. Descarga tu activo digital ahora.",
+    };
+  }
   if (mode !== "ECOMMERCE_CODE") {
     return {
       mode: "PHYSICAL_QR",
@@ -4569,6 +4582,7 @@ function withBenefitFulfillment(value = {}, fulfillment = null) {
     redemption_channel: fulfillment.channel,
     ecommerce_code: fulfillment.mode === "ECOMMERCE_CODE" ? fulfillment.ecommerce_code : value?.ecommerce_code,
     ecommerce_url: fulfillment.mode === "ECOMMERCE_CODE" ? fulfillment.ecommerce_url : value?.ecommerce_url,
+    digital_asset_id: fulfillment.mode === "DIGITAL_ASSET" ? fulfillment.asset_id : value?.digital_asset_id,
   };
 }
 
@@ -4582,6 +4596,9 @@ function benefitFulfillmentLabel(value = {}, metadata = {}) {
   if (fulfillment.mode === "ECOMMERCE_CODE") {
     return `Ecommerce: código ${fulfillment.ecommerce_code || "pendiente"}`;
   }
+  if (fulfillment.mode === "DIGITAL_ASSET") {
+    return `Activo digital: ${fulfillment.asset_title || "pendiente"}`;
+  }
   return "Redención física con QR";
 }
 
@@ -4589,7 +4606,8 @@ function syncBenefitFulfillmentFields() {
   document.querySelectorAll("[data-benefit-fulfillment-mode]").forEach((modeInput) => {
     const panel = modeInput.closest(".benefit-fulfillment-panel");
     const ecommerceMode = modeInput.value === "ECOMMERCE_CODE";
-    if (panel) panel.dataset.fulfillmentMode = ecommerceMode ? "ecommerce" : "physical";
+    const digitalAssetMode = modeInput.value === "DIGITAL_ASSET";
+    if (panel) panel.dataset.fulfillmentMode = digitalAssetMode ? "digital-asset" : ecommerceMode ? "ecommerce" : "physical";
     panel?.querySelectorAll("[data-benefit-fulfillment-field='ecommerce']").forEach((field) => {
       field.classList.toggle("hidden", !ecommerceMode);
       field.querySelectorAll("input, select, textarea").forEach((input) => {
@@ -4597,7 +4615,25 @@ function syncBenefitFulfillmentFields() {
         if (!ecommerceMode) input.required = false;
       });
     });
+    panel?.querySelectorAll("[data-benefit-fulfillment-field='digital_asset']").forEach((field) => {
+      field.classList.toggle("hidden", !digitalAssetMode);
+      field.querySelectorAll("input, select, textarea").forEach((input) => {
+        input.disabled = !digitalAssetMode;
+        input.required = digitalAssetMode;
+      });
+    });
   });
+}
+
+function syncActivationDigitalAssetOptions() {
+  if (!triviaDigitalAssetInput) return;
+  const selectedId = triviaDigitalAssetInput.value;
+  const assets = (state.digitalAssets || []).filter((asset) => asset.is_active !== false);
+  triviaDigitalAssetInput.innerHTML = [
+    '<option value="">Selecciona un activo digital</option>',
+    ...assets.map((asset) => `<option value="${escapeHtml(asset.id)}">${escapeHtml(asset.title || asset.file_name || "Activo digital")}</option>`),
+  ].join("");
+  if (assets.some((asset) => asset.id === selectedId)) triviaDigitalAssetInput.value = selectedId;
 }
 
 function productScopeFromValue(value = {}, metadata = {}) {
@@ -15438,6 +15474,13 @@ function openGamingActivationBuilderModal(options = {}) {
   if (body) body.scrollTop = 0;
   updateGamingActivationWizard();
   updateGamingBuilderProgress();
+  const loadAssets = state.digitalAssetsLoaded ? Promise.resolve() : loadDigitalAssets({ quiet: true });
+  loadAssets.then(() => {
+    syncActivationDigitalAssetOptions();
+    syncBenefitFulfillmentFields();
+  }).catch(() => {
+    if (triviaDigitalAssetInput) triviaDigitalAssetInput.innerHTML = '<option value="">No fue posible cargar los activos</option>';
+  });
   window.setTimeout(() => modal.querySelector("[data-close-gaming-activation-builder]")?.focus({ preventScroll: true }), 40);
 }
 
@@ -15509,11 +15552,13 @@ function openGamingActivationDetail(id = "") {
     const attempts = Number(item.attempts_count || 0);
     const winners = Number(item.winners_count || 0);
     const maxWinners = Number(item.max_winners || 0);
+    const digitalDownloads = Number(item.digital_asset_downloads || 0);
     const maxBar = Math.max(attempts, winners, maxWinners, 1);
     body.innerHTML = `
       <section class="gaming-activation-detail-kpis">
         <article><span>Leads obtenidos</span><strong>${activationMetricNumber(attempts)}</strong><small>Participaciones capturadas</small></article>
         <article><span>Tickets generados</span><strong>${activationMetricNumber(winners)}</strong><small>Beneficios entregados</small></article>
+        <article><span>Descargas</span><strong>${activationMetricNumber(digitalDownloads)}</strong><small>Activos digitales descargados</small></article>
         <article><span>Rendimiento</span><strong>${rate.toFixed(1)}%</strong><small>Tickets sobre leads</small></article>
         <article><span>Cupo</span><strong>${maxWinners ? activationMetricNumber(maxWinners) : "Libre"}</strong><small>${maxWinners ? `${Math.max(0, maxWinners - winners).toLocaleString("es-CO")} disponibles` : "Sin límite definido"}</small></article>
       </section>
@@ -24021,7 +24066,14 @@ function validateActivationParticipantLock() {
 }
 
 function validateBenefitFulfillment(modeInput, codeInput, messageNode, contextLabel = "beneficio") {
-  if (String(modeInput?.value || "PHYSICAL_QR") !== "ECOMMERCE_CODE") return true;
+  const mode = String(modeInput?.value || "PHYSICAL_QR");
+  if (mode === "DIGITAL_ASSET") {
+    if (triviaDigitalAssetInput?.value) return true;
+    setInlineMessage(messageNode, `Selecciona el activo digital que recibirá el ganador del ${contextLabel}.`, "error");
+    triviaDigitalAssetInput?.focus();
+    return false;
+  }
+  if (mode !== "ECOMMERCE_CODE") return true;
   const code = String(codeInput?.value || "").trim();
   if (code) return true;
   setInlineMessage(messageNode, `Escribe el código ecommerce que recibirá el ganador del ${contextLabel}.`, "error");

@@ -6,6 +6,16 @@ const { createSecureToken } = require("../utils/token");
 const { logQrEvent } = require("./auditService");
 const { consumeQrCredits, ensureCreditAccount, mapPublicCreditAccount } = require("./qrCreditService");
 
+const DIGITAL_ASSET_MAX_BYTES = 5 * 1024 * 1024;
+const DIGITAL_ASSET_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+]);
+
 const ACTIVATION_CATALOG = [
   { type: "TRIVIA_QUIZ", label: "Trivia / Quiz comercial", category: "commercial", group: "Comerciales rapidas", reward_modes: ["by_score", "fixed"] },
   { type: "OPEN_QUESTION", label: "Pregunta abierta", category: "commercial", group: "Comerciales rapidas", reward_modes: ["fixed", "manual_approval"] },
@@ -176,6 +186,17 @@ function normalizeBenefitFulfillment(value = {}) {
       instructions: String(source.instructions || value.instructions || "Copia este codigo y aplicalo en el checkout de la tienda online.").trim(),
     };
   }
+  if (mode === "DIGITAL_ASSET" || mode === "DIGITAL_DOWNLOAD") {
+    return {
+      mode: "DIGITAL_ASSET",
+      channel: "digital_download",
+      label: "Activo digital al cumplir el juego",
+      asset_id: String(source.asset_id || value.digital_asset_id || "").trim() || null,
+      asset_title: String(source.asset_title || value.digital_asset_title || "").trim() || null,
+      asset_file_name: String(source.asset_file_name || value.digital_asset_file_name || "").trim() || null,
+      instructions: String(source.instructions || value.instructions || "Completaste la dinamica. Descarga tu activo digital ahora.").trim(),
+    };
+  }
   return {
     mode: "PHYSICAL_QR",
     channel: "physical_store",
@@ -257,6 +278,21 @@ function buildValidatorUrl(token) {
   return target.toString();
 }
 
+function interactiveAssetDownloadUrl(token) {
+  return `${publicAppBaseUrl()}/api/public/activations/download/${encodeURIComponent(token)}`;
+}
+
+function parseDigitalAssetDataUrl(value) {
+  const text = String(value || "");
+  const match = text.match(/^data:([^;,]+);base64,([a-z0-9+/=]+)$/i);
+  if (!match) throw badRequest("El activo digital no tiene un archivo valido.");
+  const mime = match[1].toLowerCase();
+  if (!DIGITAL_ASSET_TYPES.has(mime)) throw badRequest("El tipo del activo digital no esta permitido.");
+  const buffer = Buffer.from(match[2], "base64");
+  if (!buffer.length || buffer.length > DIGITAL_ASSET_MAX_BYTES) throw badRequest("El activo digital supera el tamano permitido.");
+  return { buffer, mime };
+}
+
 function slugify(value) {
   return String(value || "activacion")
     .normalize("NFD")
@@ -321,6 +357,7 @@ function mapActivation(row, extras = {}) {
     updated_at: row.updated_at,
     attempts_count: Number(row.participants_count || row.attempts_count || 0),
     winners_count: Number(row.rewards_count || row.winners_count || 0),
+    digital_asset_downloads: Number(row.digital_asset_downloads || 0),
     max_winners: row.max_rewards,
     ...extras,
   };
@@ -750,6 +787,12 @@ async function listInteractiveActivations(businessId, options = {}) {
        from interactive_activation_rewards
        where activation_id in (select id from recent_activations)
        group by activation_id
+     ),
+     asset_download_counts as (
+       select activation_id, count(*) filter (where downloaded_at is not null)::int as digital_asset_downloads
+       from interactive_activation_asset_downloads
+       where activation_id in (select id from recent_activations)
+       group by activation_id
      )
      select a.id, a.company_id, a.user_id, a.campaign_id, a.title, a.description,
             a.category, a.activation_type, a.status, a.reward_ticket_cost, a.reward_mode,
@@ -758,11 +801,13 @@ async function listInteractiveActivations(businessId, options = {}) {
             a.access_qr_token, a.terms, a.created_at, a.updated_at,
             c.name as campaign_name,
             coalesce(p.participants_count, 0)::int as participants_count,
-            coalesce(r.rewards_count, 0)::int as rewards_count
+            coalesce(r.rewards_count, 0)::int as rewards_count,
+            coalesce(d.digital_asset_downloads, 0)::int as digital_asset_downloads
      from recent_activations a
      left join campaigns c on c.id = a.campaign_id
      left join participant_counts p on p.activation_id = a.id
      left join reward_counts r on r.activation_id = a.id
+     left join asset_download_counts d on d.activation_id = a.id
      order by a.created_at desc`,
     [businessId, limit, includeArchived, availableOnly]
   );
@@ -1154,6 +1199,7 @@ async function completeInteractiveParticipant(slug, body) {
     const reward = await generateInteractiveRewardQr(client, activation, { ...participant, score, result_profile: resultProfile }, rewardPayload, {
       user_id: activation.user_id || null,
     });
+    const digitalAsset = await issueInteractiveActivationAssetDownload(client, activation, participant, reward.reward);
     await recordCommunicationEvent(client, activation, attribution, "REWARD_ISSUED", { participant_id: participant.id, qr_code_id: reward.qr_code?.id || null });
     const fulfillment = normalizeBenefitFulfillment(rewardPayload.reward_value || {});
     return {
@@ -1161,12 +1207,15 @@ async function completeInteractiveParticipant(slug, body) {
       rewarded: true,
       message: fulfillment.mode === "ECOMMERCE_CODE"
         ? "Beneficio generado. Tu codigo ecommerce esta listo para usar en la tienda online."
+        : fulfillment.mode === "DIGITAL_ASSET"
+          ? "Completaste la dinamica. Tu activo digital ya esta listo para descargar."
         : "Beneficio generado. El QR esta listo para redimir en tienda.",
       reward: reward.reward,
       qr_code: reward.qr_code,
       validator_url: reward.validator_url,
       qr_image_data_url: reward.qr_image_data_url,
       credit_account: reward.credit_account,
+      digital_asset: digitalAsset,
     };
   });
 }
@@ -1199,6 +1248,7 @@ async function existingRewardResponseForIdentity(client, activation, body) {
   const reward = result.rows[0];
   if (!reward) return null;
   const validatorUrl = buildValidatorUrl(reward.qr_token_value || reward.qr_token);
+  const digitalAsset = await interactiveActivationAssetDownloadForReward(client, reward.id);
   return {
     participant: {
       id: reward.participant_id,
@@ -1214,6 +1264,7 @@ async function existingRewardResponseForIdentity(client, activation, body) {
     validator_url: validatorUrl,
     qr_image_data_url: await buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, reward }),
     credit_account: null,
+    digital_asset: digitalAsset,
   };
 }
 
@@ -1874,6 +1925,122 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
   };
 }
 
+async function issueInteractiveActivationAssetDownload(client, activation, participant, reward) {
+  const fulfillment = normalizeBenefitFulfillment(reward.reward_value || {});
+  if (fulfillment.mode !== "DIGITAL_ASSET") return null;
+  if (!fulfillment.asset_id) throw badRequest("Selecciona el activo digital que recibira el ganador.");
+  const assetResult = await client.query(
+    `select id, title, file_name, file_type, file_size
+     from digital_assets
+     where id = $1 and business_id = $2 and is_active = true
+     for share`,
+    [fulfillment.asset_id, activation.company_id]
+  );
+  const asset = assetResult.rows[0];
+  if (!asset) throw badRequest("El activo digital seleccionado ya no esta disponible para esta empresa.");
+  const downloadToken = createSecureToken();
+  const inserted = await client.query(
+    `insert into interactive_activation_asset_downloads
+      (business_id, activation_id, asset_id, participant_id, reward_id, download_token, metadata)
+     values ($1, $2, $3, $4, $5, $6, $7::jsonb)
+     on conflict (activation_id, participant_id, asset_id)
+     do update set reward_id = excluded.reward_id
+     returning download_token`,
+    [
+      activation.company_id,
+      activation.id,
+      asset.id,
+      participant.id,
+      reward.id,
+      downloadToken,
+      jsonParam({
+        activation_title: activation.title,
+        campaign_id: activation.campaign_id || null,
+        asset_title: asset.title,
+        fulfillment: "digital_asset_reward",
+      }, {}),
+    ]
+  );
+  return {
+    id: asset.id,
+    title: asset.title,
+    file_name: asset.file_name,
+    file_type: asset.file_type,
+    file_size: Number(asset.file_size || 0),
+    download_url: interactiveAssetDownloadUrl(inserted.rows[0].download_token),
+  };
+}
+
+async function interactiveActivationAssetDownloadForReward(client, rewardId) {
+  if (!rewardId) return null;
+  const result = await client.query(
+    `select d.download_token, da.id, da.title, da.file_name, da.file_type, da.file_size
+     from interactive_activation_asset_downloads d
+     join digital_assets da on da.id = d.asset_id and da.is_active = true
+     where d.reward_id = $1
+     order by d.created_at desc
+     limit 1`,
+    [rewardId]
+  );
+  const asset = result.rows[0];
+  if (!asset) return null;
+  return {
+    id: asset.id,
+    title: asset.title,
+    file_name: asset.file_name,
+    file_type: asset.file_type,
+    file_size: Number(asset.file_size || 0),
+    download_url: interactiveAssetDownloadUrl(asset.download_token),
+  };
+}
+
+async function downloadInteractiveActivationAsset(token, reqMeta = {}) {
+  return withTransaction(async (client) => {
+    const result = await client.query(
+      `select d.*, da.file_name, da.file_type, da.file_data_url, da.file_size, da.title as asset_title,
+              a.status as activation_status, a.starts_at, a.ends_at, a.title as activation_title,
+              a.campaign_id, p.player_id
+       from interactive_activation_asset_downloads d
+       join digital_assets da on da.id = d.asset_id and da.is_active = true
+       join interactive_activations a on a.id = d.activation_id and a.company_id = d.business_id
+       join interactive_activation_participants p on p.id = d.participant_id and p.activation_id = a.id
+       where d.download_token = $1
+       for update`,
+      [token]
+    );
+    const row = result.rows[0];
+    if (!row) throw notFound("La descarga no esta disponible.");
+    assertActivationOpen({ status: row.activation_status, starts_at: row.starts_at, ends_at: row.ends_at });
+    const parsed = parseDigitalAssetDataUrl(row.file_data_url);
+    await client.query(
+      `update interactive_activation_asset_downloads
+       set downloaded_at = now(), ip_address = coalesce(ip_address, $2), user_agent = coalesce(user_agent, $3)
+       where id = $1`,
+      [row.id, reqMeta.ip || null, reqMeta.userAgent || null]
+    );
+    await client.query(
+      `insert into lead_events
+        (business_id, lead_id, event_type, event_title, event_description, campaign_id, metadata)
+       values ($1, $2, 'interactive_asset_downloaded', 'Activo digital descargado por activacion', $3, $4, $5::jsonb)`,
+      [
+        row.business_id,
+        row.player_id || null,
+        `El lead descargo "${row.asset_title || row.file_name}" despues de completar "${row.activation_title}".`,
+        row.campaign_id || null,
+        jsonParam({
+          activation_id: row.activation_id,
+          participant_id: row.participant_id,
+          reward_id: row.reward_id,
+          asset_id: row.asset_id,
+          asset_title: row.asset_title,
+          source_label: "recompensa_activo_digital",
+        }, {}),
+      ]
+    );
+    return { buffer: parsed.buffer, file_name: row.file_name, file_type: row.file_type, file_size: row.file_size };
+  });
+}
+
 async function getInteractiveActivationReport(businessId, activationId) {
   const activationResult = await query(
     "select * from interactive_activations where id = $1 and company_id = $2",
@@ -1887,6 +2054,7 @@ async function getInteractiveActivationReport(businessId, activationId) {
        count(distinct p.id) filter (where p.status in ('completed', 'rewarded'))::int as completed,
        count(distinct p.id) filter (where p.status = 'abandoned')::int as abandoned,
        count(distinct r.id)::int as qr_generated,
+       count(distinct iad.id) filter (where iad.downloaded_at is not null)::int as digital_asset_downloads,
        coalesce(sum(tx.tickets_debited), 0)::int as tickets_consumed,
        count(distinct rd.id)::int as redemptions,
        count(distinct bs.id)::int as sales_count,
@@ -1894,6 +2062,7 @@ async function getInteractiveActivationReport(businessId, activationId) {
      from interactive_activations a
      left join interactive_activation_participants p on p.activation_id = a.id
      left join interactive_activation_rewards r on r.activation_id = a.id
+     left join interactive_activation_asset_downloads iad on iad.activation_id = a.id
      left join interactive_ticket_transactions tx on tx.reward_id = r.id
      left join qr_codes q on q.id = r.qr_code_id
      left join redemptions rd on rd.qr_code_id = q.id
@@ -1912,6 +2081,7 @@ async function getInteractiveActivationReport(businessId, activationId) {
       completed: Number(row.completed || 0),
       abandoned: Number(row.abandoned || 0),
       qr_generated: qrGenerated,
+      digital_asset_downloads: Number(row.digital_asset_downloads || 0),
       tickets_consumed: Number(row.tickets_consumed || 0),
       redemptions,
       sales_count: Number(row.sales_count || 0),
@@ -1965,6 +2135,7 @@ module.exports = {
   completeInteractiveParticipant,
   createInteractiveActivation,
   deleteInteractiveActivation,
+  downloadInteractiveActivationAsset,
   generateInteractiveRewardQr,
   getInteractiveActivationReport,
   getPublicInteractiveActivation,

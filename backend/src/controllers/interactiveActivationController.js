@@ -10,6 +10,7 @@ const {
   completeInteractiveParticipant,
   createInteractiveActivation,
   deleteInteractiveActivation,
+  downloadInteractiveActivationAsset,
   getInteractiveActivationReport,
   getPublicInteractiveActivation,
   listActivationCatalog,
@@ -32,6 +33,13 @@ function businessIdFor(req) {
     throw forbidden("This user is not assigned to a business.");
   }
   return req.user.business_id;
+}
+
+function reqMeta(req) {
+  return {
+    ip: req.ip || req.headers["x-forwarded-for"] || "",
+    userAgent: req.headers["user-agent"] || "",
+  };
 }
 
 async function catalog(req, res, next) {
@@ -155,6 +163,18 @@ async function publicComplete(req, res, next) {
   }
 }
 
+async function publicDownload(req, res, next) {
+  try {
+    const file = await downloadInteractiveActivationAsset(req.params.downloadToken, reqMeta(req));
+    res.setHeader("Content-Type", file.file_type);
+    res.setHeader("Content-Length", file.buffer.length);
+    res.setHeader("Content-Disposition", `attachment; filename="${String(file.file_name || "activo-digital").replace(/"/g, "")}"`);
+    res.send(file.buffer);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   catalog,
   create,
@@ -162,6 +182,7 @@ module.exports = {
   remove,
   recycle,
   publicComplete,
+  publicDownload,
   publicGet,
   publicStart,
   report,

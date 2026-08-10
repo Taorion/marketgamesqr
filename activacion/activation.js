@@ -97,6 +97,14 @@ function benefitFulfillmentFromResult(data = {}) {
       instructions: source.instructions || value.instructions || "Copia este codigo y aplicalo en el checkout de la tienda online.",
     };
   }
+  if (mode === "DIGITAL_ASSET" || mode === "DIGITAL_DOWNLOAD") {
+    return {
+      mode: "DIGITAL_ASSET",
+      asset_title: data.digital_asset?.title || source.asset_title || value.digital_asset_title || "Activo digital",
+      download_url: data.digital_asset?.download_url || source.download_url || value.download_url || "",
+      instructions: source.instructions || value.instructions || "Completaste la dinámica. Descarga tu activo digital ahora.",
+    };
+  }
   return {
     mode: "PHYSICAL_QR",
     instructions: source.instructions || "Presenta este QR en el punto autorizado para redimir el beneficio.",
@@ -3164,8 +3172,23 @@ async function renderResult(data) {
   const validatorUrl = data.validator_url || "";
   const fulfillment = benefitFulfillmentFromResult(data);
   const isEcommerceReward = fulfillment.mode === "ECOMMERCE_CODE";
+  const isDigitalAssetReward = fulfillment.mode === "DIGITAL_ASSET";
   ticketResult.dataset.tone = data.rewarded ? "success" : "error";
-  ticketResult.innerHTML = data.rewarded && isEcommerceReward ? `
+  ticketResult.innerHTML = data.rewarded && isDigitalAssetReward ? `
+    <div class="result-copy">
+      <span>Activo digital desbloqueado</span>
+      <strong>${escapeHtml(fulfillment.asset_title || data.reward?.reward_label || "Activo digital")}</strong>
+      <p>${escapeHtml(fulfillment.instructions)}</p>
+    </div>
+    <div class="ecommerce-reward-card">
+      <span>Tu descarga segura está lista</span>
+      <strong>${escapeHtml(data.digital_asset?.file_name || fulfillment.asset_title || "Activo digital")}</strong>
+    </div>
+    <div class="ticket-actions">
+      ${fulfillment.download_url ? `<a class="submit-button" href="${escapeHtml(fulfillment.download_url)}">Descargar activo</a>` : ""}
+      ${validatorUrl ? `<a class="submit-button secondary" href="${escapeHtml(validatorUrl)}" target="_blank" rel="noreferrer">Ver respaldo QR</a>` : ""}
+    </div>
+  ` : data.rewarded && isEcommerceReward ? `
     <div class="result-copy">
       <span>Beneficio desbloqueado</span>
       <strong>${escapeHtml(data.reward?.reward_label || "Codigo ecommerce")}</strong>

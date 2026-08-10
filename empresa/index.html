@@ -2559,12 +2559,17 @@
                           <select id="triviaBenefitFulfillmentModeInput" data-benefit-fulfillment-mode>
                             <option value="PHYSICAL_QR">Premio físico / QR en tienda</option>
                             <option value="ECOMMERCE_CODE">Código para ecommerce</option>
+                            <option value="DIGITAL_ASSET">Activo digital al cumplir el juego</option>
                           </select>
-                          <small>El ganador puede salir con QR para tienda o código usable en ecommerce.</small>
+                          <small>El ganador puede salir con QR, código ecommerce o una descarga segura al cumplir la dinámica.</small>
                         </label>
                         <label class="ecommerce-code-field" data-benefit-fulfillment-field="ecommerce"><span>Código ecommerce</span><input id="triviaEcommerceCodeInput" type="text" maxlength="80" placeholder="MG15, ENVIOGRATIS..."></label>
                         <label class="ecommerce-url-field" data-benefit-fulfillment-field="ecommerce"><span>URL de la tienda</span><input id="triviaEcommerceUrlInput" type="url" maxlength="500" placeholder="https://tienda.com/checkout"></label>
                         <label class="ecommerce-instructions-field" data-benefit-fulfillment-field="ecommerce"><span>Instrucciones para usarlo</span><input id="triviaEcommerceInstructionsInput" type="text" maxlength="300" placeholder="Copia el código en el checkout antes de pagar."></label>
+                        <label class="full digital-asset-reward-field" data-benefit-fulfillment-field="digital_asset"><span>Activo digital para entregar</span>
+                          <select id="triviaDigitalAssetInput"><option value="">Cargando activos digitales…</option></select>
+                          <small>En Trivia se desbloquea al responder correctamente; en Batalla naval, al hundir la flota. La descarga queda registrada en las métricas.</small>
+                        </label>
                       </div>
                     </section>
                     <section class="full benefit-expiration-panel">
