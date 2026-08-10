@@ -17864,3 +17864,8 @@ html body #campaignStrategyWizardModal .strategy-wizard-progress-detail[data-sta
     justify-content: space-between !important;
   }
 }
+
+/* Contraste legible dentro del ayudador de campa\u00f1as en el portal claro. */
+html body #campaignStrategyWizardModal .strategy-wizard-field > span {
+  color: #111827 !important;
+}
