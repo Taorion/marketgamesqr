@@ -15765,7 +15765,6 @@ function renderGamingActivationReview() {
   const campaign = triviaCampaignInput?.selectedOptions?.[0]?.textContent?.trim() || "Sin campaña asociada";
   const benefit = triviaBenefitLabelInput?.value.trim() || (type === "SCRATCH_DIGITAL" ? "Beneficio definido por zona" : "Beneficio pendiente");
   const benefitType = triviaBenefitTypeInput?.selectedOptions?.[0]?.textContent?.trim() || "Beneficio";
-  const fulfillment = triviaBenefitFulfillmentModeInput?.selectedOptions?.[0]?.textContent?.trim() || "QR en tienda";
   const expiry = triviaExpiresModeInput?.selectedOptions?.[0]?.textContent?.trim() || "Sin expiración";
   const customFields = collectActivationCustomFields();
   const maxWinners = triviaMaxWinnersInput?.value ? Number(triviaMaxWinnersInput.value).toLocaleString("es-CO") : "Sin límite";
@@ -15776,7 +15775,6 @@ function renderGamingActivationReview() {
         <article><span>Dinámica</span><strong>${escapeHtml(typeName)}</strong></article>
         <article><span>Campaña</span><strong>${escapeHtml(campaign)}</strong></article>
         <article><span>Beneficio</span><strong>${escapeHtml(`${benefitType} · ${benefit}`)}</strong></article>
-        <article><span>Entrega</span><strong>${escapeHtml(fulfillment)}</strong></article>
         <article><span>Captura RMS</span><strong>${customFields.length.toLocaleString("es-CO")} pregunta(s) personalizada(s)</strong></article>
         <article><span>Cupo / vigencia</span><strong>${escapeHtml(`${maxWinners} · ${expiry}`)}</strong></article>
       </div>
@@ -23243,7 +23241,11 @@ function activationFormRowMarkup(index = 1, field = {}) {
     <article class="activation-form-field-row" data-activation-form-field="${index}">
       <div class="activation-form-row-head">
         <span>Pregunta ${index}</span>
-        <button class="ghost-button compact danger-button" type="button" data-activation-form-remove>Quitar</button>
+        <div class="activation-form-row-actions">
+          <button class="ghost-button compact" type="button" data-activation-form-move="up" aria-label="Subir pregunta" title="Subir pregunta"><span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span></button>
+          <button class="ghost-button compact" type="button" data-activation-form-move="down" aria-label="Bajar pregunta" title="Bajar pregunta"><span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span></button>
+          <button class="ghost-button compact danger-button" type="button" data-activation-form-remove>Quitar</button>
+        </div>
       </div>
       <label class="activation-form-question-label"><span>Pregunta / dato a capturar</span><input data-activation-form-label type="text" maxlength="180" value="${escapeHtml(label)}" placeholder="Ej: Que producto te interesa?"></label>
       <label><span>Tipo de control</span>
@@ -23268,7 +23270,7 @@ function enhanceActivationFormRows() {
     if (!row.querySelector(".activation-form-row-head")) {
       const head = document.createElement("div");
       head.className = "activation-form-row-head";
-      head.innerHTML = `<span>Pregunta ${position}</span><button class="ghost-button compact danger-button" type="button" data-activation-form-remove>Quitar</button>`;
+      head.innerHTML = `<span>Pregunta ${position}</span><div class="activation-form-row-actions"><button class="ghost-button compact" type="button" data-activation-form-move="up" aria-label="Subir pregunta" title="Subir pregunta"><span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span></button><button class="ghost-button compact" type="button" data-activation-form-move="down" aria-label="Bajar pregunta" title="Bajar pregunta"><span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span></button><button class="ghost-button compact danger-button" type="button" data-activation-form-remove>Quitar</button></div>`;
       row.insertBefore(head, row.firstElementChild);
     } else {
       const title = row.querySelector(".activation-form-row-head span");
@@ -23286,6 +23288,10 @@ function enhanceActivationFormRows() {
     row.querySelector("[data-activation-form-options]")?.closest("label")?.classList.add("activation-form-options-field");
     row.querySelector("[data-activation-form-rms]")?.closest("label")?.classList.add("activation-form-rms-field");
     row.querySelector("[data-activation-form-help]")?.closest("label")?.classList.add("activation-form-help-field");
+    const moveUp = row.querySelector('[data-activation-form-move="up"]');
+    const moveDown = row.querySelector('[data-activation-form-move="down"]');
+    if (moveUp) moveUp.disabled = index === 0;
+    if (moveDown) moveDown.disabled = index === rows.length - 1;
   });
 }
 
@@ -49255,6 +49261,19 @@ activationFormAddChoiceQuestionButton?.addEventListener("click", () => addActiva
   required: true,
 }));
 activationFormBuilder?.addEventListener("click", (event) => {
+  const moveButton = event.target.closest("[data-activation-form-move]");
+  if (moveButton) {
+    const row = moveButton.closest("[data-activation-form-field]");
+    const direction = moveButton.dataset.activationFormMove;
+    if (row && direction === "up" && row.previousElementSibling) {
+      activationFormBuilder.insertBefore(row, row.previousElementSibling);
+    } else if (row && direction === "down" && row.nextElementSibling) {
+      activationFormBuilder.insertBefore(row.nextElementSibling, row);
+    }
+    syncActivationFormBuilder();
+    row?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
   const removeButton = event.target.closest("[data-activation-form-remove]");
   if (!removeButton) return;
   const row = removeButton.closest("[data-activation-form-field]");

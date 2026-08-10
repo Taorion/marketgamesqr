@@ -32983,6 +32983,21 @@ body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme=
   font-size: 0.72rem !important;
 }
 
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-row-actions .ghost-button {
+  min-width: 32px;
+  padding-inline: 8px;
+}
+
+.ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-row-actions .material-symbols-outlined {
+  font-size: 16px;
+}
+
 .ticket-center-panel[data-ticket-panel="trivia"] .activation-builder-form .activation-form-field-row label {
   display: grid !important;
   align-content: start !important;
