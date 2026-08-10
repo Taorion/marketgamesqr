@@ -6,6 +6,7 @@ const {
   downloadActivationAttachment,
   executeRmsAction,
   executeRmsBulkAction,
+  getRmsUnconvertedLeadCost,
   getDailyQueue,
   listRmsEvents,
   listRmsPostSaleActions,
@@ -298,6 +299,11 @@ const recyclingActionSchema = z.object({
   idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
 
+const unconvertedCostSchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+});
+
 const negotiationResultSchema = z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
@@ -425,6 +431,15 @@ async function recordPostSaleAction(req, res, next) {
   try {
     const body = validate(postSaleActionSchema, req.body);
     res.status(201).json(await recordRmsPostSaleAction(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function unconvertedCost(req, res, next) {
+  try {
+    const query = validate(unconvertedCostSchema, req.query);
+    res.json(await getRmsUnconvertedLeadCost(businessIdFor(req), query));
   } catch (error) {
     next(error);
   }
@@ -577,6 +592,7 @@ module.exports = {
   journeys,
   machine,
   metrics,
+  unconvertedCost,
   movePhase,
   publicAttachmentDownload,
   recordActivationDeliveryAction,

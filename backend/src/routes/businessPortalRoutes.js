@@ -114,6 +114,7 @@ const {
   journeys: rmsJourneys,
   machine: rmsMachine,
   metrics: rmsMetrics,
+  unconvertedCost: rmsUnconvertedCost,
   movePhase: moveRmsPhase,
   recordActivationDeliveryAction,
   recordAttributedSale: rmsRecordAttributedSale,
@@ -149,6 +150,7 @@ const {
   create: createCommunication,
   list: listCommunications,
   patch: patchCommunication,
+  publish: publishCommunication,
   send: sendCommunication,
 } = require("../controllers/businessCommunicationController");
 const { storageSummary } = require("../controllers/storageQuotaController");
@@ -190,6 +192,7 @@ router.get("/rms-machine", standardBusinessCache, rmsMachine);
 router.get("/rms-machine/daily-queue", standardBusinessCache, rmsDailyQueue);
 router.get("/rms-machine/journeys", standardBusinessCache, rmsJourneys);
 router.get("/rms-machine/metrics", standardBusinessCache, rmsMetrics);
+router.get("/rms-machine/unconverted-cost", rmsUnconvertedCost);
 router.get("/rms-machine/events", shortBusinessCache, rmsEvents);
 router.get("/rms-machine/intelligence/case", shortBusinessCache, rmsIntelligenceCase);
 router.get("/rms-machine/intelligence/cases", shortBusinessCache, rmsIntelligenceCases);
@@ -240,6 +243,7 @@ router.get("/communications/audience", shortBusinessCache, communicationAudience
 router.get("/communications", standardBusinessCache, listCommunications);
 router.post("/communications", createCommunication);
 router.patch("/communications/:id", patchCommunication);
+router.post("/communications/:id/publish", publishCommunication);
 router.post("/communications/:id/send", sendCommunication);
 router.get("/activity", businessActivity);
 router.get("/analytics/command-center", heavyBusinessCache, commandCenterAnalytics);

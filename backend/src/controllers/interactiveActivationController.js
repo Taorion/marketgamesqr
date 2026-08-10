@@ -131,7 +131,7 @@ async function rewards(req, res, next) {
 
 async function publicGet(req, res, next) {
   try {
-    res.json({ activation: await getPublicInteractiveActivation(req.params.slug) });
+    res.json({ activation: await getPublicInteractiveActivation(req.params.slug, req.query.qori_ref) });
   } catch (error) {
     next(error);
   }

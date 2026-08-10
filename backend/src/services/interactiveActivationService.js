@@ -977,7 +977,17 @@ async function listDeletedInteractiveActivations(businessId) {
   return result.rows.map(mapActivation);
 }
 
-async function getPublicInteractiveActivation(slug) {
+async function communicationAttribution(client, activation, token) {
+  if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(String(token || ""))) return null;
+  const result = await client.query("select id from business_communications where business_id=$1 and activation_id=$2 and tracking_token=$3 and publication_status='PUBLISHED'", [activation.company_id, activation.id, token]);
+  return result.rows[0] || null;
+}
+async function recordCommunicationEvent(client, activation, attribution, eventType, extra = {}) {
+  if (!attribution?.id) return;
+  await client.query("insert into business_communication_events (business_id, communication_id, activation_id, participant_id, qr_code_id, event_type, metadata) values ($1,$2,$3,$4,$5,$6,$7::jsonb)", [activation.company_id, attribution.id, activation.id, extra.participant_id || null, extra.qr_code_id || null, eventType, JSON.stringify(extra.metadata || {})]);
+}
+
+async function getPublicInteractiveActivation(slug, trackingToken = null) {
   const activationResult = await query(
     `select a.*, b.name as business_name, b.slug as business_slug, b.settings as business_settings
      from interactive_activations a
@@ -990,6 +1000,8 @@ async function getPublicInteractiveActivation(slug) {
     throw notFound("Activacion no encontrada.");
   }
   assertActivationOpen(activation);
+  const attribution = await communicationAttribution({ query }, activation, trackingToken);
+  await recordCommunicationEvent({ query }, activation, attribution, "ACTIVATION_VIEWED");
   const [questions, scoreRules, touchZones] = await Promise.all([
     query("select * from interactive_activation_questions where activation_id = $1 order by order_index asc", [activation.id]),
     query("select * from interactive_score_reward_rules where activation_id = $1 order by min_score asc", [activation.id]),
@@ -1009,6 +1021,8 @@ async function startInteractiveParticipant(slug, body) {
     const gameSessionToken = createSecureToken();
     const player = await createPlayer(client, activation, body, { status: "started" });
     const metadata = activationFormMetadata(activation, body, { status: "started" });
+    const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token);
+    if (attribution) metadata.communication_attribution = { communication_id: attribution.id };
     const participantResult = await client.query(
       `insert into interactive_activation_participants
         (activation_id, company_id, player_id, name, document, phone, email, metadata, status,
@@ -1027,6 +1041,8 @@ async function startInteractiveParticipant(slug, body) {
         gameSessionToken,
       ]
     );
+    await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_STARTED", { participant_id: participantResult.rows[0].id });
+    await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participantResult.rows[0].id });
     return {
       participant: participantResult.rows[0],
       game_session_token: gameSessionToken,
@@ -1068,6 +1084,8 @@ async function completeInteractiveParticipant(slug, body) {
     const metadata = activationFormMetadata(activation, body, {
       anti_abuse: antiAbuseSummary(activation, participant, body, score),
     });
+    const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token || participant.metadata?.communication_tracking_token);
+    if (attribution) metadata.communication_attribution = { communication_id: attribution.id };
 
     await client.query(
       `update interactive_activation_participants
@@ -1087,6 +1105,7 @@ async function completeInteractiveParticipant(slug, body) {
         jsonParam(metadata, {}),
       ]
     );
+    await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_COMPLETED", { participant_id: participant.id });
 
     if (!rewardPayload || pendingReview) {
       return {
@@ -1101,6 +1120,7 @@ async function completeInteractiveParticipant(slug, body) {
     const reward = await generateInteractiveRewardQr(client, activation, { ...participant, score, result_profile: resultProfile }, rewardPayload, {
       user_id: activation.user_id || null,
     });
+    await recordCommunicationEvent(client, activation, attribution, "REWARD_ISSUED", { participant_id: participant.id, qr_code_id: reward.qr_code?.id || null });
     const fulfillment = normalizeBenefitFulfillment(rewardPayload.reward_value || {});
     return {
       participant: { id: participant.id, status: "rewarded", score, result_profile: resultProfile || null },
@@ -1711,6 +1731,7 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
         result_profile: participant.result_profile || null,
         activation_form: participant.metadata?.activation_form || null,
         rms_intake: participant.metadata?.rms_intake || null,
+        communication_id: participant.metadata?.communication_attribution?.communication_id || null,
         reward_source: rewardPayload.reward_source,
         selected_benefit: rewardPayload,
       }, {}),

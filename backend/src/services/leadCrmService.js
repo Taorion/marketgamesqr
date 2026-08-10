@@ -230,6 +230,20 @@ function listWhere(filters, params) {
     params.push(String(filters.rms_phase || "").trim().toLowerCase());
     clauses.push(`coalesce(rms_phase, 'recoleccion') = $${params.length}`);
   }
+  if (filters.interest) {
+    params.push(`%${normalizeSearch(filters.interest)}%`);
+    clauses.push(`normalized_top_interest like $${params.length}`);
+  }
+  if (filters.purchased_product) {
+    params.push(`%${normalizeSearch(filters.purchased_product)}%`);
+    clauses.push(`normalized_purchased_products like $${params.length}`);
+  }
+  if (filters.city) {
+    params.push(`%${normalizeSearch(filters.city)}%`);
+    clauses.push(`normalized_city like $${params.length}`);
+  }
+  if (filters.audience_type === "LEAD") clauses.push("purchase_count = 0");
+  if (filters.audience_type === "CLIENT") clauses.push("purchase_count > 0");
   if (filters.has_purchases === "true") clauses.push("purchase_count > 0");
   if (filters.has_purchases === "false") clauses.push("purchase_count = 0");
   if (filters.is_affiliate === "true") clauses.push("is_affiliate = true");
@@ -327,6 +341,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          coalesce(s.avg_ticket, 0)::numeric as avg_ticket,
          s.last_purchase_at,
          s.top_product,
+         s.purchased_products,
          s.top_category,
          coalesce(q.active_tickets, 0)::int as active_tickets,
          coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
@@ -408,6 +423,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
                 coalesce(avg(bs.sale_amount), 0)::numeric as avg_ticket,
                 max(bs.created_at) as last_purchase_at,
                 (array_agg(bs.product_name order by bs.created_at desc))[1] as top_product,
+                string_agg(distinct nullif(btrim(bs.product_name), ''), ' ') as purchased_products,
                 (array_agg(coalesce(bs.metadata->>'category', bs.acquisition_channel) order by bs.created_at desc))[1] as top_category
          from business_sales bs
          where bs.business_id = p.business_id
@@ -508,6 +524,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          coalesce(s.avg_ticket, 0)::numeric as avg_ticket,
          s.last_purchase_at,
          coalesce(s.top_product, ml.company) as top_product,
+         s.purchased_products,
          s.top_category,
          coalesce(q.active_tickets, 0)::int as active_tickets,
          coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
@@ -558,6 +575,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
                 coalesce(avg(bs.sale_amount), 0)::numeric as avg_ticket,
                 max(bs.created_at) as last_purchase_at,
                 (array_agg(bs.product_name order by bs.created_at desc))[1] as top_product,
+                string_agg(distinct nullif(btrim(bs.product_name), ''), ' ') as purchased_products,
                 (array_agg(coalesce(bs.metadata->>'category', bs.acquisition_channel) order by bs.created_at desc))[1] as top_category
          from business_sales bs
          where bs.business_id = ml.business_id
@@ -609,6 +627,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          coalesce(s.avg_ticket, 0)::numeric as avg_ticket,
          s.last_purchase_at,
          coalesce(s.top_product, fa.notes) as top_product,
+         s.purchased_products,
          s.top_category,
          coalesce(q.active_tickets, 0)::int as active_tickets,
          coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
@@ -651,6 +670,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
                 coalesce(avg(bs.sale_amount), 0)::numeric as avg_ticket,
                 max(bs.created_at) as last_purchase_at,
                 (array_agg(bs.product_name order by bs.created_at desc))[1] as top_product,
+                string_agg(distinct nullif(btrim(bs.product_name), ''), ' ') as purchased_products,
                 (array_agg(coalesce(bs.metadata->>'category', bs.acquisition_channel) order by bs.created_at desc))[1] as top_category
          from business_sales bs
          where bs.business_id = fa.business_id
@@ -745,10 +765,13 @@ async function listLeadCrmRows(businessId, filters = {}) {
          regexp_replace(lower(coalesce(channel, '')), '[^a-z0-9]', '', 'g') as normalized_channel,
          regexp_replace(lower(coalesce(array_to_string(associated_channels, ' '), '')), '[^a-z0-9]', '', 'g') as normalized_associated_channels,
          regexp_replace(lower(coalesce(affiliate_code, '')), '[^a-z0-9]', '', 'g') as normalized_affiliate_code,
+         regexp_replace(translate(lower(coalesce(city, '')), 'áéíóúüñ', 'aeiouun'), '[^a-z0-9]', '', 'g') as normalized_city,
+         regexp_replace(translate(lower(coalesce(top_interest, '')), 'áéíóúüñ', 'aeiouun'), '[^a-z0-9]', '', 'g') as normalized_top_interest,
+         regexp_replace(translate(lower(coalesce(purchased_products, '') || ' ' || coalesce(top_product, '')), 'áéíóúüñ', 'aeiouun'), '[^a-z0-9]', '', 'g') as normalized_purchased_products,
          regexp_replace(lower(
            coalesce(name, '') || ' ' || coalesce(email, '') || ' ' || coalesce(phone, '') || ' ' ||
            coalesce(document_id, '') || ' ' || coalesce(campaign_name, '') || ' ' ||
-           coalesce(channel, '') || ' ' || coalesce(top_interest, '') || ' ' || coalesce(affiliate_code, '')),
+           coalesce(channel, '') || ' ' || coalesce(top_interest, '') || ' ' || coalesce(top_product, '') || ' ' || coalesce(purchased_products, '') || ' ' || coalesce(affiliate_code, '')),
            '[^a-z0-9@.]+', '', 'g'
          ) as search_blob
        from rms_rows

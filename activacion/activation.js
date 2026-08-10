@@ -362,6 +362,7 @@ function participantPayload() {
     metadata: {
       source_url: window.location.href,
       user_agent: navigator.userAgent,
+      communication_tracking_token: new URLSearchParams(window.location.search).get("qori_ref") || null,
       activation_form: enriched.activationForm,
       rms_intake: enriched.rmsIntake,
     },

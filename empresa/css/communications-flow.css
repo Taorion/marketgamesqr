@@ -144,7 +144,7 @@ html body > #communicationComposerModal .communication-composer-modal { width: m
 #communicationComposerModal .communication-media-upload-control { min-height: 80px; border-radius: 14px; }
 #communicationComposerModal .communication-media-preview-item { border: 1px solid rgba(17, 125, 199, .12); background: #f5fbff; }
 #communicationComposerModal .communication-composer-audience { gap: 15px; }
-#communicationComposerModal .communication-composer-audience-filters { display: grid; grid-template-columns: minmax(180px, 1.6fr) minmax(160px, 1fr) minmax(130px, .7fr) auto; gap: 12px; align-items: end; }
+#communicationComposerModal .communication-composer-audience-filters { display: grid; grid-template-columns: minmax(200px, 1.55fr) repeat(3, minmax(150px, 1fr)); gap: 12px; align-items: end; }
 #communicationComposerModal .communication-composer-audience-filters > .ghost-button { min-height: 48px; }
 #communicationComposerModal .communication-composer-audience-status { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #4c7099; font-size: .88rem; }
 #communicationComposerModal .communication-composer-audience-status > div { display:flex; flex-wrap:wrap; gap:14px; }
@@ -161,6 +161,8 @@ html body > #communicationComposerModal .communication-composer-modal { width: m
 #communicationComposerModal .communication-composer-contact small { color: #6681a2; margin-top: 3px; font-weight: 600; }
 #communicationComposerModal .communication-composer-audience-empty { display: flex; align-items: center; gap: 9px; min-height: 92px; color: #6a85a6; font-size: .9rem; }
 #communicationComposerModal .communication-composer-audience-empty .material-symbols-outlined { color: #06a3dd; }
+#communicationComposerModal .communication-composer-audience-more { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 4px 2px; color:#6681a2; font-size:.84rem; }
+#communicationComposerModal .communication-composer-audience-more .text-button { padding:0; border:0; background:transparent; color:#0758cd; font-weight:850; cursor:pointer; }
 #communicationComposerModal .communication-composer-consent { display: flex !important; grid-template-columns: none; align-items: flex-start; gap: 9px; color: #547495 !important; font-size: .84rem !important; line-height: 1.45; }
 #communicationComposerModal .communication-composer-consent input { width: 17px !important; min-height: 17px !important; margin-top: 1px; accent-color: #0874dc; }
 #communicationComposerModal .communication-composer-preview { min-height: 68px; grid-template-columns: 38px minmax(0, 1fr); justify-content: start; gap: 12px; padding: 14px 0 0; border-radius: 0; background: transparent; color: #527294; }

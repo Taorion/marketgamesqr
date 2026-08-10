@@ -1,4 +1,5 @@
 const { query } = require("../config/db");
+const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
 const { listLeadCrmRows } = require("./leadCrmService");
 const { sendBusinessCommunicationEmail } = require("./businessCommunicationMailService");
@@ -58,14 +59,8 @@ function safeFilters(filters = {}) {
   return Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== undefined && value !== null && value !== ""));
 }
 
-function normalizeAudience(rows, filters = {}) {
-  const interest = String(filters.interest || "").trim().toLowerCase();
-  const city = String(filters.city || "").trim().toLowerCase();
-  return rows.filter((row) => {
-    if (interest && !String(row.top_interest || "").toLowerCase().includes(interest)) return false;
-    if (city && !String(row.city || "").toLowerCase().includes(city)) return false;
-    return true;
-  }).map((row) => ({
+function normalizeAudience(rows) {
+  return rows.map((row) => ({
     source_id: row.id,
     source_type: row.source_type,
     lead_id: row.lead_id || null,
@@ -74,6 +69,11 @@ function normalizeAudience(rows, filters = {}) {
     phone: row.phone || "",
     city: row.city || "",
     interest: row.top_interest || "",
+    purchased_product: row.top_product || "",
+    purchased_products: row.purchased_products || row.top_product || "",
+    audience_type: Number(row.purchase_count || 0) > 0 ? "CLIENT" : "LEAD",
+    commercial_status: row.commercial_status || "",
+    rms_phase: row.rms_phase || "recoleccion",
     campaign_name: row.campaign_name || "",
     channel: row.channel || "",
     score_total: Number(row.score_total || 0),
@@ -82,13 +82,14 @@ function normalizeAudience(rows, filters = {}) {
 }
 
 async function listAudience(businessId, filters = {}) {
-  const result = await listLeadCrmRows(businessId, { ...safeFilters(filters), limit: 120, offset: 0 });
-  const contacts = normalizeAudience(result.rows || [], filters);
-  return { contacts, returned: contacts.length, total: interestOrCity(filters) ? contacts.length : Number(result.total || contacts.length), capped: Number(result.total || 0) > 120 };
-}
-
-function interestOrCity(filters) {
-  return Boolean(String(filters?.interest || "").trim() || String(filters?.city || "").trim());
+  const result = await listLeadCrmRows(businessId, {
+    ...safeFilters(filters),
+    limit: filters.limit || 120,
+    offset: filters.offset || 0,
+  });
+  const contacts = normalizeAudience(result.leads || []);
+  const pagination = result.pagination || { total: contacts.length, limit: contacts.length, offset: 0, has_more: false };
+  return { contacts, returned: contacts.length, total: Number(pagination.total || contacts.length), pagination, capped: false };
 }
 
 async function assertRelationBelongsToBusiness(businessId, payload) {
@@ -109,9 +110,13 @@ async function assertRelationBelongsToBusiness(businessId, payload) {
 
 async function listBusinessCommunications(businessId) {
   const result = await query(
-    `select bc.*, c.name as campaign_name, ch.name as channel_name, ia.title as activation_name,
+    `select bc.*, c.name as campaign_name, ch.name as channel_name, ia.title as activation_name, ia.public_slug as activation_public_slug,
        coalesce(rc.recipients_total, 0)::int as recipients_total, coalesce(rc.sent_count, 0)::int as recipients_sent, coalesce(rc.failed_count, 0)::int as recipients_failed,
-       coalesce(rc.skipped_count, 0)::int as recipients_skipped
+       coalesce(rc.skipped_count, 0)::int as recipients_skipped,
+       coalesce(em.views, 0)::int as views, coalesce(em.starts, 0)::int as starts, coalesce(em.leads, 0)::int as leads,
+       coalesce(em.completions, 0)::int as completions, coalesce(em.rewards, 0)::int as rewards,
+       coalesce(sm.sales, 0)::int as sales, coalesce(sm.revenue, 0)::numeric as revenue, coalesce(sm.customers, 0)::int as customers,
+       coalesce(pm.investment, 0)::numeric as investment
      from business_communications bc
      left join campaigns c on c.id = bc.campaign_id and c.business_id = bc.business_id
      left join business_acquisition_channels ch on ch.id = bc.channel_id and ch.business_id = bc.business_id
@@ -123,11 +128,59 @@ async function listBusinessCommunications(businessId) {
               count(*) filter (where status = 'SKIPPED') as skipped_count
        from business_communication_recipients r where r.communication_id = bc.id
      ) rc on true
+     left join lateral (
+       select count(*) filter (where event_type = 'ACTIVATION_VIEWED')::int as views,
+              count(*) filter (where event_type = 'ACTIVATION_STARTED')::int as starts,
+              count(*) filter (where event_type = 'LEAD_CAPTURED')::int as leads,
+              count(*) filter (where event_type = 'ACTIVATION_COMPLETED')::int as completions,
+              count(*) filter (where event_type = 'REWARD_ISSUED')::int as rewards
+       from business_communication_events e where e.communication_id = bc.id
+     ) em on true
+     left join lateral (
+       select coalesce(sum(bs.sale_amount), 0)::numeric as revenue,
+              count(*)::int as sales,
+              count(distinct coalesce(nullif(bs.customer_email, ''), nullif(bs.customer_phone, ''), bs.id::text))::int as customers
+       from business_sales bs left join qr_codes q on q.id = bs.qr_code_id
+       where bs.business_id = bc.business_id and (q.metadata->>'communication_id' = bc.id::text or bs.metadata->>'communication_id' = bc.id::text)
+     ) sm on true
+     left join lateral (
+       select coalesce(sum(e.budget_amount), 0)::numeric as investment
+       from business_acquisition_channel_efforts e
+       where e.business_id = bc.business_id and e.metadata->>'communication_id' = bc.id::text and e.status <> 'ARCHIVED'
+     ) pm on true
      where bc.business_id = $1 and bc.status <> 'ARCHIVED'
      order by bc.updated_at desc`,
     [businessId]
   );
-  return { communications: result.rows };
+  return { communications: result.rows.map((row) => {
+    const investment = Number(row.investment || 0); const revenue = Number(row.revenue || 0); const customers = Number(row.customers || 0);
+    return { ...row, tracking_url: row.activation_public_slug ? publicActivationUrl(row.activation_public_slug, row.tracking_token) : null, views: Number(row.views || 0), starts: Number(row.starts || 0), leads: Number(row.leads || 0), completions: Number(row.completions || 0), rewards: Number(row.rewards || 0), sales: Number(row.sales || 0), revenue, investment, cac: customers ? investment / customers : null, roi: investment ? (revenue - investment) / investment : null };
+  }) };
+}
+
+function publicActivationUrl(slug, trackingToken) {
+  return `${String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "")}/activacion/${encodeURIComponent(slug)}?qori_ref=${encodeURIComponent(trackingToken)}`;
+}
+
+async function publishBusinessCommunication(businessId, userId, id, payload = {}) {
+  const found = await query("select * from business_communications where id = $1 and business_id = $2", [id, businessId]);
+  if (!found.rowCount) throw notFound("Comunicación no encontrada.");
+  const communication = found.rows[0];
+  if (!["SOCIAL", "MIXED"].includes(communication.communication_type)) throw badRequest("Solo las piezas para redes pueden registrarse como publicación.");
+  if (!communication.activation_id || !communication.channel_id) throw badRequest("Conecta una activación y un canal antes de registrar esta publicación medida.");
+  const activation = await query("select public_slug from interactive_activations where id = $1 and company_id = $2", [communication.activation_id, businessId]);
+  if (!activation.rowCount) throw badRequest("La activación seleccionada ya no está disponible.");
+  const trackingUrl = publicActivationUrl(activation.rows[0].public_slug, communication.tracking_token);
+  const investment = Number(payload.investment_amount || 0);
+  if (!Number.isFinite(investment) || investment < 0) throw badRequest("La inversión debe ser un valor válido mayor o igual a cero.");
+  await query(
+    `insert into business_acquisition_channel_efforts (business_id, channel_id, campaign_id, title, description, content_type, status, published_at, budget_amount, source_url, metadata, created_by_user_id)
+     values ($1,$2,$3,$4,$5,'POST','ACTIVE',now(),$6,$7,$8::jsonb,$9)`,
+    [businessId, communication.channel_id, communication.campaign_id || null, communication.title, communication.social_copy || null, investment, payload.external_publication_url || trackingUrl, JSON.stringify({ communication_id: communication.id, tracking_token: communication.tracking_token, tracking_url: trackingUrl, activation_id: communication.activation_id }), userId]
+  );
+  const updated = await query("update business_communications set publication_status='PUBLISHED', published_at=coalesce(published_at, now()), published_by=$3, external_publication_url=coalesce($4, external_publication_url), updated_by=$3, updated_at=now() where id=$1 and business_id=$2 returning *", [id, businessId, userId, payload.external_publication_url || null]);
+  await query("insert into business_communication_events (business_id, communication_id, activation_id, event_type, metadata) values ($1,$2,$3,'PUBLISHED',$4::jsonb)", [businessId, id, communication.activation_id, JSON.stringify({ tracking_url: trackingUrl, investment })]);
+  return { communication: { ...updated.rows[0], tracking_url: trackingUrl } };
 }
 
 async function createBusinessCommunication(businessId, userId, payload) {
@@ -259,6 +312,7 @@ module.exports = {
   createBusinessCommunication,
   listAudience,
   listBusinessCommunications,
+  publishBusinessCommunication,
   sendBusinessCommunication,
   updateBusinessCommunication,
 };

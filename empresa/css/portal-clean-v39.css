@@ -10414,6 +10414,36 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-
 html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-history li strong { color:#214a68; font-size:.81rem; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-history li span { margin-top:2px; font-size:.78rem; overflow-wrap:anywhere; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-history li small { margin-top:3px; color:#6a8293; font-size:.7rem; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs {
+  margin:16px 0;
+  border:1px solid #cfe2ec;
+  border-radius:16px;
+  padding:14px;
+  background:#f7fbfd;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs header { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:10px; color:#214a68; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tablist"] { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tab"] { display:flex; gap:8px; align-items:flex-start; min-width:0; padding:11px; border:1px solid #c9dde8; border-radius:11px; background:#fff; color:#315b74; text-align:left; cursor:pointer; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tab"] strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tab"] small { display:block; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tab"] small { margin-top:3px; font-size:.7rem; line-height:1.3; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tab"].is-active { border-color:#1479a9; background:#e7f5fb; box-shadow:0 0 0 2px rgba(20,121,169,.12); color:#0e577e; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-cost-card { display:flex; align-items:flex-start; gap:11px; margin:0 0 16px; padding:14px; border:1px solid #efd99a; border-radius:13px; background:#fff9e7; color:#765910; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-cost-card strong { display:block; font-size:1.08rem; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-cost-card p,
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-cost-card small { display:block; margin:4px 0 0; line-height:1.4; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs { margin:16px 0; border:1px solid #cfe2ec; border-radius:16px; padding:14px; background:#f7fbfd; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs header { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:10px; color:#214a68; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tablist"] { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tab"] { display:flex; gap:9px; align-items:flex-start; padding:12px; border:1px solid #c9dde8; border-radius:11px; background:#fff; color:#315b74; text-align:left; cursor:pointer; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tab"] strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tab"] small { display:block; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tab"] small { margin-top:3px; font-size:.74rem; line-height:1.32; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tab"].is-active { border-color:#1479a9; background:#e7f5fb; box-shadow:0 0 0 2px rgba(20,121,169,.12); color:#0e577e; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-negotiation-cost-card { display:flex; align-items:flex-start; gap:11px; margin:0 0 16px; padding:14px; border:1px solid #efd99a; border-radius:13px; background:#fff9e7; color:#765910; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-negotiation-cost-card strong { display:block; font-size:1.08rem; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-negotiation-cost-card p,
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-negotiation-cost-card small { display:block; margin:4px 0 0; line-height:1.4; }
 @media (max-width:760px) {
   html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-work-lead,
   html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-work-console { padding:19px 16px!important; }
@@ -10421,6 +10451,10 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-
   html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-context-block dl,
   html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-signals article { grid-template-columns:1fr!important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-commercial-console-head h4 { font-size:1.12rem!important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs header,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tablist"] { display:grid; grid-template-columns:1fr 1fr; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs header,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tablist"] { display:grid; grid-template-columns:1fr; }
 }
 
 /* Estacion 08 · Riesgos de fuga. Alcance exclusivo: control_anti_fuga. */

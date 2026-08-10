@@ -1691,6 +1691,72 @@ async function updateRmsRecyclingCase(businessId, user, payload = {}) {
   return { recycling_case: updated.rows[0], movement };
 }
 
+function rmsExplicitBenefitCost(value = {}, benefitType = "") {
+  const source = value && typeof value === "object" ? value : {};
+  const fixedBenefit = String(benefitType || "").toUpperCase() === "FIXED_AMOUNT_DISCOUNT";
+  const candidates = [
+    source.effective_cost_cop,
+    source.cost_cop,
+    source.benefit_cost,
+    source.cost,
+    source.discount_amount,
+    ...(fixedBenefit ? [source.amount, source.value] : []),
+  ];
+  const amount = candidates.map((entry) => Number(entry)).find((entry) => Number.isFinite(entry) && entry >= 0);
+  return amount === undefined ? null : Math.round(amount * 100) / 100;
+}
+
+async function getRmsUnconvertedLeadCost(businessId, payload = {}, knownItem = null) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const item = knownItem || await findOpportunity(businessId, sourceType, payload.source_id);
+  if (Number(item.purchase_count || 0) > 0) {
+    return { is_unconverted: false, redeemed_benefits: 0, benefits_with_explicit_cost: 0, totals_by_currency: {}, message: "El lead ya tiene una compra registrada; no se clasifica como costo de no conversi\u00f3n." };
+  }
+  const result = await query(
+    `select distinct q.id, q.benefit_type, q.benefit_value, q.metadata, r.metadata as redemption_metadata
+       from qr_codes q
+       left join redemptions r on r.qr_code_id = q.id and r.business_id = q.business_id
+      where q.business_id = $1
+        and (q.redeemed_at is not null or q.status = 'REDEEMED' or r.id is not null)
+        and (
+          ($2 = 'PLAYER' and q.player_id = $3::uuid)
+          or ($2 = 'AFFILIATE' and q.affiliate_id = $3::uuid)
+          or exists (
+            select 1 from lead_activations la
+             where la.business_id = q.business_id
+               and la.qr_code_id = q.id
+               and la.source_type = $2
+               and la.source_id = $3::uuid
+          )
+        )`,
+    [businessId, sourceType, payload.source_id]
+  );
+  const totals = {};
+  let explicit = 0;
+  const benefits = result.rows.map((row) => {
+    const cost = [row.redemption_metadata, row.metadata, row.benefit_value]
+      .map((value) => rmsExplicitBenefitCost(value, row.benefit_type))
+      .find((value) => value !== null);
+    const currency = String(row.redemption_metadata?.currency || row.metadata?.currency || row.benefit_value?.currency || "COP").toUpperCase();
+    if (cost !== null) {
+      totals[currency] = Math.round(((totals[currency] || 0) + cost) * 100) / 100;
+      explicit += 1;
+    }
+    return { qr_code_id: row.id, benefit_type: row.benefit_type, cost, currency };
+  });
+  return {
+    is_unconverted: true,
+    redeemed_benefits: benefits.length,
+    benefits_with_explicit_cost: explicit,
+    benefits_without_recorded_cost: benefits.length - explicit,
+    totals_by_currency: totals,
+    benefits,
+    message: benefits.length
+      ? "Solo suma beneficios redimidos con costo o descuento monetario registrado; no infiere el valor de porcentajes, regalos o beneficios sin costo cargado."
+      : "No hay beneficios redimidos para este lead sin compra registrada.",
+  };
+}
+
 async function recordRmsNegotiationResult(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
@@ -1715,6 +1781,9 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
   if (result === "LOST" && !payload.lost_classification) {
     throw badRequest("Clasifica la pérdida antes de cerrar la oportunidad.");
   }
+  const nonConversionCost = ["RECYCLE", "LOST"].includes(result)
+    ? await getRmsUnconvertedLeadCost(businessId, { source_type: sourceType, source_id: payload.source_id }, item)
+    : null;
   const current = await query(`select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`, [businessId, sourceType, payload.source_id]);
   const priorMetadata = current.rows[0]?.metadata || {};
   const round = {
@@ -1736,8 +1805,10 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
       responsible: String(payload.recycle_responsible || "").trim(),
       consent: payload.recycle_consent,
       channel: String(payload.channel || "").trim(),
+      non_conversion_cost: nonConversionCost,
     } : null,
     lost_classification: result === "LOST" ? payload.lost_classification : null,
+    non_conversion_cost: nonConversionCost,
     recorded_at: new Date().toISOString(),
     recorded_by: user.id,
   };
@@ -1786,12 +1857,12 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
     to_phase: toPhase, priority: result === "LOST" ? "LOW" : result === "NO_RESPONSE" ? "HIGH" : "MEDIUM",
     recommended_action: result === "LOST" ? "Conservar aprendizaje comercial" : result === "REPROCESS" ? "Actualizar propuesta antes de retomar el acuerdo" : "Confirmar condición comercial",
     last_operation: `negotiation_${result.toLowerCase()}`, revenue_potential: item.revenue_potential, reason,
-    metadata: { negotiation_current: round, negotiation_history: [...history, round], negotiation_result: result, negotiation_task_id: agenda?.item?.id || null, recycling: result === "RECYCLE" ? { status: "RECYCLED", recycling_case_id: recycling?.recycling_case?.id || null, reason: payload.recycle_reason || reason, strategy: payload.recycle_strategy || "NEW_CONTACT", reactivate_at: nextAt, responsible: String(payload.recycle_responsible || user.id), consent: payload.recycle_consent, channel: String(payload.channel || "").trim(), note: reason } : null, commercial_status: result === "LOST" ? "LOST" : result === "WAITING" ? "WAITING" : result === "NO_RESPONSE" ? "RECOVERY" : result === "RECYCLE" ? "RECYCLED" : "REPROCESS", lost_classification: result === "LOST" ? payload.lost_classification : null, cancelled_agenda_count: cancelledAgendaCount },
+    metadata: { negotiation_current: round, negotiation_history: [...history, round], negotiation_result: result, negotiation_task_id: agenda?.item?.id || null, recycling: result === "RECYCLE" ? { status: "RECYCLED", recycling_case_id: recycling?.recycling_case?.id || null, reason: payload.recycle_reason || reason, strategy: payload.recycle_strategy || "NEW_CONTACT", reactivate_at: nextAt, responsible: String(payload.recycle_responsible || user.id), consent: payload.recycle_consent, channel: String(payload.channel || "").trim(), note: reason, non_conversion_cost: nonConversionCost } : null, commercial_status: result === "LOST" ? "LOST" : result === "WAITING" ? "WAITING" : result === "NO_RESPONSE" ? "RECOVERY" : result === "RECYCLE" ? "RECYCLED" : "REPROCESS", lost_classification: result === "LOST" ? payload.lost_classification : null, non_conversion_cost: nonConversionCost, cancelled_agenda_count: cancelledAgendaCount },
   }, RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT);
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     event_type: "negotiation_round_recorded", event_title: "Resultado de Negociación registrado", event_description: reason,
-    rms_phase: toPhase, metadata: { negotiation_round: round, movement_id: movement.movement?.id || null, task_id: agenda?.item?.id || null },
+    rms_phase: toPhase, metadata: { negotiation_round: round, non_conversion_cost: nonConversionCost, movement_id: movement.movement?.id || null, task_id: agenda?.item?.id || null },
   });
   if (result === "RECYCLE") {
     await recordRmsWorkflowEvent(businessId, user, {
@@ -1839,10 +1910,16 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
   const canClear = Boolean(item.name && (item.phone || item.email) && confirmation?.inventory_product_id && Number(confirmation.amount) > 0 && confirmation?.responsible && hasSupport);
   if (result === "CLEARED" && !canClear) throw badRequest("No se puede liberar la venta: faltan contacto, producto, valor, responsable o soporte verificable.");
   if (["WAITING", "RECYCLE"].includes(result) && !payload.next_action_at) throw badRequest("Programa la fecha de seguimiento o reactivación antes de guardar.");
+  if (result === "RECYCLE" && (!payload.recycle_reason || !payload.recycle_strategy)) {
+    throw badRequest("Para Reciclaje indica el motivo y la estrategia de reactivación.");
+  }
+  const nonConversionCost = result === "RECYCLE"
+    ? await getRmsUnconvertedLeadCost(businessId, { source_type: sourceType, source_id: payload.source_id }, item)
+    : null;
   const review = {
     result, reason, reviewed_at: new Date().toISOString(), reviewed_by: user.id, confirmation_snapshot: confirmation,
     signals: payload.signals || {}, ticket_action: payload.ticket_action || null,
-    recycle: result === "RECYCLE" ? { reason: payload.recycle_reason || reason, reactivate_at: payload.next_action_at, strategy: payload.recycle_strategy || "NEW_CONTACT", responsible: payload.responsible || confirmation?.responsible || user.id, note: payload.recycle_note || null } : null,
+    recycle: result === "RECYCLE" ? { reason: payload.recycle_reason || reason, reactivate_at: payload.next_action_at, strategy: payload.recycle_strategy || "NEW_CONTACT", responsible: payload.responsible || confirmation?.responsible || user.id, note: payload.recycle_note || null, non_conversion_cost: nonConversionCost } : null,
   };
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
@@ -2621,6 +2698,7 @@ module.exports = {
   downloadActivationAttachment,
   executeRmsAction,
   executeRmsBulkAction,
+  getRmsUnconvertedLeadCost,
   getDailyQueue,
   getPhaseRecommendedOperation,
   listRmsEvents,

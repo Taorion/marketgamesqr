@@ -1,6 +1,10 @@
 (() => {
   const MAX_MEDIA_FILES = 3;
   const MAX_MEDIA_BYTES = 3 * 1024 * 1024;
+  const AUDIENCE_PAGE_SIZE = 120;
+  const MAX_EMAIL_RECIPIENTS = 120;
+  const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentacion: "Curaduría", curaduria: "Clasificador", clasificacion: "Activación 1", preprocesamiento: "Control de calidad 1", procesamiento: "Evaluación", accion_correctiva: "Negociación", control_anti_fuga: "Riesgos de fuga", cierre: "Ventas atribuidas", revenue_generado: "Control de calidad 2", postventa: "Activación 2", inteligencia: "Inteligencia RMS" }[String(phase || "").toLowerCase()] || "Leads recolectados");
+  const metricMoney = (value) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(value || 0));
   const refKey = (contact) => `${contact?.source_type || "PLAYER"}:${contact?.source_id || contact?.id || ""}`;
   const esc = (value) => escapeHtml(value == null ? "" : String(value));
   const typeLabel = (type) => ({ EMAIL: "Email", SOCIAL: "Publicación", MIXED: "Email + publicación" }[String(type || "").toUpperCase()] || "Comunicación");
@@ -26,10 +30,12 @@
     const current = new Set(state.communicationSelectedRefs || []);
     if (mode === "clear") {
       state.communicationSelectedRefs = [];
-      return;
+      return 0;
     }
-    emailReadyContacts().forEach((contact) => current.add(refKey(contact)));
+    const available = Math.max(0, MAX_EMAIL_RECIPIENTS - current.size);
+    emailReadyContacts().filter((contact) => !current.has(refKey(contact))).slice(0, available).forEach((contact) => current.add(refKey(contact)));
     state.communicationSelectedRefs = Array.from(current);
+    return available;
   };
   const mediaFor = (item) => {
     const saved = Array.isArray(item?.metadata?.media_assets) ? item.metadata.media_assets : [];
@@ -54,17 +60,28 @@
     } finally { state.communicationsLoading = false; }
   }
 
-  async function loadAudience() {
+  async function loadAudience(options = {}) {
+    const append = Boolean(options.append);
+    const offset = append ? Number(state.communicationAudienceNextOffset || (state.communicationAudience || []).length) : 0;
     state.communicationAudienceLoading = true;
     const query = new URLSearchParams();
     Object.entries(state.communicationAudienceFilters || {}).forEach(([key, value]) => { if (String(value || "").trim()) query.set(key, String(value).trim()); });
+    query.set("limit", String(AUDIENCE_PAGE_SIZE));
+    query.set("offset", String(offset));
     try {
       const data = await api(`/api/business/communications/audience${query.toString() ? `?${query}` : ""}`, { headers: authHeaders() });
-      state.communicationAudience = data.contacts || [];
+      const contacts = data.contacts || [];
+      state.communicationAudience = append
+        ? Array.from(new Map([...(state.communicationAudience || []), ...contacts].map((contact) => [refKey(contact), contact])).values())
+        : contacts;
       state.communicationAudienceTotal = Number(data.total || state.communicationAudience.length);
-      state.communicationAudienceCapped = Boolean(data.capped);
-      const shown = new Set(state.communicationAudience.map(refKey));
-      state.communicationSelectedRefs = (state.communicationSelectedRefs || []).filter((id) => shown.has(id));
+      state.communicationAudienceCapped = false;
+      state.communicationAudienceNextOffset = offset + contacts.length;
+      state.communicationAudienceHasMore = Boolean(data.pagination?.has_more);
+      if (!append) {
+        const shown = new Set(state.communicationAudience.map(refKey));
+        state.communicationSelectedRefs = (state.communicationSelectedRefs || []).filter((id) => shown.has(id));
+      }
     } finally {
       state.communicationAudienceLoading = false;
     }
@@ -101,7 +118,7 @@
     count.textContent = state.communicationAudienceLoading
       ? "Cargando contactos…"
       : contacts.length
-        ? `${recipients.length} seleccionado${recipients.length === 1 ? "" : "s"} de ${ready.length} con email${state.communicationAudienceCapped ? " · primeros 120 resultados" : ""}`
+        ? `${recipients.length} de ${MAX_EMAIL_RECIPIENTS} seleccionado${recipients.length === 1 ? "" : "s"} · mostrando ${contacts.length} de ${state.communicationAudienceTotal || contacts.length} contactos (${ready.length} con email)`
         : "Usa los filtros para encontrar contactos.";
     list.innerHTML = state.communicationAudienceLoading
       ? '<div class="communication-composer-audience-empty"><span class="material-symbols-outlined">hourglass_top</span><span>Cargando contactos disponibles…</span></div>'
@@ -109,8 +126,9 @@
         ? contacts.map((contact) => {
           const deliverable = hasEmail(contact);
           const selectedContact = selected.has(refKey(contact));
-          return `<label class="communication-composer-contact ${selectedContact ? "is-selected" : ""} ${deliverable ? "" : "is-unavailable"}"><input type="checkbox" data-communication-recipient value="${esc(refKey(contact))}" ${selectedContact ? "checked" : ""} ${deliverable ? "" : "disabled"}><span class="communication-contact-avatar">${esc((contact.name || "C").slice(0, 1).toUpperCase())}</span><span class="communication-composer-contact-copy"><strong>${esc(contact.name || "Contacto sin nombre")}</strong><small>${esc(contact.interest || "Sin interés registrado")}</small></span><span class="communication-contact-delivery ${deliverable ? "is-ready" : ""}">${deliverable ? esc(contact.email) : "Sin email"}</span></label>`;
-        }).join("")
+          const profile = contact.audience_type === "CLIENT" ? "Cliente" : "Lead";
+          return `<label class="communication-composer-contact ${selectedContact ? "is-selected" : ""} ${deliverable ? "" : "is-unavailable"}"><input type="checkbox" data-communication-recipient value="${esc(refKey(contact))}" ${selectedContact ? "checked" : ""} ${deliverable ? "" : "disabled"}><span class="communication-contact-avatar">${esc((contact.name || "C").slice(0, 1).toUpperCase())}</span><span class="communication-composer-contact-copy"><strong>${esc(contact.name || "Contacto sin nombre")}</strong><small>${esc([profile, contact.interest || "Sin interés registrado", `RMS: ${rmsPhaseLabel(contact.rms_phase)}`].join(" · "))}</small></span><span class="communication-contact-delivery ${deliverable ? "is-ready" : ""}">${deliverable ? esc(contact.email) : "Sin email"}</span></label>`;
+        }).join("") + (state.communicationAudienceHasMore ? `<div class="communication-composer-audience-more"><span>Hay más contactos que coinciden con estos filtros.</span><button type="button" class="text-button" data-load-more-composer-audience>Cargar los siguientes</button></div>` : "")
         : '<div class="communication-composer-audience-empty"><span class="material-symbols-outlined">group</span><span>No encontramos contactos para estos filtros.</span></div>';
   }
 
@@ -118,8 +136,10 @@
     const filters = state.communicationAudienceFilters || {};
     const fields = {
       communicationComposerAudienceSearch: filters.search || "",
+      communicationComposerAudienceType: filters.audience_type || "",
       communicationComposerAudienceInterest: filters.interest || "",
-      communicationComposerAudiencePurchases: filters.has_purchases || "",
+      communicationComposerAudiencePurchasedProduct: filters.purchased_product || "",
+      communicationComposerAudienceRmsPhase: filters.rms_phase || "",
     };
     Object.entries(fields).forEach(([id, value]) => { const field = document.getElementById(id); if (field) field.value = value; });
   }
@@ -144,9 +164,11 @@
 
   async function refreshComposerAudience() {
     const search = document.getElementById("communicationComposerAudienceSearch")?.value.trim() || "";
+    const audienceType = document.getElementById("communicationComposerAudienceType")?.value || "";
     const interest = document.getElementById("communicationComposerAudienceInterest")?.value.trim() || "";
-    const hasPurchases = document.getElementById("communicationComposerAudiencePurchases")?.value || "";
-    state.communicationAudienceFilters = { ...(state.communicationAudienceFilters || {}), search, interest, has_purchases: hasPurchases };
+    const purchasedProduct = document.getElementById("communicationComposerAudiencePurchasedProduct")?.value.trim() || "";
+    const rmsPhase = document.getElementById("communicationComposerAudienceRmsPhase")?.value || "";
+    state.communicationAudienceFilters = { ...(state.communicationAudienceFilters || {}), search, audience_type: audienceType, interest, purchased_product: purchasedProduct, rms_phase: rmsPhase };
     await loadAudience();
     render();
     renderComposerAudience();
@@ -192,11 +214,12 @@
     const active = communications.find((item) => String(item.id) === String(state.selectedCommunicationId));
     if (!active) { sendBar.innerHTML = '<span class="material-symbols-outlined">touch_app</span><p>Elige una comunicación para preparar su envío.</p>'; return; }
     const media = mediaFor(active);
-    if (selectedPiece && active) selectedPiece.innerHTML = `<div><span class="mono-label">Pieza seleccionada</span><strong>${esc(active.title)}</strong><p>${esc(active.subject || active.social_copy || "Aún sin texto de salida.")}</p><div class="communication-delivery-metrics"><span><b>${Number(active.recipients_total || 0)}</b> destinatarios</span><span><b>${Number(active.recipients_sent || 0)}</b> enviados</span><span><b>${Number(active.recipients_failed || 0)}</b> fallidos</span></div></div><div class="communication-selected-actions"><button class="ghost-button compact" type="button" data-edit-communication="${esc(active.id)}">Editar</button><button class="ghost-button compact" type="button" data-duplicate-communication="${esc(active.id)}">Duplicar</button><button class="ghost-button compact" type="button" data-archive-communication="${esc(active.id)}" ${String(active.status).toUpperCase() === "ARCHIVED" ? "disabled" : ""}>Archivar</button></div>`;
+    if (selectedPiece && active) selectedPiece.innerHTML = `<div><span class="mono-label">Pieza seleccionada</span><strong>${esc(active.title)}</strong><p>${esc(active.subject || active.social_copy || "Aún sin texto de salida.")}</p><div class="communication-delivery-metrics"><span><b>${Number(active.recipients_total || 0)}</b> destinatarios</span><span><b>${Number(active.views || 0)}</b> visitas</span><span><b>${Number(active.completions || 0)}</b> activaciones</span><span><b>${metricMoney(active.revenue)}</b> revenue</span><span><b>${active.cac === null ? "—" : metricMoney(active.cac)}</b> CAC</span><span><b>${active.roi === null ? "—" : `${(Number(active.roi) * 100).toFixed(0)}%`}</b> ROI</span></div></div><div class="communication-selected-actions"><button class="ghost-button compact" type="button" data-edit-communication="${esc(active.id)}">Editar</button><button class="ghost-button compact" type="button" data-duplicate-communication="${esc(active.id)}">Duplicar</button><button class="ghost-button compact" type="button" data-archive-communication="${esc(active.id)}" ${String(active.status).toUpperCase() === "ARCHIVED" ? "disabled" : ""}>Archivar</button></div>`;
     const mediaNote = media.length ? `${media.length} imagen${media.length === 1 ? "" : "es"} adjunta${media.length === 1 ? "" : "s"}.` : "Sin adjuntos.";
     if (String(active.status).toUpperCase() === "ARCHIVED") { sendBar.innerHTML = '<span class="material-symbols-outlined">inventory_2</span><div><strong>Comunicación archivada</strong><p>Conserva su historial de entrega. Duplícala para crear una nueva versión enviable.</p></div>'; return; }
     if (String(active.communication_type).toUpperCase() === "SOCIAL") {
-      sendBar.innerHTML = `<span class="material-symbols-outlined">share</span><div><strong>Publicación lista para redes</strong><p>${mediaNote} Copia el texto y descarga las imágenes para subirlas a la red que elijas.</p></div><button class="ghost-button compact" type="button" data-download-communication-media="${esc(active.id)}" ${media.length ? "" : "disabled"}>Descargar imágenes</button><button class="solid-button compact" type="button" data-copy-communication-social="${esc(active.id)}">Copiar publicación</button>`;
+      const published = active.publication_status === "PUBLISHED";
+      sendBar.innerHTML = `<span class="material-symbols-outlined">share</span><div><strong>${published ? "Publicación medida" : "Publicación lista para redes"}</strong><p>${published ? `Mide visitas, activaciones, leads, QR, ventas, CAC y ROI mediante su enlace Qori.` : "Registra la publicación para generar el enlace medido de la activación; luego copia el texto y súbelo a la red."}</p></div><label class="communication-publish-field"><span>Inversión COP</span><input id="communicationPublicationInvestment" type="number" min="0" value="${Number(active.investment || 0)}"></label><label class="communication-publish-field"><span>URL publicada (opcional)</span><input id="communicationPublicationUrl" type="url" value="${esc(active.external_publication_url || "")}" placeholder="https://..."></label><button class="ghost-button compact" type="button" data-download-communication-media="${esc(active.id)}" ${media.length ? "" : "disabled"}>Descargar imágenes</button><button class="ghost-button compact" type="button" data-copy-communication-social="${esc(active.id)}">Copiar publicación</button><button class="solid-button compact" type="button" data-publish-communication="${esc(active.id)}">${published ? "Actualizar publicación" : "Registrar publicación medida"}</button>`;
       return;
     }
     sendBar.innerHTML = `<span class="material-symbols-outlined">send</span><div><strong>${esc(active.title)}</strong><p>${recipients.length ? `${recipients.length} destinatario${recipients.length === 1 ? "" : "s"} seleccionado${recipients.length === 1 ? "" : "s"}.` : "Selecciona contactos para enviarla."} ${mediaNote}</p></div><label class="communication-consent"><input id="communicationConsentInput" type="checkbox"> Confirmo que aceptaron recibir comunicaciones.</label>${String(active.communication_type).toUpperCase() === "MIXED" ? `<button class="ghost-button compact" type="button" data-copy-communication-social="${esc(active.id)}">Copiar para redes</button>` : ""}<button class="solid-button compact" type="button" data-send-communication="${esc(active.id)}" ${recipients.length ? "" : "disabled"}>Enviar email</button>`;
@@ -287,24 +310,26 @@
   }
 
   document.addEventListener("click", async (event) => {
-    const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const all = event.target.closest("[data-communication-select-loaded]"); const clearSelection = event.target.closest("[data-communication-clear-selection]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]"); const clearComposerAudience = event.target.closest("[data-composer-clear-audience]");
+    const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const all = event.target.closest("[data-communication-select-loaded]"); const clearSelection = event.target.closest("[data-communication-clear-selection]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const publish = event.target.closest("[data-publish-communication]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const loadMoreComposerAudience = event.target.closest("[data-load-more-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]"); const clearComposerAudience = event.target.closest("[data-composer-clear-audience]");
     if (open || edit || duplicate) { try { await prepareComposerRelations(); } catch (error) { console.warn("No se pudieron actualizar los canales para comunicaciones.", error); } renderOptions(); positionComposerAudience(); }
     if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); } document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
     if (close) { composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); return; }
     if (loadComposerAudience) { try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } return; }
-    if (selectComposerAudience || all) { setAudienceSelection(); render(); renderComposerAudience(); return; }
+    if (loadMoreComposerAudience) { try { await loadAudience({ append: true }); render(); renderComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudieron cargar más contactos.", "error", { title: "Audiencia" }); } return; }
+    if (selectComposerAudience || all) { const available = setAudienceSelection(); render(); renderComposerAudience(); if (!available) showFeedback(`Ya seleccionaste el máximo de ${MAX_EMAIL_RECIPIENTS} contactos por envío.`, "info", { title: "Destinatarios" }); return; }
     if (clearComposerAudience || clearSelection) { setAudienceSelection("clear"); render(); renderComposerAudience(); return; }
     if (archive) { const item = state.communications.find((row) => String(row.id) === String(archive.dataset.archiveCommunication)); if (!item || !window.confirm(`¿Archivar “${item.title}”? Se conserva el historial, pero deja de quedar disponible para nuevos envíos.`)) return; await api(`/api/business/communications/${item.id}`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status: "ARCHIVED" }) }); state.communicationsLoaded = false; await loadCommunications({ force: true }); state.selectedCommunicationId = state.communications.find((row) => String(row.status).toUpperCase() !== "ARCHIVED")?.id || state.communications[0]?.id || null; render(); showFeedback("La comunicación quedó archivada.", "success", { title: "Comunicación archivada" }); return; }
     if (removeMedia) { const media = uploadedMedia(); media.splice(Number(removeMedia.dataset.removeCommunicationMedia), 1); setUploadedMedia(media); renderComposerPreview(); return; }
     if (clearUrl) { const input = document.getElementById("communicationImageInput"); if (input) input.value = ""; toggleComposer(); return; }
     if (pick) { state.selectedCommunicationId = pick.dataset.communicationSelect; render(); return; }
     if (download) { const item = state.communications.find((row) => String(row.id) === String(download.dataset.downloadCommunicationMedia)); downloadMedia(item); return; }
-    if (copy) { const item = state.communications.find((row) => String(row.id) === String(copy.dataset.copyCommunicationSocial)); const content = [item?.social_copy, item?.action_url].filter(Boolean).join("\n\n"); try { await navigator.clipboard.writeText(content); showFeedback("Publicación copiada.", "success", { title: "Texto copiado" }); } catch { window.prompt("Copia esta publicación", content); } return; }
+    if (copy) { const item = state.communications.find((row) => String(row.id) === String(copy.dataset.copyCommunicationSocial)); const content = [item?.social_copy, item?.tracking_url || item?.action_url].filter(Boolean).join("\n\n"); try { await navigator.clipboard.writeText(content); showFeedback("Publicación copiada con su enlace medido.", "success", { title: "Texto copiado" }); } catch { window.prompt("Copia esta publicación", content); } return; }
+    if (publish) { try { const investment = document.getElementById("communicationPublicationInvestment")?.value || 0; const externalUrl = document.getElementById("communicationPublicationUrl")?.value.trim() || ""; const data = await api(`/api/business/communications/${publish.dataset.publishCommunication}/publish`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ investment_amount: Number(investment), external_publication_url: externalUrl }) }); const item = state.communications.find((row) => String(row.id) === String(publish.dataset.publishCommunication)); if (item) Object.assign(item, data.communication); state.communicationsLoaded = false; await loadCommunications({ force: true }); render(); showFeedback("Publicación registrada. Usa el texto copiado con el enlace medido de Qori.", "success", { title: "Publicación medida" }); } catch (error) { showFeedback(error.message || "No se pudo registrar la publicación.", "error", { title: "Publicación" }); } return; }
     if (send) { const recipients = selectedRecipients(); if (!recipients.length) { showFeedback("Selecciona al menos un contacto que tenga email.", "info", { title: "Destinatarios" }); return; } if (!document.getElementById("communicationConsentInput")?.checked) { showFeedback("Confirma el consentimiento antes de enviar.", "info", { title: "Consentimiento requerido" }); return; } try { showFeedback("Enviando emails…", "loading", { title: "Comunicación", timeout: 0 }); const data = await api(`/api/business/communications/${send.dataset.sendCommunication}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) }); state.communicationSelectedRefs = []; state.communicationsLoaded = false; await loadCommunications({ force: true }); render(); const results = data.results || {}; const feedbackType = Number(results.sent || 0) ? "success" : "error"; showFeedback(`Envío finalizado: ${results.sent || 0} enviados, ${results.failed || 0} fallidos.`, feedbackType, { title: Number(results.sent || 0) ? "Comunicación enviada" : "No se enviaron correos" }); } catch (error) { showFeedback(error.message || "No se pudo completar el envío.", "error", { title: "Comunicación" }); } }
   });
 
   document.addEventListener("change", (event) => {
-    if (event.target.matches("[data-communication-recipient]")) { const selected = new Set(state.communicationSelectedRefs || []); if (event.target.checked) selected.add(event.target.value); else selected.delete(event.target.value); state.communicationSelectedRefs = Array.from(selected); render(); renderComposerAudience(); }
+    if (event.target.matches("[data-communication-recipient]")) { const selected = new Set(state.communicationSelectedRefs || []); if (event.target.checked && selected.size >= MAX_EMAIL_RECIPIENTS) { event.target.checked = false; showFeedback(`Puedes seleccionar hasta ${MAX_EMAIL_RECIPIENTS} contactos por envío.`, "info", { title: "Destinatarios" }); return; } if (event.target.checked) selected.add(event.target.value); else selected.delete(event.target.value); state.communicationSelectedRefs = Array.from(selected); render(); renderComposerAudience(); }
     if (event.target.matches('input[name="communicationType"]')) toggleComposer();
     if (event.target.matches("#communicationImageUploadInput")) addMediaFiles(event.target.files).finally(() => { event.target.value = ""; });
   });

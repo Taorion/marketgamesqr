@@ -40898,6 +40898,21 @@ function rmsDealProgressMarkup(active = "evaluation", detail = "") {
   return `<section class="rms-deal-progress" aria-label="Progreso comercial"><ol>${steps.map(([key, number, label], index) => `<li class="${index < activeIndex ? "is-done" : index === activeIndex ? "is-active" : ""}"><b>${escapeHtml(number)}</b><span>${escapeHtml(label)}</span></li>`).join("")}</ol><p>${escapeHtml(detail)}</p></section>`;
 }
 
+const RMS_NEGOTIATION_TABS = [
+  { key: "conversion", label: "Conversi\u00f3n", icon: "paid", result: "ACCEPTED", route: "NEGOTIATION_CLEAN", detail: "Confirma la venta y env\u00eda los datos a Ventas atribuidas." },
+  { key: "risk", label: "Riesgos de fuga", icon: "shield", result: "ACCEPTED", route: "NEEDS_RISK_REVIEW", detail: "Protege el acuerdo antes de atribuir la venta." },
+  { key: "recycle", label: "Reciclaje", icon: "autorenew", result: "RECYCLE", route: "NEEDS_RISK_REVIEW", detail: "Documenta por qu\u00e9 no convirti\u00f3 y programa una reactivaci\u00f3n permitida." },
+  { key: "followup", label: "Espera o p\u00e9rdida", icon: "schedule", result: "WAITING", route: "NEEDS_RISK_REVIEW", detail: "Conserva seguimiento, reproceso o p\u00e9rdida sin mezclarlo con una venta." },
+];
+
+function rmsNegotiationTabsMarkup(item = {}) {
+  return `<section class="rms-negotiation-tabs" data-rms-negotiation-tabs="${escapeHtml(item.id)}" aria-label="Decisi\u00f3n de Negociaci\u00f3n">
+    <header><span class="mono-label">Elige la condici\u00f3n real</span><strong>Cada ruta muestra solo los datos que necesita.</strong></header>
+    <div role="tablist">${RMS_NEGOTIATION_TABS.map((tab, index) => `<button type="button" role="tab" aria-selected="${index === 0 ? "true" : "false"}" class="${index === 0 ? "is-active" : ""}" data-rms-negotiation-tab="${escapeHtml(item.id)}" data-rms-negotiation-tab-key="${tab.key}"><span class="material-symbols-outlined" aria-hidden="true">${tab.icon}</span><span><strong>${escapeHtml(tab.label)}</strong><small>${escapeHtml(tab.detail)}</small></span></button>`).join("")}</div>
+  </section>
+  <aside class="rms-negotiation-cost-card" data-rms-nonconversion-cost="${escapeHtml(item.id)}" hidden><span class="material-symbols-outlined" aria-hidden="true">analytics</span><div><strong>Costo efectivo de no conversi\u00f3n</strong><p>Calculando solo descuentos y beneficios ya redimidos…</p></div></aside>`;
+}
+
 function rmsCommercialConfirmationStationCardMarkup(item = {}) {
   const flow = rmsCommercialWorkflow(item);
   const evaluation = flow.evaluation;
@@ -40937,6 +40952,7 @@ function rmsCommercialConfirmationStationCardMarkup(item = {}) {
         ${rmsDealProgressMarkup("confirmation", "Estás confirmando la condición comercial antes de proteger la venta.")}
         <header class="rms-commercial-console-head"><div><span class="mono-label">Estación 07 · Negociación · ${escapeHtml(scenarioLabel)}</span><h4>${escapeHtml(paymentReported ? "Pago informado · pendiente de confirmación comercial" : status)}</h4><p>${escapeHtml(paymentReported ? "El cliente reportó un pago. Confirma producto, valor, condición acordada y soporte antes de decidir entre venta limpia o protección anti-fuga." : "Confirma la condición comercial y decide si la venta puede atribuirse limpia o requiere protección anti-fuga.")}</p></div><span class="rms-commercial-state ${status === "Perdido" ? "is-risk" : paymentReported ? "is-pending" : ""}">${escapeHtml(status)}</span></header>
         <aside class="rms-negotiation-intent-strip"><span class="material-symbols-outlined" aria-hidden="true">handshake</span><div><span>Lo importante ahora</span><strong>Confirma que la promesa y el soporte coinciden.</strong><small>Negociar no es presionar: es dejar una condición clara que el cliente pueda reconocer y el equipo pueda cumplir.</small></div></aside>
+        ${rmsNegotiationTabsMarkup(item)}
         <section class="rms-commercial-info-block rms-negotiation-context-block"><h5>A. Contexto heredado</h5><dl><div><dt>Respuesta u objeción</dt><dd>${escapeHtml(paymentReported ? "Reportó que ya realizó el pago" : evaluation.objections || evaluation.note || "Sin respuesta registrada")}</dd></div><div><dt>Oferta o producto</dt><dd>${escapeHtml(product || "Pendiente de confirmar")}</dd></div><div><dt>Valor previo</dt><dd>${escapeHtml(amount ? `${amount} ${currency}` : "Pendiente")}</dd></div><div><dt>Canal y último contacto</dt><dd>${escapeHtml(rmsActivationDelivery(item).channel === "email" ? "Email" : "WhatsApp")}</dd></div><div><dt>Campaña u origen</dt><dd>${escapeHtml(item.campaign_name || item.source_detail || item.source_type || "Sin origen definido")}</dd></div><div><dt>Retorno de Riesgos</dt><dd>${escapeHtml(flow.risk?.result === "RETURN_TO_NEGOTIATION" ? `Caso devuelto: ${flow.risk.reason || "requiere ajuste"}` : "No aplica")}</dd></div></dl></section>
         <section class="rms-commercial-info-block rms-negotiation-condition-block"><h5>B. Condición comercial y ronda actual</h5><div class="rms-sale-form-grid"><label><span>Objetivo de la ronda</span><input type="text" value="${escapeHtml(negotiation.objective || "Confirmar condición comercial")}" data-rms-negotiation-objective="${escapeHtml(item.id)}"></label><label><span>Tipo de objeción</span><select data-rms-negotiation-objection="${escapeHtml(item.id)}"><option value="PRICE" ${initialDraft.objection_type === "PRICE" ? "selected" : ""}>Precio</option><option value="PAYMENT" ${initialDraft.objection_type === "PAYMENT" ? "selected" : ""}>Condiciones de pago</option><option value="TIME" ${initialDraft.objection_type === "TIME" ? "selected" : ""}>Tiempo</option><option value="SCOPE" ${initialDraft.objection_type === "SCOPE" ? "selected" : ""}>Alcance o producto</option><option value="TRUST" ${initialDraft.objection_type === "TRUST" ? "selected" : ""}>Confianza</option><option value="COMPETITION" ${initialDraft.objection_type === "COMPETITION" ? "selected" : ""}>Competencia</option><option value="OTHER" ${initialDraft.objection_type === "OTHER" ? "selected" : ""}>Otra / sin objeción</option></select></label><label><span>Estado de la objeción</span><select data-rms-negotiation-objection-status="${escapeHtml(item.id)}"><option value="NOT_APPLICABLE" ${initialDraft.objection_status === "NOT_APPLICABLE" ? "selected" : ""}>No aplica</option><option value="PENDING" ${initialDraft.objection_status === "PENDING" ? "selected" : ""}>Pendiente</option><option value="RESOLVED" ${initialDraft.objection_status === "RESOLVED" ? "selected" : ""}>Resuelta</option><option value="NEEDS_VALIDATION" ${initialDraft.objection_status === "NEEDS_VALIDATION" ? "selected" : ""}>Requiere validación adicional</option></select></label><label><span>Condición inicial del cliente</span><input type="text" value="${escapeHtml(initialDraft.customer_condition)}" data-rms-negotiation-condition="${escapeHtml(item.id)}" placeholder="Qué pidió o confirmó"></label><label><span>Propuesta o contraoferta</span><input type="text" value="${escapeHtml(initialDraft.proposal)}" data-rms-negotiation-proposal="${escapeHtml(item.id)}" placeholder="Qué se ofreció"></label><label><span>Beneficio o concesión</span><input type="text" value="${escapeHtml(initialDraft.concession)}" data-rms-negotiation-concession="${escapeHtml(item.id)}" placeholder="Opcional"></label><label><span>Canal de contacto</span><select data-rms-negotiation-channel="${escapeHtml(item.id)}"><option value="WHATSAPP" ${initialDraft.channel === "WHATSAPP" ? "selected" : ""}>WhatsApp</option><option value="EMAIL" ${initialDraft.channel === "EMAIL" ? "selected" : ""}>Email</option><option value="CALL" ${initialDraft.channel === "CALL" ? "selected" : ""}>Llamada</option><option value="MEETING" ${initialDraft.channel === "MEETING" ? "selected" : ""}>Reunión</option><option value="OTHER" ${initialDraft.channel === "OTHER" || !initialDraft.channel ? "selected" : ""}>Otro</option></select></label><label><span>Producto o servicio final</span><select data-rms-confirm-product="${escapeHtml(item.id)}">${rmsInventoryProductPickerOptions(productId, product)}</select><small>Selecciona el producto activo del inventario; el nombre y precio histórico quedan como evidencia.</small></label><label><span>Valor final esperado</span><input type="number" min="1" step="0.01" value="${escapeHtml(amount)}" data-rms-confirm-amount="${escapeHtml(item.id)}" placeholder="0"></label><label><span>Moneda</span><select data-rms-confirm-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((code) => `<option value="${code}" ${currency === code ? "selected" : ""}>${code}</option>`).join("")}</select></label><label><span>Referencia de pago</span><input type="text" value="${escapeHtml(confirmation.payment_reference || "")}" data-rms-confirm-reference="${escapeHtml(item.id)}" placeholder="Factura, link o referencia"></label><label><span>Responsable</span><input type="text" value="${escapeHtml(confirmation.responsible || "")}" data-rms-confirm-responsible="${escapeHtml(item.id)}" placeholder="Quien confirmó"></label><label><span>Próximo contacto</span><input type="datetime-local" value="${escapeHtml(rmsActivationDatetimeLocal(negotiation.next_action_at || "", 2))}" data-rms-negotiation-next-at="${escapeHtml(item.id)}"></label></div><label class="rms-commercial-note-field" data-rms-objection-resolution-wrap="${escapeHtml(item.id)}"><span>Cómo se resolvió la objeción</span><textarea rows="2" data-rms-negotiation-objection-resolution="${escapeHtml(item.id)}" placeholder="Propuesta, evidencia o condición verificable">${escapeHtml(initialDraft.objection_resolution)}</textarea></label><label class="rms-commercial-note-field"><span>Evidencia, referencia o comprobante</span><textarea rows="3" data-rms-confirm-evidence="${escapeHtml(item.id)}" placeholder="Link, número de factura, soporte o detalle verificable">${escapeHtml(confirmation.evidence || "")}</textarea></label><label class="rms-commercial-note-field"><span>Resumen de conversación y condición acordada</span><textarea rows="3" data-rms-confirm-note="${escapeHtml(item.id)}" placeholder="Qué dijo el cliente, qué se acordó y qué falta">${escapeHtml(confirmation.note || negotiation.summary || "")}</textarea></label></section>
         <section class="rms-commercial-info-block rms-negotiation-health" data-rms-negotiation-health="${escapeHtml(item.id)}">${rmsNegotiationCleanHealthMarkup(item, initialDraft)}</section>
@@ -40946,6 +40962,10 @@ function rmsCommercialConfirmationStationCardMarkup(item = {}) {
         <div class="rms-commercial-action-row"><small data-rms-negotiation-help="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span>Completa la condición, producto, valor, canal, evidencia, responsable y resumen antes de confirmar.</small><button class="solid-button compact" type="button" data-rms-save-negotiation-decision="${escapeHtml(item.id)}" data-rms-negotiation-cta-button="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span><span data-rms-negotiation-cta="${escapeHtml(item.id)}">Confirmar acuerdo y enviar a Riesgos de fuga</span></button></div>
       </section>
     </article>`;
+}
+
+function rmsRiskTabsMarkup(item = {}) {
+  return `<section class="rms-risk-tabs" data-rms-risk-tabs="${escapeHtml(item.id)}" aria-label="Decisión de Riesgos de fuga"><header><span class="mono-label">Elige el destino del acuerdo</span><strong>Solo una decisión por vez.</strong></header><div role="tablist"><button class="is-active" type="button" role="tab" aria-selected="true" data-rms-risk-tab="${escapeHtml(item.id)}" data-rms-risk-tab-key="sale"><span class="material-symbols-outlined" aria-hidden="true">paid</span><span><strong>Liberar venta</strong><small>Enviar a Ventas atribuidas.</small></span></button><button type="button" role="tab" aria-selected="false" data-rms-risk-tab="${escapeHtml(item.id)}" data-rms-risk-tab-key="recycle"><span class="material-symbols-outlined" aria-hidden="true">autorenew</span><span><strong>Reciclar lead</strong><small>Explicar qué ocurrió y cuándo retomarlo.</small></span></button></div></section><aside class="rms-negotiation-cost-card" data-rms-nonconversion-cost="${escapeHtml(item.id)}" hidden><span class="material-symbols-outlined" aria-hidden="true">analytics</span><div><strong>Costo efectivo de no conversión</strong><p>Calculando solo descuentos y beneficios ya redimidos…</p></div></aside>`;
 }
 
 function rmsRiskValidationStationCardMarkup(item = {}) {
@@ -43878,7 +43898,19 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-negotiation-route]").forEach((select) => {
     select.addEventListener("change", () => updateRmsNegotiationDecisionUi(root, select.dataset.rmsNegotiationRoute || ""));
   });
-  root.querySelectorAll("[data-rms-negotiation-objective], [data-rms-negotiation-objection], [data-rms-negotiation-objection-status], [data-rms-negotiation-objection-resolution], [data-rms-negotiation-condition], [data-rms-negotiation-proposal], [data-rms-negotiation-concession], [data-rms-negotiation-channel], [data-rms-confirm-product-id], [data-rms-confirm-amount], [data-rms-confirm-reference], [data-rms-confirm-responsible], [data-rms-confirm-evidence], [data-rms-confirm-note]").forEach((field) => {
+  root.querySelectorAll("[data-rms-negotiation-tab]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.rmsNegotiationTab || "";
+      activateRmsNegotiationTab(root, id, button.dataset.rmsNegotiationTabKey || "conversion");
+    });
+  });
+  root.querySelectorAll("[data-rms-negotiation-tabs]").forEach((tabs) => {
+    const id = tabs.dataset.rmsNegotiationTabs || "";
+    const selected = rmsCommercialNode(root, "[data-rms-negotiation-result]", id)?.value || "ACCEPTED";
+    const initialTab = selected === "RECYCLE" ? "recycle" : selected === "ACCEPTED" ? "conversion" : "followup";
+    activateRmsNegotiationTab(root, id, initialTab);
+  });
+  root.querySelectorAll("[data-rms-negotiation-objective], [data-rms-negotiation-objection], [data-rms-negotiation-objection-status], [data-rms-negotiation-objection-resolution], [data-rms-negotiation-condition], [data-rms-negotiation-proposal], [data-rms-negotiation-concession], [data-rms-negotiation-channel], [data-rms-confirm-product-id], [data-rms-confirm-product], [data-rms-confirm-amount], [data-rms-confirm-reference], [data-rms-confirm-responsible], [data-rms-confirm-evidence], [data-rms-confirm-note]").forEach((field) => {
     const id = Object.values(field.dataset || {}).find((value) => rmsOpportunityById(value)) || "";
     const refresh = () => id && updateRmsNegotiationDecisionUi(root, id);
     field.addEventListener("input", refresh);
@@ -43897,6 +43929,21 @@ function bindRmsMachineActions(root) {
     button.addEventListener("click", () => {
       const item = rmsOpportunityById(button.dataset.rmsSaveRiskReview || button.dataset.rmsReturnCommercialConfirmation || "");
       if (item) saveRmsRiskReview(item, root, button.hasAttribute("data-rms-save-risk-review") ? "CLEARED" : "RETURN_TO_NEGOTIATION").catch((error) => showFeedback(error.message || "No pudimos guardar la validación final.", "error", { title: "Riesgos de fuga" }));
+    });
+  });
+  root.querySelectorAll(".rms-risk-work-item[data-rms-station-lead]").forEach((card) => {
+    const id = card.dataset.rmsStationLead || "";
+    const consoleNode = card.querySelector(".rms-commercial-work-console");
+    const header = consoleNode?.querySelector(".rms-commercial-console-head");
+    if (consoleNode && header && !consoleNode.querySelector("[data-rms-risk-tabs]")) {
+      header.insertAdjacentHTML("afterend", rmsRiskTabsMarkup({ id }));
+    }
+    activateRmsRiskTab(root, id, "sale");
+  });
+  root.querySelectorAll("[data-rms-risk-tab]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.rmsRiskTab || "";
+      activateRmsRiskTab(root, id, button.dataset.rmsRiskTabKey || "sale");
     });
   });
   root.querySelectorAll("[data-rms-save-risk-decision]").forEach((button) => {
@@ -46039,7 +46086,7 @@ async function saveRmsEvaluationResponse(item, root) {
 }
 
 function rmsCommercialConfirmationDraft(root, id) {
-  const product = findInventoryProductById(rmsCommercialNode(root, "[data-rms-confirm-product-id]", id)?.value || "");
+  const product = findInventoryProductById(rmsCommercialNode(root, "[data-rms-confirm-product-id]", id)?.value || rmsCommercialNode(root, "[data-rms-confirm-product]", id)?.value || "");
   return {
     inventory_product_id: product?.id || null,
     product_name: product?.name || "",
@@ -46213,6 +46260,122 @@ function updateRmsNegotiationDecisionUi(root, id) {
     : `<span class="material-symbols-outlined" aria-hidden="true">verified_user</span>${escapeHtml(result === "ACCEPTED" && commercialRoute === "NEEDS_RISK_REVIEW" ? "El acuerdo irá a Riesgos de fuga para protegerlo antes de atribuir." : "Completa y documenta la decisión antes de guardar.")}`;
 }
 
+function rmsNegotiationFieldWrap(root, selector, id) {
+  const node = rmsCommercialNode(root, selector, id);
+  return node?.closest("label") || node?.parentElement || null;
+}
+
+function rmsToggleNegotiationNode(root, selector, id, visible) {
+  const node = typeof selector === "string" ? rmsNegotiationFieldWrap(root, selector, id) : selector;
+  if (node) node.hidden = !visible;
+}
+
+function rmsNegotiationCostMarkup(cost = {}) {
+  const totals = Object.entries(cost.totals_by_currency || {});
+  const totalMarkup = totals.length
+    ? totals.map(([currency, value]) => `<strong>${escapeHtml(new Intl.NumberFormat("es-CO", { style: "currency", currency, maximumFractionDigits: 0 }).format(Number(value || 0)))}</strong>`).join(" ")
+    : "<strong>Sin costo monetario registrado</strong>";
+  const withoutCost = Number(cost.benefits_without_recorded_cost || 0);
+  return `<span class="material-symbols-outlined" aria-hidden="true">analytics</span><div><span class="mono-label">Costo real antes de reciclar</span>${totalMarkup}<p>${escapeHtml(cost.message || "Solo se incluyen beneficios redimidos.")}</p>${withoutCost ? `<small>${withoutCost} beneficio(s) redimido(s) sin costo monetario cargado: Qori no los estima.</small>` : ""}</div>`;
+}
+
+async function loadRmsNonConversionCost(item, root) {
+  const card = rmsCommercialNode(root, "[data-rms-nonconversion-cost]", item.id);
+  if (!card || card.dataset.loaded === "true") return;
+  card.hidden = false;
+  card.dataset.loaded = "loading";
+  try {
+    const params = new URLSearchParams({ source_id: item.source_id, source_type: item.source_type || "PLAYER" });
+    const cost = await api(`/api/business/rms-machine/unconverted-cost?${params.toString()}`, { headers: authHeaders() });
+    card.innerHTML = rmsNegotiationCostMarkup(cost || {});
+    card.dataset.loaded = "true";
+  } catch (error) {
+    card.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">info</span><div><strong>No se pudo calcular el costo todav\u00eda</strong><p>El costo se recalcular\u00e1 y se guardar\u00e1 al enviar el lead a Reciclaje.</p></div>`;
+    card.dataset.loaded = "error";
+  }
+}
+
+function activateRmsNegotiationTab(root, id, tabKey, item = rmsOpportunityById(id)) {
+  const tab = RMS_NEGOTIATION_TABS.find((entry) => entry.key === tabKey) || RMS_NEGOTIATION_TABS[0];
+  const result = rmsCommercialNode(root, "[data-rms-negotiation-result]", id);
+  const route = rmsCommercialNode(root, "[data-rms-negotiation-route]", id);
+  if (result) result.value = tab.result;
+  if (route) route.value = tab.route;
+  root.querySelectorAll(`[data-rms-negotiation-tab="${CSS.escape(id)}"]`).forEach((button) => {
+    const active = button.dataset.rmsNegotiationTabKey === tab.key;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
+  const conditionBlock = card?.querySelector(".rms-negotiation-condition-block");
+  const healthBlock = rmsCommercialNode(root, "[data-rms-negotiation-health]", id);
+  if (conditionBlock) {
+    const compactCondition = ["recycle", "followup"].includes(tab.key);
+    conditionBlock.hidden = false;
+    conditionBlock.querySelectorAll("label").forEach((label) => { label.hidden = compactCondition; });
+    if (compactCondition) {
+      rmsToggleNegotiationNode(root, "[data-rms-negotiation-channel]", id, tab.key === "recycle");
+      rmsToggleNegotiationNode(root, "[data-rms-negotiation-next-at]", id, true);
+    }
+  }
+  if (healthBlock) healthBlock.hidden = !["conversion", "risk"].includes(tab.key);
+  rmsToggleNegotiationNode(root, "[data-rms-negotiation-result]", id, tab.key === "followup");
+  rmsToggleNegotiationNode(root, "[data-rms-negotiation-route]", id, ["conversion", "risk"].includes(tab.key));
+  rmsToggleNegotiationNode(root, "[data-rms-negotiation-reprocess]", id, tab.key === "followup" && result?.value === "REPROCESS");
+  root.querySelectorAll(`[data-rms-negotiation-recycle-wrap="${CSS.escape(id)}"]`).forEach((node) => { node.hidden = tab.key !== "recycle"; });
+  rmsToggleNegotiationNode(root, "[data-rms-negotiation-lost-classification]", id, tab.key === "followup" && result?.value === "LOST");
+  if (!["recycle", "followup"].includes(tab.key)) {
+    rmsToggleNegotiationNode(root, "[data-rms-negotiation-channel]", id, true);
+    rmsToggleNegotiationNode(root, "[data-rms-negotiation-next-at]", id, true);
+  }
+  const costCard = rmsCommercialNode(root, "[data-rms-nonconversion-cost]", id);
+  if (costCard) costCard.hidden = tab.key !== "recycle";
+  if (tab.key === "recycle" && item) loadRmsNonConversionCost(item, root);
+  updateRmsNegotiationDecisionUi(root, id);
+}
+
+function activateRmsRiskTab(root, id, tabKey, item = rmsOpportunityById(id)) {
+  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
+  if (!card) return;
+  const decision = rmsCommercialNode(root, "[data-rms-risk-decision]", id);
+  if (decision) decision.value = tabKey === "recycle" ? "RECYCLE" : "CLEARED";
+  card.querySelectorAll(".rms-commercial-info-block label").forEach((label) => { label.hidden = true; });
+  const show = (selector) => rmsToggleNegotiationNode(root, selector, id, true);
+  if (tabKey === "recycle") {
+    show("[data-rms-risk-ticket-action]");
+    show("[data-rms-risk-recycle-reason]");
+    show("[data-rms-risk-recycle-strategy]");
+    show("[data-rms-risk-reason]");
+    show("[data-rms-risk-next-at]");
+  } else {
+    show("[data-rms-risk-decision]");
+    show("[data-rms-risk-ticket-action]");
+    show("[data-rms-risk-reason]");
+  }
+  card.querySelectorAll(`[data-rms-risk-tab="${CSS.escape(id)}"]`).forEach((button) => {
+    const active = button.dataset.rmsRiskTabKey === tabKey;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  const preview = rmsCommercialNode(root, "[data-rms-risk-preview]", id);
+  const action = rmsCommercialNode(root, "[data-rms-save-risk-decision]", id);
+  const reason = rmsCommercialNode(root, "[data-rms-risk-reason]", id);
+  if (tabKey === "recycle") {
+    if (preview) preview.innerHTML = "<strong>Siguiente paso: Reciclaje comercial</strong><small>Se conserva el motivo, la estrategia y el costo efectivo de los beneficios redimidos antes de volver a Evaluación.</small>";
+    if (action) action.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">autorenew</span>Enviar a Reciclaje comercial';
+    if (reason) reason.placeholder = "Explica qué ocurrió, qué se intentó y qué debe cambiar antes de reactivar";
+    const costCard = rmsCommercialNode(root, "[data-rms-nonconversion-cost]", id);
+    if (costCard) costCard.hidden = false;
+    if (item) loadRmsNonConversionCost(item, root);
+  } else {
+    if (preview) preview.innerHTML = "<strong>Siguiente paso: Ventas atribuidas</strong><small>La venta se libera para registrar el pago, costos, ROI y atribución comercial.</small>";
+    if (action) action.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">paid</span>Liberar venta y enviar a Ventas atribuidas';
+    if (reason) reason.placeholder = "Explica por qué la condición y la evidencia ya pueden atribuirse";
+    const costCard = rmsCommercialNode(root, "[data-rms-nonconversion-cost]", id);
+    if (costCard) costCard.hidden = true;
+  }
+}
+
 async function saveRmsNegotiationDecision(item, root) {
   const draft = rmsNegotiationDraft(root, item.id);
   const actionButton = rmsCommercialNode(root, "[data-rms-negotiation-cta-button]", item.id);
@@ -46299,6 +46462,10 @@ async function saveRmsRiskDecision(item, root) {
   }
   if (["WAITING", "RECYCLE"].includes(result) && !next_action_at) {
     showFeedback("Programa la fecha de seguimiento o reactivación.", "info", { title: "Riesgos de fuga" });
+    return;
+  }
+  if (result === "RECYCLE" && (!rmsCommercialNode(root, "[data-rms-risk-recycle-reason]", item.id)?.value || !rmsCommercialNode(root, "[data-rms-risk-recycle-strategy]", item.id)?.value)) {
+    showFeedback("Para Reciclaje define el motivo y la estrategia de reactivación.", "info", { title: "Riesgos de fuga" });
     return;
   }
   const payload = {
