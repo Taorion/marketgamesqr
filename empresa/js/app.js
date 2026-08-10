@@ -489,6 +489,8 @@ const accountSloganInput = document.getElementById("accountSloganInput");
 const accountNitInput = document.getElementById("accountNitInput");
 const accountContactInput = document.getElementById("accountContactInput");
 const accountEmailInput = document.getElementById("accountEmailInput");
+const accountCommunicationSenderNameInput = document.getElementById("accountCommunicationSenderNameInput");
+const accountCommunicationSenderEmailInput = document.getElementById("accountCommunicationSenderEmailInput");
 const accountPhoneInput = document.getElementById("accountPhoneInput");
 const accountWebsiteInput = document.getElementById("accountWebsiteInput");
 const accountCityInput = document.getElementById("accountCityInput");
@@ -5786,6 +5788,8 @@ function renderAccountView() {
   if (accountNitInput) accountNitInput.value = business.nit || "";
   if (accountContactInput) accountContactInput.value = business.contact_name || "";
   if (accountEmailInput) accountEmailInput.value = business.contact_email || "";
+  if (accountCommunicationSenderNameInput) accountCommunicationSenderNameInput.value = business.communication_sender_name || business.name || "";
+  if (accountCommunicationSenderEmailInput) accountCommunicationSenderEmailInput.value = business.communication_sender_email || "";
   if (accountPhoneInput) accountPhoneInput.value = business.phone || "";
   if (accountWebsiteInput) accountWebsiteInput.value = business.website || "";
   if (accountCityInput) accountCityInput.value = business.city || "";
@@ -29186,6 +29190,8 @@ async function submitAccountProfile(event) {
       slogan: optionalInputValue(accountSloganInput),
       contact_name: optionalInputValue(accountContactInput),
       contact_email: optionalInputValue(accountEmailInput),
+      communication_sender_name: optionalInputValue(accountCommunicationSenderNameInput),
+      communication_sender_email: optionalInputValue(accountCommunicationSenderEmailInput),
       phone: optionalInputValue(accountPhoneInput),
       website: optionalInputValue(accountWebsiteInput),
       city: optionalInputValue(accountCityInput),

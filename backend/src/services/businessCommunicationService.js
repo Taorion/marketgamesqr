@@ -25,6 +25,28 @@ function normalizedRecipientEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function communicationSenderName(value) {
+  return String(value || "").replace(/[<>\"\r\n]/g, "").trim();
+}
+
+async function businessCommunicationSender(businessId, connectedUserEmail) {
+  const result = await query(
+    "select name, settings from businesses where id = $1 and is_active = true",
+    [businessId]
+  );
+  const business = result.rows[0];
+  if (!business) throw notFound("Empresa no encontrada.");
+
+  const settings = business.settings || {};
+  const senderEmail = normalizedRecipientEmail(settings.communication_sender_email);
+  if (!senderEmail) {
+    throw badRequest("Configura el email remitente verificado de tu empresa en Cuenta antes de enviar una comunicacion. No enviaremos desde MarketGamesQR por defecto.");
+  }
+  const senderName = communicationSenderName(settings.communication_sender_name || business.name) || "Qori";
+  const replyTo = normalizedRecipientEmail(connectedUserEmail) || senderEmail;
+  return { from: `${senderName} <${senderEmail}>`, replyTo };
+}
+
 function normalizeMediaAssets(communication) {
   const saved = Array.isArray(communication?.metadata?.media_assets) ? communication.metadata.media_assets : [];
   const unique = [];
@@ -356,13 +378,14 @@ async function logLeadCommunication({ businessId, contact, communication, status
   );
 }
 
-async function sendBusinessCommunication(businessId, userId, id, recipientRefs, consentConfirmed) {
+async function sendBusinessCommunication(businessId, userId, id, recipientRefs, consentConfirmed, connectedUserEmail = null) {
   if (!consentConfirmed) throw badRequest("Confirma que los destinatarios aceptaron recibir esta comunicación antes de enviarla.");
   const found = await query("select * from business_communications where id = $1 and business_id = $2", [id, businessId]);
   if (!found.rowCount) throw notFound("Comunicación no encontrada.");
   const communication = found.rows[0];
   if (!['EMAIL', 'MIXED'].includes(communication.communication_type)) throw badRequest("Esta comunicación no está configurada para email.");
   if (!communication.subject || !communication.email_body) throw badRequest("Completa asunto y mensaje antes de enviar.");
+  const sender = await businessCommunicationSender(businessId, connectedUserEmail);
   let emailTrackingUrl = null;
   if (communication.activation_id) {
     const activation = await query("select public_slug from interactive_activations where id = $1 and company_id = $2", [communication.activation_id, businessId]);
@@ -435,7 +458,9 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
     const attachments = makeEmailAttachments(mediaAssets);
     try {
       const provider = await sendBusinessCommunicationEmail({
+        from: sender.from,
         to: contact.email,
+        replyTo: sender.replyTo,
         subject,
         text: message,
         html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(attachments.length), actionUrl: emailTrackingUrl || communication.action_url }),

@@ -14,9 +14,13 @@ function deliveryError(message) {
   return error;
 }
 
-async function sendBusinessCommunicationEmail({ to, subject, text, html, replyTo, attachments = [] }) {
+async function sendBusinessCommunicationEmail({ from, to, subject, text, html, replyTo, attachments = [] }) {
   if (!env.resendApiKey) {
     throw serviceUnavailable("El envío masivo por email requiere configurar RESEND_API_KEY y un remitente verificado.");
+  }
+
+  if (!from) {
+    throw serviceUnavailable("Configura un remitente propio y verificado para esta empresa antes de enviar comunicaciones por email.");
   }
 
   const response = await fetch("https://api.resend.com/emails", {
@@ -26,7 +30,7 @@ async function sendBusinessCommunicationEmail({ to, subject, text, html, replyTo
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: env.marketingMailFrom,
+      from,
       to: [to],
       ...(replyTo ? { reply_to: replyTo } : {}),
       subject,
