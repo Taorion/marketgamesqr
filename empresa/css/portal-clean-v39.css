@@ -17074,3 +17074,18 @@ html body > :is(.modal-shell, .modal-overlay):not(.hidden) > :is(.modal-card, .m
     border-radius: 16px !important;
   }
 }
+
+/* Dashboard branch table: this compact utility card does not need the
+ * inherited ruler from generic table headers. It was visually cutting across
+ * the section title, especially next to the close control. */
+html body[data-current-view="dashboard"] .portal-shell .quiet-zone[data-quiet-zone-key="dashboard:sucursales-y-revenue-atribuido"] > .quiet-zone-control-head {
+  align-items: center !important;
+  min-height: 40px !important;
+  padding-bottom: 14px !important;
+  box-shadow: none !important;
+  border-bottom: 0 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .quiet-zone[data-quiet-zone-key="dashboard:sucursales-y-revenue-atribuido"] > .table-wrap {
+  margin-top: 0 !important;
+}
