@@ -173,6 +173,79 @@ function trackingUrls(row) {
   };
 }
 
+function communicationEffortContentType(communication = {}) {
+  const type = String(communication.communication_type || "").toUpperCase();
+  if (type === "EMAIL") return "EMAIL";
+  if (type === "MIXED") return "CAMPAIGN";
+  return "POST";
+}
+
+function communicationEffortStatus(communication = {}) {
+  if (String(communication.status || "").toUpperCase() === "ARCHIVED") return "ARCHIVED";
+  if (String(communication.publication_status || "").toUpperCase() === "PUBLISHED" || ["SENT", "READY"].includes(String(communication.status || "").toUpperCase())) return "ACTIVE";
+  return "DRAFT";
+}
+
+async function syncCommunicationChannelEffort(businessId, userId, communication = {}) {
+  const existing = await query(
+    `select * from business_acquisition_channel_efforts
+     where business_id = $1 and metadata->>'communication_id' = $2
+     order by updated_at desc nulls last, created_at desc
+     limit 1`,
+    [businessId, communication.id]
+  );
+  const existingEffort = existing.rows[0] || null;
+  const effortStatus = communicationEffortStatus(communication);
+  if (!communication.channel_id || effortStatus === "ARCHIVED") {
+    if (existingEffort && existingEffort.status !== "ARCHIVED") {
+      await query(
+        "update business_acquisition_channel_efforts set status='ARCHIVED', updated_at=now() where id=$1 and business_id=$2",
+        [existingEffort.id, businessId]
+      );
+    }
+    return null;
+  }
+  const metadata = {
+    ...(existingEffort?.metadata && typeof existingEffort.metadata === "object" ? existingEffort.metadata : {}),
+    source_module: "business_communication",
+    communication_id: communication.id,
+    tracking_token: communication.tracking_token || null,
+    activation_id: communication.activation_id || null,
+  };
+  const media = normalizeMediaAssets(communication);
+  const creativeUrl = String(communication.image_url || media.find((item) => /^https?:\/\//i.test(String(item?.source || "")))?.source || "").trim() || null;
+  const sourceUrl = communication.external_publication_url || communication.action_url || existingEffort?.source_url || null;
+  const description = communication.social_copy || communication.email_body || existingEffort?.description || null;
+  const objective = existingEffort?.objective || (String(communication.communication_type || "").toUpperCase() === "EMAIL" ? "Comunicar y convertir por email" : "Comunicar y convertir desde la pieza");
+  const publishedAt = String(communication.publication_status || "").toUpperCase() === "PUBLISHED"
+    ? (communication.published_at || existingEffort?.published_at || new Date().toISOString())
+    : existingEffort?.published_at || null;
+  if (existingEffort) {
+    await query(
+      `update business_acquisition_channel_efforts
+       set channel_id=$3, campaign_id=$4, title=$5, description=$6, objective=$7, content_type=$8, status=$9,
+           published_at=$10::timestamptz, starts_at=coalesce(starts_at, $11::timestamptz),
+           creative_url=$12, source_url=$13, metadata=$14::jsonb, updated_at=now()
+       where id=$1 and business_id=$2`,
+      [existingEffort.id, businessId, communication.channel_id, communication.campaign_id || null, communication.title, description,
+        objective, communicationEffortContentType(communication), effortStatus, publishedAt,
+        communication.created_at || new Date().toISOString(), creativeUrl, sourceUrl, JSON.stringify(metadata)]
+    );
+    return existingEffort.id;
+  }
+  const inserted = await query(
+    `insert into business_acquisition_channel_efforts
+      (business_id, channel_id, campaign_id, title, description, objective, content_type, status,
+       published_at, starts_at, budget_amount, currency, creative_url, source_url, metadata, created_by_user_id)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9::timestamptz,$10::timestamptz,0,'COP',$11,$12,$13::jsonb,$14)
+     returning id`,
+    [businessId, communication.channel_id, communication.campaign_id || null, communication.title, description, objective,
+      communicationEffortContentType(communication), effortStatus, publishedAt, communication.created_at || new Date().toISOString(),
+      creativeUrl, sourceUrl, JSON.stringify(metadata), userId]
+  );
+  return inserted.rows[0]?.id || null;
+}
+
 async function publishBusinessCommunication(businessId, userId, id, payload = {}) {
   const found = await query("select * from business_communications where id = $1 and business_id = $2", [id, businessId]);
   if (!found.rowCount) throw notFound("Comunicación no encontrada.");
@@ -184,7 +257,7 @@ async function publishBusinessCommunication(businessId, userId, id, payload = {}
   const trackingUrl = publicActivationUrl(activation.rows[0].public_slug, communication.tracking_token, "social");
   const investment = Number(payload.investment_amount || 0);
   if (!Number.isFinite(investment) || investment < 0) throw badRequest("La inversión debe ser un valor válido mayor o igual a cero.");
-  const effortMetadata = JSON.stringify({ communication_id: communication.id, tracking_token: communication.tracking_token, tracking_url: trackingUrl, activation_id: communication.activation_id });
+  const effortMetadata = JSON.stringify({ source_module: "business_communication", communication_id: communication.id, tracking_token: communication.tracking_token, tracking_url: trackingUrl, activation_id: communication.activation_id });
   const existingEffort = await query(
     `select id from business_acquisition_channel_efforts
      where business_id = $1 and metadata->>'communication_id' = $2 and status <> 'ARCHIVED'
@@ -225,6 +298,7 @@ async function createBusinessCommunication(businessId, userId, payload) {
       payload.social_copy || null, payload.image_url || null, payload.action_url || null,
       JSON.stringify(payload.audience_filters || {}), JSON.stringify(payload.metadata || {}), userId]
   );
+  await syncCommunicationChannelEffort(businessId, userId, result.rows[0]);
   return { communication: result.rows[0] };
 }
 
@@ -243,6 +317,7 @@ async function updateBusinessCommunication(businessId, userId, id, payload) {
       merged.social_copy || null, merged.image_url || null, merged.action_url || null,
       JSON.stringify(merged.audience_filters || {}), JSON.stringify(merged.metadata || {}), userId]
   );
+  await syncCommunicationChannelEffort(businessId, userId, result.rows[0]);
   return { communication: result.rows[0] };
 }
 
@@ -339,7 +414,8 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
       results.failed += 1;
     }
   }
-  await query("update business_communications set status = $3, updated_by = $4, updated_at = now() where id = $1 and business_id = $2", [id, businessId, results.sent ? 'SENT' : communication.status, userId]);
+  const updated = await query("update business_communications set status = $3, updated_by = $4, updated_at = now() where id = $1 and business_id = $2 returning *", [id, businessId, results.sent ? 'SENT' : communication.status, userId]);
+  await syncCommunicationChannelEffort(businessId, userId, updated.rows[0] || communication);
   return { results };
 }
 

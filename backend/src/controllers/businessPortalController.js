@@ -3095,7 +3095,79 @@ async function salesDetailForChannelEffort(businessId, effort, start, end) {
   };
 }
 
+async function metricsForCommunicationChannelEffort(businessId, effort, communicationId) {
+  const result = await query(
+    `with communication_events as (
+       select
+         count(*) filter (where event_type = 'LEAD_CAPTURED')::int as leads,
+         count(*) filter (where event_type = 'ACTIVATION_STARTED')::int as starts,
+         count(*) filter (where event_type = 'ACTIVATION_COMPLETED')::int as completions
+       from business_communication_events
+       where business_id = $1 and communication_id::text = $2
+     ), attributed_sales as (
+       select bs.*
+       from business_sales bs
+       left join qr_codes q on q.id = bs.qr_code_id
+       where bs.business_id = $1
+         and (q.metadata->>'communication_id' = $2 or bs.metadata->>'communication_id' = $2)
+     )
+     select
+       coalesce((select leads from communication_events), 0)::int as leads,
+       coalesce((select starts from communication_events), 0)::int as qr_generated,
+       coalesce((select completions from communication_events), 0)::int as redemptions,
+       count(*)::int as sales,
+       coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue,
+       count(distinct coalesce(nullif(customer_document_id, ''), nullif(customer_phone, ''), nullif(customer_email, ''), id::text))::int as unique_customers,
+       count(*) filter (
+         where referred_affiliate_id is not null
+            or acquisition_source = 'FRIEND_REFERRAL'
+            or acquisition_channel ilike '%refer%'
+       )::int as referral_sales,
+       count(*) filter (
+         where exists (
+           select 1
+           from business_sales previous
+           where previous.business_id = attributed_sales.business_id
+             and previous.created_at < attributed_sales.created_at
+             and (
+               (nullif(attributed_sales.customer_document_id, '') is not null and previous.customer_document_id = attributed_sales.customer_document_id)
+               or (nullif(attributed_sales.customer_phone, '') is not null and previous.customer_phone = attributed_sales.customer_phone)
+               or (nullif(attributed_sales.customer_email, '') is not null and previous.customer_email = attributed_sales.customer_email)
+             )
+         )
+       )::int as rebuy_sales
+     from attributed_sales`,
+    [businessId, communicationId]
+  );
+  const row = result.rows[0] || {};
+  const investment = Number(effort.budget_amount || 0);
+  const sales = Number(row.sales || 0);
+  const revenue = Number(row.revenue || 0);
+  const leads = Number(row.leads || 0);
+  const { start, end } = channelEffortDateRange(effort);
+  return {
+    leads,
+    qr_generated: Number(row.qr_generated || 0),
+    redemptions: Number(row.redemptions || 0),
+    sales,
+    revenue,
+    investment,
+    cac: sales > 0 ? Number((investment / sales).toFixed(2)) : null,
+    net_revenue: Number((revenue - investment).toFixed(2)),
+    roi: safeRoi(revenue, investment),
+    conversion_rate: leads > 0 ? Number(((sales / leads) * 100).toFixed(1)) : 0,
+    rebuy_sales: Number(row.rebuy_sales || 0),
+    referral_sales: Number(row.referral_sales || 0),
+    unique_customers: Number(row.unique_customers || 0),
+    date_window: { start_date: start.toISOString(), end_date: end.toISOString() },
+  };
+}
+
 async function metricsForChannelEffort(businessId, effort = {}) {
+  const communicationId = String(effort?.metadata?.communication_id || "").trim();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(communicationId)) {
+    return metricsForCommunicationChannelEffort(businessId, effort, communicationId);
+  }
   const { start, end } = channelEffortDateRange(effort);
   const effortKeys = new Set(channelMatchKeys({
     slug: effort.channel_slug,

@@ -342,7 +342,11 @@
       if (action === "SEND") state.communicationSelectedRefs = [];
       state.editingCommunicationId = null; composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); render();
       if (action === "PUBLISH") showFeedback("La publicación quedó registrada con enlace medido. Ahora puedes copiarla, descargar imágenes o usar Compartir.", "success", { title: "Publicación medida lista" });
-      else if (action !== "SEND") showFeedback(editingId ? "La comunicación quedó actualizada." : "La comunicación quedó guardada. Puedes volver a abrirla para enviar o publicar.", "success", { title: editingId ? "Comunicación actualizada" : "Comunicación creada" });
+      else if (action !== "SEND") {
+        const selectedChannel = form.querySelector("#communicationChannelInput option:checked")?.textContent?.trim();
+        const channelNote = payload.channel_id ? ` También quedó vinculada automáticamente a Publicaciones y esfuerzos${selectedChannel ? ` del canal ${selectedChannel}` : ""}.` : "";
+        showFeedback(`${editingId ? "La comunicación quedó actualizada." : "La comunicación quedó guardada. Puedes volver a abrirla para enviar o publicar."}${channelNote}`, "success", { title: editingId ? "Comunicación actualizada" : "Comunicación creada" });
+      }
     } catch (error) { const reason = error.message || "No se pudo guardar la comunicación."; message.textContent = reason; showFeedback(reason, "error", { title: action === "PUBLISH" ? "No se pudo registrar la publicación" : "No se pudo guardar la comunicación" }); }
   }
 
@@ -355,7 +359,7 @@
     if (loadMoreComposerAudience) { try { await loadAudience({ append: true }); render(); renderComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudieron cargar más contactos.", "error", { title: "Audiencia" }); } return; }
     if (selectComposerAudience || all) { const available = setAudienceSelection(); render(); renderComposerAudience(); if (!available) showFeedback(`Ya seleccionaste el máximo de ${MAX_EMAIL_RECIPIENTS} contactos por envío.`, "info", { title: "Destinatarios" }); return; }
     if (clearComposerAudience || clearSelection) { setAudienceSelection("clear"); render(); renderComposerAudience(); return; }
-    if (archive) { const item = state.communications.find((row) => String(row.id) === String(archive.dataset.archiveCommunication)); if (!item || !window.confirm(`¿Archivar “${item.title}”? Se conserva el historial, pero deja de quedar disponible para nuevos envíos.`)) return; await api(`/api/business/communications/${item.id}`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status: "ARCHIVED" }) }); state.communicationsLoaded = false; await loadCommunications({ force: true }); state.selectedCommunicationId = state.communications.find((row) => String(row.status).toUpperCase() !== "ARCHIVED")?.id || state.communications[0]?.id || null; render(); showFeedback("La comunicación quedó archivada.", "success", { title: "Comunicación archivada" }); return; }
+    if (archive) { const item = state.communications.find((row) => String(row.id) === String(archive.dataset.archiveCommunication)); if (!item || !window.confirm(`¿Archivar “${item.title}”? Se conserva el historial, pero deja de quedar disponible para nuevos envíos.`)) return; await api(`/api/business/communications/${item.id}`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status: "ARCHIVED" }) }); state.communicationsLoaded = false; await loadCommunications({ force: true }); state.selectedCommunicationId = state.communications.find((row) => String(row.status).toUpperCase() !== "ARCHIVED")?.id || state.communications[0]?.id || null; render(); showFeedback(item.channel_id ? "La comunicación y su esfuerzo asociado quedaron archivados." : "La comunicación quedó archivada.", "success", { title: "Comunicación archivada" }); return; }
     if (removeMedia) { const media = uploadedMedia(); media.splice(Number(removeMedia.dataset.removeCommunicationMedia), 1); setUploadedMedia(media); renderComposerPreview(); return; }
     if (clearUrl) { const input = document.getElementById("communicationImageInput"); if (input) input.value = ""; toggleComposer(); return; }
     if (pick) { state.selectedCommunicationId = pick.dataset.communicationSelect; render(); return; }
