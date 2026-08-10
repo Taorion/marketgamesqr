@@ -285,7 +285,7 @@
             </button>
             <button class="nav-item" data-view="channels" type="button">
               <span class="material-symbols-outlined">hub</span>
-              <span><strong>Canales ROI</strong><small>Comparar fuentes y retorno</small></span>
+              <span><strong>Medios de adquisición</strong><small>Comparar fuentes y retorno</small></span>
             </button>
             <button class="nav-item" data-view="competition" type="button">
               <span class="material-symbols-outlined">monitoring</span>
@@ -4877,7 +4877,7 @@
                   </select>
                 </label>
                 <label><span>Detalle origen</span><input id="manualLeadSourceDetailInput" type="text" maxlength="220" placeholder="Asunto del correo, campaña, referido..."></label>
-                <label class="acquisition-channel-picker" data-acquisition-channel-picker="manual-lead"><span>Canal de adquisición</span><select id="manualLeadAcquisitionChannelPicker" aria-describedby="manualLeadAcquisitionChannelHelp"></select><input id="manualLeadAcquisitionChannelInput" type="text" maxlength="180" placeholder="Escribe el canal temporal" hidden><small id="manualLeadAcquisitionChannelHelp" class="field-help"></small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar canales en GOS</button></label>
+                <label class="acquisition-channel-picker" data-acquisition-channel-picker="manual-lead"><span>Medio de adquisición</span><select id="manualLeadAcquisitionChannelPicker" aria-describedby="manualLeadAcquisitionChannelHelp"></select><input id="manualLeadAcquisitionChannelInput" type="text" maxlength="180" placeholder="Escribe el medio temporal" hidden><small id="manualLeadAcquisitionChannelHelp" class="field-help"></small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar medios en GOS</button></label>
                 <label><span>Sede</span><select id="manualLeadBranchInput"><option value="">Sin sede asignada</option></select><small class="field-help">La sede acompaña este contacto en su trazabilidad y KPIs.</small></label>
                 <label><span>Prioridad</span>
                   <select id="manualLeadPriorityInput">
@@ -5186,7 +5186,7 @@
                         <option value="OTHER">Otro</option>
                       </select>
                     </label>
-                    <label class="sale-field acquisition-channel-picker" data-acquisition-channel-picker="customer-sale"><span>Canal de adquisición</span><select id="customerAcquisitionChannelPicker" aria-describedby="customerAcquisitionChannelHelp"></select><input id="customerAcquisitionChannelInput" type="text" maxlength="180" placeholder="Escribe el canal temporal" hidden><small id="customerAcquisitionChannelHelp" class="field-help"></small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar canales en GOS</button></label>
+                    <label class="sale-field acquisition-channel-picker" data-acquisition-channel-picker="customer-sale"><span>Medio de adquisición</span><select id="customerAcquisitionChannelPicker" aria-describedby="customerAcquisitionChannelHelp"></select><input id="customerAcquisitionChannelInput" type="text" maxlength="180" placeholder="Escribe el medio temporal" hidden><small id="customerAcquisitionChannelHelp" class="field-help"></small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar medios en GOS</button></label>
                     <label class="sale-field affiliate-only-config hidden"><span>Afiliado que recomendo</span><select id="customerAcquisitionAffiliateInput"></select></label>
                     <label class="sale-field sale-field-notes"><span>Observaciones</span><textarea id="customerAcquisitionNotesInput" rows="3" placeholder="Ej: volante, gamificacion, stand, anuncio o contexto puntual."></textarea></label>
                   </div>
@@ -5254,19 +5254,19 @@
           <section class="view-section" data-view="channels">
             <div class="view-head">
               <div>
-                <h2>Canales de adquisición</h2>
-                <p>Analiza Instagram, Facebook, Google, WhatsApp, Web y otros canales separados de las campañas. Una venta puede tener campaña atribuida y canal de llegada al mismo tiempo.</p>
+                <h2>Medios de adquisición</h2>
+                <p>Analiza Instagram, Facebook, Google, WhatsApp, Web y otros medios separados de las campañas. Una venta puede tener campaña atribuida y medio de llegada al mismo tiempo.</p>
               </div>
               <div class="head-actions">
                 <button class="solid-button" id="newAcquisitionChannelButton" type="button">
                   <span class="material-symbols-outlined" aria-hidden="true">add</span>
-                  Crear canal
+                  Crear medio
                 </button>
                 <button class="ghost-button" id="newChannelEffortButton" type="button">
                   <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
                   Crear atracción
                 </button>
-                <button class="ghost-button" id="refreshAcquisitionChannelsButton" type="button">Actualizar canales</button>
+                <button class="ghost-button" id="refreshAcquisitionChannelsButton" type="button">Actualizar medios</button>
               </div>
             </div>
 
@@ -5276,8 +5276,8 @@
               <article class="surface-card channel-command-card">
                 <div>
                   <span class="mono-label">Cómo se usa</span>
-                  <h3>Canales como centros de inversión</h3>
-                  <p>Crea cada canal por separado, carga cuánto inviertes en el periodo y registra cada venta con su canal de llegada. El portal calcula leads, ventas, revenue, CAC, ROI y cruce con campañas.</p>
+                  <h3>Medios como centros de inversión</h3>
+                  <p>Crea cada medio por separado, carga cuánto inviertes en el periodo y registra cada venta con su medio de llegada. El portal calcula leads, ventas, revenue, CAC, ROI y cruce con campañas.</p>
                 </div>
                 <div class="channel-quick-create" id="acquisitionChannelQuickCreate">
                   <button type="button" data-channel-template="Instagram|SOCIAL|Instagram|Meta Ads">Instagram</button>
@@ -5294,15 +5294,15 @@
               <article class="surface-card channel-effort-form-card" id="channelEffortFormPanel">
                 <div class="table-card-head">
                   <div>
-                    <span class="mono-label">Esfuerzos del canal</span>
-                    <h3 id="channelEffortFormTitle">Crear atracción por canal</h3>
+                    <span class="mono-label">Esfuerzos del medio</span>
+                    <h3 id="channelEffortFormTitle">Crear atracción por medio</h3>
                   </div>
-                  <button class="icon-button" id="channelEffortCancelButton" type="button" aria-label="Cerrar atracción por canal"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+                  <button class="icon-button" id="channelEffortCancelButton" type="button" aria-label="Cerrar atracción por medio"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
                 </div>
-                <p class="chart-explainer">Registra piezas concretas del canal: publicación de Instagram, pauta de Google, campaña de WhatsApp, landing, historia, reel, evento o esfuerzo orgánico. El portal cruza fechas, canal, campaña opcional, inversión, leads, compras, recompra y referidos.</p>
+                <p class="chart-explainer">Registra piezas concretas del medio: publicación de Instagram, pauta de Google, campaña de WhatsApp, landing, historia, reel, evento o esfuerzo orgánico. El portal cruza fechas, medio, campaña opcional, inversión, leads, compras, recompra y referidos.</p>
                 <form class="modal-form channel-effort-form" id="channelEffortForm">
                   <input id="channelEffortIdInput" type="hidden">
-                  <label><span>Canal</span><select id="channelEffortChannelInput" required></select></label>
+                  <label><span>Medio</span><select id="channelEffortChannelInput" required></select></label>
                   <label><span>Campaña asociada</span><select id="channelEffortCampaignInput"><option value="">Sin campaña</option></select></label>
                   <label class="span-2"><span>Título del esfuerzo</span><input id="channelEffortTitleInput" type="text" maxlength="180" required placeholder="Post Instagram colección premium julio"></label>
                   <label><span>Tipo de pieza</span>
@@ -5337,7 +5337,7 @@
                   <label class="span-2"><span>Descripción / esfuerzo realizado</span><textarea id="channelEffortDescriptionInput" rows="3" maxlength="1200" placeholder="Qué se publicó, qué imagen se usó, qué copy, qué oferta, qué segmento y qué se espera medir."></textarea></label>
                   <label class="span-2"><span>Notas de análisis</span><textarea id="channelEffortNotesInput" rows="2" maxlength="1600" placeholder="Ej: se compartió en historias 3 días, se impulsó con $150.000 y se enlazó a WhatsApp."></textarea></label>
                   <p class="form-message span-2" id="channelEffortMessage"></p>
-                  <button class="solid-button" id="channelEffortSaveButton" type="submit">Guardar atracción del canal</button>
+                  <button class="solid-button" id="channelEffortSaveButton" type="submit">Guardar atracción del medio</button>
                 </form>
               </article>
 
@@ -5345,17 +5345,17 @@
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Publicaciones y esfuerzos</span>
-                    <h3>ROI por pieza dentro del canal</h3>
+                    <h3>ROI por pieza dentro del medio</h3>
                   </div>
                   <span class="status-chip ok" id="channelEffortTotalsChip">0 esfuerzos</span>
                 </div>
-                <p class="chart-explainer">Cada fila muestra qué produjo una acción concreta del canal durante su rango de fechas: leads, ventas, recompra, referidos, revenue y ROI.</p>
+                <p class="chart-explainer">Cada fila muestra qué produjo una acción concreta del medio durante su rango de fechas: leads, ventas, recompra, referidos, revenue y ROI.</p>
                 <div class="table-wrap">
                   <table>
                     <thead>
                       <tr>
                         <th>Esfuerzo</th>
-                        <th>Canal</th>
+                        <th>Medio</th>
                         <th>Campaña</th>
                         <th>Fechas</th>
                         <th>Inversión</th>
@@ -5380,14 +5380,14 @@
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Directorio independiente</span>
-                    <h3 id="acquisitionChannelFormTitle">Crear canal</h3>
+                    <h3 id="acquisitionChannelFormTitle">Crear medio</h3>
                   </div>
-                  <button class="icon-button" id="acquisitionChannelCancelButton" type="button" aria-label="Cerrar creación de canal"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+                  <button class="icon-button" id="acquisitionChannelCancelButton" type="button" aria-label="Cerrar creación de medio"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
                 </div>
-                <p class="chart-explainer">Crea canales separados de campañas para asignar inversión, controlar origen y medir ROI por Instagram, Facebook, Google, WhatsApp, Web u otros medios.</p>
+                <p class="chart-explainer">Crea medios separados de campañas para asignar inversión, controlar origen y medir ROI por Instagram, Facebook, Google, WhatsApp, Web u otros medios.</p>
                 <form class="modal-form channel-form" id="acquisitionChannelForm">
                   <input id="acquisitionChannelIdInput" type="hidden">
-                  <label><span>Nombre del canal</span><input id="acquisitionChannelNameInput" type="text" maxlength="120" placeholder="Instagram Ads" required></label>
+                  <label><span>Nombre del medio</span><input id="acquisitionChannelNameInput" type="text" maxlength="120" placeholder="Instagram Ads" required></label>
                   <label><span>Tipo</span>
                     <select id="acquisitionChannelTypeInput">
                       <option value="DIGITAL">Digital</option>
@@ -5413,17 +5413,17 @@
                       <option value="ARCHIVED">Archivado</option>
                     </select>
                   </label>
-                  <label class="span-2"><span>Estrategia del canal</span><textarea id="acquisitionChannelNotesInput" rows="3" placeholder="Ej: Instagram para leads de pantalón, WhatsApp para temporada, vitrina para darse a conocer sin producto específico."></textarea></label>
+                  <label class="span-2"><span>Estrategia del medio</span><textarea id="acquisitionChannelNotesInput" rows="3" placeholder="Ej: Instagram para leads de pantalón, WhatsApp para temporada, vitrina para darse a conocer sin producto específico."></textarea></label>
                   <p class="form-message span-2" id="acquisitionChannelMessage"></p>
-                  <button class="solid-button" id="acquisitionChannelSaveButton" type="submit">Guardar canal</button>
+                  <button class="solid-button" id="acquisitionChannelSaveButton" type="submit">Guardar medio</button>
                 </form>
               </article>
 
               <article class="surface-card data-table-card channel-list-card" data-quiet-zone-ignore>
                 <div class="table-card-head">
                   <div>
-                    <span class="mono-label">ROI por canal</span>
-                    <h3>Canales creados y detectados</h3>
+                    <span class="mono-label">ROI por medio</span>
+                    <h3>Medios creados y detectados</h3>
                   </div>
                   <span class="status-chip ok">Independiente de campañas</span>
                 </div>
@@ -5431,7 +5431,7 @@
                   <table>
                     <thead>
                       <tr>
-                        <th>Canal</th>
+                        <th>Medio</th>
                         <th>Inversión</th>
                         <th>Leads</th>
                         <th>Ventas</th>
@@ -7561,7 +7561,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=kpi-economics-audit-v289-20260810" defer></script>
+<script src="js/app.js?v=acquisition-media-naming-v292-20260810" defer></script>
     <script src="js/communications.js?v=branch-attribution-v281-20260810" defer></script>
 </body>
 </html>

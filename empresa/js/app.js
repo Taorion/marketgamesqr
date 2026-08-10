@@ -3488,7 +3488,7 @@ function clearBusinessWorkspaceUi() {
     [qrCreditOrdersTable, 4, "Cargando compras recientes..."],
     [affiliateTable, 9, "Cargando afiliados..."],
     [affiliateLedgerTable, 6, "Sin afiliado seleccionado."],
-    [acquisitionChannelTable, 12, "Abre Canales ROI para cargar canales de adquisición."],
+    [acquisitionChannelTable, 12, "Abre Medios de adquisición para cargar medios medibles."],
     [inventoryTable, 7, "Abre Productos para cargar productos."],
     [competitionTable, 9, "Abre Radar Competitivo para cargar productos y precios."],
     [competitorTable, 7, "Abre Radar Competitivo para cargar competidores."],
@@ -38902,9 +38902,9 @@ function renderAcquisitionChannelPickers(root = document) {
     const currentManual = manual.value || select.dataset.historicalChannelName || "";
     const channels = activeAcquisitionChannels();
     const historic = currentId && (state.acquisitionChannels || []).find((channel) => String(channel.id) === String(currentId));
-    const options = ["<option value=\"\">Selecciona un canal de adquisición</option>"];
+    const options = ["<option value=\"\">Selecciona un medio de adquisición</option>"];
     if (historic && historic.status !== "ACTIVE") {
-      options.push(`<option value="${escapeHtml(historic.id)}">Canal archivado: ${escapeHtml(historic.name || historic.platform || "Canal")}</option>`);
+      options.push(`<option value="${escapeHtml(historic.id)}">Medio archivado: ${escapeHtml(historic.name || historic.platform || "Medio")}</option>`);
     }
     options.push(...channels.map((channel) => `<option value="${escapeHtml(channel.id)}">${escapeHtml(channel.name || channel.platform || "Canal")}${channel.platform ? ` · ${escapeHtml(channel.platform)}` : ""}</option>`));
     options.push('<option value="__MANUAL__">Otro / canal aún no configurado</option>');
@@ -38916,7 +38916,7 @@ function renderAcquisitionChannelPickers(root = document) {
     if (help) {
       help.textContent = channels.length
         ? "Selecciona un canal activo configurado en GOS. El modo temporal conserva el texto sin inventar un canal."
-        : "Aún no tienes canales de adquisición configurados. Puedes escribir uno para esta operación o crearlo en GOS.";
+        : "Aún no tienes medios de adquisición configurados. Puedes escribir uno para esta operación o crearlo en GOS.";
     }
   });
 }
@@ -38937,16 +38937,16 @@ function acquisitionChannelSelection(key, root = document) {
 function acquisitionChannelPickerMarkup({ selectAttribute, manualAttribute, helpAttribute, selectedId = "", selectedName = "" } = {}) {
   const channels = activeAcquisitionChannels();
   const current = (state.acquisitionChannels || []).find((channel) => String(channel.id) === String(selectedId));
-  const options = ["<option value=\"\">Selecciona un canal de adquisición</option>"];
+  const options = ["<option value=\"\">Selecciona un medio de adquisición</option>"];
   if (current && current.status !== "ACTIVE") {
-    options.push(`<option value="${escapeHtml(current.id)}" selected>Canal archivado: ${escapeHtml(current.name || current.platform || "Canal")}</option>`);
+    options.push(`<option value="${escapeHtml(current.id)}" selected>Medio archivado: ${escapeHtml(current.name || current.platform || "Medio")}</option>`);
   }
   options.push(...channels.map((channel) => `<option value="${escapeHtml(channel.id)}" ${String(channel.id) === String(selectedId) ? "selected" : ""}>${escapeHtml(channel.name || channel.platform || "Canal")}</option>`));
   options.push(`<option value="__MANUAL__" ${!selectedId && selectedName ? "selected" : ""}>Otro / canal aún no configurado</option>`);
   const help = channels.length
     ? "Selecciona un canal activo configurado en GOS."
-    : "Aún no tienes canales de adquisición configurados. Puedes escribir uno para esta operación o crearlo en GOS.";
-  return `<label class="acquisition-channel-picker" data-acquisition-channel-picker="dynamic"><span>Canal de adquisición</span><select ${selectAttribute || ""}>${options.join("")}</select><input ${manualAttribute || ""} type="text" maxlength="180" value="${escapeHtml(selectedName || "")}" placeholder="Escribe el canal temporal" ${selectedId || !selectedName ? "hidden" : ""}><small ${helpAttribute || ""} class="field-help">${escapeHtml(help)}</small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar canales en GOS</button></label>`;
+    : "Aún no tienes medios de adquisición configurados. Puedes escribir uno para esta operación o crearlo en GOS.";
+  return `<label class="acquisition-channel-picker" data-acquisition-channel-picker="dynamic"><span>Medio de adquisición</span><select ${selectAttribute || ""}>${options.join("")}</select><input ${manualAttribute || ""} type="text" maxlength="180" value="${escapeHtml(selectedName || "")}" placeholder="Escribe el medio temporal" ${selectedId || !selectedName ? "hidden" : ""}><small ${helpAttribute || ""} class="field-help">${escapeHtml(help)}</small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar medios en GOS</button></label>`;
 }
 
 function acquisitionChannelSelectionFromElements(select, manual) {
@@ -38971,8 +38971,8 @@ function renderAcquisitionChannelGrids() {
     `).join("");
     const help = document.querySelector(`[data-acquisition-channel-grid-help="${key}"]`);
     if (help) help.textContent = channels.length
-      ? "Canales reales configurados en GOS."
-      : "Aún no tienes canales de adquisición configurados. Puedes usar el canal temporal o crear uno en GOS.";
+      ? "Medios reales configurados en GOS."
+      : "Aún no tienes medios de adquisición configurados. Puedes usar el medio temporal o crear uno en GOS.";
   });
 }
 
@@ -39351,7 +39351,7 @@ async function submitChannelEffort(event) {
     ]);
     renderAcquisitionChannelsView();
     closeChannelEffortModal();
-    showFeedback("Esfuerzo del canal guardado con análisis de ROI por fechas.", "success", { title: "Canales ROI" });
+    showFeedback("Esfuerzo del medio guardado con análisis de ROI por fechas.", "success", { title: "Medios de adquisición" });
   } catch (error) {
     setInlineMessage(channelEffortMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo guardar el esfuerzo" });
@@ -39370,7 +39370,7 @@ async function archiveChannelEffort(effortId = "") {
     if (state.channelEffortEditingId === effortId) resetChannelEffortForm();
     await loadChannelEfforts({ force: true, quiet: true });
     renderAcquisitionChannelsView();
-    showFeedback("Esfuerzo archivado. El canal conserva su histórico de ventas y campañas.", "success", { title: "Canales ROI" });
+    showFeedback("Esfuerzo archivado. El medio conserva su histórico de ventas y campañas.", "success", { title: "Medios de adquisición" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo archivar el esfuerzo" });
   }
@@ -39406,7 +39406,7 @@ async function loadAcquisitionChannels(options = {}) {
 
 function resetAcquisitionChannelForm(channel = null) {
   state.acquisitionChannelEditingId = channel?.id || null;
-  if (acquisitionChannelFormTitle) acquisitionChannelFormTitle.textContent = channel?.id ? "Editar canal" : "Crear canal";
+  if (acquisitionChannelFormTitle) acquisitionChannelFormTitle.textContent = channel?.id ? "Editar medio" : "Crear medio";
   if (acquisitionChannelIdInput) acquisitionChannelIdInput.value = channel?.id || "";
   if (acquisitionChannelNameInput) acquisitionChannelNameInput.value = channel?.name || "";
   if (acquisitionChannelTypeInput) acquisitionChannelTypeInput.value = channel?.channel_type || "DIGITAL";
@@ -39415,7 +39415,7 @@ function resetAcquisitionChannelForm(channel = null) {
   if (acquisitionChannelCurrencyInput) acquisitionChannelCurrencyInput.value = channel?.currency || "COP";
   if (acquisitionChannelStatusInput) acquisitionChannelStatusInput.value = channel?.status && channel.status !== "DETECTED" ? channel.status : "ACTIVE";
   if (acquisitionChannelNotesInput) acquisitionChannelNotesInput.value = channel?.notes || "";
-  if (acquisitionChannelSaveButton) acquisitionChannelSaveButton.textContent = channel?.id ? "Guardar cambios" : "Guardar canal";
+  if (acquisitionChannelSaveButton) acquisitionChannelSaveButton.textContent = channel?.id ? "Guardar cambios" : "Guardar medio";
   setInlineMessage(acquisitionChannelMessage, "", "info");
 }
 
@@ -39435,7 +39435,7 @@ async function submitAcquisitionChannel(event) {
   event.preventDefault();
   const payload = acquisitionChannelPayload();
   if (!payload.name) {
-    setInlineMessage(acquisitionChannelMessage, "Escribe el nombre del canal.", "error");
+    setInlineMessage(acquisitionChannelMessage, "Escribe el nombre del medio.", "error");
     acquisitionChannelNameInput?.focus();
     return;
   }
@@ -39453,10 +39453,10 @@ async function submitAcquisitionChannel(event) {
     renderAcquisitionChannelsView();
     renderAcquisitionChannelDatalist();
     closeAcquisitionChannelModal();
-    showFeedback("Canal guardado para análisis independiente de ROI.", "success", { title: "Canales ROI" });
+    showFeedback("Medio guardado para análisis independiente de ROI.", "success", { title: "Medios de adquisición" });
   } catch (error) {
     setInlineMessage(acquisitionChannelMessage, error.message, "error");
-    showFeedback(error.message, "error", { title: "No se pudo guardar canal" });
+    showFeedback(error.message, "error", { title: "No se pudo guardar el medio" });
   } finally {
     setButtonLoading(acquisitionChannelSaveButton, false);
   }
@@ -39474,7 +39474,7 @@ async function archiveAcquisitionChannel(channelId = "") {
     await loadAcquisitionChannels({ force: true, quiet: true });
     renderAcquisitionChannelsView();
     renderAcquisitionChannelDatalist();
-    showFeedback("Canal archivado. Los datos históricos siguen disponibles por texto de canal.", "success", { title: "Canales ROI" });
+    showFeedback("Medio archivado. Los datos históricos siguen disponibles por texto de medio.", "success", { title: "Medios de adquisición" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo archivar" });
   }
@@ -39564,7 +39564,7 @@ function renderAcquisitionChannelDetail() {
     </div>
     <div class="button-row">
       ${isDetected
-        ? `<button class="solid-button compact" type="button" data-channel-create="${escapeHtml(channel.name || "")}">Crear canal y cargar inversión</button>`
+        ? `<button class="solid-button compact" type="button" data-channel-create="${escapeHtml(channel.name || "")}">Crear medio y cargar inversión</button>`
         : `<button class="ghost-button compact" type="button" data-channel-edit="${escapeHtml(channel.id)}">Editar inversión</button>`}
       <button class="ghost-button compact" type="button" data-channel-open-sales="${escapeHtml(channel.name || "")}">Registrar venta con este canal</button>
       ${!isDetected ? `<button class="solid-button compact" type="button" data-channel-add-effort="${escapeHtml(channel.id)}">Registrar publicación/pauta</button>` : ""}
@@ -39590,12 +39590,12 @@ function renderAcquisitionChannelsView() {
     const created = channels.filter((channel) => channel.id).length;
     const detected = channels.filter((channel) => !channel.id || channel.status === "DETECTED").length;
     acquisitionChannelKpiGrid.innerHTML = [
-      ["Canales creados", created, "Directorio propio"],
-      ["Canales detectados", detected, "Desde ventas, leads o tickets"],
+      ["Medios creados", created, "Directorio propio"],
+      ["Medios detectados", detected, "Desde ventas, leads o tickets"],
       ["Esfuerzos medidos", Number(state.acquisitionChannelEffortTotals?.efforts || 0), "Posts, pautas, WhatsApp o eventos"],
-      ["Revenue por canal", money(totals.revenue || 0), `${Number(totals.sales || 0)} ventas`],
-      ["Inversión canal", money(totals.investment || 0), "Presupuesto cargado"],
-      ["ROI total de canales", channelRoiLabel(totals.roi), totals.investment ? roiDecisionLabel(totals.roi, totals.revenue, totals.investment) : "Carga inversión para ROI"],
+      ["Revenue por medio", money(totals.revenue || 0), `${Number(totals.sales || 0)} ventas`],
+      ["Inversión por medio", money(totals.investment || 0), "Presupuesto cargado"],
+      ["ROI total de medios", channelRoiLabel(totals.roi), totals.investment ? roiDecisionLabel(totals.roi, totals.revenue, totals.investment) : "Carga inversión para ROI"],
     ].map(([label, value, meta]) => `
       <article class="kpi-card">
         <span class="mono-label">${escapeHtml(label)}</span>
@@ -39608,7 +39608,7 @@ function renderAcquisitionChannelsView() {
   renderChannelEffortsView();
   if (!acquisitionChannelTable) return;
   if (state.acquisitionChannelsLoading && !channels.length) {
-    acquisitionChannelTable.innerHTML = '<tr><td colspan="11">Cargando canales de adquisición...</td></tr>';
+    acquisitionChannelTable.innerHTML = '<tr><td colspan="11">Cargando medios de adquisición...</td></tr>';
     return;
   }
   acquisitionChannelTable.innerHTML = channels.map((channel) => {
@@ -39635,7 +39635,7 @@ function renderAcquisitionChannelsView() {
         <td>
           <span class="channel-row-actions">
             ${isDetected
-              ? `<button class="solid-button compact" type="button" data-channel-create="${escapeHtml(channel.name || "")}">Crear canal</button>`
+              ? `<button class="solid-button compact" type="button" data-channel-create="${escapeHtml(channel.name || "")}">Crear medio</button>`
               : `<button class="ghost-button" type="button" data-channel-edit="${escapeHtml(channel.id)}">Editar</button>
                  <button class="solid-button compact" type="button" data-channel-add-effort="${escapeHtml(channel.id)}">Crear atracción</button>
                  <button class="link-button danger-link" type="button" data-channel-archive="${escapeHtml(channel.id)}">Archivar</button>`}
@@ -40340,7 +40340,7 @@ function rmsQualityAuditForItem(key, item = {}) {
     ? [
       rmsQualityCriterion("Lead identificable", Boolean(item.name && contact), "Falta nombre o un canal de contacto.", "Sin identidad no es posible interpretar una respuesta comercial.", "recoleccion"),
       rmsQualityCriterion("Consentimiento y canal", hasConsent && Boolean(rmsQualityValue(metadata.activation_channel, item.channel)), "Falta confirmar consentimiento o el canal usado.", "El contacto debe ser demostrable y permitido.", "clasificacion"),
-      rmsQualityCriterion("Origen atribuible", Boolean(source), "Falta campaña, canal de adquisición, QR, referido u origen.", "Sin origen se pierde la atribución del resultado.", "recoleccion"),
+      rmsQualityCriterion("Origen atribuible", Boolean(source), "Falta campaña, medio de adquisición, QR, referido u origen.", "Sin origen se pierde la atribución del resultado.", "recoleccion"),
       rmsQualityCriterion("Producto u oferta", Boolean(product), "Falta producto de inventario, oferta, ticket o activación.", "Evaluación no puede contrastar el interés con una propuesta concreta.", "curaduria"),
       rmsQualityCriterion("Material enviado o programado", Boolean(activationMaterial), "Falta evidencia de activación, propuesta, ticket o material.", "No hay soporte para evaluar qué recibió el lead.", "clasificacion"),
       rmsQualityCriterion("Responsable", Boolean(owner), "Falta responsable de la siguiente acción.", "No hay una persona trazable para continuar el caso.", "clasificacion"),
@@ -49116,7 +49116,7 @@ refreshAcquisitionChannelsButton?.addEventListener("click", () => {
     loadAcquisitionChannels({ force: true }),
     loadChannelEfforts({ force: true }),
   ]).then(renderAcquisitionChannelsView).catch((error) => {
-    showFeedback(error.message || "No se pudieron cargar los canales.", "error", { title: "Canales ROI" });
+    showFeedback(error.message || "No se pudieron cargar los medios.", "error", { title: "Medios de adquisición" });
   });
 });
 acquisitionChannelTable?.addEventListener("click", (event) => {
