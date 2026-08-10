@@ -12,6 +12,7 @@
   const readJson = (value, fallback = []) => { try { const parsed = JSON.parse(value || ""); return Array.isArray(parsed) ? parsed : fallback; } catch { return fallback; } };
   const isSocialCommunication = (item) => ["SOCIAL", "MIXED"].includes(String(item?.communication_type || "").toUpperCase());
   const isEmailCommunication = (item) => ["EMAIL", "MIXED"].includes(String(item?.communication_type || "").toUpperCase());
+  const isWhatsAppCommunication = (item) => String(item?.communication_type || "").toUpperCase() === "WHATSAPP";
   const publicationLabel = (item) => isSocialCommunication(item)
     ? (String(item?.publication_status || "").toUpperCase() === "PUBLISHED" ? "Publicada" : "Por publicar")
     : statusLabel(item?.status);
@@ -26,11 +27,13 @@
   const uploadedMedia = () => readJson(mediaInput()?.value);
   const setUploadedMedia = (items) => { const input = mediaInput(); if (input) input.value = JSON.stringify(items.slice(0, MAX_MEDIA_FILES)); renderMediaPreview(); };
   const hasEmail = (contact) => Boolean(String(contact?.email || "").trim());
-  const selectedRecipients = () => {
+  const hasWhatsApp = (contact) => Boolean(String(contact?.phone || "").replace(/\D/g, "").length >= 7);
+  const selectedRecipients = (channel = "email") => {
     const selected = new Set(state.communicationSelectedRefs || []);
-    return (state.communicationAudience || []).filter((contact) => selected.has(refKey(contact)) && hasEmail(contact));
+    const isReady = channel === "whatsapp" ? hasWhatsApp : hasEmail;
+    return (state.communicationAudience || []).filter((contact) => selected.has(refKey(contact)) && isReady(contact));
   };
-  const emailReadyContacts = () => (state.communicationAudience || []).filter(hasEmail);
+  const emailReadyContacts = (channel = "email") => (state.communicationAudience || []).filter(channel === "whatsapp" ? hasWhatsApp : hasEmail);
   const setAudienceSelection = (mode = "email") => {
     const current = new Set(state.communicationSelectedRefs || []);
     if (mode === "clear") {
@@ -38,7 +41,7 @@
       return 0;
     }
     const available = Math.max(0, MAX_EMAIL_RECIPIENTS - current.size);
-    emailReadyContacts().filter((contact) => !current.has(refKey(contact))).slice(0, available).forEach((contact) => current.add(refKey(contact)));
+    emailReadyContacts(mode).filter((contact) => !current.has(refKey(contact))).slice(0, available).forEach((contact) => current.add(refKey(contact)));
     state.communicationSelectedRefs = Array.from(current);
     return available;
   };
@@ -129,9 +132,10 @@
     const count = document.getElementById("communicationComposerAudienceCount");
     if (!list || !count) return;
     const selected = new Set(state.communicationSelectedRefs || []);
+    const deliveryChannel = document.querySelector('input[name="communicationType"]:checked')?.value === "WHATSAPP" ? "whatsapp" : "email";
     const contacts = state.communicationAudience || [];
-    const ready = emailReadyContacts();
-    const recipients = selectedRecipients();
+    const ready = emailReadyContacts(deliveryChannel);
+    const recipients = selectedRecipients(deliveryChannel);
     count.textContent = state.communicationAudienceLoading
       ? "Cargando contactos…"
       : contacts.length
@@ -141,10 +145,10 @@
       ? '<div class="communication-composer-audience-empty"><span class="material-symbols-outlined">hourglass_top</span><span>Cargando contactos disponibles…</span></div>'
       : contacts.length
         ? contacts.map((contact) => {
-          const deliverable = hasEmail(contact);
+          const deliverable = deliveryChannel === "whatsapp" ? hasWhatsApp(contact) : hasEmail(contact);
           const selectedContact = selected.has(refKey(contact));
           const profile = contact.audience_type === "CLIENT" ? "Cliente" : "Lead";
-          return `<label class="communication-composer-contact ${selectedContact ? "is-selected" : ""} ${deliverable ? "" : "is-unavailable"}"><input type="checkbox" data-communication-recipient value="${esc(refKey(contact))}" ${selectedContact ? "checked" : ""} ${deliverable ? "" : "disabled"}><span class="communication-contact-avatar">${esc((contact.name || "C").slice(0, 1).toUpperCase())}</span><span class="communication-composer-contact-copy"><strong>${esc(contact.name || "Contacto sin nombre")}</strong><small>${esc([profile, contact.interest || "Sin interés registrado", `RMS: ${rmsPhaseLabel(contact.rms_phase)}`].join(" · "))}</small></span><span class="communication-contact-delivery ${deliverable ? "is-ready" : ""}">${deliverable ? esc(contact.email) : "Sin email"}</span></label>`;
+          return `<label class="communication-composer-contact ${selectedContact ? "is-selected" : ""} ${deliverable ? "" : "is-unavailable"}"><input type="checkbox" data-communication-recipient value="${esc(refKey(contact))}" ${selectedContact ? "checked" : ""} ${deliverable ? "" : "disabled"}><span class="communication-contact-avatar">${esc((contact.name || "C").slice(0, 1).toUpperCase())}</span><span class="communication-composer-contact-copy"><strong>${esc(contact.name || "Contacto sin nombre")}</strong><small>${esc([profile, contact.interest || "Sin interés registrado", `RMS: ${rmsPhaseLabel(contact.rms_phase)}`].join(" · "))}</small></span><span class="communication-contact-delivery ${deliverable ? "is-ready" : ""}">${deliverable ? esc(deliveryChannel === "whatsapp" ? contact.phone : contact.email) : deliveryChannel === "whatsapp" ? "Sin WhatsApp" : "Sin email"}</span></label>`;
         }).join("") + (state.communicationAudienceHasMore ? `<div class="communication-composer-audience-more"><span>Hay más contactos que coinciden con estos filtros.</span><button type="button" class="text-button" data-load-more-composer-audience>Cargar los siguientes</button></div>` : "")
         : '<div class="communication-composer-audience-empty"><span class="material-symbols-outlined">group</span><span>No encontramos contactos para estos filtros.</span></div>';
   }
@@ -208,12 +212,14 @@
     const selectedPiece = document.getElementById("communicationSelectedSummary");
     if (!list || !audience || !summary || !selectedSummary || !sendBar) return;
     const communications = state.communications || [];
+    const activeCommunication = communications.find((item) => String(item.id) === String(state.selectedCommunicationId));
+    const audienceChannel = isWhatsAppCommunication(activeCommunication) ? "whatsapp" : "email";
     list.innerHTML = communications.length ? communications.map((item) => {
       const media = mediaFor(item);
       return `<article class="communication-list-item ${String(item.id) === String(state.selectedCommunicationId) ? "is-selected" : ""}" data-communication-select="${esc(item.id)}"><div><span class="mono-label">${esc(typeLabel(item.communication_type))} · ${esc(publicationLabel(item))}</span><strong>${esc(item.title)}</strong><p>${esc(item.campaign_name || item.channel_name || item.activation_name || "Sin relación comercial")}</p></div><div class="communication-list-item-meta">${media.length ? `<span class="communication-media-count"><span class="material-symbols-outlined">image</span>${media.length}</span>` : ""}<strong>${Number(item.recipients_total || 0)}</strong><small>destinatarios</small><span class="material-symbols-outlined">arrow_forward</span></div></article>`;
     }).join("") : '<div class="communication-empty-state"><span class="material-symbols-outlined">mail</span><strong>Aún no has creado comunicaciones.</strong><p>Crea una pieza y úsala en email, redes o ambos canales.</p></div>';
     const selected = new Set(state.communicationSelectedRefs || []);
-    const ready = emailReadyContacts();
+    const ready = emailReadyContacts(audienceChannel);
     summary.textContent = state.communicationAudienceLoading
       ? "Cargando contactos…"
       : `${state.communicationAudienceTotal || state.communicationAudience.length} contactos · ${ready.length} con email${state.communicationAudienceCapped ? " · se muestran los primeros 120" : ""}`;
@@ -221,19 +227,28 @@
       ? '<div class="communication-empty-state compact"><span class="material-symbols-outlined">hourglass_top</span><strong>Cargando contactos disponibles…</strong></div>'
       : state.communicationAudience.length
         ? state.communicationAudience.map((contact) => {
-          const deliverable = hasEmail(contact);
+          const deliverable = audienceChannel === "whatsapp" ? hasWhatsApp(contact) : hasEmail(contact);
           const selectedContact = selected.has(refKey(contact));
-          return `<label class="communication-contact-row ${selectedContact ? "is-selected" : ""} ${deliverable ? "" : "is-unavailable"}"><input type="checkbox" data-communication-recipient value="${esc(refKey(contact))}" ${selectedContact ? "checked" : ""} ${deliverable ? "" : "disabled"}><span class="communication-contact-avatar">${esc((contact.name || "C").slice(0, 1).toUpperCase())}</span><span class="communication-contact-copy"><strong>${esc(contact.name || "Contacto sin nombre")}</strong><small>${esc(contact.interest || "Sin interés registrado")}</small></span><span class="communication-contact-delivery ${deliverable ? "is-ready" : ""}">${deliverable ? esc(contact.email) : "Sin email"}</span><span class="communication-contact-metrics"><strong>${Number(contact.purchase_count || 0)}</strong><small>compras</small></span></label>`;
+          return `<label class="communication-contact-row ${selectedContact ? "is-selected" : ""} ${deliverable ? "" : "is-unavailable"}"><input type="checkbox" data-communication-recipient value="${esc(refKey(contact))}" ${selectedContact ? "checked" : ""} ${deliverable ? "" : "disabled"}><span class="communication-contact-avatar">${esc((contact.name || "C").slice(0, 1).toUpperCase())}</span><span class="communication-contact-copy"><strong>${esc(contact.name || "Contacto sin nombre")}</strong><small>${esc(contact.interest || "Sin interés registrado")}</small></span><span class="communication-contact-delivery ${deliverable ? "is-ready" : ""}">${deliverable ? esc(audienceChannel === "whatsapp" ? contact.phone : contact.email) : audienceChannel === "whatsapp" ? "Sin WhatsApp" : "Sin email"}</span><span class="communication-contact-metrics"><strong>${Number(contact.purchase_count || 0)}</strong><small>compras</small></span></label>`;
         }).join("")
         : '<div class="communication-empty-state compact"><strong>No encontramos contactos con estos filtros.</strong><p>Prueba removiendo un filtro.</p></div>';
-    const recipients = selectedRecipients();
+    const recipients = selectedRecipients(audienceChannel);
     selectedSummary.textContent = `${recipients.length} con email seleccionado${recipients.length === 1 ? "" : "s"}`;
-    const active = communications.find((item) => String(item.id) === String(state.selectedCommunicationId));
+    if (audienceChannel === "whatsapp") selectedSummary.textContent = `${recipients.length} con WhatsApp seleccionado${recipients.length === 1 ? "" : "s"}`;
+    const active = activeCommunication;
     if (!active) { sendBar.innerHTML = '<span class="material-symbols-outlined">touch_app</span><p>Elige una comunicación para preparar su envío.</p>'; return; }
     const media = mediaFor(active);
     if (selectedPiece && active) selectedPiece.innerHTML = `<div><span class="mono-label">Pieza seleccionada</span><strong>${esc(active.title)}</strong><p>${esc(active.subject || active.social_copy || "Aún sin texto de salida.")}</p><div class="communication-delivery-metrics"><span><b>${Number(active.recipients_total || 0)}</b> destinatarios</span><span><b>${Number(active.recipients_sent || 0)}</b> enviados</span><span><b>${Number(active.recipients_failed || 0)}</b> fallidos</span><span><b>${Number(active.views || 0)}</b> visitas</span><span><b>${Number(active.leads || 0)}</b> leads</span><span><b>${Number(active.completions || 0)}</b> activaciones</span><span><b>${Number(active.sales || 0)}</b> ventas</span><span><b>${metricMoney(active.revenue)}</b> revenue</span><span><b>${active.cac === null ? "—" : metricMoney(active.cac)}</b> CAC</span><span><b>${active.roi === null ? "—" : `${(Number(active.roi) * 100).toFixed(0)}%`}</b> ROI</span></div></div><div class="communication-selected-actions"><button class="ghost-button compact" type="button" data-edit-communication="${esc(active.id)}">Editar</button><button class="ghost-button compact" type="button" data-duplicate-communication="${esc(active.id)}">Duplicar</button><button class="ghost-button compact" type="button" data-archive-communication="${esc(active.id)}" ${String(active.status).toUpperCase() === "ARCHIVED" ? "disabled" : ""}>Archivar</button></div>`;
     const mediaNote = media.length ? `${media.length} imagen${media.length === 1 ? "" : "es"} adjunta${media.length === 1 ? "" : "s"}.` : "Sin adjuntos.";
     if (String(active.status).toUpperCase() === "ARCHIVED") { sendBar.innerHTML = '<span class="material-symbols-outlined">inventory_2</span><div><strong>Comunicación archivada</strong><p>Conserva su historial de entrega. Duplícala para crear una nueva versión enviable.</p></div>'; return; }
+    if (isWhatsAppCommunication(active)) {
+      const dispatch = state.communicationWhatsAppQueue?.communicationId === active.id ? state.communicationWhatsAppQueue : null;
+      const next = dispatch?.queue?.find((item) => item.status === "QUEUED");
+      const prepared = Number(dispatch?.prepared ?? active.recipients_prepared ?? 0);
+      const queued = Number(dispatch?.queued ?? active.recipients_queued ?? 0);
+      sendBar.innerHTML = `<section class="communication-delivery-route communication-whatsapp-route"><span class="material-symbols-outlined">chat</span><div><strong>WhatsApp masivo con historial</strong><p>${next ? `Siguiente: ${esc(next.name)} · ${esc(next.phone)}. Abre WhatsApp y Qori registrará este intento.` : queued ? `${queued} contacto(s) en cola. Carga la cola para continuar el envío manual.` : recipients.length ? `${recipients.length} contacto(s) seleccionados con WhatsApp. Prepara el lote para empezar.` : "Selecciona contactos con WhatsApp para preparar el lote."} ${prepared ? `${prepared} preparado(s) en este lote.` : ""}</p></div><label class="communication-consent"><input id="communicationConsentInput" type="checkbox"> Confirmo que aceptaron recibir comunicaciones.</label>${next ? `<button class="solid-button compact" type="button" data-open-next-communication-whatsapp="${esc(active.id)}">Abrir siguiente WhatsApp</button>` : queued ? `<button class="ghost-button compact" type="button" data-load-communication-whatsapp-queue="${esc(active.id)}">Cargar cola</button>` : `<button class="solid-button compact" type="button" data-prepare-communication-whatsapp="${esc(active.id)}" ${recipients.length ? "" : "disabled"}>Preparar lote WhatsApp</button>`}</section>`;
+      return;
+    }
     if (isSocialCommunication(active)) {
       const published = String(active.publication_status).toUpperCase() === "PUBLISHED";
       const trackingLink = published && active.tracking_url
@@ -252,17 +267,22 @@
   function toggleComposer() {
     positionComposerAudience();
     const type = document.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL";
-    document.querySelectorAll(".communication-email-fields").forEach((node) => node.classList.toggle("hidden", type === "SOCIAL"));
-    document.querySelectorAll(".communication-social-fields").forEach((node) => node.classList.toggle("hidden", type === "EMAIL"));
+    document.querySelectorAll(".communication-email-fields").forEach((node) => node.classList.toggle("hidden", ["SOCIAL", "WHATSAPP"].includes(type)));
+    document.querySelectorAll(".communication-whatsapp-fields").forEach((node) => node.classList.toggle("hidden", type !== "WHATSAPP"));
+    document.querySelectorAll(".communication-social-fields").forEach((node) => node.classList.toggle("hidden", ["EMAIL", "WHATSAPP"].includes(type)));
     document.getElementById("communicationComposerAudience")?.classList.toggle("hidden", type === "SOCIAL");
     const subject = document.getElementById("communicationSubjectInput");
     const emailBody = document.getElementById("communicationEmailBodyInput");
+    const whatsappBody = document.getElementById("communicationWhatsAppBodyInput");
     const socialCopy = document.getElementById("communicationSocialCopyInput");
     if (subject) subject.required = type !== "SOCIAL";
     if (emailBody) emailBody.required = type !== "SOCIAL";
-    if (socialCopy) socialCopy.required = type !== "EMAIL";
+    if (subject) subject.required = ["EMAIL", "MIXED"].includes(type);
+    if (emailBody) emailBody.required = ["EMAIL", "MIXED"].includes(type);
+    if (whatsappBody) whatsappBody.required = type === "WHATSAPP";
+    if (socialCopy) socialCopy.required = ["SOCIAL", "MIXED"].includes(type);
     const send = document.getElementById("communicationComposerSaveAndSendButton");
-    if (send) send.classList.toggle("hidden", type === "SOCIAL");
+    if (send) { send.classList.toggle("hidden", type === "SOCIAL"); send.textContent = type === "WHATSAPP" ? "Guardar y preparar WhatsApp" : "Guardar y enviar email"; }
     const publish = document.getElementById("communicationComposerSaveAndPublishButton");
     if (publish) publish.classList.toggle("hidden", type === "EMAIL");
     renderMediaPreview();
@@ -308,13 +328,13 @@
     const media = [...assets, ...(url ? [{ source: url, name: "Imagen desde URL" }] : [])].slice(0, MAX_MEDIA_FILES);
     const action = event.submitter?.dataset.communicationSaveAction || "DRAFT";
     const type = form.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL";
-    const recipients = selectedRecipients();
+    const recipients = selectedRecipients(type === "WHATSAPP" ? "whatsapp" : "email");
     if (action === "SEND" && !recipients.length) { message.textContent = "Selecciona al menos un contacto antes de enviar."; return; }
     if (action === "SEND" && !document.getElementById("communicationComposerConsentInput")?.checked) { message.textContent = "Confirma el consentimiento antes de enviar."; return; }
     const payload = {
       title: form.querySelector("#communicationTitleInput")?.value.trim(), communication_type: form.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL",
       campaign_id: form.querySelector("#communicationCampaignInput")?.value || null, channel_id: form.querySelector("#communicationChannelInput")?.value || null, activation_id: form.querySelector("#communicationActivationInput")?.value || null,
-      subject: form.querySelector("#communicationSubjectInput")?.value.trim() || null, email_body: form.querySelector("#communicationEmailBodyInput")?.value.trim() || null, social_copy: form.querySelector("#communicationSocialCopyInput")?.value.trim() || null,
+      subject: form.querySelector("#communicationSubjectInput")?.value.trim() || null, email_body: form.querySelector("#communicationEmailBodyInput")?.value.trim() || null, whatsapp_body: form.querySelector("#communicationWhatsAppBodyInput")?.value.trim() || null, social_copy: form.querySelector("#communicationSocialCopyInput")?.value.trim() || null,
       image_url: media[0]?.source || null, action_url: form.querySelector("#communicationActionUrlInput")?.value.trim() || null,
       audience_filters: { ...(state.communicationAudienceFilters || {}) }, metadata: { media_assets: media },
     };
@@ -328,7 +348,12 @@
       message.textContent = action === "SEND" ? "Guardando y preparando el envío…" : action === "PUBLISH" ? "Guardando y creando el enlace medido…" : "Guardando comunicación…";
       const editingId = state.editingCommunicationId;
       const data = await api(editingId ? `/api/business/communications/${editingId}` : "/api/business/communications", { method: editingId ? "PATCH" : "POST", headers: authHeaders(), body: JSON.stringify(payload) });
-      if (action === "SEND" && type !== "SOCIAL") {
+      if (action === "SEND" && type === "WHATSAPP") {
+        message.textContent = "Preparando la cola de WhatsApp…";
+        const prepared = await api(`/api/business/communications/${data.communication.id}/whatsapp/prepare`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
+        state.communicationWhatsAppQueue = { communicationId: data.communication.id, ...(prepared.queue || {}) };
+        showFeedback(`Lote preparado: ${prepared.results?.queued || 0} con WhatsApp y ${prepared.results?.skipped || 0} omitidos. Abre cada contacto para completar el envío manual.`, "success", { title: "WhatsApp masivo preparado" });
+      } else if (action === "SEND" && type !== "SOCIAL") {
         message.textContent = "Enviando emails…";
         const sent = await api(`/api/business/communications/${data.communication.id}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
         const sentCount = Number(sent.results?.sent || 0);
@@ -351,10 +376,52 @@
     } catch (error) { const reason = error.message || "No se pudo guardar la comunicación."; message.textContent = reason; showFeedback(reason, "error", { title: action === "PUBLISH" ? "No se pudo registrar la publicación" : "No se pudo guardar la comunicación" }); }
   }
 
+  async function loadWhatsAppDispatchQueue(communicationId) {
+    const data = await api(`/api/business/communications/${communicationId}/whatsapp/queue`, { headers: authHeaders() });
+    state.communicationWhatsAppQueue = { communicationId, ...(data || {}) };
+    return state.communicationWhatsAppQueue;
+  }
+
+  document.addEventListener("click", async (event) => {
+    const prepare = event.target.closest("[data-prepare-communication-whatsapp]");
+    const loadQueue = event.target.closest("[data-load-communication-whatsapp-queue]");
+    const openNext = event.target.closest("[data-open-next-communication-whatsapp]");
+    if (!prepare && !loadQueue && !openNext) return;
+    const control = prepare || loadQueue || openNext;
+    const communicationId = control.dataset.prepareCommunicationWhatsapp || control.dataset.loadCommunicationWhatsappQueue || control.dataset.openNextCommunicationWhatsapp;
+    try {
+      if (prepare) {
+        const recipients = selectedRecipients("whatsapp");
+        if (!recipients.length) throw new Error("Selecciona al menos un contacto con WhatsApp.");
+        if (!document.getElementById("communicationConsentInput")?.checked) throw new Error("Confirma el consentimiento antes de preparar el lote.");
+        const data = await api(`/api/business/communications/${communicationId}/whatsapp/prepare`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
+        state.communicationWhatsAppQueue = { communicationId, ...(data.queue || {}) };
+        state.communicationSelectedRefs = [];
+        showFeedback(`Lote preparado: ${data.results?.queued || 0} contactos con WhatsApp. Abre el siguiente para continuar.`, "success", { title: "WhatsApp masivo" });
+      } else if (loadQueue) {
+        await loadWhatsAppDispatchQueue(communicationId);
+      } else {
+        const dispatch = state.communicationWhatsAppQueue?.communicationId === communicationId ? state.communicationWhatsAppQueue : await loadWhatsAppDispatchQueue(communicationId);
+        const next = dispatch.queue?.find((item) => item.status === "QUEUED");
+        if (!next) { showFeedback("No quedan contactos pendientes en esta cola.", "info", { title: "WhatsApp masivo" }); return; }
+        const popup = window.open(`https://wa.me/${encodeURIComponent(String(next.phone || "").replace(/\D/g, ""))}?text=${encodeURIComponent(next.message || "")}`, "_blank", "noopener");
+        if (!popup) throw new Error("El navegador bloqueó la apertura de WhatsApp.");
+        await api(`/api/business/communications/${communicationId}/whatsapp/opened`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_type: next.source_type, source_id: next.source_id }) });
+        await loadWhatsAppDispatchQueue(communicationId);
+        showFeedback("WhatsApp abierto y registrado. La entrega se confirma únicamente en WhatsApp.", "success", { title: "Siguiente contacto" });
+      }
+      state.communicationsLoaded = false;
+      await loadCommunications({ force: true });
+      render();
+    } catch (error) {
+      showFeedback(error.message || "No se pudo preparar el envío por WhatsApp.", "error", { title: "WhatsApp masivo" });
+    }
+  });
+
   document.addEventListener("click", async (event) => {
     const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const all = event.target.closest("[data-communication-select-loaded]"); const clearSelection = event.target.closest("[data-communication-clear-selection]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const share = event.target.closest("[data-share-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const publish = event.target.closest("[data-publish-communication]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const loadMoreComposerAudience = event.target.closest("[data-load-more-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]"); const clearComposerAudience = event.target.closest("[data-composer-clear-audience]");
     if (open || edit || duplicate) { try { await prepareComposerRelations(); } catch (error) { console.warn("No se pudieron actualizar los canales para comunicaciones.", error); } renderOptions(); positionComposerAudience(); }
-    if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); } document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
+    if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationWhatsAppBodyInput").value = item.whatsapp_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); } document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
     if (close) { composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); return; }
     if (loadComposerAudience) { try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } return; }
     if (loadMoreComposerAudience) { try { await loadAudience({ append: true }); render(); renderComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudieron cargar más contactos.", "error", { title: "Audiencia" }); } return; }

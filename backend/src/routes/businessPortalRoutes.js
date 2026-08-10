@@ -150,9 +150,12 @@ const {
   audience: communicationAudience,
   create: createCommunication,
   list: listCommunications,
+  markWhatsAppOpened: markCommunicationWhatsAppOpened,
   patch: patchCommunication,
+  prepareWhatsApp: prepareCommunicationWhatsApp,
   publish: publishCommunication,
   send: sendCommunication,
+  whatsappQueue: communicationWhatsAppQueue,
 } = require("../controllers/businessCommunicationController");
 const { storageSummary } = require("../controllers/storageQuotaController");
 
@@ -247,6 +250,9 @@ router.post("/communications", createCommunication);
 router.patch("/communications/:id", patchCommunication);
 router.post("/communications/:id/publish", publishCommunication);
 router.post("/communications/:id/send", sendCommunication);
+router.post("/communications/:id/whatsapp/prepare", prepareCommunicationWhatsApp);
+router.get("/communications/:id/whatsapp/queue", communicationWhatsAppQueue);
+router.post("/communications/:id/whatsapp/opened", markCommunicationWhatsAppOpened);
 router.get("/activity", businessActivity);
 router.get("/analytics/command-center", heavyBusinessCache, commandCenterAnalytics);
 router.get("/branches", standardBusinessCache, listBranches);

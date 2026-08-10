@@ -7446,6 +7446,7 @@
             <div class="communication-composer-section-head"><span class="communication-composer-step">01</span><div><span class="mono-label">Pieza y propósito</span><strong>¿Cómo quieres comunicar?</strong><small>Escoge el canal, conecta el esfuerzo comercial y escribe una pieza reutilizable.</small></div></div>
             <div class="communication-type-switch" role="group" aria-label="Tipo de comunicación">
               <label><input type="radio" name="communicationType" value="EMAIL" checked> Email</label>
+              <label><input type="radio" name="communicationType" value="WHATSAPP"> WhatsApp</label>
               <label><input type="radio" name="communicationType" value="SOCIAL"> Redes</label>
               <label><input type="radio" name="communicationType" value="MIXED"> Email y redes</label>
             </div>
@@ -7460,6 +7461,10 @@
             <div class="communication-composer-section-head"><span class="communication-composer-step">02</span><div><span class="mono-label">Mensaje de email</span><strong>Escribe lo que recibirá cada contacto</strong><small>Puedes usar <b>{{nombre}}</b> para personalizar el saludo.</small></div></div>
             <label><span>Asunto del email</span><input id="communicationSubjectInput" maxlength="220" placeholder="Un beneficio para ti, {{nombre}}"></label>
             <label><span>Mensaje</span><textarea id="communicationEmailBodyInput" rows="7" placeholder="Hola {{nombre}}, tenemos una oferta para ti..."></textarea></label>
+          </section>
+          <section class="communication-composer-section communication-whatsapp-fields hidden">
+            <div class="communication-composer-section-head"><span class="communication-composer-step">02</span><div><span class="mono-label">Mensaje de WhatsApp</span><strong>Prepara el lote para envío manual</strong><small>Puedes usar <b>{{nombre}}</b>. Qori conserva cada intento; la entrega y lectura solo las confirma WhatsApp.</small></div></div>
+            <label><span>Mensaje</span><textarea id="communicationWhatsAppBodyInput" rows="7" maxlength="3000" placeholder="Hola {{nombre}}, tenemos una novedad para ti..."></textarea></label>
           </section>
           <section class="communication-composer-section communication-social-fields hidden">
             <div class="communication-composer-section-head"><span class="communication-composer-step">02</span><div><span class="mono-label">Texto para publicar</span><strong>Prepara la versión para redes</strong><small>Incluye tu llamado a la acción, etiquetas y el enlace de destino.</small></div></div>

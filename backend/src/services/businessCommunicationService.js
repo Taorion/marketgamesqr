@@ -115,7 +115,7 @@ async function assertRelationBelongsToBusiness(businessId, payload) {
 async function listBusinessCommunications(businessId) {
   const result = await query(
     `select bc.*, c.name as campaign_name, ch.name as channel_name, ia.title as activation_name, ia.public_slug as activation_public_slug,
-       coalesce(rc.recipients_total, 0)::int as recipients_total, coalesce(rc.sent_count, 0)::int as recipients_sent, coalesce(rc.failed_count, 0)::int as recipients_failed,
+       coalesce(rc.recipients_total, 0)::int as recipients_total, coalesce(rc.sent_count, 0)::int as recipients_sent, coalesce(rc.prepared_count, 0)::int as recipients_prepared, coalesce(rc.queued_count, 0)::int as recipients_queued, coalesce(rc.failed_count, 0)::int as recipients_failed,
        coalesce(rc.skipped_count, 0)::int as recipients_skipped,
        coalesce(em.views, 0)::int as views, coalesce(em.starts, 0)::int as starts, coalesce(em.leads, 0)::int as leads,
        coalesce(em.completions, 0)::int as completions, coalesce(em.rewards, 0)::int as rewards,
@@ -128,6 +128,8 @@ async function listBusinessCommunications(businessId) {
      left join lateral (
        select count(*) as recipients_total,
               count(*) filter (where status = 'SENT') as sent_count,
+              count(*) filter (where status = 'PREPARED') as prepared_count,
+              count(*) filter (where status = 'QUEUED') as queued_count,
               count(*) filter (where status = 'FAILED') as failed_count,
               count(*) filter (where status = 'SKIPPED') as skipped_count
        from business_communication_recipients r where r.communication_id = bc.id
@@ -294,12 +296,12 @@ async function createBusinessCommunication(businessId, userId, payload) {
   const result = await query(
     `insert into business_communications (
       business_id, title, communication_type, status, campaign_id, channel_id, activation_id,
-      subject, email_body, social_copy, image_url, action_url, audience_filters, metadata, created_by, updated_by
-    ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13::jsonb,$14::jsonb,$15,$15)
+      subject, email_body, whatsapp_body, social_copy, image_url, action_url, audience_filters, metadata, created_by, updated_by
+    ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15::jsonb,$16,$16)
     returning *`,
     [businessId, payload.title, payload.communication_type, payload.status, payload.campaign_id || null,
       payload.channel_id || null, payload.activation_id || null, payload.subject || null, payload.email_body || null,
-      payload.social_copy || null, payload.image_url || null, payload.action_url || null,
+      payload.whatsapp_body || null, payload.social_copy || null, payload.image_url || null, payload.action_url || null,
       JSON.stringify(payload.audience_filters || {}), JSON.stringify(payload.metadata || {}), userId]
   );
   await syncCommunicationChannelEffort(businessId, userId, result.rows[0]);
@@ -313,19 +315,19 @@ async function updateBusinessCommunication(businessId, userId, id, payload) {
   await assertRelationBelongsToBusiness(businessId, merged);
   const result = await query(
     `update business_communications set title=$3, communication_type=$4, status=$5, campaign_id=$6, channel_id=$7,
-      activation_id=$8, subject=$9, email_body=$10, social_copy=$11, image_url=$12, action_url=$13,
-      audience_filters=$14::jsonb, metadata=$15::jsonb, updated_by=$16, updated_at=now()
+      activation_id=$8, subject=$9, email_body=$10, whatsapp_body=$11, social_copy=$12, image_url=$13, action_url=$14,
+      audience_filters=$15::jsonb, metadata=$16::jsonb, updated_by=$17, updated_at=now()
      where id=$1 and business_id=$2 returning *`,
     [id, businessId, merged.title, merged.communication_type, merged.status, merged.campaign_id || null,
       merged.channel_id || null, merged.activation_id || null, merged.subject || null, merged.email_body || null,
-      merged.social_copy || null, merged.image_url || null, merged.action_url || null,
+      merged.whatsapp_body || null, merged.social_copy || null, merged.image_url || null, merged.action_url || null,
       JSON.stringify(merged.audience_filters || {}), JSON.stringify(merged.metadata || {}), userId]
   );
   await syncCommunicationChannelEffort(businessId, userId, result.rows[0]);
   return { communication: result.rows[0] };
 }
 
-async function saveRecipient({ businessId, communicationId, contact, status, providerMessageId, errorMessage, userId }) {
+async function saveRecipient({ businessId, communicationId, contact, status, providerMessageId, errorMessage, userId, metadata = {} }) {
   const recipient = await query(
     `insert into business_communication_recipients (
       business_id, communication_id, lead_id, source_type, source_id, recipient_name, recipient_email,
@@ -338,7 +340,7 @@ async function saveRecipient({ businessId, communicationId, contact, status, pro
     returning *`,
     [businessId, communicationId, contact.lead_id || null, contact.source_type, contact.source_id,
       contact.name, contact.email || null, status, providerMessageId || null, errorMessage || null,
-      JSON.stringify({ sent_by: userId })]
+      JSON.stringify({ sent_by: userId, ...metadata })]
   );
   return recipient.rows[0];
 }
@@ -453,11 +455,120 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
   return { results };
 }
 
+function normalizedWhatsAppPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  return digits.length === 10 && digits.startsWith("3") ? `57${digits}` : digits;
+}
+
+async function selectedCommunicationAudience(businessId, recipientRefs = []) {
+  const requested = [];
+  const keys = new Set();
+  for (const item of recipientRefs) {
+    const sourceId = String(item?.source_id || "").trim();
+    const sourceType = String(item?.source_type || "").trim().toUpperCase();
+    const key = `${sourceType}:${sourceId}`;
+    if (!sourceId || keys.has(key)) continue;
+    keys.add(key);
+    requested.push({ source_id: sourceId, source_type: sourceType });
+  }
+  if (!requested.length) throw badRequest("Selecciona al menos un contacto con el que comunicarte.");
+  const audience = await listAudience(businessId, { source_ids: [...new Set(requested.map((item) => item.source_id))] });
+  const byTypedId = new Map(audience.contacts.map((contact) => [`${String(contact.source_type || "").toUpperCase()}:${contact.source_id}`, contact]));
+  const selected = requested.map((recipient) => byTypedId.get(`${recipient.source_type}:${recipient.source_id}`)).filter(Boolean);
+  if (selected.length !== requested.length) throw badRequest("Uno o más contactos ya no están disponibles para esta comunicación.");
+  return selected;
+}
+
+async function prepareBusinessCommunicationWhatsApp(businessId, userId, id, recipientRefs, consentConfirmed) {
+  if (!consentConfirmed) throw badRequest("Confirma que los destinatarios aceptaron recibir esta comunicación antes de prepararla.");
+  const found = await query("select * from business_communications where id = $1 and business_id = $2", [id, businessId]);
+  if (!found.rowCount) throw notFound("Comunicación no encontrada.");
+  const communication = found.rows[0];
+  if (communication.communication_type !== "WHATSAPP") throw badRequest("Esta comunicación no está configurada para WhatsApp.");
+  if (!communication.whatsapp_body) throw badRequest("Completa el mensaje de WhatsApp antes de preparar el lote.");
+  const selected = await selectedCommunicationAudience(businessId, recipientRefs);
+  const results = { attempted: selected.length, queued: 0, skipped: 0 };
+  for (const contact of selected) {
+    const phone = normalizedWhatsAppPhone(contact.phone);
+    if (phone.length < 7) {
+      await saveRecipient({ businessId, communicationId: id, contact, status: "SKIPPED", errorMessage: "Sin teléfono válido para WhatsApp", userId, metadata: { channel: "WHATSAPP" } });
+      results.skipped += 1;
+      continue;
+    }
+    await saveRecipient({
+      businessId, communicationId: id, contact, status: "QUEUED", userId,
+      metadata: { channel: "WHATSAPP", phone, message: personalize(communication.whatsapp_body, contact), delivery_status: "QUEUED_FOR_MANUAL_SEND", consent_confirmed: true },
+    });
+    results.queued += 1;
+  }
+  const updated = await query("update business_communications set status = case when $3 > 0 then 'READY' else status end, updated_by = $4, updated_at = now() where id = $1 and business_id = $2 returning *", [id, businessId, results.queued, userId]);
+  await syncCommunicationChannelEffort(businessId, userId, updated.rows[0] || communication);
+  return { results, queue: await listBusinessCommunicationWhatsAppQueue(businessId, id) };
+}
+
+async function listBusinessCommunicationWhatsAppQueue(businessId, id) {
+  const found = await query("select id, communication_type from business_communications where id = $1 and business_id = $2", [id, businessId]);
+  if (!found.rowCount) throw notFound("Comunicación no encontrada.");
+  if (found.rows[0].communication_type !== "WHATSAPP") throw badRequest("Esta comunicación no está configurada para WhatsApp.");
+  const result = await query(
+    `select source_id, source_type, recipient_name, status, metadata, created_at
+     from business_communication_recipients
+     where business_id = $1 and communication_id = $2 and metadata->>'channel' = 'WHATSAPP'
+     order by case status when 'QUEUED' then 0 when 'PREPARED' then 1 else 2 end, created_at asc`,
+    [businessId, id]
+  );
+  const queue = result.rows.map((row) => ({
+    source_id: row.source_id,
+    source_type: row.source_type,
+    name: row.recipient_name || "Contacto",
+    phone: row.metadata?.phone || "",
+    message: row.metadata?.message || "",
+    status: row.status,
+    prepared_at: row.metadata?.opened_at || null,
+  }));
+  return { queue, queued: queue.filter((item) => item.status === "QUEUED").length, prepared: queue.filter((item) => item.status === "PREPARED").length };
+}
+
+async function markBusinessCommunicationWhatsAppOpened(businessId, userId, id, recipientRef) {
+  const recipient = await query(
+    `select r.*, bc.campaign_id, bc.activation_id
+     from business_communication_recipients r
+     join business_communications bc on bc.id = r.communication_id and bc.business_id = r.business_id
+     where r.business_id = $1 and r.communication_id = $2 and r.source_id = $3 and r.source_type = $4 and r.metadata->>'channel' = 'WHATSAPP'`,
+    [businessId, id, recipientRef.source_id, String(recipientRef.source_type || "PLAYER").toUpperCase()]
+  );
+  if (!recipient.rowCount) throw notFound("El contacto no pertenece a la cola de WhatsApp de esta comunicación.");
+  const row = recipient.rows[0];
+  if (row.status === "PREPARED") return { already_prepared: true, recipient: row };
+  const updated = await query(
+    `update business_communication_recipients
+     set status = 'PREPARED', sent_at = now(), metadata = metadata || jsonb_build_object('delivery_status', 'OPENED_FOR_MANUAL_SEND', 'opened_at', now()::text)
+     where id = $1 and business_id = $2 returning *`,
+    [row.id, businessId]
+  );
+  const message = String(row.metadata?.message || "");
+  const description = "WhatsApp abierto para envío manual desde una comunicación masiva; la entrega no se confirma automáticamente.";
+  await query(
+    `insert into lead_communications (business_id, lead_id, source_type, source_id, campaign_id, type, channel, subject, message, status, opened_at, metadata, created_by)
+     values ($1,$2,$3,$4,$5,'BUSINESS_COMMUNICATION','whatsapp',$6,$7,'opened',now(),$8::jsonb,$9)`,
+    [businessId, row.lead_id || null, row.source_type, row.source_id, row.campaign_id || null, "WhatsApp masivo preparado", message, JSON.stringify({ business_communication_id: id, delivery_status: "OPENED_FOR_MANUAL_SEND" }), userId]
+  );
+  await query(
+    `insert into lead_events (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
+     values ($1,$2,$3,$4,'whatsapp_opened_for_manual_send','WhatsApp abierto para envío manual',$5,$6,$7::jsonb)`,
+    [businessId, row.lead_id || null, row.source_type, row.source_id, description, userId, JSON.stringify({ business_communication_id: id, channel: "WHATSAPP", phone: row.metadata?.phone || null, message, delivery_status: "OPENED_FOR_MANUAL_SEND" })]
+  );
+  return { recipient: updated.rows[0] };
+}
+
 module.exports = {
   createBusinessCommunication,
   listAudience,
   listBusinessCommunications,
   publishBusinessCommunication,
+  prepareBusinessCommunicationWhatsApp,
+  listBusinessCommunicationWhatsAppQueue,
+  markBusinessCommunicationWhatsAppOpened,
   sendBusinessCommunication,
   updateBusinessCommunication,
 };

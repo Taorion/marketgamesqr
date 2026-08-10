@@ -19,13 +19,14 @@ const mediaAssetSchema = z.object({
 });
 const communicationFieldsSchema = z.object({
   title: z.string().trim().min(3).max(180),
-  communication_type: z.enum(["EMAIL", "SOCIAL", "MIXED"]).default("EMAIL"),
+  communication_type: z.enum(["EMAIL", "SOCIAL", "MIXED", "WHATSAPP"]).default("EMAIL"),
   status: z.enum(["DRAFT", "READY", "SENT", "ARCHIVED"]).default("DRAFT"),
   campaign_id: z.string().uuid().optional().nullable(),
   channel_id: z.string().uuid().optional().nullable(),
   activation_id: z.string().uuid().optional().nullable(),
   subject: z.string().trim().max(220).optional().nullable(),
   email_body: z.string().trim().max(12000).optional().nullable(),
+  whatsapp_body: z.string().trim().max(3000).optional().nullable(),
   social_copy: z.string().trim().max(5000).optional().nullable(),
   image_url: optionalImageSource,
   action_url: optionalUrl,
@@ -47,6 +48,9 @@ const communicationSchema = communicationFieldsSchema.superRefine((body, ctx) =>
   if (["SOCIAL", "MIXED"].includes(body.communication_type) && !body.social_copy) {
     ctx.addIssue({ code: "custom", path: ["social_copy"], message: "La publicación necesita una descripción." });
   }
+  if (body.communication_type === "WHATSAPP" && !body.whatsapp_body) {
+    ctx.addIssue({ code: "custom", path: ["whatsapp_body"], message: "WhatsApp necesita un mensaje." });
+  }
 });
 const communicationPatchSchema = communicationFieldsSchema.partial().superRefine((body, ctx) => {
   if (Object.keys(body).length === 0) ctx.addIssue({ code: "custom", message: "No hay cambios para guardar." });
@@ -61,6 +65,9 @@ async function audience(req, res, next) { try { res.json(await service.listAudie
 async function create(req, res, next) { try { const body = validate(communicationSchema, req.body); res.status(201).json(await service.createBusinessCommunication(businessIdFor(req), req.user.id, body)); } catch (error) { next(error); } }
 async function patch(req, res, next) { try { const body = validate(communicationPatchSchema, req.body); res.json(await service.updateBusinessCommunication(businessIdFor(req), req.user.id, req.params.id, body)); } catch (error) { next(error); } }
 async function send(req, res, next) { try { const body = validate(sendSchema, req.body); res.json(await service.sendBusinessCommunication(businessIdFor(req), req.user.id, req.params.id, body.recipients, body.consent_confirmed)); } catch (error) { next(error); } }
+async function prepareWhatsApp(req, res, next) { try { const body = validate(sendSchema, req.body); res.json(await service.prepareBusinessCommunicationWhatsApp(businessIdFor(req), req.user.id, req.params.id, body.recipients, body.consent_confirmed)); } catch (error) { next(error); } }
+async function whatsappQueue(req, res, next) { try { res.json(await service.listBusinessCommunicationWhatsAppQueue(businessIdFor(req), req.params.id)); } catch (error) { next(error); } }
+async function markWhatsAppOpened(req, res, next) { try { const body = validate(recipientSchema, req.body); res.json(await service.markBusinessCommunicationWhatsAppOpened(businessIdFor(req), req.user.id, req.params.id, body)); } catch (error) { next(error); } }
 async function publish(req, res, next) { try { const body = validate(publishSchema, req.body); res.json(await service.publishBusinessCommunication(businessIdFor(req), req.user.id, req.params.id, body)); } catch (error) { next(error); } }
 
-module.exports = { audience, create, list, patch, publish, send };
+module.exports = { audience, create, list, markWhatsAppOpened, patch, prepareWhatsApp, publish, send, whatsappQueue };
