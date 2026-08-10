@@ -737,8 +737,12 @@
                       <th>Sucursal</th>
                       <th>Dirección</th>
                       <th>Redenciones</th>
+                      <th>Leads</th>
                       <th>Ventas</th>
                       <th>Revenue</th>
+                      <th>Inversión</th>
+                      <th>CAC</th>
+                      <th>ROI</th>
                     </tr>
                   </thead>
                   <tbody id="branchPerformanceTable"></tbody>
@@ -2329,6 +2333,11 @@
                       <span>Campaña que medirá esta activación</span>
                       <select id="triviaCampaignInput"></select>
                       <small id="triviaCampaignHelp">Opcional. Si seleccionas campaña, los leads, respuestas, tickets emitidos y redenciones quedaran asociados a ese reporte.</small>
+                    </label>
+                    <label class="full association-field">
+                      <span>Sede que operará esta activación</span>
+                      <select id="triviaBranchInput"><option value="">Sin sede asignada</option></select>
+                      <small>Opcional. Los contactos capturados y sus resultados conservarán esta sede para sus KPIs.</small>
                     </label>
                     <div class="full activation-type-picker" id="activationTypePicker" aria-label="Tipo de activación">
                       <button class="activation-type-option active" type="button" data-activation-type="TRIVIA" aria-pressed="true">
@@ -4847,6 +4856,7 @@
                 </label>
                 <label><span>Detalle origen</span><input id="manualLeadSourceDetailInput" type="text" maxlength="220" placeholder="Asunto del correo, campaña, referido..."></label>
                 <label class="acquisition-channel-picker" data-acquisition-channel-picker="manual-lead"><span>Canal de adquisición</span><select id="manualLeadAcquisitionChannelPicker" aria-describedby="manualLeadAcquisitionChannelHelp"></select><input id="manualLeadAcquisitionChannelInput" type="text" maxlength="180" placeholder="Escribe el canal temporal" hidden><small id="manualLeadAcquisitionChannelHelp" class="field-help"></small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar canales en GOS</button></label>
+                <label><span>Sede</span><select id="manualLeadBranchInput"><option value="">Sin sede asignada</option></select><small class="field-help">La sede acompaña este contacto en su trazabilidad y KPIs.</small></label>
                 <label><span>Prioridad</span>
                   <select id="manualLeadPriorityInput">
                     <option value="HIGH">Alta</option>
@@ -7465,6 +7475,7 @@
               <label class="communication-title-field"><span>Nombre interno</span><input id="communicationTitleInput" required maxlength="180" placeholder="Ej. Oferta de agosto para clientes frecuentes"></label>
               <label><span>Campaña</span><select id="communicationCampaignInput"><option value="">Sin campaña</option></select></label>
               <label><span>Canal</span><select id="communicationChannelInput"><option value="">Sin canal</option></select></label>
+              <label><span>Sede</span><select id="communicationBranchInput"><option value="">Sin sede asignada</option></select></label>
               <label><span>Activación</span><select id="communicationActivationInput"><option value="">Sin activación</option></select></label>
               <label class="communication-showcase-control"><span>Vitrina web</span><select id="communicationWebShowcaseInput"><option value="">Sin vitrina web</option></select><small>Al elegirla, Qori conecta su enlace público a esta comunicación.</small></label>
               <label class="communication-showcase-control"><span>Producto de la vitrina</span><select id="communicationWebShowcaseProductInput" disabled><option value="">Primero elige una vitrina web</option></select><small>La comunicación llevará al producto específico.</small></label>
@@ -7522,8 +7533,8 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=reward-pass-history-v278-20260810" defer></script>
-    <script src="js/communications.js?v=communications-vitrina-web-v7-20260810" defer></script>
+<script src="js/app.js?v=branch-attribution-v281-20260810" defer></script>
+    <script src="js/communications.js?v=branch-attribution-v281-20260810" defer></script>
 </body>
 </html>
 

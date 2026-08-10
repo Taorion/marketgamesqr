@@ -843,7 +843,9 @@ async function getSeriesAndCharts(businessId, filters) {
        select coalesce(br.name, 'Sin sucursal') as branch_name,
               count(distinct qrd.id)::int as redemptions,
               count(distinct s.created_at::text || s.sale_amount::text || coalesce(s.qr_code_id::text, ''))::int as sales,
-              coalesce(sum(s.sale_amount), 0)::numeric(14, 2) as revenue
+              coalesce(sum(s.sale_amount), 0)::numeric(14, 2) as revenue,
+              coalesce(max(lead_metrics.leads), 0)::int as leads,
+              coalesce(max(effort_metrics.investment), 0)::numeric(14, 2) as investment
        from branches br
        left join redemptions rd on rd.branch_id = br.id
         and rd.redeemed_at >= $${branchParams.push(filters.startDate)}::timestamptz
@@ -863,6 +865,36 @@ async function getSeriesAndCharts(businessId, filters) {
         and ($${branchParams.push(filters.qrStatus)}::text is null or qs.status::text = $${branchParams.length}::text)
         and ($${branchParams.push(filters.qrType)}::text is null or qs.origin_type::text = $${branchParams.length}::text)
         and ($${branchParams.push(filters.affiliateId)}::uuid is null or coalesce(s.referred_affiliate_id, qs.affiliate_id) = $${branchParams.length}::uuid)
+       left join lateral (
+         select count(*)::int as leads
+         from (
+           select p.id
+           from players p
+           where p.business_id = br.business_id
+             and p.branch_id = br.id
+             and p.created_at >= $${branchParams.push(filters.startDate)}::timestamptz
+             and p.created_at < ($${branchParams.push(filters.endDate)}::date + interval '1 day')
+             and ($${branchParams.push(filters.campaignId)}::uuid is null or p.campaign_id = $${branchParams.length}::uuid)
+           union
+           select ml.id
+           from business_manual_leads ml
+           where ml.business_id = br.business_id
+             and ml.branch_id = br.id
+             and ml.created_at >= $${branchParams.push(filters.startDate)}::timestamptz
+             and ml.created_at < ($${branchParams.push(filters.endDate)}::date + interval '1 day')
+             and $${branchParams.push(filters.campaignId)}::uuid is null
+         ) contacts
+       ) lead_metrics on true
+       left join lateral (
+         select coalesce(sum(e.budget_amount), 0)::numeric(14, 2) as investment
+         from business_acquisition_channel_efforts e
+         where e.business_id = br.business_id
+           and e.branch_id = br.id
+           and e.status <> 'ARCHIVED'
+           and coalesce(e.published_at, e.created_at) >= $${branchParams.push(filters.startDate)}::timestamptz
+           and coalesce(e.published_at, e.created_at) < ($${branchParams.push(filters.endDate)}::date + interval '1 day')
+           and ($${branchParams.push(filters.campaignId)}::uuid is null or e.campaign_id = $${branchParams.length}::uuid)
+       ) effort_metrics on true
        where br.business_id = $${branchParams.push(businessId)}
          and ($${branchParams.push(filters.branchId)}::uuid is null or br.id = $${branchParams.length}::uuid)
        group by br.id, br.name
@@ -1020,12 +1052,20 @@ async function getSeriesAndCharts(businessId, filters) {
     branches: branches.rows.map((row) => {
       const sales = number(row.sales);
       const redemptions = number(row.redemptions);
+      const leads = number(row.leads);
+      const investment = number(row.investment);
+      const revenue = number(row.revenue);
       return {
         branch_name: row.branch_name,
+        leads,
         redemptions,
         sales,
-        revenue: number(row.revenue),
+        revenue,
+        investment,
+        cac: safeDivide(investment, leads),
+        roi: safeRoi(revenue, investment),
         conversion_rate: safeRate(sales, redemptions),
+        lead_conversion_rate: safeRate(sales, leads),
       };
     }),
     affiliates: affiliates.rows.map((row) => ({

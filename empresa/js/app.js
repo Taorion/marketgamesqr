@@ -308,6 +308,7 @@ const manualLeadPhoneInput = document.getElementById("manualLeadPhoneInput");
 const manualLeadEmailInput = document.getElementById("manualLeadEmailInput");
 const manualLeadSourceInput = document.getElementById("manualLeadSourceInput");
 const manualLeadSourceDetailInput = document.getElementById("manualLeadSourceDetailInput");
+const manualLeadBranchInput = document.getElementById("manualLeadBranchInput");
 const manualLeadPriorityInput = document.getElementById("manualLeadPriorityInput");
 const manualLeadStatusInput = document.getElementById("manualLeadStatusInput");
 const manualLeadPreferredChannelInput = document.getElementById("manualLeadPreferredChannelInput");
@@ -845,6 +846,7 @@ const activationTypeInput = document.getElementById("activationTypeInput");
 const activationTypePicker = document.getElementById("activationTypePicker");
 const triviaCampaignInput = document.getElementById("triviaCampaignInput");
 const triviaCampaignHelp = document.getElementById("triviaCampaignHelp");
+const triviaBranchInput = document.getElementById("triviaBranchInput");
 const triviaTitleInput = document.getElementById("triviaTitleInput");
 const triviaDescriptionInput = document.getElementById("triviaDescriptionInput");
 const triviaInviteMessageInput = document.getElementById("triviaInviteMessageInput");
@@ -12070,9 +12072,11 @@ function renderDashboard() {
       <span class="mono-label">Sucursal</span>
       <strong>${escapeHtml(row.branch_name || "Sin sucursal")}</strong>
       <p>${escapeHtml(row.address || "Sin dirección")}</p>
+      <div class="geo-metric"><span>Leads</span><span>${escapeHtml(row.leads || 0)}</span></div>
       <div class="geo-metric"><span>Redenciones</span><span>${escapeHtml(row.redemptions)}</span></div>
       <div class="geo-metric"><span>Ventas</span><span>${escapeHtml(row.sales)}</span></div>
       <div class="geo-metric"><span>Revenue</span><span>${escapeHtml(money(row.revenue))}</span></div>
+      <div class="geo-metric"><span>ROI</span><span>${escapeHtml(`${toNumber(row.roi || 0).toFixed(1)}%`)}</span></div>
     </article>
   `).join("") || '<article class="geo-branch-card"><strong>Sin datos</strong><p>No hay actividad por sucursal todavia.</p></article>';
 
@@ -12081,10 +12085,14 @@ function renderDashboard() {
       <td>${escapeHtml(row.branch_name || "Sin sucursal")}</td>
       <td>${escapeHtml(row.address || "-")}</td>
       <td>${escapeHtml(row.redemptions)}</td>
+      <td>${escapeHtml(row.leads || 0)}</td>
       <td>${escapeHtml(row.sales)}</td>
       <td>${escapeHtml(money(row.revenue))}</td>
+      <td>${escapeHtml(money(row.investment || 0))}</td>
+      <td>${escapeHtml(money(row.cac || 0))}</td>
+      <td>${escapeHtml(`${toNumber(row.roi || 0).toFixed(1)}%`)}</td>
     </tr>
-  `).join("") || '<tr><td colspan="5">Sin actividad por sucursal.</td></tr>';
+  `).join("") || '<tr><td colspan="9">Sin actividad por sucursal.</td></tr>';
 
   dashboardInsightTitle.textContent = topHour?.count
     ? `El pico de redenciones ocurre a las ${String(topHour.hour).padStart(2, "0")}:00. ${topAcquisitionSource ? `${acquisitionSourceLabel(topAcquisitionSource.acquisition_source)} lidera ventas reales con ${money(topAcquisitionSource.revenue)}.` : `${topBranch?.branch_name || "La sucursal principal"} lidera el revenue del periodo.`} Los tickets estratégicos ya aportan ${summary.strategic_claimed_or_active || 0} activaciones al embudo.`
@@ -24165,6 +24173,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
   };
   const base = {
     campaign_id: triviaCampaignInput.value || null,
+    branch_id: triviaBranchInput?.value || null,
     title: triviaTitleInput.value.trim(),
     description: triviaDescriptionInput.value.trim() || null,
     max_rewards: triviaMaxWinnersInput.value ? Number(triviaMaxWinnersInput.value) : null,
@@ -25406,6 +25415,7 @@ async function saveGamingActivationDraft() {
     category: interactiveCategoryForType(type),
     title: draftTitle.length >= 4 ? draftTitle : "Borrador de activacion",
     description: triviaDescriptionInput?.value.trim() || null,
+    branch_id: triviaBranchInput?.value || null,
     reward_ticket_cost: 1,
     reward_mode: "fixed",
     reward_config: {
@@ -30790,6 +30800,7 @@ async function createManualLead(event) {
     email: optionalInputValue(manualLeadEmailInput),
     source: String(manualLeadSourceInput?.value || "Manual").trim(),
     source_detail: optionalInputValue(manualLeadSourceDetailInput),
+    branch_id: manualLeadBranchInput?.value || null,
     ...acquisitionChannel,
     priority: manualLeadPriorityInput?.value || "MEDIUM",
     status: manualLeadStatusInput?.value || "NEW",
@@ -40396,6 +40407,8 @@ function closeBranchDetailModal() {
 }
 
 function renderCustomerAcquisitionBranchOptions() {
+  renderInteractiveActivationBranchOptions();
+  renderManualLeadBranchOptions();
   if (!customerAcquisitionBranchInput) return;
   if (!state.businessBranchesLoaded && !state.businessBranchesLoading && session?.user?.business_id) {
     loadBusinessBranches().then(renderCustomerAcquisitionBranchOptions).catch(() => {});
@@ -41925,6 +41938,32 @@ function renderRmsStationOnly() {
 function rmsVisibleOpportunities(rows = []) {
   const phase = state.rmsMachineFilters?.phase || "";
   return rows.filter((item) => !phase || item.stage === phase);
+}
+
+function renderManualLeadBranchOptions() {
+  if (!manualLeadBranchInput) return;
+  const selected = manualLeadBranchInput.value || "";
+  const rows = (state.businessBranches || []).filter((branch) => branch.is_active !== false);
+  manualLeadBranchInput.innerHTML = [
+    `<option value="">${state.businessBranchesLoading ? "Cargando sedes..." : "Sin sede asignada"}</option>`,
+    ...rows.map((branch) => `<option value="${escapeHtml(branch.id)}">${escapeHtml(branch.name)}</option>`),
+  ].join("");
+  if (selected && rows.some((branch) => String(branch.id) === String(selected))) {
+    manualLeadBranchInput.value = selected;
+  }
+}
+
+function renderInteractiveActivationBranchOptions() {
+  if (!triviaBranchInput) return;
+  const selected = triviaBranchInput.value || "";
+  const rows = (state.businessBranches || []).filter((branch) => branch.is_active !== false);
+  triviaBranchInput.innerHTML = [
+    `<option value="">${state.businessBranchesLoading ? "Cargando sedes..." : "Sin sede asignada"}</option>`,
+    ...rows.map((branch) => `<option value="${escapeHtml(branch.id)}">${escapeHtml(branch.name)}</option>`),
+  ].join("");
+  if (selected && rows.some((branch) => String(branch.id) === String(selected))) {
+    triviaBranchInput.value = selected;
+  }
 }
 
 function renderRmsMachineFilterFeedback(data = state.rmsMachine || {}, rows = data.opportunities || []) {

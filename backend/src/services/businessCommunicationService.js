@@ -129,6 +129,7 @@ async function assertRelationBelongsToBusiness(businessId, payload) {
   const checks = [
     ["campaign_id", "campaigns"],
     ["channel_id", "business_acquisition_channels"],
+    ["branch_id", "branches"],
   ];
   for (const [field, table] of checks) {
     if (!payload[field]) continue;
@@ -143,7 +144,7 @@ async function assertRelationBelongsToBusiness(businessId, payload) {
 
 async function listBusinessCommunications(businessId) {
   const result = await query(
-    `select bc.*, c.name as campaign_name, ch.name as channel_name, ia.title as activation_name, ia.public_slug as activation_public_slug,
+    `select bc.*, c.name as campaign_name, ch.name as channel_name, br.name as branch_name, ia.title as activation_name, ia.public_slug as activation_public_slug,
        sw.title as web_showcase_title, sw.slug as web_showcase_slug, sw.status as web_showcase_status,
        coalesce(rc.recipients_total, 0)::int as recipients_total, coalesce(rc.sent_count, 0)::int as recipients_sent, coalesce(rc.prepared_count, 0)::int as recipients_prepared, coalesce(rc.queued_count, 0)::int as recipients_queued, coalesce(rc.failed_count, 0)::int as recipients_failed,
        coalesce(rc.skipped_count, 0)::int as recipients_skipped,
@@ -154,6 +155,7 @@ async function listBusinessCommunications(businessId) {
      from business_communications bc
      left join campaigns c on c.id = bc.campaign_id and c.business_id = bc.business_id
      left join business_acquisition_channels ch on ch.id = bc.channel_id and ch.business_id = bc.business_id
+     left join branches br on br.id = bc.branch_id and br.business_id = bc.business_id
      left join interactive_activations ia on ia.id = bc.activation_id and ia.company_id = bc.business_id
      left join smart_catalogs sw on sw.id::text = bc.metadata->>'web_showcase_id' and sw.business_id = bc.business_id
      left join lateral (
@@ -429,6 +431,10 @@ async function syncCommunicationChannelEffort(businessId, userId, communication 
         objective, communicationEffortContentType(communication), effortStatus, publishedAt,
         communication.created_at || new Date().toISOString(), creativeUrl, sourceUrl, JSON.stringify(metadata)]
     );
+    await query(
+      "update business_acquisition_channel_efforts set branch_id = $3, updated_at = now() where id = $1 and business_id = $2",
+      [existingEffort.id, businessId, communication.branch_id || null]
+    );
     return existingEffort.id;
   }
   const inserted = await query(
@@ -441,7 +447,14 @@ async function syncCommunicationChannelEffort(businessId, userId, communication 
       communicationEffortContentType(communication), effortStatus, publishedAt, communication.created_at || new Date().toISOString(),
       creativeUrl, sourceUrl, JSON.stringify(metadata), userId]
   );
-  return inserted.rows[0]?.id || null;
+  const effortId = inserted.rows[0]?.id || null;
+  if (effortId) {
+    await query(
+      "update business_acquisition_channel_efforts set branch_id = $3, updated_at = now() where id = $1 and business_id = $2",
+      [effortId, businessId, communication.branch_id || null]
+    );
+  }
+  return effortId;
 }
 
 async function publishBusinessCommunication(businessId, userId, id, payload = {}) {
@@ -460,7 +473,7 @@ async function publishBusinessCommunication(businessId, userId, id, payload = {}
     : publicActivationUrl(activation.rows[0].public_slug, communication.tracking_token, "social");
   const investment = Number(payload.investment_amount || 0);
   if (!Number.isFinite(investment) || investment < 0) throw badRequest("La inversión debe ser un valor válido mayor o igual a cero.");
-  const effortMetadata = JSON.stringify({ source_module: "business_communication", communication_id: communication.id, tracking_token: communication.tracking_token, tracking_url: trackingUrl, activation_id: communication.activation_id || null, web_showcase_id: showcase?.id || null });
+  const effortMetadata = JSON.stringify({ source_module: "business_communication", communication_id: communication.id, tracking_token: communication.tracking_token, tracking_url: trackingUrl, activation_id: communication.activation_id || null, branch_id: communication.branch_id || null, web_showcase_id: showcase?.id || null });
   const existingEffort = await query(
     `select id from business_acquisition_channel_efforts
      where business_id = $1 and metadata->>'communication_id' = $2 and status <> 'ARCHIVED'
@@ -471,20 +484,20 @@ async function publishBusinessCommunication(businessId, userId, id, payload = {}
   if (existingEffort.rowCount) {
     await query(
       `update business_acquisition_channel_efforts
-       set channel_id=$3, campaign_id=$4, title=$5, description=$6, content_type='POST', status='ACTIVE',
-           published_at=coalesce(published_at, now()), budget_amount=$7, source_url=$8, metadata=$9::jsonb
+       set channel_id=$3, campaign_id=$4, branch_id=$5, title=$6, description=$7, content_type='POST', status='ACTIVE',
+           published_at=coalesce(published_at, now()), budget_amount=$8, source_url=$9, metadata=$10::jsonb
        where id=$1 and business_id=$2`,
-      [existingEffort.rows[0].id, businessId, communication.channel_id, communication.campaign_id || null, communication.title, communication.social_copy || null, investment, payload.external_publication_url || trackingUrl, effortMetadata]
+      [existingEffort.rows[0].id, businessId, communication.channel_id, communication.campaign_id || null, communication.branch_id || null, communication.title, communication.social_copy || null, investment, payload.external_publication_url || trackingUrl, effortMetadata]
     );
   } else {
     await query(
-      `insert into business_acquisition_channel_efforts (business_id, channel_id, campaign_id, title, description, content_type, status, published_at, budget_amount, source_url, metadata, created_by_user_id)
-       values ($1,$2,$3,$4,$5,'POST','ACTIVE',now(),$6,$7,$8::jsonb,$9)`,
-      [businessId, communication.channel_id, communication.campaign_id || null, communication.title, communication.social_copy || null, investment, payload.external_publication_url || trackingUrl, effortMetadata, userId]
+      `insert into business_acquisition_channel_efforts (business_id, channel_id, campaign_id, branch_id, title, description, content_type, status, published_at, budget_amount, source_url, metadata, created_by_user_id)
+       values ($1,$2,$3,$4,$5,$6,'POST','ACTIVE',now(),$7,$8,$9::jsonb,$10)`,
+      [businessId, communication.channel_id, communication.campaign_id || null, communication.branch_id || null, communication.title, communication.social_copy || null, investment, payload.external_publication_url || trackingUrl, effortMetadata, userId]
     );
   }
   const updated = await query("update business_communications set publication_status='PUBLISHED', published_at=coalesce(published_at, now()), published_by=$3, external_publication_url=coalesce($4, external_publication_url), updated_by=$3, updated_at=now() where id=$1 and business_id=$2 returning *", [id, businessId, userId, payload.external_publication_url || null]);
-  await query("insert into business_communication_events (business_id, communication_id, activation_id, event_type, metadata) values ($1,$2,$3,'PUBLISHED',$4::jsonb)", [businessId, id, communication.activation_id || null, JSON.stringify({ tracking_url: trackingUrl, investment, web_showcase_id: showcase?.id || null })]);
+  await query("insert into business_communication_events (business_id, communication_id, activation_id, event_type, metadata) values ($1,$2,$3,'PUBLISHED',$4::jsonb)", [businessId, id, communication.activation_id || null, JSON.stringify({ tracking_url: trackingUrl, investment, branch_id: communication.branch_id || null, web_showcase_id: showcase?.id || null })]);
   return { communication: { ...updated.rows[0], tracking_url: trackingUrl, email_tracking_url: activation?.rowCount ? publicActivationUrl(activation.rows[0].public_slug, communication.tracking_token, "email") : null } };
 }
 
@@ -494,12 +507,12 @@ async function createBusinessCommunication(businessId, userId, payload) {
   await assertRelationBelongsToBusiness(businessId, normalizedPayload);
   const result = await query(
     `insert into business_communications (
-      business_id, title, communication_type, status, campaign_id, channel_id, activation_id,
+      business_id, title, communication_type, status, campaign_id, channel_id, branch_id, activation_id,
       subject, email_body, whatsapp_body, social_copy, image_url, action_url, audience_filters, metadata, created_by, updated_by
-    ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15::jsonb,$16,$16)
+    ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15::jsonb,$16::jsonb,$17,$17)
     returning *`,
     [businessId, normalizedPayload.title, normalizedPayload.communication_type, normalizedPayload.status, normalizedPayload.campaign_id || null,
-      normalizedPayload.channel_id || null, normalizedPayload.activation_id || null, normalizedPayload.subject || null, normalizedPayload.email_body || null,
+      normalizedPayload.channel_id || null, normalizedPayload.branch_id || null, normalizedPayload.activation_id || null, normalizedPayload.subject || null, normalizedPayload.email_body || null,
       normalizedPayload.whatsapp_body || null, normalizedPayload.social_copy || null, normalizedPayload.image_url || null, normalizedPayload.action_url || null,
       JSON.stringify(normalizedPayload.audience_filters || {}), JSON.stringify(normalizedPayload.metadata || {}), userId]
   );
@@ -515,12 +528,12 @@ async function updateBusinessCommunication(businessId, userId, id, payload) {
   const merged = await normalizeWebShowcaseRelation(businessId, productNormalizedPayload, existing.rows[0].metadata);
   await assertRelationBelongsToBusiness(businessId, merged);
   const result = await query(
-    `update business_communications set title=$3, communication_type=$4, status=$5, campaign_id=$6, channel_id=$7,
-      activation_id=$8, subject=$9, email_body=$10, whatsapp_body=$11, social_copy=$12, image_url=$13, action_url=$14,
-      audience_filters=$15::jsonb, metadata=$16::jsonb, updated_by=$17, updated_at=now()
+    `update business_communications set title=$3, communication_type=$4, status=$5, campaign_id=$6, channel_id=$7, branch_id=$8,
+      activation_id=$9, subject=$10, email_body=$11, whatsapp_body=$12, social_copy=$13, image_url=$14, action_url=$15,
+      audience_filters=$16::jsonb, metadata=$17::jsonb, updated_by=$18, updated_at=now()
      where id=$1 and business_id=$2 returning *`,
     [id, businessId, merged.title, merged.communication_type, merged.status, merged.campaign_id || null,
-      merged.channel_id || null, merged.activation_id || null, merged.subject || null, merged.email_body || null,
+      merged.channel_id || null, merged.branch_id || null, merged.activation_id || null, merged.subject || null, merged.email_body || null,
       merged.whatsapp_body || null, merged.social_copy || null, merged.image_url || null, merged.action_url || null,
       JSON.stringify(merged.audience_filters || {}), JSON.stringify(merged.metadata || {}), userId]
   );

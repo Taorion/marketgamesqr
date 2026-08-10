@@ -23,6 +23,7 @@ const communicationFieldsSchema = z.object({
   status: z.enum(["DRAFT", "READY", "SENT", "ARCHIVED"]).default("DRAFT"),
   campaign_id: z.string().uuid().optional().nullable(),
   channel_id: z.string().uuid().optional().nullable(),
+  branch_id: z.string().uuid().optional().nullable(),
   activation_id: z.string().uuid().optional().nullable(),
   web_showcase_id: z.string().uuid().optional().nullable(),
   web_showcase_product_id: z.string().uuid().optional().nullable(),

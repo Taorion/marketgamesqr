@@ -148,14 +148,19 @@
   }
 
   function renderOptions() {
+  if (!state.businessBranchesLoaded && !state.businessBranchesLoading && typeof window.loadBusinessBranches === "function") {
+      window.loadBusinessBranches().then(() => renderOptions()).catch(() => {});
+    }
     const options = (items, label) => (items || []).map((item) => `<option value="${esc(item.id)}">${esc(label(item))}</option>`).join("");
     const campaign = document.getElementById("communicationCampaignInput");
     const channel = document.getElementById("communicationChannelInput");
+    const branch = document.getElementById("communicationBranchInput");
     const activation = document.getElementById("communicationActivationInput");
     const showcase = document.getElementById("communicationWebShowcaseInput");
     const product = document.getElementById("communicationWebShowcaseProductInput");
     const selectedCampaign = campaign?.value || "";
     const selectedChannel = channel?.value || "";
+    const selectedBranch = branch?.value || "";
     const selectedActivation = activation?.value || "";
     const selectedShowcase = showcase?.value || state.communicationPendingShowcaseId || "";
     const selectedProduct = product?.value || product?.dataset.selectedProduct || state.communicationPendingProductId || "";
@@ -163,8 +168,10 @@
     if (channel) channel.innerHTML = '<option value="">Sin canal</option>' + options(state.acquisitionChannels, (item) => [item.name || item.channel_name || "Canal", item.platform].filter(Boolean).join(" · "));
     if (activation) activation.innerHTML = '<option value="">Sin activación</option>' + options(state.triviaLaunchers, (item) => item.title || "Activación");
     if (showcase) showcase.innerHTML = '<option value="">Sin vitrina web</option>' + options(state.smartCatalogs, (item) => `${item.title || "Vitrina web"}${String(item.status || "").toUpperCase() === "ACTIVE" ? "" : " · No publicada"}`);
+    if (branch) branch.innerHTML = '<option value="">Sin sede asignada</option>' + options((state.businessBranches || []).filter((item) => item.is_active !== false), (item) => item.name || "Sede");
     if (campaign) campaign.value = selectedCampaign;
     if (channel) channel.value = selectedChannel;
+    if (branch) branch.value = selectedBranch;
     if (activation) activation.value = selectedActivation;
     if (showcase) showcase.value = selectedShowcase;
     if (product) {
@@ -434,7 +441,7 @@
     if (action === "SEND" && !document.getElementById("communicationComposerConsentInput")?.checked) { message.textContent = "Confirma el consentimiento antes de enviar."; return; }
     const payload = {
       title: form.querySelector("#communicationTitleInput")?.value.trim(), communication_type: form.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL",
-      campaign_id: form.querySelector("#communicationCampaignInput")?.value || null, channel_id: form.querySelector("#communicationChannelInput")?.value || null, activation_id: form.querySelector("#communicationActivationInput")?.value || null, web_showcase_id: form.querySelector("#communicationWebShowcaseInput")?.value || null, web_showcase_product_id: form.querySelector("#communicationWebShowcaseProductInput")?.value || null,
+      campaign_id: form.querySelector("#communicationCampaignInput")?.value || null, channel_id: form.querySelector("#communicationChannelInput")?.value || null, branch_id: form.querySelector("#communicationBranchInput")?.value || null, activation_id: form.querySelector("#communicationActivationInput")?.value || null, web_showcase_id: form.querySelector("#communicationWebShowcaseInput")?.value || null, web_showcase_product_id: form.querySelector("#communicationWebShowcaseProductInput")?.value || null,
       product_promotion: promotionEnabled ? { label: form.querySelector("#communicationProductPromotionLabelInput")?.value.trim() || "", promotional_price: Number(form.querySelector("#communicationProductPromotionPriceInput")?.value || 0), starts_at: form.querySelector("#communicationProductPromotionStartsAtInput")?.value || "", ends_at: form.querySelector("#communicationProductPromotionEndsAtInput")?.value || "" } : null,
       subject: form.querySelector("#communicationSubjectInput")?.value.trim() || null, email_body: form.querySelector("#communicationEmailBodyInput")?.value.trim() || null, whatsapp_body: form.querySelector("#communicationWhatsAppBodyInput")?.value.trim() || null, social_copy: form.querySelector("#communicationSocialCopyInput")?.value.trim() || null,
       image_url: media[0]?.source || null, action_url: form.querySelector("#communicationActionUrlInput")?.value.trim() || null,

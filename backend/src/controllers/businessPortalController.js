@@ -482,6 +482,7 @@ const manualLeadSchema = z.object({
   job_title: nullableText(160),
   source: z.string().trim().min(2).max(120).default("Manual"),
   source_detail: nullableText(220),
+  branch_id: z.string().uuid().optional().nullable(),
   acquisition_channel_id: z.string().uuid().optional().nullable(),
   acquisition_channel: nullableText(180),
   interest: nullableText(500),
@@ -4275,13 +4276,21 @@ async function createManualLead(req, res, next) {
     }
     const lead = await withTransaction(async (client) => {
       const acquisitionChannel = await resolveAcquisitionChannelReference(client, businessId, body);
+      let branchId = body.branch_id || null;
+      if (branchId) {
+        const branch = await client.query(
+          "select id from branches where id = $1 and business_id = $2 and is_active = true",
+          [branchId, businessId]
+        );
+        if (!branch.rowCount) throw badRequest("La sede seleccionada no existe o no está activa para este negocio.");
+      }
       const result = await client.query(
         `insert into business_manual_leads
            (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
-            acquisition_channel_id, acquisition_channel_name_snapshot, acquisition_channel_slug_snapshot,
+            branch_id, acquisition_channel_id, acquisition_channel_name_snapshot, acquisition_channel_slug_snapshot,
             acquisition_channel_source, interest, importance_reason, preferred_channel, preferred_contact_time,
             status, priority, notes, metadata)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21::jsonb)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22::jsonb)
          returning *`,
         [
           businessId,
@@ -4293,6 +4302,7 @@ async function createManualLead(req, res, next) {
           body.job_title,
           body.source || "Manual",
           body.source_detail,
+          branchId,
           acquisitionChannel.acquisition_channel_id,
           acquisitionChannel.acquisition_channel_name_snapshot,
           acquisitionChannel.acquisition_channel_slug_snapshot,
@@ -4306,6 +4316,7 @@ async function createManualLead(req, res, next) {
           body.notes,
           JSON.stringify({
             source: "manual_portal_entry",
+            branch_id: branchId,
             acquisition_channel: {
               id: acquisitionChannel.acquisition_channel_id,
               name_snapshot: acquisitionChannel.acquisition_channel_name_snapshot,
