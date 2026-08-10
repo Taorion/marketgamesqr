@@ -16127,3 +16127,81 @@ html body > #rewardPassCreateModal .reward-pass-create-modal-card {
   scrollbar-gutter: stable;
   padding-bottom: 42px;
 }
+
+/* Detalle individual: la trazabilidad comercial se lee en la misma Gift Card. */
+.reward-pass-detail-modal-card {
+  width: min(880px, calc(100vw - 24px)) !important;
+  max-height: calc(100dvh - 24px) !important;
+  overflow: auto !important;
+}
+
+.reward-pass-detail-summary {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+}
+
+.reward-pass-balance-summary {
+  border-color: rgba(0, 174, 219, .35) !important;
+  background: linear-gradient(135deg, #e8fbff, #f8feff) !important;
+}
+
+.reward-pass-history-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(7, 89, 214, .14);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.reward-pass-history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.reward-pass-history-heading h4 { margin: 3px 0 0; color: #06388e; font-size: 1rem; }
+.reward-pass-history-list { display: grid; gap: 8px; }
+
+.reward-pass-history-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(7, 89, 214, .1);
+}
+
+.reward-pass-history-row:first-child { border-top: 0; }
+.reward-pass-history-row > .material-symbols-outlined { color: #0877c9; font-size: 21px; }
+.reward-pass-history-row strong { color: #102c63; }
+.reward-pass-history-row > strong { white-space: nowrap; color: #06388e; }
+.reward-pass-history-row p, .reward-pass-history-row small { display: block; margin: 3px 0 0; color: #58749b; line-height: 1.38; }
+.reward-pass-history-row small { font-weight: 700; color: #345778; }
+.reward-pass-history-issue > strong { color: #0877c9; }
+.reward-pass-history-empty { margin: 0; color: #58749b; line-height: 1.45; }
+
+.reward-pass-admin-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.reward-pass-admin-panel > div {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 13px;
+  background: #f7fbff;
+  border: 1px solid rgba(7, 89, 214, .1);
+}
+
+.reward-pass-admin-panel span { display: block; margin-bottom: 4px; color: #58749b; font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+.reward-pass-admin-panel strong { display: block; color: #102c63; overflow-wrap: anywhere; }
+
+@media (max-width: 620px) {
+  .reward-pass-detail-modal-card { width: 100% !important; max-height: 100dvh !important; border-radius: 0 !important; }
+  .reward-pass-history-panel { padding: 15px; }
+  .reward-pass-history-heading { align-items: flex-start; flex-direction: column; }
+  .reward-pass-admin-panel { grid-template-columns: 1fr; }
+}

@@ -36867,6 +36867,11 @@ function renderRewardPassDetailModal() {
   if (!pass) return;
   const modal = ensureRewardPassDetailModal();
   const hasClaim = pass.status !== "pending_claim" && Boolean(pass.beneficiary_name && pass.beneficiary_document);
+  const initialValue = Number(pass.initial_value_cop || 0);
+  const currentBalance = Number(pass.current_balance_cop || 0);
+  const redeemedValue = Math.max(initialValue - currentBalance, 0);
+  const redemptionRows = Array.isArray(pass.redemptions) ? pass.redemptions : [];
+  const ticketRows = Array.isArray(pass.ticket_transactions) ? pass.ticket_transactions : [];
   const reminderPhone = String(pass.beneficiary_phone || pass.buyer_phone || "").replace(/\D/g, "");
   const reminderTarget = pass.beneficiary_name || pass.buyer_name || "la persona beneficiaria";
   const reminderText = hasClaim
@@ -36884,7 +36889,9 @@ function renderRewardPassDetailModal() {
         <button class="icon-button" type="button" data-rp-detail-close aria-label="Cerrar detalle"><span class="material-symbols-outlined">close</span></button>
       </div>
       <div class="reward-pass-detail-summary">
-        <div><span>Saldo disponible</span><strong>${escapeHtml(money(pass.current_balance_cop || 0))}</strong></div>
+        <div><span>Valor emitido</span><strong>${escapeHtml(money(initialValue))}</strong></div>
+        <div><span>Redimido</span><strong>${escapeHtml(money(redeemedValue))}</strong></div>
+        <div class="reward-pass-balance-summary"><span>Saldo disponible</span><strong>${escapeHtml(money(currentBalance))}</strong></div>
         <div><span>Estado</span><strong><span class="status-chip ${rewardPassStatusClass(pass.status)}">${escapeHtml(rewardPassStatusLabel(pass.status))}</span></strong></div>
         <div><span>Vence</span><strong>${escapeHtml(formatDateShort(pass.expires_at))}</strong></div>
       </div>
@@ -36895,6 +36902,38 @@ function renderRewardPassDetailModal() {
       <section class="reward-pass-reveal-status ${hasClaim ? "is-revealed" : "is-pending"}">
         <span class="material-symbols-outlined" aria-hidden="true">${hasClaim ? "verified" : "lock"}</span>
         <div><strong>${hasClaim ? "Valor revelado" : "Valor pendiente de revelar"}</strong><p>${hasClaim ? "El beneficiario completó sus datos; la giftcard puede utilizarse según su vigencia." : "El valor solo se revela cuando el beneficiario completa el formulario con sus datos."}</p></div>
+      </section>
+      <section class="reward-pass-history-panel" aria-label="Historial de la giftcard">
+        <div class="reward-pass-history-heading">
+          <div>
+            <span class="mono-label">Trazabilidad comercial</span>
+            <h4>Historial de saldo y redenciones</h4>
+          </div>
+          <span class="status-chip ${redemptionRows.length ? "ok" : "pending"}">${escapeHtml(`${redemptionRows.length} ${redemptionRows.length === 1 ? "movimiento" : "movimientos"}`)}</span>
+        </div>
+        <div class="reward-pass-history-list">
+          <article class="reward-pass-history-row reward-pass-history-issue">
+            <span class="material-symbols-outlined" aria-hidden="true">add_card</span>
+            <div><strong>Gift Card emitida</strong><p>${escapeHtml(formatDate(pass.issued_at || pass.created_at))}${pass.payment_method_received ? ` · ${escapeHtml(pass.payment_method_received)}` : ""}</p></div>
+            <strong>${escapeHtml(money(initialValue))}</strong>
+          </article>
+          ${redemptionRows.map((item) => `
+            <article class="reward-pass-history-row">
+              <span class="material-symbols-outlined" aria-hidden="true">shopping_bag</span>
+              <div>
+                <strong>Redención ${escapeHtml(item.invoice_number ? `· ${item.invoice_number}` : "registrada")}</strong>
+                <p>${escapeHtml(formatDate(item.redeemed_at))}${item.branch ? ` · ${escapeHtml(item.branch)}` : ""}${item.cashier_name ? ` · ${escapeHtml(item.cashier_name)}` : ""}</p>
+                <small>Saldo: ${escapeHtml(money(item.balance_before_cop || 0))} → ${escapeHtml(money(item.balance_after_cop || 0))}</small>
+              </div>
+              <strong>-${escapeHtml(money(item.redeemed_value_cop || 0))}</strong>
+            </article>
+          `).join("") || '<p class="reward-pass-history-empty">Aún no hay redenciones. El saldo total sigue disponible hasta que venza o se anule la Gift Card.</p>'}
+        </div>
+      </section>
+      <section class="reward-pass-admin-panel" aria-label="Datos operativos de la giftcard">
+        <div><span>Permite saldo parcial</span><strong>${pass.partial_redemption_allowed ? "Sí" : "No, es de un solo uso"}</strong></div>
+        <div><span>Sede autorizada</span><strong>${escapeHtml(pass.authorized_branch || "Cualquier sede autorizada")}</strong></div>
+        <div><span>Movimientos Qori</span><strong>${escapeHtml(`${ticketRows.length} ${ticketRows.length === 1 ? "registro" : "registros"}`)}</strong></div>
       </section>
       <div class="modal-actions reward-pass-detail-actions">
         <button class="ghost-button" type="button" data-rp-detail-close>Cerrar</button>
