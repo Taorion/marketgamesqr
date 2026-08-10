@@ -24,6 +24,7 @@ const communicationFieldsSchema = z.object({
   campaign_id: z.string().uuid().optional().nullable(),
   channel_id: z.string().uuid().optional().nullable(),
   activation_id: z.string().uuid().optional().nullable(),
+  web_showcase_id: z.string().uuid().optional().nullable(),
   subject: z.string().trim().max(220).optional().nullable(),
   email_body: z.string().trim().max(12000).optional().nullable(),
   whatsapp_body: z.string().trim().max(3000).optional().nullable(),

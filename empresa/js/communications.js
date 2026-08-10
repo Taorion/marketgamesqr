@@ -56,7 +56,8 @@
       return true;
     }).slice(0, MAX_MEDIA_FILES);
   };
-  const socialShareContent = (item) => [item?.social_copy, item?.tracking_url || item?.action_url].filter(Boolean).join("\n\n");
+  const communicationActionUrl = (item) => item?.web_showcase_slug ? item.action_url || `${window.location.origin}/c/${encodeURIComponent(item.web_showcase_slug)}` : item?.tracking_url || item?.action_url || "";
+  const socialShareContent = (item) => [item?.social_copy, communicationActionUrl(item)].filter(Boolean).join("\n\n");
 
   async function shareSocialPublication(item) {
     const content = socialShareContent(item);
@@ -151,9 +152,11 @@
     const campaign = document.getElementById("communicationCampaignInput");
     const channel = document.getElementById("communicationChannelInput");
     const activation = document.getElementById("communicationActivationInput");
+    const showcase = document.getElementById("communicationWebShowcaseInput");
     if (campaign) campaign.innerHTML = '<option value="">Sin campaña</option>' + options(state.campaigns, (item) => item.name || item.title || "Campaña");
     if (channel) channel.innerHTML = '<option value="">Sin canal</option>' + options(state.acquisitionChannels, (item) => [item.name || item.channel_name || "Canal", item.platform].filter(Boolean).join(" · "));
     if (activation) activation.innerHTML = '<option value="">Sin activación</option>' + options(state.triviaLaunchers, (item) => item.title || "Activación");
+    if (showcase) showcase.innerHTML = '<option value="">Sin vitrina web</option>' + options(state.smartCatalogs, (item) => `${item.title || "Vitrina web"}${String(item.status || "").toUpperCase() === "ACTIVE" ? "" : " · No publicada"}`);
   }
 
   function renderMediaPreview() {
@@ -208,6 +211,9 @@
     if (typeof loadAcquisitionChannels === "function") {
       await loadAcquisitionChannels({ force: true, quiet: true });
     }
+    if (typeof loadSmartCatalogData === "function") {
+      await loadSmartCatalogData({ force: true, quiet: true });
+    }
   }
 
   function positionComposerAudience() {
@@ -255,7 +261,7 @@
     const audienceChannel = isWhatsAppCommunication(activeCommunication) ? "whatsapp" : "email";
     list.innerHTML = communications.length ? communications.map((item) => {
       const media = mediaFor(item);
-      return `<article class="communication-list-item ${String(item.id) === String(state.selectedCommunicationId) ? "is-selected" : ""}" data-communication-select="${esc(item.id)}"><div><span class="mono-label">${esc(typeLabel(item.communication_type))} · ${esc(publicationLabel(item))}</span><strong>${esc(item.title)}</strong><p>${esc(item.campaign_name || item.channel_name || item.activation_name || "Sin relación comercial")}</p></div><div class="communication-list-item-meta">${media.length ? `<span class="communication-media-count"><span class="material-symbols-outlined">image</span>${media.length}</span>` : ""}<strong>${Number(item.recipients_total || 0)}</strong><small>destinatarios</small><span class="material-symbols-outlined">arrow_forward</span></div></article>`;
+      return `<article class="communication-list-item ${String(item.id) === String(state.selectedCommunicationId) ? "is-selected" : ""}" data-communication-select="${esc(item.id)}"><div><span class="mono-label">${esc(typeLabel(item.communication_type))} · ${esc(publicationLabel(item))}</span><strong>${esc(item.title)}</strong><p>${esc(item.web_showcase_title ? `Vitrina web: ${item.web_showcase_title}` : item.campaign_name || item.channel_name || item.activation_name || "Sin relación comercial")}</p></div><div class="communication-list-item-meta">${media.length ? `<span class="communication-media-count"><span class="material-symbols-outlined">image</span>${media.length}</span>` : ""}<strong>${Number(item.recipients_total || 0)}</strong><small>destinatarios</small><span class="material-symbols-outlined">arrow_forward</span></div></article>`;
     }).join("") : '<div class="communication-empty-state"><span class="material-symbols-outlined">mail</span><strong>Aún no has creado comunicaciones.</strong><p>Crea una pieza y úsala en email, redes o ambos canales.</p></div>';
     const selected = new Set(state.communicationSelectedRefs || []);
     const ready = emailReadyContacts(audienceChannel);
@@ -294,8 +300,9 @@
     }
     if (isSocialCommunication(active)) {
       const published = String(active.publication_status).toUpperCase() === "PUBLISHED";
-      const trackingLink = published && active.tracking_url
-        ? `<a class="communication-measured-link" href="${esc(active.tracking_url)}" target="_blank" rel="noopener">Abrir enlace medido</a>`
+      const publicLink = communicationActionUrl(active);
+      const trackingLink = published && publicLink
+        ? `<a class="communication-measured-link" href="${esc(publicLink)}" target="_blank" rel="noopener">Abrir ${active.web_showcase_title ? "vitrina web" : "enlace medido"}</a>`
         : "";
       const socialRoute = `<section class="communication-delivery-route communication-social-route"><span class="material-symbols-outlined">share</span><div><strong>${published ? "Publicación medida y activa" : "Publicación lista para registrar"}</strong><p>${published ? "Cada visita, activación, lead, QR y venta atribuida alimenta esta pieza, su canal y su campaña." : "Registra la publicación antes de compartirla: Qori crea el enlace medido y conserva la inversión para calcular CAC y ROI."}</p>${trackingLink}</div><label class="communication-publish-field"><span>Inversión COP</span><input id="communicationPublicationInvestment" type="number" min="0" value="${Number(active.investment || 0)}"></label><label class="communication-publish-field"><span>URL publicada (opcional)</span><input id="communicationPublicationUrl" type="url" value="${esc(active.external_publication_url || "")}" placeholder="https://..."></label><div class="communication-social-actions"><button class="ghost-button compact" type="button" data-download-communication-media="${esc(active.id)}" ${media.length ? "" : "disabled"}>Descargar imágenes</button><button class="ghost-button compact" type="button" data-copy-communication-social="${esc(active.id)}" ${published ? "" : "disabled"}>Copiar publicación</button><button class="ghost-button compact" type="button" data-share-communication-social="${esc(active.id)}" ${published ? "" : "disabled"}>Compartir</button><button class="solid-button compact" type="button" data-publish-communication="${esc(active.id)}">${published ? "Actualizar publicación" : "Registrar publicación medida"}</button></div></section>`;
       if (!isEmailCommunication(active)) { sendBar.innerHTML = socialRoute; return; }
@@ -376,13 +383,13 @@
     if (action === "SEND" && !document.getElementById("communicationComposerConsentInput")?.checked) { message.textContent = "Confirma el consentimiento antes de enviar."; return; }
     const payload = {
       title: form.querySelector("#communicationTitleInput")?.value.trim(), communication_type: form.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL",
-      campaign_id: form.querySelector("#communicationCampaignInput")?.value || null, channel_id: form.querySelector("#communicationChannelInput")?.value || null, activation_id: form.querySelector("#communicationActivationInput")?.value || null,
+      campaign_id: form.querySelector("#communicationCampaignInput")?.value || null, channel_id: form.querySelector("#communicationChannelInput")?.value || null, activation_id: form.querySelector("#communicationActivationInput")?.value || null, web_showcase_id: form.querySelector("#communicationWebShowcaseInput")?.value || null,
       subject: form.querySelector("#communicationSubjectInput")?.value.trim() || null, email_body: form.querySelector("#communicationEmailBodyInput")?.value.trim() || null, whatsapp_body: form.querySelector("#communicationWhatsAppBodyInput")?.value.trim() || null, social_copy: form.querySelector("#communicationSocialCopyInput")?.value.trim() || null,
       image_url: media[0]?.source || null, action_url: form.querySelector("#communicationActionUrlInput")?.value.trim() || null,
       audience_filters: { ...(state.communicationAudienceFilters || {}) }, metadata: { media_assets: media },
     };
-    if (action === "PUBLISH" && (!payload.activation_id || !payload.channel_id)) {
-      const reason = "Para registrar una publicación medida, selecciona la activación y el canal que la distribuye.";
+    if (action === "PUBLISH" && (!payload.channel_id || (!payload.activation_id && !payload.web_showcase_id))) {
+      const reason = "Para registrar una publicación medida, selecciona el canal y una activación o vitrina web.";
       message.textContent = reason;
       showFeedback(reason, "info", { title: "Falta conectar la publicación" });
       return;
@@ -464,7 +471,7 @@
   document.addEventListener("click", async (event) => {
     const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const all = event.target.closest("[data-communication-select-loaded]"); const clearSelection = event.target.closest("[data-communication-clear-selection]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const share = event.target.closest("[data-share-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const publish = event.target.closest("[data-publish-communication]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const loadMoreComposerAudience = event.target.closest("[data-load-more-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]"); const clearComposerAudience = event.target.closest("[data-composer-clear-audience]");
     if (open || edit || duplicate) { try { await prepareComposerRelations(); } catch (error) { console.warn("No se pudieron actualizar los canales para comunicaciones.", error); } renderOptions(); positionComposerAudience(); }
-    if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationWhatsAppBodyInput").value = item.whatsapp_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); } document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
+    if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationWebShowcaseInput").value = item.metadata?.web_showcase_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationWhatsAppBodyInput").value = item.whatsapp_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); } document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
     if (close) { composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); return; }
     if (loadComposerAudience) { try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } return; }
     if (loadMoreComposerAudience) { try { await loadAudience({ append: true }); render(); renderComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudieron cargar más contactos.", "error", { title: "Audiencia" }); } return; }
@@ -492,6 +499,12 @@
   document.addEventListener("change", (event) => {
     if (event.target.matches("[data-communication-recipient]")) { const selected = new Set(state.communicationSelectedRefs || []); if (event.target.checked && selected.size >= MAX_EMAIL_RECIPIENTS) { event.target.checked = false; showFeedback(`Puedes seleccionar hasta ${MAX_EMAIL_RECIPIENTS} contactos por envío.`, "info", { title: "Destinatarios" }); return; } if (event.target.checked) selected.add(event.target.value); else selected.delete(event.target.value); state.communicationSelectedRefs = Array.from(selected); render(); renderComposerAudience(); }
     if (event.target.matches('input[name="communicationType"]')) toggleComposer();
+    if (event.target.matches("#communicationWebShowcaseInput")) {
+      const showcase = (state.smartCatalogs || []).find((item) => String(item.id) === String(event.target.value || ""));
+      const actionUrl = document.getElementById("communicationActionUrlInput");
+      if (showcase && actionUrl) actionUrl.value = showcase.public_url || `${window.location.origin}/c/${encodeURIComponent(showcase.slug || "")}`;
+      toggleComposer();
+    }
     if (event.target.matches("#communicationImageUploadInput")) addMediaFiles(event.target.files).finally(() => { event.target.value = ""; });
   });
   document.addEventListener("keydown", (event) => {

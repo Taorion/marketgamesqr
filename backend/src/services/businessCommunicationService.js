@@ -21,6 +21,13 @@ function personalize(value, contact) {
     .replace(/{{\s*interes\s*}}/gi, contact.top_interest || "nuestra oferta");
 }
 
+function messageWithActionUrl(message, actionUrl) {
+  const text = String(message || "").trim();
+  const url = String(actionUrl || "").trim();
+  if (!url || text.includes(url)) return text;
+  return `${text}\n\n${url}`.trim();
+}
+
 function normalizedRecipientEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -137,6 +144,7 @@ async function assertRelationBelongsToBusiness(businessId, payload) {
 async function listBusinessCommunications(businessId) {
   const result = await query(
     `select bc.*, c.name as campaign_name, ch.name as channel_name, ia.title as activation_name, ia.public_slug as activation_public_slug,
+       sw.title as web_showcase_title, sw.slug as web_showcase_slug, sw.status as web_showcase_status,
        coalesce(rc.recipients_total, 0)::int as recipients_total, coalesce(rc.sent_count, 0)::int as recipients_sent, coalesce(rc.prepared_count, 0)::int as recipients_prepared, coalesce(rc.queued_count, 0)::int as recipients_queued, coalesce(rc.failed_count, 0)::int as recipients_failed,
        coalesce(rc.skipped_count, 0)::int as recipients_skipped,
        coalesce(em.views, 0)::int as views, coalesce(em.starts, 0)::int as starts, coalesce(em.leads, 0)::int as leads,
@@ -147,6 +155,7 @@ async function listBusinessCommunications(businessId) {
      left join campaigns c on c.id = bc.campaign_id and c.business_id = bc.business_id
      left join business_acquisition_channels ch on ch.id = bc.channel_id and ch.business_id = bc.business_id
      left join interactive_activations ia on ia.id = bc.activation_id and ia.company_id = bc.business_id
+     left join smart_catalogs sw on sw.id::text = bc.metadata->>'web_showcase_id' and sw.business_id = bc.business_id
      left join lateral (
        select count(*) as recipients_total,
               count(*) filter (where status = 'SENT') as sent_count,
@@ -191,6 +200,49 @@ async function listBusinessCommunications(businessId) {
 function publicActivationUrl(slug, trackingToken, source = "social") {
   const trackingSource = String(source || "social").toLowerCase() === "email" ? "email" : "social";
   return `${String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "")}/activacion/${encodeURIComponent(slug)}?qori_ref=${encodeURIComponent(trackingToken)}&qori_source=${trackingSource}`;
+}
+
+function publicWebShowcaseUrl(slug) {
+  return `${String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "")}/c/${encodeURIComponent(slug)}`;
+}
+
+async function normalizeWebShowcaseRelation(businessId, payload, existingMetadata = {}) {
+  const hasShowcaseSelection = Object.prototype.hasOwnProperty.call(payload, "web_showcase_id");
+  const webShowcaseId = hasShowcaseSelection ? payload.web_showcase_id : existingMetadata?.web_showcase_id || null;
+  const metadata = {
+    ...(existingMetadata && typeof existingMetadata === "object" ? existingMetadata : {}),
+    ...(payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {}),
+  };
+  if (!webShowcaseId) {
+    delete metadata.web_showcase_id;
+    delete metadata.web_showcase_title;
+    delete metadata.web_showcase_slug;
+    return { ...payload, metadata };
+  }
+  const result = await query(
+    "select id, title, slug from smart_catalogs where id = $1 and business_id = $2",
+    [webShowcaseId, businessId]
+  );
+  if (!result.rowCount) throw badRequest("La vitrina web elegida no pertenece a esta empresa.");
+  const showcase = result.rows[0];
+  return {
+    ...payload,
+    metadata: { ...metadata, web_showcase_id: showcase.id, web_showcase_title: showcase.title, web_showcase_slug: showcase.slug },
+    action_url: publicWebShowcaseUrl(showcase.slug),
+  };
+}
+
+async function assertWebShowcaseIsActiveForDelivery(businessId, communication) {
+  const webShowcaseId = communication?.metadata?.web_showcase_id;
+  if (!webShowcaseId) return null;
+  const result = await query(
+    "select id, title, slug, status from smart_catalogs where id = $1 and business_id = $2",
+    [webShowcaseId, businessId]
+  );
+  if (!result.rowCount || String(result.rows[0].status || "").toUpperCase() !== "ACTIVE") {
+    throw badRequest("La vitrina web seleccionada debe estar activa antes de enviarla o publicarla.");
+  }
+  return result.rows[0];
 }
 
 function trackingUrls(row) {
@@ -239,6 +291,7 @@ async function syncCommunicationChannelEffort(businessId, userId, communication 
     communication_id: communication.id,
     tracking_token: communication.tracking_token || null,
     activation_id: communication.activation_id || null,
+    web_showcase_id: communication.metadata?.web_showcase_id || null,
   };
   const media = normalizeMediaAssets(communication);
   const creativeUrl = String(communication.image_url || media.find((item) => /^https?:\/\//i.test(String(item?.source || "")))?.source || "").trim() || null;
@@ -279,13 +332,18 @@ async function publishBusinessCommunication(businessId, userId, id, payload = {}
   if (!found.rowCount) throw notFound("Comunicación no encontrada.");
   const communication = found.rows[0];
   if (!["SOCIAL", "MIXED"].includes(communication.communication_type)) throw badRequest("Solo las piezas para redes pueden registrarse como publicación.");
-  if (!communication.activation_id || !communication.channel_id) throw badRequest("Conecta una activación y un canal antes de registrar esta publicación medida.");
-  const activation = await query("select public_slug from interactive_activations where id = $1 and company_id = $2", [communication.activation_id, businessId]);
-  if (!activation.rowCount) throw badRequest("La activación seleccionada ya no está disponible.");
-  const trackingUrl = publicActivationUrl(activation.rows[0].public_slug, communication.tracking_token, "social");
+  if (!communication.channel_id || (!communication.activation_id && !communication.metadata?.web_showcase_id)) throw badRequest("Conecta un canal y una activación o vitrina web antes de registrar esta publicación medida.");
+  const showcase = await assertWebShowcaseIsActiveForDelivery(businessId, communication);
+  const activation = communication.activation_id
+    ? await query("select public_slug from interactive_activations where id = $1 and company_id = $2", [communication.activation_id, businessId])
+    : null;
+  if (communication.activation_id && !activation.rowCount) throw badRequest("La activación seleccionada ya no está disponible.");
+  const trackingUrl = showcase
+    ? publicWebShowcaseUrl(showcase.slug)
+    : publicActivationUrl(activation.rows[0].public_slug, communication.tracking_token, "social");
   const investment = Number(payload.investment_amount || 0);
   if (!Number.isFinite(investment) || investment < 0) throw badRequest("La inversión debe ser un valor válido mayor o igual a cero.");
-  const effortMetadata = JSON.stringify({ source_module: "business_communication", communication_id: communication.id, tracking_token: communication.tracking_token, tracking_url: trackingUrl, activation_id: communication.activation_id });
+  const effortMetadata = JSON.stringify({ source_module: "business_communication", communication_id: communication.id, tracking_token: communication.tracking_token, tracking_url: trackingUrl, activation_id: communication.activation_id || null, web_showcase_id: showcase?.id || null });
   const existingEffort = await query(
     `select id from business_acquisition_channel_efforts
      where business_id = $1 and metadata->>'communication_id' = $2 and status <> 'ARCHIVED'
@@ -309,22 +367,23 @@ async function publishBusinessCommunication(businessId, userId, id, payload = {}
     );
   }
   const updated = await query("update business_communications set publication_status='PUBLISHED', published_at=coalesce(published_at, now()), published_by=$3, external_publication_url=coalesce($4, external_publication_url), updated_by=$3, updated_at=now() where id=$1 and business_id=$2 returning *", [id, businessId, userId, payload.external_publication_url || null]);
-  await query("insert into business_communication_events (business_id, communication_id, activation_id, event_type, metadata) values ($1,$2,$3,'PUBLISHED',$4::jsonb)", [businessId, id, communication.activation_id, JSON.stringify({ tracking_url: trackingUrl, investment })]);
-  return { communication: { ...updated.rows[0], tracking_url: trackingUrl, email_tracking_url: publicActivationUrl(activation.rows[0].public_slug, communication.tracking_token, "email") } };
+  await query("insert into business_communication_events (business_id, communication_id, activation_id, event_type, metadata) values ($1,$2,$3,'PUBLISHED',$4::jsonb)", [businessId, id, communication.activation_id || null, JSON.stringify({ tracking_url: trackingUrl, investment, web_showcase_id: showcase?.id || null })]);
+  return { communication: { ...updated.rows[0], tracking_url: trackingUrl, email_tracking_url: activation?.rowCount ? publicActivationUrl(activation.rows[0].public_slug, communication.tracking_token, "email") : null } };
 }
 
 async function createBusinessCommunication(businessId, userId, payload) {
-  await assertRelationBelongsToBusiness(businessId, payload);
+  const normalizedPayload = await normalizeWebShowcaseRelation(businessId, payload);
+  await assertRelationBelongsToBusiness(businessId, normalizedPayload);
   const result = await query(
     `insert into business_communications (
       business_id, title, communication_type, status, campaign_id, channel_id, activation_id,
       subject, email_body, whatsapp_body, social_copy, image_url, action_url, audience_filters, metadata, created_by, updated_by
     ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14::jsonb,$15::jsonb,$16,$16)
     returning *`,
-    [businessId, payload.title, payload.communication_type, payload.status, payload.campaign_id || null,
-      payload.channel_id || null, payload.activation_id || null, payload.subject || null, payload.email_body || null,
-      payload.whatsapp_body || null, payload.social_copy || null, payload.image_url || null, payload.action_url || null,
-      JSON.stringify(payload.audience_filters || {}), JSON.stringify(payload.metadata || {}), userId]
+    [businessId, normalizedPayload.title, normalizedPayload.communication_type, normalizedPayload.status, normalizedPayload.campaign_id || null,
+      normalizedPayload.channel_id || null, normalizedPayload.activation_id || null, normalizedPayload.subject || null, normalizedPayload.email_body || null,
+      normalizedPayload.whatsapp_body || null, normalizedPayload.social_copy || null, normalizedPayload.image_url || null, normalizedPayload.action_url || null,
+      JSON.stringify(normalizedPayload.audience_filters || {}), JSON.stringify(normalizedPayload.metadata || {}), userId]
   );
   await syncCommunicationChannelEffort(businessId, userId, result.rows[0]);
   return { communication: result.rows[0] };
@@ -333,7 +392,7 @@ async function createBusinessCommunication(businessId, userId, payload) {
 async function updateBusinessCommunication(businessId, userId, id, payload) {
   const existing = await query("select * from business_communications where id = $1 and business_id = $2", [id, businessId]);
   if (!existing.rowCount) throw notFound("Comunicación no encontrada.");
-  const merged = { ...existing.rows[0], ...payload };
+  const merged = await normalizeWebShowcaseRelation(businessId, { ...existing.rows[0], ...payload }, existing.rows[0].metadata);
   await assertRelationBelongsToBusiness(businessId, merged);
   const result = await query(
     `update business_communications set title=$3, communication_type=$4, status=$5, campaign_id=$6, channel_id=$7,
@@ -374,7 +433,7 @@ async function logLeadCommunication({ businessId, contact, communication, status
     ) values ($1,$2,$3,$4,$5,'BUSINESS_COMMUNICATION','email',$6,$7,$8,$9::jsonb,$10)`,
     [businessId, contact.lead_id || null, contact.source_type, contact.source_id, communication.campaign_id || null,
       communication.subject || communication.title, message, status === 'SENT' ? 'sent' : 'failed',
-      JSON.stringify({ business_communication_id: communication.id, activation_id: communication.activation_id || null, error: errorMessage || null }), userId]
+      JSON.stringify({ business_communication_id: communication.id, activation_id: communication.activation_id || null, web_showcase_id: communication.metadata?.web_showcase_id || null, error: errorMessage || null }), userId]
   );
 }
 
@@ -385,6 +444,7 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
   const communication = found.rows[0];
   if (!['EMAIL', 'MIXED'].includes(communication.communication_type)) throw badRequest("Esta comunicación no está configurada para email.");
   if (!communication.subject || !communication.email_body) throw badRequest("Completa asunto y mensaje antes de enviar.");
+  await assertWebShowcaseIsActiveForDelivery(businessId, communication);
   const sender = await businessCommunicationSender(businessId, connectedUserEmail);
   let emailTrackingUrl = null;
   if (communication.activation_id) {
@@ -463,7 +523,7 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
         replyTo: sender.replyTo,
         subject,
         text: message,
-        html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(attachments.length), actionUrl: emailTrackingUrl || communication.action_url }),
+        html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(attachments.length), actionUrl: communication.metadata?.web_showcase_id ? communication.action_url : emailTrackingUrl || communication.action_url }),
         attachments,
       });
       await saveRecipient({ businessId, communicationId: id, contact, status: 'SENT', providerMessageId: provider.id, userId });
@@ -511,6 +571,7 @@ async function prepareBusinessCommunicationWhatsApp(businessId, userId, id, reci
   const communication = found.rows[0];
   if (communication.communication_type !== "WHATSAPP") throw badRequest("Esta comunicación no está configurada para WhatsApp.");
   if (!communication.whatsapp_body) throw badRequest("Completa el mensaje de WhatsApp antes de preparar el lote.");
+  await assertWebShowcaseIsActiveForDelivery(businessId, communication);
   const selected = await selectedCommunicationAudience(businessId, recipientRefs);
   const results = { attempted: selected.length, queued: 0, skipped: 0 };
   for (const contact of selected) {
@@ -522,7 +583,7 @@ async function prepareBusinessCommunicationWhatsApp(businessId, userId, id, reci
     }
     await saveRecipient({
       businessId, communicationId: id, contact, status: "QUEUED", userId,
-      metadata: { channel: "WHATSAPP", phone, message: personalize(communication.whatsapp_body, contact), delivery_status: "QUEUED_FOR_MANUAL_SEND", consent_confirmed: true },
+      metadata: { channel: "WHATSAPP", phone, message: messageWithActionUrl(personalize(communication.whatsapp_body, contact), communication.action_url), delivery_status: "QUEUED_FOR_MANUAL_SEND", consent_confirmed: true, web_showcase_id: communication.metadata?.web_showcase_id || null },
     });
     results.queued += 1;
   }
