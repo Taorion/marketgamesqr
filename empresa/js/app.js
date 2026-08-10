@@ -46501,6 +46501,8 @@ function missionStatusLabel(status = "") {
     DRAFT: "Borrador",
     PAUSED: "Pausada",
     COMPLETED: "Finalizada",
+    FINISHED: "Finalizada",
+    CLOSED: "Cerrada",
     ARCHIVED: "Archivada",
   };
   return labels[String(status || "ACTIVE").toUpperCase()] || status || "Activa";
@@ -47547,6 +47549,8 @@ function renderMissionsView() {
   syncMissionPeriodControls();
   state.missionLeaderboardRows = sortMissionLeaderboardRows(state.missionLeaderboardRows || []);
   renderMissionsKpis();
+  renderMissionActiveList(state.missions?.seasons || []);
+  renderMissionRewards(state.missions?.rewards || []);
   renderMissionLeaderboard(state.missionLeaderboardRows || [], "PURCHASES");
   if (state.missionLeaderboardLoadedPeriod !== period && !state.missionLeaderboardLoading) {
     loadMissionPurchaseLeaderboard(period).catch((error) => {
@@ -47640,6 +47644,14 @@ function renderMissionActiveList(seasons = []) {
       <div class="button-row">
         <button class="ghost-button" type="button" data-mission-agenda="${escapeHtml(season.id)}">Crear tareas</button>
         <button class="ghost-button" type="button" data-mission-leaderboard="${escapeHtml(season.id)}">Ver ranking</button>
+        ${String(season.status || "").toUpperCase() === "ACTIVE"
+          ? `<button class="ghost-button" type="button" data-mission-status="PAUSED" data-mission-id="${escapeHtml(season.id)}">Pausar</button>`
+          : String(season.status || "").toUpperCase() === "CLOSED"
+            ? ""
+            : `<button class="solid-button compact" type="button" data-mission-status="ACTIVE" data-mission-id="${escapeHtml(season.id)}">Activar</button>`}
+        ${["ACTIVE", "PAUSED", "DRAFT"].includes(String(season.status || "").toUpperCase())
+          ? `<button class="ghost-button compact" type="button" data-mission-status="CLOSED" data-mission-id="${escapeHtml(season.id)}">Cerrar</button>`
+          : ""}
       </div>
     </article>
   `;
@@ -47654,6 +47666,27 @@ function renderMissionActiveList(seasons = []) {
   missionActiveList.querySelectorAll("[data-mission-leaderboard]").forEach((button) => {
     button.addEventListener("click", () => loadMissionLeaderboard(button.dataset.missionLeaderboard));
   });
+  missionActiveList.querySelectorAll("[data-mission-status]").forEach((button) => {
+    button.addEventListener("click", () => updateMissionSeasonStatus(button.dataset.missionId, button.dataset.missionStatus));
+  });
+}
+
+async function updateMissionSeasonStatus(seasonId, status) {
+  if (!seasonId || !status) return;
+  const endpoint = { ACTIVE: "activate", PAUSED: "pause", CLOSED: "close" }[String(status).toUpperCase()];
+  if (!endpoint) return;
+  try {
+    await api(`/api/business/gamification/seasons/${encodeURIComponent(seasonId)}/${endpoint}`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+    state.missionsLoaded = false;
+    await loadGamificationDashboard({ force: true, quiet: true });
+    renderMissionsView();
+    showFeedback(`Temporada ${missionStatusLabel(status).toLowerCase()}.`, "success", { title: "Temporadas" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo actualizar el estado de la temporada.", "error", { title: "Temporadas" });
+  }
 }
 
 async function loadMissionLeaderboard(seasonId) {
@@ -47884,6 +47917,14 @@ function parseMissionRewards(text = "") {
 async function submitMissionWizard(event) {
   event.preventDefault();
   const template = missionTemplateByKey(missionTemplateInput?.value || state.missionWizardTemplateKey);
+  const startDate = missionStartInput?.value || null;
+  const endDate = missionEndInput?.value || null;
+  if (startDate && endDate && new Date(endDate).getTime() < new Date(startDate).getTime()) {
+    const message = "La fecha final debe ser posterior o igual a la fecha de inicio.";
+    if (missionWizardMessage) missionWizardMessage.textContent = message;
+    showFeedback(message, "info", { title: "Temporadas" });
+    return;
+  }
   const body = {
     template_key: template.key,
     campaign_id: missionCampaignInput?.value || null,
@@ -47891,8 +47932,8 @@ async function submitMissionWizard(event) {
     description: missionDescriptionInput?.value?.trim() || template.description,
     type: template.type || "TEMPORADA_MG",
     status: "ACTIVE",
-    start_date: missionStartInput?.value || null,
-    end_date: missionEndInput?.value || null,
+    start_date: startDate,
+    end_date: endDate,
     channel: missionChannelInput?.value || template.channel || "mixto",
     points_rules: parseMissionPoints(missionPointsInput?.value || ""),
     ranking: {
