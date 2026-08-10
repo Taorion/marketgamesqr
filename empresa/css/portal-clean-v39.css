@@ -17089,3 +17089,186 @@ html body[data-current-view="dashboard"] .portal-shell .quiet-zone[data-quiet-zo
 html body[data-current-view="dashboard"] .portal-shell .quiet-zone[data-quiet-zone-key="dashboard:sucursales-y-revenue-atribuido"] > .table-wrap {
   margin-top: 0 !important;
 }
+
+/* Crear canal: modal operativo claro, con jerarquía y lectura financiera Qori. */
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open {
+  display: block !important;
+  z-index: 1901 !important;
+  top: clamp(16px, 5vh, 48px) !important;
+  width: min(860px, calc(100vw - 40px)) !important;
+  max-height: min(860px, calc(100dvh - 32px)) !important;
+  padding: 0 !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  border: 1px solid rgba(53, 135, 188, .24) !important;
+  border-radius: 28px !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f7fbff 100%) !important;
+  box-shadow: 0 34px 96px rgba(4, 36, 88, .34), 0 8px 24px rgba(6, 62, 119, .14) !important;
+}
+
+body.channel-operation-modal-open::before {
+  background: rgba(4, 24, 59, .56) !important;
+  backdrop-filter: blur(9px) saturate(112%) !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .table-card-head {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 22px !important;
+  margin: 0 !important;
+  padding: 28px 32px 25px !important;
+  border: 0 !important;
+  border-radius: 27px 27px 0 0 !important;
+  background:
+    radial-gradient(circle at 92% 18%, rgba(129, 235, 255, .42), transparent 30%),
+    linear-gradient(128deg, #063779 0%, #075cae 54%, #087fae 100%) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .16), 0 12px 24px rgba(3, 50, 111, .16) !important;
+  color: #fff !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .table-card-head > div {
+  display: grid !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .table-card-head .mono-label {
+  color: rgba(232, 250, 255, .86) !important;
+  font-size: .68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .13em !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .table-card-head h3 {
+  margin: 0 !important;
+  color: #fff !important;
+  font-size: clamp(1.35rem, 2.6vw, 1.72rem) !important;
+  letter-spacing: -.035em !important;
+  line-height: 1.1 !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .table-card-head .icon-button {
+  display: inline-grid !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  place-items: center !important;
+  flex: 0 0 auto !important;
+  padding: 0 !important;
+  color: #fff !important;
+  border: 1px solid rgba(236, 252, 255, .42) !important;
+  border-radius: 13px !important;
+  background: rgba(255, 255, 255, .13) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18) !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .table-card-head .icon-button:hover {
+  background: rgba(255, 255, 255, .24) !important;
+  transform: translateY(-1px) !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .chart-explainer {
+  max-width: 720px !important;
+  margin: 24px 32px 20px !important;
+  color: #52708d !important;
+  font-size: .94rem !important;
+  line-height: 1.58 !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .channel-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px 18px !important;
+  margin: 0 32px 32px !important;
+  padding: 24px !important;
+  border: 1px solid rgba(133, 173, 203, .26) !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, .82) !important;
+  box-shadow: 0 12px 28px rgba(13, 75, 129, .06) !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .channel-form > label {
+  display: grid !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  color: #173f62 !important;
+  font-size: .78rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .01em !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .channel-form > label > :is(input, select, textarea) {
+  width: 100% !important;
+  min-height: 46px !important;
+  padding: 11px 13px !important;
+  color: #163d5d !important;
+  border: 1px solid #cfdfeb !important;
+  border-radius: 12px !important;
+  outline: 0 !important;
+  background: #fbfdff !important;
+  box-shadow: inset 0 1px 2px rgba(7, 57, 105, .03) !important;
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .channel-form > label > textarea {
+  min-height: 112px !important;
+  resize: vertical !important;
+  line-height: 1.5 !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .channel-form > label > :is(input, select, textarea):focus {
+  border-color: #149dc1 !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 4px rgba(20, 157, 193, .14), inset 0 1px 2px rgba(7, 57, 105, .03) !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .channel-form .span-2,
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .channel-form > .solid-button {
+  grid-column: 1 / -1 !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .channel-form .form-message {
+  min-height: 0 !important;
+  margin: -2px 0 0 !important;
+  color: #b5473a !important;
+  font-size: .82rem !important;
+  font-weight: 700 !important;
+}
+
+html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .channel-form > .solid-button {
+  min-height: 48px !important;
+  margin-top: 2px !important;
+  border-radius: 13px !important;
+  background: linear-gradient(135deg, #0867b6, #0695b7) !important;
+  box-shadow: 0 12px 20px rgba(5, 108, 174, .2) !important;
+}
+
+@media (max-width: 680px) {
+  html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open {
+    top: 10px !important;
+    width: calc(100vw - 20px) !important;
+    max-height: calc(100dvh - 20px) !important;
+    border-radius: 21px !important;
+  }
+
+  html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .table-card-head {
+    padding: 22px 20px 19px !important;
+    border-radius: 20px 20px 0 0 !important;
+  }
+
+  html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .chart-explainer {
+    margin: 19px 20px 16px !important;
+  }
+
+  html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open > .channel-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+    margin: 0 20px 20px !important;
+    padding: 18px !important;
+    border-radius: 16px !important;
+  }
+}
