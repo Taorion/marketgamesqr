@@ -96,6 +96,7 @@ const {
   leadDetail,
   listLeadsCrm,
   markActivationOpened,
+  registerLeadWhatsAppContact,
   removeInterest,
   sendActivation,
   updateAgendaItem,
@@ -237,6 +238,7 @@ router.delete("/leads/:leadId/interests/:interestId", removeInterest);
 router.post("/leads/:leadId/purchases", addPurchase);
 router.post("/leads/:leadId/activations", sendActivation);
 router.post("/leads/:leadId/activations/:activationId/opened", markActivationOpened);
+router.post("/leads/:leadId/whatsapp", registerLeadWhatsAppContact);
 
 router.use(requirePortalAccess);
 router.get("/communications/audience", shortBusinessCache, communicationAudience);

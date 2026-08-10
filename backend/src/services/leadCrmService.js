@@ -1429,6 +1429,14 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     reward_passes: rewardPasses.rows,
     affiliate: affiliates.rows[0] || null,
     communications: communicationRows,
+    whatsapp_history: events.rows
+      .filter((item) => String(item.event_type || "").startsWith("whatsapp_"))
+      .map((item) => ({
+        ...item,
+        phone: item.metadata?.phone || null,
+        message: item.metadata?.message || null,
+        delivery_status: item.metadata?.delivery_status || null,
+      })),
     notes: noteRows,
     rms: {
       ...(rmsState.rows[0] || {}),
@@ -1529,6 +1537,42 @@ async function createLeadNote(businessId, user, leadId, sourceType, payload) {
     `insert into lead_events (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
      values ($1, $2, $3, $4, 'note_created', 'Nota interna creada', $5, $6, $7::jsonb)`,
     [businessId, lead.lead_id || null, lead.source_type, lead.id, payload.note.slice(0, 500), user.id, JSON.stringify({ note_id: result.rows[0].id, note_type: payload.note_type || "commercial" })]
+  );
+  return result.rows[0];
+}
+
+/**
+ * Registra la entrega manual hacia WhatsApp sin suplantar una confirmación de
+ * entrega que solo el proveedor de mensajería podría reportar. El navegador
+ * abre wa.me y Qori conserva el contexto exacto que el operador preparó.
+ */
+async function createLeadWhatsAppContact(businessId, user, leadId, sourceType, payload) {
+  const lead = await resolveLead(businessId, leadId, sourceType);
+  const phone = normalizedDigits(payload.phone);
+  if (phone.length < 7) throw badRequest("El teléfono no tiene un formato válido para WhatsApp.");
+
+  const description = `Mensaje preparado para ${payload.phone}. Qori abrió WhatsApp para envío manual; la entrega no se confirma automáticamente.`;
+  const result = await query(
+    `insert into lead_events
+      (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
+     values ($1, $2, $3, $4, 'whatsapp_opened_for_manual_send', 'WhatsApp abierto para envío manual', $5, $6, $7::jsonb)
+     returning *`,
+    [
+      businessId,
+      lead.lead_id || null,
+      lead.source_type,
+      lead.id,
+      description,
+      user.id,
+      JSON.stringify({
+        channel: "WHATSAPP",
+        delivery_status: "OPENED_FOR_MANUAL_SEND",
+        phone,
+        message: payload.message,
+        consent_confirmed: true,
+        source: payload.source || "contact_detail",
+      }),
+    ]
   );
   return result.rows[0];
 }
@@ -2716,6 +2760,7 @@ module.exports = {
   markLeadActivationOpened,
   createLeadAgendaItem,
   createLeadNote,
+  createLeadWhatsAppContact,
   deleteLeadAgendaItem,
   deleteLeadContact,
   deleteLeadInterest,

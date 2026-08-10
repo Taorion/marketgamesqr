@@ -274,6 +274,7 @@ const leadDetailTabs = document.getElementById("leadDetailTabs");
 const leadDetailContent = document.getElementById("leadDetailContent");
 const leadEditManualButton = document.getElementById("leadEditManualButton");
 const leadSendActivationButton = document.getElementById("leadSendActivationButton");
+const leadSendWhatsAppButton = document.getElementById("leadSendWhatsAppButton");
 const leadCreateTaskButton = document.getElementById("leadCreateTaskButton");
 const leadSendBenefitButton = document.getElementById("leadSendBenefitButton");
 const leadCreateNoteButton = document.getElementById("leadCreateNoteButton");
@@ -35024,6 +35025,47 @@ function renderLeadDetailRelatedSalesSnapshot(detail = {}) {
   `;
 }
 
+function defaultLeadWhatsAppMessage(lead = {}) {
+  const firstName = String(lead.name || "").trim().split(/\s+/)[0];
+  return `Hola${firstName ? ` ${firstName}` : ""}, ¿cómo estás? Te escribimos para acompañarte y resolver cualquier duda que tengas.`;
+}
+
+function renderLeadWhatsAppWorkspace(detail = {}) {
+  const lead = detail.lead || {};
+  const initialPhone = whatsappPhoneFromInput(lead.phone || "");
+  const history = Array.isArray(detail.whatsapp_history) ? detail.whatsapp_history : [];
+  return `
+    <section class="lead-whatsapp-workspace" aria-label="Comunicación por WhatsApp">
+      <div class="lead-client-agenda-head">
+        <div>
+          <span class="mono-label">Comunicación uno a uno</span>
+          <strong>Enviar WhatsApp</strong>
+          <small>Qori abre WhatsApp con el texto preparado y registra el intento en la ficha. La entrega y lectura solo las confirma WhatsApp.</small>
+        </div>
+      </div>
+      ${initialPhone ? `
+        <form class="lead-whatsapp-form" id="leadWhatsAppForm">
+          <label><span>Teléfono de WhatsApp</span><input id="leadWhatsAppPhoneInput" type="tel" inputmode="tel" maxlength="40" value="${escapeHtml(initialPhone)}" required></label>
+          <label class="span-2"><span>Mensaje</span><textarea id="leadWhatsAppMessageInput" rows="6" maxlength="3000" required>${escapeHtml(defaultLeadWhatsAppMessage(lead))}</textarea></label>
+          <label class="lead-whatsapp-consent span-2"><input id="leadWhatsAppConsentInput" type="checkbox" required> <span>Confirmo que este contacto autorizó recibir esta comunicación por WhatsApp.</span></label>
+          <p class="form-message span-2" id="leadWhatsAppMessage"></p>
+          <button class="solid-button" id="leadWhatsAppSubmitButton" type="submit">Abrir WhatsApp y registrar</button>
+        </form>
+      ` : '<div class="empty-state compact">Este contacto no tiene teléfono. Actualiza su ficha antes de preparar un WhatsApp.</div>'}
+      <section class="lead-whatsapp-history">
+        <div class="lead-client-agenda-head">
+          <div><span class="mono-label">Historial</span><strong>WhatsApps preparados</strong></div>
+        </div>
+        ${detailList(history.map((item) => `
+          <strong>WhatsApp preparado para ${escapeHtml(item.phone || "contacto")}</strong>
+          <span>${formatDate(item.created_at)} · ${escapeHtml(item.delivery_status === "OPENED_FOR_MANUAL_SEND" ? "Abierto para envío manual" : item.delivery_status || "Registrado")}</span>
+          <small class="lead-whatsapp-history-copy">${escapeHtml(item.message || item.event_description || "Sin contenido registrado.")}</small>
+        `), "Aún no hay WhatsApps preparados para este contacto.")}
+      </section>
+    </section>
+  `;
+}
+
 function renderLeadTab(detail) {
   if (!leadDetailContent) return;
   const lead = detail.lead || {};
@@ -35198,6 +35240,7 @@ function renderLeadTab(detail) {
       <span>${escapeHtml(item.channel || "-")} · ${escapeHtml(item.status || "-")} · ${formatDate(item.created_at)}</span>
       <small>${escapeHtml(item.activation_name || item.campaign_name || "-")}</small>
     `), "Sin comunicaciones registradas."),
+    whatsapp: () => renderLeadWhatsAppWorkspace(detail),
     tasks: () => renderLeadDetailAgenda(detail),
     notes: () => `
       <section class="lead-notes-workspace" aria-label="Notas internas del contacto">
@@ -35309,6 +35352,7 @@ function bindLeadDetailPanelActions() {
     button.addEventListener("click", () => deleteLeadInterestFromDetail(button.dataset.deleteInterest));
   });
   document.getElementById("leadNoteForm")?.addEventListener("submit", createLeadNoteFromForm);
+  document.getElementById("leadWhatsAppForm")?.addEventListener("submit", submitLeadWhatsAppContact);
   leadDetailContent?.querySelectorAll("[data-lead-create-task]").forEach((button) => {
     button.addEventListener("click", openLeadTaskFromDetail);
   });
@@ -35332,6 +35376,61 @@ function bindLeadDetailPanelActions() {
       syncProductOpenInput(select);
     });
   });
+}
+
+async function submitLeadWhatsAppContact(event) {
+  event.preventDefault();
+  if (!state.selectedLeadRef) return;
+  const phoneInput = document.getElementById("leadWhatsAppPhoneInput");
+  const messageInput = document.getElementById("leadWhatsAppMessageInput");
+  const consentInput = document.getElementById("leadWhatsAppConsentInput");
+  const feedback = document.getElementById("leadWhatsAppMessage");
+  const submitButton = document.getElementById("leadWhatsAppSubmitButton");
+  const phone = whatsappPhoneFromInput(phoneInput?.value || "");
+  const message = String(messageInput?.value || "").trim();
+  if (!phone) {
+    setFormMessage(feedback, "Ingresa un teléfono válido para WhatsApp.", "error");
+    phoneInput?.focus();
+    return;
+  }
+  if (!message) {
+    setFormMessage(feedback, "Escribe el mensaje que quieres preparar.", "error");
+    messageInput?.focus();
+    return;
+  }
+  if (!consentInput?.checked) {
+    setFormMessage(feedback, "Confirma la autorización del contacto antes de continuar.", "error");
+    consentInput?.focus();
+    return;
+  }
+
+  const popup = window.open(`https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+  if (!popup) {
+    setFormMessage(feedback, "El navegador bloqueó la apertura de WhatsApp. Habilita las ventanas emergentes e inténtalo de nuevo.", "error");
+    return;
+  }
+
+  setButtonLoading(submitButton, true, "Registrando...");
+  setFormMessage(feedback, "WhatsApp se abrió. Guardando el historial en Qori...", "info");
+  try {
+    await api(`/api/business/leads/${encodeURIComponent(state.selectedLeadRef.id)}/whatsapp`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_type: state.selectedLeadRef.source_type || "PLAYER",
+        phone,
+        message,
+        consent_confirmed: true,
+        source: "contact_detail",
+      }),
+    });
+    await reloadSelectedLeadDetail({ keepTab: true, scrollTab: false });
+    showFeedback("WhatsApp preparado y registrado en el historial del contacto.", "success");
+  } catch (error) {
+    setFormMessage(feedback, `WhatsApp se abrió, pero Qori no pudo guardar el historial: ${error.message}`, "error");
+  } finally {
+    setButtonLoading(submitButton, false);
+  }
 }
 
 function arrangeLeadDetailWorkspace(tab = state.selectedLeadTab || "general") {
@@ -48980,6 +49079,10 @@ leadDetailTabs?.addEventListener("click", (event) => {
 leadEditManualButton?.addEventListener("click", () => {
   setLeadDetailTab("personal", { scrollTab: true });
   document.getElementById("manualLeadEditNameInput")?.focus();
+});
+leadSendWhatsAppButton?.addEventListener("click", () => {
+  setLeadDetailTab("whatsapp", { scrollTab: true });
+  document.getElementById("leadWhatsAppMessageInput")?.focus();
 });
 leadSendActivationButton?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "TICKET"));
 leadCreateTaskButton?.addEventListener("click", openLeadTaskFromDetail);

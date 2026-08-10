@@ -6,6 +6,7 @@ const {
   createLeadActivation,
   createLeadAgendaItem,
   createLeadNote,
+  createLeadWhatsAppContact,
   createLeadPurchase,
   deleteLeadAgendaItem,
   deleteLeadContact,
@@ -152,6 +153,14 @@ const activationSchema = z.object({
   source_module: z.enum(["contacts", "campaign", "rms_activation_1", "other"]).optional().default("contacts"),
   idempotency_key: z.string().trim().min(8).max(180).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
+});
+
+const whatsappContactSchema = z.object({
+  source_type: sourceTypeSchema.optional(),
+  phone: z.string().trim().min(7).max(40),
+  message: z.string().trim().min(1).max(3000),
+  consent_confirmed: z.literal(true),
+  source: z.string().trim().max(80).optional().default("contact_detail"),
 });
 
 async function listLeadsCrm(req, res, next) {
@@ -311,6 +320,22 @@ async function markActivationOpened(req, res, next) {
   }
 }
 
+async function registerLeadWhatsAppContact(req, res, next) {
+  try {
+    const body = validate(whatsappContactSchema, req.body);
+    const event = await createLeadWhatsAppContact(
+      businessIdFor(req),
+      req.user,
+      req.params.leadId,
+      body.source_type || String(req.query.source_type || "PLAYER").toUpperCase(),
+      body
+    );
+    res.status(201).json({ event });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   addInterest,
   addPurchase,
@@ -321,6 +346,7 @@ module.exports = {
   deleteContact,
   leadDetail,
   markActivationOpened,
+  registerLeadWhatsAppContact,
   listLeadsCrm,
   removeInterest,
   sendActivation,

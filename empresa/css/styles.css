@@ -14118,6 +14118,60 @@ body.chart-focus-open .command-center {
   }
 }
 
+/* Ficha de contacto: composición y trazabilidad de WhatsApp manual. */
+html body #leadDetailModal .lead-whatsapp-workspace,
+html body #leadDetailModal .lead-whatsapp-history {
+  display: grid;
+  gap: 16px;
+}
+
+html body #leadDetailModal .lead-whatsapp-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #d8e8f4;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f8fcff 0%, #eff9ff 100%);
+}
+
+html body #leadDetailModal .lead-whatsapp-form label {
+  display: grid;
+  gap: 7px;
+  color: #315775;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+html body #leadDetailModal .lead-whatsapp-form label.span-2,
+html body #leadDetailModal .lead-whatsapp-form .span-2 {
+  grid-column: 1 / -1;
+}
+
+html body #leadDetailModal .lead-whatsapp-form textarea {
+  min-height: 132px;
+  resize: vertical;
+}
+
+html body #leadDetailModal .lead-whatsapp-consent {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 9px !important;
+  padding: 10px 0 0;
+  color: #4f6c87 !important;
+  font-weight: 500 !important;
+  line-height: 1.4;
+}
+
+html body #leadDetailModal .lead-whatsapp-consent input { margin-top: 3px; }
+html body #leadDetailModal .lead-whatsapp-history-copy { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 620px) {
+  html body #leadDetailModal .lead-whatsapp-form { grid-template-columns: 1fr; padding: 14px; }
+  html body #leadDetailModal .lead-whatsapp-form label.span-2,
+  html body #leadDetailModal .lead-whatsapp-form .span-2 { grid-column: auto; }
+}
+
 /* Cuenta y CRM: campos opcionales claros, activos amplios y modales navegables. */
 html body[data-current-view="account"] .portal-shell .digital-asset-library-card {
   min-width: 0 !important;
