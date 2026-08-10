@@ -17247,6 +17247,15 @@ html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel
   box-shadow: 0 12px 20px rgba(5, 108, 174, .2) !important;
 }
 
+html body[data-current-view="channels"] .portal-shell .channel-effort-results-card .channel-roi-reading-note {
+  max-width: 680px;
+  margin: 6px 0 0 !important;
+  color: #61809b;
+  font-size: .76rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 @media (max-width: 680px) {
   html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open {
     top: 10px !important;
