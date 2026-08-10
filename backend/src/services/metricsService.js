@@ -22,6 +22,33 @@ function safeRoi(revenue, budget) {
   return Number(((Number(revenue || 0) - totalBudget) / totalBudget).toFixed(2));
 }
 
+// A sale is counted once in every KPI surface. Legacy QR redemptions live in
+// attributed_sales; newer sales live in business_sales. A business sale linked
+// to a QR is only excluded when its legacy counterpart actually exists.
+function canonicalSalesUnionSql() {
+  return `
+    select id::text as sale_id, business_id, campaign_id, qr_code_id, branch_id, sale_amount, currency, created_at,
+           payment_method, product_or_service as product_name, null::text as acquisition_source,
+           null::text as acquisition_channel, null::uuid as referred_affiliate_id,
+           sale_confirmed_by_user_id as seller_user_id,
+           coalesce(player_id::text, qr_code_id::text, id::text) as customer_key
+    from attributed_sales
+    union all
+    select bs.id::text as sale_id, bs.business_id, bs.campaign_id, bs.qr_code_id, bs.branch_id, bs.sale_amount, bs.currency, bs.created_at,
+           bs.payment_method, bs.product_name, bs.acquisition_source,
+           bs.acquisition_channel, bs.referred_affiliate_id, bs.seller_user_id,
+           coalesce(nullif(bs.customer_document_id, ''), nullif(bs.customer_phone, ''), nullif(lower(bs.customer_email), ''), bs.id::text) as customer_key
+    from business_sales bs
+    where coalesce(bs.sale_status, 'PAID') = 'PAID'
+      and not exists (
+        select 1
+        from attributed_sales legacy
+        where legacy.business_id = bs.business_id
+          and legacy.qr_code_id = bs.qr_code_id
+      )
+  `;
+}
+
 function normalizeCampaign(row) {
   return {
     ...row,
@@ -40,7 +67,8 @@ function normalizeCampaign(row) {
     total_qr_generated: Number(row.total_qr_generated || 0),
     total_qr_redeemed: Number(row.total_qr_redeemed || 0),
     direct_sales_count: Number(row.direct_sales_count || 0),
-    attributed_sales_count: Number(row.direct_sales_count || 0),
+    attributed_sales_count: Number(row.attributed_sales_count || row.direct_sales_count || 0),
+    acquired_customers: Number(row.acquired_customers || 0),
   };
 }
 
@@ -53,7 +81,7 @@ function decorateCampaignMetrics(rawRow) {
     redemption_rate: safeRate(row.total_qr_redeemed, row.total_qr_generated),
     cost_per_lead: safeDivide(row.budget_total, row.total_leads),
     cost_per_redeemed_qr: safeDivide(row.budget_total, row.total_qr_redeemed),
-    cost_per_acquired_customer: safeDivide(row.budget_total, row.direct_sales_count),
+    cost_per_acquired_customer: safeDivide(row.budget_total, row.acquired_customers),
     estimated_roi: safeRoi(row.attributed_revenue, row.budget_total),
     sales_uplift: salesUplift,
     estimated_uplift_roi: safeRoi(salesUplift, row.budget_total),
@@ -88,27 +116,23 @@ const campaignMetricsSelect = `
     coalesce((select count(*)::int from qr_codes q where q.campaign_id = c.id and q.status = 'REDEEMED'), 0) as total_qr_redeemed,
     coalesce((
       select count(*)::int
-      from (
-        select s.id
-        from attributed_sales s
-        where s.campaign_id = c.id and s.sale_type = 'DIRECT_REDEMPTION'
-        union all
-        select bs.id
-        from business_sales bs
-        where bs.campaign_id = c.id
-      ) direct_sales
+      from (${canonicalSalesUnionSql()}) sales
+      where sales.campaign_id = c.id
     ), 0) as direct_sales_count,
     coalesce((
+      select count(distinct sales.customer_key)::int
+      from (${canonicalSalesUnionSql()}) sales
+      where sales.campaign_id = c.id
+    ), 0) as acquired_customers,
+    coalesce((
+      select count(*)::int
+      from (${canonicalSalesUnionSql()}) sales
+      where sales.campaign_id = c.id
+    ), 0) as attributed_sales_count,
+    coalesce((
       select sum(sale_amount)
-      from (
-        select s.sale_amount
-        from attributed_sales s
-        where s.campaign_id = c.id
-        union all
-        select bs.sale_amount
-        from business_sales bs
-        where bs.campaign_id = c.id
-      ) attributed_sales
+      from (${canonicalSalesUnionSql()}) sales
+      where sales.campaign_id = c.id
     ), 0)::numeric(14, 2) as attributed_revenue,
     coalesce((
       select sum(css.total_sales_amount)
@@ -211,18 +235,25 @@ async function getBusinessSummary(businessId) {
   totals.interactive_activation_redeemed = Number(strategic.interactive_activation_redeemed || 0);
 
   const observedSalesResult = await query(
-    `select
+    `with sales as (${canonicalSalesUnionSql()})
+     select
        count(*)::int as observed_sales_count,
        coalesce(sum(sale_amount), 0)::numeric(14, 2) as observed_revenue,
+       count(distinct customer_key)::int as observed_customers,
        count(*) filter (where referred_affiliate_id is not null)::int as referral_sales_count,
-       coalesce(sum(referral_points_awarded), 0)::int as referral_points_awarded
-     from business_sales
+       coalesce((
+         select sum(bs.referral_points_awarded)
+         from business_sales bs
+         where bs.business_id = $1 and coalesce(bs.sale_status, 'PAID') = 'PAID'
+       ), 0)::int as referral_points_awarded
+     from sales
      where business_id = $1`,
     [businessId]
   );
   const observed = observedSalesResult.rows[0] || {};
   totals.observed_sales_count = Number(observed.observed_sales_count || 0);
   totals.observed_revenue = Number(observed.observed_revenue || 0);
+  totals.observed_customers = Number(observed.observed_customers || 0);
   totals.referral_sales_count = Number(observed.referral_sales_count || 0);
   totals.referral_points_awarded = Number(observed.referral_points_awarded || 0);
 
@@ -233,8 +264,8 @@ async function getBusinessSummary(businessId) {
     redemption_rate: safeRate(totals.total_qr_redeemed, totals.total_qr_generated),
     cost_per_lead: safeDivide(totals.total_investment, totals.total_leads),
     cost_per_redeemed_qr: safeDivide(totals.total_investment, totals.total_qr_redeemed),
-    cost_per_acquired_customer: safeDivide(totals.total_investment, totals.direct_sales_count),
-    cost_per_observed_customer: safeDivide(totals.total_investment, totals.observed_sales_count),
+    cost_per_acquired_customer: safeDivide(totals.total_investment, totals.observed_customers),
+    cost_per_observed_customer: safeDivide(totals.total_investment, totals.observed_customers),
     estimated_roi: safeRoi(totals.attributed_revenue, totals.total_investment),
     observed_roi: safeRoi(totals.observed_revenue, totals.total_investment),
     observed_avg_ticket: safeDivide(totals.observed_revenue, totals.observed_sales_count),
@@ -250,6 +281,7 @@ module.exports = {
   safeDivide,
   safeRate,
   safeRoi,
+  canonicalSalesUnionSql,
   getCampaignMetrics,
   getBusinessCampaignMetrics,
   getBusinessSummary,

@@ -2793,7 +2793,7 @@ const DATA_DICTIONARY = {
   conversion_rate: { name: "Tasa de conversión", description: "Mide cuantas oportunidades terminaron en venta registrada.", formula: "Ventas registradas / leads o redenciones, según el contexto.", example: "10 ventas sobre 100 leads = 10%.", decisión: "Si baja, revisa cierre comercial, oferta y seguimiento." },
   revenue: { name: "Revenue atribuido", description: "Ingreso registrado y conectado a campañas, tickets, canales o ventas RMS.", formula: "Suma de ventas atribuidas al periodo y filtros activos.", example: "$2.500.000 vendidos por una campaña de Instagram.", decisión: "Escala lo que produce revenue, no solo lo que produce trafico." },
   avg_ticket: { name: "Ticket promedio", description: "Valor promedio de compra por venta registrada.", formula: "Revenue atribuido / ventas registradas.", example: "$1.000.000 / 5 ventas = $200.000.", decisión: "Canales de menor volumen pueden valer más si traen ticket alto." },
-  cac: { name: "CAC", description: "Costo estimado de adquirir una venta o cliente.", formula: "Inversión atribuida / ventas registradas.", example: "$300.000 de pauta / 10 ventas = $30.000 por venta.", decisión: "Si el CAC supera el margen, optimiza canal, incentivo o segmentacion." },
+  cac: { name: "CAC", description: "Costo de adquirir clientes únicos con compra pagada.", formula: "Inversión atribuida / clientes únicos con compra pagada.", example: "$300.000 de pauta / 10 clientes = $30.000 por cliente.", decisión: "Si el CAC supera el margen, optimiza canal, incentivo o segmentacion." },
   roi: { name: "ROI", description: "Retorno estimado de la inversión de marketing.", formula: "(Revenue - inversión) / inversión.", example: "$1.200.000 de revenue con $300.000 de inversión = 3x.", decisión: "Repite y escala campañas con ROI positivo y datos confiables." },
   channel: { name: "Canal de llegada", description: "Origen por donde el cliente llego o compro.", formula: "Clasificación de leads, tickets, redenciones o ventas por fuente.", example: "Instagram, Facebook, WhatsApp, Página web o Google.", decisión: "Compara canales por revenue, no solo por volumen." },
   affiliate: { name: "Afiliado", description: "Persona que recomienda y genera compras medibles con tickets o referidos.", formula: "Afiliados activos y ventas asociadas a su recomendación.", example: "Un cliente compra por ticket de un afiliado.", decisión: "Premia afiliados con alto ticket y entregales más tickets." },
@@ -2818,7 +2818,7 @@ const CHART_FOCUS_REGISTRY = {
   scatter: { title: "Scatter de campañas", subtitle: "Inversión o tickets vs revenue", chartType: "scatter", primaryMetric: "roi", description: "Ubica campañas según esfuerzo y resultado.", calculation: "Eje X usa inversión o tickets generados; eje Y usa revenue o ventas; tamano usa leads.", businessMeaning: "Encuentra campañas sanas, costosas o escalables.", recommendedActions: ["Escala puntos con alto revenue y bajo esfuerzo.", "Optimiza puntos con muchos leads y poco revenue.", "Investiga campañas sin datos completos."], supportedDrilldowns: ["campaign"], relatedMetrics: ["campaign", "qr_generated", "revenue", "roi"], dataDictionaryKeys: ["campaign", "qr_generated", "revenue", "roi"] },
   waterfall: { title: "Waterfall de revenue", subtitle: "Composicion del ingreso", chartType: "waterfall", primaryMetric: "revenue", description: "Muestra como se compone el revenue total por canales principales.", calculation: "Parte de revenue total y desglosa contribuciones por canal.", businessMeaning: "Explica de donde viene el dinero de forma ejecutiva.", recommendedActions: ["Prioriza los canales con mayor contribucion.", "Completa ventas sin origen.", "Compara canales con ticket alto."], supportedDrilldowns: ["channel"], relatedMetrics: ["revenue", "channel", "avg_ticket"], dataDictionaryKeys: ["revenue", "channel", "avg_ticket"] },
   cohorts: { title: "Cohort postventa", subtitle: "Recompra y ticket postventa", chartType: "cohort", primaryMetric: "retention", description: "Mide si las ventas generan nuevas visitas o recompras.", calculation: "Agrupa compras por cohorte y cuenta ticket postventa generados y redimidos.", businessMeaning: "Indica si el RMS crea fidelización después de la primera compra.", recommendedActions: ["Crea ticket postventa para compradores recientes.", "Escala beneficios que traen recompra.", "Mide cohortes por mes para ver retención."], supportedDrilldowns: ["cohort"], relatedMetrics: ["revenue", "redeemed_qr", "avg_ticket"], dataDictionaryKeys: ["revenue", "redeemed_qr", "avg_ticket"] },
-  "power-table": { title: "Tabla PowerBI-style", subtitle: "Drill-down por campaña", chartType: "table", primaryMetric: "revenue", description: "Tabla ejecutiva para ordenar, buscar y abrir detalle por campaña.", calculation: "Une KPIs de campaña con canal dominante, CAC, ROI, conversión y decisión sugerida.", businessMeaning: "Convierte la data en una lista de prioridades comerciales.", recommendedActions: ["Ordena por revenue para repetir.", "Ordena por conversión para escalar.", "Ordena por ROI para optimizar inversión."], supportedDrilldowns: ["campaign", "channel"], relatedMetrics: ["campaign", "revenue", "roi", "conversion_rate"], dataDictionaryKeys: ["campaign", "channel", "revenue", "cac", "roi", "conversion_rate"] },
+  "power-table": { title: "Tabla PowerBI-style", subtitle: "Drill-down por campaña", chartType: "table", primaryMetric: "revenue", description: "Tabla ejecutiva para ordenar, buscar y abrir detalle por campaña.", calculation: "Une KPIs de campaña con canal dominante, costo por venta, ROI, conversión y decisión sugerida.", businessMeaning: "Convierte la data en una lista de prioridades comerciales.", recommendedActions: ["Ordena por revenue para repetir.", "Ordena por conversión para escalar.", "Ordena por ROI para optimizar inversión."], supportedDrilldowns: ["campaign", "channel"], relatedMetrics: ["campaign", "revenue", "roi", "conversion_rate"], dataDictionaryKeys: ["campaign", "channel", "revenue", "roi", "conversion_rate"] },
 };
 
 function commandCenterDateRange(range = state.commandCenterFilters.range) {
@@ -7362,7 +7362,7 @@ function renderTreemapChart(rows = []) {
         return `<article style="--share:${share}; --span:${span}; --tone:${index}" data-command-focus="treemap" data-focus-channel="${escapeHtml(row.label)}" tabindex="0" role="button">
           <strong>${escapeHtml(row.label)}</strong>
           <span>${money(row.revenue)}</span>
-          <small>${row.sales} ventas · ROI ${channelRoiLabel(row.roi)} · CAC ${money(row.cac || 0)}</small>
+          <small>${row.sales} ventas · ROI ${channelRoiLabel(row.roi)} · Costo/venta ${row.cost_per_sale === null || row.cost_per_sale === undefined ? "-" : money(row.cost_per_sale)}</small>
         </article>`;
       }).join("")}
     </div>`;
@@ -7386,7 +7386,7 @@ function renderChannelPerformanceTable(rows = []) {
             <th>Revenue</th>
             <th>Inversión</th>
             <th>ROI</th>
-            <th>CAC</th>
+            <th>Costo / venta</th>
             <th>Conversión</th>
             <th>Ticket prom.</th>
             <th>Campaña dominante</th>
@@ -7403,7 +7403,7 @@ function renderChannelPerformanceTable(rows = []) {
               <td>${money(row.revenue)}</td>
               <td>${money(row.investment || 0)}<small>${row.investment_source === "manual" ? "Manual" : "Estimado"}</small></td>
               <td>${ratioLabel(row.roi)}</td>
-              <td>${money(row.cac || 0)}</td>
+              <td>${row.cost_per_sale === null || row.cost_per_sale === undefined ? "-" : money(row.cost_per_sale)}</td>
               <td>${toNumber(row.conversion_rate)}%</td>
               <td>${money(row.avg_ticket || 0)}</td>
               <td>${escapeHtml(row.top_campaign || "Sin campaña dominante")}</td>
@@ -7533,7 +7533,7 @@ function renderPowerTable(rows = []) {
       <table class="command-table">
         <thead>
           <tr>
-            <th>Campaña</th><th>Canal</th><th>Leads</th><th>Tickets</th><th>Redenciones</th><th>Ventas</th><th>Revenue</th><th>CAC</th><th>ROI</th><th>Conversión</th><th>Salud</th><th>Detalle</th>
+            <th>Campaña</th><th>Canal</th><th>Leads</th><th>Tickets</th><th>Redenciones</th><th>Ventas</th><th>Revenue</th><th>Costo / venta</th><th>ROI</th><th>Conversión</th><th>Salud</th><th>Detalle</th>
           </tr>
         </thead>
         <tbody>
@@ -7549,7 +7549,7 @@ function renderPowerTable(rows = []) {
                 <td>${row.redemptions}</td>
                 <td>${row.sales}</td>
                 <td>${money(row.revenue)}</td>
-                <td>${money(row.cac)}</td>
+                <td>${row.cost_per_sale === null || row.cost_per_sale === undefined ? "-" : money(row.cost_per_sale)}</td>
                 <td>${ratioLabel(row.roi)}</td>
                 <td>${row.conversion_rate}%</td>
                 <td><span class="status-chip ${health === "Sana" ? "ok" : health === "Optimizar" ? "pending" : "danger"}">${health}</span></td>
@@ -7929,7 +7929,7 @@ function bindCommandCenterEvents() {
 function exportCommandCenterCsv() {
   const rows = state.commandCenter?.power_table || [];
   downloadCsv("rms-command-center", [
-    ["Campaña", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue", "CAC", "ROI", "Conversión"],
+    ["Campaña", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue", "Costo por venta", "ROI", "Conversión"],
     ...rows.map((row) => [
       row.campaign_name,
       row.leads,
@@ -7937,7 +7937,7 @@ function exportCommandCenterCsv() {
       row.redemptions,
       row.sales,
       row.revenue,
-      row.cac,
+      row.cost_per_sale,
       row.roi,
       row.conversion_rate,
     ]),
@@ -8305,10 +8305,10 @@ function chartFocusRecords(chartId, context = {}) {
   }
   if (chartId === "treemap" || chartId === "waterfall" || chartId === "channel-performance") {
     return {
-      columns: ["Canal", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue", "Inversión", "ROI", "CAC", "Conversión", "Campaña dominante"],
+      columns: ["Canal", "Leads", "Tickets", "Redenciones", "Ventas", "Revenue", "Inversión", "ROI", "Costo por venta", "Conversión", "Campaña dominante"],
       rows: (data.channel_performance || data.revenue_treemap || [])
         .filter((row) => !context.channel || row.label === context.channel || row.channel === context.channel)
-        .map((row) => [row.label || row.channel, row.leads, row.qr_generated, row.redemptions, row.sales, money(row.revenue), money(row.investment || 0), ratioLabel(row.roi), money(row.cac || 0), `${row.conversion_rate || 0}%`, row.top_campaign || "-"]),
+        .map((row) => [row.label || row.channel, row.leads, row.qr_generated, row.redemptions, row.sales, money(row.revenue), money(row.investment || 0), ratioLabel(row.roi), row.cost_per_sale === null || row.cost_per_sale === undefined ? "-" : money(row.cost_per_sale), `${row.conversion_rate || 0}%`, row.top_campaign || "-"]),
     };
   }
   if (chartId === "affiliate-network") {
@@ -9410,8 +9410,8 @@ function ensureRevenueCenterLayoutGuard() {
 
 function renderRevenuePulseStrip(summary = {}, dashboard = {}, path = []) {
   if (!revenuePulseStrip) return;
-  const observedSalesCount = toNumber(summary.observed_sales_count || summary.direct_sales_count);
-  const observedRevenue = toNumber(summary.observed_revenue || summary.attributed_revenue);
+  const observedSalesCount = toNumber(summary.observed_sales_count ?? summary.direct_sales_count);
+  const observedRevenue = toNumber(summary.observed_revenue ?? summary.attributed_revenue);
   const activeQr = toNumber(dashboard.summary?.active_qr);
   const openAgenda = (state.leadAgenda || []).filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN").length;
   const totalLeads = toNumber(summary.total_leads || 0);
@@ -9437,8 +9437,8 @@ function renderRevenueWorkspace() {
   ensureRevenueCenterUxStyles();
   const summary = state.summary || {};
   const dashboard = state.dashboard || {};
-  const observedSalesCount = toNumber(summary.observed_sales_count || summary.direct_sales_count);
-  const observedRevenue = toNumber(summary.observed_revenue || summary.attributed_revenue);
+  const observedSalesCount = toNumber(summary.observed_sales_count ?? summary.direct_sales_count);
+  const observedRevenue = toNumber(summary.observed_revenue ?? summary.attributed_revenue);
   const activeQr = toNumber(dashboard.summary?.active_qr);
   const openAgenda = (state.leadAgenda || []).filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN").length;
   const activeMissions = toNumber(state.missions?.metrics?.active_seasons || 0);
@@ -9476,7 +9476,7 @@ function nextBestRevenueAction(path = []) {
   const leads = toNumber(summary.total_leads || 0);
   const openAgenda = (state.leadAgenda || []).filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN").length;
   const redeemed = toNumber(summary.total_qr_redeemed || 0);
-  const observedSalesCount = toNumber(summary.observed_sales_count || summary.direct_sales_count);
+  const observedSalesCount = toNumber(summary.observed_sales_count ?? summary.direct_sales_count);
   const activeQr = toNumber(dashboard.summary?.active_qr || 0);
   if (!leads) return { title: "Crear una entrada de clientes", description: "Aún no hay materia prima comercial. Crea QR, campaña, dinámica o importa contactos para alimentar la Máquina RMS.", cta: "Crear acción de revenue", objective: "capture", route: "wizard" };
   if (leads && !openAgenda) return { title: "Crear seguimiento en agenda", description: "Ya hay leads o contactos, pero necesitan una orden de trabajo: WhatsApp, llamada, redención, venta o recompra.", cta: "Crear tarea de conversión", objective: "agenda", route: "wizard" };
@@ -11110,7 +11110,7 @@ const DASHBOARD_BUILDER_PROFILES = {
 };
 
 const DASHBOARD_WIDGET_CATALOG = [
-  { id: "cac", title: "CAC promedio", category: "Gráfico", icon: "ads_click", route: "channels", description: "Costo promedio de captar un cliente a partir de inversión y ventas atribuidas." },
+  { id: "cac", title: "CAC promedio", category: "Gráfico", icon: "ads_click", route: "channels", description: "Inversión comercial dividida entre clientes únicos con compra pagada." },
   { id: "revenue", title: "Revenue real", category: "Número", icon: "payments", route: "sales", description: "Ventas reales registradas y atribuidas dentro del portal." },
   { id: "sales", title: "Ventas registradas", category: "Número", icon: "point_of_sale", route: "sales", description: "Cantidad de ventas observadas en el periodo." },
   { id: "avg_ticket", title: "Ticket promedio", category: "Número", icon: "receipt_long", route: "sales", description: "Promedio de ingreso por venta registrada." },
@@ -11217,6 +11217,20 @@ function dashboardBuilderTopChannels() {
 
 function dashboardCommercialEconomics() {
   const summary = state.summary || {};
+  const authoritative = state.commandCenter?.business_economics;
+  if (authoritative && Number.isFinite(Number(authoritative.revenue)) && Number.isFinite(Number(authoritative.investment))) {
+    const investment = toNumber(authoritative.investment);
+    const revenue = toNumber(authoritative.revenue);
+    const customers = toNumber(authoritative.customers);
+    return {
+      investment,
+      revenue,
+      customers,
+      roi: investment ? (revenue - investment) / investment : null,
+      cac: customers ? investment / customers : null,
+      sourceLabel: "Ventas pagadas y fuentes de inversi\u00f3n sin duplicar",
+    };
+  }
   const campaigns = Array.isArray(state.campaigns) ? state.campaigns : [];
   const channels = Array.isArray(state.acquisitionChannels) ? state.acquisitionChannels : [];
   const efforts = Array.isArray(state.acquisitionChannelEfforts) ? state.acquisitionChannelEfforts : [];
@@ -11315,8 +11329,8 @@ function getDashboardBuilderStats() {
     || topChannels.reduce((sum, row) => sum + toNumber(row.investment), 0);
   const channelRevenue = toNumber(state.acquisitionChannelTotals?.revenue || state.acquisitionChannelTotals?.total_revenue)
     || topChannels.reduce((sum, row) => sum + toNumber(row.revenue), 0);
-  const observedSalesCount = toNumber(summary.observed_sales_count || summary.direct_sales_count);
-  const observedRevenue = toNumber(summary.observed_revenue || summary.attributed_revenue);
+  const observedSalesCount = toNumber(summary.observed_sales_count ?? summary.direct_sales_count);
+  const observedRevenue = toNumber(summary.observed_revenue ?? summary.attributed_revenue);
   const openAgenda = (Array.isArray(state.leadAgenda) ? state.leadAgenda : [])
     .filter((item) => !["DONE", "CLOSED", "COMPLETED", "CANCELLED"].includes(String(item.status || item.agenda_status || "").toUpperCase()))
     .length;
@@ -11934,8 +11948,8 @@ function renderDashboard() {
   const qrStatus = dashboard.qr_status || [];
   const topHour = [...(dashboard.time_stats?.redemptions_by_hour || [])].sort((a, b) => toNumber(b.count) - toNumber(a.count))[0];
   const topBranch = [...branchPerformance].sort((a, b) => toNumber(b.revenue) - toNumber(a.revenue))[0];
-  const observedSalesCount = toNumber(summary.observed_sales_count || summary.direct_sales_count);
-  const observedRevenue = toNumber(summary.observed_revenue || summary.attributed_revenue);
+  const observedSalesCount = toNumber(summary.observed_sales_count ?? summary.direct_sales_count);
+  const observedRevenue = toNumber(summary.observed_revenue ?? summary.attributed_revenue);
   const avgTicket = observedSalesCount ? observedRevenue / observedSalesCount : 0;
   const topAcquisitionSource = [...acquisitionSources].sort((a, b) => toNumber(b.revenue) - toNumber(a.revenue))[0];
   const commercialEconomics = dashboardCommercialEconomics();

@@ -1,5 +1,5 @@
 const { query } = require("../config/db");
-const { safeDivide, safeRate, safeRoi } = require("./metricsService");
+const { safeDivide, safeRate, safeRoi, canonicalSalesUnionSql } = require("./metricsService");
 
 const ANALYTICS_CACHE_TTL_MS = 45 * 1000;
 const ANALYTICS_CACHE_MAX_ENTRIES = 80;
@@ -114,26 +114,7 @@ function normalizeFilters(raw = {}) {
 }
 
 function salesUnionSql() {
-  return `
-    select business_id, campaign_id, qr_code_id, branch_id, sale_amount, currency, created_at,
-           payment_method, product_or_service as product_name, null::text as acquisition_source,
-           null::text as acquisition_channel, null::uuid as referred_affiliate_id,
-           sale_confirmed_by_user_id as seller_user_id,
-           coalesce(player_id::text, qr_code_id::text, id::text) as customer_key
-    from attributed_sales
-    union all
-    select business_id, campaign_id, qr_code_id, branch_id, sale_amount, currency, created_at,
-           null::text as payment_method, product_name, acquisition_source,
-           acquisition_channel, referred_affiliate_id, seller_user_id,
-           coalesce(
-             nullif(customer_document_id, ''),
-             nullif(customer_phone, ''),
-             nullif(lower(customer_email), ''),
-             id::text
-           ) as customer_key
-    from business_sales
-    where qr_code_id is null
-  `;
+  return canonicalSalesUnionSql();
 }
 
 async function getBusinessEconomics(businessId) {
@@ -161,12 +142,20 @@ async function getBusinessEconomics(businessId) {
            from business_acquisition_channels ch
            where ch.business_id = $1
              and ch.status <> 'ARCHIVED'
+             and not exists (
+               select 1
+               from business_acquisition_channel_efforts e
+               where e.business_id = ch.business_id
+                 and e.channel_id = ch.id
+                 and e.status <> 'ARCHIVED'
+             )
          ), 0)::numeric(14, 2) as channel_investment,
          coalesce((
            select sum(e.budget_amount)
            from business_acquisition_channel_efforts e
            where e.business_id = $1
              and e.status <> 'ARCHIVED'
+             and e.campaign_id is null
          ), 0)::numeric(14, 2) as effort_investment`,
       [businessId]
     ),
@@ -284,6 +273,7 @@ async function getTotals(businessId, filters, period = "current") {
        select
          count(*)::int as sales_count,
          coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue,
+         count(distinct customer_key)::int as customers,
          count(*) filter (where referred_affiliate_id is not null)::int as referred_buyers
        from sales s
        left join qr_codes q on q.id = s.qr_code_id
@@ -310,7 +300,6 @@ async function getTotals(businessId, filters, period = "current") {
   };
   const revenue = number(row.revenue);
   const salesCount = number(row.sales_count);
-  const investment = 0;
   return {
     leads: number(row.leads),
     qr_generated: number(row.qr_generated),
@@ -321,13 +310,12 @@ async function getTotals(businessId, filters, period = "current") {
     cancelled_qr: number(row.cancelled_qr),
     redemptions: number(row.redemptions),
     sales_count: salesCount,
+    customers: number(row.customers),
     revenue,
     referred_buyers: number(row.referred_buyers),
     redemption_rate: safeRate(row.redemptions, row.qr_generated),
     conversion_rate: safeRate(salesCount, row.leads),
     avg_ticket: safeDivide(revenue, salesCount) || 0,
-    cac_estimated: safeDivide(investment, salesCount) || 0,
-    roi_estimated: safeRoi(revenue, investment),
   };
 }
 
@@ -339,7 +327,12 @@ function delta(current, previous) {
   return round(((c - p) / p) * 100, 1);
 }
 
-function kpiItems(current, previous, topBranch, topChannel, affiliateSummary) {
+function kpiItems(current, previous, topBranch, topChannel, affiliateSummary, businessEconomics = {}) {
+  const investment = number(businessEconomics.investment);
+  const customers = number(businessEconomics.customers);
+  const hasEconomics = investment > 0;
+  const hasCac = hasEconomics && customers > 0 && businessEconomics.cac !== null && businessEconomics.cac !== undefined;
+  const hasRoi = hasEconomics && businessEconomics.roi !== null && businessEconomics.roi !== undefined;
   const items = [
     ["revenue", "Revenue atribuido", current.revenue, "money", delta(current.revenue, previous.revenue), "payments", "Ventas reales registradas y atribuibles al RMS."],
     ["sales", "Ventas registradas", current.sales_count, "number", delta(current.sales_count, previous.sales_count), "point_of_sale", "Compras capturadas por redencion o sales tracker."],
@@ -351,8 +344,8 @@ function kpiItems(current, previous, topBranch, topChannel, affiliateSummary) {
     ["redemption_rate", "Tasa de redencion", current.redemption_rate, "percent", delta(current.redemption_rate, previous.redemption_rate), "conversion_path", "Porcentaje de QR emitidos que se redimieron."],
     ["conversion_rate", "Lead -> venta", current.conversion_rate, "percent", delta(current.conversion_rate, previous.conversion_rate), "shopping_cart_checkout", "Capacidad para convertir interes en compra."],
     ["avg_ticket", "Ticket promedio", current.avg_ticket, "money", delta(current.avg_ticket, previous.avg_ticket), "receipt_long", "Revenue promedio por venta registrada."],
-    ["cac", "CAC estimado", current.cac_estimated, "money", delta(current.cac_estimated, previous.cac_estimated), "target", "Costo estimado por venta segun inversion disponible."],
-    ["roi", "ROI estimado", current.roi_estimated ?? 0, "ratio", delta(current.roi_estimated, previous.roi_estimated), "trending_up", "Retorno calculado cuando hay presupuesto de campana."],
+    ["cac", "CAC acumulado", hasCac ? businessEconomics.cac : "—", hasCac ? "money" : "text", 0, "target", hasCac ? "Inversión comercial acumulada dividida entre clientes únicos con compra pagada." : "Registra inversión y ventas pagadas para calcularlo sin inventar un costo."],
+    ["roi", "ROI acumulado", hasRoi ? businessEconomics.roi : "—", hasRoi ? "ratio" : "text", 0, "trending_up", hasRoi ? "Revenue pagado menos inversión comercial acumulada, dividido entre la inversión." : "Registra inversión comercial para calcularlo sin inventar un retorno."],
     ["affiliates", "Afiliados activos", affiliateSummary.active_affiliates, "number", 0, "groups", "Afiliados disponibles para recomendacion y referidos."],
     ["referrals", "Referidos compradores", current.referred_buyers, "number", delta(current.referred_buyers, previous.referred_buyers), "diversity_3", "Ventas con afiliado o referido identificado."],
     ["branch", "Sucursal lider", topBranch?.branch_name || "Sin datos", "text", topBranch?.conversion_rate || 0, "storefront", "Punto de venta con mejor revenue o conversion."],
@@ -934,6 +927,7 @@ async function getSeriesAndCharts(businessId, filters) {
          affiliateColumn: "bs.referred_affiliate_id",
          channelExpression: "coalesce(nullif(bs.acquisition_channel, ''), bs.acquisition_source, 'QR_REDEMPTION')",
        })}
+         and coalesce(bs.sale_status, 'PAID') = 'PAID'
        group by date_trunc('week', bs.created_at)
        order by cohort desc
        limit 8`,
@@ -1044,7 +1038,7 @@ async function getSeriesAndCharts(businessId, filters) {
         conversion_rate: safeRate(sales, leads),
         redemption_rate: safeRate(redemptions, qr),
         roi: safeRoi(revenue, investment),
-        cac: safeDivide(investment, sales) || 0,
+        cost_per_sale: safeDivide(investment, sales),
       };
     }),
     matrix: matrixRows,
@@ -1062,7 +1056,7 @@ async function getSeriesAndCharts(businessId, filters) {
         sales,
         revenue,
         investment,
-        cac: safeDivide(investment, leads),
+        cost_per_lead: safeDivide(investment, leads),
         roi: safeRoi(revenue, investment),
         conversion_rate: safeRate(sales, redemptions),
         lead_conversion_rate: safeRate(sales, leads),
@@ -1152,8 +1146,8 @@ function buildChannelPerformance(matrixRows = [], investmentRows = []) {
       redemption_rate: safeRate(channel.redemptions, channel.qr_generated),
       avg_ticket: safeDivide(channel.revenue, channel.sales) || 0,
       roi: safeRoi(channel.revenue, channel.investment),
-      cac: safeDivide(channel.investment, channel.sales) || 0,
-      cost_per_lead: safeDivide(channel.investment, channel.leads) || 0,
+      cost_per_sale: safeDivide(channel.investment, channel.sales),
+      cost_per_lead: safeDivide(channel.investment, channel.leads),
     }))
     .sort((a, b) => b.revenue - a.revenue || b.sales - a.sales || b.leads - a.leads);
 }
@@ -1341,7 +1335,7 @@ async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
   const analytics = {
     filters,
     options,
-    kpis: kpiItems(current, previous, topBranch, topChannel, affiliateSummary),
+    kpis: kpiItems(current, previous, topBranch, topChannel, affiliateSummary, businessEconomics),
     totals: current,
     previous_totals: previous,
     business_economics: businessEconomics,

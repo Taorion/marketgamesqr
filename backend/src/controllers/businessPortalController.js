@@ -9,6 +9,7 @@ const {
   getBusinessCampaignMetrics,
   getCampaignMetrics,
   safeRoi,
+  canonicalSalesUnionSql,
 } = require("../services/metricsService");
 const { getCommandCenterAnalytics } = require("../services/commandCenterAnalyticsService");
 const {
@@ -2529,6 +2530,7 @@ function emptyChannelMetrics() {
     qr_generated: 0,
     redemptions: 0,
     sales: 0,
+    unique_customers: 0,
     revenue: 0,
   };
 }
@@ -2546,6 +2548,7 @@ function decorateChannel(row = {}, metrics = emptyChannelMetrics(), breakdown = 
   const investment = Number(row.period_budget || 0);
   const revenue = Number(metrics.revenue || 0);
   const sales = Number(metrics.sales || 0);
+  const uniqueCustomers = Number(metrics.unique_customers || 0);
   const leads = Number(metrics.leads || 0);
   const redemptions = Number(metrics.redemptions || 0);
   const qrGenerated = Number(metrics.qr_generated || 0);
@@ -2559,7 +2562,8 @@ function decorateChannel(row = {}, metrics = emptyChannelMetrics(), breakdown = 
       revenue,
       investment,
       roi: safeRoi(revenue, investment),
-      cac: sales > 0 ? Number((investment / sales).toFixed(2)) : null,
+      unique_customers: uniqueCustomers,
+      cac: uniqueCustomers > 0 ? Number((investment / uniqueCustomers).toFixed(2)) : null,
       conversion_rate: leads > 0 ? Number(((sales / leads) * 100).toFixed(1)) : 0,
       redemption_rate: qrGenerated > 0 ? Number(((redemptions / qrGenerated) * 100).toFixed(1)) : 0,
       efficiency_label: channelEfficiencyLabel({ revenue, sales, leads, roi: safeRoi(revenue, investment) }),
@@ -2572,20 +2576,21 @@ async function channelCampaignBreakdownRows(businessId, filters = {}) {
   const { start, end } = filters;
   const campaignId = filters.campaign_id || null;
   const result = await query(
-    `with sales_by_campaign_channel as (
+    `with sales as (${canonicalSalesUnionSql()}),
+     sales_by_campaign_channel as (
        select
-         coalesce(nullif(bs.acquisition_channel, ''), bs.acquisition_source, 'Sin canal') as channel,
-         bs.campaign_id,
+         coalesce(nullif(s.acquisition_channel, ''), s.acquisition_source, 'QR_REDEMPTION') as channel,
+         s.campaign_id,
          coalesce(c.name, 'Sin campana') as campaign_name,
          count(*)::int as sales,
-         coalesce(sum(bs.sale_amount), 0)::numeric(14, 2) as revenue
-       from business_sales bs
-       left join campaigns c on c.id = bs.campaign_id and c.business_id = bs.business_id
-       where bs.business_id = $1
-         and bs.created_at >= $2::timestamptz
-         and bs.created_at <= $3::timestamptz
-         and ($4::uuid is null or bs.campaign_id = $4::uuid)
-       group by channel, bs.campaign_id, c.name
+         coalesce(sum(s.sale_amount), 0)::numeric(14, 2) as revenue
+       from sales s
+       left join campaigns c on c.id = s.campaign_id and c.business_id = s.business_id
+       where s.business_id = $1
+         and s.created_at >= $2::timestamptz
+         and s.created_at <= $3::timestamptz
+         and ($4::uuid is null or s.campaign_id = $4::uuid)
+       group by channel, s.campaign_id, c.name
      ),
      campaign_budget as (
        select id, coalesce(budget_total, 0)::numeric(14, 2) as campaign_investment
@@ -2623,6 +2628,7 @@ async function channelActivityRows(businessId, filters = {}) {
          0::int as qr_generated,
          0::int as redemptions,
          0::int as sales,
+         0::int as unique_customers,
          0::numeric(14, 2) as revenue
        from players p
        left join lateral (
@@ -2646,6 +2652,7 @@ async function channelActivityRows(businessId, filters = {}) {
          0::int as qr_generated,
          0::int as redemptions,
          0::int as sales,
+         0::int as unique_customers,
          0::numeric(14, 2) as revenue
        from business_manual_leads ml
        where ml.business_id = $1
@@ -2662,6 +2669,7 @@ async function channelActivityRows(businessId, filters = {}) {
          count(distinct q.id)::int as qr_generated,
          0::int as redemptions,
          0::int as sales,
+         0::int as unique_customers,
          0::numeric(14, 2) as revenue
        from qr_codes q
        left join qr_batches qb on qb.id = q.batch_id and qb.business_id = q.business_id
@@ -2679,6 +2687,7 @@ async function channelActivityRows(businessId, filters = {}) {
          0::int as qr_generated,
          count(distinct rd.id)::int as redemptions,
          0::int as sales,
+         0::int as unique_customers,
          0::numeric(14, 2) as revenue
        from redemptions rd
        left join qr_codes q on q.id = rd.qr_code_id
@@ -2692,17 +2701,18 @@ async function channelActivityRows(businessId, filters = {}) {
        union all
 
        select
-         coalesce(nullif(bs.acquisition_channel, ''), bs.acquisition_source, 'Sin canal') as channel,
+         coalesce(nullif(s.acquisition_channel, ''), s.acquisition_source, 'Sin canal') as channel,
          0::int as leads,
          0::int as qr_generated,
          0::int as redemptions,
          count(*)::int as sales,
-         coalesce(sum(bs.sale_amount), 0)::numeric(14, 2) as revenue
-       from business_sales bs
-       where bs.business_id = $1
-         and bs.created_at >= $2::timestamptz
-         and bs.created_at <= $3::timestamptz
-         and ($4::uuid is null or bs.campaign_id = $4::uuid)
+         count(distinct s.customer_key)::int as unique_customers,
+         coalesce(sum(s.sale_amount), 0)::numeric(14, 2) as revenue
+       from (${canonicalSalesUnionSql()}) s
+       where s.business_id = $1
+         and s.created_at >= $2::timestamptz
+         and s.created_at <= $3::timestamptz
+         and ($4::uuid is null or s.campaign_id = $4::uuid)
        group by channel
      )
      select channel,
@@ -2710,6 +2720,7 @@ async function channelActivityRows(businessId, filters = {}) {
             sum(qr_generated)::int as qr_generated,
             sum(redemptions)::int as redemptions,
             sum(sales)::int as sales,
+            sum(unique_customers)::int as unique_customers,
             coalesce(sum(revenue), 0)::numeric(14, 2) as revenue
      from activity
      where nullif(channel, '') is not null
@@ -2748,6 +2759,7 @@ async function listAcquisitionChannels(req, res, next) {
         qr_generated: current.qr_generated + Number(row.qr_generated || 0),
         redemptions: current.redemptions + Number(row.redemptions || 0),
         sales: current.sales + Number(row.sales || 0),
+        unique_customers: current.unique_customers + Number(row.unique_customers || 0),
         revenue: current.revenue + Number(row.revenue || 0),
       });
     });
@@ -2852,10 +2864,11 @@ async function listAcquisitionChannels(req, res, next) {
       acc.qr_generated += Number(row.metrics?.qr_generated || 0);
       acc.redemptions += Number(row.metrics?.redemptions || 0);
       acc.sales += Number(row.metrics?.sales || 0);
+      acc.unique_customers += Number(row.metrics?.unique_customers || 0);
       acc.revenue += Number(row.metrics?.revenue || 0);
       acc.investment += Number(row.metrics?.investment || 0);
       return acc;
-    }, { leads: 0, qr_generated: 0, redemptions: 0, sales: 0, revenue: 0, investment: 0 });
+    }, { leads: 0, qr_generated: 0, redemptions: 0, sales: 0, unique_customers: 0, revenue: 0, investment: 0 });
 
     res.json({
       channels: allRows,
@@ -2864,7 +2877,7 @@ async function listAcquisitionChannels(req, res, next) {
       totals: {
         ...totals,
         roi: safeRoi(totals.revenue, totals.investment),
-        cac: totals.sales > 0 ? Number((totals.investment / totals.sales).toFixed(2)) : null,
+        cac: totals.unique_customers > 0 ? Number((totals.investment / totals.unique_customers).toFixed(2)) : null,
       },
       campaign_channel_matrix: allRows.flatMap((channel) => (
         channel.campaign_breakdown || []
@@ -3087,6 +3100,7 @@ async function salesDetailForChannelEffort(businessId, effort, start, end) {
        )::int as rebuy_sales
      from business_sales bs
      where bs.business_id = $1
+       and coalesce(bs.sale_status, 'PAID') = 'PAID'
        and bs.created_at >= $2::timestamptz
        and bs.created_at <= $3::timestamptz
        and ($4::uuid is null or bs.campaign_id = $4::uuid)
@@ -3117,6 +3131,7 @@ async function metricsForCommunicationChannelEffort(businessId, effort, communic
        from business_sales bs
        left join qr_codes q on q.id = bs.qr_code_id
        where bs.business_id = $1
+         and coalesce(bs.sale_status, 'PAID') = 'PAID'
          and (q.metadata->>'communication_id' = $2 or bs.metadata->>'communication_id' = $2)
      )
      select
@@ -3136,6 +3151,7 @@ async function metricsForCommunicationChannelEffort(businessId, effort, communic
            select 1
            from business_sales previous
            where previous.business_id = attributed_sales.business_id
+             and coalesce(previous.sale_status, 'PAID') = 'PAID'
              and previous.created_at < attributed_sales.created_at
              and (
                (nullif(attributed_sales.customer_document_id, '') is not null and previous.customer_document_id = attributed_sales.customer_document_id)
@@ -3160,7 +3176,7 @@ async function metricsForCommunicationChannelEffort(businessId, effort, communic
     sales,
     revenue,
     investment,
-    cac: sales > 0 ? Number((investment / sales).toFixed(2)) : null,
+    cac: Number(row.unique_customers || 0) > 0 ? Number((investment / Number(row.unique_customers)).toFixed(2)) : null,
     net_revenue: Number((revenue - investment).toFixed(2)),
     roi: safeRoi(revenue, investment),
     conversion_rate: leads > 0 ? Number(((sales / leads) * 100).toFixed(1)) : 0,
@@ -3205,7 +3221,7 @@ async function metricsForChannelEffort(businessId, effort = {}) {
     sales,
     revenue,
     investment,
-    cac: sales > 0 ? Number((investment / sales).toFixed(2)) : null,
+    cac: salesDetail.unique_customers > 0 ? Number((investment / salesDetail.unique_customers).toFixed(2)) : null,
     net_revenue: Number((revenue - investment).toFixed(2)),
     roi: safeRoi(revenue, investment),
     conversion_rate: Number(activity.leads || 0) > 0 ? Number(((sales / Number(activity.leads || 0)) * 100).toFixed(1)) : 0,
@@ -3277,9 +3293,7 @@ async function listAcquisitionChannelEfforts(req, res, next) {
         roi: safeRoi(totals.revenue, totals.investment),
         cac: totals.unique_customers > 0
           ? Number((totals.investment / totals.unique_customers).toFixed(2))
-          : totals.sales > 0
-            ? Number((totals.investment / totals.sales).toFixed(2))
-            : null,
+          : null,
         net_revenue: Number((totals.revenue - totals.investment).toFixed(2)),
       },
     });
