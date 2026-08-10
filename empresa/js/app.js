@@ -47867,6 +47867,9 @@ function templateTextLines(items = [], mapper) {
 }
 
 function openMissionWizard(templateKey = "weekly_trivia") {
+  if (missionWizardModal?.parentElement !== document.body) {
+    document.body.appendChild(missionWizardModal);
+  }
   fillMissionWizardOptions();
   const template = missionTemplateByKey(templateKey);
   state.missionWizardTemplateKey = template.key;
@@ -47886,10 +47889,16 @@ function openMissionWizard(templateKey = "weekly_trivia") {
   }
   if (missionWizardMessage) missionWizardMessage.textContent = "";
   missionWizardModal?.classList.remove("hidden");
+  document.body.classList.add("mission-wizard-open");
+  window.requestAnimationFrame(() => {
+    missionWizardModal?.querySelector(".mission-wizard-card")?.scrollTo({ top: 0 });
+    missionNameInput?.focus({ preventScroll: true });
+  });
 }
 
 function closeMissionWizard() {
   missionWizardModal?.classList.add("hidden");
+  document.body.classList.remove("mission-wizard-open");
 }
 
 function parseMissionPoints(text = "") {

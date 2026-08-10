@@ -16110,6 +16110,45 @@ html body > #rewardPassCreateModal .reward-pass-create-modal-card {
   #rewardPassCreateModal .reward-pass-preview-card .affiliate-card-actions { grid-template-columns: minmax(0, 1fr) !important; }
 }
 
+/* Temporadas: el asistente se monta en body para no quedar recortado por la vista activa. */
+html body > #missionWizardModal.modal-shell:not(.hidden) {
+  z-index: 1300 !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+  padding: clamp(18px, 3vw, 42px) !important;
+}
+
+html body > #missionWizardModal .mission-wizard-card {
+  display: flex !important;
+  flex-direction: column !important;
+  width: min(960px, calc(100vw - (2 * clamp(18px, 3vw, 42px)))) !important;
+  max-width: 100% !important;
+  max-height: calc(100dvh - (2 * clamp(18px, 3vw, 42px))) !important;
+  margin: auto !important;
+  overflow: hidden !important;
+}
+
+html body > #missionWizardModal .mission-wizard-card > .modal-head {
+  flex: 0 0 auto;
+}
+
+html body > #missionWizardModal .mission-wizard-form {
+  min-height: 0 !important;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+@media (max-width: 620px) {
+  html body > #missionWizardModal.modal-shell:not(.hidden) { padding: 12px !important; }
+  html body > #missionWizardModal .mission-wizard-card {
+    width: calc(100vw - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+  }
+}
+
 /* El formulario puede superar la altura visible. El encabezado permanece
    visible y el cuerpo del modal es el que se desplaza, para mantener
    alcanzables los campos y las acciones finales. */
