@@ -16010,3 +16010,102 @@ html body .portal-shell .smart-catalog-product-image-preview figcaption {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Reward Pass: the issuing workspace must remain readable inside its modal. */
+html body > #rewardPassCreateModal.modal-shell:not(.hidden) {
+  z-index: 10050;
+  align-items: center;
+  padding: clamp(12px, 2vw, 28px);
+  background: rgba(4, 30, 78, .62) !important;
+  backdrop-filter: blur(10px) saturate(1.06);
+}
+
+html body > #rewardPassCreateModal .reward-pass-create-modal-card {
+  width: min(1380px, calc(100vw - 32px)) !important;
+  max-width: 1380px !important;
+  max-height: min(92dvh, 980px) !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 26px !important;
+  background: #f6fbff !important;
+  box-shadow: 0 38px 100px rgba(0, 28, 88, .38) !important;
+}
+
+#rewardPassCreateModal .reward-pass-create-modal-card > .modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  min-width: 0;
+  margin: 0;
+  padding: 28px 34px 24px;
+  border: 0;
+  background: radial-gradient(circle at 88% 18%, rgba(32, 219, 255, .48), transparent 30%), linear-gradient(122deg, #06388e, #075ccd 54%, #08a8d8);
+  color: #fff;
+}
+
+#rewardPassCreateModal .reward-pass-create-modal-card > .modal-head > div { min-width: 0; }
+#rewardPassCreateModal .reward-pass-create-modal-card > .modal-head :is(.mono-label, h3, p) { color: #fff !important; }
+#rewardPassCreateModal .reward-pass-create-modal-card > .modal-head h3 { margin: 4px 0 6px; font-size: clamp(1.35rem, 2vw, 1.85rem); line-height: 1.14; }
+#rewardPassCreateModal .reward-pass-create-modal-card > .modal-head p { max-width: 70ch; margin: 0; line-height: 1.42; opacity: .9; }
+#rewardPassCreateModal .reward-pass-create-modal-card > .modal-head .icon-button { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; }
+
+#rewardPassCreateModal .reward-pass-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.24fr) minmax(320px, .76fr) !important;
+  align-items: start;
+  gap: clamp(18px, 2.2vw, 28px);
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 26px 34px 30px;
+}
+
+#rewardPassCreateModal :is(.reward-pass-form-card, .reward-pass-preview-card) {
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: clamp(17px, 1.7vw, 23px) !important;
+  border: 1px solid rgba(7, 89, 214, .12) !important;
+  border-radius: 17px !important;
+  background: #fff !important;
+  box-shadow: 0 12px 28px rgba(5, 42, 107, .07) !important;
+}
+
+#rewardPassCreateModal .reward-pass-preview-card { position: static !important; top: auto !important; display: grid; gap: 13px; }
+#rewardPassCreateModal .reward-pass-form { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 11px !important; min-width: 0; }
+#rewardPassCreateModal .reward-pass-form label { min-width: 0; overflow: hidden; }
+#rewardPassCreateModal .reward-pass-form :is(input, select, textarea) { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; }
+#rewardPassCreateModal .reward-pass-form textarea { min-height: 110px; overflow: auto; resize: vertical; line-height: 1.42; }
+#rewardPassCreateModal .reward-pass-form .validator-checkline { overflow: visible; }
+#rewardPassCreateModal .reward-pass-form .modal-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-width: 0; }
+#rewardPassCreateModal .reward-pass-form .error-line { min-width: 0; overflow-wrap: anywhere; }
+
+#rewardPassCreateModal .reward-pass-card-preview { min-height: 250px !important; aspect-ratio: 5 / 3; padding: clamp(14px, 1.5vw, 20px); overflow: hidden; }
+#rewardPassCreateModal .reward-pass-card-inner { min-width: 0; padding: clamp(18px, 2vw, 28px) !important; overflow: hidden; }
+#rewardPassCreateModal .reward-pass-card-inner :is(strong, p, small) { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+#rewardPassCreateModal .reward-pass-card-inner strong { font-size: clamp(1.7rem, 3.1vw, 3rem) !important; line-height: 1.02 !important; }
+#rewardPassCreateModal .reward-pass-card-inner :is(p, small) { max-width: none !important; line-height: 1.4 !important; }
+#rewardPassCreateModal .reward-pass-preview-card .affiliate-card-actions { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+#rewardPassCreateModal .reward-pass-preview-card .affiliate-card-actions .ghost-button { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+#rewardPassCreateModal #rewardPassPreviewMeta { overflow-wrap: anywhere; }
+
+@media (max-width: 980px) {
+  #rewardPassCreateModal .reward-pass-layout { grid-template-columns: minmax(0, 1fr) !important; }
+  #rewardPassCreateModal .reward-pass-preview-card { order: -1; }
+}
+
+@media (max-width: 620px) {
+  html body > #rewardPassCreateModal.modal-shell:not(.hidden) { align-items: stretch; padding: 0; }
+  html body > #rewardPassCreateModal .reward-pass-create-modal-card { width: 100% !important; max-height: 100dvh !important; border-radius: 0 !important; }
+  #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head { padding: 22px 20px 19px; }
+  #rewardPassCreateModal .reward-pass-layout { gap: 16px; padding: 20px 16px 24px; }
+  #rewardPassCreateModal .reward-pass-form { grid-template-columns: minmax(0, 1fr) !important; }
+  #rewardPassCreateModal .reward-pass-form .modal-actions { align-items: stretch; flex-direction: column; }
+  #rewardPassCreateModal .reward-pass-form .modal-button-row { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  #rewardPassCreateModal .reward-pass-form .modal-button-row .solid-button { grid-column: span 2; }
+  #rewardPassCreateModal .reward-pass-preview-card .affiliate-card-actions { grid-template-columns: minmax(0, 1fr) !important; }
+}
