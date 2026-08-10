@@ -206,7 +206,7 @@
             </button>
             <button class="nav-item" data-view="smart-catalogs" type="button">
               <span class="material-symbols-outlined">storefront</span>
-              <span><strong>Catálogos</strong><small>Oferta comercial publicada</small></span>
+              <span><strong>Vitrina web</strong><small>Oferta comercial publicada</small></span>
             </button>
             <button class="nav-item" data-view="inventory" type="button">
               <span class="material-symbols-outlined">inventory_2</span>
@@ -3478,15 +3478,15 @@
                 <nav class="breadcrumb">
                   <span>Máquina RMS</span>
                   <span class="material-symbols-outlined">chevron_right</span>
-                  <span>Catálogo accionable</span>
+                  <span>Vitrina web</span>
                 </nav>
-                <h2>Catálogos</h2>
+                <h2>Vitrina web</h2>
                 <p>Crea una vitrina pública, agrega tu oferta y comparte un enlace que lleva las conversaciones a WhatsApp.</p>
               </div>
               <div class="head-actions">
                 <button class="solid-button" id="smartCatalogCreateButton" type="button">
                   <span class="material-symbols-outlined" aria-hidden="true">add</span>
-                  Crear catálogo
+                  Crear vitrina web
                 </button>
                 <button class="ghost-button" id="smartCatalogRefreshButton" type="button">
                   <span class="material-symbols-outlined" aria-hidden="true">sync</span>
@@ -3499,8 +3499,8 @@
               </div>
             </div>
 
-            <nav class="smart-catalog-tabs" aria-label="Secciones de Catálogos Qori">
-              <button class="active" data-smart-catalog-tab="catalogs" type="button">Mis catálogos</button>
+            <nav class="smart-catalog-tabs" aria-label="Secciones de Vitrina web Qori">
+              <button class="active" data-smart-catalog-tab="catalogs" type="button">Mis vitrinas</button>
               <button data-smart-catalog-tab="products" type="button">Productos</button>
               <button data-smart-catalog-tab="intents" type="button">Interesados</button>
               <button data-smart-catalog-tab="dashboard" type="button">Cómo funciona</button>
@@ -3511,7 +3511,7 @@
                 <div class="smart-catalog-dashboard-grid">
                   <article class="smart-catalog-step">
                     <span>01</span>
-                    <strong>Crear catálogo</strong>
+                    <strong>Crear vitrina web</strong>
                     <p>Nombre, marca, WhatsApp receptor, color y conexión opcional a campaña o activación.</p>
                   </article>
                   <article class="smart-catalog-step">
@@ -3531,11 +3531,11 @@
                 <div class="smart-catalog-split">
                   <form class="smart-catalog-form" id="smartCatalogForm">
                     <div class="form-section-head">
-                      <span class="mono-label">Crear catálogo en 5 minutos</span>
+                      <span class="mono-label">Crear vitrina web en 5 minutos</span>
                       <h3>Datos de la marca y publicación</h3>
                     </div>
                     <label>
-                      <span>Nombre del catálogo</span>
+                      <span>Nombre de la vitrina</span>
                       <input name="title" type="text" placeholder="Productos de la Doctora Angie" required>
                     </label>
                     <label>
@@ -3560,7 +3560,7 @@
                       </select>
                     </label>
                     <label>
-                      <span>Color del catálogo</span>
+                      <span>Color de la vitrina</span>
                       <input name="theme_color" type="color" value="#0759d6">
                     </label>
                     <label>
@@ -3578,22 +3578,22 @@
                       </select>
                     </label>
                     <p class="form-message" id="smartCatalogMessage"></p>
-                    <button class="solid-button" type="submit">Crear catálogo</button>
+                    <button class="solid-button" type="submit">Crear vitrina web</button>
                   </form>
 
                   <article class="data-table-card smart-catalog-table-card">
                     <div class="table-card-head">
                       <div>
-                        <span class="mono-label">Catálogos creados</span>
+                        <span class="mono-label">Vitrinas creadas</span>
                         <h3>Tus vitrinas públicas</h3>
-                        <p class="smart-catalog-list-intro">Abre un catálogo para agregar su oferta, compartir su enlace y revisar las personas interesadas.</p>
+                        <p class="smart-catalog-list-intro">Abre una vitrina para agregar su oferta, compartir su enlace y revisar las personas interesadas.</p>
                       </div>
                     </div>
                     <div class="table-wrap">
                       <table>
                         <thead>
                           <tr>
-                            <th>Catálogo</th>
+                            <th>Vitrina web</th>
                             <th>Estado</th>
                             <th>WhatsApp</th>
                             <th>Vistas</th>
@@ -3612,15 +3612,15 @@
                   <form class="smart-catalog-form" id="smartCatalogProductForm">
                     <div class="form-section-head">
                       <span class="mono-label">Productos y servicios</span>
-                      <h3>Agregar al catálogo</h3>
+                      <h3>Agregar a la vitrina</h3>
                     </div>
                     <label>
-                      <span>Catálogo</span>
+                      <span>Vitrina web</span>
                       <select name="catalog_id" id="smartCatalogProductCatalogSelect" required></select>
                     </label>
                     <label class="span-2">
                       <span>Producto registrado</span>
-                      <select name="inventory_product_id" id="smartCatalogInventoryProductSelect" data-product-select data-placeholder="Seleccionar producto de Productos" data-open-label="Crear producto manual en este catálogo"></select>
+                      <select name="inventory_product_id" id="smartCatalogInventoryProductSelect" data-product-select data-placeholder="Seleccionar producto de Productos" data-open-label="Crear producto manual en esta vitrina"></select>
                       <small>Selecciona un producto ya creado para autocompletar nombre, precio y categoría, o deja el formulario manual.</small>
                     </label>
                     <label>
@@ -3703,7 +3703,7 @@
                     </label>
                     <label class="span-2">
                       <span>Mensaje sugerido de WhatsApp</span>
-                      <textarea name="whatsapp_message_template" rows="2" maxlength="600" placeholder="Hola, quiero el {product_name} del catálogo y el beneficio de temporada."></textarea>
+                      <textarea name="whatsapp_message_template" rows="2" maxlength="600" placeholder="Hola, quiero el {product_name} de la vitrina web y el beneficio de temporada."></textarea>
                     </label>
                     <label class="smart-catalog-check">
                       <input name="is_featured" type="checkbox">
@@ -3767,13 +3767,13 @@
                 <div class="smart-catalog-settings">
                   <article>
                     <span class="mono-label">Configuración operativa</span>
-                    <h3>Reglas MVP del catálogo</h3>
-                    <p>El catálogo crea leads básicos si el visitante no viene identificado, registra eventos, crea intención comercial y alimenta RMS con cobertura tipo catálogo.</p>
+                    <h3>Reglas de la vitrina web</h3>
+                    <p>La vitrina web crea leads básicos si el visitante no viene identificado, registra eventos, crea intención comercial y alimenta RMS con cobertura de vitrina.</p>
                   </article>
                   <article>
                     <span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>
                     <strong>QR y activaciones</strong>
-                    <p>Conecta el catálogo desde campañas, QR o activaciones para medir origen, aliado, gimnasio o sucursal.</p>
+                    <p>Conecta la vitrina desde campañas, QR o activaciones para medir origen, aliado, gimnasio o sucursal.</p>
                   </article>
                   <article>
                     <span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span>
@@ -7519,7 +7519,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=modal-backdrop-guard-v276-20260810" defer></script>
+<script src="js/app.js?v=vitrina-web-v277-20260810" defer></script>
     <script src="js/communications.js?v=communications-measured-delivery-v6-20260810" defer></script>
 </body>
 </html>

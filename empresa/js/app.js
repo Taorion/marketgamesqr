@@ -6203,7 +6203,7 @@ function setView(view) {
       renderInventoryProductOptions();
     }
     loadSmartCatalogData({ quiet: true }).then(renderSmartCatalogView).catch((error) => {
-      showFeedback(error.message || "No se pudo cargar Catálogos Qori.", "error", { title: "Catálogos Qori" });
+      showFeedback(error.message || "No se pudo cargar la vitrina web.", "error", { title: "Vitrina web Qori" });
       renderSmartCatalogView();
     });
   }
@@ -10303,17 +10303,17 @@ function renderSmartCatalogCatalogOptions() {
   if (!state.smartCatalogSelectedCatalogId && catalogs[0]) state.smartCatalogSelectedCatalogId = catalogs[0].id;
   smartCatalogProductCatalogSelect.innerHTML = catalogs.length
     ? catalogs.map((catalog) => `<option value="${escapeHtml(catalog.id)}" ${catalog.id === state.smartCatalogSelectedCatalogId ? "selected" : ""}>${escapeHtml(catalog.title)}</option>`).join("")
-    : '<option value="">Crea un catálogo primero</option>';
+    : '<option value="">Crea una vitrina web primero</option>';
 }
 
 function renderSmartCatalogDashboard() {
   if (!smartCatalogDashboardGrid) return;
   const summary = state.smartCatalogDashboard?.summary || {};
   const metrics = [
-    ["Catálogos activos", summary.active_catalogs, "Landings públicas listas"],
-    ["Vistas", summary.catalog_views, "Tráfico medido en catálogo"],
+    ["Vitrinas activas", summary.active_catalogs, "Páginas públicas listas"],
+    ["Vistas", summary.catalog_views, "Tráfico medido en la vitrina"],
     ["Clics WhatsApp", summary.whatsapp_clicks, "Señales de intención"],
-    ["Leads creados", summary.leads_created, "Captura desde catálogo"],
+    ["Leads creados", summary.leads_created, "Captura desde la vitrina"],
     ["Revenue potencial", summary.revenue_potential, "Valor estimado por producto", "money"],
     ["Vista → WhatsApp", summary.view_to_whatsapp_rate, "Conversión de interés", "rate"],
   ];
@@ -10334,8 +10334,8 @@ function renderSmartCatalogPublishPanel() {
     smartCatalogPublicLink.textContent = catalog
       ? (published
         ? `${catalog.title} · ${url}`
-        : `${catalog.title} · publica el catálogo para activar su enlace`)
-      : "Selecciona o crea un catálogo activo.";
+        : `${catalog.title} · publica la vitrina para activar su enlace`)
+      : "Selecciona o crea una vitrina activa.";
   }
   if (smartCatalogCopyLinkButton) smartCatalogCopyLinkButton.disabled = !url || !published;
   if (smartCatalogOpenPublicButton) smartCatalogOpenPublicButton.disabled = !url || !published;
@@ -10362,7 +10362,7 @@ function renderSmartCatalogTables() {
           </td>
         </tr>
       `;
-    }).join("") : '<tr><td colspan="5">Crea tu primer catálogo accionable para publicar una landing conectada a WhatsApp.</td></tr>';
+    }).join("") : '<tr><td colspan="5">Crea tu primera vitrina web para publicar una página conectada a WhatsApp.</td></tr>';
   }
 
   if (smartCatalogProductTable) {
@@ -10390,7 +10390,7 @@ function renderSmartCatalogTables() {
     const intents = state.smartCatalogIntents || [];
     smartCatalogIntentTable.innerHTML = intents.length ? intents.map((intent) => `
       <tr>
-        <td><strong>${escapeHtml(intent.lead_name || intent.customer_name || "Lead de catálogo")}</strong><small>${escapeHtml(intent.lead_phone || intent.customer_phone || intent.customer_email || "")}</small></td>
+        <td><strong>${escapeHtml(intent.lead_name || intent.customer_name || "Lead de vitrina web")}</strong><small>${escapeHtml(intent.lead_phone || intent.customer_phone || intent.customer_email || "")}</small></td>
         <td><strong>${escapeHtml(intent.product_name || "Producto")}</strong><small>${escapeHtml(intent.catalog_title || "")}</small></td>
         <td><span class="status-chip ${smartCatalogStatusClass(intent.status)}">${escapeHtml(smartCatalogStatusLabel(intent.status))}</span></td>
         <td>${money(intent.sale_amount || intent.product_price || 0)}</td>
@@ -10446,10 +10446,10 @@ function renderSmartCatalogWorkbench() {
       <div class="smart-catalog-workbench-head">
         <div>
           <span class="mono-label">Paso 1</span>
-          <h3>Elige tu catálogo</h3>
-          <p class="table-secondary">${catalogs.length ? "Selecciona uno para continuar con su oferta." : "Aún no tienes catálogos. Crea el primero para empezar."}</p>
+          <h3>Elige tu vitrina web</h3>
+          <p class="table-secondary">${catalogs.length ? "Selecciona una para continuar con su oferta." : "Aún no tienes vitrinas. Crea la primera para empezar."}</p>
         </div>
-        <button class="ghost-button compact" type="button" data-smart-catalog-jump="catalogs">${catalogs.length ? "Administrar" : "Crear catálogo"}</button>
+        <button class="ghost-button compact" type="button" data-smart-catalog-jump="catalogs">${catalogs.length ? "Administrar" : "Crear vitrina"}</button>
       </div>
       <div class="smart-catalog-card-list">
         ${catalogs.length ? catalogs.map((catalog) => {
@@ -10457,7 +10457,7 @@ function renderSmartCatalogWorkbench() {
           return `
             <button class="smart-catalog-card-button ${active ? "is-active" : ""}" type="button" data-smart-catalog-workbench-select="${escapeHtml(catalog.id)}">
               <span class="smart-catalog-card-top">
-                <span><strong>${escapeHtml(catalog.title || "Catálogo")}</strong><small>${escapeHtml(catalog.brand_name || catalog.slug || "")}</small></span>
+                <span><strong>${escapeHtml(catalog.title || "Vitrina web")}</strong><small>${escapeHtml(catalog.brand_name || catalog.slug || "")}</small></span>
                 <span class="status-chip ${smartCatalogStatusClass(catalog.status)}">${escapeHtml(smartCatalogStatusLabel(catalog.status))}</span>
               </span>
               <span class="smart-catalog-card-metrics">
@@ -10467,15 +10467,15 @@ function renderSmartCatalogWorkbench() {
               </span>
             </button>
           `;
-        }).join("") : '<div class="empty-state compact">Cuando crees el catálogo aparecerá aquí y podrás agregar su oferta.</div>'}
+        }).join("") : '<div class="empty-state compact">Cuando crees la vitrina aparecerá aquí y podrás agregar su oferta.</div>'}
       </div>
     </article>
     <article class="smart-catalog-workbench-card is-primary">
       <div class="smart-catalog-workbench-head">
         <div>
           <span class="mono-label">Siguiente paso</span>
-          <h3>${escapeHtml(activeCatalog?.title || "Crea tu primer catálogo")}</h3>
-          <p class="table-secondary">${activeCatalog ? escapeHtml(activeCatalog.description || "Este catálogo ya está listo para recibir productos.") : "Solo necesitas un nombre y el WhatsApp que recibirá las consultas."}</p>
+          <h3>${escapeHtml(activeCatalog?.title || "Crea tu primera vitrina web")}</h3>
+          <p class="table-secondary">${activeCatalog ? escapeHtml(activeCatalog.description || "Esta vitrina ya está lista para recibir productos.") : "Solo necesitas un nombre y el WhatsApp que recibirá las consultas."}</p>
         </div>
         ${activeCatalog ? `<span class="status-chip ${smartCatalogStatusClass(activeCatalog.status)}">${escapeHtml(smartCatalogStatusLabel(activeCatalog.status))}</span>` : ""}
       </div>
@@ -10488,7 +10488,7 @@ function renderSmartCatalogWorkbench() {
           <span><strong>${Number(activeCatalog?.intent_count || 0).toLocaleString("es-CO")}</strong><small>Interesados</small></span>
         </div>
         <div class="smart-catalog-active-actions">
-          <button class="solid-button compact" type="button" data-smart-catalog-jump="${activeCatalog ? "products" : "catalogs"}">${activeCatalog ? "Agregar productos" : "Crear catálogo"}</button>
+          <button class="solid-button compact" type="button" data-smart-catalog-jump="${activeCatalog ? "products" : "catalogs"}">${activeCatalog ? "Agregar productos" : "Crear vitrina"}</button>
           <button class="ghost-button compact" type="button" data-smart-catalog-workbench-copy ${activeCatalog ? "" : "disabled"}>Copiar enlace</button>
           <button class="ghost-button compact" type="button" data-smart-catalog-jump="intents" ${activeCatalog ? "" : "disabled"}>Ver interesados</button>
         </div>
@@ -10504,11 +10504,11 @@ function renderSmartCatalogWorkbench() {
     <article class="smart-catalog-workbench-hero">
       <div>
         <span class="mono-label">Panel de trabajo</span>
-        <h3>Catálogo claro, productos visibles y beneficios que venden</h3>
+        <h3>Vitrina web clara, productos visibles y beneficios que venden</h3>
         <p>Primero selecciona o crea una vitrina. Después agrega productos con precio, WhatsApp y beneficio de temporada. Las intenciones quedan listas para seguimiento comercial.</p>
       </div>
       <div class="smart-catalog-workbench-actions">
-        <button class="solid-button compact" type="button" data-smart-catalog-jump="catalogs">Crear catálogo</button>
+        <button class="solid-button compact" type="button" data-smart-catalog-jump="catalogs">Crear vitrina web</button>
         <button class="ghost-button compact" type="button" data-smart-catalog-jump="products" ${activeCatalog ? "" : "disabled"}>Agregar producto</button>
         <button class="ghost-button compact" type="button" data-smart-catalog-jump="intents">Ver intenciones</button>
       </div>
@@ -10516,9 +10516,9 @@ function renderSmartCatalogWorkbench() {
     <article class="smart-catalog-workbench-card">
       <div class="smart-catalog-workbench-head">
         <div>
-          <span class="mono-label">Catálogos creados</span>
+          <span class="mono-label">Vitrinas creadas</span>
           <h3>Selecciona una vitrina</h3>
-          <p class="table-secondary">${catalogs.length.toLocaleString("es-CO")} catálogo(s) disponibles.</p>
+          <p class="table-secondary">${catalogs.length.toLocaleString("es-CO")} vitrina(s) disponibles.</p>
         </div>
         <button class="ghost-button compact" type="button" data-smart-catalog-jump="catalogs">Crear</button>
       </div>
@@ -10528,7 +10528,7 @@ function renderSmartCatalogWorkbench() {
           return `
             <button class="smart-catalog-card-button ${active ? "is-active" : ""}" type="button" data-smart-catalog-workbench-select="${escapeHtml(catalog.id)}">
               <span class="smart-catalog-card-top">
-                <span><strong>${escapeHtml(catalog.title || "Catálogo")}</strong><small>${escapeHtml(catalog.brand_name || catalog.slug || "")}</small></span>
+                <span><strong>${escapeHtml(catalog.title || "Vitrina web")}</strong><small>${escapeHtml(catalog.brand_name || catalog.slug || "")}</small></span>
                 <span class="status-chip ${smartCatalogStatusClass(catalog.status)}">${escapeHtml(smartCatalogStatusLabel(catalog.status))}</span>
               </span>
               <span class="smart-catalog-card-metrics">
@@ -10538,21 +10538,21 @@ function renderSmartCatalogWorkbench() {
               </span>
             </button>
           `;
-        }).join("") : '<div class="empty-state compact">Crea tu primer catálogo para poder agregar productos y beneficios.</div>'}
+        }).join("") : '<div class="empty-state compact">Crea tu primera vitrina web para poder agregar productos y beneficios.</div>'}
       </div>
     </article>
     <article class="smart-catalog-workbench-card is-primary">
       <div class="smart-catalog-workbench-head">
         <div>
-          <span class="mono-label">Catálogo seleccionado</span>
-          <h3>${escapeHtml(activeCatalog?.title || "Sin catálogo activo")}</h3>
-          <p class="table-secondary">${activeCatalog ? escapeHtml(activeCatalog.description || "Landing pública conectada a WhatsApp.") : "Crea o selecciona un catálogo para continuar."}</p>
+          <span class="mono-label">Vitrina seleccionada</span>
+          <h3>${escapeHtml(activeCatalog?.title || "Sin vitrina activa")}</h3>
+          <p class="table-secondary">${activeCatalog ? escapeHtml(activeCatalog.description || "Página pública conectada a WhatsApp.") : "Crea o selecciona una vitrina para continuar."}</p>
         </div>
         ${activeCatalog ? `<span class="status-chip ${smartCatalogStatusClass(activeCatalog.status)}">${escapeHtml(smartCatalogStatusLabel(activeCatalog.status))}</span>` : ""}
       </div>
       <div class="smart-catalog-active-panel">
         <h3>${activeCatalog ? `${products.length.toLocaleString("es-CO")} producto(s) en esta vitrina` : "Flujo recomendado"}</h3>
-        <p>${activeCatalog ? `WhatsApp receptor: ${escapeHtml(activeCatalog.whatsapp_number || "-")}. Link público: ${escapeHtml(smartCatalogPublicUrl(activeCatalog))}` : "1. Crea catálogo. 2. Selecciona productos. 3. Agrega beneficio de temporada. 4. Publica el link."}</p>
+        <p>${activeCatalog ? `WhatsApp receptor: ${escapeHtml(activeCatalog.whatsapp_number || "-")}. Enlace público: ${escapeHtml(smartCatalogPublicUrl(activeCatalog))}` : "1. Crea vitrina. 2. Selecciona productos. 3. Agrega beneficio de temporada. 4. Publica el enlace."}</p>
         <div class="smart-catalog-active-metrics">
           <span><strong>${Number(activeCatalog?.product_count || products.length || 0).toLocaleString("es-CO")}</strong><small>Productos</small></span>
           <span><strong>${Number(activeCatalog?.view_count || 0).toLocaleString("es-CO")}</strong><small>Vistas</small></span>
@@ -10581,7 +10581,7 @@ function renderSmartCatalogWorkbench() {
               ${productBenefits.length ? `<div class="smart-catalog-product-tags">${productBenefits.slice(0, 3).map((benefit) => `<span class="pill muted">${escapeHtml(benefit)}</span>`).join("")}</div>` : ""}
             </article>
           `;
-        }).join("") : '<div class="empty-state compact">Este catálogo aún no tiene productos. Usa “Agregar productos” y añade beneficios de temporada.</div>'}
+        }).join("") : '<div class="empty-state compact">Esta vitrina aún no tiene productos. Usa “Agregar productos” y añade beneficios de temporada.</div>'}
       </div>
     </article>
     <article class="smart-catalog-workbench-card">
@@ -10606,8 +10606,8 @@ function renderSmartCatalogWorkbench() {
         `}
       </div>
       <div class="smart-catalog-guide-list">
-        <article><span>1</span><div><strong>Crea catálogo</strong><small>Nombre, WhatsApp, marca y campaña.</small></div></article>
-        <article><span>2</span><div><strong>Selecciona productos</strong><small>Usa el catálogo activo y agrega la oferta.</small></div></article>
+        <article><span>1</span><div><strong>Crea vitrina web</strong><small>Nombre, WhatsApp, marca y campaña.</small></div></article>
+        <article><span>2</span><div><strong>Selecciona productos</strong><small>Usa la vitrina activa y agrega la oferta.</small></div></article>
         <article><span>3</span><div><strong>Beneficio temporada</strong><small>Descuento, regalo, combo o bono visible.</small></div></article>
       </div>
     </article>
@@ -10668,7 +10668,7 @@ async function loadSmartCatalogDetail(catalogId, options = {}) {
   state.smartCatalogs = (state.smartCatalogs || []).map((catalog) => (
     catalog.id === data.catalog?.id ? { ...catalog, ...data.catalog } : catalog
   ));
-  if (!options.quiet) showFeedback("Catálogo seleccionado.", "success", { title: "Catálogos Qori" });
+  if (!options.quiet) showFeedback("Vitrina web seleccionada.", "success", { title: "Vitrina web Qori" });
 }
 
 function setSmartCatalogTab(tab) {
@@ -10690,11 +10690,11 @@ function ensureSmartCatalogCreateModal() {
     <article class="modal-card smart-catalog-create-modal-card" role="document">
       <div class="modal-head">
         <div>
-          <span class="mono-label">NUEVO CATÁLOGO</span>
-          <h3 id="smartCatalogCreateModalTitle">Crea una vitrina pública</h3>
+          <span class="mono-label">NUEVA VITRINA WEB</span>
+          <h3 id="smartCatalogCreateModalTitle">Crea tu vitrina web</h3>
           <p>Define tu marca y WhatsApp. Después agrega productos y comparte el enlace.</p>
         </div>
-        <button class="icon-button" type="button" data-close-smart-catalog-create aria-label="Cerrar creación de catálogo"><span class="material-symbols-outlined">close</span></button>
+        <button class="icon-button" type="button" data-close-smart-catalog-create aria-label="Cerrar creación de vitrina web"><span class="material-symbols-outlined">close</span></button>
       </div>
     </article>
   `;
@@ -10718,8 +10718,8 @@ function openSmartCatalogCreateModal() {
   if (statusField) statusField.value = "DRAFT";
   const title = modal.querySelector("#smartCatalogCreateModalTitle");
   const copy = modal.querySelector(".modal-head p");
-  if (title) title.textContent = "Crea una vitrina pública";
-  if (copy) copy.textContent = "Define tu marca y WhatsApp. Podrás publicar la vitrina cuando la oferta esté lista.";
+  if (title) title.textContent = "Crea tu vitrina web";
+  if (copy) copy.textContent = "Define tu marca y WhatsApp. Podrás activarla cuando la oferta esté lista.";
   modal.classList.remove("hidden");
   window.setTimeout(() => smartCatalogForm?.querySelector('[name="title"]')?.focus({ preventScroll: true }), 40);
 }
@@ -10761,7 +10761,7 @@ function ensureSmartCatalogProductModal() {
     <article class="modal-card smart-catalog-product-modal-card" role="document">
       <div class="modal-head">
         <div>
-          <span class="mono-label">OFERTA DEL CATÁLOGO</span>
+          <span class="mono-label">OFERTA DE LA VITRINA WEB</span>
           <h3 id="smartCatalogProductModalTitle">Agregar producto o servicio</h3>
           <p>Conecta un producto existente o crea una oferta especial para esta vitrina.</p>
         </div>
@@ -10788,7 +10788,7 @@ function openSmartCatalogProductModal(options = {}) {
   const catalogId = options.catalogId || state.smartCatalogSelectedCatalogId;
   if (!catalogId) {
     openSmartCatalogCreateModal();
-    showFeedback("Primero crea la vitrina donde se publicará la oferta.", "info", { title: "Catálogos Qori" });
+    showFeedback("Primero crea la vitrina donde se publicará la oferta.", "info", { title: "Vitrina web Qori" });
     return;
   }
   const modal = ensureSmartCatalogProductModal();
@@ -10822,7 +10822,7 @@ function openSmartCatalogProductModal(options = {}) {
   const submit = smartCatalogProductForm.querySelector('button[type="submit"]');
   if (title) title.textContent = product ? "Edita la oferta" : "Agregar producto o servicio";
   if (copy) copy.textContent = product ? "Actualiza precio, disponibilidad y mensaje de WhatsApp sin borrar sus resultados." : "Elige un producto registrado o crea una oferta nueva para la vitrina seleccionada.";
-  if (submit) submit.textContent = product ? "Guardar cambios" : "Agregar al catálogo";
+  if (submit) submit.textContent = product ? "Guardar cambios" : "Agregar a la vitrina";
   modal.classList.remove("hidden");
   window.setTimeout(() => smartCatalogProductForm.querySelector('[name="name"]')?.focus({ preventScroll: true }), 40);
 }
@@ -10831,7 +10831,7 @@ function normalizeSmartCatalogWorkspace() {
   const view = document.querySelector('.view-section[data-view="smart-catalogs"]');
   const listCard = smartCatalogTable?.closest(".smart-catalog-table-card");
   if (!view || !listCard) return;
-  view.querySelector('[data-smart-catalog-tab="catalogs"]')?.replaceChildren("Mis catálogos");
+  view.querySelector('[data-smart-catalog-tab="catalogs"]')?.replaceChildren("Mis vitrinas");
   view.querySelector('[data-smart-catalog-tab="dashboard"]')?.replaceChildren("Cómo funciona");
   const head = listCard.querySelector(":scope > .table-card-head");
   if (head && !head.querySelector("[data-open-smart-catalog-create]")) {
@@ -10839,7 +10839,7 @@ function normalizeSmartCatalogWorkspace() {
     button.className = "solid-button compact";
     button.type = "button";
     button.dataset.openSmartCatalogCreate = "true";
-    button.textContent = "Crear catálogo";
+    button.textContent = "Crear vitrina web";
     button.addEventListener("click", openSmartCatalogCreateModal);
     head.appendChild(button);
   }
@@ -10861,14 +10861,14 @@ async function refreshSmartCatalogs(options = {}) {
   state.smartCatalogLoaded = false;
   await loadSmartCatalogData({ force: true });
   renderSmartCatalogView();
-  if (!options.quiet) showFeedback("Catálogos Qori actualizado.", "success", { title: "Qori Smart Catalog" });
+  if (!options.quiet) showFeedback("Vitrina web actualizada.", "success", { title: "Vitrina web Qori" });
 }
 
 async function submitSmartCatalog(event) {
   event.preventDefault();
   if (!smartCatalogForm) return;
   const editingCatalogId = smartCatalogForm.dataset.editingCatalogId || "";
-  setInlineMessage(smartCatalogMessage, editingCatalogId ? "Guardando cambios del catálogo..." : "Creando catálogo accionable...", "info");
+  setInlineMessage(smartCatalogMessage, editingCatalogId ? "Guardando cambios de la vitrina..." : "Creando vitrina web...", "info");
   try {
     const payload = smartCatalogFormPayload(smartCatalogForm);
     const data = await api(editingCatalogId ? `/api/business/catalogs/${encodeURIComponent(editingCatalogId)}` : "/api/business/catalogs", {
@@ -10879,12 +10879,12 @@ async function submitSmartCatalog(event) {
     state.smartCatalogSelectedCatalogId = data.catalog?.id || state.smartCatalogSelectedCatalogId;
     smartCatalogForm.reset();
     delete smartCatalogForm.dataset.editingCatalogId;
-    setInlineMessage(smartCatalogMessage, editingCatalogId ? "Catálogo actualizado." : "Catálogo creado. Agrega productos y comparte el link público.", "success");
+    setInlineMessage(smartCatalogMessage, editingCatalogId ? "Vitrina web actualizada." : "Vitrina web creada. Agrega productos y comparte el enlace público.", "success");
     await refreshSmartCatalogs({ quiet: true });
     closeSmartCatalogCreateModal();
     setSmartCatalogTab(editingCatalogId ? "catalogs" : "products");
   } catch (error) {
-    setInlineMessage(smartCatalogMessage, error.message || "No se pudo crear el catálogo.", "error");
+    setInlineMessage(smartCatalogMessage, error.message || "No se pudo crear la vitrina web.", "error");
   }
 }
 
@@ -10897,13 +10897,13 @@ async function submitSmartCatalogProduct(event) {
   prepareSmartCatalogProductPayload(payload);
   const catalogId = payload.catalog_id || state.smartCatalogSelectedCatalogId;
   if (!catalogId) {
-    setInlineMessage(smartCatalogProductMessage, "Primero crea o selecciona un catálogo.", "error");
+    setInlineMessage(smartCatalogProductMessage, "Primero crea o selecciona una vitrina.", "error");
     return;
   }
   payload.price = payload.price === null ? null : Number(payload.price || 0);
   payload.is_featured = smartCatalogProductForm.querySelector('[name="is_featured"]')?.checked || false;
   delete payload.catalog_id;
-  setInlineMessage(smartCatalogProductMessage, editingProductId ? "Guardando cambios de la oferta..." : "Agregando producto al catálogo...", "info");
+  setInlineMessage(smartCatalogProductMessage, editingProductId ? "Guardando cambios de la oferta..." : "Agregando producto a la vitrina...", "info");
   try {
     await api(editingProductId
       ? `/api/business/catalogs/${encodeURIComponent(catalogId)}/products/${encodeURIComponent(editingProductId)}`
@@ -10933,16 +10933,16 @@ async function copySmartCatalogLink(catalogId = "") {
     ? (state.smartCatalogs || []).find((item) => item.id === catalogId)
     : smartCatalogSelectedCatalog();
   if (catalog?.status !== "ACTIVE") {
-    showFeedback("Publica el catálogo antes de compartir su enlace.", "info", { title: "Catálogos Qori" });
+    showFeedback("Publica la vitrina antes de compartir su enlace.", "info", { title: "Vitrina web Qori" });
     return;
   }
   const url = smartCatalogPublicUrl(catalog);
   if (!url) return;
   try {
     await navigator.clipboard.writeText(url);
-    showFeedback("Link público copiado.", "success", { title: "Catálogos Qori" });
+    showFeedback("Enlace público copiado.", "success", { title: "Vitrina web Qori" });
   } catch {
-    window.prompt("Link público del catálogo", url);
+    window.prompt("Enlace público de la vitrina web", url);
   }
 }
 
@@ -10956,9 +10956,9 @@ async function updateSmartCatalogStatus(catalogId, status) {
       body: JSON.stringify({ status }),
     });
     await refreshSmartCatalogs({ quiet: true });
-    showFeedback(`Catálogo ${label}. Puedes cambiar este estado cuando quieras.`, "success", { title: "Catálogos Qori" });
+    showFeedback(`Vitrina web ${label}. Puedes cambiar este estado cuando quieras.`, "success", { title: "Vitrina web Qori" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo actualizar la publicación.", "error", { title: "Catálogos Qori" });
+    showFeedback(error.message || "No se pudo actualizar la publicación.", "error", { title: "Vitrina web Qori" });
   }
 }
 
@@ -10992,7 +10992,7 @@ async function smartCatalogIntentAction(intentId, action) {
         headers: authHeaders(),
         body: JSON.stringify({ status: "CONTACTED" }),
       });
-      showFeedback("Tarea creada y consulta marcada como contactada.", "success", { title: "Catálogos Qori" });
+      showFeedback("Tarea creada y consulta marcada como contactada.", "success", { title: "Vitrina web Qori" });
     }
     if (action === "won") {
       await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}/mark-won`, {
@@ -11001,10 +11001,10 @@ async function smartCatalogIntentAction(intentId, action) {
         body: JSON.stringify({
           sale_amount: intent?.sale_amount || intent?.product_price || 0,
           currency: intent?.sale_currency || intent?.product_currency || "COP",
-          notes: "Venta marcada desde Catálogos Qori.",
+          notes: "Venta marcada desde Vitrina web Qori.",
         }),
       });
-      showFeedback("Venta marcada y enviada a RMS.", "success", { title: "Catálogos Qori" });
+      showFeedback("Venta marcada y enviada a RMS.", "success", { title: "Vitrina web Qori" });
     }
     if (action === "ticket") {
       await api(`/api/business/catalogs/intents/${encodeURIComponent(intentId)}/send-post-sale-ticket`, {
@@ -11021,7 +11021,7 @@ async function smartCatalogIntentAction(intentId, action) {
     }
     await refreshSmartCatalogs({ quiet: true });
   } catch (error) {
-    showFeedback(error.message || "No se pudo ejecutar la acción.", "error", { title: "Catálogos Qori" });
+    showFeedback(error.message || "No se pudo ejecutar la acción.", "error", { title: "Vitrina web Qori" });
   }
 }
 
@@ -48224,7 +48224,7 @@ const PORTAL_SEARCH_TARGETS = [
   { view: "rms-machine", label: "Estaciones RMS", keywords: "estaciones rms maquina fabrica leads recolectar" },
   { view: "campaigns", label: "Campañas y QR", keywords: "campana campañas qr oferta" },
   { view: "strategic-qr", label: "Activaciones", keywords: "activacion activaciones juegos dinamicas tickets" },
-  { view: "smart-catalogs", label: "Catálogos", keywords: "catalogo catalogos productos oferta" },
+  { view: "smart-catalogs", label: "Vitrina web", keywords: "vitrina web catalogo catalogos productos oferta" },
   { view: "inventory", label: "Productos e inventario", keywords: "producto productos inventario" },
   { view: "leads", label: "Contactos y leads", keywords: "cliente clientes contacto contactos lead leads" },
   { view: "sales", label: "Ventas", keywords: "venta ventas revenue" },
@@ -49587,10 +49587,10 @@ smartCatalogTabButtons.forEach((button) => {
   button.addEventListener("click", () => setSmartCatalogTab(button.dataset.smartCatalogTab || "dashboard"));
 });
 document.getElementById("smartCatalogCreateButton")?.addEventListener("click", openSmartCatalogCreateModal);
-smartCatalogRefreshButton?.addEventListener("click", () => refreshSmartCatalogs().catch((error) => showFeedback(error.message, "error", { title: "Catálogos Qori" })));
+smartCatalogRefreshButton?.addEventListener("click", () => refreshSmartCatalogs().catch((error) => showFeedback(error.message, "error", { title: "Vitrina web Qori" })));
 smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
   try {
-    showFeedback("Creando plantilla Productos de la Doctora Angie...", "loading", { title: "Catálogos Qori", timeout: 0 });
+    showFeedback("Creando plantilla Productos de la Doctora Angie...", "loading", { title: "Vitrina web Qori", timeout: 0 });
     const data = await api("/api/business/catalogs/templates/doctor-angie", {
       method: "POST",
       headers: authHeaders(),
@@ -49599,9 +49599,9 @@ smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
     state.smartCatalogSelectedCatalogId = data.catalog?.id || state.smartCatalogSelectedCatalogId;
     await refreshSmartCatalogs({ quiet: true });
     setSmartCatalogTab("products");
-    showFeedback("Plantilla creada. Revisa productos y WhatsApp antes de publicar.", "success", { title: "Catálogos Qori" });
+    showFeedback("Plantilla creada. Revisa productos y WhatsApp antes de publicar.", "success", { title: "Vitrina web Qori" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo crear la plantilla.", "error", { title: "Catálogos Qori" });
+    showFeedback(error.message || "No se pudo crear la plantilla.", "error", { title: "Vitrina web Qori" });
   }
 });
 function isQoriModalBackdrop(target) {
