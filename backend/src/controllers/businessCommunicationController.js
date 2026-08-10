@@ -25,6 +25,13 @@ const communicationFieldsSchema = z.object({
   channel_id: z.string().uuid().optional().nullable(),
   activation_id: z.string().uuid().optional().nullable(),
   web_showcase_id: z.string().uuid().optional().nullable(),
+  web_showcase_product_id: z.string().uuid().optional().nullable(),
+  product_promotion: z.object({
+    label: z.string().trim().min(2).max(140),
+    promotional_price: z.coerce.number().min(0).max(1_000_000_000),
+    starts_at: z.string().trim().min(10).max(80),
+    ends_at: z.string().trim().min(10).max(80),
+  }).optional().nullable(),
   subject: z.string().trim().max(220).optional().nullable(),
   email_body: z.string().trim().max(12000).optional().nullable(),
   whatsapp_body: z.string().trim().max(3000).optional().nullable(),

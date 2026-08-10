@@ -219,6 +219,13 @@ html body > #communicationComposerModal .communication-composer-modal { width: m
 #communicationComposerModal .communication-type-switch input { accent-color: #fff; }
 #communicationComposerModal .communication-composer-grid { grid-template-columns: minmax(220px, 1.7fr) repeat(3, minmax(140px, 1fr)); gap: 14px 16px; }
 #communicationComposerModal .communication-composer-grid .communication-title-field { grid-column: auto; }
+#communicationComposerModal .communication-product-promotion-control { display: grid; grid-column: span 2; gap: 10px; margin: 0; padding: 13px; border: 1px solid rgba(7, 89, 214, .14); border-radius: 14px; background: linear-gradient(135deg, rgba(7, 89, 214, .055), rgba(8, 174, 224, .035)); }
+#communicationComposerModal .communication-product-promotion-control legend { padding: 0; color: #123d78; font-size: .82rem; font-weight: 850; }
+#communicationComposerModal .communication-product-promotion-control legend label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+#communicationComposerModal .communication-product-promotion-control legend input { width: 16px; min-height: 16px; accent-color: #0759d6; }
+#communicationComposerModal .communication-product-promotion-control > small { color: #5e7999; font-size: .78rem; line-height: 1.4; }
+#communicationComposerModal .communication-product-promotion-fields { display: grid; grid-template-columns: minmax(180px, 1.4fr) repeat(3, minmax(145px, 1fr)); gap: 10px; }
+#communicationComposerModal .communication-product-promotion-fields.hidden { display: none; }
 #communicationComposerModal .communication-composer-form label { color: #35577f; }
 #communicationComposerModal .communication-composer-form label > span { font-size: .74rem; font-weight: 900; letter-spacing: .035em; text-transform: uppercase; }
 #communicationComposerModal .communication-composer-form input:not([type="checkbox"]):not([type="radio"]), #communicationComposerModal .communication-composer-form select, #communicationComposerModal .communication-composer-form textarea { min-height: 48px; border: 1px solid rgba(95, 150, 207, .34); border-radius: 12px; background: #fff; color: #092e68; box-shadow: none; transition: border-color .18s ease, box-shadow .18s ease; }
@@ -264,6 +271,8 @@ html body > #communicationComposerModal .communication-composer-modal { width: m
   #communicationComposerModal .communication-composer-head, #communicationComposerModal .communication-composer-scroll { padding-inline: 28px; }
   #communicationComposerModal .modal-actions { padding-inline: 28px; }
   #communicationComposerModal .communication-composer-grid, #communicationComposerModal .communication-media-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #communicationComposerModal .communication-product-promotion-control { grid-column: span 2; }
+  #communicationComposerModal .communication-product-promotion-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #communicationComposerModal .communication-title-field { grid-column: span 2 !important; }
   #communicationComposerModal .communication-composer-audience-filters { grid-template-columns: 1fr 1fr; }
 }
@@ -276,7 +285,8 @@ html body > #communicationComposerModal .communication-composer-modal { width: m
   #communicationComposerModal .modal-actions { align-items: stretch; flex-direction: column; padding: 13px 20px; }
   #communicationComposerModal .modal-button-row { display: grid; grid-template-columns: 1fr 1fr; }
   #communicationComposerModal .modal-button-row > .solid-button { grid-column: span 2; }
-  #communicationComposerModal .communication-composer-grid, #communicationComposerModal .communication-media-controls, #communicationComposerModal .communication-composer-audience-filters { grid-template-columns: 1fr; }
+  #communicationComposerModal .communication-composer-grid, #communicationComposerModal .communication-media-controls, #communicationComposerModal .communication-composer-audience-filters, #communicationComposerModal .communication-product-promotion-fields { grid-template-columns: 1fr; }
+  #communicationComposerModal .communication-product-promotion-control { grid-column: auto; }
   #communicationComposerModal .communication-title-field { grid-column: auto !important; }
   #communicationComposerModal .communication-composer-audience-status { align-items: flex-start; flex-direction: column; gap: 7px; }
   #communicationComposerModal .communication-composer-contact { grid-template-columns:auto 34px minmax(0,1fr); }

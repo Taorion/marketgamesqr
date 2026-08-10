@@ -206,6 +206,121 @@ function publicWebShowcaseUrl(slug) {
   return `${String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "")}/c/${encodeURIComponent(slug)}`;
 }
 
+function publicWebShowcaseProductUrl(catalogSlug, productSlug) {
+  return `${publicWebShowcaseUrl(catalogSlug)}/${encodeURIComponent(productSlug)}`;
+}
+
+function normalizeProductPromotion(value) {
+  if (!value || typeof value !== "object") return null;
+  const promotionalPrice = Number(value.promotional_price);
+  const startsAt = new Date(value.starts_at);
+  const endsAt = new Date(value.ends_at);
+  if (!Number.isFinite(promotionalPrice) || promotionalPrice < 0 || Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime()) || endsAt <= startsAt) {
+    throw badRequest("Define un precio promocional y una vigencia temporal válida.");
+  }
+  return {
+    label: String(value.label || "Promoción temporal").trim().slice(0, 140) || "Promoción temporal",
+    promotional_price: promotionalPrice,
+    starts_at: startsAt.toISOString(),
+    ends_at: endsAt.toISOString(),
+  };
+}
+
+async function normalizeWebShowcaseProductRelation(businessId, payload, existingMetadata = {}) {
+  const hasProductSelection = Object.prototype.hasOwnProperty.call(payload, "web_showcase_product_id");
+  const productId = hasProductSelection ? payload.web_showcase_product_id : existingMetadata?.web_showcase_product_id || null;
+  const metadata = {
+    ...(existingMetadata && typeof existingMetadata === "object" ? existingMetadata : {}),
+    ...(payload.metadata && typeof payload.metadata === "object" ? payload.metadata : {}),
+  };
+  const promotion = Object.prototype.hasOwnProperty.call(payload, "product_promotion")
+    ? normalizeProductPromotion(payload.product_promotion)
+    : existingMetadata?.product_promotion || null;
+  if (promotion) metadata.product_promotion = promotion;
+  else delete metadata.product_promotion;
+  if (!productId) {
+    delete metadata.web_showcase_product_id;
+    delete metadata.web_showcase_product_name;
+    delete metadata.web_showcase_product_slug;
+    return { ...payload, metadata };
+  }
+  const result = await query(
+    `select p.id, p.name, p.slug, p.price, p.catalog_id, c.title as catalog_title, c.slug as catalog_slug
+     from smart_catalog_products p
+     join smart_catalogs c on c.id = p.catalog_id and c.business_id = p.business_id
+     where p.id = $1 and p.business_id = $2 and p.stock_status <> 'HIDDEN'`,
+    [productId, businessId]
+  );
+  if (!result.rowCount) throw badRequest("El producto elegido no pertenece a una vitrina web disponible de esta empresa.");
+  const product = result.rows[0];
+  if (payload.web_showcase_id && String(payload.web_showcase_id) !== String(product.catalog_id)) {
+    throw badRequest("El producto seleccionado debe pertenecer a la vitrina web elegida.");
+  }
+  if (promotion && promotionalPriceIsInvalid(promotion.promotional_price, product.price)) {
+    throw badRequest("El precio promocional debe ser menor que el precio actual del producto.");
+  }
+  return {
+    ...payload,
+    web_showcase_id: product.catalog_id,
+    metadata: {
+      ...metadata,
+      web_showcase_product_id: product.id,
+      web_showcase_product_name: product.name,
+      web_showcase_product_slug: product.slug,
+      web_showcase_product_price: product.price,
+    },
+    action_url: publicWebShowcaseProductUrl(product.catalog_slug, product.slug),
+  };
+}
+
+function promotionalPriceIsInvalid(promotionalPrice, basePrice) {
+  const currentPrice = Number(basePrice);
+  return Number.isFinite(currentPrice) && currentPrice > 0 && Number(promotionalPrice) >= currentPrice;
+}
+
+async function syncCommunicationProductPromotion(businessId, communication) {
+  const productId = communication?.metadata?.web_showcase_product_id;
+  const promotion = String(communication?.status || "").toUpperCase() === "ARCHIVED" ? null : communication?.metadata?.product_promotion || null;
+  if (!productId) return;
+  const result = await query(
+    "select id, price, metadata from smart_catalog_products where id = $1 and business_id = $2",
+    [productId, businessId]
+  );
+  if (!result.rowCount) throw badRequest("El producto de esta comunicación ya no está disponible.");
+  const product = result.rows[0];
+  const productMetadata = product.metadata && typeof product.metadata === "object" ? product.metadata : {};
+  const existingPromotion = productMetadata.active_promotion;
+  if (!promotion) {
+    if (existingPromotion?.communication_id === communication.id) {
+      delete productMetadata.active_promotion;
+      await query("update smart_catalog_products set metadata = $3::jsonb, updated_at = now() where id = $1 and business_id = $2", [product.id, businessId, JSON.stringify(productMetadata)]);
+    }
+    return;
+  }
+  if (promotionalPriceIsInvalid(promotion.promotional_price, product.price)) throw badRequest("El precio promocional debe ser menor que el precio actual del producto.");
+  const existingEndsAt = new Date(existingPromotion?.ends_at || 0).getTime();
+  if (existingPromotion?.communication_id && existingPromotion.communication_id !== communication.id && existingEndsAt > Date.now()) {
+    throw badRequest("Este producto ya tiene una promoción temporal vigente desde otra comunicación.");
+  }
+  productMetadata.active_promotion = {
+    ...promotion,
+    communication_id: communication.id,
+    original_price: Number(product.price || 0),
+    updated_at: new Date().toISOString(),
+  };
+  await query("update smart_catalog_products set metadata = $3::jsonb, updated_at = now() where id = $1 and business_id = $2", [product.id, businessId, JSON.stringify(productMetadata)]);
+}
+
+async function clearCommunicationProductPromotion(businessId, productId, communicationId) {
+  if (!productId) return;
+  const result = await query("select id, metadata from smart_catalog_products where id = $1 and business_id = $2", [productId, businessId]);
+  if (!result.rowCount) return;
+  const metadata = result.rows[0].metadata && typeof result.rows[0].metadata === "object" ? result.rows[0].metadata : {};
+  if (metadata.active_promotion?.communication_id !== communicationId) return;
+  delete metadata.active_promotion;
+  await query("update smart_catalog_products set metadata = $3::jsonb, updated_at = now() where id = $1 and business_id = $2", [productId, businessId, JSON.stringify(metadata)]);
+}
+
 async function normalizeWebShowcaseRelation(businessId, payload, existingMetadata = {}) {
   const hasShowcaseSelection = Object.prototype.hasOwnProperty.call(payload, "web_showcase_id");
   const webShowcaseId = hasShowcaseSelection ? payload.web_showcase_id : existingMetadata?.web_showcase_id || null;
@@ -228,7 +343,9 @@ async function normalizeWebShowcaseRelation(businessId, payload, existingMetadat
   return {
     ...payload,
     metadata: { ...metadata, web_showcase_id: showcase.id, web_showcase_title: showcase.title, web_showcase_slug: showcase.slug },
-    action_url: publicWebShowcaseUrl(showcase.slug),
+    action_url: metadata.web_showcase_product_slug
+      ? publicWebShowcaseProductUrl(showcase.slug, metadata.web_showcase_product_slug)
+      : publicWebShowcaseUrl(showcase.slug),
   };
 }
 
@@ -372,7 +489,8 @@ async function publishBusinessCommunication(businessId, userId, id, payload = {}
 }
 
 async function createBusinessCommunication(businessId, userId, payload) {
-  const normalizedPayload = await normalizeWebShowcaseRelation(businessId, payload);
+  const productNormalizedPayload = await normalizeWebShowcaseProductRelation(businessId, payload);
+  const normalizedPayload = await normalizeWebShowcaseRelation(businessId, productNormalizedPayload);
   await assertRelationBelongsToBusiness(businessId, normalizedPayload);
   const result = await query(
     `insert into business_communications (
@@ -385,6 +503,7 @@ async function createBusinessCommunication(businessId, userId, payload) {
       normalizedPayload.whatsapp_body || null, normalizedPayload.social_copy || null, normalizedPayload.image_url || null, normalizedPayload.action_url || null,
       JSON.stringify(normalizedPayload.audience_filters || {}), JSON.stringify(normalizedPayload.metadata || {}), userId]
   );
+  await syncCommunicationProductPromotion(businessId, result.rows[0]);
   await syncCommunicationChannelEffort(businessId, userId, result.rows[0]);
   return { communication: result.rows[0] };
 }
@@ -392,7 +511,8 @@ async function createBusinessCommunication(businessId, userId, payload) {
 async function updateBusinessCommunication(businessId, userId, id, payload) {
   const existing = await query("select * from business_communications where id = $1 and business_id = $2", [id, businessId]);
   if (!existing.rowCount) throw notFound("Comunicación no encontrada.");
-  const merged = await normalizeWebShowcaseRelation(businessId, { ...existing.rows[0], ...payload }, existing.rows[0].metadata);
+  const productNormalizedPayload = await normalizeWebShowcaseProductRelation(businessId, { ...existing.rows[0], ...payload }, existing.rows[0].metadata);
+  const merged = await normalizeWebShowcaseRelation(businessId, productNormalizedPayload, existing.rows[0].metadata);
   await assertRelationBelongsToBusiness(businessId, merged);
   const result = await query(
     `update business_communications set title=$3, communication_type=$4, status=$5, campaign_id=$6, channel_id=$7,
@@ -404,6 +524,11 @@ async function updateBusinessCommunication(businessId, userId, id, payload) {
       merged.whatsapp_body || null, merged.social_copy || null, merged.image_url || null, merged.action_url || null,
       JSON.stringify(merged.audience_filters || {}), JSON.stringify(merged.metadata || {}), userId]
   );
+  const previousProductId = existing.rows[0].metadata?.web_showcase_product_id || null;
+  if (previousProductId && String(previousProductId) !== String(result.rows[0].metadata?.web_showcase_product_id || "")) {
+    await clearCommunicationProductPromotion(businessId, previousProductId, id);
+  }
+  await syncCommunicationProductPromotion(businessId, result.rows[0]);
   await syncCommunicationChannelEffort(businessId, userId, result.rows[0]);
   return { communication: result.rows[0] };
 }

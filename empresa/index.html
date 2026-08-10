@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="css/dashboard-open-flow.css?v=20260727-v156">
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159">
   <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=activation-builder-catalog-fix-20260728-v177">
-  <link rel="stylesheet" href="css/communications-flow.css?v=communications-measured-delivery-v7-20260810">
+  <link rel="stylesheet" href="css/communications-flow.css?v=communications-product-promotion-v8-20260810">
   <link rel="stylesheet" href="css/revenue-center.css?v=20260731-command-center-v6">
   <link rel="stylesheet" href="css/mobile-shell-guard.css?v=20260729-v1">
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
@@ -7467,6 +7467,8 @@
               <label><span>Canal</span><select id="communicationChannelInput"><option value="">Sin canal</option></select></label>
               <label><span>Activación</span><select id="communicationActivationInput"><option value="">Sin activación</option></select></label>
               <label class="communication-showcase-control"><span>Vitrina web</span><select id="communicationWebShowcaseInput"><option value="">Sin vitrina web</option></select><small>Al elegirla, Qori conecta su enlace público a esta comunicación.</small></label>
+              <label class="communication-showcase-control"><span>Producto de la vitrina</span><select id="communicationWebShowcaseProductInput" disabled><option value="">Primero elige una vitrina web</option></select><small>La comunicación llevará al producto específico.</small></label>
+              <fieldset class="communication-product-promotion-control"><legend><label><input id="communicationProductPromotionEnabledInput" type="checkbox"> Crear promoción temporal</label></legend><div class="communication-product-promotion-fields hidden" id="communicationProductPromotionFields"><label><span>Nombre de la promoción</span><input id="communicationProductPromotionLabelInput" maxlength="140" placeholder="Oferta especial de temporada"></label><label><span>Precio promocional</span><input id="communicationProductPromotionPriceInput" type="number" min="0" step="1" placeholder="0"></label><label><span>Inicia</span><input id="communicationProductPromotionStartsAtInput" type="datetime-local"></label><label><span>Finaliza</span><input id="communicationProductPromotionEndsAtInput" type="datetime-local"></label></div><small>El precio original se conserva y la promoción deja de mostrarse al finalizar la vigencia.</small></fieldset>
             </div>
           </section>
           <section class="communication-composer-section communication-email-fields">

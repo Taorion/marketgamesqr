@@ -153,10 +153,41 @@
     const channel = document.getElementById("communicationChannelInput");
     const activation = document.getElementById("communicationActivationInput");
     const showcase = document.getElementById("communicationWebShowcaseInput");
+    const product = document.getElementById("communicationWebShowcaseProductInput");
+    const selectedCampaign = campaign?.value || "";
+    const selectedChannel = channel?.value || "";
+    const selectedActivation = activation?.value || "";
+    const selectedShowcase = showcase?.value || state.communicationPendingShowcaseId || "";
+    const selectedProduct = product?.value || product?.dataset.selectedProduct || state.communicationPendingProductId || "";
     if (campaign) campaign.innerHTML = '<option value="">Sin campaña</option>' + options(state.campaigns, (item) => item.name || item.title || "Campaña");
     if (channel) channel.innerHTML = '<option value="">Sin canal</option>' + options(state.acquisitionChannels, (item) => [item.name || item.channel_name || "Canal", item.platform].filter(Boolean).join(" · "));
     if (activation) activation.innerHTML = '<option value="">Sin activación</option>' + options(state.triviaLaunchers, (item) => item.title || "Activación");
     if (showcase) showcase.innerHTML = '<option value="">Sin vitrina web</option>' + options(state.smartCatalogs, (item) => `${item.title || "Vitrina web"}${String(item.status || "").toUpperCase() === "ACTIVE" ? "" : " · No publicada"}`);
+    if (campaign) campaign.value = selectedCampaign;
+    if (channel) channel.value = selectedChannel;
+    if (activation) activation.value = selectedActivation;
+    if (showcase) showcase.value = selectedShowcase;
+    if (product) {
+      const showcaseId = showcase?.value || "";
+      const ready = showcaseId && String(state.communicationShowcaseProductsCatalogId || "") === String(showcaseId);
+      product.disabled = !ready;
+      product.innerHTML = ready
+        ? '<option value="">Toda la vitrina web</option>' + options(state.communicationShowcaseProducts, (item) => `${item.name || "Producto"}${item.price !== null && item.price !== undefined ? ` · ${metricMoney(item.price)}` : ""}`)
+        : `<option value="">${showcaseId ? "Cargando productos..." : "Primero elige una vitrina web"}</option>`;
+      if (ready) product.value = selectedProduct;
+    }
+    const promotion = state.communicationPendingPromotion || null;
+    const promotionEnabled = document.getElementById("communicationProductPromotionEnabledInput");
+    if (promotionEnabled) promotionEnabled.checked = Boolean(promotion);
+    if (promotion) {
+      const startsAt = promotion.starts_at ? new Date(promotion.starts_at).toISOString().slice(0, 16) : "";
+      const endsAt = promotion.ends_at ? new Date(promotion.ends_at).toISOString().slice(0, 16) : "";
+      document.getElementById("communicationProductPromotionLabelInput").value = promotion.label || "";
+      document.getElementById("communicationProductPromotionPriceInput").value = promotion.promotional_price ?? "";
+      document.getElementById("communicationProductPromotionStartsAtInput").value = startsAt;
+      document.getElementById("communicationProductPromotionEndsAtInput").value = endsAt;
+    }
+    toggleProductPromotionFields();
   }
 
   function renderMediaPreview() {
@@ -214,6 +245,25 @@
     if (typeof loadSmartCatalogData === "function") {
       await loadSmartCatalogData({ force: true, quiet: true });
     }
+  }
+
+  async function loadCommunicationShowcaseProducts(catalogId) {
+    state.communicationShowcaseProducts = [];
+    state.communicationShowcaseProductsCatalogId = null;
+    if (!catalogId) return;
+    const data = await api(`/api/business/catalogs/${encodeURIComponent(catalogId)}`, { headers: authHeaders() });
+    state.communicationShowcaseProducts = data.products || [];
+    state.communicationShowcaseProductsCatalogId = catalogId;
+  }
+
+  function toggleProductPromotionFields() {
+    const enabled = Boolean(document.getElementById("communicationProductPromotionEnabledInput")?.checked);
+    const fields = document.getElementById("communicationProductPromotionFields");
+    fields?.classList.toggle("hidden", !enabled);
+    ["communicationProductPromotionLabelInput", "communicationProductPromotionPriceInput", "communicationProductPromotionStartsAtInput", "communicationProductPromotionEndsAtInput"].forEach((id) => {
+      const field = document.getElementById(id);
+      if (field) field.required = enabled;
+    });
   }
 
   function positionComposerAudience() {
@@ -378,16 +428,24 @@
     const media = [...assets, ...(url ? [{ source: url, name: "Imagen desde URL" }] : [])].slice(0, MAX_MEDIA_FILES);
     const action = event.submitter?.dataset.communicationSaveAction || "DRAFT";
     const type = form.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL";
+    const promotionEnabled = Boolean(form.querySelector("#communicationProductPromotionEnabledInput")?.checked);
     const recipients = selectedRecipients(type === "WHATSAPP" ? "whatsapp" : "email");
     if (action === "SEND" && !recipients.length) { message.textContent = "Selecciona al menos un contacto antes de enviar."; return; }
     if (action === "SEND" && !document.getElementById("communicationComposerConsentInput")?.checked) { message.textContent = "Confirma el consentimiento antes de enviar."; return; }
     const payload = {
       title: form.querySelector("#communicationTitleInput")?.value.trim(), communication_type: form.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL",
-      campaign_id: form.querySelector("#communicationCampaignInput")?.value || null, channel_id: form.querySelector("#communicationChannelInput")?.value || null, activation_id: form.querySelector("#communicationActivationInput")?.value || null, web_showcase_id: form.querySelector("#communicationWebShowcaseInput")?.value || null,
+      campaign_id: form.querySelector("#communicationCampaignInput")?.value || null, channel_id: form.querySelector("#communicationChannelInput")?.value || null, activation_id: form.querySelector("#communicationActivationInput")?.value || null, web_showcase_id: form.querySelector("#communicationWebShowcaseInput")?.value || null, web_showcase_product_id: form.querySelector("#communicationWebShowcaseProductInput")?.value || null,
+      product_promotion: promotionEnabled ? { label: form.querySelector("#communicationProductPromotionLabelInput")?.value.trim() || "", promotional_price: Number(form.querySelector("#communicationProductPromotionPriceInput")?.value || 0), starts_at: form.querySelector("#communicationProductPromotionStartsAtInput")?.value || "", ends_at: form.querySelector("#communicationProductPromotionEndsAtInput")?.value || "" } : null,
       subject: form.querySelector("#communicationSubjectInput")?.value.trim() || null, email_body: form.querySelector("#communicationEmailBodyInput")?.value.trim() || null, whatsapp_body: form.querySelector("#communicationWhatsAppBodyInput")?.value.trim() || null, social_copy: form.querySelector("#communicationSocialCopyInput")?.value.trim() || null,
       image_url: media[0]?.source || null, action_url: form.querySelector("#communicationActionUrlInput")?.value.trim() || null,
       audience_filters: { ...(state.communicationAudienceFilters || {}) }, metadata: { media_assets: media },
     };
+    if (promotionEnabled && !payload.web_showcase_product_id) {
+      const reason = "Elige el producto específico de la vitrina antes de crear una promoción temporal.";
+      message.textContent = reason;
+      showFeedback(reason, "info", { title: "Falta producto" });
+      return;
+    }
     if (action === "PUBLISH" && (!payload.channel_id || (!payload.activation_id && !payload.web_showcase_id))) {
       const reason = "Para registrar una publicación medida, selecciona el canal y una activación o vitrina web.";
       message.textContent = reason;
@@ -470,6 +528,7 @@
 
   document.addEventListener("click", async (event) => {
     const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const all = event.target.closest("[data-communication-select-loaded]"); const clearSelection = event.target.closest("[data-communication-clear-selection]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const share = event.target.closest("[data-share-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const publish = event.target.closest("[data-publish-communication]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const loadMoreComposerAudience = event.target.closest("[data-load-more-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]"); const clearComposerAudience = event.target.closest("[data-composer-clear-audience]");
+    if (open || edit || duplicate) { const relationKey = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const related = relationKey ? state.communications.find((row) => String(row.id) === String(relationKey)) : null; state.communicationPendingShowcaseId = related?.metadata?.web_showcase_id || ""; state.communicationPendingProductId = related?.metadata?.web_showcase_product_id || ""; state.communicationPendingPromotion = related?.metadata?.product_promotion || null; if (state.communicationPendingShowcaseId) { try { await loadCommunicationShowcaseProducts(state.communicationPendingShowcaseId); } catch (error) { console.warn("No se pudieron cargar los productos de la vitrina.", error); } } }
     if (open || edit || duplicate) { try { await prepareComposerRelations(); } catch (error) { console.warn("No se pudieron actualizar los canales para comunicaciones.", error); } renderOptions(); positionComposerAudience(); }
     if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationWebShowcaseInput").value = item.metadata?.web_showcase_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationWhatsAppBodyInput").value = item.whatsapp_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); } document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
     if (close) { composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); return; }
@@ -496,15 +555,22 @@
     openCommunicationDeliverySummary(state.communications.find((item) => String(item.id) === String(summary.dataset.openCommunicationDeliverySummary)));
   });
 
-  document.addEventListener("change", (event) => {
+  document.addEventListener("change", async (event) => {
     if (event.target.matches("[data-communication-recipient]")) { const selected = new Set(state.communicationSelectedRefs || []); if (event.target.checked && selected.size >= MAX_EMAIL_RECIPIENTS) { event.target.checked = false; showFeedback(`Puedes seleccionar hasta ${MAX_EMAIL_RECIPIENTS} contactos por envío.`, "info", { title: "Destinatarios" }); return; } if (event.target.checked) selected.add(event.target.value); else selected.delete(event.target.value); state.communicationSelectedRefs = Array.from(selected); render(); renderComposerAudience(); }
     if (event.target.matches('input[name="communicationType"]')) toggleComposer();
     if (event.target.matches("#communicationWebShowcaseInput")) {
       const showcase = (state.smartCatalogs || []).find((item) => String(item.id) === String(event.target.value || ""));
       const actionUrl = document.getElementById("communicationActionUrlInput");
       if (showcase && actionUrl) actionUrl.value = showcase.public_url || `${window.location.origin}/c/${encodeURIComponent(showcase.slug || "")}`;
+      try {
+        await loadCommunicationShowcaseProducts(showcase?.id || null);
+        renderOptions();
+      } catch (error) {
+        showFeedback(error.message || "No se pudieron cargar los productos de la vitrina.", "error", { title: "Vitrina web" });
+      }
       toggleComposer();
     }
+    if (event.target.matches("#communicationProductPromotionEnabledInput")) toggleProductPromotionFields();
     if (event.target.matches("#communicationImageUploadInput")) addMediaFiles(event.target.files).finally(() => { event.target.value = ""; });
   });
   document.addEventListener("keydown", (event) => {

@@ -95,6 +95,8 @@ function productInitials(product) {
 
 function productCard(product) {
   const tags = Array.isArray(product.tags) ? product.tags.slice(0, 3) : [];
+  const promotion = product.active_promotion || null;
+  const price = product.price ? `<strong class="product-price">${promotion && product.compare_at_price ? `<s>${escapeHtml(money(product.compare_at_price, product.currency))}</s> ` : ""}${escapeHtml(money(product.price, product.currency))}</strong>` : "";
   return `
     <article class="product-card" data-product-id="${escapeHtml(product.id)}">
       <div class="product-image">
@@ -104,7 +106,8 @@ function productCard(product) {
         <h3>${escapeHtml(product.name)}</h3>
         <p>${escapeHtml(product.short_description || product.description || "Solicita informacion por WhatsApp.")}</p>
       </div>
-      ${product.price ? `<strong class="product-price">${escapeHtml(money(product.price, product.currency))}</strong>` : ""}
+      ${price}
+      ${promotion ? `<span class="product-promotion-badge">${escapeHtml(promotion.label || "Promoción temporal")} · hasta ${escapeHtml(new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(new Date(promotion.ends_at)))}</span>` : ""}
       ${tags.length ? `<div class="tag-row">${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>` : ""}
       <div class="product-actions">
         <button class="primary-button" type="button" data-order-product="${escapeHtml(product.id)}">${escapeHtml(product.cta_label || state.catalog?.default_cta_label || "Ordenar por WhatsApp")}</button>

@@ -233,6 +233,25 @@ input {
   font-weight: 900;
 }
 
+.product-price s {
+  color: #78869a;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.product-promotion-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 5px 9px;
+  border: 1px solid rgba(7, 89, 214, 0.16);
+  border-radius: 999px;
+  background: rgba(7, 89, 214, 0.08);
+  color: #0759d6;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .tag-row {
   display: flex;
   flex-wrap: wrap;

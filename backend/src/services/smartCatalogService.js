@@ -71,6 +71,29 @@ function moneyNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function activeProductPromotion(product, now = Date.now()) {
+  const promotion = metadata(product?.metadata).active_promotion;
+  if (!promotion || typeof promotion !== "object") return null;
+  const startsAt = new Date(promotion.starts_at || 0).getTime();
+  const endsAt = new Date(promotion.ends_at || 0).getTime();
+  const promotionalPrice = Number(promotion.promotional_price);
+  const basePrice = Number(product?.price);
+  if (!Number.isFinite(promotionalPrice) || promotionalPrice < 0 || !Number.isFinite(startsAt) || !Number.isFinite(endsAt) || startsAt > now || endsAt <= now) return null;
+  if (Number.isFinite(basePrice) && basePrice > 0 && promotionalPrice >= basePrice) return null;
+  return { ...promotion, promotional_price: promotionalPrice, starts_at: new Date(startsAt).toISOString(), ends_at: new Date(endsAt).toISOString() };
+}
+
+function publicProductWithPromotion(product) {
+  const promotion = activeProductPromotion(product);
+  if (!promotion) return { ...product, active_promotion: null };
+  return {
+    ...product,
+    price: promotion.promotional_price,
+    compare_at_price: Number(product.price || 0) || product.compare_at_price || null,
+    active_promotion: promotion,
+  };
+}
+
 function hashIp(value) {
   const raw = String(value || "").split(",")[0].trim();
   if (!raw) return null;
@@ -578,7 +601,7 @@ async function getPublicCatalog(slug, reqMeta = {}, params = {}) {
   }, reqMeta);
   return {
     catalog: mapCatalog(catalog),
-    products: products.rows,
+    products: products.rows.map(publicProductWithPromotion),
     categories: [...new Set(products.rows.map((item) => item.category).filter(Boolean))],
   };
 }
@@ -754,7 +777,8 @@ async function createWhatsappIntent(slug, productId, body = {}, reqMeta = {}) {
     if (product && product.stock_status === "OUT_OF_STOCK") throw badRequest("Este producto no esta disponible.");
 
     const { lead, created } = await findOrCreateCatalogLead(client, catalog, product, body);
-    const messageBody = buildWhatsappMessage(catalog, product, lead, body);
+    const offeredProduct = product ? publicProductWithPromotion(product) : product;
+    const messageBody = buildWhatsappMessage(catalog, offeredProduct, lead, body);
     const whatsappNumber = normalizeWhatsapp(catalog.whatsapp_number);
     const intentResult = await client.query(
       `insert into smart_catalog_order_intents
@@ -780,16 +804,17 @@ async function createWhatsappIntent(slug, productId, body = {}, reqMeta = {}) {
         body.branch_id || null,
         cleanText(body.partner_name, 160),
         cleanText(body.referral_source || body.source, 160),
-        product?.price || null,
-        product?.currency || "COP",
+        offeredProduct?.price || null,
+        offeredProduct?.currency || "COP",
         JSON.stringify({
           ...metadata(body.metadata),
           ...trackingMetadata(body),
           source_module: "smart_catalog",
+          active_promotion: offeredProduct?.active_promotion || null,
         }),
       ]
     );
-    const intent = { ...intentResult.rows[0], product_name: product?.name, product_price: product?.price };
+    const intent = { ...intentResult.rows[0], product_name: offeredProduct?.name, product_price: offeredProduct?.price };
     if (created) {
       await recordEvent(client, {
         business_id: catalog.business_id,
