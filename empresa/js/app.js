@@ -128,8 +128,6 @@ const rmsIndustrialFlow = document.getElementById("rmsIndustrialFlow");
 const rmsMachineAlerts = document.getElementById("rmsMachineAlerts");
 const rmsBulkToolbar = document.getElementById("rmsBulkToolbar");
 const rmsBulkSelectionCount = document.getElementById("rmsBulkSelectionCount");
-const rmsBulkCreateTasksButton = document.getElementById("rmsBulkCreateTasksButton");
-const rmsBulkClearButton = document.getElementById("rmsBulkClearButton");
 const rmsLeadInspector = document.getElementById("rmsLeadInspector");
 const rmsMachineEventLog = document.getElementById("rmsMachineEventLog");
 const rmsEmptyStateGuide = document.getElementById("rmsEmptyStateGuide");
@@ -48197,8 +48195,6 @@ rmsMachinePhaseFilter?.addEventListener("change", () => {
 rmsMachinePriorityFilter?.addEventListener("change", () => {
   applyRmsMachineFilters({ quiet: true }).catch((error) => showFeedback(error.message || "No se pudo filtrar la prioridad.", "error", { title: "Búsqueda de leads" }));
 });
-rmsBulkCreateTasksButton?.addEventListener("click", () => executeRmsBulkOperation());
-rmsBulkClearButton?.addEventListener("click", clearRmsSelection);
 rmsApplyRuleButton?.addEventListener("click", () => {
   const hasOpportunities = (state.rmsMachine?.opportunities || []).length > 0;
   if (!hasOpportunities) {
