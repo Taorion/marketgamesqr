@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=competitive-radar-products-v295-20260810">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=competitive-radar-units-v296-20260810">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -5710,6 +5710,7 @@
                   <input id="competitionProductIdInput" type="hidden">
                   <label class="span-2"><span>Competidor registrado</span><select id="competitionCompetitorSelect" required></select></label>
                   <label><span>Producto o servicio</span><input id="competitionProductNameInput" type="text" maxlength="180" required></label>
+                  <label><span>Unidad de medida</span><select id="competitionUnitInput"><option value="unidad">Unidad</option><option value="kg">Kilogramo (kg)</option><option value="g">Gramo (g)</option><option value="L">Litro (L)</option><option value="ml">Mililitro (ml)</option><option value="m">Metro (m)</option><option value="cm">Centímetro (cm)</option><option value="paquete">Paquete</option><option value="caja">Caja</option><option value="servicio">Servicio</option><option value="otro">Otro</option></select></label>
                   <label><span>Categoría</span><input id="competitionCategoryInput" type="text" maxlength="120"></label>
                   <label><span>Precio competidor</span><input id="competitionPriceInput" type="number" min="0" step="100" required></label>
                   <label><span>Precio anterior</span><input id="competitionPreviousPriceInput" type="number" min="0" step="100"></label>
@@ -5750,6 +5751,7 @@
                         <tr>
                           <th>Competidor</th>
                           <th>Producto</th>
+                          <th>Unidad</th>
                           <th>Categoría</th>
                           <th>Precio competidor</th>
                           <th>Producto propio</th>
@@ -5769,6 +5771,7 @@
                       <thead>
                         <tr>
                           <th>Producto o servicio</th>
+                          <th>Unidad</th>
                           <th>Competidores que lo tienen</th>
                           <th>Precios observados</th>
                           <th>Referente propio</th>
@@ -7588,7 +7591,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=competitive-radar-products-v295-20260810" defer></script>
+<script src="js/app.js?v=competitive-radar-units-v296-20260810" defer></script>
     <script src="js/communications.js?v=branch-attribution-v281-20260810" defer></script>
 </body>
 </html>

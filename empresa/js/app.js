@@ -1068,6 +1068,7 @@ const competitorProductFilterInput = document.getElementById("competitorProductF
 const competitorTable = document.getElementById("competitorTable");
 const competitionCompetitorSelect = document.getElementById("competitionCompetitorSelect");
 const competitionProductNameInput = document.getElementById("competitionProductNameInput");
+const competitionUnitInput = document.getElementById("competitionUnitInput");
 const competitionCategoryInput = document.getElementById("competitionCategoryInput");
 const competitionPriceInput = document.getElementById("competitionPriceInput");
 const competitionPreviousPriceInput = document.getElementById("competitionPreviousPriceInput");
@@ -21934,6 +21935,23 @@ function openCompetitionProductModal() {
   competitionProductFormPanel?.classList.add("is-competition-modal-open");
 }
 
+function competitionUnitLabel(value = "") {
+  return {
+    unidad: "Unidad",
+    kg: "kg",
+    g: "g",
+    L: "L",
+    l: "L",
+    ml: "ml",
+    m: "m",
+    cm: "cm",
+    paquete: "Paquete",
+    caja: "Caja",
+    servicio: "Servicio",
+    otro: "Otra",
+  }[String(value || "unidad")] || String(value || "Unidad");
+}
+
 function closeCompetitionProductModal() {
   competitionProductFormPanel?.classList.remove("is-competition-modal-open");
   if (!competitorFormPanel?.classList.contains("is-competition-modal-open")) {
@@ -22060,10 +22078,11 @@ function renderCompetitorDetailModal() {
   }
   if (activeTab === "prices") {
     competitorDetailBody.innerHTML = competitorDetailTable(
-      ["Producto", "Precio competidor", "Precio propio", "Diferencia", "Fuente", "Fecha"],
+      ["Producto", "Unidad", "Precio competidor", "Precio propio", "Diferencia", "Fuente", "Fecha"],
       products.map((product) => `
         <tr>
           <td><strong>${escapeHtml(product.product_name || "-")}</strong><span class="table-secondary">${escapeHtml(product.promotion_label || product.category || "-")}</span></td>
+          <td>${escapeHtml(competitionUnitLabel(product.unit_of_measure))}</td>
           <td>${escapeHtml(money(product.competitor_price || 0))}</td>
           <td>${escapeHtml(product.our_price === null || product.our_price === undefined ? "-" : money(product.our_price))}</td>
           <td><strong>${escapeHtml(competitionGapLabel(product))}</strong><span class="table-secondary">${escapeHtml(competitionGapPercentLabel(product))}</span></td>
@@ -22211,7 +22230,7 @@ function renderCompetitorDirectory() {
           </span>
         </td>
         <td>${escapeHtml([competitor.city, competitor.operation_zone].filter(Boolean).join(" / ") || "-")}</td>
-        <td><strong>${escapeHtml(primaryProduct ? money(primaryProduct.competitor_price || 0) : (competitor.price_range || "-"))}</strong><span class="table-secondary">${escapeHtml(primaryProduct ? competitionGapLabel(primaryProduct) : "Rango general")}</span></td>
+        <td><strong>${escapeHtml(primaryProduct ? money(primaryProduct.competitor_price || 0) : (competitor.price_range || "-"))}</strong><span class="table-secondary">${escapeHtml(primaryProduct ? `${competitionGapLabel(primaryProduct)} · ${competitionUnitLabel(primaryProduct.unit_of_measure)}` : "Rango general")}</span></td>
         <td><span class="competition-radar-counts"><span>${escapeHtml(String(campaigns.length))} campañas</span><span>${escapeHtml(String(events.length))} eventos</span></span></td>
         <td><span class="competition-radar-counts"><span>${escapeHtml(String(findings.length || competitor.finding_count || 0))} hallazgos</span><span>${escapeHtml(String(products.length || competitor.product_count || 0))} productos</span></span></td>
         <td><span class="status-chip ${["HIGH", "CRITICAL"].includes(String(competitor.threat_level || "").toUpperCase()) ? "warning" : "ok"}">${escapeHtml(threatLabel(competitor.threat_level))}</span></td>
@@ -22231,8 +22250,8 @@ function renderCompetitorDirectory() {
 function renderCompetitionProductsTable() {
   if (!competitionTable) return;
   if (!state.competitionLoaded) {
-    competitionTable.innerHTML = '<tr><td colspan="9">Cargando productos y precios...</td></tr>';
-    if (competitionProductServiceTable) competitionProductServiceTable.innerHTML = '<tr><td colspan="6">Cargando mapa de productos y servicios...</td></tr>';
+    competitionTable.innerHTML = '<tr><td colspan="10">Cargando productos y precios...</td></tr>';
+    if (competitionProductServiceTable) competitionProductServiceTable.innerHTML = '<tr><td colspan="7">Cargando mapa de productos y servicios...</td></tr>';
     return;
   }
   const rows = filteredCompetitionProducts();
@@ -22243,6 +22262,7 @@ function renderCompetitionProductsTable() {
       <tr>
         <td><strong>${escapeHtml(competitorName)}</strong><span class="table-secondary">${escapeHtml(formatDate(product.observed_at))}</span></td>
         <td><strong>${escapeHtml(product.product_name)}</strong><span class="table-secondary">${escapeHtml(product.promotion_label || "-")}</span></td>
+        <td>${escapeHtml(competitionUnitLabel(product.unit_of_measure))}</td>
         <td>${escapeHtml(product.category || "-")}</td>
         <td>${escapeHtml(money(product.competitor_price))}</td>
         <td>${escapeHtml(product.own_product_name || "-")}</td>
@@ -22252,7 +22272,7 @@ function renderCompetitionProductsTable() {
         <td><div class="table-actions"><button class="ghost-button" type="button" data-competition-edit="${escapeHtml(product.id)}">Editar</button><button class="ghost-button danger-button" type="button" data-competition-delete="${escapeHtml(product.id)}">Eliminar</button></div></td>
       </tr>
     `;
-  }).join("") || '<tr><td colspan="9">Sin productos de competidores registrados.</td></tr>';
+  }).join("") || '<tr><td colspan="10">Sin productos de competidores registrados.</td></tr>';
   competitionTable.querySelectorAll("[data-competition-edit]").forEach((button) => button.addEventListener("click", () => editCompetitionProduct(button.dataset.competitionEdit)));
   competitionTable.querySelectorAll("[data-competition-delete]").forEach((button) => button.addEventListener("click", () => archiveCompetitionProduct(button.dataset.competitionDelete)));
   renderCompetitionProductServiceTable(rows);
@@ -22271,9 +22291,11 @@ function renderCompetitionProductServiceTable(products = []) {
   if (!competitionProductServiceTable) return;
   const groups = new Map();
   products.forEach((product) => {
-    const key = normalizedCompetitionProductName(product.product_name);
-    if (!key) return;
-    if (!groups.has(key)) groups.set(key, { label: product.product_name, products: [] });
+    const unit = String(product.unit_of_measure || "unidad").trim().toLowerCase();
+    const normalizedName = normalizedCompetitionProductName(product.product_name);
+    if (!normalizedName) return;
+    const key = `${normalizedName}::${unit}`;
+    if (!groups.has(key)) groups.set(key, { label: product.product_name, unit, products: [] });
     groups.get(key).products.push(product);
   });
 
@@ -22301,6 +22323,7 @@ function renderCompetitionProductServiceTable(products = []) {
       return `
         <tr>
           <td><strong>${escapeHtml(group.label)}</strong><span class="table-secondary">${escapeHtml(group.products[0]?.category || "Sin categoría")}</span></td>
+          <td>${escapeHtml(competitionUnitLabel(group.unit))}</td>
           <td><span class="competition-radar-counts">${competitors.map((name) => `<span>${escapeHtml(name)}</span>`).join("")}</span></td>
           <td><strong>${escapeHtml(priceLabel)}</strong><span class="table-secondary">${escapeHtml(String(prices.length))} precio${prices.length === 1 ? "" : "s"} registrado${prices.length === 1 ? "" : "s"}</span></td>
           <td>${escapeHtml(ownReferences.join(" · ") || "Sin referente propio")}</td>
@@ -22309,7 +22332,7 @@ function renderCompetitionProductServiceTable(products = []) {
         </tr>
       `;
     });
-  competitionProductServiceTable.innerHTML = rows.join("") || '<tr><td colspan="6">Sin productos o servicios para comparar todavía.</td></tr>';
+  competitionProductServiceTable.innerHTML = rows.join("") || '<tr><td colspan="7">Sin productos o servicios para comparar todavía.</td></tr>';
 }
 
 function renderCompetitorCampaignsTable() {
@@ -22440,6 +22463,7 @@ function resetCompetitionForm() {
   competitionProductForm?.reset();
   if (competitionProductIdInput) competitionProductIdInput.value = "";
   if (competitionCurrencyInput) competitionCurrencyInput.value = "COP";
+  if (competitionUnitInput) competitionUnitInput.value = "unidad";
   if (competitionObservedAtInput) competitionObservedAtInput.value = dateInputValue(new Date());
   if (competitionCompetitorSelect) competitionCompetitorSelect.value = "";
   if (competitionFormTitle) competitionFormTitle.textContent = "Nuevo producto competidor";
@@ -22453,6 +22477,7 @@ function editCompetitionProduct(productId = "") {
   if (competitionProductIdInput) competitionProductIdInput.value = product.id;
   if (competitionCompetitorSelect) competitionCompetitorSelect.value = product.competitor_id || "";
   if (competitionProductNameInput) competitionProductNameInput.value = product.product_name || "";
+  if (competitionUnitInput) competitionUnitInput.value = product.unit_of_measure || "unidad";
   if (competitionCategoryInput) competitionCategoryInput.value = product.category || "";
   if (competitionPriceInput) competitionPriceInput.value = String(product.competitor_price || 0);
   if (competitionPreviousPriceInput) competitionPreviousPriceInput.value = product.previous_price === null || product.previous_price === undefined ? "" : String(product.previous_price || 0);
@@ -22479,6 +22504,7 @@ function competitionFormPayload() {
     competitor_id: competitionCompetitorSelect?.value || null,
     competitor_name: selectedCompetitor?.name || "",
     product_name: competitionProductNameInput?.value.trim() || "",
+    unit_of_measure: competitionUnitInput?.value || "unidad",
     category: competitionCategoryInput?.value.trim() || null,
     competitor_price: Number(competitionPriceInput?.value || 0),
     previous_price: competitionPreviousPriceInput?.value === "" ? null : Number(competitionPreviousPriceInput?.value || 0),
