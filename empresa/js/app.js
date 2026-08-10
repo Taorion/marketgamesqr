@@ -2216,6 +2216,7 @@ const campaignStrategyWizardModal = document.getElementById("campaignStrategyWiz
 const campaignStrategyWizardCloseButton = document.getElementById("campaignStrategyWizardCloseButton");
 const strategyWizardProgressText = document.getElementById("strategyWizardProgressText");
 const strategyWizardProgressBar = document.getElementById("strategyWizardProgressBar");
+const strategyWizardProgressDetail = document.getElementById("strategyWizardProgressDetail");
 const strategyWizardStepKicker = document.getElementById("strategyWizardStepKicker");
 const strategyWizardStepTitle = document.getElementById("strategyWizardStepTitle");
 const strategyWizardStepHelp = document.getElementById("strategyWizardStepHelp");
@@ -26704,6 +26705,39 @@ function strategyWizardCurrentStep() {
   return STRATEGY_WIZARD_STEPS[state.strategyWizardStep] || STRATEGY_WIZARD_STEPS[0];
 }
 
+function strategyWizardHasAnswer(value) {
+  if (Array.isArray(value)) return value.length > 0;
+  return String(value ?? "").trim().length > 0;
+}
+
+function strategyWizardStepCompletion(step = strategyWizardCurrentStep()) {
+  const fields = (step.fields || []).filter((field) => !["note", "summary", "templates"].includes(field.type));
+  const missing = fields.filter((field) => !strategyWizardHasAnswer(strategyWizardAnswer(field.key)));
+  return {
+    total: fields.length,
+    complete: fields.length - missing.length,
+    missing: missing.map((field) => field.label),
+  };
+}
+
+function renderStrategyWizardFeedback() {
+  if (!strategyWizardProgressDetail) return;
+  const completion = strategyWizardStepCompletion();
+  if (!completion.total) {
+    strategyWizardProgressDetail.dataset.state = "review";
+    strategyWizardProgressDetail.textContent = "Revisa el plan propuesto antes de llevarlo al formulario real de la campa\u00f1a.";
+    return;
+  }
+  if (completion.complete === completion.total) {
+    strategyWizardProgressDetail.dataset.state = "complete";
+    strategyWizardProgressDetail.textContent = `Paso listo: ${completion.complete}/${completion.total} decisiones definidas. Tu avance queda guardado en este navegador.`;
+    return;
+  }
+  const pending = completion.missing.slice(0, 2).join(" y ");
+  strategyWizardProgressDetail.dataset.state = "pending";
+  strategyWizardProgressDetail.textContent = `Avance del paso: ${completion.complete}/${completion.total}. Pendiente: ${pending}${completion.missing.length > 2 ? " y otros datos" : ""}.`;
+}
+
 function applyStrategyTemplate(templateId) {
   const template = STRATEGY_WIZARD_TEMPLATES.find((item) => item.id === templateId);
   if (!template) return;
@@ -26933,8 +26967,13 @@ function renderStrategyWizard() {
   strategyWizardStepHelp.textContent = step.help;
   strategyWizardStepBody.innerHTML = step.fields.map(renderStrategyWizardField).join("");
   strategyWizardBackButton.disabled = state.strategyWizardStep === 0;
-  strategyWizardNextButton.textContent = state.strategyWizardStep === total - 1 ? "Aplicar al formulario" : "Continuar";
+  const completion = strategyWizardStepCompletion(step);
+  const pendingCount = Math.max(0, completion.total - completion.complete);
+  strategyWizardNextButton.textContent = state.strategyWizardStep === total - 1
+    ? "Aplicar al formulario"
+    : pendingCount ? `Continuar · ${pendingCount} pendiente${pendingCount === 1 ? "" : "s"}` : "Continuar";
   renderStrategyWizardSummary();
+  renderStrategyWizardFeedback();
   bindStrategyWizardStepEvents();
 }
 
@@ -26988,7 +27027,9 @@ function bindStrategyWizardStepEvents() {
     input.addEventListener("input", () => {
       setStrategyWizardAnswer(input.dataset.strategyInput, input.value);
       autoCompleteStrategyWizard();
+      saveStrategyWizardDraft({ silent: true });
       renderStrategyWizardSummary();
+      renderStrategyWizardFeedback();
     });
   });
   strategyWizardStepBody?.querySelectorAll("[data-strategy-field]").forEach((button) => {
@@ -26996,6 +27037,7 @@ function bindStrategyWizardStepEvents() {
       const key = button.dataset.strategyField;
       const option = button.dataset.strategyValue;
       const mode = button.dataset.strategyMode;
+      const fieldLabel = strategyWizardCurrentStep().fields.find((field) => field.key === key)?.label || "Decisión";
       if (mode === "multi") {
         const current = Array.isArray(strategyWizardAnswer(key)) ? [...strategyWizardAnswer(key)] : [];
         setStrategyWizardAnswer(key, current.includes(option) ? current.filter((item) => item !== option) : [...current, option]);
@@ -27003,14 +27045,18 @@ function bindStrategyWizardStepEvents() {
         setStrategyWizardAnswer(key, option);
       }
       autoCompleteStrategyWizard();
+      saveStrategyWizardDraft({ silent: true });
       renderStrategyWizard();
+      setFormMessage(strategyWizardMessage, `${fieldLabel}: decisión actualizada y guardada localmente.`, "success");
     });
   });
   strategyWizardStepBody?.querySelectorAll("[data-strategy-template]").forEach((button) => {
     button.addEventListener("click", () => {
       applyStrategyTemplate(button.dataset.strategyTemplate);
       autoCompleteStrategyWizard();
+      saveStrategyWizardDraft({ silent: true });
       renderStrategyWizard();
+      setFormMessage(strategyWizardMessage, "Plantilla aplicada. Revisa los datos ajustados y continúa con el plan.", "success");
     });
   });
 }
@@ -27026,13 +27072,15 @@ function autoCompleteStrategyWizard() {
   }
 }
 
-function saveStrategyWizardDraft() {
+function saveStrategyWizardDraft({ silent = false } = {}) {
   try {
     window.localStorage?.removeItem(STRATEGY_WIZARD_DRAFT_KEY);
     window.localStorage?.setItem(strategyWizardDraftKey(), JSON.stringify(state.strategyWizardAnswers || {}));
-    setFormMessage(strategyWizardMessage, "Borrador guardado.", "success");
+    if (!silent) setFormMessage(strategyWizardMessage, "Borrador guardado en este navegador. Podrás retomarlo al volver a abrir el ayudador.", "success");
+    return true;
   } catch (error) {
-    setFormMessage(strategyWizardMessage, "No se pudo guardar el borrador local.", "error");
+    if (!silent) setFormMessage(strategyWizardMessage, "No se pudo guardar el borrador local.", "error");
+    return false;
   }
 }
 
@@ -27048,11 +27096,12 @@ function loadStrategyWizardDraft() {
 
 function openStrategyWizard({ fromScratch = false } = {}) {
   state.strategyWizardStep = 0;
-  state.strategyWizardAnswers = fromScratch ? defaultStrategyWizardAnswers() : { ...defaultStrategyWizardAnswers(), ...(loadStrategyWizardDraft() || {}) };
+  const savedDraft = fromScratch ? null : loadStrategyWizardDraft();
+  state.strategyWizardAnswers = fromScratch ? defaultStrategyWizardAnswers() : { ...defaultStrategyWizardAnswers(), ...(savedDraft || {}) };
   autoCompleteStrategyWizard();
   campaignStrategyWizardModal?.classList.remove("hidden");
-  setFormMessage(strategyWizardMessage, "", "info");
   renderStrategyWizard();
+  setFormMessage(strategyWizardMessage, savedDraft ? "Retomamos tu borrador local. Cada cambio se guarda mientras construyes la campaña." : "Define la estrategia paso a paso. Cada cambio se guarda localmente mientras trabajas.", "info");
 }
 
 function closeStrategyWizard() {
@@ -49137,10 +49186,13 @@ campaignStrategyWizardModal?.addEventListener("click", (event) => {
 strategyWizardBackButton?.addEventListener("click", () => {
   state.strategyWizardStep = Math.max(0, state.strategyWizardStep - 1);
   renderStrategyWizard();
+  setFormMessage(strategyWizardMessage, "Volviste al paso anterior. Puedes ajustar la decisión sin perder el avance.", "info");
 });
 strategyWizardSkipButton?.addEventListener("click", () => {
+  const skippedStep = strategyWizardCurrentStep();
   state.strategyWizardStep = Math.min(STRATEGY_WIZARD_STEPS.length - 1, state.strategyWizardStep + 1);
   renderStrategyWizard();
+  setFormMessage(strategyWizardMessage, `Omitiste “${skippedStep.title}”. Puedes volver cuando tengas ese dato; Qori mantendrá el contexto.`, "info");
 });
 strategyWizardNextButton?.addEventListener("click", () => {
   autoCompleteStrategyWizard();
@@ -49148,12 +49200,20 @@ strategyWizardNextButton?.addEventListener("click", () => {
     applyStrategyWizardToCampaignForm();
     return;
   }
+  const completedStep = strategyWizardCurrentStep();
+  const completion = strategyWizardStepCompletion(completedStep);
   state.strategyWizardStep += 1;
+  saveStrategyWizardDraft({ silent: true });
   renderStrategyWizard();
+  const pending = Math.max(0, completion.total - completion.complete);
+  setFormMessage(strategyWizardMessage, pending
+    ? `Avanzas con ${pending} dato${pending === 1 ? "" : "s"} pendiente${pending === 1 ? "" : "s"} de “${completedStep.title}”. Puedes volver a completarlo.`
+    : `Paso “${completedStep.title}” confirmado. Qori incorporó esas decisiones al plan.`, pending ? "info" : "success");
 });
 strategyWizardDraftButton?.addEventListener("click", saveStrategyWizardDraft);
 strategyWizardSuggestButton?.addEventListener("click", () => {
   autoCompleteStrategyWizard();
+  saveStrategyWizardDraft({ silent: true });
   setFormMessage(strategyWizardMessage, "Estrategia sugerida con dinámica, embudo, tickets internos y seguimiento comercial.", "success");
   renderStrategyWizard();
 });
@@ -49165,6 +49225,7 @@ strategyWizardOptimizeButton?.addEventListener("click", () => {
   if (!Array.isArray(answers.channels) || answers.channels.length < 3) setStrategyWizardAnswer("channels", Array.from(new Set([...(answers.channels || []), "Instagram", "WhatsApp", "Punto de venta"])).slice(0, 4));
   if (!Array.isArray(answers.ticketLogic) || answers.ticketLogic.length < 3) setStrategyWizardAnswer("ticketLogic", ["Lead ticket", "Reward ticket", "Redemption ticket"]);
   autoCompleteStrategyWizard();
+  saveStrategyWizardDraft({ silent: true });
   setFormMessage(strategyWizardMessage, "Campaña optimizada para más alcance, mejor filtrado y mayor trazabilidad comercial.", "success");
   renderStrategyWizard();
 });

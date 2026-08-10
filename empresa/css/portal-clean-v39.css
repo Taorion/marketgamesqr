@@ -17819,6 +17819,37 @@ html body[data-current-view="competition"] .portal-shell .competition-detail-act
   background: rgba(255, 255, 255, .13) !important;
 }
 
+/* Asistente de campa\u00f1as: el avance debe leerse como una gu\u00eda, no como un formulario silencioso. */
+html body #campaignStrategyWizardModal .strategy-wizard-progress-detail {
+  margin: 1px 0 0 !important;
+  padding: 9px 11px !important;
+  color: #47677c !important;
+  border: 1px solid #d9e8ef !important;
+  border-radius: 10px !important;
+  background: #f6fbfd !important;
+  font-size: .78rem !important;
+  font-weight: 650 !important;
+  line-height: 1.42 !important;
+}
+
+html body #campaignStrategyWizardModal .strategy-wizard-progress-detail[data-state="complete"] {
+  color: #08775e !important;
+  border-color: #bde9da !important;
+  background: #f0fbf7 !important;
+}
+
+html body #campaignStrategyWizardModal .strategy-wizard-progress-detail[data-state="pending"] {
+  color: #69571b !important;
+  border-color: #f0dd9d !important;
+  background: #fffaf0 !important;
+}
+
+html body #campaignStrategyWizardModal .strategy-wizard-progress-detail[data-state="review"] {
+  color: #135f80 !important;
+  border-color: #bce7f1 !important;
+  background: #f0fbff !important;
+}
+
 @media (max-width: 680px) {
   html body[data-current-view="competition"] .portal-shell .competition-product-view-tabs {
     padding: 9px 14px !important;
