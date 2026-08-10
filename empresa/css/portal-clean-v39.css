@@ -15963,3 +15963,50 @@ html body[data-current-view="account"] .portal-shell .table-wrap {
     padding: 9px;
   }
 }
+html body .portal-shell .smart-catalog-product-image-field {
+  gap: 9px;
+}
+
+html body .portal-shell .smart-catalog-product-image-inputs {
+  display: grid;
+  grid-template-columns: minmax(180px, .8fr) minmax(0, 1.2fr);
+  gap: 10px;
+}
+
+html body .portal-shell .smart-catalog-product-image-preview {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin: 3px 0 0;
+  padding: 10px;
+  border: 1px solid rgba(7, 89, 214, .16);
+  border-radius: 14px;
+  background: rgba(244, 249, 252, .78);
+}
+
+html body .portal-shell .smart-catalog-product-image-preview.hidden {
+  display: none !important;
+}
+
+html body .portal-shell .smart-catalog-product-image-preview img {
+  display: block;
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #eaf2f7;
+}
+
+html body .portal-shell .smart-catalog-product-image-preview figcaption {
+  min-width: 0;
+  color: #52707e;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+@media (max-width: 680px) {
+  html body .portal-shell .smart-catalog-product-image-inputs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

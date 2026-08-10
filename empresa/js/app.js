@@ -192,6 +192,11 @@ const smartCatalogTable = document.getElementById("smartCatalogTable");
 const smartCatalogProductForm = document.getElementById("smartCatalogProductForm");
 const smartCatalogProductCatalogSelect = document.getElementById("smartCatalogProductCatalogSelect");
 const smartCatalogProductMessage = document.getElementById("smartCatalogProductMessage");
+const smartCatalogProductImageFileInput = document.getElementById("smartCatalogProductImageFileInput");
+const smartCatalogProductImageUrlInput = document.getElementById("smartCatalogProductImageUrlInput");
+const smartCatalogProductImagePreview = document.getElementById("smartCatalogProductImagePreview");
+const smartCatalogProductImagePreviewImage = document.getElementById("smartCatalogProductImagePreviewImage");
+const smartCatalogProductImagePreviewLabel = document.getElementById("smartCatalogProductImagePreviewLabel");
 const smartCatalogProductTable = document.getElementById("smartCatalogProductTable");
 const smartCatalogIntentTable = document.getElementById("smartCatalogIntentTable");
 const smartCatalogTabButtons = Array.from(document.querySelectorAll("[data-smart-catalog-tab]"));
@@ -9723,6 +9728,37 @@ function smartCatalogProductFormField(name) {
   return smartCatalogProductForm?.querySelector(`[name="${name}"]`) || null;
 }
 
+function syncSmartCatalogProductImagePreview(source = smartCatalogProductImageUrlInput?.value) {
+  const imageSource = String(source || "").trim();
+  if (!smartCatalogProductImagePreview || !smartCatalogProductImagePreviewImage) return;
+  smartCatalogProductImagePreview.classList.toggle("hidden", !imageSource);
+  if (!imageSource) {
+    smartCatalogProductImagePreviewImage.removeAttribute("src");
+    if (smartCatalogProductImagePreviewLabel) smartCatalogProductImagePreviewLabel.textContent = "";
+    return;
+  }
+  smartCatalogProductImagePreviewImage.src = imageSource;
+  if (smartCatalogProductImagePreviewLabel) {
+    smartCatalogProductImagePreviewLabel.textContent = imageSource.startsWith("data:image/")
+      ? "Imagen subida desde este equipo"
+      : "Imagen desde URL";
+  }
+}
+
+async function uploadSmartCatalogProductImage(file) {
+  if (!file || !smartCatalogProductImageUrlInput) return;
+  try {
+    setInlineMessage(smartCatalogProductMessage, "Preparando imagen...", "info");
+    const dataUrl = await readFileAsDataUrl(file, 1024 * 1024, ["image/png", "image/jpeg", "image/webp", "image/gif"]);
+    smartCatalogProductImageUrlInput.value = dataUrl;
+    syncSmartCatalogProductImagePreview(dataUrl);
+    setInlineMessage(smartCatalogProductMessage, "Imagen lista para guardar con la oferta.", "success");
+  } catch (error) {
+    if (smartCatalogProductImageFileInput) smartCatalogProductImageFileInput.value = "";
+    setInlineMessage(smartCatalogProductMessage, error.message || "No se pudo cargar la imagen.", "error");
+  }
+}
+
 function applySmartCatalogInventoryProductToForm(options = {}) {
   const select = document.getElementById("smartCatalogInventoryProductSelect");
   const product = findInventoryProduct(select?.value || "");
@@ -9737,6 +9773,7 @@ function applySmartCatalogInventoryProductToForm(options = {}) {
   setField("category", product.category);
   setField("price", product.unit_price || product.price || product.sale_price);
   setField("image_url", product.image_url || product.image);
+  syncSmartCatalogProductImagePreview();
 }
 
 function prepareSmartCatalogProductPayload(payload = {}) {
@@ -10758,6 +10795,7 @@ function openSmartCatalogProductModal(options = {}) {
   if (!modal || !smartCatalogProductForm) return;
   const product = options.product || null;
   smartCatalogProductForm.reset();
+  if (smartCatalogProductImageFileInput) smartCatalogProductImageFileInput.value = "";
   if (product) {
     smartCatalogProductForm.dataset.editingProductId = product.id;
     ["inventory_product_id", "name", "short_description", "category", "product_type", "price", "compare_at_price", "image_url", "cta_label", "stock_status", "whatsapp_message_template"].forEach((name) => {
@@ -10777,6 +10815,7 @@ function openSmartCatalogProductModal(options = {}) {
   } else {
     delete smartCatalogProductForm.dataset.editingProductId;
   }
+  syncSmartCatalogProductImagePreview();
   smartCatalogProductCatalogSelect.value = catalogId;
   const title = modal.querySelector("#smartCatalogProductModalTitle");
   const copy = modal.querySelector(".modal-head p");
@@ -10854,6 +10893,7 @@ async function submitSmartCatalogProduct(event) {
   if (!smartCatalogProductForm) return;
   const editingProductId = smartCatalogProductForm.dataset.editingProductId || "";
   const payload = smartCatalogFormPayload(smartCatalogProductForm);
+  delete payload.image_file;
   prepareSmartCatalogProductPayload(payload);
   const catalogId = payload.catalog_id || state.smartCatalogSelectedCatalogId;
   if (!catalogId) {
@@ -10873,6 +10913,7 @@ async function submitSmartCatalogProduct(event) {
       body: JSON.stringify(payload),
     });
     smartCatalogProductForm.reset();
+    syncSmartCatalogProductImagePreview("");
     delete smartCatalogProductForm.dataset.editingProductId;
     smartCatalogProductCatalogSelect.value = catalogId;
     await loadSmartCatalogDetail(catalogId, { quiet: true });
@@ -49565,6 +49606,8 @@ smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
 });
 smartCatalogForm?.addEventListener("submit", submitSmartCatalog);
 smartCatalogProductForm?.addEventListener("submit", submitSmartCatalogProduct);
+smartCatalogProductImageFileInput?.addEventListener("change", () => uploadSmartCatalogProductImage(smartCatalogProductImageFileInput.files?.[0]));
+smartCatalogProductImageUrlInput?.addEventListener("input", () => syncSmartCatalogProductImagePreview());
 document.getElementById("smartCatalogInventoryProductSelect")?.addEventListener("change", (event) => {
   syncProductOpenInput(event.currentTarget);
   applySmartCatalogInventoryProductToForm({ overwrite: true });

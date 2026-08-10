@@ -74,7 +74,7 @@ const productSchema = z.object({
   price: z.coerce.number().min(0).optional().nullable(),
   compare_at_price: z.coerce.number().min(0).optional().nullable(),
   currency: z.string().trim().max(8).optional(),
-  image_url: z.string().trim().max(1200).optional().nullable(),
+  image_url: z.string().trim().max(1_600_000).optional().nullable(),
   gallery: z.array(z.unknown()).optional().default([]),
   tags: z.array(z.unknown()).optional().default([]),
   benefits: z.array(z.unknown()).optional().default([]),

@@ -151,7 +151,7 @@ function mapProductPayload(body = {}, userId = null) {
     price: body.price === "" || body.price === null || body.price === undefined ? null : moneyNumber(body.price, 0),
     compare_at_price: body.compare_at_price === "" || body.compare_at_price === null || body.compare_at_price === undefined ? null : moneyNumber(body.compare_at_price, 0),
     currency: cleanText(body.currency || "COP", 8) || "COP",
-    image_url: cleanText(body.image_url, 1200),
+    image_url: cleanText(body.image_url, 1_600_000),
     gallery: jsonArray(body.gallery),
     tags: jsonArray(body.tags),
     benefits: jsonArray(body.benefits),
