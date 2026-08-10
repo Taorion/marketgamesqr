@@ -24574,7 +24574,12 @@ function renderTriviaLaunchers() {
             <small>${escapeHtml(rate)}% de conversión</small>
           </div>
         </td>
-        <td><button class="ghost-button compact" type="button" data-open-activation-detail="${escapeHtml(item.id)}">Abrir</button></td>
+        <td>
+          <div class="activation-row-actions">
+            <button class="ghost-button compact" type="button" data-open-activation-detail="${escapeHtml(item.id)}">Abrir</button>
+            <button class="ghost-button compact danger" type="button" data-delete-activation="${escapeHtml(item.id)}">Eliminar</button>
+          </div>
+        </td>
       </tr>
     `;
     }).join("")
