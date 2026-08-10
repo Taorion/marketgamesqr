@@ -121,6 +121,8 @@ const rmsMachineSearchInput = document.getElementById("rmsMachineSearchInput");
 const rmsMachinePhaseFilter = document.getElementById("rmsMachinePhaseFilter");
 const rmsMachinePriorityFilter = document.getElementById("rmsMachinePriorityFilter");
 const rmsMachineFilterButton = document.getElementById("rmsMachineFilterButton");
+const rmsMachineClearFiltersButton = document.getElementById("rmsMachineClearFiltersButton");
+const rmsMachineFilterFeedback = document.getElementById("rmsMachineFilterFeedback");
 const rmsIntakeFunnel = document.getElementById("rmsIntakeFunnel");
 const rmsIndustrialFlow = document.getElementById("rmsIndustrialFlow");
 const rmsMachineAlerts = document.getElementById("rmsMachineAlerts");
@@ -2441,6 +2443,7 @@ let state = {
     phase: "recoleccion",
     priority: "",
   },
+  rmsMachineFilterTimer: null,
   rmsCollectorActivation: null,
   rmsCollectorSubmitting: false,
   missions: null,
@@ -40279,6 +40282,7 @@ async function loadRmsMachineData(options = {}) {
     const search = state.rmsMachineFilters?.search || state.filter || "";
     if (search) params.set("search", search);
     if (state.rmsMachineFilters?.priority) params.set("priority", state.rmsMachineFilters.priority);
+    if (options.fresh) params.set("fresh", "1");
     const data = await api(`/api/business/rms-machine?${params.toString()}`, {
       headers: authHeaders(),
     });
@@ -40713,6 +40717,7 @@ function renderRmsMachineView() {
       ? `${opportunities.length.toLocaleString("es-CO")} en estación / ${totalOpportunities.toLocaleString("es-CO")} total`
       : `${totalOpportunities.toLocaleString("es-CO")} oportunidades`;
   }
+  renderRmsMachineFilterFeedback(data, allOpportunities);
   rmsEmptyStateGuide?.classList.toggle("hidden", !isEmpty);
   renderRmsCollectorActivation();
   renderRmsTutorial();
@@ -41533,6 +41538,69 @@ function renderRmsStationOnly() {
 function rmsVisibleOpportunities(rows = []) {
   const phase = state.rmsMachineFilters?.phase || "";
   return rows.filter((item) => !phase || item.stage === phase);
+}
+
+function renderRmsMachineFilterFeedback(data = state.rmsMachine || {}, rows = data.opportunities || []) {
+  if (!rmsMachineFilterFeedback) return;
+  const search = String(state.rmsMachineFilters?.search || "").trim();
+  const phase = String(state.rmsMachineFilters?.phase || "").trim();
+  const priority = String(state.rmsMachineFilters?.priority || "").trim();
+  const hasFilters = Boolean(search || phase || priority);
+  rmsMachineFilterFeedback.classList.toggle("hidden", !hasFilters);
+  if (!hasFilters) {
+    rmsMachineFilterFeedback.textContent = "";
+    rmsMachineFilterFeedback.classList.remove("is-empty");
+    return;
+  }
+  const visibleRows = rmsVisibleOpportunities(rows);
+  rmsMachineFilterFeedback.classList.toggle("is-empty", visibleRows.length === 0);
+  const filters = [
+    search ? `“${search}”` : "",
+    phase ? `estación: ${rmsPrimaryFactoryStages(state.rmsMachine || {}).find((stage) => stage.key === phase)?.short_label || phase}` : "",
+    priority ? `prioridad: ${priority.toLowerCase()}` : "",
+  ].filter(Boolean);
+  rmsMachineFilterFeedback.textContent = visibleRows.length
+    ? `${visibleRows.length.toLocaleString("es-CO")} lead${visibleRows.length === 1 ? "" : "s"} encontrado${visibleRows.length === 1 ? "" : "s"} · ${filters.join(" · ")}`
+    : `No encontramos leads para ${filters.join(" · ")}. Prueba otro dato o usa Limpiar.`;
+}
+
+async function applyRmsMachineFilters(options = {}) {
+  const search = rmsMachineSearchInput?.value?.trim() || "";
+  state.rmsMachineFilters = {
+    search,
+    phase: rmsMachinePhaseFilter?.value || "",
+    priority: rmsMachinePriorityFilter?.value || "",
+  };
+  if (state.rmsMachineFilterTimer) {
+    window.clearTimeout(state.rmsMachineFilterTimer);
+    state.rmsMachineFilterTimer = null;
+  }
+  if (rmsMachineFilterFeedback) {
+    rmsMachineFilterFeedback.classList.remove("hidden", "is-empty");
+    rmsMachineFilterFeedback.textContent = search ? `Buscando “${search}”…` : "Actualizando filtros…";
+  }
+  setButtonLoading(rmsMachineFilterButton, true, "Buscando...");
+  state.rmsMachineLoaded = false;
+  try {
+    await loadRmsMachineData({ force: true, quiet: Boolean(options.quiet), fresh: true });
+    renderRmsMachineView();
+    const matches = rmsVisibleOpportunities(state.rmsMachine?.opportunities || []).length;
+    const summary = search ? ` para “${search}”` : "";
+    showFeedback(
+      matches ? `${matches.toLocaleString("es-CO")} lead${matches === 1 ? "" : "s"} encontrado${matches === 1 ? "" : "s"}${summary}.` : `No encontramos leads${summary}.`,
+      "info",
+      { title: "Búsqueda de leads" }
+    );
+  } catch (error) {
+    if (rmsMachineFilterFeedback) {
+      rmsMachineFilterFeedback.classList.remove("hidden");
+      rmsMachineFilterFeedback.classList.add("is-empty");
+      rmsMachineFilterFeedback.textContent = "No se pudo completar la búsqueda. Intenta actualizar la Máquina RMS.";
+    }
+    throw error;
+  } finally {
+    setButtonLoading(rmsMachineFilterButton, false);
+  }
 }
 
 function renderRmsMachineFilterOptions(stages = []) {
@@ -48085,36 +48153,49 @@ rmsMachineCollectorButton?.addEventListener("click", openRmsCollectorModal);
 rmsMachineHookButton?.addEventListener("click", () => setView("missions"));
 rmsMachineHowButton?.addEventListener("click", focusRmsTutorial);
 rmsMachineFilterButton?.addEventListener("click", () => {
-  state.rmsMachineFilters = {
-    search: rmsMachineSearchInput?.value?.trim() || "",
-    phase: rmsMachinePhaseFilter?.value || "",
-    priority: rmsMachinePriorityFilter?.value || "",
-  };
-  state.rmsMachineLoaded = false;
-  loadRmsMachineData({ force: true }).then(renderRmsMachineView).catch((error) => {
+  applyRmsMachineFilters().catch((error) => {
     showFeedback(error.message || "No se pudo filtrar la Máquina RMS.", "error", { title: "Máquina RMS" });
   });
 });
 rmsMachineSearchInput?.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     event.preventDefault();
-    rmsMachineFilterButton?.click();
+    applyRmsMachineFilters().catch((error) => showFeedback(error.message || "No se pudo buscar el lead.", "error", { title: "Búsqueda de leads" }));
   }
+});
+rmsMachineSearchInput?.addEventListener("input", () => {
+  const query = rmsMachineSearchInput.value.trim();
+  if (state.rmsMachineFilterTimer) window.clearTimeout(state.rmsMachineFilterTimer);
+  if (!query) {
+    if (rmsMachineFilterFeedback) {
+      rmsMachineFilterFeedback.classList.add("hidden");
+      rmsMachineFilterFeedback.textContent = "";
+    }
+    state.rmsMachineFilterTimer = window.setTimeout(() => {
+      applyRmsMachineFilters({ quiet: true }).catch((error) => showFeedback(error.message || "No se pudo restablecer la lista.", "error", { title: "Búsqueda de leads" }));
+    }, 160);
+    return;
+  }
+  if (rmsMachineFilterFeedback) {
+    rmsMachineFilterFeedback.classList.remove("hidden", "is-empty");
+    rmsMachineFilterFeedback.textContent = query.length < 2 ? "Escribe al menos 2 caracteres para buscar." : `Buscaré “${query}” al terminar de escribir.`;
+  }
+  if (query.length < 2) return;
+  state.rmsMachineFilterTimer = window.setTimeout(() => {
+    applyRmsMachineFilters({ quiet: true }).catch((error) => showFeedback(error.message || "No se pudo buscar el lead.", "error", { title: "Búsqueda de leads" }));
+  }, 420);
+});
+rmsMachineClearFiltersButton?.addEventListener("click", () => {
+  if (rmsMachineSearchInput) rmsMachineSearchInput.value = "";
+  if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = "";
+  if (rmsMachinePriorityFilter) rmsMachinePriorityFilter.value = "";
+  applyRmsMachineFilters().catch((error) => showFeedback(error.message || "No se pudieron limpiar los filtros.", "error", { title: "Búsqueda de leads" }));
 });
 rmsMachinePhaseFilter?.addEventListener("change", () => {
-  state.rmsMachineFilters.phase = rmsMachinePhaseFilter.value || "";
-  if (state.rmsMachineFilters.phase) {
-    openRmsStation(state.rmsMachineFilters.phase, { source: "phase-filter" });
-  } else {
-    state.rmsStationPhase = "";
-    state.rmsStationScreenOpen = false;
-    renderRmsMachineView();
-  }
+  applyRmsMachineFilters({ quiet: true }).catch((error) => showFeedback(error.message || "No se pudo filtrar la estación.", "error", { title: "Búsqueda de leads" }));
 });
 rmsMachinePriorityFilter?.addEventListener("change", () => {
-  state.rmsMachineFilters.priority = rmsMachinePriorityFilter.value || "";
-  state.rmsMachineLoaded = false;
-  loadRmsMachineData({ force: true, quiet: true }).then(renderRmsMachineView);
+  applyRmsMachineFilters({ quiet: true }).catch((error) => showFeedback(error.message || "No se pudo filtrar la prioridad.", "error", { title: "Búsqueda de leads" }));
 });
 rmsBulkCreateTasksButton?.addEventListener("click", () => executeRmsBulkOperation());
 rmsBulkClearButton?.addEventListener("click", clearRmsSelection);

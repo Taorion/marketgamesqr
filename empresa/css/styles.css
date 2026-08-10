@@ -14145,6 +14145,23 @@ html body[data-current-view="account"] .portal-shell .digital-asset-card :is(p, 
   overflow-wrap: anywhere;
 }
 
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-filter-feedback {
+  margin: 10px 0 0 !important;
+  padding: 10px 12px !important;
+  border: 1px solid rgba(20, 78, 133, .16) !important;
+  border-radius: 10px !important;
+  background: #f4f9ff !important;
+  color: #173d75 !important;
+  font-size: .86rem !important;
+  font-weight: 700 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-machine-filter-feedback.is-empty {
+  border-color: rgba(180, 82, 42, .22) !important;
+  background: #fff8f4 !important;
+  color: #8e421f !important;
+}
+
 html body > #rmsCollectorModal .rms-collector-form::before {
   content: none !important;
   display: none !important;
