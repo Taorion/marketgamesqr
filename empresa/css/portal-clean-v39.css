@@ -16295,3 +16295,49 @@ body[data-current-view="validator"] .portal-shell .validator-result-grid {
 body[data-current-view="validator"] .portal-shell .validator-result-grid > .validator-panel {
   width: 100% !important;
 }
+
+/* Qori breathing room: ningún espacio operativo empieza ni termina pegado al borde. */
+:root {
+  --qori-breathing-gutter: clamp(20px, 2.8vw, 42px);
+  --qori-breathing-gutter-compact: clamp(16px, 4vw, 22px);
+}
+
+html body .portal-shell .content-shell {
+  padding-inline: var(--qori-breathing-gutter) !important;
+  padding-block: clamp(20px, 2.4vw, 34px) clamp(30px, 4vw, 54px) !important;
+}
+
+html body .portal-shell .content-shell > .view-section.active {
+  width: min(100%, var(--portal-content-max)) !important;
+  margin-inline: auto !important;
+}
+
+html body .portal-shell .content-shell :is(.surface-card, .data-table-card, .chart-card, .map-card, .setting-card, .asset-card, .metric-card, .kpi-card) {
+  scroll-margin-inline: var(--qori-breathing-gutter);
+}
+
+html body > :is(.modal-shell, .modal-overlay):not(.hidden) {
+  padding: clamp(18px, 3vw, 42px) !important;
+}
+
+html body > :is(.modal-shell, .modal-overlay):not(.hidden) > :is(.modal-card, .modal-content, .modal-dialog, .reward-pass-create-modal-card, .sales-entry-modal-card, .sales-detail-card, .rms-negotiation-card) {
+  max-width: min(100%, calc(100vw - (2 * clamp(18px, 3vw, 42px)))) !important;
+  max-height: calc(100dvh - (2 * clamp(18px, 3vw, 42px))) !important;
+}
+
+@media (max-width: 620px) {
+  html body .portal-shell .content-shell {
+    padding-inline: var(--qori-breathing-gutter-compact) !important;
+    padding-block: 18px 32px !important;
+  }
+
+  html body > :is(.modal-shell, .modal-overlay):not(.hidden) {
+    padding: 12px !important;
+  }
+
+  html body > :is(.modal-shell, .modal-overlay):not(.hidden) > :is(.modal-card, .modal-content, .modal-dialog, .reward-pass-create-modal-card, .sales-entry-modal-card, .sales-detail-card, .rms-negotiation-card) {
+    max-width: calc(100vw - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+    border-radius: 16px !important;
+  }
+}
