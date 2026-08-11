@@ -45853,17 +45853,13 @@ async function handleRmsCreateProductClassification(id = "") {
     phase: item.stage || "curaduria",
     productName,
   };
-  // The product form starts inside the Inventory view. Move it before switching
-  // views so Inventory's render cannot replace the form between this handoff
-  // and the guided product creation step.
-  if (inventoryProductModal?.parentElement !== document.body) {
-    document.body.appendChild(inventoryProductModal);
-  }
-  setView("inventory");
+  // Open the form first. This moves it out of the Inventory view before the
+  // navigation can render that view and guarantees the guided form stays open.
   resetInventoryForm();
   if (inventoryNameInput) inventoryNameInput.value = productName;
   if (inventoryDescriptionInput) inventoryDescriptionInput.value = `Creado desde Clasificador para ${item.name || "un lead"}.`;
   openInventoryProductModal({ focusTarget: inventoryUnitPriceInput || inventoryNameInput });
+  setView("inventory");
   showFeedback("Completa precio y unidad. Al guardar, Qori vinculará este producto al lead y volverá al Clasificador.", "info", { title: "Clasificador" });
 }
 
