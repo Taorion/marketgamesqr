@@ -33,7 +33,7 @@
     const select = document.getElementById("communicationWhatsAppTemplateInput");
     if (!select) return;
     const templates = Array.isArray(state.communicationWhatsAppTemplates) ? state.communicationWhatsAppTemplates : [];
-    select.innerHTML = `<option value="">${templates.length ? "Elige una plantilla aprobada" : "Conecta WhatsApp Business en Cuenta y carga plantillas"}</option>${templates.map((template) => `<option value="${esc(template.name)}" data-language="${esc(template.language || "es_CO")}" data-variables="${Number(template.variable_count || 0)}">${esc(template.name)} · ${esc(template.language || "es_CO")}${Number(template.variable_count || 0) ? ` · ${Number(template.variable_count)} variable(s)` : ""}</option>`).join("")}`;
+    select.innerHTML = `<option value="">${templates.length ? "Elige una plantilla aprobada" : "Conecta WhatsApp Business en Cuenta y carga plantillas"}</option>${templates.map((template) => `<option value="${esc(template.name)}" data-language="${esc(template.language || "es_CO")}" data-variables="${Number(template.variable_count || 0)}">${esc(template.name)} · ${esc(template.language || "es_CO")}${Number(template.variable_count || 0) ? ` · ${Number(template.variable_count)} variable(s)` : " · sin variables"}</option>`).join("")}`;
     select.value = selectedName || "";
     const parameters = document.getElementById("communicationWhatsAppTemplateParametersInput");
     if (parameters) parameters.value = Array.isArray(selectedParameters) ? selectedParameters.join("\n") : "";
@@ -42,9 +42,31 @@
   const updateWhatsAppTemplateHelp = () => {
     const template = whatsAppTemplateSelection();
     const help = document.getElementById("communicationWhatsAppTemplateHelp");
+    const field = document.getElementById("communicationWhatsAppTemplateParametersField");
+    const label = document.getElementById("communicationWhatsAppTemplateParametersLabel");
+    const input = document.getElementById("communicationWhatsAppTemplateParametersInput");
+    const preview = document.getElementById("communicationWhatsAppTemplatePreview");
+    const selectedTemplate = (state.communicationWhatsAppTemplates || []).find((item) => String(item.name) === template.name && String(item.language || "es_CO") === template.language);
     if (!help) return;
-    if (!template.name) help.textContent = "Conecta Meta y carga las plantillas aprobadas desde Cuenta. Qori no enviará texto libre fuera de la ventana permitida por WhatsApp.";
-    else help.textContent = template.variable_count ? `Esta plantilla espera ${template.variable_count} variable(s). Escribe una línea por variable, en el mismo orden. Puedes usar {{nombre}}, {{contacto}}, {{interes}} y {{enlace}}.` : "Esta plantilla no tiene variables de cuerpo. Déjalas vacías.";
+    if (preview) {
+      preview.classList.toggle("hidden", !template.name);
+      preview.innerHTML = template.name ? `<span class="material-symbols-outlined">preview</span><div><span class="mono-label">Vista de la plantilla aprobada</span><strong>${esc(template.name)} · ${esc(template.language)}</strong><p>${esc(selectedTemplate?.body || "Meta no entregó una vista previa del texto.")}</p></div>` : "";
+    }
+    if (!template.name) {
+      field?.classList.remove("hidden");
+      if (label) label.textContent = "Variables de plantilla, una por línea";
+      help.textContent = "Selecciona una plantilla aprobada. Qori no enviará texto libre fuera de la ventana permitida por WhatsApp.";
+      return;
+    }
+    if (!template.variable_count) {
+      if (input) input.value = "";
+      field?.classList.add("hidden");
+      help.textContent = "Esta plantilla se envía tal como fue aprobada en Meta: no necesitas escribir variables ni mensaje adicional.";
+      return;
+    }
+    field?.classList.remove("hidden");
+    if (label) label.textContent = template.variable_count === 1 ? "Dato que reemplazará {{1}}" : `${template.variable_count} datos, una línea por cada variable`;
+    help.textContent = `Meta espera ${template.variable_count} variable(s). Qori envía cada línea en orden. Puedes usar {{nombre}}, {{contacto}}, {{interes}} y {{enlace}}.`;
   };
   const publicationLabel = (item) => isSocialCommunication(item)
     ? (String(item?.publication_status || "").toUpperCase() === "PUBLISHED" ? "Publicada" : "Por publicar")

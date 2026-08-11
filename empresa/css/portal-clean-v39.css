@@ -14571,6 +14571,10 @@ body[data-current-view="account"] .portal-shell .account-whatsapp-template-picke
 .communication-whatsapp-guidance { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid rgba(18, 140, 126, .22); border-radius: 12px; background: rgba(18, 140, 126, .07); color: #195d55; }
 .communication-whatsapp-guidance .material-symbols-outlined { color: #0b8f7d; }
 .communication-whatsapp-guidance p { margin: 0; line-height: 1.5; }
+.communication-whatsapp-template-preview { display: flex; gap: 11px; align-items: flex-start; padding: 13px 14px; border: 1px solid rgba(18, 140, 126, .20); border-radius: 12px; background: #f4fbf9; color: #17544d; }
+.communication-whatsapp-template-preview .material-symbols-outlined { color: #0b8f7d; }
+.communication-whatsapp-template-preview strong, .communication-whatsapp-template-preview p { display: block; margin: 3px 0 0; }
+.communication-whatsapp-template-preview p { white-space: pre-wrap; line-height: 1.45; }
 .communication-whatsapp-route { border-color: rgba(18, 140, 126, .28) !important; background: linear-gradient(135deg, rgba(18, 140, 126, .09), rgba(8, 104, 215, .035)) !important; }
 .communication-whatsapp-route > .material-symbols-outlined { color: #0b8f7d !important; }
 @media (max-width: 700px) {

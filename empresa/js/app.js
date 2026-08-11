@@ -519,6 +519,8 @@ const accountWhatsAppLoadTemplatesButton = document.getElementById("accountWhats
 const accountWhatsAppTestPhoneInput = document.getElementById("accountWhatsAppTestPhoneInput");
 const accountWhatsAppTestTemplateInput = document.getElementById("accountWhatsAppTestTemplateInput");
 const accountWhatsAppTestParametersInput = document.getElementById("accountWhatsAppTestParametersInput");
+const accountWhatsAppTestParametersField = document.getElementById("accountWhatsAppTestParametersField");
+const accountWhatsAppTestParametersLabel = document.getElementById("accountWhatsAppTestParametersLabel");
 const accountWhatsAppTestConsentInput = document.getElementById("accountWhatsAppTestConsentInput");
 const accountWhatsAppTestButton = document.getElementById("accountWhatsAppTestButton");
 const accountWhatsAppWebhookUrlInput = document.getElementById("accountWhatsAppWebhookUrlInput");
@@ -5908,6 +5910,25 @@ function renderCommunicationWhatsAppTemplateOptions(select = accountWhatsAppTest
   const templates = Array.isArray(state.communicationWhatsAppTemplates) ? state.communicationWhatsAppTemplates : [];
   select.innerHTML = `<option value="">${templates.length ? "Elige una plantilla aprobada" : "Guarda la conexión y carga tus plantillas"}</option>${templates.map((template) => `<option value="${escapeHtml(template.name)}" data-language="${escapeHtml(template.language || "es_CO")}" data-variables="${Number(template.variable_count || 0)}">${escapeHtml(template.name)} · ${escapeHtml(template.language || "es_CO")}${Number(template.variable_count || 0) ? ` · ${Number(template.variable_count)} variable(s)` : ""}</option>`).join("")}`;
   select.value = selected || "";
+  updateCommunicationWhatsAppTestParameters();
+}
+
+function updateCommunicationWhatsAppTestParameters() {
+  const selected = accountWhatsAppTestTemplateInput?.selectedOptions?.[0];
+  const variableCount = Number(selected?.dataset.variables || 0);
+  const selectedTemplate = Boolean(accountWhatsAppTestTemplateInput?.value);
+  if (!selectedTemplate) {
+    accountWhatsAppTestParametersField?.classList.remove("hidden");
+    if (accountWhatsAppTestParametersLabel) accountWhatsAppTestParametersLabel.textContent = "Variables de prueba (una por línea)";
+    return;
+  }
+  if (!variableCount) {
+    if (accountWhatsAppTestParametersInput) accountWhatsAppTestParametersInput.value = "";
+    accountWhatsAppTestParametersField?.classList.add("hidden");
+    return;
+  }
+  accountWhatsAppTestParametersField?.classList.remove("hidden");
+  if (accountWhatsAppTestParametersLabel) accountWhatsAppTestParametersLabel.textContent = variableCount === 1 ? "Dato de prueba para {{1}}" : `${variableCount} datos de prueba, una línea por variable`;
 }
 
 function renderCommunicationWhatsAppConnection() {
@@ -50401,6 +50422,7 @@ accountWhatsAppConnectButton?.addEventListener("click", () => saveCommunicationW
 accountWhatsAppDisconnectButton?.addEventListener("click", () => saveCommunicationWhatsAppConnection({ removeAccessToken: true }));
 accountWhatsAppLoadTemplatesButton?.addEventListener("click", () => loadCommunicationWhatsAppTemplates().catch(() => {}));
 accountWhatsAppTestButton?.addEventListener("click", testCommunicationWhatsAppConnection);
+accountWhatsAppTestTemplateInput?.addEventListener("change", updateCommunicationWhatsAppTestParameters);
 accountWhatsAppCopyWebhookUrlButton?.addEventListener("click", () => copyWhatsAppWebhookValue(accountWhatsAppWebhookUrlInput, "La URL de devolución"));
 accountWhatsAppCopyWebhookTokenButton?.addEventListener("click", () => copyWhatsAppWebhookValue(accountWhatsAppWebhookVerifyTokenInput, "El token de verificación"));
 accountPasswordForm?.addEventListener("submit", submitAccountPassword);

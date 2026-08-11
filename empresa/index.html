@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=whatsapp-webhooks-v310-20260811">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=whatsapp-simple-v312-20260811">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -1658,7 +1658,7 @@
                     <label><span>Número para prueba</span><input id="accountWhatsAppTestPhoneInput" type="tel" maxlength="40" placeholder="Ej: +57 300 123 4567"></label>
                     <div class="account-whatsapp-template-picker">
                       <label><span>Plantilla aprobada</span><select id="accountWhatsAppTestTemplateInput"><option value="">Guarda la conexión y carga tus plantillas</option></select></label>
-                      <label><span>Variables de prueba (una por línea)</span><textarea id="accountWhatsAppTestParametersInput" rows="2" maxlength="4000" placeholder="Ej: Ana&#10;https://tu-enlace.com"></textarea></label>
+                      <label id="accountWhatsAppTestParametersField"><span id="accountWhatsAppTestParametersLabel">Variables de prueba (una por línea)</span><textarea id="accountWhatsAppTestParametersInput" rows="2" maxlength="4000" placeholder="Ej: Ana&#10;https://tu-enlace.com"></textarea></label>
                     </div>
                     <label class="communication-consent"><input id="accountWhatsAppTestConsentInput" type="checkbox"> Confirmo que este número aceptó recibir esta prueba.</label>
                     <div class="inline-actions"><button class="ghost-button compact" id="accountWhatsAppTestButton" type="button">Enviar prueba por WhatsApp</button></div>
@@ -7634,7 +7634,8 @@
             <div class="communication-composer-section-head"><span class="communication-composer-step">02</span><div><span class="mono-label">Plantilla oficial de WhatsApp</span><strong>Elige qué plantilla aprobada enviará Meta</strong><small>Primero conecta WhatsApp Business en Cuenta. Qori sustituye las variables en orden y registra el resultado de cada envío.</small></div></div>
             <div class="communication-whatsapp-guidance"><span class="material-symbols-outlined">verified_user</span><p><strong>Antes de lanzar:</strong> elige una plantilla aprobada, completa exactamente sus variables y confirma que todos dieron consentimiento. Si todavía no conectas Meta, guarda este borrador y ve a <b>Cuenta → WhatsApp Business</b>.</p></div>
             <label><span>Plantilla aprobada de Meta</span><select id="communicationWhatsAppTemplateInput"><option value="">Carga plantillas desde tu conexión de WhatsApp</option></select></label>
-            <label><span>Variables de plantilla, una por línea</span><textarea id="communicationWhatsAppTemplateParametersInput" rows="3" maxlength="4000" placeholder="Ej: {{nombre}}&#10;{{enlace}}"></textarea><small id="communicationWhatsAppTemplateHelp">Qori reemplaza {{nombre}}, {{contacto}}, {{interes}} y {{enlace}} automáticamente. Añade una línea por cada variable que tenga tu plantilla.</small></label>
+            <div class="communication-whatsapp-template-preview hidden" id="communicationWhatsAppTemplatePreview"></div>
+            <label id="communicationWhatsAppTemplateParametersField"><span id="communicationWhatsAppTemplateParametersLabel">Variables de plantilla, una por línea</span><textarea id="communicationWhatsAppTemplateParametersInput" rows="3" maxlength="4000" placeholder="Ej: {{nombre}}&#10;{{enlace}}"></textarea><small id="communicationWhatsAppTemplateHelp">Qori reemplaza {{nombre}}, {{contacto}}, {{interes}} y {{enlace}} automáticamente. Añade una línea por cada variable que tenga tu plantilla.</small></label>
             <label><span>Nota interna / vista previa</span><textarea id="communicationWhatsAppBodyInput" rows="4" maxlength="3000" placeholder="Ej: Campaña de regreso para {{nombre}}. Esta nota se guarda en Qori; Meta envía el texto aprobado de la plantilla."></textarea></label>
           </section>
           <section class="communication-composer-section communication-social-fields hidden">
@@ -7679,8 +7680,8 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=whatsapp-webhooks-v311-20260811" defer></script>
-    <script src="js/communications.js?v=whatsapp-cloud-guided-v309-20260811" defer></script>
+<script src="js/app.js?v=whatsapp-simple-v312-20260811" defer></script>
+    <script src="js/communications.js?v=whatsapp-simple-v312-20260811" defer></script>
 </body>
 </html>
 
