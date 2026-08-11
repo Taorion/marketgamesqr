@@ -14,6 +14,50 @@
     if (!reasons.length) return "";
     return ` Causa: ${reasons.slice(0, 2).map((item) => `${Number(item?.count || 0)}: ${String(item?.message || "Error de entrega")}`).join(" · ")}`;
   };
+  const communicationHistorySelection = () => Array.from(new Set(state.communicationHistorySelectedIds || []));
+  const runCommunicationBulkRequests = async (items, request, concurrency = 5) => {
+    const queue = Array.from(items || []);
+    const results = [];
+    const workers = Array.from({ length: Math.min(Math.max(1, concurrency), queue.length) }, async () => {
+      while (queue.length) {
+        const item = queue.shift();
+        try { results.push({ item, ok: true, value: await request(item) }); }
+        catch (error) { results.push({ item, ok: false, error }); }
+      }
+    });
+    await Promise.all(workers);
+    return results;
+  };
+  const runCommunicationHistoryBulk = async (operation) => {
+    const ids = communicationHistorySelection();
+    if (!ids.length) return;
+    const items = (state.communications || []).filter((item) => ids.includes(String(item.id)));
+    if (!items.length) return;
+    const isDelete = operation === "delete";
+    const confirmation = isDelete
+      ? `¿Borrar ${items.length} comunicación(es)? Se eliminarán sus destinatarios y su historial de entrega. No se borrarán contactos ni ventas.`
+      : `¿Archivar ${items.length} comunicación(es)? Se conservará el historial, pero dejarán de estar disponibles para nuevos envíos.`;
+    if (!window.confirm(confirmation)) return;
+    showFeedback(`${isDelete ? "Borrando" : "Archivando"} ${items.length} comunicación(es)...`, "loading", { title: "Operación masiva", timeout: 0 });
+    const results = await runCommunicationBulkRequests(items, (item) => api(`/api/business/communications/${encodeURIComponent(item.id)}`, {
+      method: isDelete ? "DELETE" : "PATCH",
+      headers: authHeaders(),
+      ...(isDelete ? {} : { body: JSON.stringify({ status: "ARCHIVED" }) }),
+    }));
+    const completed = results.filter((result) => result.ok).map((result) => String(result.item.id));
+    state.communicationHistorySelectedIds = [];
+    state.communicationSelectedRefs = [];
+    state.communicationWhatsAppQueue = null;
+    state.communicationsLoaded = false;
+    await loadCommunications({ force: true });
+    state.selectedCommunicationId = state.communications.find((item) => String(item.id) === String(state.selectedCommunicationId))?.id
+      || state.communications.find((item) => String(item.status || "").toUpperCase() !== "ARCHIVED")?.id
+      || state.communications[0]?.id
+      || null;
+    render();
+    const failed = results.length - completed.length;
+    showFeedback(`${completed.length} comunicación(es) ${isDelete ? "borradas" : "archivadas"}${failed ? `. ${failed} no se pudieron procesar.` : "."}`, failed ? "info" : "success", { title: "Operación masiva" });
+  };
   const readJson = (value, fallback = []) => { try { const parsed = JSON.parse(value || ""); return Array.isArray(parsed) ? parsed : fallback; } catch { return fallback; } };
   const isSocialCommunication = (item) => ["SOCIAL", "MIXED"].includes(String(item?.communication_type || "").toUpperCase());
   const isEmailCommunication = (item) => ["EMAIL", "MIXED"].includes(String(item?.communication_type || "").toUpperCase());
@@ -454,6 +498,19 @@
       const deliveryLabel = isWhatsAppCommunication(item) ? "aceptados por Meta" : "enviados";
       return `<article class="communication-list-item communication-history-item is-${historyState.tone} ${String(item.id) === String(state.selectedCommunicationId) ? "is-selected" : ""}" data-communication-select="${esc(item.id)}"><span class="communication-history-icon material-symbols-outlined">${historyState.icon}</span><div class="communication-history-copy"><div class="communication-history-topline"><span class="communication-history-chip is-${historyState.tone}">${esc(historyState.label)}</span><span class="mono-label">${esc(communicationTypeLabel(item.communication_type))}</span></div><strong>${esc(item.title)}</strong><p>${esc(item.web_showcase_title ? `Vitrina web: ${item.web_showcase_title}` : item.campaign_name || item.channel_name || item.activation_name || "Sin relación comercial")}</p><div class="communication-history-foot"><span>${esc(communicationHistoryDate(item.updated_at || item.created_at))}</span>${media.length ? `<span><span class="material-symbols-outlined">image</span>${media.length}</span>` : ""}</div></div><div class="communication-list-item-meta"><strong>${Number(item.recipients_sent || 0)}</strong><small>${deliveryLabel}</small>${Number(item.recipients_failed || 0) ? `<em>${Number(item.recipients_failed || 0)} fallido${Number(item.recipients_failed || 0) === 1 ? "" : "s"}</em>` : `<span>${Number(item.recipients_total || 0)} destinatarios</span>`}<span class="material-symbols-outlined">arrow_forward</span></div></article>`;
     }).join("") : '<div class="communication-empty-state"><span class="material-symbols-outlined">mail</span><strong>Aún no has creado comunicaciones.</strong><p>Crea una pieza y úsala en email, redes o ambos canales.</p></div>';
+    const historyIds = communications.map((item) => String(item.id));
+    const historySelected = new Set(communicationHistorySelection().filter((id) => historyIds.includes(String(id))));
+    state.communicationHistorySelectedIds = Array.from(historySelected);
+    const historyOverview = list.querySelector(".communication-history-overview");
+    if (historyOverview) {
+      historyOverview.insertAdjacentHTML("beforeend", `<div class="communication-history-bulk" aria-live="polite"><strong>${historySelected.size} seleccionada${historySelected.size === 1 ? "" : "s"}</strong><div><button class="ghost-button compact" type="button" data-communication-history-select-visible>${historySelected.size === historyIds.length ? "Limpiar" : "Seleccionar visibles"}</button><button class="ghost-button compact" type="button" data-communication-history-archive ${historySelected.size ? "" : "disabled"}>Archivar</button>${canDeleteCommunications ? `<button class="communication-delete-button compact" type="button" data-communication-history-delete ${historySelected.size ? "" : "disabled"}>Borrar historial</button>` : ""}</div></div>`);
+    }
+    list.querySelectorAll("[data-communication-select]").forEach((item) => {
+      const id = String(item.dataset.communicationSelect || "");
+      const marked = historySelected.has(id);
+      item.classList.toggle("is-bulk-selected", marked);
+      item.insertAdjacentHTML("afterbegin", `<label class="communication-history-select" data-communication-history-select-control title="Seleccionar comunicación"><input type="checkbox" data-communication-history-select="${esc(id)}" aria-label="Seleccionar comunicación" ${marked ? "checked" : ""}><span></span></label>`);
+    });
     const selected = new Set(state.communicationSelectedRefs || []);
     const ready = emailReadyContacts(audienceChannel);
     summary.textContent = state.communicationAudienceLoading
@@ -702,7 +759,11 @@
   });
 
   document.addEventListener("click", async (event) => {
-    const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const all = event.target.closest("[data-communication-select-loaded]"); const clearSelection = event.target.closest("[data-communication-clear-selection]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const share = event.target.closest("[data-share-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const publish = event.target.closest("[data-publish-communication]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const remove = event.target.closest("[data-delete-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const loadMoreComposerAudience = event.target.closest("[data-load-more-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]"); const clearComposerAudience = event.target.closest("[data-composer-clear-audience]");
+    const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const historyPick = event.target.closest("[data-communication-history-select], [data-communication-history-select-control]"); const historySelectVisible = event.target.closest("[data-communication-history-select-visible]"); const historyArchive = event.target.closest("[data-communication-history-archive]"); const historyDelete = event.target.closest("[data-communication-history-delete]"); const all = event.target.closest("[data-communication-select-loaded]"); const clearSelection = event.target.closest("[data-communication-clear-selection]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const share = event.target.closest("[data-share-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const publish = event.target.closest("[data-publish-communication]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const remove = event.target.closest("[data-delete-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const loadMoreComposerAudience = event.target.closest("[data-load-more-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]"); const clearComposerAudience = event.target.closest("[data-composer-clear-audience]");
+    if (historyPick) { event.stopPropagation(); const input = historyPick.matches("input") ? historyPick : historyPick.querySelector("[data-communication-history-select]"); if (!input) return; if (historyPick !== input) { input.checked = !input.checked; event.preventDefault(); } const selected = new Set(communicationHistorySelection()); const id = String(input.dataset.communicationHistorySelect || ""); if (!id) return; if (input.checked) selected.add(id); else selected.delete(id); state.communicationHistorySelectedIds = Array.from(selected); render(); return; }
+    if (historySelectVisible) { event.preventDefault(); event.stopPropagation(); const ids = (state.communications || []).map((item) => String(item.id)); const selected = communicationHistorySelection(); state.communicationHistorySelectedIds = selected.length === ids.length ? [] : ids; render(); return; }
+    if (historyArchive) { event.preventDefault(); event.stopPropagation(); await runCommunicationHistoryBulk("archive"); return; }
+    if (historyDelete) { event.preventDefault(); event.stopPropagation(); await runCommunicationHistoryBulk("delete"); return; }
     if (open || edit || duplicate) { const relationKey = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const related = relationKey ? state.communications.find((row) => String(row.id) === String(relationKey)) : null; state.communicationPendingShowcaseId = related?.metadata?.web_showcase_id || ""; state.communicationPendingProductId = related?.metadata?.web_showcase_product_id || ""; state.communicationPendingPromotion = related?.metadata?.product_promotion || null; if (state.communicationPendingShowcaseId) { try { await loadCommunicationShowcaseProducts(state.communicationPendingShowcaseId); } catch (error) { console.warn("No se pudieron cargar los productos de la vitrina.", error); } } }
     if (open || edit || duplicate) { try { await prepareComposerRelations(); } catch (error) { console.warn("No se pudieron actualizar los canales para comunicaciones.", error); } renderOptions(); positionComposerAudience(); }
     if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationWebShowcaseInput").value = item.metadata?.web_showcase_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationWhatsAppBodyInput").value = item.whatsapp_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); } try { await window.loadCommunicationWhatsAppConnection?.({ force: true }); if (state.communicationWhatsAppConnection?.ready && !state.communicationWhatsAppTemplates?.length) await window.loadCommunicationWhatsAppTemplates?.(); } catch (error) { console.warn("No se pudo preparar la conexión de WhatsApp.", error); } renderWhatsAppTemplateOptions(item?.metadata?.whatsapp_template?.name || "", item?.metadata?.whatsapp_template?.body_parameters || []); document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }

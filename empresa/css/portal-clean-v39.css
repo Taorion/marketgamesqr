@@ -19327,3 +19327,127 @@ html body .portal-shell #rmsCollectorModal .modal-actions {
     padding: 12px !important;
   }
 }
+/* Qori: operaciones masivas en directorios, activaciones y comunicaciones. */
+.bulk-operation-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 18px 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(103, 181, 222, .42);
+  border-radius: 14px;
+  background: linear-gradient(105deg, rgba(233, 248, 255, .94), rgba(247, 252, 255, .96));
+  box-shadow: 0 8px 22px rgba(8, 59, 121, .08);
+}
+
+.bulk-operation-toolbar.hidden { display: none; }
+
+.bulk-operation-summary,
+.bulk-operation-actions,
+.communication-history-bulk,
+.communication-history-bulk > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bulk-operation-summary .material-symbols-outlined {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: #0579b9;
+  color: #fff;
+  font-size: 18px;
+}
+
+.bulk-operation-summary strong,
+.communication-history-bulk strong { color: var(--qori-blue-deep, #012268); }
+.bulk-operation-summary small { color: var(--qori-muted, #54708f); }
+
+.bulk-table-select { width: 44px; text-align: center; }
+.bulk-row-check,
+.communication-history-select {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+}
+
+.bulk-row-check input,
+.communication-history-select input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bulk-row-check span,
+.communication-history-select span {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #a6c5df;
+  border-radius: 6px;
+  background: #fff;
+  transition: .16s ease;
+}
+
+.bulk-row-check input:checked + span,
+.communication-history-select input:checked + span {
+  border-color: #0579b9;
+  background: #0579b9;
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+.bulk-row-check input:focus-visible + span,
+.communication-history-select input:focus-visible + span {
+  outline: 3px solid rgba(5, 121, 185, .25);
+  outline-offset: 2px;
+}
+
+.gaming-activation-list-row.is-bulk-selected,
+.lead-directory-row.is-bulk-selected .lead-directory-card-row,
+.communication-history-item.is-bulk-selected {
+  background: linear-gradient(100deg, rgba(213, 245, 255, .9), rgba(255, 255, 255, .96)) !important;
+}
+
+.lead-directory-row-check {
+  align-self: center;
+  margin-left: 2px;
+}
+
+html body:not(#qoriV132A#qoriV132B#qoriV132C)[data-current-view="leads"] .portal-shell .lead-directory-card-row {
+  grid-template-columns: 28px minmax(270px, 1.2fr) minmax(180px, 0.78fr) minmax(210px, 0.9fr) minmax(235px, 1fr) auto !important;
+}
+
+.lead-directory-bulk-toolbar { margin: 0 18px 12px; }
+
+.communication-history-overview {
+  flex-wrap: wrap;
+}
+
+.communication-history-bulk {
+  width: 100%;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid rgba(169, 203, 227, .65);
+}
+
+.communication-history-item { position: relative; }
+.communication-history-item > .communication-history-select { margin: 0 2px 0 0; flex: 0 0 auto; }
+
+@media (max-width: 760px) {
+  .bulk-operation-toolbar,
+  .communication-history-bulk {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .bulk-operation-actions,
+  .communication-history-bulk > div { flex-wrap: wrap; }
+  html body:not(#qoriV132A#qoriV132B#qoriV132C)[data-current-view="leads"] .portal-shell .lead-directory-card-row {
+    grid-template-columns: 26px minmax(0, 1fr) !important;
+  }
+  .lead-directory-row-check { grid-row: 1; }
+}

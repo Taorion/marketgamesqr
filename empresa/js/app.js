@@ -2455,6 +2455,7 @@ let state = {
   contactCenterMounted: false,
   contactCenterTab: "overview",
   leadCrmRows: [],
+  leadCrmBulkSelection: [],
   leadCrmPagination: { total: 0, limit: 40, offset: 0, has_more: false },
   leadCrmLoaded: false,
   leadCrmLoading: false,
@@ -2599,6 +2600,7 @@ let state = {
   strategicQrBatches: [],
   strategicQrHistory: [],
   triviaLaunchers: [],
+  triviaLauncherBulkSelection: [],
   gamingActivationCategory: "recommended",
   gamingActivationSearch: "",
   gamingActivationStatusFilter: "all",
@@ -25133,15 +25135,101 @@ function validateTriviaLauncherForm() {
   return { questions };
 }
 
+async function runBulkRequests(items, request, { concurrency = 6 } = {}) {
+  const queue = Array.from(items || []);
+  const results = [];
+  const workers = Array.from({ length: Math.min(Math.max(1, concurrency), queue.length) }, async () => {
+    while (queue.length) {
+      const item = queue.shift();
+      try {
+        results.push({ item, ok: true, value: await request(item) });
+      } catch (error) {
+        results.push({ item, ok: false, error });
+      }
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+function activationBulkIds() {
+  return Array.from(new Set(state.triviaLauncherBulkSelection || []));
+}
+
+function renderActivationBulkToolbar() {
+  const toolbar = document.getElementById("activationBulkToolbar");
+  const visibleIds = (state.triviaLaunchers || []).map((item) => String(item.id));
+  const selected = activationBulkIds().filter((id) => visibleIds.includes(String(id)));
+  state.triviaLauncherBulkSelection = selected;
+  if (!toolbar) return;
+  toolbar.classList.toggle("hidden", !visibleIds.length);
+  toolbar.innerHTML = visibleIds.length ? `
+    <div class="bulk-operation-summary"><span class="material-symbols-outlined">checklist</span><strong>${selected.length} seleccionada${selected.length === 1 ? "" : "s"}</strong><small>en esta lista</small></div>
+    <div class="bulk-operation-actions">
+      <button class="ghost-button compact" type="button" data-activation-bulk-select-visible>${selected.length === visibleIds.length ? "Limpiar selección" : "Seleccionar visibles"}</button>
+      <button class="ghost-button compact" type="button" data-activation-bulk-status="active" ${selected.length ? "" : "disabled"}>Activar</button>
+      <button class="ghost-button compact" type="button" data-activation-bulk-status="paused" ${selected.length ? "" : "disabled"}>Pausar</button>
+      <button class="ghost-button compact" type="button" data-activation-bulk-status="archived" ${selected.length ? "" : "disabled"}>Anular</button>
+      <button class="ghost-button compact danger-button" type="button" data-activation-bulk-delete ${selected.length ? "" : "disabled"}>Eliminar</button>
+    </div>` : "";
+  toolbar.querySelector("[data-activation-bulk-select-visible]")?.addEventListener("click", () => {
+    state.triviaLauncherBulkSelection = selected.length === visibleIds.length ? [] : visibleIds;
+    renderTriviaLaunchers();
+  });
+  toolbar.querySelectorAll("[data-activation-bulk-status]").forEach((button) => {
+    button.addEventListener("click", () => updateInteractiveActivationsBulk(button.dataset.activationBulkStatus));
+  });
+  toolbar.querySelector("[data-activation-bulk-delete]")?.addEventListener("click", deleteInteractiveActivationsBulk);
+}
+
+async function updateInteractiveActivationsBulk(status) {
+  const ids = activationBulkIds();
+  if (!ids.length || !status) return;
+  const label = activationStatusLabel(status);
+  if (status === "archived" && !window.confirm(`Vas a anular ${ids.length} activaci\u00f3n(es). Sus enlaces quedar\u00e1n inactivos y el historial permanecer\u00e1 protegido. \u00bfContinuar?`)) return;
+  showFeedback(`Actualizando ${ids.length} activaci\u00f3n(es)...`, "loading", { title: "Operaci\u00f3n masiva", timeout: 0 });
+  const results = await runBulkRequests(ids, (id) => api(`/api/business/interactive-activations/${encodeURIComponent(id)}`, {
+    method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status }),
+  }));
+  const completed = results.filter((result) => result.ok).map((result) => String(result.item));
+  if (status === "archived") {
+    state.triviaLaunchers = (state.triviaLaunchers || []).filter((item) => !completed.includes(String(item.id)));
+  } else {
+    state.triviaLaunchers = (state.triviaLaunchers || []).map((item) => completed.includes(String(item.id)) ? { ...item, status } : item);
+  }
+  state.triviaLauncherBulkSelection = [];
+  renderTriviaLaunchers();
+  const failed = results.length - completed.length;
+  showFeedback(`${completed.length} activaci\u00f3n(es) quedaron en ${label.toLowerCase()}${failed ? `. ${failed} no se pudieron actualizar.` : "."}`, failed ? "info" : "success", { title: "Operaci\u00f3n masiva" });
+}
+
+async function deleteInteractiveActivationsBulk() {
+  const ids = activationBulkIds();
+  if (!ids.length) return;
+  if (!window.confirm(`Vas a eliminar ${ids.length} activaci\u00f3n(es). Las que ya tienen participaciones o tickets se archivar\u00e1n para conservar trazabilidad. \u00bfContinuar?`)) return;
+  showFeedback(`Eliminando ${ids.length} activaci\u00f3n(es)...`, "loading", { title: "Operaci\u00f3n masiva", timeout: 0 });
+  const results = await runBulkRequests(ids, (id) => api(`/api/business/interactive-activations/${encodeURIComponent(id)}`, {
+    method: "DELETE", headers: authHeaders(),
+  }));
+  const completed = results.filter((result) => result.ok).map((result) => String(result.item));
+  state.triviaLaunchers = (state.triviaLaunchers || []).filter((item) => !completed.includes(String(item.id)));
+  state.triviaLauncherBulkSelection = [];
+  renderTriviaLaunchers();
+  const failed = results.length - completed.length;
+  showFeedback(`${completed.length} activaci\u00f3n(es) eliminadas o archivadas${failed ? `. ${failed} no se pudieron procesar.` : "."}`, failed ? "info" : "success", { title: "Operaci\u00f3n masiva" });
+}
+
 function renderTriviaLaunchers() {
   if (!triviaLauncherTable) return;
+  const selectedIds = new Set(activationBulkIds());
   triviaLauncherTable.innerHTML = (state.triviaLaunchers || []).length
     ? state.triviaLaunchers.map((item) => {
       const attemptsCount = Number(item.attempts_count || 0).toLocaleString("es-CO");
       const winnersCount = Number(item.winners_count || 0).toLocaleString("es-CO");
       const rate = activationPerformanceRate(item).toFixed(1);
       return `
-      <tr class="gaming-activation-list-row" data-open-activation-detail="${escapeHtml(item.id)}" data-gaming-published-activation="${escapeHtml(item.id)}" data-gaming-activation-status="${escapeHtml(item.status || "draft")}" data-gaming-activation-search="${escapeHtml([item.title, activationTypeLabel(item.activation_type), item.campaign_name, item.public_slug].filter(Boolean).join(" ").toLowerCase())}" tabindex="0">
+      <tr class="gaming-activation-list-row ${selectedIds.has(String(item.id)) ? "is-bulk-selected" : ""}" data-open-activation-detail="${escapeHtml(item.id)}" data-gaming-published-activation="${escapeHtml(item.id)}" data-gaming-activation-status="${escapeHtml(item.status || "draft")}" data-gaming-activation-search="${escapeHtml([item.title, activationTypeLabel(item.activation_type), item.campaign_name, item.public_slug].filter(Boolean).join(" ").toLowerCase())}" tabindex="0">
+        <td class="bulk-table-select"><label class="bulk-row-check" title="Seleccionar activación"><input type="checkbox" data-activation-bulk-select="${escapeHtml(item.id)}" aria-label="Seleccionar ${escapeHtml(item.title || "activación")}" ${selectedIds.has(String(item.id)) ? "checked" : ""}><span></span></label></td>
         <td>
           <div class="activation-summary-cell">
             <strong class="activation-title">${escapeHtml(item.title || "Activación sin título")}</strong>
@@ -25173,7 +25261,29 @@ function renderTriviaLaunchers() {
       </tr>
     `;
     }).join("")
-    : '<tr><td colspan="4" class="activation-empty-state">Sin activaciones creadas. Usa Crear activación para configurar la primera.</td></tr>';
+    : '<tr><td colspan="5" class="activation-empty-state">Sin activaciones creadas. Usa Crear activación para configurar la primera.</td></tr>';
+
+  renderActivationBulkToolbar();
+  const visibleIds = (state.triviaLaunchers || []).map((item) => String(item.id));
+  const selectVisible = document.getElementById("activationBulkSelectVisible");
+  if (selectVisible) {
+    selectVisible.checked = Boolean(visibleIds.length) && visibleIds.every((id) => selectedIds.has(id));
+    selectVisible.indeterminate = selectedIds.size > 0 && !selectVisible.checked;
+    selectVisible.onchange = () => {
+      state.triviaLauncherBulkSelection = selectVisible.checked ? visibleIds : [];
+      renderTriviaLaunchers();
+    };
+  }
+  triviaLauncherTable.querySelectorAll("[data-activation-bulk-select]").forEach((input) => {
+    input.addEventListener("click", (event) => event.stopPropagation());
+    input.closest(".bulk-row-check")?.addEventListener("click", (event) => event.stopPropagation());
+    input.addEventListener("change", () => {
+      const selected = new Set(activationBulkIds());
+      if (input.checked) selected.add(input.dataset.activationBulkSelect); else selected.delete(input.dataset.activationBulkSelect);
+      state.triviaLauncherBulkSelection = Array.from(selected);
+      renderTriviaLaunchers();
+    });
+  });
 
   triviaLauncherTable.querySelectorAll("[data-open-activation-detail]").forEach((row) => {
     const open = (event) => {
@@ -32686,6 +32796,97 @@ async function removeManualContactFromCampaign(manualLeadId, campaignId) {
   }
 }
 
+function leadBulkKey(leadRef = {}) {
+  return `${String(leadRef.source_type || "PLAYER").toUpperCase()}:${String(leadRef.id || "")}`;
+}
+
+function leadBulkSelection() {
+  return Array.from(new Set(state.leadCrmBulkSelection || []));
+}
+
+function leadBulkReferences(rows = state.leadCrmRows || []) {
+  const byKey = new Map((rows || []).map((item) => [leadBulkKey(item), { id: item.id, source_type: item.source_type || "PLAYER", name: item.name || "este contacto" }]));
+  return leadBulkSelection().map((key) => byKey.get(key)).filter(Boolean);
+}
+
+function renderLeadBulkToolbar(visibleRows = []) {
+  const card = leadCrmTable?.closest(".lead-directory-card");
+  if (!card) return;
+  let toolbar = card.querySelector(".lead-directory-bulk-toolbar");
+  if (!toolbar) {
+    toolbar = document.createElement("div");
+    toolbar.className = "bulk-operation-toolbar lead-directory-bulk-toolbar";
+    card.querySelector(".table-card-head")?.insertAdjacentElement("afterend", toolbar);
+  }
+  const visibleKeys = visibleRows.map((item) => leadBulkKey(item));
+  const selected = leadBulkSelection().filter((key) => visibleKeys.includes(key));
+  state.leadCrmBulkSelection = selected;
+  const selectedRefs = leadBulkReferences(visibleRows);
+  const canSave = selectedRefs.some((item) => String(item.source_type || "").toUpperCase() !== "MANUAL");
+  toolbar.classList.toggle("hidden", !visibleKeys.length);
+  toolbar.innerHTML = visibleKeys.length ? `
+    <div class="bulk-operation-summary"><span class="material-symbols-outlined">checklist</span><strong>${selected.length} seleccionada${selected.length === 1 ? "" : "s"}</strong><small>en esta página</small></div>
+    <div class="bulk-operation-actions">
+      <button class="ghost-button compact" type="button" data-lead-bulk-select-visible>${selected.length === visibleKeys.length ? "Limpiar selección" : "Seleccionar visibles"}</button>
+      <button class="ghost-button compact" type="button" data-lead-bulk-save ${canSave ? "" : "disabled"}>Guardar en contactos</button>
+      <button class="ghost-button compact danger-button" type="button" data-lead-bulk-archive ${selected.length ? "" : "disabled"}>Archivar seleccionados</button>
+    </div>` : "";
+  toolbar.querySelector("[data-lead-bulk-select-visible]")?.addEventListener("click", () => {
+    state.leadCrmBulkSelection = selected.length === visibleKeys.length ? [] : visibleKeys;
+    renderLeadCrmTable();
+  });
+  toolbar.querySelector("[data-lead-bulk-save]")?.addEventListener("click", saveLeadsToManualContactsBulk);
+  toolbar.querySelector("[data-lead-bulk-archive]")?.addEventListener("click", archiveLeadContactsBulk);
+}
+
+async function archiveLeadContactsBulk() {
+  const leads = leadBulkReferences();
+  if (!leads.length) return;
+  const reason = window.prompt(`Archivar ${leads.length} contacto(s). Dejarán de aparecer en contactos activos, pero su historial comercial se conservará. Motivo obligatorio:`);
+  if (!String(reason || "").trim()) return;
+  if (!window.confirm(`¿Archivar ${leads.length} contacto(s) con este motivo? El historial comercial y las ventas no se borrarán.`)) return;
+  showFeedback(`Archivando ${leads.length} contacto(s) sin borrar su historial...`, "loading", { title: "Operación masiva", timeout: 0 });
+  const results = await runBulkRequests(leads, (lead) => api(`/api/business/leads/${encodeURIComponent(lead.id)}?source_type=${encodeURIComponent(lead.source_type)}`, {
+    method: "DELETE", headers: authHeaders(), body: JSON.stringify({ reason: String(reason).trim() }),
+  }));
+  const completed = results.filter((result) => result.ok).map((result) => leadBulkKey(result.item));
+  state.leadCrmRows = (state.leadCrmRows || []).filter((item) => !completed.includes(leadBulkKey(item)));
+  state.leadCrmBulkSelection = [];
+  state.leadCrmLoaded = false;
+  state.contactFeedLoaded = false;
+  state.manualContactsLoaded = false;
+  await Promise.all([
+    loadContactFeedData({ force: true, quiet: true }),
+    loadLeadCrmData({ force: true, quiet: true }),
+    loadManualContactsData({ force: true, quiet: true }),
+  ]);
+  renderLeadsView();
+  const failed = results.length - completed.length;
+  showFeedback(`${completed.length} contacto(s) archivados; el historial comercial permanece protegido${failed ? `. ${failed} no se pudieron archivar.` : "."}`, failed ? "info" : "success", { title: "Operación masiva" });
+}
+
+async function saveLeadsToManualContactsBulk() {
+  const leads = leadBulkReferences().filter((lead) => String(lead.source_type || "").toUpperCase() !== "MANUAL");
+  if (!leads.length) return;
+  showFeedback(`Guardando ${leads.length} lead(s) en el directorio interno...`, "loading", { title: "Operación masiva", timeout: 0 });
+  const results = await runBulkRequests(leads, (lead) => api(`/api/business/contacts/manual/from-lead/${encodeURIComponent(lead.id)}`, {
+    method: "POST", headers: authHeaders(), body: JSON.stringify({ source_type: lead.source_type || "PLAYER" }),
+  }));
+  state.leadCrmBulkSelection = [];
+  state.contactFeedLoaded = false;
+  state.leadCrmLoaded = false;
+  state.manualContactsLoaded = false;
+  await Promise.all([
+    loadContactFeedData({ force: true, quiet: true }),
+    loadLeadCrmData({ force: true, quiet: true }),
+    loadManualContactsData({ force: true, quiet: true }),
+  ]);
+  renderLeadsView();
+  const completed = results.filter((result) => result.ok).length;
+  const failed = results.length - completed;
+  showFeedback(`${completed} lead(s) ya están disponibles como contactos internos${failed ? `. ${failed} no se pudieron guardar.` : "."}`, failed ? "info" : "success", { title: "Operación masiva" });
+}
+
 function renderLeadCrmTable() {
   if (!leadCrmTable) return;
   ensureLeadDirectoryTableUxStyles();
@@ -32693,6 +32894,7 @@ function renderLeadCrmTable() {
   const pagination = state.leadCrmPagination || {};
   const audience = leadDirectoryAudience();
   const visibleRows = leadDirectorySegmentRows(rows, audience);
+  const selectedKeys = new Set(leadBulkSelection());
   syncLeadDirectoryAudienceTabs(rows);
   if (leadCrmPaginationLabel) {
     const from = visibleRows.length ? Number(pagination.offset || 0) + 1 : 0;
@@ -32709,9 +32911,10 @@ function renderLeadCrmTable() {
     const kindLabel = isCustomer ? "Cliente" : "Lead";
     const kindClass = isCustomer ? "ok" : leadPriorityChipClass(item.care_priority);
     return `
-    <tr class="lead-directory-row" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
+    <tr class="lead-directory-row ${selectedKeys.has(leadBulkKey(item)) ? "is-bulk-selected" : ""}" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}">
       <td colspan="9">
         <div class="lead-directory-card-row" role="button" tabindex="0">
+          <label class="bulk-row-check lead-directory-row-check" title="Seleccionar contacto"><input type="checkbox" data-lead-bulk-select="${escapeHtml(item.id)}" data-lead-bulk-source-type="${escapeHtml(item.source_type || "PLAYER")}" aria-label="Seleccionar ${escapeHtml(item.name || kindLabel)}" ${selectedKeys.has(leadBulkKey(item)) ? "checked" : ""}><span></span></label>
           <div class="lead-directory-person">
             <span class="lead-directory-avatar">${escapeHtml(leadDirectoryInitials(item.name || kindLabel).toUpperCase())}</span>
             <div>
@@ -32755,8 +32958,21 @@ function renderLeadCrmTable() {
     </tr>
   `;
   }).join("") || `<tr><td colspan="9"><div class="lead-directory-empty">Sin ${leadDirectoryAudienceLabel(audience).toLowerCase()} para los filtros actuales.</div></td></tr>`;
+  renderLeadBulkToolbar(visibleRows);
+  leadCrmTable.querySelectorAll("[data-lead-bulk-select]").forEach((input) => {
+    input.addEventListener("click", (event) => event.stopPropagation());
+    input.closest(".bulk-row-check")?.addEventListener("click", (event) => event.stopPropagation());
+    input.addEventListener("change", () => {
+      const selected = new Set(leadBulkSelection());
+      const key = leadBulkKey({ id: input.dataset.leadBulkSelect, source_type: input.dataset.leadBulkSourceType || "PLAYER" });
+      if (input.checked) selected.add(key); else selected.delete(key);
+      state.leadCrmBulkSelection = Array.from(selected);
+      renderLeadCrmTable();
+    });
+  });
   leadCrmTable.querySelectorAll("[data-lead-id]").forEach((row) => {
     const handleDirectoryRowAction = (event) => {
+      if (event.target.closest("[data-lead-bulk-select]")) return;
       const actionButton = event.target.closest("[data-lead-action]");
       const action = actionButton?.dataset.leadAction || "detail";
       const leadRef = { id: row.dataset.leadId, source_type: row.dataset.sourceType || "PLAYER" };
