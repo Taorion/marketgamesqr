@@ -55,7 +55,7 @@ async function businessCommunicationSender(businessId, connectedUserEmail) {
   const replyTo = normalizedRecipientEmail(connectedUserEmail) || senderEmail;
   const apiKey = await ownResendApiKey(businessId) || env.resendApiKey;
   if (!apiKey) throw badRequest("Conecta tu cuenta de Resend en Cuenta > Correo masivo antes de enviar.");
-  return { from: `${senderName} <${senderEmail}>`, replyTo, apiKey };
+  return { from: `${senderName} <${senderEmail}>`, replyTo, apiKey, brandName: senderName };
 }
 
 function normalizeMediaAssets(communication) {
@@ -86,10 +86,61 @@ function makeEmailAttachments(assets = []) {
   });
 }
 
-function buildEmailMarkup({ title, body, hasInlineImage, actionUrl }) {
-  const image = hasInlineImage ? `<img src="cid:communication-image" alt="${escapeHtml(title)}" style="display:block;width:100%;max-width:560px;border-radius:18px;margin:0 auto 24px;" />` : "";
-  const action = actionUrl ? `<p style="margin:28px 0 0"><a href="${escapeHtml(actionUrl)}" style="display:inline-block;background:#0759d6;color:#fff;padding:13px 20px;border-radius:12px;text-decoration:none;font-weight:700">Ver información</a></p>` : "";
-  return `<!doctype html><html><body style="margin:0;background:#f4f9fc;color:#052a6b;font-family:Arial,sans-serif"><main style="max-width:620px;margin:24px auto;background:#fff;padding:36px;border-radius:22px">${image}<h1 style="margin:0 0 16px;font-size:26px;line-height:1.15;color:#052a6b">${escapeHtml(title)}</h1><div style="font-size:16px;line-height:1.6;color:#294b5e">${escapeHtml(body).replace(/\r?\n/g, "<br>")}</div>${action}</main></body></html>`;
+function buildEmailMarkup({ title, body, hasInlineImage, actionUrl, brandName = "Qori" }) {
+  const safeBrand = escapeHtml(String(brandName || "Qori").trim() || "Qori");
+  const safeTitle = escapeHtml(String(title || "Información para ti").trim() || "Información para ti");
+  const safeBody = escapeHtml(String(body || "").trim()).replace(/\r?\n/g, "<br>");
+  const preview = escapeHtml(String(body || "").replace(/\s+/g, " ").trim().slice(0, 150));
+  const image = hasInlineImage
+    ? `<tr><td style="padding:0 32px 8px;"><img src="cid:communication-image" alt="${safeTitle}" width="536" style="display:block;width:100%;max-width:536px;height:auto;border:0;border-radius:18px;outline:none;text-decoration:none;" /></td></tr>`
+    : "";
+  const action = actionUrl
+    ? `<tr><td style="padding:10px 32px 10px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td bgcolor="#0B5FFF" style="border-radius:12px;background:#0B5FFF;"><a href="${escapeHtml(actionUrl)}" target="_blank" style="display:inline-block;padding:15px 22px;border:1px solid #0B5FFF;border-radius:12px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:18px;font-weight:700;color:#ffffff;text-decoration:none;">Ver información <span aria-hidden="true">→</span></a></td></tr></table></td></tr>`
+    : "";
+  return `<!doctype html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <title>${safeTitle}</title>
+    <style>
+      @media screen and (max-width: 620px) {
+        .qori-shell { width: 100% !important; }
+        .qori-padding { padding-left: 22px !important; padding-right: 22px !important; }
+        .qori-title { font-size: 27px !important; line-height: 33px !important; }
+      }
+    </style>
+  </head>
+  <body style="margin:0;padding:0;background:#EEF3F9;color:#10213A;font-family:Arial,Helvetica,sans-serif;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all;">${preview}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin:0;padding:0;background:#EEF3F9;">
+      <tr><td align="center" style="padding:30px 12px;">
+        <!--[if mso]><table role="presentation" width="600" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+        <table class="qori-shell" role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;margin:0 auto;background:#FFFFFF;border-radius:22px;overflow:hidden;box-shadow:0 12px 34px rgba(30,61,104,.12);">
+          <tr><td height="6" style="height:6px;line-height:6px;background:#0B5FFF;background:linear-gradient(90deg,#0B5FFF 0%,#16B8A6 100%);font-size:0;">&nbsp;</td></tr>
+          <tr><td class="qori-padding" style="padding:28px 32px 20px;background:#10213A;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr>
+              <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:18px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#8FE6DB;">${safeBrand}</td>
+              <td align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:18px;color:#B7C5D8;">Comunicación</td>
+            </tr></table>
+          </td></tr>
+          <tr><td class="qori-padding" style="padding:30px 32px 18px;">
+            <h1 class="qori-title" style="margin:0;color:#10213A;font-family:Arial,Helvetica,sans-serif;font-size:31px;line-height:37px;font-weight:800;letter-spacing:-0.6px;">${safeTitle}</h1>
+          </td></tr>
+          ${image}
+          <tr><td class="qori-padding" style="padding:14px 32px 20px;color:#40536C;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:26px;">${safeBody}</td></tr>
+          ${action}
+          <tr><td class="qori-padding" style="padding:25px 32px 28px;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="height:1px;line-height:1px;background:#E6ECF3;font-size:0;">&nbsp;</td></tr></table>
+            <p style="margin:17px 0 0;color:#75859A;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:18px;">Recibiste este correo de ${safeBrand}. Si tienes preguntas, responde a este mensaje.</p>
+          </td></tr>
+        </table>
+        <!--[if mso]></td></tr></table><![endif]-->
+      </td></tr>
+    </table>
+  </body>
+</html>`;
 }
 
 function safeFilters(filters = {}) {
@@ -675,6 +726,7 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
     }
     const subject = personalize(communication.subject, contact);
     const message = personalize(communication.email_body, contact);
+    const actionUrl = communication.metadata?.web_showcase_id ? communication.action_url : emailTrackingUrl || communication.action_url;
     const mediaAssets = normalizeMediaAssets(communication);
     const attachments = makeEmailAttachments(mediaAssets);
     try {
@@ -684,8 +736,8 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
         to: contact.email,
         replyTo: sender.replyTo,
         subject,
-        text: message,
-        html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(attachments.length), actionUrl: communication.metadata?.web_showcase_id ? communication.action_url : emailTrackingUrl || communication.action_url }),
+        text: messageWithActionUrl(message, actionUrl),
+        html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(attachments.length), actionUrl, brandName: sender.brandName }),
         attachments,
       });
       await saveRecipient({ businessId, communicationId: id, contact, status: 'SENT', providerMessageId: provider.id, userId });
@@ -902,6 +954,7 @@ async function sendEmailConnectionTest(businessId, userEmail, recipientEmail) {
       body: "La conexión de Resend quedó lista. Este correo confirma que Qori puede enviar desde el remitente configurado.",
       hasInlineImage: false,
       actionUrl: "",
+      brandName: sender.brandName,
     }),
   });
   return { ok: true, provider_message_id: provider.id || null, recipient_email: recipient };
