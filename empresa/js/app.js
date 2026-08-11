@@ -12167,7 +12167,7 @@ function renderDashboard() {
   branchPerformanceTable.innerHTML = branchPerformance.map((row) => `
     <tr>
       <td>${escapeHtml(row.branch_name || "Sin sucursal")}</td>
-      <td>${escapeHtml(row.address || "-")}</td>
+      <td>${escapeHtml(row.address || "Sin dirección")}</td>
       <td>${escapeHtml(row.redemptions)}</td>
       <td>${escapeHtml(row.leads || 0)}</td>
       <td>${escapeHtml(row.sales)}</td>
