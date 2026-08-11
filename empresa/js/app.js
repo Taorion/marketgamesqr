@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260803-rms-negotiation-console-v245";
+const APP_VERSION = "empresa-20260811-rms-collector-handoff-v316";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -43644,7 +43644,7 @@ function ensureRmsStationUxStyles() {
     @media (max-width: 580px) { html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { min-height: 0 !important; align-items: stretch !important; flex-direction: column !important; padding: 8px 0 10px !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title > .material-symbols-outlined { width: 40px !important; height: 40px !important; flex-basis: 40px !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions { width: 100% !important; justify-content: flex-end !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-range { margin-right: auto !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-guide { gap: 10px !important; overflow-x: auto !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-hint { display: none !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex-basis: 92% !important; width: 92% !important; min-width: 92% !important; grid-template-rows: auto 190px auto auto auto !important; min-height: 500px !important; padding: 18px !important; border-radius: 18px !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media { height: 190px !important; } }
   `);
   rules.push(`
-    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions.is-collector-actions { grid-template-columns: minmax(180px,.8fr) minmax(220px,1fr) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions.is-collector-actions { grid-template-columns:repeat(2,minmax(180px,1fr)) !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions.is-collector-actions > button { min-height: 42px !important; justify-content: center !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-collector-station-shell { display: grid !important; gap: 14px !important; padding: 14px !important; background: linear-gradient(180deg,#f7fbff,#ffffff) !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-collector-work-hint { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 10px !important; }
@@ -44149,6 +44149,9 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   const commandActionsMarkup = isCollectorStation
     ? `
           <button class="ghost-button" type="button" data-rms-open-collector><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Ingresar lead manual</button>
+          <button class="ghost-button compact" type="button" data-rms-station-clear-selection ${selectedRows.length ? "" : "disabled"}>Limpiar selección</button>
+          <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}" ${outputEligibleRows.length ? "" : "disabled"}>${escapeHtml(selectAllLabel)}</button>
+          <button class="solid-button" type="button" data-rms-station-bulk-next ${selectedRows.length && nextPhase ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span> Enviar a ${escapeHtml(nextPhase?.label || "siguiente estación")}</button>
         `
     : `
           <button class="ghost-button compact" type="button" data-rms-station-clear-selection ${selectedRows.length ? "" : "disabled"}>Limpiar selección</button>
@@ -44191,7 +44194,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
         <div class="rms-station-screen-head">
           <div>
             <strong>${escapeHtml(`Leads en ${stage.label || "esta estación"}`)}</strong>
-            <small>${escapeHtml(isCollectorStation ? "Selecciona los leads hábiles, haz clic para ver respuestas y envía solo los que deben pasar a Curaduría." : "Analiza, completa el criterio, selecciona y envía. Nada más.")}</small>
+            <small>${escapeHtml(isCollectorStation ? `Selecciona los leads hábiles, haz clic para ver respuestas y envía solo los que deben pasar a ${nextPhase?.label || "la siguiente estación"}.` : "Analiza, completa el criterio, selecciona y envía. Nada más.")}</small>
           </div>
           <span class="rms-station-build-badge">Qori v137 anti-bloqueo</span>
           <span class="rms-station-analysis-hint"><span class="material-symbols-outlined" aria-hidden="true">touch_app</span>${escapeHtml(isCollectorStation ? "Clic en la tarjeta: datos y respuestas" : "Haz clic en un lead para analizarlo")}</span>
@@ -44231,6 +44234,10 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   });
   rmsStationWorkspace.querySelector("[data-rms-station-select-all]")?.addEventListener("click", () => {
     selectRmsPhaseForBulk(phase);
+  });
+  rmsStationWorkspace.querySelector("[data-rms-station-bulk-next]")?.addEventListener("click", async () => {
+    if (!nextPhase) return;
+    await moveSelectedRmsPhase(nextPhase.key, phase);
   });
   rmsStationWorkspace.querySelectorAll("[data-rms-move-next]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -44337,7 +44344,7 @@ function rmsStationOutputMarkup(phase = "", rows = [], nextPhase = null) {
       : phase === "clasificacion"
         ? "Envía y registra la oferta por WhatsApp o email antes de pasar el lead a Evaluación."
       : phase === "recoleccion"
-        ? "Selecciona en la entrada los leads que sí cumplen el mínimo para pasar a Curaduría."
+        ? `Selecciona en la entrada los leads que sí cumplen el mínimo para pasar a ${nextPhase?.label || "la siguiente estación"}.`
         : "Selecciona los leads que deben avanzar a la siguiente estación.";
   const showInlineSend = phase !== "recoleccion";
   return `
@@ -45791,8 +45798,8 @@ function toggleRmsSelection(id = "", selected = false) {
   if (state.rmsStationScreenOpen && state.rmsStationPhase === "recoleccion" && item?.stage === "recoleccion") {
     showFeedback(
       selected
-        ? `${item.name || "Lead"} quedó seleccionado para pasar a Curaduría.`
-        : `${item.name || "Lead"} salió de la selección de Curaduría.`,
+        ? `${item.name || "Lead"} quedó seleccionado para pasar a ${rmsStationNextPhase(rmsPrimaryFactoryStages(state.rmsMachine || {}).find((stage) => stage.key === "recoleccion") || {}, rmsPrimaryFactoryStages(state.rmsMachine || {}))?.label || "la siguiente estación"}.`
+        : `${item.name || "Lead"} salió de la selección de salida.`,
       selected ? "success" : "info",
       { title: "Estación 1 · Leads recolectados", timeout: 2600 }
     );
@@ -46282,19 +46289,17 @@ async function executeRmsBulkOperation() {
   }
 }
 
-async function moveSelectedRmsPhase() {
-  showFeedback("Las transiciones RMS se confirman individualmente con la decisión y evidencia del caso.", "info", { title: "Máquina RMS" });
-  return;
+async function moveSelectedRmsPhase(destinationPhase = "", sourcePhase = "") {
   const ids = state.rmsMachineSelectedIds || [];
-  const toPhase = rmsBulkPhaseInput?.value || "";
+  const toPhase = destinationPhase || rmsBulkPhaseInput?.value || "";
   if (!ids.length || !toPhase) {
-    showFeedback("Selecciona clientes y una fase destino.", "info", { title: "Máquina RMS" });
+    showFeedback("Selecciona al menos un lead y una estación destino.", "info", { title: "Máquina RMS" });
     return;
   }
   try {
     showFeedback("Moviendo materia prima comercial...", "loading", { title: "Máquina RMS", timeout: 0 });
     let movedCount = 0;
-    const fromPhase = state.rmsStationPhase || "";
+    const fromPhase = sourcePhase || state.rmsStationPhase || "";
     for (const id of ids) {
       const item = rmsOpportunityById(id);
       if (!item) continue;
