@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260811-rms-collector-handoff-v317";
+const APP_VERSION = "empresa-20260811-rms-station-handoff-v318";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -42541,6 +42541,12 @@ function renderRmsStationLeanOnly() {
   const isClassifierStation = phase === "curaduria";
   const isActivationStation = phase === "clasificacion";
   const isCommercialStation = ["clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "postventa", "inteligencia"].includes(phase);
+  const hasStandardHandoff = ["recoleccion", "alimentacion", "curaduria"].includes(phase) && Boolean(nextPhase);
+  const selectReadyLabel = phase === "recoleccion"
+    ? "Seleccionar procesables"
+    : phase === "alimentacion"
+      ? "Seleccionar cualificados"
+      : "Seleccionar clasificados";
   const pendingQualityCount = isCurationStation
     ? rows.filter((item) => !rmsLeadQualityValue(item)).length
     : 0;
@@ -42587,11 +42593,11 @@ function renderRmsStationLeanOnly() {
         </div>
         <div class="rms-lean-station-actions">
           ${phase === "recoleccion" ? `<button class="ghost-button compact" type="button" data-rms-open-collector><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Nuevo lead</button>` : ""}
-          ${phase === "recoleccion" ? `
+          ${hasStandardHandoff ? `
             <button class="ghost-button compact" type="button" data-rms-station-clear-selection ${selectedRows.length ? "" : "disabled"}>Limpiar selección</button>
-            <button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> Seleccionar procesables</button>
+            <button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> ${escapeHtml(selectReadyLabel)}</button>
             <button class="solid-button compact" type="button" data-rms-station-bulk-next ${selectedRows.length && nextPhase ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span> Enviar a ${escapeHtml(nextPhase?.label || "siguiente estación")}</button>
-          ` : isCommercialStation ? "" : `<button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> Seleccionar listos</button>`}
+          ` : ""}
         </div>
       </header>
       ${isCurationStation ? `
@@ -42684,7 +42690,11 @@ function renderRmsStationLeanOnly() {
     renderRmsStationOnly();
   });
   rmsStationWorkspace.querySelector("[data-rms-station-select-ready]")?.addEventListener("click", () => {
-    state.rmsMachineSelectedIds = eligibleRows.map((item) => item.id);
+    const currentIds = new Set(rows.map((item) => item.id));
+    state.rmsMachineSelectedIds = [
+      ...(state.rmsMachineSelectedIds || []).filter((id) => !currentIds.has(id)),
+      ...eligibleRows.map((item) => item.id),
+    ];
     renderRmsStationOnly();
   });
   rmsStationWorkspace.querySelector("[data-rms-station-bulk-next]")?.addEventListener("click", async () => {
