@@ -22021,6 +22021,7 @@ function closeCompetitorFormModal() {
 
 function openCompetitionProductModal() {
   setCompetitionTab("products");
+  if (competitionProductFormPanel?.parentElement !== document.body) document.body.appendChild(competitionProductFormPanel);
   competitionViewSection()?.classList.add("competition-modal-open");
   competitionProductFormPanel?.classList.add("is-competition-modal-open");
 }

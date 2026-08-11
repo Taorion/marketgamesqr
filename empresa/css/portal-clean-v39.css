@@ -16237,6 +16237,99 @@ html body[data-current-view="competition"] .portal-shell :is(#competitorFormPane
   display: none !important;
 }
 
+/* El formulario de productos se desacopla de la grilla del Radar al abrirse.
+   Así, el hover de la tarjeta o de sus campos no puede cambiar su referencia
+   de centrado ni desplazar el formulario. */
+html body > #competitionProductFormPanel:not(.is-competition-modal-open) {
+  display: none !important;
+}
+
+html body > #competitionProductFormPanel.is-competition-modal-open,
+html body > #competitionProductFormPanel.is-competition-modal-open:hover,
+html body > #competitionProductFormPanel.is-competition-modal-open:focus-within {
+  position: fixed !important;
+  z-index: 1101 !important;
+  top: 50% !important;
+  left: 50% !important;
+  display: block !important;
+  width: min(980px, calc(100vw - 32px)) !important;
+  max-height: calc(100dvh - 32px) !important;
+  margin: 0 !important;
+  padding: 24px !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  contain: layout paint !important;
+  border: 1px solid #cfe0f2 !important;
+  border-radius: 20px !important;
+  background: #fff !important;
+  box-shadow: 0 30px 80px rgba(2, 20, 51, .30) !important;
+  transform: translate(-50%, -50%) !important;
+  transition: none !important;
+}
+
+html body > #competitionProductFormPanel.is-competition-modal-open .table-card-head {
+  position: sticky !important;
+  top: -24px !important;
+  z-index: 2 !important;
+  margin: -24px -24px 20px !important;
+  padding: 20px 24px 16px !important;
+  border-bottom: 1px solid #e3edf6 !important;
+  background: #fff !important;
+}
+
+html body > #competitionProductFormPanel.is-competition-modal-open .inventory-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+html body > #competitionProductFormPanel.is-competition-modal-open .inventory-form :is(input, select, textarea) {
+  width: 100% !important;
+  min-height: 44px !important;
+  box-sizing: border-box !important;
+  border-radius: 10px !important;
+}
+
+html body > #competitionProductFormPanel.is-competition-modal-open .inventory-form textarea {
+  min-height: 90px !important;
+}
+
+html body > #competitionProductFormPanel.is-competition-modal-open .modal-actions {
+  position: sticky !important;
+  bottom: -24px !important;
+  z-index: 2 !important;
+  margin: 6px -24px -24px !important;
+  padding: 16px 24px !important;
+  border-top: 1px solid #e3edf6 !important;
+  background: #fff !important;
+}
+
+@media (max-width: 720px) {
+  html body > #competitionProductFormPanel.is-competition-modal-open,
+  html body > #competitionProductFormPanel.is-competition-modal-open:hover,
+  html body > #competitionProductFormPanel.is-competition-modal-open:focus-within {
+    width: calc(100vw - 20px) !important;
+    max-height: calc(100dvh - 20px) !important;
+    padding: 16px !important;
+  }
+
+  html body > #competitionProductFormPanel.is-competition-modal-open .table-card-head {
+    top: -16px !important;
+    margin: -16px -16px 16px !important;
+    padding: 16px !important;
+  }
+
+  html body > #competitionProductFormPanel.is-competition-modal-open .inventory-form {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body > #competitionProductFormPanel.is-competition-modal-open .modal-actions {
+    bottom: -16px !important;
+    margin: 6px -16px -16px !important;
+    padding: 14px 16px !important;
+  }
+}
+
 html body[data-current-view="competition"] .portal-shell [data-competition-panel] :is(.surface-card, .data-table-card) {
   min-width: 0 !important;
   overflow: hidden !important;
