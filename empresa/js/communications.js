@@ -18,6 +18,34 @@
   const isSocialCommunication = (item) => ["SOCIAL", "MIXED"].includes(String(item?.communication_type || "").toUpperCase());
   const isEmailCommunication = (item) => ["EMAIL", "MIXED"].includes(String(item?.communication_type || "").toUpperCase());
   const isWhatsAppCommunication = (item) => String(item?.communication_type || "").toUpperCase() === "WHATSAPP";
+  const whatsAppTemplateParameters = (value) => String(value || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+  const whatsAppTemplateSelection = () => {
+    const select = document.getElementById("communicationWhatsAppTemplateInput");
+    const selected = select?.selectedOptions?.[0];
+    return {
+      name: String(select?.value || "").trim(),
+      language: String(selected?.dataset.language || "es_CO").trim() || "es_CO",
+      variable_count: Number(selected?.dataset.variables || 0),
+      body_parameters: whatsAppTemplateParameters(document.getElementById("communicationWhatsAppTemplateParametersInput")?.value),
+    };
+  };
+  const renderWhatsAppTemplateOptions = (selectedName = "", selectedParameters = []) => {
+    const select = document.getElementById("communicationWhatsAppTemplateInput");
+    if (!select) return;
+    const templates = Array.isArray(state.communicationWhatsAppTemplates) ? state.communicationWhatsAppTemplates : [];
+    select.innerHTML = `<option value="">${templates.length ? "Elige una plantilla aprobada" : "Conecta WhatsApp Business en Cuenta y carga plantillas"}</option>${templates.map((template) => `<option value="${esc(template.name)}" data-language="${esc(template.language || "es_CO")}" data-variables="${Number(template.variable_count || 0)}">${esc(template.name)} · ${esc(template.language || "es_CO")}${Number(template.variable_count || 0) ? ` · ${Number(template.variable_count)} variable(s)` : ""}</option>`).join("")}`;
+    select.value = selectedName || "";
+    const parameters = document.getElementById("communicationWhatsAppTemplateParametersInput");
+    if (parameters) parameters.value = Array.isArray(selectedParameters) ? selectedParameters.join("\n") : "";
+    updateWhatsAppTemplateHelp();
+  };
+  const updateWhatsAppTemplateHelp = () => {
+    const template = whatsAppTemplateSelection();
+    const help = document.getElementById("communicationWhatsAppTemplateHelp");
+    if (!help) return;
+    if (!template.name) help.textContent = "Conecta Meta y carga las plantillas aprobadas desde Cuenta. Qori no enviará texto libre fuera de la ventana permitida por WhatsApp.";
+    else help.textContent = template.variable_count ? `Esta plantilla espera ${template.variable_count} variable(s). Escribe una línea por variable, en el mismo orden. Puedes usar {{nombre}}, {{contacto}}, {{interes}} y {{enlace}}.` : "Esta plantilla no tiene variables de cuerpo. Déjalas vacías.";
+  };
   const publicationLabel = (item) => isSocialCommunication(item)
     ? (String(item?.publication_status || "").toUpperCase() === "PUBLISHED" ? "Publicada" : "Por publicar")
     : statusLabel(item?.status);
@@ -118,6 +146,7 @@
     if (!session?.user?.business_id || state.communicationsLoading || (state.communicationsLoaded && !options.force)) return;
     state.communicationsLoading = true;
     try {
+      if (!state.communicationWhatsAppConnectionLoaded && typeof window.loadCommunicationWhatsAppConnection === "function") await window.loadCommunicationWhatsAppConnection();
       const data = await api("/api/business/communications", { headers: authHeaders() });
       state.communications = data.communications || [];
       state.communicationsLoaded = true;
@@ -357,7 +386,17 @@
       const next = dispatch?.queue?.find((item) => item.status === "QUEUED");
       const prepared = Number(dispatch?.prepared ?? active.recipients_prepared ?? 0);
       const queued = Number(dispatch?.queued ?? active.recipients_queued ?? 0);
-      sendBar.innerHTML = `<section class="communication-delivery-route communication-whatsapp-route"><span class="material-symbols-outlined">chat</span><div><strong>WhatsApp masivo con historial</strong><p>${next ? `Siguiente: ${esc(next.name)} · ${esc(next.phone)}. Abre WhatsApp y Qori registrará este intento.` : queued ? `${queued} contacto(s) en cola. Carga la cola para continuar el envío manual.` : recipients.length ? `${recipients.length} contacto(s) seleccionados con WhatsApp. Prepara el lote para empezar.` : "Selecciona contactos con WhatsApp para preparar el lote."} ${prepared ? `${prepared} preparado(s) en este lote.` : ""}</p></div><label class="communication-consent"><input id="communicationConsentInput" type="checkbox"> Confirmo que aceptaron recibir comunicaciones.</label>${next ? `<button class="solid-button compact" type="button" data-open-next-communication-whatsapp="${esc(active.id)}">Abrir siguiente WhatsApp</button>` : queued ? `<button class="ghost-button compact" type="button" data-load-communication-whatsapp-queue="${esc(active.id)}">Cargar cola</button>` : `<button class="solid-button compact" type="button" data-prepare-communication-whatsapp="${esc(active.id)}" ${recipients.length ? "" : "disabled"}>Preparar lote WhatsApp</button>`}</section>`;
+      const template = active.metadata?.whatsapp_template || {};
+      const connected = Boolean(state.communicationWhatsAppConnection?.ready);
+      const templateReady = Boolean(template.name);
+      const automaticCopy = !connected
+        ? "Conecta WhatsApp Business en Cuenta para habilitar el envío oficial por lotes."
+        : !templateReady
+          ? "Esta pieza no tiene una plantilla aprobada. Edítala, elige una plantilla de Meta y guarda."
+          : recipients.length
+            ? `${recipients.length} contacto(s) seleccionados. Meta recibirá hasta 6 envíos simultáneos y Qori guardará cada resultado.`
+            : "Selecciona contactos con WhatsApp para enviar este lote.";
+      sendBar.innerHTML = `<section class="communication-delivery-route communication-whatsapp-route"><span class="material-symbols-outlined">chat</span><div><strong>${connected && templateReady ? "WhatsApp masivo oficial" : "Configura tu envío oficial por WhatsApp"}</strong><p>${automaticCopy} ${templateReady ? `Plantilla: ${esc(template.name)} · ${esc(template.language || "es_CO")}.` : ""}</p></div><label class="communication-consent"><input id="communicationConsentInput" type="checkbox"> Confirmo que aceptaron recibir comunicaciones.</label>${connected && templateReady ? `<button class="solid-button compact" type="button" data-send-communication-whatsapp="${esc(active.id)}" ${recipients.length ? "" : "disabled"}>Enviar por WhatsApp</button>` : `<button class="ghost-button compact" type="button" data-edit-communication="${esc(active.id)}">Completar configuración</button>`}${next ? `<button class="ghost-button compact" type="button" data-open-next-communication-whatsapp="${esc(active.id)}">Abrir respaldo manual</button>` : queued ? `<button class="ghost-button compact" type="button" data-load-communication-whatsapp-queue="${esc(active.id)}">Ver cola manual</button>` : `<button class="text-button" type="button" data-prepare-communication-whatsapp="${esc(active.id)}" ${recipients.length ? "" : "disabled"}>Usar respaldo manual</button>`}</section>`;
       return;
     }
     if (isSocialCommunication(active)) {
@@ -391,7 +430,7 @@
     if (emailBody) emailBody.required = type !== "SOCIAL";
     if (subject) subject.required = ["EMAIL", "MIXED"].includes(type);
     if (emailBody) emailBody.required = ["EMAIL", "MIXED"].includes(type);
-    if (whatsappBody) whatsappBody.required = type === "WHATSAPP";
+    if (whatsappBody) whatsappBody.required = false;
     if (socialCopy) socialCopy.required = ["SOCIAL", "MIXED"].includes(type);
     const send = document.getElementById("communicationComposerSaveAndSendButton");
     if (send) { send.classList.toggle("hidden", type === "SOCIAL"); send.textContent = type === "WHATSAPP" ? "Guardar y preparar WhatsApp" : "Guardar y enviar email"; }
@@ -440,17 +479,20 @@
     const media = [...assets, ...(url ? [{ source: url, name: "Imagen desde URL" }] : [])].slice(0, MAX_MEDIA_FILES);
     const action = event.submitter?.dataset.communicationSaveAction || "DRAFT";
     const type = form.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL";
+    const whatsAppTemplate = whatsAppTemplateSelection();
     const promotionEnabled = Boolean(form.querySelector("#communicationProductPromotionEnabledInput")?.checked);
     const recipients = selectedRecipients(type === "WHATSAPP" ? "whatsapp" : "email");
     if (action === "SEND" && !recipients.length) { message.textContent = "Selecciona al menos un contacto antes de enviar."; return; }
     if (action === "SEND" && !document.getElementById("communicationComposerConsentInput")?.checked) { message.textContent = "Confirma el consentimiento antes de enviar."; return; }
+    if (action === "SEND" && type === "WHATSAPP" && !whatsAppTemplate.name) { message.textContent = "Elige una plantilla aprobada de Meta antes de lanzar el lote de WhatsApp."; return; }
+    if (action === "SEND" && type === "WHATSAPP" && whatsAppTemplate.variable_count !== whatsAppTemplate.body_parameters.length) { message.textContent = `La plantilla elegida espera ${whatsAppTemplate.variable_count} variable(s) y escribiste ${whatsAppTemplate.body_parameters.length}. Ajusta una línea por variable.`; return; }
     const payload = {
       title: form.querySelector("#communicationTitleInput")?.value.trim(), communication_type: form.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL",
       campaign_id: form.querySelector("#communicationCampaignInput")?.value || null, channel_id: form.querySelector("#communicationChannelInput")?.value || null, branch_id: form.querySelector("#communicationBranchInput")?.value || null, activation_id: form.querySelector("#communicationActivationInput")?.value || null, web_showcase_id: form.querySelector("#communicationWebShowcaseInput")?.value || null, web_showcase_product_id: form.querySelector("#communicationWebShowcaseProductInput")?.value || null,
       product_promotion: promotionEnabled ? { label: form.querySelector("#communicationProductPromotionLabelInput")?.value.trim() || "", promotional_price: Number(form.querySelector("#communicationProductPromotionPriceInput")?.value || 0), starts_at: form.querySelector("#communicationProductPromotionStartsAtInput")?.value || "", ends_at: form.querySelector("#communicationProductPromotionEndsAtInput")?.value || "" } : null,
       subject: form.querySelector("#communicationSubjectInput")?.value.trim() || null, email_body: form.querySelector("#communicationEmailBodyInput")?.value.trim() || null, whatsapp_body: form.querySelector("#communicationWhatsAppBodyInput")?.value.trim() || null, social_copy: form.querySelector("#communicationSocialCopyInput")?.value.trim() || null,
       image_url: media[0]?.source || null, action_url: form.querySelector("#communicationActionUrlInput")?.value.trim() || null,
-      audience_filters: { ...(state.communicationAudienceFilters || {}) }, metadata: { media_assets: media },
+      audience_filters: { ...(state.communicationAudienceFilters || {}) }, metadata: { media_assets: media, ...(type === "WHATSAPP" && whatsAppTemplate.name ? { whatsapp_template: whatsAppTemplate } : {}) },
     };
     if (promotionEnabled && !payload.web_showcase_product_id) {
       const reason = "Elige el producto específico de la vitrina antes de crear una promoción temporal.";
@@ -469,10 +511,11 @@
       const editingId = state.editingCommunicationId;
       const data = await api(editingId ? `/api/business/communications/${editingId}` : "/api/business/communications", { method: editingId ? "PATCH" : "POST", headers: authHeaders(), body: JSON.stringify(payload) });
       if (action === "SEND" && type === "WHATSAPP") {
-        message.textContent = "Preparando la cola de WhatsApp…";
-        const prepared = await api(`/api/business/communications/${data.communication.id}/whatsapp/prepare`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
-        state.communicationWhatsAppQueue = { communicationId: data.communication.id, ...(prepared.queue || {}) };
-        showFeedback(`Lote preparado: ${prepared.results?.queued || 0} con WhatsApp y ${prepared.results?.skipped || 0} omitidos. Abre cada contacto para completar el envío manual.`, "success", { title: "WhatsApp masivo preparado" });
+        message.textContent = "Enviando lote de WhatsApp a Meta…";
+        const sent = await api(`/api/business/communications/${data.communication.id}/whatsapp/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, template: whatsAppTemplate, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
+        const results = sent.results || {};
+        const duplicateNote = Number(results.duplicate_phones || 0) ? ` Se omitieron ${results.duplicate_phones} número(s) duplicado(s).` : "";
+        showFeedback(`Lote finalizado: ${results.sent || 0} aceptados por Meta, ${results.failed || 0} fallidos y ${results.skipped || 0} omitidos.${duplicateNote}${emailFailureNote(results)}`, Number(results.sent || 0) ? "success" : "error", { title: Number(results.sent || 0) ? "WhatsApp enviado" : "WhatsApp no se envió" });
       } else if (action === "SEND" && type !== "SOCIAL") {
         message.textContent = "Enviando emails…";
         const sent = await api(`/api/business/communications/${data.communication.id}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
@@ -506,9 +549,10 @@
     const prepare = event.target.closest("[data-prepare-communication-whatsapp]");
     const loadQueue = event.target.closest("[data-load-communication-whatsapp-queue]");
     const openNext = event.target.closest("[data-open-next-communication-whatsapp]");
-    if (!prepare && !loadQueue && !openNext) return;
-    const control = prepare || loadQueue || openNext;
-    const communicationId = control.dataset.prepareCommunicationWhatsapp || control.dataset.loadCommunicationWhatsappQueue || control.dataset.openNextCommunicationWhatsapp;
+    const sendWhatsApp = event.target.closest("[data-send-communication-whatsapp]");
+    if (!prepare && !loadQueue && !openNext && !sendWhatsApp) return;
+    const control = prepare || loadQueue || openNext || sendWhatsApp;
+    const communicationId = control.dataset.prepareCommunicationWhatsapp || control.dataset.loadCommunicationWhatsappQueue || control.dataset.openNextCommunicationWhatsapp || control.dataset.sendCommunicationWhatsapp;
     try {
       if (prepare) {
         const recipients = selectedRecipients("whatsapp");
@@ -520,7 +564,7 @@
         showFeedback(`Lote preparado: ${data.results?.queued || 0} contactos con WhatsApp. Abre el siguiente para continuar.`, "success", { title: "WhatsApp masivo" });
       } else if (loadQueue) {
         await loadWhatsAppDispatchQueue(communicationId);
-      } else {
+      } else if (openNext) {
         const dispatch = state.communicationWhatsAppQueue?.communicationId === communicationId ? state.communicationWhatsAppQueue : await loadWhatsAppDispatchQueue(communicationId);
         const next = dispatch.queue?.find((item) => item.status === "QUEUED");
         if (!next) { showFeedback("No quedan contactos pendientes en esta cola.", "info", { title: "WhatsApp masivo" }); return; }
@@ -529,6 +573,17 @@
         await api(`/api/business/communications/${communicationId}/whatsapp/opened`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_type: next.source_type, source_id: next.source_id }) });
         await loadWhatsAppDispatchQueue(communicationId);
         showFeedback("WhatsApp abierto y registrado. La entrega se confirma únicamente en WhatsApp.", "success", { title: "Siguiente contacto" });
+      } else {
+        const recipients = selectedRecipients("whatsapp");
+        const item = state.communications.find((row) => String(row.id) === String(communicationId));
+        const template = item?.metadata?.whatsapp_template || {};
+        if (!recipients.length) throw new Error("Selecciona al menos un contacto con WhatsApp.");
+        if (!document.getElementById("communicationConsentInput")?.checked) throw new Error("Confirma el consentimiento antes de enviar.");
+        showFeedback("Enviando el lote a Meta…", "loading", { title: "WhatsApp masivo", timeout: 0 });
+        const data = await api(`/api/business/communications/${communicationId}/whatsapp/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, template, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
+        const results = data.results || {};
+        state.communicationSelectedRefs = [];
+        showFeedback(`Lote finalizado: ${results.sent || 0} aceptados por Meta, ${results.failed || 0} fallidos y ${results.skipped || 0} omitidos.${emailFailureNote(results)}`, Number(results.sent || 0) ? "success" : "error", { title: Number(results.sent || 0) ? "WhatsApp enviado" : "WhatsApp no se envió" });
       }
       state.communicationsLoaded = false;
       await loadCommunications({ force: true });
@@ -542,7 +597,7 @@
     const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const all = event.target.closest("[data-communication-select-loaded]"); const clearSelection = event.target.closest("[data-communication-clear-selection]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const share = event.target.closest("[data-share-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const publish = event.target.closest("[data-publish-communication]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const loadMoreComposerAudience = event.target.closest("[data-load-more-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]"); const clearComposerAudience = event.target.closest("[data-composer-clear-audience]");
     if (open || edit || duplicate) { const relationKey = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const related = relationKey ? state.communications.find((row) => String(row.id) === String(relationKey)) : null; state.communicationPendingShowcaseId = related?.metadata?.web_showcase_id || ""; state.communicationPendingProductId = related?.metadata?.web_showcase_product_id || ""; state.communicationPendingPromotion = related?.metadata?.product_promotion || null; if (state.communicationPendingShowcaseId) { try { await loadCommunicationShowcaseProducts(state.communicationPendingShowcaseId); } catch (error) { console.warn("No se pudieron cargar los productos de la vitrina.", error); } } }
     if (open || edit || duplicate) { try { await prepareComposerRelations(); } catch (error) { console.warn("No se pudieron actualizar los canales para comunicaciones.", error); } renderOptions(); positionComposerAudience(); }
-    if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationWebShowcaseInput").value = item.metadata?.web_showcase_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationWhatsAppBodyInput").value = item.whatsapp_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); } document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
+    if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationWebShowcaseInput").value = item.metadata?.web_showcase_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationWhatsAppBodyInput").value = item.whatsapp_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); } try { await window.loadCommunicationWhatsAppConnection?.({ force: true }); if (state.communicationWhatsAppConnection?.ready && !state.communicationWhatsAppTemplates?.length) await window.loadCommunicationWhatsAppTemplates?.(); } catch (error) { console.warn("No se pudo preparar la conexión de WhatsApp.", error); } renderWhatsAppTemplateOptions(item?.metadata?.whatsapp_template?.name || "", item?.metadata?.whatsapp_template?.body_parameters || []); document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
     if (close) { composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); return; }
     if (loadComposerAudience) { try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } return; }
     if (loadMoreComposerAudience) { try { await loadAudience({ append: true }); render(); renderComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudieron cargar más contactos.", "error", { title: "Audiencia" }); } return; }
@@ -570,6 +625,7 @@
   document.addEventListener("change", async (event) => {
     if (event.target.matches("[data-communication-recipient]")) { const selected = new Set(state.communicationSelectedRefs || []); if (event.target.checked && selected.size >= MAX_EMAIL_RECIPIENTS) { event.target.checked = false; showFeedback(`Puedes seleccionar hasta ${MAX_EMAIL_RECIPIENTS} contactos por envío.`, "info", { title: "Destinatarios" }); return; } if (event.target.checked) selected.add(event.target.value); else selected.delete(event.target.value); state.communicationSelectedRefs = Array.from(selected); render(); renderComposerAudience(); }
     if (event.target.matches('input[name="communicationType"]')) toggleComposer();
+    if (event.target.matches("#communicationWhatsAppTemplateInput")) updateWhatsAppTemplateHelp();
     if (event.target.matches("#communicationWebShowcaseInput")) {
       const showcase = (state.smartCatalogs || []).find((item) => String(item.id) === String(event.target.value || ""));
       const actionUrl = document.getElementById("communicationActionUrlInput");

@@ -14555,6 +14555,25 @@ body[data-current-view="account"] .portal-shell .account-users-card td:last-chil
 body[data-current-view="account"] .portal-shell .account-users-card .ghost-button:disabled { opacity: .52; cursor: not-allowed; }
 body[data-current-view="account"] .portal-shell .modal-actions .error-line { min-width: 0; overflow-wrap: anywhere; }
 
+/* WhatsApp Cloud API: setup and launch guidance */
+body[data-current-view="account"] .portal-shell .account-whatsapp-connection-panel {
+  background: linear-gradient(135deg, rgba(18, 140, 126, .10), rgba(7, 89, 214, .035));
+  border-color: rgba(18, 140, 126, .30);
+}
+body[data-current-view="account"] .portal-shell .account-whatsapp-connection-panel h4 { color: #075e54; }
+body[data-current-view="account"] .portal-shell .account-whatsapp-connection-fields,
+body[data-current-view="account"] .portal-shell .account-whatsapp-template-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.communication-whatsapp-guidance { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid rgba(18, 140, 126, .22); border-radius: 12px; background: rgba(18, 140, 126, .07); color: #195d55; }
+.communication-whatsapp-guidance .material-symbols-outlined { color: #0b8f7d; }
+.communication-whatsapp-guidance p { margin: 0; line-height: 1.5; }
+.communication-whatsapp-route { border-color: rgba(18, 140, 126, .28) !important; background: linear-gradient(135deg, rgba(18, 140, 126, .09), rgba(8, 104, 215, .035)) !important; }
+.communication-whatsapp-route > .material-symbols-outlined { color: #0b8f7d !important; }
+@media (max-width: 700px) {
+  body[data-current-view="account"] .portal-shell .account-whatsapp-connection-fields,
+  body[data-current-view="account"] .portal-shell .account-whatsapp-template-picker { grid-template-columns: 1fr; }
+  body[data-current-view="account"] .portal-shell .account-whatsapp-connection-fields .span-2 { grid-column: auto; }
+}
+
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell .view-section[data-view="account"] { --account-ink: #eaf4ff; --account-muted: #adc0d4; --account-line: rgba(151, 206, 244, .2); --account-soft: #0a2342; --account-panel: #071a33; --account-accent: #6bbdff; }
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell :is(.view-section[data-view="account"] > .view-head, .account-profile-card:first-child, .account-profile-card:nth-child(3), .account-settings-card, .account-billing-card, .portal-pricing-card, .qr-credit-shop-card, .account-deal-card) { background: #071a33 !important; }
 html[data-theme="dark"] body[data-current-view="account"] .portal-shell :is(.account-profile-card, .account-admin-nav a, .account-meta-grid > div, .account-deal-grid > div, .account-billing-panel) { background: #0a2342 !important; }

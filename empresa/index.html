@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=competition-detail-premium-v306-20260810">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=whatsapp-cloud-guided-v309-20260811">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -1623,6 +1623,40 @@
                       <button class="ghost-button compact" id="accountCommunicationTestButton" type="button">Enviar correo de prueba</button>
                     </div>
                     <p class="error-line" id="accountCommunicationConnectionMessage"></p>
+                  </section>
+                  <section class="account-email-connection-panel account-whatsapp-connection-panel span-2" aria-labelledby="accountWhatsAppConnectionTitle">
+                    <div class="account-email-connection-head">
+                      <div>
+                        <span class="mono-label">Envío oficial por WhatsApp</span>
+                        <h4 id="accountWhatsAppConnectionTitle">Conecta WhatsApp Business y envía desde Qori</h4>
+                      </div>
+                      <span class="status-chip pending" id="accountWhatsAppConnectionStatus">Sin conectar</span>
+                    </div>
+                    <p class="table-secondary">Qori envía en lotes controlados con la API oficial de Meta. Tu token se cifra y nunca se vuelve a mostrar. Solo puedes enviar campañas con una plantilla aprobada y a contactos que aceptaron recibir WhatsApp.</p>
+                    <ol class="account-email-connection-steps">
+                      <li>En <a href="https://business.facebook.com/wa/manage/" target="_blank" rel="noopener noreferrer">WhatsApp Manager</a>, registra y verifica el número que representará a tu negocio.</li>
+                      <li>Crea una plantilla de marketing, espera su estado <strong>Aprobada</strong> y guarda sus variables en el mismo orden.</li>
+                      <li>En <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer">Meta for Developers</a>, crea un token de usuario del sistema con permisos de WhatsApp, copia el ID de cuenta, el ID de número y el token aquí.</li>
+                    </ol>
+                    <div class="account-whatsapp-connection-fields">
+                      <label><span>ID de cuenta de WhatsApp Business</span><input id="accountWhatsAppBusinessAccountIdInput" inputmode="numeric" autocomplete="off" placeholder="Ej: 102345678901234"></label>
+                      <label><span>ID del número de teléfono</span><input id="accountWhatsAppPhoneNumberIdInput" inputmode="numeric" autocomplete="off" placeholder="Ej: 104567890123456"></label>
+                      <label class="span-2"><span>Token de acceso de Meta</span><input id="accountWhatsAppAccessTokenInput" type="password" autocomplete="new-password" spellcheck="false" placeholder="EAA..."></label>
+                    </div>
+                    <p class="table-secondary">Si ya hay un token conectado, déjalo vacío para conservarlo. Un token de prueba vence rápido: para campañas reales usa un token de usuario del sistema.</p>
+                    <div class="inline-actions">
+                      <button class="solid-button compact" id="accountWhatsAppConnectButton" type="button">Guardar conexión</button>
+                      <button class="ghost-button compact" id="accountWhatsAppDisconnectButton" type="button">Desconectar</button>
+                      <button class="ghost-button compact" id="accountWhatsAppLoadTemplatesButton" type="button">Ver plantillas aprobadas</button>
+                    </div>
+                    <label><span>Número para prueba</span><input id="accountWhatsAppTestPhoneInput" type="tel" maxlength="40" placeholder="Ej: +57 300 123 4567"></label>
+                    <div class="account-whatsapp-template-picker">
+                      <label><span>Plantilla aprobada</span><select id="accountWhatsAppTestTemplateInput"><option value="">Guarda la conexión y carga tus plantillas</option></select></label>
+                      <label><span>Variables de prueba (una por línea)</span><textarea id="accountWhatsAppTestParametersInput" rows="2" maxlength="4000" placeholder="Ej: Ana&#10;https://tu-enlace.com"></textarea></label>
+                    </div>
+                    <label class="communication-consent"><input id="accountWhatsAppTestConsentInput" type="checkbox"> Confirmo que este número aceptó recibir esta prueba.</label>
+                    <div class="inline-actions"><button class="ghost-button compact" id="accountWhatsAppTestButton" type="button">Enviar prueba por WhatsApp</button></div>
+                    <p class="error-line" id="accountWhatsAppConnectionMessage"></p>
                   </section>
                   <label><span>Teléfono</span><input id="accountPhoneInput" type="text" maxlength="40"></label>
                   <label><span>Sitio web</span><input id="accountWebsiteInput" type="url" maxlength="220"></label>
@@ -7591,8 +7625,11 @@
             <label><span>Mensaje</span><textarea id="communicationEmailBodyInput" rows="7" placeholder="Hola {{nombre}}, tenemos una oferta para ti..."></textarea></label>
           </section>
           <section class="communication-composer-section communication-whatsapp-fields hidden">
-            <div class="communication-composer-section-head"><span class="communication-composer-step">02</span><div><span class="mono-label">Mensaje de WhatsApp</span><strong>Prepara el lote para envío manual</strong><small>Puedes usar <b>{{nombre}}</b>. Qori conserva cada intento; la entrega y lectura solo las confirma WhatsApp.</small></div></div>
-            <label><span>Mensaje</span><textarea id="communicationWhatsAppBodyInput" rows="7" maxlength="3000" placeholder="Hola {{nombre}}, tenemos una novedad para ti..."></textarea></label>
+            <div class="communication-composer-section-head"><span class="communication-composer-step">02</span><div><span class="mono-label">Plantilla oficial de WhatsApp</span><strong>Elige qué plantilla aprobada enviará Meta</strong><small>Primero conecta WhatsApp Business en Cuenta. Qori sustituye las variables en orden y registra el resultado de cada envío.</small></div></div>
+            <div class="communication-whatsapp-guidance"><span class="material-symbols-outlined">verified_user</span><p><strong>Antes de lanzar:</strong> elige una plantilla aprobada, completa exactamente sus variables y confirma que todos dieron consentimiento. Si todavía no conectas Meta, guarda este borrador y ve a <b>Cuenta → WhatsApp Business</b>.</p></div>
+            <label><span>Plantilla aprobada de Meta</span><select id="communicationWhatsAppTemplateInput"><option value="">Carga plantillas desde tu conexión de WhatsApp</option></select></label>
+            <label><span>Variables de plantilla, una por línea</span><textarea id="communicationWhatsAppTemplateParametersInput" rows="3" maxlength="4000" placeholder="Ej: {{nombre}}&#10;{{enlace}}"></textarea><small id="communicationWhatsAppTemplateHelp">Qori reemplaza {{nombre}}, {{contacto}}, {{interes}} y {{enlace}} automáticamente. Añade una línea por cada variable que tenga tu plantilla.</small></label>
+            <label><span>Nota interna / vista previa</span><textarea id="communicationWhatsAppBodyInput" rows="4" maxlength="3000" placeholder="Ej: Campaña de regreso para {{nombre}}. Esta nota se guarda en Qori; Meta envía el texto aprobado de la plantilla."></textarea></label>
           </section>
           <section class="communication-composer-section communication-social-fields hidden">
             <div class="communication-composer-section-head"><span class="communication-composer-step">02</span><div><span class="mono-label">Texto para publicar</span><strong>Prepara la versión para redes</strong><small>Incluye tu llamado a la acción, etiquetas y el enlace de destino.</small></div></div>
@@ -7636,8 +7673,8 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=competition-detail-premium-v308-20260810" defer></script>
-    <script src="js/communications.js?v=email-delivery-diagnostics-v297-20260810" defer></script>
+<script src="js/app.js?v=whatsapp-cloud-guided-v309-20260811" defer></script>
+    <script src="js/communications.js?v=whatsapp-cloud-guided-v309-20260811" defer></script>
 </body>
 </html>
 

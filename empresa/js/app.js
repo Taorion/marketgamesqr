@@ -508,6 +508,19 @@ const accountCommunicationConnectButton = document.getElementById("accountCommun
 const accountCommunicationDisconnectButton = document.getElementById("accountCommunicationDisconnectButton");
 const accountCommunicationTestEmailInput = document.getElementById("accountCommunicationTestEmailInput");
 const accountCommunicationTestButton = document.getElementById("accountCommunicationTestButton");
+const accountWhatsAppBusinessAccountIdInput = document.getElementById("accountWhatsAppBusinessAccountIdInput");
+const accountWhatsAppPhoneNumberIdInput = document.getElementById("accountWhatsAppPhoneNumberIdInput");
+const accountWhatsAppAccessTokenInput = document.getElementById("accountWhatsAppAccessTokenInput");
+const accountWhatsAppConnectionStatus = document.getElementById("accountWhatsAppConnectionStatus");
+const accountWhatsAppConnectionMessage = document.getElementById("accountWhatsAppConnectionMessage");
+const accountWhatsAppConnectButton = document.getElementById("accountWhatsAppConnectButton");
+const accountWhatsAppDisconnectButton = document.getElementById("accountWhatsAppDisconnectButton");
+const accountWhatsAppLoadTemplatesButton = document.getElementById("accountWhatsAppLoadTemplatesButton");
+const accountWhatsAppTestPhoneInput = document.getElementById("accountWhatsAppTestPhoneInput");
+const accountWhatsAppTestTemplateInput = document.getElementById("accountWhatsAppTestTemplateInput");
+const accountWhatsAppTestParametersInput = document.getElementById("accountWhatsAppTestParametersInput");
+const accountWhatsAppTestConsentInput = document.getElementById("accountWhatsAppTestConsentInput");
+const accountWhatsAppTestButton = document.getElementById("accountWhatsAppTestButton");
 const accountPhoneInput = document.getElementById("accountPhoneInput");
 const accountWebsiteInput = document.getElementById("accountWebsiteInput");
 const accountCityInput = document.getElementById("accountCityInput");
@@ -2370,6 +2383,9 @@ let state = {
   businessProfile: null,
   communicationEmailConnection: null,
   communicationEmailConnectionLoaded: false,
+  communicationWhatsAppConnection: null,
+  communicationWhatsAppConnectionLoaded: false,
+  communicationWhatsAppTemplates: [],
   subscription: null,
   access: null,
   dashboardLoading: false,
@@ -5821,6 +5837,7 @@ function renderAccountView() {
   if (accountCommunicationSenderEmailInput) accountCommunicationSenderEmailInput.value = business.communication_sender_email || "";
   if (accountCommunicationTestEmailInput && !accountCommunicationTestEmailInput.value) accountCommunicationTestEmailInput.value = business.contact_email || user.email || "";
   renderCommunicationEmailConnection();
+  renderCommunicationWhatsAppConnection();
   if (accountPhoneInput) accountPhoneInput.value = business.phone || "";
   if (accountWebsiteInput) accountWebsiteInput.value = business.website || "";
   if (accountCityInput) accountCityInput.value = business.city || "";
@@ -5877,6 +5894,96 @@ async function loadCommunicationEmailConnection(options = {}) {
   state.communicationEmailConnectionLoaded = true;
   return state.communicationEmailConnection;
 }
+
+function communicationWhatsAppTemplateParameters(value) {
+  return String(value || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+}
+
+function renderCommunicationWhatsAppTemplateOptions(select = accountWhatsAppTestTemplateInput, selected = "") {
+  if (!select) return;
+  const templates = Array.isArray(state.communicationWhatsAppTemplates) ? state.communicationWhatsAppTemplates : [];
+  select.innerHTML = `<option value="">${templates.length ? "Elige una plantilla aprobada" : "Guarda la conexión y carga tus plantillas"}</option>${templates.map((template) => `<option value="${escapeHtml(template.name)}" data-language="${escapeHtml(template.language || "es_CO")}" data-variables="${Number(template.variable_count || 0)}">${escapeHtml(template.name)} · ${escapeHtml(template.language || "es_CO")}${Number(template.variable_count || 0) ? ` · ${Number(template.variable_count)} variable(s)` : ""}</option>`).join("")}`;
+  select.value = selected || "";
+}
+
+function renderCommunicationWhatsAppConnection() {
+  const connection = state.communicationWhatsAppConnection || {};
+  const ready = Boolean(connection.ready);
+  const hasToken = Boolean(connection.access_token_configured);
+  if (accountWhatsAppBusinessAccountIdInput) accountWhatsAppBusinessAccountIdInput.value = connection.business_account_id || "";
+  if (accountWhatsAppPhoneNumberIdInput) accountWhatsAppPhoneNumberIdInput.value = connection.phone_number_id || "";
+  if (accountWhatsAppConnectionStatus) {
+    accountWhatsAppConnectionStatus.textContent = ready ? "Lista para prueba" : (hasToken ? "Faltan IDs" : "Sin conectar");
+    accountWhatsAppConnectionStatus.className = `status-chip ${ready ? "ok" : "pending"}`;
+  }
+  if (accountWhatsAppDisconnectButton) accountWhatsAppDisconnectButton.disabled = !hasToken;
+  if (accountWhatsAppLoadTemplatesButton) accountWhatsAppLoadTemplatesButton.disabled = !ready;
+  if (accountWhatsAppTestButton) accountWhatsAppTestButton.disabled = !ready;
+  renderCommunicationWhatsAppTemplateOptions();
+}
+
+async function loadCommunicationWhatsAppConnection(options = {}) {
+  if (!session?.user?.business_id || (state.communicationWhatsAppConnectionLoaded && !options.force)) return state.communicationWhatsAppConnection;
+  const data = await api("/api/business/communications/whatsapp-connection", { headers: authHeaders() });
+  state.communicationWhatsAppConnection = data || null;
+  state.communicationWhatsAppConnectionLoaded = true;
+  return state.communicationWhatsAppConnection;
+}
+
+async function loadCommunicationWhatsAppTemplates() {
+  if (!state.communicationWhatsAppConnection?.ready) throw new Error("Primero guarda el token, el ID de cuenta y el ID de número de WhatsApp Business.");
+  setButtonLoading(accountWhatsAppLoadTemplatesButton, true, "Cargando...");
+  try {
+    const data = await api("/api/business/communications/whatsapp-connection/templates", { headers: authHeaders() });
+    state.communicationWhatsAppTemplates = data.templates || [];
+    renderCommunicationWhatsAppConnection();
+    setInlineMessage(accountWhatsAppConnectionMessage, state.communicationWhatsAppTemplates.length ? `${state.communicationWhatsAppTemplates.length} plantilla(s) aprobada(s) lista(s). Ahora prueba una antes de lanzar.` : "No hay plantillas aprobadas todavía. Créala en WhatsApp Manager y vuelve a cargar.", state.communicationWhatsAppTemplates.length ? "success" : "error");
+    return state.communicationWhatsAppTemplates;
+  } catch (error) {
+    setInlineMessage(accountWhatsAppConnectionMessage, error.message || "No se pudieron cargar las plantillas de Meta.", "error");
+    throw error;
+  } finally { setButtonLoading(accountWhatsAppLoadTemplatesButton, false); }
+}
+
+async function saveCommunicationWhatsAppConnection({ removeAccessToken = false } = {}) {
+  const businessAccountId = optionalInputValue(accountWhatsAppBusinessAccountIdInput);
+  const phoneNumberId = optionalInputValue(accountWhatsAppPhoneNumberIdInput);
+  const accessToken = String(accountWhatsAppAccessTokenInput?.value || "").trim();
+  if (!businessAccountId || !phoneNumberId) { setInlineMessage(accountWhatsAppConnectionMessage, "Completa el ID de cuenta de WhatsApp Business y el ID del número. Ambos aparecen en Meta for Developers.", "error"); return null; }
+  if (!removeAccessToken && !accessToken && !state.communicationWhatsAppConnection?.access_token_configured) { setInlineMessage(accountWhatsAppConnectionMessage, "Pega el token de usuario del sistema de Meta para completar la conexión.", "error"); return null; }
+  setButtonLoading(accountWhatsAppConnectButton, true, "Guardando...");
+  try {
+    const data = await api("/api/business/communications/whatsapp-connection", { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ business_account_id: businessAccountId, phone_number_id: phoneNumberId, access_token: removeAccessToken ? "" : accessToken, remove_access_token: removeAccessToken }) });
+    state.communicationWhatsAppConnection = data;
+    state.communicationWhatsAppConnectionLoaded = true;
+    if (accountWhatsAppAccessTokenInput) accountWhatsAppAccessTokenInput.value = "";
+    renderCommunicationWhatsAppConnection();
+    setInlineMessage(accountWhatsAppConnectionMessage, removeAccessToken ? "Conexión eliminada. No se enviarán campañas por WhatsApp hasta conectar un token nuevo." : "Conexión guardada. Carga una plantilla aprobada y envía una prueba antes de lanzar.", "success");
+    return data;
+  } catch (error) {
+    setInlineMessage(accountWhatsAppConnectionMessage, error.message || "No se pudo guardar la conexión de WhatsApp.", "error");
+    return null;
+  } finally { setButtonLoading(accountWhatsAppConnectButton, false); }
+}
+
+async function testCommunicationWhatsAppConnection() {
+  const phone = optionalInputValue(accountWhatsAppTestPhoneInput);
+  const selected = accountWhatsAppTestTemplateInput?.selectedOptions?.[0];
+  const templateName = accountWhatsAppTestTemplateInput?.value || "";
+  if (!phone || !templateName) { setInlineMessage(accountWhatsAppConnectionMessage, "Elige una plantilla aprobada y escribe el número que recibirá la prueba.", "error"); return; }
+  if (!accountWhatsAppTestConsentInput?.checked) { setInlineMessage(accountWhatsAppConnectionMessage, "Confirma el consentimiento del número de prueba antes de enviar.", "error"); return; }
+  setButtonLoading(accountWhatsAppTestButton, true, "Enviando...");
+  try {
+    const data = await api("/api/business/communications/whatsapp-connection/test", { method: "POST", headers: authHeaders(), body: JSON.stringify({ recipient_phone: phone, template_name: templateName, language_code: selected?.dataset.language || "es_CO", body_parameters: communicationWhatsAppTemplateParameters(accountWhatsAppTestParametersInput?.value), consent_confirmed: true }) });
+    setInlineMessage(accountWhatsAppConnectionMessage, `Meta aceptó la prueba para ${data.recipient_phone}. Revisa el WhatsApp de ese número.`, "success");
+    showFeedback("La prueba fue aceptada por WhatsApp Business.", "success", { title: "Conexión de WhatsApp" });
+  } catch (error) { setInlineMessage(accountWhatsAppConnectionMessage, error.message || "La prueba no pudo enviarse.", "error"); }
+  finally { setButtonLoading(accountWhatsAppTestButton, false); }
+}
+
+window.loadCommunicationWhatsAppTemplates = loadCommunicationWhatsAppTemplates;
+window.loadCommunicationWhatsAppConnection = loadCommunicationWhatsAppConnection;
+window.renderCommunicationWhatsAppTemplateOptions = renderCommunicationWhatsAppTemplateOptions;
 
 function applyPlanNavigation() {
   navButtons.forEach((button) => {
@@ -6266,7 +6373,7 @@ function setView(view) {
     });
   }
   if (view === "account") {
-    Promise.all([loadAccountWorkspaceData({ quiet: true }), loadCommunicationEmailConnection({ force: true })]).then(() => {
+    Promise.all([loadAccountWorkspaceData({ quiet: true }), loadCommunicationEmailConnection({ force: true }), loadCommunicationWhatsAppConnection({ force: true })]).then(() => {
       renderBusinessLogoPanel();
       renderAccountView();
     }).catch(() => {});
@@ -50276,6 +50383,10 @@ accountProfileForm?.addEventListener("submit", submitAccountProfile);
 accountCommunicationConnectButton?.addEventListener("click", () => saveCommunicationEmailConnection());
 accountCommunicationDisconnectButton?.addEventListener("click", () => saveCommunicationEmailConnection({ removeApiKey: true }));
 accountCommunicationTestButton?.addEventListener("click", testCommunicationEmailConnection);
+accountWhatsAppConnectButton?.addEventListener("click", () => saveCommunicationWhatsAppConnection());
+accountWhatsAppDisconnectButton?.addEventListener("click", () => saveCommunicationWhatsAppConnection({ removeAccessToken: true }));
+accountWhatsAppLoadTemplatesButton?.addEventListener("click", () => loadCommunicationWhatsAppTemplates().catch(() => {}));
+accountWhatsAppTestButton?.addEventListener("click", testCommunicationWhatsAppConnection);
 accountPasswordForm?.addEventListener("submit", submitAccountPassword);
 accountUserForm?.addEventListener("submit", submitAccountUser);
 refreshAccountUsersButton?.addEventListener("click", loadBusinessUsers);

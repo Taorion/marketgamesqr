@@ -156,8 +156,13 @@ const {
   prepareWhatsApp: prepareCommunicationWhatsApp,
   publish: publishCommunication,
   saveEmailConnection: saveCommunicationEmailConnection,
+  saveWhatsAppConnection: saveCommunicationWhatsAppConnection,
   send: sendCommunication,
+  sendWhatsApp: sendCommunicationWhatsApp,
   testEmailConnection: testCommunicationEmailConnection,
+  testWhatsAppConnection: testCommunicationWhatsAppConnection,
+  whatsAppConnection: communicationWhatsAppConnection,
+  whatsAppTemplates: communicationWhatsAppTemplates,
   whatsappQueue: communicationWhatsAppQueue,
 } = require("../controllers/businessCommunicationController");
 const { storageSummary } = require("../controllers/storageQuotaController");
@@ -250,6 +255,10 @@ router.use(requirePortalAccess);
 router.get("/communications/email-connection", communicationEmailConnection);
 router.patch("/communications/email-connection", saveCommunicationEmailConnection);
 router.post("/communications/email-connection/test", testCommunicationEmailConnection);
+router.get("/communications/whatsapp-connection", communicationWhatsAppConnection);
+router.patch("/communications/whatsapp-connection", saveCommunicationWhatsAppConnection);
+router.get("/communications/whatsapp-connection/templates", communicationWhatsAppTemplates);
+router.post("/communications/whatsapp-connection/test", testCommunicationWhatsAppConnection);
 router.get("/communications/audience", shortBusinessCache, communicationAudience);
 router.get("/communications", standardBusinessCache, listCommunications);
 router.post("/communications", createCommunication);
@@ -257,6 +266,7 @@ router.patch("/communications/:id", patchCommunication);
 router.post("/communications/:id/publish", publishCommunication);
 router.post("/communications/:id/send", sendCommunication);
 router.post("/communications/:id/whatsapp/prepare", prepareCommunicationWhatsApp);
+router.post("/communications/:id/whatsapp/send", sendCommunicationWhatsApp);
 router.get("/communications/:id/whatsapp/queue", communicationWhatsAppQueue);
 router.post("/communications/:id/whatsapp/opened", markCommunicationWhatsAppOpened);
 router.get("/activity", businessActivity);

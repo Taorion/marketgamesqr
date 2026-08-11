@@ -3,7 +3,8 @@ const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
 const { listLeadCrmRows } = require("./leadCrmService");
 const { sendBusinessCommunicationEmail } = require("./businessCommunicationMailService");
-const { getEmailConnectionStatus, ownResendApiKey, saveEmailConnection } = require("./businessCommunicationCredentialService");
+const { getEmailConnectionStatus, getWhatsAppConnectionStatus, ownResendApiKey, saveEmailConnection, saveWhatsAppConnection } = require("./businessCommunicationCredentialService");
+const { listApprovedWhatsAppTemplates, sendWhatsAppTemplate } = require("./businessCommunicationWhatsAppService");
 
 function escapeHtml(value) {
   return String(value || "")
@@ -567,13 +568,13 @@ async function saveRecipient({ businessId, communicationId, contact, status, pro
   return recipient.rows[0];
 }
 
-async function logLeadCommunication({ businessId, contact, communication, status, message, errorMessage, userId }) {
+async function logLeadCommunication({ businessId, contact, communication, status, message, errorMessage, userId, channel = "email" }) {
   await query(
     `insert into lead_communications (
       business_id, lead_id, source_type, source_id, campaign_id, type, channel, subject, message, status, metadata, created_by
-    ) values ($1,$2,$3,$4,$5,'BUSINESS_COMMUNICATION','email',$6,$7,$8,$9::jsonb,$10)`,
+    ) values ($1,$2,$3,$4,$5,'BUSINESS_COMMUNICATION',$6,$7,$8,$9,$10::jsonb,$11)`,
     [businessId, contact.lead_id || null, contact.source_type, contact.source_id, communication.campaign_id || null,
-      communication.subject || communication.title, message, status === 'SENT' ? 'sent' : 'failed',
+      channel, communication.subject || communication.title, message, status === 'SENT' ? 'sent' : 'failed',
       JSON.stringify({ business_communication_id: communication.id, activation_id: communication.activation_id || null, web_showcase_id: communication.metadata?.web_showcase_id || null, error: errorMessage || null }), userId]
   );
 }
@@ -704,11 +705,84 @@ async function selectedCommunicationAudience(businessId, recipientRefs = []) {
     requested.push({ source_id: sourceId, source_type: sourceType });
   }
   if (!requested.length) throw badRequest("Selecciona al menos un contacto con el que comunicarte.");
+  if (requested.length > 120) throw badRequest("Envía máximo 120 contactos por lote para mantener el control del envío.");
   const audience = await listAudience(businessId, { source_ids: [...new Set(requested.map((item) => item.source_id))] });
   const byTypedId = new Map(audience.contacts.map((contact) => [`${String(contact.source_type || "").toUpperCase()}:${contact.source_id}`, contact]));
   const selected = requested.map((recipient) => byTypedId.get(`${recipient.source_type}:${recipient.source_id}`)).filter(Boolean);
   if (selected.length !== requested.length) throw badRequest("Uno o más contactos ya no están disponibles para esta comunicación.");
   return selected;
+}
+
+function whatsAppTemplateForDelivery(communication, suppliedTemplate = null) {
+  const template = suppliedTemplate || communication.metadata?.whatsapp_template || {};
+  const name = String(template.name || template.template_name || "").trim();
+  const language = String(template.language || template.language_code || "es_CO").trim() || "es_CO";
+  const parameters = Array.isArray(template.body_parameters) ? template.body_parameters : [];
+  if (!/^[a-z0-9_]+$/.test(name)) throw badRequest("Elige una plantilla aprobada de Meta antes de enviar por WhatsApp.");
+  return { name, language, body_parameters: parameters.map((value) => String(value || "").trim()).filter(Boolean) };
+}
+
+function whatsappTemplateParameters(template, contact, actionUrl) {
+  return template.body_parameters.map((value) => personalize(value, contact).replace(/{{\s*(enlace|link)\s*}}/gi, String(actionUrl || "").trim()));
+}
+
+async function runWithConcurrency(items, limit, callback) {
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (items.length) await callback(items.shift());
+  });
+  await Promise.all(workers);
+}
+
+async function sendBusinessCommunicationWhatsApp(businessId, userId, id, recipientRefs, consentConfirmed, suppliedTemplate = null) {
+  if (!consentConfirmed) throw badRequest("Confirma que los destinatarios aceptaron recibir esta comunicación antes de enviarla.");
+  const found = await query("select * from business_communications where id = $1 and business_id = $2", [id, businessId]);
+  if (!found.rowCount) throw notFound("Comunicación no encontrada.");
+  const communication = found.rows[0];
+  if (communication.communication_type !== "WHATSAPP") throw badRequest("Esta comunicación no está configurada para WhatsApp.");
+  await assertWebShowcaseIsActiveForDelivery(businessId, communication);
+  const template = whatsAppTemplateForDelivery(communication, suppliedTemplate);
+  const selected = await selectedCommunicationAudience(businessId, recipientRefs);
+  const seenPhones = new Set();
+  const duplicates = [];
+  let invalidPhones = 0;
+  const deliverable = [];
+  for (const contact of selected) {
+    const phone = normalizedWhatsAppPhone(contact.phone);
+    if (!phone || phone.length < 7) {
+      await saveRecipient({ businessId, communicationId: id, contact, status: "SKIPPED", errorMessage: "Sin teléfono válido para WhatsApp", userId, metadata: { channel: "WHATSAPP", delivery_status: "SKIPPED" } });
+      invalidPhones += 1;
+      continue;
+    }
+    if (seenPhones.has(phone)) { duplicates.push({ contact, phone }); continue; }
+    seenPhones.add(phone);
+    deliverable.push({ contact, phone });
+  }
+  const results = { attempted: selected.length, unique_phones: seenPhones.size, duplicate_phones: duplicates.length, sent: 0, failed: 0, skipped: invalidPhones, failure_reasons: [] };
+  for (const { contact, phone } of duplicates) {
+    await saveRecipient({ businessId, communicationId: id, contact, status: "SKIPPED", errorMessage: "Número de WhatsApp duplicado en la audiencia: se envió una sola copia.", userId, metadata: { channel: "WHATSAPP", phone, delivery_status: "DUPLICATE" } });
+    results.skipped += 1;
+  }
+  const pending = [...deliverable];
+  await runWithConcurrency(pending, 6, async ({ contact, phone }) => {
+    const parameters = whatsappTemplateParameters(template, contact, communication.action_url);
+    const message = messageWithActionUrl(personalize(communication.whatsapp_body || "", contact), communication.action_url);
+    try {
+      const provider = await sendWhatsAppTemplate(businessId, { to: phone, templateName: template.name, languageCode: template.language, bodyParameters: parameters });
+      await saveRecipient({ businessId, communicationId: id, contact, status: "SENT", providerMessageId: provider.id, userId, metadata: { channel: "WHATSAPP", phone, template_name: template.name, template_language: template.language, template_parameters: parameters, delivery_status: "ACCEPTED_BY_META", consent_confirmed: true } });
+      await logLeadCommunication({ businessId, contact, communication, status: "SENT", message, userId, channel: "whatsapp" });
+      results.sent += 1;
+    } catch (error) {
+      await saveRecipient({ businessId, communicationId: id, contact, status: "FAILED", errorMessage: error.message, userId, metadata: { channel: "WHATSAPP", phone, template_name: template.name, template_language: template.language, delivery_status: "FAILED", consent_confirmed: true } });
+      await logLeadCommunication({ businessId, contact, communication, status: "FAILED", message, errorMessage: error.message, userId, channel: "whatsapp" });
+      results.failed += 1;
+      const reason = String(error.publicMessage || "No se pudo entregar por WhatsApp. Revisa la plantilla y la conexión.").slice(0, 280);
+      const known = results.failure_reasons.find((item) => item.message === reason);
+      if (known) known.count += 1; else results.failure_reasons.push({ message: reason, count: 1 });
+    }
+  });
+  const updated = await query("update business_communications set status = $3, updated_by = $4, updated_at = now() where id = $1 and business_id = $2 returning *", [id, businessId, results.sent ? "SENT" : communication.status, userId]);
+  await syncCommunicationChannelEffort(businessId, userId, updated.rows[0] || communication);
+  return { results };
 }
 
 async function prepareBusinessCommunicationWhatsApp(businessId, userId, id, recipientRefs, consentConfirmed) {
@@ -815,9 +889,22 @@ async function sendEmailConnectionTest(businessId, userEmail, recipientEmail) {
   return { ok: true, provider_message_id: provider.id || null, recipient_email: recipient };
 }
 
+async function sendWhatsAppConnectionTest(businessId, payload) {
+  const phone = normalizedWhatsAppPhone(payload.recipient_phone);
+  if (phone.length < 7) throw badRequest("Escribe un número de WhatsApp válido con su prefijo de país.");
+  const provider = await sendWhatsAppTemplate(businessId, {
+    to: phone,
+    templateName: payload.template_name,
+    languageCode: payload.language_code,
+    bodyParameters: payload.body_parameters,
+  });
+  return { ok: true, provider_message_id: provider.id || null, recipient_phone: phone };
+}
+
 module.exports = {
   createBusinessCommunication,
   getEmailConnectionStatus,
+  getWhatsAppConnectionStatus,
   listAudience,
   listBusinessCommunications,
   publishBusinessCommunication,
@@ -825,7 +912,11 @@ module.exports = {
   listBusinessCommunicationWhatsAppQueue,
   markBusinessCommunicationWhatsAppOpened,
   sendBusinessCommunication,
+  sendBusinessCommunicationWhatsApp,
   saveEmailConnection,
+  saveWhatsAppConnection,
   sendEmailConnectionTest,
+  sendWhatsAppConnectionTest,
+  listApprovedWhatsAppTemplates,
   updateBusinessCommunication,
 };

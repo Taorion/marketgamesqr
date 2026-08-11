@@ -57,8 +57,8 @@ const communicationSchema = communicationFieldsSchema.superRefine((body, ctx) =>
   if (["SOCIAL", "MIXED"].includes(body.communication_type) && !body.social_copy) {
     ctx.addIssue({ code: "custom", path: ["social_copy"], message: "La publicación necesita una descripción." });
   }
-  if (body.communication_type === "WHATSAPP" && !body.whatsapp_body) {
-    ctx.addIssue({ code: "custom", path: ["whatsapp_body"], message: "WhatsApp necesita un mensaje." });
+  if (body.communication_type === "WHATSAPP" && !body.whatsapp_body && !body.metadata?.whatsapp_template?.name) {
+    ctx.addIssue({ code: "custom", path: ["metadata", "whatsapp_template"], message: "WhatsApp necesita una plantilla aprobada o un mensaje para el respaldo manual." });
   }
 });
 const communicationPatchSchema = communicationFieldsSchema.partial().superRefine((body, ctx) => {
@@ -75,6 +75,21 @@ const emailConnectionSchema = z.object({
   remove_api_key: z.boolean().optional().default(false),
 });
 const emailConnectionTestSchema = z.object({ recipient_email: z.string().trim().email().max(220) });
+const whatsAppConnectionSchema = z.object({
+  business_account_id: z.string().trim().regex(/^\d{5,40}$/, "El ID de la cuenta de WhatsApp Business debe contener solo números.").optional().or(z.literal("")),
+  phone_number_id: z.string().trim().regex(/^\d{5,40}$/, "El ID del número de teléfono debe contener solo números.").optional().or(z.literal("")),
+  access_token: z.string().trim().min(30, "Pega el token de acceso de Meta completo.").max(2000).optional().or(z.literal("")),
+  remove_access_token: z.boolean().optional().default(false),
+});
+const whatsAppTemplateSchema = z.object({
+  template_name: z.string().trim().regex(/^[a-z0-9_]+$/, "Usa el nombre técnico de la plantilla de Meta (minúsculas, números y guiones bajos).").min(1).max(512),
+  language_code: z.string().trim().regex(/^[a-z]{2,3}(_[A-Z]{2})?$/, "Usa el código de idioma de Meta, por ejemplo es_CO.").max(16).default("es_CO"),
+  body_parameters: z.array(z.string().trim().max(1024)).max(20).default([]),
+});
+const whatsAppConnectionTestSchema = whatsAppTemplateSchema.extend({
+  recipient_phone: z.string().trim().min(7).max(40),
+  consent_confirmed: z.literal(true),
+});
 
 function requireCommunicationConfigurationAccess(req) {
   if (!["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_Qori"].includes(req.user?.role)) {
@@ -94,5 +109,10 @@ async function publish(req, res, next) { try { const body = validate(publishSche
 async function emailConnection(req, res, next) { try { res.json(await service.getEmailConnectionStatus(businessIdFor(req))); } catch (error) { next(error); } }
 async function saveEmailConnection(req, res, next) { try { requireCommunicationConfigurationAccess(req); const body = validate(emailConnectionSchema, req.body); res.json(await service.saveEmailConnection(businessIdFor(req), { ...body, resend_api_key: body.resend_api_key || "" })); } catch (error) { next(error); } }
 async function testEmailConnection(req, res, next) { try { requireCommunicationConfigurationAccess(req); const body = validate(emailConnectionTestSchema, req.body); res.json(await service.sendEmailConnectionTest(businessIdFor(req), req.user.email, body.recipient_email)); } catch (error) { next(error); } }
+async function whatsAppConnection(req, res, next) { try { res.json(await service.getWhatsAppConnectionStatus(businessIdFor(req))); } catch (error) { next(error); } }
+async function saveWhatsAppConnection(req, res, next) { try { requireCommunicationConfigurationAccess(req); const body = validate(whatsAppConnectionSchema, req.body); res.json(await service.saveWhatsAppConnection(businessIdFor(req), body)); } catch (error) { next(error); } }
+async function whatsAppTemplates(req, res, next) { try { requireCommunicationConfigurationAccess(req); res.json(await service.listApprovedWhatsAppTemplates(businessIdFor(req))); } catch (error) { next(error); } }
+async function testWhatsAppConnection(req, res, next) { try { requireCommunicationConfigurationAccess(req); const body = validate(whatsAppConnectionTestSchema, req.body); res.json(await service.sendWhatsAppConnectionTest(businessIdFor(req), body)); } catch (error) { next(error); } }
+async function sendWhatsApp(req, res, next) { try { const body = validate(sendSchema.extend({ template: whatsAppTemplateSchema.optional() })); res.json(await service.sendBusinessCommunicationWhatsApp(businessIdFor(req), req.user.id, req.params.id, body.recipients, body.consent_confirmed, body.template)); } catch (error) { next(error); } }
 
-module.exports = { audience, create, emailConnection, list, markWhatsAppOpened, patch, prepareWhatsApp, publish, saveEmailConnection, send, testEmailConnection, whatsappQueue };
+module.exports = { audience, create, emailConnection, list, markWhatsAppOpened, patch, prepareWhatsApp, publish, saveEmailConnection, saveWhatsAppConnection, send, sendWhatsApp, testEmailConnection, testWhatsAppConnection, whatsAppConnection, whatsAppTemplates, whatsappQueue };

@@ -22,14 +22,14 @@ function encryptCredential(value) {
 function decryptCredential(value) {
   const [version, ivValue, tagValue, encryptedValue] = String(value || "").split(".");
   if (version !== CIPHER_VERSION || !ivValue || !tagValue || !encryptedValue) {
-    throw badRequest("La conexión de Resend guardada no es válida. Vuelve a conectar tu cuenta.");
+    throw badRequest("La credencial de envío guardada no es válida. Vuelve a conectar la cuenta.");
   }
   try {
     const decipher = crypto.createDecipheriv("aes-256-gcm", credentialKey(), Buffer.from(ivValue, "base64"));
     decipher.setAuthTag(Buffer.from(tagValue, "base64"));
     return Buffer.concat([decipher.update(Buffer.from(encryptedValue, "base64")), decipher.final()]).toString("utf8");
   } catch {
-    throw badRequest("No se pudo abrir la conexión de Resend. Vuelve a guardar tu clave de envío.");
+    throw badRequest("No se pudo abrir la credencial de envío. Vuelve a guardar la conexión.");
   }
 }
 
@@ -89,4 +89,67 @@ async function ownResendApiKey(businessId) {
   return ciphertext ? decryptCredential(ciphertext) : "";
 }
 
-module.exports = { getEmailConnectionStatus, ownResendApiKey, saveEmailConnection };
+function normalizedIdentifier(value) {
+  return String(value || "").trim().replace(/[^0-9]/g, "");
+}
+
+async function whatsAppConnectionForBusiness(businessId) {
+  const result = await query("select id, name, settings from businesses where id = $1 and is_active = true", [businessId]);
+  const business = result.rows[0];
+  if (!business) throw notFound("Empresa no encontrada.");
+  const settings = business.settings || {};
+  return {
+    business,
+    business_account_id: normalizedIdentifier(settings.communication_whatsapp_business_account_id),
+    phone_number_id: normalizedIdentifier(settings.communication_whatsapp_phone_number_id),
+    has_access_token: Boolean(settings.communication_whatsapp_access_token_ciphertext),
+  };
+}
+
+async function getWhatsAppConnectionStatus(businessId) {
+  const connection = await whatsAppConnectionForBusiness(businessId);
+  return {
+    provider: "WHATSAPP_CLOUD_API",
+    business_account_id: connection.business_account_id,
+    phone_number_id: connection.phone_number_id,
+    access_token_configured: connection.has_access_token,
+    ready: Boolean(connection.business_account_id && connection.phone_number_id && connection.has_access_token),
+  };
+}
+
+async function saveWhatsAppConnection(businessId, payload) {
+  const connection = await whatsAppConnectionForBusiness(businessId);
+  const patch = {
+    communication_whatsapp_business_account_id: normalizedIdentifier(payload.business_account_id || connection.business_account_id) || null,
+    communication_whatsapp_phone_number_id: normalizedIdentifier(payload.phone_number_id || connection.phone_number_id) || null,
+  };
+  if (payload.remove_access_token) {
+    patch.communication_whatsapp_access_token_ciphertext = null;
+  } else if (payload.access_token) {
+    patch.communication_whatsapp_access_token_ciphertext = encryptCredential(payload.access_token.trim());
+  }
+  const updated = await query(
+    `update businesses
+       set settings = jsonb_strip_nulls(coalesce(settings, '{}'::jsonb) || $2::jsonb), updated_at = now()
+     where id = $1 and is_active = true
+     returning id`,
+    [businessId, JSON.stringify(patch)]
+  );
+  if (!updated.rowCount) throw notFound("Empresa no encontrada.");
+  return getWhatsAppConnectionStatus(businessId);
+}
+
+async function ownWhatsAppAccessToken(businessId) {
+  const connection = await whatsAppConnectionForBusiness(businessId);
+  const ciphertext = connection.business.settings?.communication_whatsapp_access_token_ciphertext;
+  return ciphertext ? decryptCredential(ciphertext) : "";
+}
+
+module.exports = {
+  getEmailConnectionStatus,
+  getWhatsAppConnectionStatus,
+  ownResendApiKey,
+  ownWhatsAppAccessToken,
+  saveEmailConnection,
+  saveWhatsAppConnection,
+};
