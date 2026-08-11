@@ -20834,7 +20834,10 @@ async function submitCustomerAcquisitionSale(event) {
     const productSyncMessage = autoCreatedCount
       ? ` ${autoCreatedCount} producto${autoCreatedCount === 1 ? "" : "s"} nuevo${autoCreatedCount === 1 ? "" : "s"} quedó${autoCreatedCount === 1 ? "" : "aron"} creado${autoCreatedCount === 1 ? "" : "s"} en Productos.`
       : "";
-    const message = `Venta registrada con su medio de llegada.${productSyncMessage}`;
+    const customerCreatedMessage = data.customer?.created
+      ? ` ${data.customer.name || "El comprador"} también quedó creado como contacto cliente.`
+      : "";
+    const message = `Venta registrada con su medio de llegada.${customerCreatedMessage}${productSyncMessage}`;
     setInlineMessage(customerAcquisitionMessage, message, "success");
     customerAcquisitionForm.reset();
     if (customerAcquisitionAffiliateInput) customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = "";
@@ -47839,7 +47842,14 @@ async function saveRmsAttributedSale(item, root) {
     loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "postventa" }),
     loadAttributedSalesView({ quiet: true }),
   ]);
-  showFeedback(result?.duplicate ? "Esta venta ya estaba registrada; no se duplicó." : "Venta atribuida registrada con sus costos, utilidad y ROI.", "success", { title: "Ventas atribuidas" });
+  const customerFeedback = result?.customer?.created
+    ? ` Además, ${result.customer.name || "el comprador"} fue creado automáticamente como contacto cliente.`
+    : "";
+  showFeedback(
+    `${result?.duplicate ? "Esta venta ya estaba registrada; no se duplicó." : "Venta atribuida registrada con sus costos, utilidad y ROI."}${customerFeedback}`,
+    "success",
+    { title: "Ventas atribuidas" }
+  );
   openRmsStation("postventa", { source: "attributed-sale" });
 }
 

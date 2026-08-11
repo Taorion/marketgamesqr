@@ -76,6 +76,58 @@ async function resolveCampaignChannelReferences(client, businessId, refs = [], l
   return resolved;
 }
 
+function customerContactIdentity(customer = {}) {
+  const documentId = String(customer.customer_document_id || "").trim();
+  const email = String(customer.customer_email || "").trim().toLowerCase();
+  const phone = String(customer.customer_phone || "").replace(/\D/g, "");
+  return { documentId: documentId || null, email: email || null, phone: phone || null };
+}
+
+// The sales form may receive a buyer who has never been captured by a campaign.
+// Persist a canonical contact in the same transaction as the sale, so the
+// contacts list and post-sale flows never lose that new customer.
+async function ensureCustomerContactForAcquisitionSale(client, businessId, user, customer = {}) {
+  const identity = customerContactIdentity(customer);
+  const lockKey = [businessId, identity.documentId || identity.email || identity.phone || String(customer.customer_name || "cliente").trim().toLowerCase()].join(":");
+  await client.query("select pg_advisory_xact_lock(hashtext($1))", [`customer-acquisition:${lockKey}`]);
+  const existing = await client.query(
+    `select id, name, email, phone, document_id
+       from players
+      where business_id = $1
+        and (
+          ($2::text is not null and nullif(document_id, '') = $2)
+          or ($3::text is not null and lower(nullif(email, '')) = $3)
+          or ($4::text is not null and regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = $4)
+        )
+      order by created_at asc
+      limit 1
+      for update`,
+    [businessId, identity.documentId, identity.email, identity.phone]
+  );
+  if (existing.rowCount) return { customer: existing.rows[0], created: false };
+
+  const created = await client.query(
+    `insert into players (business_id, campaign_id, game_id, name, email, phone, document_id, metadata)
+     values ($1, $2, null, $3, $4, $5, $6, $7::jsonb)
+     returning id, name, email, phone, document_id`,
+    [
+      businessId,
+      customer.campaign_id || null,
+      String(customer.customer_name || "Cliente sin nombre").trim() || "Cliente sin nombre",
+      identity.email || null,
+      customer.customer_phone || null,
+      identity.documentId,
+      JSON.stringify({
+        source: "Venta registrada en Operar",
+        crm_created_from: "customer_acquisition_sale",
+        customer_created_at: new Date().toISOString(),
+        created_by_user_id: user?.id || null,
+      }),
+    ]
+  );
+  return { customer: created.rows[0], created: true };
+}
+
 const clientSetupSchema = z.object({
   budget_total: z.number().min(0),
   starts_at: z.string().datetime(),
@@ -2302,6 +2354,8 @@ async function createCustomerAcquisitionSale(req, res, next) {
           throw badRequest("La sede o punto de consignación seleccionado no pertenece a este negocio o no está activo.");
         }
       }
+      const customerLink = await ensureCustomerContactForAcquisitionSale(client, businessId, req.user, body);
+      const customerContact = customerLink.customer;
 
       let referredAffiliate = null;
       const affiliateResult = await client.query(
@@ -2366,6 +2420,11 @@ async function createCustomerAcquisitionSale(req, res, next) {
         conversion_source: "contact_center_sale",
         affiliate_match_source: autoMatchedAffiliate ? "customer_identity" : body.referred_affiliate_id ? "manual_selection" : null,
         related_affiliate_id: referredAffiliate?.id || null,
+        crm_source_type: "PLAYER",
+        crm_source_id: customerContact.id,
+        crm_lead_id: customerContact.id,
+        customer_contact_id: customerContact.id,
+        customer_contact_created: customerLink.created,
         ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
       };
 
@@ -2381,10 +2440,10 @@ async function createCustomerAcquisitionSale(req, res, next) {
         [
           businessId,
           body.campaign_id || null,
-          body.customer_name || null,
-          body.customer_phone || null,
-          body.customer_email || null,
-          body.customer_document_id || null,
+          customerContact.name || body.customer_name || null,
+          customerContact.phone || body.customer_phone || null,
+          customerContact.email || body.customer_email || null,
+          customerContact.document_id || body.customer_document_id || null,
           body.product_name || null,
           body.sale_amount,
           body.currency || "COP",
@@ -2403,26 +2462,15 @@ async function createCustomerAcquisitionSale(req, res, next) {
         ]
       );
 
-      const matchParams = [
-        businessId,
-        body.customer_document_id || null,
-        body.customer_phone || null,
-        body.customer_email || null,
-      ];
       const convertedPlayers = await client.query(
         `update players
          set metadata = jsonb_set(
            jsonb_set(coalesce(metadata, '{}'::jsonb), '{commercial_status}', to_jsonb('BUYER'::text), true),
-           '{converted_sale_id}', to_jsonb($5::text), true
+           '{converted_sale_id}', to_jsonb($3::text), true
          )
-         where business_id = $1
-           and (
-             ($2::text is not null and nullif(document_id, '') = $2)
-             or ($3::text is not null and nullif(phone, '') = $3)
-             or ($4::text is not null and lower(nullif(email, '')) = lower($4))
-           )
+         where business_id = $1 and id = $2
          returning id`,
-        [...matchParams, saleResult.rows[0].id]
+        [businessId, customerContact.id, saleResult.rows[0].id]
       );
       const convertedManual = await client.query(
         `update business_manual_leads
@@ -2478,6 +2526,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
 
       return {
         sale: saleResult.rows[0],
+        customer: { id: customerContact.id, name: customerContact.name, created: customerLink.created },
         conversion: {
           players: convertedPlayers.rowCount,
           manual_leads: convertedManual.rowCount,

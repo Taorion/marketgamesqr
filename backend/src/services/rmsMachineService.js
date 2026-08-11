@@ -1027,6 +1027,75 @@ async function findOpportunity(businessId, sourceType, sourceId) {
   return item;
 }
 
+function rmsCustomerIdentity(item = {}) {
+  const documentId = String(item.document_id || "").trim();
+  const email = String(item.email || "").trim().toLowerCase();
+  const phone = String(item.phone || "").replace(/\D/g, "");
+  return { documentId: documentId || null, email: email || null, phone: phone || null };
+}
+
+/**
+ * A sale in RMS is the moment a prospect becomes a customer.  Leads imported
+ * manually (and other non-player sources) used to remain only as their source
+ * record, so they disappeared from the customer contact view.  Keep one
+ * canonical player contact for the customer, reusing it by document, email or
+ * phone before creating anything new.
+ */
+async function ensureRmsCustomerContact(client, businessId, user, item, sourceType, sourceId) {
+  if (sourceType === "PLAYER") {
+    const sourcePlayer = await client.query(
+      `select id, name, email, phone, document_id
+         from players
+        where business_id = $1 and id = $2
+        for update`,
+      [businessId, sourceId]
+    );
+    if (sourcePlayer.rowCount) return { customer: sourcePlayer.rows[0], created: false };
+  }
+  const identity = rmsCustomerIdentity(item);
+  const lockKey = [businessId, identity.documentId || identity.email || identity.phone || String(sourceId)].join(":");
+  await client.query("select pg_advisory_xact_lock(hashtext($1))", [`rms-customer:${lockKey}`]);
+
+  const existing = await client.query(
+    `select id, name, email, phone, document_id
+       from players
+      where business_id = $1
+        and (
+          ($2::text is not null and nullif(document_id, '') = $2)
+          or ($3::text is not null and lower(nullif(email, '')) = $3)
+          or ($4::text is not null and regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = $4)
+        )
+      order by created_at asc
+      limit 1
+      for update`,
+    [businessId, identity.documentId, identity.email, identity.phone]
+  );
+  if (existing.rowCount) return { customer: existing.rows[0], created: false };
+
+  const created = await client.query(
+    `insert into players (business_id, campaign_id, game_id, name, email, phone, document_id, metadata)
+     values ($1, $2, null, $3, $4, $5, $6, $7::jsonb)
+     returning id, name, email, phone, document_id`,
+    [
+      businessId,
+      item.campaign_id || null,
+      String(item.name || "Cliente sin nombre").trim() || "Cliente sin nombre",
+      identity.email || null,
+      item.phone || null,
+      identity.documentId,
+      JSON.stringify({
+        crm_created_from: "rms_attributed_sale",
+        crm_source_type: sourceType,
+        crm_source_id: sourceId,
+        source: "Venta atribuida RMS",
+        customer_created_at: new Date().toISOString(),
+        created_by_user_id: user?.id || null,
+      }),
+    ]
+  );
+  return { customer: created.rows[0], created: true };
+}
+
 function assertRmsPhaseTransition(fromPhase, toPhase, payload = {}) {
   const from = normalizePhase(fromPhase, "");
   if (!from || from === toPhase) return;
@@ -2104,6 +2173,18 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     },
   };
   const result = await withTransaction(async (client) => {
+    const customerLink = await ensureRmsCustomerContact(client, businessId, user, item, sourceType, payload.source_id);
+    const customer = customerLink.customer;
+    const saleMetadata = {
+      ...metadata,
+      crm_source_type: "PLAYER",
+      crm_source_id: customer.id,
+      crm_lead_id: customer.id,
+      rms_original_source_type: sourceType,
+      rms_original_source_id: payload.source_id,
+      customer_contact_id: customer.id,
+      customer_contact_created: customerLink.created,
+    };
     const sale = await client.query(
       `insert into business_sales
         (business_id, campaign_id, customer_name, customer_phone, customer_email, customer_document_id,
@@ -2118,25 +2199,66 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
          $17::jsonb, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, 'PAID', $32, $33, $34, $35, $36)
        on conflict (business_id, idempotency_key) where idempotency_key is not null do nothing
        returning *`,
-      [businessId, item.campaign_id || null, item.name || null, item.phone || null, item.email || null,
-        item.document_id || null, productName, saleAmount, currency, user.id,
+      [businessId, item.campaign_id || null, customer.name || item.name || null, customer.phone || item.phone || null, customer.email || item.email || null,
+        customer.document_id || item.document_id || null, productName, saleAmount, currency, user.id,
         item.acquisition_channel_name_snapshot || item.channel || "RMS / Ventas atribuidas",
         item.acquisition_channel_id || null,
         item.acquisition_channel_name_snapshot || item.channel || null,
         item.acquisition_channel_slug_snapshot || null,
         item.acquisition_channel_source || (item.channel ? "MANUAL_UNCONFIGURED" : null),
         String(payload.notes || "").trim() || null,
-        JSON.stringify(metadata), sourceType, payload.source_id, productRow?.id || null, quantity, unitCost,
+        JSON.stringify(saleMetadata), sourceType, payload.source_id, productRow?.id || null, quantity, unitCost,
         productCostTotal, String(payload.benefit_type || "NONE").toUpperCase(), benefitCost, acquisitionCost,
         grossProfit, netProfit, roi, String(payload.payment_method || "OTHER").toUpperCase(), paidAt, idempotencyKey,
         productSnapshot.product_name_snapshot, productSnapshot.product_price_snapshot, productSnapshot.product_currency_snapshot, productSnapshot.product_source]
     );
-    if (sale.rows[0]) return { sale: sale.rows[0], duplicate: false };
+    if (sale.rows[0]) {
+      await client.query(
+        `update players
+            set metadata = jsonb_set(
+              jsonb_set(coalesce(metadata, '{}'::jsonb), '{commercial_status}', to_jsonb('BUYER'::text), true),
+              '{converted_sale_id}', to_jsonb($3::text), true
+            )
+          where business_id = $1 and id = $2`,
+        [businessId, customer.id, sale.rows[0].id]
+      );
+      if (sourceType === "MANUAL") {
+        await client.query(
+          `update business_manual_leads
+              set status = case when status in ('NEW', 'INTERESTED', 'CONTACTED', 'FOLLOW_UP', '') then 'CONVERTED' else status end,
+                  metadata = coalesce(metadata, '{}'::jsonb) || $3::jsonb,
+                  updated_at = now()
+            where id = $1 and business_id = $2`,
+          [payload.source_id, businessId, JSON.stringify({
+            customer_contact_id: customer.id,
+            customer_contact_created: customerLink.created,
+            customer_converted_at: new Date().toISOString(),
+            attributed_sale_id: sale.rows[0].id,
+          })]
+        );
+      }
+      await client.query(
+        `insert into lead_events
+          (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, metadata, created_by)
+         values ($1, $2, 'PLAYER', $2, 'customer_created_from_attributed_sale', $3, $4, $5::jsonb, $6)`,
+        [
+          businessId,
+          customer.id,
+          customerLink.created ? "Cliente creado desde venta atribuida" : "Venta atribuida vinculada a cliente existente",
+          customerLink.created
+            ? "La venta quedó vinculada a un nuevo contacto cliente en Qori."
+            : "La venta quedó vinculada al contacto cliente existente en Qori.",
+          JSON.stringify({ sale_id: sale.rows[0].id, original_source_type: sourceType, original_source_id: payload.source_id }),
+          user.id,
+        ]
+      );
+      return { sale: sale.rows[0], duplicate: false, customer: { id: customer.id, name: customer.name, created: customerLink.created } };
+    }
     const existing = await client.query(
       `select * from business_sales where business_id = $1 and idempotency_key = $2 limit 1`,
       [businessId, idempotencyKey]
     );
-    return { sale: existing.rows[0], duplicate: true };
+    return { sale: existing.rows[0], duplicate: true, customer: { id: customer.id, name: customer.name, created: customerLink.created } };
   });
   if (result.duplicate) {
     const duplicateMovement = item.stage === "cierre" ? await moveRmsLeadPhase(businessId, user, {
@@ -2146,7 +2268,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
       revenue_potential: saleAmount, reason: "Reintento idempotente: la venta canónica ya existía.",
       metadata: { rms_attributed_sale_id: result.sale?.id || null, rms_sale_recorded_at: new Date().toISOString() },
     }, RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE) : null;
-    return { sale: result.sale, economics: result.sale?.metadata?.economics || economics, movement: duplicateMovement, duplicate: true };
+    return { sale: result.sale, economics: result.sale?.metadata?.economics || economics, movement: duplicateMovement, customer: result.customer, duplicate: true };
   }
   const movement = await moveRmsLeadPhase(businessId, user, {
     source_type: sourceType,
@@ -2167,7 +2289,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     event_description: "La condición comercial y la validación anti-fuga quedaron trazadas antes del registro final.",
     rms_phase: "postventa", metadata: { sale_id: result.sale.id, movement_id: movement.movement?.id || null, quality_control: "revenue_generado_visual" },
   });
-  return { sale: result.sale, economics, movement, duplicate: false };
+  return { sale: result.sale, economics, movement, customer: result.customer, duplicate: false };
 }
 
 async function canonicalAttributedSaleFor(client, businessId, sourceType, sourceId, requestedSaleId = null) {
