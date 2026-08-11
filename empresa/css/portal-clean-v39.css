@@ -16969,6 +16969,185 @@ body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashb
   display: none !important;
 }
 
+/* Incluso durante el cambio de vista, los KPI heredados no deben volver a
+   abrirse debajo del tablero elegido por el usuario. */
+.portal-shell .view-section[data-view="dashboard"].dashboard-builder-mode > :not(.dashboard-revenue-head, .portal-gaming-entry, .dashboard-builder-shell, .revenue-workspace) {
+  display: none !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  padding: 1rem !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-heading {
+  display: grid;
+  gap: .45rem;
+  padding: .4rem .35rem 1rem;
+  border-bottom: 1px solid rgba(58, 115, 135, .14);
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-heading .dashboard-selection-status {
+  order: 4;
+  width: fit-content;
+  padding: .32rem .58rem;
+  border: 1px solid rgba(11, 130, 126, .18);
+  border-radius: 999px;
+  color: #08716d;
+  background: #e7f8f5;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-heading h4 {
+  margin: 0;
+  color: #073a57;
+  font-size: 1.1rem;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-heading p {
+  margin: 0;
+  color: #5a7284;
+  font-size: .82rem;
+  line-height: 1.48;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .45rem;
+  padding-top: .85rem;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-item {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  gap: .65rem;
+  align-items: center;
+  padding: .72rem !important;
+  border: 1px solid rgba(62, 119, 139, .14) !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  text-align: left;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-item:hover {
+  border-color: rgba(8, 128, 129, .32) !important;
+  background: #f6fffd !important;
+  transform: none !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-item.is-active {
+  border-color: rgba(7, 137, 131, .3) !important;
+  background: linear-gradient(135deg, #e9f9f6, #faffff) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-item > .material-symbols-outlined {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: #08716d;
+  background: #ddf4ef;
+  font-size: 1.05rem;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-copy {
+  min-width: 0;
+  display: grid;
+  gap: .1rem;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-copy strong {
+  color: #123f57;
+  font-size: .85rem;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-copy small:not(.dashboard-library-category) {
+  color: #617989;
+  font-size: .71rem;
+  line-height: 1.33;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-category {
+  color: #08716d;
+  font-size: .61rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-action {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+  border-radius: 50%;
+  color: #08716d;
+  background: #ddf4ef;
+  font-size: 0;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-library-action .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card {
+  position: relative;
+  overflow: hidden;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #0d9d98, #2e86cb);
+  opacity: .68;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card:hover {
+  border-color: rgba(8, 129, 130, .28) !important;
+  box-shadow: 0 14px 28px rgba(12, 69, 89, .09) !important;
+  transform: translateY(-2px);
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card .dashboard-widget-top {
+  align-items: center;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card .dashboard-widget-value {
+  color: #073a57;
+  font-size: clamp(1.65rem, 2.6vw, 2.35rem);
+  letter-spacing: -.055em;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card .dashboard-widget-meta {
+  color: #5a7284;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card .dashboard-widget-actions {
+  padding-top: .75rem;
+  border-top: 1px solid rgba(62, 119, 139, .12);
+}
+
+@media (max-width: 1020px) {
+  body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library {
+    position: static;
+    max-height: none;
+  }
+}
+
 body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] {
   width: min(100%, 1380px);
   margin-inline: auto;

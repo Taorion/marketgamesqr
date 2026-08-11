@@ -77,6 +77,7 @@ const dashboardBusinessCacMeta = document.getElementById("dashboardBusinessCacMe
 const dashboardWorkspaceTabs = document.getElementById("dashboardWorkspaceTabs");
 const dashboardProfileTabs = document.getElementById("dashboardProfileTabs");
 const dashboardWidgetLibrary = document.getElementById("dashboardWidgetLibrary");
+const dashboardWidgetSelectionStatus = document.getElementById("dashboardWidgetSelectionStatus");
 const dashboardWidgetGrid = document.getElementById("dashboardWidgetGrid");
 const dashboardProfileLabel = document.getElementById("dashboardProfileLabel");
 const dashboardProfileTitle = document.getElementById("dashboardProfileTitle");
@@ -11143,12 +11144,24 @@ const DASHBOARD_BUILDER_PROFILES = {
     label: "Personalizado",
     title: "Dashboard Personalizado",
     description: "Arrastra, agrega, cierra y exporta bloques para construir tu propia vista de análisis.",
-    widgets: ["revenue", "channel_roi", "roi_table"],
+    widgets: ["roi_average", "cac_average", "revenue", "sales"],
   },
 };
 
 const DASHBOARD_WIDGET_CATALOG = [
-  { id: "cac", title: "CAC promedio", category: "Gráfico", icon: "ads_click", route: "channels", description: "Inversión comercial dividida entre clientes únicos con compra pagada." },
+  { id: "roi_average", title: "ROI promedio", category: "Indicador", icon: "trending_up", route: "channels", description: "Retorno comercial calculado sobre ventas e inversión registrada." },
+  { id: "cac_average", title: "CAC promedio", category: "Indicador", icon: "ads_click", route: "channels", description: "Costo de adquirir un cliente con venta atribuida." },
+  { id: "ready_campaigns", title: "Listas para lanzar", category: "Indicador", icon: "rocket_launch", route: "campaigns", description: "Campañas preparadas para iniciar o programar." },
+  { id: "active_campaigns", title: "Campañas activas", category: "Indicador", icon: "campaign", route: "campaigns", description: "Campañas actualmente en ejecución." },
+  { id: "post_sale_tickets", title: "Tickets postventa", category: "Indicador", icon: "confirmation_number", route: "sales", description: "Tickets creados desde ventas reales para activar recompra." },
+  { id: "strategic_batches", title: "Paquetes de tickets", category: "Indicador", icon: "inventory_2", route: "strategic-qr", description: "Lotes de tickets estratégicos disponibles." },
+  { id: "strategic_tickets", title: "Tickets estratégicos", category: "Indicador", icon: "qr_code_2", route: "strategic-qr", description: "Tickets de estrategias internas del negocio." },
+  { id: "strategic_claims", title: "Claims estratégicos", category: "Indicador", icon: "fact_check", route: "strategic-qr", description: "Clientes que activaron tickets estratégicos." },
+  { id: "referrals", title: "Referidos", category: "Indicador", icon: "diversity_3", route: "sales", description: "Ventas y puntos entregados por recomendación." },
+  { id: "investment", title: "Inversión total", category: "Indicador", icon: "account_balance_wallet", route: "channels", description: "Inversión comercial registrada en el periodo." },
+  { id: "cost_per_lead", title: "Costo por lead", category: "Indicador", icon: "person_add", route: "channels", description: "Inversión dividida entre leads capturados." },
+  { id: "cost_per_sale", title: "Costo por venta", category: "Indicador", icon: "point_of_sale", route: "channels", description: "Inversión dividida entre ventas reales observadas." },
+  { id: "cac", title: "Tendencia CAC", category: "Gráfico", icon: "ads_click", route: "channels", description: "Inversión comercial dividida entre clientes únicos con compra pagada." },
   { id: "revenue", title: "Revenue real", category: "Número", icon: "payments", route: "sales", description: "Ventas reales registradas y atribuidas dentro del portal." },
   { id: "sales", title: "Ventas registradas", category: "Número", icon: "point_of_sale", route: "sales", description: "Cantidad de ventas observadas en el periodo." },
   { id: "avg_ticket", title: "Ticket promedio", category: "Número", icon: "receipt_long", route: "sales", description: "Promedio de ingreso por venta registrada." },
@@ -11378,6 +11391,13 @@ function getDashboardBuilderStats() {
   const totalLeads = toNumber(summary.total_leads);
   const activeQr = toNumber(dashboard.summary?.active_qr);
   const totalQrRedeemed = toNumber(summary.total_qr_redeemed);
+  const commercialEconomics = dashboardCommercialEconomics();
+  const postSaleGenerated = toNumber(summary.post_sale_generated);
+  const strategicGenerated = toNumber(summary.strategic_generated);
+  const strategicClaimed = toNumber(summary.strategic_claimed_or_active);
+  const postSaleRedemptionRate = toNumber(dashboard.derived?.post_sale_redemption_rate || summary.post_sale_redemption_rate);
+  const strategicClaimRate = toNumber(dashboard.derived?.strategic_claim_rate || summary.strategic_claim_rate);
+  const strategicRedemptionRate = toNumber(dashboard.derived?.strategic_redemption_rate || summary.strategic_redemption_rate);
   const nextAction = getDashboardBuilderNextAction({
     totalLeads,
     openAgenda,
@@ -11387,7 +11407,9 @@ function getDashboardBuilderStats() {
   });
   return {
     activeQr,
+    activeCampaigns: toNumber(summary.active_campaigns),
     avgTicket: observedSalesCount ? observedRevenue / observedSalesCount : 0,
+    cac: commercialEconomics.cac,
     acquisitionSources,
     branchPerformance,
     campaignInvestment,
@@ -11405,6 +11427,8 @@ function getDashboardBuilderStats() {
     recentSales,
     referralPoints: toNumber(summary.referral_points_awarded),
     referralSales: toNumber(summary.referral_sales_count),
+    readyCampaigns: toNumber(summary.ready_for_client_setup),
+    roi: commercialEconomics.roi,
     rmsOpportunities,
     salesCount: observedSalesCount,
     topCampaigns,
@@ -11418,6 +11442,16 @@ function getDashboardBuilderStats() {
     totalLeads,
     totalQrGenerated: toNumber(summary.total_qr_generated),
     totalQrRedeemed,
+    totalInvestment: toNumber(summary.total_investment || commercialEconomics.investment),
+    costPerLead: toNumber(summary.cost_per_lead),
+    costPerSale: toNumber(summary.cost_per_observed_customer || summary.cost_per_acquired_customer),
+    postSaleGenerated,
+    postSaleRedemptionRate,
+    strategicBatches: toNumber(summary.strategic_batches),
+    strategicGenerated,
+    strategicClaimed,
+    strategicClaimRate,
+    strategicRedemptionRate,
   };
 }
 
@@ -11651,6 +11685,21 @@ function exportDashboardWidget(widgetId) {
 
 function renderDashboardWidget(widget, stats) {
   if (widget.id === "revenue") return { value: money(stats.observedRevenue), meta: `${stats.salesCount} ventas registradas`, body: `Ticket promedio: ${money(stats.avgTicket)}.`, tone: "money" };
+  const selectedIndicators = {
+    roi_average: { value: ratioLabel(stats.roi), meta: `${money(stats.observedRevenue)} atribuido`, body: "Retorno sobre ventas reales e inversión registrada.", tone: "money" },
+    cac_average: { value: stats.cac === null ? "—" : money(stats.cac), meta: `${stats.salesCount} cliente(s) con venta atribuida`, body: "Costo promedio de adquisición comercial.", tone: "money" },
+    ready_campaigns: { value: stats.readyCampaigns, meta: "listas para programar", body: "Campañas preparadas para iniciar.", tone: "neutral" },
+    active_campaigns: { value: stats.activeCampaigns, meta: "en ejecución", body: "Campañas activas en el periodo.", tone: "neutral" },
+    post_sale_tickets: { value: stats.postSaleGenerated, meta: `${stats.postSaleRedemptionRate}% redimido`, body: "Tickets creados desde una venta real.", tone: "neutral" },
+    strategic_batches: { value: stats.strategicBatches, meta: `${stats.strategicGenerated} códigos estratégicos`, body: "Lotes preparados para activaciones internas.", tone: "neutral" },
+    strategic_tickets: { value: stats.strategicGenerated, meta: `${stats.strategicClaimRate}% activado`, body: "Tickets nacidos de una estrategia interna.", tone: "neutral" },
+    strategic_claims: { value: stats.strategicClaimed, meta: `${stats.strategicRedemptionRate}% redimido`, body: "Clientes que activaron tickets estratégicos.", tone: "neutral" },
+    referrals: { value: stats.referralSales, meta: `${stats.referralPoints} puntos entregados`, body: "Ventas que llegaron por recomendación.", tone: "neutral" },
+    investment: { value: money(stats.totalInvestment), meta: stats.totalLeads ? `${money(stats.costPerLead)} por lead` : "sin leads para comparar", body: "Inversión comercial registrada en el periodo.", tone: "money" },
+    cost_per_lead: { value: stats.totalLeads ? money(stats.costPerLead) : "—", meta: `${stats.totalLeads} leads capturados`, body: "Costo de captación antes de la venta.", tone: "money" },
+    cost_per_sale: { value: stats.salesCount ? money(stats.costPerSale) : "—", meta: `vs. ticket medio ${money(stats.avgTicket)}`, body: "Costo de traer una venta real observada.", tone: "money" },
+  };
+  if (selectedIndicators[widget.id]) return selectedIndicators[widget.id];
   if (widget.id === "cac") {
     const economics = state.commandCenter?.business_economics;
     const investment = Number(economics?.investment || 0);
@@ -11770,6 +11819,15 @@ function renderDashboardBuilder() {
   dashboardSection?.setAttribute("data-revenue-workspace-tab", workspaceTab);
   const widgetLibrary = dashboardBuilderShell.querySelector(".dashboard-widget-library");
   const dashboardCanvas = dashboardBuilderShell.querySelector(".dashboard-canvas");
+  const widgetLibraryHeading = widgetLibrary?.querySelector(".dashboard-library-heading");
+  if (widgetLibraryHeading) {
+    const label = widgetLibraryHeading.querySelector(".mono-label");
+    const title = widgetLibraryHeading.querySelector("h4");
+    const description = widgetLibraryHeading.querySelector("p");
+    if (label) label.textContent = "Tablero personal";
+    if (title) title.textContent = "Elige tus indicadores";
+    if (description) description.textContent = "Selecciona solo lo que necesitas monitorear. Arrastra las tarjetas o usa las flechas para decidir su orden.";
+  }
   const showWidgetLibrary = workspaceTab === "customize";
   if (widgetLibrary) {
     widgetLibrary.hidden = !showWidgetLibrary;
@@ -11836,6 +11894,9 @@ function renderDashboardBuilder() {
   }
   const profile = DASHBOARD_BUILDER_PROFILES[state.dashboardBuilderProfile] || DASHBOARD_BUILDER_PROFILES.marketing;
   const layout = getDashboardBuilderLayout(state.dashboardBuilderProfile);
+  if (dashboardWidgetSelectionStatus) {
+    dashboardWidgetSelectionStatus.textContent = `${layout.length} indicador${layout.length === 1 ? "" : "es"} seleccionado${layout.length === 1 ? "" : "s"}`;
+  }
   const visibleWidgets = dashboardWidgetsForWorkspaceTab(layout, workspaceTab);
   const stats = getDashboardBuilderStats();
   if (dashboardProfileLabel) dashboardProfileLabel.textContent = `${workspaceTab === "customize" ? "Vista personal" : "Centro de Revenue"} · ${profile.label}`;
