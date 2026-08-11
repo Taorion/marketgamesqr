@@ -5,12 +5,18 @@ const DEFAULT_GRAPH_API_VERSION = "v23.0";
 
 function providerError(status, detail = "") {
   const text = String(detail || "").toLowerCase();
+  let metaError = null;
+  try { metaError = JSON.parse(String(detail || ""))?.error || null; } catch { /* Meta can also return plain text. */ }
+  const metaCode = Number(metaError?.code || 0);
+  const metaSubcode = Number(metaError?.error_subcode || 0);
   let publicMessage = "WhatsApp no aceptó este envío. Revisa la plantilla, el consentimiento y la conexión en Cuenta.";
-  if (status === 401 || status === 403 || /token|access token|permission|oauth/.test(text)) {
+  if (metaCode === 131030 || /allowed list|test recipient|recipient.*not.*allowed/.test(text)) {
+    publicMessage = "Meta bloque\u00f3 este n\u00famero porque la app est\u00e1 en modo de prueba. Agr\u00e9galo en Meta for Developers > WhatsApp > API Setup > Add phone number y verifica el c\u00f3digo, o publica la app para enviar a n\u00fameros reales.";
+  } else if (status === 401 || status === 403 || metaCode === 190 || /invalid.*token|access token.*invalid|token.*expired/.test(text)) {
     publicMessage = "Meta rechazó el token de WhatsApp. Genera un token de usuario del sistema con permisos de WhatsApp y vuelve a conectarlo en Cuenta.";
   } else if (/template|plantilla/.test(text)) {
     publicMessage = "Meta rechazó la plantilla. Elige una plantilla aprobada, con el idioma y las variables exactas configuradas en WhatsApp Manager.";
-  } else if (/recipient|phone|number/.test(text)) {
+  } else if (/recipient|phone|number/.test(text) || [131026, 133010].includes(metaCode) || metaSubcode === 2494073) {
     publicMessage = "Meta no pudo entregar a uno de los números. Revisa que tenga prefijo de país y consentimiento para WhatsApp.";
   } else if (status === 429) {
     publicMessage = "Meta aplicó un límite temporal. Qori detuvo este lote para que puedas reintentarlo más tarde.";
