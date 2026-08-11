@@ -1635,8 +1635,8 @@
                     <p class="table-secondary">Qori envía en lotes controlados con la API oficial de Meta. Tu token se cifra y nunca se vuelve a mostrar. Solo puedes enviar campañas con una plantilla aprobada y a contactos que aceptaron recibir WhatsApp.</p>
                     <div class="account-whatsapp-webhook-card">
                       <div><span class="mono-label">Paso 2 · Webhooks de Meta</span><strong>Recibe entregas, lecturas, fallos y respuestas</strong><small>Copia estos dos valores en Meta for Developers → WhatsApp → Configuración → Webhooks → Editar.</small></div>
-                      <label><span>URL de devolución de llamada</span><input id="accountWhatsAppWebhookUrlInput" type="url" readonly></label>
-                      <label><span>Token de verificación</span><input id="accountWhatsAppWebhookVerifyTokenInput" type="text" readonly></label>
+                      <label><span>URL de devolución de llamada</span><input id="accountWhatsAppWebhookUrlInput" type="url" readonly><button class="ghost-button compact" id="accountWhatsAppCopyWebhookUrlButton" type="button">Copiar URL</button></label>
+                      <label><span>Token de verificación</span><input id="accountWhatsAppWebhookVerifyTokenInput" type="text" readonly><button class="ghost-button compact" id="accountWhatsAppCopyWebhookTokenButton" type="button">Copiar token</button></label>
                       <p class="table-secondary">Antes de verificar, agrega <strong>WHATSAPP_APP_SECRET</strong> en las variables de entorno de Render staging con el App Secret de Meta. Luego suscríbete a <strong>messages</strong>.</p>
                     </div>
                     <ol class="account-email-connection-steps">
@@ -7679,7 +7679,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=whatsapp-webhooks-v310-20260811" defer></script>
+<script src="js/app.js?v=whatsapp-webhooks-v311-20260811" defer></script>
     <script src="js/communications.js?v=whatsapp-cloud-guided-v309-20260811" defer></script>
 </body>
 </html>

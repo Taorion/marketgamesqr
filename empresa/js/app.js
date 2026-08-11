@@ -523,6 +523,8 @@ const accountWhatsAppTestConsentInput = document.getElementById("accountWhatsApp
 const accountWhatsAppTestButton = document.getElementById("accountWhatsAppTestButton");
 const accountWhatsAppWebhookUrlInput = document.getElementById("accountWhatsAppWebhookUrlInput");
 const accountWhatsAppWebhookVerifyTokenInput = document.getElementById("accountWhatsAppWebhookVerifyTokenInput");
+const accountWhatsAppCopyWebhookUrlButton = document.getElementById("accountWhatsAppCopyWebhookUrlButton");
+const accountWhatsAppCopyWebhookTokenButton = document.getElementById("accountWhatsAppCopyWebhookTokenButton");
 const accountPhoneInput = document.getElementById("accountPhoneInput");
 const accountWebsiteInput = document.getElementById("accountWebsiteInput");
 const accountCityInput = document.getElementById("accountCityInput");
@@ -5983,6 +5985,14 @@ async function testCommunicationWhatsAppConnection() {
     showFeedback("La prueba fue aceptada por WhatsApp Business.", "success", { title: "Conexión de WhatsApp" });
   } catch (error) { setInlineMessage(accountWhatsAppConnectionMessage, error.message || "La prueba no pudo enviarse.", "error"); }
   finally { setButtonLoading(accountWhatsAppTestButton, false); }
+}
+
+async function copyWhatsAppWebhookValue(input, label) {
+  const value = String(input?.value || "").trim();
+  if (!value) { setInlineMessage(accountWhatsAppConnectionMessage, "Aún no pudimos cargar este valor. Actualiza Cuenta e inténtalo de nuevo.", "error"); return; }
+  try { await navigator.clipboard.writeText(value); }
+  catch { window.prompt(`Copia ${label}`, value); }
+  setInlineMessage(accountWhatsAppConnectionMessage, `${label} copiado. Pégalo sin espacios adicionales en Meta.`, "success");
 }
 
 window.loadCommunicationWhatsAppTemplates = loadCommunicationWhatsAppTemplates;
@@ -50391,6 +50401,8 @@ accountWhatsAppConnectButton?.addEventListener("click", () => saveCommunicationW
 accountWhatsAppDisconnectButton?.addEventListener("click", () => saveCommunicationWhatsAppConnection({ removeAccessToken: true }));
 accountWhatsAppLoadTemplatesButton?.addEventListener("click", () => loadCommunicationWhatsAppTemplates().catch(() => {}));
 accountWhatsAppTestButton?.addEventListener("click", testCommunicationWhatsAppConnection);
+accountWhatsAppCopyWebhookUrlButton?.addEventListener("click", () => copyWhatsAppWebhookValue(accountWhatsAppWebhookUrlInput, "La URL de devolución"));
+accountWhatsAppCopyWebhookTokenButton?.addEventListener("click", () => copyWhatsAppWebhookValue(accountWhatsAppWebhookVerifyTokenInput, "El token de verificación"));
 accountPasswordForm?.addEventListener("submit", submitAccountPassword);
 accountUserForm?.addEventListener("submit", submitAccountUser);
 refreshAccountUsersButton?.addEventListener("click", loadBusinessUsers);
