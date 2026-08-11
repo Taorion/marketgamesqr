@@ -18074,6 +18074,17 @@ html body[data-current-view="competition"] .portal-shell #competitorTable tr[dat
   background: #eef9fc !important;
 }
 
+html body[data-current-view="competition"] .portal-shell .competition-detail-actions {
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .competition-detail-actions .ghost-button {
+  min-height: 34px !important;
+  padding: 7px 10px !important;
+  font-size: .71rem !important;
+}
+
 @media (max-width: 1040px) {
   html body[data-current-view="competition"] .portal-shell .competition-radar-workflow {
     grid-template-columns: 1fr !important;
@@ -18105,5 +18116,9 @@ html body[data-current-view="competition"] .portal-shell #competitorTable tr[dat
 
   html body[data-current-view="competition"] .portal-shell #competitionKpiGrid {
     grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="competition"] .portal-shell .competition-detail-actions {
+    justify-content: flex-start !important;
   }
 }

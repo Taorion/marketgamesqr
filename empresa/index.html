@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=competitive-radar-v301-20260810">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=competitive-radar-data-v302-20260810">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -5775,12 +5775,13 @@
                   <div>
                     <span class="mono-label">Mapa de oferta</span>
                     <strong>Productos y servicios observados</strong>
+                    <small>Consulta cada registro por competidor o agrupa un producto para ver qué competidores lo ofrecen.</small>
                   </div>
                   <input id="competitionSearchInput" type="search" placeholder="Buscar competidor, producto, categoría o canal">
                 </div>
                 <div class="competition-product-view-tabs" role="tablist" aria-label="Forma de leer productos competidores">
                   <button class="active" type="button" data-competition-product-view="competitor">Por competidor</button>
-                  <button type="button" data-competition-product-view="product">Por producto o servicio</button>
+                  <button type="button" data-competition-product-view="product">Producto compartido</button>
                 </div>
                 <div class="competition-product-view-panel" data-competition-product-view-panel="competitor">
                   <div class="table-wrap">
@@ -6043,7 +6044,10 @@
                     <p id="competitorDetailSummary">Precios, productos, campañas, eventos, hallazgos, DOFA y análisis comparativo.</p>
                   </div>
                   <div class="competition-detail-actions">
-                    <button class="ghost-button" id="competitorDetailAddProductButton" type="button">Agregar producto</button>
+                    <button class="ghost-button" id="competitorDetailAddProductButton" type="button">Producto o precio</button>
+                    <button class="ghost-button" id="competitorDetailAddCampaignButton" type="button">Promoción</button>
+                    <button class="ghost-button" id="competitorDetailAddEventButton" type="button">Activación</button>
+                    <button class="ghost-button" id="competitorDetailAddFindingButton" type="button">Señal</button>
                     <button class="icon-button" id="competitorDetailCloseButton" type="button" aria-label="Cerrar detalle competitivo">
                       <span class="material-symbols-outlined" aria-hidden="true">close</span>
                     </button>
@@ -7630,7 +7634,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=self-service-resend-v300-20260810" defer></script>
+<script src="js/app.js?v=competitive-radar-data-v302-20260810" defer></script>
     <script src="js/communications.js?v=email-delivery-diagnostics-v297-20260810" defer></script>
 </body>
 </html>

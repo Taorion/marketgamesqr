@@ -21991,6 +21991,52 @@ function closeCompetitionProductModal() {
   }
 }
 
+function addCompetitionDataForCompetitor(competitorId = "", type = "product") {
+  const competitor = competitorById(competitorId);
+  if (!competitor) return;
+  if (type === "product") {
+    addCompetitionProductForCompetitor(competitor.id);
+    return;
+  }
+  closeCompetitorDetailModal();
+  renderCompetitionSelectOptions();
+  const actions = {
+    campaign: {
+      tab: "campaigns",
+      reset: resetCompetitorCampaignForm,
+      select: competitorCampaignCompetitorInput,
+      message: competitorCampaignMessage,
+      focus: competitorCampaignNameInput,
+      copy: `Registrarás una promoción o campaña observada de ${competitor.name}.`,
+    },
+    event: {
+      tab: "events",
+      reset: resetCompetitorEventForm,
+      select: competitorEventCompetitorInput,
+      message: competitorEventMessage,
+      focus: competitorEventNameInput,
+      copy: `Registrarás una activación o evento observado de ${competitor.name}.`,
+    },
+    finding: {
+      tab: "findings",
+      reset: resetFindingForm,
+      select: findingCompetitorInput,
+      message: findingMessage,
+      focus: findingTitleInput,
+      copy: `Registrarás una señal competitiva vinculada a ${competitor.name}.`,
+    },
+  };
+  const action = actions[type];
+  if (!action) return;
+  setCompetitionTab(action.tab);
+  action.reset();
+  if (action.select) action.select.value = competitor.id;
+  setInlineMessage(action.message, action.copy, "info");
+  const panel = document.querySelector(`[data-competition-panel="${action.tab}"]`);
+  panel?.querySelector(".inventory-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  action.focus?.focus();
+}
+
 function addCompetitionProductForCompetitor(competitorId = "") {
   const competitor = competitorById(competitorId);
   if (!competitor) return;
@@ -22356,7 +22402,7 @@ function renderCompetitionProductServiceTable(products = []) {
         <tr>
           <td><strong>${escapeHtml(group.label)}</strong><span class="table-secondary">${escapeHtml(group.products[0]?.category || "Sin categoría")}</span></td>
           <td>${escapeHtml(competitionUnitLabel(group.unit))}</td>
-          <td><span class="competition-radar-counts">${competitors.map((name) => `<span>${escapeHtml(name)}</span>`).join("")}</span></td>
+          <td><strong>${escapeHtml(String(competitors.length))} competidor${competitors.length === 1 ? "" : "es"}</strong><span class="competition-radar-counts">${competitors.map((name) => `<span>${escapeHtml(name)}</span>`).join("")}</span></td>
           <td><strong>${escapeHtml(priceLabel)}</strong><span class="table-secondary">${escapeHtml(String(prices.length))} precio${prices.length === 1 ? "" : "s"} registrado${prices.length === 1 ? "" : "s"}</span></td>
           <td>${escapeHtml(ownReferences.join(" · ") || "Sin referente propio")}</td>
           <td>${escapeHtml(formatDate(latest?.observed_at || latest?.created_at))}</td>
@@ -49972,7 +50018,10 @@ competitorEventSearchInput?.addEventListener("input", () => {
   renderCompetitorEventsTable();
 });
 competitorDetailCloseButton?.addEventListener("click", closeCompetitorDetailModal);
-competitorDetailAddProductButton?.addEventListener("click", () => addCompetitionProductForCompetitor(state.competitorDetailId || ""));
+competitorDetailAddProductButton?.addEventListener("click", () => addCompetitionDataForCompetitor(state.competitorDetailId || "", "product"));
+document.getElementById("competitorDetailAddCampaignButton")?.addEventListener("click", () => addCompetitionDataForCompetitor(state.competitorDetailId || "", "campaign"));
+document.getElementById("competitorDetailAddEventButton")?.addEventListener("click", () => addCompetitionDataForCompetitor(state.competitorDetailId || "", "event"));
+document.getElementById("competitorDetailAddFindingButton")?.addEventListener("click", () => addCompetitionDataForCompetitor(state.competitorDetailId || "", "finding"));
 competitorDetailModal?.addEventListener("click", (event) => {
   if (event.target === competitorDetailModal) closeCompetitorDetailModal();
 });
