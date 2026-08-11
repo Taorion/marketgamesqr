@@ -42104,7 +42104,7 @@ function rmsActivationStationCardMarkup(item = {}) {
   const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
   const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
   return `
-    <article class="rms-activation-work-item ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}">
+    <article class="rms-activation-work-item ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
       <aside class="rms-activation-work-lead">
         <label class="rms-activation-work-select">
           <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" aria-label="Seleccionar ${escapeHtml(item.name || "lead")}" ${selected ? "checked" : ""}>
@@ -42113,7 +42113,10 @@ function rmsActivationStationCardMarkup(item = {}) {
         </label>
         <div class="rms-activation-work-person">
           <span class="material-symbols-outlined" aria-hidden="true">person</span>
-          <div><strong>${escapeHtml(item.name || "Contacto")}</strong><small>${escapeHtml(contact)}</small></div>
+          <div>
+            <button class="rms-station-lead-open rms-activation-lead-open" type="button" data-rms-review-capture="${escapeHtml(item.id)}" aria-label="Abrir ficha de ${escapeHtml(item.name || "lead")}"><strong>${escapeHtml(item.name || "Contacto")}</strong></button>
+            <small>${escapeHtml(contact)}</small>
+          </div>
         </div>
         <dl class="rms-activation-work-facts">
           <div><dt>Oferta</dt><dd>${escapeHtml(rmsActivationDelivery(item).offer)}</dd></div>
@@ -42122,7 +42125,6 @@ function rmsActivationStationCardMarkup(item = {}) {
           <div><dt>Entrada</dt><dd>${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")}</dd></div>
         </dl>
         <div class="rms-activation-work-actions">
-          <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}">Detalle</button>
           <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Operar</button>
         </div>
       </aside>
