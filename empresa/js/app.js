@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260811-rms-collector-handoff-v316";
+const APP_VERSION = "empresa-20260811-rms-collector-handoff-v317";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -42587,7 +42587,11 @@ function renderRmsStationLeanOnly() {
         </div>
         <div class="rms-lean-station-actions">
           ${phase === "recoleccion" ? `<button class="ghost-button compact" type="button" data-rms-open-collector><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Nuevo lead</button>` : ""}
-          ${isCommercialStation ? "" : `<button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> Seleccionar con tarea pendiente</button>`}
+          ${phase === "recoleccion" ? `
+            <button class="ghost-button compact" type="button" data-rms-station-clear-selection ${selectedRows.length ? "" : "disabled"}>Limpiar selección</button>
+            <button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> Seleccionar procesables</button>
+            <button class="solid-button compact" type="button" data-rms-station-bulk-next ${selectedRows.length && nextPhase ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span> Enviar a ${escapeHtml(nextPhase?.label || "siguiente estación")}</button>
+          ` : isCommercialStation ? "" : `<button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> Seleccionar listos</button>`}
         </div>
       </header>
       ${isCurationStation ? `
@@ -42674,9 +42678,18 @@ function renderRmsStationLeanOnly() {
     state.rmsStationRenderLimit = Number(state.rmsStationRenderLimit || RMS_STATION_RENDER_INITIAL_LIMIT) + RMS_STATION_RENDER_INCREMENT;
     renderRmsStationOnly();
   });
+  rmsStationWorkspace.querySelector("[data-rms-station-clear-selection]")?.addEventListener("click", () => {
+    const currentIds = new Set(rows.map((item) => item.id));
+    state.rmsMachineSelectedIds = (state.rmsMachineSelectedIds || []).filter((id) => !currentIds.has(id));
+    renderRmsStationOnly();
+  });
   rmsStationWorkspace.querySelector("[data-rms-station-select-ready]")?.addEventListener("click", () => {
     state.rmsMachineSelectedIds = eligibleRows.map((item) => item.id);
     renderRmsStationOnly();
+  });
+  rmsStationWorkspace.querySelector("[data-rms-station-bulk-next]")?.addEventListener("click", async () => {
+    if (!nextPhase) return;
+    await moveSelectedRmsPhase(nextPhase.key, phase);
   });
   renderRmsBulkToolbar();
 }
@@ -46290,7 +46303,10 @@ async function executeRmsBulkOperation() {
 }
 
 async function moveSelectedRmsPhase(destinationPhase = "", sourcePhase = "") {
-  const ids = state.rmsMachineSelectedIds || [];
+  const selectedIds = state.rmsMachineSelectedIds || [];
+  const ids = sourcePhase
+    ? selectedIds.filter((id) => rmsOpportunityById(id)?.stage === sourcePhase)
+    : selectedIds;
   const toPhase = destinationPhase || rmsBulkPhaseInput?.value || "";
   if (!ids.length || !toPhase) {
     showFeedback("Selecciona al menos un lead y una estación destino.", "info", { title: "Máquina RMS" });
@@ -46299,6 +46315,7 @@ async function moveSelectedRmsPhase(destinationPhase = "", sourcePhase = "") {
   try {
     showFeedback("Moviendo materia prima comercial...", "loading", { title: "Máquina RMS", timeout: 0 });
     let movedCount = 0;
+    const movedIds = [];
     const fromPhase = sourcePhase || state.rmsStationPhase || "";
     for (const id of ids) {
       const item = rmsOpportunityById(id);
@@ -46346,10 +46363,13 @@ async function moveSelectedRmsPhase(destinationPhase = "", sourcePhase = "") {
         }),
       });
       movedCount += 1;
+      movedIds.push(id);
       if (qualityOption && state.rmsLeadQualityDraft) delete state.rmsLeadQualityDraft[id];
       if (productClassification.classified_product_name && state.rmsProductClassificationDraft) delete state.rmsProductClassificationDraft[id];
     }
-    state.rmsMachineSelectedIds = [];
+    state.rmsMachineSelectedIds = sourcePhase
+      ? selectedIds.filter((id) => !movedIds.includes(id))
+      : [];
     state.rmsMachineLoaded = false;
     await loadRmsMachineData({ force: true, quiet: true });
     if (movedCount > 0 && state.rmsStationScreenOpen) {
