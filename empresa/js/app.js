@@ -5885,11 +5885,21 @@ function renderCommunicationEmailConnection() {
   const connection = state.communicationEmailConnection || {};
   const ready = Boolean(connection.ready);
   const hasKey = Boolean(connection.api_key_configured);
+  const usingPlatformSender = Boolean(connection.using_platform_sender);
+  if (usingPlatformSender) {
+    if (accountCommunicationSenderEmailInput) accountCommunicationSenderEmailInput.value = connection.sender_email || "contacto@marketgamesqr.com";
+    if (accountCommunicationSenderNameInput && !accountCommunicationSenderNameInput.value.trim()) accountCommunicationSenderNameInput.value = connection.sender_name || "MarketGames QR";
+  }
   if (accountCommunicationConnectionStatus) {
-    accountCommunicationConnectionStatus.textContent = ready ? "Lista para prueba" : (hasKey ? "Falta remitente" : "Sin conectar");
+    accountCommunicationConnectionStatus.textContent = ready ? (usingPlatformSender ? "Lista · MarketGames" : "Lista para prueba") : (hasKey ? "Falta remitente" : "Sin conectar");
     accountCommunicationConnectionStatus.className = `status-chip ${ready ? "ok" : "pending"}`;
   }
-  if (accountCommunicationDisconnectButton) accountCommunicationDisconnectButton.disabled = !hasKey;
+  if (accountCommunicationConnectionHelp) {
+    accountCommunicationConnectionHelp.textContent = usingPlatformSender
+      ? "Esta cuenta interna usa el remitente verificado contacto@marketgamesqr.com y la conexión central de MarketGames. Las demás cuentas deben conectar su propio dominio y clave de Resend."
+      : "Déjala vacía para conservar la clave ya conectada. Para reemplazarla, pega una nueva y guarda.";
+  }
+  if (accountCommunicationDisconnectButton) accountCommunicationDisconnectButton.disabled = !hasKey || usingPlatformSender;
   if (accountCommunicationTestButton) accountCommunicationTestButton.disabled = !ready;
 }
 

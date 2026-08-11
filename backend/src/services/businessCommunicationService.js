@@ -3,7 +3,7 @@ const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
 const { listLeadCrmRows } = require("./leadCrmService");
 const { sendBusinessCommunicationEmail } = require("./businessCommunicationMailService");
-const { getEmailConnectionStatus, getWhatsAppConnectionStatus, ownResendApiKey, saveEmailConnection, saveWhatsAppConnection } = require("./businessCommunicationCredentialService");
+const { getEmailConnectionStatus, getWhatsAppConnectionStatus, isMarketGamesInternalAccount, ownResendApiKey, saveEmailConnection, saveWhatsAppConnection } = require("./businessCommunicationCredentialService");
 const { listApprovedWhatsAppTemplates, sendWhatsAppTemplate } = require("./businessCommunicationWhatsAppService");
 
 function escapeHtml(value) {
@@ -40,18 +40,20 @@ function communicationSenderName(value) {
 
 async function businessCommunicationSender(businessId, connectedUserEmail) {
   const result = await query(
-    "select name, settings from businesses where id = $1 and is_active = true",
+    "select name, slug, settings from businesses where id = $1 and is_active = true",
     [businessId]
   );
   const business = result.rows[0];
   if (!business) throw notFound("Empresa no encontrada.");
 
   const settings = business.settings || {};
-  const senderEmail = normalizedRecipientEmail(settings.communication_sender_email);
+  const internalMarketGames = isMarketGamesInternalAccount(business);
+  const senderEmail = normalizedRecipientEmail(settings.communication_sender_email)
+    || (internalMarketGames ? "contacto@marketgamesqr.com" : "");
   if (!senderEmail) {
     throw badRequest("Configura el email remitente verificado de tu empresa en Cuenta antes de enviar una comunicacion. No enviaremos desde MarketGamesQR por defecto.");
   }
-  const senderName = communicationSenderName(settings.communication_sender_name || business.name) || "Qori";
+  const senderName = communicationSenderName(settings.communication_sender_name || business.name || (internalMarketGames ? "MarketGames QR" : "Qori")) || "Qori";
   const replyTo = normalizedRecipientEmail(connectedUserEmail) || senderEmail;
   const apiKey = await ownResendApiKey(businessId) || env.resendApiKey;
   if (!apiKey) throw badRequest("Conecta tu cuenta de Resend en Cuenta > Correo masivo antes de enviar.");

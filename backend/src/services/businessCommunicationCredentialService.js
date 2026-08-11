@@ -4,6 +4,8 @@ const { badRequest, notFound } = require("../utils/http");
 const { query } = require("../config/db");
 
 const CIPHER_VERSION = "v1";
+const MARKETGAMES_INTERNAL_SLUG = "marketgames-qr";
+const MARKETGAMES_SENDER_EMAIL = "contacto@marketgamesqr.com";
 
 function credentialKey() {
   if (!env.jwtSecret || env.jwtSecret === "dev-only-change-me") {
@@ -37,16 +39,27 @@ function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function isMarketGamesInternalAccount(business = {}) {
+  return String(business.slug || "").trim().toLowerCase() === MARKETGAMES_INTERNAL_SLUG
+    && business.settings?.internal_account === true;
+}
+
+function usesMarketGamesDomain(email = "") {
+  return normalizeEmail(email).endsWith("@marketgamesqr.com");
+}
+
 async function emailConnectionForBusiness(businessId) {
-  const result = await query("select id, name, settings from businesses where id = $1 and is_active = true", [businessId]);
+  const result = await query("select id, name, slug, settings from businesses where id = $1 and is_active = true", [businessId]);
   const business = result.rows[0];
   if (!business) throw notFound("Empresa no encontrada.");
   const settings = business.settings || {};
+  const internalMarketGames = isMarketGamesInternalAccount(business);
   return {
     business,
     sender_name: String(settings.communication_sender_name || business.name || "").trim(),
-    sender_email: normalizeEmail(settings.communication_sender_email),
+    sender_email: normalizeEmail(settings.communication_sender_email) || (internalMarketGames ? MARKETGAMES_SENDER_EMAIL : ""),
     has_own_resend_key: Boolean(settings.communication_resend_api_key_ciphertext),
+    is_internal_marketgames: internalMarketGames,
   };
 }
 
@@ -56,16 +69,21 @@ async function getEmailConnectionStatus(businessId) {
     provider: "RESEND",
     sender_name: connection.sender_name,
     sender_email: connection.sender_email,
-    api_key_configured: connection.has_own_resend_key,
-    ready: Boolean(connection.sender_email && connection.has_own_resend_key),
+    api_key_configured: connection.has_own_resend_key || (connection.is_internal_marketgames && Boolean(env.resendApiKey)),
+    using_platform_sender: connection.is_internal_marketgames && !connection.has_own_resend_key,
+    ready: Boolean(connection.sender_email && (connection.has_own_resend_key || (connection.is_internal_marketgames && env.resendApiKey))),
   };
 }
 
 async function saveEmailConnection(businessId, payload) {
   const connection = await emailConnectionForBusiness(businessId);
+  const requestedSender = normalizeEmail(payload.sender_email);
+  if (usesMarketGamesDomain(requestedSender) && !connection.is_internal_marketgames) {
+    throw badRequest("El remitente @marketgamesqr.com está reservado para la cuenta interna de MarketGames. Configura un correo verificado de tu propio dominio.");
+  }
   const patch = {
     communication_sender_name: String(payload.sender_name || connection.sender_name || connection.business.name || "").trim() || null,
-    communication_sender_email: normalizeEmail(payload.sender_email),
+    communication_sender_email: requestedSender,
   };
   if (payload.remove_api_key) {
     patch.communication_resend_api_key_ciphertext = null;
@@ -156,6 +174,7 @@ async function ownWhatsAppAccessToken(businessId) {
 module.exports = {
   getEmailConnectionStatus,
   getWhatsAppConnectionStatus,
+  isMarketGamesInternalAccount,
   ownResendApiKey,
   ownWhatsAppAccessToken,
   saveEmailConnection,
