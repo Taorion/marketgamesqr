@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=self-service-resend-v300-20260810">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=competitive-radar-v301-20260810">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -5588,7 +5588,7 @@
             <div class="view-head">
               <div>
                 <h2>Radar Competitivo</h2>
-                <p>Tabla simple para leer competidores, productos, precios, campañas, eventos, hallazgos y respuesta competitiva.</p>
+                <p>Convierte señales del mercado en decisiones comerciales: registra quién compite, qué está ofreciendo y qué respuesta conviene activar.</p>
               </div>
               <div class="head-actions">
                 <button class="solid-button" id="newCompetitorButton" type="button">
@@ -5597,23 +5597,36 @@
                 </button>
                 <button class="ghost-button" id="newCompetitionProductButton" type="button">
                   <span class="material-symbols-outlined" aria-hidden="true">sell</span>
-                  Crear producto competidor
+                  Registrar precio u oferta
                 </button>
                 <button class="ghost-button" id="refreshCompetitionButton" type="button">Actualizar</button>
               </div>
             </div>
 
+            <section class="competition-radar-workflow" aria-label="Flujo de trabajo del Radar Competitivo">
+              <div class="competition-radar-workflow-copy">
+                <span class="mono-label">Flujo de inteligencia Qori</span>
+                <strong>Empieza por el competidor. Cada dato posterior conserva el contexto para que puedas decidir, no solo acumular información.</strong>
+              </div>
+              <ol class="competition-radar-steps">
+                <li><span>01</span><div><strong>Mapea</strong><small>Registra competidor y territorio.</small></div></li>
+                <li><span>02</span><div><strong>Observa</strong><small>Precio, oferta, campaña o evento.</small></div></li>
+                <li><span>03</span><div><strong>Prioriza</strong><small>Convierte el dato en señal o alerta.</small></div></li>
+                <li><span>04</span><div><strong>Responde</strong><small>Define una acción comercial medible.</small></div></li>
+              </ol>
+            </section>
+
             <section class="kpi-grid sales-kpis" id="competitionKpiGrid"></section>
 
             <div class="segment-tabs contact-center-tabs">
               <button class="segment-tab active" type="button" data-competition-tab="competitors">Directorio</button>
-              <button class="segment-tab" type="button" data-competition-tab="dashboard">Dashboard competitivo</button>
-              <button class="segment-tab" type="button" data-competition-tab="products">Productos y precios</button>
-              <button class="segment-tab" type="button" data-competition-tab="campaigns">Campañas y promociones</button>
-              <button class="segment-tab" type="button" data-competition-tab="events">Eventos y activaciones</button>
-              <button class="segment-tab" type="button" data-competition-tab="findings">Hallazgos y alertas</button>
-              <button class="segment-tab" type="button" data-competition-tab="swot">SWOT / DOFA</button>
-              <button class="segment-tab" type="button" data-competition-tab="comparison">Análisis comparativo</button>
+              <button class="segment-tab" type="button" data-competition-tab="dashboard">Resumen</button>
+              <button class="segment-tab" type="button" data-competition-tab="products">Precios y oferta</button>
+              <button class="segment-tab" type="button" data-competition-tab="campaigns">Promociones</button>
+              <button class="segment-tab" type="button" data-competition-tab="events">Activaciones</button>
+              <button class="segment-tab" type="button" data-competition-tab="findings">Señales</button>
+              <button class="segment-tab" type="button" data-competition-tab="swot">Estrategia</button>
+              <button class="segment-tab" type="button" data-competition-tab="comparison">Comparar</button>
             </div>
 
             <section class="competition-panel hidden" data-competition-panel="dashboard">
@@ -5691,8 +5704,9 @@
                 <article class="surface-card data-table-card inventory-table-card">
                   <div class="table-card-head">
                     <div>
-                      <span class="mono-label">Directorio</span>
+                      <span class="mono-label">Mapa competitivo</span>
                       <strong>Competidores registrados</strong>
+                      <small>Abre un competidor para revisar su oferta, señales y respuesta recomendada.</small>
                     </div>
                     <div class="competition-table-filters">
                       <input id="competitorSearchInput" type="search" placeholder="Filtrar por competidor, ciudad, zona o categoría">
