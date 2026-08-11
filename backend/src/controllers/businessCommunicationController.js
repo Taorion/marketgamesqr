@@ -68,6 +68,19 @@ const communicationPatchSchema = communicationFieldsSchema.partial().superRefine
 const recipientSchema = z.object({ source_id: z.string().uuid(), source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).optional() });
 const sendSchema = z.object({ recipients: z.array(recipientSchema).min(1).max(120), consent_confirmed: z.literal(true) });
 const publishSchema = z.object({ external_publication_url: optionalUrl, investment_amount: z.coerce.number().min(0).max(1_000_000_000).default(0) });
+const emailConnectionSchema = z.object({
+  sender_name: z.string().trim().min(2).max(160),
+  sender_email: z.string().trim().email().max(220),
+  resend_api_key: z.string().trim().regex(/^re_/, "La clave de Resend debe empezar por re_").min(12).max(500).optional().or(z.literal("")),
+  remove_api_key: z.boolean().optional().default(false),
+});
+const emailConnectionTestSchema = z.object({ recipient_email: z.string().trim().email().max(220) });
+
+function requireCommunicationConfigurationAccess(req) {
+  if (!["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_Qori"].includes(req.user?.role)) {
+    throw forbidden("Solo un owner o manager puede conectar la cuenta de correo de la empresa.");
+  }
+}
 
 async function list(req, res, next) { try { res.json(await service.listBusinessCommunications(businessIdFor(req))); } catch (error) { next(error); } }
 async function audience(req, res, next) { try { res.json(await service.listAudience(businessIdFor(req), req.query)); } catch (error) { next(error); } }
@@ -78,5 +91,8 @@ async function prepareWhatsApp(req, res, next) { try { const body = validate(sen
 async function whatsappQueue(req, res, next) { try { res.json(await service.listBusinessCommunicationWhatsAppQueue(businessIdFor(req), req.params.id)); } catch (error) { next(error); } }
 async function markWhatsAppOpened(req, res, next) { try { const body = validate(recipientSchema, req.body); res.json(await service.markBusinessCommunicationWhatsAppOpened(businessIdFor(req), req.user.id, req.params.id, body)); } catch (error) { next(error); } }
 async function publish(req, res, next) { try { const body = validate(publishSchema, req.body); res.json(await service.publishBusinessCommunication(businessIdFor(req), req.user.id, req.params.id, body)); } catch (error) { next(error); } }
+async function emailConnection(req, res, next) { try { res.json(await service.getEmailConnectionStatus(businessIdFor(req))); } catch (error) { next(error); } }
+async function saveEmailConnection(req, res, next) { try { requireCommunicationConfigurationAccess(req); const body = validate(emailConnectionSchema, req.body); res.json(await service.saveEmailConnection(businessIdFor(req), { ...body, resend_api_key: body.resend_api_key || "" })); } catch (error) { next(error); } }
+async function testEmailConnection(req, res, next) { try { requireCommunicationConfigurationAccess(req); const body = validate(emailConnectionTestSchema, req.body); res.json(await service.sendEmailConnectionTest(businessIdFor(req), req.user.email, body.recipient_email)); } catch (error) { next(error); } }
 
-module.exports = { audience, create, list, markWhatsAppOpened, patch, prepareWhatsApp, publish, send, whatsappQueue };
+module.exports = { audience, create, emailConnection, list, markWhatsAppOpened, patch, prepareWhatsApp, publish, saveEmailConnection, send, testEmailConnection, whatsappQueue };

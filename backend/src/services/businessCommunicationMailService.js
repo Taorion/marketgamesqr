@@ -20,7 +20,7 @@ function resendDeliveryMessage(status, detail = "") {
     return "El remitente o su dominio aún no está verificado en Resend. Verifica el dominio y usa una dirección de ese dominio en Cuenta.";
   }
   if (status === 401 || status === 403 || /api key|authorization|unauthorized|forbidden/.test(normalized)) {
-    return "Resend rechazó la credencial del servidor. Configura una RESEND_API_KEY válida en Render y vuelve a intentar.";
+    return "Resend rechazó la clave de envío. Revísala en Cuenta > Correo masivo y vuelve a conectar Resend.";
   }
   if (status === 429) {
     return "Resend aplicó un límite temporal de envío. Espera unos minutos y vuelve a intentar.";
@@ -28,9 +28,10 @@ function resendDeliveryMessage(status, detail = "") {
   return "Resend rechazó el correo. Revisa la verificación del dominio remitente y la configuración de envío.";
 }
 
-async function sendBusinessCommunicationEmail({ from, to, subject, text, html, replyTo, attachments = [] }) {
-  if (!env.resendApiKey) {
-    throw serviceUnavailable("El envío masivo por email requiere configurar RESEND_API_KEY y un remitente verificado.");
+async function sendBusinessCommunicationEmail({ apiKey, from, to, subject, text, html, replyTo, attachments = [] }) {
+  const resendApiKey = String(apiKey || env.resendApiKey || "").trim();
+  if (!resendApiKey) {
+    throw serviceUnavailable("Conecta tu cuenta de Resend en Cuenta > Correo masivo antes de enviar.");
   }
 
   if (!from) {
@@ -40,8 +41,9 @@ async function sendBusinessCommunicationEmail({ from, to, subject, text, html, r
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${env.resendApiKey}`,
+      Authorization: `Bearer ${resendApiKey}`,
       "Content-Type": "application/json",
+      "User-Agent": "Qori-RMS/1.0",
     },
     body: JSON.stringify({
       from,

@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=campaign-wizard-feedback-v299-20260810">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=self-service-resend-v300-20260810">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -1598,7 +1598,31 @@
                   <label><span>Email contacto</span><input id="accountEmailInput" type="email" maxlength="220"></label>
                   <label><span>Nombre del remitente</span><input id="accountCommunicationSenderNameInput" type="text" maxlength="160" placeholder="Ej: Lancelot"></label>
                   <label><span>Email para envios masivos</span><input id="accountCommunicationSenderEmailInput" type="email" maxlength="220" placeholder="Ej: comunicaciones@lancelot.com"></label>
-                  <p class="table-secondary span-2">Este correo debe estar verificado por el proveedor de envio. Las respuestas llegaran al email del usuario que envia la comunicacion.</p>
+                  <section class="account-email-connection-panel span-2" aria-labelledby="accountEmailConnectionTitle">
+                    <div class="account-email-connection-head">
+                      <div>
+                        <span class="mono-label">Conexión de envío</span>
+                        <h4 id="accountEmailConnectionTitle">Conecta Resend en tres pasos</h4>
+                      </div>
+                      <span class="status-chip pending" id="accountCommunicationConnectionStatus">Sin conectar</span>
+                    </div>
+                    <ol class="account-email-connection-steps">
+                      <li>Crea una cuenta en <a href="https://resend.com" target="_blank" rel="noopener noreferrer">Resend</a> y verifica el dominio del correo remitente.</li>
+                      <li>Crea una API Key con permiso <strong>Sending access</strong> y pégala abajo. Qori la cifra y nunca vuelve a mostrarla.</li>
+                      <li>Guarda y envía una prueba a tu propio correo antes de comunicarte con leads.</li>
+                    </ol>
+                    <label><span>API Key de Resend</span><input id="accountCommunicationResendKeyInput" type="password" autocomplete="new-password" spellcheck="false" placeholder="re_..." aria-describedby="accountCommunicationConnectionHelp"></label>
+                    <p class="table-secondary" id="accountCommunicationConnectionHelp">Déjala vacía para conservar la clave ya conectada. Para reemplazarla, pega una nueva y guarda.</p>
+                    <div class="inline-actions">
+                      <button class="solid-button compact" id="accountCommunicationConnectButton" type="button">Guardar conexión</button>
+                      <button class="ghost-button compact" id="accountCommunicationDisconnectButton" type="button">Desconectar</button>
+                    </div>
+                    <label><span>Correo para la prueba</span><input id="accountCommunicationTestEmailInput" type="email" maxlength="220" placeholder="tu-correo@empresa.com"></label>
+                    <div class="inline-actions">
+                      <button class="ghost-button compact" id="accountCommunicationTestButton" type="button">Enviar correo de prueba</button>
+                    </div>
+                    <p class="error-line" id="accountCommunicationConnectionMessage"></p>
+                  </section>
                   <label><span>Teléfono</span><input id="accountPhoneInput" type="text" maxlength="40"></label>
                   <label><span>Sitio web</span><input id="accountWebsiteInput" type="url" maxlength="220"></label>
                   <label><span>Ciudad</span><input id="accountCityInput" type="text" maxlength="120"></label>
@@ -7592,7 +7616,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=campaign-wizard-feedback-v298-20260810" defer></script>
+<script src="js/app.js?v=self-service-resend-v300-20260810" defer></script>
     <script src="js/communications.js?v=email-delivery-diagnostics-v297-20260810" defer></script>
 </body>
 </html>

@@ -149,12 +149,15 @@ const {
 const {
   audience: communicationAudience,
   create: createCommunication,
+  emailConnection: communicationEmailConnection,
   list: listCommunications,
   markWhatsAppOpened: markCommunicationWhatsAppOpened,
   patch: patchCommunication,
   prepareWhatsApp: prepareCommunicationWhatsApp,
   publish: publishCommunication,
+  saveEmailConnection: saveCommunicationEmailConnection,
   send: sendCommunication,
+  testEmailConnection: testCommunicationEmailConnection,
   whatsappQueue: communicationWhatsAppQueue,
 } = require("../controllers/businessCommunicationController");
 const { storageSummary } = require("../controllers/storageQuotaController");
@@ -244,6 +247,9 @@ router.post("/leads/:leadId/activations/:activationId/opened", markActivationOpe
 router.post("/leads/:leadId/whatsapp", registerLeadWhatsAppContact);
 
 router.use(requirePortalAccess);
+router.get("/communications/email-connection", communicationEmailConnection);
+router.patch("/communications/email-connection", saveCommunicationEmailConnection);
+router.post("/communications/email-connection/test", testCommunicationEmailConnection);
 router.get("/communications/audience", shortBusinessCache, communicationAudience);
 router.get("/communications", standardBusinessCache, listCommunications);
 router.post("/communications", createCommunication);

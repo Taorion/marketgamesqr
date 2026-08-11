@@ -3,6 +3,7 @@ const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
 const { listLeadCrmRows } = require("./leadCrmService");
 const { sendBusinessCommunicationEmail } = require("./businessCommunicationMailService");
+const { getEmailConnectionStatus, ownResendApiKey, saveEmailConnection } = require("./businessCommunicationCredentialService");
 
 function escapeHtml(value) {
   return String(value || "")
@@ -51,7 +52,9 @@ async function businessCommunicationSender(businessId, connectedUserEmail) {
   }
   const senderName = communicationSenderName(settings.communication_sender_name || business.name) || "Qori";
   const replyTo = normalizedRecipientEmail(connectedUserEmail) || senderEmail;
-  return { from: `${senderName} <${senderEmail}>`, replyTo };
+  const apiKey = await ownResendApiKey(businessId) || env.resendApiKey;
+  if (!apiKey) throw badRequest("Conecta tu cuenta de Resend en Cuenta > Correo masivo antes de enviar.");
+  return { from: `${senderName} <${senderEmail}>`, replyTo, apiKey };
 }
 
 function normalizeMediaAssets(communication) {
@@ -657,6 +660,7 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
     const attachments = makeEmailAttachments(mediaAssets);
     try {
       const provider = await sendBusinessCommunicationEmail({
+        apiKey: sender.apiKey,
         from: sender.from,
         to: contact.email,
         replyTo: sender.replyTo,
@@ -790,8 +794,30 @@ async function markBusinessCommunicationWhatsAppOpened(businessId, userId, id, r
   return { recipient: updated.rows[0] };
 }
 
+async function sendEmailConnectionTest(businessId, userEmail, recipientEmail) {
+  const sender = await businessCommunicationSender(businessId, userEmail);
+  const recipient = normalizedRecipientEmail(recipientEmail);
+  if (!recipient) throw badRequest("Escribe el correo donde quieres recibir la prueba.");
+  const provider = await sendBusinessCommunicationEmail({
+    apiKey: sender.apiKey,
+    from: sender.from,
+    to: recipient,
+    replyTo: sender.replyTo,
+    subject: "Prueba de correo masivo Qori",
+    text: "La conexión de Resend quedó lista. Este correo confirma que Qori puede enviar desde el remitente configurado.",
+    html: buildEmailMarkup({
+      title: "Conexión lista",
+      body: "La conexión de Resend quedó lista. Este correo confirma que Qori puede enviar desde el remitente configurado.",
+      hasInlineImage: false,
+      actionUrl: "",
+    }),
+  });
+  return { ok: true, provider_message_id: provider.id || null, recipient_email: recipient };
+}
+
 module.exports = {
   createBusinessCommunication,
+  getEmailConnectionStatus,
   listAudience,
   listBusinessCommunications,
   publishBusinessCommunication,
@@ -799,5 +825,7 @@ module.exports = {
   listBusinessCommunicationWhatsAppQueue,
   markBusinessCommunicationWhatsAppOpened,
   sendBusinessCommunication,
+  saveEmailConnection,
+  sendEmailConnectionTest,
   updateBusinessCommunication,
 };

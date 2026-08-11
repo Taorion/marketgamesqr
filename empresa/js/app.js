@@ -500,6 +500,13 @@ const accountContactInput = document.getElementById("accountContactInput");
 const accountEmailInput = document.getElementById("accountEmailInput");
 const accountCommunicationSenderNameInput = document.getElementById("accountCommunicationSenderNameInput");
 const accountCommunicationSenderEmailInput = document.getElementById("accountCommunicationSenderEmailInput");
+const accountCommunicationResendKeyInput = document.getElementById("accountCommunicationResendKeyInput");
+const accountCommunicationConnectionStatus = document.getElementById("accountCommunicationConnectionStatus");
+const accountCommunicationConnectionMessage = document.getElementById("accountCommunicationConnectionMessage");
+const accountCommunicationConnectButton = document.getElementById("accountCommunicationConnectButton");
+const accountCommunicationDisconnectButton = document.getElementById("accountCommunicationDisconnectButton");
+const accountCommunicationTestEmailInput = document.getElementById("accountCommunicationTestEmailInput");
+const accountCommunicationTestButton = document.getElementById("accountCommunicationTestButton");
 const accountPhoneInput = document.getElementById("accountPhoneInput");
 const accountWebsiteInput = document.getElementById("accountWebsiteInput");
 const accountCityInput = document.getElementById("accountCityInput");
@@ -2359,6 +2366,8 @@ let state = {
   },
   summary: null,
   businessProfile: null,
+  communicationEmailConnection: null,
+  communicationEmailConnectionLoaded: false,
   subscription: null,
   access: null,
   dashboardLoading: false,
@@ -5808,6 +5817,8 @@ function renderAccountView() {
   if (accountEmailInput) accountEmailInput.value = business.contact_email || "";
   if (accountCommunicationSenderNameInput) accountCommunicationSenderNameInput.value = business.communication_sender_name || business.name || "";
   if (accountCommunicationSenderEmailInput) accountCommunicationSenderEmailInput.value = business.communication_sender_email || "";
+  if (accountCommunicationTestEmailInput && !accountCommunicationTestEmailInput.value) accountCommunicationTestEmailInput.value = business.contact_email || user.email || "";
+  renderCommunicationEmailConnection();
   if (accountPhoneInput) accountPhoneInput.value = business.phone || "";
   if (accountWebsiteInput) accountWebsiteInput.value = business.website || "";
   if (accountCityInput) accountCityInput.value = business.city || "";
@@ -5843,6 +5854,26 @@ function renderAccountView() {
     accountTicketFrameRemoveButton.disabled = !ticketFrame;
   }
   applyAccountScreen();
+}
+
+function renderCommunicationEmailConnection() {
+  const connection = state.communicationEmailConnection || {};
+  const ready = Boolean(connection.ready);
+  const hasKey = Boolean(connection.api_key_configured);
+  if (accountCommunicationConnectionStatus) {
+    accountCommunicationConnectionStatus.textContent = ready ? "Lista para prueba" : (hasKey ? "Falta remitente" : "Sin conectar");
+    accountCommunicationConnectionStatus.className = `status-chip ${ready ? "ok" : "pending"}`;
+  }
+  if (accountCommunicationDisconnectButton) accountCommunicationDisconnectButton.disabled = !hasKey;
+  if (accountCommunicationTestButton) accountCommunicationTestButton.disabled = !ready;
+}
+
+async function loadCommunicationEmailConnection(options = {}) {
+  if (!session?.user?.business_id || (state.communicationEmailConnectionLoaded && !options.force)) return state.communicationEmailConnection;
+  const data = await api("/api/business/communications/email-connection", { headers: authHeaders() });
+  state.communicationEmailConnection = data || null;
+  state.communicationEmailConnectionLoaded = true;
+  return state.communicationEmailConnection;
 }
 
 function applyPlanNavigation() {
@@ -6233,7 +6264,7 @@ function setView(view) {
     });
   }
   if (view === "account") {
-    loadAccountWorkspaceData({ quiet: true }).then(() => {
+    Promise.all([loadAccountWorkspaceData({ quiet: true }), loadCommunicationEmailConnection({ force: true })]).then(() => {
       renderBusinessLogoPanel();
       renderAccountView();
     }).catch(() => {});
@@ -35372,6 +35403,71 @@ function renderLeadDetailRelatedSalesSnapshot(detail = {}) {
   `;
 }
 
+async function saveCommunicationEmailConnection({ removeApiKey = false } = {}) {
+  const senderName = optionalInputValue(accountCommunicationSenderNameInput);
+  const senderEmail = optionalInputValue(accountCommunicationSenderEmailInput);
+  const resendApiKey = String(accountCommunicationResendKeyInput?.value || "").trim();
+  if (!senderName || !senderEmail) {
+    setInlineMessage(accountCommunicationConnectionMessage, "Completa el nombre y email del remitente antes de conectar Resend.", "error");
+    return null;
+  }
+  if (!removeApiKey && !resendApiKey && !state.communicationEmailConnection?.api_key_configured) {
+    setInlineMessage(accountCommunicationConnectionMessage, "Pega la API Key de Resend para completar la conexión.", "error");
+    return null;
+  }
+  setButtonLoading(accountCommunicationConnectButton, true, "Guardando...");
+  try {
+    const data = await api("/api/business/communications/email-connection", {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        sender_name: senderName,
+        sender_email: senderEmail,
+        resend_api_key: removeApiKey ? "" : resendApiKey,
+        remove_api_key: removeApiKey,
+      }),
+    });
+    state.communicationEmailConnection = data;
+    state.communicationEmailConnectionLoaded = true;
+    state.businessProfile = {
+      ...(state.businessProfile || {}),
+      communication_sender_name: data.sender_name || senderName,
+      communication_sender_email: data.sender_email || senderEmail,
+    };
+    if (accountCommunicationResendKeyInput) accountCommunicationResendKeyInput.value = "";
+    renderCommunicationEmailConnection();
+    setInlineMessage(accountCommunicationConnectionMessage, removeApiKey ? "Conexión eliminada. No se enviarán campañas hasta conectar una nueva clave." : "Conexión guardada. Envía una prueba antes de hacer un envío masivo.", "success");
+    return data;
+  } catch (error) {
+    setInlineMessage(accountCommunicationConnectionMessage, error.message || "No se pudo guardar la conexión de Resend.", "error");
+    return null;
+  } finally {
+    setButtonLoading(accountCommunicationConnectButton, false);
+  }
+}
+
+async function testCommunicationEmailConnection() {
+  const recipientEmail = optionalInputValue(accountCommunicationTestEmailInput);
+  if (!recipientEmail) {
+    setInlineMessage(accountCommunicationConnectionMessage, "Escribe el correo donde quieres recibir la prueba.", "error");
+    return;
+  }
+  setButtonLoading(accountCommunicationTestButton, true, "Enviando...");
+  try {
+    const data = await api("/api/business/communications/email-connection/test", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ recipient_email: recipientEmail }),
+    });
+    setInlineMessage(accountCommunicationConnectionMessage, `Prueba enviada a ${data.recipient_email}. Revisa también spam o promociones.`, "success");
+    showFeedback("El correo de prueba fue aceptado por Resend.", "success", { title: "Conexión de correo" });
+  } catch (error) {
+    setInlineMessage(accountCommunicationConnectionMessage, error.message || "La prueba no pudo enviarse. Revisa la clave y el dominio en Resend.", "error");
+  } finally {
+    setButtonLoading(accountCommunicationTestButton, false);
+  }
+}
+
 function defaultLeadWhatsAppMessage(lead = {}) {
   const firstName = String(lead.name || "").trim().split(/\s+/)[0];
   return `Hola${firstName ? ` ${firstName}` : ""}, ¿cómo estás? Te escribimos para acompañarte y resolver cualquier duda que tengas.`;
@@ -50047,6 +50143,9 @@ branchDetailModal?.addEventListener("click", (event) => {
   if (event.target === branchDetailModal) closeBranchDetailModal();
 });
 accountProfileForm?.addEventListener("submit", submitAccountProfile);
+accountCommunicationConnectButton?.addEventListener("click", () => saveCommunicationEmailConnection());
+accountCommunicationDisconnectButton?.addEventListener("click", () => saveCommunicationEmailConnection({ removeApiKey: true }));
+accountCommunicationTestButton?.addEventListener("click", testCommunicationEmailConnection);
 accountPasswordForm?.addEventListener("submit", submitAccountPassword);
 accountUserForm?.addEventListener("submit", submitAccountUser);
 refreshAccountUsersButton?.addEventListener("click", loadBusinessUsers);
