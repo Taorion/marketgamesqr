@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260811-rms-station-handoff-v318";
+const APP_VERSION = "empresa-20260811-rms-classifier-workflow-v319";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -21657,11 +21657,33 @@ async function submitInventoryProduct(event) {
       ...(state.inventoryProducts || []).filter((item) => item.id !== saved.id),
     ];
     state.inventoryLoaded = true;
+    const pendingClassification = state.rmsPendingProductClassification;
     resetInventoryForm();
     renderInventoryProductOptions();
-    renderInventoryView();
     setInlineMessage(inventoryMessage, "Producto guardado correctamente.", "success");
     closeInventoryProductModal();
+    if (pendingClassification) {
+      const opportunity = rmsOpportunityById(pendingClassification.opportunityId);
+      state.rmsPendingProductClassification = null;
+      if (opportunity) {
+        await saveRmsProductClassification(opportunity, {
+          product_select: `inventory:${saved.id}`,
+          inventory_product_id: saved.id,
+          product_name: saved.name,
+          product_category: saved.category || "",
+          open_product_name: "",
+        });
+        state.rmsMachineLoaded = false;
+        await loadRmsMachineData({ force: true, quiet: true });
+        state.rmsStationScreenOpen = true;
+        state.rmsStationPhase = pendingClassification.phase || "curaduria";
+        state.rmsMachineFilters.phase = state.rmsStationPhase;
+        renderRmsMachineView();
+        showFeedback("Producto creado y clasificación guardada. Ya puedes enviarlo a Activación 1.", "success", { title: "Clasificador" });
+        return;
+      }
+    }
+    renderInventoryView();
     showFeedback("Producto guardado.", "success", { title: "Productos" });
   } catch (error) {
     setInlineMessage(inventoryMessage, error.message, "error");
@@ -42193,6 +42215,33 @@ function recyclingReasonLabel(reason = "") {
   return ({ TIMING: "Momento inadecuado", BUDGET: "Presupuesto", NO_RESPONSE: "Sin respuesta", WAITING_DECISION: "Espera de decision", NOT_VIABLE_NOW: "Condicion no viable", OTHER: "Otro" })[String(reason).toUpperCase()] || reason || "Sin motivo";
 }
 
+function rmsClassifierStationCardMarkup(item = {}) {
+  const selected = state.rmsMachineSelectedIds.includes(item.id);
+  const origin = item.entry_summary || item.source_detail || item.campaign_name || item.channel || item.source_label || item.source_type || "Origen sin definir";
+  const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "Sin interés registrado";
+  const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
+  return `
+    <article class="rms-classifier-station-card ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
+      <header class="rms-classifier-station-card-head">
+        <label class="rms-lean-station-check">
+          <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" aria-label="Seleccionar ${escapeHtml(item.name || "lead")}" ${selected ? "checked" : ""}>
+        </label>
+        <div>
+          <span class="mono-label">Lead para clasificar</span>
+          <strong>${escapeHtml(item.name || "Contacto")}</strong>
+          <small>${escapeHtml(contact)}</small>
+        </div>
+        <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}">Ver datos</button>
+      </header>
+      <div class="rms-classifier-context">
+        <span><small>Interés</small><strong>${escapeHtml(interest)}</strong></span>
+        <span><small>Origen</small><strong>${escapeHtml(origin)}</strong></span>
+      </div>
+      ${rmsProductClassificationMarkup(item)}
+    </article>
+  `;
+}
+
 function recyclingStrategyLabel(strategy = "") {
   return ({ NEW_CONTACT: "Nuevo contacto", NEW_PROPOSAL: "Nueva propuesta", NEW_ACTIVATION: "Nueva activacion", PERMITTED_BENEFIT: "Beneficio permitido", NURTURE: "Nutricion comercial" })[String(strategy).toUpperCase()] || strategy || "Sin estrategia";
 }
@@ -42640,7 +42689,11 @@ function renderRmsStationLeanOnly() {
         </select>
         <span>${selectedRows.length.toLocaleString("es-CO")} seleccionados · ${eligibleRows.length.toLocaleString("es-CO")} listos · ${rows.length.toLocaleString("es-CO")} total</span>
       </div>
-      ${isCommercialStation ? `
+      ${isClassifierStation ? `
+        <section class="rms-classifier-station-list" aria-label="Leads por clasificar">
+          ${renderedRows.map((item) => rmsClassifierStationCardMarkup(item)).join("") || `<div class="empty-state compact">${escapeHtml(isEmpty ? "No hay leads todavía." : "No hay leads con este filtro.")}</div>`}
+        </section>
+      ` : isCommercialStation ? `
         ${phase === "inteligencia" ? rmsIntelligenceStationMarkup(state.rmsIntelligenceCases || rows) : ""}
         ${phase !== "inteligencia" ? `
         ${phase === "control_anti_fuga" ? rmsRiskStationMetricsMarkup(rows, allOpportunities) : ""}
@@ -43093,6 +43146,8 @@ function rmsProductClassificationMarkup(item = {}) {
   const openValue = selected === OPEN_PRODUCT_VALUE ? rmsClassifiedProductName(item) : "";
   const confidence = Math.round(Number(item.classification_confidence || 0) * 100);
   const classifiedName = rmsClassifiedProductName(item);
+  const selectedProduct = findInventoryProduct(selected);
+  const canConfirm = Boolean(selectedProduct?.id);
   return `
     <div class="rms-product-classifier rms-product-classifier-lean" data-rms-product-classifier="${escapeHtml(item.id)}">
       <label>
@@ -43107,7 +43162,9 @@ function rmsProductClassificationMarkup(item = {}) {
         <small>${escapeHtml(rmsClassificationSourceLabel(item))}${confidence ? ` · ${confidence}% de coincidencia` : ""}</small>
       </div>
       <div class="rms-product-classifier-actions">
-        <button class="solid-button compact" type="button" data-rms-save-classification="${escapeHtml(item.id)}">Confirmar</button>
+        ${canConfirm
+          ? `<button class="solid-button compact" type="button" data-rms-save-classification="${escapeHtml(item.id)}">Guardar clasificación</button>`
+          : `<button class="solid-button compact" type="button" data-rms-create-product-classification="${escapeHtml(item.id)}">Crear producto y vincular</button>`}
         <details class="rms-product-classifier-more">
           <summary>Más opciones</summary>
           <div>
@@ -43975,6 +44032,29 @@ function ensureRmsStationUxStyles() {
       #workspace.app-shell .rms-board-tools .rms-operator-toolbar,
       #workspace.app-shell .rms-board-tools .rms-bulk-toolbar { grid-template-columns: minmax(0, 1fr) !important; }
     }
+  `);
+  rules.push(`
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-list { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)) !important; gap: 16px !important; width: 100% !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card { display: grid !important; gap: 14px !important; min-width: 0 !important; padding: clamp(16px, 2vw, 22px) !important; border: 1px solid rgba(5, 89, 214, .16) !important; border-radius: 18px !important; background: linear-gradient(145deg, #fff, #f6fbff) !important; box-shadow: 0 12px 28px rgba(5, 42, 107, .06) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card.is-selected { border-color: #0759d6 !important; box-shadow: 0 14px 30px rgba(7, 89, 214, .16) !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card-head { display: grid !important; grid-template-columns: auto minmax(0, 1fr) auto !important; align-items: center !important; gap: 12px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card-head > div { display: grid !important; min-width: 0 !important; gap: 3px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card-head strong { overflow: hidden !important; color: #052a6b !important; font-size: 1rem !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card-head small { overflow: hidden !important; color: #53677f !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-context { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-context > span { display: grid !important; min-width: 0 !important; gap: 5px !important; padding: 11px 12px !important; border-radius: 12px !important; background: #f1f7ff !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-context small { color: #53677f !important; font-size: .66rem !important; font-weight: 800 !important; text-transform: uppercase !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-context strong { overflow: hidden !important; color: #17385c !important; font-size: .82rem !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card .rms-product-classifier-lean { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 11px !important; min-width: 0 !important; padding: 14px !important; border: 1px solid rgba(23, 65, 91, .13) !important; border-radius: 14px !important; background: #fff !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card .rms-product-classifier-lean label { display: grid !important; gap: 6px !important; min-width: 0 !important; color: #17385c !important; font-weight: 800 !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card .rms-product-classifier-lean select, body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card .rms-product-classifier-lean .open-product-input { width: 100% !important; min-width: 0 !important; min-height: 42px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card .rms-product-classifier-meta { display: flex !important; flex-wrap: wrap !important; gap: 7px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card .rms-product-classifier-actions { display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; }
+    body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card .rms-product-classifier-actions > .solid-button { min-height: 42px !important; }
+    @media (max-width: 620px) { body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card-head { grid-template-columns: auto minmax(0, 1fr) !important; } body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card-head > button { grid-column: 1 / -1 !important; width: 100% !important; } body[data-current-view="rms-machine"] .portal-shell .rms-classifier-context { grid-template-columns: 1fr !important; } body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card .rms-product-classifier-actions > .solid-button { width: 100% !important; } }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card, :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card .rms-product-classifier-lean { border-color: rgba(216, 230, 242, .2) !important; background: #052a6b !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-classifier-station-card :is(strong, label) { color: #f6fbff !important; }
+    :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-classifier-context > span { background: rgba(216, 230, 242, .1) !important; }
   `);
   style.textContent = rules.join("\n");
   document.head.appendChild(style);
@@ -45013,6 +45093,12 @@ function bindRmsMachineActions(root) {
         checkbox.closest("[data-rms-station-lead]")?.classList.add("is-selected");
         checkbox.closest(".rms-station-lead-check")?.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode("check_circle"));
       }
+      const primaryAction = select.closest("[data-rms-product-classifier]")?.querySelector(".rms-product-classifier-actions > .solid-button");
+      if (primaryAction) {
+        const hasInventoryProduct = Boolean(findInventoryProduct(select.value)?.id);
+        primaryAction.textContent = hasInventoryProduct ? "Guardar clasificación" : "Crear producto y vincular";
+        primaryAction.setAttribute("aria-label", hasInventoryProduct ? "Guardar clasificación" : "Crear producto y vincular");
+      }
       renderRmsBulkToolbar();
       updateRmsStationOutputPreview();
     });
@@ -45752,8 +45838,27 @@ async function handleRmsSaveClassification(id = "") {
 async function handleRmsCreateProductClassification(id = "") {
   const item = rmsOpportunityById(id);
   if (!item) return;
+  const draft = rmsClassificationDraftFromDom(item);
+  if (draft.inventory_product_id) {
+    await handleRmsSaveClassification(id);
+    return;
+  }
+  const productName = String(draft.open_product_name || draft.product_name || item.product_interest || "").trim();
+  if (!productName) {
+    showFeedback("Escribe el nombre del producto o servicio antes de crearlo.", "info", { title: "Clasificador" });
+    return;
+  }
+  state.rmsPendingProductClassification = {
+    opportunityId: item.id,
+    phase: item.stage || "curaduria",
+    productName,
+  };
   setView("inventory");
-  showFeedback("Crea el producto explícitamente en Inventario; luego vuelve a Clasificación para vincularlo a este lead.", "info", { title: "Clasificador" });
+  resetInventoryForm();
+  if (inventoryNameInput) inventoryNameInput.value = productName;
+  if (inventoryDescriptionInput) inventoryDescriptionInput.value = `Creado desde Clasificador para ${item.name || "un lead"}.`;
+  openInventoryProductModal({ focusTarget: inventoryUnitPriceInput || inventoryNameInput });
+  showFeedback("Completa precio y unidad. Al guardar, Qori vinculará este producto al lead y volverá al Clasificador.", "info", { title: "Clasificador" });
 }
 
 async function handleRmsClearClassification(id = "") {
