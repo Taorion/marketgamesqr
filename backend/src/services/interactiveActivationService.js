@@ -1554,8 +1554,80 @@ async function createParticipantInsideCompletion(client, activation, body) {
   return result.rows[0];
 }
 
+function activationContactIdentity(body = {}) {
+  const documentId = String(body.document || body.document_id || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  const email = String(body.email || "").trim().toLowerCase();
+  const phone = String(body.phone || "").replace(/\D/g, "");
+  return { documentId: documentId || null, email: email || null, phone: phone || null };
+}
+
 async function createPlayer(client, activation, body, metadata = {}) {
   const formMetadata = activationFormMetadata(activation, body, metadata);
+  const playerMetadata = {
+    source: "interactive_activation",
+    activation_id: activation.id,
+    activation_type: activation.activation_type,
+    activation_title: activation.title || null,
+    lead_source: "Activacion interactiva",
+    lead_origin: "activation_form",
+    interest: formMetadata.rms_intake?.interest || null,
+    intent: formMetadata.rms_intake?.intent || null,
+    lead_priority_signal: formMetadata.rms_intake?.priority || formMetadata.rms_intake?.level || null,
+    ...formMetadata,
+  };
+  const identity = activationContactIdentity(body);
+
+  // One person can complete several activations. The participant row preserves
+  // each activation, but the CRM contact must remain a single PLAYER record.
+  if (identity.documentId || identity.email || identity.phone) {
+    const lockKey = [activation.company_id, identity.documentId || identity.email || identity.phone].join(":");
+    await client.query("select pg_advisory_xact_lock(hashtext($1))", [`interactive-contact:${lockKey}`]);
+    const existing = await client.query(
+      `select *
+         from players
+        where business_id = $1
+          and (
+            ($2::text is not null and regexp_replace(lower(coalesce(document_id, '')), '[^a-z0-9]', '', 'g') = $2)
+            or ($3::text is not null and lower(nullif(email, '')) = $3)
+            or ($4::text is not null and regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = $4)
+          )
+        order by created_at asc
+        limit 1
+        for update`,
+      [activation.company_id, identity.documentId, identity.email, identity.phone]
+    );
+    if (existing.rowCount) {
+      const { source, lead_source, lead_origin, ...activationUpdate } = playerMetadata;
+      const updated = await client.query(
+        `update players
+            set name = coalesce(nullif($2, ''), name),
+                email = coalesce(nullif($3, ''), email),
+                phone = coalesce(nullif($4, ''), phone),
+                document_id = coalesce(nullif($5, ''), document_id),
+                metadata = coalesce(metadata, '{}'::jsonb) || $6::jsonb
+          where id = $1
+          returning *`,
+        [
+          existing.rows[0].id,
+          String(body.name || "").trim(),
+          String(body.email || "").trim(),
+          String(body.phone || "").trim(),
+          String(body.document || body.document_id || "").trim(),
+          jsonParam({
+            ...activationUpdate,
+            latest_interactive_activation: {
+              id: activation.id,
+              title: activation.title || null,
+              type: activation.activation_type,
+              captured_at: new Date().toISOString(),
+            },
+          }, {}),
+        ]
+      );
+      return updated.rows[0];
+    }
+  }
+
   const result = await client.query(
     `insert into players (business_id, campaign_id, branch_id, game_id, name, email, phone, document_id, metadata)
      values ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
@@ -1569,18 +1641,7 @@ async function createPlayer(client, activation, body, metadata = {}) {
       body.email || null,
       body.phone || null,
       body.document || body.document_id || null,
-      jsonParam({
-        source: "interactive_activation",
-        activation_id: activation.id,
-        activation_type: activation.activation_type,
-        activation_title: activation.title || null,
-        lead_source: "Activacion interactiva",
-        lead_origin: "activation_form",
-        interest: formMetadata.rms_intake?.interest || null,
-        intent: formMetadata.rms_intake?.intent || null,
-        lead_priority_signal: formMetadata.rms_intake?.priority || formMetadata.rms_intake?.level || null,
-        ...formMetadata,
-      }, {}),
+      jsonParam(playerMetadata, {}),
     ]
   );
   return result.rows[0];
