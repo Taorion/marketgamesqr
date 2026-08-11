@@ -19451,3 +19451,82 @@ html body:not(#qoriV132A#qoriV132B#qoriV132C)[data-current-view="leads"] .portal
   }
   .lead-directory-row-check { grid-row: 1; }
 }
+/* RMS station header: compact screens keep actions readable without overlap. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head {
+  display: grid;
+  grid-template-columns: max-content minmax(240px, 1fr) max-content;
+  align-items: start;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head > .ghost-button {
+  white-space: nowrap;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title {
+  min-width: 0;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title :is(.mono-label, h3, p) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions {
+  min-width: 0;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions > button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 1120px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head {
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding: 4px 1px 8px;
+    scrollbar-width: thin;
+  }
+}
+
+@media (max-width: 560px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding-bottom: 14px;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head > .ghost-button,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions {
+    grid-column: 1;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title .rms-lean-station-media {
+    width: 30px;
+    height: 30px;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title .rms-lean-station-symbol {
+    font-size: 25px;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions {
+    margin: 0 -2px;
+  }
+}
