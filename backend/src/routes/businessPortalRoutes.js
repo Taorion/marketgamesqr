@@ -149,6 +149,7 @@ const {
 const {
   audience: communicationAudience,
   create: createCommunication,
+  remove: deleteCommunication,
   emailConnection: communicationEmailConnection,
   list: listCommunications,
   markWhatsAppOpened: markCommunicationWhatsAppOpened,
@@ -263,6 +264,7 @@ router.get("/communications/audience", shortBusinessCache, communicationAudience
 router.get("/communications", standardBusinessCache, listCommunications);
 router.post("/communications", createCommunication);
 router.patch("/communications/:id", patchCommunication);
+router.delete("/communications/:id", deleteCommunication);
 router.post("/communications/:id/publish", publishCommunication);
 router.post("/communications/:id/send", sendCommunication);
 router.post("/communications/:id/whatsapp/prepare", prepareCommunicationWhatsApp);

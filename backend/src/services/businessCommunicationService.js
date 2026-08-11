@@ -552,6 +552,22 @@ async function updateBusinessCommunication(businessId, userId, id, payload) {
   return { communication: result.rows[0] };
 }
 
+async function deleteBusinessCommunication(businessId, id) {
+  const existing = await query(
+    "select id, title, metadata from business_communications where id = $1 and business_id = $2",
+    [id, businessId]
+  );
+  if (!existing.rowCount) throw notFound("Comunicación no encontrada.");
+  const communication = existing.rows[0];
+  await clearCommunicationProductPromotion(businessId, communication.metadata?.web_showcase_product_id || null, id);
+  await query(
+    "update business_acquisition_channel_efforts set status = 'ARCHIVED', updated_at = now() where business_id = $1 and metadata->>'communication_id' = $2 and status <> 'ARCHIVED'",
+    [businessId, id]
+  );
+  await query("delete from business_communications where id = $1 and business_id = $2", [id, businessId]);
+  return { deleted: true, communication: { id: communication.id, title: communication.title } };
+}
+
 async function saveRecipient({ businessId, communicationId, contact, status, providerMessageId, errorMessage, userId, metadata = {} }) {
   const recipient = await query(
     `insert into business_communication_recipients (
@@ -905,6 +921,7 @@ async function sendWhatsAppConnectionTest(businessId, payload) {
 
 module.exports = {
   createBusinessCommunication,
+  deleteBusinessCommunication,
   getEmailConnectionStatus,
   getWhatsAppConnectionStatus,
   listAudience,
