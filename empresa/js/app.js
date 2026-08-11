@@ -1198,6 +1198,7 @@ const competitionPriceComparisonTable = document.getElementById("competitionPric
 const competitionCampaignComparisonTable = document.getElementById("competitionCampaignComparisonTable");
 const competitionStrategicComparisonTable = document.getElementById("competitionStrategicComparisonTable");
 const competitorDetailModal = document.getElementById("competitorDetailModal");
+const competitorDetailSnapshot = document.getElementById("competitorDetailSnapshot");
 const competitorDetailCloseButton = document.getElementById("competitorDetailCloseButton");
 const competitorDetailAddProductButton = document.getElementById("competitorDetailAddProductButton");
 const competitorDetailTitle = document.getElementById("competitorDetailTitle");
@@ -22207,6 +22208,27 @@ function renderCompetitorDetailModal() {
   if (competitorDetailTitle) competitorDetailTitle.textContent = competitor.name || "Competidor";
   if (competitorDetailSummary) {
     competitorDetailSummary.textContent = `${competitor.category || competitor.business_type || "Competidor"} · ${[competitor.city, competitor.operation_zone].filter(Boolean).join(" / ") || "Sin zona"} · amenaza ${threatLabel(competitor.threat_level)}`;
+  }
+  if (competitorDetailSnapshot) {
+    const primaryProduct = competitorPrimaryProduct(competitor);
+    competitorDetailSnapshot.innerHTML = `
+      <div class="competition-detail-signal competition-detail-threat">
+        <span class="material-symbols-outlined" aria-hidden="true">radar</span>
+        <div><small>Nivel competitivo</small><strong>${escapeHtml(threatLabel(competitor.threat_level))}</strong></div>
+      </div>
+      <div class="competition-detail-signal">
+        <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+        <div><small>Oferta observada</small><strong>${escapeHtml(String(products.length))} registro${products.length === 1 ? "" : "s"}</strong></div>
+      </div>
+      <div class="competition-detail-signal">
+        <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
+        <div><small>Movimientos</small><strong>${escapeHtml(String(campaigns.length + events.length))}</strong></div>
+      </div>
+      <div class="competition-detail-signal competition-detail-reference">
+        <span class="material-symbols-outlined" aria-hidden="true">sell</span>
+        <div><small>Última referencia</small><strong>${escapeHtml(primaryProduct?.product_name || "Sin producto")}</strong></div>
+      </div>
+    `;
   }
   if (competitorDetailTabs) {
     competitorDetailTabs.innerHTML = tabs.map(([key, label]) => `
