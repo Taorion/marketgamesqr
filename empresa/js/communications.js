@@ -306,6 +306,22 @@
     if (!list || !count) return;
     const selected = new Set(state.communicationSelectedRefs || []);
     const deliveryChannel = document.querySelector('input[name="communicationType"]:checked')?.value === "WHATSAPP" ? "whatsapp" : "email";
+    const audienceSection = document.getElementById("communicationComposerAudience");
+    const audienceTitle = document.getElementById("communicationComposerAudienceTitle");
+    const audienceLabel = audienceSection?.querySelector(".communication-composer-section-head .mono-label");
+    const audienceHelp = audienceSection?.querySelector(".communication-composer-section-head small");
+    const selectAll = audienceSection?.querySelector("[data-composer-select-audience]");
+    if (deliveryChannel === "whatsapp") {
+      if (audienceLabel) audienceLabel.textContent = "Audiencia de WhatsApp";
+      if (audienceTitle) audienceTitle.textContent = "Elige quién recibirá este WhatsApp";
+      if (audienceHelp) audienceHelp.textContent = "Filtra y selecciona los contactos que aceptaron recibir WhatsApp. Qori enviará solo una vez por número.";
+      if (selectAll) selectAll.textContent = `Seleccionar hasta ${MAX_EMAIL_RECIPIENTS} con WhatsApp`;
+    } else {
+      if (audienceLabel) audienceLabel.textContent = "Audiencia de email";
+      if (audienceTitle) audienceTitle.textContent = "Elige quién recibirá esta comunicación";
+      if (audienceHelp) audienceHelp.textContent = "Filtra primero y selecciona solo los contactos a los que quieres escribir. Este paso se oculta para una publicación exclusiva de redes.";
+      if (selectAll) selectAll.textContent = `Seleccionar hasta ${MAX_EMAIL_RECIPIENTS} con email`;
+    }
     const contacts = state.communicationAudience || [];
     const ready = emailReadyContacts(deliveryChannel);
     const recipients = selectedRecipients(deliveryChannel);
@@ -502,10 +518,12 @@
     if (emailBody) emailBody.required = ["EMAIL", "MIXED"].includes(type);
     if (whatsappBody) whatsappBody.required = false;
     if (socialCopy) socialCopy.required = ["SOCIAL", "MIXED"].includes(type);
+    const draft = document.getElementById("communicationComposerSaveButton");
+    if (draft) draft.textContent = type === "WHATSAPP" ? "Guardar" : "Guardar borrador";
     const send = document.getElementById("communicationComposerSaveAndSendButton");
-    if (send) { send.classList.toggle("hidden", type === "SOCIAL"); send.textContent = type === "WHATSAPP" ? "Guardar y preparar WhatsApp" : "Guardar y enviar email"; }
+    if (send) { send.classList.toggle("hidden", type === "SOCIAL"); send.textContent = type === "WHATSAPP" ? "Enviar WhatsApp masivo" : "Guardar y enviar email"; }
     const publish = document.getElementById("communicationComposerSaveAndPublishButton");
-    if (publish) publish.classList.toggle("hidden", type === "EMAIL");
+    if (publish) publish.classList.toggle("hidden", !["SOCIAL", "MIXED"].includes(type));
     renderMediaPreview();
     renderComposerPreview();
     renderComposerAudience();
@@ -577,7 +595,7 @@
       return;
     }
     try {
-      message.textContent = action === "SEND" ? "Guardando y preparando el envío…" : action === "PUBLISH" ? "Guardando y creando el enlace medido…" : "Guardando comunicación…";
+      message.textContent = action === "SEND" ? (type === "WHATSAPP" ? "Guardando y enviando el lote a Meta…" : "Guardando y preparando el envío…") : action === "PUBLISH" ? "Guardando y creando el enlace medido…" : "Guardando comunicación…";
       const editingId = state.editingCommunicationId;
       const data = await api(editingId ? `/api/business/communications/${editingId}` : "/api/business/communications", { method: editingId ? "PATCH" : "POST", headers: authHeaders(), body: JSON.stringify(payload) });
       if (action === "SEND" && type === "WHATSAPP") {
@@ -671,7 +689,7 @@
     if (close) { composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); return; }
     if (loadComposerAudience) { try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } return; }
     if (loadMoreComposerAudience) { try { await loadAudience({ append: true }); render(); renderComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudieron cargar más contactos.", "error", { title: "Audiencia" }); } return; }
-    if (selectComposerAudience || all) { const available = setAudienceSelection(); render(); renderComposerAudience(); if (!available) showFeedback(`Ya seleccionaste el máximo de ${MAX_EMAIL_RECIPIENTS} contactos por envío.`, "info", { title: "Destinatarios" }); return; }
+    if (selectComposerAudience || all) { const mode = document.querySelector('input[name="communicationType"]:checked')?.value === "WHATSAPP" ? "whatsapp" : "email"; const available = setAudienceSelection(mode); render(); renderComposerAudience(); if (!available) showFeedback(`Ya seleccionaste el máximo de ${MAX_EMAIL_RECIPIENTS} contactos por envío.`, "info", { title: "Destinatarios" }); return; }
     if (clearComposerAudience || clearSelection) { setAudienceSelection("clear"); render(); renderComposerAudience(); return; }
     if (archive) { const item = state.communications.find((row) => String(row.id) === String(archive.dataset.archiveCommunication)); if (!item || !window.confirm(`¿Archivar “${item.title}”? Se conserva el historial, pero deja de quedar disponible para nuevos envíos.`)) return; await api(`/api/business/communications/${item.id}`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status: "ARCHIVED" }) }); state.communicationsLoaded = false; await loadCommunications({ force: true }); state.selectedCommunicationId = state.communications.find((row) => String(row.status).toUpperCase() !== "ARCHIVED")?.id || state.communications[0]?.id || null; render(); showFeedback(item.channel_id ? "La comunicación y su esfuerzo asociado quedaron archivados." : "La comunicación quedó archivada.", "success", { title: "Comunicación archivada" }); return; }
     if (removeMedia) { const media = uploadedMedia(); media.splice(Number(removeMedia.dataset.removeCommunicationMedia), 1); setUploadedMedia(media); renderComposerPreview(); return; }
