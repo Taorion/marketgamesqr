@@ -59,7 +59,13 @@ function templateSummary(template = {}) {
 
 async function listApprovedWhatsAppTemplates(businessId) {
   const connection = await whatsappConnection(businessId);
-  const data = await graphRequest(connection, `${encodeURIComponent(connection.business_account_id)}/message_templates?fields=name,status,language,category,components&limit=250`);
+  let data;
+  try {
+    data = await graphRequest(connection, `${encodeURIComponent(connection.business_account_id)}/message_templates?fields=name,status,language,category,components&limit=250`);
+  } catch (error) {
+    error.publicMessage = "Meta no permitió leer las plantillas. En Meta Business Settings abre Usuarios del sistema, asigna a ese usuario la aplicación y la cuenta de WhatsApp Business con control total; luego genera un token nuevo con whatsapp_business_management y vuelve a guardarlo en Qori.";
+    throw error;
+  }
   return {
     templates: (data.data || []).map(templateSummary).filter((template) => template.status === "APPROVED").sort((a, b) => a.name.localeCompare(b.name, "es")),
   };
