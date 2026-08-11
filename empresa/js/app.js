@@ -11759,9 +11759,6 @@ function dashboardWidgetsForWorkspaceTab(layout, tab) {
 function renderDashboardBuilder() {
   renderDashboardBusinessEconomics();
   if (!dashboardBuilderShell || !dashboardWidgetGrid || !dashboardWidgetLibrary) return;
-  ensureRevenueCenterUxStyles();
-  ensureRevenueCenterWorkspacePolish();
-  ensureRevenueCenterLayoutGuard();
   state.dashboardBuilderProfile = getDashboardProfile();
   state.dashboardWorkspaceTab = getDashboardWorkspaceTab();
   const workspaceTab = state.dashboardWorkspaceTab;

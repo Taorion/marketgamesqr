@@ -16958,6 +16958,385 @@ body[data-current-view="dashboard"] .portal-shell .dashboard-charts canvas {
   }
 }
 
+/* Centro de Revenue: capa única de composición.
+   Reemplaza las variaciones históricas del tablero por una lectura clara:
+   economía del negocio, decisión inmediata y luego profundidad analítica. */
+body[data-current-view="dashboard"] .portal-shell .portal-gaming-entry {
+  display: none !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"].dashboard-builder-mode > :not(.dashboard-revenue-head, .portal-gaming-entry, .dashboard-builder-shell, .revenue-workspace) {
+  display: none !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] {
+  width: min(100%, 1380px);
+  margin-inline: auto;
+  padding-bottom: clamp(2rem, 5vw, 4.5rem);
+}
+
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, .75fr);
+  gap: clamp(1rem, 4vw, 4rem);
+  align-items: stretch !important;
+  margin-bottom: clamp(1.2rem, 3vw, 2rem) !important;
+  padding: clamp(1.45rem, 3.4vw, 2.75rem) !important;
+  border: 1px solid rgba(12, 104, 122, .18) !important;
+  border-radius: 30px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(80, 219, 202, .33), transparent 35%),
+    radial-gradient(circle at 68% 100%, rgba(39, 130, 212, .14), transparent 37%),
+    linear-gradient(135deg, #f8ffff 0%, #eff8fa 100%) !important;
+  box-shadow: 0 20px 48px rgba(9, 55, 78, .09) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-copy::before {
+  content: "DECISIONES COMERCIALES";
+  display: inline-block;
+  margin-bottom: .7rem;
+  color: #08736f;
+  font-size: .7rem;
+  font-weight: 850;
+  letter-spacing: .12em;
+}
+
+body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head h2 {
+  max-width: 12ch;
+  margin: 0 0 .55rem !important;
+  color: #063c58 !important;
+  font-size: clamp(2.15rem, 4vw, 3.5rem) !important;
+  line-height: .98;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-self: stretch;
+  overflow: hidden;
+  border: 1px solid rgba(16, 112, 134, .16);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .72);
+  box-shadow: 0 12px 24px rgba(11, 68, 87, .07);
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: .5rem;
+  padding: clamp(1rem, 2.1vw, 1.45rem);
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item + .dashboard-business-economics-item {
+  border-left: 1px solid rgba(16, 112, 134, .14);
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item strong {
+  color: #073a57;
+  font-size: clamp(1.65rem, 2.7vw, 2.35rem);
+  letter-spacing: -.06em;
+  line-height: 1;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item small {
+  color: #597184;
+  font-size: .78rem;
+  line-height: 1.42;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell {
+  display: grid;
+  gap: clamp(1.1rem, 2.4vw, 1.8rem);
+  margin-top: 0 !important;
+  padding: clamp(1.2rem, 3vw, 2.45rem) !important;
+  border: 1px solid rgba(49, 112, 136, .14) !important;
+  border-radius: 28px !important;
+  background: #fff !important;
+  box-shadow: 0 17px 38px rgba(14, 62, 82, .065) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-builder-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 0 clamp(.85rem, 2vw, 1.25rem) !important;
+  border-bottom: 1px solid rgba(70, 124, 144, .15) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-builder-head h3 {
+  margin: .25rem 0 .4rem;
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-builder-head p {
+  max-width: 68ch;
+  margin: 0;
+  line-height: 1.55;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: .55rem;
+  margin: 0 !important;
+  padding: .45rem !important;
+  border: 1px solid rgba(58, 114, 137, .14) !important;
+  border-radius: 18px !important;
+  background: #f4f9fa !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button,
+body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button.active {
+  display: inline-flex !important;
+  min-width: 0;
+  min-height: 3.05rem !important;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .65rem .72rem !important;
+  border: 1px solid transparent !important;
+  border-radius: 13px !important;
+  color: #587184;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: .86rem;
+  font-weight: 780;
+  line-height: 1.15;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button .material-symbols-outlined {
+  font-size: 1.15rem;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button.active,
+body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button[aria-selected="true"] {
+  border-color: rgba(8, 128, 129, .2) !important;
+  color: #07575e !important;
+  background: linear-gradient(135deg, #dff5f1, #eef9f9) !important;
+  box-shadow: 0 5px 14px rgba(13, 120, 124, .12) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .revenue-workspace {
+  display: grid;
+  gap: clamp(1rem, 2.3vw, 1.6rem);
+  margin-top: clamp(1.1rem, 2.4vw, 1.75rem) !important;
+  padding: clamp(1.25rem, 3vw, 2.3rem) !important;
+  border: 1px solid rgba(48, 115, 137, .15) !important;
+  border-radius: 28px !important;
+  background: linear-gradient(145deg, #fbffff 0%, #f0faf9 100%) !important;
+  box-shadow: 0 18px 42px rgba(14, 62, 82, .065) !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 0 0 1.1rem !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(62, 120, 139, .16) !important;
+  background: transparent !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head h3 {
+  margin: .28rem 0 .38rem;
+  font-size: clamp(1.45rem, 2.3vw, 2rem);
+}
+
+body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head p {
+  max-width: 62ch;
+  margin: 0;
+  line-height: 1.55;
+}
+
+body[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card {
+  position: relative;
+  min-height: 128px;
+  overflow: hidden;
+  padding: 1rem;
+  border: 1px solid rgba(58, 116, 137, .15);
+  border-radius: 19px;
+  background: rgba(255, 255, 255, .8);
+}
+
+body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card::after {
+  content: "";
+  position: absolute;
+  right: -25px;
+  bottom: -44px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: var(--pulse, rgba(55, 177, 171, .14));
+}
+
+body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card strong {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin-top: .55rem;
+  color: #073a57;
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
+  letter-spacing: -.05em;
+  line-height: 1;
+}
+
+body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card small {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin-top: .38rem;
+  color: #587184;
+  line-height: 1.35;
+}
+
+body[data-current-view="dashboard"] .portal-shell .revenue-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 1rem !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .next-best-action-card {
+  display: grid;
+  gap: .85rem;
+  padding: clamp(1.15rem, 2.7vw, 1.85rem) !important;
+  border: 1px solid rgba(14, 127, 129, .22) !important;
+  border-radius: 22px !important;
+  background: radial-gradient(circle at 95% 8%, rgba(76, 211, 194, .21), transparent 34%), #fff !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .next-best-action-card h3 {
+  margin: .2rem 0 .35rem;
+  color: #073a57;
+  font-size: clamp(1.32rem, 2.1vw, 1.8rem);
+}
+
+body[data-current-view="dashboard"] .portal-shell .next-best-action-card p {
+  max-width: 68ch;
+  margin: 0;
+  color: #587184;
+  line-height: 1.55;
+}
+
+body[data-current-view="dashboard"] .portal-shell .portal-module-map {
+  display: grid;
+  gap: 1.15rem;
+}
+
+body[data-current-view="dashboard"] .portal-shell .portal-map-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .8rem;
+}
+
+body[data-current-view="dashboard"] .portal-shell .portal-map-grid > article {
+  display: grid;
+  gap: .65rem;
+  padding: 1.1rem;
+  border: 1px solid rgba(54, 112, 134, .15);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .82);
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-builder-layout {
+  align-items: start;
+  gap: 1rem;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-canvas,
+body[data-current-view="dashboard"] .portal-shell .dashboard-widget-library {
+  border: 1px solid rgba(55, 115, 137, .15) !important;
+  border-radius: 22px !important;
+  background: #fbfdfd !important;
+  box-shadow: none !important;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head {
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(64, 121, 141, .15);
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-canvas-head h3 {
+  margin: .25rem 0 .3rem;
+  color: #073a57;
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-widget-grid {
+  gap: .8rem;
+}
+
+body[data-current-view="dashboard"] .portal-shell .dashboard-widget-card {
+  border-color: rgba(58, 115, 135, .15) !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 20px rgba(14, 62, 82, .045) !important;
+}
+
+@media (max-width: 900px) {
+  body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics {
+    max-width: 560px;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  body[data-current-view="dashboard"] .portal-shell .view-section[data-view="dashboard"] > .view-head,
+  body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell,
+  body[data-current-view="dashboard"] .portal-shell .revenue-workspace {
+    border-radius: 22px !important;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics,
+  body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs,
+  body[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip,
+  body[data-current-view="dashboard"] .portal-shell .portal-map-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item + .dashboard-business-economics-item {
+    border-top: 1px solid rgba(16, 112, 134, .14);
+    border-left: 0;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button,
+  body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button.active {
+    justify-content: flex-start;
+    padding-inline: 1rem !important;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head .solid-button {
+    width: 100%;
+  }
+}
+
 /* Reciclaje es una mesa de trabajo transversal: los cuatro paneles comparten
    jerarquia y contexto sin convertir la navegacion en un salto a RMS. */
 .recycling-subnav {
