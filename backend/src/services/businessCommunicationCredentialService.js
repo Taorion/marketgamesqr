@@ -93,6 +93,11 @@ function normalizedIdentifier(value) {
   return String(value || "").trim().replace(/[^0-9]/g, "");
 }
 
+function whatsAppWebhookVerifyToken() {
+  if (env.whatsappWebhookVerifyToken) return env.whatsappWebhookVerifyToken;
+  return `qori_${crypto.createHash("sha256").update(`whatsapp-webhook:${env.jwtSecret}`).digest("hex").slice(0, 40)}`;
+}
+
 async function whatsAppConnectionForBusiness(businessId) {
   const result = await query("select id, name, settings from businesses where id = $1 and is_active = true", [businessId]);
   const business = result.rows[0];
@@ -114,6 +119,9 @@ async function getWhatsAppConnectionStatus(businessId) {
     phone_number_id: connection.phone_number_id,
     access_token_configured: connection.has_access_token,
     ready: Boolean(connection.business_account_id && connection.phone_number_id && connection.has_access_token),
+    webhook_callback_url: `${String(env.publicAppUrl || "").replace(/\/$/, "")}/api/webhooks/whatsapp`,
+    webhook_verify_token: whatsAppWebhookVerifyToken(),
+    webhook_signature_ready: Boolean(env.whatsappAppSecret),
   };
 }
 
@@ -152,4 +160,5 @@ module.exports = {
   ownWhatsAppAccessToken,
   saveEmailConnection,
   saveWhatsAppConnection,
+  whatsAppWebhookVerifyToken,
 };

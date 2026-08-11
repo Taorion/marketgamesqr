@@ -521,6 +521,8 @@ const accountWhatsAppTestTemplateInput = document.getElementById("accountWhatsAp
 const accountWhatsAppTestParametersInput = document.getElementById("accountWhatsAppTestParametersInput");
 const accountWhatsAppTestConsentInput = document.getElementById("accountWhatsAppTestConsentInput");
 const accountWhatsAppTestButton = document.getElementById("accountWhatsAppTestButton");
+const accountWhatsAppWebhookUrlInput = document.getElementById("accountWhatsAppWebhookUrlInput");
+const accountWhatsAppWebhookVerifyTokenInput = document.getElementById("accountWhatsAppWebhookVerifyTokenInput");
 const accountPhoneInput = document.getElementById("accountPhoneInput");
 const accountWebsiteInput = document.getElementById("accountWebsiteInput");
 const accountCityInput = document.getElementById("accountCityInput");
@@ -5912,6 +5914,8 @@ function renderCommunicationWhatsAppConnection() {
   const hasToken = Boolean(connection.access_token_configured);
   if (accountWhatsAppBusinessAccountIdInput) accountWhatsAppBusinessAccountIdInput.value = connection.business_account_id || "";
   if (accountWhatsAppPhoneNumberIdInput) accountWhatsAppPhoneNumberIdInput.value = connection.phone_number_id || "";
+  if (accountWhatsAppWebhookUrlInput) accountWhatsAppWebhookUrlInput.value = connection.webhook_callback_url || "";
+  if (accountWhatsAppWebhookVerifyTokenInput) accountWhatsAppWebhookVerifyTokenInput.value = connection.webhook_verify_token || "";
   if (accountWhatsAppConnectionStatus) {
     accountWhatsAppConnectionStatus.textContent = ready ? "Lista para prueba" : (hasToken ? "Faltan IDs" : "Sin conectar");
     accountWhatsAppConnectionStatus.className = `status-chip ${ready ? "ok" : "pending"}`;

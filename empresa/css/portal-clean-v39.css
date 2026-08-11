@@ -14563,6 +14563,11 @@ body[data-current-view="account"] .portal-shell .account-whatsapp-connection-pan
 body[data-current-view="account"] .portal-shell .account-whatsapp-connection-panel h4 { color: #075e54; }
 body[data-current-view="account"] .portal-shell .account-whatsapp-connection-fields,
 body[data-current-view="account"] .portal-shell .account-whatsapp-template-picker { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.account-whatsapp-webhook-card { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; padding: 14px; border: 1px solid rgba(7, 94, 84, .20); border-radius: 13px; background: rgba(255,255,255,.72); }
+.account-whatsapp-webhook-card > div, .account-whatsapp-webhook-card > p { grid-column: 1 / -1; }
+.account-whatsapp-webhook-card strong, .account-whatsapp-webhook-card small { display: block; }
+.account-whatsapp-webhook-card strong { margin: 4px 0; color: #075e54; }
+.account-whatsapp-webhook-card input[readonly] { background: #f1f7f6; color: #1d4d47; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; }
 .communication-whatsapp-guidance { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid rgba(18, 140, 126, .22); border-radius: 12px; background: rgba(18, 140, 126, .07); color: #195d55; }
 .communication-whatsapp-guidance .material-symbols-outlined { color: #0b8f7d; }
 .communication-whatsapp-guidance p { margin: 0; line-height: 1.5; }
@@ -14570,7 +14575,8 @@ body[data-current-view="account"] .portal-shell .account-whatsapp-template-picke
 .communication-whatsapp-route > .material-symbols-outlined { color: #0b8f7d !important; }
 @media (max-width: 700px) {
   body[data-current-view="account"] .portal-shell .account-whatsapp-connection-fields,
-  body[data-current-view="account"] .portal-shell .account-whatsapp-template-picker { grid-template-columns: 1fr; }
+  body[data-current-view="account"] .portal-shell .account-whatsapp-template-picker,
+  .account-whatsapp-webhook-card { grid-template-columns: 1fr; }
   body[data-current-view="account"] .portal-shell .account-whatsapp-connection-fields .span-2 { grid-column: auto; }
 }
 

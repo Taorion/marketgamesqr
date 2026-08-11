@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=whatsapp-cloud-guided-v309-20260811">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=whatsapp-webhooks-v310-20260811">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -1633,6 +1633,12 @@
                       <span class="status-chip pending" id="accountWhatsAppConnectionStatus">Sin conectar</span>
                     </div>
                     <p class="table-secondary">Qori envía en lotes controlados con la API oficial de Meta. Tu token se cifra y nunca se vuelve a mostrar. Solo puedes enviar campañas con una plantilla aprobada y a contactos que aceptaron recibir WhatsApp.</p>
+                    <div class="account-whatsapp-webhook-card">
+                      <div><span class="mono-label">Paso 2 · Webhooks de Meta</span><strong>Recibe entregas, lecturas, fallos y respuestas</strong><small>Copia estos dos valores en Meta for Developers → WhatsApp → Configuración → Webhooks → Editar.</small></div>
+                      <label><span>URL de devolución de llamada</span><input id="accountWhatsAppWebhookUrlInput" type="url" readonly></label>
+                      <label><span>Token de verificación</span><input id="accountWhatsAppWebhookVerifyTokenInput" type="text" readonly></label>
+                      <p class="table-secondary">Antes de verificar, agrega <strong>WHATSAPP_APP_SECRET</strong> en las variables de entorno de Render staging con el App Secret de Meta. Luego suscríbete a <strong>messages</strong>.</p>
+                    </div>
                     <ol class="account-email-connection-steps">
                       <li>En <a href="https://business.facebook.com/wa/manage/" target="_blank" rel="noopener noreferrer">WhatsApp Manager</a>, registra y verifica el número que representará a tu negocio.</li>
                       <li>Crea una plantilla de marketing, espera su estado <strong>Aprobada</strong> y guarda sus variables en el mismo orden.</li>
@@ -7673,7 +7679,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=whatsapp-cloud-guided-v309-20260811" defer></script>
+<script src="js/app.js?v=whatsapp-webhooks-v310-20260811" defer></script>
     <script src="js/communications.js?v=whatsapp-cloud-guided-v309-20260811" defer></script>
 </body>
 </html>

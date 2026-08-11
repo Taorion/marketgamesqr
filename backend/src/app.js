@@ -26,6 +26,7 @@ const packageSalesRoutes = require("./routes/packageSalesRoutes");
 const { publicAttachmentDownload } = require("./controllers/rmsMachineController");
 const paymentRoutes = require("./routes/paymentRoutes");
 const rewardPassRoutes = require("./routes/rewardPassRoutes");
+const whatsAppWebhookRoutes = require("./routes/businessCommunicationWhatsAppWebhookRoutes");
 const {
   publicGet: publicRewardPassGet,
   publicClaim: publicRewardPassClaim,
@@ -154,7 +155,7 @@ app.use(helmet({
   },
 }));
 app.use(cors({ origin: corsOrigin }));
-app.use(express.json({ limit: "15mb" }));
+app.use(express.json({ limit: "15mb", verify: (req, _res, buffer) => { req.rawBody = Buffer.from(buffer); } }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.get("/api/health", (_req, res) => {
@@ -181,6 +182,7 @@ app.use("/api", (_req, res, next) => {
 });
 
 app.use("/api/public", contactRoutes);
+app.use("/api/webhooks", whatsAppWebhookRoutes);
 
 app.use((req, res, next) => {
   if (env.databaseConfigured || !req.path.startsWith("/api/")) {
