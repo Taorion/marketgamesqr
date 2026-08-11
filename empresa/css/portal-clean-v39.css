@@ -19049,3 +19049,93 @@ html body[data-current-view="competition"] .portal-shell .competition-detail-act
     justify-content: flex-start !important;
   }
 }
+
+/* RMS collector: keep the optional context and internal note in independent grid rows. */
+html body > #rmsCollectorModal .rms-collector-form,
+html body .portal-shell #rmsCollectorModal .rms-collector-form {
+  grid-auto-flow: row !important;
+  row-gap: 18px !important;
+  padding-bottom: 102px !important;
+  scroll-padding-bottom: 102px !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-context-details,
+html body .portal-shell #rmsCollectorModal .rms-collector-context-details {
+  order: 0 !important;
+  position: static !important;
+  display: block !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 13px 15px !important;
+  overflow: visible !important;
+  isolation: isolate !important;
+  border: 1px solid rgba(5, 42, 107, .12) !important;
+  border-radius: 10px !important;
+  background: #f7fbff !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-context-details summary,
+html body .portal-shell #rmsCollectorModal .rms-collector-context-details summary {
+  position: relative !important;
+  z-index: 1 !important;
+  min-height: 30px !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-context-details[open] summary,
+html body .portal-shell #rmsCollectorModal .rms-collector-context-details[open] summary {
+  padding-bottom: 11px !important;
+  border-bottom: 1px solid rgba(5, 42, 107, .1) !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-context-grid,
+html body .portal-shell #rmsCollectorModal .rms-collector-context-grid {
+  position: static !important;
+  z-index: auto !important;
+  margin: 0 !important;
+  padding-top: 13px !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-lead-entry,
+html body .portal-shell #rmsCollectorModal .rms-collector-lead-entry {
+  order: 1 !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-form > label.span-2,
+html body .portal-shell #rmsCollectorModal .rms-collector-form > label.span-2 {
+  order: 2 !important;
+  position: static !important;
+  display: grid !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 13px 15px !important;
+  overflow: visible !important;
+  border: 1px solid rgba(5, 42, 107, .12) !important;
+  border-radius: 10px !important;
+  background: #f7fbff !important;
+}
+
+html body > #rmsCollectorModal #rmsCollectorExpectedInput,
+html body .portal-shell #rmsCollectorModal #rmsCollectorExpectedInput {
+  position: static !important;
+  min-height: 86px !important;
+  margin: 0 !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-summary,
+html body .portal-shell #rmsCollectorModal .rms-collector-summary {
+  order: 3 !important;
+}
+
+html body > #rmsCollectorModal .modal-actions,
+html body .portal-shell #rmsCollectorModal .modal-actions {
+  order: 4 !important;
+}
+
+@media (max-width: 700px) {
+  html body > #rmsCollectorModal .rms-collector-context-details,
+  html body .portal-shell #rmsCollectorModal .rms-collector-context-details,
+  html body > #rmsCollectorModal .rms-collector-form > label.span-2,
+  html body .portal-shell #rmsCollectorModal .rms-collector-form > label.span-2 {
+    padding: 12px !important;
+  }
+}
