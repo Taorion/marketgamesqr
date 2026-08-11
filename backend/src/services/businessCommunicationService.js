@@ -150,7 +150,7 @@ async function listBusinessCommunications(businessId) {
   const result = await query(
     `select bc.*, c.name as campaign_name, ch.name as channel_name, br.name as branch_name, ia.title as activation_name, ia.public_slug as activation_public_slug,
        sw.title as web_showcase_title, sw.slug as web_showcase_slug, sw.status as web_showcase_status,
-       coalesce(rc.recipients_total, 0)::int as recipients_total, coalesce(rc.sent_count, 0)::int as recipients_sent, coalesce(rc.prepared_count, 0)::int as recipients_prepared, coalesce(rc.queued_count, 0)::int as recipients_queued, coalesce(rc.failed_count, 0)::int as recipients_failed,
+       coalesce(rc.recipients_total, 0)::int as recipients_total, coalesce(rc.sent_count, 0)::int as recipients_sent, coalesce(rc.prepared_count, 0)::int as recipients_prepared, coalesce(rc.queued_count, 0)::int as recipients_queued, coalesce(rc.failed_count, 0)::int as recipients_failed, coalesce(rc.delivered_count, 0)::int as recipients_delivered, coalesce(rc.read_count, 0)::int as recipients_read,
        coalesce(rc.skipped_count, 0)::int as recipients_skipped,
        coalesce(em.views, 0)::int as views, coalesce(em.starts, 0)::int as starts, coalesce(em.leads, 0)::int as leads,
        coalesce(em.completions, 0)::int as completions, coalesce(em.rewards, 0)::int as rewards,
@@ -168,6 +168,8 @@ async function listBusinessCommunications(businessId) {
               count(*) filter (where status = 'PREPARED') as prepared_count,
               count(*) filter (where status = 'QUEUED') as queued_count,
               count(*) filter (where status = 'FAILED') as failed_count,
+              count(*) filter (where metadata->>'channel' = 'WHATSAPP' and metadata->>'delivery_status' = 'DELIVERED') as delivered_count,
+              count(*) filter (where metadata->>'channel' = 'WHATSAPP' and metadata->>'delivery_status' = 'READ') as read_count,
               count(*) filter (where status = 'SKIPPED') as skipped_count
        from business_communication_recipients r where r.communication_id = bc.id
      ) rc on true

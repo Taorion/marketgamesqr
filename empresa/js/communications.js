@@ -18,6 +18,7 @@
   const isSocialCommunication = (item) => ["SOCIAL", "MIXED"].includes(String(item?.communication_type || "").toUpperCase());
   const isEmailCommunication = (item) => ["EMAIL", "MIXED"].includes(String(item?.communication_type || "").toUpperCase());
   const isWhatsAppCommunication = (item) => String(item?.communication_type || "").toUpperCase() === "WHATSAPP";
+  const communicationTypeLabel = (type) => ({ EMAIL: "Email", SOCIAL: "Publicación", MIXED: "Email + publicación", WHATSAPP: "WhatsApp" }[String(type || "").toUpperCase()] || "Comunicación");
   const whatsAppTemplateParameters = (value) => String(value || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
   const whatsAppTemplateSelection = () => {
     const select = document.getElementById("communicationWhatsAppTemplateInput");
@@ -82,13 +83,35 @@
   const uploadedMedia = () => readJson(mediaInput()?.value);
   const setUploadedMedia = (items) => { const input = mediaInput(); if (input) input.value = JSON.stringify(items.slice(0, MAX_MEDIA_FILES)); renderMediaPreview(); };
   const hasEmail = (contact) => Boolean(String(contact?.email || "").trim());
-  const hasWhatsApp = (contact) => Boolean(String(contact?.phone || "").replace(/\D/g, "").length >= 7);
+  const normalizedWhatsAppPhone = (value) => {
+    const digits = String(value || "").replace(/\D/g, "");
+    return digits.length === 10 && digits.startsWith("3") ? `57${digits}` : digits;
+  };
+  const hasWhatsApp = (contact) => Boolean(normalizedWhatsAppPhone(contact?.phone).length >= 7);
   const selectedRecipients = (channel = "email") => {
     const selected = new Set(state.communicationSelectedRefs || []);
     const isReady = channel === "whatsapp" ? hasWhatsApp : hasEmail;
-    return (state.communicationAudience || []).filter((contact) => selected.has(refKey(contact)) && isReady(contact));
+    const phones = new Set();
+    return (state.communicationAudience || []).filter((contact) => {
+      if (!selected.has(refKey(contact)) || !isReady(contact)) return false;
+      if (channel !== "whatsapp") return true;
+      const phone = normalizedWhatsAppPhone(contact.phone);
+      if (phones.has(phone)) return false;
+      phones.add(phone);
+      return true;
+    });
   };
-  const emailReadyContacts = (channel = "email") => (state.communicationAudience || []).filter(channel === "whatsapp" ? hasWhatsApp : hasEmail);
+  const emailReadyContacts = (channel = "email") => {
+    const phones = new Set();
+    return (state.communicationAudience || []).filter((contact) => {
+      if (channel !== "whatsapp") return hasEmail(contact);
+      if (!hasWhatsApp(contact)) return false;
+      const phone = normalizedWhatsAppPhone(contact.phone);
+      if (phones.has(phone)) return false;
+      phones.add(phone);
+      return true;
+    });
+  };
   const setAudienceSelection = (mode = "email") => {
     const current = new Set(state.communicationSelectedRefs || []);
     if (mode === "clear") {
@@ -96,7 +119,15 @@
       return 0;
     }
     const available = Math.max(0, MAX_EMAIL_RECIPIENTS - current.size);
-    emailReadyContacts(mode).filter((contact) => !current.has(refKey(contact))).slice(0, available).forEach((contact) => current.add(refKey(contact)));
+    const phones = new Set();
+    emailReadyContacts(mode).filter((contact) => {
+      if (current.has(refKey(contact))) return false;
+      if (mode !== "whatsapp") return true;
+      const phone = normalizedWhatsAppPhone(contact.phone);
+      if (phones.has(phone)) return false;
+      phones.add(phone);
+      return true;
+    }).slice(0, available).forEach((contact) => current.add(refKey(contact)));
     state.communicationSelectedRefs = Array.from(current);
     return available;
   };
@@ -126,7 +157,7 @@
   }
 
   function communicationDeliveryCopy(item = {}) {
-    if (isWhatsAppCommunication(item)) return item.whatsapp_body || "Sin mensaje registrado.";
+    if (isWhatsAppCommunication(item)) return item.whatsapp_body || item.metadata?.whatsapp_template?.body || (item.metadata?.whatsapp_template?.name ? `Plantilla de Meta: ${item.metadata.whatsapp_template.name}` : "Sin plantilla registrada.");
     if (isEmailCommunication(item)) return [item.subject, item.email_body].filter(Boolean).join("\n\n") || "Sin contenido registrado.";
     return item.social_copy || "Sin contenido registrado.";
   }
@@ -154,11 +185,17 @@
     if (!item) return;
     const modal = ensureCommunicationDeliverySummaryModal();
     const isWhatsApp = isWhatsAppCommunication(item);
-    const deliveryLabel = isWhatsApp ? "WhatsApp preparado manualmente" : isEmailCommunication(item) ? "Email masivo" : "Publicación medida";
-    const deliveryState = isWhatsApp
-      ? `${Number(item.recipients_prepared || 0)} preparados · ${Number(item.recipients_queued || 0)} en cola`
+    const whatsAppOfficial = isWhatsApp && Number(item.recipients_sent || 0) > 0;
+    const deliveryLabel = isWhatsApp ? (whatsAppOfficial ? "WhatsApp masivo oficial" : "WhatsApp listo para enviar") : isEmailCommunication(item) ? "Email masivo" : "Publicación medida";
+    const deliveryState = isWhatsApp && whatsAppOfficial
+      ? `${Number(item.recipients_sent || 0)} aceptados por Meta · ${Number(item.recipients_delivered || 0)} entregados · ${Number(item.recipients_read || 0)} leídos · ${Number(item.recipients_failed || 0)} fallidos`
+      : isWhatsApp
+        ? `${Number(item.recipients_prepared || 0)} preparados · ${Number(item.recipients_queued || 0)} en cola`
       : `${Number(item.recipients_sent || 0)} enviados · ${Number(item.recipients_failed || 0)} fallidos`;
-    modal.innerHTML = `<article class="modal-card communication-delivery-summary-card"><header><div><span class="mono-label">Resumen de comunicación</span><h3 id="communicationDeliverySummaryTitle">${esc(item.title || "Comunicación")}</h3><p>${esc(deliveryLabel)} · ${esc(statusLabel(item.status))}</p></div><button class="icon-button" type="button" data-close-communication-delivery-summary aria-label="Cerrar resumen"><span class="material-symbols-outlined">close</span></button></header><section class="communication-delivery-summary-metrics"><article><span>Audiencia</span><strong>${Number(item.recipients_total || 0)}</strong><small>contactos del lote</small></article><article><span>${isWhatsApp ? "Preparados" : "Enviados"}</span><strong>${isWhatsApp ? Number(item.recipients_prepared || 0) : Number(item.recipients_sent || 0)}</strong><small>${isWhatsApp ? "WhatsApps abiertos" : "emails enviados"}</small></article><article><span>Leads</span><strong>${Number(item.leads || 0)}</strong><small>desde la pieza</small></article><article><span>Ventas</span><strong>${Number(item.sales || 0)}</strong><small>${metricMoney(item.revenue)}</small></article><article><span>CAC</span><strong>${item.cac === null ? "—" : metricMoney(item.cac)}</strong><small>por cliente</small></article><article><span>ROI</span><strong>${item.roi === null ? "—" : `${(Number(item.roi) * 100).toFixed(0)}%`}</strong><small>resultado atribuido</small></article></section><section class="communication-delivery-summary-context"><div><span class="mono-label">Estado de entrega</span><strong>${esc(deliveryState)}</strong><small>${isWhatsApp ? "La entrega y lectura se confirman únicamente dentro de WhatsApp." : "Los fallidos se registran para poder revisar la audiencia."}</small></div><div><span class="mono-label">Conexión comercial</span><strong>${esc(item.campaign_name || "Sin campaña")}</strong><small>${esc(item.channel_name || "Sin canal")} · ${esc(item.activation_name || "Sin activación")}</small></div></section><section class="communication-delivery-summary-message"><span class="mono-label">Mensaje enviado o preparado</span><pre>${esc(communicationDeliveryCopy(item))}</pre></section></article>`;
+    const deliveryMetric = isWhatsApp
+      ? `<article><span>${whatsAppOfficial ? "Aceptados" : "Preparados"}</span><strong>${whatsAppOfficial ? Number(item.recipients_sent || 0) : Number(item.recipients_prepared || 0)}</strong><small>${whatsAppOfficial ? "recibidos por Meta" : "WhatsApps abiertos"}</small></article>${whatsAppOfficial ? `<article><span>Entregados</span><strong>${Number(item.recipients_delivered || 0)}</strong><small>${Number(item.recipients_read || 0)} leídos</small></article>` : ""}`
+      : `<article><span>Enviados</span><strong>${Number(item.recipients_sent || 0)}</strong><small>emails enviados</small></article>`;
+    modal.innerHTML = `<article class="modal-card communication-delivery-summary-card"><header><div><span class="mono-label">Resumen de comunicación</span><h3 id="communicationDeliverySummaryTitle">${esc(item.title || "Comunicación")}</h3><p>${esc(deliveryLabel)} · ${esc(statusLabel(item.status))}</p></div><button class="icon-button" type="button" data-close-communication-delivery-summary aria-label="Cerrar resumen"><span class="material-symbols-outlined">close</span></button></header><section class="communication-delivery-summary-metrics"><article><span>Audiencia</span><strong>${Number(item.recipients_total || 0)}</strong><small>contactos del lote</small></article>${deliveryMetric}<article><span>Leads</span><strong>${Number(item.leads || 0)}</strong><small>desde la pieza</small></article><article><span>Ventas</span><strong>${Number(item.sales || 0)}</strong><small>${metricMoney(item.revenue)}</small></article><article><span>CAC</span><strong>${item.cac === null ? "—" : metricMoney(item.cac)}</strong><small>por cliente</small></article><article><span>ROI</span><strong>${item.roi === null ? "—" : `${(Number(item.roi) * 100).toFixed(0)}%`}</strong><small>resultado atribuido</small></article></section><section class="communication-delivery-summary-context"><div><span class="mono-label">Estado de entrega</span><strong>${esc(deliveryState)}</strong><small>${isWhatsApp ? (whatsAppOfficial ? "Meta aceptó el envío. Las entregas y lecturas aparecen cuando el webhook de WhatsApp recibe las actualizaciones." : "El lote aún no se ha enviado a Meta.") : "Los fallidos se registran para poder revisar la audiencia."}</small></div><div><span class="mono-label">Conexión comercial</span><strong>${esc(item.campaign_name || "Sin campaña")}</strong><small>${esc(item.channel_name || "Sin canal")} · ${esc(item.activation_name || "Sin activación")}</small></div></section><section class="communication-delivery-summary-message"><span class="mono-label">Mensaje enviado o preparado</span><pre>${esc(communicationDeliveryCopy(item))}</pre></section></article>`;
     modal.classList.remove("hidden");
     document.body.classList.add("communication-delivery-summary-open");
     modal.querySelector("[data-close-communication-delivery-summary]")?.focus();
@@ -275,7 +312,7 @@
     count.textContent = state.communicationAudienceLoading
       ? "Cargando contactos…"
       : contacts.length
-        ? `${recipients.length} de ${MAX_EMAIL_RECIPIENTS} seleccionado${recipients.length === 1 ? "" : "s"} · mostrando ${contacts.length} de ${state.communicationAudienceTotal || contacts.length} contactos (${ready.length} con email)`
+        ? `${recipients.length} de ${MAX_EMAIL_RECIPIENTS} seleccionado${recipients.length === 1 ? "" : "s"} · mostrando ${contacts.length} de ${state.communicationAudienceTotal || contacts.length} contactos (${ready.length} con ${deliveryChannel === "whatsapp" ? "WhatsApp" : "email"})`
         : "Usa los filtros para encontrar contactos.";
     list.innerHTML = state.communicationAudienceLoading
       ? '<div class="communication-composer-audience-empty"><span class="material-symbols-outlined">hourglass_top</span><span>Cargando contactos disponibles…</span></div>'
@@ -358,6 +395,11 @@
     if (!preview) return;
     const type = document.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL";
     const mediaCount = uploadedMedia().length + (document.getElementById("communicationImageInput")?.value.trim() ? 1 : 0);
+    if (type === "WHATSAPP") {
+      const template = whatsAppTemplateSelection();
+      preview.innerHTML = `<span class="material-symbols-outlined">chat</span><div><strong>${template.name ? `WhatsApp listo: ${esc(template.name)}` : "Elige una plantilla de WhatsApp"}</strong><small>${template.name ? "Qori enviará el texto aprobado por Meta; solo necesitas seleccionar la audiencia y confirmar el consentimiento." : "Carga y selecciona una plantilla aprobada antes de enviar."}</small></div>`;
+      return;
+    }
     preview.innerHTML = `<span class="material-symbols-outlined">${type === "SOCIAL" ? "share" : "mail"}</span><div><strong>${type === "SOCIAL" ? "Publicación preparada para redes" : type === "MIXED" ? "Pieza preparada para email y redes" : "Email listo para personalizar"}</strong><small>${mediaCount ? `${mediaCount} imagen${mediaCount === 1 ? "" : "es"} lista${mediaCount === 1 ? "" : "s"} para adjuntar o publicar.` : "Puedes añadir imágenes ahora o continuar solo con texto."}</small></div>`;
   }
 
@@ -374,13 +416,13 @@
     const audienceChannel = isWhatsAppCommunication(activeCommunication) ? "whatsapp" : "email";
     list.innerHTML = communications.length ? communications.map((item) => {
       const media = mediaFor(item);
-      return `<article class="communication-list-item ${String(item.id) === String(state.selectedCommunicationId) ? "is-selected" : ""}" data-communication-select="${esc(item.id)}"><div><span class="mono-label">${esc(typeLabel(item.communication_type))} · ${esc(publicationLabel(item))}</span><strong>${esc(item.title)}</strong><p>${esc(item.web_showcase_title ? `Vitrina web: ${item.web_showcase_title}` : item.campaign_name || item.channel_name || item.activation_name || "Sin relación comercial")}</p></div><div class="communication-list-item-meta">${media.length ? `<span class="communication-media-count"><span class="material-symbols-outlined">image</span>${media.length}</span>` : ""}<strong>${Number(item.recipients_total || 0)}</strong><small>destinatarios</small><span class="material-symbols-outlined">arrow_forward</span></div></article>`;
+      return `<article class="communication-list-item ${String(item.id) === String(state.selectedCommunicationId) ? "is-selected" : ""}" data-communication-select="${esc(item.id)}"><div><span class="mono-label">${esc(communicationTypeLabel(item.communication_type))} · ${esc(publicationLabel(item))}</span><strong>${esc(item.title)}</strong><p>${esc(item.web_showcase_title ? `Vitrina web: ${item.web_showcase_title}` : item.campaign_name || item.channel_name || item.activation_name || "Sin relación comercial")}</p></div><div class="communication-list-item-meta">${media.length ? `<span class="communication-media-count"><span class="material-symbols-outlined">image</span>${media.length}</span>` : ""}<strong>${Number(item.recipients_total || 0)}</strong><small>destinatarios</small><span class="material-symbols-outlined">arrow_forward</span></div></article>`;
     }).join("") : '<div class="communication-empty-state"><span class="material-symbols-outlined">mail</span><strong>Aún no has creado comunicaciones.</strong><p>Crea una pieza y úsala en email, redes o ambos canales.</p></div>';
     const selected = new Set(state.communicationSelectedRefs || []);
     const ready = emailReadyContacts(audienceChannel);
     summary.textContent = state.communicationAudienceLoading
       ? "Cargando contactos…"
-      : `${state.communicationAudienceTotal || state.communicationAudience.length} contactos · ${ready.length} con email${state.communicationAudienceCapped ? " · se muestran los primeros 120" : ""}`;
+      : `${state.communicationAudienceTotal || state.communicationAudience.length} contactos · ${ready.length} con ${audienceChannel === "whatsapp" ? "WhatsApp" : "email"}${state.communicationAudienceCapped ? " · se muestran los primeros 120" : ""}`;
     audience.innerHTML = state.communicationAudienceLoading
       ? '<div class="communication-empty-state compact"><span class="material-symbols-outlined">hourglass_top</span><strong>Cargando contactos disponibles…</strong></div>'
       : state.communicationAudience.length
@@ -400,6 +442,12 @@
     if (selectedPiece && Number(active.recipients_total || 0) > 0) {
       const actions = selectedPiece.querySelector(".communication-selected-actions");
       if (actions && !actions.querySelector("[data-open-communication-delivery-summary]")) actions.insertAdjacentHTML("afterbegin", `<button class="ghost-button compact" type="button" data-open-communication-delivery-summary="${esc(active.id)}">Ver resumen</button>`);
+    }
+    if (selectedPiece && isWhatsAppCommunication(active)) {
+      const description = selectedPiece.querySelector("p");
+      if (description) description.textContent = communicationDeliveryCopy(active);
+      const metrics = selectedPiece.querySelector(".communication-delivery-metrics");
+      if (metrics && Number(active.recipients_sent || 0) > 0) metrics.insertAdjacentHTML("beforeend", `<span><b>${Number(active.recipients_delivered || 0)}</b> entregados</span><span><b>${Number(active.recipients_read || 0)}</b> leídos</span>`);
     }
     const mediaNote = media.length ? `${media.length} imagen${media.length === 1 ? "" : "es"} adjunta${media.length === 1 ? "" : "s"}.` : "Sin adjuntos.";
     if (String(active.status).toUpperCase() === "ARCHIVED") { sendBar.innerHTML = '<span class="material-symbols-outlined">inventory_2</span><div><strong>Comunicación archivada</strong><p>Conserva su historial de entrega. Duplícala para crear una nueva versión enviable.</p></div>'; return; }
@@ -645,7 +693,22 @@
   });
 
   document.addEventListener("change", async (event) => {
-    if (event.target.matches("[data-communication-recipient]")) { const selected = new Set(state.communicationSelectedRefs || []); if (event.target.checked && selected.size >= MAX_EMAIL_RECIPIENTS) { event.target.checked = false; showFeedback(`Puedes seleccionar hasta ${MAX_EMAIL_RECIPIENTS} contactos por envío.`, "info", { title: "Destinatarios" }); return; } if (event.target.checked) selected.add(event.target.value); else selected.delete(event.target.value); state.communicationSelectedRefs = Array.from(selected); render(); renderComposerAudience(); }
+    if (event.target.matches("[data-communication-recipient]")) {
+      const selected = new Set(state.communicationSelectedRefs || []);
+      const active = state.communications.find((item) => String(item.id) === String(state.selectedCommunicationId));
+      const deliveryChannel = isWhatsAppCommunication(active) ? "whatsapp" : "email";
+      const contact = (state.communicationAudience || []).find((item) => refKey(item) === event.target.value);
+      if (event.target.checked && selected.size >= MAX_EMAIL_RECIPIENTS) { event.target.checked = false; showFeedback(`Puedes seleccionar hasta ${MAX_EMAIL_RECIPIENTS} contactos por envío.`, "info", { title: "Destinatarios" }); return; }
+      if (event.target.checked && deliveryChannel === "whatsapp" && contact) {
+        const phone = normalizedWhatsAppPhone(contact.phone);
+        (state.communicationAudience || []).forEach((item) => { if (normalizedWhatsAppPhone(item.phone) === phone) selected.delete(refKey(item)); });
+      }
+      if (event.target.checked) selected.add(event.target.value); else selected.delete(event.target.value);
+      state.communicationSelectedRefs = Array.from(selected);
+      if (event.target.checked && deliveryChannel === "whatsapp" && contact) showFeedback("Qori conservará una sola copia por número de WhatsApp.", "info", { title: "Destinatarios" });
+      render();
+      renderComposerAudience();
+    }
     if (event.target.matches('input[name="communicationType"]')) toggleComposer();
     if (event.target.matches("#communicationWhatsAppTemplateInput")) updateWhatsAppTemplateHelp();
     if (event.target.matches("#communicationWebShowcaseInput")) {
