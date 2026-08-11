@@ -45725,6 +45725,12 @@ function bindRmsMachineActions(root) {
       if (item) saveRmsActivationOutcome(item, outcome);
     });
   });
+  root.querySelectorAll("[data-rms-send-activation-evaluation]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = rmsOpportunityById(button.dataset.rmsSendActivationEvaluation || "");
+      if (item) moveRmsActivationToEvaluation(item);
+    });
+  });
   root.querySelectorAll("[data-rms-select]").forEach((checkbox) => {
     checkbox.addEventListener("change", () => toggleRmsSelection(checkbox.dataset.rmsSelect, checkbox.checked));
   });
@@ -48388,6 +48394,63 @@ function rmsActivationReady(item = {}) {
   return Boolean(delivery.sentAt && delivery.followUpAt);
 }
 
+async function moveRmsActivationToEvaluation(item = {}) {
+  if (!item?.source_id) return;
+  if (!rmsActivationReady(item)) {
+    showFeedback("Confirma el contacto y agenda el seguimiento antes de pasar el lead a Evaluación.", "info", { title: "Activación 1" });
+    return;
+  }
+  if (!rmsActivationReadyForEvaluation(item)) {
+    showFeedback("Guarda una respuesta del lead antes de pasarlo a Evaluación.", "info", { title: "Activación 1" });
+    return;
+  }
+  const delivery = rmsActivationDelivery(item);
+  try {
+    showFeedback("Enviando el lead a Evaluación…", "loading", { title: "Activación 1", timeout: 0 });
+    await api("/api/business/rms-machine/lead/phase", {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_id: item.source_id,
+        source_type: item.source_type || "PLAYER",
+        lead_id: item.lead_id || null,
+        to_phase: "procesamiento",
+        priority: rmsPriorityCode(item),
+        recommended_action: "Evaluar la respuesta y definir el siguiente paso comercial",
+        last_operation: "activation_sent_to_evaluation",
+        last_material_sent: delivery.offer,
+        revenue_potential: Number(item.revenue_potential || 0),
+        reason: `Activación 1 completada: ${rmsActivationOutcomeLabel(delivery.outcome)}.`,
+        metadata: {
+          source_module: "rms_machine",
+          source_flow: "activation_to_evaluation",
+          from_phase: "clasificacion",
+          activation_offer_sent_at: delivery.sentAt,
+          activation_delivery_channel: delivery.channel,
+          activation_offer_name: delivery.offer,
+          activation_offer_note: delivery.note,
+          activation_message: delivery.message,
+          activation_follow_up_at: delivery.followUpAt,
+          activation_outcome: delivery.outcome,
+          activation_outcome_updated_at: new Date().toISOString(),
+        },
+      }),
+    });
+    state.rmsMachineSelectedIds = (state.rmsMachineSelectedIds || []).filter((id) => id !== item.id);
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({ force: true, quiet: true });
+    renderRmsMachineView();
+    showFeedback("Lead enviado a Evaluación con su contacto y respuesta registrados.", "success", { title: "Activación 1" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo enviar el lead a Evaluación.", "error", { title: "Activación 1" });
+  }
+}
+
+function rmsActivationReadyForEvaluation(item = {}) {
+  const delivery = rmsActivationDelivery(item);
+  return rmsActivationReady(item) && Boolean(delivery.outcome && delivery.outcome !== "PENDING");
+}
+
 const RMS_ACTIVATION_OUTCOMES = [
   { value: "PENDING", label: "Aún sin respuesta" },
   { value: "INTERESTED", label: "Respondió con interés" },
@@ -48425,6 +48488,7 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
   const delivery = rmsActivationDelivery(item);
   const sent = Boolean(delivery.sentAt);
   const ready = rmsActivationReady(item);
+  const readyForEvaluation = rmsActivationReadyForEvaluation(item);
   const channelLabel = delivery.channel === "email" ? "Email" : "WhatsApp";
   const offer = delivery.offer || "Oferta comercial";
   const followUpValue = rmsActivationDatetimeLocal(delivery.followUpAt);
@@ -48440,7 +48504,7 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
             <small>${sent ? `${channelLabel} · ${formatDate(delivery.sentAt)} · ${escapeHtml(rmsActivationOutcomeLabel(delivery.outcome))}` : "Personaliza el mensaje, abre el canal y confirma cuando realmente lo envíes."}</small>
           </div>
         </div>
-        <span class="rms-activation-delivery-state">${ready ? "Listo para evaluar" : sent ? "Seguimiento pendiente" : "Por activar"}</span>
+        <span class="rms-activation-delivery-state">${readyForEvaluation ? "Listo para Evaluación" : ready ? "Guarda la respuesta" : sent ? "Seguimiento pendiente" : "Por activar"}</span>
       </header>
       <div class="rms-activation-delivery-offer" title="${escapeHtml(offer)}">
         <span class="material-symbols-outlined" aria-hidden="true">sell</span>
@@ -48503,9 +48567,10 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
             </select>
           </label>
           <button class="ghost-button compact" type="button" data-rms-save-activation-outcome="${escapeHtml(item.id)}">Guardar respuesta</button>
+          ${readyForEvaluation ? `<button class="solid-button compact" type="button" data-rms-send-activation-evaluation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Enviar a Evaluación</button>` : ""}
         </div>
       ` : ""}
-      <small class="rms-activation-delivery-note">${sent ? `Primer contacto: ${escapeHtml(formatDate(delivery.firstContactAt || delivery.sentAt))}. Contactos registrados: ${Number(delivery.contactCount || 1)}. ` : ""}${sent && delivery.followUpAt ? `Seguimiento: ${escapeHtml(formatDate(delivery.followUpAt))}. ` : ""}${delivery.note ? `Registro: ${escapeHtml(delivery.note)}` : "El paso siguiente solo se habilita después de confirmar el contacto y agendar el seguimiento."}</small>
+      <small class="rms-activation-delivery-note">${sent ? `Primer contacto: ${escapeHtml(formatDate(delivery.firstContactAt || delivery.sentAt))}. Contactos registrados: ${Number(delivery.contactCount || 1)}. ` : ""}${sent && delivery.followUpAt ? `Seguimiento: ${escapeHtml(formatDate(delivery.followUpAt))}. ` : ""}${ready && !readyForEvaluation ? "Guarda una respuesta distinta de “Aún sin respuesta” para habilitar el paso a Evaluación. " : ""}${delivery.note ? `Registro: ${escapeHtml(delivery.note)}` : "El paso siguiente solo se habilita después de confirmar el contacto y agendar el seguimiento."}</small>
     </article>
   `;
 }
