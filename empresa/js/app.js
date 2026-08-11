@@ -45853,6 +45853,12 @@ async function handleRmsCreateProductClassification(id = "") {
     phase: item.stage || "curaduria",
     productName,
   };
+  // The product form starts inside the Inventory view. Move it before switching
+  // views so Inventory's render cannot replace the form between this handoff
+  // and the guided product creation step.
+  if (inventoryProductModal?.parentElement !== document.body) {
+    document.body.appendChild(inventoryProductModal);
+  }
   setView("inventory");
   resetInventoryForm();
   if (inventoryNameInput) inventoryNameInput.value = productName;
