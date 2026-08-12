@@ -19915,3 +19915,266 @@ html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace[data-wo
     padding: 20px 18px !important;
   }
 }
+
+/* Consola comercial RMS: una sola composición final, sin capas que se contradigan. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-work-item {
+  display: grid !important;
+  grid-template-columns: minmax(228px, .78fr) minmax(0, 1.42fr) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  border: 1px solid #d5e2e9 !important;
+  border-radius: 20px !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 26px rgba(27, 55, 77, .06) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-work-item > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-work-lead {
+  display: grid !important;
+  align-content: start !important;
+  gap: 14px !important;
+  padding: clamp(20px, 2.1vw, 30px) !important;
+  border-right: 1px solid #dce8ef !important;
+  border-bottom: 0 !important;
+  background: linear-gradient(160deg, #f0f8fc 0%, #f9fcfe 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-work-console {
+  padding: clamp(22px, 2.4vw, 34px) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fbfd 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-console-head {
+  gap: 18px !important;
+  margin: 0 !important;
+  padding: 0 0 18px !important;
+  border-bottom-color: #dce8ef !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-console-head h4 {
+  margin: 3px 0 6px !important;
+  color: #183a59 !important;
+  font-size: clamp(1.05rem, 1.5vw, 1.25rem) !important;
+  line-height: 1.22 !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-console-head p {
+  max-width: 62ch !important;
+  color: #63798b !important;
+  line-height: 1.5 !important;
+}
+
+@media (max-width: 1120px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-work-item {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-work-lead {
+    border-right: 0 !important;
+    border-bottom: 1px solid #dce8ef !important;
+  }
+}
+
+@media (max-width: 620px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-work-item {
+    border-radius: 16px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell :is(.rms-commercial-work-lead, .rms-commercial-work-console) {
+    padding: 18px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-commercial-console-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+}
+
+/* Decisiones de Negociación y Riesgos: no heredan el bloque gris de las capas históricas. */
+html body[data-current-view="rms-machine"] .portal-shell :is(
+  .rms-confirmation-work-item .rms-negotiation-tabs,
+  .rms-risk-work-item .rms-risk-tabs
+) {
+  margin: 20px 0 !important;
+  padding: clamp(18px, 2vw, 24px) !important;
+  overflow: hidden !important;
+  border: 1px solid #d8e6ee !important;
+  border-radius: 18px !important;
+  background: linear-gradient(145deg, #f1f8fc 0%, #fbfdfe 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .86) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell :is(
+  .rms-confirmation-work-item .rms-negotiation-tabs,
+  .rms-risk-work-item .rms-risk-tabs
+) > header {
+  display: flex !important;
+  align-items: end !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  margin: 0 0 16px !important;
+  padding: 0 0 14px !important;
+  border-bottom: 1px solid #d8e6ee !important;
+  color: #183a59 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell :is(
+  .rms-confirmation-work-item .rms-negotiation-tabs,
+  .rms-risk-work-item .rms-risk-tabs
+) > header > strong {
+  max-width: 44ch !important;
+  color: #60798c !important;
+  font-size: .79rem !important;
+  font-weight: 650 !important;
+  line-height: 1.42 !important;
+  text-align: right !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell :is(
+  .rms-confirmation-work-item .rms-negotiation-tabs,
+  .rms-risk-work-item .rms-risk-tabs
+) [role="tablist"] {
+  gap: 10px !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tab"] {
+  min-width: 0 !important;
+  padding: 13px !important;
+  border-color: #d3e1e9 !important;
+  border-radius: 13px !important;
+  background: #ffffff !important;
+  color: #315b74 !important;
+  box-shadow: 0 2px 5px rgba(27, 55, 77, .025) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tab"] {
+  min-width: 0 !important;
+  padding: 13px !important;
+  border-color: #d3e1e9 !important;
+  border-radius: 13px !important;
+  background: #ffffff !important;
+  color: #315b74 !important;
+  box-shadow: 0 2px 5px rgba(27, 55, 77, .025) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell :is(
+  .rms-confirmation-work-item .rms-negotiation-tabs,
+  .rms-risk-work-item .rms-risk-tabs
+) [role="tab"].is-active {
+  border-color: #76b9df !important;
+  background: #e8f6fd !important;
+  color: #0b5e8f !important;
+  box-shadow: 0 0 0 3px rgba(78, 161, 207, .12) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell :is(
+  .rms-confirmation-work-item .rms-negotiation-tabs,
+  .rms-risk-work-item .rms-risk-tabs
+) [role="tab"] strong {
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell :is(
+    .rms-confirmation-work-item .rms-negotiation-tabs,
+    .rms-risk-work-item .rms-risk-tabs
+  ) > header {
+    align-items: start !important;
+    flex-direction: column !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell :is(
+    .rms-confirmation-work-item .rms-negotiation-tabs,
+    .rms-risk-work-item .rms-risk-tabs
+  ) > header > strong {
+    max-width: none !important;
+    text-align: left !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tablist"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 520px) {
+  html body[data-current-view="rms-machine"] .portal-shell :is(
+    .rms-confirmation-work-item .rms-negotiation-tabs,
+    .rms-risk-work-item .rms-risk-tabs
+  ) {
+    margin: 16px 0 !important;
+    padding: 16px !important;
+    border-radius: 15px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell :is(
+    .rms-confirmation-work-item .rms-negotiation-tabs,
+    .rms-risk-work-item .rms-risk-tabs
+  ) [role="tablist"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Una ruta necesita ancho de lectura: cuatro decisiones nunca se comprimen en una sola fila. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tablist"],
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tablist"] {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tab"],
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tab"] {
+  display: grid !important;
+  grid-template-columns: 24px minmax(0, 1fr) !important;
+  align-items: start !important;
+  column-gap: 10px !important;
+  min-height: 88px !important;
+  text-align: left !important;
+  overflow: hidden !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tab"] > span:last-child,
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tab"] > span:last-child {
+  display: block !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tab"] :is(strong, small),
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tab"] :is(strong, small) {
+  display: block !important;
+  min-width: 0 !important;
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tab"] small,
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tab"] small {
+  margin-top: 4px !important;
+  color: #63798b !important;
+  font-size: .72rem !important;
+  line-height: 1.35 !important;
+}
+
+@media (max-width: 560px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tablist"],
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tablist"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tab"],
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tab"] {
+    min-height: 0 !important;
+  }
+}
