@@ -741,6 +741,68 @@ async function leadRowsForStateRefs(businessId, refs = [], filters = {}) {
   return rows;
 }
 
+function rmsContactIdentityKeys(row = {}) {
+  const documentValue = String(row.document_id || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  const email = String(row.email || "").trim().toLowerCase();
+  let phone = String(row.phone || "").replace(/\D/g, "");
+  // Qori opera principalmente con números colombianos: +57 310... y
+  // 310... representan el mismo contacto, no dos oportunidades distintas.
+  if (phone.length === 12 && phone.startsWith("57")) phone = phone.slice(2);
+  return [
+    documentValue.length >= 5 ? `document:${documentValue}` : "",
+    email ? `email:${email}` : "",
+    phone.length >= 7 ? `phone:${phone}` : "",
+  ].filter(Boolean);
+}
+
+function rmsStageRankFor(row = {}, stateMap = new Map()) {
+  const sourceType = crmSourceType(row);
+  const state = stateMap.get(`${sourceType}:${row.id}`);
+  const phase = normalizePhase(state?.rms_phase, deriveRmsPhase(row));
+  return RMS_OPERATIONAL_STAGES.find((stage) => stage.key === phase)?.order || 0;
+}
+
+function rmsCanonicalContactRow(rows = [], stateMap = new Map()) {
+  const sourcePreference = { PLAYER: 3, MANUAL: 2, AFFILIATE: 1 };
+  return [...rows].sort((left, right) => {
+    const rightStage = rmsStageRankFor(right, stateMap);
+    const leftStage = rmsStageRankFor(left, stateMap);
+    if (rightStage !== leftStage) return rightStage - leftStage;
+    const rightState = stateMap.get(`${crmSourceType(right)}:${right.id}`);
+    const leftState = stateMap.get(`${crmSourceType(left)}:${left.id}`);
+    const rightUpdated = new Date(rightState?.updated_at || right.last_interaction_at || right.created_at || 0).getTime();
+    const leftUpdated = new Date(leftState?.updated_at || left.last_interaction_at || left.created_at || 0).getTime();
+    if (rightUpdated !== leftUpdated) return rightUpdated - leftUpdated;
+    return (sourcePreference[crmSourceType(right)] || 0) - (sourcePreference[crmSourceType(left)] || 0);
+  })[0] || null;
+}
+
+function collapseRmsDuplicateContacts(rows = [], stateMap = new Map()) {
+  const groups = [];
+  for (const row of rows) {
+    const identities = rmsContactIdentityKeys(row);
+    // Sin un dato de identidad confiable, no se presume que dos personas son la misma.
+    if (!identities.length) {
+      groups.push({ identities: new Set(), rows: [row] });
+      continue;
+    }
+    const matchingGroups = groups.filter((group) => identities.some((identity) => group.identities.has(identity)));
+    if (!matchingGroups.length) {
+      groups.push({ identities: new Set(identities), rows: [row] });
+      continue;
+    }
+    const target = matchingGroups[0];
+    identities.forEach((identity) => target.identities.add(identity));
+    target.rows.push(row);
+    matchingGroups.slice(1).forEach((group) => {
+      group.identities.forEach((identity) => target.identities.add(identity));
+      target.rows.push(...group.rows);
+      groups.splice(groups.indexOf(group), 1);
+    });
+  }
+  return groups.map((group) => rmsCanonicalContactRow(group.rows, stateMap)).filter(Boolean);
+}
+
 function opportunityFromRow(row = {}, stateRow = null, inventoryProducts = []) {
   const sourceType = crmSourceType(row);
   const autoPhase = deriveRmsPhase(row);
@@ -839,18 +901,23 @@ async function listRmsOpportunities(businessId, filters = {}) {
   const limit = Math.min(Number(filters.limit || 120), 180);
   const phaseFilter = normalizePhase(filters.rms_phase || filters.phase, "");
   const lite = ["1", "true", true].includes(filters.lite);
+  // Primero se obtiene la persona completa, sin limitarla a una estación.
+  // Así un PLAYER y un MANUAL con el mismo teléfono/correo pueden resolverse
+  // como una sola oportunidad antes de decidir en qué estación aparece.
+  const crmFilters = { ...filters };
+  delete crmFilters.rms_phase;
+  delete crmFilters.phase;
   const data = await listLeadCrmRows(businessId, {
-    ...filters,
-    ...(phaseFilter ? { rms_phase: phaseFilter } : {}),
+    ...crmFilters,
     limit,
     offset: filters.offset || 0,
   });
   const baseRows = data.leads || data.rows || [];
-  const recentStateRows = await recentStateRowsForBusiness(businessId, phaseFilter ? limit : 240, phaseFilter);
+  const recentStateRows = await recentStateRowsForBusiness(businessId, 240);
   const baseKeys = new Set(baseRows.map((row) => `${crmSourceType(row)}:${row.id}`));
   const missingStateRows = recentStateRows.filter((row) => !baseKeys.has(`${crmSourceType(row)}:${row.source_id}`));
   const extraRows = missingStateRows.length
-    ? await leadRowsForStateRefs(businessId, missingStateRows, filters)
+    ? await leadRowsForStateRefs(businessId, missingStateRows, crmFilters)
     : [];
   const mergedRows = [...baseRows];
   extraRows.forEach((row) => {
@@ -866,12 +933,22 @@ async function listRmsOpportunities(businessId, filters = {}) {
   ]);
   const needsInventory = true;
   const inventoryProducts = needsInventory ? await inventoryProductsForBusiness(businessId) : [];
-  const opportunities = mergedRows.map((row) => (
+  const canonicalRows = collapseRmsDuplicateContacts(mergedRows, stateMap);
+  const allOpportunities = canonicalRows.map((row) => (
     opportunityFromRow(row, stateMap.get(`${crmSourceType(row)}:${row.id}`), inventoryProducts)
   )).sort((a, b) => b.priority_score - a.priority_score || b.risk_score - a.risk_score);
+  const opportunities = phaseFilter
+    ? allOpportunities.filter((item) => item.stage === phaseFilter)
+    : allOpportunities;
   return {
     opportunities,
-    pagination: data.pagination || { total: opportunities.length, limit, offset: 0, has_more: false },
+    pagination: {
+      ...(data.pagination || {}),
+      total: opportunities.length,
+      limit,
+      offset: Number(filters.offset || 0),
+      has_more: false,
+    },
     stages: RMS_PHASES,
     quality_controls: RMS_QUALITY_CONTROLS,
     transition_contract: RMS_TRANSITION_CONTRACT,
@@ -879,6 +956,7 @@ async function listRmsOpportunities(businessId, filters = {}) {
     funnel: lite ? [] : buildIntakeFunnel(opportunities),
     process_flow: lite ? [] : buildIndustrialProcess(opportunities),
     alerts: lite ? [] : rmsAlerts(opportunities),
+    deduplication: { collapsed_contacts: Math.max(0, mergedRows.length - canonicalRows.length) },
     scope: phaseFilter ? { mode: "station", phase: phaseFilter, lite } : { mode: "machine", phase: "", lite },
   };
 }
