@@ -433,3 +433,71 @@ html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="
     padding-inline: 0 !important;
   }
 }
+
+/* Centro de Revenue v6: cada pestaña tiene un propósito y una actualización explícita. */
+html body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-statusbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  min-width: 0 !important;
+  padding: 10px clamp(14px, 2vw, 22px) !important;
+  border-bottom: 1px solid rgba(22, 65, 103, .1) !important;
+  background: linear-gradient(90deg, rgba(2, 81, 174, .045), rgba(0, 191, 242, .035)) !important;
+  color: #55718d !important;
+  font-size: .76rem !important;
+  line-height: 1.4 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-statusbar > span {
+  min-width: 0 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-statusbar .ghost-button {
+  flex: 0 0 auto !important;
+  min-height: 34px !important;
+  padding: 6px 10px !important;
+  border: 1px solid rgba(7, 89, 214, .2) !important;
+  border-radius: 9px !important;
+  background: #fff !important;
+  color: #0759d6 !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-statusbar .ghost-button:hover:not(:disabled) {
+  border-color: #0759d6 !important;
+  background: #f2f8ff !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs > button:focus-visible,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-statusbar .ghost-button:focus-visible {
+  position: relative !important;
+  z-index: 1 !important;
+  outline: 3px solid rgba(0, 191, 242, .4) !important;
+  outline-offset: -3px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell[data-workspace-tab="analysis"] .dashboard-widget-card.chart {
+  min-height: 262px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell[data-workspace-tab="tables"] .dashboard-widget-card.table {
+  overflow: hidden !important;
+}
+
+@media (max-width: 640px) {
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-statusbar {
+    align-items: stretch !important;
+    flex-direction: column !important;
+    padding: 12px 14px !important;
+  }
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-statusbar .ghost-button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs > button {
+    min-height: 54px !important;
+    padding-inline: 8px !important;
+    font-size: .74rem !important;
+  }
+}

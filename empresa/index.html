@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159">
   <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=activation-builder-catalog-fix-20260728-v177">
   <link rel="stylesheet" href="css/communications-flow.css?v=communications-history-v315-20260811">
-  <link rel="stylesheet" href="css/revenue-center.css?v=20260731-command-center-v6">
+  <link rel="stylesheet" href="css/revenue-center.css?v=revenue-center-v7-20260811">
   <link rel="stylesheet" href="css/mobile-shell-guard.css?v=20260729-v1">
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
@@ -432,6 +432,13 @@
                 <button type="button" role="tab" aria-selected="false" data-dashboard-workspace-tab="customize">
                   <span class="material-symbols-outlined" aria-hidden="true">tune</span>
                   Mi tablero
+                </button>
+              </div>
+              <div class="dashboard-revenue-statusbar" aria-live="polite">
+                <span>Las cifras se calculan con ventas, inversión y actividad registrada en Qori.</span>
+                <button class="ghost-button compact" id="dashboardRevenueRefreshButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+                  Actualizar datos
                 </button>
               </div>
 
@@ -7686,7 +7693,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=rms-activation-evaluation-v326-20260811" defer></script>
+<script src="js/app.js?v=revenue-center-v7-20260811" defer></script>
     <script src="js/communications.js?v=bulk-history-v323-20260811" defer></script>
 </body>
 </html>

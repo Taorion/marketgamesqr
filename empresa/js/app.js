@@ -75,6 +75,7 @@ const dashboardBusinessRoiMeta = document.getElementById("dashboardBusinessRoiMe
 const dashboardBusinessCacValue = document.getElementById("dashboardBusinessCacValue");
 const dashboardBusinessCacMeta = document.getElementById("dashboardBusinessCacMeta");
 const dashboardWorkspaceTabs = document.getElementById("dashboardWorkspaceTabs");
+const dashboardRevenueRefreshButton = document.getElementById("dashboardRevenueRefreshButton");
 const dashboardProfileTabs = document.getElementById("dashboardProfileTabs");
 const dashboardWidgetLibrary = document.getElementById("dashboardWidgetLibrary");
 const dashboardWidgetSelectionStatus = document.getElementById("dashboardWidgetSelectionStatus");
@@ -6360,6 +6361,7 @@ function setView(view) {
       loadDashboardData({ quiet: true }),
       loadAcquisitionChannels({ quiet: true }),
       loadChannelEfforts({ quiet: true }),
+      loadLeadAgendaData({ quiet: true }),
     ]).then((results) => {
       const failed = results.find((result) => result.status === "rejected");
       try {
@@ -11553,6 +11555,9 @@ function getDashboardBuilderStats() {
   const postSaleRedemptionRate = toNumber(dashboard.derived?.post_sale_redemption_rate || summary.post_sale_redemption_rate);
   const strategicClaimRate = toNumber(dashboard.derived?.strategic_claim_rate || summary.strategic_claim_rate);
   const strategicRedemptionRate = toNumber(dashboard.derived?.strategic_redemption_rate || summary.strategic_redemption_rate);
+  const investmentRecorded = commercialEconomics.investment > 0;
+  const costPerLead = investmentRecorded && totalLeads > 0 ? commercialEconomics.investment / totalLeads : null;
+  const costPerSale = investmentRecorded && observedSalesCount > 0 ? commercialEconomics.investment / observedSalesCount : null;
   const nextAction = getDashboardBuilderNextAction({
     totalLeads,
     openAgenda,
@@ -11597,9 +11602,10 @@ function getDashboardBuilderStats() {
     totalLeads,
     totalQrGenerated: toNumber(summary.total_qr_generated),
     totalQrRedeemed,
-    totalInvestment: toNumber(summary.total_investment || commercialEconomics.investment),
-    costPerLead: toNumber(summary.cost_per_lead),
-    costPerSale: toNumber(summary.cost_per_observed_customer || summary.cost_per_acquired_customer),
+    totalInvestment: commercialEconomics.investment,
+    investmentRecorded,
+    costPerLead,
+    costPerSale,
     postSaleGenerated,
     postSaleRedemptionRate,
     strategicBatches: toNumber(summary.strategic_batches),
@@ -11850,9 +11856,9 @@ function renderDashboardWidget(widget, stats) {
     strategic_tickets: { value: stats.strategicGenerated, meta: `${stats.strategicClaimRate}% activado`, body: "Tickets nacidos de una estrategia interna.", tone: "neutral" },
     strategic_claims: { value: stats.strategicClaimed, meta: `${stats.strategicRedemptionRate}% redimido`, body: "Clientes que activaron tickets estratégicos.", tone: "neutral" },
     referrals: { value: stats.referralSales, meta: `${stats.referralPoints} puntos entregados`, body: "Ventas que llegaron por recomendación.", tone: "neutral" },
-    investment: { value: money(stats.totalInvestment), meta: stats.totalLeads ? `${money(stats.costPerLead)} por lead` : "sin leads para comparar", body: "Inversión comercial registrada en el periodo.", tone: "money" },
-    cost_per_lead: { value: stats.totalLeads ? money(stats.costPerLead) : "—", meta: `${stats.totalLeads} leads capturados`, body: "Costo de captación antes de la venta.", tone: "money" },
-    cost_per_sale: { value: stats.salesCount ? money(stats.costPerSale) : "—", meta: `vs. ticket medio ${money(stats.avgTicket)}`, body: "Costo de traer una venta real observada.", tone: "money" },
+    investment: { value: stats.investmentRecorded ? money(stats.totalInvestment) : "—", meta: stats.investmentRecorded && stats.totalLeads ? `${money(stats.costPerLead)} por lead` : "Registra inversión para calcular costos", body: "Inversión comercial registrada en el periodo.", tone: "money" },
+    cost_per_lead: { value: stats.costPerLead === null ? "—" : money(stats.costPerLead), meta: `${stats.totalLeads} leads capturados`, body: stats.investmentRecorded ? "Costo de captación antes de la venta." : "Disponible cuando registres inversión.", tone: "money" },
+    cost_per_sale: { value: stats.costPerSale === null ? "—" : money(stats.costPerSale), meta: `vs. ticket medio ${money(stats.avgTicket)}`, body: stats.investmentRecorded ? "Costo de traer una venta real observada." : "Disponible cuando registres inversión.", tone: "money" },
   };
   if (selectedIndicators[widget.id]) return selectedIndicators[widget.id];
   if (widget.id === "cac") {
@@ -11947,13 +11953,9 @@ function dashboardWidgetsForWorkspaceTab(layout, tab) {
   const widgets = (layout || []).map((id) => DASHBOARD_WIDGET_CATALOG.find((widget) => widget.id === id)).filter(Boolean);
   if (tab === "customize") return widgets;
   if (tab === "analysis") {
-    const analysisWidgets = widgets.filter((widget) => widget.category === "Gráfico");
-    const cacWidget = DASHBOARD_WIDGET_CATALOG.find((widget) => widget.id === "cac");
-    return cacWidget && !analysisWidgets.some((widget) => widget.id === "cac")
-      ? [cacWidget, ...analysisWidgets]
-      : analysisWidgets;
+    return DASHBOARD_WIDGET_CATALOG.filter((widget) => widget.category === "Gráfico");
   }
-  if (tab === "tables") return widgets.filter((widget) => widget.category === "Tabla");
+  if (tab === "tables") return DASHBOARD_WIDGET_CATALOG.filter((widget) => widget.category === "Tabla");
 
   const preferred = ["revenue", "avg_ticket", "sales", "leads", "revenue_funnel", "redemption_rate"];
   const summary = preferred.map((id) => widgets.find((widget) => widget.id === id)).filter(Boolean);
@@ -12053,6 +12055,7 @@ function renderDashboardBuilder() {
     dashboardWidgetSelectionStatus.textContent = `${layout.length} indicador${layout.length === 1 ? "" : "es"} seleccionado${layout.length === 1 ? "" : "s"}`;
   }
   const visibleWidgets = dashboardWidgetsForWorkspaceTab(layout, workspaceTab);
+  const widgetsAreEditable = workspaceTab === "customize";
   const stats = getDashboardBuilderStats();
   if (dashboardProfileLabel) dashboardProfileLabel.textContent = `${workspaceTab === "customize" ? "Vista personal" : "Centro de Revenue"} · ${profile.label}`;
   if (dashboardProfileTitle) dashboardProfileTitle.textContent = workspace.title;
@@ -12083,11 +12086,11 @@ function renderDashboardBuilder() {
   dashboardWidgetGrid.innerHTML = visibleWidgets.map((widget, index) => {
     const rendered = renderDashboardWidget(widget, stats);
     return `
-      <article class="dashboard-widget-card ${escapeHtml(rendered.tone || "")}" draggable="true" data-dashboard-widget="${escapeHtml(widget.id)}">
+      <article class="dashboard-widget-card ${escapeHtml(rendered.tone || "")}" draggable="${widgetsAreEditable ? "true" : "false"}" data-dashboard-widget="${escapeHtml(widget.id)}">
         <div class="dashboard-widget-top">
           <span class="dashboard-widget-icon material-symbols-outlined" aria-hidden="true">${escapeHtml(widget.icon)}</span>
           <div><span class="mono-label">${escapeHtml(widget.category)}</span><h4>${escapeHtml(widget.title)}</h4></div>
-          <button class="icon-button" type="button" data-dashboard-remove-widget="${escapeHtml(widget.id)}" title="Quitar bloque"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+          ${widgetsAreEditable ? `<button class="icon-button" type="button" data-dashboard-remove-widget="${escapeHtml(widget.id)}" title="Quitar bloque"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>` : ""}
         </div>
         <strong class="dashboard-widget-value">${escapeHtml(rendered.value ?? "-")}</strong>
         <span class="dashboard-widget-meta">${escapeHtml(rendered.meta || widget.description)}</span>
@@ -12097,8 +12100,10 @@ function renderDashboardBuilder() {
             <span class="material-symbols-outlined" aria-hidden="true">download</span>
             CSV
           </button>
-          <button class="icon-button" type="button" data-dashboard-move-widget="${escapeHtml(widget.id)}" data-direction="-1" ${index === 0 ? "disabled" : ""} title="Mover a la izquierda"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
-          <button class="icon-button" type="button" data-dashboard-move-widget="${escapeHtml(widget.id)}" data-direction="1" ${index === visibleWidgets.length - 1 ? "disabled" : ""} title="Mover a la derecha"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+          ${widgetsAreEditable ? `
+            <button class="icon-button" type="button" data-dashboard-move-widget="${escapeHtml(widget.id)}" data-direction="-1" ${index === 0 ? "disabled" : ""} title="Mover a la izquierda"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button>
+            <button class="icon-button" type="button" data-dashboard-move-widget="${escapeHtml(widget.id)}" data-direction="1" ${index === visibleWidgets.length - 1 ? "disabled" : ""} title="Mover a la derecha"><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
+          ` : ""}
         </div>
       </article>
     `;
@@ -12155,6 +12160,30 @@ function toggleDashboardAdvancedView() {
   setDashboardWorkspaceTab("analysis");
   renderDashboardBuilder();
   dashboardBuilderShell?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function refreshRevenueCenter() {
+  if (!session?.user?.business_id || state.dashboardLoading) return;
+  setButtonLoading(dashboardRevenueRefreshButton, true, "Actualizando...");
+  try {
+    const results = await Promise.allSettled([
+      loadDashboardData({ force: true, quiet: true }),
+      loadAcquisitionChannels({ force: true, quiet: true }),
+      loadChannelEfforts({ force: true, quiet: true }),
+      loadLeadAgendaData({ force: true, quiet: true }),
+    ]);
+    renderDashboard();
+    const failed = results.filter((result) => result.status === "rejected").length;
+    showFeedback(
+      failed ? "Actualizamos los datos disponibles; una fuente no respondió y se mostrará cuando vuelva a estar disponible." : "Centro de Revenue actualizado.",
+      failed ? "info" : "success",
+      { title: "Centro de Revenue" }
+    );
+  } catch (error) {
+    showFeedback(error.message || "No fue posible actualizar el Centro de Revenue.", "error", { title: "Centro de Revenue" });
+  } finally {
+    setButtonLoading(dashboardRevenueRefreshButton, false);
+  }
 }
 
 function renderDashboardKpiFallback() {
@@ -49488,6 +49517,19 @@ dashboardWorkspaceTabs?.addEventListener("click", (event) => {
   setDashboardProfile(workspaceTab.profile);
   renderDashboardBuilder();
 });
+dashboardWorkspaceTabs?.addEventListener("keydown", (event) => {
+  const tabs = Array.from(dashboardWorkspaceTabs.querySelectorAll("[data-dashboard-workspace-tab]"));
+  const currentIndex = tabs.indexOf(document.activeElement);
+  if (currentIndex < 0) return;
+  let nextIndex = currentIndex;
+  if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabs.length;
+  if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+  if (event.key === "Home") nextIndex = 0;
+  if (event.key === "End") nextIndex = tabs.length - 1;
+  if (nextIndex === currentIndex) return;
+  event.preventDefault();
+  tabs[nextIndex]?.focus();
+});
 dashboardProfileTabs?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-dashboard-profile]");
   if (!button) return;
@@ -49521,6 +49563,7 @@ dashboardWidgetGrid?.addEventListener("click", (event) => {
   }
 });
 dashboardWidgetGrid?.addEventListener("dragstart", (event) => {
+  if (getDashboardWorkspaceTab() !== "customize") return;
   const card = event.target.closest("[data-dashboard-widget]");
   if (!card) return;
   state.dashboardBuilderDragWidget = card.dataset.dashboardWidget || "";
@@ -49532,9 +49575,11 @@ dashboardWidgetGrid?.addEventListener("dragend", (event) => {
   state.dashboardBuilderDragWidget = "";
 });
 dashboardWidgetGrid?.addEventListener("dragover", (event) => {
+  if (getDashboardWorkspaceTab() !== "customize") return;
   if (event.target.closest("[data-dashboard-widget]")) event.preventDefault();
 });
 dashboardWidgetGrid?.addEventListener("drop", (event) => {
+  if (getDashboardWorkspaceTab() !== "customize") return;
   const target = event.target.closest("[data-dashboard-widget]");
   if (!target) return;
   event.preventDefault();
@@ -49542,6 +49587,16 @@ dashboardWidgetGrid?.addEventListener("drop", (event) => {
 });
 dashboardAdvancedToggleButton?.addEventListener("click", toggleDashboardAdvancedView);
 dashboardResetProfileButton?.addEventListener("click", resetDashboardBuilderLayout);
+dashboardRevenueRefreshButton?.addEventListener("click", refreshRevenueCenter);
+dashboardRevenueActionButton?.addEventListener("click", () => openRevenueActionWizard("capture"));
+revenueQuickActions?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-revenue-objective]");
+  if (!button) return;
+  openRevenueActionWizard(button.dataset.revenueObjective || "capture");
+});
+document.querySelectorAll("[data-revenue-open-wizard]").forEach((button) => {
+  button.addEventListener("click", () => openRevenueActionWizard("capture"));
+});
 revenueActionWizardCloseButton?.addEventListener("click", closeRevenueActionWizard);
 revenueActionWizardCancelButton?.addEventListener("click", closeRevenueActionWizard);
 revenueActionWizardForm?.addEventListener("submit", submitRevenueActionWizard);
