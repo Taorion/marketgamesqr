@@ -19530,3 +19530,49 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actio
     margin: 0 -2px;
   }
 }
+
+/* Dashboard portal map: preserve a clear breathing room around each operational stage. */
+html body[data-current-view="dashboard"] .portal-shell .portal-map-grid {
+  gap: 14px !important;
+  border-top: 0 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .portal-map-grid article {
+  gap: 0 18px !important;
+  padding: clamp(22px, 2.4vw, 30px) clamp(20px, 2.8vw, 34px) !important;
+  border: 1px solid rgba(92, 143, 163, .18) !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(13, 63, 88, .045) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .portal-map-grid article h4 {
+  margin: 3px 0 8px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .portal-map-grid article p {
+  margin: 0 0 16px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .portal-map-grid article .button-row {
+  gap: 10px !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .portal-map-grid article .ghost-button {
+  padding: 8px 10px !important;
+  border: 1px solid rgba(82, 135, 158, .28) !important;
+  border-radius: 9px !important;
+  background: #f8fcff !important;
+}
+
+@media (max-width: 600px) {
+  html body[data-current-view="dashboard"] .portal-shell .portal-map-grid {
+    gap: 12px !important;
+  }
+
+  html body[data-current-view="dashboard"] .portal-shell .portal-map-grid article {
+    gap: 0 14px !important;
+    padding: 20px 18px !important;
+    border-radius: 16px !important;
+  }
+}
