@@ -19531,6 +19531,36 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actio
   }
 }
 
+/* Negociación es una secuencia de decisión; no usa una columna lateral vacía. */
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console > .rms-negotiation-tabs,
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console > .rms-negotiation-cost-card {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console > .rms-negotiation-cost-card:not([hidden]) {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  margin: 0 0 22px !important;
+  padding: 14px 16px !important;
+  border: 1px solid #ecd491 !important;
+  border-radius: 14px !important;
+  background: #fff9e8 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console > .rms-negotiation-cost-card[hidden] {
+  display: none !important;
+}
+
 /* Dashboard portal map: preserve a clear breathing room around each operational stage. */
 html body[data-current-view="dashboard"] .portal-shell .portal-map-grid {
   gap: 14px !important;
