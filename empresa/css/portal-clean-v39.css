@@ -19576,3 +19576,170 @@ html body[data-current-view="dashboard"] .portal-shell .portal-map-grid article 
     border-radius: 16px !important;
   }
 }
+
+/* Medios de adquisición: tabla de gestión legible, no una fila comprimida. */
+html body[data-current-view="channels"] .portal-shell .channel-list-card {
+  overflow: hidden !important;
+  border: 1px solid rgba(57, 111, 147, .16) !important;
+  border-radius: 20px !important;
+  background: #fff !important;
+  box-shadow: 0 12px 30px rgba(10, 55, 87, .055) !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card .table-card-head {
+  align-items: center !important;
+  gap: 18px !important;
+  padding: clamp(19px, 2.4vw, 28px) clamp(18px, 2.8vw, 32px) !important;
+  border-bottom: 1px solid rgba(57, 111, 147, .12) !important;
+  background: linear-gradient(105deg, #f8fcff 0%, #ffffff 70%) !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card .table-card-head h3 {
+  margin: 4px 0 0 !important;
+  color: #082d63 !important;
+  font-size: clamp(1.1rem, 2vw, 1.42rem) !important;
+  line-height: 1.2 !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card .table-wrap {
+  width: 100% !important;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain !important;
+  scrollbar-color: #9fc6dc #edf6fa !important;
+  scrollbar-width: thin !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card table {
+  width: 100% !important;
+  min-width: 1100px !important;
+  table-layout: fixed !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card th {
+  padding: 12px 13px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(57, 111, 147, .13) !important;
+  background: #f4f9fc !important;
+  color: #59728a !important;
+  font-size: .67rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .075em !important;
+  line-height: 1.25 !important;
+  text-align: right !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:first-child,
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(7),
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(8),
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:last-child {
+  text-align: left !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card td {
+  padding: 16px 13px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(57, 111, 147, .1) !important;
+  color: #173f70 !important;
+  font-size: .86rem !important;
+  line-height: 1.35 !important;
+  text-align: right !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card tbody tr {
+  transition: background-color .16s ease, box-shadow .16s ease !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card tbody tr:hover {
+  background: #f6fbff !important;
+  box-shadow: inset 3px 0 0 #08a9dc !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card tbody tr:last-child td {
+  border-bottom: 0 !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card td:first-child,
+html body[data-current-view="channels"] .portal-shell .channel-list-card td:nth-child(7),
+html body[data-current-view="channels"] .portal-shell .channel-list-card td:nth-child(8),
+html body[data-current-view="channels"] .portal-shell .channel-list-card td:last-child {
+  overflow: visible !important;
+  text-align: left !important;
+  text-overflow: clip !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card td:first-child strong {
+  color: #062d68 !important;
+  font-size: .94rem !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card td:first-child .table-secondary,
+html body[data-current-view="channels"] .portal-shell .channel-list-card td:nth-child(7) .table-secondary {
+  display: inline-block !important;
+  margin-top: 3px !important;
+  color: #6d8298 !important;
+  font-size: .72rem !important;
+  white-space: normal !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card .channel-row-actions {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 7px !important;
+  min-width: 142px !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card .channel-row-actions :is(.ghost-button, .solid-button, .link-button) {
+  width: 100% !important;
+  min-height: 33px !important;
+  justify-content: center !important;
+  padding: 7px 9px !important;
+  border-radius: 8px !important;
+  font-size: .72rem !important;
+  line-height: 1.15 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card .channel-row-actions .ghost-button {
+  border: 1px solid rgba(7, 89, 214, .22) !important;
+  background: #fff !important;
+  color: #0759d6 !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card .channel-row-actions .link-button {
+  color: #a73c3c !important;
+}
+
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(1) { width: 18% !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(2),
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(3),
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(4),
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(5),
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(6) { width: 9% !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(7) { width: 13% !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(8) { width: 10% !important; }
+html body[data-current-view="channels"] .portal-shell .channel-list-card th:nth-child(9) { width: 14% !important; }
+
+@media (max-width: 720px) {
+  html body[data-current-view="channels"] .portal-shell .channel-list-card .table-card-head {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    padding: 19px 18px !important;
+  }
+  html body[data-current-view="channels"] .portal-shell .channel-list-card .table-card-head .status-chip {
+    align-self: flex-start !important;
+  }
+  html body[data-current-view="channels"] .portal-shell .channel-list-card table {
+    min-width: 1010px !important;
+  }
+  html body[data-current-view="channels"] .portal-shell .channel-list-card td,
+  html body[data-current-view="channels"] .portal-shell .channel-list-card th {
+    padding-inline: 11px !important;
+  }
+}
