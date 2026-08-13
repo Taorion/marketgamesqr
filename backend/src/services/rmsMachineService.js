@@ -2232,13 +2232,17 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const acquisitionCost = Math.max(0, roundedMoney(payload.acquisition_cost));
   const idempotencyKey = String(payload.idempotency_key || "").trim() || null;
   const confirmation = workflowMetadata.commercial_confirmation;
-  if (String(payload.inventory_product_id) !== String(confirmation.inventory_product_id)) {
-    throw badRequest("La venta debe conservar el producto de inventario confirmado en Negociación.");
-  }
-  const productSnapshot = await rmsInventoryProductSnapshot(businessId, confirmation.inventory_product_id);
+  const negotiatedProduct = {
+    inventory_product_id: confirmation.inventory_product_id,
+    product_name: confirmation.product_name || null,
+    product_price_snapshot: confirmation.product_price_snapshot ?? null,
+    product_currency_snapshot: confirmation.product_currency_snapshot || null,
+  };
+  const productSnapshot = await rmsInventoryProductSnapshot(businessId, payload.inventory_product_id);
   const productRow = productSnapshot.inventory_product;
   const productName = productSnapshot.product_name;
-  const unitPrice = Math.max(0, roundedMoney(confirmation.product_price_snapshot ?? productSnapshot.product_price_snapshot));
+  const productCorrectedAtSale = String(payload.inventory_product_id) !== String(confirmation.inventory_product_id);
+  const unitPrice = Math.max(0, roundedMoney(productSnapshot.product_price_snapshot));
   const saleAmount = roundedMoney(unitPrice * quantity);
   if (unitPrice <= 0 || saleAmount <= 0) {
     throw badRequest("El producto confirmado debe tener un precio de venta mayor a cero para calcular el valor pagado.");
@@ -2265,6 +2269,8 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
       product_currency_snapshot: productSnapshot.product_currency_snapshot,
       product_source: productSnapshot.product_source,
     },
+    negotiated_product: negotiatedProduct,
+    product_corrected_at_sale: productCorrectedAtSale,
     benefit_description: String(payload.benefit_description || "").trim() || null,
     economics,
     acquisition_channel: {

@@ -42392,9 +42392,9 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
         ${rmsDealProgressMarkup("sale", "La validación final fue aprobada. Registra el resultado comercial.")}
         <section class="rms-sale-trust-ribbon"><span class="material-symbols-outlined" aria-hidden="true">verified</span><div><strong>Venta lista para atribuir</strong><small>${escapeHtml(saleOrigin)}. Producto, valor y evidencia fueron precargados.</small></div></section>
         <header class="rms-commercial-console-head"><div><span class="mono-label">Compra confirmada</span><h4>Registra el pago y su rentabilidad</h4><p>La venta se atribuye a este contacto y a la ruta de Activación 1. Los costos son los que declare tu equipo.</p></div><span class="rms-commercial-state is-sale">Pago por registrar</span></header>
-        <details class="rms-sale-handoff" open><summary><span class="material-symbols-outlined" aria-hidden="true">route</span><span><strong>Información que llega con el lead</strong><small>Activación, Evaluación y Negociación se conservan; aquí solo completas el pago real.</small></span></summary><div class="rms-sale-handoff-grid"><article><span>Activación</span><strong>${escapeHtml(activationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(activation.firstContactAt ? `Contacto ${formatDate(activation.firstContactAt)}` : "Sin fecha de contacto")}</small></article><article><span>Evaluación</span><strong>${escapeHtml(evaluationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(evaluation.next_action || "Sin próximo paso pendiente")}</small></article><article><span>Negociación</span><strong>${escapeHtml(negotiationDetail || "Venta confirmada")}</strong><small>${escapeHtml(confirmation.evidence ? "Evidencia registrada" : "Sin evidencia adicional")}</small></article></div></details>
+        <details class="rms-sale-handoff"><summary><span class="material-symbols-outlined" aria-hidden="true">route</span><span><strong>Ver información heredada</strong><small>Activación, Evaluación y Negociación quedan guardadas. Ábrelo solo si necesitas revisar el contexto.</small></span></summary><div class="rms-sale-handoff-grid"><article><span>Activación</span><strong>${escapeHtml(activationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(activation.firstContactAt ? `Contacto ${formatDate(activation.firstContactAt)}` : "Sin fecha de contacto")}</small></article><article><span>Evaluación</span><strong>${escapeHtml(evaluationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(evaluation.next_action || "Sin próximo paso pendiente")}</small></article><article><span>Negociación</span><strong>${escapeHtml(negotiationDetail || "Venta confirmada")}</strong><small>${escapeHtml(confirmation.evidence ? "Evidencia registrada" : "Sin evidencia adicional")}</small></article></div></details>
         <div class="rms-sale-form-grid">
-          <label><span>Producto confirmado</span><select data-rms-sale-product="${escapeHtml(item.id)}" aria-describedby="rms-sale-product-hint-${escapeHtml(item.id)}" disabled>${rmsInventoryProductPickerOptions(confirmedInventoryProductId, defaultProduct)}</select><small id="rms-sale-product-hint-${escapeHtml(item.id)}">El producto viene de Negociación. Si no corresponde, vuelve allí para corregir el acuerdo antes de registrar la venta.</small></label>
+          <label><span>Producto comprado</span><select data-rms-sale-product="${escapeHtml(item.id)}" aria-describedby="rms-sale-product-hint-${escapeHtml(item.id)}">${rmsInventoryProductPickerOptions(confirmedInventoryProductId, defaultProduct)}</select><small id="rms-sale-product-hint-${escapeHtml(item.id)}">Viene seleccionado desde Negociación. Cámbialo solo si el cliente compró otra referencia; Qori conservará ambas referencias en el historial.</small></label>
           <input type="hidden" value="${escapeHtml(defaultProduct)}" data-rms-sale-product-name="${escapeHtml(item.id)}">
           <label><span>Cantidad comprada</span><input type="number" min="0.01" step="0.01" value="${escapeHtml(String(quantity))}" data-rms-sale-quantity="${escapeHtml(item.id)}"></label>
           <label><span>Dinero recibido</span><input type="number" min="1" step="0.01" value="${escapeHtml(confirmation.amount ?? "")}" data-rms-sale-amount="${escapeHtml(item.id)}" placeholder="0"></label>
@@ -42740,9 +42740,9 @@ function rmsPostSaleStationCardMarkup(item = {}) {
         ${rmsDealProgressMarkup("post_sale", "La venta ya existe. Elige una sola acción de continuidad y conserva su trazabilidad.")}
         <header class="rms-commercial-console-head"><div><span class="mono-label">ESTACIÓN 09 · ACTIVACIÓN 2</span><h4>Convierte una compra en continuidad verificable</h4><p>La venta original queda vinculada: esta operación prepara una tarea, ticket, Reward Pass, encuesta, referido o seguimiento sin crear otra venta.</p></div><span class="rms-commercial-state is-sale">Venta canónica</span></header>
         <section class="rms-commercial-info-block"><h5>A. Venta y cliente de origen</h5><dl><div><dt>Cliente</dt><dd>${escapeHtml(item.name || "Contacto")}</dd></div><div><dt>Producto</dt><dd>${escapeHtml(saleProduct)}</dd></div><div><dt>Valor atribuido</dt><dd>${escapeHtml(money(saleAmount))}</dd></div><div><dt>Campaña / canal</dt><dd>${escapeHtml([item.campaign_name, item.channel].filter(Boolean).join(" · ") || "Sin dato adicional")}</dd></div><div><dt>Venta original</dt><dd>${escapeHtml(saleId ? `#${String(saleId).slice(0, 8)}` : "Se resolverá desde la oportunidad RMS")}</dd></div><div><dt>Acciones previas</dt><dd>${escapeHtml(`${actions.length} registrada${actions.length === 1 ? "" : "s"}`)}</dd></div></dl></section>
-        <section class="rms-commercial-info-block rms-post-sale-action-form"><h5>B. Elige una acción de continuidad</h5><div class="rms-sale-form-grid"><label><span>Acción principal</span><select data-rms-post-sale-type="${escapeHtml(item.id)}"><option value="THANK_YOU">Agradecimiento</option><option value="WARRANTY">Garantía o instrucciones</option><option value="SURVEY">Encuesta de satisfacción</option><option value="REBUY_TICKET">Ticket de próxima compra</option><option value="REWARD_PASS">Reward Pass</option><option value="REFERRAL">Invitación de referido</option><option value="FOLLOW_UP">Seguimiento</option><option value="INCIDENT">Incidencia</option><option value="NO_ACTION_NEEDED">Sin acción aplicable</option></select></label><label><span>Usar recurso</span><select data-rms-post-sale-mode="${escapeHtml(item.id)}"><option value="TASK">Solo tarea / mensaje preparado</option><option value="EXISTING_RESOURCE">Recurso existente</option><option value="NEW_TICKET">Crear ticket postventa</option><option value="NEW_REWARD_PASS">Crear Reward Pass</option></select></label><label><span>Responsable</span><input type="text" data-rms-post-sale-responsible="${escapeHtml(item.id)}" placeholder="Quien ejecuta la acción"></label><label><span>Fecha programada</span><input type="datetime-local" data-rms-post-sale-scheduled="${escapeHtml(item.id)}" value="${escapeHtml(rmsSaleDatetimeLocal())}"></label><label><span>Canal permitido</span><select data-rms-post-sale-channel="${escapeHtml(item.id)}"><option value="">No se contactará ahora</option><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="CALL">Llamada</option><option value="IN_PERSON">Presencial</option></select></label><label><span>Estado inicial</span><select data-rms-post-sale-status="${escapeHtml(item.id)}"><option value="PLANNED">Pendiente</option><option value="SCHEDULED">Programada</option><option value="COMPLETED">Completada</option><option value="NOT_APPLICABLE">No aplica</option></select></label><label><span>Tipo de recurso existente</span><input type="text" data-rms-post-sale-resource-type="${escapeHtml(item.id)}" placeholder="Ticket, encuesta, campaña o beneficio"></label><label><span>ID o enlace del recurso</span><input type="text" data-rms-post-sale-resource-url="${escapeHtml(item.id)}" placeholder="Selecciona o pega el enlace existente"></label><label><span>Beneficio para nuevo ticket</span><input type="text" data-rms-post-sale-ticket-label="${escapeHtml(item.id)}" placeholder="Ej.: 10% próxima compra"></label><label><span>Valor Reward Pass (COP)</span><input type="number" min="1" step="1" data-rms-post-sale-pass-value="${escapeHtml(item.id)}" placeholder="Solo si lo seleccionas"></label></div><label class="rms-commercial-note-field"><span>Contenido, instrucciones o resumen</span><textarea rows="3" data-rms-post-sale-content="${escapeHtml(item.id)}" placeholder="Qué se prepara; no se envía comunicación automáticamente."></textarea></label><label class="rms-commercial-note-field"><span>Resultado, razón o evidencia</span><textarea rows="3" data-rms-post-sale-result="${escapeHtml(item.id)}" placeholder="Obligatorio si no aplica o si se enviará a Inteligencia."></textarea></label><label class="rms-post-sale-consent"><input type="checkbox" data-rms-post-sale-consent="${escapeHtml(item.id)}"> <span>Confirmo consentimiento y canal válido si habrá contacto.</span></label><label class="rms-post-sale-consent"><input type="checkbox" data-rms-post-sale-intelligence="${escapeHtml(item.id)}"> <span>Enviar a Inteligencia solo con resultado registrable.</span></label></section>
+        <section class="rms-commercial-info-block rms-post-sale-action-form"><h5>B. Decide la continuidad</h5><p class="rms-post-sale-choice-copy">Puedes activar una acción postventa o cerrar esta etapa sin contactar al cliente y enviar el aprendizaje a Inteligencia.</p><div class="rms-sale-form-grid"><label><span>Acción principal</span><select data-rms-post-sale-type="${escapeHtml(item.id)}"><option value="THANK_YOU">Agradecimiento</option><option value="WARRANTY">Garantía o instrucciones</option><option value="SURVEY">Encuesta de satisfacción</option><option value="REBUY_TICKET">Ticket de próxima compra</option><option value="REWARD_PASS">Reward Pass</option><option value="REFERRAL">Invitación de referido</option><option value="FOLLOW_UP">Seguimiento</option><option value="INCIDENT">Incidencia</option><option value="NO_ACTION_NEEDED">Sin acción aplicable</option></select></label><label><span>Usar recurso</span><select data-rms-post-sale-mode="${escapeHtml(item.id)}"><option value="TASK">Solo tarea / mensaje preparado</option><option value="EXISTING_RESOURCE">Recurso existente</option><option value="NEW_TICKET">Crear ticket postventa</option><option value="NEW_REWARD_PASS">Crear Reward Pass</option></select></label><label><span>Responsable</span><input type="text" data-rms-post-sale-responsible="${escapeHtml(item.id)}" placeholder="Quien ejecuta la acción"></label><label><span>Fecha programada</span><input type="datetime-local" data-rms-post-sale-scheduled="${escapeHtml(item.id)}" value="${escapeHtml(rmsSaleDatetimeLocal())}"></label><label><span>Canal permitido</span><select data-rms-post-sale-channel="${escapeHtml(item.id)}"><option value="">No se contactará ahora</option><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="CALL">Llamada</option><option value="IN_PERSON">Presencial</option></select></label><label><span>Estado inicial</span><select data-rms-post-sale-status="${escapeHtml(item.id)}"><option value="PLANNED">Pendiente</option><option value="SCHEDULED">Programada</option><option value="COMPLETED">Completada</option><option value="NOT_APPLICABLE">No aplica</option></select></label><label><span>Tipo de recurso existente</span><input type="text" data-rms-post-sale-resource-type="${escapeHtml(item.id)}" placeholder="Ticket, encuesta, campaña o beneficio"></label><label><span>ID o enlace del recurso</span><input type="text" data-rms-post-sale-resource-url="${escapeHtml(item.id)}" placeholder="Selecciona o pega el enlace existente"></label><label><span>Beneficio para nuevo ticket</span><input type="text" data-rms-post-sale-ticket-label="${escapeHtml(item.id)}" placeholder="Ej.: 10% próxima compra"></label><label><span>Valor Reward Pass (COP)</span><input type="number" min="1" step="1" data-rms-post-sale-pass-value="${escapeHtml(item.id)}" placeholder="Solo si lo seleccionas"></label></div><label class="rms-commercial-note-field"><span>Resultado, razón o evidencia</span><textarea rows="3" data-rms-post-sale-result="${escapeHtml(item.id)}" placeholder="Qué pasó o por qué no se hará postventa. Si lo dejas vacío, se registrará que no habrá acción por decisión comercial."></textarea></label><label class="rms-commercial-note-field"><span>Contenido o instrucciones <small>(solo si harás una acción)</small></span><textarea rows="3" data-rms-post-sale-content="${escapeHtml(item.id)}" placeholder="Qué se prepara; no se envía comunicación automáticamente."></textarea></label><label class="rms-post-sale-consent"><input type="checkbox" data-rms-post-sale-consent="${escapeHtml(item.id)}"> <span>Confirmo consentimiento y canal válido si habrá contacto.</span></label><label class="rms-post-sale-consent"><input type="checkbox" data-rms-post-sale-intelligence="${escapeHtml(item.id)}"> <span>Enviar a Inteligencia solo con resultado registrable.</span></label></section>
         <section class="rms-commercial-info-block rms-post-sale-history"><h5>C. Historial de Activación 2</h5><ol>${actions.map((action) => `<li><strong>${escapeHtml(rmsPostSaleActionStatusLabel(action.status))} · ${escapeHtml(action.action_type)}</strong><span>${escapeHtml(action.result_note || action.content || "Sin detalle adicional")}</span><small>${escapeHtml(action.resource_type || "Sin recurso")}${action.resource_url ? ` · ${escapeHtml(action.resource_url)}` : ""}</small></li>`).join("") || "<li><strong>Aún no hay acciones</strong><span>Elige una acción principal; las posteriores se registran de forma explícita.</span></li>"}</ol></section>
-        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">link</span>La venta original es obligatoria y nunca se duplica al emitir un ticket, Reward Pass, encuesta o seguimiento.</small><button class="solid-button compact" type="button" data-rms-save-post-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span>Registrar Activación 2</button></div>
+        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">link</span>La venta original nunca se duplica. Si no harás postventa, registra la decisión y envía el aprendizaje a Inteligencia.</small><div class="button-row"><button class="ghost-button compact" type="button" data-rms-post-sale-skip-to-intelligence="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">insights</span>Sin postventa · enviar a Inteligencia</button><button class="solid-button compact" type="button" data-rms-save-post-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span>Registrar Activación 2</button></div></div>
       </section>
     </article>`;
 }
@@ -45723,6 +45723,14 @@ function bindRmsMachineActions(root) {
         .finally(() => { button.disabled = false; });
     });
   });
+  root.querySelectorAll("[data-rms-post-sale-skip-to-intelligence]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = rmsOpportunityById(button.dataset.rmsPostSaleSkipToIntelligence || "");
+      if (!item) return;
+      sendRmsPostSaleToIntelligence(item, root)
+        .catch((error) => showFeedback(error.message || "No pudimos enviar esta decisión a Inteligencia RMS.", "error", { title: "Activación 2" }));
+    });
+  });
   root.querySelectorAll("[data-rms-intelligence-view]").forEach((button) => {
     button.addEventListener("click", () => {
       state.rmsIntelligenceView = button.dataset.rmsIntelligenceView || "case";
@@ -48260,9 +48268,8 @@ async function reactivateRmsRecycled(item, note, destination = "procesamiento") 
 function rmsSaleDraftFromDom(root, id) {
   const productSelect = rmsCommercialNode(root, "[data-rms-sale-product]", id);
   const inventoryProduct = findInventoryProductById(productSelect?.value || "");
-  const confirmation = rmsCommercialWorkflow(rmsOpportunityById(id) || {}).confirmation || {};
   const quantity = Math.max(0.01, rmsCommercialNumber(root, "[data-rms-sale-quantity]", id) || 1);
-  const unitPrice = Math.max(0, Number(confirmation.product_price_snapshot ?? inventoryProduct?.unit_price ?? 0));
+  const unitPrice = Math.max(0, Number(inventoryProduct?.unit_price || 0));
   return {
     inventory_product_id: inventoryProduct?.id || null,
     product_name: inventoryProduct?.name || "",
@@ -48290,6 +48297,13 @@ function updateRmsSaleEconomicsPreview(root, id) {
   if (unitPrice) unitPrice.textContent = rmsCommercialMoney(draft.unit_price, draft.currency);
   const total = rmsCommercialNode(root, "[data-rms-sale-calculated-total]", id);
   if (total) total.textContent = rmsCommercialMoney(draft.sale_amount, draft.currency);
+  const productHint = root.querySelector?.(`#rms-sale-product-hint-${CSS.escape(id)}`);
+  const confirmation = rmsCommercialWorkflow(rmsOpportunityById(id) || {}).confirmation || {};
+  if (productHint) {
+    productHint.textContent = draft.inventory_product_id && String(draft.inventory_product_id) !== String(confirmation.inventory_product_id || "")
+      ? "Producto corregido al cerrar la venta. Se conservará la referencia negociada y esta será la compra real."
+      : "Producto preseleccionado desde Negociación. Cámbialo solo si la compra real fue otra referencia.";
+  }
   const productCost = draft.quantity * draft.unit_cost;
   const grossProfit = draft.sale_amount - productCost - draft.benefit_cost;
   const netProfit = grossProfit - draft.acquisition_cost;
@@ -48327,6 +48341,18 @@ function applyRmsNegotiationContextToAttributedSales(root) {
     const amountLabel = amountInput?.closest("label")?.querySelector(":scope > span");
     if (amountInput) amountInput.readOnly = true;
     if (amountLabel) amountLabel.textContent = "Valor pagado (calculado)";
+    if (!card.querySelector("[data-rms-sale-cost-details]")) {
+      const details = document.createElement("details");
+      details.className = "rms-sale-cost-details";
+      details.dataset.rmsSaleCostDetails = item?.id || "sale";
+      details.innerHTML = `<summary>Costos y beneficios <small>(opcionales)</small></summary><div class="rms-sale-form-grid"></div>`;
+      const extrasGrid = details.querySelector(".rms-sale-form-grid");
+      ["[data-rms-sale-unit-cost]", "[data-rms-sale-benefit-type]", "[data-rms-sale-benefit-cost]", "[data-rms-sale-acquisition-cost]"]
+        .map((selector) => card.querySelector(selector)?.closest("label"))
+        .filter(Boolean)
+        .forEach((label) => extrasGrid?.append(label));
+      card.querySelector(".rms-sale-form-grid")?.insertAdjacentElement("afterend", details);
+    }
     if (!card.querySelector("[data-rms-sale-calculation]")) {
       card.querySelector(".rms-sale-form-grid")?.insertAdjacentHTML("afterend", `<aside class="rms-sale-calculation" data-rms-sale-calculation="${escapeHtml(item?.id || "sale")}" aria-live="polite"><span>Precio del producto</span><strong data-rms-sale-unit-price="${escapeHtml(item?.id || "sale")}">—</strong><span>× cantidad</span><strong data-rms-sale-calculated-total="${escapeHtml(item?.id || "sale")}">—</strong><small>El valor pagado se calcula con el precio confirmado y la cantidad vendida. Registra descuentos o esfuerzos como beneficio.</small></aside>`);
     }
@@ -48536,6 +48562,52 @@ async function saveRmsPostSaleAction(item, root) {
   ]);
   showFeedback(result?.duplicate ? "Esta acción ya estaba registrada; no se duplicó el recurso ni la venta." : "Activación 2 registrada sobre la venta original.", "success", { title: "Activación 2" });
   openRmsStation("postventa", { source: "post-sale-action" });
+}
+
+async function sendRmsPostSaleToIntelligence(item, root) {
+  const resultInput = rmsCommercialNode(root, "[data-rms-post-sale-result]", item.id);
+  const typeInput = rmsCommercialNode(root, "[data-rms-post-sale-type]", item.id);
+  const modeInput = rmsCommercialNode(root, "[data-rms-post-sale-mode]", item.id);
+  const statusInput = rmsCommercialNode(root, "[data-rms-post-sale-status]", item.id);
+  const channelInput = rmsCommercialNode(root, "[data-rms-post-sale-channel]", item.id);
+  const saleId = item.state_metadata?.rms_attributed_sale_id || null;
+  const reason = String(resultInput?.value || "").trim() || "No se realizará una acción postventa para este cliente en este momento.";
+  if (resultInput && !resultInput.value.trim()) resultInput.value = reason;
+  if (typeInput) typeInput.value = "NO_ACTION_NEEDED";
+  if (modeInput) modeInput.value = "TASK";
+  if (statusInput) statusInput.value = "NOT_APPLICABLE";
+  if (channelInput) channelInput.value = "";
+  const button = rmsCommercialNode(root, "[data-rms-post-sale-skip-to-intelligence]", item.id);
+  if (button) button.disabled = true;
+  try {
+    const result = await api("/api/business/rms-machine/post-sale-actions", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_id: item.source_id,
+        source_type: item.source_type || "PLAYER",
+        lead_id: item.lead_id || null,
+        sale_id: saleId,
+        action_type: "NO_ACTION_NEEDED",
+        execution_mode: "TASK",
+        status: "NOT_APPLICABLE",
+        result_note: reason,
+        send_to_intelligence: true,
+        idempotency_key: rmsPostSaleActionKey(item.id),
+      }),
+    });
+    if (state.rmsPostSaleActionKeys) delete state.rmsPostSaleActionKeys[item.id];
+    await Promise.all([
+      loadRmsPostSaleActions({ force: true }),
+      loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "postventa" }),
+      loadRmsIntelligenceData({ force: true }),
+    ]);
+    showFeedback(result?.duplicate ? "Esta decisión ya estaba registrada; no se duplicó." : "Sin acción postventa: la decisión fue registrada y enviada a Inteligencia RMS.", "success", { title: "Activación 2" });
+    openRmsStation("postventa", { source: "post-sale-intelligence" });
+  } catch (error) {
+    if (button) button.disabled = false;
+    throw error;
+  }
 }
 
 function rmsActivationDelivery(item = {}) {

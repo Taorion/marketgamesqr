@@ -20748,8 +20748,49 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rm
   line-height: 1.42 !important;
 }
 
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-cost-details {
+  margin-top: 14px !important;
+  border: 1px solid #dce8ee !important;
+  border-radius: 12px !important;
+  background: #fbfdfe !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-cost-details summary {
+  padding: 11px 13px !important;
+  color: #315b74 !important;
+  cursor: pointer !important;
+  font-size: .78rem !important;
+  font-weight: 800 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-cost-details summary small {
+  color: #71879a !important;
+  font-weight: 600 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-cost-details[open] > .rms-sale-form-grid {
+  padding: 0 13px 13px !important;
+}
+
 @media (max-width: 760px) {
   #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid {
     grid-template-columns: 1fr !important;
   }
+}
+
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-choice-copy {
+  margin: -4px 0 14px !important;
+  color: #60798c !important;
+  font-size: .8rem !important;
+  line-height: 1.45 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="post-sale"] [data-rms-post-sale-skip-to-intelligence] {
+  border-color: #c9dfae !important;
+  background: #fbfdf4 !important;
+  color: #526e2e !important;
+}
+
+#rmsStationWorkspace[data-station-theme="post-sale"] [data-rms-post-sale-skip-to-intelligence] .material-symbols-outlined {
+  color: #708d2d !important;
 }
