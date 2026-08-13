@@ -20517,3 +20517,51 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rm
     padding: 12px 18px !important;
   }
 }
+
+/* El contexto de Negociación se abre como panel completo, no dentro de la columna del botón. */
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head .rms-negotiation-context-drawer {
+  width: auto !important;
+  max-width: none !important;
+  min-width: max-content !important;
+  margin: 0 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head .rms-negotiation-context-drawer[open] {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  background: #fbfdfe !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head .rms-negotiation-context-drawer[open] summary {
+  padding: 11px 14px !important;
+  border-bottom: 1px solid #dce8ee !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head .rms-negotiation-context-drawer[open] > div {
+  padding: 15px 16px 18px !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head .rms-negotiation-context-drawer dl {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+  gap: 14px 18px !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head .rms-negotiation-context-drawer dd {
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  line-height: 1.42 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head .rms-negotiation-context-drawer .rms-negotiation-history {
+  width: 100% !important;
+  margin-top: 18px !important;
+}
+
+@media (max-width: 760px) {
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head .rms-negotiation-context-drawer,
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head .rms-negotiation-context-drawer[open] {
+    width: 100% !important;
+  }
+}
