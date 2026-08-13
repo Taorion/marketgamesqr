@@ -44410,6 +44410,9 @@ function rmsStationDisplayRows(rows = [], phase = "") {
 
 function prepareRmsCommercialAccordions(root = rmsStationWorkspace) {
   if (!root) return;
+  // Ningún campo de la estación bloquea por validación nativa. Cada acción
+  // valida únicamente el dato mínimo que necesita para decidir su destino.
+  root.querySelectorAll("[required]").forEach((field) => field.removeAttribute("required"));
   root.querySelectorAll(".rms-commercial-work-console").forEach((consoleNode) => {
     const blocks = Array.from(consoleNode.querySelectorAll(":scope > .rms-commercial-info-block"));
     if (!blocks.length) return;
@@ -51214,7 +51217,7 @@ if (paymentResult === "success") {
 /* Negociación compacta: conserva los contratos RMS y reduce la operación a una ruta activa. */
 function rmsNegotiationCompactPaths() {
   return [
-    { key: "conversion", label: "Acuerdo confirmado", icon: "paid", result: "ACCEPTED", route: "NEGOTIATION_CLEAN" },
+    { key: "conversion", label: "Venta confirmada", icon: "paid", result: "ACCEPTED", route: "NEGOTIATION_CLEAN" },
     { key: "risk", label: "Requiere protección", icon: "shield", result: "ACCEPTED", route: "NEEDS_RISK_REVIEW" },
     { key: "followup", label: "Espera o pérdida", icon: "schedule", result: "WAITING", route: "" },
     { key: "recycle", label: "Reciclaje", icon: "autorenew", result: "RECYCLE", route: "" },
@@ -51275,8 +51278,10 @@ function rmsNegotiationCompactHealthMarkup(item, draft, path) {
   const health = rmsNegotiationCleanHealth(item, draft);
   if (path === "risk") return `<span class="material-symbols-outlined" aria-hidden="true">shield</span><strong>Este acuerdo requiere protección antes de atribuirse.</strong><small>Se enviará a Riesgos de fuga con la condición y evidencia registradas.</small>`;
   if (path !== "conversion") return `<span class="material-symbols-outlined" aria-hidden="true">edit_note</span><strong>La decisión quedará registrada en el historial.</strong>`;
+  const minimumMissing = [!draft.inventory_product_id && "Producto vendido", Number(draft.amount) <= 0 && "valor pagado"].filter(Boolean);
+  if (minimumMissing.length) return `<span class="material-symbols-outlined" aria-hidden="true">pending</span><strong>Para enviar la venta falta: ${escapeHtml(minimumMissing.join(" y "))}.</strong><small>Los demás datos son opcionales y puedes completarlos después.</small>`;
   const missing = health.checks.filter((check) => !check.ready).map((check) => check.label.replace("Producto o servicio definido", "Producto").replace("Valor final definido", "valor").replace("Condición comercial confirmada", "condición").replace("Canal y responsable", "canal y responsable").replace("Evidencia, referencia o nota verificable", "evidencia"));
-  if (health.requiresRisk) return `<span class="material-symbols-outlined" aria-hidden="true">shield</span><strong>Este acuerdo requiere protección antes de atribuirse.</strong><button type="button" class="link-button" data-rms-protect-agreement="${escapeHtml(item.id)}">Proteger acuerdo</button>`;
+  if (health.requiresRisk) return `<span class="material-symbols-outlined" aria-hidden="true">info</span><strong>Venta lista para enviar; faltan datos opcionales de soporte.</strong><small>Registra evidencia, responsable o condición si los tienes. Usa Riesgos de fuga solo si el acuerdo es frágil.</small>`;
   return health.canClean ? `<span class="material-symbols-outlined" aria-hidden="true">verified</span><strong>Listo para atribuir</strong><small>Producto, valor, condición, canal, responsable y evidencia completos.</small>` : `<span class="material-symbols-outlined" aria-hidden="true">pending</span><strong>Faltan: ${escapeHtml(missing.join(" y ") || "datos comerciales")}</strong><small>Completa el primer campo pendiente para confirmar la venta.</small>`;
 }
 
@@ -51304,13 +51309,35 @@ function activateRmsNegotiationTab(root, id, tabKey, item = rmsOpportunityById(i
 function updateRmsNegotiationDecisionUi(root, id) {
   const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
   const active = card?.querySelector("[data-rms-negotiation-tab].is-active")?.dataset.rmsNegotiationTabKey || "conversion";
+  const conversionHeader = card?.querySelector('[data-rms-negotiation-path="conversion"] > header');
+  if (conversionHeader) {
+    const title = conversionHeader.querySelector("h5");
+    const copy = conversionHeader.querySelector("p");
+    if (title) title.textContent = "Venta confirmada";
+    if (copy) copy.textContent = "Solo producto vendido y valor pagado son obligatorios. Completa el resto si lo tienes.";
+  }
+  const conversionMinimumControls = new Set(["[data-rms-confirm-product]", "[data-rms-confirm-amount]"]);
+  card?.querySelectorAll('[data-rms-negotiation-path="conversion"] label').forEach((label) => {
+    const fieldLabel = label.querySelector(":scope > span");
+    const isMinimum = Array.from(conversionMinimumControls).some((selector) => label.querySelector(selector));
+    if (!fieldLabel || isMinimum || fieldLabel.dataset.rmsOptionalLabel === "true") return;
+    fieldLabel.dataset.rmsOptionalLabel = "true";
+    fieldLabel.textContent = `${fieldLabel.textContent} (opcional)`;
+  });
+  const paidAmountLabel = card?.querySelector('[data-rms-negotiation-path="conversion"] [data-rms-confirm-amount]')?.closest("label")?.querySelector(":scope > span");
+  if (paidAmountLabel) paidAmountLabel.textContent = "Valor pagado";
   const item = rmsOpportunityById(id) || {};
   const draft = rmsNegotiationDraft(root, id);
   const choice = rmsCommercialNode(root, "[data-rms-negotiation-result-choice]", id);
   if (active === "followup" && choice) draft.result = choice.value;
   const health = rmsNegotiationCleanHealth(item, draft);
   const healthNode = rmsCommercialNode(root, "[data-rms-negotiation-health]", id);
-  if (healthNode) healthNode.innerHTML = rmsNegotiationCompactHealthMarkup(item, draft, active);
+  if (healthNode) {
+    healthNode.innerHTML = rmsNegotiationCompactHealthMarkup(item, draft, active);
+    if (active === "conversion" && health.canClean) {
+      healthNode.querySelector("strong")?.replaceChildren("Venta confirmada: lista para enviar a Ventas atribuidas");
+    }
+  }
   const followupAt = rmsCompactActiveNode(root, id, "[data-rms-negotiation-next-at]")?.closest("label");
   const lossClassification = rmsCompactActiveNode(root, id, "[data-rms-negotiation-lost-classification]")?.closest("label");
   if (active === "followup") {
@@ -51318,11 +51345,11 @@ function updateRmsNegotiationDecisionUi(root, id) {
     if (followupAt) followupAt.hidden = isLoss;
     if (lossClassification) lossClassification.hidden = !isLoss;
   }
-  const ctas = { conversion: health.requiresRisk ? "Proteger acuerdo" : "Confirmar venta limpia y enviar a Ventas atribuidas", risk: "Enviar a Riesgos de fuga", followup: choice?.value === "LOST" ? "Registrar pérdida" : "Programar seguimiento", recycle: "Enviar a Reciclaje" };
+  const ctas = { conversion: "Enviar venta a Ventas atribuidas", risk: "Enviar a Riesgos de fuga", followup: choice?.value === "LOST" ? "Registrar pérdida" : "Programar seguimiento", recycle: "Enviar a Reciclaje" };
   const cta = rmsCommercialNode(root, "[data-rms-negotiation-cta]", id);
   if (cta) cta.textContent = ctas[active];
   const help = rmsCommercialNode(root, "[data-rms-negotiation-help]", id);
-  if (help) help.textContent = active === "conversion" && !health.canClean && !health.requiresRisk ? `Faltan: ${health.blockers.join(", ")}.` : active === "risk" ? "La condición será revisada antes de atribuir la venta." : "";
+  if (help) help.textContent = active === "risk" ? "La condición será revisada antes de atribuir la venta." : "";
 }
 
 async function saveRmsNegotiationDecision(item, root) {
@@ -51331,15 +51358,14 @@ async function saveRmsNegotiationDecision(item, root) {
   const draft = rmsNegotiationDraft(root, item.id);
   const resultChoice = rmsCommercialNode(root, "[data-rms-negotiation-result-choice]", item.id);
   if (active === "followup" && resultChoice) draft.result = resultChoice.value;
-  if (active === "conversion") draft.commercial_route = rmsNegotiationCleanHealth(item, draft).requiresRisk ? "NEEDS_RISK_REVIEW" : "NEGOTIATION_CLEAN";
+  if (active === "conversion") draft.commercial_route = "NEGOTIATION_CLEAN";
   if (active === "risk") draft.commercial_route = "NEEDS_RISK_REVIEW";
   const button = rmsCommercialNode(root, "[data-rms-negotiation-cta-button]", item.id);
   const focusMissing = (missing) => { const first = missing[0]; rmsCompactNegotiationFocus(root, item.id, first); showFeedback(`Para continuar falta ${missing.join(", ")}.`, "info", { title: "Negociación" }); };
   if (["conversion", "risk"].includes(active)) {
-    const missing = [!draft.inventory_product_id && "producto", draft.amount <= 0 && "valor", !draft.channel && "canal", !draft.responsible && "responsable", !draft.customer_condition && "condición", !(draft.payment_reference || draft.evidence || draft.summary) && "evidencia"].filter(Boolean);
+    const missing = [!draft.inventory_product_id && "producto", draft.amount <= 0 && "valor pagado"].filter(Boolean);
     if (missing.length) return focusMissing(missing);
     const health = rmsNegotiationCleanHealth(item, draft);
-    if (active === "conversion" && health.requiresRisk) { activateRmsNegotiationTab(root, item.id, "risk", item); showFeedback("Este acuerdo requiere protección antes de atribuirse.", "info", { title: "Negociación" }); return; }
     if (button) button.disabled = true;
     const key = rmsCommercialOperationKey("commercial-confirmation", item, `${draft.commercial_route}|${draft.inventory_product_id}|${draft.amount}|${draft.evidence}|${draft.responsible}|${draft.customer_condition}`);
     await api("/api/business/rms-machine/commercial-confirmation", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft, risk_signals: health.signals, idempotency_key: key }) });
@@ -51350,10 +51376,10 @@ async function saveRmsNegotiationDecision(item, root) {
     openRmsStation(destination, { source: "negotiation-compact" });
     return;
   }
-  if (!draft.reason) { rmsCommercialNode(root, "[data-rms-negotiation-reason]", item.id)?.focus(); showFeedback("Explica brevemente la decisión comercial.", "info", { title: "Negociación" }); return; }
+  if (!draft.reason) draft.reason = "Decisión registrada sin detalle adicional.";
   if (["WAITING", "NO_RESPONSE"].includes(draft.result) && !draft.next_action_at) { rmsCommercialNode(root, "[data-rms-negotiation-next-at]", item.id)?.focus(); showFeedback("Programa el próximo contacto.", "info", { title: "Negociación" }); return; }
   if (draft.result === "LOST" && !draft.lost_classification) { showFeedback("Selecciona la clasificación de pérdida.", "info", { title: "Negociación" }); return; }
-  if (draft.result === "RECYCLE" && (!draft.recycle_reason || !draft.recycle_strategy || !draft.recycle_consent || !draft.recycle_responsible || !draft.channel || !draft.next_action_at)) { showFeedback("Para Reciclaje define motivo, estrategia, responsable, canal, consentimiento y fecha.", "info", { title: "Negociación" }); return; }
+  if (draft.result === "RECYCLE" && (!draft.recycle_reason || !draft.recycle_strategy || !draft.recycle_consent || !draft.channel || !draft.next_action_at)) { showFeedback("Para Reciclaje define motivo, estrategia, canal, consentimiento y fecha.", "info", { title: "Negociación" }); return; }
   if (button) button.disabled = true;
   const key = rmsCommercialOperationKey("negotiation", item, `${draft.result}|${draft.reason}|${draft.next_action_at || ""}`);
   await api("/api/business/rms-machine/negotiation-result", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft, idempotency_key: key }) });

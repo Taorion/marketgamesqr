@@ -1634,27 +1634,9 @@ async function recordRmsCommercialConfirmation(businessId, user, payload = {}) {
   const commercialRoute = payload.commercial_route === "NEGOTIATION_CLEAN" ? "NEGOTIATION_CLEAN" : "NEEDS_RISK_REVIEW";
   const missing = [
     !confirmation.inventory_product_id && "producto o servicio del inventario",
-    confirmation.amount <= 0 && "valor acordado",
-    !confirmation.responsible && "responsable",
-    !(confirmation.payment_reference || confirmation.evidence || confirmation.note) && "evidencia, referencia o nota de confirmación",
+    confirmation.amount <= 0 && "valor de la venta",
   ].filter(Boolean);
   if (missing.length) throw badRequest(`Antes de continuar confirma: ${missing.join(", ")}.`);
-  if (confirmation.negotiation.objection_status === "RESOLVED" && !confirmation.negotiation.objection_resolution) {
-    throw badRequest("Explica cómo se resolvió la objeción antes de marcarla como resuelta.");
-  }
-  if (commercialRoute === "NEGOTIATION_CLEAN" && ["PENDING", "NEEDS_VALIDATION"].includes(confirmation.negotiation.objection_status)) {
-    throw badRequest("Una objeción pendiente o sin validar debe mantenerse en Negociación o pasar a Riesgos de fuga.");
-  }
-  if (commercialRoute === "NEGOTIATION_CLEAN") {
-    const cleanMissing = [
-      !(item.name && (item.phone || item.email)) && "cliente y contacto identificables",
-      !confirmation.negotiation.customer_condition && "condición comercial confirmada",
-      !confirmation.negotiation.channel && "canal de contacto",
-      !confirmation.negotiation.summary && "resumen verificable de la conversación",
-      confirmation.negotiation.objection_type && confirmation.negotiation.objection_type !== "OTHER" && confirmation.negotiation.objection_status !== "RESOLVED" && "objeción resuelta",
-    ].filter(Boolean);
-    if (cleanMissing.length) throw badRequest(`La venta limpia requiere: ${cleanMissing.join(", ")}.`);
-  }
   const confirmationRound = {
     result: "ACCEPTED",
     ...confirmation.negotiation,
@@ -1912,16 +1894,15 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
   if (item.stage !== "accion_correctiva") throw badRequest("El resultado solo se registra desde Negociación.");
   const result = String(payload.result || "").toUpperCase();
   if (!["WAITING", "REPROCESS", "NO_RESPONSE", "RECYCLE", "LOST"].includes(result)) throw badRequest("Selecciona un resultado de Negociación válido.");
-  const reason = String(payload.reason || payload.summary || "").trim();
-  if (!reason) throw badRequest("Explica la decisión comercial antes de guardarla.");
+  const reason = String(payload.reason || payload.summary || "").trim() || "Decisión registrada sin detalle adicional.";
   const nextAt = payload.next_action_at || null;
   if (["WAITING", "NO_RESPONSE", "RECYCLE"].includes(result) && !nextAt) throw badRequest("Programa el próximo contacto o reactivación antes de guardar.");
   if (result === "REPROCESS" && !["procesamiento", "clasificacion"].includes(payload.reprocess_phase)) {
     throw badRequest("El reproceso debe volver explícitamente a Evaluación o Activación 1.");
   }
   if (result === "RECYCLE") {
-    if (!payload.recycle_reason || !payload.recycle_strategy || !payload.recycle_consent || !payload.channel || !payload.recycle_responsible) {
-      throw badRequest("Para Reciclaje indica motivo, estrategia, responsable, canal permitido y consentimiento confirmado.");
+    if (!payload.recycle_reason || !payload.recycle_strategy || !payload.recycle_consent || !payload.channel) {
+      throw badRequest("Para Reciclaje indica motivo, estrategia, canal permitido y consentimiento confirmado.");
     }
     if (new Date(nextAt).getTime() <= Date.now()) {
       throw badRequest("La fecha de reactivación debe estar en el futuro.");
@@ -1951,7 +1932,7 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
     recycle: result === "RECYCLE" ? {
       reason: payload.recycle_reason,
       strategy: payload.recycle_strategy,
-      responsible: String(payload.recycle_responsible || "").trim(),
+      responsible: String(payload.recycle_responsible || payload.responsible || user.id).trim(),
       consent: payload.recycle_consent,
       channel: String(payload.channel || "").trim(),
       non_conversion_cost: nonConversionCost,
@@ -2052,9 +2033,8 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     throw badRequest("Una venta limpia confirmada no debe volver a Riesgos de fuga; atribúyela desde Ventas atribuidas.");
   }
   const result = String(payload.result || "").toUpperCase();
-  const reason = String(payload.reason || "").trim();
+  const reason = String(payload.reason || "").trim() || "Revisión registrada sin detalle adicional.";
   if (!["CLEARED", "RETURN_TO_NEGOTIATION", "WAITING", "RECYCLE", "LOST"].includes(result)) throw badRequest("Selecciona una decisión de Riesgos de fuga válida.");
-  if (!reason) throw badRequest("Explica la decisión antes de guardar la revisión de riesgo.");
   const hasSupport = Boolean(confirmation?.evidence || confirmation?.payment_reference || confirmation?.note);
   const canClear = Boolean(item.name && (item.phone || item.email) && confirmation?.inventory_product_id && Number(confirmation.amount) > 0 && confirmation?.responsible && hasSupport);
   if (result === "CLEARED" && !canClear) throw badRequest("No se puede liberar la venta: faltan contacto, producto, valor, responsable o soporte verificable.");
