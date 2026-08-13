@@ -42360,11 +42360,31 @@ function rmsRiskStationMetricsMarkup(rows = [], allOpportunities = []) {
 function rmsAttributedSaleStationCardMarkup(item = {}) {
   const workflow = rmsCommercialWorkflow(item);
   const confirmation = workflow.confirmation;
+  const evaluation = workflow.evaluation || {};
+  const saleContext = confirmation.sale_context || {};
+  const activation = rmsActivationDelivery(item);
   const saleOrigin = confirmation.route === "NEGOTIATION_CLEAN" ? "Venta limpia confirmada desde Negociación" : "Venta protegida y liberada desde Riesgos de fuga";
   const defaultProduct = confirmation.product_name || rmsClassifiedProductName(item) || item.product_interest || "";
   // Cierre never guesses a catalog reference from a label. The confirmation is the
   // canonical handoff and must be preselected before an operator can attribute payment.
   const confirmedInventoryProductId = String(confirmation.inventory_product_id || "");
+  const inventoryProduct = findInventoryProductById(confirmedInventoryProductId);
+  const quantity = Math.max(0.01, Number(saleContext.quantity || 1));
+  const unitCost = Math.max(0, Number(inventoryProduct?.cost_price || 0));
+  const benefitType = String(saleContext.benefit_type || "NONE").toUpperCase();
+  const benefitCost = Math.max(0, Number(saleContext.benefit_cost || 0));
+  const acquisitionCost = Math.max(0, Number(saleContext.acquisition_cost || 0));
+  const evaluationResponse = RMS_EVALUATION_RESPONSES.find((entry) => entry.value === evaluation.response)?.short || evaluation.response || "Sin respuesta registrada";
+  const activationDetail = [activation.offer || defaultProduct, activation.channel ? `por ${activation.channel}` : "", activation.outcome ? rmsActivationOutcomeLabel(activation.outcome) : ""].filter(Boolean).join(" · ");
+  const evaluationDetail = [evaluationResponse, evaluation.need, evaluation.objections, evaluation.decision_maker].filter(Boolean).join(" · ");
+  const negotiationDetail = [confirmation.negotiation?.customer_condition, confirmation.negotiation?.channel, confirmation.responsible, confirmation.payment_reference].filter(Boolean).join(" · ");
+  const inheritedNotes = [
+    evaluation.note && `Evaluación: ${evaluation.note}`,
+    confirmation.payment_reference,
+    confirmation.evidence,
+    confirmation.note,
+    saleContext.benefit_description && `Beneficio o esfuerzo comercial: ${saleContext.benefit_description}`,
+  ].filter(Boolean).join(" · ");
   return `
     <article class="rms-commercial-work-item rms-sale-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
       ${rmsCommercialLeadAsideMarkup(item, "Ventas atribuidas · evidencia de una compra real")}
@@ -42372,22 +42392,24 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
         ${rmsDealProgressMarkup("sale", "La validación final fue aprobada. Registra el resultado comercial.")}
         <section class="rms-sale-trust-ribbon"><span class="material-symbols-outlined" aria-hidden="true">verified</span><div><strong>Venta lista para atribuir</strong><small>${escapeHtml(saleOrigin)}. Producto, valor y evidencia fueron precargados.</small></div></section>
         <header class="rms-commercial-console-head"><div><span class="mono-label">Compra confirmada</span><h4>Registra el pago y su rentabilidad</h4><p>La venta se atribuye a este contacto y a la ruta de Activación 1. Los costos son los que declare tu equipo.</p></div><span class="rms-commercial-state is-sale">Pago por registrar</span></header>
+        <details class="rms-sale-handoff" open><summary><span class="material-symbols-outlined" aria-hidden="true">route</span><span><strong>Información que llega con el lead</strong><small>Activación, Evaluación y Negociación se conservan; aquí solo completas el pago real.</small></span></summary><div class="rms-sale-handoff-grid"><article><span>Activación</span><strong>${escapeHtml(activationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(activation.firstContactAt ? `Contacto ${formatDate(activation.firstContactAt)}` : "Sin fecha de contacto")}</small></article><article><span>Evaluación</span><strong>${escapeHtml(evaluationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(evaluation.next_action || "Sin próximo paso pendiente")}</small></article><article><span>Negociación</span><strong>${escapeHtml(negotiationDetail || "Venta confirmada")}</strong><small>${escapeHtml(confirmation.evidence ? "Evidencia registrada" : "Sin evidencia adicional")}</small></article></div></details>
         <div class="rms-sale-form-grid">
-          <label><span>Producto del inventario</span><select data-rms-sale-product="${escapeHtml(item.id)}" aria-describedby="rms-sale-product-hint-${escapeHtml(item.id)}">${rmsInventoryProductPickerOptions(confirmedInventoryProductId, defaultProduct)}</select><small id="rms-sale-product-hint-${escapeHtml(item.id)}">${confirmedInventoryProductId ? "Producto confirmado en la negociación; verifica que corresponde al pago." : "Antes de registrar el pago, vincula el producto real desde el inventario."}</small></label>
+          <label><span>Producto confirmado</span><select data-rms-sale-product="${escapeHtml(item.id)}" aria-describedby="rms-sale-product-hint-${escapeHtml(item.id)}" disabled>${rmsInventoryProductPickerOptions(confirmedInventoryProductId, defaultProduct)}</select><small id="rms-sale-product-hint-${escapeHtml(item.id)}">El producto viene de Negociación. Si no corresponde, vuelve allí para corregir el acuerdo antes de registrar la venta.</small></label>
           <input type="hidden" value="${escapeHtml(defaultProduct)}" data-rms-sale-product-name="${escapeHtml(item.id)}">
-          <label><span>Cantidad</span><input type="number" min="0.01" step="0.01" value="1" data-rms-sale-quantity="${escapeHtml(item.id)}"></label>
+          <label><span>Cantidad comprada</span><input type="number" min="0.01" step="0.01" value="${escapeHtml(String(quantity))}" data-rms-sale-quantity="${escapeHtml(item.id)}"></label>
           <label><span>Dinero recibido</span><input type="number" min="1" step="0.01" value="${escapeHtml(confirmation.amount ?? "")}" data-rms-sale-amount="${escapeHtml(item.id)}" placeholder="0"></label>
           <label><span>Moneda</span><select data-rms-sale-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${currency === (confirmation.currency || "COP") ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
-          <label><span>Costo unitario</span><input type="number" min="0" step="0.01" value="0" data-rms-sale-unit-cost="${escapeHtml(item.id)}"></label>
+          <label><span>Costo unitario</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(unitCost))}" data-rms-sale-unit-cost="${escapeHtml(item.id)}"></label>
           <label><span>Medio de pago</span><select data-rms-sale-payment="${escapeHtml(item.id)}"><option value="TRANSFER">Transferencia</option><option value="CASH">Efectivo</option><option value="CARD">Tarjeta</option><option value="PAYMENT_LINK">Link de pago</option><option value="OTHER">Otro</option></select></label>
-          <label><span>Beneficio usado</span><select data-rms-sale-benefit-type="${escapeHtml(item.id)}"><option value="NONE">No se usó beneficio</option><option value="DISCOUNT">Descuento</option><option value="GIFT">Obsequio</option><option value="BONUS">Bono / incentivo</option><option value="OTHER">Otro</option></select></label>
-          <label><span>Costo del beneficio</span><input type="number" min="0" step="0.01" value="0" data-rms-sale-benefit-cost="${escapeHtml(item.id)}"></label>
-          <label><span>Costo de adquisición</span><input type="number" min="0" step="0.01" value="0" data-rms-sale-acquisition-cost="${escapeHtml(item.id)}"></label>
+          <label><span>Beneficio usado</span><select data-rms-sale-benefit-type="${escapeHtml(item.id)}"><option value="NONE" ${benefitType === "NONE" ? "selected" : ""}>No se usó beneficio</option><option value="DISCOUNT" ${benefitType === "DISCOUNT" ? "selected" : ""}>Descuento</option><option value="GIFT" ${benefitType === "GIFT" ? "selected" : ""}>Obsequio</option><option value="BONUS" ${benefitType === "BONUS" ? "selected" : ""}>Bono / incentivo</option><option value="OTHER" ${benefitType === "OTHER" ? "selected" : ""}>Otro</option></select></label>
+          <label><span>Costo del beneficio</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(benefitCost))}" data-rms-sale-benefit-cost="${escapeHtml(item.id)}"></label>
+          <label><span>Costo de adquisición</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(acquisitionCost))}" data-rms-sale-acquisition-cost="${escapeHtml(item.id)}"></label>
           <label><span>Pago recibido el</span><input type="datetime-local" value="${escapeHtml(rmsSaleDatetimeLocal())}" data-rms-sale-paid-at="${escapeHtml(item.id)}"></label>
         </div>
-        <label class="rms-commercial-note-field"><span>Evidencia y acuerdos de la venta</span><textarea rows="4" data-rms-sale-notes="${escapeHtml(item.id)}" placeholder="Explica condiciones, comprobante, factura, promesas y alertas de postventa.">${escapeHtml([confirmation.payment_reference, confirmation.evidence, confirmation.note].filter(Boolean).join(" · "))}</textarea></label>
+        <label class="rms-commercial-note-field"><span>Evidencia y acuerdos de la venta</span><textarea rows="4" data-rms-sale-notes="${escapeHtml(item.id)}" placeholder="Explica condiciones, comprobante, factura, promesas y alertas de postventa.">${escapeHtml(inheritedNotes)}</textarea></label>
         <div class="rms-sale-economics" data-rms-sale-economics="${escapeHtml(item.id)}"></div>
-        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">calculate</span>Utilidad neta = pago − costo del producto − beneficio − adquisición. Un segundo clic no duplica esta venta.</small><button class="solid-button compact" type="button" data-rms-save-attributed-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">paid</span>Registrar venta cobrada</button></div>
+        <aside class="rms-sale-intelligence-handoff"><span class="material-symbols-outlined" aria-hidden="true">insights</span><div><strong>Inteligencia recibirá este resultado automáticamente</strong><small>Al registrar la venta se envían producto, cantidad, costos, canal y el recorrido comercial. El lead continuará en Postventa para atender recompra, soporte o referidos.</small></div></aside>
+        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">calculate</span>Utilidad neta = pago − costo del producto − beneficio − adquisición. Un segundo clic no duplica esta venta.</small><button class="solid-button compact" type="button" data-rms-save-attributed-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">paid</span>Registrar venta y enviar resultado a Inteligencia</button></div>
       </section>
     </article>
   `;
@@ -48295,6 +48317,8 @@ function applyRmsNegotiationContextToAttributedSales(root) {
     setValue("[data-rms-sale-benefit-type]", context.benefit_type || "NONE");
     setValue("[data-rms-sale-benefit-cost]", Number(context.benefit_cost) || 0);
     setValue("[data-rms-sale-acquisition-cost]", Number(context.acquisition_cost) || 0);
+    const inventoryProduct = findInventoryProductById(rmsCommercialNode(root, "[data-rms-sale-product]", item?.id || "")?.value || "");
+    setValue("[data-rms-sale-unit-cost]", Number(inventoryProduct?.cost_price) || 0);
     const notes = card.querySelector("[data-rms-sale-notes]");
     if (notes && context.benefit_description && !notes.value.includes(context.benefit_description)) {
       notes.value = [notes.value, `Beneficio o esfuerzo comercial: ${context.benefit_description}`].filter(Boolean).join(" · ");
@@ -48360,7 +48384,7 @@ async function saveRmsAttributedSale(item, root) {
     ? ` Además, ${result.customer.name || "el comprador"} fue creado automáticamente como contacto cliente.`
     : "";
   showFeedback(
-    `${result?.duplicate ? "Esta venta ya estaba registrada; no se duplicó." : "Venta atribuida registrada con sus costos, utilidad y ROI."}${customerFeedback}`,
+    `${result?.duplicate ? "Esta venta ya estaba registrada; no se duplicó." : "Venta atribuida registrada con sus costos, utilidad y ROI. El resultado fue enviado a Inteligencia RMS; el lead continúa en Postventa."}${customerFeedback}`,
     "success",
     { title: "Ventas atribuidas" }
   );

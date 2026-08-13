@@ -2445,9 +2445,42 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   }, RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE);
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
-    event_type: "sale_attributed", event_title: "Venta atribuida correctamente",
-    event_description: "La condición comercial y la validación anti-fuga quedaron trazadas antes del registro final.",
-    rms_phase: "postventa", metadata: { sale_id: result.sale.id, movement_id: movement.movement?.id || null, quality_control: "revenue_generado_visual" },
+    event_type: "sale_attributed", event_title: "Venta atribuida e incorporada a Inteligencia",
+    event_description: "La venta queda en Postventa para continuar la relación. Su recorrido comercial y economía se enviaron a Inteligencia RMS para análisis.",
+    rms_phase: "postventa", metadata: {
+      sale_id: result.sale.id,
+      movement_id: movement.movement?.id || null,
+      quality_control: "revenue_generado_visual",
+      intelligence_handoff: {
+        status: "READY",
+        source: "attributed_sale",
+        activation: {
+          campaign_id: item.campaign_id || null,
+          acquisition_channel_id: item.acquisition_channel_id || null,
+          acquisition_channel: item.acquisition_channel_name_snapshot || item.channel || null,
+          offer: item.product_interest || null,
+        },
+        evaluation: workflowMetadata.rms_evaluation || null,
+        negotiation: confirmation.negotiation || null,
+        confirmation: {
+          inventory_product_id: confirmation.inventory_product_id,
+          product_name: confirmation.product_name,
+          quantity: confirmation.sale_context?.quantity || quantity,
+          benefit_type: confirmation.sale_context?.benefit_type || "NONE",
+          benefit_cost: confirmation.sale_context?.benefit_cost || 0,
+          acquisition_cost: confirmation.sale_context?.acquisition_cost || 0,
+        },
+        sale: {
+          product_name: productName,
+          quantity,
+          sale_amount: saleAmount,
+          currency,
+          economics,
+          affiliate_id: result.affiliate?.id || null,
+          referral_points_awarded: result.affiliate?.points_awarded || 0,
+        },
+      },
+    },
   });
   return { sale: result.sale, economics, movement, customer: result.customer, affiliate: result.affiliate || null, duplicate: false };
 }

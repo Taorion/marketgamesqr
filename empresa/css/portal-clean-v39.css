@@ -20645,3 +20645,111 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rm
     grid-column: 1 !important;
   }
 }
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff {
+  margin: 14px 0 !important;
+  border: 1px solid #cfe2ec !important;
+  border-radius: 14px !important;
+  background: #f7fbfd !important;
+  overflow: hidden !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff summary {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 12px 14px !important;
+  cursor: pointer !important;
+  color: #173e5c !important;
+  list-style: none !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff summary::-webkit-details-marker {
+  display: none !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff summary > .material-symbols-outlined {
+  color: #0b5eaa !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff summary strong,
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff summary small {
+  display: block !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff summary small,
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid small {
+  margin-top: 3px !important;
+  color: #60798c !important;
+  font-size: .74rem !important;
+  line-height: 1.4 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  padding: 0 14px 14px !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid article {
+  min-width: 0 !important;
+  padding: 10px !important;
+  border: 1px solid #dce9ef !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid span,
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid strong,
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid small {
+  display: block !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid span {
+  color: #60798c !important;
+  font-size: .67rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid strong {
+  margin-top: 5px !important;
+  color: #173e5c !important;
+  font-size: .8rem !important;
+  line-height: 1.38 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-intelligence-handoff {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  margin-top: 14px !important;
+  padding: 12px 14px !important;
+  border: 1px solid #d9e5ba !important;
+  border-radius: 12px !important;
+  background: #fbfdf3 !important;
+  color: #405b2b !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-intelligence-handoff > .material-symbols-outlined {
+  color: #6b8a22 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-intelligence-handoff strong,
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-intelligence-handoff small {
+  display: block !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-intelligence-handoff small {
+  margin-top: 3px !important;
+  color: #5f744a !important;
+  font-size: .74rem !important;
+  line-height: 1.42 !important;
+}
+
+@media (max-width: 760px) {
+  #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
