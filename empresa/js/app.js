@@ -7,8 +7,8 @@ const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
 const ACTIVITY_POLL_INTERVAL_MS = 900000;
 const ACTIVITY_POLLING_VIEWS = new Set(["dashboard", "campaigns", "leads", "redemptions", "sales", "branches", "strategic-qr", "communications"]);
-const RMS_STATION_RENDER_INITIAL_LIMIT = 6;
-const RMS_STATION_RENDER_INCREMENT = 8;
+const RMS_STATION_RENDER_INITIAL_LIMIT = 10;
+const RMS_STATION_RENDER_INCREMENT = 10;
 const workspace = document.getElementById("workspace");
 const sidebar = document.querySelector(".sidebar");
 const loginForm = document.getElementById("loginForm");
@@ -2488,6 +2488,7 @@ let state = {
   rmsStationViewMode: "all",
   rmsStationNavigationDirection: "forward",
   rmsStationRenderLimit: RMS_STATION_RENDER_INITIAL_LIMIT,
+  rmsStationPage: 1,
   rmsStationListDeferred: false,
   rmsStationFastRenderTimer: null,
   rmsStationOpenSeq: 0,
@@ -13401,11 +13402,11 @@ function renderCampaignList() {
     const qoriEmptyMarkup = `
       <article class="campaign-empty-list">
         <span class="material-symbols-outlined" aria-hidden="true">campaign</span>
-        <strong>Crea tu primera campaÃ±a Qori</strong>
-        <p>Define objetivo, canal, inversiÃ³n y dinÃ¡mica para empezar a medir revenue.</p>
+      <strong>Crea tu primera campaña Qori</strong>
+      <p>Define objetivo, canal, inversión y dinámica para empezar a medir revenue.</p>
         <div class="campaign-empty-actions">
-          <button class="solid-button compact" type="button" data-campaign-empty-create>Nueva campaÃ±a</button>
-          <button class="ghost-button compact" type="button" data-campaign-tab-open="assistant">Usar asistente estratÃ©gico</button>
+      <button class="solid-button compact" type="button" data-campaign-empty-create>Nueva campaña</button>
+      <button class="ghost-button compact" type="button" data-campaign-tab-open="assistant">Usar asistente estratégico</button>
         </div>
       </article>
     `;
@@ -42268,7 +42269,9 @@ function rmsNegotiationTabsMarkup(item = {}) {
   <aside class="rms-negotiation-cost-card" data-rms-nonconversion-cost="${escapeHtml(item.id)}" hidden><span class="material-symbols-outlined" aria-hidden="true">analytics</span><div><strong>Costo efectivo de no conversi\u00f3n</strong><p>Calculando solo descuentos y beneficios ya redimidos…</p></div></aside>`;
 }
 
-function rmsCommercialConfirmationStationCardMarkup(item = {}) {
+// Renderizador histórico. Se mantiene temporalmente por compatibilidad, pero
+// la estación Negociación usa exclusivamente la versión compacta más abajo.
+function rmsCommercialConfirmationStationCardMarkupLegacy(item = {}) {
   const flow = rmsCommercialWorkflow(item);
   const evaluation = flow.evaluation;
   const confirmation = flow.confirmation;
@@ -42966,22 +42969,29 @@ function renderRmsStationLeanOnly() {
       </div>
       `}
       <footer class="rms-lean-station-foot">
+        ${display.matchingRows.length > RMS_STATION_RENDER_INITIAL_LIMIT ? `<nav class="rms-station-pagination" aria-label="Paginación de leads"><button class="ghost-button compact" type="button" data-rms-station-page-prev ${display.page <= 1 ? "disabled" : ""}>Anterior</button><span>Página ${display.page} de ${display.pageCount} · 10 por página</span><button class="ghost-button compact" type="button" data-rms-station-page-next ${display.page >= display.pageCount ? "disabled" : ""}>Siguiente</button></nav>` : ""}
         <span>Mostrando ${renderedRows.length.toLocaleString("es-CO")} de ${display.matchingRows.length.toLocaleString("es-CO")}${display.hiddenCount ? ` · ${display.hiddenCount.toLocaleString("es-CO")} más sin dibujar` : ""}</span>
         ${display.hiddenCount ? `<button class="ghost-button compact" type="button" data-rms-station-show-more>Ver ${Math.min(RMS_STATION_RENDER_INCREMENT, display.hiddenCount).toLocaleString("es-CO")} más</button>` : ""}
       </footer>
     </section>
   `;
+  prepareRmsCommercialAccordions(rmsStationWorkspace);
   bindRmsMachineActions(rmsStationWorkspace);
   rmsStationWorkspace.querySelectorAll("[data-rms-close-station]").forEach((button) => button.addEventListener("click", closeRmsStation));
   rmsStationWorkspace.querySelector("[data-rms-station-picker]")?.addEventListener("change", (event) => openRmsStation(event.target.value || "", { source: "picker" }));
   rmsStationWorkspace.querySelector("[data-rms-station-search]")?.addEventListener("input", (event) => {
     state.rmsStationSearch = event.target.value || "";
     state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
+    state.rmsStationPage = 1;
     window.clearTimeout(state.rmsStationSearchRenderTimer);
     state.rmsStationSearchRenderTimer = window.setTimeout(() => renderRmsStationOnly(), 120);
   });
-  rmsStationWorkspace.querySelector("[data-rms-station-show-more]")?.addEventListener("click", () => {
-    state.rmsStationRenderLimit = Number(state.rmsStationRenderLimit || RMS_STATION_RENDER_INITIAL_LIMIT) + RMS_STATION_RENDER_INCREMENT;
+  rmsStationWorkspace.querySelector("[data-rms-station-page-prev]")?.addEventListener("click", () => {
+    state.rmsStationPage = Math.max(1, Number(state.rmsStationPage || 1) - 1);
+    renderRmsStationOnly();
+  });
+  rmsStationWorkspace.querySelector("[data-rms-station-page-next]")?.addEventListener("click", () => {
+    state.rmsStationPage = Number(state.rmsStationPage || 1) + 1;
     renderRmsStationOnly();
   });
   rmsStationWorkspace.querySelector("[data-rms-station-clear-selection]")?.addEventListener("click", () => {
@@ -44381,26 +44391,62 @@ function rmsStationRowMatches(item = {}, phase = "") {
 }
 
 function rmsStationDisplayRows(rows = [], phase = "") {
-  const selectedIds = new Set((state.rmsMachineSelectedIds || []).map((id) => String(id)));
-  const limit = Math.max(RMS_STATION_RENDER_INITIAL_LIMIT, Number(state.rmsStationRenderLimit || RMS_STATION_RENDER_INITIAL_LIMIT));
-  const matchingRows = [];
-  const selectedVisibleRows = [];
-  const regularVisibleRows = [];
-  for (const item of rows || []) {
-    if (!rmsStationRowMatches(item, phase)) continue;
-    matchingRows.push(item);
-    if (selectedIds.has(String(item.id))) {
-      if (selectedVisibleRows.length < limit) selectedVisibleRows.push(item);
-    } else if (regularVisibleRows.length < limit) {
-      regularVisibleRows.push(item);
-    }
-  }
-  const visibleRows = selectedVisibleRows.concat(regularVisibleRows).slice(0, limit);
+  const pageSize = RMS_STATION_RENDER_INITIAL_LIMIT;
+  const matchingRows = (rows || []).filter((item) => rmsStationRowMatches(item, phase));
+  const pageCount = Math.max(1, Math.ceil(matchingRows.length / pageSize));
+  const page = Math.min(Math.max(1, Number(state.rmsStationPage || 1)), pageCount);
+  const pageStart = (page - 1) * pageSize;
+  const visibleRows = matchingRows.slice(pageStart, pageStart + pageSize);
+  state.rmsStationPage = page;
   return {
     matchingRows,
     visibleRows,
-    hiddenCount: Math.max(0, matchingRows.length - visibleRows.length),
+    page,
+    pageCount,
+    pageStart,
+    hiddenCount: 0,
   };
+}
+
+function prepareRmsCommercialAccordions(root = rmsStationWorkspace) {
+  if (!root) return;
+  root.querySelectorAll(".rms-commercial-work-console").forEach((consoleNode) => {
+    const blocks = Array.from(consoleNode.querySelectorAll(":scope > .rms-commercial-info-block"));
+    if (!blocks.length) return;
+    const operatingBlock = blocks.find((block) => block.matches(".rms-negotiation-condition-block, .rms-negotiation-decision-block, .rms-post-sale-action-form")) || blocks[0];
+    blocks.forEach((block) => {
+      if (block.dataset.rmsAccordionReady === "true") return;
+      const heading = block.querySelector(":scope > h5");
+      if (!heading) return;
+      const title = heading.textContent.trim() || "Detalle";
+      const content = document.createElement("div");
+      content.className = "rms-commercial-accordion-content";
+      const toggle = document.createElement("button");
+      const open = block === operatingBlock;
+      toggle.type = "button";
+      toggle.className = "rms-commercial-accordion-toggle";
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.innerHTML = `<span>${escapeHtml(title)}</span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span>`;
+      heading.replaceWith(toggle);
+      while (toggle.nextElementSibling) content.appendChild(toggle.nextElementSibling);
+      content.hidden = !open;
+      block.appendChild(content);
+      block.classList.add("rms-commercial-accordion");
+      block.dataset.rmsAccordionReady = "true";
+      toggle.addEventListener("click", () => {
+        const willOpen = content.hidden;
+        blocks.forEach((other) => {
+          const otherContent = other.querySelector(":scope > .rms-commercial-accordion-content");
+          const otherToggle = other.querySelector(":scope > .rms-commercial-accordion-toggle");
+          if (!otherContent || !otherToggle) return;
+          otherContent.hidden = true;
+          otherToggle.setAttribute("aria-expanded", "false");
+        });
+        content.hidden = !willOpen;
+        toggle.setAttribute("aria-expanded", String(willOpen));
+      });
+    });
+  });
 }
 
 function applyRmsStationDomFilters(root = rmsStationWorkspace) {
@@ -44568,6 +44614,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   rmsStationWorkspace.querySelector("[data-rms-station-search]")?.addEventListener("input", (event) => {
       state.rmsStationSearch = event.target.value || "";
       state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
+      state.rmsStationPage = 1;
       window.clearTimeout(state.rmsStationSearchRenderTimer);
       state.rmsStationSearchRenderTimer = window.setTimeout(() => renderRmsStationOnly(), 120);
   });
@@ -44575,11 +44622,16 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
     button.addEventListener("click", () => {
       state.rmsStationViewMode = button.dataset.rmsStationView || "all";
       state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
+      state.rmsStationPage = 1;
       renderRmsStationOnly();
     });
   });
-  rmsStationWorkspace.querySelector("[data-rms-station-show-more]")?.addEventListener("click", () => {
-    state.rmsStationRenderLimit = Number(state.rmsStationRenderLimit || RMS_STATION_RENDER_INITIAL_LIMIT) + RMS_STATION_RENDER_INCREMENT;
+  rmsStationWorkspace.querySelector("[data-rms-station-page-prev]")?.addEventListener("click", () => {
+    state.rmsStationPage = Math.max(1, Number(state.rmsStationPage || 1) - 1);
+    renderRmsStationOnly();
+  });
+  rmsStationWorkspace.querySelector("[data-rms-station-page-next]")?.addEventListener("click", () => {
+    state.rmsStationPage = Number(state.rmsStationPage || 1) + 1;
     renderRmsStationOnly();
   });
   rmsStationWorkspace.querySelector("[data-rms-station-select-all]")?.addEventListener("click", () => {
@@ -44770,6 +44822,7 @@ function resetRmsStationMode() {
   state.rmsStationSearch = "";
   state.rmsStationViewMode = "all";
   state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
+  state.rmsStationPage = 1;
   state.rmsStationListDeferred = false;
   state.rmsMachineFilters.phase = "";
   state.rmsMachineFilters.search = "";
@@ -44851,6 +44904,7 @@ function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, op
       ${rmsStationToolbarMarkup(rows, stage)}
       ${rmsStationOutputMarkup(stage.key || "", rows, nextPhase)}
       ${rmsStationLeadTableMarkup(renderedRows, stage, nextPhase, operation)}
+      ${display.matchingRows.length > RMS_STATION_RENDER_INITIAL_LIMIT ? `<nav class="rms-station-pagination" aria-label="Paginación de leads"><button class="ghost-button compact" type="button" data-rms-station-page-prev ${display.page <= 1 ? "disabled" : ""}>Anterior</button><span>Página ${display.page} de ${display.pageCount} · 10 por página</span><button class="ghost-button compact" type="button" data-rms-station-page-next ${display.page >= display.pageCount ? "disabled" : ""}>Siguiente</button></nav>` : ""}
       ${display.hiddenCount ? `<button class="ghost-button rms-station-show-more" type="button" data-rms-station-show-more>Ver ${Math.min(RMS_STATION_RENDER_INCREMENT, display.hiddenCount).toLocaleString("es-CO")} más</button>` : ""}
       <div class="rms-station-no-results ${renderedRows.length ? "hidden" : ""}" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con este filtro.</strong><small>Cambia el texto o vuelve a “Todos”.</small></div>
     </section>
@@ -45843,6 +45897,7 @@ function openRmsStation(phase = "", options = {}) {
   state.rmsStationScreenOpen = true;
   syncRmsStationShellMode(true);
   state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
+  state.rmsStationPage = 1;
   state.rmsStationListDeferred = false;
   if (state.rmsStationFastRenderTimer) {
     window.clearTimeout(state.rmsStationFastRenderTimer);
@@ -51155,5 +51210,236 @@ if (paymentResult === "success") {
 } else if (paymentResult === "failure") {
   showFeedback("El pago no fue aprobado. Puedes intentar nuevamente con otro medio de pago.", "error", { title: "Pago no completado", timeout: 8000 });
 }
+
+/* Negociación compacta: conserva los contratos RMS y reduce la operación a una ruta activa. */
+function rmsNegotiationCompactPaths() {
+  return [
+    { key: "conversion", label: "Acuerdo confirmado", icon: "paid", result: "ACCEPTED", route: "NEGOTIATION_CLEAN" },
+    { key: "risk", label: "Requiere protección", icon: "shield", result: "ACCEPTED", route: "NEEDS_RISK_REVIEW" },
+    { key: "followup", label: "Espera o pérdida", icon: "schedule", result: "WAITING", route: "" },
+    { key: "recycle", label: "Reciclaje", icon: "autorenew", result: "RECYCLE", route: "" },
+  ];
+}
+
+function rmsNegotiationDraftStorageKey(id) {
+  return `marketgames:rms:negotiation-draft:${session?.user?.business_id || state.loadedBusinessId || "business"}:${id}`;
+}
+
+function rmsReadNegotiationDraft(id) {
+  try { return JSON.parse(localStorage.getItem(rmsNegotiationDraftStorageKey(id)) || "null") || {}; } catch { return {}; }
+}
+
+function rmsCompactField(label, control, extra = "") {
+  return `<label><span>${escapeHtml(label)}</span>${control}${extra}</label>`;
+}
+
+// Renderizador canónico de Negociación: una decisión y un formulario por ruta.
+function rmsCommercialConfirmationStationCardMarkup(item = {}) {
+  const workflow = rmsCommercialWorkflow(item);
+  const evaluation = workflow.evaluation || {};
+  const confirmation = workflow.confirmation || {};
+  const negotiation = (item.state_metadata || {}).negotiation_current || {};
+  const saved = rmsReadNegotiationDraft(item.id);
+  const productId = saved.inventory_product_id || confirmation.inventory_product_id || evaluation.recommended_inventory_product_id || item.classified_product_id || "";
+  const product = confirmation.product_name || evaluation.recommended_product || rmsClassifiedProductName(item) || item.product_interest || "";
+  const amount = saved.amount ?? confirmation.amount ?? evaluation.budget_amount ?? "";
+  const currency = saved.currency || confirmation.currency || evaluation.currency || "COP";
+  const channel = saved.channel || negotiation.channel || confirmation.negotiation?.channel || "WHATSAPP";
+  const responsible = saved.responsible || confirmation.responsible || "";
+  const condition = saved.customer_condition || negotiation.customer_condition || confirmation.negotiation?.customer_condition || "";
+  const evidence = saved.evidence || confirmation.evidence || "";
+  const reference = saved.payment_reference || confirmation.payment_reference || "";
+  const note = saved.note || confirmation.note || negotiation.summary || "";
+  const history = Array.isArray((item.state_metadata || {}).negotiation_history) ? (item.state_metadata || {}).negotiation_history.slice(-6).reverse() : [];
+  const current = rmsNegotiationCompactPaths().find((path) => path.key === saved.path) || rmsNegotiationCompactPaths()[0];
+  const prefill = { inventory_product_id: productId, product_name: product, amount: Number(amount || 0), channel, responsible, customer_condition: condition, evidence, payment_reference: reference, summary: note, objection_type: "OTHER", objection_status: "NOT_APPLICABLE" };
+  const ticket = rmsNegotiationTicketContext(item);
+  return `<article class="rms-commercial-work-item rms-confirmation-work-item rms-negotiation-compact" data-rms-station-lead="${escapeHtml(item.id)}">
+    <section class="rms-commercial-work-console">
+      <header class="rms-negotiation-compact-head"><div><span class="mono-label">Negociación</span><h4>${escapeHtml(item.name || "Contacto")}</h4><p>${escapeHtml(product || "Sin producto confirmado")} · ${escapeHtml(channel)} · Próximo contacto: ${escapeHtml(negotiation.next_action_at ? formatDate(negotiation.next_action_at) : "por definir")}</p></div><details class="rms-negotiation-context-drawer"><summary><span class="material-symbols-outlined" aria-hidden="true">history</span> Contexto e historial</summary><div><dl><div><dt>Oferta conocida</dt><dd>${escapeHtml(product || "Sin producto confirmado")}</dd></div><div><dt>Canal anterior</dt><dd>${escapeHtml(channel || "Sin canal")}</dd></div><div><dt>Beneficio</dt><dd>${escapeHtml(ticket.label)}</dd></div><div><dt>Origen</dt><dd>${escapeHtml(item.campaign_name || item.source_detail || "Sin origen")}</dd></div></dl><section class="rms-negotiation-history"><h5>Historial</h5>${rmsNegotiationTimelineMarkup(item, history, evaluation, confirmation, workflow.risk || {})}</section></div></details></header>
+      <section class="rms-negotiation-choice-panel" data-rms-negotiation-tabs="${escapeHtml(item.id)}" aria-label="Decisión de negociación"><span class="mono-label">¿Qué pasó con este lead?</span><div role="tablist">${rmsNegotiationCompactPaths().map((path) => `<button type="button" role="tab" class="${path.key === current.key ? "is-active" : ""}" aria-selected="${path.key === current.key}" data-rms-negotiation-tab="${escapeHtml(item.id)}" data-rms-negotiation-tab-key="${path.key}"><span class="material-symbols-outlined" aria-hidden="true">${path.icon}</span><strong>${escapeHtml(path.label)}</strong></button>`).join("")}</div></section>
+      <input type="hidden" data-rms-negotiation-result="${escapeHtml(item.id)}" value="${current.result}"><input type="hidden" data-rms-negotiation-route="${escapeHtml(item.id)}" value="${current.route}">
+      <section class="rms-negotiation-active-form" data-rms-negotiation-active-form="${escapeHtml(item.id)}">
+        <div data-rms-negotiation-path="conversion" ${current.key === "conversion" ? "" : "hidden"}><header><h5>Confirma la venta</h5><p>Solo lo necesario para atribuirla correctamente.</p></header><div class="rms-sale-form-grid">${rmsCompactField("Producto o servicio activo", `<select data-rms-confirm-product="${escapeHtml(item.id)}">${rmsInventoryProductPickerOptions(productId, product)}</select>`, product ? `<small>Referencia anterior: ${escapeHtml(product)}</small>` : "")}${rmsCompactField("Valor final esperado", `<input type="number" min="1" step="0.01" value="${escapeHtml(amount)}" data-rms-confirm-amount="${escapeHtml(item.id)}" placeholder="0">`)}${rmsCompactField("Canal", `<select data-rms-negotiation-channel="${escapeHtml(item.id)}"><option value="WHATSAPP" ${channel === "WHATSAPP" ? "selected" : ""}>WhatsApp</option><option value="EMAIL" ${channel === "EMAIL" ? "selected" : ""}>Email</option><option value="CALL" ${channel === "CALL" ? "selected" : ""}>Llamada</option><option value="MEETING" ${channel === "MEETING" ? "selected" : ""}>Reunión</option><option value="OTHER" ${channel === "OTHER" ? "selected" : ""}>Otro</option></select>`)}${rmsCompactField("Responsable", `<input type="text" value="${escapeHtml(responsible)}" data-rms-confirm-responsible="${escapeHtml(item.id)}" placeholder="Quién confirma">`)}${rmsCompactField("Condición comercial acordada", `<input type="text" value="${escapeHtml(condition)}" data-rms-negotiation-condition="${escapeHtml(item.id)}" placeholder="Qué aceptó el cliente">`)}${rmsCompactField("Referencia o comprobante", `<input type="text" value="${escapeHtml(reference)}" data-rms-confirm-reference="${escapeHtml(item.id)}" placeholder="Factura, enlace o referencia">`)}</div>${rmsCompactField("Evidencia o nota comercial", `<textarea rows="3" data-rms-confirm-evidence="${escapeHtml(item.id)}" placeholder="Qué se acordó y cómo se puede verificar">${escapeHtml(evidence || note)}</textarea>`)}</div>
+        <div data-rms-negotiation-path="risk" ${current.key === "risk" ? "" : "hidden"}><header><h5>Protege el acuerdo</h5><p>Documenta la condición frágil antes de enviarla a Riesgos de fuga.</p></header><div class="rms-sale-form-grid">${rmsCompactField("Producto activo", `<select data-rms-confirm-product="${escapeHtml(item.id)}">${rmsInventoryProductPickerOptions(productId, product)}</select>`)}${rmsCompactField("Valor esperado", `<input type="number" min="1" step="0.01" value="${escapeHtml(amount)}" data-rms-confirm-amount="${escapeHtml(item.id)}">`)}${rmsCompactField("Canal", `<select data-rms-negotiation-channel="${escapeHtml(item.id)}"><option value="WHATSAPP" ${channel === "WHATSAPP" ? "selected" : ""}>WhatsApp</option><option value="EMAIL" ${channel === "EMAIL" ? "selected" : ""}>Email</option><option value="CALL" ${channel === "CALL" ? "selected" : ""}>Llamada</option><option value="MEETING" ${channel === "MEETING" ? "selected" : ""}>Reunión</option></select>`)}${rmsCompactField("Responsable", `<input type="text" value="${escapeHtml(responsible)}" data-rms-confirm-responsible="${escapeHtml(item.id)}" placeholder="Responsable">`)}${rmsCompactField("Condición acordada", `<input type="text" value="${escapeHtml(condition)}" data-rms-negotiation-condition="${escapeHtml(item.id)}" placeholder="Condición a proteger">`)}</div>${rmsCompactField("Evidencia o explicación de la fragilidad", `<textarea rows="3" data-rms-confirm-evidence="${escapeHtml(item.id)}" placeholder="Qué debe validar Riesgos de fuga">${escapeHtml(evidence || note)}</textarea>`)}</div>
+        <div data-rms-negotiation-path="followup" ${current.key === "followup" ? "" : "hidden"}><header><h5>Espera o pérdida</h5><p>Registra solo el resultado y el siguiente movimiento.</p></header><div class="rms-sale-form-grid">${rmsCompactField("Resultado", `<select data-rms-negotiation-result-choice="${escapeHtml(item.id)}"><option value="WAITING">Esperar respuesta</option><option value="NO_RESPONSE">Sin respuesta</option><option value="LOST">Pérdida definitiva</option></select>`)}${rmsCompactField("Responsable", `<input type="text" value="${escapeHtml(responsible)}" data-rms-confirm-responsible="${escapeHtml(item.id)}" placeholder="Responsable">`)}${rmsCompactField("Próximo contacto", `<input type="datetime-local" value="${escapeHtml(rmsActivationDatetimeLocal(negotiation.next_action_at || "", 2))}" data-rms-negotiation-next-at="${escapeHtml(item.id)}">`)}${rmsCompactField("Clasificación de pérdida", `<select data-rms-negotiation-lost-classification="${escapeHtml(item.id)}"><option value="DEFINITIVE">Rechazo definitivo</option><option value="NOT_NOW">No es el momento</option><option value="NO_BUDGET">Sin presupuesto</option><option value="PROLONGED_NO_RESPONSE">Sin respuesta prolongada</option><option value="NO_CONSENT">Sin consentimiento</option><option value="OTHER">Otro</option></select>`)}</div>${rmsCompactField("Motivo", `<textarea rows="3" data-rms-negotiation-reason="${escapeHtml(item.id)}" placeholder="Qué pasó y qué debe saber el equipo">${escapeHtml(saved.reason || "")}</textarea>`)}</div>
+        <div data-rms-negotiation-path="recycle" ${current.key === "recycle" ? "" : "hidden"}><header><h5>Programar Reciclaje</h5><p>Se conserva el historial y la reactivación vuelve a Evaluación.</p></header><div class="rms-sale-form-grid">${rmsCompactField("Motivo", `<select data-rms-negotiation-recycle-reason="${escapeHtml(item.id)}"><option value="TIMING">Momento inadecuado</option><option value="BUDGET">Presupuesto</option><option value="NO_RESPONSE">Sin respuesta</option><option value="WAITING_DECISION">Espera de decisión</option><option value="NOT_VIABLE_NOW">Condición no viable hoy</option><option value="OTHER">Otro</option></select>`)}${rmsCompactField("Estrategia", `<select data-rms-negotiation-recycle-strategy="${escapeHtml(item.id)}"><option value="NEW_CONTACT">Nuevo contacto</option><option value="NEW_PROPOSAL">Nueva propuesta</option><option value="NEW_ACTIVATION">Nueva activación</option><option value="PERMITTED_BENEFIT">Beneficio permitido</option><option value="NURTURE">Nutrición comercial</option></select>`)}${rmsCompactField("Fecha de reactivación", `<input type="datetime-local" value="${escapeHtml(rmsActivationDatetimeLocal("", 7))}" data-rms-negotiation-next-at="${escapeHtml(item.id)}">`)}${rmsCompactField("Canal permitido", `<select data-rms-negotiation-channel="${escapeHtml(item.id)}"><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="CALL">Llamada</option><option value="OTHER">Otro</option></select>`)}${rmsCompactField("Responsable de reactivación", `<input type="text" value="${escapeHtml(responsible)}" data-rms-negotiation-recycle-responsible="${escapeHtml(item.id)}" placeholder="Responsable">`)}${rmsCompactField("Consentimiento", `<select data-rms-negotiation-recycle-consent="${escapeHtml(item.id)}"><option value="CONFIRMED">Confirmado</option><option value="NOT_REQUIRED">No requiere nuevo contacto</option></select>`)}<input type="hidden" data-rms-negotiation-recycle-target="${escapeHtml(item.id)}" value="procesamiento"></div>${rmsCompactField("Contexto para reactivar", `<textarea rows="3" data-rms-negotiation-reason="${escapeHtml(item.id)}" placeholder="Qué debe cambiar al retomar">${escapeHtml(saved.reason || "")}</textarea>`)}</div>
+      </section>
+      <aside class="rms-negotiation-health-compact" data-rms-negotiation-health="${escapeHtml(item.id)}">${rmsNegotiationCompactHealthMarkup(item, prefill, current.key)}</aside>
+      <footer class="rms-negotiation-compact-actions"><small data-rms-negotiation-help="${escapeHtml(item.id)}"></small><div><button class="ghost-button compact" type="button" data-rms-save-negotiation-draft="${escapeHtml(item.id)}">Guardar borrador</button><button class="solid-button compact" type="button" data-rms-save-negotiation-decision="${escapeHtml(item.id)}" data-rms-negotiation-cta-button="${escapeHtml(item.id)}"><span data-rms-negotiation-cta="${escapeHtml(item.id)}">Confirmar venta limpia y enviar a Ventas atribuidas</span></button></div></footer>
+    </section>
+  </article>`;
+}
+
+function rmsNegotiationCompactHealthMarkup(item, draft, path) {
+  const health = rmsNegotiationCleanHealth(item, draft);
+  if (path === "risk") return `<span class="material-symbols-outlined" aria-hidden="true">shield</span><strong>Este acuerdo requiere protección antes de atribuirse.</strong><small>Se enviará a Riesgos de fuga con la condición y evidencia registradas.</small>`;
+  if (path !== "conversion") return `<span class="material-symbols-outlined" aria-hidden="true">edit_note</span><strong>La decisión quedará registrada en el historial.</strong>`;
+  const missing = health.checks.filter((check) => !check.ready).map((check) => check.label.replace("Producto o servicio definido", "Producto").replace("Valor final definido", "valor").replace("Condición comercial confirmada", "condición").replace("Canal y responsable", "canal y responsable").replace("Evidencia, referencia o nota verificable", "evidencia"));
+  if (health.requiresRisk) return `<span class="material-symbols-outlined" aria-hidden="true">shield</span><strong>Este acuerdo requiere protección antes de atribuirse.</strong><button type="button" class="link-button" data-rms-protect-agreement="${escapeHtml(item.id)}">Proteger acuerdo</button>`;
+  return health.canClean ? `<span class="material-symbols-outlined" aria-hidden="true">verified</span><strong>Listo para atribuir</strong><small>Producto, valor, condición, canal, responsable y evidencia completos.</small>` : `<span class="material-symbols-outlined" aria-hidden="true">pending</span><strong>Faltan: ${escapeHtml(missing.join(" y ") || "datos comerciales")}</strong><small>Completa el primer campo pendiente para confirmar la venta.</small>`;
+}
+
+function rmsCompactNegotiationFocus(root, id, key) {
+  const aliases = { producto: "product", valor: "amount", canal: "channel", responsable: "owner", condición: "condition", evidencia: "support" };
+  const selectors = { product: "[data-rms-confirm-product]", amount: "[data-rms-confirm-amount]", channel: "[data-rms-negotiation-channel]", condition: "[data-rms-negotiation-condition]", owner: "[data-rms-confirm-responsible]", support: "[data-rms-confirm-evidence]" };
+  const node = rmsCommercialNode(root, selectors[aliases[key] || key] || selectors.product, id);
+  node?.scrollIntoView({ behavior: "smooth", block: "center" });
+  node?.focus({ preventScroll: true });
+}
+
+function activateRmsNegotiationTab(root, id, tabKey, item = rmsOpportunityById(id)) {
+  const path = rmsNegotiationCompactPaths().find((entry) => entry.key === tabKey) || rmsNegotiationCompactPaths()[0];
+  const result = rmsCommercialNode(root, "[data-rms-negotiation-result]", id);
+  const route = rmsCommercialNode(root, "[data-rms-negotiation-route]", id);
+  if (result) result.value = path.result;
+  if (route) route.value = path.route;
+  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
+  card?.querySelectorAll("[data-rms-negotiation-path]").forEach((node) => { node.hidden = node.dataset.rmsNegotiationPath !== path.key; });
+  card?.querySelectorAll(`[data-rms-negotiation-tab="${CSS.escape(id)}"]`).forEach((button) => { const active = button.dataset.rmsNegotiationTabKey === path.key; button.classList.toggle("is-active", active); button.setAttribute("aria-selected", String(active)); });
+  if (path.key === "recycle" && item) loadRmsNonConversionCost(item, root);
+  updateRmsNegotiationDecisionUi(root, id);
+}
+
+function updateRmsNegotiationDecisionUi(root, id) {
+  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
+  const active = card?.querySelector("[data-rms-negotiation-tab].is-active")?.dataset.rmsNegotiationTabKey || "conversion";
+  const item = rmsOpportunityById(id) || {};
+  const draft = rmsNegotiationDraft(root, id);
+  const choice = rmsCommercialNode(root, "[data-rms-negotiation-result-choice]", id);
+  if (active === "followup" && choice) draft.result = choice.value;
+  const health = rmsNegotiationCleanHealth(item, draft);
+  const healthNode = rmsCommercialNode(root, "[data-rms-negotiation-health]", id);
+  if (healthNode) healthNode.innerHTML = rmsNegotiationCompactHealthMarkup(item, draft, active);
+  const followupAt = rmsCompactActiveNode(root, id, "[data-rms-negotiation-next-at]")?.closest("label");
+  const lossClassification = rmsCompactActiveNode(root, id, "[data-rms-negotiation-lost-classification]")?.closest("label");
+  if (active === "followup") {
+    const isLoss = choice?.value === "LOST";
+    if (followupAt) followupAt.hidden = isLoss;
+    if (lossClassification) lossClassification.hidden = !isLoss;
+  }
+  const ctas = { conversion: health.requiresRisk ? "Proteger acuerdo" : "Confirmar venta limpia y enviar a Ventas atribuidas", risk: "Enviar a Riesgos de fuga", followup: choice?.value === "LOST" ? "Registrar pérdida" : "Programar seguimiento", recycle: "Enviar a Reciclaje" };
+  const cta = rmsCommercialNode(root, "[data-rms-negotiation-cta]", id);
+  if (cta) cta.textContent = ctas[active];
+  const help = rmsCommercialNode(root, "[data-rms-negotiation-help]", id);
+  if (help) help.textContent = active === "conversion" && !health.canClean && !health.requiresRisk ? `Faltan: ${health.blockers.join(", ")}.` : active === "risk" ? "La condición será revisada antes de atribuir la venta." : "";
+}
+
+async function saveRmsNegotiationDecision(item, root) {
+  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(item.id)}"]`);
+  const active = card?.querySelector("[data-rms-negotiation-tab].is-active")?.dataset.rmsNegotiationTabKey || "conversion";
+  const draft = rmsNegotiationDraft(root, item.id);
+  const resultChoice = rmsCommercialNode(root, "[data-rms-negotiation-result-choice]", item.id);
+  if (active === "followup" && resultChoice) draft.result = resultChoice.value;
+  if (active === "conversion") draft.commercial_route = rmsNegotiationCleanHealth(item, draft).requiresRisk ? "NEEDS_RISK_REVIEW" : "NEGOTIATION_CLEAN";
+  if (active === "risk") draft.commercial_route = "NEEDS_RISK_REVIEW";
+  const button = rmsCommercialNode(root, "[data-rms-negotiation-cta-button]", item.id);
+  const focusMissing = (missing) => { const first = missing[0]; rmsCompactNegotiationFocus(root, item.id, first); showFeedback(`Para continuar falta ${missing.join(", ")}.`, "info", { title: "Negociación" }); };
+  if (["conversion", "risk"].includes(active)) {
+    const missing = [!draft.inventory_product_id && "producto", draft.amount <= 0 && "valor", !draft.channel && "canal", !draft.responsible && "responsable", !draft.customer_condition && "condición", !(draft.payment_reference || draft.evidence || draft.summary) && "evidencia"].filter(Boolean);
+    if (missing.length) return focusMissing(missing);
+    const health = rmsNegotiationCleanHealth(item, draft);
+    if (active === "conversion" && health.requiresRisk) { activateRmsNegotiationTab(root, item.id, "risk", item); showFeedback("Este acuerdo requiere protección antes de atribuirse.", "info", { title: "Negociación" }); return; }
+    if (button) button.disabled = true;
+    const key = rmsCommercialOperationKey("commercial-confirmation", item, `${draft.commercial_route}|${draft.inventory_product_id}|${draft.amount}|${draft.evidence}|${draft.responsible}|${draft.customer_condition}`);
+    await api("/api/business/rms-machine/commercial-confirmation", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft, risk_signals: health.signals, idempotency_key: key }) });
+    state.rmsMachineLoaded = false;
+    const destination = draft.commercial_route === "NEGOTIATION_CLEAN" ? "cierre" : "control_anti_fuga";
+    await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
+    showFeedback(destination === "cierre" ? "Venta limpia confirmada y lista para atribuir." : "Acuerdo enviado a Riesgos de fuga para su protección.", "success", { title: "Negociación" });
+    openRmsStation(destination, { source: "negotiation-compact" });
+    return;
+  }
+  if (!draft.reason) { rmsCommercialNode(root, "[data-rms-negotiation-reason]", item.id)?.focus(); showFeedback("Explica brevemente la decisión comercial.", "info", { title: "Negociación" }); return; }
+  if (["WAITING", "NO_RESPONSE"].includes(draft.result) && !draft.next_action_at) { rmsCommercialNode(root, "[data-rms-negotiation-next-at]", item.id)?.focus(); showFeedback("Programa el próximo contacto.", "info", { title: "Negociación" }); return; }
+  if (draft.result === "LOST" && !draft.lost_classification) { showFeedback("Selecciona la clasificación de pérdida.", "info", { title: "Negociación" }); return; }
+  if (draft.result === "RECYCLE" && (!draft.recycle_reason || !draft.recycle_strategy || !draft.recycle_consent || !draft.recycle_responsible || !draft.channel || !draft.next_action_at)) { showFeedback("Para Reciclaje define motivo, estrategia, responsable, canal, consentimiento y fecha.", "info", { title: "Negociación" }); return; }
+  if (button) button.disabled = true;
+  const key = rmsCommercialOperationKey("negotiation", item, `${draft.result}|${draft.reason}|${draft.next_action_at || ""}`);
+  await api("/api/business/rms-machine/negotiation-result", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft, idempotency_key: key }) });
+  localStorage.removeItem(rmsNegotiationDraftStorageKey(item.id));
+  state.rmsMachineLoaded = false;
+  if (draft.result === "RECYCLE") { setView("recycling"); showFeedback("Caso enviado a Reciclaje; al reactivarlo volverá a Evaluación.", "success", { title: "Negociación" }); return; }
+  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "accion_correctiva" });
+  showFeedback(draft.result === "LOST" ? "Pérdida registrada sin crear una venta." : "Seguimiento programado.", "success", { title: "Negociación" });
+  openRmsStation("accion_correctiva", { source: "negotiation-compact" });
+}
+
+function rmsCompactActiveNode(root, id, selector) {
+  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
+  return card?.querySelector(`[data-rms-negotiation-path]:not([hidden]) ${selector}`) || rmsCommercialNode(root, selector, id);
+}
+
+function rmsCommercialConfirmationDraft(root, id) {
+  const product = findInventoryProductById(rmsCompactActiveNode(root, id, "[data-rms-confirm-product-id]")?.value || rmsCompactActiveNode(root, id, "[data-rms-confirm-product]")?.value || "");
+  return {
+    inventory_product_id: product?.id || null,
+    product_name: product?.name || "",
+    amount: Number(rmsCompactActiveNode(root, id, "[data-rms-confirm-amount]")?.value || 0),
+    currency: rmsCompactActiveNode(root, id, "[data-rms-confirm-currency]")?.value || "COP",
+    payment_reference: String(rmsCompactActiveNode(root, id, "[data-rms-confirm-reference]")?.value || "").trim(),
+    evidence: String(rmsCompactActiveNode(root, id, "[data-rms-confirm-evidence]")?.value || "").trim(),
+    responsible: String(rmsCompactActiveNode(root, id, "[data-rms-confirm-responsible]")?.value || "").trim(),
+    confirmed_at: null,
+    note: String(rmsCompactActiveNode(root, id, "[data-rms-confirm-note]")?.value || "").trim(),
+  };
+}
+
+function rmsNegotiationDraft(root, id) {
+  const confirmation = rmsCommercialConfirmationDraft(root, id);
+  const active = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"] [data-rms-negotiation-tab].is-active`)?.dataset.rmsNegotiationTabKey || "conversion";
+  const activeValue = (selector, fallback = "") => String(rmsCompactActiveNode(root, id, selector)?.value || fallback).trim();
+  const resultChoice = activeValue("[data-rms-negotiation-result-choice]", "WAITING");
+  return {
+    ...confirmation,
+    result: active === "followup" ? resultChoice : rmsCommercialNode(root, "[data-rms-negotiation-result]", id)?.value || "ACCEPTED",
+    objective: "",
+    objection_type: "OTHER",
+    objection_status: "NOT_APPLICABLE",
+    objection_resolution: "",
+    customer_condition: activeValue("[data-rms-negotiation-condition]"),
+    proposal: "",
+    concession: "",
+    channel: activeValue("[data-rms-negotiation-channel]", "OTHER"),
+    summary: confirmation.note || confirmation.evidence,
+    reason: activeValue("[data-rms-negotiation-reason]"),
+    next_action_at: rmsCommercialLocalToIso(rmsCompactActiveNode(root, id, "[data-rms-negotiation-next-at]")?.value || ""),
+    reprocess_phase: "procesamiento",
+    commercial_route: rmsCommercialNode(root, "[data-rms-negotiation-route]", id)?.value || "NEGOTIATION_CLEAN",
+    recycle_reason: activeValue("[data-rms-negotiation-recycle-reason]") || null,
+    recycle_strategy: activeValue("[data-rms-negotiation-recycle-strategy]") || null,
+    recycle_consent: activeValue("[data-rms-negotiation-recycle-consent]") || null,
+    recycle_responsible: activeValue("[data-rms-negotiation-recycle-responsible]") || confirmation.responsible,
+    recycle_target_phase: "procesamiento",
+    lost_classification: activeValue("[data-rms-negotiation-lost-classification]") || null,
+  };
+}
+
+document.addEventListener("click", (event) => {
+  const draftButton = event.target.closest("[data-rms-save-negotiation-draft]");
+  const protectButton = event.target.closest("[data-rms-protect-agreement]");
+  if (draftButton) {
+    const id = draftButton.dataset.rmsSaveNegotiationDraft || "";
+    const root = document;
+    const draft = rmsNegotiationDraft(root, id);
+    const active = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"] [data-rms-negotiation-tab].is-active`)?.dataset.rmsNegotiationTabKey || "conversion";
+    localStorage.setItem(rmsNegotiationDraftStorageKey(id), JSON.stringify({ ...draft, path: active, saved_at: new Date().toISOString() }));
+    showFeedback("Borrador guardado en este navegador. Puedes continuar sin perder la información escrita.", "success", { title: "Negociación" });
+  }
+  if (protectButton) {
+    const id = protectButton.dataset.rmsProtectAgreement || "";
+    activateRmsNegotiationTab(document, id, "risk", rmsOpportunityById(id));
+  }
+});
+
+document.addEventListener("input", (event) => {
+  const card = event.target.closest?.(".rms-negotiation-compact[data-rms-station-lead]");
+  if (card) updateRmsNegotiationDecisionUi(document, card.dataset.rmsStationLead || "");
+});
+
+document.addEventListener("change", (event) => {
+  const card = event.target.closest?.(".rms-negotiation-compact[data-rms-station-lead]");
+  if (card) updateRmsNegotiationDecisionUi(document, card.dataset.rmsStationLead || "");
+});
 
 

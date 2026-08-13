@@ -10189,7 +10189,7 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-
   html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-decision-block { padding:15px; }
 }
 
-/* TipografÃ­a y densidad propias de NegociaciÃ³n. Estas reglas vencen la consola genÃ©rica. */
+/* Tipografía y densidad propias de Negociación. Estas reglas vencen la consola genérica. */
 html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item {
   border-color:#c8dbe8!important;
   border-radius:20px!important;
@@ -10274,7 +10274,7 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-
 }
 html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-context-block h5::before { content:"Lo que ya sabemos"; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-condition-block h5::before { content:"Lo que debe quedar claro"; }
-html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-decision-block h5::before { content:"La siguiente acciÃ³n"; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-decision-block h5::before { content:"La siguiente acción"; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item :is(.rms-negotiation-context-block,.rms-negotiation-condition-block,.rms-negotiation-decision-block) h5 {
   margin:0 0 14px!important;
   color:#173f5d!important;
@@ -19531,6 +19531,69 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actio
   }
 }
 
+/* Consolas RMS extensas: una sola fase abierta evita tarjetas interminables. */
+#rmsStationWorkspace .rms-commercial-info-block.rms-commercial-accordion {
+  margin: 10px 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+#rmsStationWorkspace .rms-commercial-accordion-toggle {
+  display: flex !important;
+  width: 100% !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 13px 15px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #123d63 !important;
+  cursor: pointer !important;
+  font: inherit !important;
+  font-weight: 800 !important;
+  text-align: left !important;
+}
+
+#rmsStationWorkspace .rms-commercial-accordion-toggle .material-symbols-outlined {
+  transition: transform 160ms ease !important;
+}
+
+#rmsStationWorkspace .rms-commercial-accordion-toggle[aria-expanded="true"] .material-symbols-outlined {
+  transform: rotate(180deg) !important;
+}
+
+#rmsStationWorkspace .rms-commercial-accordion-content {
+  padding: 0 15px 15px !important;
+}
+
+#rmsStationWorkspace .rms-commercial-accordion-content[hidden] {
+  display: none !important;
+}
+
+#rmsStationWorkspace .rms-station-pagination {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  margin: 14px 0 0 !important;
+}
+
+#rmsStationWorkspace .rms-station-pagination > span {
+  color: #5d7489 !important;
+  font-size: .78rem !important;
+  font-weight: 750 !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 620px) {
+  #rmsStationWorkspace .rms-station-pagination {
+    justify-content: space-between !important;
+  }
+  #rmsStationWorkspace .rms-station-pagination > span {
+    font-size: .72rem !important;
+  }
+}
+
 /* Negociación es una secuencia de decisión; no usa una columna lateral vacía. */
 #rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console {
   display: block !important;
@@ -19559,6 +19622,103 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actio
 
 #rmsStationWorkspace[data-station-theme="recovery"] .rms-commercial-work-console > .rms-negotiation-cost-card[hidden] {
   display: none !important;
+}
+
+/* Negociación compacta: una decisión y un formulario, sin auditoría permanente. */
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact .rms-commercial-work-console {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 18px !important;
+  padding: clamp(20px, 2.6vw, 34px) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head {
+  display: flex !important;
+  align-items: start !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  margin: 0 !important;
+  padding: 0 0 18px !important;
+  border-bottom: 1px solid var(--rms-console-line) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head h4 {
+  margin: 4px 0 6px !important;
+  color: var(--rms-console-ink) !important;
+  font-size: clamp(1.25rem, 2vw, 1.6rem) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head p {
+  margin: 0 !important;
+  color: var(--rms-console-muted) !important;
+  font-size: .84rem !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-context-drawer {
+  flex: 0 0 auto;
+  width: min(100%, 250px);
+  border: 1px solid #d8e5eb;
+  border-radius: 12px;
+  background: #fbfdfe;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-context-drawer summary {
+  padding: 10px 12px;
+  color: #315b74;
+  font-size: .76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-context-drawer > div { padding: 0 12px 12px; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-context-drawer dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-context-drawer dl div { min-width: 0; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-context-drawer dt { color: #668094; font-size: .65rem; font-weight: 800; text-transform: uppercase; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-context-drawer dd { margin: 3px 0 0; color: #24455f; font-size: .76rem; overflow-wrap: anywhere; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-context-drawer .rms-negotiation-history { margin-top: 14px; }
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel > .mono-label { display: block; margin-bottom: 10px; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tablist"] { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 10px !important; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tab"] { display: grid !important; grid-template-columns: 24px minmax(0, 1fr) !important; gap: 9px !important; min-width: 0 !important; min-height: 74px !important; padding: 12px !important; border: 1px solid #d8e5eb !important; border-radius: 14px !important; background: #fff !important; color: #315b74 !important; text-align: left; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tab"].is-active { border-color: #73b8db !important; background: #e9f6fc !important; color: #0a5d8c !important; box-shadow: 0 0 0 3px rgba(71, 161, 208, .12) !important; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tab"] strong { display: block; color: inherit; font-size: .82rem; line-height: 1.2; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tab"] small { display: block; margin-top: 4px; color: #6a8293; font-size: .68rem; line-height: 1.32; }
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form { padding: clamp(17px, 2vw, 25px); border: 1px solid #dce8ee; border-radius: 18px; background: #ffffff; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form > div > header { margin-bottom: 16px; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form h5 { margin: 0; color: #193d5a; font-size: 1rem; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form header p { margin: 4px 0 0; color: #60798c; font-size: .8rem; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form .rms-sale-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 13px !important; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form .rms-sale-form-grid label:last-child { grid-column: auto; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form > div > label { display: grid; gap: 6px; margin-top: 14px; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form label > span { color: #47657b; font-size: .7rem; font-weight: 800; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form label small { color: #71879a; font-size: .69rem; line-height: 1.32; }
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-health-compact { display: flex; align-items: center; gap: 9px; min-height: 42px; padding: 11px 13px; border: 1px solid #d7e5ec; border-radius: 13px; background: #f6fbfd; color: #315b74; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-health-compact strong { font-size: .8rem; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-health-compact small { color: #63798b; font-size: .73rem; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-health-compact .link-button { margin-left: auto; white-space: nowrap; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 4px; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-actions > small { color: #6c8191; font-size: .75rem; }
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-actions > div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; }
+
+@media (max-width: 900px) {
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tablist"] { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+@media (max-width: 620px) {
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact .rms-commercial-work-console { padding: 18px !important; }
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head { align-items: stretch !important; flex-direction: column !important; }
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-context-drawer { width: 100%; }
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tablist"], #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form .rms-sale-form-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-actions { align-items: stretch; flex-direction: column; }
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-actions > div { justify-content: stretch; }
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-actions button { flex: 1 1 170px; }
 }
 
 /* Dashboard portal map: preserve a clear breathing room around each operational stage. */
@@ -20206,5 +20366,154 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rm
   html body[data-current-view="rms-machine"] .portal-shell .rms-confirmation-work-item .rms-negotiation-tabs [role="tab"],
   html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rms-risk-tabs [role="tab"] {
     min-height: 0 !important;
+  }
+}
+
+/* Negociación: una decisión visible y un formulario activo; el historial queda contraído. */
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact .rms-commercial-work-console {
+  display: grid !important;
+  gap: 16px !important;
+  padding: clamp(18px, 2.2vw, 28px) !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 14px !important;
+  align-items: start !important;
+  padding: 0 0 14px !important;
+  border-bottom: 1px solid #dce8ee !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head > div > p {
+  max-width: 72ch !important;
+  margin-bottom: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-context-drawer {
+  min-width: 0 !important;
+  align-self: center !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-context-drawer summary {
+  white-space: nowrap !important;
+  color: #285b78 !important;
+  font-size: .78rem !important;
+  font-weight: 800 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel > .mono-label {
+  margin-bottom: 8px !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tablist"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tab"] {
+  grid-template-columns: 21px minmax(0, 1fr) !important;
+  align-items: center !important;
+  min-height: 48px !important;
+  padding: 9px 10px !important;
+  border-radius: 10px !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tab"] strong {
+  margin: 0 !important;
+  font-size: .75rem !important;
+  line-height: 1.2 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tab"] small {
+  display: none !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form {
+  padding: clamp(16px, 2vw, 22px) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form > div > header {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin-bottom: 14px !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form > div > header p {
+  margin: 0 !important;
+  color: #698193 !important;
+  font-size: .74rem !important;
+  text-align: right !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-health-compact {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 10px 12px !important;
+  border: 1px solid #dce8ee !important;
+  border-radius: 10px !important;
+  background: #f7fbfd !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-health-compact :is(strong, small) {
+  margin: 0 !important;
+}
+
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-actions {
+  position: sticky !important;
+  bottom: -28px !important;
+  z-index: 2 !important;
+  margin: 0 -28px -28px !important;
+  padding: 13px 28px !important;
+  border-top: 1px solid #dce8ee !important;
+  background: rgba(255,255,255,.96) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+@media (max-width: 760px) {
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tablist"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head {
+    grid-template-columns: 1fr !important;
+  }
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-head > div > p {
+    white-space: normal !important;
+  }
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form > div > header {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+  }
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-active-form > div > header p {
+    text-align: left !important;
+  }
+}
+
+@media (max-width: 560px) {
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-actions {
+    bottom: -18px !important;
+    margin: 0 -18px -18px !important;
+    padding: 12px 18px !important;
   }
 }
