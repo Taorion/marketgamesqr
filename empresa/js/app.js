@@ -48238,11 +48238,15 @@ async function reactivateRmsRecycled(item, note, destination = "procesamiento") 
 function rmsSaleDraftFromDom(root, id) {
   const productSelect = rmsCommercialNode(root, "[data-rms-sale-product]", id);
   const inventoryProduct = findInventoryProductById(productSelect?.value || "");
+  const confirmation = rmsCommercialWorkflow(rmsOpportunityById(id) || {}).confirmation || {};
+  const quantity = Math.max(0.01, rmsCommercialNumber(root, "[data-rms-sale-quantity]", id) || 1);
+  const unitPrice = Math.max(0, Number(confirmation.product_price_snapshot ?? inventoryProduct?.unit_price ?? 0));
   return {
     inventory_product_id: inventoryProduct?.id || null,
     product_name: inventoryProduct?.name || "",
-    quantity: Math.max(0.01, rmsCommercialNumber(root, "[data-rms-sale-quantity]", id) || 1),
-    sale_amount: rmsCommercialNumber(root, "[data-rms-sale-amount]", id),
+    quantity,
+    unit_price: unitPrice,
+    sale_amount: Math.round(unitPrice * quantity * 100) / 100,
     currency: rmsCommercialNode(root, "[data-rms-sale-currency]", id)?.value || "COP",
     unit_cost: Math.max(0, rmsCommercialNumber(root, "[data-rms-sale-unit-cost]", id)),
     benefit_type: rmsCommercialNode(root, "[data-rms-sale-benefit-type]", id)?.value || "NONE",
@@ -48258,12 +48262,25 @@ function updateRmsSaleEconomicsPreview(root, id) {
   const preview = rmsCommercialNode(root, "[data-rms-sale-economics]", id);
   if (!preview) return;
   const draft = rmsSaleDraftFromDom(root, id);
+  const amountInput = rmsCommercialNode(root, "[data-rms-sale-amount]", id);
+  if (amountInput) amountInput.value = String(draft.sale_amount || "");
+  const unitPrice = rmsCommercialNode(root, "[data-rms-sale-unit-price]", id);
+  if (unitPrice) unitPrice.textContent = rmsCommercialMoney(draft.unit_price, draft.currency);
+  const total = rmsCommercialNode(root, "[data-rms-sale-calculated-total]", id);
+  if (total) total.textContent = rmsCommercialMoney(draft.sale_amount, draft.currency);
   const productCost = draft.quantity * draft.unit_cost;
   const grossProfit = draft.sale_amount - productCost - draft.benefit_cost;
   const netProfit = grossProfit - draft.acquisition_cost;
   const invested = productCost + draft.benefit_cost + draft.acquisition_cost;
   const roi = invested > 0 ? netProfit / invested : null;
-  preview.innerHTML = [["Pago", rmsCommercialMoney(draft.sale_amount, draft.currency)], ["Costo producto", rmsCommercialMoney(productCost, draft.currency)], ["Beneficio", rmsCommercialMoney(draft.benefit_cost, draft.currency)], ["Adquisición", rmsCommercialMoney(draft.acquisition_cost, draft.currency)], ["Utilidad neta", rmsCommercialMoney(netProfit, draft.currency)], ["ROI", roi === null ? "Sin base de costo" : `${(roi * 100).toFixed(1)}%`]].map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
+  const item = rmsOpportunityById(id) || {};
+  const hasAffiliate = Boolean(item.is_affiliate || item.affiliate_id || item.source_type === "AFFILIATE");
+  const points = hasAffiliate ? affiliateReferralPointsEstimateDetail(draft.sale_amount) : null;
+  const affiliateBox = rmsCommercialNode(root, "[data-rms-sale-affiliate]", id);
+  if (affiliateBox) affiliateBox.innerHTML = hasAffiliate
+    ? `<span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><div><strong>Afiliado o referido vinculado</strong><small>${points?.points ?? 0} puntos estimados. ${escapeHtml(points?.formula || "El cálculo final se confirma al registrar el pago.")}</small></div>`
+    : `<span class="material-symbols-outlined" aria-hidden="true">group</span><div><strong>Sin afiliado vinculado</strong><small>Si existe una relación de referido, se detectará al registrar el pago.</small></div>`;
+  preview.innerHTML = [["Precio unitario", rmsCommercialMoney(draft.unit_price, draft.currency)], ["Pago calculado", rmsCommercialMoney(draft.sale_amount, draft.currency)], ["Costo producto", rmsCommercialMoney(productCost, draft.currency)], ["Beneficio", rmsCommercialMoney(draft.benefit_cost, draft.currency)], ["Adquisición", rmsCommercialMoney(draft.acquisition_cost, draft.currency)], ["Utilidad neta", rmsCommercialMoney(netProfit, draft.currency)], ["ROI", roi === null ? "Sin base de costo" : `${(roi * 100).toFixed(1)}%`]].map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
 }
 
 function applyRmsNegotiationContextToAttributedSales(root) {
@@ -48282,9 +48299,19 @@ function applyRmsNegotiationContextToAttributedSales(root) {
     if (notes && context.benefit_description && !notes.value.includes(context.benefit_description)) {
       notes.value = [notes.value, `Beneficio o esfuerzo comercial: ${context.benefit_description}`].filter(Boolean).join(" · ");
     }
+    const amountInput = card.querySelector("[data-rms-sale-amount]");
+    const amountLabel = amountInput?.closest("label")?.querySelector(":scope > span");
+    if (amountInput) amountInput.readOnly = true;
+    if (amountLabel) amountLabel.textContent = "Valor pagado (calculado)";
+    if (!card.querySelector("[data-rms-sale-calculation]")) {
+      card.querySelector(".rms-sale-form-grid")?.insertAdjacentHTML("afterend", `<aside class="rms-sale-calculation" data-rms-sale-calculation="${escapeHtml(item?.id || "sale")}" aria-live="polite"><span>Precio del producto</span><strong data-rms-sale-unit-price="${escapeHtml(item?.id || "sale")}">—</strong><span>× cantidad</span><strong data-rms-sale-calculated-total="${escapeHtml(item?.id || "sale")}">—</strong><small>El valor pagado se calcula con el precio confirmado y la cantidad vendida. Registra descuentos o esfuerzos como beneficio.</small></aside>`);
+    }
     if (!card.querySelector("[data-rms-affiliate-credit-note]")) {
       card.querySelector(".rms-sale-trust-ribbon")?.insertAdjacentHTML("afterend", `<aside class="rms-affiliate-sale-note" data-rms-affiliate-credit-note="${escapeHtml(item?.id || "sale")}"><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><span>Los puntos de afiliado o referido se acreditan una sola vez cuando registres esta venta como pagada.</span></aside>`);
     }
+    const affiliateNote = card.querySelector("[data-rms-affiliate-credit-note]");
+    if (affiliateNote) affiliateNote.dataset.rmsSaleAffiliate = item?.id || "sale";
+    updateRmsSaleEconomicsPreview(root, item?.id || "");
   });
 }
 
@@ -48327,6 +48354,7 @@ async function saveRmsAttributedSale(item, root) {
   await Promise.all([
     loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "postventa" }),
     loadAttributedSalesView({ quiet: true }),
+    loadDashboardData({ force: true, quiet: true }),
   ]);
   const customerFeedback = result?.customer?.created
     ? ` Además, ${result.customer.name || "el comprador"} fue creado automáticamente como contacto cliente.`
@@ -51348,6 +51376,12 @@ function updateRmsNegotiationDecisionUi(root, id) {
   if (paidAmountLabel) paidAmountLabel.textContent = "Valor pagado";
   const item = rmsOpportunityById(id) || {};
   const draft = rmsNegotiationDraft(root, id);
+  const paidAmountInput = rmsCompactActiveNode(root, id, "[data-rms-confirm-amount]");
+  if (paidAmountInput) {
+    paidAmountInput.readOnly = true;
+    paidAmountInput.value = draft.amount > 0 ? String(draft.amount) : "";
+    paidAmountInput.closest("label")?.querySelector(":scope > span")?.replaceChildren("Valor pagado (calculado)");
+  }
   const choice = rmsCommercialNode(root, "[data-rms-negotiation-result-choice]", id);
   if (active === "followup" && choice) draft.result = choice.value;
   const health = rmsNegotiationCleanHealth(item, draft);
@@ -51419,17 +51453,19 @@ function rmsCompactActiveNode(root, id, selector) {
 function rmsCommercialConfirmationDraft(root, id) {
   const product = findInventoryProductById(rmsCompactActiveNode(root, id, "[data-rms-confirm-product-id]")?.value || rmsCompactActiveNode(root, id, "[data-rms-confirm-product]")?.value || "");
   const value = (selector, fallback = "") => rmsCompactActiveNode(root, id, selector)?.value ?? fallback;
+  const saleQuantity = Math.max(0.01, Number(value("[data-rms-confirm-quantity]", 1) || 1));
+  const unitPrice = Math.max(0, Number(product?.unit_price || 0));
   return {
     inventory_product_id: product?.id || null,
     product_name: product?.name || "",
-    amount: Number(value("[data-rms-confirm-amount]") || 0),
+    amount: Math.round(unitPrice * saleQuantity * 100) / 100,
     currency: value("[data-rms-confirm-currency]", "COP") || "COP",
     payment_reference: String(value("[data-rms-confirm-reference]") || "").trim(),
     evidence: String(value("[data-rms-confirm-evidence]") || "").trim(),
     responsible: String(value("[data-rms-confirm-responsible]") || "").trim(),
     confirmed_at: null,
     note: String(value("[data-rms-confirm-note]") || "").trim(),
-    sale_quantity: Math.max(0.01, Number(value("[data-rms-confirm-quantity]", 1) || 1)),
+    sale_quantity: saleQuantity,
     benefit_type: String(value("[data-rms-confirm-benefit-type]", "NONE") || "NONE").trim().toUpperCase(),
     benefit_cost: Math.max(0, Number(value("[data-rms-confirm-benefit-cost]", 0) || 0)),
     acquisition_cost: Math.max(0, Number(value("[data-rms-confirm-acquisition-cost]", 0) || 0)),

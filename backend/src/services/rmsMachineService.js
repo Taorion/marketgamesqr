@@ -2228,11 +2228,9 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     throw badRequest("Aún falta una procedencia válida: venta limpia desde Negociación o Riesgo de fuga liberado.");
   }
   const quantity = Math.max(0.01, Number(payload.quantity || 1));
-  const saleAmount = roundedMoney(payload.sale_amount);
   const benefitCost = Math.max(0, roundedMoney(payload.benefit_cost));
   const acquisitionCost = Math.max(0, roundedMoney(payload.acquisition_cost));
   const idempotencyKey = String(payload.idempotency_key || "").trim() || null;
-  if (saleAmount <= 0) throw badRequest("El valor pagado debe ser mayor a cero.");
   const confirmation = workflowMetadata.commercial_confirmation;
   if (String(payload.inventory_product_id) !== String(confirmation.inventory_product_id)) {
     throw badRequest("La venta debe conservar el producto de inventario confirmado en Negociación.");
@@ -2240,6 +2238,11 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const productSnapshot = await rmsInventoryProductSnapshot(businessId, confirmation.inventory_product_id);
   const productRow = productSnapshot.inventory_product;
   const productName = productSnapshot.product_name;
+  const unitPrice = Math.max(0, roundedMoney(confirmation.product_price_snapshot ?? productSnapshot.product_price_snapshot));
+  const saleAmount = roundedMoney(unitPrice * quantity);
+  if (unitPrice <= 0 || saleAmount <= 0) {
+    throw badRequest("El producto confirmado debe tener un precio de venta mayor a cero para calcular el valor pagado.");
+  }
   const unitCost = Math.max(0, roundedMoney(payload.unit_cost ?? productRow?.cost_price ?? 0));
   const productCostTotal = roundedMoney(unitCost * quantity);
   const grossProfit = roundedMoney(saleAmount - productCostTotal - benefitCost);
@@ -2248,7 +2251,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const roi = invested > 0 ? Math.round((netProfit / invested) * 1000000) / 1000000 : null;
   const paidAt = payload.paid_at || new Date().toISOString();
   const currency = String(payload.currency || "COP").trim().toUpperCase().slice(0, 8) || "COP";
-  const economics = { quantity, unit_cost: unitCost, product_cost_total: productCostTotal, benefit_cost: benefitCost, acquisition_cost: acquisitionCost, gross_profit: grossProfit, net_profit: netProfit, roi, currency };
+  const economics = { quantity, unit_price: unitPrice, sale_amount: saleAmount, unit_cost: unitCost, product_cost_total: productCostTotal, benefit_cost: benefitCost, acquisition_cost: acquisitionCost, gross_profit: grossProfit, net_profit: netProfit, roi, currency };
   const metadata = {
     source_module: "rms_machine",
     rms_source_type: sourceType,
