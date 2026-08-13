@@ -45662,6 +45662,7 @@ function bindRmsMachineActions(root) {
       reactivateRmsRecycled(item, note, destination).catch((error) => showFeedback(error.message || "No pudimos reactivar el lead.", "error", { title: "Reciclaje comercial" }));
     });
   });
+  applyRmsNegotiationContextToAttributedSales(root);
   root.querySelectorAll("[data-rms-sale-product]").forEach((select) => {
     const id = select.dataset.rmsSaleProduct || "";
     select.addEventListener("change", () => {
@@ -48265,6 +48266,28 @@ function updateRmsSaleEconomicsPreview(root, id) {
   preview.innerHTML = [["Pago", rmsCommercialMoney(draft.sale_amount, draft.currency)], ["Costo producto", rmsCommercialMoney(productCost, draft.currency)], ["Beneficio", rmsCommercialMoney(draft.benefit_cost, draft.currency)], ["Adquisición", rmsCommercialMoney(draft.acquisition_cost, draft.currency)], ["Utilidad neta", rmsCommercialMoney(netProfit, draft.currency)], ["ROI", roi === null ? "Sin base de costo" : `${(roi * 100).toFixed(1)}%`]].map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
 }
 
+function applyRmsNegotiationContextToAttributedSales(root) {
+  root?.querySelectorAll(".rms-sale-work-item[data-rms-station-lead]").forEach((card) => {
+    const item = rmsOpportunityById(card.dataset.rmsStationLead || "");
+    const context = rmsCommercialWorkflow(item || {}).confirmation?.sale_context || {};
+    const setValue = (selector, value) => {
+      const field = card.querySelector(selector);
+      if (field && value !== undefined && value !== null && value !== "") field.value = String(value);
+    };
+    setValue("[data-rms-sale-quantity]", Number(context.quantity) > 0 ? context.quantity : 1);
+    setValue("[data-rms-sale-benefit-type]", context.benefit_type || "NONE");
+    setValue("[data-rms-sale-benefit-cost]", Number(context.benefit_cost) || 0);
+    setValue("[data-rms-sale-acquisition-cost]", Number(context.acquisition_cost) || 0);
+    const notes = card.querySelector("[data-rms-sale-notes]");
+    if (notes && context.benefit_description && !notes.value.includes(context.benefit_description)) {
+      notes.value = [notes.value, `Beneficio o esfuerzo comercial: ${context.benefit_description}`].filter(Boolean).join(" · ");
+    }
+    if (!card.querySelector("[data-rms-affiliate-credit-note]")) {
+      card.querySelector(".rms-sale-trust-ribbon")?.insertAdjacentHTML("afterend", `<aside class="rms-affiliate-sale-note" data-rms-affiliate-credit-note="${escapeHtml(item?.id || "sale")}"><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><span>Los puntos de afiliado o referido se acreditan una sola vez cuando registres esta venta como pagada.</span></aside>`);
+    }
+  });
+}
+
 function rmsAttributedSaleKey(id) {
   if (!state.rmsAttributedSaleKeys) state.rmsAttributedSaleKeys = {};
   if (!state.rmsAttributedSaleKeys[id]) state.rmsAttributedSaleKeys[id] = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -48313,6 +48336,9 @@ async function saveRmsAttributedSale(item, root) {
     "success",
     { title: "Ventas atribuidas" }
   );
+  if (!result?.duplicate && result?.affiliate?.points_awarded > 0) {
+    showFeedback(`Se acreditaron ${result.affiliate.points_awarded} punto(s) a ${result.affiliate.name || "el afiliado"}.`, "success", { title: "Puntos de afiliado" });
+  }
   openRmsStation("postventa", { source: "attributed-sale" });
 }
 
@@ -51276,7 +51302,7 @@ function rmsCommercialConfirmationStationCardMarkup(item = {}) {
 
 function rmsNegotiationCompactHealthMarkup(item, draft, path) {
   const health = rmsNegotiationCleanHealth(item, draft);
-  if (path === "risk") return `<span class="material-symbols-outlined" aria-hidden="true">shield</span><strong>Este acuerdo requiere protección antes de atribuirse.</strong><small>Se enviará a Riesgos de fuga con la condición y evidencia registradas.</small>`;
+  if (path === "risk") return `<span class="material-symbols-outlined" aria-hidden="true">shield</span><strong>Enviar a Riesgos de fuga es una decisión manual.</strong><small>Úsala solo si el acuerdo es frágil; esta ruta no se activa automáticamente.</small>`;
   if (path !== "conversion") return `<span class="material-symbols-outlined" aria-hidden="true">edit_note</span><strong>La decisión quedará registrada en el historial.</strong>`;
   const minimumMissing = [!draft.inventory_product_id && "Producto vendido", Number(draft.amount) <= 0 && "valor pagado"].filter(Boolean);
   if (minimumMissing.length) return `<span class="material-symbols-outlined" aria-hidden="true">pending</span><strong>Para enviar la venta falta: ${escapeHtml(minimumMissing.join(" y "))}.</strong><small>Los demás datos son opcionales y puedes completarlos después.</small>`;
@@ -51309,13 +51335,7 @@ function activateRmsNegotiationTab(root, id, tabKey, item = rmsOpportunityById(i
 function updateRmsNegotiationDecisionUi(root, id) {
   const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
   const active = card?.querySelector("[data-rms-negotiation-tab].is-active")?.dataset.rmsNegotiationTabKey || "conversion";
-  const conversionHeader = card?.querySelector('[data-rms-negotiation-path="conversion"] > header');
-  if (conversionHeader) {
-    const title = conversionHeader.querySelector("h5");
-    const copy = conversionHeader.querySelector("p");
-    if (title) title.textContent = "Venta confirmada";
-    if (copy) copy.textContent = "Solo producto vendido y valor pagado son obligatorios. Completa el resto si lo tienes.";
-  }
+  ensureRmsNegotiationSaleContextFields(card, id);
   const conversionMinimumControls = new Set(["[data-rms-confirm-product]", "[data-rms-confirm-amount]"]);
   card?.querySelectorAll('[data-rms-negotiation-path="conversion"] label').forEach((label) => {
     const fieldLabel = label.querySelector(":scope > span");
@@ -51398,17 +51418,66 @@ function rmsCompactActiveNode(root, id, selector) {
 
 function rmsCommercialConfirmationDraft(root, id) {
   const product = findInventoryProductById(rmsCompactActiveNode(root, id, "[data-rms-confirm-product-id]")?.value || rmsCompactActiveNode(root, id, "[data-rms-confirm-product]")?.value || "");
+  const value = (selector, fallback = "") => rmsCompactActiveNode(root, id, selector)?.value ?? fallback;
   return {
     inventory_product_id: product?.id || null,
     product_name: product?.name || "",
-    amount: Number(rmsCompactActiveNode(root, id, "[data-rms-confirm-amount]")?.value || 0),
-    currency: rmsCompactActiveNode(root, id, "[data-rms-confirm-currency]")?.value || "COP",
-    payment_reference: String(rmsCompactActiveNode(root, id, "[data-rms-confirm-reference]")?.value || "").trim(),
-    evidence: String(rmsCompactActiveNode(root, id, "[data-rms-confirm-evidence]")?.value || "").trim(),
-    responsible: String(rmsCompactActiveNode(root, id, "[data-rms-confirm-responsible]")?.value || "").trim(),
+    amount: Number(value("[data-rms-confirm-amount]") || 0),
+    currency: value("[data-rms-confirm-currency]", "COP") || "COP",
+    payment_reference: String(value("[data-rms-confirm-reference]") || "").trim(),
+    evidence: String(value("[data-rms-confirm-evidence]") || "").trim(),
+    responsible: String(value("[data-rms-confirm-responsible]") || "").trim(),
     confirmed_at: null,
-    note: String(rmsCompactActiveNode(root, id, "[data-rms-confirm-note]")?.value || "").trim(),
+    note: String(value("[data-rms-confirm-note]") || "").trim(),
+    sale_quantity: Math.max(0.01, Number(value("[data-rms-confirm-quantity]", 1) || 1)),
+    benefit_type: String(value("[data-rms-confirm-benefit-type]", "NONE") || "NONE").trim().toUpperCase(),
+    benefit_cost: Math.max(0, Number(value("[data-rms-confirm-benefit-cost]", 0) || 0)),
+    acquisition_cost: Math.max(0, Number(value("[data-rms-confirm-acquisition-cost]", 0) || 0)),
+    benefit_description: String(value("[data-rms-confirm-benefit-description]") || "").trim(),
   };
+}
+
+function ensureRmsNegotiationSaleContextFields(card, id) {
+  const conversion = card?.querySelector('[data-rms-negotiation-path="conversion"]');
+  const grid = conversion?.querySelector(".rms-sale-form-grid");
+  if (!conversion || !grid) return;
+  const header = conversion.querySelector(":scope > header");
+  const title = header?.querySelector("h5");
+  const copy = header?.querySelector("p");
+  if (title) title.textContent = "Venta realizada";
+  if (copy) copy.textContent = "Registra qué se vendió y qué costó lograrla. La venta se atribuye en el siguiente paso.";
+  const productLabel = grid.querySelector("[data-rms-confirm-product]")?.closest("label")?.querySelector(":scope > span");
+  const amountLabel = grid.querySelector("[data-rms-confirm-amount]")?.closest("label")?.querySelector(":scope > span");
+  const saved = rmsReadNegotiationDraft(id);
+  if (productLabel) productLabel.textContent = "Producto vendido";
+  if (amountLabel) amountLabel.textContent = "Valor pagado";
+  if (!grid.querySelector("[data-rms-confirm-quantity]")) {
+    const numberValue = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+    const benefitType = String(saved.benefit_type || "NONE").toUpperCase();
+    const fields = `
+      <label><span>Cantidad vendida</span><input type="number" min="0.01" step="0.01" value="${escapeHtml(String(numberValue(saved.sale_quantity, 1)))}" data-rms-confirm-quantity="${escapeHtml(id)}"></label>
+      <label><span>Beneficio usado</span><select data-rms-confirm-benefit-type="${escapeHtml(id)}"><option value="NONE" ${benefitType === "NONE" ? "selected" : ""}>Sin beneficio</option><option value="DISCOUNT" ${benefitType === "DISCOUNT" ? "selected" : ""}>Descuento</option><option value="GIFT" ${benefitType === "GIFT" ? "selected" : ""}>Obsequio</option><option value="BONUS" ${benefitType === "BONUS" ? "selected" : ""}>Bono o incentivo</option><option value="OTHER" ${benefitType === "OTHER" ? "selected" : ""}>Otro</option></select></label>
+      <label><span>Costo del beneficio</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(numberValue(saved.benefit_cost, 0)))}" data-rms-confirm-benefit-cost="${escapeHtml(id)}"></label>
+      <label><span>Costo de captación</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(numberValue(saved.acquisition_cost, 0)))}" data-rms-confirm-acquisition-cost="${escapeHtml(id)}"></label>
+    `;
+    grid.querySelector("[data-rms-confirm-amount]")?.closest("label")?.insertAdjacentHTML("afterend", fields);
+  }
+  if (!conversion.querySelector("[data-rms-negotiation-sale-extras]")) {
+    const extras = document.createElement("details");
+    extras.className = "rms-negotiation-sale-extras";
+    extras.dataset.rmsNegotiationSaleExtras = id;
+    extras.innerHTML = `<summary>Detalles de negociación (opcionales)</summary><div class="rms-sale-form-grid"></div><label><span>Descripción del beneficio o esfuerzo</span><textarea rows="2" data-rms-confirm-benefit-description="${escapeHtml(id)}" placeholder="Descuento, pauta, comisión, activación o esfuerzo comercial"></textarea></label></details>`;
+    const extrasGrid = extras.querySelector(".rms-sale-form-grid");
+    Array.from(grid.querySelectorAll("label")).filter((label) => !label.querySelector("[data-rms-confirm-product], [data-rms-confirm-amount], [data-rms-confirm-quantity], [data-rms-confirm-benefit-type], [data-rms-confirm-benefit-cost], [data-rms-confirm-acquisition-cost]")).forEach((label) => extrasGrid?.append(label));
+    const evidence = conversion.querySelector(":scope > label:not(.rms-negotiation-sale-extras)");
+    if (evidence) extras.append(evidence);
+    conversion.append(extras);
+  }
+  const benefitDescription = conversion.querySelector("[data-rms-confirm-benefit-description]");
+  if (benefitDescription && !benefitDescription.value && saved.benefit_description) benefitDescription.value = saved.benefit_description;
+  if (!conversion.querySelector("[data-rms-affiliate-sale-note]")) {
+    conversion.querySelector("[data-rms-negotiation-sale-extras]")?.insertAdjacentHTML("afterend", `<aside class="rms-affiliate-sale-note" data-rms-affiliate-sale-note="${escapeHtml(id)}"><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><span>Si la compra corresponde a un afiliado o referido, sus puntos se acreditarán solo al registrar la venta pagada en Ventas atribuidas.</span></aside>`);
+  }
 }
 
 function rmsNegotiationDraft(root, id) {

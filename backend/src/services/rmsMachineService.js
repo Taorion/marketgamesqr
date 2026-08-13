@@ -5,6 +5,11 @@ const { createLeadAgendaItem, createLeadNote, listLeadCrmRows } = require("./lea
 const { createPostSaleQr } = require("./strategicQrService");
 const { createRewardPass } = require("./rewardPassService");
 const {
+  affiliatePointRuleMetadata,
+  getAffiliatePointRules,
+  referralPointsForAmount,
+} = require("./affiliatePointRulesService");
+const {
   normalizePostSaleActionType,
   normalizePostSaleStatus,
   requiresContactConsent,
@@ -826,6 +831,9 @@ function opportunityFromRow(row = {}, stateRow = null, inventoryProducts = []) {
     created_at: row.created_at || null,
     phone: row.phone || "",
     email: row.email || "",
+    document_id: row.document_id || "",
+    affiliate_id: row.affiliate_id || null,
+    is_affiliate: Boolean(row.is_affiliate),
     campaign_id: metadataObject(row).communication_campaign_id || metadataObject(row).communication_attribution?.campaign_id || row.campaign_id || null,
     communication_id: metadataObject(row).communication_attribution?.communication_id || null,
     campaign_name: entry.campaign_name || row.campaign_name || "",
@@ -1172,6 +1180,32 @@ async function ensureRmsCustomerContact(client, businessId, user, item, sourceTy
     ]
   );
   return { customer: created.rows[0], created: true };
+}
+
+async function resolveRmsRelatedAffiliate(client, businessId, item, sourceType, sourceId, customer = {}) {
+  const result = await client.query(
+    `select id, full_name, points_total
+       from affiliates
+      where business_id = $1
+        and status = 'ACTIVE'
+        and (
+          ($2::uuid is not null and id = $2)
+          or ($3::text is not null and nullif(document_id, '') = $3)
+          or ($4::text is not null and nullif(phone, '') = $4)
+          or ($5::text is not null and lower(nullif(email, '')) = lower($5))
+        )
+      order by case when $2::uuid is not null and id = $2 then 0 else 1 end, created_at desc
+      limit 1
+      for update`,
+    [
+      businessId,
+      sourceType === "AFFILIATE" ? sourceId : item.affiliate_id || null,
+      customer.document_id || item.document_id || null,
+      customer.phone || item.phone || null,
+      customer.email || item.email || null,
+    ]
+  );
+  return result.rows[0] || null;
 }
 
 function assertRmsPhaseTransition(fromPhase, toPhase, payload = {}) {
@@ -1597,6 +1631,13 @@ function rmsCommercialConfirmationFromPayload(payload = {}, user = {}, product =
     confirmed_at: payload.confirmed_at || new Date().toISOString(),
     note: String(payload.note || "").trim() || null,
     idempotency_key: String(payload.idempotency_key || "").trim() || null,
+    sale_context: {
+      quantity: Math.max(0.01, Number(payload.sale_quantity || payload.quantity || 1)),
+      benefit_type: String(payload.benefit_type || "NONE").trim().toUpperCase(),
+      benefit_cost: Math.max(0, moneyNumber(payload.benefit_cost)),
+      acquisition_cost: Math.max(0, moneyNumber(payload.acquisition_cost)),
+      benefit_description: String(payload.benefit_description || "").trim() || null,
+    },
     negotiation: {
       objective: String(payload.objective || "").trim() || null,
       objection_type: String(payload.objection_type || "").trim() || null,
@@ -2233,6 +2274,9 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const result = await withTransaction(async (client) => {
     const customerLink = await ensureRmsCustomerContact(client, businessId, user, item, sourceType, payload.source_id);
     const customer = customerLink.customer;
+    let relatedAffiliate = await resolveRmsRelatedAffiliate(client, businessId, item, sourceType, payload.source_id, customer);
+    const affiliatePointRules = relatedAffiliate ? await getAffiliatePointRules(businessId, client) : null;
+    const referralPoints = affiliatePointRules ? referralPointsForAmount(saleAmount, affiliatePointRules) : 0;
     const saleMetadata = {
       ...metadata,
       crm_source_type: "PLAYER",
@@ -2242,6 +2286,8 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
       rms_original_source_id: payload.source_id,
       customer_contact_id: customer.id,
       customer_contact_created: customerLink.created,
+      related_affiliate_id: relatedAffiliate?.id || null,
+      ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
     };
     const sale = await client.query(
       `insert into business_sales
@@ -2271,6 +2317,54 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
         productSnapshot.product_name_snapshot, productSnapshot.product_price_snapshot, productSnapshot.product_currency_snapshot, productSnapshot.product_source]
     );
     if (sale.rows[0]) {
+      let recordedSale = sale.rows[0];
+      if (relatedAffiliate && referralPoints > 0) {
+        await client.query(
+          `insert into affiliate_point_ledger
+            (business_id, affiliate_id, created_by_user_id, amount, points_awarded, reason, metadata)
+           values ($1, $2, $3, $4, $5, 'REFERRAL_PURCHASE', $6::jsonb)`,
+          [
+            businessId,
+            relatedAffiliate.id,
+            user?.id || null,
+            saleAmount,
+            referralPoints,
+            JSON.stringify({
+              sale_id: recordedSale.id,
+              rms_source_type: sourceType,
+              rms_source_id: payload.source_id,
+              registered_from: "rms_attributed_sale",
+              referred_customer: customer.name || item.name || null,
+              ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
+            }),
+          ]
+        );
+        const updatedAffiliate = await client.query(
+          `update affiliates
+              set points_total = points_total + $3,
+                  updated_at = now()
+            where id = $1 and business_id = $2
+            returning id, full_name, points_total`,
+          [relatedAffiliate.id, businessId, referralPoints]
+        );
+        relatedAffiliate = updatedAffiliate.rows[0] || relatedAffiliate;
+        const updatedSale = await client.query(
+          `update business_sales
+              set referred_affiliate_id = $3,
+                  referral_points_awarded = $4,
+                  metadata = coalesce(metadata, '{}'::jsonb) || $5::jsonb
+            where business_id = $1 and id = $2
+            returning *`,
+          [
+            businessId,
+            recordedSale.id,
+            relatedAffiliate.id,
+            referralPoints,
+            JSON.stringify({ related_affiliate_id: relatedAffiliate.id, referral_points_awarded: referralPoints }),
+          ]
+        );
+        recordedSale = updatedSale.rows[0] || recordedSale;
+      }
       await client.query(
         `update players
             set metadata = jsonb_set(
@@ -2306,17 +2400,22 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
           customerLink.created
             ? "La venta quedó vinculada a un nuevo contacto cliente en Qori."
             : "La venta quedó vinculada al contacto cliente existente en Qori.",
-          JSON.stringify({ sale_id: sale.rows[0].id, original_source_type: sourceType, original_source_id: payload.source_id }),
+          JSON.stringify({ sale_id: recordedSale.id, original_source_type: sourceType, original_source_id: payload.source_id, related_affiliate_id: relatedAffiliate?.id || null, referral_points_awarded: referralPoints }),
           user.id,
         ]
       );
-      return { sale: sale.rows[0], duplicate: false, customer: { id: customer.id, name: customer.name, created: customerLink.created } };
+      return {
+        sale: recordedSale,
+        duplicate: false,
+        customer: { id: customer.id, name: customer.name, created: customerLink.created },
+        affiliate: relatedAffiliate ? { id: relatedAffiliate.id, name: relatedAffiliate.full_name, points_awarded: referralPoints, points_total: relatedAffiliate.points_total } : null,
+      };
     }
     const existing = await client.query(
       `select * from business_sales where business_id = $1 and idempotency_key = $2 limit 1`,
       [businessId, idempotencyKey]
     );
-    return { sale: existing.rows[0], duplicate: true, customer: { id: customer.id, name: customer.name, created: customerLink.created } };
+    return { sale: existing.rows[0], duplicate: true, customer: { id: customer.id, name: customer.name, created: customerLink.created }, affiliate: null };
   });
   if (result.duplicate) {
     const duplicateMovement = item.stage === "cierre" ? await moveRmsLeadPhase(businessId, user, {
@@ -2326,7 +2425,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
       revenue_potential: saleAmount, reason: "Reintento idempotente: la venta canónica ya existía.",
       metadata: { rms_attributed_sale_id: result.sale?.id || null, rms_sale_recorded_at: new Date().toISOString() },
     }, RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE) : null;
-    return { sale: result.sale, economics: result.sale?.metadata?.economics || economics, movement: duplicateMovement, customer: result.customer, duplicate: true };
+    return { sale: result.sale, economics: result.sale?.metadata?.economics || economics, movement: duplicateMovement, customer: result.customer, affiliate: result.affiliate || null, duplicate: true };
   }
   const movement = await moveRmsLeadPhase(businessId, user, {
     source_type: sourceType,
@@ -2347,7 +2446,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     event_description: "La condición comercial y la validación anti-fuga quedaron trazadas antes del registro final.",
     rms_phase: "postventa", metadata: { sale_id: result.sale.id, movement_id: movement.movement?.id || null, quality_control: "revenue_generado_visual" },
   });
-  return { sale: result.sale, economics, movement, customer: result.customer, duplicate: false };
+  return { sale: result.sale, economics, movement, customer: result.customer, affiliate: result.affiliate || null, duplicate: false };
 }
 
 async function canonicalAttributedSaleFor(client, businessId, sourceType, sourceId, requestedSaleId = null) {
