@@ -21561,3 +21561,13 @@ html body .portal-shell #revenueWorkspace .portal-map-grid .ghost-button { min-h
   html body .portal-shell #revenueWorkspace .revenue-workspace-head .solid-button { width: 100% !important; }
   html body .portal-shell #revenueWorkspace .portal-map-grid { grid-template-columns: 1fr !important; }
 }
+
+/* El Centro de Revenue respeta la pestaña activa: jamás se apila con el dashboard. */
+html body .portal-shell #revenueWorkspace[hidden],
+html body .portal-shell #revenueWorkspace.hidden {
+  display: none !important;
+}
+
+html body .portal-shell #revenueWorkspace.revenue-workspace:not([hidden]):not(.hidden) {
+  display: grid !important;
+}
