@@ -21457,3 +21457,107 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actio
   html body[data-current-view="rms-machine"] .portal-shell :is(.rms-lean-station-media, .rms-lean-station-symbol) { width: 40px !important; height: 40px !important; min-width: 40px !important; min-height: 40px !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions :is(.ghost-button, .solid-button).compact { flex-basis: 100% !important; }
 }
+
+/* Revenue servido dentro de RMS: no depende de data-current-view. */
+html body .portal-shell #revenueWorkspace.revenue-workspace {
+  display: grid !important;
+  gap: clamp(20px, 2.2vw, 32px) !important;
+  min-width: 0 !important;
+  padding: clamp(22px, 3vw, 42px) !important;
+  border: 1px solid rgba(52, 111, 163, .17) !important;
+  border-radius: 26px !important;
+  background: linear-gradient(145deg, #fbfdff, #eff8ff) !important;
+  box-shadow: 0 20px 46px rgba(5, 55, 112, .08) !important;
+}
+
+html body .portal-shell #revenueWorkspace .revenue-workspace-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 18px !important;
+  align-items: center !important;
+  padding: 0 0 20px !important;
+  border-bottom: 1px solid rgba(52, 111, 163, .16) !important;
+}
+
+html body .portal-shell #revenueWorkspace .revenue-workspace-head h3,
+html body .portal-shell #revenueWorkspace .portal-map-head h3 {
+  margin: 5px 0 0 !important;
+  color: #082d67 !important;
+  font-size: clamp(1.4rem, 2.3vw, 2.1rem) !important;
+  letter-spacing: -.045em !important;
+  line-height: 1.12 !important;
+}
+
+html body .portal-shell #revenueWorkspace .revenue-workspace-head p,
+html body .portal-shell #revenueWorkspace .portal-map-head > p {
+  max-width: 66ch !important;
+  margin: 7px 0 0 !important;
+  color: #58738d !important;
+  line-height: 1.58 !important;
+}
+
+html body .portal-shell #revenueWorkspace .portal-module-map {
+  display: grid !important;
+  gap: clamp(18px, 2.2vw, 30px) !important;
+  min-width: 0 !important;
+  padding: clamp(24px, 3.2vw, 44px) !important;
+  border: 1px solid rgba(52, 111, 163, .15) !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, .9) !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell #revenueWorkspace .portal-map-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, .7fr) !important;
+  gap: clamp(20px, 3.5vw, 50px) !important;
+  align-items: end !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell #revenueWorkspace .portal-map-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+html body .portal-shell #revenueWorkspace .portal-map-grid > article {
+  display: grid !important;
+  align-content: start !important;
+  gap: 9px !important;
+  min-width: 0 !important;
+  min-height: 188px !important;
+  padding: 18px !important;
+  border: 1px solid rgba(52, 111, 163, .14) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(145deg, #fff, #f7fbff) !important;
+}
+
+html body .portal-shell #revenueWorkspace .portal-map-grid > article > .material-symbols-outlined {
+  display: grid !important;
+  width: 34px !important;
+  height: 34px !important;
+  place-items: center !important;
+  border-radius: 10px !important;
+  background: #eaf5ff !important;
+  color: #0759d6 !important;
+}
+
+html body .portal-shell #revenueWorkspace .portal-map-grid :is(h4, p) { margin: 0 !important; }
+html body .portal-shell #revenueWorkspace .portal-map-grid h4 { color: #123d6d !important; }
+html body .portal-shell #revenueWorkspace .portal-map-grid p { color: #5a7690 !important; line-height: 1.5 !important; }
+html body .portal-shell #revenueWorkspace .portal-map-grid .button-row { display: flex !important; flex-wrap: wrap !important; gap: 7px !important; margin-top: auto !important; }
+html body .portal-shell #revenueWorkspace .portal-map-grid .ghost-button { min-height: 32px !important; padding: 6px 9px !important; border-radius: 9px !important; font-size: .74rem !important; }
+
+@media (max-width: 960px) {
+  html body .portal-shell #revenueWorkspace .portal-map-head { grid-template-columns: 1fr !important; }
+  html body .portal-shell #revenueWorkspace .portal-map-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 620px) {
+  html body .portal-shell #revenueWorkspace.revenue-workspace,
+  html body .portal-shell #revenueWorkspace .portal-module-map { padding: 18px !important; border-radius: 16px !important; }
+  html body .portal-shell #revenueWorkspace .revenue-workspace-head { grid-template-columns: 1fr !important; }
+  html body .portal-shell #revenueWorkspace .revenue-workspace-head .solid-button { width: 100% !important; }
+  html body .portal-shell #revenueWorkspace .portal-map-grid { grid-template-columns: 1fr !important; }
+}
