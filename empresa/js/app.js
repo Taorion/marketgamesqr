@@ -70,6 +70,7 @@ const revenuePulseStrip = document.getElementById("revenuePulseStrip");
 const revenueQuickActions = document.getElementById("revenueQuickActions");
 const dashboardRevenueActionButton = document.getElementById("dashboardRevenueActionButton");
 const dashboardBuilderShell = document.getElementById("dashboardBuilderShell");
+const dashboardLegacySurfaces = document.getElementById("dashboardLegacySurfaces");
 const dashboardBusinessRoiValue = document.getElementById("dashboardBusinessRoiValue");
 const dashboardBusinessRoiMeta = document.getElementById("dashboardBusinessRoiMeta");
 const dashboardBusinessCacValue = document.getElementById("dashboardBusinessCacValue");
@@ -11966,6 +11967,11 @@ function dashboardWidgetsForWorkspaceTab(layout, tab) {
 function renderDashboardBuilder() {
   renderDashboardBusinessEconomics();
   if (!dashboardBuilderShell || !dashboardWidgetGrid || !dashboardWidgetLibrary) return;
+  // El dashboard anterior aún conserva nodos de datos para compatibilidad de
+  // exportaciones, pero no puede volver a abrirse debajo de las pestañas.
+  dashboardLegacySurfaces?.setAttribute("hidden", "");
+  dashboardLegacySurfaces?.setAttribute("aria-hidden", "true");
+  dashboardLegacySurfaces?.style.setProperty("display", "none", "important");
   state.dashboardBuilderProfile = getDashboardProfile();
   state.dashboardWorkspaceTab = getDashboardWorkspaceTab();
   const workspaceTab = state.dashboardWorkspaceTab;

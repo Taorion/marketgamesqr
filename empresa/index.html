@@ -594,6 +594,13 @@
               </section>
             </section>
 
+            <!--
+              Estas superficies se mantienen para que los renderizadores y exportaciones
+              heredados conserven sus destinos. No forman parte de la experiencia del
+              Centro de Revenue: el tablero activo se compone exclusivamente desde
+              dashboardBuilderShell y revenueWorkspace.
+            -->
+            <div class="dashboard-legacy-surfaces" id="dashboardLegacySurfaces" hidden aria-hidden="true">
             <section class="command-center-shell" id="commandCenterRoot" aria-live="polite">
               <article class="command-center-loading surface-card">
                 <span class="busy-spinner" aria-hidden="true"></span>
@@ -801,6 +808,7 @@
                 </div>
               </article>
             </section>
+            </div>
           </section>
 
           <section class="view-section active" data-view="rms-machine">
