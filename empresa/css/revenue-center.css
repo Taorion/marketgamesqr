@@ -945,3 +945,25 @@ html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace .portal
 html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace .portal-map-grid > article { min-height:210px !important; padding:20px !important; border:1px solid rgba(4,65,179,.13) !important; border-radius:17px !important; background:#fff !important; box-shadow:0 8px 20px rgba(1,34,104,.045) !important; }
 @media (max-width: 960px) { html body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-head { grid-template-columns:1fr !important; } html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace .portal-map-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } }
 @media (max-width: 620px) { html body[data-current-view="dashboard"] .portal-shell .dashboard-revenue-head { padding:20px !important; border-radius:18px !important; } html body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics { grid-template-columns:1fr !important; } html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace .revenue-workspace-head { align-items:stretch !important; flex-direction:column !important; } html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace .revenue-pulse-strip, html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace .portal-map-grid { grid-template-columns:1fr !important; } html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace .portal-module-map { padding:18px 0 0 !important; } }
+
+/* Centro de Revenue v12: orientación explícita de cada destino. */
+html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-guide {
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) !important;
+  gap: 13px !important;
+  align-items: start !important;
+  margin: 18px clamp(18px, 3vw, 38px) 0 !important;
+  padding: 16px 18px !important;
+  border: 1px solid rgba(4,65,179,.13) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(110deg, #f0f8ff, #fff) !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-guide > .material-symbols-outlined { display:grid !important; width:42px !important; height:42px !important; place-items:center !important; border-radius:12px !important; background:#0759d6 !important; color:#fff !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-guide > div { display:grid !important; gap:3px !important; min-width:0 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-guide small { color:#0759d6 !important; font-size:.69rem !important; font-weight:800 !important; letter-spacing:.08em !important; text-transform:uppercase !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-guide strong { color:#082d63 !important; font-size:.98rem !important; line-height:1.3 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-guide p { margin:0 !important; color:#58718f !important; font-size:.82rem !important; line-height:1.45 !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell[data-workspace-tab="analysis"] .dashboard-canvas-head { border-color:rgba(7,89,214,.25) !important; background:linear-gradient(110deg,#edf7ff,#fff) !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell[data-workspace-tab="analysis"] .dashboard-widget-card.chart { min-height:340px !important; }
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell[data-workspace-tab="tables"] .dashboard-widget-card.table { min-height:330px !important; }
+@media (max-width:620px) { html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-guide { grid-template-columns:38px minmax(0,1fr) !important; margin:14px 18px 0 !important; padding:14px !important; } html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-guide > .material-symbols-outlined { width:38px !important; height:38px !important; } }

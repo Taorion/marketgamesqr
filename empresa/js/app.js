@@ -77,6 +77,7 @@ const dashboardBusinessCacValue = document.getElementById("dashboardBusinessCacV
 const dashboardBusinessCacMeta = document.getElementById("dashboardBusinessCacMeta");
 const dashboardWorkspaceTabs = document.getElementById("dashboardWorkspaceTabs");
 const dashboardRevenueRefreshButton = document.getElementById("dashboardRevenueRefreshButton");
+const dashboardWorkspaceGuide = document.getElementById("dashboardWorkspaceGuide");
 const dashboardProfileTabs = document.getElementById("dashboardProfileTabs");
 const dashboardWidgetLibrary = document.getElementById("dashboardWidgetLibrary");
 const dashboardWidgetSelectionStatus = document.getElementById("dashboardWidgetSelectionStatus");
@@ -11980,6 +11981,19 @@ function renderDashboardBuilder() {
   dashboardSection?.classList.add("dashboard-builder-mode");
   dashboardSection?.classList.remove("dashboard-advanced-active");
   dashboardBuilderShell.dataset.workspaceTab = workspaceTab;
+  if (dashboardWorkspaceGuide) {
+    const workspaceGuide = {
+      summary: { icon: "dashboard", eyebrow: "Para decidir hoy", title: "Resumen: retorno, costo y siguiente movimiento", text: "Aquí no hay gráficas largas. Revisa el pulso del negocio y la acción comercial recomendada." },
+      analysis: { icon: "query_stats", eyebrow: "Aquí están las gráficas", title: "Gráficas y costos: encuentra la explicación detrás de las cifras", text: "Compara embudo, CAC, ROI por campaña y medios de adquisición. Cambia el enfoque comercial arriba si necesitas otra lectura." },
+      tables: { icon: "table_chart", eyebrow: "Para comprobar o exportar", title: "Datos: tablas limpias, ordenadas y descargables", text: "Revisa ventas, leads, redenciones y sucursales sin mezclar gráficos ni acciones operativas." },
+      map: { icon: "account_tree", eyebrow: "Para actuar", title: "Recorrido Qori: de capturar a fidelizar", text: "Cada etapa abre la herramienta que corresponde. No es un reporte: es un atajo para operar." },
+      customize: { icon: "tune", eyebrow: "Para tu rutina", title: "Personalizar: deja visibles solo tus indicadores", text: "Agrega, retira o reordena bloques. Esta vista no cambia el cálculo de tus datos." },
+    }[workspaceTab] || null;
+    dashboardWorkspaceGuide.innerHTML = workspaceGuide ? `
+      <span class="material-symbols-outlined" aria-hidden="true">${workspaceGuide.icon}</span>
+      <div><small>${workspaceGuide.eyebrow}</small><strong>${workspaceGuide.title}</strong><p>${workspaceGuide.text}</p></div>
+    ` : "";
+  }
   dashboardSection?.setAttribute("data-revenue-workspace-tab", workspaceTab);
   const widgetLibrary = dashboardBuilderShell.querySelector(".dashboard-widget-library");
   const dashboardCanvas = dashboardBuilderShell.querySelector(".dashboard-canvas");
