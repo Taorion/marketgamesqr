@@ -18771,6 +18771,116 @@ html body[data-current-view="dashboard"] .portal-shell .quiet-zone[data-quiet-zo
   margin-top: 0 !important;
 }
 
+/* Activation editor: body-mounted overlay so it is never clipped by the ticket panel. */
+html body[data-current-view="strategic-qr"] > #activationEditModal.activation-edit-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 12000 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: clamp(16px, 3vw, 42px) !important;
+  overflow: auto !important;
+  background: rgba(5, 25, 65, .56) !important;
+  backdrop-filter: blur(10px) saturate(1.08) !important;
+}
+
+html body[data-current-view="strategic-qr"] > #activationEditModal.activation-edit-modal.hidden {
+  display: none !important;
+}
+
+html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-card {
+  width: min(760px, 100%) !important;
+  max-height: calc(100dvh - clamp(32px, 6vw, 84px)) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 24px !important;
+  background: #fff !important;
+  box-shadow: 0 28px 80px rgba(2, 19, 55, .34) !important;
+}
+
+html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  padding: clamp(20px, 2.8vw, 30px) !important;
+  border-bottom: 1px solid rgba(183, 211, 233, .72) !important;
+  background: linear-gradient(135deg, #f8fcff 0%, #fff 62%) !important;
+}
+
+html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-head :is(h3, p) {
+  margin: 0 !important;
+}
+
+html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-head h3 {
+  margin-top: 4px !important;
+  color: var(--qori-ink) !important;
+}
+
+html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-head p {
+  margin-top: 7px !important;
+  color: var(--qori-muted) !important;
+}
+
+html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-form {
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  padding: clamp(20px, 2.8vw, 30px) !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-form label {
+  display: grid !important;
+  min-width: 0 !important;
+  gap: 7px !important;
+}
+
+html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-form label > span {
+  color: #365474 !important;
+  font-size: .76rem !important;
+  font-weight: 800 !important;
+}
+
+html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-form :is(.span-2, .modal-button-row) {
+  grid-column: 1 / -1 !important;
+}
+
+html body[data-current-view="strategic-qr"] > #activationEditModal .modal-button-row {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  margin-top: 4px !important;
+  padding-top: 16px !important;
+  border-top: 1px solid rgba(183, 211, 233, .72) !important;
+}
+
+@media (max-width: 640px) {
+  html body[data-current-view="strategic-qr"] > #activationEditModal.activation-edit-modal {
+    padding: 0 !important;
+  }
+
+  html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-card {
+    width: 100% !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+
+  html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 20px 16px !important;
+  }
+
+  html body[data-current-view="strategic-qr"] > #activationEditModal .modal-button-row > button {
+    flex: 1 1 0 !important;
+  }
+}
+
 /* Crear canal: modal operativo claro, con jerarquía y lectura financiera Qori. */
 html body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-modal-open {
   display: block !important;

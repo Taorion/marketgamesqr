@@ -26072,9 +26072,12 @@ async function updateActivationStatus(id, status) {
 }
 
 function ensureActivationEditModal(view = document.querySelector('.view-section[data-view="strategic-qr"]')) {
-  if (!view) return null;
-  let modal = view.querySelector("#activationEditModal");
-  if (modal) return modal;
+  if (!view && !document.getElementById("activationEditModal")) return null;
+  let modal = document.getElementById("activationEditModal");
+  if (modal) {
+    if (modal.parentElement !== document.body) document.body.appendChild(modal);
+    return modal;
+  }
   modal = document.createElement("div");
   modal.className = "modal-shell hidden activation-edit-modal";
   modal.id = "activationEditModal";
@@ -26117,7 +26120,7 @@ function ensureActivationEditModal(view = document.querySelector('.view-section[
       </form>
     </article>
   `;
-  view.appendChild(modal);
+  document.body.appendChild(modal);
   modal.querySelectorAll("[data-close-activation-edit]").forEach((button) => {
     button.addEventListener("click", closeActivationEditModal);
   });
@@ -51500,6 +51503,10 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape" && !document.getElementById("gamingActivationDetailModal")?.classList.contains("hidden")) {
     closeGamingActivationDetail();
+    return;
+  }
+  if (event.key === "Escape" && !document.getElementById("activationEditModal")?.classList.contains("hidden")) {
+    closeActivationEditModal();
     return;
   }
   if (event.key === "Escape" && !document.getElementById("rmsCaptureReviewModal")?.classList.contains("hidden")) {
