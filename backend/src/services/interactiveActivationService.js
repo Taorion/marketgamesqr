@@ -1159,10 +1159,16 @@ async function startInteractiveParticipant(slug, body) {
         gameSessionToken,
       ]
     );
-    await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_STARTED", { participant_id: participantResult.rows[0].id });
-    await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participantResult.rows[0].id });
+    const participant = participantResult.rows[0];
+    await syncInteractiveParticipationToLead(client, activation, participant, {
+      status: "started",
+      rewarded: false,
+      occurred_at: participant.game_session_started_at || new Date().toISOString(),
+    });
+    await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_STARTED", { participant_id: participant.id });
+    await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participant.id });
     return {
-      participant: participantResult.rows[0],
+      participant,
       game_session_token: gameSessionToken,
     };
   });
@@ -1228,6 +1234,13 @@ async function completeInteractiveParticipant(slug, body) {
         jsonParam(metadata, {}),
       ]
     );
+    await syncInteractiveParticipationToLead(client, activation, participant, {
+      status,
+      score,
+      result_profile: resultProfile || null,
+      rewarded: Boolean(rewardPayload && !pendingReview),
+      occurred_at: new Date().toISOString(),
+    });
     await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_COMPLETED", { participant_id: participant.id });
 
     if (!rewardPayload || pendingReview) {
@@ -1645,6 +1658,37 @@ async function createPlayer(client, activation, body, metadata = {}) {
     ]
   );
   return result.rows[0];
+}
+
+// A participation is a commercial signal even if it does not unlock a benefit.
+// The participant table retains the complete history; this compact snapshot makes
+// the latest attempt immediately visible in the canonical Qori contact record.
+async function syncInteractiveParticipationToLead(client, activation, participant, outcome = {}) {
+  if (!participant?.player_id) return;
+  const status = String(outcome.status || participant.status || "started").toLowerCase();
+  const rewarded = outcome.rewarded === true;
+  const snapshot = {
+    id: activation.id,
+    title: activation.title || null,
+    type: activation.activation_type || null,
+    participant_id: participant.id,
+    status,
+    outcome: rewarded ? "beneficio_generado" : status === "completed" ? "participacion_sin_beneficio" : status,
+    rewarded,
+    score: Number.isFinite(Number(outcome.score)) ? Number(outcome.score) : null,
+    result_profile: outcome.result_profile || null,
+    captured_at: outcome.occurred_at || new Date().toISOString(),
+  };
+  await client.query(
+    `update players
+        set metadata = coalesce(metadata, '{}'::jsonb)
+          || jsonb_build_object(
+            'latest_interactive_activation', $2::jsonb,
+            'latest_activation_participation', $2::jsonb
+          )
+      where id = $1 and business_id = $3`,
+    [participant.player_id, jsonParam(snapshot, {}), activation.company_id]
+  );
 }
 
 function validateGameSession(activation, participant, body) {
