@@ -22381,3 +22381,18 @@ html body[data-current-view="dashboard"] .portal-shell .view-section.active[data
 @media (max-width:700px) {
   html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-builder-shell.is-library-open #dashboardWidgetLibrary { grid-template-columns:1fr !important; }
 }
+
+/* Activaciones: el checkbox es una utilidad, no una columna de contenido. */
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card table { min-width:860px !important; }
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th.bulk-table-select,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td.bulk-table-select,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(1),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(1) { width:52px !important; min-width:52px !important; max-width:52px !important; padding-right:7px !important; padding-left:12px !important; text-align:center !important; }
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(2),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(2) { width:43% !important; }
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(3),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(3) { width:17% !important; text-align:left !important; }
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(4),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(4) { width:22% !important; text-align:left !important; }
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(5),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(5) { width:150px !important; min-width:150px !important; text-align:right !important; }
