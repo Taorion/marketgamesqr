@@ -42415,6 +42415,7 @@ const RMS_EVALUATION_RESPONSES = [
   { value: "PAID_SALE", label: "Compró desde Activación 1 y ya pagó", short: "Pago confirmado", eyebrow: "Compra", title: "Ya realizó el pago", icon: "paid", hint: "La venta está lista para registrarse y atribuirse a este lead." },
   { value: "MISSING_INFORMATION", label: "Necesita información o material adicional", short: "Pide información", eyebrow: "Pendiente", title: "Solicita más información", icon: "send", hint: "Hay que enviar o aclarar material antes de continuar." },
   { value: "NURTURE", label: "No compra ahora; requiere nutrición", short: "Seguimiento", eyebrow: "Más adelante", title: "Aún no está listo", icon: "schedule", hint: "Conserva la relación y programa un seguimiento sin presionarlo." },
+  { value: "RECYCLE", label: "No es convertible; dejar para Reciclaje", short: "Enviar a Reciclaje", eyebrow: "No convierte", title: "No es viable por ahora", icon: "autorenew", hint: "Registra el motivo y deja una fecha para revisar el caso sin insistirle ahora." },
   { value: "NOT_QUALIFIED", label: "No califica por ahora", short: "No es oportunidad", eyebrow: "Descartar", title: "No califica por ahora", icon: "do_not_disturb_on", hint: "Documenta el motivo y evita insistirle comercialmente." },
   { value: "NO_RESPONSE", label: "No respondió a Activación 1", short: "Sin respuesta", eyebrow: "Silencio", title: "No respondió", icon: "phone_missed", hint: "Pasa a Riesgos de fuga para definir una recuperación responsable." },
   { value: "OBJECTION", label: "Respondió con una objeción", short: "Presenta objeción", eyebrow: "Bloqueo", title: "Tiene una objeción", icon: "report_problem", hint: "Describe la objeción y envíala a Riesgos de fuga." },
@@ -42429,6 +42430,7 @@ const RMS_EVALUATION_AUTO_DESTINATIONS = Object.freeze({
   MISSING_INFORMATION: "NEGOTIATION",
   NURTURE: "NEGOTIATION",
   PAID_SALE: "ATTRIBUTED_SALE",
+  RECYCLE: "RECYCLE",
   NO_RESPONSE: "RISK_REVIEW",
   OBJECTION: "RISK_REVIEW",
   NOT_QUALIFIED: "RISK_REVIEW",
@@ -42496,7 +42498,10 @@ function rmsEvaluationStationCardMarkup(item = {}) {
           <label data-rms-evaluation-detail="followup"><span>Objeción o bloqueo</span><input type="text" value="${escapeHtml(draft.objections || "")}" data-rms-evaluation-objections="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Precio, plazo, confianza, competencia..."></label>
           <label data-rms-evaluation-detail="context"><span>Necesidad</span><input type="text" value="${escapeHtml(draft.need || "")}" data-rms-evaluation-need="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Qué necesita resolver"></label>
           <label data-rms-evaluation-detail="context"><span>Resultado esperado</span><input type="text" value="${escapeHtml(draft.desired_outcome || "")}" data-rms-evaluation-outcome="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Qué cambio espera"></label>
+          <label data-rms-evaluation-detail="recycle"><span>Motivo de Reciclaje</span><select data-rms-evaluation-recycle-reason="${escapeHtml(item.id)}" data-rms-evaluation-draft-field><option value="" ${draft.recycle_reason ? "" : "selected"} disabled>Selecciona el motivo</option><option value="BUDGET" ${draft.recycle_reason === "BUDGET" ? "selected" : ""}>No tiene presupuesto</option><option value="TIMING" ${draft.recycle_reason === "TIMING" ? "selected" : ""}>No es el momento</option><option value="NOT_VIABLE_NOW" ${draft.recycle_reason === "NOT_VIABLE_NOW" ? "selected" : ""}>No es viable por ahora</option><option value="NO_RESPONSE" ${draft.recycle_reason === "NO_RESPONSE" ? "selected" : ""}>No responde tras los intentos</option><option value="OTHER" ${draft.recycle_reason === "OTHER" ? "selected" : ""}>Otro motivo</option></select></label>
+          <label data-rms-evaluation-detail="recycle"><span>Revisar de nuevo el</span><input type="datetime-local" value="${escapeHtml(draft.recycle_at ? rmsSaleDatetimeLocal(draft.recycle_at) : rmsActivationDatetimeLocal("", 30))}" data-rms-evaluation-recycle-at="${escapeHtml(item.id)}" data-rms-evaluation-draft-field><small>El lead queda en Reciclaje y solo vuelve a Evaluación cuando decidas reactivarlo.</small></label>
         </div>
+        <label class="rms-commercial-note-field" data-rms-evaluation-detail="recycle"><span>Explica por qué no es convertible <small>(obligatorio para Reciclaje)</small></span><textarea rows="3" data-rms-evaluation-recycle-note="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Ej.: no tiene presupuesto este trimestre y no autorizó nuevos contactos.">${escapeHtml(draft.recycle_note || "")}</textarea></label>
         <label class="rms-commercial-note-field"><span>Resumen de lo que dijo el cliente <small>(opcional)</small></span><textarea rows="4" data-rms-evaluation-note="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Opcional: respuesta, condiciones y promesas hechas. Quedará en el historial del contacto.">${escapeHtml(draft.note || "")}</textarea></label></section>
         <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">history</span>La decisión y el destino se guardan en la ficha del contacto.</small><button class="solid-button compact" type="button" data-rms-save-evaluation="${escapeHtml(item.id)}" ${selectedResponse && selectedDestination ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span><span data-rms-evaluation-save-label="${escapeHtml(item.id)}">${escapeHtml(saveLabel)}</span></button></div>
       </section>
@@ -48019,6 +48024,7 @@ function rmsEvaluationDefaultNextAction(response = "") {
     MISSING_INFORMATION: "Preparar y reenviar la información solicitada",
     NURTURE: "Programar seguimiento de nutrición comercial",
     NOT_QUALIFIED: "Documentar el motivo y detener seguimiento comercial",
+    RECYCLE: "Registrar el motivo y programar una posible reactivación",
   }[response] || "";
 }
 
@@ -48033,6 +48039,7 @@ function rmsEvaluationRoute(response = "", destination = "") {
     NEGOTIATION: { label: "Negociación", detail: "Continuar el acuerdo de precio, alcance, plazos o forma de pago.", icon: "handshake" },
     RISK_REVIEW: { label: "Riesgos de fuga", detail: "Registra la objeción, el silencio o la falta de interés antes de decidir cómo recuperar el caso.", icon: "shield", phase: "control_anti_fuga" },
     ATTRIBUTED_SALE: { label: "Ventas atribuidas", detail: "La venta ya fue reportada. Completa producto, cantidad, pago y evidencia para atribuirla.", icon: "point_of_sale", phase: "cierre" },
+    RECYCLE: { label: "Reciclaje", detail: "El lead no es convertible ahora. Conserva el motivo y prográmalo para revisarlo más adelante.", icon: "autorenew", phase: "reciclaje" },
   };
   if (directDestinations[destination]) return directDestinations[destination];
   const routes = {
@@ -48041,6 +48048,7 @@ function rmsEvaluationRoute(response = "", destination = "") {
     MISSING_INFORMATION: { label: "Pasa a Negociación", detail: "Acorda la información que falta y el siguiente compromiso comercial.", icon: "handshake" },
     NURTURE: { label: "Pasa a Negociación", detail: "Acorda el siguiente compromiso comercial y programa el seguimiento.", icon: "handshake" },
     NOT_QUALIFIED: { label: "Pasa a Inteligencia RMS", detail: "Conserva el aprendizaje sin seguir presionando al contacto.", icon: "psychology" },
+    RECYCLE: { label: "Pasa a Reciclaje", detail: "Registra el motivo y conserva el caso para una posible reactivación responsable.", icon: "autorenew" },
   };
   return routes[response] || { label: "Enviar a Negociación", detail: "La Evaluación abre la conversación comercial antes de Riesgos de fuga.", icon: "alt_route" };
 }
@@ -48082,6 +48090,7 @@ function updateRmsEvaluationRoutePreview(root, id) {
     commercial: ["NEGOTIATION", "PAID_SALE"].includes(response),
     followup: ["NEGOTIATION", "MISSING_INFORMATION", "NURTURE", "NO_RESPONSE", "OBJECTION", "NOT_QUALIFIED"].includes(response),
     context: ["NEGOTIATION", "PAID_SALE", "MISSING_INFORMATION"].includes(response),
+    recycle: response === "RECYCLE",
   };
   root.querySelectorAll("[data-rms-evaluation-detail]").forEach((field) => {
     const fieldId = field.closest("[data-rms-station-lead]")?.dataset.rmsStationLead || "";
@@ -48131,6 +48140,9 @@ function rmsEvaluationDraftFromDom(root, id) {
     objections: String(rmsCommercialNode(root, "[data-rms-evaluation-objections]", id)?.value || "").trim(),
     next_action: String(rmsCommercialNode(root, "[data-rms-evaluation-next-action]", id)?.value || "").trim(),
     next_action_at: rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-evaluation-next-at]", id)?.value || ""),
+    recycle_reason: rmsCommercialNode(root, "[data-rms-evaluation-recycle-reason]", id)?.value || "",
+    recycle_at: rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-evaluation-recycle-at]", id)?.value || ""),
+    recycle_note: String(rmsCommercialNode(root, "[data-rms-evaluation-recycle-note]", id)?.value || "").trim(),
     note: String(rmsCommercialNode(root, "[data-rms-evaluation-note]", id)?.value || "").trim(),
   };
 }
@@ -48139,6 +48151,10 @@ async function saveRmsEvaluationResponse(item, root) {
   const draft = rmsEvaluationDraftFromDom(root, item.id);
   if (!draft.response || !draft.destination) {
     showFeedback("Selecciona el resultado y envíalo a Negociación para confirmar la condición comercial.", "info", { title: "Evaluación" });
+    return;
+  }
+  if (draft.response === "RECYCLE" && (!draft.recycle_reason || !draft.recycle_note || !draft.recycle_at)) {
+    showFeedback("Para enviar a Reciclaje registra el motivo, explícalo brevemente y define cuándo revisar el caso.", "info", { title: "Evaluación" });
     return;
   }
   const saveButton = rmsCommercialNode(root, "[data-rms-save-evaluation]", item.id);
@@ -48154,6 +48170,7 @@ async function saveRmsEvaluationResponse(item, root) {
     NEGOTIATION: "accion_correctiva",
     RISK_REVIEW: "control_anti_fuga",
     ATTRIBUTED_SALE: "cierre",
+    RECYCLE: "reciclaje",
   }[draft.destination] || "accion_correctiva";
   state.rmsMachineLoaded = false;
   await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });

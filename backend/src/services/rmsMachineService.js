@@ -62,6 +62,7 @@ const RMS_TRANSITION_CONTRACT = Object.freeze([
   { from: "procesamiento", decision: "INTEREST_OR_OBJECTION", to: "accion_correctiva" },
   { from: "procesamiento", decision: "ACTIVATION_OBJECTION_OR_SILENCE", to: "control_anti_fuga" },
   { from: "procesamiento", decision: "ACTIVATION_SALE_REPORTED", to: "cierre" },
+  { from: "procesamiento", decision: "RECYCLE", to: "reciclaje", creates_agenda_task: true },
   { from: "procesamiento", decision: "WAITING", to: "procesamiento" },
   { from: "procesamiento", decision: "NEW_ACTIVATION", to: "clasificacion" },
   { from: "accion_correctiva", decision: "COMPLETE_AGREEMENT", to: "cierre" },
@@ -102,6 +103,7 @@ const RMS_PROTECTED_TRANSITIONS = Object.freeze({
     accion_correctiva: RMS_TRANSITION_AUTHORITY.EVALUATION,
     control_anti_fuga: RMS_TRANSITION_AUTHORITY.EVALUATION,
     cierre: RMS_TRANSITION_AUTHORITY.EVALUATION,
+    reciclaje: RMS_TRANSITION_AUTHORITY.EVALUATION,
   }),
   accion_correctiva: Object.freeze({
     procesamiento: [RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT, RMS_TRANSITION_AUTHORITY.RECYCLING],
@@ -1498,6 +1500,11 @@ const RMS_EVALUATION_ROUTES = {
     label: "Negociación",
     action: "Programar nutrición y seguimiento sin presionar la compra",
   },
+  RECYCLE: {
+    phase: "reciclaje",
+    label: "Reciclaje",
+    action: "Conservar el motivo y revisar el lead cuando vuelva a ser viable",
+  },
   NO_RESPONSE: {
     phase: "control_anti_fuga",
     label: "Riesgos de fuga",
@@ -1519,6 +1526,7 @@ const RMS_EVALUATION_DESTINATIONS = {
   NEGOTIATION: RMS_EVALUATION_ROUTES.NEGOTIATION,
   RISK_REVIEW: RMS_EVALUATION_ROUTES.OBJECTION,
   ATTRIBUTED_SALE: RMS_EVALUATION_ROUTES.PAID_SALE,
+  RECYCLE: RMS_EVALUATION_ROUTES.RECYCLE,
 };
 
 function rmsEvaluationSummary(response, route) {
@@ -1526,6 +1534,7 @@ function rmsEvaluationSummary(response, route) {
   if (response === "NO_RESPONSE") return "El cliente no respondió a Activación 1; el caso pasa a Riesgos de fuga para decidir una recuperación responsable.";
   if (response === "OBJECTION") return "El cliente planteó una objeción; el caso pasa a Riesgos de fuga con el contexto para proteger la oportunidad.";
   if (response === "NOT_QUALIFIED") return "El cliente no muestra interés por ahora; el caso pasa a Riesgos de fuga para documentar la salida o recuperación permitida.";
+  if (response === "RECYCLE") return "El lead no es convertible por ahora; queda en Reciclaje con su motivo y fecha de revisión para no insistirle sin contexto.";
   if (route.phase === "accion_correctiva") return "El caso fue dirigido a Negociación para acordar las condiciones y el siguiente compromiso.";
   if (response === "NEGOTIATION") return "El cliente tiene intención de compra y requiere acordar condiciones.";
   if (response === "MISSING_INFORMATION") return "El cliente necesita información antes de tomar la decisión.";
@@ -1541,7 +1550,13 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
   let destination = "";
   const route = RMS_EVALUATION_ROUTES[response];
   if (!RMS_EVALUATION_ROUTES[response]) throw badRequest("Selecciona una decisión comercial válida.");
-  destination = route.phase === "cierre" ? "ATTRIBUTED_SALE" : route.phase === "control_anti_fuga" ? "RISK_REVIEW" : "NEGOTIATION";
+  destination = route.phase === "cierre" ? "ATTRIBUTED_SALE" : route.phase === "control_anti_fuga" ? "RISK_REVIEW" : route.phase === "reciclaje" ? "RECYCLE" : "NEGOTIATION";
+  const recycleAt = payload.recycle_at || payload.next_action_at || null;
+  const recycleNote = String(payload.recycle_note || "").trim();
+  if (response === "RECYCLE") {
+    if (!payload.recycle_reason || !recycleNote) throw badRequest("Para enviar a Reciclaje indica el motivo y explícalo brevemente.");
+    if (!recycleAt || new Date(recycleAt).getTime() <= Date.now()) throw badRequest("Indica una fecha futura para revisar el lead reciclado.");
+  }
   const note = String(payload.note || "").trim()
     || `Resultado de Evaluación: ${response}. Destino elegido: ${route.label}.`;
   const recommendedProduct = payload.recommended_inventory_product_id
@@ -1549,8 +1564,8 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
     : null;
   const evaluation = {
     response,
-    scenario: ["PAID_SALE", "NEGOTIATION"].includes(response) ? (response === "PAID_SALE" ? "EASY_CLOSE" : "ASSISTED_NEGOTIATION") : "ASSISTED_NEGOTIATION",
-    destination: destination || (route.phase === "cierre" ? "ATTRIBUTED_SALES" : route.phase === "accion_correctiva" ? "NEGOTIATION" : null),
+    scenario: ["PAID_SALE", "NEGOTIATION"].includes(response) ? (response === "PAID_SALE" ? "EASY_CLOSE" : "ASSISTED_NEGOTIATION") : response === "RECYCLE" ? "RECYCLE" : "ASSISTED_NEGOTIATION",
+    destination: destination || (route.phase === "cierre" ? "ATTRIBUTED_SALES" : route.phase === "accion_correctiva" ? "NEGOTIATION" : route.phase === "reciclaje" ? "RECYCLE" : null),
     route: route.phase,
     route_label: route.label,
     need: String(payload.need || "").trim() || null,
@@ -1568,8 +1583,9 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
     decision_maker: String(payload.decision_maker || "").trim() || null,
     urgency: String(payload.urgency || "MEDIUM").toUpperCase(),
     objections: String(payload.objections || "").trim() || null,
-    next_action: String(payload.next_action || "").trim() || (response === "PAID_SALE" ? "Confirmar pago y condiciones con el cliente" : null),
-    next_action_at: payload.next_action_at || null,
+    next_action: String(payload.next_action || "").trim() || (response === "PAID_SALE" ? "Confirmar pago y condiciones con el cliente" : response === "RECYCLE" ? "Revisar lead reciclado con el motivo registrado" : null),
+    next_action_at: response === "RECYCLE" ? recycleAt : payload.next_action_at || null,
+    recycling: response === "RECYCLE" ? { reason: payload.recycle_reason, note: recycleNote, recycle_at: recycleAt, target_phase: "procesamiento" } : null,
     note,
     evaluated_at: new Date().toISOString(),
     evaluated_by: user.id,
@@ -1602,6 +1618,26 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
       agendaWarning = error?.message || "No se pudo crear la tarea automática.";
     }
   }
+  const recycling = response === "RECYCLE" ? await scheduleRmsRecyclingCase(businessId, user, {
+    source_id: payload.source_id,
+    source_type: sourceType,
+    lead_id: item.lead_id || payload.lead_id || null,
+    recycled_from_phase: "procesamiento",
+    recycle_reason: payload.recycle_reason,
+    recycle_strategy: "NURTURE",
+    recycle_owner: String(user.name || user.email || user.id),
+    recycle_at: recycleAt,
+    recycle_channel: null,
+    recycle_consent: "NOT_REQUIRED",
+    recycle_note: recycleNote,
+    recycle_target_phase: "procesamiento",
+    idempotency_key: payload.idempotency_key ? `evaluation:${payload.idempotency_key}` : null,
+    metadata: { rms_evaluation: evaluation, agenda_note_id: agenda?.item?.id || null },
+  }) : null;
+  if (recycling?.recycling_case?.id && agenda?.item?.id) await query(
+    `update rms_recycling_cases set agenda_note_id=$3, updated_at=now() where business_id=$1 and id=$2`,
+    [businessId, recycling.recycling_case.id, agenda.item.id]
+  );
   const movement = await moveRmsLeadPhase(businessId, user, {
     source_type: sourceType,
     source_id: payload.source_id,
@@ -1619,8 +1655,32 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
       rms_evaluation_agenda_note_id: agenda?.item?.id || null,
       rms_evaluation_agenda_warning: agendaWarning,
       rms_evaluation_destination: evaluation.destination,
+      recycling: recycling ? { status: "RECYCLED", recycling_case_id: recycling.recycling_case?.id || null, reason: payload.recycle_reason, reactivate_at: recycleAt, note: recycleNote } : null,
     },
   }, RMS_TRANSITION_AUTHORITY.EVALUATION);
+  if (response === "RECYCLE") {
+    await recordRmsWorkflowEvent(businessId, user, {
+      source_type: sourceType,
+      source_id: payload.source_id,
+      lead_id: item.lead_id || payload.lead_id || null,
+      event_type: "evaluation_sent_to_recycling",
+      event_title: "Lead enviado a Reciclaje desde Evaluación",
+      event_description: recycleNote,
+      rms_phase: "reciclaje",
+      metadata: { rms_evaluation: evaluation, recycling_case_id: recycling?.recycling_case?.id || null, movement_id: movement.movement?.id || null },
+    });
+    await markRmsLifecycleStatus(businessId, user, {
+      source_type: sourceType,
+      source_id: payload.source_id,
+      lead_id: item.lead_id || payload.lead_id || null,
+      lifecycle_status: "RECYCLED",
+      event_type: "evaluation_recycled_analyzed",
+      event_title: "Reciclaje incorporado a Inteligencia",
+      reason: recycleNote,
+      idempotency_key: `evaluation-recycle:${payload.idempotency_key || `${sourceType}:${payload.source_id}`}`,
+      metadata: { rms_evaluation: evaluation, recycling_case_id: recycling?.recycling_case?.id || null },
+    });
+  }
   if (response === "NOT_QUALIFIED") {
     await markRmsLifecycleStatus(businessId, user, {
       source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
@@ -1652,7 +1712,7 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
       metadata: { rms_evaluation: evaluation, movement_id: movement.movement?.id || null },
     });
   }
-  return { evaluation, route, note: historyNote, agenda, agenda_warning: agendaWarning, ...movement };
+  return { evaluation, route, note: historyNote, agenda, agenda_warning: agendaWarning, recycling, ...movement };
 }
 
 function rmsCommercialConfirmationFromPayload(payload = {}, user = {}, product = {}) {
