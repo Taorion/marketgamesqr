@@ -42998,22 +42998,86 @@ function rmsPostSaleActionStatusLabel(status = "PLANNED") {
   return ({ PLANNED: "Pendiente", SCHEDULED: "Programada", ISSUED: "Emitida", DELIVERED: "Entregada", CLAIMED: "Reclamada", COMPLETED: "Completada", REDEEMED: "Redimida", EXPIRED: "Vencida", CANCELLED: "Cancelada", NOT_APPLICABLE: "No aplica", FAILED: "Fallida" })[String(status || "").toUpperCase()] || status;
 }
 
+const RMS_POST_SALE_REFINERY_PATHS = Object.freeze([
+  { key: "REFERRAL", icon: "group_add", title: "Referidos", detail: "Entrega un QR o beneficio y convierte los datos autorizados del referido en un nuevo lead." },
+  { key: "LOYALTY", icon: "workspace_premium", title: "Fidelizar", detail: "Afílialo o reconoce su compra con puntos y beneficios por visitas." },
+  { key: "REBUY", icon: "shopping_bag", title: "Recompra", detail: "Crea un ticket o beneficio concreto para su próxima compra." },
+]);
+
+function rmsPostSaleRefineryPath(root, id) {
+  return rmsCommercialNode(root, "[data-rms-refinery-path]", id)?.value || "REFERRAL";
+}
+
+function rmsPostSaleAffiliateFor(item = {}) {
+  const phone = String(item.phone || "").replace(/\D/g, "");
+  const email = String(item.email || "").trim().toLowerCase();
+  return (state.affiliates || []).find((affiliate) => {
+    const affiliatePhone = String(affiliate.phone || "").replace(/\D/g, "");
+    const affiliateEmail = String(affiliate.email || "").trim().toLowerCase();
+    return Boolean((phone && affiliatePhone && phone === affiliatePhone) || (email && affiliateEmail && email === affiliateEmail));
+  }) || null;
+}
+
+function rmsPostSaleRefineryPanel(root, id, path) {
+  return Array.from(root?.querySelectorAll?.("[data-rms-refinery-panel]") || [])
+    .find((panel) => panel.dataset.rmsRefineryPanel === String(id) && panel.dataset.rmsRefineryPanelKey === path) || null;
+}
+
+function rmsPostSaleRefineryValue(root, id, path, selector) {
+  return rmsPostSaleRefineryPanel(root, id, path)?.querySelector(selector)?.value || "";
+}
+
+function rmsPostSaleRefineryChecked(root, id, path, selector) {
+  return Boolean(rmsPostSaleRefineryPanel(root, id, path)?.querySelector(selector)?.checked);
+}
+
+function syncRmsPostSaleRefinery(root, id) {
+  const path = rmsPostSaleRefineryPath(root, id);
+  root.querySelectorAll(`[data-rms-refinery-route="${id}"]`).forEach((button) => {
+    const active = button.dataset.rmsRefineryRouteKey === path;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+  root.querySelectorAll(`[data-rms-refinery-panel="${id}"]`).forEach((panel) => {
+    panel.hidden = panel.dataset.rmsRefineryPanelKey !== path;
+  });
+  const loyaltyPanel = rmsPostSaleRefineryPanel(root, id, "LOYALTY");
+  const loyaltyMode = loyaltyPanel?.querySelector("[data-rms-refinery-loyalty-mode]")?.value || "POINTS";
+  loyaltyPanel?.querySelectorAll("[data-rms-refinery-loyalty-detail]").forEach((field) => {
+    field.hidden = field.dataset.rmsRefineryLoyaltyDetail !== loyaltyMode;
+  });
+  const label = root.querySelector(`[data-rms-refinery-submit-label="${id}"]`);
+  if (!label) return;
+  if (path === "REFERRAL") label.textContent = "Crear QR de referido";
+  else if (path === "REBUY") label.textContent = "Crear ticket de recompra";
+  else if (loyaltyMode === "VISITS") {
+    const visit = Number(loyaltyPanel?.querySelector("[data-rms-refinery-visit-number]")?.value || 0);
+    const target = Number(loyaltyPanel?.querySelector("[data-rms-refinery-visit-target]")?.value || 0);
+    label.textContent = visit >= target && target > 0 ? "Entregar beneficio por sellos" : "Registrar sello de compra";
+  } else label.textContent = "Afiliar y sumar puntos";
+}
+
 function rmsPostSaleStationCardMarkup(item = {}) {
   const metadata = item.state_metadata || {};
   const saleId = metadata.rms_attributed_sale_id || metadata.rms_sale_id || "";
   const actions = (state.rmsPostSaleActions || []).filter((action) => action.source_type === item.source_type && String(action.source_id) === String(item.source_id));
   const saleProduct = metadata.rms_sale_product || item.product_interest || item.top_product || "Producto registrado";
   const saleAmount = metadata.rms_sale_amount || item.total_spent || 0;
+  const affiliate = rmsPostSaleAffiliateFor(item);
+  const recordedVisit = actions.reduce((maximum, action) => Math.max(maximum, Number(action.metadata?.loyalty?.visit_number || 0)), 0);
+  const visitNumber = Math.max(1, Number(item.purchase_count || metadata.purchase_count || 1), recordedVisit + 1);
   return `
     <article class="rms-commercial-work-item rms-post-sale-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
-      ${rmsCommercialLeadAsideMarkup(item, "Activación 2 · continuidad sobre una venta canónica")}
+      ${rmsCommercialLeadAsideMarkup(item, "Activación 2 · refinería de un cliente ya convertido")}
       <section class="rms-commercial-work-console">
-        ${rmsDealProgressMarkup("post_sale", "La venta ya existe. Elige una sola acción de continuidad y conserva su trazabilidad.")}
-        <header class="rms-commercial-console-head"><div><span class="mono-label">ESTACIÓN 09 · ACTIVACIÓN 2</span><h4>Convierte una compra en continuidad verificable</h4><p>La venta original queda vinculada: esta operación prepara una tarea, ticket, Reward Pass, encuesta, referido o seguimiento sin crear otra venta.</p></div><span class="rms-commercial-state is-sale">Venta canónica</span></header>
-        <section class="rms-commercial-info-block"><h5>A. Venta y cliente de origen</h5><dl><div><dt>Cliente</dt><dd>${escapeHtml(item.name || "Contacto")}</dd></div><div><dt>Producto</dt><dd>${escapeHtml(saleProduct)}</dd></div><div><dt>Valor atribuido</dt><dd>${escapeHtml(money(saleAmount))}</dd></div><div><dt>Campaña / canal</dt><dd>${escapeHtml([item.campaign_name, item.channel].filter(Boolean).join(" · ") || "Sin dato adicional")}</dd></div><div><dt>Venta original</dt><dd>${escapeHtml(saleId ? `#${String(saleId).slice(0, 8)}` : "Se resolverá desde la oportunidad RMS")}</dd></div><div><dt>Acciones previas</dt><dd>${escapeHtml(`${actions.length} registrada${actions.length === 1 ? "" : "s"}`)}</dd></div></dl></section>
-        <section class="rms-commercial-info-block rms-post-sale-action-form"><h5>B. Decide la continuidad</h5><p class="rms-post-sale-choice-copy">Puedes activar una acción postventa o cerrar esta etapa sin contactar al cliente y enviar el aprendizaje a Inteligencia.</p><div class="rms-sale-form-grid"><label><span>Acción principal</span><select data-rms-post-sale-type="${escapeHtml(item.id)}"><option value="THANK_YOU">Agradecimiento</option><option value="WARRANTY">Garantía o instrucciones</option><option value="SURVEY">Encuesta de satisfacción</option><option value="REBUY_TICKET">Ticket de próxima compra</option><option value="REWARD_PASS">Reward Pass</option><option value="REFERRAL">Invitación de referido</option><option value="FOLLOW_UP">Seguimiento</option><option value="INCIDENT">Incidencia</option><option value="NO_ACTION_NEEDED">Sin acción aplicable</option></select></label><label><span>Usar recurso</span><select data-rms-post-sale-mode="${escapeHtml(item.id)}"><option value="TASK">Solo tarea / mensaje preparado</option><option value="EXISTING_RESOURCE">Recurso existente</option><option value="NEW_TICKET">Crear ticket postventa</option><option value="NEW_REWARD_PASS">Crear Reward Pass</option></select></label><label><span>Responsable</span><input type="text" data-rms-post-sale-responsible="${escapeHtml(item.id)}" placeholder="Quien ejecuta la acción"></label><label><span>Fecha programada</span><input type="datetime-local" data-rms-post-sale-scheduled="${escapeHtml(item.id)}" value="${escapeHtml(rmsSaleDatetimeLocal())}"></label><label><span>Canal permitido</span><select data-rms-post-sale-channel="${escapeHtml(item.id)}"><option value="">No se contactará ahora</option><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="CALL">Llamada</option><option value="IN_PERSON">Presencial</option></select></label><label><span>Estado inicial</span><select data-rms-post-sale-status="${escapeHtml(item.id)}"><option value="PLANNED">Pendiente</option><option value="SCHEDULED">Programada</option><option value="COMPLETED">Completada</option><option value="NOT_APPLICABLE">No aplica</option></select></label><label><span>Tipo de recurso existente</span><input type="text" data-rms-post-sale-resource-type="${escapeHtml(item.id)}" placeholder="Ticket, encuesta, campaña o beneficio"></label><label><span>ID o enlace del recurso</span><input type="text" data-rms-post-sale-resource-url="${escapeHtml(item.id)}" placeholder="Selecciona o pega el enlace existente"></label><label><span>Beneficio para nuevo ticket</span><input type="text" data-rms-post-sale-ticket-label="${escapeHtml(item.id)}" placeholder="Ej.: 10% próxima compra"></label><label><span>Valor Reward Pass (COP)</span><input type="number" min="1" step="1" data-rms-post-sale-pass-value="${escapeHtml(item.id)}" placeholder="Solo si lo seleccionas"></label></div><label class="rms-commercial-note-field"><span>Resultado, razón o evidencia</span><textarea rows="3" data-rms-post-sale-result="${escapeHtml(item.id)}" placeholder="Qué pasó o por qué no se hará postventa. Si lo dejas vacío, se registrará que no habrá acción por decisión comercial."></textarea></label><label class="rms-commercial-note-field"><span>Contenido o instrucciones <small>(solo si harás una acción)</small></span><textarea rows="3" data-rms-post-sale-content="${escapeHtml(item.id)}" placeholder="Qué se prepara; no se envía comunicación automáticamente."></textarea></label><label class="rms-post-sale-consent"><input type="checkbox" data-rms-post-sale-consent="${escapeHtml(item.id)}"> <span>Confirmo consentimiento y canal válido si habrá contacto.</span></label><label class="rms-post-sale-consent"><input type="checkbox" data-rms-post-sale-intelligence="${escapeHtml(item.id)}"> <span>Enviar a Inteligencia solo con resultado registrable.</span></label></section>
-        <section class="rms-commercial-info-block rms-post-sale-history"><h5>C. Historial de Activación 2</h5><ol>${actions.map((action) => `<li><strong>${escapeHtml(rmsPostSaleActionStatusLabel(action.status))} · ${escapeHtml(action.action_type)}</strong><span>${escapeHtml(action.result_note || action.content || "Sin detalle adicional")}</span><small>${escapeHtml(action.resource_type || "Sin recurso")}${action.resource_url ? ` · ${escapeHtml(action.resource_url)}` : ""}</small></li>`).join("") || "<li><strong>Aún no hay acciones</strong><span>Elige una acción principal; las posteriores se registran de forma explícita.</span></li>"}</ol></section>
-        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">link</span>La venta original nunca se duplica. Si no harás postventa, registra la decisión y envía el aprendizaje a Inteligencia.</small><div class="button-row"><button class="ghost-button compact" type="button" data-rms-post-sale-skip-to-intelligence="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">insights</span>Sin postventa · enviar a Inteligencia</button><button class="solid-button compact" type="button" data-rms-save-post-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span>Registrar Activación 2</button></div></div>
+        <header class="rms-commercial-console-head rms-refinery-head"><div><span class="mono-label">ESTACIÓN 09 · REFINERÍA POSTVENTA</span><h4>Haz que una venta vuelva a mover el negocio</h4><p>Trabaja al cliente convertido sin duplicar su compra: trae referidos, afílialo o invita su próxima compra.</p><div class="rms-refinery-sale-facts"><span>${escapeHtml(saleProduct)}</span><strong>${escapeHtml(money(saleAmount))}</strong><span>${escapeHtml(affiliate ? `Afiliado · ${Number(affiliate.points_total || affiliate.ledger_points || 0).toLocaleString("es-CO")} puntos` : "Cliente sin afiliación")}</span></div></div><span class="rms-commercial-state is-sale">Venta registrada</span></header>
+        <input type="hidden" data-rms-refinery-path="${escapeHtml(item.id)}" value="REFERRAL">
+        <section class="rms-refinery-route-picker" aria-label="Objetivo de Activación 2">${RMS_POST_SALE_REFINERY_PATHS.map((path, index) => `<button type="button" class="rms-refinery-route ${index === 0 ? "is-active" : ""}" data-rms-refinery-route="${escapeHtml(item.id)}" data-rms-refinery-route-key="${path.key}" aria-pressed="${index === 0 ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">${path.icon}</span><span><strong>${path.title}</strong><small>${path.detail}</small></span></button>`).join("")}</section>
+        <section class="rms-refinery-panel" data-rms-refinery-panel="${escapeHtml(item.id)}" data-rms-refinery-panel-key="REFERRAL"><header><span class="mono-label">1 · REFERIDOS</span><h5>Beneficio por traer un nuevo contacto</h5><p>El QR queda ligado a la venta. Si registras los datos autorizados, el referido entra a Recolector como un lead nuevo.</p></header><div class="rms-sale-form-grid"><label><span>Beneficio del QR</span><input type="text" data-rms-refinery-referral-benefit="${escapeHtml(item.id)}" placeholder="Ej.: 10% para quien recomienda"></label><label><span>Canal para compartirlo</span><select data-rms-refinery-channel="${escapeHtml(item.id)}"><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="">Solo generar QR</option></select></label><label><span>Nombre del referido</span><input type="text" data-rms-refinery-referral-name="${escapeHtml(item.id)}" placeholder="Nombre completo"></label><label><span>WhatsApp o teléfono</span><input type="text" data-rms-refinery-referral-phone="${escapeHtml(item.id)}" placeholder="Ej.: 300 000 0000"></label><label><span>Correo del referido</span><input type="email" data-rms-refinery-referral-email="${escapeHtml(item.id)}" placeholder="Opcional si dejó teléfono"></label><label><span>Interés del referido</span><input type="text" data-rms-refinery-referral-interest="${escapeHtml(item.id)}" placeholder="Producto o necesidad"></label></div><label class="rms-commercial-note-field"><span>Mensaje o instrucciones</span><textarea rows="2" data-rms-refinery-message="${escapeHtml(item.id)}" placeholder="Gracias por tu compra. Comparte este QR y recibe tu beneficio cuando tu referido se registre."></textarea></label><label class="rms-post-sale-consent"><input type="checkbox" data-rms-refinery-referral-consent="${escapeHtml(item.id)}"> <span>Confirmo que el referido autorizó compartir sus datos de contacto.</span></label></section>
+        <section class="rms-refinery-panel" data-rms-refinery-panel="${escapeHtml(item.id)}" data-rms-refinery-panel-key="LOYALTY" hidden><header><span class="mono-label">2 · FIDELIZACIÓN</span><h5>Afiliación, puntos o sello de compra</h5><p>${escapeHtml(affiliate ? "Este cliente ya es afiliado. La compra puede sumar puntos con la regla configurada." : "Puedes afiliar al cliente ahora y reconocer esta compra sin crear una venta nueva.")}</p></header><div class="rms-sale-form-grid"><label><span>Programa</span><select data-rms-refinery-loyalty-mode="${escapeHtml(item.id)}"><option value="POINTS">Sumar puntos por compra</option><option value="VISITS">Beneficio por número de compra</option></select></label><label><span>Estado de afiliación</span><select data-rms-refinery-affiliate-mode="${escapeHtml(item.id)}"><option value="${affiliate ? "EXISTING" : "ENROLL"}">${affiliate ? "Ya es afiliado" : "Afiliar a este cliente"}</option><option value="NONE">No afiliar en esta compra</option></select><small>${escapeHtml(affiliate ? "Se usará su cuenta actual de afiliado." : "Se crea una cuenta de afiliado con sus datos de cliente.")}</small></label><label data-rms-refinery-loyalty-detail="VISITS"><span>Compra número</span><input type="number" min="1" value="${visitNumber}" data-rms-refinery-visit-number="${escapeHtml(item.id)}"></label><label data-rms-refinery-loyalty-detail="VISITS"><span>Entregar beneficio en la compra #</span><input type="number" min="2" value="5" data-rms-refinery-visit-target="${escapeHtml(item.id)}"></label><label data-rms-refinery-loyalty-detail="VISITS"><span>Beneficio por completar sellos</span><input type="text" data-rms-refinery-visit-benefit="${escapeHtml(item.id)}" placeholder="Ej.: servicio gratis en la quinta visita"></label></div><label class="rms-commercial-note-field"><span>Nota de fidelización</span><textarea rows="2" data-rms-refinery-loyalty-note="${escapeHtml(item.id)}" placeholder="Opcional: condición del programa o beneficio entregado."></textarea></label></section>
+        <section class="rms-refinery-panel" data-rms-refinery-panel="${escapeHtml(item.id)}" data-rms-refinery-panel-key="REBUY" hidden><header><span class="mono-label">3 · RECOMPRA</span><h5>Beneficio para la próxima compra</h5><p>Crea un ticket QR sobre esta venta. No registra una compra nueva ni altera el valor atribuido.</p></header><div class="rms-sale-form-grid"><label><span>Beneficio de recompra</span><input type="text" data-rms-refinery-rebuy-benefit="${escapeHtml(item.id)}" placeholder="Ej.: $20.000 en la próxima compra"></label><label><span>Canal para compartirlo</span><select data-rms-refinery-channel="${escapeHtml(item.id)}"><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="">Solo generar QR</option></select></label></div><label class="rms-commercial-note-field"><span>Mensaje para el cliente</span><textarea rows="2" data-rms-refinery-message="${escapeHtml(item.id)}" placeholder="Gracias por tu compra. Aquí tienes un beneficio para tu próxima visita."></textarea></label></section>
+        <section class="rms-commercial-info-block rms-post-sale-history"><h5>Actividad de esta venta</h5><ol>${actions.map((action) => `<li><strong>${escapeHtml(rmsPostSaleActionStatusLabel(action.status))} · ${escapeHtml(action.action_type)}</strong><span>${escapeHtml(action.result_note || action.content || "Sin detalle adicional")}</span><small>${escapeHtml(action.resource_type || "Sin recurso")}${action.resource_url ? ` · ${escapeHtml(action.resource_url)}` : ""}</small></li>`).join("") || "<li><strong>Sin acciones postventa</strong><span>Elige uno de los tres objetivos para refinar esta relación comercial.</span></li>"}</ol></section>
+        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>La venta original y sus indicadores se conservan. Si no realizarás postventa, puedes enviar el resultado a Inteligencia.</small><div class="button-row"><button class="ghost-button compact" type="button" data-rms-post-sale-skip-to-intelligence="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">insights</span>Sin acción · Inteligencia</button><button class="solid-button compact" type="button" data-rms-save-post-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span><span data-rms-refinery-submit-label="${escapeHtml(item.id)}">Crear QR de referido</span></button></div></div>
       </section>
     </article>`;
 }
@@ -45997,6 +46061,21 @@ function bindRmsMachineActions(root) {
       if (item) saveRmsAttributedSale(item, root).catch((error) => showFeedback(error.message || "No pudimos registrar la venta atribuida.", "error", { title: "Ventas atribuidas" }));
     });
   });
+  root.querySelectorAll("[data-rms-refinery-route]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.rmsRefineryRoute || "";
+      const input = rmsCommercialNode(root, "[data-rms-refinery-path]", id);
+      if (!input) return;
+      input.value = button.dataset.rmsRefineryRouteKey || "REFERRAL";
+      syncRmsPostSaleRefinery(root, id);
+    });
+  });
+  root.querySelectorAll("[data-rms-refinery-loyalty-mode], [data-rms-refinery-visit-number], [data-rms-refinery-visit-target]").forEach((input) => {
+    const id = input.dataset.rmsRefineryLoyaltyMode || input.dataset.rmsRefineryVisitNumber || input.dataset.rmsRefineryVisitTarget || "";
+    syncRmsPostSaleRefinery(root, id);
+    input.addEventListener("change", () => syncRmsPostSaleRefinery(root, id));
+    input.addEventListener("input", () => syncRmsPostSaleRefinery(root, id));
+  });
   root.querySelectorAll("[data-rms-save-post-sale]").forEach((button) => {
     button.addEventListener("click", () => {
       const item = rmsOpportunityById(button.dataset.rmsSavePostSale || "");
@@ -48759,30 +48838,55 @@ function rmsPostSaleActionKey(id) {
 }
 
 function rmsPostSaleDraftFromDom(root, id) {
-  const value = (selector) => rmsCommercialNode(root, selector, id)?.value || "";
-  const checked = (selector) => Boolean(rmsCommercialNode(root, selector, id)?.checked);
-  const mode = value("[data-rms-post-sale-mode]") || "TASK";
-  const actionType = value("[data-rms-post-sale-type]") || "THANK_YOU";
-  const ticketLabel = String(value("[data-rms-post-sale-ticket-label]") || "").trim();
-  const passValue = Number(value("[data-rms-post-sale-pass-value]") || 0);
+  const path = rmsPostSaleRefineryPath(root, id);
+  if (path === "REFERRAL") {
+    const benefit = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-referral-benefit]") || "").trim();
+    const channel = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-channel]") || "").trim();
+    const name = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-referral-name]") || "").trim();
+    const phone = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-referral-phone]") || "").trim();
+    const email = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-referral-email]") || "").trim();
+    const interest = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-referral-interest]") || "").trim();
+    const consent = rmsPostSaleRefineryChecked(root, id, path, "[data-rms-refinery-referral-consent]");
+    return {
+      refinery_path: path,
+      action_type: "REFERRAL", execution_mode: "NEW_TICKET", status: "ISSUED",
+      contact_channel: channel || null, contact_consent_confirmed: false,
+      content: String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-message]") || "").trim() || null,
+      result_note: "Activación de referidos creada desde la venta atribuida.",
+      ticket: { benefit: { benefit_type: "CUSTOM", benefit_label: benefit, benefit_value: {} }, expires_mode: "30_DAYS" },
+      referred_contact: { name: name || null, phone: phone || null, email: email || null, interest: interest || null, preferred_channel: channel || null, note: "Referido capturado desde Activación 2.", contact_consent_confirmed: consent },
+      metadata: { refinery_path: path, referral_capture: Boolean(name || phone || email) },
+    };
+  }
+  if (path === "REBUY") {
+    const benefit = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-rebuy-benefit]") || "").trim();
+    const channel = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-channel]") || "").trim();
+    return {
+      refinery_path: path,
+      action_type: "REBUY_TICKET", execution_mode: "NEW_TICKET", status: "ISSUED",
+      contact_channel: channel || null, contact_consent_confirmed: false,
+      content: String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-message]") || "").trim() || null,
+      result_note: "Beneficio de recompra creado desde la venta atribuida.",
+      ticket: { benefit: { benefit_type: "CUSTOM", benefit_label: benefit, benefit_value: {} }, expires_mode: "30_DAYS" },
+      metadata: { refinery_path: path },
+    };
+  }
+  const loyaltyMode = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-loyalty-mode]") || "POINTS").toUpperCase();
+  const affiliateMode = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-affiliate-mode]") || "NONE").toUpperCase();
+  const visitNumber = Math.max(1, Number(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-visit-number]") || 1));
+  const visitTarget = Math.max(2, Number(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-visit-target]") || 5));
+  const visitBenefit = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-visit-benefit]") || "").trim();
+  const deliversVisitBenefit = loyaltyMode === "VISITS" && visitNumber >= visitTarget;
   return {
-    action_type: actionType,
-    execution_mode: mode,
-    responsible: String(value("[data-rms-post-sale-responsible]") || "").trim() || null,
-    scheduled_for: rmsCommercialLocalToIso(value("[data-rms-post-sale-scheduled]")) || null,
-    contact_channel: String(value("[data-rms-post-sale-channel]") || "").trim() || null,
-    status: value("[data-rms-post-sale-status]") || "PLANNED",
-    resource_type: String(value("[data-rms-post-sale-resource-type]") || "").trim() || null,
-    resource_url: String(value("[data-rms-post-sale-resource-url]") || "").trim() || null,
-    content: String(value("[data-rms-post-sale-content]") || "").trim() || null,
-    result_note: String(value("[data-rms-post-sale-result]") || "").trim() || null,
-    contact_consent_confirmed: checked("[data-rms-post-sale-consent]"),
-    send_to_intelligence: checked("[data-rms-post-sale-intelligence]"),
-    ticket: mode === "NEW_TICKET" ? {
-      benefit: { benefit_type: "CUSTOM", benefit_label: ticketLabel, benefit_value: {} },
-      expires_mode: "30_DAYS",
-    } : {},
-    reward_pass: mode === "NEW_REWARD_PASS" ? { initial_value_cop: passValue } : {},
+    refinery_path: path,
+    action_type: deliversVisitBenefit ? "REBUY_TICKET" : "REWARD_PASS",
+    execution_mode: deliversVisitBenefit ? "NEW_TICKET" : "TASK",
+    status: deliversVisitBenefit ? "ISSUED" : "COMPLETED",
+    contact_channel: null, contact_consent_confirmed: false,
+    content: String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-loyalty-note]") || "").trim() || null,
+    result_note: loyaltyMode === "POINTS" ? "Compra registrada para fidelización por puntos." : `Sello ${visitNumber} de ${visitTarget} registrado.`,
+    ticket: deliversVisitBenefit ? { benefit: { benefit_type: "CUSTOM", benefit_label: visitBenefit, benefit_value: {} }, expires_mode: "30_DAYS" } : {},
+    metadata: { refinery_path: path, loyalty: { mode: loyaltyMode, affiliate_mode: affiliateMode, visit_number: visitNumber, visit_target: visitTarget, visit_benefit: visitBenefit || null } },
   };
 }
 
@@ -48870,13 +48974,52 @@ async function createRmsIntelligenceAgendaTask(insightId) {
   showFeedback(result?.task ? "Tarea creada por tu confirmación explícita." : "No se pudo crear la tarea.", "success", { title: "Inteligencia RMS" });
 }
 
+async function applyRmsPostSaleLoyalty(item, result, draft) {
+  if (draft.refinery_path !== "LOYALTY" || result?.duplicate || !session?.user?.business_id) return null;
+  const loyalty = draft.metadata?.loyalty || {};
+  const affiliateMode = String(loyalty.affiliate_mode || "NONE").toUpperCase();
+  if (affiliateMode === "NONE") return null;
+  if (!state.affiliatesLoaded) await loadAffiliatesData();
+  let affiliate = rmsPostSaleAffiliateFor(item);
+  if (!affiliate && affiliateMode === "ENROLL") {
+    const created = await api(`/api/portal/businesses/${session.user.business_id}/affiliates`, {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({
+        full_name: item.name || "Cliente Qori", phone: item.phone || null, email: item.email || null,
+        notes: "Afiliado desde Activación 2 tras una venta atribuida.",
+        card_metadata: { source: "rms_activation_2", source_id: item.source_id, sale_id: result?.sale?.id || null },
+      }),
+    });
+    affiliate = created?.affiliate || null;
+    if (affiliate) state.affiliates = [affiliate, ...(state.affiliates || []).filter((entry) => entry.id !== affiliate.id)];
+  }
+  if (!affiliate || String(loyalty.mode || "").toUpperCase() !== "POINTS") return affiliate;
+  const amount = Number(item.state_metadata?.rms_sale_amount || item.total_spent || result?.sale?.sale_amount || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return affiliate;
+  const points = await api(`/api/portal/businesses/${session.user.business_id}/affiliates/${affiliate.id}/points`, {
+    method: "POST", headers: authHeaders(),
+    body: JSON.stringify({
+      amount, reason: "RMS_POST_SALE_PURCHASE",
+      metadata: { source: "rms_activation_2", post_sale_action_id: result?.action?.id || null, sale_id: result?.sale?.id || null },
+    }),
+  });
+  await loadAffiliatesData();
+  return { ...affiliate, awarded: Number(points?.awarded || 0) };
+}
+
 async function saveRmsPostSaleAction(item, root) {
   const draft = rmsPostSaleDraftFromDom(root, item.id);
   if (draft.execution_mode === "NEW_TICKET" && !draft.ticket.benefit.benefit_label) {
-    throw new Error("Indica el beneficio antes de crear un ticket postventa.");
+    throw new Error(draft.refinery_path === "REFERRAL" ? "Indica el beneficio antes de crear el QR de referidos." : "Indica el beneficio antes de crear el ticket de recompra.");
   }
-  if (draft.execution_mode === "NEW_REWARD_PASS" && Number(draft.reward_pass.initial_value_cop || 0) <= 0) {
-    throw new Error("Indica el valor del Reward Pass antes de emitirlo.");
+  if (draft.refinery_path === "REFERRAL") {
+    const referred = draft.referred_contact || {};
+    const hasContact = Boolean(referred.name || referred.phone || referred.email);
+    if (hasContact && (!referred.name || (!referred.phone && !referred.email))) throw new Error("Para crear el lead referido registra su nombre y al menos WhatsApp o correo.");
+    if (hasContact && !referred.contact_consent_confirmed) throw new Error("Confirma la autorización del referido antes de guardar sus datos.");
+  }
+  if (draft.refinery_path === "LOYALTY" && draft.metadata?.loyalty?.mode === "VISITS" && Number(draft.metadata?.loyalty?.visit_number || 0) >= Number(draft.metadata?.loyalty?.visit_target || 0) && !draft.ticket.benefit.benefit_label) {
+    throw new Error("Indica el beneficio que recibirá al completar los sellos.");
   }
   const saleId = item.state_metadata?.rms_attributed_sale_id || null;
   const result = await api("/api/business/rms-machine/post-sale-actions", {
@@ -48888,11 +49031,17 @@ async function saveRmsPostSaleAction(item, root) {
     }),
   });
   if (state.rmsPostSaleActionKeys) delete state.rmsPostSaleActionKeys[item.id];
+  let loyaltyResult = null;
+  try { loyaltyResult = await applyRmsPostSaleLoyalty(item, result, draft); }
+  catch (error) { showFeedback(`La acción postventa quedó registrada, pero no pudimos actualizar afiliación o puntos: ${error.message}`, "error", { title: "Fidelización" }); }
   await Promise.all([
     loadRmsPostSaleActions({ force: true }),
     loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "postventa" }),
   ]);
-  showFeedback(result?.duplicate ? "Esta acción ya estaba registrada; no se duplicó el recurso ni la venta." : "Activación 2 registrada sobre la venta original.", "success", { title: "Activación 2" });
+  const loyaltyMessage = loyaltyResult?.awarded
+    ? ` Se acreditaron ${loyaltyResult.awarded.toLocaleString("es-CO")} puntos al afiliado.`
+    : draft.refinery_path === "LOYALTY" && loyaltyResult ? " La afiliación quedó vinculada a esta compra." : "";
+  showFeedback(result?.duplicate ? "Esta acción ya estaba registrada; no se duplicó el recurso ni la venta." : `Activación 2 registrada sobre la venta original.${loyaltyMessage}`, "success", { title: "Activación 2" });
   openRmsStation("postventa", { source: "post-sale-action" });
 }
 

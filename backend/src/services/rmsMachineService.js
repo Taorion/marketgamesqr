@@ -2756,7 +2756,9 @@ async function recordRmsPostSaleAction(businessId, user, payload = {}) {
       ]
     );
     const action = actionResult.rows[0];
-    const agenda = actionType === "NO_ACTION_NEEDED" ? null : await createPostSaleAgendaInTransaction(client, businessId, user, item, action);
+    const agenda = actionType === "NO_ACTION_NEEDED" || ["COMPLETED", "NOT_APPLICABLE"].includes(status)
+      ? null
+      : await createPostSaleAgendaInTransaction(client, businessId, user, item, action);
     const referral = actionType === "REFERRAL"
       ? await createReferredOpportunityInTransaction(client, businessId, user, action, payload.referred_contact || {})
       : null;
