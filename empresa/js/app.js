@@ -43854,6 +43854,11 @@ function rmsProductClassificationMarkup(item = {}) {
   const productSearch = String(draft?.product_search || "").trim();
   const searchTerm = productSearch.toLocaleLowerCase("es-CO");
   const activeProducts = (state.inventoryProducts || []).filter((product) => product.status === "ACTIVE");
+  const matchingProducts = searchTerm
+    ? activeProducts.filter((product) => [product.name, product.category, product.sku, product.barcode]
+      .filter(Boolean)
+      .some((value) => String(value).toLocaleLowerCase("es-CO").includes(searchTerm)))
+    : [];
   const estimatedTotal = selectedLines.reduce((total, line) => total + line.total, 0);
   return `
     <div class="rms-product-classifier rms-product-classifier-lean" data-rms-product-classifier="${escapeHtml(item.id)}">
@@ -43869,17 +43874,17 @@ function rmsProductClassificationMarkup(item = {}) {
         <span class="material-symbols-outlined" aria-hidden="true">search</span>
         <input type="search" value="${escapeHtml(productSearch)}" data-rms-product-search="${escapeHtml(item.id)}" placeholder="Buscar producto, categoría o código" autocomplete="off">
       </label>
-      <fieldset class="rms-product-classifier-options" aria-describedby="rms-product-classification-help-${escapeHtml(item.id)}">
-        <legend>Productos o servicios disponibles</legend>
+      <section class="rms-product-classifier-options rms-product-assignment-results" data-rms-product-results="${escapeHtml(item.id)}" aria-live="polite" ${productSearch ? "" : "hidden"}>
+        <strong>Coincidencias${productSearch ? ` para “${escapeHtml(productSearch)}”` : ""}</strong>
         <div>
-          ${activeProducts.map((product) => {
+          ${matchingProducts.map((product) => {
             const value = inventoryProductSelectValue(product);
             const searchable = [product.name, product.category, product.sku, product.barcode].filter(Boolean).join(" ").toLocaleLowerCase("es-CO");
-            return `<label class="${selectedValues.includes(value) ? "is-selected" : ""}" data-rms-product-entry="${escapeHtml(searchable)}" ${searchTerm && !searchable.includes(searchTerm) ? "hidden" : ""}><input type="checkbox" value="${escapeHtml(value)}" data-rms-product-option="${escapeHtml(item.id)}" ${selectedValues.includes(value) ? "checked" : ""}><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(money(product.unit_price || 0))} · ${escapeHtml(product.category || "Producto")}</small></span><span class="material-symbols-outlined" aria-hidden="true">check</span></label>`;
-          }).join("") || '<p class="table-secondary">No hay productos activos todavía.</p>'}
+            return `<label class="${selectedValues.includes(value) ? "is-selected" : ""}" data-rms-product-entry="${escapeHtml(searchable)}"><input type="checkbox" value="${escapeHtml(value)}" data-rms-product-option="${escapeHtml(item.id)}" ${selectedValues.includes(value) ? "checked" : ""}><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(money(product.unit_price || 0))} · ${escapeHtml(product.category || "Producto")}</small></span><span class="material-symbols-outlined" aria-hidden="true">check</span></label>`;
+          }).join("") || '<p class="table-secondary">No hay coincidencias. Puedes crear este producto sin salir de Asignación.</p>'}
         </div>
-        <small id="rms-product-classification-help-${escapeHtml(item.id)}">Selecciona con una casilla; no necesitas usar Ctrl ni Cmd.</small>
-      </fieldset>
+        <small id="rms-product-classification-help-${escapeHtml(item.id)}">Marca una o varias coincidencias para agregarlas a la oferta.</small>
+      </section>
       ${selectedLines.length ? `
         <section class="rms-product-assignment-selected" aria-label="Productos asignados">
           <div class="rms-product-assignment-selected-head"><strong>Detalle de la oferta</strong><small>El valor es estimado y se podrá ajustar al registrar la venta.</small></div>
@@ -45881,9 +45886,14 @@ function bindRmsMachineActions(root) {
         ...(state.rmsProductClassificationDraft[id] || {}),
         product_search: input.value,
       };
-      const query = input.value.trim().toLocaleLowerCase("es-CO");
-      root.querySelectorAll("[data-rms-product-entry]").forEach((entry) => {
-        entry.hidden = Boolean(query && !String(entry.dataset.rmsProductEntry || "").includes(query));
+      const caret = Number.isInteger(input.selectionStart) ? input.selectionStart : input.value.length;
+      renderRmsStationOnly();
+      requestAnimationFrame(() => {
+        const nextInput = Array.from(document.querySelectorAll("[data-rms-product-search]"))
+          .find((node) => node.dataset.rmsProductSearch === id);
+        if (!nextInput) return;
+        nextInput.focus({ preventScroll: true });
+        nextInput.setSelectionRange(caret, caret);
       });
     });
   });
