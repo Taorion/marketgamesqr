@@ -22294,3 +22294,51 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-post-sale-history 
   html body[data-current-view="rms-machine"] .portal-shell .rms-refinery-panel { padding:15px !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-refinery-route { padding:12px !important; }
 }
+
+/* Inteligencia RMS: lectura del recorrido real, costos y resultado de cada cliente. */
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-journey {
+  margin:20px 0 !important;
+  padding:19px !important;
+  border:1px solid #c9dfef !important;
+  border-radius:15px !important;
+  background:linear-gradient(135deg,#f1f9ff 0%,#ffffff 62%,#f8fcff 100%) !important;
+}
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-journey > header { margin-bottom:13px !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-journey h5 { margin:3px 0 5px !important; color:#092f67 !important; font-size:1.02rem !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-journey p { margin:0 !important; color:#53718e !important; line-height:1.48 !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-journey-stages,
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-journey-skipped { display:flex !important; flex-wrap:wrap !important; gap:7px !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-journey-stages { margin:12px 0 8px !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-journey-stages span,
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-journey-skipped span { padding:6px 9px !important; border-radius:999px !important; font-size:.73rem !important; line-height:1.25 !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-journey-stages .is-visited { border:1px solid #b9d7ee !important; background:#fff !important; color:#124b82 !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-journey-skipped .is-skipped { border:1px dashed #c8d6e3 !important; color:#6b7f93 !important; background:#f8fbfd !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-economics {
+  display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:1px !important;
+  overflow:hidden !important; margin:16px 0 !important; border:1px solid #cfdfeb !important; border-radius:11px !important; background:#cfdfeb !important;
+}
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-economics > div { min-width:0 !important; padding:12px !important; background:#fff !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-economics dt,
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-sale-detail dt { margin-bottom:4px !important; color:#6c8295 !important; font-size:.65rem !important; font-weight:850 !important; letter-spacing:.04em !important; text-transform:uppercase !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-economics dd,
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-sale-detail dd { margin:0 !important; color:#0d3d74 !important; font-weight:800 !important; font-size:.82rem !important; overflow-wrap:anywhere !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-sale-list { display:grid !important; gap:10px !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-sale-detail { padding:14px !important; border:1px solid #d7e5f0 !important; border-radius:12px !important; background:#fff !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-sale-detail > header { display:flex !important; justify-content:space-between !important; gap:12px !important; align-items:flex-start !important; padding-bottom:11px !important; border-bottom:1px solid #e2edf5 !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-sale-detail header strong { color:#092f67 !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-sale-detail header small { display:block !important; margin-top:3px !important; color:#617b94 !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-sale-detail header > b { color:#0759d6 !important; white-space:nowrap !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-sale-detail dl { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:11px !important; margin:12px 0 0 !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-benefit-history { margin-top:13px !important; padding:12px 13px !important; border-radius:10px !important; background:#f7fbfe !important; color:#315b81 !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-benefit-history strong { color:#153e70 !important; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-benefit-history ul { display:grid !important; gap:5px !important; margin:8px 0 0 !important; padding-left:17px !important; }
+@media (max-width:900px) {
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-economics { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-sale-detail dl { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+}
+@media (max-width:520px) {
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-journey { padding:14px !important; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-economics,
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-sale-detail dl { grid-template-columns:1fr !important; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-sale-detail > header { display:grid !important; }
+}

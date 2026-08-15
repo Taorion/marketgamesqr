@@ -24,6 +24,95 @@ function metadata(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
 
+const RMS_PHASE_LABELS = Object.freeze({
+  recoleccion: "Recolector",
+  alimentacion: "Curaduría",
+  curaduria: "Clasificador",
+  clasificacion: "Activación 1",
+  procesamiento: "Evaluación",
+  accion_correctiva: "Negociación",
+  control_anti_fuga: "Riesgos de fuga",
+  cierre: "Ventas atribuidas",
+  postventa: "Activación 2",
+  inteligencia: "Inteligencia",
+  reciclaje: "Reciclaje",
+});
+
+function phaseLabel(phase) {
+  const key = String(phase || "").trim().toLowerCase();
+  return RMS_PHASE_LABELS[key] || key || "Sin etapa";
+}
+
+function moneyTotal(rows = [], field) {
+  return rows.reduce((sum, row) => sum + Number(row?.[field] || 0), 0);
+}
+
+function leadQualityLabel(value) {
+  const normalized = String(value || "").trim().toUpperCase();
+  return ({ HIGH: "Alta", MEDIUM: "Media", LOW: "Baja", ALTA: "Alta", MEDIA: "Media", BAJA: "Baja" })[normalized]
+    || String(value || "").trim()
+    || "Sin registrar";
+}
+
+function intelligenceJourney({ stateMetadata = {}, movements = [], sales = [], postSaleActions = [], tickets = [], rewardPasses = [] }) {
+  const phases = [...new Set(movements.map((movement) => movement.to_phase).filter(Boolean))];
+  const visited = new Set(phases);
+  const negotiated = visited.has("accion_correctiva") || Boolean(stateMetadata.negotiation?.round || stateMetadata.negotiation?.objective);
+  const riskReviewed = visited.has("control_anti_fuga") || Boolean(stateMetadata.risk_review);
+  const commercialRoute = riskReviewed ? "Venta protegida por Riesgos de fuga" : negotiated ? "Venta negociada" : sales.length ? "Compra directa atribuida" : "Aún sin venta atribuida";
+  const quality = leadQualityLabel(stateMetadata.lead_quality_label || stateMetadata.lead_quality || stateMetadata.funnel_quality);
+  const salesSummary = sales.map((sale) => {
+    const saleMetadata = metadata(sale.metadata);
+    const economics = metadata(saleMetadata.economics);
+    return {
+      id: sale.id,
+      product_name: sale.product_name || sale.product_name_snapshot || "Producto sin nombre",
+      quantity: Number(sale.quantity || economics.quantity || 1),
+      currency: sale.currency || economics.currency || "COP",
+      sale_amount: Number(sale.sale_amount || economics.sale_amount || 0),
+      unit_cost: Number(sale.unit_cost || economics.unit_cost || 0),
+      product_cost_total: Number(sale.product_cost_total || economics.product_cost_total || 0),
+      benefit_type: sale.benefit_type || "NONE",
+      benefit_cost: Number(sale.benefit_cost || economics.benefit_cost || 0),
+      benefit_description: saleMetadata.benefit_description || null,
+      acquisition_cost: Number(sale.acquisition_cost || economics.acquisition_cost || 0),
+      gross_profit: Number(sale.gross_profit || economics.gross_profit || 0),
+      net_profit: Number(sale.net_profit || economics.net_profit || 0),
+      roi: sale.roi ?? economics.roi ?? null,
+      acquisition_channel: sale.acquisition_channel_name_snapshot || sale.acquisition_channel || saleMetadata.acquisition_channel?.name_snapshot || null,
+      payment_method: sale.payment_method || null,
+      paid_at: sale.paid_at || sale.created_at || null,
+    };
+  });
+  return {
+    quality,
+    commercial_route: commercialRoute,
+    negotiated,
+    risk_reviewed: riskReviewed,
+    direct_purchase: Boolean(sales.length) && !negotiated && !riskReviewed,
+    phases: phases.map((phase) => ({ key: phase, label: phaseLabel(phase) })),
+    skipped_stages: [
+      !negotiated ? { key: "accion_correctiva", label: "Negociación" } : null,
+      !riskReviewed ? { key: "control_anti_fuga", label: "Riesgos de fuga" } : null,
+    ].filter(Boolean),
+    economics: {
+      revenue: moneyTotal(salesSummary, "sale_amount"),
+      product_cost: moneyTotal(salesSummary, "product_cost_total"),
+      benefit_cost: moneyTotal(salesSummary, "benefit_cost"),
+      acquisition_cost: moneyTotal(salesSummary, "acquisition_cost"),
+      gross_profit: moneyTotal(salesSummary, "gross_profit"),
+      net_profit: moneyTotal(salesSummary, "net_profit"),
+    },
+    sales: salesSummary,
+    benefits: {
+      used_in_sale: salesSummary.filter((sale) => sale.benefit_type !== "NONE" || sale.benefit_cost > 0).map((sale) => ({ type: sale.benefit_type, cost: sale.benefit_cost, description: sale.benefit_description || null })),
+      post_sale_actions: postSaleActions.map((action) => ({ type: action.action_type, status: action.status, detail: action.result_note || action.content || null })),
+      tickets: tickets.map((ticket) => ({ type: ticket.benefit_type || ticket.origin_type || "Ticket", status: ticket.status, value: ticket.benefit_value || null })),
+      reward_passes: rewardPasses.map((pass) => ({ status: pass.status, initial_value_cop: Number(pass.initial_value_cop || 0), current_balance_cop: Number(pass.current_balance_cop || 0) })),
+    },
+  };
+}
+
 function elapsedLabel(milliseconds = 0) {
   const hours = Math.max(0, Math.round(milliseconds / 3600000));
   if (hours < 24) return `${hours} h`;
@@ -92,6 +181,14 @@ async function learningCase(businessId, params = {}) {
   const analyticalEvents = analyticalEventsResult.rows;
   const durations = phaseDurations(movements, state);
   const longest = [...durations].sort((left, right) => right.milliseconds - left.milliseconds)[0] || null;
+  const journey = intelligenceJourney({
+    stateMetadata,
+    movements,
+    sales,
+    postSaleActions: postSaleResult.rows,
+    tickets: qrResult.rows,
+    rewardPasses: rewardPassResult.rows,
+  });
   const timeline = [
     ...movements.map((row) => ({ kind: "phase", at: row.created_at, phase: row.to_phase, title: `${row.from_phase || "Origen"} → ${row.to_phase}`, detail: row.reason || "Movimiento RMS registrado", evidence_id: row.id })),
     ...events.map((row) => ({ kind: "event", at: row.created_at, phase: row.rms_phase, title: row.event_title, detail: row.event_description || "Hecho RMS registrado", evidence_id: row.id })),
@@ -114,7 +211,7 @@ async function learningCase(businessId, params = {}) {
       source_type: type, source_id: sourceId, current_operational_phase: state?.rms_phase || "sin_estado",
       lifecycle_status: state?.lifecycle_status || "ACTIVE", profile,
     },
-    facts: { state, movements, events, analytical_events: analyticalEvents, sales, post_sale_actions: postSaleResult.rows, tickets: qrResult.rows, reward_passes: rewardPassResult.rows, agenda_and_notes: notesResult.rows },
+    facts: { state, movements, events, analytical_events: analyticalEvents, sales, post_sale_actions: postSaleResult.rows, tickets: qrResult.rows, reward_passes: rewardPassResult.rows, agenda_and_notes: notesResult.rows, journey },
     learning: {
       timeline, phase_durations: durations, longest_phase: longest,
       reprocess_count: movements.filter((row) => ["clasificacion", "procesamiento", "accion_correctiva", "reciclaje"].includes(row.to_phase)).length,
