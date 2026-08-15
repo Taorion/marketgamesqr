@@ -21820,3 +21820,38 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-next-pa
   html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview { grid-template-columns:auto minmax(0,1fr) !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview .rms-evaluation-route-state { grid-column:2 !important; justify-self:start !important; }
 }
+
+/* La ficha de Evaluación es una cabecera de ancho completo. Las capas
+   anteriores la comprimían en un lateral y sus cuatro bloques se cruzaban. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item {
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) !important;
+  overflow:clip !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-commercial-work-lead {
+  display:grid !important;
+  grid-template-columns:minmax(190px,.78fr) minmax(0,1.7fr) auto !important;
+  align-items:center !important;
+  gap:18px !important;
+  width:100% !important;
+  min-width:0 !important;
+  padding:20px 24px !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-commercial-work-kicker { grid-column:1 / -1 !important; margin:0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-activation-work-person { min-width:0 !important; padding-right:18px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-activation-work-facts { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px 12px !important; min-width:0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-activation-work-facts div { min-width:0 !important; padding:0 12px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-activation-work-actions { display:flex !important; flex-direction:row !important; flex-wrap:wrap !important; justify-content:flex-end !important; min-width:min(100%,240px) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-commercial-work-console { width:100% !important; min-width:0 !important; }
+@media (max-width:920px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-commercial-work-lead { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-activation-work-facts { grid-column:1 / -1 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-activation-work-actions { justify-content:flex-start !important; }
+}
+@media (max-width:620px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-commercial-work-lead { grid-template-columns:minmax(0,1fr) !important; gap:14px !important; padding:18px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-activation-work-person { padding:0 0 14px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-activation-work-facts { grid-column:auto !important; grid-template-columns:minmax(0,1fr) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-activation-work-facts div { padding:0 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-activation-work-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; width:100% !important; }
+}
