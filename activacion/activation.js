@@ -11,6 +11,7 @@ const activationDescription = document.getElementById("activationDescription");
 const participantForm = document.getElementById("participantForm");
 const participantName = document.getElementById("participantName");
 const participantPhone = document.getElementById("participantPhone");
+const participantPhoneCountry = document.getElementById("participantPhoneCountry");
 const participantEmail = document.getElementById("participantEmail");
 const participantDocument = document.getElementById("participantDocument");
 const participantDocumentType = document.getElementById("participantDocumentType");
@@ -365,7 +366,7 @@ function participantPayload() {
   const enriched = applyFixedProductInterest(activationForm, rmsIntake);
   return {
     name: participantName.value.trim(),
-    phone: participantPhone.value.trim(),
+    phone: `+${participantPhoneCountry?.value || "57"}${participantPhone.value.replace(/\D/g, "")}`,
     email: participantEmail.value.trim() || null,
     document: participantDocument.value.trim() || null,
     document_type: participantDocumentType?.value || "CC",

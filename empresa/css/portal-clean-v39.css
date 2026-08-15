@@ -23279,3 +23279,38 @@ html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#q
     padding: 12px 16px 14px !important;
   }
 }
+/* RMS station headers: retain hierarchy without clipping at notebook widths. */
+.rms-lean-station-head {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: clamp(10px, 1.6vw, 20px) !important;
+  padding: clamp(14px, 2vw, 22px) !important;
+}
+.rms-lean-station-title { min-width: 0 !important; }
+.rms-lean-station-title > div { min-width: 0 !important; }
+.rms-lean-station-title h3,
+.rms-lean-station-title p,
+.rms-lean-station-title .mono-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rms-lean-station-actions { display: flex !important; flex-wrap: wrap !important; justify-content: flex-end !important; gap: 8px !important; min-width: 0 !important; }
+@media (max-width: 1180px) {
+  .rms-lean-station-head { grid-template-columns: auto minmax(0, 1fr) !important; }
+  .rms-lean-station-actions { grid-column: 1 / -1; justify-content: flex-start !important; }
+}
+@media (max-width: 680px) {
+  .rms-lean-station-head { grid-template-columns: 1fr !important; align-items: start !important; }
+  .rms-lean-station-head > .ghost-button { justify-self: start; }
+  .rms-lean-station-actions { display: grid !important; grid-template-columns: 1fr; }
+  .rms-lean-station-actions button { width: 100%; justify-content: center; }
+}
+
+/* Editing an activation uses the same full-screen, centered canvas as creation. */
+.modal-shell:has(.gaming-builder-assistant) {
+  position: fixed !important; inset: 0 !important; z-index: var(--portal-modal, 1100) !important;
+  display: grid !important; place-items: center !important; padding: clamp(12px, 3vw, 34px) !important;
+  overflow: auto !important; background: rgba(1, 20, 54, .56) !important;
+}
+.modal-shell:has(.gaming-builder-assistant) .modal-card {
+  width: min(1240px, 100%) !important; max-height: calc(100dvh - clamp(24px, 6vw, 68px)) !important;
+  overflow: auto !important; margin: auto !important;
+}
