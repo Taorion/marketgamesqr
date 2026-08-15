@@ -1139,23 +1139,25 @@ async function startInteractiveParticipant(slug, body) {
     const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token, body.metadata?.communication_tracking_source);
     const attributionMetadata = communicationAttributionMetadata(attribution);
     const gameSessionToken = createSecureToken();
-    const player = await createPlayer(client, activation, body, { status: "started", ...attributionMetadata });
+    const contact = await resolveActivationContact(client, activation, body, { status: "started", ...attributionMetadata });
     const metadata = activationFormMetadata(activation, body, { status: "started", ...attributionMetadata });
     const participantResult = await client.query(
       `insert into interactive_activation_participants
-        (activation_id, company_id, player_id, name, document, phone, email, metadata, status,
+        (activation_id, company_id, player_id, source_type, source_id, name, document, phone, email, metadata, status,
          game_session_token, game_session_started_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, 'started', $9, now())
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, 'started', $11, now())
        returning *`,
       [
         activation.id,
         activation.company_id,
-        player.id,
+        contact.player_id,
+        contact.source_type,
+        contact.source_id,
         body.name || null,
         body.document || body.document_id || null,
         body.phone || null,
         body.email || null,
-        jsonParam(metadata, {}),
+        jsonParam({ ...metadata, crm_contact: contact.reference }, {}),
         gameSessionToken,
       ]
     );
@@ -1166,7 +1168,9 @@ async function startInteractiveParticipant(slug, body) {
       occurred_at: participant.game_session_started_at || new Date().toISOString(),
     });
     await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_STARTED", { participant_id: participant.id });
-    await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participant.id });
+    if (contact.created) {
+      await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participant.id });
+    }
     return {
       participant,
       game_session_token: gameSessionToken,
@@ -1213,7 +1217,9 @@ async function completeInteractiveParticipant(slug, body) {
 
     if (!body.participant_id) {
       await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_STARTED", { participant_id: participant.id });
-      await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participant.id });
+      if (participant.metadata?.crm_contact?.created) {
+        await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participant.id });
+      }
     }
 
     await client.query(
@@ -1546,22 +1552,24 @@ async function createParticipantInsideCompletion(client, activation, body) {
   await assertDuplicateParticipant(client, activation, body);
   const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token, body.metadata?.communication_tracking_source);
   const attributionMetadata = communicationAttributionMetadata(attribution);
-  const player = await createPlayer(client, activation, body, { status: "completed", ...attributionMetadata });
+  const contact = await resolveActivationContact(client, activation, body, { status: "completed", ...attributionMetadata });
   const metadata = activationFormMetadata(activation, body, { status: "completed", ...attributionMetadata });
   const result = await client.query(
     `insert into interactive_activation_participants
-      (activation_id, company_id, player_id, name, document, phone, email, metadata, status)
-     values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, 'started')
+      (activation_id, company_id, player_id, source_type, source_id, name, document, phone, email, metadata, status)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, 'started')
      returning *`,
     [
       activation.id,
       activation.company_id,
-      player.id,
+      contact.player_id,
+      contact.source_type,
+      contact.source_id,
       body.name || null,
       body.document || body.document_id || null,
       body.phone || null,
       body.email || null,
-      jsonParam(metadata, {}),
+      jsonParam({ ...metadata, crm_contact: contact.reference }, {}),
     ]
   );
   return result.rows[0];
@@ -1572,6 +1580,67 @@ function activationContactIdentity(body = {}) {
   const email = String(body.email || "").trim().toLowerCase();
   const phone = String(body.phone || "").replace(/\D/g, "");
   return { documentId: documentId || null, email: email || null, phone: phone || null };
+}
+
+async function resolveActivationContact(client, activation, body, metadata = {}) {
+  const identity = activationContactIdentity(body);
+  if (identity.documentId || identity.email || identity.phone) {
+    const lockKey = [activation.company_id, identity.documentId || identity.email || identity.phone].join(":");
+    await client.query("select pg_advisory_xact_lock(hashtext($1))", [`interactive-contact:${lockKey}`]);
+    const existing = await client.query(
+      `select *
+         from (
+           select p.id, 'PLAYER'::text as source_type, p.created_at, 1 as source_rank
+             from players p
+            where p.business_id = $1
+              and (
+                ($2::text is not null and regexp_replace(lower(coalesce(p.document_id, '')), '[^a-z0-9]', '', 'g') = $2)
+                or ($3::text is not null and lower(nullif(p.email, '')) = $3)
+                or ($4::text is not null and regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g') = $4)
+              )
+           union all
+           select ml.id, 'MANUAL'::text as source_type, ml.created_at, 2 as source_rank
+             from business_manual_leads ml
+            where ml.business_id = $1
+              and (
+                ($3::text is not null and lower(nullif(ml.email, '')) = $3)
+                or ($4::text is not null and regexp_replace(coalesce(ml.phone, ''), '\\D', '', 'g') = $4)
+              )
+           union all
+           select af.id, 'AFFILIATE'::text as source_type, af.created_at, 3 as source_rank
+             from affiliates af
+            where af.business_id = $1
+              and af.status <> 'DELETED'
+              and (
+                ($2::text is not null and regexp_replace(lower(coalesce(af.document_id, '')), '[^a-z0-9]', '', 'g') = $2)
+                or ($3::text is not null and lower(nullif(af.email, '')) = $3)
+                or ($4::text is not null and regexp_replace(coalesce(af.phone, ''), '\\D', '', 'g') = $4)
+              )
+         ) contacts
+        order by source_rank asc, created_at asc
+        limit 1`,
+      [activation.company_id, identity.documentId, identity.email, identity.phone]
+    );
+    if (existing.rowCount) {
+      const row = existing.rows[0];
+      return {
+        player_id: row.source_type === "PLAYER" ? row.id : null,
+        source_type: row.source_type,
+        source_id: row.id,
+        created: false,
+        reference: { source_type: row.source_type, source_id: row.id, created: false },
+      };
+    }
+  }
+
+  const player = await createPlayer(client, activation, body, metadata);
+  return {
+    player_id: player.id,
+    source_type: "PLAYER",
+    source_id: player.id,
+    created: player._created !== false,
+    reference: { source_type: "PLAYER", source_id: player.id, created: player._created !== false },
+  };
 }
 
 async function createPlayer(client, activation, body, metadata = {}) {
@@ -1590,8 +1659,9 @@ async function createPlayer(client, activation, body, metadata = {}) {
   };
   const identity = activationContactIdentity(body);
 
-  // One person can complete several activations. The participant row preserves
-  // each activation, but the CRM contact must remain a single PLAYER record.
+  // The transaction-level identity lock in resolveActivationContact protects all
+  // Qori contact sources. This second PLAYER lookup only covers a concurrent
+  // player created by a legacy intake path while the activation is being saved.
   if (identity.documentId || identity.email || identity.phone) {
     const lockKey = [activation.company_id, identity.documentId || identity.email || identity.phone].join(":");
     await client.query("select pg_advisory_xact_lock(hashtext($1))", [`interactive-contact:${lockKey}`]);
@@ -1610,34 +1680,7 @@ async function createPlayer(client, activation, body, metadata = {}) {
       [activation.company_id, identity.documentId, identity.email, identity.phone]
     );
     if (existing.rowCount) {
-      const { source, lead_source, lead_origin, ...activationUpdate } = playerMetadata;
-      const updated = await client.query(
-        `update players
-            set name = coalesce(nullif($2, ''), name),
-                email = coalesce(nullif($3, ''), email),
-                phone = coalesce(nullif($4, ''), phone),
-                document_id = coalesce(nullif($5, ''), document_id),
-                metadata = coalesce(metadata, '{}'::jsonb) || $6::jsonb
-          where id = $1
-          returning *`,
-        [
-          existing.rows[0].id,
-          String(body.name || "").trim(),
-          String(body.email || "").trim(),
-          String(body.phone || "").trim(),
-          String(body.document || body.document_id || "").trim(),
-          jsonParam({
-            ...activationUpdate,
-            latest_interactive_activation: {
-              id: activation.id,
-              title: activation.title || null,
-              type: activation.activation_type,
-              captured_at: new Date().toISOString(),
-            },
-          }, {}),
-        ]
-      );
-      return updated.rows[0];
+      return { ...existing.rows[0], _created: false };
     }
   }
 
@@ -1657,14 +1700,16 @@ async function createPlayer(client, activation, body, metadata = {}) {
       jsonParam(playerMetadata, {}),
     ]
   );
-  return result.rows[0];
+  return { ...result.rows[0], _created: true };
 }
 
 // A participation is a commercial signal even if it does not unlock a benefit.
 // The participant table retains the complete history; this compact snapshot makes
 // the latest attempt immediately visible in the canonical Qori contact record.
 async function syncInteractiveParticipationToLead(client, activation, participant, outcome = {}) {
-  if (!participant?.player_id) return;
+  const sourceType = String(participant?.source_type || (participant?.player_id ? "PLAYER" : "")).toUpperCase();
+  const sourceId = participant?.source_id || participant?.player_id || null;
+  if (!sourceType || !sourceId) return;
   const status = String(outcome.status || participant.status || "started").toLowerCase();
   const rewarded = outcome.rewarded === true;
   const snapshot = {
@@ -1679,15 +1724,55 @@ async function syncInteractiveParticipationToLead(client, activation, participan
     result_profile: outcome.result_profile || null,
     captured_at: outcome.occurred_at || new Date().toISOString(),
   };
+  const snapshotJson = jsonParam(snapshot, {});
+  if (sourceType === "PLAYER") {
+    await client.query(
+      `update players
+          set metadata = coalesce(metadata, '{}'::jsonb)
+            || jsonb_build_object(
+              'latest_interactive_activation', $2::jsonb,
+              'latest_activation_participation', $2::jsonb
+            )
+        where id = $1 and business_id = $3`,
+      [sourceId, snapshotJson, activation.company_id]
+    );
+  } else if (sourceType === "MANUAL") {
+    await client.query(
+      `update business_manual_leads
+          set metadata = coalesce(metadata, '{}'::jsonb)
+            || jsonb_build_object(
+              'latest_interactive_activation', $2::jsonb,
+              'latest_activation_participation', $2::jsonb
+            ),
+              updated_at = now()
+        where id = $1 and business_id = $3`,
+      [sourceId, snapshotJson, activation.company_id]
+    );
+  } else if (sourceType === "AFFILIATE") {
+    await client.query(
+      `update affiliates
+          set card_metadata = coalesce(card_metadata, '{}'::jsonb)
+            || jsonb_build_object(
+              'latest_interactive_activation', $2::jsonb,
+              'latest_activation_participation', $2::jsonb
+            ),
+              updated_at = now()
+        where id = $1 and business_id = $3`,
+      [sourceId, snapshotJson, activation.company_id]
+    );
+  }
   await client.query(
-    `update players
-        set metadata = coalesce(metadata, '{}'::jsonb)
-          || jsonb_build_object(
-            'latest_interactive_activation', $2::jsonb,
-            'latest_activation_participation', $2::jsonb
-          )
-      where id = $1 and business_id = $3`,
-    [participant.player_id, jsonParam(snapshot, {}), activation.company_id]
+    `insert into lead_events
+      (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, metadata)
+     values ($1, $2, $3, $4, 'interactive_activation_participation', 'Participación en activación', $5, $6::jsonb)`,
+    [
+      activation.company_id,
+      sourceType === "PLAYER" ? sourceId : null,
+      sourceType,
+      sourceId,
+      `${status === "started" ? "Inició" : "Registró"} la activación “${activation.title || "Activación"}”.`,
+      snapshotJson,
+    ]
   );
 }
 
@@ -2223,7 +2308,7 @@ async function getInteractiveActivationReport(businessId, activationId) {
   const row = metrics.rows[0] || {};
   const [participantHistory, invitationHistory] = await Promise.all([
     query(
-      `select p.id as participant_id, p.player_id, p.name, p.document, p.phone, p.email,
+      `select p.id as participant_id, p.player_id, p.source_type, p.source_id, p.name, p.document, p.phone, p.email,
               p.score, p.result_profile, p.status as participant_status, p.started_at,
               p.completed_at, p.created_at, p.metadata,
               r.id as reward_id, r.status as reward_status,

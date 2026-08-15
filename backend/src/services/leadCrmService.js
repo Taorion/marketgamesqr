@@ -732,12 +732,33 @@ async function listLeadCrmRows(businessId, filters = {}) {
        union all
        select * from affiliate_rows
      ),
+     deduplicated_rows as (
+       select distinct on (
+         coalesce(
+           nullif(regexp_replace(lower(coalesce(document_id, '')), '[^a-z0-9]', '', 'g'), ''),
+           nullif(lower(coalesce(email, '')), ''),
+           nullif(regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g'), ''),
+           id::text
+         )
+       ) *
+       from all_rows
+       order by
+         coalesce(
+           nullif(regexp_replace(lower(coalesce(document_id, '')), '[^a-z0-9]', '', 'g'), ''),
+           nullif(lower(coalesce(email, '')), ''),
+           nullif(regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g'), ''),
+           id::text
+         ),
+         case source_type when 'PLAYER' then 1 when 'AFFILIATE' then 2 else 3 end,
+         created_at asc,
+         id asc
+     ),
      rms_rows as (
        select ar.*,
               rms.rms_phase,
               rms.updated_at as rms_phase_updated_at,
               rms.last_operation as rms_last_operation
-       from all_rows ar
+       from deduplicated_rows ar
        left join lateral (
          select rls.rms_phase, rls.updated_at, rls.last_operation
          from rms_lead_state rls
@@ -1185,6 +1206,8 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
               iap.activation_id,
               iap.company_id as business_id,
               iap.player_id,
+              iap.source_type as participant_source_type,
+              iap.source_id as participant_source_id,
               iap.name as participant_name,
               iap.document as document_value,
               iap.phone as phone_value,
@@ -1234,10 +1257,11 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
          or ($3::text is not null and nullif($3::text, '') is not null and iap.document = $3::text)
          or ($4::text is not null and nullif($4::text, '') is not null and iap.phone = $4::text)
          or ($5::text is not null and nullif($5::text, '') is not null and lower(iap.email) = lower($5::text))
+         or (iap.source_type = $6 and iap.source_id = $7)
        )
        order by iap.created_at desc
        limit 120`,
-      identityOnlyParams
+      params
     ),
     query(
       `select la.*, c.name as campaign_name, al.public_url, al.token, al.status as link_status
