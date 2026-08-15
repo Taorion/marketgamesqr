@@ -945,6 +945,7 @@ const activationShareSearchButton = document.getElementById("activationShareSear
 const activationShareLeadList = document.getElementById("activationShareLeadList");
 const activationShareContactMode = document.getElementById("activationShareContactMode");
 const activationSharePhoneMode = document.getElementById("activationSharePhoneMode");
+const activationShareEmailMode = document.getElementById("activationShareEmailMode");
 const activationShareWhatsAppChannel = document.getElementById("activationShareWhatsAppChannel");
 const activationShareEmailChannel = document.getElementById("activationShareEmailChannel");
 const activationShareContactPanel = document.getElementById("activationShareContactPanel");
@@ -26048,9 +26049,10 @@ function renderActivationShareModal() {
   activationShareEmailChannel?.setAttribute("aria-selected", String(isEmail));
   activationShareContactMode?.classList.toggle("is-active", !isManual);
   activationShareContactMode?.setAttribute("aria-selected", String(!isManual));
-  activationSharePhoneMode?.classList.toggle("is-active", isManual);
-  activationSharePhoneMode?.setAttribute("aria-selected", String(isManual));
-  if (activationSharePhoneMode) activationSharePhoneMode.textContent = isEmail ? "Escribir email" : "Escribir WhatsApp";
+  activationSharePhoneMode?.classList.toggle("is-active", !isEmail && isManual);
+  activationSharePhoneMode?.setAttribute("aria-selected", String(!isEmail && isManual));
+  activationShareEmailMode?.classList.toggle("is-active", isEmail && isManual);
+  activationShareEmailMode?.setAttribute("aria-selected", String(isEmail && isManual));
   activationShareContactPanel?.classList.toggle("hidden", isManual);
   activationShareManualPanel?.classList.toggle("hidden", !isManual || isEmail);
   activationShareManualEmailPanel?.classList.toggle("hidden", !isManual || !isEmail);
@@ -51620,7 +51622,14 @@ activationShareSearchInput?.addEventListener("keydown", (event) => {
   searchActivationShareLeads().catch((error) => showFeedback(error.message, "error", { title: "No se pudo buscar lead" }));
 });
 activationShareContactMode?.addEventListener("click", () => setActivationShareRecipientMode("contact"));
-activationSharePhoneMode?.addEventListener("click", () => setActivationShareRecipientMode("manual"));
+activationSharePhoneMode?.addEventListener("click", () => {
+  setActivationShareChannel("whatsapp");
+  setActivationShareRecipientMode("manual");
+});
+activationShareEmailMode?.addEventListener("click", () => {
+  setActivationShareChannel("email");
+  setActivationShareRecipientMode("manual");
+});
 activationShareWhatsAppChannel?.addEventListener("click", () => setActivationShareChannel("whatsapp"));
 activationShareEmailChannel?.addEventListener("click", () => setActivationShareChannel("email"));
 activationShareManualName?.addEventListener("input", () => {
@@ -51661,6 +51670,12 @@ activationShareModal?.addEventListener("click", (event) => {
     return;
   }
   if (event.target.closest("#activationSharePhoneMode")) {
+    setActivationShareChannel("whatsapp");
+    setActivationShareRecipientMode("manual");
+    return;
+  }
+  if (event.target.closest("#activationShareEmailMode")) {
+    setActivationShareChannel("email");
     setActivationShareRecipientMode("manual");
     return;
   }
