@@ -42416,11 +42416,27 @@ const RMS_EVALUATION_RESPONSES = [
   { value: "MISSING_INFORMATION", label: "Necesita información o material adicional", short: "Pide información", eyebrow: "Pendiente", title: "Solicita más información", icon: "send", hint: "Hay que enviar o aclarar material antes de continuar." },
   { value: "NURTURE", label: "No compra ahora; requiere nutrición", short: "Seguimiento", eyebrow: "Más adelante", title: "Aún no está listo", icon: "schedule", hint: "Conserva la relación y programa un seguimiento sin presionarlo." },
   { value: "NOT_QUALIFIED", label: "No califica por ahora", short: "No es oportunidad", eyebrow: "Descartar", title: "No califica por ahora", icon: "do_not_disturb_on", hint: "Documenta el motivo y evita insistirle comercialmente." },
+  { value: "NO_RESPONSE", label: "No respondió a Activación 1", short: "Sin respuesta", eyebrow: "Silencio", title: "No respondió", icon: "phone_missed", hint: "Pasa a Riesgos de fuga para definir una recuperación responsable." },
+  { value: "OBJECTION", label: "Respondió con una objeción", short: "Presenta objeción", eyebrow: "Bloqueo", title: "Tiene una objeción", icon: "report_problem", hint: "Describe la objeción y envíala a Riesgos de fuga." },
 ];
 
 const RMS_EVALUATION_DESTINATIONS = [
   { value: "NEGOTIATION", label: "Negociación", eyebrow: "Acordar", icon: "handshake", hint: "Precio, alcance, plazos o forma de pago." },
 ];
+
+const RMS_EVALUATION_AUTO_DESTINATIONS = Object.freeze({
+  NEGOTIATION: "NEGOTIATION",
+  MISSING_INFORMATION: "NEGOTIATION",
+  NURTURE: "NEGOTIATION",
+  PAID_SALE: "ATTRIBUTED_SALE",
+  NO_RESPONSE: "RISK_REVIEW",
+  OBJECTION: "RISK_REVIEW",
+  NOT_QUALIFIED: "RISK_REVIEW",
+});
+
+function rmsEvaluationAutoDestination(response = "") {
+  return RMS_EVALUATION_AUTO_DESTINATIONS[String(response || "").toUpperCase()] || "";
+}
 
 const RMS_CURRENCIES = ["COP", "USD", "EUR", "MXN", "PEN", "CLP", "ARS", "BRL"];
 
@@ -42449,9 +42465,9 @@ function rmsEvaluationStationCardMarkup(item = {}) {
   const draft = rmsEvaluationCachedDraft(item.id);
   const evaluationProductId = draft.recommended_inventory_product_id || item.classified_product_id || "";
   const selectedResponse = draft.response || "";
-  const selectedDestination = draft.destination || "";
+  const selectedDestination = rmsEvaluationAutoDestination(selectedResponse) || draft.destination || "";
   const selectedResponseLabel = RMS_EVALUATION_RESPONSES.find((option) => option.value === selectedResponse)?.short || "Pendiente";
-  const selectedDestinationLabel = RMS_EVALUATION_DESTINATIONS.find((option) => option.value === selectedDestination)?.label || "Por elegir";
+  const selectedDestinationLabel = selectedResponse && selectedDestination ? rmsEvaluationRoute(selectedResponse, selectedDestination).label : "Por elegir";
   const saveLabel = selectedDestination ? `Guardar y enviar a ${selectedDestinationLabel}` : "Elige una estación de destino";
   const contactSummary = delivery.sentAt
     ? `${delivery.channel === "email" ? "Email" : "WhatsApp"} enviado ${formatDate(delivery.sentAt)} · ${delivery.contactCount || 1} contacto(s)`
@@ -45787,9 +45803,7 @@ function bindRmsMachineActions(root) {
       response.value = button.dataset.rmsEvaluationValue || "";
       response.dispatchEvent(new Event("change", { bubbles: true }));
       const destination = rmsCommercialNode(root, "[data-rms-evaluation-destination]", id);
-      if (destination && !destination.value) {
-        destination.value = "NEGOTIATION";
-      }
+      if (destination) destination.value = rmsEvaluationAutoDestination(response.value);
       const nextAction = rmsCommercialNode(root, "[data-rms-evaluation-next-action]", id);
       if (nextAction && !nextAction.value.trim()) nextAction.value = rmsEvaluationDefaultNextAction(response.value);
       root.querySelectorAll("[data-rms-evaluation-choice]").forEach((choice) => {
@@ -47986,6 +48000,8 @@ function persistRmsEvaluationDraft(root, id = "") {
 function rmsEvaluationRoute(response = "", destination = "") {
   const directDestinations = {
     NEGOTIATION: { label: "Negociación", detail: "Continuar el acuerdo de precio, alcance, plazos o forma de pago.", icon: "handshake" },
+    RISK_REVIEW: { label: "Riesgos de fuga", detail: "Registra la objeción, el silencio o la falta de interés antes de decidir cómo recuperar el caso.", icon: "shield", phase: "control_anti_fuga" },
+    ATTRIBUTED_SALE: { label: "Ventas atribuidas", detail: "La venta ya fue reportada. Completa producto, cantidad, pago y evidencia para atribuirla.", icon: "point_of_sale", phase: "cierre" },
   };
   if (directDestinations[destination]) return directDestinations[destination];
   const routes = {
@@ -48006,7 +48022,7 @@ function updateRmsEvaluationRoutePreview(root, id) {
   const destination = destinationSelect?.value || "";
   const route = rmsEvaluationRoute(select?.value || "", destination);
   const responseLabel = RMS_EVALUATION_RESPONSES.find((option) => option.value === select?.value)?.short || "Pendiente";
-  const destinationLabel = RMS_EVALUATION_DESTINATIONS.find((option) => option.value === destination)?.label || "Por elegir";
+  const destinationLabel = response && destination ? route.label : "Por elegir";
   const responseMetric = rmsCommercialNode(root, "[data-rms-evaluation-response-label]", id);
   const destinationMetric = rmsCommercialNode(root, "[data-rms-evaluation-destination-label]", id);
   const routeState = rmsCommercialNode(root, "[data-rms-evaluation-route-state]", id);
@@ -48014,23 +48030,26 @@ function updateRmsEvaluationRoutePreview(root, id) {
   if (responseMetric) responseMetric.textContent = responseLabel;
   if (destinationMetric) destinationMetric.textContent = destinationLabel;
   if (routeState) {
-    routeState.textContent = response && destination ? "Listo para dirigir" : "Pendiente";
+    routeState.textContent = response && destination ? "Ruta lista" : "Pendiente";
     routeState.classList.toggle("is-ready", Boolean(response && destination));
   }
   if (saveLabel) saveLabel.textContent = destination ? `Guardar y enviar a ${destinationLabel}` : "Elige una estación de destino";
   if (preview) {
     preview.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode(route.icon));
+    if (saveLabel) saveLabel.textContent = destination ? `Guardar y enviar a ${destinationLabel}` : "Registra la respuesta del lead";
+    const eyebrow = preview.querySelector(".mono-label");
+    if (eyebrow) eyebrow.textContent = "Destino automático";
     const title = preview.querySelector("strong");
     const detail = preview.querySelector("small");
     if (title) title.textContent = route.label;
     if (detail) detail.textContent = route.detail;
-    preview.classList.toggle("is-ready", Boolean(destination));
+    preview.classList.toggle("is-ready", Boolean(response && destination));
   }
   const nextPanel = rmsCommercialNode(root, "[data-rms-evaluation-next-panel]", id);
   nextPanel?.classList.toggle("is-visible", Boolean(response && destination));
   const detailVisibility = {
     commercial: ["NEGOTIATION", "PAID_SALE"].includes(response),
-    followup: ["NEGOTIATION", "MISSING_INFORMATION", "NURTURE"].includes(response),
+    followup: ["NEGOTIATION", "MISSING_INFORMATION", "NURTURE", "NO_RESPONSE", "OBJECTION", "NOT_QUALIFIED"].includes(response),
     context: ["NEGOTIATION", "PAID_SALE", "MISSING_INFORMATION"].includes(response),
   };
   root.querySelectorAll("[data-rms-evaluation-detail]").forEach((field) => {
@@ -48100,7 +48119,11 @@ async function saveRmsEvaluationResponse(item, root) {
     body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft }),
   });
   if (state.rmsEvaluationDrafts) delete state.rmsEvaluationDrafts[item.id];
-  const destination = "accion_correctiva";
+  const destination = {
+    NEGOTIATION: "accion_correctiva",
+    RISK_REVIEW: "control_anti_fuga",
+    ATTRIBUTED_SALE: "cierre",
+  }[draft.destination] || "accion_correctiva";
   state.rmsMachineLoaded = false;
   await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
   const warning = result?.agenda_warning ? " La tarea automática no se pudo crear, pero el lead sí fue dirigido." : "";

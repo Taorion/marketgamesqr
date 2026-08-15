@@ -21802,3 +21802,21 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-p
   html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-steps { overflow-x:auto !important; }
   #inventoryCsvImportModal .inventory-csv-template { align-items:flex-start !important; flex-direction:column !important; }
 }
+
+/* Evaluación posterior a Activación 1: la ruta se calcula desde la respuesta,
+   no se pide al operador repetir una decisión de destino. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-panel { display:none !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview { display:grid !important; grid-template-columns:auto minmax(0,1fr) auto !important; align-items:center !important; gap:12px !important; padding:15px 17px !important; border:1px solid rgba(4,65,179,.16) !important; background:linear-gradient(115deg,#f5faff,#eaf6ff) !important; box-shadow:none !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview > .material-symbols-outlined { display:grid !important; width:38px !important; height:38px !important; place-items:center !important; border-radius:11px !important; color:#0341b3 !important; background:#dceeff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview .mono-label { color:#58738d !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview strong { display:block !important; margin:2px 0 !important; color:#082d67 !important; font-size:.98rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview small { color:#58738d !important; line-height:1.42 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview .rms-evaluation-route-state { align-self:center !important; padding:6px 9px !important; border:1px solid #d5e6f7 !important; border-radius:999px !important; color:#58738d !important; background:#fff !important; font-size:.72rem !important; font-weight:800 !important; white-space:nowrap !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview .rms-evaluation-route-state.is-ready { border-color:#9ad4b5 !important; color:#176b48 !important; background:#effbf4 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-decision-panel::before { content:"Registra la respuesta real de Activación 1. Qori calcula el destino automáticamente."; display:block; margin:-3px 0 14px; color:#5b7690; font-size:.82rem; line-height:1.45; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice.is-selected { border-color:#0759d6 !important; background:#eef7ff !important; box-shadow:0 0 0 3px rgba(7,89,214,.08) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-next-panel { border-top:3px solid #07cefb !important; }
+@media (max-width:680px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview { grid-template-columns:auto minmax(0,1fr) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview .rms-evaluation-route-state { grid-column:2 !important; justify-self:start !important; }
+}

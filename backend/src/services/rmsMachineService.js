@@ -60,6 +60,8 @@ const RMS_TRANSITION_CONTRACT = Object.freeze([
   { from: "clasificacion", decision: "ACTIVATION_DELIVERED", to: "procesamiento" },
   { from: "clasificacion", decision: "MISSING_ACTIVATION_EVIDENCE", to: "clasificacion" },
   { from: "procesamiento", decision: "INTEREST_OR_OBJECTION", to: "accion_correctiva" },
+  { from: "procesamiento", decision: "ACTIVATION_OBJECTION_OR_SILENCE", to: "control_anti_fuga" },
+  { from: "procesamiento", decision: "ACTIVATION_SALE_REPORTED", to: "cierre" },
   { from: "procesamiento", decision: "WAITING", to: "procesamiento" },
   { from: "procesamiento", decision: "NEW_ACTIVATION", to: "clasificacion" },
   { from: "accion_correctiva", decision: "COMPLETE_AGREEMENT", to: "cierre" },
@@ -98,6 +100,8 @@ const RMS_TRANSITION_AUTHORITY = Object.freeze({
 const RMS_PROTECTED_TRANSITIONS = Object.freeze({
   procesamiento: Object.freeze({
     accion_correctiva: RMS_TRANSITION_AUTHORITY.EVALUATION,
+    control_anti_fuga: RMS_TRANSITION_AUTHORITY.EVALUATION,
+    cierre: RMS_TRANSITION_AUTHORITY.EVALUATION,
   }),
   accion_correctiva: Object.freeze({
     procesamiento: [RMS_TRANSITION_AUTHORITY.NEGOTIATION_RESULT, RMS_TRANSITION_AUTHORITY.RECYCLING],
@@ -1480,9 +1484,9 @@ const RMS_EVALUATION_ROUTES = {
     action: "Continuar la conversación y acordar condiciones",
   },
   PAID_SALE: {
-    phase: "accion_correctiva",
-    label: "Negociación",
-    action: "Confirmar pago, producto, condición comercial y soporte",
+    phase: "cierre",
+    label: "Ventas atribuidas",
+    action: "Completar el registro de la venta, producto, cantidad y pago",
   },
   MISSING_INFORMATION: {
     phase: "accion_correctiva",
@@ -1494,19 +1498,34 @@ const RMS_EVALUATION_ROUTES = {
     label: "Negociación",
     action: "Programar nutrición y seguimiento sin presionar la compra",
   },
+  NO_RESPONSE: {
+    phase: "control_anti_fuga",
+    label: "Riesgos de fuga",
+    action: "Revisar el silencio comercial y definir una recuperación responsable",
+  },
+  OBJECTION: {
+    phase: "control_anti_fuga",
+    label: "Riesgos de fuga",
+    action: "Proteger el acuerdo y resolver la objeción antes de continuar",
+  },
   NOT_QUALIFIED: {
-    phase: "procesamiento",
-    label: "Evaluación cerrada",
-    action: "Conservar el aprendizaje y excluir el caso de la presión comercial",
+    phase: "control_anti_fuga",
+    label: "Riesgos de fuga",
+    action: "Documentar la falta de interés y decidir una salida responsable",
   },
 };
 
 const RMS_EVALUATION_DESTINATIONS = {
   NEGOTIATION: RMS_EVALUATION_ROUTES.NEGOTIATION,
+  RISK_REVIEW: RMS_EVALUATION_ROUTES.OBJECTION,
+  ATTRIBUTED_SALE: RMS_EVALUATION_ROUTES.PAID_SALE,
 };
 
 function rmsEvaluationSummary(response, route) {
-  if (response === "PAID_SALE") return "El cliente reportó un pago; falta confirmar producto, valor, condición acordada y soporte antes de atribuir la venta.";
+  if (response === "PAID_SALE") return "La venta fue reportada desde Activación 1; falta completar producto, cantidad, pago y evidencia antes de atribuirla.";
+  if (response === "NO_RESPONSE") return "El cliente no respondió a Activación 1; el caso pasa a Riesgos de fuga para decidir una recuperación responsable.";
+  if (response === "OBJECTION") return "El cliente planteó una objeción; el caso pasa a Riesgos de fuga con el contexto para proteger la oportunidad.";
+  if (response === "NOT_QUALIFIED") return "El cliente no muestra interés por ahora; el caso pasa a Riesgos de fuga para documentar la salida o recuperación permitida.";
   if (route.phase === "accion_correctiva") return "El caso fue dirigido a Negociación para acordar las condiciones y el siguiente compromiso.";
   if (response === "NEGOTIATION") return "El cliente tiene intención de compra y requiere acordar condiciones.";
   if (response === "MISSING_INFORMATION") return "El cliente necesita información antes de tomar la decisión.";
@@ -1519,10 +1538,10 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
   if (item.stage !== "procesamiento") throw badRequest("La respuesta solo puede registrarse desde Evaluación.");
   const response = String(payload.response || "").toUpperCase();
-  const destination = String(payload.destination || "").trim().toUpperCase();
-  const route = destination ? RMS_EVALUATION_DESTINATIONS[destination] : RMS_EVALUATION_ROUTES[response];
+  let destination = "";
+  const route = RMS_EVALUATION_ROUTES[response];
   if (!RMS_EVALUATION_ROUTES[response]) throw badRequest("Selecciona una decisión comercial válida.");
-  if (destination && !route) throw badRequest("Evaluación solo abre un caso en Negociación.");
+  destination = route.phase === "cierre" ? "ATTRIBUTED_SALE" : route.phase === "control_anti_fuga" ? "RISK_REVIEW" : "NEGOTIATION";
   const note = String(payload.note || "").trim()
     || `Resultado de Evaluación: ${response}. Destino elegido: ${route.label}.`;
   const recommendedProduct = payload.recommended_inventory_product_id
@@ -1618,18 +1637,18 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
       lead_id: item.lead_id || payload.lead_id || null,
       event_type: "payment_reported",
       event_title: "Pago informado por el cliente",
-      event_description: "El pago fue reportado; falta confirmar producto, valor, condición acordada y soporte antes de atribuir la venta.",
-      rms_phase: "accion_correctiva",
+      event_description: "La venta fue reportada desde Activación 1; falta completar producto, cantidad, pago y evidencia en Ventas atribuidas.",
+      rms_phase: "cierre",
       metadata: { rms_evaluation: evaluation, movement_id: movement.movement?.id || null },
     });
     await recordRmsWorkflowEvent(businessId, user, {
       source_type: sourceType,
       source_id: payload.source_id,
       lead_id: item.lead_id || payload.lead_id || null,
-      event_type: "commercial_confirmation_started",
-      event_title: "Confirmación comercial iniciada",
-      event_description: "El caso quedó en Negociación para verificar pago, producto, valor, condición y soporte.",
-      rms_phase: "accion_correctiva",
+      event_type: "attributed_sale_started",
+      event_title: "Registro de venta atribuida iniciado",
+      event_description: "El caso quedó listo para completar el registro de venta atribuida.",
+      rms_phase: "cierre",
       metadata: { rms_evaluation: evaluation, movement_id: movement.movement?.id || null },
     });
   }
