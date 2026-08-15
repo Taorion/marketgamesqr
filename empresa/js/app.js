@@ -43926,7 +43926,7 @@ function rmsProductClassificationMarkup(item = {}) {
               <div class="rms-product-assignment-line">
                 <span class="rms-product-assignment-order">${index + 1}</span>
                 <div><strong>${escapeHtml(line.product.name)}</strong><small>${escapeHtml(money(line.product.unit_price || 0))} por unidad</small></div>
-                <label><span>Cantidad</span><input type="number" min="0.01" step="0.01" value="${escapeHtml(String(line.quantity))}" data-rms-product-quantity="${escapeHtml(item.id)}" data-rms-product-quantity-value="${escapeHtml(line.value)}"></label>
+                <label><span>Cantidad</span><input type="number" min="1" step="1" value="${escapeHtml(String(line.quantity))}" data-rms-product-quantity="${escapeHtml(item.id)}" data-rms-product-quantity-value="${escapeHtml(line.value)}"></label>
                 <strong class="rms-product-assignment-line-total">${escapeHtml(money(line.total || 0))}</strong>
               </div>
             `).join("")}
