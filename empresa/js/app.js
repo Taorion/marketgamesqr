@@ -26501,6 +26501,7 @@ function closeActivationEditModal() {
   const modal = document.getElementById("activationEditModal");
   modal?.classList.add("hidden");
   modal?.setAttribute("hidden", "");
+  document.body.classList.remove("activation-edit-open");
 }
 
 function editInteractiveActivation(id) {
@@ -26522,7 +26523,11 @@ function editInteractiveActivation(id) {
   setFormMessage(modal.querySelector("#activationEditMessage"), "", "");
   modal.classList.remove("hidden");
   modal.removeAttribute("hidden");
-  window.setTimeout(() => modal.querySelector("#activationEditTitleInput")?.focus({ preventScroll: true }), 40);
+  document.body.classList.add("activation-edit-open");
+  window.setTimeout(() => {
+    modal.scrollTop = 0;
+    modal.querySelector("#activationEditTitleInput")?.focus({ preventScroll: true });
+  }, 40);
 }
 
 async function submitActivationEditModal(event) {

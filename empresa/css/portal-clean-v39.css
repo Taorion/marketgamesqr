@@ -23314,3 +23314,124 @@ html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#q
   width: min(1240px, 100%) !important; max-height: calc(100dvh - clamp(24px, 6vw, 68px)) !important;
   overflow: auto !important; margin: auto !important;
 }
+
+/* Activation editor: use the same focused application canvas as the creator. */
+html body.activation-edit-open {
+  overflow: hidden !important;
+}
+
+html body > #activationEditModal.activation-edit-modal:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: var(--portal-modal, 1100) !important;
+  display: grid !important;
+  place-items: center !important;
+  box-sizing: border-box !important;
+  padding: clamp(12px, 3vw, 34px) !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  background: rgba(1, 20, 54, .58) !important;
+}
+
+html body > #activationEditModal .activation-edit-card {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  width: min(960px, 100%) !important;
+  max-height: calc(100dvh - clamp(24px, 6vw, 68px)) !important;
+  margin: auto !important;
+  overflow: hidden !important;
+  border-radius: 18px !important;
+  box-shadow: 0 30px 80px rgba(1, 25, 74, .28) !important;
+}
+
+html body > #activationEditModal .activation-edit-form {
+  min-height: 0 !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+/* RMS station headers: identity is never sacrificed to the action buttons. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  grid-template-areas:
+    "back title"
+    "actions actions" !important;
+  align-items: center !important;
+  gap: 14px clamp(14px, 2vw, 24px) !important;
+  padding: clamp(16px, 2.2vw, 26px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head > [data-rms-close-station] {
+  grid-area: back !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title {
+  grid-area: title !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title :is(h3, p, .mono-label) {
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title h3 {
+  font-size: clamp(1.22rem, 2vw, 1.65rem) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title p {
+  max-width: 72ch !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions {
+  grid-area: actions !important;
+  display: flex !important;
+  width: 100% !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  padding-top: 14px !important;
+  border-top: 1px solid rgba(5, 42, 107, .11) !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "back"
+      "title"
+      "actions" !important;
+    align-items: start !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions {
+    justify-content: stretch !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions :is(.ghost-button, .solid-button).compact {
+    flex: 1 1 190px !important;
+    min-width: 0 !important;
+    white-space: normal !important;
+  }
+}
+
+@media (max-width: 540px) {
+  html body > #activationEditModal.activation-edit-modal:not(.hidden) {
+    padding: 0 !important;
+    place-items: stretch !important;
+  }
+
+  html body > #activationEditModal .activation-edit-card {
+    width: 100% !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions :is(.ghost-button, .solid-button).compact {
+    flex-basis: 100% !important;
+  }
+}
