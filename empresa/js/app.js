@@ -43710,6 +43710,16 @@ function rmsProductClassificationMarkup(item = {}) {
         </select>
         <small id="rms-product-classification-help-${escapeHtml(item.id)}">Puedes seleccionar varios: usa Ctrl/Cmd al hacer clic. El primero queda como producto principal para los flujos existentes.</small>
       </label>
+      <fieldset class="rms-product-classifier-options" aria-describedby="rms-product-classification-help-${escapeHtml(item.id)}">
+        <legend>Productos o servicios de interés</legend>
+        <div>
+          ${(state.inventoryProducts || []).filter((product) => product.status === "ACTIVE").map((product) => {
+            const value = inventoryProductSelectValue(product);
+            return `<label class="${selectedValues.includes(value) ? "is-selected" : ""}"><input type="checkbox" value="${escapeHtml(value)}" data-rms-product-option="${escapeHtml(item.id)}" ${selectedValues.includes(value) ? "checked" : ""}><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(money(product.unit_price || 0))} · ${escapeHtml(product.category || "Producto")}</small></span><span class="material-symbols-outlined" aria-hidden="true">check</span></label>`;
+          }).join("") || '<p class="table-secondary">No hay productos activos. Crea el primero.</p>'}
+        </div>
+        <small>Marca todos los productos que interesan a este lead. Qori conserva uno como referencia principal y todos los demás en el historial.</small>
+      </fieldset>
       <div class="rms-product-classifier-meta">
         <strong>${escapeHtml(classifiedName || "Selecciona una o varias ofertas")}</strong>
         <small>${escapeHtml(rmsClassificationSourceLabel(item))}${confidence ? ` · ${confidence}% de coincidencia` : ""}</small>
@@ -45664,10 +45674,13 @@ function bindRmsMachineActions(root) {
       );
     });
   });
-  root.querySelectorAll("[data-rms-product-select]").forEach((select) => {
+  root.querySelectorAll("[data-rms-product-select], [data-rms-product-option]").forEach((select) => {
     select.addEventListener("change", () => {
-      const id = select.dataset.rmsProductSelect || "";
-      const selectedValues = Array.from(select.selectedOptions).map((option) => option.value).filter((value) => Boolean(findInventoryProduct(value)));
+      const id = select.dataset.rmsProductSelect || select.dataset.rmsProductOption || "";
+      const optionInputs = Array.from(root.querySelectorAll("[data-rms-product-option]")).filter((input) => input.dataset.rmsProductOption === id);
+      const selectedValues = optionInputs.length
+        ? optionInputs.filter((input) => input.checked).map((input) => input.value).filter((value) => Boolean(findInventoryProduct(value)))
+        : Array.from(select.selectedOptions || []).map((option) => option.value).filter((value) => Boolean(findInventoryProduct(value)));
       if (!state.rmsProductClassificationDraft) state.rmsProductClassificationDraft = {};
       state.rmsProductClassificationDraft[id] = {
         ...(state.rmsProductClassificationDraft[id] || {}),
@@ -45679,6 +45692,7 @@ function bindRmsMachineActions(root) {
       if (selectedValues.length) current.add(id);
       else current.delete(id);
       state.rmsMachineSelectedIds = Array.from(current).filter(Boolean);
+      optionInputs.forEach((input) => input.closest("label")?.classList.toggle("is-selected", input.checked));
       const checkbox = Array.from(root.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
       if (checkbox) {
         checkbox.checked = current.has(id);
@@ -46353,10 +46367,13 @@ function updateRmsStationOutputPreview() {
 }
 
 function rmsClassificationDraftFromDom(item = {}) {
+  const optionInputs = Array.from(document.querySelectorAll("[data-rms-product-option]")).filter((node) => node.dataset.rmsProductOption === item.id);
   const select = Array.from(document.querySelectorAll("[data-rms-product-select]")).find((node) => node.dataset.rmsProductSelect === item.id);
   const openInput = Array.from(document.querySelectorAll("[data-rms-product-open]")).find((node) => node.dataset.rmsProductOpen === item.id);
-  const selectedValues = select
-    ? Array.from(select.selectedOptions).map((option) => option.value).filter((value) => Boolean(findInventoryProduct(value)))
+  const selectedValues = optionInputs.length
+    ? optionInputs.filter((input) => input.checked).map((input) => input.value).filter((value) => Boolean(findInventoryProduct(value)))
+    : select
+      ? Array.from(select.selectedOptions).map((option) => option.value).filter((value) => Boolean(findInventoryProduct(value)))
     : rmsClassifiedProductValues(item);
   const selectedProducts = selectedValues.map((value) => findInventoryProduct(value)).filter(Boolean);
   const selectedProduct = selectedProducts[0] || null;
@@ -46421,7 +46438,9 @@ async function saveRmsProductClassification(item = {}, draft = null, options = {
 
 function rmsProductClassificationMetadata(item = {}) {
   const draft = rmsClassifiedProductDraft(item);
-  const selectedProduct = draft?.product_select ? findInventoryProduct(draft.product_select) : findInventoryProductById(item.classified_product_id);
+  const selectedValues = rmsClassifiedProductValues(item);
+  const selectedProducts = selectedValues.map((value) => findInventoryProduct(value)).filter(Boolean);
+  const selectedProduct = selectedProducts[0] || (draft?.product_select ? findInventoryProduct(draft.product_select) : findInventoryProductById(item.classified_product_id));
   const source = String(item.classification_source || "").toLowerCase();
   if (!draft && !item.classified_product_id && source === "interest_without_inventory_match") return {};
   // Product text is retained only as historical context. A current handoff
@@ -46431,6 +46450,13 @@ function rmsProductClassificationMetadata(item = {}) {
     classified_product_id: selectedProduct?.id || item.classified_product_id || null,
     classified_product_name: productName,
     classified_product_category: selectedProduct?.category || item.classified_product_category || "",
+    classified_products: selectedProducts.map((product) => ({
+      inventory_product_id: product.id,
+      name: product.name,
+      category: product.category || "",
+      unit_price: Number(product.unit_price || 0),
+      currency: product.currency || "COP",
+    })),
     classification_source: selectedProduct?.id ? "station_output_inventory" : "HISTORICAL_UNLINKED",
     classification_confidence: selectedProduct?.id ? 1 : Number(item.classification_confidence || 0),
     classified_at: item.state_metadata?.classified_at || new Date().toISOString(),

@@ -1268,7 +1268,7 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
   if (selectedClassificationProducts.length) {
     const snapshots = [];
     const seenProductIds = new Set();
-    for (const selectedProduct of selectedClassificationProducts.slice(0, 24)) {
+    for (const selectedProduct of selectedClassificationProducts) {
       const inventoryProductId = selectedProduct?.inventory_product_id || selectedProduct?.id || selectedProduct;
       if (!inventoryProductId || seenProductIds.has(String(inventoryProductId))) continue;
       const product = await rmsInventoryProductSnapshot(businessId, inventoryProductId);
