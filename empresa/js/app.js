@@ -6885,15 +6885,22 @@ function renderCampaignAssociationInputs() {
       input.required = false;
       return;
     }
-    const currentValue = input.value || selectedCampaignId || selectedCampaign?.id || "";
+    const isStandaloneActivation = input === triviaCampaignInput;
+    const currentValue = isStandaloneActivation
+      ? input.value
+      : input.value || selectedCampaignId || selectedCampaign?.id || "";
     const optionConfig = input === affiliatePurchaseCampaignInput
       ? { allowNoCampaign: true, forceCampaign: false, noCampaignLabel: "Sin campaña" }
-      : { allowNoCampaign };
+      : isStandaloneActivation
+        ? { allowNoCampaign: true, forceCampaign: false, noCampaignLabel: "Sin campaña · activación independiente" }
+        : { allowNoCampaign };
     input.innerHTML = campaignAssociationOptions(currentValue, optionConfig);
     if (currentValue && Array.from(input.options).some((option) => option.value === currentValue)) {
       input.value = currentValue;
-    } else if (selectedCampaign?.id && Array.from(input.options).some((option) => option.value === selectedCampaign.id)) {
+    } else if (!isStandaloneActivation && selectedCampaign?.id && Array.from(input.options).some((option) => option.value === selectedCampaign.id)) {
       input.value = selectedCampaign.id;
+    } else if (isStandaloneActivation) {
+      input.value = "";
     }
     input.required = input !== postSaleCampaignInput
       && input !== triviaCampaignInput
