@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-    <link rel="stylesheet" href="css/portal-clean-v39.css?v=activation-edit-modal-v174-20260815">
+    <link rel="stylesheet" href="css/portal-clean-v39.css?v=activation-share-email-v175-20260815">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -3374,7 +3374,11 @@
                       </div>
                       <button class="icon-button" id="activationShareCloseButton" type="button" aria-label="Cerrar compartir activación"><span class="material-symbols-outlined">close</span></button>
                     </div>
-                    <p class="activation-share-intro" id="activationShareIntro">Comparte un ticket listo despu&eacute;s de una compra: elige un contacto o escribe su WhatsApp.</p>
+                    <p class="activation-share-intro" id="activationShareIntro">Comparte la activaci&oacute;n por WhatsApp o email. Elige un lead y usa el canal para el que autoriz&oacute; contacto.</p>
+                    <div class="activation-share-channel" role="tablist" aria-label="Canal de envío">
+                      <button class="is-active" id="activationShareWhatsAppChannel" type="button" role="tab" aria-selected="true"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</button>
+                      <button id="activationShareEmailChannel" type="button" role="tab" aria-selected="false"><span class="material-symbols-outlined" aria-hidden="true">mail</span>Email</button>
+                    </div>
                     <div class="activation-share-mode" role="tablist" aria-label="Destinatario del ticket">
                       <button class="is-active" id="activationShareContactMode" type="button" role="tab" aria-selected="true">Elegir contacto</button>
                       <button id="activationSharePhoneMode" type="button" role="tab" aria-selected="false">Escribir WhatsApp</button>
@@ -3399,6 +3403,13 @@
                           <label><span>N&uacute;mero de WhatsApp</span><input id="activationShareManualPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej. 300 123 4567"></label>
                           <small>Incluye el indicativo de pa&iacute;s si el n&uacute;mero no es colombiano.</small>
                         </div>
+                        <div class="activation-share-manual hidden" id="activationShareManualEmailPanel">
+                          <span class="activation-share-manual-kicker">Correo para un lead nuevo</span>
+                          <h4>Escribe el email del destinatario</h4>
+                          <p>Si este lead a&uacute;n no est&aacute; registrado, abriremos un correo listo para revisar y enviar desde tu cliente de email.</p>
+                          <label><span>Nombre (opcional)</span><input id="activationShareManualEmailName" type="text" autocomplete="name" placeholder="Ej. Mar&iacute;a"></label>
+                          <label><span>Email</span><input id="activationShareManualEmail" type="email" autocomplete="email" placeholder="maria@ejemplo.com"></label>
+                        </div>
                       </section>
                       <section class="activation-share-panel activation-share-preview">
                         <div id="activationShareSelectedContact" class="activation-share-selected"></div>
@@ -3406,10 +3417,13 @@
                           <span>Mensaje automatizado</span>
                           <textarea id="activationShareMessagePreview" rows="7" readonly></textarea>
                         </label>
+                        <label class="activation-email-field hidden" id="activationShareEmailSubjectField"><span>Asunto</span><input id="activationShareEmailSubject" type="text" maxlength="220" placeholder="Asunto del correo"></label>
+                        <label class="activation-email-field hidden" id="activationShareEmailBodyField"><span>Redacci&oacute;n del email</span><textarea id="activationShareEmailBody" rows="7" maxlength="12000" placeholder="Escribe el mensaje que recibir&aacute; el lead"></textarea><small>El enlace de la activaci&oacute;n se agrega y mide aperturas cuando el email sale desde Qori.</small></label>
                         <label class="checkbox-row"><input id="activationShareConsentInput" type="checkbox"> Confirmo que este lead autorizó el contacto por el canal elegido.</label>
                         <p class="form-message" id="activationShareMessage"></p>
                         <div class="modal-button-row">
                           <button class="solid-button" id="activationShareOpenWhatsAppButton" type="button">Enviar ticket</button>
+                          <button class="solid-button hidden" id="activationShareSendEmailButton" type="button">Enviar por email</button>
                           <button class="ghost-button" id="activationShareCopyMessageButton" type="button">Copiar mensaje</button>
                         </div>
                       </section>

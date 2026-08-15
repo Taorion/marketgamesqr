@@ -941,15 +941,25 @@ const activationShareSearchButton = document.getElementById("activationShareSear
 const activationShareLeadList = document.getElementById("activationShareLeadList");
 const activationShareContactMode = document.getElementById("activationShareContactMode");
 const activationSharePhoneMode = document.getElementById("activationSharePhoneMode");
+const activationShareWhatsAppChannel = document.getElementById("activationShareWhatsAppChannel");
+const activationShareEmailChannel = document.getElementById("activationShareEmailChannel");
 const activationShareContactPanel = document.getElementById("activationShareContactPanel");
 const activationShareManualPanel = document.getElementById("activationShareManualPanel");
 const activationShareManualName = document.getElementById("activationShareManualName");
 const activationShareManualPhone = document.getElementById("activationShareManualPhone");
+const activationShareManualEmailPanel = document.getElementById("activationShareManualEmailPanel");
+const activationShareManualEmailName = document.getElementById("activationShareManualEmailName");
+const activationShareManualEmail = document.getElementById("activationShareManualEmail");
 const activationShareSelectedContact = document.getElementById("activationShareSelectedContact");
 const activationShareMessagePreview = document.getElementById("activationShareMessagePreview");
+const activationShareEmailSubjectField = document.getElementById("activationShareEmailSubjectField");
+const activationShareEmailSubject = document.getElementById("activationShareEmailSubject");
+const activationShareEmailBodyField = document.getElementById("activationShareEmailBodyField");
+const activationShareEmailBody = document.getElementById("activationShareEmailBody");
 const activationShareConsentInput = document.getElementById("activationShareConsentInput");
 const activationShareMessage = document.getElementById("activationShareMessage");
 const activationShareOpenWhatsAppButton = document.getElementById("activationShareOpenWhatsAppButton");
+const activationShareSendEmailButton = document.getElementById("activationShareSendEmailButton");
 const activationShareCopyMessageButton = document.getElementById("activationShareCopyMessageButton");
 const productVoteImages = {};
 const salesCreatePanel = document.getElementById("salesCreatePanel");
@@ -2627,9 +2637,14 @@ let state = {
   activationShareId: null,
   activationShareLeads: [],
   activationShareSelectedKey: "",
+  activationShareChannel: "whatsapp",
   activationShareRecipientMode: "contact",
   activationShareManualName: "",
   activationShareManualPhone: "",
+  activationShareManualEmailName: "",
+  activationShareManualEmail: "",
+  activationShareEmailSubject: "",
+  activationShareEmailBody: "",
   activationShareLoading: false,
   affiliatesLoaded: false,
   affiliatePointRules: null,
@@ -3758,9 +3773,14 @@ function resetBusinessScopedState(options = {}) {
   state.activationShareId = null;
   state.activationShareLeads = [];
   state.activationShareSelectedKey = "";
+  state.activationShareChannel = "whatsapp";
   state.activationShareRecipientMode = "contact";
   state.activationShareManualName = "";
   state.activationShareManualPhone = "";
+  state.activationShareManualEmailName = "";
+  state.activationShareManualEmail = "";
+  state.activationShareEmailSubject = "";
+  state.activationShareEmailBody = "";
   state.activationShareLoading = false;
   state.affiliatesLoaded = false;
   state.affiliateRewardRules = [];
@@ -25772,9 +25792,12 @@ function activationShareContactLine(lead = {}) {
 
 function activationShareRecipient() {
   if (state.activationShareRecipientMode === "manual") {
+    const isEmail = state.activationShareChannel === "email";
+    const manualName = isEmail ? state.activationShareManualEmailName : state.activationShareManualName;
     return {
-      name: String(state.activationShareManualName || "").trim() || "tu",
-      phone: String(state.activationShareManualPhone || "").trim(),
+      name: String(manualName || "").trim() || "tu",
+      phone: isEmail ? "" : String(state.activationShareManualPhone || "").trim(),
+      email: isEmail ? String(state.activationShareManualEmail || "").trim() : "",
       source_type: "MANUAL",
     };
   }
@@ -25792,6 +25815,21 @@ function activationPostSaleMessage(activation = {}, recipient = {}) {
   return `${greeting}\nGracias por tu compra en ${business}. Llevate tambien este ticket: ${link}`;
 }
 
+function activationShareEmailSubjectFor(activation = {}) {
+  return `Tu activación: ${activation.title || "ticket especial"}`.slice(0, 220);
+}
+
+function activationShareEmailBodyFor(activation = {}, recipient = {}) {
+  const business = activation.business?.name || activationBusinessName();
+  const name = recipient.name || recipient.full_name || recipient.customer_name || "";
+  const greeting = name ? `Hola ${name},` : "Hola,";
+  return `${greeting}\n\nTenemos una activación lista para ti en ${business}. Abre el enlace que encontrarás a continuación para participar o consultar tu beneficio.\n\nTe esperamos.`;
+}
+
+function activationShareHasValidEmail(recipient = {}) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(recipient.email || "").trim());
+}
+
 function activationShareWhatsAppUrl(activation, recipient) {
   const phone = whatsappPhoneFromInput(recipient?.phone || recipient?.whatsapp || recipient?.mobile || "");
   const message = activationPostSaleMessage(activation, recipient || {});
@@ -25806,17 +25844,28 @@ function renderActivationShareModal() {
   const selectedLead = selectedActivationShareLead();
   const recipient = activationShareRecipient();
   const isManual = state.activationShareRecipientMode === "manual";
+  const isEmail = state.activationShareChannel === "email";
   if (activationShareTitle) {
-    activationShareTitle.textContent = activation ? `Enviar ticket: ${activation.title || "activacion"}` : "Enviar ticket por WhatsApp";
+    activationShareTitle.textContent = activation
+      ? `Enviar por ${isEmail ? "email" : "WhatsApp"}: ${activation.title || "activacion"}`
+      : `Enviar ticket por ${isEmail ? "email" : "WhatsApp"}`;
   }
+  activationShareWhatsAppChannel?.classList.toggle("is-active", !isEmail);
+  activationShareWhatsAppChannel?.setAttribute("aria-selected", String(!isEmail));
+  activationShareEmailChannel?.classList.toggle("is-active", isEmail);
+  activationShareEmailChannel?.setAttribute("aria-selected", String(isEmail));
   activationShareContactMode?.classList.toggle("is-active", !isManual);
   activationShareContactMode?.setAttribute("aria-selected", String(!isManual));
   activationSharePhoneMode?.classList.toggle("is-active", isManual);
   activationSharePhoneMode?.setAttribute("aria-selected", String(isManual));
+  if (activationSharePhoneMode) activationSharePhoneMode.textContent = isEmail ? "Escribir email" : "Escribir WhatsApp";
   activationShareContactPanel?.classList.toggle("hidden", isManual);
-  activationShareManualPanel?.classList.toggle("hidden", !isManual);
+  activationShareManualPanel?.classList.toggle("hidden", !isManual || isEmail);
+  activationShareManualEmailPanel?.classList.toggle("hidden", !isManual || !isEmail);
   if (activationShareManualName) activationShareManualName.value = state.activationShareManualName;
   if (activationShareManualPhone) activationShareManualPhone.value = state.activationShareManualPhone;
+  if (activationShareManualEmailName) activationShareManualEmailName.value = state.activationShareManualEmailName;
+  if (activationShareManualEmail) activationShareManualEmail.value = state.activationShareManualEmail;
   if (activationShareLeadList && !isManual) {
     if (state.activationShareLoading) {
       activationShareLeadList.innerHTML = '<div class="empty-state compact">Cargando leads...</div>';
@@ -25825,13 +25874,15 @@ function renderActivationShareModal() {
         ? leads.map((lead) => {
           const key = activationShareLeadKey(lead);
           const hasPhone = Boolean(whatsappPhoneFromInput(lead.phone || lead.whatsapp || lead.mobile || ""));
+          const hasEmail = activationShareHasValidEmail(lead);
+          const ready = isEmail ? hasEmail : hasPhone;
           return `
             <button class="activation-share-lead ${key === state.activationShareSelectedKey ? "active" : ""}" type="button" data-activation-share-lead="${escapeHtml(key)}">
               <span>
                 <strong>${escapeHtml(lead.name || "Lead sin nombre")}</strong>
                 <small>${escapeHtml(activationShareContactLine(lead))}</small>
               </span>
-              <span class="activation-share-phone-state ${hasPhone ? "is-ready" : "is-missing"}">${hasPhone ? "WhatsApp listo" : "Sin telefono"}</span>
+              <span class="activation-share-phone-state ${ready ? "is-ready" : "is-missing"}">${isEmail ? (hasEmail ? "Email listo" : "Sin email") : (hasPhone ? "WhatsApp listo" : "Sin telefono")}</span>
             </button>
           `;
         }).join("")
@@ -25846,17 +25897,29 @@ function renderActivationShareModal() {
   }
   const preview = activation ? activationPostSaleMessage(activation, recipient || {}) : "";
   if (activationShareMessagePreview) activationShareMessagePreview.value = preview;
+  const emailSubject = state.activationShareEmailSubject || activationShareEmailSubjectFor(activation || {});
+  const emailBody = state.activationShareEmailBody || activationShareEmailBodyFor(activation || {}, recipient || {});
+  activationShareEmailSubjectField?.classList.toggle("hidden", !isEmail);
+  activationShareEmailBodyField?.classList.toggle("hidden", !isEmail);
+  activationShareMessagePreview?.closest(".activation-invite-preview")?.classList.toggle("hidden", isEmail);
+  if (activationShareEmailSubject) activationShareEmailSubject.value = emailSubject;
+  if (activationShareEmailBody) activationShareEmailBody.value = emailBody;
   if (activationShareSelectedContact) {
     activationShareSelectedContact.innerHTML = recipient
-      ? `<strong>${escapeHtml(recipient.name || "Contacto sin nombre")}</strong><small>${escapeHtml(isManual ? `WhatsApp: ${recipient.phone || "sin numero"}` : activationShareContactLine(recipient))}</small>`
-      : "<strong>Selecciona un contacto</strong><small>O escribe el WhatsApp del comprador para enviarlo desde caja.</small>";
+      ? `<strong>${escapeHtml(recipient.name || "Contacto sin nombre")}</strong><small>${escapeHtml(isManual ? `${isEmail ? "Email" : "WhatsApp"}: ${isEmail ? recipient.email || "sin email" : recipient.phone || "sin numero"}` : activationShareContactLine(recipient))}</small>`
+      : `<strong>Selecciona un contacto</strong><small>O escribe el ${isEmail ? "email" : "WhatsApp"} del destinatario.</small>`;
   }
   const hasPhone = Boolean(whatsappPhoneFromInput(recipient?.phone || recipient?.whatsapp || recipient?.mobile || ""));
+  const hasEmail = activationShareHasValidEmail(recipient || {});
   if (activationShareOpenWhatsAppButton) activationShareOpenWhatsAppButton.disabled = !activationIsUsable(activation) || !recipient || !hasPhone;
+  activationShareOpenWhatsAppButton?.classList.toggle("hidden", isEmail);
+  if (activationShareSendEmailButton) activationShareSendEmailButton.disabled = !activationIsUsable(activation) || !recipient || !hasEmail || !String(emailSubject || "").trim() || !String(emailBody || "").trim();
+  activationShareSendEmailButton?.classList.toggle("hidden", !isEmail);
+  if (activationShareCopyMessageButton) activationShareCopyMessageButton.textContent = isEmail ? "Copiar email" : "Copiar mensaje";
   setFormMessage(
     activationShareMessage,
-    recipient && !hasPhone ? "WhatsApp necesita un numero valido para abrir el envio." : "",
-    recipient && !hasPhone ? "error" : ""
+    recipient && (isEmail ? !hasEmail : !hasPhone) ? `${isEmail ? "Email" : "WhatsApp"} necesita un ${isEmail ? "correo" : "numero"} valido para enviar.` : "",
+    recipient && (isEmail ? !hasEmail : !hasPhone) ? "error" : ""
   );
 }
 
@@ -25872,9 +25935,11 @@ async function loadActivationShareLeads(search = "") {
     state.activationShareLeads = data.leads || [];
     const currentExists = state.activationShareLeads.some((lead) => activationShareLeadKey(lead) === state.activationShareSelectedKey);
     if (!currentExists) {
-      const firstWithPhone = state.activationShareLeads.find((lead) => whatsappPhoneFromInput(lead.phone || lead.whatsapp || lead.mobile || ""));
-      state.activationShareSelectedKey = firstWithPhone
-        ? activationShareLeadKey(firstWithPhone)
+      const firstReachable = state.activationShareChannel === "email"
+        ? state.activationShareLeads.find((lead) => activationShareHasValidEmail(lead))
+        : state.activationShareLeads.find((lead) => whatsappPhoneFromInput(lead.phone || lead.whatsapp || lead.mobile || ""));
+      state.activationShareSelectedKey = firstReachable
+        ? activationShareLeadKey(firstReachable)
         : (state.activationShareLeads[0] ? activationShareLeadKey(state.activationShareLeads[0]) : "");
     }
   } finally {
@@ -25887,8 +25952,19 @@ function setActivationShareRecipientMode(mode = "contact") {
   state.activationShareRecipientMode = mode === "manual" ? "manual" : "contact";
   renderActivationShareModal();
   if (state.activationShareRecipientMode === "manual") {
-    window.setTimeout(() => activationShareManualPhone?.focus(), 0);
+    window.setTimeout(() => (state.activationShareChannel === "email" ? activationShareManualEmail : activationShareManualPhone)?.focus(), 0);
   }
+}
+
+function setActivationShareChannel(channel = "whatsapp") {
+  state.activationShareChannel = channel === "email" ? "email" : "whatsapp";
+  state.activationShareSelectedKey = "";
+  state.activationShareEmailSubject = "";
+  state.activationShareEmailBody = "";
+  if (activationShareConsentInput) activationShareConsentInput.checked = false;
+  loadActivationShareLeads(String(activationShareSearchInput?.value || "").trim()).catch((error) => {
+    setFormMessage(activationShareMessage, error.message || "No se pudieron cargar los contactos.", "error");
+  });
 }
 
 function promoteActivationShareModal() {
@@ -25907,14 +25983,17 @@ async function openActivationShareModal(id) {
   state.activationShareId = id;
   state.activationShareLeads = state.leadCrmRows || [];
   state.activationShareSelectedKey = "";
+  state.activationShareChannel = "whatsapp";
   state.activationShareRecipientMode = "contact";
   state.activationShareManualName = "";
   state.activationShareManualPhone = "";
+  state.activationShareManualEmailName = "";
+  state.activationShareManualEmail = "";
+  state.activationShareEmailSubject = "";
+  state.activationShareEmailBody = "";
   if (activationShareConsentInput) activationShareConsentInput.checked = false;
   if (activationShareOpenWhatsAppButton) delete activationShareOpenWhatsAppButton.dataset.activationAssociationKey;
   if (activationShareSearchInput) activationShareSearchInput.value = "";
-  if (activationShareContactMode) activationShareContactMode.onclick = () => setActivationShareRecipientMode("contact");
-  if (activationSharePhoneMode) activationSharePhoneMode.onclick = () => setActivationShareRecipientMode("manual");
   activationShareModal?.classList.remove("hidden");
   document.body.classList.add("has-activation-share-modal");
   renderActivationShareModal();
@@ -25928,6 +26007,95 @@ function closeActivationShareModal() {
 
 async function searchActivationShareLeads() {
   await loadActivationShareLeads(String(activationShareSearchInput?.value || "").trim());
+}
+
+async function sendActivationShareEmail() {
+  const activation = activationById(state.activationShareId);
+  const recipient = activationShareRecipient();
+  const subject = String(activationShareEmailSubject?.value || state.activationShareEmailSubject || "").trim();
+  const body = String(activationShareEmailBody?.value || state.activationShareEmailBody || "").trim();
+  if (!activationIsUsable(activation) || !recipient || !activationShareHasValidEmail(recipient)) {
+    setFormMessage(activationShareMessage, "Selecciona un lead con email válido o escribe una dirección correcta.", "error");
+    return;
+  }
+  if (!subject || !body) {
+    setFormMessage(activationShareMessage, "Completa el asunto y la redacción antes de enviar.", "error");
+    return;
+  }
+  if (!activationShareConsentInput?.checked) {
+    setFormMessage(activationShareMessage, "Confirma el consentimiento comercial antes de enviar el email.", "error");
+    return;
+  }
+  if (!recipient.id) {
+    const mailto = `mailto:${encodeURIComponent(recipient.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`${body}\n\n${activation.public_url || ""}`.trim())}`;
+    window.location.href = mailto;
+    showFeedback("Abrimos un borrador de email porque este destinatario aún no está registrado como lead.", "info", { title: "Email listo para revisar" });
+    return;
+  }
+  const sourceType = String(recipient.source_type || "PLAYER").toUpperCase();
+  const idempotencyKey = activationShareSendEmailButton?.dataset.activationAssociationKey
+    || `activation-share-email:${activation.id}:${sourceType}:${recipient.id}:${Date.now()}`;
+  if (activationShareSendEmailButton) {
+    activationShareSendEmailButton.dataset.activationAssociationKey = idempotencyKey;
+    activationShareSendEmailButton.disabled = true;
+  }
+  try {
+    const association = await api(`/api/business/leads/${encodeURIComponent(recipient.id)}/activations`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_type: sourceType,
+        interactive_activation_id: activation.id,
+        activation_type: "MICROGAME",
+        name: activation.title || "Activacion interactiva",
+        channel: "email",
+        subject,
+        message: body,
+        contact_consent_confirmed: true,
+        source_module: "contacts",
+        idempotency_key: idempotencyKey,
+        metadata: { source: "contacts", interactive_activation_id: activation.id, delivery_channel: "email" },
+      }),
+    });
+    const created = await api("/api/business/communications", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        title: `Activación · ${activation.title || "Ticket"} · ${recipient.name || recipient.email}`.slice(0, 180),
+        communication_type: "EMAIL",
+        status: "READY",
+        activation_id: activation.id,
+        subject,
+        email_body: body,
+        action_url: association?.public_url || activation.public_url || null,
+        metadata: {
+          source: "activation_share",
+          interactive_activation_id: activation.id,
+          lead_activation_id: association?.activation?.id || null,
+        },
+      }),
+    });
+    const communicationId = created.communication?.id;
+    if (!communicationId) throw new Error("No se pudo preparar el email de la activación.");
+    const delivery = await api(`/api/business/communications/${encodeURIComponent(communicationId)}/send`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        recipients: [{ source_id: recipient.id, source_type: sourceType }],
+        consent_confirmed: true,
+      }),
+    });
+    const sent = Number(delivery?.results?.sent || 0);
+    if (!sent) throw new Error(delivery?.results?.failure_reasons?.[0]?.message || "El correo no pudo entregarse. Revisa la conexión de email en Cuenta.");
+    showFeedback("Email enviado y activación registrada en el historial del lead.", "success", { title: "Ticket compartido" });
+    closeActivationShareModal();
+    markTicketCenterDataStale(["activations", "metrics"]);
+    await Promise.all([loadLeadCrmData({ force: true }), loadStrategicQrData({ groups: ["activations", "metrics"], force: true })]);
+  } catch (error) {
+    setFormMessage(activationShareMessage, error.message || "No se pudo enviar el email.", "error");
+  } finally {
+    if (activationShareSendEmailButton) activationShareSendEmailButton.disabled = false;
+  }
 }
 
 async function openActivationShareWhatsApp() {
@@ -26004,10 +26172,14 @@ async function copyActivationShareMessage() {
   const activation = activationById(state.activationShareId);
   const recipient = activationShareRecipient();
   if (!activation) return;
-  const message = activationPostSaleMessage(activation, recipient || {});
+  const isEmail = state.activationShareChannel === "email";
+  const subject = String(activationShareEmailSubject?.value || state.activationShareEmailSubject || activationShareEmailSubjectFor(activation)).trim();
+  const message = isEmail
+    ? `Asunto: ${subject}\n\n${String(activationShareEmailBody?.value || state.activationShareEmailBody || activationShareEmailBodyFor(activation, recipient || {})).trim()}\n\n${activation.public_url || ""}`.trim()
+    : activationPostSaleMessage(activation, recipient || {});
   try {
     await navigator.clipboard?.writeText(message);
-    showFeedback("Mensaje de invitacion copiado.", "success", { title: "Activacion lista" });
+    showFeedback(isEmail ? "Asunto, redacción y enlace copiados." : "Mensaje de invitacion copiado.", "success", { title: "Activacion lista" });
   } catch {
     window.alert(message);
   }
@@ -51256,6 +51428,8 @@ activationShareSearchInput?.addEventListener("keydown", (event) => {
 });
 activationShareContactMode?.addEventListener("click", () => setActivationShareRecipientMode("contact"));
 activationSharePhoneMode?.addEventListener("click", () => setActivationShareRecipientMode("manual"));
+activationShareWhatsAppChannel?.addEventListener("click", () => setActivationShareChannel("whatsapp"));
+activationShareEmailChannel?.addEventListener("click", () => setActivationShareChannel("email"));
 activationShareManualName?.addEventListener("input", () => {
   state.activationShareManualName = activationShareManualName.value;
   renderActivationShareModal();
@@ -51264,7 +51438,26 @@ activationShareManualPhone?.addEventListener("input", () => {
   state.activationShareManualPhone = activationShareManualPhone.value;
   renderActivationShareModal();
 });
+activationShareManualEmailName?.addEventListener("input", () => {
+  state.activationShareManualEmailName = activationShareManualEmailName.value;
+  renderActivationShareModal();
+});
+activationShareManualEmail?.addEventListener("input", () => {
+  state.activationShareManualEmail = activationShareManualEmail.value;
+  renderActivationShareModal();
+});
+activationShareEmailSubject?.addEventListener("input", () => {
+  state.activationShareEmailSubject = activationShareEmailSubject.value;
+  renderActivationShareModal();
+});
+activationShareEmailBody?.addEventListener("input", () => {
+  state.activationShareEmailBody = activationShareEmailBody.value;
+  renderActivationShareModal();
+});
 activationShareOpenWhatsAppButton?.addEventListener("click", openActivationShareWhatsApp);
+activationShareSendEmailButton?.addEventListener("click", () => {
+  sendActivationShareEmail().catch((error) => setFormMessage(activationShareMessage, error.message || "No se pudo enviar el email.", "error"));
+});
 activationShareCopyMessageButton?.addEventListener("click", () => {
   copyActivationShareMessage().catch((error) => showFeedback(error.message, "error"));
 });
@@ -51276,6 +51469,14 @@ activationShareModal?.addEventListener("click", (event) => {
   }
   if (event.target.closest("#activationSharePhoneMode")) {
     setActivationShareRecipientMode("manual");
+    return;
+  }
+  if (event.target.closest("#activationShareWhatsAppChannel")) {
+    setActivationShareChannel("whatsapp");
+    return;
+  }
+  if (event.target.closest("#activationShareEmailChannel")) {
+    setActivationShareChannel("email");
     return;
   }
   if (event.target === activationShareModal) closeActivationShareModal();

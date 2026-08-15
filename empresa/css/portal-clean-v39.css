@@ -18876,9 +18876,58 @@ html body[data-current-view="strategic-qr"] > #activationEditModal .modal-button
     padding: 20px 16px !important;
   }
 
-  html body[data-current-view="strategic-qr"] > #activationEditModal .modal-button-row > button {
+html body[data-current-view="strategic-qr"] > #activationEditModal .modal-button-row > button {
     flex: 1 1 0 !important;
   }
+}
+
+/* Activation share: distinguish the delivery channel from the recipient picker. */
+html body > #activationShareModal .activation-share-channel {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin: 0 0 12px !important;
+  padding: 5px !important;
+  border: 1px solid rgba(183, 211, 233, .78) !important;
+  border-radius: 14px !important;
+  background: #f7fbff !important;
+}
+
+html body > #activationShareModal .activation-share-channel button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  min-height: 38px !important;
+  padding: 8px 13px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: #476783 !important;
+  font-weight: 800 !important;
+}
+
+html body > #activationShareModal .activation-share-channel button.is-active {
+  border-color: rgba(7, 89, 214, .24) !important;
+  background: #fff !important;
+  color: #052a6b !important;
+  box-shadow: 0 5px 14px rgba(1, 34, 104, .08) !important;
+}
+
+html body > #activationShareModal .activation-email-field {
+  display: grid !important;
+  gap: 7px !important;
+}
+
+html body > #activationShareModal .activation-email-field > span {
+  color: #365474 !important;
+  font-size: .76rem !important;
+  font-weight: 800 !important;
+}
+
+html body > #activationShareModal .activation-email-field small {
+  color: #5d7892 !important;
+  line-height: 1.45 !important;
 }
 
 /* Crear canal: modal operativo claro, con jerarquía y lectura financiera Qori. */
