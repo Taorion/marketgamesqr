@@ -22721,3 +22721,130 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-station-handoff > 
     transform:rotate(90deg) !important;
   }
 }
+
+/* Constructor de Activaciones: una sola superficie desplazable, sin barras flotantes que tapen el paso activo. */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal.gaming-activation-builder-modal:not(.hidden) {
+  padding: clamp(8px, 1.5vw, 20px) !important;
+  overflow: auto !important;
+  place-items: center !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-interstitial {
+  width: min(1180px, calc(100vw - 16px)) !important;
+  height: min(920px, calc(100dvh - 16px)) !important;
+  max-height: calc(100dvh - 16px) !important;
+  border-radius: 22px !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head {
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 18px clamp(18px, 3vw, 34px) 16px !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head h3 {
+  margin: 3px 0 !important;
+  font-size: clamp(1.28rem, 2.2vw, 1.75rem) !important;
+  line-height: 1.15 !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head p {
+  max-width: 72ch !important;
+  font-size: .78rem !important;
+  line-height: 1.35 !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-body {
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-assistant {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+  grid-template-columns: minmax(145px, .5fr) minmax(0, 1.5fr) auto !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  padding: 12px clamp(18px, 3vw, 34px) !important;
+  border-bottom: 1px solid rgba(92, 143, 186, .2) !important;
+  background: #f8fcff !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-progress-copy {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 2px !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-progress-copy strong,
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal [data-gaming-wizard-current] {
+  font-size: .72rem !important;
+  white-space: nowrap !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-progress-copy small {
+  font-size: .66rem !important;
+  line-height: 1.25 !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-progress-track {
+  height: 4px !important;
+  margin-top: 3px !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-section-nav {
+  flex-wrap: nowrap !important;
+  gap: 4px !important;
+  padding-bottom: 1px !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-section-nav button {
+  min-height: 30px !important;
+  padding: 0 9px !important;
+  font-size: .69rem !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard > :is(.activation-builder-section, .activation-config-panel.activation-builder-form, .gaming-activation-review) {
+  width: min(100% - clamp(30px, 6vw, 72px), 1040px) !important;
+  padding-block: clamp(22px, 3.2vw, 38px) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-wizard-footer {
+  position: static !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  margin: 0 !important;
+  padding: 15px clamp(18px, 3vw, 34px) 18px !important;
+  border-top: 1px solid rgba(92, 143, 186, .2) !important;
+  background: #f8fcff !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+@media (max-width: 760px), (max-height: 760px) {
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head {
+    padding: 13px 16px !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head p,
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-progress-copy small {
+    display: none !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-assistant {
+    grid-template-columns: minmax(112px, auto) minmax(0, 1fr) !important;
+    padding: 9px 16px !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal [data-gaming-wizard-current] {
+    display: none !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-wizard-footer {
+    padding: 12px 16px 14px !important;
+  }
+}
