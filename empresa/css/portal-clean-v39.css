@@ -9688,8 +9688,115 @@ html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms
     padding: 15px !important;
   }
 
-  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts {
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts {
     grid-template-columns: 1fr !important;
+  }
+}
+
+/* Activación 1: la ficha del lead debe servir como resumen de consulta, no como una columna larga. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) {
+  grid-template-columns: minmax(245px, .5fr) minmax(0, 1.5fr) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-lead {
+  position: sticky !important;
+  top: 14px !important;
+  align-self: start !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas:
+    "select select"
+    "person actions"
+    "facts facts" !important;
+  gap: 12px !important;
+  padding: 16px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-select {
+  grid-area: select !important;
+  padding-bottom: 9px !important;
+  border-bottom: 1px solid rgba(11, 99, 246, .12) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-person {
+  grid-area: person !important;
+  grid-template-columns: 34px minmax(0, 1fr) !important;
+  gap: 8px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-person > .material-symbols-outlined {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 10px !important;
+  font-size: 18px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-person small {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-actions {
+  grid-area: actions !important;
+  align-self: center !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-actions .ghost-button {
+  min-height: 32px !important;
+  padding: 0 9px !important;
+  font-size: .7rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-facts {
+  grid-area: facts !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+  padding-top: 2px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-facts div {
+  gap: 2px !important;
+  padding: 8px 9px !important;
+  border: 1px solid rgba(11, 99, 246, .1) !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, .72) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-facts dd {
+  display: block !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  -webkit-line-clamp: unset !important;
+}
+
+@media (max-width: 1180px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-lead {
+    position: static !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(11, 99, 246, .13) !important;
+  }
+}
+
+@media (max-width: 620px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-lead {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "select"
+      "person"
+      "actions"
+      "facts" !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item:not(.rms-evaluation-work-item):not(.rms-confirmation-work-item) .rms-activation-work-actions {
+    justify-content: flex-start !important;
   }
 }
 
