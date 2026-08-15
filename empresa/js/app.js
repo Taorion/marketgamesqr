@@ -42621,10 +42621,15 @@ function rmsRiskStationMetricsMarkup(rows = [], allOpportunities = []) {
 function rmsAttributedSaleStationCardMarkup(item = {}) {
   const workflow = rmsCommercialWorkflow(item);
   const confirmation = workflow.confirmation;
+  const negotiationResponse = (item.state_metadata || {}).negotiation_current || {};
   const evaluation = workflow.evaluation || {};
   const saleContext = confirmation.sale_context || {};
   const activation = rmsActivationDelivery(item);
-  const saleOrigin = confirmation.route === "NEGOTIATION_CLEAN" ? "Venta limpia confirmada desde Negociación" : "Venta protegida y liberada desde Riesgos de fuga";
+  const saleOrigin = confirmation.route === "NEGOTIATION_CLEAN"
+    ? "Venta limpia confirmada desde Negociación"
+    : negotiationResponse.result === "ACCEPTED"
+      ? "Compra confirmada por el cliente en Negociación"
+      : "Venta protegida y liberada desde Riesgos de fuga";
   const defaultProduct = confirmation.product_name || rmsClassifiedProductName(item) || item.product_interest || "";
   // Cierre never guesses a catalog reference from a label. The confirmation is the
   // canonical handoff and must be preselected before an operator can attribute payment.
@@ -42638,7 +42643,7 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
   const evaluationResponse = RMS_EVALUATION_RESPONSES.find((entry) => entry.value === evaluation.response)?.short || evaluation.response || "Sin respuesta registrada";
   const activationDetail = [activation.offer || defaultProduct, activation.channel ? `por ${activation.channel}` : "", activation.outcome ? rmsActivationOutcomeLabel(activation.outcome) : ""].filter(Boolean).join(" · ");
   const evaluationDetail = [evaluationResponse, evaluation.need, evaluation.objections, evaluation.decision_maker].filter(Boolean).join(" · ");
-  const negotiationDetail = [confirmation.negotiation?.customer_condition, confirmation.negotiation?.channel, confirmation.responsible, confirmation.payment_reference].filter(Boolean).join(" · ");
+  const negotiationDetail = [confirmation.negotiation?.customer_condition, confirmation.negotiation?.channel, confirmation.responsible, confirmation.payment_reference, negotiationResponse.reason].filter(Boolean).join(" · ");
   const inheritedNotes = [
     evaluation.note && `Evaluación: ${evaluation.note}`,
     confirmation.payment_reference,
@@ -45885,7 +45890,7 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-negotiation-tabs]").forEach((tabs) => {
     const id = tabs.dataset.rmsNegotiationTabs || "";
     const selected = rmsCommercialNode(root, "[data-rms-negotiation-result]", id)?.value || "ACCEPTED";
-    const initialTab = selected === "RECYCLE" ? "recycle" : selected === "ACCEPTED" ? "conversion" : "followup";
+    const initialTab = ["RECYCLE", "ACCEPTED"].includes(selected) ? "response" : "send";
     activateRmsNegotiationTab(root, id, initialTab);
   });
   root.querySelectorAll("[data-rms-negotiation-objective], [data-rms-negotiation-objection], [data-rms-negotiation-objection-status], [data-rms-negotiation-objection-resolution], [data-rms-negotiation-condition], [data-rms-negotiation-proposal], [data-rms-negotiation-concession], [data-rms-negotiation-channel], [data-rms-confirm-product-id], [data-rms-confirm-product], [data-rms-confirm-amount], [data-rms-confirm-reference], [data-rms-confirm-responsible], [data-rms-confirm-evidence], [data-rms-confirm-note]").forEach((field) => {
@@ -51670,10 +51675,8 @@ if (paymentResult === "success") {
 /* Negociación compacta: conserva los contratos RMS y reduce la operación a una ruta activa. */
 function rmsNegotiationCompactPaths() {
   return [
-    { key: "conversion", label: "Venta confirmada", icon: "paid", result: "ACCEPTED", route: "NEGOTIATION_CLEAN" },
-    { key: "risk", label: "Requiere protección", icon: "shield", result: "ACCEPTED", route: "NEEDS_RISK_REVIEW" },
-    { key: "followup", label: "Espera o pérdida", icon: "schedule", result: "WAITING", route: "" },
-    { key: "recycle", label: "Reciclaje", icon: "autorenew", result: "RECYCLE", route: "" },
+    { key: "send", label: "Enviar y esperar", icon: "send", result: "WAITING", route: "" },
+    { key: "response", label: "Registrar respuesta", icon: "reply", result: "ACCEPTED", route: "" },
   ];
 }
 
@@ -51689,8 +51692,46 @@ function rmsCompactField(label, control, extra = "") {
   return `<label><span>${escapeHtml(label)}</span>${control}${extra}</label>`;
 }
 
+function rmsNegotiationDispatchUrl(item = {}, channel = "WHATSAPP", message = "") {
+  const copy = String(message || "").trim();
+  if (channel === "EMAIL") return item.email
+    ? `mailto:${encodeURIComponent(item.email)}?subject=${encodeURIComponent("Información comercial")}&body=${encodeURIComponent(copy)}`
+    : "";
+  const rawPhone = String(item.phone || "").replace(/\D/g, "");
+  const phone = rawPhone.length === 10 && rawPhone.startsWith("3") ? `57${rawPhone}` : rawPhone;
+  return phone ? `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(copy)}` : "";
+}
+
 // Renderizador canónico de Negociación: una decisión y un formulario por ruta.
 function rmsCommercialConfirmationStationCardMarkup(item = {}) {
+  {
+    const negotiation = (item.state_metadata || {}).negotiation_current || {};
+    const saved = rmsReadNegotiationDraft(item.id);
+    const legacyPath = String(saved.path || "");
+    const current = rmsNegotiationCompactPaths().find((path) => path.key === legacyPath)
+      || (legacyPath === "recycle" || saved.result === "RECYCLE" ? rmsNegotiationCompactPaths()[1] : rmsNegotiationCompactPaths()[0]);
+    const channel = saved.channel || negotiation.channel || "WHATSAPP";
+    const material = saved.delivery_material || negotiation.delivery?.material || "QUOTE";
+    const message = saved.delivery_message || negotiation.delivery?.message || "";
+    const link = saved.delivery_link || negotiation.delivery?.link || "";
+    const nextAt = rmsActivationDatetimeLocal(saved.next_action_at || negotiation.next_action_at || "", 2);
+    const response = saved.result === "RECYCLE" ? "RECYCLE" : "ACCEPTED";
+    const responseReason = saved.reason || "";
+    const dispatchUrl = rmsNegotiationDispatchUrl(item, channel, message || `Hola ${item.name || ""}, te compartimos información comercial.`);
+    return `<article class="rms-commercial-work-item rms-confirmation-work-item rms-negotiation-compact" data-rms-station-lead="${escapeHtml(item.id)}">
+      <section class="rms-commercial-work-console">
+        <header class="rms-negotiation-compact-head"><div><span class="mono-label">Negociación · seguimiento activo</span><h4>${escapeHtml(item.name || "Contacto")}</h4><p>${escapeHtml(item.product_interest || item.classified_product_name || "Oferta por definir")} · ${escapeHtml(channel === "EMAIL" ? "Email" : "WhatsApp")} · ${escapeHtml(negotiation.next_action_at ? `Seguimiento ${formatDate(negotiation.next_action_at)}` : "Sin respuesta registrada")}</p></div><details class="rms-negotiation-context-drawer"><summary><span class="material-symbols-outlined" aria-hidden="true">history</span> Contexto e historial</summary><div>${rmsNegotiationTimelineMarkup(item, Array.isArray((item.state_metadata || {}).negotiation_history) ? (item.state_metadata || {}).negotiation_history.slice(-6).reverse() : [], (item.state_metadata || {}).rms_evaluation || {}, (item.state_metadata || {}).commercial_confirmation || {}, (item.state_metadata || {}).risk_review || {})}</div></details></header>
+        <section class="rms-negotiation-choice-panel" data-rms-negotiation-tabs="${escapeHtml(item.id)}" aria-label="Operación de Negociación"><span class="mono-label">Opera en dos pasos</span><div role="tablist">${rmsNegotiationCompactPaths().map((path) => `<button type="button" role="tab" class="${path.key === current.key ? "is-active" : ""}" aria-selected="${path.key === current.key}" data-rms-negotiation-tab="${escapeHtml(item.id)}" data-rms-negotiation-tab-key="${path.key}"><span class="material-symbols-outlined" aria-hidden="true">${path.icon}</span><strong>${escapeHtml(path.label)}</strong></button>`).join("")}</div></section>
+        <input type="hidden" data-rms-negotiation-result="${escapeHtml(item.id)}" value="${current.result}"><input type="hidden" data-rms-negotiation-route="${escapeHtml(item.id)}" value="">
+        <section class="rms-negotiation-active-form" data-rms-negotiation-active-form="${escapeHtml(item.id)}">
+          <div data-rms-negotiation-path="send" ${current.key === "send" ? "" : "hidden"}><header><h5>Envía material y espera su respuesta</h5><p>Comparte una activación, atención, archivo o cotización. El lead se queda en Negociación hasta que respondan.</p></header><div class="rms-sale-form-grid">${rmsCompactField("Canal", `<select data-rms-negotiation-channel="${escapeHtml(item.id)}"><option value="WHATSAPP" ${channel === "WHATSAPP" ? "selected" : ""}>WhatsApp</option><option value="EMAIL" ${channel === "EMAIL" ? "selected" : ""}>Email</option></select>`)}${rmsCompactField("Qué enviarás", `<select data-rms-negotiation-delivery-material="${escapeHtml(item.id)}"><option value="ACTIVATION" ${material === "ACTIVATION" ? "selected" : ""}>Activación</option><option value="ATTENTION" ${material === "ATTENTION" ? "selected" : ""}>Atención o información</option><option value="FILE" ${material === "FILE" ? "selected" : ""}>Archivo</option><option value="QUOTE" ${material === "QUOTE" ? "selected" : ""}>Cotización</option><option value="OTHER" ${material === "OTHER" ? "selected" : ""}>Otro</option></select>`)}${rmsCompactField("Próximo seguimiento", `<input type="datetime-local" value="${escapeHtml(nextAt)}" data-rms-negotiation-next-at="${escapeHtml(item.id)}">`)}</div>${rmsCompactField("Mensaje o contexto", `<textarea rows="3" data-rms-negotiation-delivery-message="${escapeHtml(item.id)}" placeholder="Qué le envías y qué esperas que responda">${escapeHtml(message)}</textarea>`)}${rmsCompactField("Enlace de archivo o cotización", `<input type="url" value="${escapeHtml(link)}" data-rms-negotiation-delivery-link="${escapeHtml(item.id)}" placeholder="https://…">`, "<small>Opcional. Pega un enlace si compartes un archivo o una cotización.</small>")}</div>
+          <div data-rms-negotiation-path="response" ${current.key === "response" ? "" : "hidden"}><header><h5>Registra la respuesta del cliente</h5><p>Justifica la decisión. Aquí no se registra el pago: ese detalle se completa en Ventas atribuidas.</p></header><div class="rms-sale-form-grid">${rmsCompactField("Respuesta", `<select data-rms-negotiation-response-outcome="${escapeHtml(item.id)}"><option value="ACCEPTED" ${response === "ACCEPTED" ? "selected" : ""}>Compró o confirmó compra → Ventas atribuidas</option><option value="RECYCLE" ${response === "RECYCLE" ? "selected" : ""}>No compra por ahora → Reciclaje</option></select>`)}</div>${rmsCompactField("Por qué tomas esta decisión", `<textarea rows="4" data-rms-negotiation-reason="${escapeHtml(item.id)}" placeholder="Resume lo que respondió el cliente y por qué lo envías a la siguiente etapa">${escapeHtml(responseReason)}</textarea>`, "<small>Este motivo queda en el historial del lead.</small>")}</div>
+        </section>
+        <aside class="rms-negotiation-health-compact" data-rms-negotiation-health="${escapeHtml(item.id)}"></aside>
+        <footer class="rms-negotiation-compact-actions"><small data-rms-negotiation-help="${escapeHtml(item.id)}"></small><div><button class="ghost-button compact" type="button" data-rms-save-negotiation-draft="${escapeHtml(item.id)}">Guardar borrador</button><a class="ghost-button compact" data-rms-negotiation-dispatch="${escapeHtml(item.id)}" href="${escapeHtml(dispatchUrl || "#")}" target="_blank" rel="noopener" ${current.key === "send" && dispatchUrl ? "" : "hidden"}><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span><span data-rms-negotiation-dispatch-label="${escapeHtml(item.id)}">Abrir ${channel === "EMAIL" ? "email" : "WhatsApp"}</span></a><button class="solid-button compact" type="button" data-rms-save-negotiation-decision="${escapeHtml(item.id)}" data-rms-negotiation-cta-button="${escapeHtml(item.id)}"><span data-rms-negotiation-cta="${escapeHtml(item.id)}"></span></button></div></footer>
+      </section>
+    </article>`;
+  }
   const workflow = rmsCommercialWorkflow(item);
   const evaluation = workflow.evaluation || {};
   const confirmation = workflow.confirmation || {};
@@ -51760,6 +51801,38 @@ function activateRmsNegotiationTab(root, id, tabKey, item = rmsOpportunityById(i
 }
 
 function updateRmsNegotiationDecisionUi(root, id) {
+  {
+    const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
+    if (!card) return;
+    const active = card.querySelector("[data-rms-negotiation-tab].is-active")?.dataset.rmsNegotiationTabKey || "send";
+    const result = rmsCommercialNode(root, "[data-rms-negotiation-result]", id);
+    const response = rmsCommercialNode(root, "[data-rms-negotiation-response-outcome]", id)?.value || "ACCEPTED";
+    if (result) result.value = active === "response" ? response : "WAITING";
+    const channel = rmsCompactActiveNode(root, id, "[data-rms-negotiation-channel]")?.value || "WHATSAPP";
+    const material = rmsCompactActiveNode(root, id, "[data-rms-negotiation-delivery-material]")?.value || "QUOTE";
+    const materialLabel = ({ ACTIVATION: "activación", ATTENTION: "atención", FILE: "archivo", QUOTE: "cotización", OTHER: "material" })[material] || "material";
+    const message = rmsCompactActiveNode(root, id, "[data-rms-negotiation-delivery-message]")?.value || `Hola ${rmsOpportunityById(id)?.name || ""}, te compartimos ${materialLabel}.`;
+    const dispatch = rmsCommercialNode(root, "[data-rms-negotiation-dispatch]", id);
+    const dispatchLabel = rmsCommercialNode(root, "[data-rms-negotiation-dispatch-label]", id);
+    const dispatchUrl = rmsNegotiationDispatchUrl(rmsOpportunityById(id) || {}, channel, message);
+    if (dispatch) {
+      dispatch.hidden = active !== "send" || !dispatchUrl;
+      dispatch.href = dispatchUrl || "#";
+    }
+    if (dispatchLabel) dispatchLabel.textContent = `Abrir ${channel === "EMAIL" ? "email" : "WhatsApp"}`;
+    const health = rmsCommercialNode(root, "[data-rms-negotiation-health]", id);
+    const reason = rmsCompactActiveNode(root, id, "[data-rms-negotiation-reason]")?.value.trim() || "";
+    if (health) health.innerHTML = active === "send"
+      ? `<span class="material-symbols-outlined" aria-hidden="true">schedule</span><strong>El lead permanece en Negociación.</strong><small>Registra su respuesta cuando llegue; el seguimiento se conserva en el historial.</small>`
+      : reason
+        ? `<span class="material-symbols-outlined" aria-hidden="true">check_circle</span><strong>Decisión lista para registrar.</strong><small>${response === "ACCEPTED" ? "Se abrirá Ventas atribuidas para registrar el pago." : "Se programará Reciclaje con el contexto que escribiste."}</small>`
+        : `<span class="material-symbols-outlined" aria-hidden="true">edit_note</span><strong>Falta explicar la respuesta.</strong><small>Escribe por qué el lead avanza a la siguiente etapa.</small>`;
+    const cta = rmsCommercialNode(root, "[data-rms-negotiation-cta]", id);
+    if (cta) cta.textContent = active === "send" ? "Registrar envío y esperar respuesta" : response === "ACCEPTED" ? "Enviar a Ventas atribuidas" : "Enviar a Reciclaje";
+    const help = rmsCommercialNode(root, "[data-rms-negotiation-help]", id);
+    if (help) help.textContent = active === "send" ? "Abre el canal, envía el material y registra el seguimiento para no perder el contexto." : "La justificación es el dato mínimo para mover al lead.";
+    return;
+  }
   const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
   const active = card?.querySelector("[data-rms-negotiation-tab].is-active")?.dataset.rmsNegotiationTabKey || "conversion";
   ensureRmsNegotiationSaleContextFields(card, id);
@@ -51806,6 +51879,52 @@ function updateRmsNegotiationDecisionUi(root, id) {
 }
 
 async function saveRmsNegotiationDecision(item, root) {
+  {
+    const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(item.id)}"]`);
+    if (!card) return;
+    const active = card.querySelector("[data-rms-negotiation-tab].is-active")?.dataset.rmsNegotiationTabKey || "send";
+    const draft = rmsNegotiationDraft(root, item.id);
+    const button = rmsCommercialNode(root, "[data-rms-negotiation-cta-button]", item.id);
+    if (active === "send") {
+      if (!draft.next_action_at) {
+        rmsCompactActiveNode(root, item.id, "[data-rms-negotiation-next-at]")?.focus();
+        showFeedback("Programa cuándo revisar la respuesta.", "info", { title: "Negociación" });
+        return;
+      }
+      const material = ({ ACTIVATION: "activación", ATTENTION: "atención", FILE: "archivo", QUOTE: "cotización", OTHER: "material" })[draft.delivery_material] || "material";
+      draft.result = "WAITING";
+      draft.reason = draft.reason || `Se compartió ${material} por ${draft.channel === "EMAIL" ? "email" : "WhatsApp"}; se espera respuesta.`;
+    } else {
+      draft.result = rmsCommercialNode(root, "[data-rms-negotiation-response-outcome]", item.id)?.value || "ACCEPTED";
+      if (draft.reason.trim().length < 4) {
+        rmsCompactActiveNode(root, item.id, "[data-rms-negotiation-reason]")?.focus();
+        showFeedback("Explica qué respondió el cliente y por qué lo envías a esa etapa.", "info", { title: "Negociación" });
+        return;
+      }
+      if (draft.result === "RECYCLE") {
+        draft.recycle_reason = "OTHER";
+        draft.recycle_strategy = "NURTURE";
+        draft.recycle_consent = "NOT_REQUIRED";
+        draft.recycle_responsible = draft.responsible || "Responsable de negociación";
+        draft.next_action_at = rmsCommercialLocalToIso(rmsActivationDatetimeLocal("", 14));
+      }
+    }
+    if (button) button.disabled = true;
+    const key = rmsCommercialOperationKey("negotiation", item, `${draft.result}|${draft.reason}|${draft.next_action_at || ""}|${draft.delivery_material || ""}`);
+    await api("/api/business/rms-machine/negotiation-result", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft, idempotency_key: key }) });
+    localStorage.removeItem(rmsNegotiationDraftStorageKey(item.id));
+    state.rmsMachineLoaded = false;
+    if (draft.result === "RECYCLE") {
+      setView("recycling");
+      showFeedback("Respuesta registrada y lead enviado a Reciclaje.", "success", { title: "Negociación" });
+      return;
+    }
+    const destination = draft.result === "ACCEPTED" ? "cierre" : "accion_correctiva";
+    await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
+    showFeedback(draft.result === "ACCEPTED" ? "Respuesta de compra registrada. Completa el pago en Ventas atribuidas." : "Envío y seguimiento registrados. El lead permanece en Negociación.", "success", { title: "Negociación" });
+    openRmsStation(destination, { source: "negotiation-follow-up" });
+    return;
+  }
   const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(item.id)}"]`);
   const active = card?.querySelector("[data-rms-negotiation-tab].is-active")?.dataset.rmsNegotiationTabKey || "conversion";
   const draft = rmsNegotiationDraft(root, item.id);
@@ -51916,6 +52035,33 @@ function ensureRmsNegotiationSaleContextFields(card, id) {
 }
 
 function rmsNegotiationDraft(root, id) {
+  {
+    const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
+    const active = card?.querySelector("[data-rms-negotiation-tab].is-active")?.dataset.rmsNegotiationTabKey || "send";
+    const activeValue = (selector, fallback = "") => String(rmsCompactActiveNode(root, id, selector)?.value || fallback).trim();
+    const outcome = activeValue("[data-rms-negotiation-response-outcome]", "ACCEPTED");
+    return {
+      result: active === "response" ? outcome : "WAITING",
+      reason: activeValue("[data-rms-negotiation-reason]"),
+      channel: activeValue("[data-rms-negotiation-channel]", "WHATSAPP"),
+      next_action_at: rmsCommercialLocalToIso(rmsCompactActiveNode(root, id, "[data-rms-negotiation-next-at]")?.value || ""),
+      delivery_material: activeValue("[data-rms-negotiation-delivery-material]", "QUOTE"),
+      delivery_message: activeValue("[data-rms-negotiation-delivery-message]"),
+      delivery_link: activeValue("[data-rms-negotiation-delivery-link]"),
+      summary: activeValue("[data-rms-negotiation-delivery-message]"),
+      recycle_reason: null,
+      recycle_strategy: null,
+      recycle_consent: null,
+      recycle_responsible: "",
+      recycle_target_phase: "procesamiento",
+      responsible: "",
+      objective: "",
+      objection_type: "OTHER",
+      customer_condition: "",
+      proposal: "",
+      concession: "",
+    };
+  }
   const confirmation = rmsCommercialConfirmationDraft(root, id);
   const active = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"] [data-rms-negotiation-tab].is-active`)?.dataset.rmsNegotiationTabKey || "conversion";
   const activeValue = (selector, fallback = "") => String(rmsCompactActiveNode(root, id, selector)?.value || fallback).trim();

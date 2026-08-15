@@ -308,7 +308,7 @@ const negotiationResultSchema = z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
   lead_id: z.string().uuid().optional().nullable(),
-  result: z.enum(["WAITING", "REPROCESS", "NO_RESPONSE", "RECYCLE", "LOST"]),
+  result: z.enum(["ACCEPTED", "WAITING", "REPROCESS", "NO_RESPONSE", "RECYCLE", "LOST"]),
   objective: z.string().trim().max(1200).optional().nullable(),
   objection_type: z.string().trim().max(120).optional().nullable(),
   customer_condition: z.string().trim().max(1800).optional().nullable(),
@@ -325,6 +325,9 @@ const negotiationResultSchema = z.object({
   recycle_responsible: z.string().trim().max(500).optional().nullable(),
   recycle_target_phase: z.enum(["procesamiento", "clasificacion"]).optional().nullable(),
   lost_classification: z.enum(["DEFINITIVE", "NOT_NOW", "NO_BUDGET", "PROLONGED_NO_RESPONSE", "NO_CONSENT", "OTHER"]).optional().nullable(),
+  delivery_material: z.enum(["ACTIVATION", "ATTENTION", "FILE", "QUOTE", "OTHER"]).optional().nullable(),
+  delivery_message: z.string().trim().max(5000).optional().nullable(),
+  delivery_link: z.string().trim().max(3000).optional().nullable(),
   idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
 

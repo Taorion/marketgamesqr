@@ -22150,3 +22150,28 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice.
   background:#ffffff !important;
   border-color:#ffffff !important;
 }
+
+/* Negociación: dos operaciones reales, con espacio suficiente para leerlas. */
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tablist"] {
+  grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+  gap:12px !important;
+}
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tab"] {
+  min-height:64px !important;
+  padding:13px 15px !important;
+  border-color:#cfe1ef !important;
+  color:#143d69 !important;
+}
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tab"].is-active {
+  background:linear-gradient(135deg,#edf7ff,#ffffff) !important;
+  border-color:#0759d6 !important;
+  color:#012268 !important;
+}
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tab"] strong {
+  font-size:.88rem !important;
+}
+#rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-actions a.ghost-button[hidden] { display:none !important; }
+@media (max-width:640px) {
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-choice-panel [role="tablist"] { grid-template-columns:minmax(0,1fr) !important; }
+  #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-compact-actions a.ghost-button { flex:1 1 100% !important; justify-content:center !important; }
+}
