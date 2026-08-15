@@ -18800,6 +18800,248 @@ html body[data-current-view="strategic-qr"] > #activationEditModal .activation-e
   box-shadow: 0 28px 80px rgba(2, 19, 55, .34) !important;
 }
 
+/* Historial completo de una activación: lectura comercial y seguimiento de cada lead. */
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .gaming-activation-detail-kpis,
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .gaming-activation-detail-grid {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .gaming-activation-detail-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  margin-top: 12px !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal :is(.gaming-activation-detail-kpis, .gaming-activation-detail-grid) article {
+  display: grid !important;
+  min-width: 0 !important;
+  gap: 4px !important;
+  padding: 12px !important;
+  border: 1px solid #cde0f4 !important;
+  border-radius: 14px !important;
+  background: #f8fcff !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal :is(.gaming-activation-detail-kpis, .gaming-activation-detail-grid) article span {
+  color: #54708f !important;
+  font-size: .69rem !important;
+  font-weight: 820 !important;
+  letter-spacing: .025em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal :is(.gaming-activation-detail-kpis, .gaming-activation-detail-grid) article strong {
+  overflow: hidden !important;
+  color: #012268 !important;
+  font-size: .96rem !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal :is(.gaming-activation-detail-kpis, .gaming-activation-detail-grid) article small {
+  overflow: hidden !important;
+  color: #54708f !important;
+  font-size: .7rem !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .gaming-activation-detail-chart {
+  display: grid !important;
+  gap: 8px !important;
+  margin-top: 14px !important;
+  padding: 14px !important;
+  border-radius: 15px !important;
+  background: #f8fcff !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .gaming-activation-detail-chart div {
+  display: grid !important;
+  grid-template-columns: 92px minmax(0, 1fr) 48px !important;
+  gap: 9px !important;
+  align-items: center !important;
+  color: #365474 !important;
+  font-size: .76rem !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .gaming-activation-detail-chart i {
+  height: 10px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, #0341b3 var(--bar), #dcecf9 var(--bar)) !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-panel {
+  display: grid !important;
+  gap: 14px !important;
+  margin: 18px 0 4px !important;
+  padding: clamp(16px, 2.3vw, 24px) !important;
+  border: 1px solid rgba(183, 211, 233, .82) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(145deg, #f8fcff, #fff) !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-panel header h4 {
+  margin: 4px 0 3px !important;
+  color: #012268 !important;
+  font-size: 1rem !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-panel header p {
+  margin: 0 !important;
+  color: #54708f !important;
+  font-size: .82rem !important;
+  line-height: 1.5 !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-filters {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-filters button {
+  min-height: 34px !important;
+  padding: 7px 11px !important;
+  border: 1px solid #cde0f4 !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  color: #365474 !important;
+  font: inherit !important;
+  font-size: .76rem !important;
+  font-weight: 780 !important;
+  cursor: pointer !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-filters button.is-active {
+  border-color: #0341b3 !important;
+  background: #e8f3fb !important;
+  color: #012268 !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-filters b {
+  display: inline-grid !important;
+  min-width: 19px !important;
+  place-items: center !important;
+  margin-left: 3px !important;
+  padding: 1px 5px !important;
+  border-radius: 999px !important;
+  background: rgba(3, 65, 179, .1) !important;
+  font-size: .69rem !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-list {
+  display: grid !important;
+  gap: 8px !important;
+  max-height: min(44vh, 520px) !important;
+  margin: 0 !important;
+  padding: 0 3px 0 0 !important;
+  overflow: auto !important;
+  list-style: none !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-row {
+  display: grid !important;
+  grid-template-columns: 34px minmax(0, 1fr) minmax(142px, auto) !important;
+  gap: 10px !important;
+  align-items: center !important;
+  padding: 11px 12px !important;
+  border: 1px solid rgba(205, 224, 244, .94) !important;
+  border-radius: 13px !important;
+  background: #fff !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-row[hidden] {
+  display: none !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-icon {
+  display: grid !important;
+  width: 34px !important;
+  height: 34px !important;
+  place-items: center !important;
+  border-radius: 11px !important;
+  background: #e8f3fb !important;
+  color: #0341b3 !important;
+  font-size: 19px !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-row.is-participated_without_benefit .activation-history-icon,
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-row.is-pending_participation .activation-history-icon {
+  background: #fff6df !important;
+  color: #9a5a00 !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-row.is-qr_redeemed .activation-history-icon {
+  background: #eaf8ef !important;
+  color: #176b43 !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-contact,
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-result {
+  display: grid !important;
+  min-width: 0 !important;
+  gap: 2px !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-contact strong,
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-result span {
+  overflow: hidden !important;
+  color: #0b1e3d !important;
+  font-size: .82rem !important;
+  font-weight: 800 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-contact small,
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-result small {
+  overflow: hidden !important;
+  color: #54708f !important;
+  font-size: .72rem !important;
+  line-height: 1.35 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-result {
+  justify-items: end !important;
+  text-align: right !important;
+}
+
+html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal :is(.activation-history-loading, .activation-history-empty) {
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  min-height: 112px !important;
+  padding: 18px !important;
+  border: 1px dashed #b8d2e9 !important;
+  border-radius: 14px !important;
+  color: #54708f !important;
+  font-size: .86rem !important;
+}
+
+@media (max-width: 680px) {
+  html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .gaming-activation-detail-kpis,
+  html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .gaming-activation-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-row {
+    grid-template-columns: 32px minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-result {
+    grid-column: 2 !important;
+    justify-items: start !important;
+    text-align: left !important;
+  }
+
+  html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal .activation-history-list {
+    max-height: none !important;
+  }
+}
+
 html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-head {
   display: flex !important;
   align-items: flex-start !important;

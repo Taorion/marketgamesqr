@@ -16050,7 +16050,7 @@ function ensureGamingActivationDetailModal(view = document.querySelector('.view-
   return modal;
 }
 
-function openGamingActivationDetail(id = "") {
+function openGamingActivationDetailLegacy(id = "") {
   const item = activationById(id);
   if (!item) return;
   const modal = ensureGamingActivationDetailModal();
@@ -16120,6 +16120,147 @@ function openGamingActivationDetail(id = "") {
   modal.classList.remove("hidden");
   modal.removeAttribute("hidden");
   window.setTimeout(() => modal.querySelector("[data-close-gaming-activation-detail]")?.focus({ preventScroll: true }), 40);
+}
+
+function activationHistoryStateMeta(state = "") {
+  const states = {
+    qr_active: ["QR activo", "confirmation_number"],
+    qr_redeemed: ["QR redimido", "task_alt"],
+    qr_issued: ["QR generado", "qr_code_2"],
+    participated_without_benefit: ["Participó sin beneficio", "sports_esports"],
+    pending_review: ["Pendiente de aprobación", "pending_actions"],
+    started: ["Intento en curso", "hourglass_top"],
+    abandoned: ["Intento abandonado", "person_off"],
+    pending_participation: ["Aún no participa", "schedule"],
+  };
+  const [label, icon] = states[state] || ["Participación registrada", "history"];
+  return { label, icon };
+}
+
+function activationHistoryContactLine(entry = {}) {
+  return [entry.phone, entry.email, entry.document].filter(Boolean).join(" · ") || "Datos de contacto no disponibles";
+}
+
+function renderGamingActivationDetailBody(item, report = null) {
+  const metrics = report?.metrics || {};
+  const attempts = Number(metrics.participants ?? item.attempts_count ?? 0);
+  const winners = Number(metrics.qr_generated ?? item.winners_count ?? 0);
+  const maxWinners = Number(item.max_winners || 0);
+  const rate = Number(metrics.participation_to_qr_rate ?? activationPerformanceRate(item));
+  const maxBar = Math.max(attempts, winners, maxWinners, 1);
+  const history = report?.history || {};
+  const participantEntries = Array.isArray(history.participants) ? history.participants : [];
+  const pendingEntries = Array.isArray(history.invitations_pending) ? history.invitations_pending : [];
+  const entries = [...participantEntries, ...pendingEntries]
+    .sort((a, b) => new Date(b.completed_at || b.started_at || b.created_at || 0) - new Date(a.completed_at || a.started_at || a.created_at || 0));
+  const totals = history.totals || {};
+  const stateFilters = [
+    ["all", "Todo", entries.length],
+    ["qr", "Con QR", Number(totals.obtained_qr || 0)],
+    ["without_benefit", "Sin beneficio", Number(totals.participated_without_benefit || 0)],
+    ["pending", "Sin participar", Number(totals.pending_participation || 0)],
+  ];
+  const historyRows = entries.length ? entries.map((entry) => {
+    const meta = activationHistoryStateMeta(entry.state);
+    const date = entry.completed_at || entry.started_at || entry.created_at;
+    const filters = ["all", entry.state?.startsWith("qr_") ? "qr" : "", entry.state === "participated_without_benefit" ? "without_benefit" : "", entry.state === "pending_participation" ? "pending" : ""].filter(Boolean).join(" ");
+    return `<li class="activation-history-row is-${escapeHtml(entry.state || "registered")}" data-activation-history-row data-history-filters="${escapeHtml(filters)}">
+      <span class="activation-history-icon material-symbols-outlined" aria-hidden="true">${escapeHtml(meta.icon)}</span>
+      <div class="activation-history-contact"><strong>${escapeHtml(entry.name || "Lead sin nombre")}</strong><small>${escapeHtml(activationHistoryContactLine(entry))}</small>${entry.capture_summary ? `<small>${escapeHtml(entry.capture_summary)}</small>` : ""}</div>
+      <div class="activation-history-result"><span>${escapeHtml(meta.label)}</span><small>${escapeHtml(date ? formatDate(date) : "Sin fecha")}</small></div>
+    </li>`;
+  }).join("") : '<li class="activation-history-empty">Todavía no hay participaciones ni envíos registrados para esta activación.</li>';
+  return `
+    <section class="gaming-activation-detail-kpis">
+      <article><span>Leads capturados</span><strong>${activationMetricNumber(attempts)}</strong><small>Datos registrados</small></article>
+      <article><span>QR generados</span><strong>${activationMetricNumber(winners)}</strong><small>Beneficios entregados</small></article>
+      <article><span>QR activos</span><strong>${activationMetricNumber(totals.qr_active || 0)}</strong><small>Listos para redimir</small></article>
+      <article><span>Sin beneficio</span><strong>${activationMetricNumber(totals.participated_without_benefit || 0)}</strong><small>Participaron igualmente</small></article>
+      <article><span>Rendimiento</span><strong>${rate.toFixed(1)}%</strong><small>QR sobre participantes</small></article>
+    </section>
+    <section class="gaming-activation-detail-chart" aria-label="Gráfica de rendimiento">
+      <div><span>Participaron</span><i style="--bar:${Math.max(6, (attempts / maxBar) * 100)}%"></i><strong>${activationMetricNumber(attempts)}</strong></div>
+      <div><span>Con QR</span><i style="--bar:${Math.max(6, (winners / maxBar) * 100)}%"></i><strong>${activationMetricNumber(winners)}</strong></div>
+      ${maxWinners ? `<div><span>Cupo</span><i style="--bar:${Math.max(6, (maxWinners / maxBar) * 100)}%"></i><strong>${activationMetricNumber(maxWinners)}</strong></div>` : ""}
+    </section>
+    <section class="gaming-activation-detail-grid">
+      <article><span>Campaña</span><strong>${escapeHtml(item.campaign_name || "Sin campaña")}</strong></article>
+      <article><span>Canal</span><strong>${escapeHtml(item.channel || item.metadata?.channel || "Sin canal definido")}</strong></article>
+      <article><span>Estado</span><strong>${escapeHtml(activationStatusLabel(item.status))}</strong></article>
+      <article><span>Sin participar</span><strong>${activationMetricNumber(totals.pending_participation || 0)}</strong></article>
+    </section>
+    <section class="activation-history-panel" aria-label="Historial de intentos de activación">
+      <header><div><span class="mono-label">Historial de leads</span><h4>Participaciones y beneficios</h4><p>Consulta a quién se envió, quién participó y el estado real de cada QR.</p></div></header>
+      <div class="activation-history-filters" role="tablist" aria-label="Filtrar historial de activación">
+        ${stateFilters.map(([key, label, count], index) => `<button type="button" data-activation-history-filter="${key}" class="${index === 0 ? "is-active" : ""}" aria-pressed="${index === 0 ? "true" : "false"}">${escapeHtml(label)} <b>${activationMetricNumber(count)}</b></button>`).join("")}
+      </div>
+      <ol class="activation-history-list" data-activation-history-list>${historyRows}</ol>
+    </section>
+    <footer class="gaming-activation-detail-actions">
+      <button class="ghost-button" type="button" data-copy-trivia-link="${escapeHtml(item.public_url || "")}">Copiar link</button>
+      <button class="solid-button" type="button" data-share-activation="${escapeHtml(item.id)}">Enviar ticket</button>
+      <button class="solid-button" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar activación</button>
+    </footer>
+  `;
+}
+
+function bindGamingActivationDetailActions(modal) {
+  modal.querySelectorAll("[data-copy-trivia-link]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await navigator.clipboard?.writeText(button.dataset.copyTriviaLink || "");
+      showFeedback("Link público de activación copiado.");
+    });
+  });
+  modal.querySelectorAll("[data-share-activation]").forEach((button) => {
+    button.addEventListener("click", () => openActivationShareModal(button.dataset.shareActivation));
+  });
+  modal.querySelectorAll("[data-edit-activation]").forEach((button) => {
+    button.addEventListener("click", () => {
+      closeGamingActivationDetail();
+      editInteractiveActivation(button.dataset.editActivation);
+    });
+  });
+  modal.querySelectorAll("[data-activation-history-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.activationHistoryFilter || "all";
+      modal.querySelectorAll("[data-activation-history-filter]").forEach((control) => {
+        const active = control === button;
+        control.classList.toggle("is-active", active);
+        control.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+      modal.querySelectorAll("[data-activation-history-row]").forEach((row) => {
+        const visible = filter === "all" || String(row.dataset.historyFilters || "").split(" ").includes(filter);
+        row.toggleAttribute("hidden", !visible);
+      });
+    });
+  });
+}
+
+async function openGamingActivationDetail(id = "") {
+  const item = activationById(id);
+  if (!item) return;
+  const modal = ensureGamingActivationDetailModal();
+  const title = modal.querySelector("#gamingActivationDetailTitle");
+  const subtitle = modal.querySelector("#gamingActivationDetailSubtitle");
+  const eyebrow = modal.querySelector("#gamingActivationDetailEyebrow");
+  const body = modal.querySelector("#gamingActivationDetailBody");
+  modal.dataset.activationId = String(item.id);
+  if (eyebrow) eyebrow.textContent = `${activationTypeLabel(item.activation_type)} · ${activationStatusLabel(item.status)}`;
+  if (title) title.textContent = item.title || "Activación sin título";
+  if (subtitle) subtitle.textContent = `${item.campaign_name || "Sin campaña"} · creada ${formatDate(item.created_at)} · ${item.ends_at ? `vence ${formatDate(item.ends_at)}` : "sin vencimiento"}`;
+  if (body) body.innerHTML = '<div class="activation-history-loading"><span class="material-symbols-outlined" aria-hidden="true">progress_activity</span> Cargando historial de participaciones…</div>';
+  modal.classList.remove("hidden");
+  modal.removeAttribute("hidden");
+  window.setTimeout(() => modal.querySelector("[data-close-gaming-activation-detail]")?.focus({ preventScroll: true }), 40);
+  try {
+    const report = await api(`/api/business/interactive-activations/${encodeURIComponent(item.id)}/report`, { headers: authHeaders() });
+    if (modal.dataset.activationId !== String(item.id) || !body) return;
+    body.innerHTML = renderGamingActivationDetailBody(item, report);
+    bindGamingActivationDetailActions(modal);
+  } catch (error) {
+    if (modal.dataset.activationId !== String(item.id) || !body) return;
+    body.innerHTML = `<div class="activation-history-empty">No se pudo cargar el historial: ${escapeHtml(error.message || "intenta de nuevo")}</div>`;
+  }
 }
 
 function closeGamingActivationDetail() {

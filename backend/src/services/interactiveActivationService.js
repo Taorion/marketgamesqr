@@ -2221,6 +2221,75 @@ async function getInteractiveActivationReport(businessId, activationId) {
     [activationId]
   );
   const row = metrics.rows[0] || {};
+  const [participantHistory, invitationHistory] = await Promise.all([
+    query(
+      `select p.id as participant_id, p.player_id, p.name, p.document, p.phone, p.email,
+              p.score, p.result_profile, p.status as participant_status, p.started_at,
+              p.completed_at, p.created_at, p.metadata,
+              r.id as reward_id, r.status as reward_status,
+              q.id as qr_code_id, q.status as qr_status, q.redeemed_at,
+              q.expires_at as qr_expires_at
+         from interactive_activation_participants p
+         left join interactive_activation_rewards r on r.participant_id = p.id and r.status <> 'cancelled'
+         left join qr_codes q on q.id = r.qr_code_id
+        where p.activation_id = $1 and p.company_id = $2
+        order by coalesce(p.completed_at, p.started_at, p.created_at) desc
+        limit 1000`,
+      [activationId, businessId]
+    ),
+    query(
+      `select la.id as invitation_id, la.source_type, la.source_id, la.lead_id, la.channel,
+              la.status as invitation_status, la.created_at,
+              coalesce(p.name, ml.name, af.full_name, 'Contacto sin nombre') as name,
+              coalesce(p.document_id, af.document_id) as document,
+              coalesce(p.phone, ml.phone, af.phone) as phone,
+              coalesce(p.email, ml.email, af.email) as email
+         from lead_activations la
+         left join players p on p.business_id = la.business_id
+           and (p.id = la.lead_id or (la.source_type = 'PLAYER' and p.id = la.source_id))
+         left join business_manual_leads ml on ml.business_id = la.business_id
+           and la.source_type = 'MANUAL' and ml.id = la.source_id
+         left join affiliates af on af.business_id = la.business_id
+           and la.source_type = 'AFFILIATE' and af.id = la.source_id
+        where la.business_id = $2
+          and la.metadata->>'interactive_activation_id' = $1::text
+          and not exists (
+            select 1
+              from interactive_activation_participants p2
+             where p2.activation_id = $1
+               and p2.company_id = $2
+               and (
+                 (p.id is not null and p2.player_id = p.id)
+                 or (p2.player_id = la.lead_id)
+                 or (nullif(coalesce(p.email, ml.email, af.email), '') is not null
+                   and lower(coalesce(p2.email, '')) = lower(coalesce(p.email, ml.email, af.email)))
+                 or (nullif(regexp_replace(coalesce(p.phone, ml.phone, af.phone, ''), '\\D', '', 'g'), '') is not null
+                   and regexp_replace(coalesce(p2.phone, ''), '\\D', '', 'g') = regexp_replace(coalesce(p.phone, ml.phone, af.phone, ''), '\\D', '', 'g'))
+               )
+          )
+        order by la.created_at desc
+        limit 1000`,
+      [activationId, businessId]
+    ),
+  ]);
+  const participantsHistory = participantHistory.rows.map((participant) => {
+    const qrStatus = String(participant.qr_status || '').toUpperCase();
+    const participantStatus = String(participant.participant_status || 'started').toLowerCase();
+    const state = participant.reward_id
+      ? (qrStatus === 'REDEEMED' || participant.redeemed_at ? 'qr_redeemed' : qrStatus === 'ACTIVE' ? 'qr_active' : 'qr_issued')
+      : participantStatus === 'completed' ? 'participated_without_benefit' : participantStatus;
+    return {
+      ...participant,
+      kind: 'participant',
+      state,
+      capture_summary: participant.metadata?.activation_form?.summary || null,
+    };
+  });
+  const invitationsHistory = invitationHistory.rows.map((invitation) => ({
+    ...invitation,
+    kind: 'invitation',
+    state: 'pending_participation',
+  }));
   const participants = Number(row.participants || 0);
   const qrGenerated = Number(row.qr_generated || 0);
   const redemptions = Number(row.redemptions || 0);
@@ -2238,6 +2307,17 @@ async function getInteractiveActivationReport(businessId, activationId) {
       revenue: Number(row.revenue || 0),
       participation_to_qr_rate: participants ? Number(((qrGenerated / participants) * 100).toFixed(1)) : 0,
       qr_to_redemption_rate: qrGenerated ? Number(((redemptions / qrGenerated) * 100).toFixed(1)) : 0,
+    },
+    history: {
+      participants: participantsHistory,
+      invitations_pending: invitationsHistory,
+      totals: {
+        obtained_qr: participantsHistory.filter((item) => ['qr_active', 'qr_issued', 'qr_redeemed'].includes(item.state)).length,
+        qr_active: participantsHistory.filter((item) => item.state === 'qr_active').length,
+        qr_redeemed: participantsHistory.filter((item) => item.state === 'qr_redeemed').length,
+        participated_without_benefit: participantsHistory.filter((item) => item.state === 'participated_without_benefit').length,
+        pending_participation: invitationsHistory.length,
+      },
     },
   };
 }
