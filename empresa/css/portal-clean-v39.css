@@ -21693,3 +21693,26 @@ html body[data-current-view="dashboard"] .portal-shell .view-section.active[data
 html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-library-empty { display:grid !important; grid-column:1 / -1 !important; place-items:center !important; gap:6px !important; min-height:132px !important; padding:18px !important; border:1px dashed rgba(4,65,179,.25) !important; border-radius:13px !important; background:#f7fbff !important; color:#55718d !important; text-align:center !important; }
 html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-library-empty p { margin:0 !important; font-size:.8rem !important; }
 @media (max-width:760px) { html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary { grid-template-columns:1fr !important; } }
+
+/* Plantillas visibles solo al personalizar: punto de partida antes de editar bloques. */
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-gallery {
+  display:grid !important;
+  gap:16px !important;
+  margin:0 clamp(18px,3vw,36px) !important;
+  padding:20px !important;
+  border:1px solid rgba(4,65,179,.14) !important;
+  border-radius:16px !important;
+  background:linear-gradient(120deg,#f3f9ff,#fff) !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-gallery[hidden] { display:none !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-copy { display:grid !important; gap:5px !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-copy h4 { margin:0 !important; color:#082d63 !important; font-size:1.08rem !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-copy p { margin:0 !important; color:#58718f !important; font-size:.84rem !important; line-height:1.45 !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-list { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:10px !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-card { display:grid !important; grid-template-columns:34px minmax(0,1fr) !important; gap:9px !important; align-items:start !important; min-height:94px !important; padding:14px !important; border:1px solid rgba(4,65,179,.14) !important; border-radius:12px !important; background:#fff !important; color:#123d6d !important; text-align:left !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-card.is-active { border-color:#0759d6 !important; box-shadow:inset 0 0 0 1px #0759d6 !important; background:#eff7ff !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-card > .material-symbols-outlined { display:grid !important; width:34px !important; height:34px !important; place-items:center !important; border-radius:10px !important; background:#e8f3fb !important; color:#0759d6 !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-card > span:last-child { display:grid !important; gap:3px !important; min-width:0 !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-card small { color:#5d7895 !important; font-size:.72rem !important; line-height:1.35 !important; }
+@media (max-width:980px) { html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-list { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } }
+@media (max-width:620px) { html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-gallery { margin:0 18px !important; padding:16px !important; } html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-list { grid-template-columns:1fr !important; } }

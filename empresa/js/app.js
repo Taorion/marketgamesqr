@@ -78,6 +78,7 @@ const dashboardBusinessCacMeta = document.getElementById("dashboardBusinessCacMe
 const dashboardWorkspaceTabs = document.getElementById("dashboardWorkspaceTabs");
 const dashboardRevenueRefreshButton = document.getElementById("dashboardRevenueRefreshButton");
 const dashboardWorkspaceGuide = document.getElementById("dashboardWorkspaceGuide");
+const dashboardTemplateGallery = document.getElementById("dashboardTemplateGallery");
 const dashboardProfileTabs = document.getElementById("dashboardProfileTabs");
 const dashboardWidgetLibrary = document.getElementById("dashboardWidgetLibrary");
 const dashboardWidgetLibraryFilters = document.getElementById("dashboardWidgetLibraryFilters");
@@ -3406,6 +3407,20 @@ function enhanceQuietCanvas() {
   if (!activeSection) return;
   renderPortalLocationPill(activeSection);
   const activeView = activeSection.dataset.view || state.currentView || "dashboard";
+  // Revenue es un tablero, no una colección de acordeones. Las zonas plegables
+  // añadían márgenes y controles que dejaban espacios vacíos entre las vistas.
+  if (activeView === "dashboard") {
+    activeSection.querySelectorAll(".quiet-zone").forEach((zone) => {
+      const quietHead = zone.querySelector(":scope > .quiet-zone-control-head");
+      zone.classList.remove("quiet-zone", "is-collapsed");
+      delete zone.dataset.quietZoneKey;
+      delete zone.dataset.quietZoneExpanded;
+      quietHead?.querySelector(".quiet-zone-toggle")?.remove();
+      quietHead?.classList.remove("quiet-zone-control-head");
+    });
+    activeSection.dataset.quietZonesReady = "0";
+    return;
+  }
   const openCount = QUIET_ZONE_DEFAULT_OPEN_COUNT[activeView] ?? 2;
   const candidates = Array.from(activeSection.querySelectorAll(QUIET_ZONE_SELECTOR))
     .filter((zone) => !shouldSkipQuietZone(zone, activeView));
@@ -11977,6 +11992,10 @@ function dashboardWidgetsForWorkspaceTab(layout, tab) {
 function renderDashboardBuilder() {
   renderDashboardBusinessEconomics();
   if (!dashboardBuilderShell || !dashboardWidgetGrid || !dashboardWidgetLibrary) return;
+  dashboardBuilderShell.classList.remove("quiet-zone", "is-collapsed");
+  const dashboardQuietHead = dashboardBuilderShell.querySelector(":scope > .quiet-zone-control-head");
+  dashboardQuietHead?.querySelector(".quiet-zone-toggle")?.remove();
+  dashboardQuietHead?.classList.remove("quiet-zone-control-head");
   // El dashboard anterior aún conserva nodos de datos para compatibilidad de
   // exportaciones, pero no puede volver a abrirse debajo de las pestañas.
   dashboardLegacySurfaces?.setAttribute("hidden", "");
@@ -12115,6 +12134,21 @@ function renderDashboardBuilder() {
         <span class="material-symbols-outlined" aria-hidden="true">${filter.icon}</span>${filter.label}
       </button>
     `).join("");
+  }
+  if (dashboardTemplateGallery) {
+    dashboardTemplateGallery.hidden = workspaceTab !== "customize";
+    dashboardTemplateGallery.style.setProperty("display", workspaceTab === "customize" ? "grid" : "none", "important");
+    dashboardTemplateGallery.innerHTML = `
+      <div class="dashboard-template-copy"><span class="mono-label">Plantillas base</span><h4>Empieza con una vista que ya sabe qué medir</h4><p>Elige una plantilla y luego ajusta sus bloques a tu forma de operar.</p></div>
+      <div class="dashboard-template-list">
+        ${Object.entries(DASHBOARD_BUILDER_PROFILES).filter(([key]) => key !== "custom").map(([key, item]) => `
+          <button type="button" class="dashboard-template-card ${key === state.dashboardBuilderProfile ? "is-active" : ""}" data-dashboard-template-profile="${escapeHtml(key)}">
+            <span class="material-symbols-outlined" aria-hidden="true">${key === "marketing" ? "campaign" : key === "commercial" ? "point_of_sale" : key === "tickets" ? "confirmation_number" : "monitoring"}</span>
+            <span><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.description)}</small></span>
+          </button>
+        `).join("")}
+      </div>
+    `;
   }
   const filteredLibrary = DASHBOARD_WIDGET_CATALOG.filter((widget) => {
     if (libraryFilter === "selected") return layout.includes(widget.id);
@@ -49808,6 +49842,13 @@ dashboardWidgetLibraryFilters?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-dashboard-library-filter]");
   if (!button) return;
   state.dashboardLibraryFilter = button.dataset.dashboardLibraryFilter || "selected";
+  renderDashboardBuilder();
+});
+dashboardTemplateGallery?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-dashboard-template-profile]");
+  if (!button) return;
+  setDashboardProfile(button.dataset.dashboardTemplateProfile || "marketing");
+  state.dashboardLibraryFilter = "selected";
   renderDashboardBuilder();
 });
 dashboardWidgetGrid?.addEventListener("click", (event) => {
