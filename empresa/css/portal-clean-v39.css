@@ -21855,3 +21855,115 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-it
   html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-activation-work-facts div { padding:0 !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-activation-work-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; width:100% !important; }
 }
+
+/* Centro de Revenue: composición final. Las tarjetas nunca se reducen por
+   debajo de una medida de lectura y el contenido mantiene aire interno. */
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] {
+  padding:clamp(20px,2.8vw,42px) !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-builder-shell {
+  width:min(100%,1520px) !important;
+  margin:0 auto !important;
+  overflow:hidden !important;
+  border-radius:22px !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-builder-layout {
+  gap:clamp(20px,2.4vw,32px) !important;
+  padding:clamp(22px,3vw,42px) !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #revenueWorkspace.revenue-workspace {
+  gap:clamp(18px,2.2vw,28px) !important;
+  padding:clamp(22px,3vw,42px) !important;
+  border:1px solid rgba(4,65,179,.11) !important;
+  border-radius:18px !important;
+  background:#f8fbff !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-gallery,
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library {
+  width:100% !important;
+  min-width:0 !important;
+  margin:0 !important;
+  padding:clamp(20px,2.6vw,34px) !important;
+  border-radius:18px !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-copy,
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-library-heading {
+  max-width:72ch !important;
+  min-width:0 !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] :is(.dashboard-template-copy p,.dashboard-library-heading p,.dashboard-library-copy small) {
+  max-width:none !important;
+  overflow:visible !important;
+  overflow-wrap:anywhere !important;
+  text-overflow:clip !important;
+  white-space:normal !important;
+  line-height:1.5 !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-list {
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr)) !important;
+  gap:14px !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-card {
+  grid-template-columns:38px minmax(0,1fr) !important;
+  align-content:start !important;
+  min-height:136px !important;
+  padding:17px !important;
+  gap:12px !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-card :is(strong,small) {
+  overflow:visible !important;
+  overflow-wrap:anywhere !important;
+  text-overflow:clip !important;
+  white-space:normal !important;
+  line-height:1.42 !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary {
+  grid-template-columns:repeat(auto-fit,minmax(290px,1fr)) !important;
+  gap:12px !important;
+  width:100% !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary .dashboard-library-item,
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary .dashboard-library-item:hover,
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary .dashboard-library-item.is-active {
+  display:grid !important;
+  grid-template-columns:38px minmax(0,1fr) max-content !important;
+  align-items:start !important;
+  min-height:132px !important;
+  padding:16px !important;
+  gap:12px !important;
+  overflow:hidden !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary .dashboard-library-copy {
+  display:grid !important;
+  min-width:0 !important;
+  gap:4px !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary .dashboard-library-copy :is(strong,small) {
+  overflow:visible !important;
+  overflow-wrap:anywhere !important;
+  text-overflow:clip !important;
+  white-space:normal !important;
+  line-height:1.42 !important;
+}
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary .dashboard-library-copy strong { font-size:.9rem !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary .dashboard-library-copy small { font-size:.76rem !important; }
+html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary .dashboard-library-action {
+  grid-column:3 !important;
+  grid-row:1 / span 2 !important;
+  align-self:center !important;
+  justify-self:end !important;
+  margin:0 !important;
+  white-space:nowrap !important;
+}
+@media (max-width:700px) {
+  html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] { padding:16px !important; }
+  html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-builder-layout,
+  html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #revenueWorkspace.revenue-workspace { padding:18px !important; }
+  html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-gallery,
+  html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-widget-library { padding:18px !important; }
+  html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary { grid-template-columns:1fr !important; }
+  html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary .dashboard-library-item,
+  html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary .dashboard-library-item:hover,
+  html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary .dashboard-library-item.is-active { grid-template-columns:36px minmax(0,1fr) !important; }
+  html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] #dashboardWidgetLibrary .dashboard-library-action { grid-column:2 !important; grid-row:auto !important; justify-self:start !important; }
+}
