@@ -15907,7 +15907,7 @@ function ensureGamingActivationBuilderModal(view = document.querySelector('.view
       }
       if (event.target.closest("[data-gaming-wizard-next]")) {
         event.preventDefault();
-        goToGamingActivationWizardStep(Number(state.gamingActivationWizardStep || 0) + 1);
+        continueOrLaunchGamingActivation();
         return;
       }
       if (event.target.closest("[data-gaming-wizard-publish]")) {
@@ -16302,9 +16302,16 @@ function updateGamingActivationWizard() {
   const previousButton = builderRoot.querySelector("[data-gaming-wizard-previous]");
   if (previousButton) previousButton.disabled = step === 0;
   const nextButton = builderRoot.querySelector("[data-gaming-wizard-next]");
-  nextButton?.classList.toggle("hidden", step === sections.length - 1);
-  if (nextButton) nextButton.textContent = step === sections.length - 2 ? "Revisar activación →" : "Continuar →";
-  builderRoot.querySelector("[data-gaming-wizard-publish]")?.classList.toggle("hidden", step !== sections.length - 1);
+  const isReviewStep = step === sections.length - 1;
+  nextButton?.classList.remove("hidden");
+  if (nextButton) {
+    nextButton.textContent = isReviewStep
+      ? "Lanzar activación"
+      : step === sections.length - 2
+        ? "Revisar activación →"
+        : "Continuar →";
+  }
+  builderRoot.querySelector("[data-gaming-wizard-publish]")?.remove();
   const stepLabel = builderRoot.querySelector("[data-gaming-wizard-current]");
   if (stepLabel) stepLabel.textContent = `Paso ${step + 1} de ${sections.length}`;
   builderRoot.querySelector(".gaming-activation-recipes")?.classList.toggle("hidden", step !== 0);
@@ -16323,6 +16330,15 @@ function goToGamingActivationWizardStep(nextStep = 0, options = {}) {
   if (modalBody) modalBody.scrollTo({ top: 0, behavior: "smooth" });
   else gamingCenterScrollTo(".gaming-builder-assistant");
   return true;
+}
+
+function continueOrLaunchGamingActivation() {
+  const lastStep = Math.max(0, gamingActivationWizardSections().length - 1);
+  if (Number(state.gamingActivationWizardStep || 0) >= lastStep) {
+    if (validateGamingActivationWizard()) triviaLauncherForm?.requestSubmit();
+    return;
+  }
+  goToGamingActivationWizardStep(Number(state.gamingActivationWizardStep || 0) + 1);
 }
 
 function applyGamingActivationRecipe(recipeKey = "") {
@@ -16473,6 +16489,9 @@ function ensureGamingCenterUx() {
   const builderCard = view.querySelector(".gaming-activation-builder-card");
   if (builderCard && !builderCard.querySelector(".gaming-builder-assistant")) {
     triviaLauncherForm?.classList.add("is-gaming-activation-wizard");
+    const legacyLaunchButton = triviaLauncherForm?.querySelector(".activation-launch-submit");
+    legacyLaunchButton?.setAttribute("hidden", "");
+    legacyLaunchButton?.setAttribute("aria-hidden", "true");
     triviaLauncherForm?.insertAdjacentHTML("beforebegin", `
       <section class="gaming-activation-recipes" aria-label="Recetas rápidas de activación">
         <div class="gaming-activation-recipes-copy"><span class="mono-label">Punto de partida</span><strong>Elige un objetivo o crea desde cero</strong><small>Las recetas cargan textos editables y una dinámica recomendada.</small></div>
@@ -16597,7 +16616,7 @@ function ensureGamingCenterUx() {
       }
       if (event.target.closest("[data-gaming-wizard-next]")) {
         event.preventDefault();
-        goToGamingActivationWizardStep(Number(state.gamingActivationWizardStep || 0) + 1);
+        continueOrLaunchGamingActivation();
         return;
       }
       if (event.target.closest("[data-gaming-wizard-publish]")) {
