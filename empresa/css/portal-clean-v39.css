@@ -22560,5 +22560,57 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-post-sale-work-ite
   html body[data-current-view="rms-machine"] .portal-shell .rms-post-sale-work-item .rms-refinery-panel .rms-sale-form-grid { grid-template-columns:1fr !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-post-sale-work-item .rms-refinery-route { min-height:0 !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-post-sale-work-item .rms-commercial-action-row .button-row { width:100% !important; }
-  html body[data-current-view="rms-machine"] .portal-shell .rms-post-sale-work-item .rms-commercial-action-row .button-row button { flex:1 1 100% !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-post-sale-work-item .rms-commercial-action-row .button-row button { flex:1 1 100% !important; }
+}
+
+/* RMS: cada estación muestra el mismo contrato de entrada, decisión y entrega. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-handoff {
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr) 22px minmax(0,1fr) !important;
+  align-items:stretch !important;
+  gap:10px !important;
+  margin:13px 0 15px !important;
+  padding:11px !important;
+  border:1px solid #d3e5f2 !important;
+  border-radius:14px !important;
+  background:linear-gradient(135deg,#f5fbff 0%,#fff 52%,#f6fcff 100%) !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-handoff > div {
+  display:grid !important;
+  align-content:start !important;
+  gap:4px !important;
+  min-width:0 !important;
+  padding:9px 10px !important;
+  border:1px solid #e0edf5 !important;
+  border-radius:10px !important;
+  background:rgba(255,255,255,.82) !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-handoff > div span {
+  color:#64809a !important;
+  font-size:.64rem !important;
+  font-weight:850 !important;
+  letter-spacing:.055em !important;
+  text-transform:uppercase !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-handoff > div strong {
+  min-width:0 !important;
+  color:#103e71 !important;
+  font-size:.75rem !important;
+  line-height:1.35 !important;
+  overflow-wrap:anywhere !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-handoff > .material-symbols-outlined {
+  align-self:center !important;
+  color:#4a91c6 !important;
+  font-size:19px !important;
+}
+@media (max-width:760px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-handoff {
+    grid-template-columns:1fr !important;
+    gap:7px !important;
+  }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-station-handoff > .material-symbols-outlined {
+    justify-self:center !important;
+    transform:rotate(90deg) !important;
+  }
 }
