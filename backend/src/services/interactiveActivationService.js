@@ -1476,6 +1476,12 @@ function activationFormMetadata(activation, body = {}, extra = {}) {
     ...metadata,
     source_url: metadata.source_url || null,
     user_agent: metadata.user_agent || null,
+    identity: {
+      document_type: normalizeIdentityDocumentType(body.document_type || metadata.identity?.document_type),
+      document: String(body.document || body.document_id || "").trim() || null,
+      phone: String(body.phone || "").trim() || null,
+      email: String(body.email || "").trim().toLowerCase() || null,
+    },
     activation_form: {
       schema_version: activation.capture_config?.form_schema_version || 1,
       ...existingActivationForm,
@@ -1503,6 +1509,12 @@ function activationFormMetadata(activation, body = {}, extra = {}) {
     },
     ...extra,
   };
+}
+
+function normalizeIdentityDocumentType(value) {
+  const allowed = new Set(["CC", "CE", "TI", "PASSPORT", "PEP", "NIT", "OTHER"]);
+  const type = String(value || "CC").trim().toUpperCase();
+  return allowed.has(type) ? type : "OTHER";
 }
 
 function assertRequiredCaptureFields(activation, body) {
@@ -1725,16 +1737,21 @@ async function syncInteractiveParticipationToLead(client, activation, participan
     captured_at: outcome.occurred_at || new Date().toISOString(),
   };
   const snapshotJson = jsonParam(snapshot, {});
+  const additionalDataJson = jsonParam(additionalContactData(participant), {});
   if (sourceType === "PLAYER") {
     await client.query(
       `update players
           set metadata = coalesce(metadata, '{}'::jsonb)
             || jsonb_build_object(
               'latest_interactive_activation', $2::jsonb,
-              'latest_activation_participation', $2::jsonb
+              'latest_activation_participation', $2::jsonb,
+              'additional_contact_entries', case when $4::text = 'started'
+                then coalesce(metadata->'additional_contact_entries', '[]'::jsonb) || jsonb_build_array($3::jsonb)
+                else coalesce(metadata->'additional_contact_entries', '[]'::jsonb)
+              end
             )
-        where id = $1 and business_id = $3`,
-      [sourceId, snapshotJson, activation.company_id]
+        where id = $1 and business_id = $5`,
+      [sourceId, snapshotJson, additionalDataJson, status, activation.company_id]
     );
   } else if (sourceType === "MANUAL") {
     await client.query(
@@ -1742,11 +1759,15 @@ async function syncInteractiveParticipationToLead(client, activation, participan
           set metadata = coalesce(metadata, '{}'::jsonb)
             || jsonb_build_object(
               'latest_interactive_activation', $2::jsonb,
-              'latest_activation_participation', $2::jsonb
+              'latest_activation_participation', $2::jsonb,
+              'additional_contact_entries', case when $4::text = 'started'
+                then coalesce(metadata->'additional_contact_entries', '[]'::jsonb) || jsonb_build_array($3::jsonb)
+                else coalesce(metadata->'additional_contact_entries', '[]'::jsonb)
+              end
             ),
               updated_at = now()
-        where id = $1 and business_id = $3`,
-      [sourceId, snapshotJson, activation.company_id]
+        where id = $1 and business_id = $5`,
+      [sourceId, snapshotJson, additionalDataJson, status, activation.company_id]
     );
   } else if (sourceType === "AFFILIATE") {
     await client.query(
@@ -1754,11 +1775,15 @@ async function syncInteractiveParticipationToLead(client, activation, participan
           set card_metadata = coalesce(card_metadata, '{}'::jsonb)
             || jsonb_build_object(
               'latest_interactive_activation', $2::jsonb,
-              'latest_activation_participation', $2::jsonb
+              'latest_activation_participation', $2::jsonb,
+              'additional_contact_entries', case when $4::text = 'started'
+                then coalesce(card_metadata->'additional_contact_entries', '[]'::jsonb) || jsonb_build_array($3::jsonb)
+                else coalesce(card_metadata->'additional_contact_entries', '[]'::jsonb)
+              end
             ),
               updated_at = now()
-        where id = $1 and business_id = $3`,
-      [sourceId, snapshotJson, activation.company_id]
+        where id = $1 and business_id = $5`,
+      [sourceId, snapshotJson, additionalDataJson, status, activation.company_id]
     );
   }
   await client.query(
@@ -1774,6 +1799,16 @@ async function syncInteractiveParticipationToLead(client, activation, participan
       snapshotJson,
     ]
   );
+}
+
+function additionalContactData(participant = {}) {
+  return {
+    captured_at: new Date().toISOString(),
+    document_type: normalizeIdentityDocumentType(participant.metadata?.identity?.document_type),
+    document: String(participant.document || "").trim() || null,
+    phone: String(participant.phone || "").trim() || null,
+    email: String(participant.email || "").trim().toLowerCase() || null,
+  };
 }
 
 function validateGameSession(activation, participant, body) {

@@ -43,7 +43,18 @@
           <label><span>Nombre</span><input id="participantName" type="text" autocomplete="name" required></label>
           <label><span>Telefono</span><input id="participantPhone" type="tel" autocomplete="tel" required></label>
           <label><span>Correo</span><input id="participantEmail" type="email" autocomplete="email" placeholder="Obligatorio" required></label>
-          <label><span>Documento</span><input id="participantDocument" type="text" autocomplete="off" placeholder="Obligatorio" required></label>
+          <label><span>Tipo de identificación</span>
+            <select id="participantDocumentType" autocomplete="off" required>
+              <option value="CC">Cédula de ciudadanía</option>
+              <option value="CE">Cédula de extranjería</option>
+              <option value="TI">Tarjeta de identidad</option>
+              <option value="PASSPORT">Pasaporte</option>
+              <option value="PEP">Permiso especial de permanencia</option>
+              <option value="NIT">NIT</option>
+              <option value="OTHER">Otro documento</option>
+            </select>
+          </label>
+          <label class="participant-document-field"><span>Número de identificación</span><input id="participantDocument" type="text" inputmode="text" autocomplete="off" placeholder="Obligatorio" required><small>Escríbelo exactamente como aparece en tu documento. Debe coincidir al redimir el beneficio.</small></label>
         </section>
         <section class="activation-custom-form hidden" id="activationCustomForm"></section>
         <button class="submit-button" type="submit">Continuar</button>

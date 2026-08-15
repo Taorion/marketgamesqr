@@ -13,6 +13,7 @@ const participantName = document.getElementById("participantName");
 const participantPhone = document.getElementById("participantPhone");
 const participantEmail = document.getElementById("participantEmail");
 const participantDocument = document.getElementById("participantDocument");
+const participantDocumentType = document.getElementById("participantDocumentType");
 const activationCustomForm = document.getElementById("activationCustomForm");
 const experienceStage = document.getElementById("experienceStage");
 const experienceTitle = document.getElementById("experienceTitle");
@@ -367,6 +368,7 @@ function participantPayload() {
     phone: participantPhone.value.trim(),
     email: participantEmail.value.trim() || null,
     document: participantDocument.value.trim() || null,
+    document_type: participantDocumentType?.value || "CC",
     metadata: {
       source_url: window.location.href,
       user_agent: navigator.userAgent,
@@ -430,8 +432,7 @@ function syncCaptureRequirements(activation) {
   participantDocument.placeholder = requiresDocument ? "Obligatorio" : "Opcional";
   participantEmail.required = requiresEmail;
   participantEmail.placeholder = requiresEmail ? "Obligatorio" : "Opcional";
-  const documentLabel = participantDocument.closest("label")?.querySelector("span");
-  if (documentLabel) documentLabel.textContent = requiresDocument ? "Documento" : "Documento";
+  if (participantDocumentType) participantDocumentType.required = requiresDocument;
   participantPhone.required = requiredFields.has("phone");
   participantPhone.placeholder = "Obligatorio";
   renderCustomFormFields(activation);

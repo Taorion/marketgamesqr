@@ -177,6 +177,21 @@ label {
   color: inherit;
 }
 
+.participant-document-field {
+  grid-column: span 1;
+}
+
+.participant-document-field small {
+  color: #52697a;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.42;
+}
+
+.is-premium .participant-document-field small {
+  color: #cfc6b4;
+}
+
 input,
 textarea,
 select {
