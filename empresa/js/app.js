@@ -80,6 +80,7 @@ const dashboardRevenueRefreshButton = document.getElementById("dashboardRevenueR
 const dashboardWorkspaceGuide = document.getElementById("dashboardWorkspaceGuide");
 const dashboardProfileTabs = document.getElementById("dashboardProfileTabs");
 const dashboardWidgetLibrary = document.getElementById("dashboardWidgetLibrary");
+const dashboardWidgetLibraryFilters = document.getElementById("dashboardWidgetLibraryFilters");
 const dashboardWidgetSelectionStatus = document.getElementById("dashboardWidgetSelectionStatus");
 const dashboardWidgetGrid = document.getElementById("dashboardWidgetGrid");
 const dashboardProfileLabel = document.getElementById("dashboardProfileLabel");
@@ -12098,7 +12099,31 @@ function renderDashboardBuilder() {
     button.classList.toggle("active", button.dataset.dashboardProfile === state.dashboardBuilderProfile);
   });
   dashboardWidgetLibrary.closest(".dashboard-widget-library")?.toggleAttribute("hidden", workspaceTab !== "customize");
-  dashboardWidgetLibrary.innerHTML = DASHBOARD_WIDGET_CATALOG.map((widget) => {
+  const libraryFilter = ["selected", "indicator", "chart", "table", "all"].includes(state.dashboardLibraryFilter)
+    ? state.dashboardLibraryFilter
+    : "selected";
+  const libraryFilters = [
+    { key: "selected", label: "En tablero", icon: "check_circle" },
+    { key: "indicator", label: "Indicadores", icon: "monitoring" },
+    { key: "chart", label: "Gráficas", icon: "query_stats" },
+    { key: "table", label: "Tablas", icon: "table_chart" },
+    { key: "all", label: "Todo", icon: "apps" },
+  ];
+  if (dashboardWidgetLibraryFilters) {
+    dashboardWidgetLibraryFilters.innerHTML = libraryFilters.map((filter) => `
+      <button type="button" class="${filter.key === libraryFilter ? "is-active" : ""}" data-dashboard-library-filter="${filter.key}" aria-pressed="${filter.key === libraryFilter ? "true" : "false"}">
+        <span class="material-symbols-outlined" aria-hidden="true">${filter.icon}</span>${filter.label}
+      </button>
+    `).join("");
+  }
+  const filteredLibrary = DASHBOARD_WIDGET_CATALOG.filter((widget) => {
+    if (libraryFilter === "selected") return layout.includes(widget.id);
+    if (libraryFilter === "indicator") return widget.category === "Indicador" || widget.category === "Número";
+    if (libraryFilter === "chart") return widget.category === "Gráfico";
+    if (libraryFilter === "table") return widget.category === "Tabla";
+    return true;
+  });
+  dashboardWidgetLibrary.innerHTML = filteredLibrary.map((widget) => {
     const active = layout.includes(widget.id);
     return `
       <button class="dashboard-library-item ${active ? "is-active" : ""}" type="button" data-dashboard-add-widget="${escapeHtml(widget.id)}" aria-pressed="${active ? "true" : "false"}">
@@ -12111,7 +12136,9 @@ function renderDashboardBuilder() {
         <span class="dashboard-library-action"><span class="material-symbols-outlined" aria-hidden="true">${active ? "check" : "add"}</span>${active ? "En tablero" : "Agregar"}</span>
       </button>
     `;
-  }).join("");
+  }).join("") || `
+    <div class="dashboard-library-empty"><span class="material-symbols-outlined" aria-hidden="true">dashboard_customize</span><strong>No hay bloques en esta vista.</strong><p>Elige otra categoría o agrega un indicador.</p></div>
+  `;
   dashboardWidgetGrid.innerHTML = visibleWidgets.map((widget, index) => {
     const rendered = renderDashboardWidget(widget, stats);
     return `
@@ -49776,6 +49803,12 @@ dashboardWidgetLibrary?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-dashboard-add-widget]");
   if (!button) return;
   addDashboardWidget(button.dataset.dashboardAddWidget);
+});
+dashboardWidgetLibraryFilters?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-dashboard-library-filter]");
+  if (!button) return;
+  state.dashboardLibraryFilter = button.dataset.dashboardLibraryFilter || "selected";
+  renderDashboardBuilder();
 });
 dashboardWidgetGrid?.addEventListener("click", (event) => {
   const removeButton = event.target.closest("[data-dashboard-remove-widget]");
