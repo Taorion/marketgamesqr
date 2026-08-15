@@ -4420,6 +4420,61 @@ async function upsertManualLeadCollectorState(client, businessId, user, lead, op
   );
 }
 
+function manualContactIdentity(contact = {}) {
+  return {
+    email: String(contact.email || "").trim().toLowerCase() || null,
+    phone: String(contact.phone || "").replace(/\D/g, "") || null,
+  };
+}
+
+async function findExistingBusinessContact(client, businessId, contact = {}) {
+  const identity = manualContactIdentity(contact);
+  if (!identity.email && !identity.phone) return null;
+  const result = await client.query(
+    `select *
+       from (
+         select p.id, p.id as lead_id, 'PLAYER'::text as source_type, p.name, p.email, p.phone, p.created_at, 1 as source_rank
+           from players p
+          where p.business_id = $1
+            and (($2::text is not null and lower(nullif(p.email, '')) = $2)
+              or ($3::text is not null and regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g') = $3))
+         union all
+         select ml.id, null::uuid as lead_id, 'MANUAL'::text as source_type, ml.name, ml.email, ml.phone, ml.created_at, 2 as source_rank
+           from business_manual_leads ml
+          where ml.business_id = $1
+            and (($2::text is not null and lower(nullif(ml.email, '')) = $2)
+              or ($3::text is not null and regexp_replace(coalesce(ml.phone, ''), '\\D', '', 'g') = $3))
+         union all
+         select af.id, null::uuid as lead_id, 'AFFILIATE'::text as source_type, af.full_name as name, af.email, af.phone, af.created_at, 3 as source_rank
+           from affiliates af
+          where af.business_id = $1 and af.status <> 'DELETED'
+            and (($2::text is not null and lower(nullif(af.email, '')) = $2)
+              or ($3::text is not null and regexp_replace(coalesce(af.phone, ''), '\\D', '', 'g') = $3))
+       ) contacts
+      order by source_rank asc, created_at asc
+      limit 1`,
+    [businessId, identity.email, identity.phone]
+  );
+  return result.rows[0] || null;
+}
+
+async function recordExistingContactIntake(client, businessId, user, contact, metadata = {}) {
+  await client.query(
+    `insert into lead_events
+      (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
+     values ($1, $2, $3, $4, 'contact_intake_reused', 'Contacto ya existente', $5, $6, $7::jsonb)`,
+    [
+      businessId,
+      contact.source_type === "PLAYER" ? contact.id : null,
+      contact.source_type,
+      contact.id,
+      "Se registró un nuevo intento de ingreso sin crear una ficha duplicada.",
+      user?.id || null,
+      JSON.stringify(metadata),
+    ]
+  );
+}
+
 async function createManualLead(req, res, next) {
   try {
     const businessId = businessIdFor(req);
@@ -4437,6 +4492,16 @@ async function createManualLead(req, res, next) {
           [branchId, businessId]
         );
         if (!branch.rowCount) throw badRequest("La sede seleccionada no existe o no está activa para este negocio.");
+      }
+      const existing = await findExistingBusinessContact(client, businessId, body);
+      if (existing) {
+        await recordExistingContactIntake(client, businessId, req.user, existing, {
+          source: "manual_portal_entry",
+          attempted_name: body.name || null,
+          interest: body.interest || null,
+          source_detail: body.source_detail || null,
+        });
+        return { lead: existing, existed: true };
       }
       const result = await client.query(
         `insert into business_manual_leads
@@ -4488,9 +4553,9 @@ async function createManualLead(req, res, next) {
         recommended_action: body.preferred_channel ? `Contactar por ${body.preferred_channel}` : "Revisar lead ingresado al Recolector RMS",
         last_material_sent: body.source || "Manual",
       });
-      return result.rows[0];
+      return { lead: result.rows[0], existed: false };
     });
-    res.status(201).json({ lead });
+    res.status(lead.existed ? 200 : 201).json({ lead: lead.lead, existed: lead.existed });
   } catch (error) {
     next(error);
   }
@@ -4518,7 +4583,19 @@ async function importManualLeadsCsv(req, res, next) {
 
     const inserted = await withTransaction(async (client) => {
       const created = [];
+      const existing = [];
       for (const row of rows) {
+        const matchedContact = await findExistingBusinessContact(client, businessId, row);
+        if (matchedContact) {
+          await recordExistingContactIntake(client, businessId, req.user, matchedContact, {
+            source: "manual_csv_import",
+            csv_row: row.csv_row,
+            attempted_name: row.name || null,
+            interest: row.interest || null,
+          });
+          existing.push({ ...matchedContact, csv_row: row.csv_row });
+          continue;
+        }
         const result = await client.query(
           `insert into business_manual_leads
              (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
@@ -4561,10 +4638,15 @@ async function importManualLeadsCsv(req, res, next) {
         });
         created.push(result.rows[0]);
       }
-      return created;
+      return { created, existing };
     });
 
-    res.status(201).json({ imported: inserted.length, contacts: inserted });
+    res.status(201).json({
+      imported: inserted.created.length,
+      existing: inserted.existing.length,
+      contacts: inserted.created,
+      existing_contacts: inserted.existing,
+    });
   } catch (error) {
     next(error);
   }
