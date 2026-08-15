@@ -21015,7 +21015,27 @@ async function submitCustomerAcquisitionSale(event) {
 }
 
 function normalizeInventoryLookup(value) {
-  return String(value || "").trim().toLowerCase();
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-CO")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
+function rmsProductSearchMatches(product = {}, query = "") {
+  const tokens = normalizeInventoryLookup(query).split(/\s+/).filter(Boolean);
+  if (!tokens.length) return true;
+  const searchable = normalizeInventoryLookup([
+    product.name,
+    product.category,
+    product.sku,
+    product.barcode,
+    product.brand,
+    product.description,
+    product.unit_label,
+  ].filter(Boolean).join(" "));
+  return tokens.every((token) => searchable.includes(token));
 }
 
 const OPEN_PRODUCT_VALUE = "__OPEN_PRODUCT__";
@@ -43866,12 +43886,11 @@ function rmsProductClassificationMarkup(item = {}) {
   const selectedLines = rmsClassificationProductLines(item);
   const canConfirm = selectedLines.length > 0;
   const productSearch = String(draft?.product_search || "").trim();
-  const searchTerm = productSearch.toLocaleLowerCase("es-CO");
-  const activeProducts = (state.inventoryProducts || []).filter((product) => product.status === "ACTIVE");
+  const searchTerm = normalizeInventoryLookup(productSearch);
+  const activeProducts = activeInventoryProducts()
+    .filter((product) => String(product.status || "ACTIVE").toUpperCase() === "ACTIVE");
   const matchingProducts = searchTerm
-    ? activeProducts.filter((product) => [product.name, product.category, product.sku, product.barcode]
-      .filter(Boolean)
-      .some((value) => String(value).toLocaleLowerCase("es-CO").includes(searchTerm)))
+    ? activeProducts.filter((product) => rmsProductSearchMatches(product, searchTerm))
     : [];
   const estimatedTotal = selectedLines.reduce((total, line) => total + line.total, 0);
   return `
