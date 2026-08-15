@@ -42332,7 +42332,9 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
   const interest = item.product_interest || item.top_interest || item.interest || item.raw_recommended_action || "-";
   const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
   const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
-  let stationControl = `<td class="rms-lean-station-status ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || readiness.label || "Media")}</td>`;
+  let stationControl = stage.key === "recoleccion"
+    ? `<td class="rms-lean-station-status ${readiness.ready ? "ready" : "pending"}"><strong>${escapeHtml(readiness.label)}</strong><small>${escapeHtml(readiness.detail)}</small></td>`
+    : `<td class="rms-lean-station-status ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || readiness.label || "Media")}</td>`;
   if (stage.key === "alimentacion") {
     stationControl = `<td class="rms-lean-station-quality">${rmsLeadQualitySelectMarkup(item)}</td>`;
   } else if (stage.key === "curaduria") {
@@ -42365,6 +42367,7 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
       <td>
         <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}">Detalle</button>
         <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Operar</button>
+        ${stage.key === "recoleccion" ? `<button class="solid-button compact" type="button" data-rms-station-send-single="${escapeHtml(item.id)}" ${readiness.ready && nextPhase ? "" : "disabled"} title="${escapeHtml(readiness.ready ? `Enviar a ${nextPhase?.label || "Curaduría"}` : readiness.detail)}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span> Enviar</button>` : ""}
       </td>
     </tr>
   `;
@@ -43397,6 +43400,17 @@ function renderRmsStationLeanOnly() {
       ...eligibleRows.map((item) => item.id),
     ];
     renderRmsStationOnly();
+  });
+  rmsStationWorkspace.querySelectorAll("[data-rms-station-send-single]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const item = rmsOpportunityById(button.dataset.rmsStationSendSingle || "");
+      if (!item || !nextPhase) return;
+      await moveRmsOpportunityToPhase(item, nextPhase.key, {
+        reason: "Lead con contacto confirmado desde Recolector.",
+        last_operation: "collector_valid_lead_handoff",
+        metadata: { decision: "VALID_LEAD", source_flow: "collector_single_handoff" },
+      });
+    });
   });
   rmsStationWorkspace.querySelector("[data-rms-station-bulk-next]")?.addEventListener("click", async () => {
     if (!nextPhase) return;
