@@ -22014,3 +22014,89 @@ html body[data-current-view="dashboard"] .portal-shell .view-section.active[data
     grid-column:1 / -1 !important;
   }
 }
+
+/* Activación 1: una operación por lead, con contexto visible y formulario
+   legible. Esta capa reemplaza la mezcla histórica de tarjetas y filas. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-list { display:grid !important; gap:18px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item {
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) !important;
+  overflow:hidden !important;
+  border:1px solid rgba(4,65,179,.14) !important;
+  border-radius:20px !important;
+  background:#fff !important;
+  box-shadow:0 14px 34px rgba(1,34,104,.07) !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item.is-selected { border-color:#0759d6 !important; box-shadow:0 0 0 3px rgba(7,89,214,.09),0 14px 34px rgba(1,34,104,.08) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead {
+  display:grid !important;
+  grid-template-columns:auto minmax(190px,.8fr) minmax(0,1.65fr) auto !important;
+  align-items:center !important;
+  gap:18px !important;
+  min-width:0 !important;
+  padding:18px 22px !important;
+  border:0 !important;
+  border-bottom:1px solid rgba(4,65,179,.13) !important;
+  background:linear-gradient(118deg,#012268 0%,#0341b3 66%,#0759d6 100%) !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-select { display:inline-flex !important; align-items:center !important; gap:6px !important; min-width:0 !important; color:#e7f5ff !important; font-size:.72rem !important; font-weight:800 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-select input { width:18px !important; height:18px !important; accent-color:#07cefb !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-select .material-symbols-outlined { color:#8edcff !important; font-size:20px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-person { min-width:0 !important; padding-right:18px !important; border-right:1px solid rgba(255,255,255,.24) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-person > .material-symbols-outlined { display:grid !important; width:42px !important; height:42px !important; place-items:center !important; border-radius:12px !important; color:#fff !important; background:rgba(255,255,255,.15) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-person :is(strong,small) { color:#fff !important; overflow-wrap:anywhere !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-person small { color:#d9f2ff !important; line-height:1.4 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px 14px !important; min-width:0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts div { min-width:0 !important; padding:0 12px !important; border-left:1px solid rgba(255,255,255,.18) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts dt { color:#bfe7ff !important; font-size:.62rem !important; font-weight:800 !important; letter-spacing:.06em !important; text-transform:uppercase !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts dd { margin:4px 0 0 !important; color:#fff !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; font-size:.8rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-actions { display:flex !important; flex-wrap:wrap !important; justify-content:flex-end !important; gap:8px !important; min-width:100px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-actions .ghost-button { border-color:rgba(255,255,255,.38) !important; color:#fff !important; background:rgba(255,255,255,.1) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-console { display:grid !important; gap:0 !important; min-width:0 !important; padding:clamp(18px,2.5vw,32px) !important; background:linear-gradient(160deg,#f7fbff,#fff 42%) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-card.rms-activation-command-card { display:grid !important; gap:16px !important; margin:0 !important; padding:0 !important; border:0 !important; border-radius:0 !important; background:transparent !important; box-shadow:none !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-head { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; align-items:start !important; gap:16px !important; padding:18px !important; border:1px solid rgba(4,65,179,.13) !important; border-radius:16px !important; background:#fff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-status { display:grid !important; grid-template-columns:42px minmax(0,1fr) !important; align-items:start !important; gap:12px !important; min-width:0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-icon { display:grid !important; width:42px !important; height:42px !important; place-items:center !important; border-radius:12px !important; color:#0341b3 !important; background:#e8f3fb !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-status :is(strong,small) { display:block !important; overflow-wrap:anywhere !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-status strong { margin:2px 0 4px !important; color:#082d67 !important; font-size:1rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-status small { color:#58738d !important; line-height:1.42 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-state { align-self:center !important; padding:7px 10px !important; border:1px solid #cfe2f6 !important; border-radius:999px !important; color:#0759d6 !important; background:#f2f8ff !important; font-size:.72rem !important; font-weight:800 !important; white-space:nowrap !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-offer { display:flex !important; align-items:center !important; gap:9px !important; min-width:0 !important; padding:12px 14px !important; border-left:3px solid #07cefb !important; border-radius:12px !important; color:#173d69 !important; background:#eef8ff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-offer > span:last-child { overflow:visible !important; text-overflow:clip !important; white-space:normal !important; overflow-wrap:anywhere !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-steps { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:8px !important; margin:0 !important; padding:0 !important; background:transparent !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-steps span { display:flex !important; align-items:center !important; gap:7px !important; min-width:0 !important; padding:10px 12px !important; border:1px solid rgba(4,65,179,.12) !important; border-radius:11px !important; color:#466883 !important; background:#fff !important; font-size:.76rem !important; font-weight:750 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-steps b { display:grid !important; width:22px !important; height:22px !important; flex:0 0 22px !important; place-items:center !important; border-radius:50% !important; color:#fff !important; background:#0759d6 !important; font-size:.7rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-plan-controls { display:grid !important; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)) !important; gap:12px !important; align-items:end !important; margin:0 !important; padding:16px !important; border:1px solid rgba(4,65,179,.11) !important; border-radius:15px !important; background:#fff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-plan-controls label { display:grid !important; gap:6px !important; min-width:0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-plan-controls label > span,
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-message-field > span { color:#41627e !important; font-size:.72rem !important; font-weight:800 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-plan-controls :is(input,select),
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-message-field textarea { width:100% !important; min-width:0 !important; min-height:42px !important; padding:10px 11px !important; border:1px solid #cfe1ef !important; border-radius:10px !important; color:#173d69 !important; background:#fff !important; box-shadow:none !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-message-field { display:grid !important; gap:7px !important; margin:0 !important; padding:16px !important; border:1px solid rgba(4,65,179,.11) !important; border-radius:15px !important; background:#fff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-message-field textarea { min-height:96px !important; line-height:1.48 !important; resize:vertical !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-message-field small { color:#5d7892 !important; line-height:1.42 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-action-row,
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-outcome-row { display:flex !important; flex-wrap:wrap !important; align-items:end !important; gap:10px !important; margin:0 !important; padding:16px !important; border:1px solid rgba(4,65,179,.13) !important; border-radius:15px !important; background:#f2f8ff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-outcome-row label { display:grid !important; flex:1 1 260px !important; gap:6px !important; min-width:0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-outcome-row select { min-height:42px !important; padding:10px 11px !important; border:1px solid #cfe1ef !important; border-radius:10px !important; background:#fff !important; }
+@media (max-width:1100px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead { grid-template-columns:auto minmax(0,1fr) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts { grid-column:1 / -1 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-actions { grid-column:2 !important; justify-content:flex-start !important; }
+}
+@media (max-width:680px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead { grid-template-columns:minmax(0,1fr) !important; gap:14px !important; padding:18px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-person { padding:0 0 14px !important; border-right:0 !important; border-bottom:1px solid rgba(255,255,255,.24) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts { grid-column:auto !important; grid-template-columns:minmax(0,1fr) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts div { padding:0 !important; border-left:0 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-actions { grid-column:auto !important; justify-content:stretch !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-actions .ghost-button { width:100% !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-console { padding:18px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-head { grid-template-columns:minmax(0,1fr) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-delivery-state { justify-self:start !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-steps { grid-template-columns:minmax(0,1fr) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-plan-controls { grid-template-columns:minmax(0,1fr) !important; padding:14px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell :is(.rms-activation-message-field,.rms-activation-action-row,.rms-activation-outcome-row) { padding:14px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-action-row > button,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-outcome-row > button { flex:1 1 100% !important; }
+}
