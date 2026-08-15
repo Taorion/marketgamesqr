@@ -891,6 +891,10 @@ const triviaBenefitTypeInput = document.getElementById("triviaBenefitTypeInput")
 const triviaBenefitProductModeInput = document.getElementById("triviaBenefitProductModeInput");
 const triviaBenefitProductInput = document.getElementById("triviaBenefitProductInput");
 const triviaBenefitValueInput = document.getElementById("triviaBenefitValueInput");
+const triviaBenefitAmountInput = document.getElementById("triviaBenefitAmountInput");
+const triviaBenefitAmountKindInput = document.getElementById("triviaBenefitAmountKindInput");
+const triviaBenefitValueFields = document.getElementById("triviaBenefitValueFields");
+const triviaBenefitAmountHelp = document.getElementById("triviaBenefitAmountHelp");
 const activationProductIntentPanel = document.querySelector(".activation-product-intent-panel");
 const activationProductIntentModeInput = document.getElementById("activationProductIntentModeInput");
 const activationProductIntentInput = document.getElementById("activationProductIntentInput");
@@ -12287,6 +12291,53 @@ function toggleDashboardAdvancedView() {
   setDashboardWorkspaceTab("analysis");
   renderDashboardBuilder();
   dashboardBuilderShell?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function isDiscountBenefitType(type = "") {
+  return ["PERCENT_DISCOUNT", "FIXED_AMOUNT_DISCOUNT"].includes(String(type));
+}
+
+function activationBenefitValueForPayload() {
+  const stored = parseJsonObject(triviaBenefitValueInput?.value || "{}");
+  const benefitType = String(triviaBenefitTypeInput?.value || "CUSTOM");
+  if (!isDiscountBenefitType(benefitType)) return stored;
+  const value = Number(triviaBenefitAmountInput?.value || 0);
+  const next = { ...stored };
+  delete next.percent;
+  delete next.amount;
+  if (Number.isFinite(value) && value > 0) {
+    if (benefitType === "PERCENT_DISCOUNT") next.percent = value;
+    else {
+      next.amount = value;
+      next.currency = next.currency || "COP";
+    }
+  }
+  if (triviaBenefitValueInput) triviaBenefitValueInput.value = JSON.stringify(next);
+  return next;
+}
+
+function syncActivationBenefitValueInputs({ fromLegacy = false } = {}) {
+  const benefitType = String(triviaBenefitTypeInput?.value || "CUSTOM");
+  const isDiscount = isDiscountBenefitType(benefitType);
+  const stored = parseJsonObject(triviaBenefitValueInput?.value || "{}");
+  if (triviaBenefitValueFields) triviaBenefitValueFields.classList.toggle("hidden", !isDiscount);
+  if (!isDiscount) return;
+  const kind = benefitType === "FIXED_AMOUNT_DISCOUNT" ? "FIXED_AMOUNT" : "PERCENT";
+  if (triviaBenefitAmountKindInput) triviaBenefitAmountKindInput.value = kind;
+  if (fromLegacy && triviaBenefitAmountInput) {
+    const legacyValue = kind === "PERCENT" ? stored.percent : (stored.amount ?? stored.discount_amount);
+    triviaBenefitAmountInput.value = Number.isFinite(Number(legacyValue)) && Number(legacyValue) > 0 ? String(legacyValue) : "";
+  }
+  if (triviaBenefitAmountInput) {
+    triviaBenefitAmountInput.max = kind === "PERCENT" ? "100" : "";
+    triviaBenefitAmountInput.placeholder = kind === "PERCENT" ? "Ej. 15" : "Ej. 10000";
+  }
+  if (triviaBenefitAmountHelp) {
+    triviaBenefitAmountHelp.textContent = kind === "PERCENT"
+      ? "Escribe solo el número. Por ejemplo: 15 equivale a 15% de descuento."
+      : "Escribe solo el valor en dinero. Por ejemplo: 10000 equivale a $10.000 de descuento.";
+  }
+  if (!fromLegacy) activationBenefitValueForPayload();
 }
 
 async function refreshRevenueCenter() {
@@ -24589,7 +24640,7 @@ function collectRevealCards() {
       label: input.dataset.revealCard || "Card",
       benefit_label: input.value.trim(),
       benefit_type: triviaBenefitTypeInput?.value || "CUSTOM",
-      benefit_value: withBenefitFulfillment(withBenefitProductScope(parseJsonObject(triviaBenefitValueInput?.value || "{}"), productScope), fulfillment),
+      benefit_value: withBenefitFulfillment(withBenefitProductScope(activationBenefitValueForPayload(), productScope), fulfillment),
     }))
     .filter((item) => item.benefit_label);
 }
@@ -24616,8 +24667,8 @@ function collectFlatChoiceOptions(type) {
         reward_type: triviaBenefitTypeInput.value,
         reward_label: type === "SCRATCH_DIGITAL" ? input.value.trim() : triviaBenefitLabelInput.value.trim(),
         reward_value: type === "SCRATCH_DIGITAL"
-          ? withBenefitFulfillment(withBenefitProductScope({ ...parseJsonObject(triviaBenefitValueInput.value), label: input.value.trim(), scratch_slot: key }, productScope), fulfillment)
-          : withBenefitFulfillment(withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope), fulfillment),
+          ? withBenefitFulfillment(withBenefitProductScope({ ...activationBenefitValueForPayload(), label: input.value.trim(), scratch_slot: key }, productScope), fulfillment)
+          : withBenefitFulfillment(withBenefitProductScope(activationBenefitValueForPayload(), productScope), fulfillment),
       };
     })
     .filter((item) => item.label);
@@ -24635,7 +24686,7 @@ function collectRouletteBenefits() {
         label,
         reward_type: triviaBenefitTypeInput.value,
         reward_label: label,
-        reward_value: withBenefitFulfillment(withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope), fulfillment),
+        reward_value: withBenefitFulfillment(withBenefitProductScope(activationBenefitValueForPayload(), productScope), fulfillment),
       };
     })
     .filter((item) => item.label);
@@ -25117,7 +25168,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     triviaEcommerceInstructionsInput
   );
   const rawBenefitValue = withBenefitFulfillment(
-    withBenefitProductScope(parseJsonObject(triviaBenefitValueInput.value), productScope),
+    withBenefitProductScope(activationBenefitValueForPayload(), productScope),
     fulfillment
   );
   const benefit = {
@@ -26618,6 +26669,7 @@ function restoreGamingActivationDraft(snapshot = {}) {
   updateActivationQuestionCountControls();
   syncActivationFormBuilder();
   syncBenefitFulfillmentFields();
+  syncActivationBenefitValueInputs({ fromLegacy: true });
   updateGamingBuilderProgress();
   return true;
 }
@@ -51632,6 +51684,17 @@ document.querySelectorAll("[data-benefit-fulfillment-mode]").forEach((field) => 
   field.addEventListener("change", syncBenefitFulfillmentFields);
 });
 syncBenefitFulfillmentFields();
+syncActivationBenefitValueInputs({ fromLegacy: true });
+triviaBenefitTypeInput?.addEventListener("change", () => syncActivationBenefitValueInputs());
+triviaBenefitAmountKindInput?.addEventListener("change", () => {
+  if (triviaBenefitTypeInput) {
+    triviaBenefitTypeInput.value = triviaBenefitAmountKindInput.value === "FIXED_AMOUNT"
+      ? "FIXED_AMOUNT_DISCOUNT"
+      : "PERCENT_DISCOUNT";
+  }
+  syncActivationBenefitValueInputs();
+});
+triviaBenefitAmountInput?.addEventListener("input", () => activationBenefitValueForPayload());
 updatePostSaleExpiryMode();
 updateGenericTicketPreview();
 updateQrBatchExpiryMode();

@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-    <link rel="stylesheet" href="css/portal-clean-v39.css?v=activation-history-v176-20260815">
+    <link rel="stylesheet" href="css/portal-clean-v39.css?v=activation-benefit-value-v177-20260815">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -2641,7 +2641,12 @@
                       </select>
                     </label>
                     <label><span>Producto del beneficio</span><select id="triviaBenefitProductInput" data-product-select data-open-product-input="triviaBenefitProductOpenInput"></select><input id="triviaBenefitProductOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto del beneficio"></label>
-                    <label><span>Valor del beneficio</span><input id="triviaBenefitValueInput" type="text" placeholder='{"percent":15}'></label>
+                    <div class="activation-benefit-value-fields full" id="triviaBenefitValueFields">
+                      <input id="triviaBenefitValueInput" type="hidden" value="{}">
+                      <label><span>Valor del descuento</span><input id="triviaBenefitAmountInput" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ej. 15"></label>
+                      <label><span>Tipo de valor</span><select id="triviaBenefitAmountKindInput"><option value="PERCENT">Porcentaje (%)</option><option value="FIXED_AMOUNT">Dinero ($)</option></select></label>
+                      <small id="triviaBenefitAmountHelp">Escribe solo el número. Por ejemplo: 15 equivale a 15% de descuento.</small>
+                    </div>
                     <section class="full activation-config-panel always-visible activation-product-intent-panel" data-product-intent-mode="OPEN_LEAD_CHOICE">
                       <div class="activation-config-head">
                         <strong>Producto de interés RMS</strong>
