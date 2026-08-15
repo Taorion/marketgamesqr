@@ -45010,9 +45010,11 @@ function rmsCollectorReadiness(item = {}) {
   if (!hasInterest) missing.push("interés");
   if (!hasOrigin) missing.push("origen");
   return {
-    ready: hasContact && hasInterest,
-    label: hasContact && hasInterest ? "Lead hábil" : "Materia prima cruda",
-    detail: missing.length ? `Falta ${missing.join(", ")}` : "Cumple dato mínimo para entrar a Curaduría",
+    ready: hasContact,
+    label: hasContact ? "Listo para Curaduría" : "Materia prima cruda",
+    detail: hasContact
+      ? (hasInterest ? "Contacto e interés disponibles." : "Cumple el dato mínimo; completa el interés en Curaduría.")
+      : `Falta ${missing.join(", ")}`,
   };
 }
 
@@ -46537,7 +46539,7 @@ function toggleRmsSelection(id = "", selected = false) {
   if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "recoleccion" && item?.stage === "recoleccion" && !rmsCollectorReadiness(item).ready) {
     const checkbox = Array.from(document.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
     if (checkbox) checkbox.checked = false;
-    showFeedback("Completa contacto e interés antes de poner este lead en salida.", "info", { title: "Leads recolectados" });
+    showFeedback("Agrega al menos WhatsApp o correo antes de enviar este lead a Curaduría.", "info", { title: "Leads recolectados" });
     return;
   }
   if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "alimentacion" && item?.stage === "alimentacion" && !rmsLeadQualityValue(item)) {
@@ -46601,7 +46603,7 @@ function selectRmsPhaseForBulk(phase = "") {
         ? "La salida de Clasificador exige producto o servicio confirmado. Usa el selector de inventario, guarda el nombre sugerido o crea el producto."
         : phase === "clasificacion"
           ? "La salida de Activación 1 exige contacto confirmado y seguimiento agendado antes de pasar a Evaluación."
-          : "La salida de Recolectar exige contacto e interés mínimo. Completa esos datos antes de enviar a Curaduría.";
+          : "La salida de Recolectar exige al menos WhatsApp o correo. El interés se puede completar en Curaduría.";
     showFeedback(message, "info", { title: stage?.label || "Estación RMS" });
     return;
   }
