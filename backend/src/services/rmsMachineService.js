@@ -1255,15 +1255,37 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
   }
   const metadata = payload.metadata && typeof payload.metadata === "object" ? { ...payload.metadata } : {};
   const isClassificationWrite = String(metadata.source_flow || "").startsWith("clasificador_product_classification");
-  if (isClassificationWrite && !metadata.classified_product_id && metadata.classification_source !== "manual_clear") {
+  const selectedClassificationProducts = Array.isArray(metadata.classified_products)
+    ? metadata.classified_products
+    : (metadata.classified_product_id ? [{ inventory_product_id: metadata.classified_product_id }] : []);
+  if (isClassificationWrite && !selectedClassificationProducts.length && metadata.classification_source !== "manual_clear") {
     throw badRequest("La Clasificación requiere un producto o servicio activo del inventario.");
   }
-  if (metadata.classified_product_id) {
-    const product = await rmsInventoryProductSnapshot(businessId, metadata.classified_product_id);
-    metadata.classified_product_id = product.inventory_product_id;
-    metadata.classified_product_name = product.product_name_snapshot;
-    metadata.classified_product_price_snapshot = product.product_price_snapshot;
-    metadata.classified_product_currency_snapshot = product.product_currency_snapshot;
+  if (selectedClassificationProducts.length) {
+    const snapshots = [];
+    const seenProductIds = new Set();
+    for (const selectedProduct of selectedClassificationProducts.slice(0, 24)) {
+      const inventoryProductId = selectedProduct?.inventory_product_id || selectedProduct?.id || selectedProduct;
+      if (!inventoryProductId || seenProductIds.has(String(inventoryProductId))) continue;
+      const product = await rmsInventoryProductSnapshot(businessId, inventoryProductId);
+      seenProductIds.add(String(product.inventory_product_id));
+      snapshots.push({
+        inventory_product_id: product.inventory_product_id,
+        name: product.product_name_snapshot,
+        category: selectedProduct?.category || "",
+        unit_price: product.product_price_snapshot,
+        currency: product.product_currency_snapshot,
+      });
+    }
+    if (isClassificationWrite && !snapshots.length && metadata.classification_source !== "manual_clear") {
+      throw badRequest("Selecciona al menos un producto activo del inventario.");
+    }
+    metadata.classified_products = snapshots;
+    const primaryProduct = snapshots[0];
+    metadata.classified_product_id = primaryProduct?.inventory_product_id || null;
+    metadata.classified_product_name = primaryProduct?.name || null;
+    metadata.classified_product_price_snapshot = primaryProduct?.unit_price ?? null;
+    metadata.classified_product_currency_snapshot = primaryProduct?.currency || null;
     metadata.classification_source = "manual_inventory";
   }
   const result = await withTransaction(async (client) => {

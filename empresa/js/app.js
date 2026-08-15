@@ -1044,8 +1044,18 @@ const inventoryMessage = document.getElementById("inventoryMessage");
 const inventorySaveButton = document.getElementById("inventorySaveButton");
 const inventoryResetButton = document.getElementById("inventoryResetButton");
 const inventoryNewProductButton = document.getElementById("inventoryNewProductButton");
+const inventoryImportCsvButton = document.getElementById("inventoryImportCsvButton");
 const inventoryProductModal = document.getElementById("inventoryProductModal");
 const inventoryProductModalCloseButton = document.getElementById("inventoryProductModalCloseButton");
+const inventoryCsvImportModal = document.getElementById("inventoryCsvImportModal");
+const inventoryCsvImportForm = document.getElementById("inventoryCsvImportForm");
+const inventoryCsvFileInput = document.getElementById("inventoryCsvFileInput");
+const inventoryCsvSkipDuplicatesInput = document.getElementById("inventoryCsvSkipDuplicatesInput");
+const inventoryCsvImportMessage = document.getElementById("inventoryCsvImportMessage");
+const inventoryCsvImportSubmitButton = document.getElementById("inventoryCsvImportSubmitButton");
+const inventoryCsvImportCloseButton = document.getElementById("inventoryCsvImportCloseButton");
+const inventoryCsvImportCancelButton = document.getElementById("inventoryCsvImportCancelButton");
+const inventoryCsvDownloadTemplateButton = document.getElementById("inventoryCsvDownloadTemplateButton");
 const refreshInventoryButton = document.getElementById("refreshInventoryButton");
 const inventoryFormTitle = document.getElementById("inventoryFormTitle");
 const inventoryKpiGrid = document.getElementById("inventoryKpiGrid");
@@ -21754,6 +21764,152 @@ function inventoryFormPayload() {
     status: inventoryStatusInput?.value || "ACTIVE",
     description: inventoryDescriptionInput?.value.trim() || null,
   };
+}
+
+function openInventoryCsvImportModal() {
+  if (!inventoryCsvImportModal) return;
+  if (inventoryCsvImportModal.parentElement !== document.body) document.body.appendChild(inventoryCsvImportModal);
+  inventoryCsvImportForm?.reset();
+  if (inventoryCsvSkipDuplicatesInput) inventoryCsvSkipDuplicatesInput.checked = true;
+  setInlineMessage(inventoryCsvImportMessage, "Carga el CSV o descarga primero la plantilla. Se validará antes de guardar.", "info");
+  inventoryCsvImportModal.classList.remove("hidden");
+  inventoryCsvImportModal.removeAttribute("aria-hidden");
+  window.setTimeout(() => inventoryCsvFileInput?.focus({ preventScroll: true }), 80);
+}
+
+function closeInventoryCsvImportModal() {
+  inventoryCsvImportModal?.classList.add("hidden");
+  inventoryCsvImportModal?.setAttribute("aria-hidden", "true");
+  inventoryImportCsvButton?.focus?.({ preventScroll: true });
+}
+
+function inventoryCsvParse(text = "") {
+  const source = String(text || "").replace(/^\uFEFF/, "");
+  const firstLine = source.split(/\r?\n/, 1)[0] || "";
+  const delimiter = (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length ? ";" : ",";
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    const next = source[index + 1];
+    if (char === '"' && inQuotes && next === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === delimiter && !inQuotes) {
+      row.push(cell.trim());
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") index += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+}
+
+function inventoryCsvNumber(value, fallback = 0) {
+  const raw = String(value ?? "").trim().replace(/[^0-9,.-]/g, "");
+  if (!raw) return fallback;
+  const normalized = raw.includes(",") && raw.includes(".")
+    ? raw.replace(/\./g, "").replace(",", ".")
+    : raw.includes(",")
+      ? raw.replace(",", ".")
+      : (/^-?\d{1,3}(\.\d{3})+$/.test(raw) ? raw.replace(/\./g, "") : raw);
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function inventoryCsvStatus(value = "") {
+  const status = normalizeCsvHeader(value);
+  if (["inactive", "inactivo"].includes(status)) return "INACTIVE";
+  if (["archived", "archivado"].includes(status)) return "ARCHIVED";
+  return "ACTIVE";
+}
+
+function inventoryProductsFromCsv(text = "") {
+  const rows = inventoryCsvParse(text);
+  if (rows.length < 2) return [];
+  const headers = rows[0].map(normalizeCsvHeader);
+  return rows.slice(1).map((cells, rowIndex) => {
+    const record = {};
+    headers.forEach((header, index) => { if (header) record[header] = cells[index] || ""; });
+    const name = csvCell(record, ["nombre", "name", "producto", "product"]);
+    return {
+      row_number: rowIndex + 2,
+      name,
+      barcode: csvCell(record, ["codigo_barras", "codigo_de_barras", "barcode"]),
+      sku: csvCell(record, ["sku", "referencia", "codigo"]),
+      category: csvCell(record, ["categoria", "category"]),
+      brand: csvCell(record, ["marca", "brand"]),
+      unit_price: inventoryCsvNumber(csvCell(record, ["precio_venta", "precio", "unit_price", "sale_price"]), 0),
+      cost_price: csvCell(record, ["costo", "cost", "cost_price"]) ? inventoryCsvNumber(csvCell(record, ["costo", "cost", "cost_price"]), 0) : null,
+      currency: (csvCell(record, ["moneda", "currency"]) || "COP").toUpperCase(),
+      stock_quantity: inventoryCsvNumber(csvCell(record, ["stock", "cantidad", "stock_quantity"]), 0),
+      min_stock_quantity: inventoryCsvNumber(csvCell(record, ["stock_minimo", "min_stock", "min_stock_quantity"]), 0),
+      unit_label: csvCell(record, ["unidad", "unidad_medida", "unit", "unit_label"]) || "unidad",
+      status: inventoryCsvStatus(csvCell(record, ["estado", "status"])),
+      description: csvCell(record, ["descripcion", "description", "detalle"]),
+    };
+  }).filter((product) => product.name || product.sku || product.barcode);
+}
+
+function downloadInventoryCsvTemplate() {
+  const csv = [
+    "nombre,codigo_barras,sku,categoria,marca,precio_venta,costo,moneda,stock,stock_minimo,unidad,estado,descripcion",
+    "Producto de ejemplo,770000000001,SKU-001,Categoría,Marca,25000,12000,COP,10,2,unidad,ACTIVE,Descripción opcional",
+  ].join("\n");
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
+  link.download = "plantilla-productos-qori.csv";
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(link.href), 500);
+}
+
+async function importInventoryProductsCsv(event) {
+  event?.preventDefault();
+  const file = inventoryCsvFileInput?.files?.[0];
+  if (!file) {
+    setInlineMessage(inventoryCsvImportMessage, "Selecciona un archivo CSV.", "error");
+    return;
+  }
+  try {
+    const products = inventoryProductsFromCsv(await file.text());
+    const incomplete = products.filter((product) => !product.name);
+    if (!products.length || incomplete.length) {
+      throw new Error("Cada fila necesita Nombre producto. Descarga la plantilla si necesitas la estructura exacta.");
+    }
+    setButtonLoading(inventoryCsvImportSubmitButton, true, "Importando...");
+    setInlineMessage(inventoryCsvImportMessage, `Validando ${products.length.toLocaleString("es-CO")} producto(s)...`, "info");
+    const result = await api("/api/business/inventory/products/import-csv", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ products, skip_duplicates: Boolean(inventoryCsvSkipDuplicatesInput?.checked) }),
+    });
+    state.inventoryLoaded = false;
+    await loadInventoryProducts({ force: true, quiet: true });
+    renderInventoryProductOptions();
+    renderInventoryView();
+    const skipped = Number(result.skipped || 0);
+    const message = `${Number(result.imported || 0).toLocaleString("es-CO")} producto(s) importado(s)${skipped ? ` · ${skipped.toLocaleString("es-CO")} omitido(s) por duplicado` : ""}.`;
+    setInlineMessage(inventoryCsvImportMessage, message, "success");
+    showFeedback(message, "success", { title: "Inventario actualizado" });
+    window.setTimeout(closeInventoryCsvImportModal, 650);
+  } catch (error) {
+    setInlineMessage(inventoryCsvImportMessage, error.message || "No se pudo importar el CSV.", "error");
+    showFeedback(error.message || "No se pudo importar el CSV.", "error", { title: "Productos" });
+  } finally {
+    setButtonLoading(inventoryCsvImportSubmitButton, false);
+  }
 }
 
 async function submitInventoryProduct(event) {
@@ -42996,7 +43152,7 @@ function renderRmsStationLeanOnly() {
             <span class="rms-lean-station-symbol material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon || "precision_manufacturing")}</span>
           </figure>
           <div>
-            <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori v144 limpio</span>
+            <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori RMS</span>
             <h3>${escapeHtml(stage.label || "Estación RMS")}</h3>
             <p>${escapeHtml(stage.operation?.primaryAction || "Trabaja la lista sin cargar paneles pesados.")}</p>
           </div>
@@ -43479,25 +43635,31 @@ function rmsClassifiedProductDraft(item = {}) {
 }
 
 function rmsClassifiedProductValue(item = {}) {
+  return rmsClassifiedProductValues(item)[0] || "";
+}
+
+function rmsClassifiedProductValues(item = {}) {
   const draft = rmsClassifiedProductDraft(item);
-  if (draft?.product_select !== undefined) return draft.product_select;
-  if (item.classified_product_id) return inventoryProductSelectValue({ id: item.classified_product_id });
+  if (Array.isArray(draft?.product_selects)) return draft.product_selects.filter((value) => Boolean(findInventoryProduct(value)));
+  if (draft?.product_select !== undefined) return findInventoryProduct(draft.product_select) ? [draft.product_select] : [];
+  const stored = item.state_metadata?.classified_products || item.metadata?.classified_products || item.classified_products;
+  if (Array.isArray(stored) && stored.length) {
+    return stored.map((product) => inventoryProductSelectValue({ id: product?.inventory_product_id || product?.id || product })).filter((value) => Boolean(findInventoryProduct(value)));
+  }
+  if (item.classified_product_id) return [inventoryProductSelectValue({ id: item.classified_product_id })];
   const matched = findInventoryProduct(item.classified_product_name || item.product_interest || "");
-  return matched ? inventoryProductSelectValue(matched) : (item.classified_product_name || item.product_interest ? OPEN_PRODUCT_VALUE : "");
+  return matched ? [inventoryProductSelectValue(matched)] : [];
 }
 
 function rmsClassifiedProductName(item = {}) {
   const draft = rmsClassifiedProductDraft(item);
   if (draft?.open_product_name) return draft.open_product_name;
-  const selected = rmsClassifiedProductValue(item);
-  const product = findInventoryProduct(selected);
-  return product?.name || item.classified_product_name || item.product_interest || "";
+  const names = rmsClassifiedProductValues(item).map((value) => findInventoryProduct(value)?.name).filter(Boolean);
+  return names.join(" · ") || item.classified_product_name || item.product_interest || "";
 }
 
 function rmsHasConfirmedProductClassification(item = {}) {
-  const draft = rmsClassifiedProductDraft(item);
-  if (draft?.product_select && draft.product_select !== OPEN_PRODUCT_VALUE) return Boolean(findInventoryProduct(draft.product_select));
-  return Boolean(item.classified_product_id && findInventoryProductById(item.classified_product_id));
+  return rmsClassifiedProductValues(item).some((value) => Boolean(findInventoryProduct(value)));
 }
 
 function rmsClassificationSourceLabel(item = {}) {
@@ -43510,29 +43672,31 @@ function rmsClassificationSourceLabel(item = {}) {
 }
 
 function rmsProductClassificationMarkup(item = {}) {
-  const selected = rmsClassifiedProductValue(item);
-  const openValue = selected === OPEN_PRODUCT_VALUE ? rmsClassifiedProductName(item) : "";
+  const selectedValues = rmsClassifiedProductValues(item);
   const confidence = Math.round(Number(item.classification_confidence || 0) * 100);
   const classifiedName = rmsClassifiedProductName(item);
-  const selectedProduct = findInventoryProduct(selected);
-  const canConfirm = Boolean(selectedProduct?.id);
+  const selectedProducts = selectedValues.map((value) => findInventoryProduct(value)).filter(Boolean);
+  const canConfirm = selectedProducts.length > 0;
   return `
     <div class="rms-product-classifier rms-product-classifier-lean" data-rms-product-classifier="${escapeHtml(item.id)}">
       <label>
-        <span>Producto o servicio</span>
-        <select data-rms-product-select="${escapeHtml(item.id)}" data-product-select data-placeholder="Selecciona el producto" data-open-label="Crear o escribir producto nuevo">
-          ${inventoryProductSelectOptions(selected, { placeholder: "Sin producto clasificado", openLabel: "Crear o escribir producto nuevo" })}
+        <span>Productos o servicios para esta oferta</span>
+        <select multiple size="${Math.min(6, Math.max(3, (state.inventoryProducts || []).filter((product) => product.status === "ACTIVE").length))}" data-rms-product-select="${escapeHtml(item.id)}" aria-describedby="rms-product-classification-help-${escapeHtml(item.id)}">
+          ${(state.inventoryProducts || []).filter((product) => product.status === "ACTIVE").map((product) => {
+            const value = inventoryProductSelectValue(product);
+            return `<option value="${escapeHtml(value)}" ${selectedValues.includes(value) ? "selected" : ""}>${escapeHtml(product.name)} · ${escapeHtml(money(product.unit_price || 0))}</option>`;
+          }).join("") || '<option disabled>No hay productos activos. Crea el primero.</option>'}
         </select>
+        <small id="rms-product-classification-help-${escapeHtml(item.id)}">Puedes seleccionar varios: usa Ctrl/Cmd al hacer clic. El primero queda como producto principal para los flujos existentes.</small>
       </label>
-      <input class="open-product-input ${selected === OPEN_PRODUCT_VALUE ? "" : "hidden"}" data-rms-product-open="${escapeHtml(item.id)}" type="text" maxlength="180" value="${escapeHtml(openValue)}" placeholder="Nombre del producto o servicio nuevo">
       <div class="rms-product-classifier-meta">
-        <strong>${escapeHtml(classifiedName || "Pendiente de clasificar")}</strong>
+        <strong>${escapeHtml(classifiedName || "Selecciona una o varias ofertas")}</strong>
         <small>${escapeHtml(rmsClassificationSourceLabel(item))}${confidence ? ` · ${confidence}% de coincidencia` : ""}</small>
       </div>
       <div class="rms-product-classifier-actions">
         ${canConfirm
-          ? `<button class="solid-button compact" type="button" data-rms-save-classification="${escapeHtml(item.id)}">Guardar clasificación</button>`
-          : `<button class="solid-button compact" type="button" data-rms-create-product-classification="${escapeHtml(item.id)}">Crear producto y vincular</button>`}
+          ? `<button class="solid-button compact" type="button" data-rms-save-classification="${escapeHtml(item.id)}">Guardar ${selectedProducts.length} producto${selectedProducts.length === 1 ? "" : "s"}</button>`
+          : `<button class="solid-button compact" type="button" data-rms-create-product-classification="${escapeHtml(item.id)}">Crear producto</button>`}
         <details class="rms-product-classifier-more">
           <summary>Más opciones</summary>
           <div>
@@ -45482,37 +45646,28 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-product-select]").forEach((select) => {
     select.addEventListener("change", () => {
       const id = select.dataset.rmsProductSelect || "";
-      const item = rmsOpportunityById(id);
-      const openInput = Array.from(root.querySelectorAll("[data-rms-product-open]")).find((node) => node.dataset.rmsProductOpen === id);
-      const isOpen = select.value === OPEN_PRODUCT_VALUE;
-      openInput?.classList.toggle("hidden", !isOpen);
-      if (openInput) {
-        openInput.disabled = !isOpen;
-        if (isOpen && !openInput.value && item?.product_interest && !findInventoryProduct(item.product_interest)) {
-          openInput.value = item.product_interest;
-        }
-      }
+      const selectedValues = Array.from(select.selectedOptions).map((option) => option.value).filter((value) => Boolean(findInventoryProduct(value)));
       if (!state.rmsProductClassificationDraft) state.rmsProductClassificationDraft = {};
       state.rmsProductClassificationDraft[id] = {
         ...(state.rmsProductClassificationDraft[id] || {}),
-        product_select: select.value,
-        open_product_name: openInput?.value || "",
+        product_select: selectedValues[0] || "",
+        product_selects: selectedValues,
+        open_product_name: "",
       };
       const current = new Set(state.rmsMachineSelectedIds || []);
-      if (select.value && select.value !== OPEN_PRODUCT_VALUE) current.add(id);
-      else if (openInput?.value.trim()) current.add(id);
+      if (selectedValues.length) current.add(id);
+      else current.delete(id);
       state.rmsMachineSelectedIds = Array.from(current).filter(Boolean);
       const checkbox = Array.from(root.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
-      if (checkbox && current.has(id)) {
-        checkbox.checked = true;
-        checkbox.closest("[data-rms-station-lead]")?.classList.add("is-selected");
-        checkbox.closest(".rms-station-lead-check")?.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode("check_circle"));
+      if (checkbox) {
+        checkbox.checked = current.has(id);
+        checkbox.closest("[data-rms-station-lead]")?.classList.toggle("is-selected", current.has(id));
+        checkbox.closest(".rms-station-lead-check")?.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode(current.has(id) ? "check_circle" : "radio_button_unchecked"));
       }
       const primaryAction = select.closest("[data-rms-product-classifier]")?.querySelector(".rms-product-classifier-actions > .solid-button");
       if (primaryAction) {
-        const hasInventoryProduct = Boolean(findInventoryProduct(select.value)?.id);
-        primaryAction.textContent = hasInventoryProduct ? "Guardar clasificación" : "Crear producto y vincular";
-        primaryAction.setAttribute("aria-label", hasInventoryProduct ? "Guardar clasificación" : "Crear producto y vincular");
+        primaryAction.textContent = selectedValues.length ? `Guardar ${selectedValues.length} producto${selectedValues.length === 1 ? "" : "s"}` : "Crear producto";
+        primaryAction.setAttribute("aria-label", selectedValues.length ? "Guardar clasificación de productos" : "Crear producto");
       }
       renderRmsBulkToolbar();
       updateRmsStationOutputPreview();
@@ -46181,10 +46336,21 @@ function updateRmsStationOutputPreview() {
 function rmsClassificationDraftFromDom(item = {}) {
   const select = Array.from(document.querySelectorAll("[data-rms-product-select]")).find((node) => node.dataset.rmsProductSelect === item.id);
   const openInput = Array.from(document.querySelectorAll("[data-rms-product-open]")).find((node) => node.dataset.rmsProductOpen === item.id);
-  const selected = select?.value || rmsClassifiedProductValue(item);
-  const selectedProduct = findInventoryProduct(selected);
+  const selectedValues = select
+    ? Array.from(select.selectedOptions).map((option) => option.value).filter((value) => Boolean(findInventoryProduct(value)))
+    : rmsClassifiedProductValues(item);
+  const selectedProducts = selectedValues.map((value) => findInventoryProduct(value)).filter(Boolean);
+  const selectedProduct = selectedProducts[0] || null;
   return {
-    product_select: selected,
+    product_select: selectedValues[0] || "",
+    product_selects: selectedValues,
+    products: selectedProducts.map((product) => ({
+      inventory_product_id: product.id,
+      name: product.name,
+      category: product.category || "",
+      unit_price: Number(product.unit_price || 0),
+      currency: product.currency || "COP",
+    })),
     inventory_product_id: selectedProduct?.id || null,
     product_name: selectedProduct?.name || item.classified_product_name || item.product_interest || "",
     product_category: selectedProduct?.category || "",
@@ -46208,7 +46374,7 @@ async function saveRmsProductClassification(item = {}, draft = null, options = {
       lead_id: item.lead_id || null,
       to_phase: item.stage || "curaduria",
       priority: rmsPriorityCode(item),
-      recommended_action: options.clear ? "Clasificación de producto pendiente" : `Lead clasificado para ${nextDraft.product_name}`,
+      recommended_action: options.clear ? "Clasificación de producto pendiente" : `Lead clasificado para ${nextDraft.products?.map((product) => product.name).join(", ") || nextDraft.product_name}`,
       last_operation: options.clear ? "product_classification_cleared" : "product_classified_in_clasificar",
       last_material_sent: options.clear ? null : (nextDraft.inventory_product_id || nextDraft.product_name),
       revenue_potential: Number(item.revenue_potential || 0),
@@ -46223,6 +46389,7 @@ async function saveRmsProductClassification(item = {}, draft = null, options = {
         classified_product_id: options.clear ? null : nextDraft.inventory_product_id,
         classified_product_name: options.clear ? null : nextDraft.product_name,
         classified_product_category: options.clear ? null : nextDraft.product_category,
+        classified_products: options.clear ? [] : (nextDraft.products || []),
         classification_source: options.clear ? "manual_clear" : "manual_inventory",
         classification_confidence: options.clear ? 0 : 1,
         classified_at: options.clear ? null : new Date().toISOString(),
@@ -47059,14 +47226,17 @@ function renderRmsLeadInspector() {
   rmsLeadInspector.setAttribute("aria-labelledby", "rmsLeadInspectorTitle");
   rmsLeadInspector.classList.remove("hidden");
   const stages = rmsPrimaryFactoryStages(state.rmsMachine || {});
+  const currentStage = stages.find((stage) => stage.key === item.stage);
+  const stageLabel = item.stage_label || currentStage?.label || "Estación RMS";
+  const stageDescription = currentStage?.operation?.primaryAction || item.why_now || "Revisa la información y ejecuta el siguiente paso.";
   rmsLeadInspector.innerHTML = `
     <button class="rms-inspector-modal-backdrop" type="button" data-rms-close-inspector aria-label="Cerrar ficha"></button>
     <section class="rms-inspector-modal-card" tabindex="-1">
     <div class="rms-inspector-head">
       <div>
-        <span class="mono-label">Panel operativo</span>
+        <span class="mono-label">Ficha operativa del lead</span>
         <h3 id="rmsLeadInspectorTitle">${escapeHtml(item.name || "Contacto")}</h3>
-        <p>${escapeHtml(item.stage_label || "")} · ${escapeHtml(item.why_now || "")}</p>
+        <p>${escapeHtml(stageLabel)} · ${escapeHtml(stageDescription)}</p>
       </div>
       <button class="icon-button" type="button" data-rms-close-inspector title="Cerrar"><span class="material-symbols-outlined">close</span></button>
     </div>
@@ -50969,6 +51139,14 @@ inventoryProductModalCloseButton?.addEventListener("click", closeInventoryProduc
 inventoryProductModal?.addEventListener("click", (event) => {
   if (event.target === inventoryProductModal) closeInventoryProductModal();
 });
+inventoryCsvImportForm?.addEventListener("submit", importInventoryProductsCsv);
+inventoryImportCsvButton?.addEventListener("click", openInventoryCsvImportModal);
+inventoryCsvImportCloseButton?.addEventListener("click", closeInventoryCsvImportModal);
+inventoryCsvImportCancelButton?.addEventListener("click", closeInventoryCsvImportModal);
+inventoryCsvImportModal?.addEventListener("click", (event) => {
+  if (event.target === inventoryCsvImportModal) closeInventoryCsvImportModal();
+});
+inventoryCsvDownloadTemplateButton?.addEventListener("click", downloadInventoryCsvTemplate);
 inventoryNewProductButton?.addEventListener("click", () => {
   resetInventoryForm();
   openInventoryProductModal({ focusTarget: inventoryNameInput });

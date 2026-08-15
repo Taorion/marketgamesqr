@@ -266,6 +266,11 @@ const inventoryProductSchema = z.object({
 
 const inventoryProductPatchSchema = inventoryProductSchema.partial();
 
+const inventoryProductCsvImportSchema = z.object({
+  products: z.array(inventoryProductSchema).min(1).max(500),
+  skip_duplicates: z.boolean().optional().default(true),
+});
+
 const acquisitionChannelSchema = z.object({
   name: z.string().trim().min(2).max(160),
   slug: slugSchema.optional(),
@@ -3085,8 +3090,8 @@ function normalizeChannelEffortRow(row = {}) {
 function channelEffortDateRange(row = {}) {
   const start = new Date(row.starts_at || row.published_at || row.created_at || Date.now());
   const end = row.ends_at ? new Date(row.ends_at) : new Date();
-  if (Number.isNaN(start.getTime())) throw badRequest("Fecha inicial del esfuerzo invÃ¡lida.");
-  if (Number.isNaN(end.getTime())) throw badRequest("Fecha final del esfuerzo invÃ¡lida.");
+if (Number.isNaN(start.getTime())) throw badRequest("Fecha inicial del esfuerzo inválida.");
+if (Number.isNaN(end.getTime())) throw badRequest("Fecha final del esfuerzo inválida.");
   if (end < start) {
     const sameDayEnd = new Date(start);
     sameDayEnd.setHours(23, 59, 59, 999);
@@ -3296,8 +3301,8 @@ async function listAcquisitionChannelEfforts(req, res, next) {
     const campaignId = req.query.campaign_id || null;
     const startDate = req.query.start_date ? new Date(req.query.start_date) : null;
     const endDate = req.query.end_date ? new Date(req.query.end_date) : null;
-    if (startDate && Number.isNaN(startDate.getTime())) throw badRequest("Fecha inicial invÃ¡lida.");
-    if (endDate && Number.isNaN(endDate.getTime())) throw badRequest("Fecha final invÃ¡lida.");
+if (startDate && Number.isNaN(startDate.getTime())) throw badRequest("Fecha inicial inválida.");
+if (endDate && Number.isNaN(endDate.getTime())) throw badRequest("Fecha final inválida.");
     if (endDate) endDate.setHours(23, 59, 59, 999);
     const result = await query(
       `select e.*,
@@ -3840,6 +3845,87 @@ async function createInventoryProduct(req, res, next) {
       );
     });
     res.status(201).json({ product: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function importInventoryProductsCsv(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const body = validate(inventoryProductCsvImportSchema, req.body);
+    const incoming = body.products.map((product) => mapInventoryPayload(product, req.user.id));
+    const productCount = await query(
+      "select count(*)::int as total from business_inventory_products where business_id = $1 and status <> 'ARCHIVED'",
+      [businessId]
+    );
+    const knownCodes = await query(
+      "select sku, barcode from business_inventory_products where business_id = $1 and status <> 'ARCHIVED'",
+      [businessId]
+    );
+    const seenCodes = new Set(knownCodes.rows.flatMap((row) => [row.sku && `sku:${row.sku}`, row.barcode && `barcode:${row.barcode}`].filter(Boolean)));
+    const potentialCreates = incoming.filter((payload) => {
+      const codes = [payload.sku && `sku:${payload.sku}`, payload.barcode && `barcode:${payload.barcode}`].filter(Boolean);
+      const duplicate = codes.some((code) => seenCodes.has(code));
+      codes.forEach((code) => seenCodes.add(code));
+      return !duplicate;
+    });
+    // The limit is checked only against rows that could actually be created.
+    // Existing SKU/barcode rows are safely omitted when the operator chooses it.
+    await assertLimitForBusiness(
+      businessId,
+      "gift_inventory_products",
+      Number(productCount.rows[0]?.total || 0) + potentialCreates.length - 1,
+      "productos de inventario"
+    );
+    const result = await withTransaction(async (client) => {
+      const imported = [];
+      const skipped = [];
+      const seenCodes = new Set();
+      for (const payload of incoming) {
+        const codes = [payload.sku && `sku:${payload.sku}`, payload.barcode && `barcode:${payload.barcode}`].filter(Boolean);
+        const repeatedInFile = codes.some((code) => seenCodes.has(code));
+        if (repeatedInFile) {
+          if (body.skip_duplicates) {
+            skipped.push({ name: payload.name, reason: "Código repetido dentro del archivo" });
+            continue;
+          }
+          throw badRequest(`El CSV repite SKU o código de barras para ${payload.name}.`);
+        }
+        codes.forEach((code) => seenCodes.add(code));
+        try {
+          await ensureInventoryProductUnique(client, businessId, payload);
+        } catch (error) {
+          if (body.skip_duplicates) {
+            skipped.push({ name: payload.name, reason: "SKU o código de barras ya existe" });
+            continue;
+          }
+          throw error;
+        }
+        const inserted = await client.query(
+          `insert into business_inventory_products
+            (business_id, sku, barcode, name, description, category, brand, unit_price, cost_price,
+             currency, stock_quantity, min_stock_quantity, unit_label, status, metadata, created_by_user_id)
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb, $16)
+           returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
+          [
+            businessId, payload.sku, payload.barcode, payload.name, payload.description, payload.category,
+            payload.brand, payload.unit_price, payload.cost_price, payload.currency, payload.stock_quantity,
+            payload.min_stock_quantity, payload.unit_label, payload.status, JSON.stringify(payload.metadata),
+            payload.created_by_user_id,
+          ]
+        );
+        imported.push(inserted.rows[0]);
+      }
+      return { imported, skipped };
+    });
+    res.status(201).json({
+      imported: result.imported.length,
+      skipped: result.skipped.length,
+      skipped_rows: result.skipped,
+      products: result.imported,
+    });
   } catch (error) {
     next(error);
   }
@@ -5878,6 +5964,7 @@ module.exports = {
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
   createInventoryProduct,
+  importInventoryProductsCsv,
   getInventoryProductInsights,
   listInventoryProducts,
   updateInventoryProduct,

@@ -55,6 +55,7 @@ const {
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
   createInventoryProduct,
+  importInventoryProductsCsv,
   getInventoryProductInsights,
   listInventoryProducts,
   updateInventoryProduct,
@@ -312,6 +313,7 @@ router.delete("/channels/:channelId", archiveAcquisitionChannel);
 router.post("/customer-acquisition-sales", createCustomerAcquisitionSale);
 router.get("/inventory/products", standardBusinessCache, listInventoryProducts);
 router.post("/inventory/products", createInventoryProduct);
+router.post("/inventory/products/import-csv", importInventoryProductsCsv);
 router.get("/inventory/products/:productId/insights", shortBusinessCache, getInventoryProductInsights);
 router.patch("/inventory/products/:productId", updateInventoryProduct);
 router.delete("/inventory/products/:productId", archiveInventoryProduct);

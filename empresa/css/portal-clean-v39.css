@@ -21716,3 +21716,89 @@ html body[data-current-view="dashboard"] .portal-shell .view-section.active[data
 html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-card small { color:#5d7895 !important; font-size:.72rem !important; line-height:1.35 !important; }
 @media (max-width:980px) { html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-list { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } }
 @media (max-width:620px) { html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-gallery { margin:0 18px !important; padding:16px !important; } html body[data-current-view="dashboard"] .portal-shell .view-section.active[data-view="dashboard"] .dashboard-template-list { grid-template-columns:1fr !important; } }
+
+/* RMS: cabecera, ficha de lead, Clasificador y Evaluación operables sin ruido. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head {
+  display:grid !important;
+  grid-template-columns:auto minmax(0,1fr) minmax(310px,auto) !important;
+  align-items:center !important;
+  gap:18px !important;
+  padding:18px 20px !important;
+  border:1px solid rgba(4,65,179,.15) !important;
+  border-radius:18px !important;
+  background:linear-gradient(125deg,#fff 0%,#f3f9ff 100%) !important;
+  box-shadow:0 12px 28px rgba(1,34,104,.055) !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head > [data-rms-close-station] { align-self:center !important; margin:0 !important; white-space:nowrap !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title { min-width:0 !important; display:grid !important; grid-template-columns:52px minmax(0,1fr) !important; align-items:center !important; gap:13px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title :is(h3,p) { margin:0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title h3 { margin-top:2px !important; color:#082d67 !important; font-size:clamp(1.1rem,1.8vw,1.45rem) !important; line-height:1.12 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-title p { margin-top:4px !important; overflow:hidden !important; color:#58738d !important; font-size:.8rem !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions { display:flex !important; flex-wrap:wrap !important; align-items:center !important; justify-content:flex-end !important; gap:8px !important; min-width:0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions .compact { min-height:36px !important; padding:7px 10px !important; white-space:nowrap !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean { display:grid !important; gap:10px !important; padding:13px !important; border:1px solid rgba(4,65,179,.13) !important; border-radius:14px !important; background:#fbfdff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean label { display:grid !important; gap:6px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean select[multiple] { min-height:118px !important; padding:7px !important; border-color:rgba(4,65,179,.22) !important; background:#fff !important; line-height:1.45 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean select[multiple] option { padding:7px 9px !important; border-radius:6px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-lean label small { color:#5a7690 !important; font-size:.72rem !important; line-height:1.42 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-meta { display:grid !important; gap:2px !important; padding:9px 10px !important; border-left:3px solid #07cefb !important; background:#eef8ff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier-meta strong { color:#082d67 !important; }
+
+html body[data-current-view="rms-machine"] #rmsLeadInspector:not(.hidden) { background:rgba(1,21,55,.58) !important; backdrop-filter:blur(7px) !important; }
+html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-modal-card { display:grid !important; grid-template-columns:minmax(0,1fr) !important; gap:16px !important; width:min(820px,100%) !important; padding:0 !important; overflow:hidden !important; border:1px solid rgba(255,255,255,.7) !important; border-radius:22px !important; }
+html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-head { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; gap:16px !important; align-items:start !important; margin:0 !important; padding:24px 26px 17px !important; border:0 !important; border-bottom:1px solid #dce9f3 !important; background:linear-gradient(130deg,#fff,#edf7ff) !important; }
+html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-head h3 { margin:4px 0 4px !important; color:#082d67 !important; font-size:clamp(1.35rem,2.6vw,2rem) !important; }
+html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-head p { margin:0 !important; color:#5b7690 !important; }
+html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-grid { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:10px !important; padding:0 26px !important; }
+html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-grid > div { display:grid !important; gap:4px !important; min-height:72px !important; padding:12px !important; border:1px solid #dce9f3 !important; border-radius:12px !important; background:#fff !important; }
+html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-grid span { color:#65809a !important; font-size:.68rem !important; font-weight:800 !important; letter-spacing:.05em !important; text-transform:uppercase !important; }
+html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-grid strong { overflow-wrap:anywhere !important; color:#173d69 !important; font-size:.84rem !important; }
+html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-operation { display:grid !important; gap:5px !important; margin:0 26px !important; padding:16px !important; border:1px solid rgba(7,89,214,.17) !important; border-radius:14px !important; background:#eef7ff !important; }
+html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-operation strong { color:#082d67 !important; font-size:1rem !important; }
+html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-operation :is(p,small) { margin:0 !important; color:#55728d !important; line-height:1.45 !important; }
+html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-actions { display:flex !important; flex-wrap:wrap !important; justify-content:flex-end !important; gap:8px !important; margin:0 !important; padding:16px 26px 24px !important; border-top:1px solid #e5eef5 !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item { display:grid !important; grid-template-columns:minmax(250px,300px) minmax(0,1fr) !important; align-items:start !important; gap:16px !important; padding:16px !important; border:1px solid rgba(4,65,179,.14) !important; border-radius:20px !important; background:#f8fbff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item .rms-commercial-work-console { display:grid !important; gap:14px !important; min-width:0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-hero { display:grid !important; grid-template-columns:minmax(0,1fr) minmax(170px,220px) !important; gap:18px !important; align-items:stretch !important; padding:20px !important; border-radius:16px !important; background:linear-gradient(125deg,#012268,#0341b3) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-hero h4 { margin:5px 0 6px !important; font-size:clamp(1.12rem,2vw,1.45rem) !important; line-height:1.18 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-hero p { margin:0 !important; line-height:1.48 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-hero-signal { display:grid !important; align-content:center !important; gap:4px !important; padding:14px !important; border:1px solid rgba(255,255,255,.24) !important; border-radius:12px !important; background:rgba(255,255,255,.11) !important; }
+html body[data-current-view="rms-machine"] .portal-shell :is(.rms-evaluation-decision-panel,.rms-evaluation-destination-panel,.rms-evaluation-next-panel) { margin:0 !important; padding:18px !important; border:1px solid rgba(4,65,179,.13) !important; border-radius:16px !important; background:#fff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-panel { background:linear-gradient(125deg,#052a6b,#0759d6) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-panel-head { display:flex !important; align-items:end !important; justify-content:space-between !important; gap:14px !important; margin:0 0 14px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-panel-head h5 { margin:4px 0 0 !important; font-size:1.06rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-decision-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:9px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:9px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice { min-height:106px !important; padding:13px !important; border:1px solid #dbe9f5 !important; border-radius:12px !important; background:#fff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-choice { min-height:94px !important; padding:13px !important; border:1px solid rgba(255,255,255,.2) !important; border-radius:12px !important; background:rgba(255,255,255,.08) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-form-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:12px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-route-preview { margin:0 !important; padding:13px 15px !important; border-radius:14px !important; }
+
+#inventoryCsvImportModal .inventory-csv-import-card { width:min(760px,calc(100vw - 28px)) !important; }
+#inventoryCsvImportModal .inventory-csv-import-form { gap:16px !important; }
+#inventoryCsvImportModal .inventory-csv-import-form small { display:block !important; margin-top:6px !important; color:#5a7690 !important; line-height:1.42 !important; }
+#inventoryCsvImportModal .inventory-csv-duplicate-option { padding:12px !important; border:1px solid #dce9f3 !important; border-radius:12px !important; background:#f7fbff !important; }
+#inventoryCsvImportModal .inventory-csv-duplicate-option > span { color:#173d69 !important; font-weight:800 !important; }
+#inventoryCsvImportModal .inventory-csv-template { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:14px !important; padding:14px !important; border:1px dashed rgba(4,65,179,.28) !important; border-radius:12px !important; background:#eef8ff !important; }
+#inventoryCsvImportModal .inventory-csv-template > div { display:grid !important; gap:2px !important; }
+
+@media (max-width:1100px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head { grid-template-columns:auto minmax(0,1fr) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions { grid-column:1 / -1 !important; justify-content:flex-start !important; padding-left:0 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-item { grid-template-columns:1fr !important; }
+}
+@media (max-width:680px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-head { grid-template-columns:1fr !important; gap:12px !important; padding:16px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions { grid-column:auto !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions .compact { flex:1 1 170px !important; justify-content:center !important; }
+  html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-head { padding:20px 18px 14px !important; }
+  html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; padding:0 18px !important; }
+  html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-operation { margin:0 18px !important; }
+  html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-actions { padding:14px 18px 20px !important; justify-content:stretch !important; }
+  html body[data-current-view="rms-machine"] #rmsLeadInspector .rms-inspector-actions button { flex:1 1 170px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-hero, html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-decision-grid, html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-destination-grid, html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-form-grid { grid-template-columns:1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-steps { overflow-x:auto !important; }
+  #inventoryCsvImportModal .inventory-csv-template { align-items:flex-start !important; flex-direction:column !important; }
+}

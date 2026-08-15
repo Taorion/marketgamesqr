@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=revenue-workspace-v152-20260815">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-product-import-v153-20260815">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -5575,6 +5575,7 @@
                 <p>Consulta tu inventario, abre cada producto para ver su desempeño y crea nuevos productos cuando los necesites.</p>
               </div>
               <div class="button-row">
+                <button class="ghost-button" id="inventoryImportCsvButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">upload_file</span> Importar CSV</button>
                 <button class="solid-button" id="inventoryNewProductButton" type="button">Nuevo producto</button>
                 <button class="ghost-button compact" id="refreshInventoryButton" type="button">Actualizar</button>
               </div>
@@ -5613,6 +5614,36 @@
                       <div class="modal-button-row">
                         <button class="ghost-button" id="inventoryResetButton" type="button">Limpiar</button>
                         <button class="solid-button" id="inventorySaveButton" type="submit">Guardar producto</button>
+                      </div>
+                    </div>
+                  </form>
+                </article>
+              </div>
+
+              <div class="modal-shell hidden" id="inventoryCsvImportModal" role="dialog" aria-modal="true" aria-labelledby="inventoryCsvImportTitle" aria-hidden="true">
+                <article class="surface-card inventory-form-card modal-card inventory-csv-import-card">
+                  <div class="modal-head">
+                    <div>
+                      <span class="mono-label">Carga masiva</span>
+                      <h3 id="inventoryCsvImportTitle">Importar productos desde CSV</h3>
+                      <p>Usa la plantilla para cargar los mismos datos del formulario de producto. Nombre es obligatorio; los demás campos son opcionales.</p>
+                    </div>
+                    <button class="icon-button" id="inventoryCsvImportCloseButton" type="button" aria-label="Cerrar importación de productos">
+                      <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                    </button>
+                  </div>
+                  <form class="modal-form inventory-csv-import-form" id="inventoryCsvImportForm">
+                    <label class="span-2"><span>Archivo CSV</span><input id="inventoryCsvFileInput" type="file" accept=".csv,text/csv" required><small>Columnas admitidas: nombre, codigo_barras, sku, categoria, marca, precio_venta, costo, moneda, stock, stock_minimo, unidad, estado y descripcion.</small></label>
+                    <label class="span-2 inventory-csv-duplicate-option"><span><input id="inventoryCsvSkipDuplicatesInput" type="checkbox" checked> Omitir filas cuyo SKU o código de barras ya exista</span><small>Las filas omitidas se informan al final; nunca reemplazan productos existentes.</small></label>
+                    <div class="inventory-csv-template span-2">
+                      <div><strong>¿No tienes plantilla?</strong><small>Descarga una base con todos los campos y un ejemplo seguro.</small></div>
+                      <button class="ghost-button compact" id="inventoryCsvDownloadTemplateButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">download</span> Descargar plantilla</button>
+                    </div>
+                    <div class="modal-actions span-2">
+                      <p class="form-message" id="inventoryCsvImportMessage"></p>
+                      <div class="modal-button-row">
+                        <button class="ghost-button" id="inventoryCsvImportCancelButton" type="button">Cancelar</button>
+                        <button class="solid-button" id="inventoryCsvImportSubmitButton" type="submit">Validar e importar</button>
                       </div>
                     </div>
                   </form>
@@ -7704,7 +7735,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=revenue-workspace-v152-20260815" defer></script>
+  <script src="js/app.js?v=rms-product-import-v153-20260815" defer></script>
     <script src="js/communications.js?v=bulk-history-v323-20260811" defer></script>
 </body>
 </html>
