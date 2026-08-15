@@ -27,7 +27,7 @@ function metadata(value) {
 const RMS_PHASE_LABELS = Object.freeze({
   recoleccion: "Recolector",
   alimentacion: "Curaduría",
-  curaduria: "Clasificador",
+  curaduria: "Asignación",
   clasificacion: "Activación 1",
   procesamiento: "Evaluación",
   accion_correctiva: "Negociación",

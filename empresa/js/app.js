@@ -21943,20 +21943,23 @@ async function submitInventoryProduct(event) {
       const opportunity = rmsOpportunityById(pendingClassification.opportunityId);
       state.rmsPendingProductClassification = null;
       if (opportunity) {
-        await saveRmsProductClassification(opportunity, {
-          product_select: `inventory:${saved.id}`,
-          inventory_product_id: saved.id,
-          product_name: saved.name,
-          product_category: saved.category || "",
+        const createdValue = `inventory:${saved.id}`;
+        const selectedValues = Array.from(new Set([...(pendingClassification.productSelects || []), createdValue]));
+        const quantities = {
+          ...(pendingClassification.productQuantities || {}),
+          [createdValue]: 1,
+        };
+        await saveRmsProductClassification(opportunity, rmsClassificationDraftForValues(opportunity, selectedValues, quantities, {
           open_product_name: "",
-        });
+          product_search: "",
+        }));
         state.rmsMachineLoaded = false;
         await loadRmsMachineData({ force: true, quiet: true });
         state.rmsStationScreenOpen = true;
         state.rmsStationPhase = pendingClassification.phase || "curaduria";
         state.rmsMachineFilters.phase = state.rmsStationPhase;
         renderRmsMachineView();
-        showFeedback("Producto creado y clasificación guardada. Ya puedes enviarlo a Activación 1.", "success", { title: "Clasificador" });
+        showFeedback("Producto creado y asignación guardada. Ya puedes enviarlo a Activación 1.", "success", { title: "Asignación" });
         return;
       }
     }
@@ -35903,7 +35906,7 @@ function renderLeadDetailHeader(detail) {
 const LEAD_RMS_CONVERSION_PATH = [
   { key: "recoleccion", label: "Recolectar", progress: 10 },
   { key: "alimentacion", label: "Curaduría", progress: 22 },
-  { key: "curaduria", label: "Clasificador", progress: 35 },
+  { key: "curaduria", label: "Asignación", progress: 35 },
   { key: "clasificacion", label: "Activación 1", progress: 48 },
   { key: "preprocesamiento", label: "Revisión auxiliar 1", progress: 56, auxiliary: true },
   { key: "procesamiento", label: "Evaluación", progress: 68 },
@@ -40135,14 +40138,14 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   },
   {
     key: "curaduria",
-    label: "Clasificador",
-    short_label: "Clasificador",
-    storageLabel: "Almacena leads curados para clasificar",
+    label: "Asignación",
+    short_label: "Asignación",
+    storageLabel: "Almacena leads curados para asignar productos",
     operation: {
-      name: "Clasificacion",
-      primaryAction: "Asignar producto o servicio interno",
+      name: "Asignación",
+      primaryAction: "Asignar productos o servicios de interés",
       materialLabel: "Inventario, interes declarado y producto sugerido",
-      buttonLabel: "Clasificar oferta",
+      buttonLabel: "Asignar productos",
       nextPhase: "clasificacion",
     },
   },
@@ -41921,20 +41924,20 @@ const RMS_TUTORIAL_STEPS = [
     action: "station",
     input: "Leads seleccionados desde Leads recolectados.",
     operation: "Asigna calidad alta, media o baja según probabilidad, rapidez y recursos necesarios para convertir.",
-    output: "Leads con una calidad definida, listos para Clasificador.",
+    output: "Leads con una calidad definida, listos para Asignación.",
     operatorHint: "La calidad no es un producto: indica la prioridad comercial con la que debe operar el equipo.",
   },
   {
     key: "curaduria",
     phase: "curaduria",
     icon: "category",
-    title: "Estación 03 · Clasificador",
+    title: "Estación 03 · Asignación",
     subtitle: "Asignar oferta",
-    actionLabel: "Abrir Clasificador",
+    actionLabel: "Abrir Asignación",
     action: "station",
     input: "Leads con calidad heredada y una señal de interés verificable.",
     operation: "Asigna el producto o servicio interno más relevante para iniciar la conversación comercial.",
-    output: "Leads clasificados por oferta y listos para Activación 1.",
+    output: "Leads con productos asignados y listos para Activación 1.",
     operatorHint: "Aquí el interés se convierte en una oferta concreta; no se vuelve a decidir la calidad del lead.",
   },
   {
@@ -43783,6 +43786,55 @@ function rmsHasConfirmedProductClassification(item = {}) {
   return rmsClassifiedProductValues(item).some((value) => Boolean(findInventoryProduct(value)));
 }
 
+function rmsClassificationProductQuantity(item = {}, value = "") {
+  const draftQuantity = Number(rmsClassifiedProductDraft(item)?.product_quantities?.[value]);
+  if (Number.isFinite(draftQuantity) && draftQuantity > 0) return draftQuantity;
+  const stored = item.state_metadata?.classified_products || item.metadata?.classified_products || item.classified_products || [];
+  const storedProduct = Array.isArray(stored) ? stored.find((product) => inventoryProductSelectValue({ id: product?.inventory_product_id || product?.id || product }) === value) : null;
+  const storedQuantity = Number(storedProduct?.quantity || 0);
+  return Number.isFinite(storedQuantity) && storedQuantity > 0 ? storedQuantity : 1;
+}
+
+function rmsClassificationProductLines(item = {}) {
+  return rmsClassifiedProductValues(item).map((value) => {
+    const product = findInventoryProduct(value);
+    if (!product) return null;
+    const quantity = rmsClassificationProductQuantity(item, value);
+    return { value, product, quantity, total: Number(product.unit_price || 0) * quantity };
+  }).filter(Boolean);
+}
+
+function rmsClassificationDraftForValues(item = {}, values = [], quantities = {}, extra = {}) {
+  const selectedValues = Array.from(new Set(values)).filter((value) => Boolean(findInventoryProduct(value)));
+  const normalizedQuantities = { ...quantities };
+  const products = selectedValues.map((value) => {
+    const product = findInventoryProduct(value);
+    const quantity = Math.max(0.01, Number(normalizedQuantities[value]) || rmsClassificationProductQuantity(item, value) || 1);
+    normalizedQuantities[value] = quantity;
+    return {
+      inventory_product_id: product.id,
+      name: product.name,
+      category: product.category || "",
+      unit_price: Number(product.unit_price || 0),
+      currency: product.currency || "COP",
+      quantity,
+      line_total: Number(product.unit_price || 0) * quantity,
+    };
+  });
+  const primary = products[0] || null;
+  return {
+    product_select: selectedValues[0] || "",
+    product_selects: selectedValues,
+    product_quantities: normalizedQuantities,
+    products,
+    estimated_total: products.reduce((total, product) => total + Number(product.line_total || 0), 0),
+    inventory_product_id: primary?.inventory_product_id || null,
+    product_name: primary?.name || item.classified_product_name || item.product_interest || "",
+    product_category: primary?.category || "",
+    ...extra,
+  };
+}
+
 function rmsClassificationSourceLabel(item = {}) {
   const source = String(item.classification_source || "").toLowerCase();
   if (item.classification_is_manual || source.includes("manual")) return "Clasificación manual";
@@ -43794,47 +43846,64 @@ function rmsClassificationSourceLabel(item = {}) {
 
 function rmsProductClassificationMarkup(item = {}) {
   const selectedValues = rmsClassifiedProductValues(item);
+  const draft = rmsClassifiedProductDraft(item);
   const confidence = Math.round(Number(item.classification_confidence || 0) * 100);
   const classifiedName = rmsClassifiedProductName(item);
-  const selectedProducts = selectedValues.map((value) => findInventoryProduct(value)).filter(Boolean);
-  const canConfirm = selectedProducts.length > 0;
+  const selectedLines = rmsClassificationProductLines(item);
+  const canConfirm = selectedLines.length > 0;
+  const productSearch = String(draft?.product_search || "").trim();
+  const searchTerm = productSearch.toLocaleLowerCase("es-CO");
+  const activeProducts = (state.inventoryProducts || []).filter((product) => product.status === "ACTIVE");
+  const estimatedTotal = selectedLines.reduce((total, line) => total + line.total, 0);
   return `
     <div class="rms-product-classifier rms-product-classifier-lean" data-rms-product-classifier="${escapeHtml(item.id)}">
-      <label>
-        <span>Productos o servicios para esta oferta</span>
-        <select multiple size="${Math.min(6, Math.max(3, (state.inventoryProducts || []).filter((product) => product.status === "ACTIVE").length))}" data-rms-product-select="${escapeHtml(item.id)}" aria-describedby="rms-product-classification-help-${escapeHtml(item.id)}">
-          ${(state.inventoryProducts || []).filter((product) => product.status === "ACTIVE").map((product) => {
-            const value = inventoryProductSelectValue(product);
-            return `<option value="${escapeHtml(value)}" ${selectedValues.includes(value) ? "selected" : ""}>${escapeHtml(product.name)} · ${escapeHtml(money(product.unit_price || 0))}</option>`;
-          }).join("") || '<option disabled>No hay productos activos. Crea el primero.</option>'}
-        </select>
-        <small id="rms-product-classification-help-${escapeHtml(item.id)}">Puedes seleccionar varios: usa Ctrl/Cmd al hacer clic. El primero queda como producto principal para los flujos existentes.</small>
+      <div class="rms-product-assignment-head">
+        <div>
+          <span class="mono-label">Oferta del lead</span>
+          <strong>Asigna uno o varios productos</strong>
+          <small>Marca lo que le interesa, define cantidades y Qori conserva el primero como producto principal.</small>
+        </div>
+        <span class="rms-product-assignment-count">${selectedLines.length} seleccionado${selectedLines.length === 1 ? "" : "s"}</span>
+      </div>
+      <label class="rms-product-assignment-search">
+        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+        <input type="search" value="${escapeHtml(productSearch)}" data-rms-product-search="${escapeHtml(item.id)}" placeholder="Buscar producto, categoría o código" autocomplete="off">
       </label>
       <fieldset class="rms-product-classifier-options" aria-describedby="rms-product-classification-help-${escapeHtml(item.id)}">
-        <legend>Productos o servicios de interés</legend>
+        <legend>Productos o servicios disponibles</legend>
         <div>
-          ${(state.inventoryProducts || []).filter((product) => product.status === "ACTIVE").map((product) => {
+          ${activeProducts.map((product) => {
             const value = inventoryProductSelectValue(product);
-            return `<label class="${selectedValues.includes(value) ? "is-selected" : ""}"><input type="checkbox" value="${escapeHtml(value)}" data-rms-product-option="${escapeHtml(item.id)}" ${selectedValues.includes(value) ? "checked" : ""}><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(money(product.unit_price || 0))} · ${escapeHtml(product.category || "Producto")}</small></span><span class="material-symbols-outlined" aria-hidden="true">check</span></label>`;
-          }).join("") || '<p class="table-secondary">No hay productos activos. Crea el primero.</p>'}
+            const searchable = [product.name, product.category, product.sku, product.barcode].filter(Boolean).join(" ").toLocaleLowerCase("es-CO");
+            return `<label class="${selectedValues.includes(value) ? "is-selected" : ""}" data-rms-product-entry="${escapeHtml(searchable)}" ${searchTerm && !searchable.includes(searchTerm) ? "hidden" : ""}><input type="checkbox" value="${escapeHtml(value)}" data-rms-product-option="${escapeHtml(item.id)}" ${selectedValues.includes(value) ? "checked" : ""}><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(money(product.unit_price || 0))} · ${escapeHtml(product.category || "Producto")}</small></span><span class="material-symbols-outlined" aria-hidden="true">check</span></label>`;
+          }).join("") || '<p class="table-secondary">No hay productos activos todavía.</p>'}
         </div>
-        <small>Marca todos los productos que interesan a este lead. Qori conserva uno como referencia principal y todos los demás en el historial.</small>
+        <small id="rms-product-classification-help-${escapeHtml(item.id)}">Selecciona con una casilla; no necesitas usar Ctrl ni Cmd.</small>
       </fieldset>
+      ${selectedLines.length ? `
+        <section class="rms-product-assignment-selected" aria-label="Productos asignados">
+          <div class="rms-product-assignment-selected-head"><strong>Detalle de la oferta</strong><small>El valor es estimado y se podrá ajustar al registrar la venta.</small></div>
+          <div class="rms-product-assignment-lines">
+            ${selectedLines.map((line, index) => `
+              <div class="rms-product-assignment-line">
+                <span class="rms-product-assignment-order">${index + 1}</span>
+                <div><strong>${escapeHtml(line.product.name)}</strong><small>${escapeHtml(money(line.product.unit_price || 0))} por unidad</small></div>
+                <label><span>Cantidad</span><input type="number" min="0.01" step="0.01" value="${escapeHtml(String(line.quantity))}" data-rms-product-quantity="${escapeHtml(item.id)}" data-rms-product-quantity-value="${escapeHtml(line.value)}"></label>
+                <strong class="rms-product-assignment-line-total">${escapeHtml(money(line.total || 0))}</strong>
+              </div>
+            `).join("")}
+          </div>
+          <div class="rms-product-assignment-total"><span>Total estimado</span><strong>${escapeHtml(money(estimatedTotal || 0))}</strong></div>
+        </section>
+      ` : ""}
       <div class="rms-product-classifier-meta">
         <strong>${escapeHtml(classifiedName || "Selecciona una o varias ofertas")}</strong>
         <small>${escapeHtml(rmsClassificationSourceLabel(item))}${confidence ? ` · ${confidence}% de coincidencia` : ""}</small>
       </div>
       <div class="rms-product-classifier-actions">
-        ${canConfirm
-          ? `<button class="solid-button compact" type="button" data-rms-save-classification="${escapeHtml(item.id)}">Guardar ${selectedProducts.length} producto${selectedProducts.length === 1 ? "" : "s"}</button>`
-          : `<button class="solid-button compact" type="button" data-rms-create-product-classification="${escapeHtml(item.id)}">Crear producto</button>`}
-        <details class="rms-product-classifier-more">
-          <summary>Más opciones</summary>
-          <div>
-            <button class="ghost-button compact" type="button" data-rms-create-product-classification="${escapeHtml(item.id)}">Crear producto</button>
-            <button class="ghost-button compact danger-button" type="button" data-rms-clear-classification="${escapeHtml(item.id)}">Limpiar</button>
-          </div>
-        </details>
+        <button class="solid-button compact" type="button" data-rms-save-classification="${escapeHtml(item.id)}" ${canConfirm ? "" : "disabled"}>Guardar asignación</button>
+        <button class="ghost-button compact" type="button" data-rms-create-product-classification="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">add</span>${productSearch ? `Crear “${escapeHtml(productSearch)}”` : "Crear producto"}</button>
+        ${canConfirm ? `<button class="link-button danger-link" type="button" data-rms-clear-classification="${escapeHtml(item.id)}">Limpiar</button>` : ""}
       </div>
     </div>
   `;
@@ -44034,13 +44103,13 @@ function rmsStationVisualMeta(phase = "") {
       icon: "fact_check",
       tone: "curation",
       image: "/empresa/img/qori-station-03-clasificador.jpg",
-      imageAlt: "Estacion 03 Clasificador",
-      screenTitle: "Estacion de almacenamiento: Clasificador",
-      visualLabel: "Inventario: leads curados para clasificar",
+      imageAlt: "Estación 03 Asignación",
+      screenTitle: "Estación de almacenamiento: Asignación",
+      visualLabel: "Inventario: leads con productos por asignar",
       input: "Leads que Curaduría ya califico como baja, media o alta calidad.",
       output: "Leads con producto o servicio interno asignado para Activación 1.",
-      focus: "Asignar el producto con el que se va a contactar al lead. Si viene de una activación con producto, queda clasificado automaticamente.",
-      checklist: ["Calidad heredada", "Producto del inventario", "Interes declarado", "Crear producto faltante", "Salida a Activación 1"],
+      focus: "Asigna todos los productos de interés y sus cantidades. Si falta uno, créalo sin salir de esta estación.",
+      checklist: ["Calidad heredada", "Productos del inventario", "Cantidades", "Crear producto faltante", "Salida a Activación 1"],
     },
     clasificacion: {
       icon: "account_tree",
@@ -45777,38 +45846,61 @@ function bindRmsMachineActions(root) {
       );
     });
   });
-  root.querySelectorAll("[data-rms-product-select], [data-rms-product-option]").forEach((select) => {
-    select.addEventListener("change", () => {
-      const id = select.dataset.rmsProductSelect || select.dataset.rmsProductOption || "";
-      const optionInputs = Array.from(root.querySelectorAll("[data-rms-product-option]")).filter((input) => input.dataset.rmsProductOption === id);
-      const selectedValues = optionInputs.length
-        ? optionInputs.filter((input) => input.checked).map((input) => input.value).filter((value) => Boolean(findInventoryProduct(value)))
-        : Array.from(select.selectedOptions || []).map((option) => option.value).filter((value) => Boolean(findInventoryProduct(value)));
+  root.querySelectorAll("[data-rms-product-option]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const id = input.dataset.rmsProductOption || "";
+      const item = rmsOpportunityById(id);
+      if (!id || !item) return;
+      const selected = new Set(rmsClassifiedProductValues(item));
+      if (input.checked) selected.add(input.value);
+      else selected.delete(input.value);
+      const quantities = { ...(rmsClassifiedProductDraft(item)?.product_quantities || {}) };
+      Array.from(selected).forEach((value) => {
+        if (!(Number(quantities[value]) > 0)) quantities[value] = rmsClassificationProductQuantity(item, value);
+      });
+      if (!state.rmsProductClassificationDraft) state.rmsProductClassificationDraft = {};
+      state.rmsProductClassificationDraft[id] = rmsClassificationDraftForValues(item, Array.from(selected), quantities, {
+        open_product_name: "",
+        product_search: rmsClassifiedProductDraft(item)?.product_search || "",
+      });
+      const current = new Set(state.rmsMachineSelectedIds || []);
+      if (selected.size) current.add(id); else current.delete(id);
+      state.rmsMachineSelectedIds = Array.from(current).filter(Boolean);
+      renderRmsBulkToolbar();
+      updateRmsStationOutputPreview();
+      renderRmsStationOnly();
+    });
+  });
+  root.querySelectorAll("[data-rms-product-search]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const id = input.dataset.rmsProductSearch || "";
+      const item = rmsOpportunityById(id);
+      if (!id || !item) return;
       if (!state.rmsProductClassificationDraft) state.rmsProductClassificationDraft = {};
       state.rmsProductClassificationDraft[id] = {
         ...(state.rmsProductClassificationDraft[id] || {}),
-        product_select: selectedValues[0] || "",
-        product_selects: selectedValues,
-        open_product_name: "",
+        product_search: input.value,
       };
-      const current = new Set(state.rmsMachineSelectedIds || []);
-      if (selectedValues.length) current.add(id);
-      else current.delete(id);
-      state.rmsMachineSelectedIds = Array.from(current).filter(Boolean);
-      optionInputs.forEach((input) => input.closest("label")?.classList.toggle("is-selected", input.checked));
-      const checkbox = Array.from(root.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
-      if (checkbox) {
-        checkbox.checked = current.has(id);
-        checkbox.closest("[data-rms-station-lead]")?.classList.toggle("is-selected", current.has(id));
-        checkbox.closest(".rms-station-lead-check")?.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode(current.has(id) ? "check_circle" : "radio_button_unchecked"));
-      }
-      const primaryAction = select.closest("[data-rms-product-classifier]")?.querySelector(".rms-product-classifier-actions > .solid-button");
-      if (primaryAction) {
-        primaryAction.textContent = selectedValues.length ? `Guardar ${selectedValues.length} producto${selectedValues.length === 1 ? "" : "s"}` : "Crear producto";
-        primaryAction.setAttribute("aria-label", selectedValues.length ? "Guardar clasificación de productos" : "Crear producto");
-      }
-      renderRmsBulkToolbar();
-      updateRmsStationOutputPreview();
+      const query = input.value.trim().toLocaleLowerCase("es-CO");
+      root.querySelectorAll("[data-rms-product-entry]").forEach((entry) => {
+        entry.hidden = Boolean(query && !String(entry.dataset.rmsProductEntry || "").includes(query));
+      });
+    });
+  });
+  root.querySelectorAll("[data-rms-product-quantity]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const id = input.dataset.rmsProductQuantity || "";
+      const value = input.dataset.rmsProductQuantityValue || "";
+      const item = rmsOpportunityById(id);
+      if (!id || !value || !item) return;
+      const quantities = { ...(rmsClassifiedProductDraft(item)?.product_quantities || {}) };
+      quantities[value] = Math.max(0.01, Number(input.value) || 1);
+      if (!state.rmsProductClassificationDraft) state.rmsProductClassificationDraft = {};
+      state.rmsProductClassificationDraft[id] = rmsClassificationDraftForValues(item, rmsClassifiedProductValues(item), quantities, {
+        open_product_name: "",
+        product_search: rmsClassifiedProductDraft(item)?.product_search || "",
+      });
+      renderRmsStationOnly();
     });
   });
   root.querySelectorAll("[data-rms-product-open]").forEach((input) => {
@@ -46486,37 +46578,28 @@ function updateRmsStationOutputPreview() {
 
 function rmsClassificationDraftFromDom(item = {}) {
   const optionInputs = Array.from(document.querySelectorAll("[data-rms-product-option]")).filter((node) => node.dataset.rmsProductOption === item.id);
-  const select = Array.from(document.querySelectorAll("[data-rms-product-select]")).find((node) => node.dataset.rmsProductSelect === item.id);
+  const quantityInputs = Array.from(document.querySelectorAll("[data-rms-product-quantity]")).filter((node) => node.dataset.rmsProductQuantity === item.id);
+  const searchInput = Array.from(document.querySelectorAll("[data-rms-product-search]")).find((node) => node.dataset.rmsProductSearch === item.id);
   const openInput = Array.from(document.querySelectorAll("[data-rms-product-open]")).find((node) => node.dataset.rmsProductOpen === item.id);
   const selectedValues = optionInputs.length
     ? optionInputs.filter((input) => input.checked).map((input) => input.value).filter((value) => Boolean(findInventoryProduct(value)))
-    : select
-      ? Array.from(select.selectedOptions).map((option) => option.value).filter((value) => Boolean(findInventoryProduct(value)))
     : rmsClassifiedProductValues(item);
-  const selectedProducts = selectedValues.map((value) => findInventoryProduct(value)).filter(Boolean);
-  const selectedProduct = selectedProducts[0] || null;
-  return {
-    product_select: selectedValues[0] || "",
-    product_selects: selectedValues,
-    products: selectedProducts.map((product) => ({
-      inventory_product_id: product.id,
-      name: product.name,
-      category: product.category || "",
-      unit_price: Number(product.unit_price || 0),
-      currency: product.currency || "COP",
-    })),
-    inventory_product_id: selectedProduct?.id || null,
-    product_name: selectedProduct?.name || item.classified_product_name || item.product_interest || "",
-    product_category: selectedProduct?.category || "",
+  const quantities = { ...(rmsClassifiedProductDraft(item)?.product_quantities || {}) };
+  quantityInputs.forEach((input) => {
+    const value = input.dataset.rmsProductQuantityValue || "";
+    if (value) quantities[value] = Math.max(0.01, Number(input.value) || 1);
+  });
+  return rmsClassificationDraftForValues(item, selectedValues, quantities, {
     open_product_name: String(openInput?.value || "").trim(),
-  };
+    product_search: String(searchInput?.value || rmsClassifiedProductDraft(item)?.product_search || "").trim(),
+  });
 }
 
 async function saveRmsProductClassification(item = {}, draft = null, options = {}) {
   if (!item?.source_id) return;
   const nextDraft = draft || rmsClassificationDraftFromDom(item);
   if (!nextDraft.inventory_product_id && !options.clear) {
-    showFeedback("Selecciona un producto activo del inventario. Si no existe, créalo primero desde Inventario y vuelve a vincular este lead.", "info", { title: "Clasificador" });
+    showFeedback("Selecciona al menos un producto activo. Si falta, créalo aquí mismo y luego quedará asignado al lead.", "info", { title: "Asignación" });
     return;
   }
   await api("/api/business/rms-machine/lead/phase", {
@@ -46532,7 +46615,7 @@ async function saveRmsProductClassification(item = {}, draft = null, options = {
       last_operation: options.clear ? "product_classification_cleared" : "product_classified_in_clasificar",
       last_material_sent: options.clear ? null : (nextDraft.inventory_product_id || nextDraft.product_name),
       revenue_potential: Number(item.revenue_potential || 0),
-      reason: options.clear ? "Clasificación interna eliminada desde Clasificador." : `Clasificación interna en Clasificador: ${nextDraft.product_name}.`,
+      reason: options.clear ? "Asignación de productos eliminada desde la estación." : `Productos asignados en Asignación: ${nextDraft.product_name}.`,
       metadata: {
         source_module: "rms_machine",
         source_flow: "clasificador_product_classification",
@@ -46544,6 +46627,8 @@ async function saveRmsProductClassification(item = {}, draft = null, options = {
         classified_product_name: options.clear ? null : nextDraft.product_name,
         classified_product_category: options.clear ? null : nextDraft.product_category,
         classified_products: options.clear ? [] : (nextDraft.products || []),
+        classified_product_quantities: options.clear ? {} : (nextDraft.product_quantities || {}),
+        classified_products_estimated_total: options.clear ? 0 : Number(nextDraft.estimated_total || 0),
         classification_source: options.clear ? "manual_clear" : "manual_inventory",
         classification_confidence: options.clear ? 0 : 1,
         classified_at: options.clear ? null : new Date().toISOString(),
@@ -46556,9 +46641,8 @@ async function saveRmsProductClassification(item = {}, draft = null, options = {
 
 function rmsProductClassificationMetadata(item = {}) {
   const draft = rmsClassifiedProductDraft(item);
-  const selectedValues = rmsClassifiedProductValues(item);
-  const selectedProducts = selectedValues.map((value) => findInventoryProduct(value)).filter(Boolean);
-  const selectedProduct = selectedProducts[0] || (draft?.product_select ? findInventoryProduct(draft.product_select) : findInventoryProductById(item.classified_product_id));
+  const selectedLines = rmsClassificationProductLines(item);
+  const selectedProduct = selectedLines[0]?.product || (draft?.product_select ? findInventoryProduct(draft.product_select) : findInventoryProductById(item.classified_product_id));
   const source = String(item.classification_source || "").toLowerCase();
   if (!draft && !item.classified_product_id && source === "interest_without_inventory_match") return {};
   // Product text is retained only as historical context. A current handoff
@@ -46568,13 +46652,17 @@ function rmsProductClassificationMetadata(item = {}) {
     classified_product_id: selectedProduct?.id || item.classified_product_id || null,
     classified_product_name: productName,
     classified_product_category: selectedProduct?.category || item.classified_product_category || "",
-    classified_products: selectedProducts.map((product) => ({
-      inventory_product_id: product.id,
-      name: product.name,
-      category: product.category || "",
-      unit_price: Number(product.unit_price || 0),
-      currency: product.currency || "COP",
+    classified_products: selectedLines.map((line) => ({
+      inventory_product_id: line.product.id,
+      name: line.product.name,
+      category: line.product.category || "",
+      unit_price: Number(line.product.unit_price || 0),
+      currency: line.product.currency || "COP",
+      quantity: line.quantity,
+      line_total: line.total,
     })),
+    classified_product_quantities: Object.fromEntries(selectedLines.map((line) => [line.value, line.quantity])),
+    classified_products_estimated_total: selectedLines.reduce((total, line) => total + line.total, 0),
     classification_source: selectedProduct?.id ? "station_output_inventory" : "HISTORICAL_UNLINKED",
     classification_confidence: selectedProduct?.id ? 1 : Number(item.classification_confidence || 0),
     classified_at: item.state_metadata?.classified_at || new Date().toISOString(),
@@ -46585,14 +46673,14 @@ async function handleRmsSaveClassification(id = "") {
   const item = rmsOpportunityById(id);
   if (!item) return;
   try {
-    showFeedback("Guardando clasificación de producto...", "loading", { title: "Clasificador", timeout: 0 });
+    showFeedback("Guardando productos asignados...", "loading", { title: "Asignación", timeout: 0 });
     await saveRmsProductClassification(item);
     state.rmsMachineLoaded = false;
     await loadRmsMachineData({ force: true, quiet: true });
     renderRmsMachineView();
-    showFeedback("Clasificación guardada en Clasificador.", "success", { title: "Clasificador" });
+    showFeedback("Productos asignados correctamente.", "success", { title: "Asignación" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo guardar la clasificación.", "error", { title: "Clasificador" });
+    showFeedback(error.message || "No se pudo guardar la asignación.", "error", { title: "Asignación" });
   }
 }
 
@@ -46600,35 +46688,36 @@ async function handleRmsCreateProductClassification(id = "") {
   const item = rmsOpportunityById(id);
   if (!item) return;
   const draft = rmsClassificationDraftFromDom(item);
-  if (draft.inventory_product_id) {
+  if (draft.inventory_product_id && !draft.product_search) {
     await handleRmsSaveClassification(id);
     return;
   }
-  const productName = String(draft.open_product_name || draft.product_name || item.product_interest || "").trim();
+  const productName = String(draft.product_search || draft.open_product_name || draft.product_name || item.product_interest || "").trim();
   if (!productName) {
-    showFeedback("Escribe el nombre del producto o servicio antes de crearlo.", "info", { title: "Clasificador" });
+    showFeedback("Busca o escribe el nombre del producto o servicio antes de crearlo.", "info", { title: "Asignación" });
     return;
   }
   state.rmsPendingProductClassification = {
     opportunityId: item.id,
     phase: item.stage || "curaduria",
     productName,
+    productSelects: draft.product_selects || [],
+    productQuantities: draft.product_quantities || {},
   };
   // Open the form first. This moves it out of the Inventory view before the
   // navigation can render that view and guarantees the guided form stays open.
   resetInventoryForm();
   if (inventoryNameInput) inventoryNameInput.value = productName;
-  if (inventoryDescriptionInput) inventoryDescriptionInput.value = `Creado desde Clasificador para ${item.name || "un lead"}.`;
+  if (inventoryDescriptionInput) inventoryDescriptionInput.value = `Creado desde Asignación para ${item.name || "un lead"}.`;
   openInventoryProductModal({ focusTarget: inventoryUnitPriceInput || inventoryNameInput });
-  setView("inventory");
-  showFeedback("Completa precio y unidad. Al guardar, Qori vinculará este producto al lead y volverá al Clasificador.", "info", { title: "Clasificador" });
+  showFeedback("Completa los datos del producto. Al guardar quedará creado, seleccionado y seguirás en Asignación.", "info", { title: "Asignación" });
 }
 
 async function handleRmsClearClassification(id = "") {
   const item = rmsOpportunityById(id);
   if (!item) return;
   try {
-    showFeedback("Limpiando clasificación...", "loading", { title: "Clasificador", timeout: 0 });
+    showFeedback("Limpiando productos asignados...", "loading", { title: "Asignación", timeout: 0 });
     await saveRmsProductClassification(item, {
       product_select: "",
       inventory_product_id: null,
@@ -46639,9 +46728,9 @@ async function handleRmsClearClassification(id = "") {
     state.rmsMachineLoaded = false;
     await loadRmsMachineData({ force: true, quiet: true });
     renderRmsMachineView();
-    showFeedback("Clasificación eliminada. El lead queda pendiente en Clasificador.", "success", { title: "Clasificador" });
+    showFeedback("Asignación eliminada. El lead queda pendiente en Asignación.", "success", { title: "Asignación" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo limpiar la clasificación.", "error", { title: "Clasificador" });
+    showFeedback(error.message || "No se pudo limpiar la asignación.", "error", { title: "Asignación" });
   }
 }
 
@@ -46662,7 +46751,7 @@ function toggleRmsSelection(id = "", selected = false) {
   if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "curaduria" && item?.stage === "curaduria" && !rmsHasConfirmedProductClassification(item)) {
     const checkbox = Array.from(document.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
     if (checkbox) checkbox.checked = false;
-    showFeedback("Primero clasifica este lead por producto o servicio interno.", "info", { title: "Clasificador" });
+    showFeedback("Primero asigna al menos un producto o servicio al lead.", "info", { title: "Asignación" });
     return;
   }
   if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "clasificacion" && item?.stage === "clasificacion" && !rmsActivationReady(item)) {

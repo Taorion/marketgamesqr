@@ -140,7 +140,7 @@ const LEGACY_PHASE_ALIASES = {
 const INDUSTRIAL_PROCESS = [
   { key: "recoleccion", label: "Recoleccion", phase: "recoleccion", description: "QR, activaciones, formularios, referidos, campanas y contactos existentes." },
   { key: "alimentacion", label: "Alimentacion", phase: "alimentacion", description: "La persona entra oficialmente como materia prima comercial RMS." },
-  { key: "curaduria", label: "Clasificador", phase: "curaduria", description: "Se asigna producto o servicio interno para contactar al lead con una oferta clara." },
+  { key: "curaduria", label: "Asignación", phase: "curaduria", description: "Se asignan productos o servicios de interés para contactar al lead con una oferta clara." },
   { key: "clasificacion", label: "Activación 1", phase: "clasificacion", description: "Se prepara el primer contacto, se confirma el envío de una oferta y se programa el seguimiento para medir respuesta." },
   { key: "procesamiento", label: "Evaluación", phase: "procesamiento", description: "Se ejecuta propuesta, catalogo, ticket, cotizacion, factura o tarea de venta." },
   { key: "correccion", label: "Negociación", phase: "accion_correctiva", description: "Reactivar, recordar, reenviar beneficio, llamar, posponer o marcar perdido." },
