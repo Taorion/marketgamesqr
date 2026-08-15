@@ -11457,6 +11457,9 @@ function dashboardCommercialEconomics() {
       revenue: toNumber(summary.attributed_revenue || summary.observed_revenue),
       customers: toNumber(summary.direct_sales_count || summary.observed_sales_count),
     };
+  const summaryInvestment = toNumber(summary.total_investment || summary.investment || summary.total_cost);
+  const summaryRevenue = toNumber(summary.observed_revenue ?? summary.attributed_revenue ?? summary.total_revenue);
+  const summaryCustomers = toNumber(summary.observed_sales_count ?? summary.direct_sales_count ?? summary.attributed_sales_count);
 
   // A detailed effort is the source of truth for its channel. Its spend must
   // not be counted again through the channel's period budget.
@@ -11480,9 +11483,14 @@ function dashboardCommercialEconomics() {
     acc.customers += toNumber(metrics.sales);
     return acc;
   }, { investment: 0, revenue: 0, customers: 0 });
-  const investment = campaignTotals.investment + standaloneEffortTotals.investment + standaloneChannelTotals.investment;
-  const revenue = campaignTotals.revenue + standaloneEffortTotals.revenue + standaloneChannelTotals.revenue;
-  const customers = campaignTotals.customers + standaloneEffortTotals.customers + standaloneChannelTotals.customers;
+  const calculatedInvestment = campaignTotals.investment + standaloneEffortTotals.investment + standaloneChannelTotals.investment;
+  const calculatedRevenue = campaignTotals.revenue + standaloneEffortTotals.revenue + standaloneChannelTotals.revenue;
+  const calculatedCustomers = campaignTotals.customers + standaloneEffortTotals.customers + standaloneChannelTotals.customers;
+  // El resumen es la consolidación de ventas reales de la cuenta. El encabezado
+  // debe usarlo cuando existe, en vez de bajar a una sola campaña o canal.
+  const investment = summaryInvestment || calculatedInvestment;
+  const revenue = summaryRevenue || calculatedRevenue;
+  const customers = summaryCustomers || calculatedCustomers;
   const addedSources = [
     standaloneEffortTotals.investment ? `${standaloneEfforts.length} esfuerzo(s) sin campaña` : "",
     standaloneChannelTotals.investment ? `${standaloneChannels.length} canal(es) independientes` : "",
@@ -11913,18 +11921,18 @@ function businessRoiLabel(value) {
 }
 
 function renderDashboardBusinessEconomics() {
-  const economics = state.commandCenter?.business_economics;
-  const investment = Number(economics?.investment || 0);
-  const revenue = Number(economics?.revenue || 0);
-  const customers = Number(economics?.customers || 0);
-  const roiAvailable = investment > 0 && economics?.roi !== null && economics?.roi !== undefined;
-  const cacAvailable = investment > 0 && customers > 0 && economics?.cac !== null && economics?.cac !== undefined;
+  const economics = dashboardCommercialEconomics();
+  const investment = toNumber(economics.investment);
+  const revenue = toNumber(economics.revenue);
+  const customers = toNumber(economics.customers);
+  const roiAvailable = investment > 0 && economics.roi !== null && economics.roi !== undefined;
+  const cacAvailable = investment > 0 && customers > 0 && economics.cac !== null && economics.cac !== undefined;
 
   if (dashboardBusinessRoiValue) dashboardBusinessRoiValue.textContent = roiAvailable ? businessRoiLabel(economics.roi) : "—";
   if (dashboardBusinessCacValue) dashboardBusinessCacValue.textContent = cacAvailable ? money(economics.cac) : "—";
   if (dashboardBusinessRoiMeta) {
     dashboardBusinessRoiMeta.textContent = investment > 0
-      ? `${money(investment)} registrados · ${money(revenue)} atribuidos`
+      ? `${money(investment)} de inversión · ${money(revenue)} en ventas`
       : "Registra inversión en campañas, canales o esfuerzos";
   }
   if (dashboardBusinessCacMeta) {
