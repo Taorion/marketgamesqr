@@ -22100,3 +22100,53 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-activation-outcome
   html body[data-current-view="rms-machine"] .portal-shell .rms-activation-action-row > button,
   html body[data-current-view="rms-machine"] .portal-shell .rms-activation-outcome-row > button { flex:1 1 100% !important; }
 }
+
+/* Evaluación: el fondo claro siempre usa texto oscuro; selección conserva contraste inverso. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice,
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice:hover {
+  color:#082d67 !important;
+  background:#ffffff !important;
+  border-color:#cfe2f6 !important;
+  box-shadow:0 8px 18px rgba(20,71,132,.07) !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice:hover {
+  background:#f4f9ff !important;
+  border-color:#8dbce8 !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice .rms-evaluation-choice-icon {
+  color:#0759d6 !important;
+  background:#e8f3ff !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice-copy em {
+  color:#426888 !important;
+  opacity:1 !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice-copy strong { color:#082d67 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice-copy small {
+  color:#58738d !important;
+  opacity:1 !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice-check {
+  color:#0759d6 !important;
+  background:#ffffff !important;
+  border-color:#b9d6f0 !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice.is-selected,
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice.is-selected:hover {
+  color:#ffffff !important;
+  background:linear-gradient(135deg,#012268 0%,#0759d6 100%) !important;
+  border-color:#0759d6 !important;
+  box-shadow:0 0 0 3px rgba(7,89,214,.12),0 14px 28px rgba(1,57,139,.22) !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice.is-selected .rms-evaluation-choice-icon {
+  color:#0759d6 !important;
+  background:#ffffff !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice.is-selected .rms-evaluation-choice-copy em { color:#cfeeff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice.is-selected .rms-evaluation-choice-copy strong { color:#ffffff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice.is-selected .rms-evaluation-choice-copy small { color:#edf8ff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-choice.is-selected .rms-evaluation-choice-check {
+  color:#0759d6 !important;
+  background:#ffffff !important;
+  border-color:#ffffff !important;
+}
