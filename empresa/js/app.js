@@ -16304,6 +16304,10 @@ async function openGamingActivationDetail(id = "") {
   const item = activationById(id);
   if (!item) return;
   const modal = ensureGamingActivationDetailModal();
+  if (!modal) {
+    showFeedback("No pudimos abrir la ficha de la activación. Vuelve a la lista e intenta Editar o Enviar directamente.", "error", { title: "Activaciones" });
+    return;
+  }
   const title = modal.querySelector("#gamingActivationDetailTitle");
   const subtitle = modal.querySelector("#gamingActivationDetailSubtitle");
   const eyebrow = modal.querySelector("#gamingActivationDetailEyebrow");
@@ -16323,7 +16327,8 @@ async function openGamingActivationDetail(id = "") {
     bindGamingActivationDetailActions(modal);
   } catch (error) {
     if (modal.dataset.activationId !== String(item.id) || !body) return;
-    body.innerHTML = `<div class="activation-history-empty">No se pudo cargar el historial: ${escapeHtml(error.message || "intenta de nuevo")}</div>`;
+    body.innerHTML = `${renderGamingActivationDetailBody(item)}<div class="activation-history-empty">El historial no se pudo cargar ahora: ${escapeHtml(error.message || "intenta de nuevo")}. Puedes seguir enviando o editando esta activación.</div>`;
+    bindGamingActivationDetailActions(modal);
   }
 }
 
@@ -21845,12 +21850,6 @@ function renderInventoryView() {
       }
     });
   });
-  const triviaPanel = view.querySelector('.ticket-center-panel[data-ticket-panel="trivia"]');
-  const primaryActivationList = triviaPanel?.querySelector(".gaming-activation-list-card");
-  const triviaContext = triviaPanel?.querySelector(":scope > .gaming-center-panel-context");
-  if (triviaPanel && primaryActivationList && primaryActivationList.previousElementSibling !== triviaContext) {
-    triviaPanel.insertBefore(primaryActivationList, triviaContext?.nextElementSibling || triviaPanel.firstElementChild);
-  }
   inventoryTable.querySelectorAll("[data-inventory-detail]").forEach((button) => {
     button.addEventListener("click", () => openInventoryProductDetail(button.dataset.inventoryDetail));
   });
@@ -25804,6 +25803,8 @@ function renderTriviaLaunchers() {
         <td>
           <div class="activation-row-actions">
             ${item.status === "draft" ? `<button class="solid-button compact" type="button" data-continue-activation-draft="${escapeHtml(item.id)}">Continuar</button>` : `<button class="ghost-button compact" type="button" data-open-activation-detail="${escapeHtml(item.id)}">Abrir</button>`}
+            <button class="ghost-button compact" type="button" data-share-activation="${escapeHtml(item.id)}">Enviar</button>
+            <button class="ghost-button compact" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar</button>
             <button class="ghost-button compact danger" type="button" data-delete-activation="${escapeHtml(item.id)}">Eliminar</button>
           </div>
         </td>
@@ -25858,6 +25859,14 @@ function renderTriviaLaunchers() {
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       editInteractiveActivation(button.dataset.editActivation);
+    });
+  });
+
+  triviaLauncherTable.querySelectorAll("[data-share-activation]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openActivationShareModal(button.dataset.shareActivation);
     });
   });
 
