@@ -2318,7 +2318,7 @@ function roundedMoney(value) {
 async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
-  if (item.stage !== "cierre") throw badRequest("La venta solo puede atribuirse desde una venta limpia confirmada o una revisión anti-fuga liberada.");
+  if (item.stage !== "cierre") throw badRequest("La venta solo puede atribuirse desde una compra directa confirmada en Evaluación, una venta limpia o una revisión anti-fuga liberada.");
   if (!payload.inventory_product_id) {
     throw badRequest("Selecciona el producto o servicio real del inventario antes de registrar la venta atribuida.");
   }
@@ -2327,12 +2327,17 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     [businessId, sourceType, payload.source_id]
   );
   const workflowMetadata = currentState.rows[0]?.metadata || {};
-  const validSaleOrigin = workflowMetadata.negotiation_result === "ACCEPTED"
+  // Una compra directa registrada en Evaluación puede llegar a Ventas atribuidas
+  // sin pasar por Negociación ni Riesgos de fuga. Esas estaciones son rutas de
+  // apoyo, no un requisito para cerrar ni para alimentar Inteligencia RMS.
+  const directEvaluationSale = workflowMetadata.rms_evaluation?.response === "PAID_SALE";
+  const validSaleOrigin = directEvaluationSale
+    || workflowMetadata.negotiation_result === "ACCEPTED"
     || workflowMetadata.commercial_route === "NEGOTIATION_CLEAN"
     || (workflowMetadata.commercial_confirmation?.route === "NEGOTIATION_CLEAN")
     || workflowMetadata.risk_review?.result === "CLEARED";
   if (!validSaleOrigin) {
-    throw badRequest("Aún falta una respuesta de compra confirmada en Negociación o una revisión anti-fuga liberada.");
+    throw badRequest("Registra una compra directa en Evaluación, confirma un acuerdo en Negociación o libera una revisión anti-fuga antes de atribuir la venta.");
   }
   const quantity = Math.max(0.01, Number(payload.quantity || 1));
   const benefitCost = Math.max(0, roundedMoney(payload.benefit_cost));
