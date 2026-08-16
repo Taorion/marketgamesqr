@@ -4634,7 +4634,17 @@ async function resolveInventoryTaxonomy(client, businessId, payload, options = {
     const categoryByInternalId = await client.query(
       `select id, name, internal_id
          from business_product_categories
-        where business_id = $1 and lower(internal_id) = lower($2)
+        where business_id = $1
+          and (
+            lower(internal_id) = lower($2)
+            or lower(name) = lower($2)
+            or id::text = $2
+          )
+        order by case
+          when lower(internal_id) = lower($2) then 0
+          when id::text = $2 then 1
+          else 2
+        end
         limit 1`,
       [businessId, payload.category_internal_id]
     );
@@ -4669,7 +4679,17 @@ async function resolveInventoryTaxonomy(client, businessId, payload, options = {
     const subcategoryByInternalId = await client.query(
       `select id, category_id, name, internal_id
          from business_product_subcategories
-        where business_id = $1 and lower(internal_id) = lower($2)
+        where business_id = $1
+          and (
+            lower(internal_id) = lower($2)
+            or lower(name) = lower($2)
+            or id::text = $2
+          )
+        order by case
+          when lower(internal_id) = lower($2) then 0
+          when id::text = $2 then 1
+          else 2
+        end
         limit 1`,
       [businessId, payload.subcategory_internal_id]
     );
