@@ -3231,6 +3231,7 @@ function hideFeedback() {
   if (!actionFeedback) return;
   actionFeedback.classList.add("hidden");
   actionFeedback.className = "action-feedback hidden";
+  actionFeedback.hidden = true;
   actionFeedback.setAttribute("aria-hidden", "true");
   actionFeedback.innerHTML = "";
 }
@@ -3324,6 +3325,7 @@ function showFeedback(message, kind = "success", options = {}) {
       <span class="material-symbols-outlined" aria-hidden="true">close</span>
     </button>
   `;
+  actionFeedback.hidden = false;
   actionFeedback.removeAttribute("aria-hidden");
   actionFeedback.classList.remove("hidden");
   // Ninguna alerta global debe quedarse inmóvil sobre la operación. Los procesos

@@ -9831,6 +9831,7 @@ html body .content-shell > .action-feedback.hidden {
    display:grid, una alerta vacía o marcada como hidden jamás debe reservar
    espacio ni superponerse a la operación. */
 html body #actionFeedback.hidden,
+html body #actionFeedback[hidden],
 html body #actionFeedback:empty {
   display: none !important;
   visibility: hidden !important;
