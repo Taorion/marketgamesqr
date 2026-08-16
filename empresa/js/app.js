@@ -48817,7 +48817,7 @@ function rmsEvaluationDraftFromDom(root, id) {
   const recycleReason = rmsCommercialNode(root, "[data-rms-evaluation-recycle-reason]", id)?.value || "";
   const recycleReasons = new Set(["BUDGET", "TIMING", "NO_RESPONSE", "WAITING_DECISION", "NOT_VIABLE_NOW", "OTHER"]);
   const isRecycleRoute = response === "RECYCLE" || destination === "RECYCLE";
-  return {
+  const draft = {
     response,
     destination,
     need: String(rmsCommercialNode(root, "[data-rms-evaluation-need]", id)?.value || "").trim(),
@@ -48838,6 +48838,14 @@ function rmsEvaluationDraftFromDom(root, id) {
     recycle_note: isRecycleRoute ? String(rmsCommercialNode(root, "[data-rms-evaluation-recycle-note]", id)?.value || "").trim() : "",
     note: String(rmsCommercialNode(root, "[data-rms-evaluation-note]", id)?.value || "").trim(),
   };
+  // Los controles de Reciclaje pueden conservar valores de un borrador previo.
+  // No deben viajar al contrato cuando el operador escogió otra ruta.
+  if (!isRecycleRoute) {
+    delete draft.recycle_reason;
+    delete draft.recycle_at;
+    delete draft.recycle_note;
+  }
+  return draft;
 }
 
 async function saveRmsEvaluationResponse(item, root) {

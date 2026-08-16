@@ -99,7 +99,15 @@ const activationDeliverySchema = z.object({
   contact_consent_confirmed: z.boolean(),
 });
 
-const evaluationResponseSchema = z.object({
+const evaluationResponseSchema = z.preprocess((value) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  // Los clientes con una pestaña abierta antes de cambiar de ruta pueden enviar
+  // un motivo de Reciclaje residual. Fuera de Reciclaje no es un dato operativo
+  // y no debe bloquear el envío a Negociación, Riesgos o Ventas atribuidas.
+  if (String(value.response || "").trim().toUpperCase() === "RECYCLE") return value;
+  const { recycle_reason, recycle_note, recycle_at, ...withoutRecycle } = value;
+  return withoutRecycle;
+}, z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
   lead_id: z.string().uuid().optional().nullable(),
@@ -120,7 +128,7 @@ const evaluationResponseSchema = z.object({
   recycle_reason: z.enum(["BUDGET", "TIMING", "NO_RESPONSE", "WAITING_DECISION", "NOT_VIABLE_NOW", "OTHER"]).optional().nullable(),
   recycle_note: z.string().trim().max(3000).optional().nullable(),
   recycle_at: z.string().datetime().optional().nullable(),
-});
+}));
 
 const attributedSaleSchema = z.object({
   source_id: z.string().uuid(),
