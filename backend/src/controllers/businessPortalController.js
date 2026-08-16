@@ -247,14 +247,23 @@ const customerAcquisitionSaleSchema = z.object({
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
 
+const inventoryTaxClassificationSchema = z.enum(["EXEMPT", "VAT_0", "VAT_5", "VAT_11", "VAT_19"]);
+
 const inventoryProductSchema = z.object({
+  internal_id: z.string().trim().min(2).max(100).optional().nullable(),
   sku: z.string().trim().max(80).optional().nullable(),
   barcode: z.string().trim().max(120).optional().nullable(),
   name: z.string().trim().min(2).max(180),
   description: z.string().trim().max(1200).optional().nullable(),
   category: z.string().trim().max(120).optional().nullable(),
+  category_id: z.string().uuid().optional().nullable(),
+  category_internal_id: z.string().trim().min(2).max(100).optional().nullable(),
+  subcategory_id: z.string().uuid().optional().nullable(),
+  subcategory_internal_id: z.string().trim().min(2).max(100).optional().nullable(),
   brand: z.string().trim().max(120).optional().nullable(),
   unit_price: z.number().min(0).default(0),
+  price_before_tax: z.number().min(0).optional(),
+  tax_classification: inventoryTaxClassificationSchema.default("EXEMPT"),
   cost_price: z.number().min(0).optional().nullable(),
   currency: z.string().trim().max(12).default("COP"),
   stock_quantity: z.number().min(0).default(0),
@@ -268,7 +277,15 @@ const inventoryProductPatchSchema = inventoryProductSchema.partial();
 
 const inventoryProductCsvImportSchema = z.object({
   products: z.array(inventoryProductSchema).min(1).max(500),
-  skip_duplicates: z.boolean().optional().default(true),
+});
+
+const inventoryCategorySchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  internal_id: z.string().trim().min(2).max(100),
+});
+
+const inventorySubcategorySchema = inventoryCategorySchema.extend({
+  category_id: z.string().uuid(),
 });
 
 const acquisitionChannelSchema = z.object({
@@ -3570,9 +3587,10 @@ async function updateInventoryProductFromSale(client, businessId, item, product)
 async function createInventoryProductFromSale(client, businessId, userId, item, options = {}) {
   const result = await client.query(
     `insert into business_inventory_products
-      (business_id, sku, barcode, name, category, brand, unit_price, currency,
-       stock_quantity, min_stock_quantity, unit_label, status, metadata, created_by_user_id)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, 0, 0, 'unidad', 'ACTIVE', $9::jsonb, $10)
+      (business_id, internal_id, sku, barcode, name, category, brand, unit_price, price_before_tax,
+       tax_classification, currency, stock_quantity, min_stock_quantity, unit_label, status, metadata, created_by_user_id)
+     values ($1, concat('AUTO-', replace(gen_random_uuid()::text, '-', '')), $2, $3, $4, $5, $6, $7, $7,
+             'EXEMPT', $8, 0, 0, 'unidad', 'ACTIVE', $9::jsonb, $10)
      returning *`,
     [
       businessId,
@@ -3643,42 +3661,70 @@ function inventorySearchWhere(search, params) {
   params.push(`%${text.toLowerCase()}%`);
   const index = params.length;
   return `and (
-    lower(name) like $${index}
-    or lower(coalesce(sku, '')) like $${index}
-    or lower(coalesce(barcode, '')) like $${index}
-    or lower(coalesce(category, '')) like $${index}
-    or lower(coalesce(brand, '')) like $${index}
+    lower(product.name) like $${index}
+    or lower(coalesce(product.internal_id, '')) like $${index}
+    or lower(coalesce(product.sku, '')) like $${index}
+    or lower(coalesce(product.barcode, '')) like $${index}
+    or lower(coalesce(product.category, '')) like $${index}
+    or lower(coalesce(product.brand, '')) like $${index}
   )`;
 }
 
+function inventoryTaxRate(classification = "EXEMPT") {
+  return {
+    EXEMPT: 0,
+    VAT_0: 0,
+    VAT_5: 0.05,
+    VAT_11: 0.11,
+    VAT_19: 0.19,
+  }[classification] ?? 0;
+}
+
+function inventorySellingPrice(priceBeforeTax, classification = "EXEMPT") {
+  const base = Math.max(0, Number(priceBeforeTax || 0));
+  return Math.round((base * (1 + inventoryTaxRate(classification)) + Number.EPSILON) * 100) / 100;
+}
+
 async function ensureInventoryProductUnique(client, businessId, payload, excludeId = null) {
-  if (!payload.sku && !payload.barcode) return;
+  if (!payload.internal_id && !payload.sku && !payload.barcode) return;
   const duplicate = await client.query(
-    `select id, sku, barcode
+    `select id, internal_id, sku, barcode
      from business_inventory_products
      where business_id = $1
        and ($2::uuid is null or id <> $2)
        and (
-         ($3::text is not null and nullif(sku, '') = $3)
-         or ($4::text is not null and nullif(barcode, '') = $4)
+         ($3::text is not null and lower(nullif(internal_id, '')) = lower($3))
+         or ($4::text is not null and nullif(sku, '') = $4)
+         or ($5::text is not null and nullif(barcode, '') = $5)
        )
      limit 1`,
-    [businessId, excludeId, payload.sku || null, payload.barcode || null]
+    [businessId, excludeId, payload.internal_id || null, payload.sku || null, payload.barcode || null]
   );
   if (duplicate.rowCount) {
-    throw badRequest("Ya existe un producto con ese SKU o codigo de barras en este negocio.");
+    throw badRequest("Ya existe un producto con ese ID interno, SKU o codigo de barras en este negocio.");
   }
 }
 
 function mapInventoryPayload(body, userId) {
+  const taxClassification = body.tax_classification || "EXEMPT";
+  const priceBeforeTax = body.price_before_tax === undefined || body.price_before_tax === null
+    ? Number(body.unit_price || 0)
+    : Number(body.price_before_tax || 0);
   return {
+    internal_id: body.internal_id || null,
     sku: body.sku || null,
     barcode: body.barcode || null,
     name: body.name,
     description: body.description || null,
     category: body.category || null,
+    category_id: body.category_id || null,
+    category_internal_id: body.category_internal_id || null,
+    subcategory_id: body.subcategory_id || null,
+    subcategory_internal_id: body.subcategory_internal_id || null,
     brand: body.brand || null,
-    unit_price: Number(body.unit_price || 0),
+    price_before_tax: priceBeforeTax,
+    tax_classification: taxClassification,
+    unit_price: inventorySellingPrice(priceBeforeTax, taxClassification),
     cost_price: body.cost_price === null || body.cost_price === undefined ? null : Number(body.cost_price || 0),
     currency: body.currency || "COP",
     stock_quantity: Number(body.stock_quantity || 0),
@@ -3700,13 +3746,32 @@ async function listInventoryProducts(req, res, next) {
     const includeArchived = String(req.query.include_archived || "") === "true";
     params.push(limit);
     const result = await query(
-      `select *,
-              (stock_quantity <= min_stock_quantity) as low_stock
-       from business_inventory_products
-       where business_id = $1
-         ${includeArchived ? "" : "and status <> 'ARCHIVED'"}
+      `select product.*,
+              category.name as category_name,
+              category.internal_id as category_internal_id,
+              subcategory.name as subcategory_name,
+              subcategory.internal_id as subcategory_internal_id,
+              (product.stock_quantity <= product.min_stock_quantity) as low_stock,
+              exists (
+                select 1
+                  from business_sales sale
+                 where sale.business_id = product.business_id
+                   and (
+                     sale.inventory_product_id = product.id
+                     or exists (
+                       select 1
+                         from jsonb_array_elements(coalesce(sale.metadata->'products', '[]'::jsonb)) line
+                        where line->>'inventory_product_id' = product.id::text
+                     )
+                   )
+              ) as has_sales
+       from business_inventory_products product
+       left join business_product_categories category on category.id = product.category_id
+       left join business_product_subcategories subcategory on subcategory.id = product.subcategory_id
+       where product.business_id = $1
+         ${includeArchived ? "" : "and product.status <> 'ARCHIVED'"}
          ${searchWhere}
-       order by status asc, updated_at desc, name asc
+       order by product.status asc, product.updated_at desc, product.name asc
        limit $${params.length}`,
       params
     );
@@ -3816,23 +3881,31 @@ async function createInventoryProduct(req, res, next) {
     );
     const body = validate(inventoryProductSchema, req.body);
     const payload = mapInventoryPayload(body, req.user.id);
+    if (!payload.internal_id) throw badRequest("El ID interno del producto es obligatorio.");
     const result = await withTransaction(async (client) => {
+      Object.assign(payload, await resolveInventoryTaxonomy(client, businessId, payload));
       await ensureInventoryProductUnique(client, businessId, payload);
       return client.query(
         `insert into business_inventory_products
-          (business_id, sku, barcode, name, description, category, brand, unit_price, cost_price,
-           currency, stock_quantity, min_stock_quantity, unit_label, status, metadata, created_by_user_id)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb, $16)
+          (business_id, internal_id, sku, barcode, name, description, category, category_id, subcategory_id, brand,
+           unit_price, price_before_tax, tax_classification, cost_price, currency, stock_quantity,
+           min_stock_quantity, unit_label, status, metadata, created_by_user_id)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20::jsonb, $21)
          returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
         [
           businessId,
+          payload.internal_id,
           payload.sku,
           payload.barcode,
           payload.name,
           payload.description,
           payload.category,
+          payload.category_id,
+          payload.subcategory_id,
           payload.brand,
           payload.unit_price,
+          payload.price_before_tax,
+          payload.tax_classification,
           payload.cost_price,
           payload.currency,
           payload.stock_quantity,
@@ -3856,30 +3929,41 @@ async function importInventoryProductsCsv(req, res, next) {
     await assertFeatureForRequest(req, businessId, "gift_inventory");
     const body = validate(inventoryProductCsvImportSchema, req.body);
     const incoming = body.products.map((product) => mapInventoryPayload(product, req.user.id));
+    const missingIds = incoming.filter((product) => !product.internal_id).map((product) => product.name);
+    if (missingIds.length) {
+      throw badRequest(`Cada fila debe incluir ID de producto. Falta en: ${missingIds.slice(0, 6).join(", ")}${missingIds.length > 6 ? "…" : ""}.`);
+    }
+    const incomingIds = new Set();
+    const repeatedIds = [];
+    for (const product of incoming) {
+      const key = String(product.internal_id).trim().toLowerCase();
+      if (incomingIds.has(key)) repeatedIds.push(product.internal_id);
+      incomingIds.add(key);
+    }
+    if (repeatedIds.length) {
+      throw badRequest(`El archivo repite ID de producto: ${[...new Set(repeatedIds)].slice(0, 6).join(", ")}. Corrige el CSV antes de importarlo.`);
+    }
     const productCount = await query(
       "select count(*)::int as total from business_inventory_products where business_id = $1 and status <> 'ARCHIVED'",
       [businessId]
     );
-    const knownCodes = await query(
-      "select sku, barcode from business_inventory_products where business_id = $1 and status <> 'ARCHIVED'",
-      [businessId]
-    );
-    const seenCodes = new Set(knownCodes.rows.flatMap((row) => [row.sku && `sku:${row.sku}`, row.barcode && `barcode:${row.barcode}`].filter(Boolean)));
-    const potentialCreates = incoming.filter((payload) => {
-      const codes = [payload.sku && `sku:${payload.sku}`, payload.barcode && `barcode:${payload.barcode}`].filter(Boolean);
-      const duplicate = codes.some((code) => seenCodes.has(code));
-      codes.forEach((code) => seenCodes.add(code));
-      return !duplicate;
-    });
-    // The limit is checked only against rows that could actually be created.
-    // Existing SKU/barcode rows are safely omitted when the operator chooses it.
     await assertLimitForBusiness(
       businessId,
       "gift_inventory_products",
-      Number(productCount.rows[0]?.total || 0) + potentialCreates.length - 1,
+      Number(productCount.rows[0]?.total || 0) + incoming.length - 1,
       "productos de inventario"
     );
     const result = await withTransaction(async (client) => {
+      const existingIds = await client.query(
+        `select internal_id
+           from business_inventory_products
+          where business_id = $1
+            and lower(internal_id) = any($2::text[])`,
+        [businessId, [...incomingIds]]
+      );
+      if (existingIds.rowCount) {
+        throw badRequest(`No se importó el archivo: estos ID de producto ya existen en Qori: ${existingIds.rows.map((row) => row.internal_id).join(", ")}. Corrige el archivo sin reemplazar productos existentes.`);
+      }
       const imported = [];
       const skipped = [];
       const seenCodes = new Set();
@@ -3895,6 +3979,7 @@ async function importInventoryProductsCsv(req, res, next) {
         }
         codes.forEach((code) => seenCodes.add(code));
         try {
+          Object.assign(payload, await resolveInventoryTaxonomy(client, businessId, payload));
           await ensureInventoryProductUnique(client, businessId, payload);
         } catch (error) {
           if (body.skip_duplicates) {
@@ -3905,15 +3990,17 @@ async function importInventoryProductsCsv(req, res, next) {
         }
         const inserted = await client.query(
           `insert into business_inventory_products
-            (business_id, sku, barcode, name, description, category, brand, unit_price, cost_price,
-             currency, stock_quantity, min_stock_quantity, unit_label, status, metadata, created_by_user_id)
-           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb, $16)
+            (business_id, internal_id, sku, barcode, name, description, category, category_id, subcategory_id, brand,
+             unit_price, price_before_tax, tax_classification, cost_price, currency, stock_quantity,
+             min_stock_quantity, unit_label, status, metadata, created_by_user_id)
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20::jsonb, $21)
            returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
           [
-            businessId, payload.sku, payload.barcode, payload.name, payload.description, payload.category,
-            payload.brand, payload.unit_price, payload.cost_price, payload.currency, payload.stock_quantity,
-            payload.min_stock_quantity, payload.unit_label, payload.status, JSON.stringify(payload.metadata),
-            payload.created_by_user_id,
+            businessId, payload.internal_id, payload.sku, payload.barcode, payload.name, payload.description,
+            payload.category, payload.category_id, payload.subcategory_id, payload.brand, payload.unit_price,
+            payload.price_before_tax, payload.tax_classification, payload.cost_price, payload.currency,
+            payload.stock_quantity, payload.min_stock_quantity, payload.unit_label, payload.status,
+            JSON.stringify(payload.metadata), payload.created_by_user_id,
           ]
         );
         imported.push(inserted.rows[0]);
@@ -3955,25 +4042,32 @@ async function updateInventoryProduct(req, res, next) {
     }
     const payload = mapInventoryPayload({ ...existing.rows[0], ...body }, req.user.id);
     const result = await withTransaction(async (client) => {
+      Object.assign(payload, await resolveInventoryTaxonomy(client, businessId, payload));
       await ensureInventoryProductUnique(client, businessId, payload, req.params.productId);
       return client.query(
         `update business_inventory_products
-         set sku = $3, barcode = $4, name = $5, description = $6, category = $7, brand = $8,
-             unit_price = $9, cost_price = $10, currency = $11, stock_quantity = $12,
-             min_stock_quantity = $13, unit_label = $14, status = $15,
-             metadata = $16::jsonb, updated_at = now()
+         set internal_id = $3, sku = $4, barcode = $5, name = $6, description = $7, category = $8,
+             category_id = $9, subcategory_id = $10, brand = $11, unit_price = $12,
+             price_before_tax = $13, tax_classification = $14, cost_price = $15, currency = $16,
+             stock_quantity = $17, min_stock_quantity = $18, unit_label = $19, status = $20,
+             metadata = $21::jsonb, updated_at = now()
          where id = $1 and business_id = $2
          returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
         [
           req.params.productId,
           businessId,
+          payload.internal_id,
           payload.sku,
           payload.barcode,
           payload.name,
           payload.description,
           payload.category,
+          payload.category_id,
+          payload.subcategory_id,
           payload.brand,
           payload.unit_price,
+          payload.price_before_tax,
+          payload.tax_classification,
           payload.cost_price,
           payload.currency,
           payload.stock_quantity,
@@ -4002,23 +4096,37 @@ async function archiveInventoryProduct(req, res, next) {
       );
       if (!existing.rowCount) throw badRequest("Producto de inventario no encontrado.");
       const product = existing.rows[0];
-      if (product.status === "ARCHIVED") return { product, duplicate: true };
-      const updated = await client.query(
-        `update business_inventory_products
-           set status = 'ARCHIVED', updated_at = now()
-         where id = $1 and business_id = $2
-         returning id, name, status`,
-        [req.params.productId, businessId]
+      const usage = await client.query(
+        `select count(*)::int as total
+           from business_sales sale
+          where sale.business_id = $1
+            and (
+              sale.inventory_product_id = $2
+              or exists (
+                select 1
+                  from jsonb_array_elements(coalesce(sale.metadata->'products', '[]'::jsonb)) line
+                 where line->>'inventory_product_id' = $2::text
+              )
+            )`,
+        [businessId, product.id]
+      );
+      const salesCount = Number(usage.rows[0]?.total || 0);
+      if (salesCount > 0) {
+        throw badRequest(`No puedes eliminar este producto porque tiene ${salesCount} venta(s) o movimiento(s) asociado(s). Se conserva para proteger el historial.`);
+      }
+      await client.query(
+        "delete from business_inventory_products where id = $1 and business_id = $2",
+        [product.id, businessId]
       );
       await recordLifecycleEvent({
         business_id: businessId, entity_type: "INVENTORY_PRODUCT", entity_id: product.id,
-        action: "ARCHIVED", previous_status: product.status, next_status: "ARCHIVED", reason: body.reason,
-        idempotency_key: body.idempotency_key || `inventory-archive:${product.id}:${product.status}`,
+        action: "DELETED", previous_status: product.status, next_status: "DELETED", reason: body.reason,
+        idempotency_key: body.idempotency_key || `inventory-delete:${product.id}`,
         actor_user_id: req.user.id, metadata: { product_name: product.name },
       }, client);
-      return { product: updated.rows[0], duplicate: false };
+      return { product, duplicate: false };
     });
-    res.json({ ok: true, product: result.product, archived: true, duplicate: result.duplicate });
+    res.json({ ok: true, product: result.product, deleted: true, duplicate: result.duplicate });
   } catch (error) {
     next(error);
   }
@@ -4424,6 +4532,166 @@ function manualContactIdentity(contact = {}) {
   return {
     email: String(contact.email || "").trim().toLowerCase() || null,
     phone: String(contact.phone || "").replace(/\D/g, "") || null,
+  };
+}
+
+async function listInventoryCategories(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const result = await query(
+      `select category.*,
+              count(product.id)::int as products_count
+         from business_product_categories category
+         left join business_inventory_products product
+           on product.business_id = category.business_id
+          and product.category_id = category.id
+        where category.business_id = $1
+        group by category.id
+        order by category.name asc`,
+      [businessId]
+    );
+    res.json({ categories: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createInventoryCategory(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const body = validate(inventoryCategorySchema, req.body);
+    const result = await query(
+      `insert into business_product_categories (business_id, internal_id, name, created_by_user_id)
+       values ($1, $2, $3, $4)
+       returning *`,
+      [businessId, body.internal_id, body.name, req.user.id]
+    );
+    res.status(201).json({ category: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function listInventorySubcategories(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const categoryId = String(req.query.category_id || "").trim();
+    const params = [businessId];
+    const categoryWhere = categoryId ? "and subcategory.category_id = $2" : "";
+    if (categoryId) params.push(categoryId);
+    const result = await query(
+      `select subcategory.*, category.name as category_name, category.internal_id as category_internal_id,
+              count(product.id)::int as products_count
+         from business_product_subcategories subcategory
+         join business_product_categories category
+           on category.id = subcategory.category_id
+          and category.business_id = subcategory.business_id
+         left join business_inventory_products product
+           on product.business_id = subcategory.business_id
+          and product.subcategory_id = subcategory.id
+        where subcategory.business_id = $1
+          ${categoryWhere}
+        group by subcategory.id, category.name, category.internal_id
+        order by category.name asc, subcategory.name asc`,
+      params
+    );
+    res.json({ subcategories: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createInventorySubcategory(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const body = validate(inventorySubcategorySchema, req.body);
+    const category = await query(
+      "select id from business_product_categories where id = $1 and business_id = $2 limit 1",
+      [body.category_id, businessId]
+    );
+    if (!category.rowCount) throw badRequest("Selecciona una categoría creada en este negocio.");
+    const result = await query(
+      `insert into business_product_subcategories (business_id, category_id, internal_id, name, created_by_user_id)
+       values ($1, $2, $3, $4, $5)
+       returning *`,
+      [businessId, body.category_id, body.internal_id, body.name, req.user.id]
+    );
+    res.status(201).json({ subcategory: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function resolveInventoryTaxonomy(client, businessId, payload, options = {}) {
+  let categoryId = payload.category_id || null;
+  if (!categoryId && payload.category_internal_id) {
+    const categoryByInternalId = await client.query(
+      `select id, name, internal_id
+         from business_product_categories
+        where business_id = $1 and lower(internal_id) = lower($2)
+        limit 1`,
+      [businessId, payload.category_internal_id]
+    );
+    categoryId = categoryByInternalId.rows[0]?.id || null;
+  }
+  if (!categoryId && payload.category) {
+    const categoryByName = await client.query(
+      `select id, name, internal_id
+         from business_product_categories
+        where business_id = $1 and lower(name) = lower($2)
+        limit 1`,
+      [businessId, payload.category]
+    );
+    categoryId = categoryByName.rows[0]?.id || null;
+  }
+  if (!categoryId && options.categoryRequired !== false) {
+    throw badRequest("Selecciona una categoría creada para este producto.");
+  }
+
+  let category = null;
+  if (categoryId) {
+    const categoryResult = await client.query(
+      "select id, name, internal_id from business_product_categories where id = $1 and business_id = $2 limit 1",
+      [categoryId, businessId]
+    );
+    category = categoryResult.rows[0] || null;
+    if (!category) throw badRequest("La categoría seleccionada no pertenece a este negocio.");
+  }
+
+  let subcategoryId = payload.subcategory_id || null;
+  if (!subcategoryId && payload.subcategory_internal_id) {
+    const subcategoryByInternalId = await client.query(
+      `select id, category_id, name, internal_id
+         from business_product_subcategories
+        where business_id = $1 and lower(internal_id) = lower($2)
+        limit 1`,
+      [businessId, payload.subcategory_internal_id]
+    );
+    subcategoryId = subcategoryByInternalId.rows[0]?.id || null;
+  }
+  let subcategory = null;
+  if (subcategoryId) {
+    const subcategoryResult = await client.query(
+      `select id, category_id, name, internal_id
+         from business_product_subcategories
+        where id = $1 and business_id = $2
+        limit 1`,
+      [subcategoryId, businessId]
+    );
+    subcategory = subcategoryResult.rows[0] || null;
+    if (!subcategory) throw badRequest("La subcategoría seleccionada no pertenece a este negocio.");
+    if (!category || String(subcategory.category_id) !== String(category.id)) {
+      throw badRequest("La subcategoría debe pertenecer a la categoría elegida.");
+    }
+  }
+  return {
+    category_id: category?.id || null,
+    category: category?.name || payload.category || null,
+    subcategory_id: subcategory?.id || null,
   };
 }
 
@@ -6045,6 +6313,10 @@ module.exports = {
   archiveAcquisitionChannelEffort,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
+  listInventoryCategories,
+  createInventoryCategory,
+  listInventorySubcategories,
+  createInventorySubcategory,
   createInventoryProduct,
   importInventoryProductsCsv,
   getInventoryProductInsights,

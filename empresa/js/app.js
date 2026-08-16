@@ -1042,11 +1042,15 @@ const channelEffortTable = document.getElementById("channelEffortTable");
 const channelEffortTotalsChip = document.getElementById("channelEffortTotalsChip");
 const inventoryProductForm = document.getElementById("inventoryProductForm");
 const inventoryProductIdInput = document.getElementById("inventoryProductIdInput");
+const inventoryInternalIdInput = document.getElementById("inventoryInternalIdInput");
 const inventoryNameInput = document.getElementById("inventoryNameInput");
 const inventoryBarcodeInput = document.getElementById("inventoryBarcodeInput");
 const inventorySkuInput = document.getElementById("inventorySkuInput");
 const inventoryCategoryInput = document.getElementById("inventoryCategoryInput");
+const inventorySubcategoryInput = document.getElementById("inventorySubcategoryInput");
 const inventoryBrandInput = document.getElementById("inventoryBrandInput");
+const inventoryTaxClassificationInput = document.getElementById("inventoryTaxClassificationInput");
+const inventoryPriceBeforeTaxInput = document.getElementById("inventoryPriceBeforeTaxInput");
 const inventoryUnitPriceInput = document.getElementById("inventoryUnitPriceInput");
 const inventoryCostPriceInput = document.getElementById("inventoryCostPriceInput");
 const inventoryCurrencyInput = document.getElementById("inventoryCurrencyInput");
@@ -1060,6 +1064,18 @@ const inventorySaveButton = document.getElementById("inventorySaveButton");
 const inventoryResetButton = document.getElementById("inventoryResetButton");
 const inventoryNewProductButton = document.getElementById("inventoryNewProductButton");
 const inventoryImportCsvButton = document.getElementById("inventoryImportCsvButton");
+const inventoryTaxonomyButton = document.getElementById("inventoryTaxonomyButton");
+const inventoryTaxonomyModal = document.getElementById("inventoryTaxonomyModal");
+const inventoryTaxonomyCloseButton = document.getElementById("inventoryTaxonomyCloseButton");
+const inventoryCategoryForm = document.getElementById("inventoryCategoryForm");
+const inventoryCategoryNameInput = document.getElementById("inventoryCategoryNameInput");
+const inventoryCategoryInternalIdInput = document.getElementById("inventoryCategoryInternalIdInput");
+const inventorySubcategoryForm = document.getElementById("inventorySubcategoryForm");
+const inventorySubcategoryCategoryInput = document.getElementById("inventorySubcategoryCategoryInput");
+const inventorySubcategoryNameInput = document.getElementById("inventorySubcategoryNameInput");
+const inventorySubcategoryInternalIdInput = document.getElementById("inventorySubcategoryInternalIdInput");
+const inventoryTaxonomyMessage = document.getElementById("inventoryTaxonomyMessage");
+const inventoryTaxonomyList = document.getElementById("inventoryTaxonomyList");
 const inventoryProductModal = document.getElementById("inventoryProductModal");
 const inventoryProductModalCloseButton = document.getElementById("inventoryProductModalCloseButton");
 const inventoryCsvImportModal = document.getElementById("inventoryCsvImportModal");
@@ -2673,6 +2689,9 @@ let state = {
   acquisitionChannelEffortsLoading: false,
   channelEffortEditingId: null,
   inventoryProducts: [],
+  inventoryCategories: [],
+  inventorySubcategories: [],
+  inventoryTaxonomyLoaded: false,
   inventoryLoaded: false,
   inventorySearch: "",
   inventoryQuickFilter: "all",
@@ -3177,6 +3196,7 @@ function forceLoginAfterSessionIssue(message) {
     }
     showFeedback("El portal se actualizó sin cerrar tu sesión. Intenta de nuevo la acción.", "info", {
       title: "Portal actualizado",
+      timeout: 2800,
     });
     return;
   }
@@ -3296,6 +3316,9 @@ function showFeedback(message, kind = "success", options = {}) {
       <strong>${escapeHtml(title)}</strong>
       <p>${escapeHtml(message)}</p>
     </div>
+    <button class="action-feedback-dismiss" type="button" data-dismiss-feedback aria-label="Cerrar aviso">
+      <span class="material-symbols-outlined" aria-hidden="true">close</span>
+    </button>
   `;
   actionFeedback.classList.remove("hidden");
   if (options.timeout !== 0) {
@@ -6675,7 +6698,7 @@ function renderShell() {
     const updateNotice = consumeAppUpdateNotice();
     if (updateNotice) {
       setInlineMessage(loginError, updateNotice, "info");
-      showFeedback(updateNotice, "info", { title: "Portal actualizado", timeout: 9000 });
+      showFeedback(updateNotice, "info", { title: "Portal actualizado", timeout: 2400 });
     }
     return;
   }
@@ -7209,7 +7232,7 @@ async function loadWorkspace() {
     showFeedback(
       lightTestMode ? "Modo ligero listo. Maquina de ventas cargada sin abrir dashboard pesado." : "Datos actualizados. Ya puedes revisar saldos, tickets y ventas.",
       "success",
-      { title: lightTestMode ? "Prueba ligera" : "Portal actualizado" }
+      { title: lightTestMode ? "Prueba ligera" : "Portal actualizado", timeout: 1800 }
     );
   } catch (error) {
     if (loadSeq !== state.workspaceLoadSeq || (session?.user?.business_id || null) !== loadBusinessId) return;
@@ -12368,6 +12391,10 @@ async function refreshRevenueCenter() {
   }
 }
 
+actionFeedback?.addEventListener("click", (event) => {
+  if (event.target.closest("[data-dismiss-feedback]")) hideFeedback();
+});
+
 function renderDashboardKpiFallback() {
   if (!businessKpiGrid) return;
   const summary = state.summary || {};
@@ -16316,7 +16343,13 @@ async function openGamingActivationDetail(id = "") {
   if (eyebrow) eyebrow.textContent = `${activationTypeLabel(item.activation_type)} · ${activationStatusLabel(item.status)}`;
   if (title) title.textContent = item.title || "Activación sin título";
   if (subtitle) subtitle.textContent = `${item.campaign_name || "Sin campaña"} · creada ${formatDate(item.created_at)} · ${item.ends_at ? `vence ${formatDate(item.ends_at)}` : "sin vencimiento"}`;
-  if (body) body.innerHTML = '<div class="activation-history-loading"><span class="material-symbols-outlined" aria-hidden="true">progress_activity</span> Cargando historial de participaciones…</div>';
+  // La operación principal nunca depende del historial. El operador debe poder
+  // abrir, enviar o editar la activación inmediatamente; el historial se
+  // completa en segundo plano como información adicional.
+  if (body) {
+    body.innerHTML = `${renderGamingActivationDetailBody(item)}<div class="activation-history-loading" data-activation-history-loading><span class="material-symbols-outlined" aria-hidden="true">progress_activity</span> Actualizando historial de participaciones…</div>`;
+    bindGamingActivationDetailActions(modal);
+  }
   modal.classList.remove("hidden");
   modal.removeAttribute("hidden");
   window.setTimeout(() => modal.querySelector("[data-close-gaming-activation-detail]")?.focus({ preventScroll: true }), 40);
@@ -21427,6 +21460,77 @@ function renderInventoryProductOptions() {
   document.querySelectorAll("[data-product-select]").forEach((select) => renderProductSelect(select));
 }
 
+async function loadInventoryTaxonomy(options = {}) {
+  if (state.inventoryTaxonomyLoaded && !options.force) {
+    return { categories: state.inventoryCategories, subcategories: state.inventorySubcategories };
+  }
+  const [categoriesData, subcategoriesData] = await Promise.all([
+    apiSafe("/api/business/inventory/categories", { headers: authHeaders() }, { categories: [] }),
+    apiSafe("/api/business/inventory/subcategories", { headers: authHeaders() }, { subcategories: [] }),
+  ]);
+  state.inventoryCategories = Array.isArray(categoriesData.categories) ? categoriesData.categories : [];
+  state.inventorySubcategories = Array.isArray(subcategoriesData.subcategories) ? subcategoriesData.subcategories : [];
+  state.inventoryTaxonomyLoaded = true;
+  renderInventoryTaxonomyOptions();
+  return { categories: state.inventoryCategories, subcategories: state.inventorySubcategories };
+}
+
+function inventoryTaxRate(classification = "EXEMPT") {
+  return { EXEMPT: 0, VAT_0: 0, VAT_5: 0.05, VAT_11: 0.11, VAT_19: 0.19 }[classification] || 0;
+}
+
+function renderInventorySellingPrice() {
+  if (!inventoryUnitPriceInput) return;
+  const base = Math.max(0, Number(inventoryPriceBeforeTaxInput?.value || 0));
+  const total = Math.round((base * (1 + inventoryTaxRate(inventoryTaxClassificationInput?.value)) + Number.EPSILON) * 100) / 100;
+  inventoryUnitPriceInput.value = String(total);
+}
+
+function renderInventoryTaxonomyOptions() {
+  const categories = state.inventoryCategories || [];
+  const selectedCategory = inventoryCategoryInput?.value || "";
+  const categoryOptions = [
+    '<option value="">Selecciona una categoría</option>',
+    ...categories.map((category) => `<option value="${escapeHtml(category.id)}">${escapeHtml(`${category.name} · ${category.internal_id}`)}</option>`),
+  ].join("");
+  if (inventoryCategoryInput) {
+    inventoryCategoryInput.innerHTML = categoryOptions;
+    inventoryCategoryInput.value = categories.some((category) => category.id === selectedCategory) ? selectedCategory : "";
+  }
+  if (inventorySubcategoryCategoryInput) {
+    const selected = inventorySubcategoryCategoryInput.value || "";
+    inventorySubcategoryCategoryInput.innerHTML = categoryOptions;
+    inventorySubcategoryCategoryInput.value = categories.some((category) => category.id === selected) ? selected : "";
+  }
+  renderInventorySubcategoryOptions();
+  renderInventoryTaxonomyList();
+}
+
+function renderInventorySubcategoryOptions() {
+  if (!inventorySubcategoryInput) return;
+  const categoryId = inventoryCategoryInput?.value || "";
+  const selected = inventorySubcategoryInput.value || "";
+  const available = (state.inventorySubcategories || []).filter((subcategory) => !categoryId || subcategory.category_id === categoryId);
+  inventorySubcategoryInput.innerHTML = [
+    '<option value="">Sin subcategoría</option>',
+    ...available.map((subcategory) => `<option value="${escapeHtml(subcategory.id)}">${escapeHtml(`${subcategory.name} · ${subcategory.internal_id}`)}</option>`),
+  ].join("");
+  inventorySubcategoryInput.value = available.some((subcategory) => subcategory.id === selected) ? selected : "";
+}
+
+function renderInventoryTaxonomyList() {
+  if (!inventoryTaxonomyList) return;
+  const categories = state.inventoryCategories || [];
+  if (!categories.length) {
+    inventoryTaxonomyList.innerHTML = '<p class="empty-state compact">Aún no hay categorías. Crea la primera para poder registrar productos.</p>';
+    return;
+  }
+  inventoryTaxonomyList.innerHTML = categories.map((category) => {
+    const subcategories = (state.inventorySubcategories || []).filter((item) => item.category_id === category.id);
+    return `<article><strong>${escapeHtml(category.name)}</strong><small>${escapeHtml(category.internal_id)} · ${Number(category.products_count || 0)} producto(s)</small><div>${subcategories.length ? subcategories.map((item) => `<span class="pill muted">${escapeHtml(item.name)} · ${escapeHtml(item.internal_id)}</span>`).join("") : '<small>Sin subcategorías</small>'}</div></article>`;
+  }).join("");
+}
+
 async function loadInventoryProducts(options = {}) {
   if (state.inventoryLoaded && !options.force) return state.inventoryProducts;
   if (!options.quiet && inventoryTable) {
@@ -21435,6 +21539,7 @@ async function loadInventoryProducts(options = {}) {
   const data = await apiSafe("/api/business/inventory/products?limit=500", { headers: authHeaders() }, { products: [] });
   state.inventoryProducts = Array.isArray(data.products) ? data.products : [];
   state.inventoryLoaded = true;
+  await loadInventoryTaxonomy({ quiet: true });
   renderInventoryProductOptions();
   return state.inventoryProducts;
 }
@@ -21443,14 +21548,14 @@ function filteredInventoryProducts() {
   const needle = normalizeInventoryLookup(state.inventorySearch);
   const products = state.inventoryProducts || [];
   const mode = state.inventoryQuickFilter || "all";
-  const category = normalizeInventoryLookup(state.inventoryCategoryFilter);
+  const categoryId = String(state.inventoryCategoryFilter || "");
   return products.filter((product) => {
     const stock = Number(product.stock_quantity || 0);
     const minStock = Number(product.min_stock_quantity || 0);
     const status = product.status || "ACTIVE";
-    const matchesNeedle = !needle || [product.name, product.sku, product.barcode, product.category, product.brand]
+    const matchesNeedle = !needle || [product.internal_id, product.name, product.sku, product.barcode, product.category, product.category_name, product.subcategory_name, product.brand]
       .some((value) => normalizeInventoryLookup(value).includes(needle));
-    const matchesCategory = !category || normalizeInventoryLookup(product.category) === category;
+    const matchesCategory = !categoryId || String(product.category_id || "") === categoryId;
     const matchesMode = mode === "all"
       || (mode === "active" && status === "ACTIVE")
       || (mode === "low_stock" && status === "ACTIVE" && stock <= minStock)
@@ -21639,6 +21744,54 @@ function ensureInventoryUxStyles() {
       flex-wrap: wrap;
       gap: 0.55rem;
     }
+    #inventoryTaxonomyModal .inventory-taxonomy-modal-card {
+      width: min(960px, calc(100vw - 32px));
+      max-height: calc(100vh - 42px);
+      overflow: auto;
+    }
+    .inventory-taxonomy-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .inventory-taxonomy-form {
+      display: grid;
+      gap: 0.75rem;
+      padding: 1rem;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 18px;
+      background: rgba(248, 250, 252, 0.76);
+    }
+    .inventory-taxonomy-form h4 { margin: 0; color: #0f3d71; }
+    .inventory-taxonomy-list {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+    .inventory-taxonomy-list article {
+      display: grid;
+      grid-template-columns: minmax(180px, .35fr) minmax(0, 1fr);
+      gap: .4rem 1rem;
+      padding: .85rem 1rem;
+      border: 1px solid rgba(148, 163, 184, .18);
+      border-radius: 15px;
+      background: #fff;
+    }
+    .inventory-taxonomy-list article > div { display: flex; gap: .35rem; flex-wrap: wrap; }
+    .inventory-technical-sheet { margin: 1rem 0; }
+    .inventory-technical-sheet dl {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: .6rem;
+      margin: .75rem 0 0;
+    }
+    .inventory-technical-sheet dl > div {
+      padding: .7rem;
+      border-radius: 14px;
+      background: rgba(248, 250, 252, .86);
+    }
+    .inventory-technical-sheet dt { font-size: .76rem; color: #64748b; }
+    .inventory-technical-sheet dd { margin: .2rem 0 0; color: #0f172a; font-weight: 700; }
     .inventory-product-card {
       display: grid;
       gap: 0.65rem;
@@ -21699,6 +21852,8 @@ function ensureInventoryUxStyles() {
       #inventoryProductModal .inventory-form {
         grid-template-columns: 1fr;
       }
+      .inventory-taxonomy-grid,
+      .inventory-technical-sheet dl { grid-template-columns: 1fr; }
     }
   `;
   document.head.appendChild(style);
@@ -21723,13 +21878,10 @@ function inventoryStatusClass(product = {}) {
 function renderInventoryCategoryFilter() {
   if (!inventoryCategoryFilter) return;
   const selected = state.inventoryCategoryFilter || "";
-  const categories = Array.from(new Set((state.inventoryProducts || [])
-    .map((product) => String(product.category || "").trim())
-    .filter(Boolean)))
-    .sort((a, b) => a.localeCompare(b, "es"));
+  const categories = state.inventoryCategories || [];
   inventoryCategoryFilter.innerHTML = [
     `<option value="" ${selected ? "" : "selected"}>Todas</option>`,
-    ...categories.map((category) => `<option value="${escapeHtml(category)}" ${selected === category ? "selected" : ""}>${escapeHtml(category)}</option>`),
+    ...categories.map((category) => `<option value="${escapeHtml(category.id)}" ${selected === category.id ? "selected" : ""}>${escapeHtml(category.name)}</option>`),
   ].join("");
 }
 
@@ -21804,12 +21956,12 @@ function renderInventoryView() {
   }
   if (!inventoryTable) return;
   if (!state.inventoryLoaded) {
-    inventoryTable.innerHTML = '<tr><td colspan="5">Cargando productos...</td></tr>';
+    inventoryTable.innerHTML = '<tr><td colspan="6">Cargando productos...</td></tr>';
     return;
   }
   const rows = filteredInventoryProducts();
   if (!rows.length) {
-    inventoryTable.innerHTML = '<tr><td colspan="7">Sin productos registrados. Puedes vender productos abiertos desde Sales y quedarán guardados aquí.</td></tr>';
+    inventoryTable.innerHTML = '<tr><td colspan="6">Sin productos registrados. Crea categorías y luego registra el primer producto.</td></tr>';
     return;
   }
   inventoryTable.innerHTML = rows.map((product) => {
@@ -21818,11 +21970,12 @@ function renderInventoryView() {
     const isLow = product.status === "ACTIVE" && stock <= minStock;
     return `
       <tr data-inventory-detail-row="${escapeHtml(product.id)}" tabindex="0">
+        <td><strong>${escapeHtml(product.internal_id || "-")}</strong><span class="table-secondary">ID de la empresa</span></td>
         <td>
           <strong>${escapeHtml(product.name)}</strong>
           <span class="table-secondary">${escapeHtml(product.brand || product.description || "Producto guardado")}</span>
         </td>
-        <td>${escapeHtml(product.category || "-")}</td>
+        <td>${escapeHtml(product.category_name || product.category || "-")}<span class="table-secondary">${escapeHtml(product.subcategory_name || "Sin subcategoría")}</span></td>
         <td>
           <strong>${escapeHtml(money(product.unit_price || 0))}</strong>
           <strong class="${isLow ? "stock-low" : ""}">${escapeHtml(stock.toLocaleString("es-CO"))} ${escapeHtml(product.unit_label || "unidad")}</strong>
@@ -21833,6 +21986,7 @@ function renderInventoryView() {
           <div class="table-actions">
             <button class="ghost-button compact" type="button" data-inventory-detail="${escapeHtml(product.id)}">Ver</button>
             <button class="ghost-button compact" type="button" data-inventory-edit="${escapeHtml(product.id)}">Editar</button>
+            <button class="ghost-button danger-button compact" type="button" data-inventory-delete="${escapeHtml(product.id)}" ${product.has_sales ? "disabled title=\"Tiene ventas o movimientos\"" : ""}>Eliminar</button>
           </div>
         </td>
       </tr>
@@ -21855,6 +22009,9 @@ function renderInventoryView() {
   });
   inventoryTable.querySelectorAll("[data-inventory-edit]").forEach((button) => {
     button.addEventListener("click", () => editInventoryProduct(button.dataset.inventoryEdit));
+  });
+  inventoryTable.querySelectorAll("[data-inventory-delete]").forEach((button) => {
+    button.addEventListener("click", () => archiveInventoryProduct(button.dataset.inventoryDelete));
   });
 }
 
@@ -21923,6 +22080,20 @@ function renderInventoryProductDetail(data = {}) {
         <article><span>Unidades</span><strong>${escapeHtml(Number(summary.units_sold || 0).toLocaleString("es-CO"))}</strong></article>
         <article><span>Clientes</span><strong>${escapeHtml(Number(summary.customers_count || 0).toLocaleString("es-CO"))}</strong></article>
       </section>
+      <section class="inventory-detail-section inventory-technical-sheet" aria-label="Ficha técnica del producto">
+        <span>Ficha técnica</span>
+        <h4>Datos operativos y de precio</h4>
+        <dl>
+          <div><dt>ID interno</dt><dd>${escapeHtml(product.internal_id || "-")}</dd></div>
+          <div><dt>Categoría</dt><dd>${escapeHtml(product.category_name || product.category || "-")}</dd></div>
+          <div><dt>Subcategoría</dt><dd>${escapeHtml(product.subcategory_name || "Sin subcategoría")}</dd></div>
+          <div><dt>Precio antes de IVA</dt><dd>${escapeHtml(money(product.price_before_tax ?? product.unit_price ?? 0))}</dd></div>
+          <div><dt>IVA</dt><dd>${escapeHtml({ EXEMPT: "Exento", VAT_0: "0%", VAT_5: "5%", VAT_11: "11%", VAT_19: "19%" }[product.tax_classification] || "Exento")}</dd></div>
+          <div><dt>Precio de venta</dt><dd>${escapeHtml(money(product.unit_price || 0))} <small>Incluye IVA</small></dd></div>
+          <div><dt>Unidad</dt><dd>${escapeHtml(product.unit_label || "unidad")}</dd></div>
+          <div><dt>Stock</dt><dd>${escapeHtml(`${Number(product.stock_quantity || 0).toLocaleString("es-CO")} · mínimo ${Number(product.min_stock_quantity || 0).toLocaleString("es-CO")}`)}</dd></div>
+        </dl>
+      </section>
       <div class="inventory-detail-grid">
         <section class="inventory-detail-section">
           <span>Rendimiento en el tiempo</span>
@@ -21987,6 +22158,13 @@ function closeInventoryProductModal() {
 function resetInventoryForm() {
   inventoryProductForm?.reset();
   if (inventoryProductIdInput) inventoryProductIdInput.value = "";
+  if (inventoryInternalIdInput) inventoryInternalIdInput.value = "";
+  if (inventoryCategoryInput) inventoryCategoryInput.value = "";
+  renderInventorySubcategoryOptions();
+  if (inventorySubcategoryInput) inventorySubcategoryInput.value = "";
+  if (inventoryTaxClassificationInput) inventoryTaxClassificationInput.value = "EXEMPT";
+  if (inventoryPriceBeforeTaxInput) inventoryPriceBeforeTaxInput.value = "0";
+  renderInventorySellingPrice();
   if (inventoryCurrencyInput) inventoryCurrencyInput.value = "COP";
   if (inventoryStockInput) inventoryStockInput.value = "0";
   if (inventoryMinStockInput) inventoryMinStockInput.value = "0";
@@ -22000,12 +22178,18 @@ function editInventoryProduct(productId) {
   const product = (state.inventoryProducts || []).find((item) => item.id === productId);
   if (!product) return;
   if (inventoryProductIdInput) inventoryProductIdInput.value = product.id;
+  if (inventoryInternalIdInput) inventoryInternalIdInput.value = product.internal_id || "";
   if (inventoryNameInput) inventoryNameInput.value = product.name || "";
   if (inventoryBarcodeInput) inventoryBarcodeInput.value = product.barcode || "";
   if (inventorySkuInput) inventorySkuInput.value = product.sku || "";
-  if (inventoryCategoryInput) inventoryCategoryInput.value = product.category || "";
+  renderInventoryTaxonomyOptions();
+  if (inventoryCategoryInput) inventoryCategoryInput.value = product.category_id || "";
+  renderInventorySubcategoryOptions();
+  if (inventorySubcategoryInput) inventorySubcategoryInput.value = product.subcategory_id || "";
   if (inventoryBrandInput) inventoryBrandInput.value = product.brand || "";
-  if (inventoryUnitPriceInput) inventoryUnitPriceInput.value = String(product.unit_price || 0);
+  if (inventoryTaxClassificationInput) inventoryTaxClassificationInput.value = product.tax_classification || "EXEMPT";
+  if (inventoryPriceBeforeTaxInput) inventoryPriceBeforeTaxInput.value = String(product.price_before_tax ?? product.unit_price ?? 0);
+  renderInventorySellingPrice();
   if (inventoryCostPriceInput) inventoryCostPriceInput.value = product.cost_price === null || product.cost_price === undefined ? "" : String(product.cost_price || 0);
   if (inventoryCurrencyInput) inventoryCurrencyInput.value = product.currency || "COP";
   if (inventoryStockInput) inventoryStockInput.value = String(product.stock_quantity || 0);
@@ -22020,11 +22204,15 @@ function editInventoryProduct(productId) {
 
 function inventoryFormPayload() {
   return {
+    internal_id: inventoryInternalIdInput?.value.trim() || null,
     name: inventoryNameInput?.value.trim() || "",
     barcode: inventoryBarcodeInput?.value.trim() || null,
     sku: inventorySkuInput?.value.trim() || null,
-    category: inventoryCategoryInput?.value.trim() || null,
+    category_id: inventoryCategoryInput?.value || null,
+    subcategory_id: inventorySubcategoryInput?.value || null,
     brand: inventoryBrandInput?.value.trim() || null,
+    price_before_tax: Number(inventoryPriceBeforeTaxInput?.value || 0),
+    tax_classification: inventoryTaxClassificationInput?.value || "EXEMPT",
     unit_price: Number(inventoryUnitPriceInput?.value || 0),
     cost_price: inventoryCostPriceInput?.value === "" ? null : Number(inventoryCostPriceInput?.value || 0),
     currency: inventoryCurrencyInput?.value.trim() || "COP",
@@ -22034,6 +22222,60 @@ function inventoryFormPayload() {
     status: inventoryStatusInput?.value || "ACTIVE",
     description: inventoryDescriptionInput?.value.trim() || null,
   };
+}
+
+async function openInventoryTaxonomyModal() {
+  if (!inventoryTaxonomyModal) return;
+  await loadInventoryTaxonomy({ force: true });
+  if (inventoryTaxonomyModal.parentElement !== document.body) document.body.appendChild(inventoryTaxonomyModal);
+  inventoryTaxonomyModal.classList.remove("hidden");
+  inventoryTaxonomyModal.removeAttribute("aria-hidden");
+  setInlineMessage(inventoryTaxonomyMessage, "Crea categorías antes de asignarlas a productos. La subcategoría es opcional.", "info");
+  window.setTimeout(() => inventoryCategoryNameInput?.focus({ preventScroll: true }), 80);
+}
+
+function closeInventoryTaxonomyModal() {
+  inventoryTaxonomyModal?.classList.add("hidden");
+  inventoryTaxonomyModal?.setAttribute("aria-hidden", "true");
+  inventoryTaxonomyButton?.focus?.({ preventScroll: true });
+}
+
+async function submitInventoryCategory(event) {
+  event.preventDefault();
+  try {
+    const data = await api("/api/business/inventory/categories", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ name: inventoryCategoryNameInput?.value.trim() || "", internal_id: inventoryCategoryInternalIdInput?.value.trim() || "" }),
+    });
+    state.inventoryCategories = [...(state.inventoryCategories || []), data.category].sort((left, right) => String(left.name).localeCompare(String(right.name), "es"));
+    inventoryCategoryForm?.reset();
+    renderInventoryTaxonomyOptions();
+    setInlineMessage(inventoryTaxonomyMessage, "Categoría creada. Ya puedes usarla en productos o crear una subcategoría.", "success");
+  } catch (error) {
+    setInlineMessage(inventoryTaxonomyMessage, error.message || "No se pudo crear la categoría.", "error");
+  }
+}
+
+async function submitInventorySubcategory(event) {
+  event.preventDefault();
+  try {
+    const data = await api("/api/business/inventory/subcategories", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        category_id: inventorySubcategoryCategoryInput?.value || "",
+        name: inventorySubcategoryNameInput?.value.trim() || "",
+        internal_id: inventorySubcategoryInternalIdInput?.value.trim() || "",
+      }),
+    });
+    state.inventorySubcategories = [...(state.inventorySubcategories || []), data.subcategory];
+    inventorySubcategoryForm?.reset();
+    renderInventoryTaxonomyOptions();
+    setInlineMessage(inventoryTaxonomyMessage, "Subcategoría creada y disponible para los productos de esa categoría.", "success");
+  } catch (error) {
+    setInlineMessage(inventoryTaxonomyMessage, error.message || "No se pudo crear la subcategoría.", "error");
+  }
 }
 
 function openInventoryCsvImportModal() {
@@ -22106,6 +22348,15 @@ function inventoryCsvStatus(value = "") {
   return "ACTIVE";
 }
 
+function inventoryCsvTaxClassification(value = "") {
+  const normalized = String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+  if (["5", "5%", "VAT_5", "IVA_5"].includes(normalized)) return "VAT_5";
+  if (["11", "11%", "VAT_11", "IVA_11"].includes(normalized)) return "VAT_11";
+  if (["19", "19%", "VAT_19", "IVA_19"].includes(normalized)) return "VAT_19";
+  if (["0", "0%", "VAT_0", "IVA_0"].includes(normalized)) return "VAT_0";
+  return "EXEMPT";
+}
+
 function inventoryProductsFromCsv(text = "") {
   const rows = inventoryCsvParse(text);
   if (rows.length < 2) return [];
@@ -22116,12 +22367,16 @@ function inventoryProductsFromCsv(text = "") {
     const name = csvCell(record, ["nombre", "name", "producto", "product"]);
     return {
       row_number: rowIndex + 2,
+      internal_id: csvCell(record, ["id_producto", "product_id", "internal_id", "id"]),
       name,
       barcode: csvCell(record, ["codigo_barras", "codigo_de_barras", "barcode"]),
       sku: csvCell(record, ["sku", "referencia", "codigo"]),
-      category: csvCell(record, ["categoria", "category"]),
+      category_internal_id: csvCell(record, ["categoria_id", "category_id", "categoria", "category"]),
+      subcategory_internal_id: csvCell(record, ["subcategoria_id", "subcategory_id", "subcategoria", "subcategory"]),
       brand: csvCell(record, ["marca", "brand"]),
-      unit_price: inventoryCsvNumber(csvCell(record, ["precio_venta", "precio", "unit_price", "sale_price"]), 0),
+      tax_classification: inventoryCsvTaxClassification(csvCell(record, ["iva", "tax", "tax_classification"])),
+      price_before_tax: inventoryCsvNumber(csvCell(record, ["precio_antes_iva", "price_before_tax", "precio_venta", "precio", "unit_price", "sale_price"]), 0),
+      unit_price: 0,
       cost_price: csvCell(record, ["costo", "cost", "cost_price"]) ? inventoryCsvNumber(csvCell(record, ["costo", "cost", "cost_price"]), 0) : null,
       currency: (csvCell(record, ["moneda", "currency"]) || "COP").toUpperCase(),
       stock_quantity: inventoryCsvNumber(csvCell(record, ["stock", "cantidad", "stock_quantity"]), 0),
@@ -22135,8 +22390,8 @@ function inventoryProductsFromCsv(text = "") {
 
 function downloadInventoryCsvTemplate() {
   const csv = [
-    "nombre,codigo_barras,sku,categoria,marca,precio_venta,costo,moneda,stock,stock_minimo,unidad,estado,descripcion",
-    "Producto de ejemplo,770000000001,SKU-001,Categoría,Marca,25000,12000,COP,10,2,unidad,ACTIVE,Descripción opcional",
+    "id_producto,nombre,categoria_id,subcategoria_id,codigo_barras,sku,marca,iva,precio_antes_iva,costo,moneda,stock,stock_minimo,unidad,estado,descripcion",
+    "PRD-001,Producto de ejemplo,CAT-ROPA,SUB-CAMISAS,770000000001,SKU-001,Marca,19%,25000,12000,COP,10,2,unidad,ACTIVE,Descripcion opcional",
   ].join("\n");
   const link = document.createElement("a");
   link.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
@@ -22154,23 +22409,22 @@ async function importInventoryProductsCsv(event) {
   }
   try {
     const products = inventoryProductsFromCsv(await file.text());
-    const incomplete = products.filter((product) => !product.name);
+    const incomplete = products.filter((product) => !product.internal_id || !product.name || !product.category_internal_id);
     if (!products.length || incomplete.length) {
-      throw new Error("Cada fila necesita Nombre producto. Descarga la plantilla si necesitas la estructura exacta.");
+      throw new Error("Cada fila necesita ID de producto, nombre y categoría. Descarga la plantilla si necesitas la estructura exacta.");
     }
     setButtonLoading(inventoryCsvImportSubmitButton, true, "Importando...");
     setInlineMessage(inventoryCsvImportMessage, `Validando ${products.length.toLocaleString("es-CO")} producto(s)...`, "info");
     const result = await api("/api/business/inventory/products/import-csv", {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({ products, skip_duplicates: Boolean(inventoryCsvSkipDuplicatesInput?.checked) }),
+      body: JSON.stringify({ products }),
     });
     state.inventoryLoaded = false;
     await loadInventoryProducts({ force: true, quiet: true });
     renderInventoryProductOptions();
     renderInventoryView();
-    const skipped = Number(result.skipped || 0);
-    const message = `${Number(result.imported || 0).toLocaleString("es-CO")} producto(s) importado(s)${skipped ? ` · ${skipped.toLocaleString("es-CO")} omitido(s) por duplicado` : ""}.`;
+    const message = `${Number(result.imported || 0).toLocaleString("es-CO")} producto(s) importado(s) correctamente.`;
     setInlineMessage(inventoryCsvImportMessage, message, "success");
     showFeedback(message, "success", { title: "Inventario actualizado" });
     window.setTimeout(closeInventoryCsvImportModal, 650);
@@ -22186,8 +22440,8 @@ async function submitInventoryProduct(event) {
   event.preventDefault();
   const productId = inventoryProductIdInput?.value || "";
   const payload = inventoryFormPayload();
-  if (!payload.name || payload.unit_price < 0) {
-    setInlineMessage(inventoryMessage, "Completa nombre y precio de venta.", "error");
+  if (!payload.internal_id || !payload.name || !payload.category_id || payload.price_before_tax < 0) {
+    setInlineMessage(inventoryMessage, "Completa ID interno, nombre, categoría y precio antes de IVA.", "error");
     return;
   }
   setButtonLoading(inventorySaveButton, true, productId ? "Actualizando..." : "Guardando...");
@@ -22246,7 +22500,11 @@ async function submitInventoryProduct(event) {
 async function archiveInventoryProduct(productId) {
   const product = (state.inventoryProducts || []).find((item) => item.id === productId);
   if (!product) return;
-  const reason = window.prompt(`Archivar ${product.name}. Se conservará en ventas e históricos, pero dejará de aparecer en nuevos selectores. Motivo obligatorio:`);
+  if (product.has_sales) {
+    showFeedback("No se puede eliminar porque este producto tiene ventas o movimientos asociados.", "error", { title: "Productos" });
+    return;
+  }
+  const reason = window.prompt(`Eliminar ${product.name}. Solo es posible porque no tiene ventas ni movimientos. Motivo obligatorio:`);
   if (!String(reason || "").trim()) return;
   try {
     await api(`/api/business/inventory/products/${productId}`, {
@@ -22254,12 +22512,10 @@ async function archiveInventoryProduct(productId) {
       headers: authHeaders(),
       body: JSON.stringify({ reason: String(reason).trim() }),
     });
-    state.inventoryProducts = (state.inventoryProducts || []).map((item) => (
-      item.id === productId ? { ...item, status: "ARCHIVED" } : item
-    ));
+    state.inventoryProducts = (state.inventoryProducts || []).filter((item) => item.id !== productId);
     renderInventoryProductOptions();
     renderInventoryView();
-    showFeedback("Producto archivado.", "success", { title: "Productos" });
+    showFeedback("Producto eliminado.", "success", { title: "Productos" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo archivar" });
   }
@@ -32786,7 +33042,7 @@ const LEAD_DIRECTORY_RMS_STATIONS = {
   control_anti_fuga: { label: "Estación 07 · Riesgos de fuga", short: "07 Riesgos fuga" },
   cierre: { label: "Estación 08 · Ventas atribuidas", short: "08 Ventas atribuidas" },
   revenue_generado: { label: "Tablero auxiliar · Control de calidad 2", short: "Control calidad 2" },
-  postventa: { label: "Estación 09 · Postventa / Activación 2", short: "09 Postventa" },
+  postventa: { label: "Estación 09 · Valorización Clientes", short: "09 Valorización" },
   inteligencia: { label: "Estación 10 · Inteligencia RMS", short: "10 Inteligencia" },
 };
 
@@ -36356,7 +36612,7 @@ const LEAD_RMS_CONVERSION_PATH = [
   { key: "control_anti_fuga", label: "Riesgos de fuga", progress: 84 },
   { key: "cierre", label: "Ventas atribuidas", progress: 94 },
   { key: "revenue_generado", label: "Revisión auxiliar 2", progress: 97, auxiliary: true },
-  { key: "postventa", label: "Activación 2", progress: 100 },
+  { key: "postventa", label: "Valorización Clientes", progress: 100 },
   { key: "inteligencia", label: "Inteligencia RMS", progress: 100 },
 ].sort((left, right) => rmsFlowIndex(left.key) - rmsFlowIndex(right.key));
 
@@ -40652,14 +40908,14 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
       name: "Atribuir venta",
       primaryAction: "Registrar una venta atribuida",
       materialLabel: "Producto, cantidad, valor pagado, fuente y evidencia",
-      buttonLabel: "Enviar a Activación 2",
+    buttonLabel: "Enviar a Valorización Clientes",
       nextPhase: "postventa",
     },
   },
   {
     key: "postventa",
-    label: "Activación 2",
-    short_label: "Activación 2",
+    label: "Valorización Clientes",
+    short_label: "Valorización",
     storageLabel: "Almacena clientes compradores para fidelizar",
     operation: {
       name: "Refinar relación",
@@ -41444,7 +41700,7 @@ const RMS_QUALITY_JOURNEY_STAGES = Object.freeze([
   { key: "accion_correctiva", label: "Negociación" },
   { key: "control_anti_fuga", label: "Riesgos de fuga" },
   { key: "cierre", label: "Ventas atribuidas" },
-  { key: "postventa", label: "Activación 2" },
+  { key: "postventa", label: "Valorización Clientes" },
   { key: "inteligencia", label: "Inteligencia RMS" },
 ]);
 
@@ -42611,16 +42867,16 @@ const RMS_TUTORIAL_STEPS = [
     action: "station",
     input: "Leads con compra directa desde Evaluación, acuerdo limpio de Negociación o acuerdo liberado por Riesgos.",
     operation: "Completa producto, cantidad, valor pagado, afiliación, puntos y evidencia; la venta conserva su fuente, campaña, ticket o acción.",
-    output: "Venta atribuida y lista para Activación 2.",
+    output: "Venta atribuida y lista para Valorización Clientes.",
     operatorHint: "Cerrar no es solo cobrar: es dejar evidencia de qué produjo el revenue.",
   },
   {
     key: "postventa",
     phase: "postventa",
     icon: "redeem",
-    title: "Estación 09 · Postventa / Activación 2",
+    title: "Estación 09 · Valorización Clientes",
     subtitle: "Fidelizar",
-    actionLabel: "Abrir Activación 2",
+    actionLabel: "Abrir Valorización Clientes",
     action: "station",
     input: "Clientes con una venta atribuida y toda su información de compra heredada.",
     operation: "Elige una acción: referido, afiliación/puntos/sellos o beneficio de recompra. También puede pasar sin acción a Inteligencia.",
@@ -43705,11 +43961,11 @@ function rmsPostSaleStationCardMarkup(item = {}) {
   const visitNumber = Math.max(1, Number(item.purchase_count || metadata.purchase_count || 1), recordedVisit + 1);
   return `
     <article class="rms-commercial-work-item rms-post-sale-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
-      ${rmsCommercialLeadAsideMarkup(item, "Activación 2 · refinería de un cliente ya convertido")}
+        ${rmsCommercialLeadAsideMarkup(item, "Valorización Clientes · refinería de un cliente ya convertido")}
       <section class="rms-commercial-work-console">
         <header class="rms-commercial-console-head rms-refinery-head"><div><span class="mono-label">ESTACIÓN 09 · REFINERÍA POSTVENTA</span><h4>Haz que una venta vuelva a mover el negocio</h4><p>Trabaja al cliente convertido sin duplicar su compra: trae referidos, afílialo o invita su próxima compra.</p><div class="rms-refinery-sale-facts"><span>${escapeHtml(saleProduct)}</span><strong>${escapeHtml(money(saleAmount))}</strong><span>${escapeHtml(affiliate ? `Afiliado · ${Number(affiliate.points_total || affiliate.ledger_points || 0).toLocaleString("es-CO")} puntos` : "Cliente sin afiliación")}</span></div></div><span class="rms-commercial-state is-sale">Venta registrada</span></header>
         <input type="hidden" data-rms-refinery-path="${escapeHtml(item.id)}" value="REFERRAL">
-        <section class="rms-refinery-route-picker" aria-label="Objetivo de Activación 2">${RMS_POST_SALE_REFINERY_PATHS.map((path, index) => `<button type="button" class="rms-refinery-route ${index === 0 ? "is-active" : ""}" data-rms-refinery-route="${escapeHtml(item.id)}" data-rms-refinery-route-key="${path.key}" aria-pressed="${index === 0 ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">${path.icon}</span><span><strong>${path.title}</strong><small>${path.detail}</small></span></button>`).join("")}</section>
+        <section class="rms-refinery-route-picker" aria-label="Objetivo de Valorización Clientes">${RMS_POST_SALE_REFINERY_PATHS.map((path, index) => `<button type="button" class="rms-refinery-route ${index === 0 ? "is-active" : ""}" data-rms-refinery-route="${escapeHtml(item.id)}" data-rms-refinery-route-key="${path.key}" aria-pressed="${index === 0 ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">${path.icon}</span><span><strong>${path.title}</strong><small>${path.detail}</small></span></button>`).join("")}</section>
         <section class="rms-refinery-panel" data-rms-refinery-panel="${escapeHtml(item.id)}" data-rms-refinery-panel-key="REFERRAL"><header><span class="mono-label">1 · REFERIDOS</span><h5>Beneficio por traer un nuevo contacto</h5><p>El QR queda ligado a la venta. Si registras los datos autorizados, el referido entra a Recolector como un lead nuevo.</p></header><div class="rms-sale-form-grid"><label><span>Beneficio del QR</span><input type="text" data-rms-refinery-referral-benefit="${escapeHtml(item.id)}" placeholder="Ej.: 10% para quien recomienda"></label><label><span>Canal para compartirlo</span><select data-rms-refinery-channel="${escapeHtml(item.id)}"><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="">Solo generar QR</option></select></label><label><span>Nombre del referido</span><input type="text" data-rms-refinery-referral-name="${escapeHtml(item.id)}" placeholder="Nombre completo"></label><label><span>WhatsApp o teléfono</span><input type="text" data-rms-refinery-referral-phone="${escapeHtml(item.id)}" placeholder="Ej.: 300 000 0000"></label><label><span>Correo del referido</span><input type="email" data-rms-refinery-referral-email="${escapeHtml(item.id)}" placeholder="Opcional si dejó teléfono"></label><label><span>Interés del referido</span><input type="text" data-rms-refinery-referral-interest="${escapeHtml(item.id)}" placeholder="Producto o necesidad"></label></div><label class="rms-commercial-note-field"><span>Mensaje o instrucciones</span><textarea rows="2" data-rms-refinery-message="${escapeHtml(item.id)}" placeholder="Gracias por tu compra. Comparte este QR y recibe tu beneficio cuando tu referido se registre."></textarea></label><label class="rms-post-sale-consent"><input type="checkbox" data-rms-refinery-referral-consent="${escapeHtml(item.id)}"> <span>Confirmo que el referido autorizó compartir sus datos de contacto.</span></label></section>
         <section class="rms-refinery-panel" data-rms-refinery-panel="${escapeHtml(item.id)}" data-rms-refinery-panel-key="LOYALTY" hidden><header><span class="mono-label">2 · FIDELIZACIÓN</span><h5>Afiliación, puntos o sello de compra</h5><p>${escapeHtml(affiliate ? "Este cliente ya es afiliado. La compra puede sumar puntos con la regla configurada." : "Puedes afiliar al cliente ahora y reconocer esta compra sin crear una venta nueva.")}</p></header><div class="rms-sale-form-grid"><label><span>Programa</span><select data-rms-refinery-loyalty-mode="${escapeHtml(item.id)}"><option value="POINTS">Sumar puntos por compra</option><option value="VISITS">Beneficio por número de compra</option></select></label><label><span>Estado de afiliación</span><select data-rms-refinery-affiliate-mode="${escapeHtml(item.id)}"><option value="${affiliate ? "EXISTING" : "ENROLL"}">${affiliate ? "Ya es afiliado" : "Afiliar a este cliente"}</option><option value="NONE">No afiliar en esta compra</option></select><small>${escapeHtml(affiliate ? "Se usará su cuenta actual de afiliado." : "Se crea una cuenta de afiliado con sus datos de cliente.")}</small></label><label data-rms-refinery-loyalty-detail="VISITS"><span>Compra número</span><input type="number" min="1" value="${visitNumber}" data-rms-refinery-visit-number="${escapeHtml(item.id)}"></label><label data-rms-refinery-loyalty-detail="VISITS"><span>Entregar beneficio en la compra #</span><input type="number" min="2" value="5" data-rms-refinery-visit-target="${escapeHtml(item.id)}"></label><label data-rms-refinery-loyalty-detail="VISITS"><span>Beneficio por completar sellos</span><input type="text" data-rms-refinery-visit-benefit="${escapeHtml(item.id)}" placeholder="Ej.: servicio gratis en la quinta visita"></label></div><label class="rms-commercial-note-field"><span>Nota de fidelización</span><textarea rows="2" data-rms-refinery-loyalty-note="${escapeHtml(item.id)}" placeholder="Opcional: condición del programa o beneficio entregado."></textarea></label></section>
         <section class="rms-refinery-panel" data-rms-refinery-panel="${escapeHtml(item.id)}" data-rms-refinery-panel-key="REBUY" hidden><header><span class="mono-label">3 · RECOMPRA</span><h5>Beneficio para la próxima compra</h5><p>Crea un ticket QR sobre esta venta. No registra una compra nueva ni altera el valor atribuido.</p></header><div class="rms-sale-form-grid"><label><span>Beneficio de recompra</span><input type="text" data-rms-refinery-rebuy-benefit="${escapeHtml(item.id)}" placeholder="Ej.: $20.000 en la próxima compra"></label><label><span>Canal para compartirlo</span><select data-rms-refinery-channel="${escapeHtml(item.id)}"><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="">Solo generar QR</option></select></label></div><label class="rms-commercial-note-field"><span>Mensaje para el cliente</span><textarea rows="2" data-rms-refinery-message="${escapeHtml(item.id)}" placeholder="Gracias por tu compra. Aquí tienes un beneficio para tu próxima visita."></textarea></label></section>
@@ -44325,7 +44581,7 @@ function rmsStageEmptyMarkup(stage = {}) {
     control_anti_fuga: ["Sin acuerdos por proteger.", "Aquí solo llegan acuerdos con una señal crítica real antes de atribuir la venta.", "Ver leads", "contacts-manual"],
     accion_correctiva: ["Sin leads en Negociación.", "Aquí permanece el lead mientras espera respuesta a una cotización, archivo, detalle o condición.", "Ver leads", "contacts-manual"],
     cierre: ["Sin ventas atribuidas.", "Aquí se completan producto, cantidad, pago, fuente y evidencia de una compra real.", "Registrar venta", "sales"],
-    postventa: ["Sin clientes en Activación 2.", "Aquí se trabaja referido, afiliación, puntos, sellos o recompra después de una venta atribuida.", "Abrir fidelización", "reward-passes"],
+    postventa: ["Sin clientes en Valorización Clientes.", "Aquí se trabaja referido, afiliación, puntos, sellos o recompra después de una venta atribuida.", "Abrir fidelización", "reward-passes"],
     inteligencia: ["Sin casos en Inteligencia.", "Aquí se leen los recorridos, costos y resultados para mejorar la siguiente captura.", "Ver leads", "contacts-manual"],
   };
   const content = map[stage.key] || ["Sin clientes en esta etapa.", "Cuando entren oportunidades, esta estación mostrará acciones listas.", "Alimentar máquina", "collector"];
@@ -46632,12 +46888,12 @@ function bindRmsMachineActions(root) {
       if (status) status.textContent = "Guardando archivos y generando el mensaje con enlaces...";
       try {
         const result = await sendRmsActivationOffer(item, { ...draft, prepareOnly: true });
-        if (result?.message && messageInput) {
+        if (result?.prepared && result?.message && messageInput) {
           messageInput.value = result.message;
           updateRmsActivationLinkBox(root, activationId, result);
           if (status) status.textContent = "Mensaje actualizado. Revisa el ticket, documentos, valor, moneda y cobro antes de enviarlo.";
         } else if (status) {
-          status.textContent = "No se pudo actualizar. Revisa los campos obligatorios y vuelve a intentarlo.";
+          status.textContent = result?.error || "No se pudo actualizar. Revisa los campos obligatorios y vuelve a intentarlo.";
         }
       } finally {
         button.disabled = false;
@@ -46677,8 +46933,10 @@ function bindRmsMachineActions(root) {
       }
       button.disabled = true;
       if (status) status.textContent = "Canal abierto. Guardando el envío y el seguimiento...";
-      await sendRmsActivationOffer(item, { ...draft, skipOpen: true });
-      if (status) status.textContent = "Envío registrado en la ficha del contacto.";
+      const result = await sendRmsActivationOffer(item, { ...draft, skipOpen: true });
+      if (status) status.textContent = result?.sent
+        ? "Envío registrado en la ficha del contacto."
+        : (result?.error || "No se pudo registrar el envío. Revisa los datos e inténtalo de nuevo.");
       button.disabled = false;
     });
   });
@@ -47398,7 +47656,7 @@ async function handleRmsCreateProductClassification(id = "") {
   resetInventoryForm();
   if (inventoryNameInput) inventoryNameInput.value = productName;
   if (inventoryDescriptionInput) inventoryDescriptionInput.value = `Creado desde Asignación para ${item.name || "un lead"}.`;
-  openInventoryProductModal({ focusTarget: inventoryUnitPriceInput || inventoryNameInput });
+  openInventoryProductModal({ focusTarget: inventoryInternalIdInput || inventoryNameInput });
   showFeedback("Completa los datos del producto. Al guardar quedará creado, seleccionado y seguirás en Asignación.", "info", { title: "Asignación" });
 }
 
@@ -47746,7 +48004,11 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
   }
   const previouslyScheduled = delivery.followUpAt && followUpAt && new Date(delivery.followUpAt).getTime() === new Date(followUpAt).getTime();
   try {
-    showFeedback("Confirmando el contacto y preparando seguimiento...", "loading", { title: "Activación 1", timeout: 0 });
+    // Preparar el mensaje no envía ni mueve el lead: su estado se muestra en la
+    // propia tarjeta. El aviso persistente se reserva para el envío real.
+    if (!draft.prepareOnly) {
+      showFeedback("Confirmando el contacto y preparando seguimiento...", "loading", { title: "Activación 1", timeout: 0 });
+    }
     const prepared = rmsActivationPreparedDeliveries.get(item.id) || null;
     const uploadedAssets = rmsActivationUploadedAssets.get(item.id) || [];
     const attachmentAssetIds = uploadedAssets.map((asset) => asset.id).filter(Boolean);
@@ -47816,8 +48078,11 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
     showFeedback(contactNumber > 1
       ? `Reenvío #${contactNumber} registrado en el historial del contacto.`
       : (followUpAt ? "Primer contacto registrado y seguimiento creado en Agenda." : "Primer contacto registrado. Programa un seguimiento antes de pasar a Evaluación."), "success", { title: "Activación 1" });
+    return { sent: true, delivery: deliveryRecord };
   } catch (error) {
-    showFeedback(error.message || "No se pudo confirmar el contacto.", "error", { title: "Activación 1" });
+    const message = error.message || (draft.prepareOnly ? "No se pudo preparar el mensaje." : "No se pudo confirmar el contacto.");
+    if (!draft.prepareOnly) showFeedback(message, "error", { title: "Activación 1" });
+    return { prepared: false, sent: false, error: message };
   }
 }
 
@@ -52208,6 +52473,10 @@ document.addEventListener("keydown", (event) => {
     closeInventoryProductModal();
     return;
   }
+  if (event.key === "Escape" && !inventoryTaxonomyModal?.classList.contains("hidden")) {
+    closeInventoryTaxonomyModal();
+    return;
+  }
   const inventoryDetailModal = document.getElementById("inventoryProductDetailModal");
   if (event.key === "Escape" && inventoryDetailModal && !inventoryDetailModal.classList.contains("hidden")) {
     inventoryDetailModal.classList.add("hidden");
@@ -52255,6 +52524,16 @@ inventoryProductModalCloseButton?.addEventListener("click", closeInventoryProduc
 inventoryProductModal?.addEventListener("click", (event) => {
   if (event.target === inventoryProductModal) closeInventoryProductModal();
 });
+inventoryTaxonomyButton?.addEventListener("click", () => openInventoryTaxonomyModal().catch((error) => showFeedback(error.message, "error", { title: "Categorías" })));
+inventoryTaxonomyCloseButton?.addEventListener("click", closeInventoryTaxonomyModal);
+inventoryTaxonomyModal?.addEventListener("click", (event) => {
+  if (event.target === inventoryTaxonomyModal) closeInventoryTaxonomyModal();
+});
+inventoryCategoryForm?.addEventListener("submit", submitInventoryCategory);
+inventorySubcategoryForm?.addEventListener("submit", submitInventorySubcategory);
+inventoryCategoryInput?.addEventListener("change", renderInventorySubcategoryOptions);
+inventoryPriceBeforeTaxInput?.addEventListener("input", renderInventorySellingPrice);
+inventoryTaxClassificationInput?.addEventListener("change", renderInventorySellingPrice);
 inventoryCsvImportForm?.addEventListener("submit", importInventoryProductsCsv);
 inventoryImportCsvButton?.addEventListener("click", openInventoryCsvImportModal);
 inventoryCsvImportCloseButton?.addEventListener("click", closeInventoryCsvImportModal);

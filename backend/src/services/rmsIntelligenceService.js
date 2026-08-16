@@ -33,7 +33,7 @@ const RMS_PHASE_LABELS = Object.freeze({
   accion_correctiva: "Negociación",
   control_anti_fuga: "Riesgos de fuga",
   cierre: "Ventas atribuidas",
-  postventa: "Activación 2",
+  postventa: "Valorización Clientes",
   inteligencia: "Inteligencia",
   reciclaje: "Reciclaje",
 });

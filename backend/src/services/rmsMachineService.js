@@ -28,7 +28,7 @@ const RMS_OPERATIONAL_STAGES = Object.freeze([
   { key: "accion_correctiva", order: 6, label: "Negociación", short_label: "Negociación" },
   { key: "control_anti_fuga", order: 7, label: "Riesgos de fuga", short_label: "Riesgos de fuga" },
   { key: "cierre", order: 8, label: "Ventas atribuidas", short_label: "Ventas atribuidas" },
-  { key: "postventa", order: 9, label: "Activación 2", short_label: "Activación 2" },
+  { key: "postventa", order: 9, label: "Valorización Clientes", short_label: "Valorización" },
   { key: "inteligencia", order: 10, label: "Inteligencia RMS", short_label: "Inteligencia", analytical_only: true },
 ]);
 const RMS_QUALITY_CONTROLS = Object.freeze([
@@ -146,7 +146,7 @@ const INDUSTRIAL_PROCESS = [
   { key: "correccion", label: "Negociación", phase: "accion_correctiva", description: "Conserva la conversación hasta recibir respuesta a material, detalle, cotización o condición." },
   { key: "control", label: "Riesgos de fuga", phase: "control_anti_fuga", description: "Se protege un acuerdo frágil con soporte, responsable y seguimiento verificables." },
   { key: "cierre", label: "Ventas atribuidas", phase: "cierre", description: "Completa producto, cantidad, pago, fuente y evidencia de una compra real." },
-  { key: "postventa", label: "Activación 2", phase: "postventa", description: "Refiere, fideliza o activa recompra sin alterar la venta original." },
+  { key: "postventa", label: "Valorización Clientes", phase: "postventa", description: "Valora la relación del cliente con referidos, afiliación, puntos, sellos o recompra sin alterar la venta original." },
   { key: "optimizar", label: "Inteligencia RMS", phase: "inteligencia", description: "El resultado vuelve a la inteligencia RMS para optimizar campanas, ganchos y operaciones." },
 ].sort((left, right) => RMS_FLOW_ORDER.findIndex((phase) => phase.key === left.phase) - RMS_FLOW_ORDER.findIndex((phase) => phase.key === right.phase));
 
@@ -226,7 +226,7 @@ const PHASE_OPERATIONS = {
     primaryActionKey: "close_sale",
     suggestedMaterialType: "cuenta_cobro_factura_pago",
     materialLabel: "Producto, cantidad, valor pagado, fuente y evidencia",
-    buttonLabel: "Enviar a Activación 2",
+    buttonLabel: "Enviar a Valorización Clientes",
     nextPhase: "postventa",
     agendaTaskType: "payment",
     whatsappTemplateKey: "send_payment",

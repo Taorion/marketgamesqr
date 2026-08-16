@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-    <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-quality-sales-compact-v178-20260815">
+    <link rel="stylesheet" href="css/portal-clean-v39.css?v=activation-feedback-catalog-v179-20260815">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -5595,6 +5595,7 @@
                 <p>Consulta tu inventario, abre cada producto para ver su desempeño y crea nuevos productos cuando los necesites.</p>
               </div>
               <div class="button-row">
+                <button class="ghost-button" id="inventoryTaxonomyButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">category</span> Categorías</button>
                 <button class="ghost-button" id="inventoryImportCsvButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">upload_file</span> Importar CSV</button>
                 <button class="solid-button" id="inventoryNewProductButton" type="button">Nuevo producto</button>
                 <button class="ghost-button compact" id="refreshInventoryButton" type="button">Actualizar</button>
@@ -5616,12 +5617,16 @@
                   </div>
                   <form class="modal-form inventory-form" id="inventoryProductForm">
                     <input id="inventoryProductIdInput" type="hidden">
+                    <label><span>ID interno del producto</span><input id="inventoryInternalIdInput" type="text" maxlength="100" placeholder="Ej. PRD-001" required><small>Único dentro de tu empresa.</small></label>
                     <label><span>Nombre producto</span><input id="inventoryNameInput" type="text" maxlength="180" required></label>
                     <label><span>Código de barras</span><input id="inventoryBarcodeInput" type="text" maxlength="120" placeholder="Escanea o escribe"></label>
                     <label><span>SKU interno</span><input id="inventorySkuInput" type="text" maxlength="80" placeholder="Referencia interna"></label>
-                    <label><span>Categoría</span><input id="inventoryCategoryInput" type="text" maxlength="120"></label>
+                    <label><span>Categoría</span><select id="inventoryCategoryInput" required><option value="">Selecciona una categoría</option></select></label>
+                    <label><span>Subcategoría <small>Opcional</small></span><select id="inventorySubcategoryInput"><option value="">Sin subcategoría</option></select></label>
                     <label><span>Marca</span><input id="inventoryBrandInput" type="text" maxlength="120"></label>
-                    <label><span>Precio venta</span><input id="inventoryUnitPriceInput" type="number" min="0" step="100" required></label>
+                    <label><span>IVA</span><select id="inventoryTaxClassificationInput"><option value="EXEMPT">Exento</option><option value="VAT_0">0%</option><option value="VAT_5">5%</option><option value="VAT_11">11%</option><option value="VAT_19">19%</option></select></label>
+                    <label><span>Precio antes de IVA</span><input id="inventoryPriceBeforeTaxInput" type="number" min="0" step="100" required></label>
+                    <label><span>Precio de venta <small>Incluye IVA</small></span><input id="inventoryUnitPriceInput" type="number" min="0" step="0.01" readonly><small>Se calcula automáticamente a partir del precio antes de IVA y el impuesto.</small></label>
                     <label><span>Costo</span><input id="inventoryCostPriceInput" type="number" min="0" step="100"></label>
                     <label><span>Moneda</span><input id="inventoryCurrencyInput" type="text" maxlength="12" value="COP"></label>
                     <label><span>Stock</span><input id="inventoryStockInput" type="number" min="0" step="1" value="0"></label>
@@ -5640,6 +5645,18 @@
                 </article>
               </div>
 
+              <div class="modal-shell hidden" id="inventoryTaxonomyModal" role="dialog" aria-modal="true" aria-labelledby="inventoryTaxonomyTitle" aria-hidden="true">
+                <article class="surface-card inventory-form-card modal-card inventory-taxonomy-modal-card">
+                  <div class="modal-head"><div><span class="mono-label">Catálogo de la empresa</span><h3 id="inventoryTaxonomyTitle">Categorías y subcategorías</h3><p>Crea primero la categoría. La subcategoría es opcional y siempre queda ligada a una categoría.</p></div><button class="icon-button" id="inventoryTaxonomyCloseButton" type="button" aria-label="Cerrar categorías"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></div>
+                  <div class="inventory-taxonomy-grid">
+                    <form class="modal-form inventory-taxonomy-form" id="inventoryCategoryForm"><h4>Nueva categoría</h4><label><span>Nombre de categoría</span><input id="inventoryCategoryNameInput" type="text" maxlength="120" required></label><label><span>ID interno de categoría</span><input id="inventoryCategoryInternalIdInput" type="text" maxlength="100" placeholder="Ej. CAT-ROPA" required></label><button class="solid-button" type="submit">Crear categoría</button></form>
+                    <form class="modal-form inventory-taxonomy-form" id="inventorySubcategoryForm"><h4>Nueva subcategoría</h4><label><span>Categoría</span><select id="inventorySubcategoryCategoryInput" required><option value="">Selecciona categoría</option></select></label><label><span>Nombre de subcategoría</span><input id="inventorySubcategoryNameInput" type="text" maxlength="120" required></label><label><span>ID interno de subcategoría</span><input id="inventorySubcategoryInternalIdInput" type="text" maxlength="100" placeholder="Ej. SUB-CAMISAS" required></label><button class="solid-button" type="submit">Crear subcategoría</button></form>
+                  </div>
+                  <p class="form-message" id="inventoryTaxonomyMessage"></p>
+                  <div class="inventory-taxonomy-list" id="inventoryTaxonomyList"></div>
+                </article>
+              </div>
+
               <div class="modal-shell hidden" id="inventoryCsvImportModal" role="dialog" aria-modal="true" aria-labelledby="inventoryCsvImportTitle" aria-hidden="true">
                 <article class="surface-card inventory-form-card modal-card inventory-csv-import-card">
                   <div class="modal-head">
@@ -5653,8 +5670,8 @@
                     </button>
                   </div>
                   <form class="modal-form inventory-csv-import-form" id="inventoryCsvImportForm">
-                    <label class="span-2"><span>Archivo CSV</span><input id="inventoryCsvFileInput" type="file" accept=".csv,text/csv" required><small>Columnas admitidas: nombre, codigo_barras, sku, categoria, marca, precio_venta, costo, moneda, stock, stock_minimo, unidad, estado y descripcion.</small></label>
-                    <label class="span-2 inventory-csv-duplicate-option"><span><input id="inventoryCsvSkipDuplicatesInput" type="checkbox" checked> Omitir filas cuyo SKU o código de barras ya exista</span><small>Las filas omitidas se informan al final; nunca reemplazan productos existentes.</small></label>
+                    <label class="span-2"><span>Archivo CSV</span><input id="inventoryCsvFileInput" type="file" accept=".csv,text/csv" required><small>Columnas: id_producto, nombre, categoria_id, subcategoria_id, codigo_barras, sku, marca, iva, precio_antes_iva, costo, moneda, stock, stock_minimo, unidad, estado y descripcion.</small></label>
+                    <p class="span-2 inventory-csv-duplicate-option"><strong>Validación completa:</strong> si algún ID de producto ya existe en Qori, no se cargará ninguna fila del archivo.</p>
                     <div class="inventory-csv-template span-2">
                       <div><strong>¿No tienes plantilla?</strong><small>Descarga una base con todos los campos y un ejemplo seguro.</small></div>
                       <button class="ghost-button compact" id="inventoryCsvDownloadTemplateButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">download</span> Descargar plantilla</button>
@@ -5686,6 +5703,7 @@
                   <table>
                     <thead>
                       <tr>
+                        <th>ID producto</th>
                         <th>Producto</th>
                         <th>Categoría</th>
                         <th>Precio y stock</th>
@@ -7755,7 +7773,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=activation-actions-inventory-import-v173-20260815" defer></script>
+  <script src="js/app.js?v=activation-feedback-catalog-v174-20260815" defer></script>
     <script src="js/communications.js?v=bulk-history-v323-20260811" defer></script>
 </body>
 </html>

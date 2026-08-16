@@ -596,16 +596,46 @@ create table if not exists business_sales (
   idempotency_key text
 );
 
+create table if not exists business_product_categories (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references businesses(id) on delete cascade,
+  internal_id text not null,
+  name text not null,
+  created_by_user_id uuid references app_users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (business_id, internal_id),
+  unique (business_id, name)
+);
+
+create table if not exists business_product_subcategories (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references businesses(id) on delete cascade,
+  category_id uuid not null references business_product_categories(id) on delete restrict,
+  internal_id text not null,
+  name text not null,
+  created_by_user_id uuid references app_users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (business_id, internal_id),
+  unique (business_id, category_id, name)
+);
+
 create table if not exists business_inventory_products (
   id uuid primary key default gen_random_uuid(),
   business_id uuid not null references businesses(id) on delete cascade,
+  internal_id text not null,
   sku text,
   barcode text,
   name text not null,
   description text,
   category text,
+  category_id uuid references business_product_categories(id) on delete restrict,
+  subcategory_id uuid references business_product_subcategories(id) on delete restrict,
   brand text,
   unit_price numeric(14, 2) not null default 0,
+  price_before_tax numeric(14, 2) not null default 0,
+  tax_classification text not null default 'EXEMPT',
   cost_price numeric(14, 2),
   currency text not null default 'COP',
   stock_quantity numeric(14, 2) not null default 0,
@@ -616,6 +646,8 @@ create table if not exists business_inventory_products (
   created_by_user_id uuid references app_users(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  check (tax_classification in ('EXEMPT', 'VAT_0', 'VAT_5', 'VAT_11', 'VAT_19')),
+  unique (business_id, internal_id),
   unique (business_id, sku),
   unique (business_id, barcode)
 );
@@ -893,6 +925,20 @@ create index if not exists business_sales_rms_source_created_idx on business_sal
 create index if not exists business_sales_inventory_product_idx on business_sales(inventory_product_id) where inventory_product_id is not null;
 create unique index if not exists business_sales_idempotency_key_idx on business_sales(business_id, idempotency_key) where idempotency_key is not null;
 create index if not exists idx_business_inventory_products_business_status on business_inventory_products(business_id, status, updated_at desc);
+create index if not exists idx_business_inventory_products_business_category_status
+  on business_inventory_products(business_id, category_id, status, updated_at desc);
+create index if not exists idx_business_inventory_products_business_subcategory_status
+  on business_inventory_products(business_id, subcategory_id, status, updated_at desc);
+create index if not exists idx_business_product_categories_business_name
+  on business_product_categories(business_id, name);
+create index if not exists idx_business_product_subcategories_business_category
+  on business_product_subcategories(business_id, category_id, name);
+create unique index if not exists business_inventory_products_business_internal_id_ci_uidx
+  on business_inventory_products(business_id, lower(internal_id));
+create unique index if not exists business_product_categories_business_internal_id_ci_uidx
+  on business_product_categories(business_id, lower(internal_id));
+create unique index if not exists business_product_subcategories_business_internal_id_ci_uidx
+  on business_product_subcategories(business_id, lower(internal_id));
 create index if not exists idx_business_inventory_products_search
   on business_inventory_products using gin (
     to_tsvector('simple', coalesce(name, '') || ' ' || coalesce(sku, '') || ' ' || coalesce(barcode, '') || ' ' || coalesce(category, '') || ' ' || coalesce(brand, ''))
@@ -972,6 +1018,16 @@ for each row execute function set_updated_at();
 drop trigger if exists trg_business_inventory_products_updated_at on business_inventory_products;
 create trigger trg_business_inventory_products_updated_at
 before update on business_inventory_products
+for each row execute function set_updated_at();
+
+drop trigger if exists trg_business_product_categories_updated_at on business_product_categories;
+create trigger trg_business_product_categories_updated_at
+before update on business_product_categories
+for each row execute function set_updated_at();
+
+drop trigger if exists trg_business_product_subcategories_updated_at on business_product_subcategories;
+create trigger trg_business_product_subcategories_updated_at
+before update on business_product_subcategories
 for each row execute function set_updated_at();
 
 create table if not exists business_acquisition_channels (

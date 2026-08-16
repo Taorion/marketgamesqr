@@ -3,7 +3,7 @@
   const MAX_MEDIA_BYTES = 3 * 1024 * 1024;
   const AUDIENCE_PAGE_SIZE = 120;
   const MAX_EMAIL_RECIPIENTS = 120;
-  const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentacion: "Curaduría", curaduria: "Clasificador", clasificacion: "Activación 1", preprocesamiento: "Control de calidad 1", procesamiento: "Evaluación", accion_correctiva: "Negociación", control_anti_fuga: "Riesgos de fuga", cierre: "Ventas atribuidas", revenue_generado: "Control de calidad 2", postventa: "Activación 2", inteligencia: "Inteligencia RMS" }[String(phase || "").toLowerCase()] || "Leads recolectados");
+const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentacion: "Curaduría", curaduria: "Asignación", clasificacion: "Activación 1", preprocesamiento: "Control de calidad 1", procesamiento: "Evaluación", accion_correctiva: "Negociación", control_anti_fuga: "Riesgos de fuga", cierre: "Ventas atribuidas", revenue_generado: "Control de calidad 2", postventa: "Valorización Clientes", inteligencia: "Inteligencia RMS" }[String(phase || "").toLowerCase()] || "Leads recolectados");
   const metricMoney = (value) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(value || 0));
   const refKey = (contact) => `${contact?.source_type || "PLAYER"}:${contact?.source_id || contact?.id || ""}`;
   const esc = (value) => escapeHtml(value == null ? "" : String(value));

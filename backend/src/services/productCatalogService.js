@@ -101,9 +101,10 @@ async function createCatalogProductFromSale(client, businessId, userId, item, op
   };
   const result = await client.query(
     `insert into business_inventory_products
-      (business_id, sku, barcode, name, category, brand, unit_price, currency,
-       stock_quantity, min_stock_quantity, unit_label, status, metadata, created_by_user_id)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, 0, 0, 'unidad', 'ACTIVE', $9::jsonb, $10)
+      (business_id, internal_id, sku, barcode, name, category, brand, unit_price, price_before_tax,
+       tax_classification, currency, stock_quantity, min_stock_quantity, unit_label, status, metadata, created_by_user_id)
+     values ($1, concat('AUTO-', replace(gen_random_uuid()::text, '-', '')), $2, $3, $4, $5, $6, $7, $7,
+             'EXEMPT', $8, 0, 0, 'unidad', 'ACTIVE', $9::jsonb, $10)
      returning *`,
     [
       businessId,

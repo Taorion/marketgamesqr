@@ -54,6 +54,10 @@ const {
   archiveAcquisitionChannelEffort,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
+  listInventoryCategories,
+  createInventoryCategory,
+  listInventorySubcategories,
+  createInventorySubcategory,
   createInventoryProduct,
   importInventoryProductsCsv,
   getInventoryProductInsights,
@@ -311,6 +315,10 @@ router.delete("/channel-efforts/:effortId", archiveAcquisitionChannelEffort);
 router.patch("/channels/:channelId", updateAcquisitionChannel);
 router.delete("/channels/:channelId", archiveAcquisitionChannel);
 router.post("/customer-acquisition-sales", createCustomerAcquisitionSale);
+router.get("/inventory/categories", standardBusinessCache, listInventoryCategories);
+router.post("/inventory/categories", createInventoryCategory);
+router.get("/inventory/subcategories", standardBusinessCache, listInventorySubcategories);
+router.post("/inventory/subcategories", createInventorySubcategory);
 router.get("/inventory/products", standardBusinessCache, listInventoryProducts);
 router.post("/inventory/products", createInventoryProduct);
 router.post("/inventory/products/import-csv", importInventoryProductsCsv);
