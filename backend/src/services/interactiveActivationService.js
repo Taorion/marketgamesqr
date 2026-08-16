@@ -1133,6 +1133,7 @@ async function startInteractiveParticipant(slug, body) {
     const activation = await lockActivationBySlug(client, slug);
     assertActivationOpen(activation);
     assertRequiredCaptureFields(activation, body);
+    await assertActivationIdentityConsistency(client, activation, body);
     const existingReward = await existingRewardResponseForIdentity(client, activation, body);
     if (existingReward) return existingReward;
     await assertDuplicateParticipant(client, activation, body);
@@ -1184,6 +1185,7 @@ async function completeInteractiveParticipant(slug, body) {
     assertActivationOpen(activation);
     if (!body.participant_id) assertRequiredCaptureFields(activation, body);
     if (!body.participant_id) {
+      await assertActivationIdentityConsistency(client, activation, body);
       const existingReward = await existingRewardResponseForIdentity(client, activation, body);
       if (existingReward) return existingReward;
     }
@@ -1590,8 +1592,55 @@ async function createParticipantInsideCompletion(client, activation, body) {
 function activationContactIdentity(body = {}) {
   const documentId = String(body.document || body.document_id || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
   const email = String(body.email || "").trim().toLowerCase();
-  const phone = String(body.phone || "").replace(/\D/g, "");
+  const phoneDigits = String(body.phone || "").replace(/\D/g, "");
+  // +57 300... and 300... are the same Colombian contact. Other country
+  // prefixes remain untouched, because they are already part of the identity.
+  const phone = /^57\d{10}$/.test(phoneDigits) ? phoneDigits.slice(2) : phoneDigits;
   return { documentId: documentId || null, email: email || null, phone: phone || null };
+}
+
+// Documento is Qori's primary identity for public activations. A phone or email
+// may be added to that document over time, but it must never silently join two
+// different documents into the same commercial contact.
+async function assertActivationIdentityConsistency(client, activation, body) {
+  const identity = activationContactIdentity(body);
+  if (!identity.documentId || (!identity.email && !identity.phone)) return;
+
+  const conflict = await client.query(
+    `select email_match, phone_match
+       from (
+         select
+           regexp_replace(lower(coalesce(p.document_id, '')), '[^a-z0-9]', '', 'g') as document_identity,
+           ($3::text is not null and lower(nullif(p.email, '')) = $3) as email_match,
+           ($4::text is not null and regexp_replace(regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g'), '^57([0-9]{10})$', '\\1') = $4) as phone_match
+         from players p
+         where p.business_id = $1
+         union all
+         select
+           regexp_replace(lower(coalesce(a.document_id, '')), '[^a-z0-9]', '', 'g') as document_identity,
+           ($3::text is not null and lower(nullif(a.email, '')) = $3) as email_match,
+           ($4::text is not null and regexp_replace(regexp_replace(coalesce(a.phone, ''), '\\D', '', 'g'), '^57([0-9]{10})$', '\\1') = $4) as phone_match
+         from affiliates a
+         where a.business_id = $1 and a.status <> 'DELETED'
+         union all
+         select
+           regexp_replace(lower(coalesce(p.document, '')), '[^a-z0-9]', '', 'g') as document_identity,
+           ($3::text is not null and lower(nullif(p.email, '')) = $3) as email_match,
+           ($4::text is not null and regexp_replace(regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g'), '^57([0-9]{10})$', '\\1') = $4) as phone_match
+         from interactive_activation_participants p
+         where p.company_id = $1
+       ) identities
+      where document_identity <> ''
+        and document_identity <> $2
+        and (email_match or phone_match)
+      limit 1`,
+    [activation.company_id, identity.documentId, identity.email, identity.phone]
+  );
+  if (!conflict.rowCount) return;
+  const row = conflict.rows[0] || {};
+  const fields = [row.email_match ? "correo" : "", row.phone_match ? "WhatsApp" : ""].filter(Boolean);
+  const dataLabel = fields.length === 2 ? "El correo y el WhatsApp" : `El ${fields[0] || "dato de contacto"}`;
+  throw badRequest(`${dataLabel} ya están asociados a otro documento. Revísalos: para participar y redimir el beneficio, deben corresponder al mismo documento de identificación.`);
 }
 
 async function resolveActivationContact(client, activation, body, metadata = {}) {
@@ -1610,6 +1659,15 @@ async function resolveActivationContact(client, activation, body, metadata = {})
                 or ($3::text is not null and lower(nullif(p.email, '')) = $3)
                 or ($4::text is not null and regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g') = $4)
               )
+           union all
+           select p.source_id as id, p.source_type, min(p.created_at) as created_at, 0 as source_rank
+             from interactive_activation_participants p
+            where p.company_id = $1
+              and p.source_id is not null
+              and p.source_type in ('PLAYER', 'MANUAL', 'AFFILIATE')
+              and $2::text is not null
+              and regexp_replace(lower(coalesce(p.document, '')), '[^a-z0-9]', '', 'g') = $2
+            group by p.source_id, p.source_type
            union all
            select ml.id, 'MANUAL'::text as source_type, ml.created_at, 2 as source_rank
              from business_manual_leads ml

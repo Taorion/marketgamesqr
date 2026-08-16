@@ -192,6 +192,31 @@ label {
   color: #cfc6b4;
 }
 
+.participant-identity-help {
+  margin: 2px 0 0;
+  padding: 11px 12px;
+  border: 1px solid rgba(7, 89, 214, .18);
+  border-radius: 10px;
+  background: #eef7ff;
+  color: #315978;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.participant-identity-help strong {
+  color: #052a6b;
+}
+
+.is-premium .participant-identity-help {
+  border-color: rgba(229, 251, 255, .22);
+  background: rgba(229, 251, 255, .08);
+  color: #d8e9f4;
+}
+
+.is-premium .participant-identity-help strong {
+  color: #ffffff;
+}
+
 input,
 textarea,
 select {

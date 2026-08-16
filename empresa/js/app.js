@@ -42787,7 +42787,6 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
       ${controlFirst ? "" : stationControl}
       <td>
         <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}">Detalle</button>
-        <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Operar</button>
         ${stage.key === "recoleccion" ? `<button class="solid-button compact" type="button" data-rms-station-send-single="${escapeHtml(item.id)}" ${readiness.ready && nextPhase ? "" : "disabled"} title="${escapeHtml(readiness.ready ? `Enviar a ${nextPhase?.label || "Curaduría"}` : readiness.detail)}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span> Enviar</button>` : ""}
       </td>
     </tr>
@@ -42826,9 +42825,6 @@ function rmsActivationStationCardMarkup(item = {}) {
           <div><dt>Origen</dt><dd title="${escapeHtml(origin)}">${escapeHtml(origin)}</dd></div>
           <div><dt>Entrada</dt><dd>${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")}</dd></div>
         </dl>
-        <div class="rms-activation-work-actions">
-          <button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Operar</button>
-        </div>
       </aside>
       <div class="rms-activation-work-console">
         ${rmsActivationDeliveryCardMarkup(item)}
@@ -42883,7 +42879,7 @@ function rmsCommercialLeadAsideMarkup(item = {}, nextLabel = "") {
         <div><dt>Contactos</dt><dd>${escapeHtml(String(delivery.contactCount || 0))}</dd></div>
         <div><dt>Última respuesta</dt><dd>${escapeHtml(rmsActivationOutcomeLabel(delivery.outcome))}</dd></div>
       </dl>
-      <div class="rms-activation-work-actions"><button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}">Detalle e historial</button><button class="ghost-button compact" type="button" data-rms-inspect="${escapeHtml(item.id)}">Operar</button></div>
+      <div class="rms-activation-work-actions"><button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}">Detalle e historial</button></div>
     </aside>
   `;
 }
@@ -45943,9 +45939,6 @@ function rmsStationLeadRowMarkup(item = {}, stage = {}, nextPhase = null, operat
       <div class="rms-station-row-actions">
         <button class="rms-station-row-detail" type="button" data-rms-review-capture="${escapeHtml(item.id)}" aria-label="Abrir detalle de ${escapeHtml(item.name || "lead")}">
           <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
-        </button>
-        <button class="rms-station-row-operate" type="button" data-rms-inspect="${escapeHtml(item.id)}" aria-label="Operar ${escapeHtml(item.name || "lead")}">
-          <span class="material-symbols-outlined" aria-hidden="true">tune</span>
         </button>
       </div>
     </article>
