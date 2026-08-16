@@ -16023,6 +16023,13 @@ function ensureGamingActivationBuilderModal(view = document.querySelector('.view
       }
     });
   }
+  // Crear el nodo durante el render no equivale a abrirlo: queda cerrado hasta
+  // que una acción explícita del usuario invoque el constructor.
+  if (modal.classList.contains("hidden") || modal.hasAttribute("hidden")) {
+    modal.classList.add("hidden");
+    modal.setAttribute("hidden", "");
+    modal.setAttribute("aria-hidden", "true");
+  }
   const body = modal.querySelector("[data-gaming-activation-builder-body]");
   if (body && builderCard.parentElement !== body) body.appendChild(builderCard);
   return modal;
@@ -16038,6 +16045,7 @@ function openGamingActivationBuilderModal(options = {}) {
   }
   modal.classList.remove("hidden");
   modal.removeAttribute("hidden");
+  modal.setAttribute("aria-hidden", "false");
   const body = modal.querySelector(".gaming-activation-builder-modal-body");
   if (body) body.scrollTop = 0;
   updateGamingActivationWizard();
@@ -16056,6 +16064,7 @@ function closeGamingActivationBuilderModal() {
   const modal = document.getElementById("gamingActivationBuilderModal");
   modal?.classList.add("hidden");
   modal?.setAttribute("hidden", "");
+  modal?.setAttribute("aria-hidden", "true");
 }
 
 function activationMetricNumber(value = 0) {

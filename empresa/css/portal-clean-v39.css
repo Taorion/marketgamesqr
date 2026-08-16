@@ -19072,6 +19072,20 @@ html body[data-current-view="strategic-qr"] > .gaming-activation-detail-modal :i
   }
 }
 
+/* El constructor se mueve a body para cubrir el portal completo. Estas reglas
+   no dependen de la vista activa: hidden debe ganar incluso durante login,
+   refresco o cambio de módulo. */
+html body > #gamingActivationBuilderModal.hidden,
+html body > #gamingActivationBuilderModal[hidden] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+html body > #gamingActivationBuilderModal:not(.hidden):not([hidden]) {
+  display: grid !important;
+  pointer-events: auto !important;
+}
+
 html body[data-current-view="strategic-qr"] > #activationEditModal .activation-edit-head {
   display: flex !important;
   align-items: flex-start !important;
