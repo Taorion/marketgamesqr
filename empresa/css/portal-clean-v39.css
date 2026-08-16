@@ -23305,10 +23305,13 @@ html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#q
 }
 
 /* Editing an activation uses the same full-screen, centered canvas as creation. */
-.modal-shell:has(.gaming-builder-assistant) {
+.modal-shell:has(.gaming-builder-assistant):not(.hidden) {
   position: fixed !important; inset: 0 !important; z-index: var(--portal-modal, 1100) !important;
   display: grid !important; place-items: center !important; padding: clamp(12px, 3vw, 34px) !important;
   overflow: auto !important; background: rgba(1, 20, 54, .56) !important;
+}
+.modal-shell:has(.gaming-builder-assistant).hidden {
+  display: none !important;
 }
 .modal-shell:has(.gaming-builder-assistant) .modal-card {
   width: min(1240px, 100%) !important; max-height: calc(100dvh - clamp(24px, 6vw, 68px)) !important;
