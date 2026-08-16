@@ -43048,30 +43048,47 @@ function rmsRiskStationMetricsMarkup(rows = [], allOpportunities = []) {
 
 function rmsAttributedSaleStationCardMarkup(item = {}) {
   const workflow = rmsCommercialWorkflow(item);
-  const confirmation = workflow.confirmation;
+  const confirmation = workflow.confirmation || {};
   const negotiationResponse = (item.state_metadata || {}).negotiation_current || {};
   const evaluation = workflow.evaluation || {};
-  const saleContext = confirmation.sale_context || {};
+  const saleContext = confirmation.sale_context || negotiationResponse.sale_context || {};
   const activation = rmsActivationDelivery(item);
   const saleOrigin = confirmation.route === "NEGOTIATION_CLEAN"
     ? "Venta limpia confirmada desde Negociación"
     : negotiationResponse.result === "ACCEPTED"
       ? "Compra confirmada por el cliente en Negociación"
-      : "Venta protegida y liberada desde Riesgos de fuga";
-  const defaultProduct = confirmation.product_name || rmsClassifiedProductName(item) || item.product_interest || "";
-  // Cierre never guesses a catalog reference from a label. The confirmation is the
-  // canonical handoff and must be preselected before an operator can attribute payment.
-  const confirmedInventoryProductId = String(confirmation.inventory_product_id || "");
-  const inventoryProduct = findInventoryProductById(confirmedInventoryProductId);
+      : evaluation.response === "PAID_SALE"
+        ? "Pago informado desde Evaluación"
+        : "Venta protegida y liberada desde Riesgos de fuga";
+  // La confirmación es la fuente preferida, pero una compra directa desde
+  // Evaluación o Negociación conserva el producto ya elegido en esas estaciones.
+  const inheritedInventoryProductId = String(
+    confirmation.inventory_product_id
+      || evaluation.recommended_inventory_product_id
+      || item.classified_product_id
+      || item.inventory_product_id
+      || ""
+  );
+  const inventoryProduct = findInventoryProductById(inheritedInventoryProductId);
+  const defaultProduct = confirmation.product_name
+    || evaluation.recommended_product
+    || inventoryProduct?.name
+    || rmsClassifiedProductName(item)
+    || item.product_interest
+    || "";
   const quantity = Math.max(0.01, Number(saleContext.quantity || 1));
   const unitCost = Math.max(0, Number(inventoryProduct?.cost_price || 0));
   const benefitType = String(saleContext.benefit_type || "NONE").toUpperCase();
   const benefitCost = Math.max(0, Number(saleContext.benefit_cost || 0));
   const acquisitionCost = Math.max(0, Number(saleContext.acquisition_cost || 0));
+  const inheritedAmount = confirmation.amount ?? evaluation.budget_amount ?? negotiationResponse.amount ?? "";
+  const inheritedCurrency = confirmation.currency || evaluation.currency || negotiationResponse.currency || "COP";
+  const inheritedChannel = confirmation.negotiation?.channel || negotiationResponse.channel || activation.channel || "";
+  const inheritedResponsible = confirmation.responsible || negotiationResponse.responsible || "";
   const evaluationResponse = RMS_EVALUATION_RESPONSES.find((entry) => entry.value === evaluation.response)?.short || evaluation.response || "Sin respuesta registrada";
   const activationDetail = [activation.offer || defaultProduct, activation.channel ? `por ${activation.channel}` : "", activation.outcome ? rmsActivationOutcomeLabel(activation.outcome) : ""].filter(Boolean).join(" · ");
   const evaluationDetail = [evaluationResponse, evaluation.need, evaluation.objections, evaluation.decision_maker].filter(Boolean).join(" · ");
-  const negotiationDetail = [confirmation.negotiation?.customer_condition, confirmation.negotiation?.channel, confirmation.responsible, confirmation.payment_reference, negotiationResponse.reason].filter(Boolean).join(" · ");
+  const negotiationDetail = [confirmation.negotiation?.customer_condition, inheritedChannel, inheritedResponsible, confirmation.payment_reference, negotiationResponse.reason].filter(Boolean).join(" · ");
   const inheritedNotes = [
     evaluation.note && `Evaluación: ${evaluation.note}`,
     confirmation.payment_reference,
@@ -43088,11 +43105,11 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
         <header class="rms-commercial-console-head"><div><span class="mono-label">Compra confirmada</span><h4>Registra el pago y su rentabilidad</h4><p>La venta se atribuye a este contacto y a la ruta de Activación 1. Los costos son los que declare tu equipo.</p></div><span class="rms-commercial-state is-sale">Pago por registrar</span></header>
         <details class="rms-sale-handoff"><summary><span class="material-symbols-outlined" aria-hidden="true">route</span><span><strong>Ver información heredada</strong><small>Activación, Evaluación y Negociación quedan guardadas. Ábrelo solo si necesitas revisar el contexto.</small></span></summary><div class="rms-sale-handoff-grid"><article><span>Activación</span><strong>${escapeHtml(activationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(activation.firstContactAt ? `Contacto ${formatDate(activation.firstContactAt)}` : "Sin fecha de contacto")}</small></article><article><span>Evaluación</span><strong>${escapeHtml(evaluationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(evaluation.next_action || "Sin próximo paso pendiente")}</small></article><article><span>Negociación</span><strong>${escapeHtml(negotiationDetail || "Venta confirmada")}</strong><small>${escapeHtml(confirmation.evidence ? "Evidencia registrada" : "Sin evidencia adicional")}</small></article></div></details>
         <div class="rms-sale-form-grid">
-          <label><span>Producto comprado</span><select data-rms-sale-product="${escapeHtml(item.id)}" aria-describedby="rms-sale-product-hint-${escapeHtml(item.id)}">${rmsInventoryProductPickerOptions(confirmedInventoryProductId, defaultProduct)}</select><small id="rms-sale-product-hint-${escapeHtml(item.id)}">Viene seleccionado desde Negociación. Cámbialo solo si el cliente compró otra referencia; Qori conservará ambas referencias en el historial.</small></label>
+          <label><span>Producto comprado</span><select data-rms-sale-product="${escapeHtml(item.id)}" aria-describedby="rms-sale-product-hint-${escapeHtml(item.id)}">${rmsInventoryProductPickerOptions(inheritedInventoryProductId, defaultProduct)}</select><small id="rms-sale-product-hint-${escapeHtml(item.id)}">Producto precargado desde ${escapeHtml(confirmation.inventory_product_id ? "Negociación" : evaluation.recommended_inventory_product_id ? "Evaluación" : "la asignación del lead")}. Cámbialo solo si el cliente compró otra referencia; Qori conservará ambas referencias en el historial.</small></label>
           <input type="hidden" value="${escapeHtml(defaultProduct)}" data-rms-sale-product-name="${escapeHtml(item.id)}">
           <label><span>Cantidad comprada</span><input type="number" min="0.01" step="0.01" value="${escapeHtml(String(quantity))}" data-rms-sale-quantity="${escapeHtml(item.id)}"></label>
-          <label><span>Dinero recibido</span><input type="number" min="1" step="0.01" value="${escapeHtml(confirmation.amount ?? "")}" data-rms-sale-amount="${escapeHtml(item.id)}" placeholder="0"></label>
-          <label><span>Moneda</span><select data-rms-sale-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${currency === (confirmation.currency || "COP") ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
+          <label><span>Dinero recibido</span><input type="number" min="1" step="0.01" value="${escapeHtml(inheritedAmount)}" data-rms-sale-amount="${escapeHtml(item.id)}" placeholder="0"></label>
+          <label><span>Moneda</span><select data-rms-sale-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${currency === inheritedCurrency ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
           <label><span>Costo unitario</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(unitCost))}" data-rms-sale-unit-cost="${escapeHtml(item.id)}"></label>
           <label><span>Medio de pago</span><select data-rms-sale-payment="${escapeHtml(item.id)}"><option value="TRANSFER">Transferencia</option><option value="CASH">Efectivo</option><option value="CARD">Tarjeta</option><option value="PAYMENT_LINK">Link de pago</option><option value="OTHER">Otro</option></select></label>
           <label><span>Beneficio usado</span><select data-rms-sale-benefit-type="${escapeHtml(item.id)}"><option value="NONE" ${benefitType === "NONE" ? "selected" : ""}>No se usó beneficio</option><option value="DISCOUNT" ${benefitType === "DISCOUNT" ? "selected" : ""}>Descuento</option><option value="GIFT" ${benefitType === "GIFT" ? "selected" : ""}>Obsequio</option><option value="BONUS" ${benefitType === "BONUS" ? "selected" : ""}>Bono / incentivo</option><option value="OTHER" ${benefitType === "OTHER" ? "selected" : ""}>Otro</option></select></label>
@@ -48795,9 +48812,14 @@ function rmsCommercialMoney(value, currency = "COP") {
 
 function rmsEvaluationDraftFromDom(root, id) {
   const product = findInventoryProductById(rmsCommercialNode(root, "[data-rms-evaluation-product-id]", id)?.value || "");
+  const response = rmsCommercialNode(root, "[data-rms-evaluation-response]", id)?.value || "";
+  const destination = rmsCommercialNode(root, "[data-rms-evaluation-destination]", id)?.value || "";
+  const recycleReason = rmsCommercialNode(root, "[data-rms-evaluation-recycle-reason]", id)?.value || "";
+  const recycleReasons = new Set(["BUDGET", "TIMING", "NO_RESPONSE", "WAITING_DECISION", "NOT_VIABLE_NOW", "OTHER"]);
+  const isRecycleRoute = response === "RECYCLE" || destination === "RECYCLE";
   return {
-    response: rmsCommercialNode(root, "[data-rms-evaluation-response]", id)?.value || "",
-    destination: rmsCommercialNode(root, "[data-rms-evaluation-destination]", id)?.value || "",
+    response,
+    destination,
     need: String(rmsCommercialNode(root, "[data-rms-evaluation-need]", id)?.value || "").trim(),
     desired_outcome: String(rmsCommercialNode(root, "[data-rms-evaluation-outcome]", id)?.value || "").trim(),
     recommended_inventory_product_id: product?.id || null,
@@ -48809,9 +48831,11 @@ function rmsEvaluationDraftFromDom(root, id) {
     objections: String(rmsCommercialNode(root, "[data-rms-evaluation-objections]", id)?.value || "").trim(),
     next_action: String(rmsCommercialNode(root, "[data-rms-evaluation-next-action]", id)?.value || "").trim(),
     next_action_at: rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-evaluation-next-at]", id)?.value || ""),
-    recycle_reason: rmsCommercialNode(root, "[data-rms-evaluation-recycle-reason]", id)?.value || "",
-    recycle_at: rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-evaluation-recycle-at]", id)?.value || ""),
-    recycle_note: String(rmsCommercialNode(root, "[data-rms-evaluation-recycle-note]", id)?.value || "").trim(),
+    // Un motivo de reciclaje no es parte de Riesgos de fuga ni de ninguna otra ruta.
+    // Limpiarlo evita que un borrador anterior invalide el envío del lead.
+    recycle_reason: isRecycleRoute && recycleReasons.has(recycleReason) ? recycleReason : null,
+    recycle_at: isRecycleRoute ? rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-evaluation-recycle-at]", id)?.value || "") : null,
+    recycle_note: isRecycleRoute ? String(rmsCommercialNode(root, "[data-rms-evaluation-recycle-note]", id)?.value || "").trim() : "",
     note: String(rmsCommercialNode(root, "[data-rms-evaluation-note]", id)?.value || "").trim(),
   };
 }
@@ -49297,11 +49321,23 @@ function updateRmsSaleEconomicsPreview(root, id) {
   const total = rmsCommercialNode(root, "[data-rms-sale-calculated-total]", id);
   if (total) total.textContent = rmsCommercialMoney(draft.sale_amount, draft.currency);
   const productHint = root.querySelector?.(`#rms-sale-product-hint-${CSS.escape(id)}`);
-  const confirmation = rmsCommercialWorkflow(rmsOpportunityById(id) || {}).confirmation || {};
+  const saleWorkflow = rmsCommercialWorkflow(rmsOpportunityById(id) || {});
+  const confirmation = saleWorkflow.confirmation || {};
+  const evaluation = saleWorkflow.evaluation || {};
+  const inheritedProductId = confirmation.inventory_product_id
+    || evaluation.recommended_inventory_product_id
+    || rmsOpportunityById(id)?.classified_product_id
+    || rmsOpportunityById(id)?.inventory_product_id
+    || "";
+  const sourceLabel = confirmation.inventory_product_id
+    ? "Negociación"
+    : evaluation.recommended_inventory_product_id
+      ? "Evaluación"
+      : "la asignación del lead";
   if (productHint) {
-    productHint.textContent = draft.inventory_product_id && String(draft.inventory_product_id) !== String(confirmation.inventory_product_id || "")
+    productHint.textContent = draft.inventory_product_id && inheritedProductId && String(draft.inventory_product_id) !== String(inheritedProductId)
       ? "Producto corregido al cerrar la venta. Se conservará la referencia negociada y esta será la compra real."
-      : "Producto preseleccionado desde Negociación. Cámbialo solo si la compra real fue otra referencia.";
+      : `Producto preseleccionado desde ${sourceLabel}. Cámbialo solo si la compra real fue otra referencia.`;
   }
   const productCost = draft.quantity * draft.unit_cost;
   const grossProfit = draft.sale_amount - productCost - draft.benefit_cost;

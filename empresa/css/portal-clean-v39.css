@@ -20293,7 +20293,7 @@ html body[data-current-view="dashboard"] .portal-shell .portal-map-grid article 
   background: #f8fcff !important;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 680px) {
   html body[data-current-view="dashboard"] .portal-shell .portal-map-grid {
     gap: 12px !important;
   }
@@ -23436,5 +23436,181 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actio
 
   html body[data-current-view="rms-machine"] .portal-shell .rms-lean-station-actions :is(.ghost-button, .solid-button).compact {
     flex-basis: 100% !important;
+  }
+}
+
+/* Activacion 1: la identidad del lead abre toda la tarjeta; los datos no se
+   comprimen como una columna lateral frente al formulario. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item {
+  border-color: rgba(3, 65, 179, .18) !important;
+  box-shadow: 0 18px 42px rgba(1, 34, 104, .09) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas:
+    "person select"
+    "facts facts" !important;
+  gap: 16px 20px !important;
+  padding: clamp(18px, 2.3vw, 28px) !important;
+  border-bottom-color: rgba(7, 206, 251, .32) !important;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(7, 206, 251, .28), transparent 30%),
+    linear-gradient(118deg, #012268 0%, #0341b3 58%, #0759d6 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-select {
+  align-self: start !important;
+  margin-top: 5px !important;
+  padding: 8px 10px !important;
+  border: 1px solid rgba(229, 251, 255, .25) !important;
+  border-radius: 10px !important;
+  background: rgba(1, 22, 71, .18) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-person {
+  display: grid !important;
+  grid-template-columns: 48px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-height: 52px !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-person > .material-symbols-outlined {
+  width: 48px !important;
+  height: 48px !important;
+  border: 1px solid rgba(229, 251, 255, .24) !important;
+  background: rgba(229, 251, 255, .14) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-person strong {
+  font-size: clamp(1.08rem, 1.6vw, 1.32rem) !important;
+  line-height: 1.2 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-person small {
+  margin-top: 4px !important;
+  font-size: .82rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts {
+  grid-column: 1 / -1 !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  padding: 12px !important;
+  border: 1px solid rgba(229, 251, 255, .18) !important;
+  border-radius: 14px !important;
+  background: rgba(1, 24, 75, .2) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts div {
+  min-height: 54px !important;
+  padding: 7px 10px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, .075) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts dt {
+  color: #9cdbff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts dd {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  color: #ffffff !important;
+  line-height: 1.35 !important;
+}
+
+@media (max-width: 980px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "person"
+      "select"
+      "facts" !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-select {
+    justify-self: start !important;
+    margin-top: 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-facts {
+    grid-column: auto !important;
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Avisos operativos: siempre se leen junto a la acción, aunque el usuario
+   esté trabajando al final de una estación, tabla o formulario. */
+html body .content-shell > .action-feedback {
+  position: fixed !important;
+  right: auto !important;
+  bottom: clamp(18px, 3.4vh, 36px) !important;
+  left: 50% !important;
+  z-index: var(--portal-toast, 1200) !important;
+  width: min(620px, calc(100vw - 44px)) !important;
+  margin: 0 !important;
+  padding: 15px 18px !important;
+  transform: translateX(-50%) !important;
+  border: 1px solid rgba(3, 65, 179, .22) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #ffffff 0%, #eef8ff 100%) !important;
+  color: #082b67 !important;
+  box-shadow: 0 22px 54px rgba(1, 34, 104, .22) !important;
+}
+
+html body .content-shell > .action-feedback::before {
+  background: #e3f6ff !important;
+  color: #0341b3 !important;
+}
+
+html body .content-shell > .action-feedback.error {
+  border-color: rgba(169, 48, 71, .34) !important;
+  background: linear-gradient(135deg, #fff9f9 0%, #fff0f2 100%) !important;
+  color: #9a203e !important;
+}
+
+html body .content-shell > .action-feedback.error::before {
+  background: #ffe2e7 !important;
+  color: #a9443d !important;
+}
+
+html body .content-shell > .action-feedback.loading,
+html body .content-shell > .action-feedback.info {
+  border-color: rgba(7, 128, 250, .3) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #e8f6ff 100%) !important;
+  color: #07558d !important;
+}
+
+html body .content-shell > .action-feedback strong {
+  color: currentColor !important;
+  font-size: .9rem !important;
+}
+
+html body .content-shell > .action-feedback p {
+  color: currentColor !important;
+  opacity: .84 !important;
+  line-height: 1.42 !important;
+}
+
+@media (max-width: 680px) {
+  html body .content-shell > .action-feedback {
+    bottom: 14px !important;
+    width: calc(100vw - 28px) !important;
+    grid-template-columns: 32px minmax(0, 1fr) !important;
+    gap: 10px !important;
+    padding: 13px 14px !important;
   }
 }
