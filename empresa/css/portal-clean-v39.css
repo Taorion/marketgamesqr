@@ -9822,6 +9822,17 @@ html body .content-shell > .action-feedback.hidden {
   pointer-events: none !important;
 }
 
+/* Estado cerrado innegociable: el aviso global vive fuera de algunos
+   contenedores durante la navegación del portal. Aunque otro layout le asigne
+   display:grid, una alerta vacía o marcada como hidden jamás debe reservar
+   espacio ni superponerse a la operación. */
+html body #actionFeedback.hidden,
+html body #actionFeedback:empty {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 html body .content-shell > .action-feedback:not(.hidden)::before {
   width: 28px !important;
   height: 28px !important;
