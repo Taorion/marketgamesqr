@@ -258,6 +258,7 @@ const inventoryProductSchema = z.object({
   category: z.string().trim().max(120).optional().nullable(),
   category_id: z.string().uuid().optional().nullable(),
   category_internal_id: z.string().trim().min(2).max(100).optional().nullable(),
+  subcategory: z.string().trim().max(120).optional().nullable(),
   subcategory_id: z.string().uuid().optional().nullable(),
   subcategory_internal_id: z.string().trim().min(2).max(100).optional().nullable(),
   brand: z.string().trim().max(120).optional().nullable(),
@@ -3719,6 +3720,7 @@ function mapInventoryPayload(body, userId) {
     category: body.category || null,
     category_id: body.category_id || null,
     category_internal_id: body.category_internal_id || null,
+    subcategory: body.subcategory || null,
     subcategory_id: body.subcategory_id || null,
     subcategory_internal_id: body.subcategory_internal_id || null,
     brand: body.brand || null,
@@ -4672,6 +4674,18 @@ async function resolveInventoryTaxonomy(client, businessId, payload, options = {
       [businessId, payload.subcategory_internal_id]
     );
     subcategoryId = subcategoryByInternalId.rows[0]?.id || null;
+  }
+  if (!subcategoryId && payload.subcategory) {
+    const subcategoryByName = await client.query(
+      `select id, category_id, name, internal_id
+         from business_product_subcategories
+        where business_id = $1
+          and lower(name) = lower($2)
+          ${category?.id ? "and category_id = $3" : ""}
+        limit 1`,
+      category?.id ? [businessId, payload.subcategory, category.id] : [businessId, payload.subcategory]
+    );
+    subcategoryId = subcategoryByName.rows[0]?.id || null;
   }
   let subcategory = null;
   if (subcategoryId) {

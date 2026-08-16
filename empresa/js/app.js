@@ -22379,8 +22379,10 @@ function inventoryProductsFromCsv(text = "") {
       name,
       barcode: csvCell(record, ["codigo_barras", "codigo_de_barras", "barcode"]),
       sku: csvCell(record, ["sku", "referencia", "codigo"]),
-      category_internal_id: csvCell(record, ["categoria_id", "category_id", "categoria", "category"]),
-      subcategory_internal_id: csvCell(record, ["subcategoria_id", "subcategory_id", "subcategoria", "subcategory"]),
+      category_internal_id: csvCell(record, ["categoria_id", "category_id", "category_internal_id"]),
+      category: csvCell(record, ["categoria", "category", "nombre_categoria", "category_name"]),
+      subcategory_internal_id: csvCell(record, ["subcategoria_id", "subcategory_id", "subcategory_internal_id"]),
+      subcategory: csvCell(record, ["subcategoria", "subcategory", "nombre_subcategoria", "subcategory_name"]),
       brand: csvCell(record, ["marca", "brand"]),
       tax_classification: inventoryCsvTaxClassification(csvCell(record, ["iva", "tax", "tax_classification"])),
       price_before_tax: inventoryCsvNumber(csvCell(record, ["precio_antes_iva", "price_before_tax", "precio_venta", "precio", "unit_price", "sale_price"]), 0),
@@ -22417,9 +22419,9 @@ async function importInventoryProductsCsv(event) {
   }
   try {
     const products = inventoryProductsFromCsv(await file.text());
-    const incomplete = products.filter((product) => !product.internal_id || !product.name || !product.category_internal_id);
+    const incomplete = products.filter((product) => !product.internal_id || !product.name || (!product.category_internal_id && !product.category));
     if (!products.length || incomplete.length) {
-      throw new Error("Cada fila necesita ID de producto, nombre y categoría. Descarga la plantilla si necesitas la estructura exacta.");
+      throw new Error("Cada fila necesita ID de producto, nombre y una categoría existente (ID interno o nombre). Descarga la plantilla si necesitas la estructura exacta.");
     }
     setButtonLoading(inventoryCsvImportSubmitButton, true, "Importando...");
     setInlineMessage(inventoryCsvImportMessage, `Validando ${products.length.toLocaleString("es-CO")} producto(s)...`, "info");
