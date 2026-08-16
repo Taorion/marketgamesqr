@@ -925,16 +925,10 @@ create index if not exists business_sales_rms_source_created_idx on business_sal
 create index if not exists business_sales_inventory_product_idx on business_sales(inventory_product_id) where inventory_product_id is not null;
 create unique index if not exists business_sales_idempotency_key_idx on business_sales(business_id, idempotency_key) where idempotency_key is not null;
 create index if not exists idx_business_inventory_products_business_status on business_inventory_products(business_id, status, updated_at desc);
-create index if not exists idx_business_inventory_products_business_category_status
-  on business_inventory_products(business_id, category_id, status, updated_at desc);
-create index if not exists idx_business_inventory_products_business_subcategory_status
-  on business_inventory_products(business_id, subcategory_id, status, updated_at desc);
 create index if not exists idx_business_product_categories_business_name
   on business_product_categories(business_id, name);
 create index if not exists idx_business_product_subcategories_business_category
   on business_product_subcategories(business_id, category_id, name);
-create unique index if not exists business_inventory_products_business_internal_id_ci_uidx
-  on business_inventory_products(business_id, lower(internal_id));
 create unique index if not exists business_product_categories_business_internal_id_ci_uidx
   on business_product_categories(business_id, lower(internal_id));
 create unique index if not exists business_product_subcategories_business_internal_id_ci_uidx

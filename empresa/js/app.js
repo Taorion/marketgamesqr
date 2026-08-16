@@ -26247,15 +26247,26 @@ function activationShareLeadKey(lead = {}) {
   return `${lead.source_type || "PLAYER"}::${lead.id || ""}`;
 }
 
+function activationShareEmailValue(recipient = {}) {
+  return String(
+    recipient.email
+    || recipient.customer_email
+    || recipient.contact_email
+    || recipient.customer?.email
+    || ""
+  ).trim();
+}
+
 function selectedActivationShareLead() {
-  return (state.activationShareLeads || [])
-    .find((lead) => activationShareLeadKey(lead) === state.activationShareSelectedKey) || null;
+  const lead = (state.activationShareLeads || [])
+    .find((item) => activationShareLeadKey(item) === state.activationShareSelectedKey) || null;
+  return lead ? { ...lead, email: activationShareEmailValue(lead) } : null;
 }
 
 function activationShareContactLine(lead = {}) {
   return [
     lead.phone || "Sin telefono",
-    lead.email || "",
+    activationShareEmailValue(lead),
     lead.document_id || "",
   ].filter(Boolean).join(" | ");
 }
@@ -26297,7 +26308,7 @@ function activationShareEmailBodyFor(activation = {}, recipient = {}) {
 }
 
 function activationShareHasValidEmail(recipient = {}) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(recipient.email || "").trim());
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(activationShareEmailValue(recipient));
 }
 
 function activationShareWhatsAppUrl(activation, recipient) {
