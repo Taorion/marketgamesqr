@@ -3060,18 +3060,20 @@ async function recordActivationDelivery(businessId, user, payload = {}) {
   const deliveryState = payload.delivery_state === "SENT" ? "SENT" : "PREPARED";
   const requestedContactAt = payload.contacted_at ? new Date(payload.contacted_at) : new Date();
   if (Number.isNaN(requestedContactAt.getTime())) throw badRequest("La fecha del contacto no es válida.");
-  const priorHistory = await query(
-    `select count(*) filter (where metadata->'activation_delivery'->>'delivery_state' = 'SENT')::int as sent_count,
-            min(nullif(metadata->'activation_delivery'->>'first_contact_at', '')::timestamptz) as first_contact_at
-     from lead_notes
-     where business_id = $1 and source_type = $2 and source_id = $3
-       and metadata->>'source_module' = 'rms_activation_1'`,
-    [businessId, sourceType, sourceId]
-  );
-  const priorState = await query(
-    `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
-    [businessId, sourceType, sourceId]
-  );
+  const [priorHistory, priorState] = await Promise.all([
+    query(
+      `select count(*) filter (where metadata->'activation_delivery'->>'delivery_state' = 'SENT')::int as sent_count,
+              min(nullif(metadata->'activation_delivery'->>'first_contact_at', '')::timestamptz) as first_contact_at
+       from lead_notes
+       where business_id = $1 and source_type = $2 and source_id = $3
+         and metadata->>'source_module' = 'rms_activation_1'`,
+      [businessId, sourceType, sourceId]
+    ),
+    query(
+      `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
+      [businessId, sourceType, sourceId]
+    ),
+  ]);
   const legacyFirstContact = priorState.rows[0]?.metadata?.activation_first_contact_at
     || priorState.rows[0]?.metadata?.activation_offer_sent_at
     || null;

@@ -2732,6 +2732,9 @@ let state = {
 };
 
 const TICKET_CENTER_CACHE_TTL_MS = 60 * 1000;
+const RMS_ACTIVATION_SELECTOR_CACHE_TTL_MS = 90 * 1000;
+const rmsActivationTicketOptionsCache = new Map();
+let rmsActivationCatalogOptionsCache = { scope: "", loadedAt: 0, promise: null, items: [] };
 const TICKET_CENTER_GROUPS = ["core", "metrics", "batches", "history", "activations", "affiliates"];
 const TICKET_CENTER_TAB_GROUPS = {
   center: ["core", "metrics", "batches", "history"],
@@ -3228,6 +3231,7 @@ function hideFeedback() {
   if (!actionFeedback) return;
   actionFeedback.classList.add("hidden");
   actionFeedback.className = "action-feedback hidden";
+  actionFeedback.setAttribute("aria-hidden", "true");
   actionFeedback.innerHTML = "";
 }
 
@@ -3320,10 +3324,14 @@ function showFeedback(message, kind = "success", options = {}) {
       <span class="material-symbols-outlined" aria-hidden="true">close</span>
     </button>
   `;
+  actionFeedback.removeAttribute("aria-hidden");
   actionFeedback.classList.remove("hidden");
-  if (options.timeout !== 0) {
-    state.feedbackTimer = window.setTimeout(hideFeedback, options.timeout || (kind === "error" ? 7200 : 4200));
-  }
+  // Ninguna alerta global debe quedarse inmóvil sobre la operación. Los procesos
+  // largos ya muestran su estado dentro de la tarjeta que los inició.
+  const defaultTimeout = kind === "loading" ? 7000 : kind === "error" ? 5200 : kind === "info" ? 3200 : 2800;
+  const requestedTimeout = Number(options.timeout);
+  const timeout = options.persistent === true ? 0 : (requestedTimeout > 0 ? requestedTimeout : defaultTimeout);
+  if (timeout > 0) state.feedbackTimer = window.setTimeout(hideFeedback, timeout);
 }
 
 function showBusyOverlay(title, message) {
@@ -26393,15 +26401,25 @@ function renderActivationShareModal() {
   }
   const hasPhone = Boolean(whatsappPhoneFromInput(recipient?.phone || recipient?.whatsapp || recipient?.mobile || ""));
   const hasEmail = activationShareHasValidEmail(recipient || {});
-  if (activationShareOpenWhatsAppButton) activationShareOpenWhatsAppButton.disabled = !activationIsUsable(activation) || !recipient || !hasPhone;
+  const activationReady = activationIsUsable(activation);
+  const activationBlockedMessage = activation && !activationReady
+    ? `“${activation.title || "Esta activación"}” está en ${activationStatusLabel(activation.status).toLowerCase()}. Ábrela en Activaciones y pulsa Lanzar activación antes de compartirla.`
+    : "";
+  if (activationShareOpenWhatsAppButton) {
+    activationShareOpenWhatsAppButton.disabled = !activationReady || !recipient || !hasPhone;
+    activationShareOpenWhatsAppButton.title = activationBlockedMessage || "Enviar por WhatsApp";
+  }
   activationShareOpenWhatsAppButton?.classList.toggle("hidden", isEmail);
-  if (activationShareSendEmailButton) activationShareSendEmailButton.disabled = !activationIsUsable(activation) || !recipient || !hasEmail || !String(emailSubject || "").trim() || !String(emailBody || "").trim();
+  if (activationShareSendEmailButton) {
+    activationShareSendEmailButton.disabled = !activationReady || !recipient || !hasEmail || !String(emailSubject || "").trim() || !String(emailBody || "").trim();
+    activationShareSendEmailButton.title = activationBlockedMessage || "Enviar por email";
+  }
   activationShareSendEmailButton?.classList.toggle("hidden", !isEmail);
   if (activationShareCopyMessageButton) activationShareCopyMessageButton.textContent = isEmail ? "Copiar email" : "Copiar mensaje";
   setFormMessage(
     activationShareMessage,
-    recipient && (isEmail ? !hasEmail : !hasPhone) ? `${isEmail ? "Email" : "WhatsApp"} necesita un ${isEmail ? "correo" : "numero"} valido para enviar.` : "",
-    recipient && (isEmail ? !hasEmail : !hasPhone) ? "error" : ""
+    activationBlockedMessage || (recipient && (isEmail ? !hasEmail : !hasPhone) ? `${isEmail ? "Email" : "WhatsApp"} necesita un ${isEmail ? "correo" : "numero"} valido para enviar.` : ""),
+    activationBlockedMessage ? "info" : (recipient && (isEmail ? !hasEmail : !hasPhone) ? "error" : "")
   );
 }
 
@@ -47246,27 +47264,42 @@ function bindRmsMachineActions(root) {
         .finally(() => { button.disabled = false; });
     });
   });
-  root.querySelectorAll("[data-rms-activation-ticket-select]").forEach(async (select) => {
+  root.querySelectorAll("[data-rms-activation-ticket-select]").forEach((select) => {
     const item = rmsOpportunityById(select.dataset.rmsActivationTicketSelect || "");
     if (!item?.source_id) return;
+    select.innerHTML = '<option value="">Abre para cargar tickets del lead</option>';
+    const loadTickets = async () => {
+    if (select.dataset.rmsActivationLoading === "1") return;
+    select.dataset.rmsActivationLoading = "1";
     try {
-      const detail = await api(`/api/business/leads/${encodeURIComponent(item.source_id)}?source_type=${encodeURIComponent(item.source_type || "PLAYER")}`, { headers: authHeaders() });
-      const tickets = (detail.benefits || []).filter((ticket) => ["ACTIVE", "UNCLAIMED", "CLAIMED"].includes(String(ticket.status || "").toUpperCase()) && ticketPublicUrl(ticket));
+      const cacheKey = `${activeBusinessId() || "business"}:${item.source_type || "PLAYER"}:${item.source_id}`;
+      const cached = rmsActivationTicketOptionsCache.get(cacheKey);
+      const tickets = cached && Date.now() - cached.loadedAt < RMS_ACTIVATION_SELECTOR_CACHE_TTL_MS
+        ? cached.tickets
+        : (await api(`/api/business/leads/${encodeURIComponent(item.source_id)}?source_type=${encodeURIComponent(item.source_type || "PLAYER")}`, { headers: authHeaders() }))
+          .benefits
+          ?.filter((ticket) => ["ACTIVE", "UNCLAIMED", "CLAIMED"].includes(String(ticket.status || "").toUpperCase()) && ticketPublicUrl(ticket)) || [];
+      rmsActivationTicketOptionsCache.set(cacheKey, { loadedAt: Date.now(), tickets });
       select.innerHTML = `<option value="">Selecciona un ticket ya creado</option>${tickets.map((ticket) => `<option value="${escapeHtml(ticketPublicUrl(ticket))}">${escapeHtml(ticketTitle(ticket))} · ${escapeHtml(ticketStatusLabel(ticket.status))}</option>`).join("")}`;
       select.disabled = !tickets.length;
       if (!tickets.length) select.innerHTML = '<option value="">Este lead no tiene tickets activos</option>';
     } catch (_error) {
       select.innerHTML = '<option value="">No se pudieron cargar los tickets</option>';
       select.disabled = true;
+    } finally {
+      delete select.dataset.rmsActivationLoading;
     }
+    };
+    select.addEventListener("focus", loadTickets, { once: true });
+    select.addEventListener("pointerdown", loadTickets, { once: true });
   });
-  root.querySelectorAll("[data-rms-activation-created-ticket]").forEach(async (select) => {
+  root.querySelectorAll("[data-rms-activation-created-ticket]").forEach((select) => {
+    select.innerHTML = '<option value="">Abre para cargar activaciones disponibles</option>';
+    const loadActivations = async () => {
+    if (select.dataset.rmsActivationLoading === "1") return;
+    select.dataset.rmsActivationLoading = "1";
     try {
-      const data = await apiSafe("/api/business/interactive-activations?limit=120&available_only=true", { headers: authHeaders() }, { activations: [], trivias: [] });
-      const activations = (data.activations || data.trivias || []).filter((activation) => {
-        const status = String(activation.status || "ACTIVE").toUpperCase();
-        return ["ACTIVE", "PUBLISHED", "LIVE"].includes(status) && (activation.public_url || activation.share_url || activation.claim_url);
-      });
+      const activations = await listRmsActivationCatalogOptions();
       select.innerHTML = `<option value="">Selecciona una activación/ticket creado</option>${activations.map((activation) => {
         const url = activation.public_url || activation.share_url || activation.claim_url;
         const label = activation.title || activation.name || activation.campaign_name || "Activación publicada";
@@ -47277,7 +47310,12 @@ function bindRmsMachineActions(root) {
     } catch (_error) {
       select.innerHTML = '<option value="">No se pudieron cargar las activaciones</option>';
       select.disabled = true;
+    } finally {
+      delete select.dataset.rmsActivationLoading;
     }
+    };
+    select.addEventListener("focus", loadActivations, { once: true });
+    select.addEventListener("pointerdown", loadActivations, { once: true });
   });
   root.querySelectorAll("[data-rms-save-activation-outcome]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -47300,6 +47338,34 @@ function bindRmsMachineActions(root) {
     button.addEventListener("click", () => selectRmsPhaseForBulk(button.dataset.rmsPhaseOperation));
   });
   upgradeRmsIntelligenceRecyclingView(root);
+}
+
+async function listRmsActivationCatalogOptions() {
+  const scope = activeBusinessId() || "business";
+  const cache = rmsActivationCatalogOptionsCache;
+  if (cache.scope === scope && cache.items.length && Date.now() - cache.loadedAt < RMS_ACTIVATION_SELECTOR_CACHE_TTL_MS) {
+    return cache.items;
+  }
+  if (cache.scope === scope && cache.promise) return cache.promise;
+
+  const promise = apiSafe("/api/business/interactive-activations?limit=120&available_only=true", { headers: authHeaders() }, { activations: [], trivias: [] })
+    .then((data) => (data.activations || data.trivias || []).filter((activation) => {
+      const status = String(activation.status || "ACTIVE").toUpperCase();
+      return ["ACTIVE", "PUBLISHED", "LIVE"].includes(status) && (activation.public_url || activation.share_url || activation.claim_url);
+    }));
+  rmsActivationCatalogOptionsCache = { scope, loadedAt: Date.now(), promise, items: [] };
+  try {
+    const items = await promise;
+    if (rmsActivationCatalogOptionsCache.scope === scope) {
+      rmsActivationCatalogOptionsCache = { scope, loadedAt: Date.now(), promise: null, items };
+    }
+    return items;
+  } catch (error) {
+    if (rmsActivationCatalogOptionsCache.scope === scope) {
+      rmsActivationCatalogOptionsCache = { scope, loadedAt: 0, promise: null, items: [] };
+    }
+    throw error;
+  }
 }
 
 function renderRmsStationInstantShell(phase = "", stages = []) {
