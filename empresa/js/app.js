@@ -3328,10 +3328,10 @@ function showFeedback(message, kind = "success", options = {}) {
   actionFeedback.classList.remove("hidden");
   // Ninguna alerta global debe quedarse inmóvil sobre la operación. Los procesos
   // largos ya muestran su estado dentro de la tarjeta que los inició.
-  const defaultTimeout = kind === "loading" ? 7000 : kind === "error" ? 5200 : kind === "info" ? 3200 : 2800;
+  const defaultTimeout = kind === "loading" ? 4200 : kind === "error" ? 4600 : kind === "info" ? 3000 : 2400;
   const requestedTimeout = Number(options.timeout);
-  const timeout = options.persistent === true ? 0 : (requestedTimeout > 0 ? requestedTimeout : defaultTimeout);
-  if (timeout > 0) state.feedbackTimer = window.setTimeout(hideFeedback, timeout);
+  const timeout = requestedTimeout > 0 ? Math.min(requestedTimeout, 6000) : defaultTimeout;
+  state.feedbackTimer = window.setTimeout(hideFeedback, timeout);
 }
 
 function showBusyOverlay(title, message) {
