@@ -9853,6 +9853,7 @@ html body #inventoryTaxonomyModal .inventory-taxonomy-modal-card {
   overflow-y: auto !important;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Datos maestros puede contener seis formularios y listados largos. El
@@ -9871,11 +9872,13 @@ html body #inventoryTaxonomyModal .inventory-taxonomy-modal-card {
 @media (max-height: 760px) {
   html body #inventoryTaxonomyModal {
     align-items: flex-start !important;
+    overflow: hidden !important;
   }
 
   html body #inventoryTaxonomyModal .inventory-taxonomy-modal-card {
     margin: 0 auto !important;
-    max-height: none !important;
+    max-height: calc(100dvh - 24px) !important;
+    overflow-y: auto !important;
   }
 }
 
