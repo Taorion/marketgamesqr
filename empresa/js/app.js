@@ -23307,35 +23307,10 @@ async function submitInventoryProduct(event) {
       ...(state.inventoryProducts || []).filter((item) => item.id !== saved.id),
     ];
     state.inventoryLoaded = true;
-    const pendingClassification = state.rmsPendingProductClassification;
     resetInventoryForm();
     renderInventoryProductOptions();
     setInlineMessage(inventoryMessage, "Producto guardado correctamente.", "success");
     closeInventoryProductModal();
-    if (pendingClassification) {
-      const opportunity = rmsOpportunityById(pendingClassification.opportunityId);
-      state.rmsPendingProductClassification = null;
-      if (opportunity) {
-        const createdValue = `inventory:${saved.id}`;
-        const selectedValues = Array.from(new Set([...(pendingClassification.productSelects || []), createdValue]));
-        const quantities = {
-          ...(pendingClassification.productQuantities || {}),
-          [createdValue]: 1,
-        };
-        await saveRmsProductClassification(opportunity, rmsClassificationDraftForValues(opportunity, selectedValues, quantities, {
-          open_product_name: "",
-          product_search: "",
-        }));
-        state.rmsMachineLoaded = false;
-        await loadRmsMachineData({ force: true, quiet: true });
-        state.rmsStationScreenOpen = true;
-        state.rmsStationPhase = pendingClassification.phase || "curaduria";
-        state.rmsMachineFilters.phase = state.rmsStationPhase;
-        renderRmsMachineView();
-        showFeedback("Producto creado y asignación guardada. Ya puedes enviarlo a Activación 1.", "success", { title: "Asignación" });
-        return;
-      }
-    }
     renderInventoryView();
     showFeedback("Producto guardado.", "success", { title: "Productos" });
   } catch (error) {
@@ -45702,9 +45677,9 @@ function rmsProductClassificationMarkup(item = {}) {
     : state.inventoryLoadError
       ? "No pudimos cargar el catálogo. Reintenta para volver a consultar Productos."
       : activeProducts.length === 0
-      ? "Todavía no hay productos activos en Qori. Crea uno y vuelve a esta asignación."
+      ? "Todavía no hay productos activos en Qori. Créalo desde Productos y vuelve a esta asignación."
       : searchTerm
-        ? "No encontramos productos con esa búsqueda. Prueba por nombre, categoría o código."
+        ? "No encontramos productos con esa búsqueda. Prueba por nombre, categoría o código; si no existe, créalo desde Productos y vuelve aquí."
         : "No hay productos para mostrar.";
   const estimatedTotal = selectedLines.reduce((total, line) => total + line.total, 0);
   return `
@@ -45754,7 +45729,6 @@ function rmsProductClassificationMarkup(item = {}) {
       </div>
       <div class="rms-product-classifier-actions">
         <button class="solid-button compact" type="button" data-rms-save-classification="${escapeHtml(item.id)}" ${canConfirm ? "" : "disabled"}>Guardar asignación</button>
-        <button class="ghost-button compact" type="button" data-rms-create-product-classification="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">add</span>${productSearch ? `Crear “${escapeHtml(productSearch)}”` : "Crear producto"}</button>
         ${canConfirm ? `<button class="link-button danger-link" type="button" data-rms-clear-classification="${escapeHtml(item.id)}">Limpiar</button>` : ""}
       </div>
     </div>
@@ -47917,9 +47891,6 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-save-classification]").forEach((button) => {
     button.addEventListener("click", () => handleRmsSaveClassification(button.dataset.rmsSaveClassification || ""));
   });
-  root.querySelectorAll("[data-rms-create-product-classification]").forEach((button) => {
-    button.addEventListener("click", () => handleRmsCreateProductClassification(button.dataset.rmsCreateProductClassification || ""));
-  });
   root.querySelectorAll("[data-rms-clear-classification]").forEach((button) => {
     button.addEventListener("click", () => handleRmsClearClassification(button.dataset.rmsClearClassification || ""));
   });
@@ -48736,35 +48707,6 @@ async function handleRmsSaveClassification(id = "") {
   } catch (error) {
     showFeedback(error.message || "No se pudo guardar la asignación.", "error", { title: "Asignación" });
   }
-}
-
-async function handleRmsCreateProductClassification(id = "") {
-  const item = rmsOpportunityById(id);
-  if (!item) return;
-  const draft = rmsClassificationDraftFromDom(item);
-  if (draft.inventory_product_id && !draft.product_search) {
-    await handleRmsSaveClassification(id);
-    return;
-  }
-  const productName = String(draft.product_search || draft.open_product_name || draft.product_name || item.product_interest || "").trim();
-  if (!productName) {
-    showFeedback("Busca o escribe el nombre del producto o servicio antes de crearlo.", "info", { title: "Asignación" });
-    return;
-  }
-  state.rmsPendingProductClassification = {
-    opportunityId: item.id,
-    phase: item.stage || "curaduria",
-    productName,
-    productSelects: draft.product_selects || [],
-    productQuantities: draft.product_quantities || {},
-  };
-  // Open the form first. This moves it out of the Inventory view before the
-  // navigation can render that view and guarantees the guided form stays open.
-  resetInventoryForm();
-  if (inventoryNameInput) inventoryNameInput.value = productName;
-  if (inventoryDescriptionInput) inventoryDescriptionInput.value = `Creado desde Asignación para ${item.name || "un lead"}.`;
-  openInventoryProductModal({ focusTarget: inventoryInternalIdInput || inventoryNameInput });
-  showFeedback("Completa los datos del producto. Al guardar quedará creado, seleccionado y seguirás en Asignación.", "info", { title: "Asignación" });
 }
 
 async function handleRmsClearClassification(id = "") {
