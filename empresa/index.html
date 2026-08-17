@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-    <link rel="stylesheet" href="css/portal-clean-v39.css?v=global-feedback-toast-v185-20260817">
+    <link rel="stylesheet" href="css/portal-clean-v39.css?v=collector-document-v186-20260817">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -1115,6 +1115,7 @@
                     <div class="rms-collector-lead-head">
                       <span class="mono-label">Entrada directa</span>
                       <strong>Enviar a Leads recolectados</strong>
+                      <span class="rms-collector-identity-notice"><span class="material-symbols-outlined" aria-hidden="true">badge</span> Tipo y nÃºmero de documento requeridos para reconocer al lead y evitar duplicados.</span>
                       <small>Completa el contacto y una señal de interés. El lead queda visible en la primera estación.</small>
                     </div>
                     <div class="rms-collector-lead-grid">
@@ -1132,8 +1133,8 @@
                       </label>
                       <label>
                         Tipo de identificación
-                        <select id="rmsCollectorLeadDocumentTypeInput">
-                          <option value="">Selecciona si registras documento</option>
+                        <select id="rmsCollectorLeadDocumentTypeInput" required>
+                          <option value="" selected disabled>Selecciona el tipo de documento</option>
                           <option value="CC">Cédula de ciudadanía</option>
                           <option value="CE">Cédula de extranjería</option>
                           <option value="TI">Tarjeta de identidad</option>
@@ -1145,7 +1146,7 @@
                       </label>
                       <label>
                         Número de identificación
-                        <input id="rmsCollectorLeadDocumentInput" type="text" inputmode="text" maxlength="80" placeholder="Ej: 1020304050">
+                        <input id="rmsCollectorLeadDocumentInput" type="text" inputmode="text" maxlength="80" placeholder="Ej: 1020304050" required>
                         <small>Opcional. Si lo registras, selecciona también el tipo de identificación.</small>
                       </label>
                       <label>

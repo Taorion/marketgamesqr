@@ -3984,6 +3984,29 @@ html body .portal-shell #rmsCollectorModal .rms-collector-lead-head strong {
   line-height: 1.22 !important;
 }
 
+html body > #rmsCollectorModal .rms-collector-identity-notice,
+html body .portal-shell #rmsCollectorModal .rms-collector-identity-notice {
+  width: fit-content !important;
+  max-width: 100% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  padding: 7px 10px !important;
+  border: 1px solid rgba(7, 89, 214, 0.22) !important;
+  border-radius: 9px !important;
+  background: rgba(232, 243, 251, 0.84) !important;
+  color: var(--qori-blue-deep, #012268) !important;
+  font-size: 0.78rem !important;
+  font-weight: 750 !important;
+  line-height: 1.35 !important;
+}
+
+html body > #rmsCollectorModal .rms-collector-identity-notice .material-symbols-outlined,
+html body .portal-shell #rmsCollectorModal .rms-collector-identity-notice .material-symbols-outlined {
+  color: var(--qori-primary, #0341b3) !important;
+  font-size: 18px !important;
+}
+
 html body > #rmsCollectorModal .rms-collector-lead-head small,
 html body .portal-shell #rmsCollectorModal .rms-collector-lead-head small {
   max-width: 70ch !important;

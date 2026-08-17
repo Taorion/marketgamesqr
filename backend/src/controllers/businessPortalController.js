@@ -4987,6 +4987,9 @@ async function createManualLead(req, res, next) {
     if (!body.email && !body.phone) {
       throw badRequest("Agrega al menos telefono o correo para poder contactar el prospecto.");
     }
+    if (body.source === "Maquina RMS" && (!body.document_type || !body.document_id)) {
+      throw badRequest("Selecciona el tipo y escribe el nÃºmero de documento antes de ingresar el lead al Recolector RMS.");
+    }
     const lead = await withTransaction(async (client) => {
       const acquisitionChannel = await resolveAcquisitionChannelReference(client, businessId, body);
       let branchId = body.branch_id || null;

@@ -52135,9 +52135,19 @@ async function submitRmsCollector(event) {
     updateRmsCollectorSubmitButtons();
     return;
   }
-  if (hasLeadDraft && (!leadName || (!leadPhone && !leadEmail))) {
-    showFeedback("Para ingresar un lead a recolectados agrega nombre y al menos WhatsApp o correo.", "error", { title: "Lead incompleto" });
-    (!leadName ? rmsCollectorLeadNameInput : (rmsCollectorLeadPhoneInput || rmsCollectorLeadEmailInput))?.focus?.({ preventScroll: false });
+  if (hasLeadDraft && (!leadName || (!leadPhone && !leadEmail) || !leadDocumentType || !leadDocument)) {
+    const missingIdentity = !leadDocumentType || !leadDocument;
+    showFeedback(
+      missingIdentity
+        ? "Selecciona el tipo y escribe el nÃºmero de documento para identificar este lead antes de guardarlo."
+        : "Para ingresar un lead a recolectados agrega nombre y al menos WhatsApp o correo.",
+      "error",
+      { title: missingIdentity ? "Documento requerido" : "Lead incompleto" }
+    );
+    (!leadName
+      ? rmsCollectorLeadNameInput
+      : (!leadDocumentType ? rmsCollectorLeadDocumentTypeInput : (!leadDocument ? rmsCollectorLeadDocumentInput : (rmsCollectorLeadPhoneInput || rmsCollectorLeadEmailInput)))
+    )?.focus?.({ preventScroll: false });
     return;
   }
   if (leadDocument && !leadDocumentType) {
