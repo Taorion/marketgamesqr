@@ -9911,6 +9911,44 @@ html body #inventoryTaxonomyModal .inventory-taxonomy-list {
   padding-right: 4px;
 }
 
+/* Datos maestros no puede cortar formularios ni referencias: en vez de dos
+   scrolls que compiten, toda la ficha se desplaza dentro del overlay. */
+html body #inventoryTaxonomyModal:not(.hidden) {
+  display: block !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  padding: clamp(12px, 2vw, 28px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+html body #inventoryTaxonomyModal .inventory-taxonomy-modal-card {
+  display: block !important;
+  width: min(960px, 100%) !important;
+  height: auto !important;
+  max-height: none !important;
+  margin: 0 auto !important;
+  overflow: visible !important;
+}
+
+html body #inventoryTaxonomyModal .inventory-taxonomy-list {
+  max-height: none !important;
+  overflow: visible !important;
+  padding-right: 0 !important;
+}
+
+@media (max-width: 720px) {
+  html body #inventoryTaxonomyModal:not(.hidden) {
+    padding: 12px !important;
+  }
+
+  html body #inventoryTaxonomyModal .inventory-taxonomy-modal-card {
+    width: 100% !important;
+    padding: 16px !important;
+  }
+}
+
 html body .content-shell > .action-feedback:not(.hidden)::before {
   width: 24px !important;
   height: 24px !important;
