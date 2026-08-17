@@ -2713,6 +2713,7 @@ let state = {
   inventoryTaxBases: [],
   inventoryHealthyTaxes: [],
   inventoryTaxonomyLoaded: false,
+  inventoryTaxonomyLoading: null,
   inventoryLoaded: false,
   inventoryLoading: null,
   inventoryLoadError: "",
@@ -22181,27 +22182,44 @@ function renderInventoryProductOptions() {
   document.querySelectorAll("[data-product-select]").forEach((select) => renderProductSelect(select));
 }
 
-async function loadInventoryTaxonomy(options = {}) {
+async function loadInventoryProductCategories(options = {}) {
   if (state.inventoryTaxonomyLoaded && !options.force) {
-    return { categories: state.inventoryCategories, subcategories: state.inventorySubcategories, brands: state.inventoryBrands, units: state.inventoryUnits, taxBases: state.inventoryTaxBases, healthyTaxes: state.inventoryHealthyTaxes };
+    return { categories: state.inventoryCategories, subcategories: state.inventorySubcategories };
   }
-  const [categoriesData, subcategoriesData, brandsData, unitsData, taxBasesData, healthyTaxesData] = await Promise.all([
-    apiSafe("/api/business/inventory/categories", { headers: authHeaders() }, { categories: [] }),
-    apiSafe("/api/business/inventory/subcategories", { headers: authHeaders() }, { subcategories: [] }),
+  if (state.inventoryTaxonomyLoading && !options.force) return state.inventoryTaxonomyLoading;
+  const scopeKey = businessScopeKey();
+  const request = Promise.all([
+    api("/api/business/inventory/categories", { headers: authHeaders(), planGate: false }),
+    api("/api/business/inventory/subcategories", { headers: authHeaders(), planGate: false }),
+  ]).then(([categoriesData, subcategoriesData]) => {
+    if (!isCurrentBusinessScope(scopeKey)) return { categories: state.inventoryCategories, subcategories: state.inventorySubcategories };
+    state.inventoryCategories = Array.isArray(categoriesData.categories) ? categoriesData.categories : [];
+    state.inventorySubcategories = Array.isArray(subcategoriesData.subcategories) ? subcategoriesData.subcategories : [];
+    state.inventoryTaxonomyLoaded = true;
+    renderInventoryTaxonomyOptions();
+    return { categories: state.inventoryCategories, subcategories: state.inventorySubcategories };
+  }).finally(() => {
+    if (isCurrentBusinessScope(scopeKey)) state.inventoryTaxonomyLoading = null;
+  });
+  state.inventoryTaxonomyLoading = request;
+  return request;
+}
+
+async function loadInventoryTaxonomy(options = {}) {
+  const core = await loadInventoryProductCategories(options);
+  const [brandsData, unitsData, taxBasesData, healthyTaxesData] = await Promise.all([
     apiSafe("/api/business/inventory/catalog/brands", { headers: authHeaders() }, { brands: [] }),
     apiSafe("/api/business/inventory/catalog/units", { headers: authHeaders() }, { units: [] }),
     apiSafe("/api/business/inventory/catalog/tax-bases", { headers: authHeaders() }, { tax_bases: [] }),
     apiSafe("/api/business/inventory/catalog/healthy-taxes", { headers: authHeaders() }, { healthy_taxes: [] }),
   ]);
-  state.inventoryCategories = Array.isArray(categoriesData.categories) ? categoriesData.categories : [];
-  state.inventorySubcategories = Array.isArray(subcategoriesData.subcategories) ? subcategoriesData.subcategories : [];
   state.inventoryBrands = Array.isArray(brandsData.brands) ? brandsData.brands : [];
   state.inventoryUnits = Array.isArray(unitsData.units) ? unitsData.units : [];
   state.inventoryTaxBases = Array.isArray(taxBasesData.tax_bases) ? taxBasesData.tax_bases : [];
   state.inventoryHealthyTaxes = Array.isArray(healthyTaxesData.healthy_taxes) ? healthyTaxesData.healthy_taxes : [];
   state.inventoryTaxonomyLoaded = true;
   renderInventoryTaxonomyOptions();
-  return { categories: state.inventoryCategories, subcategories: state.inventorySubcategories };
+  return core;
 }
 
 function inventoryTaxRate(classification = "EXEMPT") {
@@ -22909,6 +22927,22 @@ function openInventoryProductModal(options = {}) {
   if (inventoryProductModal.parentElement !== document.body) document.body.appendChild(inventoryProductModal);
   inventoryProductModal.classList.remove("hidden");
   inventoryProductModal.removeAttribute("aria-hidden");
+  if (!state.inventoryTaxonomyLoaded && inventoryCategoryInput && !state.inventoryCategories?.length) {
+    inventoryCategoryInput.innerHTML = '<option value="">Cargando categorías...</option>';
+    inventoryCategoryInput.disabled = true;
+  }
+  loadInventoryProductCategories()
+    .then(() => {
+      if (inventoryCategoryInput) inventoryCategoryInput.disabled = false;
+      renderInventoryTaxonomyOptions();
+    })
+    .catch(() => {
+      if (inventoryCategoryInput) {
+        inventoryCategoryInput.disabled = false;
+        inventoryCategoryInput.innerHTML = '<option value="">No se pudieron cargar las categorías</option>';
+      }
+      setInlineMessage(inventoryMessage, "No pudimos cargar las categorías. Cierra y vuelve a abrir el producto para reintentar.", "error");
+    });
   const focusTarget = options.focusTarget || inventoryNameInput;
   window.setTimeout(() => {
     focusTarget?.focus?.({ preventScroll: true });
