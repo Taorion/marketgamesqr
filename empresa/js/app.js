@@ -52126,7 +52126,8 @@ async function submitRmsCollector(event) {
   const leadDocumentType = String(rmsCollectorLeadDocumentTypeInput?.value || "").trim();
   const leadDocument = String(rmsCollectorLeadDocumentInput?.value || "").trim();
   const leadInterest = String(rmsCollectorLeadInterestInput?.value || "").trim();
-  const leadPriority = rmsCollectorLeadPriorityInput?.value || "HIGH";
+  const requestedLeadPriority = String(rmsCollectorLeadPriorityInput?.value || "HIGH").toUpperCase();
+  const leadPriority = ["LOW", "MEDIUM", "HIGH"].includes(requestedLeadPriority) ? requestedLeadPriority : "HIGH";
   const hasLeadDraft = rmsCollectorHasLeadDraft();
   if (isLeadSubmit && !hasLeadDraft) {
     showFeedback("Completa los datos del lead antes de guardarlo.", "info", { title: "Nuevo lead" });

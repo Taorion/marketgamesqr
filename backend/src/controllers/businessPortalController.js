@@ -557,6 +557,8 @@ const competitorTaskSchema = z.object({
 
 const competitorTaskPatchSchema = competitorTaskSchema.partial();
 
+const normalizeManualLeadPriority = (value) => String(value || "MEDIUM").trim().toUpperCase() === "URGENT" ? "HIGH" : value;
+
 const manualLeadSchema = z.object({
   name: z.string().trim().min(2).max(160),
   email: z.preprocess(
@@ -581,7 +583,7 @@ const manualLeadSchema = z.object({
   preferred_channel: nullableText(120),
   preferred_contact_time: nullableText(120),
   status: z.enum(["NEW", "CONTACTED", "FOLLOW_UP", "CONVERTED", "LOST"]).default("NEW"),
-  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+  priority: z.preprocess(normalizeManualLeadPriority, z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM")),
   notes: nullableText(2000),
 });
 
