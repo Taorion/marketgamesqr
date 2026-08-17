@@ -48,7 +48,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=qori-home-20260724-v14">
+    <link rel="stylesheet" href="css/style.css?v=qori-contact-20260817-v15">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -532,13 +532,21 @@
         </div>
 
         <form id="contact-form" class="contact-form" action="/api/public/contact" method="post">
-          <label>Nombre<input type="text" name="name" placeholder="Tu nombre" required></label>
-          <label>Email<input type="email" name="email" placeholder="tunombre@empresa.com" required></label>
-          <label>Teléfono<input type="tel" name="phone" placeholder="+57 305 000 0000" autocomplete="tel" required></label>
-          <label>Empresa<input type="text" name="company" placeholder="Nombre de tu empresa"></label>
-          <label>Mensaje<textarea name="message" rows="5" minlength="8" placeholder="Quiero entender cómo Qori puede ordenar mis oportunidades y activar mi Fábrica de Ingresos." required></textarea></label>
-          <p id="contact-form-status" class="form-status" role="status" aria-live="polite"></p>
-          <button class="button button-primary button-full" type="submit">Solicitar demo</button>
+          <div class="contact-form-intro">
+            <span class="contact-form-kicker">Conversación con Qori</span>
+            <h3>Cuéntanos cuál es tu siguiente movimiento.</h3>
+            <p>Te responderemos para entender tu operación y mostrarte la ruta más útil para tu Fábrica de Ingresos.</p>
+          </div>
+          <div class="contact-form-fields">
+            <label class="contact-field"><span>Tu nombre</span><input type="text" name="name" placeholder="Ej. Ana Lucía Pérez" autocomplete="name" required></label>
+            <label class="contact-field"><span>Correo de trabajo</span><input type="email" name="email" placeholder="tu@empresa.com" autocomplete="email" required></label>
+            <label class="contact-field"><span>WhatsApp o teléfono</span><input type="tel" name="phone" placeholder="+57 305 000 0000" autocomplete="tel" inputmode="tel" required></label>
+            <label class="contact-field"><span>Empresa <em>Opcional</em></span><input type="text" name="company" placeholder="Nombre de tu empresa" autocomplete="organization"></label>
+            <label class="contact-field contact-field-message"><span>¿Qué quieres activar o resolver?</span><textarea name="message" rows="5" minlength="8" placeholder="Cuéntanos brevemente qué quieres ordenar, medir o activar en tu operación comercial." required></textarea></label>
+          </div>
+          <p class="contact-form-privacy"><span aria-hidden="true">✓</span> Tus datos se usan solo para responder esta conversación. Sin spam.</p>
+          <p id="contact-form-status" class="form-status" role="status" aria-live="polite" aria-atomic="true"></p>
+          <button class="button button-primary button-full" type="submit"><span>Solicitar conversación</span><span aria-hidden="true">→</span></button>
         </form>
       </section>
     </main>
@@ -571,6 +579,6 @@
     <p class="access-feedback-toast" id="accessFeedbackToast" role="status" aria-live="polite"></p>
   </div>
 
-  <script src="js/main.js?v=qori-home-20260724-v7" defer></script>
+  <script src="js/main.js?v=qori-contact-20260817-v8" defer></script>
 </body>
 </html>

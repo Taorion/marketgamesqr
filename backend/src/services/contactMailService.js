@@ -27,7 +27,11 @@ function escapeHtml(value) {
 }
 
 function contactFromAddress() {
-  return env.contactMailFrom || env.smtpUser || "Qori <contacto@gosqori.com>";
+  const configured = String(env.contactMailFrom || env.smtpUser || "contacto@gosqori.com").trim();
+  const bracketed = configured.match(/<\s*([^<>\s]+@[^<>\s]+)\s*>/);
+  const bareAddress = configured.match(/^[^<>\s]+@[^<>\s]+$/);
+  const address = bracketed?.[1] || bareAddress?.[0] || "contacto@gosqori.com";
+  return `Qori · Tu Fábrica de Ingresos <${address}>`;
 }
 
 async function sendViaResend({ subject, text, html, replyTo }) {
@@ -111,10 +115,11 @@ async function sendViaSmtp({ subject, text, html, replyTo }) {
 }
 
 function buildContactMessage(body, metadata) {
-  const subject = `Nuevo contacto web - ${body.company || body.name || "Qori"}`;
+  const subject = `Qori · Nueva conversación — ${body.company || body.name || "Contacto web"}`;
   const submittedAt = new Date().toISOString();
   const lines = [
-    "Nuevo mensaje desde la home de Qori",
+    "Qori · Tu Fábrica de Ingresos",
+    "Nueva conversación desde gosqori.com",
     "",
     `Nombre: ${body.name}`,
     `Email: ${body.email}`,
@@ -132,18 +137,20 @@ function buildContactMessage(body, metadata) {
   ];
 
   const html = `
-    <h2>Nuevo mensaje desde la home de Qori</h2>
-    <p><strong>Nombre:</strong> ${escapeHtml(body.name)}</p>
-    <p><strong>Email:</strong> ${escapeHtml(body.email)}</p>
-    <p><strong>Teléfono:</strong> ${escapeHtml(body.phone || "No especificado")}</p>
-    <p><strong>Empresa:</strong> ${escapeHtml(body.company || "No especificada")}</p>
-    <p><strong>Mensaje:</strong></p>
-    <p>${escapeHtml(body.message).replace(/\r?\n/g, "<br>")}</p>
-    <hr>
-    <p><strong>Fecha:</strong> ${escapeHtml(submittedAt)}</p>
-    <p><strong>IP:</strong> ${escapeHtml(metadata.ip || "No disponible")}</p>
-    <p><strong>User-Agent:</strong> ${escapeHtml(metadata.userAgent || "No disponible")}</p>
-    <p><strong>Página:</strong> ${escapeHtml(body.source_url || "No especificada")}</p>
+    <div style="max-width:680px;margin:0 auto;padding:28px;background:#f6faff;color:#0b1e3d;font-family:Arial,sans-serif">
+      <div style="padding:22px 24px;border-radius:18px;background:linear-gradient(135deg,#012268,#0341b3);color:#fff">
+        <div style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#9deeff">Qori · Tu Fábrica de Ingresos</div>
+        <h2 style="margin:0;font-size:25px;line-height:1.2">Nueva conversación desde gosqori.com</h2>
+      </div>
+      <div style="margin-top:16px;padding:24px;border:1px solid #d9e8f7;border-radius:18px;background:#fff">
+        <p><strong>Nombre:</strong> ${escapeHtml(body.name)}</p>
+        <p><strong>Correo:</strong> ${escapeHtml(body.email)}</p>
+        <p><strong>Teléfono:</strong> ${escapeHtml(body.phone || "No especificado")}</p>
+        <p><strong>Empresa:</strong> ${escapeHtml(body.company || "No especificada")}</p>
+        <div style="margin-top:20px;padding:16px;border-radius:12px;background:#f4f9ff"><strong>Mensaje</strong><p style="margin:8px 0 0;line-height:1.55">${escapeHtml(body.message).replace(/\r?\n/g, "<br>")}</p></div>
+      </div>
+      <p style="margin:16px 4px 0;color:#54708f;font-size:12px">Recibido ${escapeHtml(submittedAt)} · ${escapeHtml(body.source_url || "gosqori.com")}</p>
+    </div>
   `;
 
   return {
