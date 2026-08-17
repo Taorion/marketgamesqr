@@ -24206,3 +24206,82 @@ html body .content-shell > .action-feedback:not(.hidden) .action-feedback-dismis
     width: calc(100vw - 24px) !important;
   }
 }
+/* Resumen comercial y contraste del lead: lectura rápida sin abrir cada ficha. */
+#rmsStationWorkspace .rms-commercial-station-summary {
+  margin: 16px 0 20px;
+  padding: 18px;
+  border: 1px solid #cde0f4;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f3f9ff 100%);
+  box-shadow: 0 12px 28px rgba(1, 34, 104, .06);
+}
+#rmsStationWorkspace .rms-commercial-station-summary > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+#rmsStationWorkspace .rms-commercial-station-summary h4 {
+  margin: 4px 0;
+  color: #0b1e3d;
+  font-size: 1rem;
+}
+#rmsStationWorkspace .rms-commercial-station-summary p {
+  margin: 0;
+  color: #54708f;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+#rmsStationWorkspace .rms-commercial-summary-table-wrap {
+  overflow: auto;
+  border: 1px solid #dbeaf7;
+  border-radius: 12px;
+  background: #fff;
+}
+#rmsStationWorkspace .rms-commercial-station-summary table {
+  width: 100%;
+  min-width: 940px;
+  border-collapse: collapse;
+}
+#rmsStationWorkspace .rms-commercial-station-summary th,
+#rmsStationWorkspace .rms-commercial-station-summary td {
+  padding: 11px 13px;
+  border-bottom: 1px solid #e5eef6;
+  color: #244767;
+  text-align: left;
+  vertical-align: top;
+  font-size: .78rem;
+  line-height: 1.42;
+}
+#rmsStationWorkspace .rms-commercial-station-summary th {
+  position: sticky;
+  top: 0;
+  background: #edf6ff;
+  color: #0b3b78;
+  font-size: .69rem;
+  font-weight: 850;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+#rmsStationWorkspace .rms-commercial-station-summary td strong,
+#rmsStationWorkspace .rms-commercial-work-lead .rms-activation-work-person strong {
+  display: block;
+  color: #0b1e3d !important;
+  font-weight: 800;
+  text-shadow: none;
+}
+#rmsStationWorkspace .rms-commercial-station-summary td small {
+  display: block;
+  margin-top: 3px;
+  color: #54708f;
+}
+#rmsStationWorkspace .rms-commercial-work-lead .rms-activation-work-person > .material-symbols-outlined {
+  color: #0341b3 !important;
+  font-variation-settings: 'FILL' 1, 'wght' 600;
+}
+@media (max-width: 720px) {
+  #rmsStationWorkspace .rms-commercial-station-summary { margin-inline: 0; padding: 14px; }
+  #rmsStationWorkspace .rms-commercial-station-summary > header { display: grid; }
+  #rmsStationWorkspace .rms-commercial-station-summary > header .ghost-button { justify-self: start; }
+}

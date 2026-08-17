@@ -2549,6 +2549,7 @@ let state = {
   rmsQualityControlCaseLoading: false,
   rmsStationPhase: "recoleccion",
   rmsStationScreenOpen: false,
+  rmsStationSummaryOpen: false,
   rmsStationSearch: "",
   rmsStationViewMode: "all",
   rmsStationNavigationDirection: "forward",
@@ -44182,6 +44183,63 @@ function rmsCommercialLeadAsideMarkup(item = {}, nextLabel = "") {
   `;
 }
 
+const RMS_COMMERCIAL_SUMMARY_PHASES = new Set(["accion_correctiva", "control_anti_fuga", "cierre"]);
+
+function rmsCommercialSummaryStageLabel(phase = "") {
+  return {
+    accion_correctiva: "Negociación",
+    control_anti_fuga: "Riesgos de fuga",
+    cierre: "Ventas atribuidas",
+  }[phase] || "estación comercial";
+}
+
+function rmsCommercialSummaryReason(item = {}, phase = "") {
+  const workflow = rmsCommercialWorkflow(item);
+  const evaluation = workflow.evaluation || {};
+  const response = String(evaluation.response || "").toUpperCase();
+  const responseLabel = RMS_EVALUATION_RESPONSES.find((entry) => entry.value === response)?.short || response || "Sin respuesta registrada";
+  const detail = [evaluation.need, evaluation.objections, evaluation.note].filter(Boolean).join(" · ");
+  if (phase === "accion_correctiva") return detail ? `${responseLabel}: ${detail}` : `${responseLabel}: requiere acordar condiciones.`;
+  if (phase === "control_anti_fuga") return detail ? `${responseLabel}: ${detail}` : `${responseLabel}: requiere proteger o recuperar el acuerdo.`;
+  if (phase === "cierre") {
+    const confirmation = workflow.confirmation || {};
+    return confirmation.route === "NEGOTIATION_CLEAN"
+      ? "Acuerdo limpio confirmado en Negociación."
+      : response === "PAID_SALE"
+        ? "Compra directa reportada desde Evaluación."
+        : detail || "Venta liberada para registrar y atribuir.";
+  }
+  return detail || responseLabel;
+}
+
+function rmsCommercialStationSummaryMarkup(rows = [], phase = "") {
+  const title = rmsCommercialSummaryStageLabel(phase);
+  return `
+    <section class="rms-commercial-station-summary" aria-label="Resumen de ${escapeHtml(title)}">
+      <header>
+        <div><span class="mono-label">Resumen de estación</span><h4>${escapeHtml(title)} · ${rows.length.toLocaleString("es-CO")} lead${rows.length === 1 ? "" : "s"}</h4><p>Consulta lo registrado en Evaluación antes de abrir una ficha o tomar la decisión comercial.</p></div>
+        <button class="ghost-button compact" type="button" data-rms-station-summary aria-expanded="true"><span class="material-symbols-outlined" aria-hidden="true">visibility_off</span> Ocultar resumen</button>
+      </header>
+      <div class="rms-commercial-summary-table-wrap">
+        <table>
+          <thead><tr><th>Lead</th><th>Respuesta en Evaluación</th><th>Información u objeción</th><th>Producto y valor</th><th>Por qué está aquí</th></tr></thead>
+          <tbody>${rows.map((item) => {
+            const workflow = rmsCommercialWorkflow(item);
+            const evaluation = workflow.evaluation || {};
+            const confirmation = workflow.confirmation || {};
+            const response = String(evaluation.response || "").toUpperCase();
+            const responseLabel = RMS_EVALUATION_RESPONSES.find((entry) => entry.value === response)?.short || response || "Sin respuesta";
+            const product = confirmation.product_name || evaluation.recommended_product || rmsClassifiedProductName(item) || item.product_interest || "Sin producto definido";
+            const amount = confirmation.amount ?? evaluation.budget_amount ?? "";
+            const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
+            return `<tr><td><strong>${escapeHtml(item.name || "Contacto")}</strong><small>${escapeHtml(contact)}</small></td><td><strong>${escapeHtml(responseLabel)}</strong><small>${escapeHtml(evaluation.decision_maker || "Decisor sin registrar")}</small></td><td>${escapeHtml([evaluation.need, evaluation.objections, evaluation.note].filter(Boolean).join(" · ") || "Sin detalle adicional")}</td><td><strong>${escapeHtml(product)}</strong><small>${escapeHtml(amount ? `${money(amount)} ${confirmation.currency || evaluation.currency || "COP"}` : "Valor pendiente")}</small></td><td>${escapeHtml(rmsCommercialSummaryReason(item, phase))}</td></tr>`;
+          }).join("") || `<tr><td colspan="5">No hay leads en esta estación.</td></tr>`}</tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
 function rmsEvaluationStationCardMarkup(item = {}) {
   const delivery = rmsActivationDelivery(item);
   const defaultProduct = rmsClassifiedProductName(item) || item.product_interest || "";
@@ -44975,6 +45033,7 @@ function renderRmsStationLeanOnly() {
   const isClassifierStation = phase === "curaduria";
   const isActivationStation = phase === "clasificacion";
   const isCommercialStation = ["clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "postventa", "inteligencia"].includes(phase);
+  const supportsCommercialSummary = RMS_COMMERCIAL_SUMMARY_PHASES.has(phase);
   const hasStandardHandoff = ["recoleccion", "alimentacion", "curaduria"].includes(phase) && Boolean(nextPhase);
   const selectReadyLabel = phase === "recoleccion"
     ? "Seleccionar procesables"
@@ -45027,6 +45086,7 @@ function renderRmsStationLeanOnly() {
         </div>
         <div class="rms-lean-station-actions">
           ${phase === "recoleccion" ? `<button class="ghost-button compact" type="button" data-rms-open-collector><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Nuevo lead</button>` : ""}
+          ${supportsCommercialSummary ? `<button class="ghost-button compact" type="button" data-rms-station-summary aria-expanded="${state.rmsStationSummaryOpen ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">table_chart</span> ${state.rmsStationSummaryOpen ? "Ocultar resumen" : "Resumen"}</button>` : ""}
           ${hasStandardHandoff ? `
             <button class="ghost-button compact" type="button" data-rms-station-clear-selection ${selectedRows.length ? "" : "disabled"}>Limpiar selección</button>
             <button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> ${escapeHtml(selectReadyLabel)}</button>
@@ -45034,6 +45094,7 @@ function renderRmsStationLeanOnly() {
           ` : ""}
         </div>
       </header>
+      ${supportsCommercialSummary && state.rmsStationSummaryOpen ? rmsCommercialStationSummaryMarkup(rows, phase) : ""}
       ${isCurationStation ? `
         <section class="rms-lean-quality-guide" aria-label="Prioridad de Curaduría">
           <span class="material-symbols-outlined" aria-hidden="true">grade</span>
@@ -45113,6 +45174,10 @@ function renderRmsStationLeanOnly() {
   prepareRmsCommercialAccordions(rmsStationWorkspace);
   bindRmsMachineActions(rmsStationWorkspace);
   rmsStationWorkspace.querySelectorAll("[data-rms-close-station]").forEach((button) => button.addEventListener("click", closeRmsStation));
+  rmsStationWorkspace.querySelectorAll("[data-rms-station-summary]").forEach((button) => button.addEventListener("click", () => {
+    state.rmsStationSummaryOpen = !state.rmsStationSummaryOpen;
+    renderRmsStationOnly();
+  }));
   rmsStationWorkspace.querySelector("[data-rms-station-picker]")?.addEventListener("change", (event) => openRmsStation(event.target.value || "", { source: "picker" }));
   rmsStationWorkspace.querySelector("[data-rms-station-search]")?.addEventListener("input", (event) => {
     state.rmsStationSearch = event.target.value || "";
@@ -48376,6 +48441,7 @@ function openRmsStation(phase = "", options = {}) {
   if (state.rmsStationPhase !== phase) {
     state.rmsStationSearch = "";
     state.rmsStationViewMode = "all";
+    state.rmsStationSummaryOpen = false;
   }
   state.rmsStationPhase = phase;
   state.rmsRecyclingFocus = false;
