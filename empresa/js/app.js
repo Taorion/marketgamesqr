@@ -2714,6 +2714,8 @@ let state = {
   inventoryHealthyTaxes: [],
   inventoryTaxonomyLoaded: false,
   inventoryLoaded: false,
+  inventoryLoading: null,
+  inventoryLoadError: "",
   inventorySearch: "",
   inventoryQuickFilter: "all",
   inventoryCategoryFilter: "",
@@ -3861,6 +3863,8 @@ function resetBusinessScopedState(options = {}) {
   state.channelEffortEditingId = null;
   state.inventoryProducts = [];
   state.inventoryLoaded = false;
+  state.inventoryLoading = null;
+  state.inventoryLoadError = "";
   state.inventorySearch = "";
   state.inventoryQuickFilter = "all";
   state.inventoryCategoryFilter = "";
@@ -22273,15 +22277,35 @@ function renderInventoryTaxonomyList() {
 
 async function loadInventoryProducts(options = {}) {
   if (state.inventoryLoaded && !options.force) return state.inventoryProducts;
+  if (state.inventoryLoading && !options.force) return state.inventoryLoading;
   if (!options.quiet && inventoryTable) {
     inventoryTable.innerHTML = '<tr><td colspan="7">Cargando productos...</td></tr>';
   }
-  const data = await apiSafe("/api/business/inventory/products?limit=500", { headers: authHeaders() }, { products: [] });
-  state.inventoryProducts = Array.isArray(data.products) ? data.products : [];
-  state.inventoryLoaded = true;
-  await loadInventoryTaxonomy({ quiet: true });
-  renderInventoryProductOptions();
-  return state.inventoryProducts;
+  state.inventoryLoadError = "";
+  const scopeKey = businessScopeKey();
+  const request = (async () => {
+    try {
+      const data = await api("/api/business/inventory/products?limit=500", { headers: authHeaders(), planGate: false });
+      if (!isCurrentBusinessScope(scopeKey)) return state.inventoryProducts;
+      state.inventoryProducts = Array.isArray(data.products) ? data.products : [];
+    } catch (error) {
+      if (!isCurrentBusinessScope(scopeKey)) return state.inventoryProducts;
+      state.inventoryProducts = [];
+      state.inventoryLoadError = error.message || "No se pudo cargar el catálogo de productos.";
+    } finally {
+      if (isCurrentBusinessScope(scopeKey)) {
+        state.inventoryLoaded = true;
+        state.inventoryLoading = null;
+        renderInventoryProductOptions();
+      }
+    }
+    if (isCurrentBusinessScope(scopeKey)) {
+      loadInventoryTaxonomy({ quiet: true }).catch(() => {});
+    }
+    return state.inventoryProducts;
+  })();
+  state.inventoryLoading = request;
+  return request;
 }
 
 function filteredInventoryProducts() {
@@ -45561,7 +45585,9 @@ function rmsProductClassificationMarkup(item = {}) {
   const hasMoreMatches = allMatches.length > matchingProducts.length;
   const productResultMessage = !state.inventoryLoaded
     ? "Cargando el catálogo de productos…"
-    : activeProducts.length === 0
+    : state.inventoryLoadError
+      ? "No pudimos cargar el catálogo. Reintenta para volver a consultar Productos."
+      : activeProducts.length === 0
       ? "Todavía no hay productos activos en Qori. Crea uno y vuelve a esta asignación."
       : searchTerm
         ? "No encontramos productos con esa búsqueda. Prueba por nombre, categoría o código."
@@ -45588,7 +45614,7 @@ function rmsProductClassificationMarkup(item = {}) {
             const value = inventoryProductSelectValue(product);
             const searchable = [product.name, product.category, product.sku, product.barcode].filter(Boolean).join(" ").toLocaleLowerCase("es-CO");
             return `<label class="${selectedValues.includes(value) ? "is-selected" : ""}" data-rms-product-entry="${escapeHtml(searchable)}"><input type="checkbox" value="${escapeHtml(value)}" data-rms-product-option="${escapeHtml(item.id)}" ${selectedValues.includes(value) ? "checked" : ""}><span><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(money(product.unit_price || 0))} · ${escapeHtml(product.category || "Producto")}</small></span><span class="material-symbols-outlined" aria-hidden="true">check</span></label>`;
-          }).join("") || `<p class="table-secondary">${escapeHtml(productResultMessage)}</p>`}
+          }).join("") || `<p class="table-secondary">${escapeHtml(productResultMessage)}</p>${state.inventoryLoadError ? `<button class="ghost-button compact" type="button" data-rms-retry-inventory="${escapeHtml(item.id)}">Reintentar catálogo</button>` : ""}`}
         </div>
         <small id="rms-product-classification-help-${escapeHtml(item.id)}">${hasMoreMatches ? `Mostramos ${matchingProducts.length} de ${allMatches.length}. Escribe para encontrar el resto.` : "Marca una o varias coincidencias para agregarlas a la oferta."}</small>
       </section>
@@ -47672,6 +47698,16 @@ function bindRmsMachineActions(root) {
       renderRmsBulkToolbar();
       updateRmsStationOutputPreview();
       renderRmsStationOnly();
+    });
+  });
+  root.querySelectorAll("[data-rms-retry-inventory]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.inventoryLoaded = false;
+      state.inventoryLoadError = "";
+      renderRmsStationOnly();
+      loadInventoryProducts({ force: true, quiet: true })
+        .then(() => renderRmsStationOnly())
+        .catch(() => renderRmsStationOnly());
     });
   });
   root.querySelectorAll("[data-rms-product-search]").forEach((input) => {
