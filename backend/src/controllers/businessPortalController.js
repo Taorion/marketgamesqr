@@ -5097,10 +5097,10 @@ async function importManualLeadsCsv(req, res, next) {
       csv_row: index + 2,
     }));
     const invalidRows = rows
-      .filter((row) => !row.email && !row.phone)
+      .filter((row) => !row.email && !row.phone && !row.document_id)
       .map((row) => row.csv_row);
     if (invalidRows.length) {
-      throw badRequest(`Filas sin telefono ni correo: ${invalidRows.slice(0, 20).join(", ")}.`);
+      throw badRequest(`Filas sin teléfono, correo ni documento: ${invalidRows.slice(0, 20).join(", ")}.`);
     }
 
     const inserted = await withTransaction(async (client) => {
@@ -5109,27 +5109,37 @@ async function importManualLeadsCsv(req, res, next) {
       for (const row of rows) {
         const matchedContact = await findExistingBusinessContact(client, businessId, row);
         if (matchedContact) {
+          const incomingIdentity = manualContactIdentity(row);
+          const existingIdentity = manualContactIdentity(matchedContact);
+          if (incomingIdentity.documentId && existingIdentity.documentId && incomingIdentity.documentId !== existingIdentity.documentId) {
+            throw badRequest(`Fila ${row.csv_row}: el correo o teléfono pertenece a un contacto con otro documento. Corrige la identidad antes de importar.`);
+          }
+          await attachManualIdentityToExistingContact(client, businessId, matchedContact, row);
           await recordExistingContactIntake(client, businessId, req.user, matchedContact, {
             source: "manual_csv_import",
             csv_row: row.csv_row,
             attempted_name: row.name || null,
             interest: row.interest || null,
+            document_type: row.document_type || null,
+            document_id: row.document_id || null,
           });
           existing.push({ ...matchedContact, csv_row: row.csv_row });
           continue;
         }
         const result = await client.query(
           `insert into business_manual_leads
-             (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
+             (business_id, created_by_user_id, name, email, phone, document_type, document_id, company, job_title, source, source_detail,
               interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
-           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb)
-           returning id, name, email, phone, source, source_detail, status, priority, created_at`,
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19::jsonb)
+           returning id, name, email, phone, document_type, document_id, source, source_detail, status, priority, created_at`,
           [
             businessId,
             req.user.id,
             row.name,
             row.email || null,
             row.phone || null,
+            row.document_type || null,
+            row.document_id || null,
             row.company || null,
             row.job_title || null,
             row.source,
@@ -5149,6 +5159,10 @@ async function importManualLeadsCsv(req, res, next) {
               csv_source_detail: body.source_detail || null,
               manual_job_title: row.job_title || null,
               manual_importance_reason: row.importance_reason || null,
+              identity_document: row.document_id ? {
+                type: row.document_type || null,
+                value: row.document_id,
+              } : null,
             }),
           ]
         );

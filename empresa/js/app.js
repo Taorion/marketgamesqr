@@ -33187,12 +33187,35 @@ function exportCampaignReport() {
   ]);
 }
 
+function detectCsvDelimiter(text = "") {
+  const source = String(text || "").replace(/^\uFEFF/, "");
+  const candidates = [",", ";", "\t", "|"];
+  const counts = new Map(candidates.map((candidate) => [candidate, 0]));
+  let inQuotes = false;
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    const next = source[index + 1];
+    if (char === '"' && inQuotes && next === '"') {
+      index += 1;
+      continue;
+    }
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (!inQuotes && (char === "\n" || char === "\r")) break;
+    if (!inQuotes && counts.has(char)) counts.set(char, counts.get(char) + 1);
+  }
+  return candidates.reduce((best, candidate) => (counts.get(candidate) > counts.get(best) ? candidate : best), ",");
+}
+
 function parseCsvText(text = "") {
   const rows = [];
   let row = [];
   let cell = "";
   let inQuotes = false;
   const source = String(text || "").replace(/^\uFEFF/, "");
+  const delimiter = detectCsvDelimiter(source);
   for (let index = 0; index < source.length; index += 1) {
     const char = source[index];
     const next = source[index + 1];
@@ -33201,7 +33224,7 @@ function parseCsvText(text = "") {
       index += 1;
     } else if (char === '"') {
       inQuotes = !inQuotes;
-    } else if (char === "," && !inQuotes) {
+    } else if (char === delimiter && !inQuotes) {
       row.push(cell.trim());
       cell = "";
     } else if ((char === "\n" || char === "\r") && !inQuotes) {
@@ -33252,6 +33275,17 @@ function normalizeCsvStatus(value = "") {
   return "NEW";
 }
 
+function normalizeCsvDocumentType(value = "") {
+  const key = normalizeCsvHeader(value);
+  if (["cc", "cedula", "cedula_ciudadania", "cedula_de_ciudadania", "citizenship_card"].includes(key)) return "CC";
+  if (["ce", "cedula_extranjeria", "cedula_de_extranjeria"].includes(key)) return "CE";
+  if (["ti", "tarjeta_identidad", "tarjeta_de_identidad"].includes(key)) return "TI";
+  if (["nit", "tax_id"].includes(key)) return "NIT";
+  if (["passport", "pasaporte"].includes(key)) return "PASSPORT";
+  if (["pep", "permiso_especial_permanencia"].includes(key)) return "PEP";
+  return key ? "OTHER" : "";
+}
+
 function manualLeadRowsFromCsv(text = "", defaults = {}) {
   const rows = parseCsvText(text);
   if (rows.length < 2) return [];
@@ -33263,13 +33297,16 @@ function manualLeadRowsFromCsv(text = "", defaults = {}) {
     });
     const firstName = csvCell(record, ["nombre", "name", "nombres", "first_name"]);
     const lastName = csvCell(record, ["apellido", "apellidos", "last_name"]);
+    const fullName = csvCell(record, ["nombre_completo", "full_name", "cliente", "contacto", "nombre_cliente", "razon_social"]);
     const campaign = csvCell(record, ["campana", "campaign", "campaign_name"]);
     const channel = csvCell(record, ["canal", "channel", "preferred_channel"]);
     const detail = csvCell(record, ["detalle_origen", "source_detail", "detalle", "asunto"]);
     return {
-      name: [firstName, lastName].filter(Boolean).join(" ").trim(),
-      email: csvCell(record, ["correo", "email", "e_mail"]),
-      phone: csvCell(record, ["telefono", "phone", "whatsapp", "celular", "movil", "mobile"]),
+      name: [firstName, lastName].filter(Boolean).join(" ").trim() || fullName,
+      email: csvCell(record, ["correo", "email", "e_mail", "correo_electronico", "email_address"]),
+      phone: csvCell(record, ["telefono", "phone", "whatsapp", "celular", "movil", "mobile", "telefono_whatsapp", "telefono_celular"]),
+      document_type: normalizeCsvDocumentType(csvCell(record, ["tipo_documento", "tipo_de_documento", "document_type", "tipo_identificacion", "tipo_de_identificacion"])),
+      document_id: csvCell(record, ["documento", "numero_documento", "numero_de_documento", "identificacion", "numero_identificacion", "document_id", "cedula", "nit"]),
       company: csvCell(record, ["empresa", "company", "marca", "negocio"]),
       job_title: csvCell(record, ["cargo", "job_title", "rol", "puesto"]),
       source: csvCell(record, ["origen", "source", "fuente"]) || defaults.source,
@@ -33282,7 +33319,7 @@ function manualLeadRowsFromCsv(text = "", defaults = {}) {
       status: normalizeCsvStatus(csvCell(record, ["estado", "status"])),
       notes: csvCell(record, ["notas", "notes", "observaciones", "comentarios"]),
     };
-  }).filter((item) => item.name || item.email || item.phone);
+  }).filter((item) => item.name || item.email || item.phone || item.document_id);
 }
 
 async function importManualLeadsCsv(event) {
@@ -33304,7 +33341,7 @@ async function importManualLeadsCsv(event) {
       interest: optionalInputValue(manualLeadCsvInterestInput),
     });
     if (!contacts.length) {
-      throw new Error("El CSV no trae filas validas. Usa encabezados como nombre, telefono, correo, campana, canal e interes.");
+      throw new Error("El CSV no trae filas válidas. Usa encabezados como nombre, correo, teléfono o documento. Puedes exportarlo desde Excel separado por coma, punto y coma o tabulación.");
     }
     const result = await api("/api/business/contacts/manual/import-csv", {
       method: "POST",
@@ -33322,7 +33359,7 @@ async function importManualLeadsCsv(event) {
     state.manualContactsLoaded = false;
     state.rmsMachineLoaded = false;
     state.leadCrmPagination.offset = 0;
-    await Promise.all([
+    await Promise.allSettled([
       loadContactFeedData({ force: true, quiet: true }),
       loadLeadCrmData({ force: true, quiet: true }),
       loadManualContactsData({ force: true, quiet: true }),
@@ -33330,8 +33367,11 @@ async function importManualLeadsCsv(event) {
     ]);
     renderLeadsView();
     if (state.currentView === "rms-machine") renderRmsMachineView();
-    setFormMessage(manualLeadCsvMessage, `${Number(result.imported || contacts.length).toLocaleString("es-CO")} leads importados a Leads recolectados.`, "success");
-    showFeedback("CSV importado a Leads recolectados.", "success", { title: "Carga masiva lista" });
+    const imported = Number(result.imported || 0);
+    const existing = Number(result.existing || 0);
+    const summary = `${imported.toLocaleString("es-CO")} cliente(s) creados${existing ? ` · ${existing.toLocaleString("es-CO")} ya existían y se registraron en su historial` : ""}.`;
+    setFormMessage(manualLeadCsvMessage, `${summary} Quedan disponibles en Leads recolectados.`, "success");
+    showFeedback(summary, "success", { title: "Carga masiva lista" });
   } catch (error) {
     setFormMessage(manualLeadCsvMessage, error.message || "No se pudo importar el CSV.", "error");
     showFeedback(error.message || "No se pudo importar el CSV.", "error");
