@@ -122,7 +122,9 @@ function buildContactMessage(body, metadata) {
     `Nombre: ${body.name}`,
     `Email: ${body.email}`,
     `Teléfono: ${body.phone || "No especificado"}`,
+    `Documento: ${body.document_type || "Sin tipo"} · ${body.document_id || "No especificado"}`,
     `Empresa: ${body.company || "No especificada"}`,
+    "Aceptaciones: Términos y Condiciones: sí · Política de Datos y Privacidad: sí",
     "",
     "Mensaje:",
     body.message,
@@ -144,7 +146,9 @@ function buildContactMessage(body, metadata) {
         <p><strong>Nombre:</strong> ${escapeHtml(body.name)}</p>
         <p><strong>Correo:</strong> ${escapeHtml(body.email)}</p>
         <p><strong>Teléfono:</strong> ${escapeHtml(body.phone || "No especificado")}</p>
+        <p><strong>Documento:</strong> ${escapeHtml(`${body.document_type || "Sin tipo"} · ${body.document_id || "No especificado"}`)}</p>
         <p><strong>Empresa:</strong> ${escapeHtml(body.company || "No especificada")}</p>
+        <p><strong>Aceptaciones:</strong> Términos y Condiciones: sí · Política de Datos y Privacidad: sí</p>
         <div style="margin-top:20px;padding:16px;border-radius:12px;background:#f4f9ff"><strong>Mensaje</strong><p style="margin:8px 0 0;line-height:1.55">${escapeHtml(body.message).replace(/\r?\n/g, "<br>")}</p></div>
       </div>
       <p style="margin:16px 4px 0;color:#54708f;font-size:12px">Recibido ${escapeHtml(submittedAt)} · ${escapeHtml(body.source_url || "gosqori.com")}</p>

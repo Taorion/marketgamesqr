@@ -260,8 +260,12 @@ function initContactForm() {
       name: String(formData.get("name") || "").trim(),
       email: String(formData.get("email") || "").trim(),
       phone: String(formData.get("phone") || "").trim(),
+      document_type: String(formData.get("document_type") || "").trim(),
+      document_id: String(formData.get("document_id") || "").trim(),
       company: String(formData.get("company") || "").trim(),
       message: String(formData.get("message") || "").trim(),
+      terms_accepted: formData.get("terms_accepted") === "on",
+      privacy_accepted: formData.get("privacy_accepted") === "on",
       source_url: window.location.href
     };
 

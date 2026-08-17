@@ -541,10 +541,16 @@
             <label class="contact-field"><span>Tu nombre</span><input type="text" name="name" placeholder="Ej. Ana Lucía Pérez" autocomplete="name" required></label>
             <label class="contact-field"><span>Correo de trabajo</span><input type="email" name="email" placeholder="tu@empresa.com" autocomplete="email" required></label>
             <label class="contact-field"><span>WhatsApp o teléfono</span><input type="tel" name="phone" placeholder="+57 305 000 0000" autocomplete="tel" inputmode="tel" required></label>
+            <label class="contact-field"><span>Tipo de documento</span><select name="document_type" required><option value="CC">Cédula de ciudadanía</option><option value="CE">Cédula de extranjería</option><option value="TI">Tarjeta de identidad</option><option value="NIT">NIT</option><option value="PASSPORT">Pasaporte</option><option value="PEP">Permiso especial de permanencia</option><option value="OTHER">Otro</option></select></label>
+            <label class="contact-field"><span>Número de documento</span><input type="text" name="document_id" placeholder="Escribe tu número de documento" inputmode="numeric" autocomplete="off" maxlength="60" required></label>
             <label class="contact-field"><span>Empresa <em>Opcional</em></span><input type="text" name="company" placeholder="Nombre de tu empresa" autocomplete="organization"></label>
             <label class="contact-field contact-field-message"><span>¿Qué quieres activar o resolver?</span><textarea name="message" rows="5" minlength="8" placeholder="Cuéntanos brevemente qué quieres ordenar, medir o activar en tu operación comercial." required></textarea></label>
           </div>
-          <p class="contact-form-privacy"><span aria-hidden="true">✓</span> Tus datos se usan solo para responder esta conversación. Sin spam.</p>
+          <div class="contact-form-consents">
+            <label><input type="checkbox" name="terms_accepted" required><span>Acepto los <a href="/terminos/" target="_blank" rel="noopener">Términos y Condiciones</a> de Qori.</span></label>
+            <label><input type="checkbox" name="privacy_accepted" required><span>He leído y acepto la <a href="/privacidad/" target="_blank" rel="noopener">Política de Datos y Privacidad</a>.</span></label>
+          </div>
+          <p class="contact-form-privacy"><span aria-hidden="true">✓</span> Usamos tus datos únicamente para atender esta solicitud. Sin spam.</p>
           <p id="contact-form-status" class="form-status" role="status" aria-live="polite" aria-atomic="true"></p>
           <button class="button button-primary button-full" type="submit"><span>Solicitar conversación</span><span aria-hidden="true">→</span></button>
         </form>
@@ -579,6 +585,6 @@
     <p class="access-feedback-toast" id="accessFeedbackToast" role="status" aria-live="polite"></p>
   </div>
 
-  <script src="js/main.js?v=qori-contact-20260817-v8" defer></script>
+    <script src="js/main.js?v=qori-contact-consent-20260817-v9" defer></script>
 </body>
 </html>

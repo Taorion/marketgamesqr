@@ -7,8 +7,12 @@ const contactSchema = z.object({
   name: z.string().trim().min(2).max(160),
   email: z.string().trim().email().max(180),
   phone: z.string().trim().max(40).optional().nullable(),
+  document_type: z.enum(["CC", "CE", "TI", "NIT", "PASSPORT", "PEP", "OTHER"]),
+  document_id: z.string().trim().min(3).max(60),
   company: z.string().trim().max(180).optional().nullable(),
   message: z.string().trim().min(8).max(2000),
+  terms_accepted: z.literal(true),
+  privacy_accepted: z.literal(true),
   source_url: z.string().trim().max(500).optional().nullable(),
 });
 
@@ -16,7 +20,7 @@ async function submitContact(req, res, next) {
   try {
     const result = contactSchema.safeParse(req.body);
     if (!result.success) {
-      const error = badRequest("Completa nombre, email, teléfono y un mensaje de al menos 8 caracteres.", result.error.flatten());
+      const error = badRequest("Completa tus datos, documento, mensaje y acepta los Términos y la Política de privacidad.", result.error.flatten());
       error.publicMessage = error.message;
       throw error;
     }
@@ -40,7 +44,11 @@ async function submitContact(req, res, next) {
         body.source_url || null,
         metadata.ip || null,
         metadata.userAgent || null,
-        JSON.stringify({ source: "home_contact_form" }),
+        JSON.stringify({
+          source: "home_contact_form",
+          identity_document: { type: body.document_type, id: body.document_id },
+          legal_consent: { terms_accepted: true, privacy_accepted: true, accepted_at: new Date().toISOString() },
+        }),
       ]
     );
     const contactId = saved.rows[0].id;

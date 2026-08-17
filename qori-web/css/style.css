@@ -2526,6 +2526,7 @@ h3 {
 }
 
 .contact-form input,
+.contact-form select,
 .contact-form textarea {
   width: 100%;
   min-height: 50px;
@@ -2550,15 +2551,50 @@ h3 {
 }
 
 .contact-form input:hover,
+.contact-form select:hover,
 .contact-form textarea:hover {
   border-color: rgba(5, 89, 214, 0.38);
 }
 
 .contact-form input:focus,
+.contact-form select:focus,
 .contact-form textarea:focus {
   border-color: var(--qori-blue-bright);
   background: #ffffff;
   box-shadow: 0 0 0 4px rgba(4, 128, 250, 0.13);
+}
+
+.contact-form-consents {
+  display: grid;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.contact-form-consents label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--qori-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.contact-form-consents input[type="checkbox"] {
+  width: 17px;
+  min-width: 17px;
+  min-height: 17px;
+  height: 17px;
+  margin: 2px 0 0;
+  padding: 0;
+  accent-color: var(--qori-blue-bright);
+  box-shadow: none;
+}
+
+.contact-form-consents a {
+  color: var(--qori-blue-corp);
+  font-weight: 800;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
 }
 
 .contact-form-privacy {
