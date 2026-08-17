@@ -149,6 +149,8 @@ const rmsCollectorAgendaInput = document.getElementById("rmsCollectorAgendaInput
 const rmsCollectorLeadNameInput = document.getElementById("rmsCollectorLeadNameInput");
 const rmsCollectorLeadPhoneInput = document.getElementById("rmsCollectorLeadPhoneInput");
 const rmsCollectorLeadEmailInput = document.getElementById("rmsCollectorLeadEmailInput");
+const rmsCollectorLeadDocumentTypeInput = document.getElementById("rmsCollectorLeadDocumentTypeInput");
+const rmsCollectorLeadDocumentInput = document.getElementById("rmsCollectorLeadDocumentInput");
 const rmsCollectorLeadPriorityInput = document.getElementById("rmsCollectorLeadPriorityInput");
 const rmsCollectorLeadInterestInput = document.getElementById("rmsCollectorLeadInterestInput");
 const rmsCollectorExpectedInput = document.getElementById("rmsCollectorExpectedInput");
@@ -52063,10 +52065,12 @@ function renderRmsCollectorSummary() {
   const coverage = rmsCollectorCoverageInput?.selectedOptions?.[0]?.textContent || "Cobertura";
   const leadName = String(rmsCollectorLeadNameInput?.value || "").trim();
   const leadContact = [rmsCollectorLeadPhoneInput?.value, rmsCollectorLeadEmailInput?.value].map((value) => String(value || "").trim()).filter(Boolean).join(" / ");
+  const leadDocument = String(rmsCollectorLeadDocumentInput?.value || "").trim();
+  const leadDocumentType = rmsCollectorLeadDocumentTypeInput?.selectedOptions?.[0]?.textContent || "";
   rmsCollectorSummary.innerHTML = `
     <strong>Resumen de captura</strong>
     <p>Fuente: ${escapeHtml(source)} · Captura: ${escapeHtml(capture)} · Cobertura: ${escapeHtml(coverage)}</p>
-    ${leadName ? `<p>Lead: ${escapeHtml(leadName)}${leadContact ? ` · ${escapeHtml(leadContact)}` : ""} · Entrada: Leads recolectados</p>` : '<p>Sin lead manual cargado. Puedes activar solo el flujo o ingresar una persona ahora.</p>'}
+    ${leadName ? `<p>Lead: ${escapeHtml(leadName)}${leadContact ? ` · ${escapeHtml(leadContact)}` : ""}${leadDocument ? ` · ${escapeHtml(leadDocumentType)} ${escapeHtml(leadDocument)}` : ""} · Entrada: Leads recolectados</p>` : '<p>Sin lead manual cargado. Puedes activar solo el flujo o ingresar una persona ahora.</p>'}
   `;
   updateRmsCollectorSubmitButtons();
 }
@@ -52116,6 +52120,8 @@ async function submitRmsCollector(event) {
   const leadName = String(rmsCollectorLeadNameInput?.value || "").trim();
   const leadPhone = String(rmsCollectorLeadPhoneInput?.value || "").trim();
   const leadEmail = String(rmsCollectorLeadEmailInput?.value || "").trim();
+  const leadDocumentType = String(rmsCollectorLeadDocumentTypeInput?.value || "").trim();
+  const leadDocument = String(rmsCollectorLeadDocumentInput?.value || "").trim();
   const leadInterest = String(rmsCollectorLeadInterestInput?.value || "").trim();
   const leadPriority = rmsCollectorLeadPriorityInput?.value || "HIGH";
   const hasLeadDraft = rmsCollectorHasLeadDraft();
@@ -52128,6 +52134,16 @@ async function submitRmsCollector(event) {
   if (hasLeadDraft && (!leadName || (!leadPhone && !leadEmail))) {
     showFeedback("Para ingresar un lead a recolectados agrega nombre y al menos WhatsApp o correo.", "error", { title: "Lead incompleto" });
     (!leadName ? rmsCollectorLeadNameInput : (rmsCollectorLeadPhoneInput || rmsCollectorLeadEmailInput))?.focus?.({ preventScroll: false });
+    return;
+  }
+  if (leadDocument && !leadDocumentType) {
+    showFeedback("Selecciona el tipo de identificación para guardar el número de documento.", "error", { title: "Identificación incompleta" });
+    rmsCollectorLeadDocumentTypeInput?.focus?.({ preventScroll: false });
+    return;
+  }
+  if (leadDocumentType && !leadDocument) {
+    showFeedback("Escribe el número de identificación o deja el tipo sin seleccionar.", "error", { title: "Identificación incompleta" });
+    rmsCollectorLeadDocumentInput?.focus?.({ preventScroll: false });
     return;
   }
   if (state.rmsCollectorSubmitting) return;
@@ -52146,6 +52162,8 @@ async function submitRmsCollector(event) {
           name: leadName,
           phone: leadPhone || null,
           email: leadEmail || null,
+          document_type: leadDocumentType || null,
+          document_id: leadDocument || null,
           source: "Maquina RMS",
           source_detail: `${sourceLabel} · ${captureLabel}`,
           priority: leadPriority,
@@ -52198,9 +52216,10 @@ async function submitRmsCollector(event) {
       created_at: new Date().toISOString(),
     };
     if (hasLeadDraft) {
-      [rmsCollectorLeadNameInput, rmsCollectorLeadPhoneInput, rmsCollectorLeadEmailInput, rmsCollectorLeadInterestInput].forEach((input) => {
+      [rmsCollectorLeadNameInput, rmsCollectorLeadPhoneInput, rmsCollectorLeadEmailInput, rmsCollectorLeadDocumentInput, rmsCollectorLeadInterestInput].forEach((input) => {
         if (input) input.value = "";
       });
+      if (rmsCollectorLeadDocumentTypeInput) rmsCollectorLeadDocumentTypeInput.value = "";
       if (rmsCollectorLeadPriorityInput) rmsCollectorLeadPriorityInput.value = "HIGH";
       state.contactFeedLoaded = false;
       state.leadCrmLoaded = false;
@@ -52838,7 +52857,7 @@ rmsEmptyStateGuide?.querySelectorAll("[data-rms-empty-action]").forEach((button)
 rmsCollectorCloseButton?.addEventListener("click", closeRmsCollectorModal);
 rmsCollectorCancelButton?.addEventListener("click", closeRmsCollectorModal);
 rmsCollectorForm?.addEventListener("submit", submitRmsCollector);
-[rmsCollectorSourceInput, rmsCollectorCaptureInput, rmsCollectorCoverageInput, rmsCollectorAgendaInput, rmsCollectorLeadNameInput, rmsCollectorLeadPhoneInput, rmsCollectorLeadEmailInput, rmsCollectorLeadPriorityInput, rmsCollectorLeadInterestInput].forEach((input) => {
+[rmsCollectorSourceInput, rmsCollectorCaptureInput, rmsCollectorCoverageInput, rmsCollectorAgendaInput, rmsCollectorLeadNameInput, rmsCollectorLeadPhoneInput, rmsCollectorLeadEmailInput, rmsCollectorLeadDocumentTypeInput, rmsCollectorLeadDocumentInput, rmsCollectorLeadPriorityInput, rmsCollectorLeadInterestInput].forEach((input) => {
   input?.addEventListener("change", renderRmsCollectorSummary);
   input?.addEventListener("input", renderRmsCollectorSummary);
 });

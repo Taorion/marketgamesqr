@@ -567,6 +567,8 @@ const manualLeadSchema = z.object({
     z.string().email().max(180).nullable()
   ),
   phone: nullableText(40),
+  document_type: z.enum(["CC", "CE", "TI", "NIT", "PASSPORT", "PEP", "OTHER"]).optional().nullable(),
+  document_id: nullableText(80),
   company: nullableText(180),
   job_title: nullableText(160),
   source: z.string().trim().min(2).max(120).default("Manual"),
@@ -4599,6 +4601,7 @@ function manualContactIdentity(contact = {}) {
   return {
     email: String(contact.email || "").trim().toLowerCase() || null,
     phone: String(contact.phone || "").replace(/\D/g, "") || null,
+    documentId: String(contact.document_id || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "") || null,
   };
 }
 
@@ -4897,31 +4900,34 @@ async function resolveInventoryTaxonomy(client, businessId, payload, options = {
 
 async function findExistingBusinessContact(client, businessId, contact = {}) {
   const identity = manualContactIdentity(contact);
-  if (!identity.email && !identity.phone) return null;
+  if (!identity.email && !identity.phone && !identity.documentId) return null;
   const result = await client.query(
     `select *
        from (
-         select p.id, p.id as lead_id, 'PLAYER'::text as source_type, p.name, p.email, p.phone, p.created_at, 1 as source_rank
+         select p.id, p.id as lead_id, 'PLAYER'::text as source_type, p.name, p.email, p.phone, p.document_id, null::text as document_type, p.created_at, 1 as source_rank
            from players p
           where p.business_id = $1
             and (($2::text is not null and lower(nullif(p.email, '')) = $2)
-              or ($3::text is not null and regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g') = $3))
+              or ($3::text is not null and regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g') = $3)
+              or ($4::text is not null and regexp_replace(lower(coalesce(p.document_id, '')), '[^a-z0-9]', '', 'g') = $4))
          union all
-         select ml.id, null::uuid as lead_id, 'MANUAL'::text as source_type, ml.name, ml.email, ml.phone, ml.created_at, 2 as source_rank
+         select ml.id, null::uuid as lead_id, 'MANUAL'::text as source_type, ml.name, ml.email, ml.phone, ml.document_id, ml.document_type, ml.created_at, 2 as source_rank
            from business_manual_leads ml
           where ml.business_id = $1
             and (($2::text is not null and lower(nullif(ml.email, '')) = $2)
-              or ($3::text is not null and regexp_replace(coalesce(ml.phone, ''), '\\D', '', 'g') = $3))
+              or ($3::text is not null and regexp_replace(coalesce(ml.phone, ''), '\\D', '', 'g') = $3)
+              or ($4::text is not null and regexp_replace(lower(coalesce(ml.document_id, '')), '[^a-z0-9]', '', 'g') = $4))
          union all
-         select af.id, null::uuid as lead_id, 'AFFILIATE'::text as source_type, af.full_name as name, af.email, af.phone, af.created_at, 3 as source_rank
+         select af.id, null::uuid as lead_id, 'AFFILIATE'::text as source_type, af.full_name as name, af.email, af.phone, af.document_id, null::text as document_type, af.created_at, 3 as source_rank
            from affiliates af
           where af.business_id = $1 and af.status <> 'DELETED'
             and (($2::text is not null and lower(nullif(af.email, '')) = $2)
-              or ($3::text is not null and regexp_replace(coalesce(af.phone, ''), '\\D', '', 'g') = $3))
+              or ($3::text is not null and regexp_replace(coalesce(af.phone, ''), '\\D', '', 'g') = $3)
+              or ($4::text is not null and regexp_replace(lower(coalesce(af.document_id, '')), '[^a-z0-9]', '', 'g') = $4))
        ) contacts
       order by source_rank asc, created_at asc
       limit 1`,
-    [businessId, identity.email, identity.phone]
+    [businessId, identity.email, identity.phone, identity.documentId]
   );
   return result.rows[0] || null;
 }
@@ -4941,6 +4947,34 @@ async function recordExistingContactIntake(client, businessId, user, contact, me
       JSON.stringify(metadata),
     ]
   );
+}
+
+async function attachManualIdentityToExistingContact(client, businessId, contact, identity = {}) {
+  if (!identity.document_id || String(contact.document_id || "").trim()) return;
+  if (contact.source_type === "MANUAL") {
+    await client.query(
+      `update business_manual_leads
+          set document_type = $3, document_id = $4
+        where business_id = $1 and id = $2 and nullif(document_id, '') is null`,
+      [businessId, contact.id, identity.document_type || null, identity.document_id]
+    );
+    return;
+  }
+  if (contact.source_type === "PLAYER") {
+    await client.query(
+      `update players set document_id = $3
+        where business_id = $1 and id = $2 and nullif(document_id, '') is null`,
+      [businessId, contact.id, identity.document_id]
+    );
+    return;
+  }
+  if (contact.source_type === "AFFILIATE") {
+    await client.query(
+      `update affiliates set document_id = $3
+        where business_id = $1 and id = $2 and nullif(document_id, '') is null`,
+      [businessId, contact.id, identity.document_id]
+    );
+  }
 }
 
 async function createManualLead(req, res, next) {
@@ -4963,11 +4997,19 @@ async function createManualLead(req, res, next) {
       }
       const existing = await findExistingBusinessContact(client, businessId, body);
       if (existing) {
+        const incomingIdentity = manualContactIdentity(body);
+        const existingIdentity = manualContactIdentity(existing);
+        if (incomingIdentity.documentId && existingIdentity.documentId && incomingIdentity.documentId !== existingIdentity.documentId) {
+          throw badRequest("El correo o teléfono ya pertenece a un contacto con otro documento. Revisa los datos antes de crear el lead.");
+        }
+        await attachManualIdentityToExistingContact(client, businessId, existing, body);
         await recordExistingContactIntake(client, businessId, req.user, existing, {
           source: "manual_portal_entry",
           attempted_name: body.name || null,
           interest: body.interest || null,
           source_detail: body.source_detail || null,
+          document_type: body.document_type || null,
+          document_id: body.document_id || null,
         });
         await upsertManualLeadCollectorState(client, businessId, req.user, existing, {
           source_flow: "collector_existing_contact",
@@ -4979,11 +5021,11 @@ async function createManualLead(req, res, next) {
       }
       const result = await client.query(
         `insert into business_manual_leads
-           (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
+           (business_id, created_by_user_id, name, email, phone, document_type, document_id, company, job_title, source, source_detail,
             branch_id, acquisition_channel_id, acquisition_channel_name_snapshot, acquisition_channel_slug_snapshot,
             acquisition_channel_source, interest, importance_reason, preferred_channel, preferred_contact_time,
             status, priority, notes, metadata)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22::jsonb)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::jsonb)
          returning *`,
         [
           businessId,
@@ -4991,6 +5033,8 @@ async function createManualLead(req, res, next) {
           body.name,
           body.email,
           body.phone,
+          body.document_type || null,
+          body.document_id || null,
           body.company,
           body.job_title,
           body.source || "Manual",
@@ -5019,6 +5063,10 @@ async function createManualLead(req, res, next) {
             created_by_email: req.user.email || null,
             manual_job_title: body.job_title || null,
             manual_importance_reason: body.importance_reason || null,
+            identity_document: body.document_id ? {
+              type: body.document_type || null,
+              value: body.document_id,
+            } : null,
           }),
         ]
       );
@@ -5200,6 +5248,8 @@ async function updateManualLead(req, res, next) {
               status = $14,
               priority = $15,
               notes = $16,
+              document_type = $18,
+              document_id = $19,
               metadata = coalesce(metadata, '{}'::jsonb)
                 || jsonb_build_object(
                      'manual_job_title', $7::text,
@@ -5208,7 +5258,9 @@ async function updateManualLead(req, res, next) {
                      'manual_status', $14::text,
                      'manual_priority', $15::text,
                      'manual_notes', $16::text,
-                     'updated_by_email', $17::text
+                     'updated_by_email', $17::text,
+                     'document_type', $18::text,
+                     'document_id', $19::text
                    ),
               updated_at = now()
         where id = $1
@@ -5232,6 +5284,8 @@ async function updateManualLead(req, res, next) {
         body.priority,
         body.notes,
         req.user.email || null,
+        body.document_type || null,
+        body.document_id || null,
       ]
     );
 

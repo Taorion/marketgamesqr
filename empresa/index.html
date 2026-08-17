@@ -1050,7 +1050,7 @@
                   <div>
                     <span class="mono-label">Leads recolectados</span>
                     <h3 id="rmsCollectorTitle">Nuevo lead</h3>
-                    <p>Carga los datos esenciales. Nombre y WhatsApp o correo son suficientes para enviarlo a Leads recolectados.</p>
+                    <p>Registra el contacto y, si lo tienes, su identificación. Nombre y WhatsApp o correo siguen siendo suficientes para enviarlo a Leads recolectados.</p>
                   </div>
                   <button class="icon-button" type="button" id="rmsCollectorCloseButton" title="Cerrar">
                     <span class="material-symbols-outlined">close</span>
@@ -1129,6 +1129,24 @@
                       <label>
                         Correo
                         <input id="rmsCollectorLeadEmailInput" type="email" maxlength="180" placeholder="correo@cliente.com">
+                      </label>
+                      <label>
+                        Tipo de identificación
+                        <select id="rmsCollectorLeadDocumentTypeInput">
+                          <option value="">Selecciona si registras documento</option>
+                          <option value="CC">Cédula de ciudadanía</option>
+                          <option value="CE">Cédula de extranjería</option>
+                          <option value="TI">Tarjeta de identidad</option>
+                          <option value="NIT">NIT</option>
+                          <option value="PASSPORT">Pasaporte</option>
+                          <option value="PEP">Permiso especial de permanencia</option>
+                          <option value="OTHER">Otro</option>
+                        </select>
+                      </label>
+                      <label>
+                        Número de identificación
+                        <input id="rmsCollectorLeadDocumentInput" type="text" inputmode="text" maxlength="80" placeholder="Ej: 1020304050">
+                        <small>Opcional. Si lo registras, selecciona también el tipo de identificación.</small>
                       </label>
                       <label>
                         Prioridad

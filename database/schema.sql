@@ -435,6 +435,8 @@ create table if not exists business_manual_leads (
   name text not null,
   email text,
   phone text,
+  document_type text,
+  document_id text,
   company text,
   job_title text,
   source text not null default 'Manual',
