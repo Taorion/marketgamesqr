@@ -629,17 +629,20 @@ async function findOrCreateCatalogLead(client, catalog, product, body, userId = 
   const name = cleanText(body.customer_name || body.name, 160);
   const phone = cleanText(body.customer_phone || body.phone, 40);
   const email = cleanText(body.customer_email || body.email, 160);
-  if (!name || !phone) {
-    throw badRequest("Nombre y WhatsApp son requeridos para ordenar desde el catalogo.");
+  const documentType = cleanText(body.customer_document_type, 20);
+  const documentId = cleanText(body.customer_document, 60);
+  if (!name || !phone || !documentType || !documentId) {
+    throw badRequest("Nombre, WhatsApp y documento son requeridos para ordenar desde el catálogo.");
   }
-  const existing = await client.query(
+  const matches = await client.query(
     `select * from business_manual_leads
      where business_id = $1
-       and ((phone is not null and regexp_replace(phone, '\\D', '', 'g') = regexp_replace($2, '\\D', '', 'g'))
-        or (email is not null and lower(email) = lower($3)))
+        and ((document_id is not null and lower(regexp_replace(document_id, '[^a-zA-Z0-9]', '', 'g')) = lower(regexp_replace($2, '[^a-zA-Z0-9]', '', 'g')))
+         or (phone is not null and regexp_replace(phone, '\\D', '', 'g') = regexp_replace($3, '\\D', '', 'g'))
+         or (email is not null and lower(email) = lower($4)))
      order by updated_at desc
-     limit 1`,
-    [catalog.business_id, phone, email || ""]
+     limit 10`,
+    [catalog.business_id, documentId, phone, email || ""]
   );
   const leadMetadata = {
     source_module: "smart_catalog",
@@ -648,25 +651,36 @@ async function findOrCreateCatalogLead(client, catalog, product, body, userId = 
     product_id: product?.id || null,
     product_name: product?.name || null,
   };
-  if (existing.rowCount) {
+  const normalizedDocument = documentId.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+  const sameDocument = matches.rows.find((row) => String(row.document_id || "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase() === normalizedDocument);
+  const conflictingContact = matches.rows.find((row) => row.document_id && String(row.document_id).replace(/[^a-zA-Z0-9]/g, "").toLowerCase() !== normalizedDocument);
+  if (conflictingContact) {
+    throw badRequest("El teléfono o correo ya pertenece a otro documento registrado. Verifica los datos antes de continuar.");
+  }
+  const existing = sameDocument || matches.rows[0] || null;
+  if (existing) {
     const updated = await client.query(
       `update business_manual_leads
-       set name = coalesce(nullif($3, ''), name),
-           email = coalesce(nullif($4, ''), email),
-           phone = coalesce(nullif($5, ''), phone),
-           interest = coalesce(nullif($6, ''), interest),
-           source = 'Catalogo Qori',
-           source_detail = $7,
-           metadata = coalesce(metadata, '{}'::jsonb) || $8::jsonb,
-           updated_at = now()
-       where id = $1 and business_id = $2
-       returning *`,
+        set name = coalesce(nullif($3, ''), name),
+            email = coalesce(nullif($4, ''), email),
+            phone = coalesce(nullif($5, ''), phone),
+            document_type = coalesce(nullif($6, ''), document_type),
+            document_id = coalesce(nullif($7, ''), document_id),
+            interest = coalesce(nullif($8, ''), interest),
+            source = 'Catalogo Qori',
+            source_detail = $9,
+            metadata = coalesce(metadata, '{}'::jsonb) || $10::jsonb,
+            updated_at = now()
+        where id = $1 and business_id = $2
+        returning *`,
       [
-        existing.rows[0].id,
+        existing.id,
         catalog.business_id,
         name,
         email,
         phone,
+        documentType,
+        documentId,
         product?.name || catalog.title,
         catalog.title,
         JSON.stringify(leadMetadata),
@@ -676,8 +690,8 @@ async function findOrCreateCatalogLead(client, catalog, product, body, userId = 
   }
   const created = await client.query(
     `insert into business_manual_leads
-      (business_id, created_by_user_id, name, email, phone, source, source_detail, interest, status, priority, notes, metadata)
-     values ($1, $2, $3, $4, $5, 'Catalogo Qori', $6, $7, 'NEW', 'HIGH', $8, $9::jsonb)
+      (business_id, created_by_user_id, name, email, phone, document_type, document_id, source, source_detail, interest, status, priority, notes, metadata)
+      values ($1, $2, $3, $4, $5, $6, $7, 'Catalogo Qori', $8, $9, 'NEW', 'HIGH', $10, $11::jsonb)
      returning *`,
     [
       catalog.business_id,
@@ -685,6 +699,8 @@ async function findOrCreateCatalogLead(client, catalog, product, body, userId = 
       name,
       email,
       phone,
+      documentType,
+      documentId,
       catalog.title,
       product?.name || catalog.title,
       "Lead creado desde catalogo accionable conectado a WhatsApp.",

@@ -335,6 +335,16 @@ input {
   color: var(--ink);
   background: #fff;
 }
+.intent-document-fields {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: 12px;
+}
+.intent-document-fields label { min-width: 0; }
+.intent-document-fields select { width: 100%; }
+@media (max-width: 560px) {
+  .intent-document-fields { grid-template-columns: 1fr; }
+}
 
 .modal-close {
   position: absolute;

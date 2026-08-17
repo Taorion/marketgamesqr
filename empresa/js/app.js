@@ -44213,10 +44213,11 @@ function rmsCommercialLeadAsideMarkup(item = {}, nextLabel = "") {
   `;
 }
 
-const RMS_COMMERCIAL_SUMMARY_PHASES = new Set(["accion_correctiva", "control_anti_fuga", "cierre"]);
+const RMS_COMMERCIAL_SUMMARY_PHASES = new Set(["procesamiento", "accion_correctiva", "control_anti_fuga", "cierre"]);
 
 function rmsCommercialSummaryStageLabel(phase = "") {
   return {
+    procesamiento: "Evaluación",
     accion_correctiva: "Negociación",
     control_anti_fuga: "Riesgos de fuga",
     cierre: "Ventas atribuidas",
@@ -44229,6 +44230,7 @@ function rmsCommercialSummaryReason(item = {}, phase = "") {
   const response = String(evaluation.response || "").toUpperCase();
   const responseLabel = RMS_EVALUATION_RESPONSES.find((entry) => entry.value === response)?.short || response || "Sin respuesta registrada";
   const detail = [evaluation.need, evaluation.objections, evaluation.note].filter(Boolean).join(" · ");
+  if (phase === "procesamiento") return detail ? `${responseLabel}: ${detail}` : `${responseLabel}: pendiente de decidir el siguiente paso.`;
   if (phase === "accion_correctiva") return detail ? `${responseLabel}: ${detail}` : `${responseLabel}: requiere acordar condiciones.`;
   if (phase === "control_anti_fuga") return detail ? `${responseLabel}: ${detail}` : `${responseLabel}: requiere proteger o recuperar el acuerdo.`;
   if (phase === "cierre") {

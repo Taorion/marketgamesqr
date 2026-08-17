@@ -95,6 +95,8 @@ const publicLeadSchema = z.object({
   customer_name: z.string().trim().min(2).max(160),
   customer_phone: z.string().trim().min(5).max(40),
   customer_email: z.string().email().max(160).optional().nullable(),
+  customer_document_type: z.enum(["CC", "CE", "TI", "NIT", "PASSPORT", "PEP", "OTHER"]),
+  customer_document: z.string().trim().min(3).max(60),
   campaign_id: uuidNullable,
   activation_id: uuidNullable,
   qr_code_id: uuidNullable,

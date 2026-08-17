@@ -322,6 +322,12 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
       window.loadBusinessBranches().then(() => renderOptions()).catch(() => {});
     }
     const options = (items, label) => (items || []).map((item) => `<option value="${esc(item.id)}">${esc(label(item))}</option>`).join("");
+    const acquisitionChannels = (state.acquisitionChannels || []).filter((item) => {
+      const id = String(item?.id || "").trim();
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+        && item.is_archived !== true
+        && String(item.status || "").toUpperCase() !== "ARCHIVED";
+    });
     const campaign = document.getElementById("communicationCampaignInput");
     const channel = document.getElementById("communicationChannelInput");
     const branch = document.getElementById("communicationBranchInput");
@@ -335,7 +341,7 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     const selectedShowcase = showcase?.value || state.communicationPendingShowcaseId || "";
     const selectedProduct = product?.value || product?.dataset.selectedProduct || state.communicationPendingProductId || "";
     if (campaign) campaign.innerHTML = '<option value="">Sin campaña</option>' + options(state.campaigns, (item) => item.name || item.title || "Campaña");
-    if (channel) channel.innerHTML = '<option value="">Sin canal</option>' + options(state.acquisitionChannels, (item) => [item.name || item.channel_name || "Canal", item.platform].filter(Boolean).join(" · "));
+    if (channel) channel.innerHTML = '<option value="">Sin medio de adquisición</option>' + options(acquisitionChannels, (item) => [item.name || item.channel_name || "Medio de adquisición", item.platform].filter(Boolean).join(" · "));
     if (activation) activation.innerHTML = '<option value="">Sin activación</option>' + options(state.triviaLaunchers, (item) => item.title || "Activación");
     if (showcase) showcase.innerHTML = '<option value="">Sin vitrina web</option>' + options(state.smartCatalogs, (item) => `${item.title || "Vitrina web"}${String(item.status || "").toUpperCase() === "ACTIVE" ? "" : " · No publicada"}`);
     if (branch) branch.innerHTML = '<option value="">Sin sede asignada</option>' + options((state.businessBranches || []).filter((item) => item.is_active !== false), (item) => item.name || "Sede");
@@ -548,7 +554,9 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     const canDeleteCommunications = ["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_Qori"].includes(session?.user?.role);
     const sentHistory = communications.filter((item) => Number(item.recipients_sent || 0) > 0 || String(item.status || "").toUpperCase() === "SENT");
     const failedHistory = communications.reduce((total, item) => total + Number(item.recipients_failed || 0), 0);
-    list.innerHTML = communications.length ? `<div class="communication-history-overview"><div><span class="mono-label">Historial</span><strong>${communications.length} comunicación${communications.length === 1 ? "" : "es"}</strong><small>Guardadas para consulta y reutilización</small></div><div><span>Enviadas</span><strong>${sentHistory.length}</strong></div><div><span>Fallidos</span><strong>${failedHistory}</strong></div></div>` + communications.map((item) => {
+    const recipientTotal = (item) => Number(item.recipients_total || 0) || (Number(item.recipients_sent || 0) + Number(item.recipients_failed || 0) + Number(item.recipients_skipped || 0));
+    const communicationsSummary = `<details class="communication-history-summary"><summary><span><span class="material-symbols-outlined" aria-hidden="true">table_chart</span><span><strong>Resumen de comunicaciones</strong><small>${communications.length} piezas · ${communications.reduce((total, item) => total + recipientTotal(item), 0)} destinatarios</small></span><span class="communication-history-summary-toggle">Ver tabla <span class="material-symbols-outlined" aria-hidden="true">expand_more</span></span></summary><div class="communication-history-summary-table-wrap"><table><thead><tr><th>Comunicación</th><th>Canal</th><th>Estado</th><th>Destinatarios</th><th>Mensajes enviados</th><th>Fallidos</th><th>Actualizada</th></tr></thead><tbody>${communications.map((item) => { const historyState = communicationHistoryState(item); return `<tr><td><strong>${esc(item.title || "Comunicación sin título")}</strong><small>${esc(item.campaign_name || item.channel_name || item.activation_name || "Sin relación comercial")}</small></td><td>${esc(communicationTypeLabel(item.communication_type))}</td><td><span class="communication-history-chip is-${historyState.tone}">${esc(historyState.label)}</span></td><td>${recipientTotal(item)}</td><td>${Number(item.recipients_sent || 0)}</td><td>${Number(item.recipients_failed || 0)}</td><td>${esc(communicationHistoryDate(item.updated_at || item.created_at))}</td></tr>`; }).join("")}</tbody></table></div></details>`;
+    list.innerHTML = communications.length ? `<div class="communication-history-overview"><div><span class="mono-label">Historial</span><strong>${communications.length} comunicación${communications.length === 1 ? "" : "es"}</strong><small>Guardadas para consulta y reutilización</small></div><div><span>Enviadas</span><strong>${sentHistory.length}</strong></div><div><span>Fallidos</span><strong>${failedHistory}</strong></div></div>${communicationsSummary}` + communications.map((item) => {
       const media = mediaFor(item);
       const historyState = communicationHistoryState(item);
       const deliveryLabel = isWhatsAppCommunication(item) ? "aceptados por Meta" : "enviados";
@@ -810,8 +818,8 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
       setComposerSaveFeedback({ step: totalSteps, total: totalSteps, title: `${totalSteps} de ${totalSteps} · Actualizando historial`, detail: "Estamos dejando esta acción visible en tu Centro de Comunicaciones." });
       state.communicationsLoaded = false; await loadCommunications({ force: true }); state.selectedCommunicationId = data.communication?.id || state.selectedCommunicationId;
       if (action === "SEND") state.communicationSelectedRefs = [];
-      setComposerSaveFeedback({ state: "success", step: totalSteps, total: totalSteps, title: "Listo", detail: action === "DRAFT" ? "El borrador quedó guardado y ya aparece en el historial." : "La acción quedó registrada correctamente." });
-      await new Promise((resolve) => window.setTimeout(resolve, 240));
+      setComposerSaveFeedback({ state: "success", step: totalSteps, total: totalSteps, title: action === "DRAFT" ? "Guardado" : "Listo", detail: action === "DRAFT" ? "El borrador quedó guardado y ya aparece en el historial." : "La acción quedó registrada correctamente." });
+      await new Promise((resolve) => window.setTimeout(resolve, action === "DRAFT" ? 900 : 240));
       setComposerSaveBusy(form, false);
       state.editingCommunicationId = null; composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); render();
       if (action === "PUBLISH") showFeedback("La publicación quedó registrada con enlace medido. Ahora puedes copiarla, descargar imágenes o usar Compartir.", "success", { title: "Publicación medida lista" });

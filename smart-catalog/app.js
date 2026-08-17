@@ -35,6 +35,8 @@ const intentProductSummary = document.getElementById("intentProductSummary");
 const intentNameInput = document.getElementById("intentNameInput");
 const intentPhoneInput = document.getElementById("intentPhoneInput");
 const intentEmailInput = document.getElementById("intentEmailInput");
+const intentDocumentTypeInput = document.getElementById("intentDocumentTypeInput");
+const intentDocumentInput = document.getElementById("intentDocumentInput");
 const intentMessage = document.getElementById("intentMessage");
 
 function escapeHtml(value) {
@@ -221,6 +223,8 @@ async function submitIntent(event) {
     customer_name: intentNameInput.value.trim(),
     customer_phone: intentPhoneInput.value.trim(),
     customer_email: intentEmailInput.value.trim() || null,
+    customer_document_type: intentDocumentTypeInput.value,
+    customer_document: intentDocumentInput.value.trim(),
     ...trackingPayload(),
   };
   try {

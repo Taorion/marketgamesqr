@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" href="/img/qori-favicon.png">
   <link rel="shortcut icon" type="image/png" href="/img/qori-favicon.png">
   <link rel="apple-touch-icon" href="/img/qori-favicon.png">
-  <link rel="stylesheet" href="/smart-catalog/styles.css?v=qori-product-promotion-20260810-v151">
+  <link rel="stylesheet" href="/smart-catalog/styles.css?v=qori-catalog-document-20260817-v152">
 </head>
 <body>
   <main class="catalog-shell">
@@ -77,6 +77,24 @@
         <span>WhatsApp</span>
         <input id="intentPhoneInput" type="tel" autocomplete="tel" required>
       </label>
+      <div class="intent-document-fields">
+        <label>
+          <span>Tipo de documento</span>
+          <select id="intentDocumentTypeInput" autocomplete="off" required>
+            <option value="CC">Cédula de ciudadanía</option>
+            <option value="CE">Cédula de extranjería</option>
+            <option value="TI">Tarjeta de identidad</option>
+            <option value="NIT">NIT</option>
+            <option value="PASSPORT">Pasaporte</option>
+            <option value="PEP">Permiso especial de permanencia</option>
+            <option value="OTHER">Otro</option>
+          </select>
+        </label>
+        <label>
+          <span>Documento</span>
+          <input id="intentDocumentInput" type="text" inputmode="numeric" autocomplete="off" maxlength="60" required>
+        </label>
+      </div>
       <label>
         <span>Correo opcional</span>
         <input id="intentEmailInput" type="email" autocomplete="email">
@@ -86,6 +104,6 @@
     </form>
   </div>
 
-  <script src="/smart-catalog/app.js?v=qori-product-promotion-20260810-v151" defer></script>
+  <script src="/smart-catalog/app.js?v=qori-catalog-document-20260817-v152" defer></script>
 </body>
 </html>
