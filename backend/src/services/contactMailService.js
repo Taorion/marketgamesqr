@@ -27,11 +27,9 @@ function escapeHtml(value) {
 }
 
 function contactFromAddress() {
-  const configured = String(env.contactMailFrom || env.smtpUser || "contacto@gosqori.com").trim();
-  const bracketed = configured.match(/<\s*([^<>\s]+@[^<>\s]+)\s*>/);
-  const bareAddress = configured.match(/^[^<>\s]+@[^<>\s]+$/);
-  const address = bracketed?.[1] || bareAddress?.[0] || "contacto@gosqori.com";
-  return `Qori · Tu Fábrica de Ingresos <${address}>`;
+  // El formulario público de gosqori.com es institucional. No debe heredar
+  // el remitente de una empresa ni un valor histórico de MarketGamesQR.
+  return "Qori · Tu Fábrica de Ingresos <contacto@gosqori.com>";
 }
 
 async function sendViaResend({ subject, text, html, replyTo }) {
