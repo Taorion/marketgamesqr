@@ -321,8 +321,11 @@ router.get("/inventory/categories", standardBusinessCache, listInventoryCategori
 router.post("/inventory/categories", createInventoryCategory);
 router.get("/inventory/subcategories", standardBusinessCache, listInventorySubcategories);
 router.post("/inventory/subcategories", createInventorySubcategory);
-router.get("/inventory/catalog/:catalog(brands|units|tax-bases|healthy-taxes)", standardBusinessCache, listInventoryCatalog);
-router.post("/inventory/catalog/:catalog(brands|units|tax-bases|healthy-taxes)", createInventoryCatalog);
+// Express 5 / path-to-regexp no longer accepts the legacy inline regexp in a
+// parameter. The controller keeps the allow-list, so this broad route remains
+// protected while letting the server start on the current runtime.
+router.get("/inventory/catalog/:catalog", standardBusinessCache, listInventoryCatalog);
+router.post("/inventory/catalog/:catalog", createInventoryCatalog);
 router.get("/inventory/products", standardBusinessCache, listInventoryProducts);
 router.post("/inventory/products", createInventoryProduct);
 router.post("/inventory/products/import-csv", importInventoryProductsCsv);
