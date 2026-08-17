@@ -2445,19 +2445,36 @@ h3 {
 }
 
 .contact-form {
+  position: relative;
+  isolation: isolate;
   display: grid;
-  gap: 18px;
-  padding: clamp(24px, 3.2vw, 36px);
-  border: 1px solid rgba(5, 89, 214, 0.16);
-  border-radius: 26px;
+  gap: 20px;
+  padding: clamp(26px, 3.4vw, 42px);
+  border: 1px solid rgba(5, 89, 214, 0.18);
+  border-radius: 28px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(7, 206, 251, 0.15), transparent 34%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(242, 249, 255, 0.95));
-  box-shadow: 0 24px 60px rgba(1, 34, 104, 0.12);
+    radial-gradient(circle at 100% 0%, rgba(7, 206, 251, 0.2), transparent 33%),
+    radial-gradient(circle at 0% 100%, rgba(5, 89, 214, 0.07), transparent 35%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(242, 249, 255, 0.96));
+  box-shadow: 0 28px 72px rgba(1, 34, 104, 0.14), 0 2px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.contact-form::before {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 30px;
+  width: 74px;
+  height: 4px;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(90deg, var(--qori-blue-corp), var(--qori-cyan));
+  content: "";
 }
 
 .contact-form-intro {
-  padding-bottom: 18px;
+  display: grid;
+  gap: 0;
+  padding: 0 0 20px;
   border-bottom: 1px solid rgba(5, 89, 214, 0.12);
 }
 
@@ -2467,7 +2484,10 @@ h3 {
   min-height: 25px;
   padding: 0 10px;
   border-radius: 999px;
-  background: #e7f5ff;
+  width: fit-content;
+  margin-bottom: 1px;
+  border: 1px solid rgba(5, 89, 214, 0.12);
+  background: #eaf6ff;
   color: var(--qori-blue-corp);
   font-size: 0.68rem;
   font-weight: 900;
@@ -2476,8 +2496,8 @@ h3 {
 }
 
 .contact-form-intro h3 {
-  max-width: 17ch;
-  margin: 11px 0 7px;
+  max-width: 21ch;
+  margin: 12px 0 8px;
   color: var(--qori-blue-deep);
   font-size: clamp(1.35rem, 2.4vw, 1.8rem);
   line-height: 1.12;
@@ -2494,17 +2514,21 @@ h3 {
 .contact-form-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px 14px;
 }
 
 .contact-field {
   display: grid;
   gap: 7px;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: 15px;
   min-width: 0;
   color: var(--qori-blue-deep);
   font-size: 0.81rem;
   font-weight: 850;
   letter-spacing: 0.01em;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
 
 .contact-field > span {
@@ -2531,10 +2555,10 @@ h3 {
   width: 100%;
   min-height: 50px;
   border: 1px solid rgba(5, 89, 214, 0.19);
-  border-radius: 13px;
+  border-radius: 12px;
   padding: 13px 14px;
   color: var(--qori-text);
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.98);
   box-shadow: inset 0 1px 0 rgba(5, 89, 214, 0.04);
   outline: none;
   transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
@@ -2564,10 +2588,20 @@ h3 {
   box-shadow: 0 0 0 4px rgba(4, 128, 250, 0.13);
 }
 
+.contact-field:focus-within {
+  border-color: rgba(4, 128, 250, 0.2);
+  background: rgba(232, 243, 251, 0.34);
+  box-shadow: 0 6px 18px rgba(1, 65, 179, 0.055);
+}
+
 .contact-form-consents {
   display: grid;
   gap: 10px;
-  margin-top: 2px;
+  margin-top: 0;
+  padding: 14px 15px;
+  border: 1px solid rgba(5, 89, 214, 0.11);
+  border-radius: 14px;
+  background: rgba(238, 247, 255, 0.62);
 }
 
 .contact-form-consents label {
@@ -2601,7 +2635,7 @@ h3 {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: -2px 0 0;
+  margin: -4px 0 0;
   color: var(--qori-muted);
   font-size: 0.76rem;
   line-height: 1.45;
@@ -2624,8 +2658,10 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 52px;
-  padding-inline: 18px;
+  min-height: 56px;
+  padding-inline: 21px;
+  border-radius: 14px;
+  box-shadow: 0 12px 24px rgba(1, 65, 179, 0.2);
 }
 
 .contact-form .button-full > span:last-child {
@@ -2639,6 +2675,10 @@ h3 {
   color: var(--qori-muted);
   font-size: 0.92rem;
   line-height: 1.45;
+}
+
+.form-status:empty {
+  display: none;
 }
 
 .form-status[data-state="pending"] {
@@ -2661,8 +2701,8 @@ h3 {
 
 @media (max-width: 620px) {
   .contact-form {
-    gap: 16px;
-    padding: 22px 18px;
+    gap: 17px;
+    padding: 24px 18px;
     border-radius: 20px;
   }
 
