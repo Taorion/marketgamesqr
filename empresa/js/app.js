@@ -10085,6 +10085,57 @@ function ensureRevenueCenterUxStyles() {
     @media (max-width: 620px) {
       html body .portal-shell .view-section.dashboard-builder-mode[data-view="dashboard"]:not([hidden]) #dashboardWidgetLibrary .dashboard-library-item { min-height: 0 !important; padding: 14px !important; }
     }
+
+    /* Personalizar es una biblioteca de trabajo, no una barra lateral: ocupa
+       el lienzo completo y deja el tablero seleccionado debajo. */
+    html body .portal-shell .view-section.dashboard-builder-mode[data-view="dashboard"]:not([hidden]) .dashboard-builder-shell[data-workspace-tab="customize"] .dashboard-builder-layout {
+      grid-template-columns: minmax(0, 1fr) !important;
+      grid-template-areas: "library" "canvas" !important;
+      gap: 0 !important;
+    }
+    html body .portal-shell .view-section.dashboard-builder-mode[data-view="dashboard"]:not([hidden]) .dashboard-builder-shell[data-workspace-tab="customize"] .dashboard-widget-library:not([hidden]) {
+      grid-area: library !important;
+      width: 100% !important;
+      max-width: none !important;
+      padding: clamp(22px, 3vw, 40px) !important;
+      border-right: 0 !important;
+      border-bottom: 1px solid var(--revenue-line) !important;
+    }
+    html body .portal-shell .view-section.dashboard-builder-mode[data-view="dashboard"]:not([hidden]) .dashboard-builder-shell[data-workspace-tab="customize"] #dashboardWidgetLibrary {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)) !important;
+      gap: 12px !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+    html body .portal-shell .view-section.dashboard-builder-mode[data-view="dashboard"]:not([hidden]) .dashboard-builder-shell[data-workspace-tab="customize"] #dashboardWidgetLibrary .dashboard-library-item {
+      grid-template-columns: 42px minmax(0, 1fr) auto !important;
+      grid-template-areas: "icon copy state" !important;
+      align-items: center !important;
+      min-height: 112px !important;
+      padding: 16px !important;
+    }
+    html body .portal-shell .view-section.dashboard-builder-mode[data-view="dashboard"]:not([hidden]) .dashboard-builder-shell[data-workspace-tab="customize"] #dashboardWidgetLibrary .dashboard-library-action {
+      justify-self: end !important;
+      align-self: center !important;
+      white-space: nowrap !important;
+    }
+    html body .portal-shell .view-section.dashboard-builder-mode[data-view="dashboard"]:not([hidden]) .dashboard-builder-shell[data-workspace-tab="customize"] .dashboard-canvas {
+      grid-area: canvas !important;
+      width: 100% !important;
+    }
+    @media (max-width: 700px) {
+      html body .portal-shell .view-section.dashboard-builder-mode[data-view="dashboard"]:not([hidden]) .dashboard-builder-shell[data-workspace-tab="customize"] #dashboardWidgetLibrary {
+        grid-template-columns: minmax(0, 1fr) !important;
+      }
+      html body .portal-shell .view-section.dashboard-builder-mode[data-view="dashboard"]:not([hidden]) .dashboard-builder-shell[data-workspace-tab="customize"] #dashboardWidgetLibrary .dashboard-library-item {
+        grid-template-columns: 40px minmax(0, 1fr) !important;
+        grid-template-areas: "icon copy" "state state" !important;
+      }
+      html body .portal-shell .view-section.dashboard-builder-mode[data-view="dashboard"]:not([hidden]) .dashboard-builder-shell[data-workspace-tab="customize"] #dashboardWidgetLibrary .dashboard-library-action {
+        justify-self: start !important;
+        margin-top: 4px !important;
+      }
+    }
   `;
   document.head.appendChild(style);
 }
