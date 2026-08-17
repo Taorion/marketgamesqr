@@ -6,9 +6,9 @@ const isProduction = process.env.NODE_ENV === "production";
 const productionPublicAppUrl = process.env.RENDER_EXTERNAL_URL || "https://market-games-portal.onrender.com";
 const defaultPublicAppUrl = isProduction ? productionPublicAppUrl : "http://localhost:3000";
 const configuredPublicAppUrl = process.env.PUBLIC_APP_URL || "";
-const publicAppUrl = isProduction && /marketgamesqr\.com/i.test(configuredPublicAppUrl)
-  ? productionPublicAppUrl
-  : configuredPublicAppUrl || defaultPublicAppUrl;
+// The public origin is intentionally runtime-configured: Render can move the
+// product to a verified custom domain without changing payment or portal code.
+const publicAppUrl = configuredPublicAppUrl || defaultPublicAppUrl;
 const defaultPublicValidatorUrl = `${publicAppUrl.replace(/\/$/, "")}/empresa/`;
 
 function splitList(value) {
@@ -41,8 +41,8 @@ const env = {
   motoRewardId: process.env.MOTO_REWARD_ID || null,
   motoCampaignId: process.env.MOTO_CAMPAIGN_ID || null,
   productCampaignId: process.env.PRODUCT_CAMPAIGN_ID || null,
-  contactRecipientEmail: process.env.CONTACT_RECIPIENT_EMAIL || "contacto@marketgamesqr.com",
-  contactMailFrom: process.env.CONTACT_MAIL_FROM || "Sales Machine <no-reply@marketgamesqr.com>",
+  contactRecipientEmail: process.env.CONTACT_RECIPIENT_EMAIL || "contacto@gosqori.com",
+  contactMailFrom: process.env.CONTACT_MAIL_FROM || "Qori <contacto@gosqori.com>",
   resendApiKey: process.env.RESEND_API_KEY || "",
   smtpHost: process.env.SMTP_HOST || "",
   smtpPort: Number(process.env.SMTP_PORT || 587),

@@ -34,7 +34,7 @@ services:
       - key: MERCADO_PAGO_WEBHOOK_URL
         sync: false
       - key: CONTACT_RECIPIENT_EMAIL
-        value: contacto@marketgamesqr.com
+        value: contacto@gosqori.com
       - key: CONTACT_MAIL_FROM
         sync: false
       - key: RESEND_API_KEY
