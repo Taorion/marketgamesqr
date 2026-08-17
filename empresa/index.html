@@ -5595,7 +5595,7 @@
                 <p>Consulta tu inventario, abre cada producto para ver su desempeño y crea nuevos productos cuando los necesites.</p>
               </div>
               <div class="button-row">
-                <button class="ghost-button" id="inventoryTaxonomyButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">category</span> Categorías</button>
+                <button class="ghost-button" id="inventoryTaxonomyButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">category</span> Catálogos</button>
                 <button class="ghost-button" id="inventoryImportCsvButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">upload_file</span> Importar CSV</button>
                 <button class="solid-button" id="inventoryNewProductButton" type="button">Nuevo producto</button>
                 <button class="ghost-button compact" id="refreshInventoryButton" type="button">Actualizar</button>
@@ -5623,15 +5623,18 @@
                     <label><span>SKU interno</span><input id="inventorySkuInput" type="text" maxlength="80" placeholder="Referencia interna"></label>
                     <label><span>Categoría</span><select id="inventoryCategoryInput" required><option value="">Selecciona una categoría</option></select></label>
                     <label><span>Subcategoría <small>Opcional</small></span><select id="inventorySubcategoryInput"><option value="">Sin subcategoría</option></select></label>
-                    <label><span>Marca</span><input id="inventoryBrandInput" type="text" maxlength="120"></label>
-                    <label><span>IVA</span><select id="inventoryTaxClassificationInput"><option value="EXEMPT">Exento</option><option value="VAT_0">0%</option><option value="VAT_5">5%</option><option value="VAT_11">11%</option><option value="VAT_19">19%</option></select></label>
-                    <label><span>Precio antes de IVA</span><input id="inventoryPriceBeforeTaxInput" type="number" min="0" step="100" required></label>
-                    <label><span>Precio de venta <small>Incluye IVA</small></span><input id="inventoryUnitPriceInput" type="number" min="0" step="0.01" readonly><small>Se calcula automáticamente a partir del precio antes de IVA y el impuesto.</small></label>
-                    <label><span>Costo</span><input id="inventoryCostPriceInput" type="number" min="0" step="100"></label>
+                    <label><span>Marca <small>Opcional</small></span><select id="inventoryBrandInput"><option value="">Sin marca</option></select></label>
+                    <label><span>IVA base</span><select id="inventoryTaxClassificationInput"><option value="">Selecciona IVA base</option></select></label>
+                    <label><span>Impuesto saludable</span><select id="inventoryHealthyTaxInput"><option value="">No aplica</option></select></label>
+                    <label><span>Precio base <small>Sin IVA ni impuesto saludable</small></span><input id="inventoryPriceBeforeTaxInput" type="number" min="0" step="0.01" required></label>
+                    <label><span>Precio de venta <small>Incluye impuestos</small></span><input id="inventoryUnitPriceInput" type="number" min="0" step="0.01" readonly><small>Se calcula a partir del precio base más IVA base e impuesto saludable.</small></label>
+                    <label><span>Costo producto</span><input id="inventoryCostPriceInput" type="number" min="0" step="0.01"></label>
+                    <label><span>Margen producto</span><input id="inventoryMarginInput" type="text" readonly></label>
+                    <label><span>Utilidad producto</span><input id="inventoryUtilityInput" type="text" readonly></label>
                     <label><span>Moneda</span><input id="inventoryCurrencyInput" type="text" maxlength="12" value="COP"></label>
                     <label><span>Stock</span><input id="inventoryStockInput" type="number" min="0" step="1" value="0"></label>
                     <label><span>Stock mínimo</span><input id="inventoryMinStockInput" type="number" min="0" step="1" value="0"></label>
-                    <label><span>Unidad</span><input id="inventoryUnitLabelInput" type="text" maxlength="40" value="unidad"></label>
+                    <label><span>Unidad de medida</span><select id="inventoryUnitLabelInput"><option value="">Selecciona unidad</option></select></label>
                     <label><span>Estado</span><select id="inventoryStatusInput"><option value="ACTIVE">Activo</option><option value="INACTIVE">Inactivo</option><option value="ARCHIVED">Archivado</option></select></label>
                     <label class="span-2"><span>Descripción</span><textarea id="inventoryDescriptionInput" rows="3" maxlength="1200"></textarea></label>
                     <div class="modal-actions span-2">
@@ -5647,10 +5650,14 @@
 
               <div class="modal-shell hidden" id="inventoryTaxonomyModal" role="dialog" aria-modal="true" aria-labelledby="inventoryTaxonomyTitle" aria-hidden="true">
                 <article class="surface-card inventory-form-card modal-card inventory-taxonomy-modal-card">
-                  <div class="modal-head"><div><span class="mono-label">Catálogo de la empresa</span><h3 id="inventoryTaxonomyTitle">Categorías y subcategorías</h3><p>Crea primero la categoría. La subcategoría es opcional y siempre queda ligada a una categoría.</p></div><button class="icon-button" id="inventoryTaxonomyCloseButton" type="button" aria-label="Cerrar categorías"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></div>
+                  <div class="modal-head"><div><span class="mono-label">Catálogos de la empresa</span><h3 id="inventoryTaxonomyTitle">Referencias para tus productos</h3><p>Crea las referencias que usarás en producto y CSV: categoría, subcategoría, marca, unidad e impuestos.</p></div><button class="icon-button" id="inventoryTaxonomyCloseButton" type="button" aria-label="Cerrar catálogos"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></div>
                   <div class="inventory-taxonomy-grid">
                     <form class="modal-form inventory-taxonomy-form" id="inventoryCategoryForm"><h4>Nueva categoría</h4><label><span>Nombre de categoría</span><input id="inventoryCategoryNameInput" type="text" maxlength="120" required></label><label><span>ID interno de categoría</span><input id="inventoryCategoryInternalIdInput" type="text" maxlength="100" placeholder="Ej. CAT-ROPA" required></label><button class="solid-button" type="submit">Crear categoría</button></form>
                     <form class="modal-form inventory-taxonomy-form" id="inventorySubcategoryForm"><h4>Nueva subcategoría</h4><label><span>Categoría</span><select id="inventorySubcategoryCategoryInput" required><option value="">Selecciona categoría</option></select></label><label><span>Nombre de subcategoría</span><input id="inventorySubcategoryNameInput" type="text" maxlength="120" required></label><label><span>ID interno de subcategoría</span><input id="inventorySubcategoryInternalIdInput" type="text" maxlength="100" placeholder="Ej. SUB-CAMISAS" required></label><button class="solid-button" type="submit">Crear subcategoría</button></form>
+                    <form class="modal-form inventory-taxonomy-form" id="inventoryBrandForm"><h4>Nueva marca</h4><label><span>Nombre de marca</span><input id="inventoryBrandNameInput" type="text" maxlength="120" required></label><label><span>ID interno de marca</span><input id="inventoryBrandInternalIdInput" type="text" maxlength="100" placeholder="Ej. MAR-001" required></label><button class="solid-button" type="submit">Crear marca</button></form>
+                    <form class="modal-form inventory-taxonomy-form" id="inventoryUnitForm"><h4>Nueva unidad de medida</h4><label><span>Nombre de unidad</span><input id="inventoryUnitNameInput" type="text" maxlength="120" required></label><label><span>ID interno de unidad</span><input id="inventoryUnitInternalIdInput" type="text" maxlength="100" placeholder="Ej. CAJA" required></label><button class="solid-button" type="submit">Crear unidad</button></form>
+                    <form class="modal-form inventory-taxonomy-form" id="inventoryTaxBaseForm"><h4>Nuevo IVA base</h4><label><span>Nombre</span><input id="inventoryTaxBaseNameInput" type="text" maxlength="120" required></label><label><span>ID interno</span><input id="inventoryTaxBaseInternalIdInput" type="text" maxlength="100" required></label><label><span>Porcentaje</span><input id="inventoryTaxBaseRateInput" type="number" min="0" max="100" step="0.01" required></label><button class="solid-button" type="submit">Crear IVA base</button></form>
+                    <form class="modal-form inventory-taxonomy-form" id="inventoryHealthyTaxForm"><h4>Nuevo impuesto saludable</h4><label><span>Nombre</span><input id="inventoryHealthyTaxNameInput" type="text" maxlength="120" required></label><label><span>ID interno</span><input id="inventoryHealthyTaxInternalIdInput" type="text" maxlength="100" required></label><label><span>Porcentaje</span><input id="inventoryHealthyTaxRateInput" type="number" min="0" max="100" step="0.01" required></label><button class="solid-button" type="submit">Crear impuesto</button></form>
                   </div>
                   <p class="form-message" id="inventoryTaxonomyMessage"></p>
                   <div class="inventory-taxonomy-list" id="inventoryTaxonomyList"></div>
@@ -5670,7 +5677,7 @@
                     </button>
                   </div>
                   <form class="modal-form inventory-csv-import-form" id="inventoryCsvImportForm">
-                    <label class="span-2"><span>Archivo CSV</span><input id="inventoryCsvFileInput" type="file" accept=".csv,text/csv" required><small>Columnas: id_producto, nombre, categoria_id o categoria, subcategoria_id o subcategoria, codigo_barras, sku, marca, iva, precio_antes_iva, costo, moneda, stock, stock_minimo, unidad, estado y descripcion. La categoría debe existir previamente.</small></label>
+                    <label class="span-2"><span>Archivo CSV</span><input id="inventoryCsvFileInput" type="file" accept=".csv,text/csv" required><small>Columnas: id_producto, nombre, categoria, subcategoria, codigo_barras, sku, marca, iva_base, impuesto_saludable, precio_base, costo_producto, moneda, stock, stock_minimo, unidad_de_medida, estado y descripcion. Categoría, marca, unidad e impuestos deben existir previamente.</small></label>
                     <p class="span-2 inventory-csv-duplicate-option"><strong>Validación completa:</strong> si algún ID de producto ya existe en Qori, no se cargará ninguna fila del archivo.</p>
                     <div class="inventory-csv-template span-2">
                       <div><strong>¿No tienes plantilla?</strong><small>Descarga una base con todos los campos y un ejemplo seguro.</small></div>
@@ -7773,7 +7780,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-  <script src="js/app.js?v=revenue-library-full-width-v84-20260817" defer></script>
+  <script src="js/app.js?v=product-reference-catalogs-v85-20260817" defer></script>
     <script src="js/communications.js?v=bulk-history-v323-20260811" defer></script>
 </body>
 </html>

@@ -1050,15 +1050,32 @@ const inventoryCategoryInput = document.getElementById("inventoryCategoryInput")
 const inventorySubcategoryInput = document.getElementById("inventorySubcategoryInput");
 const inventoryBrandInput = document.getElementById("inventoryBrandInput");
 const inventoryTaxClassificationInput = document.getElementById("inventoryTaxClassificationInput");
+const inventoryHealthyTaxInput = document.getElementById("inventoryHealthyTaxInput");
 const inventoryPriceBeforeTaxInput = document.getElementById("inventoryPriceBeforeTaxInput");
 const inventoryUnitPriceInput = document.getElementById("inventoryUnitPriceInput");
 const inventoryCostPriceInput = document.getElementById("inventoryCostPriceInput");
+const inventoryMarginInput = document.getElementById("inventoryMarginInput");
+const inventoryUtilityInput = document.getElementById("inventoryUtilityInput");
 const inventoryCurrencyInput = document.getElementById("inventoryCurrencyInput");
 const inventoryStockInput = document.getElementById("inventoryStockInput");
 const inventoryMinStockInput = document.getElementById("inventoryMinStockInput");
 const inventoryUnitLabelInput = document.getElementById("inventoryUnitLabelInput");
 const inventoryStatusInput = document.getElementById("inventoryStatusInput");
 const inventoryDescriptionInput = document.getElementById("inventoryDescriptionInput");
+const inventoryBrandForm = document.getElementById("inventoryBrandForm");
+const inventoryBrandNameInput = document.getElementById("inventoryBrandNameInput");
+const inventoryBrandInternalIdInput = document.getElementById("inventoryBrandInternalIdInput");
+const inventoryUnitForm = document.getElementById("inventoryUnitForm");
+const inventoryUnitNameInput = document.getElementById("inventoryUnitNameInput");
+const inventoryUnitInternalIdInput = document.getElementById("inventoryUnitInternalIdInput");
+const inventoryTaxBaseForm = document.getElementById("inventoryTaxBaseForm");
+const inventoryTaxBaseNameInput = document.getElementById("inventoryTaxBaseNameInput");
+const inventoryTaxBaseInternalIdInput = document.getElementById("inventoryTaxBaseInternalIdInput");
+const inventoryTaxBaseRateInput = document.getElementById("inventoryTaxBaseRateInput");
+const inventoryHealthyTaxForm = document.getElementById("inventoryHealthyTaxForm");
+const inventoryHealthyTaxNameInput = document.getElementById("inventoryHealthyTaxNameInput");
+const inventoryHealthyTaxInternalIdInput = document.getElementById("inventoryHealthyTaxInternalIdInput");
+const inventoryHealthyTaxRateInput = document.getElementById("inventoryHealthyTaxRateInput");
 const inventoryMessage = document.getElementById("inventoryMessage");
 const inventorySaveButton = document.getElementById("inventorySaveButton");
 const inventoryResetButton = document.getElementById("inventoryResetButton");
@@ -2691,6 +2708,10 @@ let state = {
   inventoryProducts: [],
   inventoryCategories: [],
   inventorySubcategories: [],
+  inventoryBrands: [],
+  inventoryUnits: [],
+  inventoryTaxBases: [],
+  inventoryHealthyTaxes: [],
   inventoryTaxonomyLoaded: false,
   inventoryLoaded: false,
   inventorySearch: "",
@@ -22158,28 +22179,43 @@ function renderInventoryProductOptions() {
 
 async function loadInventoryTaxonomy(options = {}) {
   if (state.inventoryTaxonomyLoaded && !options.force) {
-    return { categories: state.inventoryCategories, subcategories: state.inventorySubcategories };
+    return { categories: state.inventoryCategories, subcategories: state.inventorySubcategories, brands: state.inventoryBrands, units: state.inventoryUnits, taxBases: state.inventoryTaxBases, healthyTaxes: state.inventoryHealthyTaxes };
   }
-  const [categoriesData, subcategoriesData] = await Promise.all([
+  const [categoriesData, subcategoriesData, brandsData, unitsData, taxBasesData, healthyTaxesData] = await Promise.all([
     apiSafe("/api/business/inventory/categories", { headers: authHeaders() }, { categories: [] }),
     apiSafe("/api/business/inventory/subcategories", { headers: authHeaders() }, { subcategories: [] }),
+    apiSafe("/api/business/inventory/catalog/brands", { headers: authHeaders() }, { brands: [] }),
+    apiSafe("/api/business/inventory/catalog/units", { headers: authHeaders() }, { units: [] }),
+    apiSafe("/api/business/inventory/catalog/tax-bases", { headers: authHeaders() }, { tax_bases: [] }),
+    apiSafe("/api/business/inventory/catalog/healthy-taxes", { headers: authHeaders() }, { healthy_taxes: [] }),
   ]);
   state.inventoryCategories = Array.isArray(categoriesData.categories) ? categoriesData.categories : [];
   state.inventorySubcategories = Array.isArray(subcategoriesData.subcategories) ? subcategoriesData.subcategories : [];
+  state.inventoryBrands = Array.isArray(brandsData.brands) ? brandsData.brands : [];
+  state.inventoryUnits = Array.isArray(unitsData.units) ? unitsData.units : [];
+  state.inventoryTaxBases = Array.isArray(taxBasesData.tax_bases) ? taxBasesData.tax_bases : [];
+  state.inventoryHealthyTaxes = Array.isArray(healthyTaxesData.healthy_taxes) ? healthyTaxesData.healthy_taxes : [];
   state.inventoryTaxonomyLoaded = true;
   renderInventoryTaxonomyOptions();
   return { categories: state.inventoryCategories, subcategories: state.inventorySubcategories };
 }
 
 function inventoryTaxRate(classification = "EXEMPT") {
-  return { EXEMPT: 0, VAT_0: 0, VAT_5: 0.05, VAT_11: 0.11, VAT_19: 0.19 }[classification] || 0;
+  return { EXEMPT: 0, EXCLUDED: 0, VAT_0: 0, VAT_5: 0.05, VAT_8: 0.08, VAT_11: 0.11, VAT_19: 0.19 }[classification] || 0;
 }
 
 function renderInventorySellingPrice() {
   if (!inventoryUnitPriceInput) return;
   const base = Math.max(0, Number(inventoryPriceBeforeTaxInput?.value || 0));
-  const total = Math.round((base * (1 + inventoryTaxRate(inventoryTaxClassificationInput?.value)) + Number.EPSILON) * 100) / 100;
+  const taxBase = (state.inventoryTaxBases || []).find((item) => String(item.id) === String(inventoryTaxClassificationInput?.value || ""));
+  const healthyTax = (state.inventoryHealthyTaxes || []).find((item) => String(item.id) === String(inventoryHealthyTaxInput?.value || ""));
+  const iva = taxBase ? Number(taxBase.rate || 0) : inventoryTaxRate(inventoryTaxClassificationInput?.value);
+  const healthy = Number(healthyTax?.rate || 0);
+  const total = Math.round((base * (1 + iva + healthy) + Number.EPSILON) * 100) / 100;
   inventoryUnitPriceInput.value = String(total);
+  const cost = Math.max(0, Number(inventoryCostPriceInput?.value || 0));
+  if (inventoryUtilityInput) inventoryUtilityInput.value = String(Math.round((base - cost + Number.EPSILON) * 100) / 100);
+  if (inventoryMarginInput) inventoryMarginInput.value = base > 0 ? `${Math.round((((base - cost) / base) * 100 + Number.EPSILON) * 100) / 100}%` : "0%";
 }
 
 function renderInventoryTaxonomyOptions() {
@@ -22198,6 +22234,14 @@ function renderInventoryTaxonomyOptions() {
     inventorySubcategoryCategoryInput.innerHTML = categoryOptions;
     inventorySubcategoryCategoryInput.value = categories.some((category) => category.id === selected) ? selected : "";
   }
+  const selectOptions = (items, placeholder, selectedValue = "") => [
+    `<option value="">${escapeHtml(placeholder)}</option>`,
+    ...(items || []).map((item) => `<option value="${escapeHtml(item.id)}" ${String(item.id) === String(selectedValue) ? "selected" : ""}>${escapeHtml(`${item.name} · ${item.internal_id}`)}</option>`),
+  ].join("");
+  if (inventoryBrandInput) inventoryBrandInput.innerHTML = selectOptions(state.inventoryBrands, "Sin marca", inventoryBrandInput.value);
+  if (inventoryUnitLabelInput) inventoryUnitLabelInput.innerHTML = selectOptions(state.inventoryUnits, "Selecciona unidad de medida", inventoryUnitLabelInput.value);
+  if (inventoryTaxClassificationInput) inventoryTaxClassificationInput.innerHTML = selectOptions(state.inventoryTaxBases, "Selecciona IVA base", inventoryTaxClassificationInput.value);
+  if (inventoryHealthyTaxInput) inventoryHealthyTaxInput.innerHTML = selectOptions(state.inventoryHealthyTaxes, "No aplica", inventoryHealthyTaxInput.value);
   renderInventorySubcategoryOptions();
   renderInventoryTaxonomyList();
 }
@@ -22450,6 +22494,9 @@ function ensureInventoryUxStyles() {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1rem;
     }
+    #inventoryTaxonomyModal .inventory-taxonomy-modal-card { width: min(1160px, calc(100vw - 32px)); }
+    #inventoryTaxonomyModal .inventory-taxonomy-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+    #inventoryTaxonomyModal .inventory-taxonomy-list { max-height: 34vh; overflow: auto; padding-right: .25rem; }
     .inventory-taxonomy-form {
       display: grid;
       gap: 0.75rem;
@@ -22858,13 +22905,15 @@ function resetInventoryForm() {
   if (inventoryCategoryInput) inventoryCategoryInput.value = "";
   renderInventorySubcategoryOptions();
   if (inventorySubcategoryInput) inventorySubcategoryInput.value = "";
-  if (inventoryTaxClassificationInput) inventoryTaxClassificationInput.value = "EXEMPT";
+  if (inventoryBrandInput) inventoryBrandInput.value = "";
+  if (inventoryTaxClassificationInput) inventoryTaxClassificationInput.value = (state.inventoryTaxBases || []).find((item) => Number(item.rate || 0) === 0 && /exento/i.test(item.name || ""))?.id || "";
+  if (inventoryHealthyTaxInput) inventoryHealthyTaxInput.value = (state.inventoryHealthyTaxes || []).find((item) => Number(item.rate || 0) === 0)?.id || "";
   if (inventoryPriceBeforeTaxInput) inventoryPriceBeforeTaxInput.value = "0";
   renderInventorySellingPrice();
   if (inventoryCurrencyInput) inventoryCurrencyInput.value = "COP";
   if (inventoryStockInput) inventoryStockInput.value = "0";
   if (inventoryMinStockInput) inventoryMinStockInput.value = "0";
-  if (inventoryUnitLabelInput) inventoryUnitLabelInput.value = "unidad";
+  if (inventoryUnitLabelInput) inventoryUnitLabelInput.value = (state.inventoryUnits || []).find((item) => /unidad/i.test(item.name || ""))?.id || "";
   if (inventoryStatusInput) inventoryStatusInput.value = "ACTIVE";
   if (inventoryFormTitle) inventoryFormTitle.textContent = "Nuevo producto";
   setInlineMessage(inventoryMessage, "Completa nombre y precio. Código, SKU y stock son opcionales pero ayudan a operar mejor.", "info");
@@ -22882,17 +22931,19 @@ function editInventoryProduct(productId) {
   if (inventoryCategoryInput) inventoryCategoryInput.value = product.category_id || "";
   renderInventorySubcategoryOptions();
   if (inventorySubcategoryInput) inventorySubcategoryInput.value = product.subcategory_id || "";
-  if (inventoryBrandInput) inventoryBrandInput.value = product.brand || "";
-  if (inventoryTaxClassificationInput) inventoryTaxClassificationInput.value = product.tax_classification || "EXEMPT";
+  if (inventoryBrandInput) inventoryBrandInput.value = product.brand_id || "";
+  if (inventoryTaxClassificationInput) inventoryTaxClassificationInput.value = product.tax_base_id || "";
+  if (inventoryHealthyTaxInput) inventoryHealthyTaxInput.value = product.healthy_tax_id || "";
   if (inventoryPriceBeforeTaxInput) inventoryPriceBeforeTaxInput.value = String(product.price_before_tax ?? product.unit_price ?? 0);
   renderInventorySellingPrice();
   if (inventoryCostPriceInput) inventoryCostPriceInput.value = product.cost_price === null || product.cost_price === undefined ? "" : String(product.cost_price || 0);
   if (inventoryCurrencyInput) inventoryCurrencyInput.value = product.currency || "COP";
   if (inventoryStockInput) inventoryStockInput.value = String(product.stock_quantity || 0);
   if (inventoryMinStockInput) inventoryMinStockInput.value = String(product.min_stock_quantity || 0);
-  if (inventoryUnitLabelInput) inventoryUnitLabelInput.value = product.unit_label || "unidad";
+  if (inventoryUnitLabelInput) inventoryUnitLabelInput.value = product.unit_id || "";
   if (inventoryStatusInput) inventoryStatusInput.value = product.status || "ACTIVE";
   if (inventoryDescriptionInput) inventoryDescriptionInput.value = product.description || "";
+  renderInventorySellingPrice();
   if (inventoryFormTitle) inventoryFormTitle.textContent = "Editar producto";
   setInlineMessage(inventoryMessage, "Editando producto existente.", "info");
   openInventoryProductModal({ focusTarget: inventoryNameInput });
@@ -22906,15 +22957,18 @@ function inventoryFormPayload() {
     sku: inventorySkuInput?.value.trim() || null,
     category_id: inventoryCategoryInput?.value || null,
     subcategory_id: inventorySubcategoryInput?.value || null,
-    brand: inventoryBrandInput?.value.trim() || null,
+    brand_id: inventoryBrandInput?.value || null,
+    tax_base_id: inventoryTaxClassificationInput?.value || null,
+    healthy_tax_id: inventoryHealthyTaxInput?.value || null,
     price_before_tax: Number(inventoryPriceBeforeTaxInput?.value || 0),
-    tax_classification: inventoryTaxClassificationInput?.value || "EXEMPT",
+    tax_classification: "EXEMPT",
     unit_price: Number(inventoryUnitPriceInput?.value || 0),
     cost_price: inventoryCostPriceInput?.value === "" ? null : Number(inventoryCostPriceInput?.value || 0),
     currency: inventoryCurrencyInput?.value.trim() || "COP",
     stock_quantity: Number(inventoryStockInput?.value || 0),
     min_stock_quantity: Number(inventoryMinStockInput?.value || 0),
-    unit_label: inventoryUnitLabelInput?.value.trim() || "unidad",
+    unit_id: inventoryUnitLabelInput?.value || null,
+    unit_label: "Unidad",
     status: inventoryStatusInput?.value || "ACTIVE",
     description: inventoryDescriptionInput?.value.trim() || null,
   };
@@ -22974,6 +23028,27 @@ async function submitInventorySubcategory(event) {
   }
 }
 
+async function submitInventoryCatalog(event, catalog, fields) {
+  event.preventDefault();
+  try {
+    const rateValue = fields.rate?.value;
+    const body = {
+      name: fields.name?.value.trim() || "",
+      internal_id: fields.internalId?.value.trim() || "",
+      ...(fields.rate ? { rate: Math.max(0, Number(rateValue || 0)) / 100 } : {}),
+    };
+    const data = await api(`/api/business/inventory/catalog/${catalog}`, { method: "POST", headers: authHeaders(), body: JSON.stringify(body) });
+    const key = catalog === "tax-bases" ? "inventoryTaxBases" : catalog === "healthy-taxes" ? "inventoryHealthyTaxes" : catalog === "brands" ? "inventoryBrands" : "inventoryUnits";
+    const resultKey = catalog === "tax-bases" ? "tax_base" : catalog === "healthy-taxes" ? "healthy_tax" : catalog === "brands" ? "brand" : "unit";
+    state[key] = [...(state[key] || []), data[resultKey]].sort((a, b) => String(a.name).localeCompare(String(b.name), "es"));
+    event.currentTarget?.reset();
+    renderInventoryTaxonomyOptions();
+    setInlineMessage(inventoryTaxonomyMessage, "Catálogo actualizado y disponible para producto e importación CSV.", "success");
+  } catch (error) {
+    setInlineMessage(inventoryTaxonomyMessage, error.message || "No se pudo crear la referencia.", "error");
+  }
+}
+
 function openInventoryCsvImportModal() {
   if (!inventoryCsvImportModal) return;
   if (inventoryCsvImportModal.parentElement !== document.body) document.body.appendChild(inventoryCsvImportModal);
@@ -23029,7 +23104,7 @@ function inventoryCsvNumber(value, fallback = 0) {
   const raw = String(value ?? "").trim().replace(/[^0-9,.-]/g, "");
   if (!raw) return fallback;
   const normalized = raw.includes(",") && raw.includes(".")
-    ? raw.replace(/\./g, "").replace(",", ".")
+    ? (raw.lastIndexOf(".") > raw.lastIndexOf(",") ? raw.replace(/,/g, "") : raw.replace(/\./g, "").replace(",", "."))
     : raw.includes(",")
       ? raw.replace(",", ".")
       : (/^-?\d{1,3}(\.\d{3})+$/.test(raw) ? raw.replace(/\./g, "") : raw);
@@ -23047,9 +23122,9 @@ function inventoryCsvStatus(value = "") {
 function inventoryCsvTaxClassification(value = "") {
   const normalized = String(value || "").trim().toUpperCase().replace(/\s+/g, "");
   if (["5", "5%", "VAT_5", "IVA_5"].includes(normalized)) return "VAT_5";
-  if (["11", "11%", "VAT_11", "IVA_11"].includes(normalized)) return "VAT_11";
+  if (["8", "8%", "VAT_8", "IVA_8"].includes(normalized)) return "VAT_8";
   if (["19", "19%", "VAT_19", "IVA_19"].includes(normalized)) return "VAT_19";
-  if (["0", "0%", "VAT_0", "IVA_0"].includes(normalized)) return "VAT_0";
+  if (["EXCLUIDO", "EXCLUDED"].includes(normalized)) return "EXCLUDED";
   return "EXEMPT";
 }
 
@@ -23072,14 +23147,16 @@ function inventoryProductsFromCsv(text = "") {
       subcategory_internal_id: csvCell(record, ["subcategoria_id", "subcategory_id", "subcategory_internal_id"]),
       subcategory: csvCell(record, ["subcategoria", "subcategory", "nombre_subcategoria", "subcategory_name"]),
       brand: csvCell(record, ["marca", "brand"]),
-      tax_classification: inventoryCsvTaxClassification(csvCell(record, ["iva", "tax", "tax_classification"])),
-      price_before_tax: inventoryCsvNumber(csvCell(record, ["precio_antes_iva", "price_before_tax", "precio_venta", "precio", "unit_price", "sale_price"]), 0),
+      tax_base: csvCell(record, ["iva_base", "iva", "tax_base", "tax"]),
+      healthy_tax: csvCell(record, ["impuesto_saludable", "healthy_tax"]),
+      tax_classification: inventoryCsvTaxClassification(csvCell(record, ["iva_base", "iva", "tax", "tax_classification"])),
+      price_before_tax: inventoryCsvNumber(csvCell(record, ["precio_base", "precio_antes_iva", "price_before_tax", "precio_venta", "precio", "unit_price", "sale_price"]), 0),
       unit_price: 0,
-      cost_price: csvCell(record, ["costo", "cost", "cost_price"]) ? inventoryCsvNumber(csvCell(record, ["costo", "cost", "cost_price"]), 0) : null,
+      cost_price: csvCell(record, ["costo_producto", "costo", "cost", "cost_price"]) ? inventoryCsvNumber(csvCell(record, ["costo_producto", "costo", "cost", "cost_price"]), 0) : null,
       currency: (csvCell(record, ["moneda", "currency"]) || "COP").toUpperCase(),
       stock_quantity: inventoryCsvNumber(csvCell(record, ["stock", "cantidad", "stock_quantity"]), 0),
       min_stock_quantity: inventoryCsvNumber(csvCell(record, ["stock_minimo", "min_stock", "min_stock_quantity"]), 0),
-      unit_label: csvCell(record, ["unidad", "unidad_medida", "unit", "unit_label"]) || "unidad",
+      unit_label: csvCell(record, ["unidad_de_medida", "unidad", "unidad_medida", "unit", "unit_label"]) || "Unidad",
       status: inventoryCsvStatus(csvCell(record, ["estado", "status"])),
       description: csvCell(record, ["descripcion", "description", "detalle"]),
     };
@@ -23088,8 +23165,8 @@ function inventoryProductsFromCsv(text = "") {
 
 function downloadInventoryCsvTemplate() {
   const csv = [
-    "id_producto,nombre,categoria_id,subcategoria_id,codigo_barras,sku,marca,iva,precio_antes_iva,costo,moneda,stock,stock_minimo,unidad,estado,descripcion",
-    "PRD-001,Producto de ejemplo,CAT-ROPA,SUB-CAMISAS,770000000001,SKU-001,Marca,19%,25000,12000,COP,10,2,unidad,ACTIVE,Descripcion opcional",
+    "ID Producto,nombre,categoria,subcategoria,codigo_barras,sku,marca,iva_base,impuesto_saludable,precio_base,Costo Producto,moneda,stock,stock_minimo,Unidad de Medida,estado,descripcion",
+    "PRD-001,Producto de ejemplo,Ropa,Camisas,770000000001,SKU-001,Marca creada,19%,No Aplica,\"25,000.00\",\"12,000.00\",COP,10,2,Unidad,ACTIVE,Descripcion opcional",
   ].join("\n");
   const link = document.createElement("a");
   link.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
@@ -53404,9 +53481,15 @@ inventoryTaxonomyModal?.addEventListener("click", (event) => {
 });
 inventoryCategoryForm?.addEventListener("submit", submitInventoryCategory);
 inventorySubcategoryForm?.addEventListener("submit", submitInventorySubcategory);
+inventoryBrandForm?.addEventListener("submit", (event) => submitInventoryCatalog(event, "brands", { name: inventoryBrandNameInput, internalId: inventoryBrandInternalIdInput }));
+inventoryUnitForm?.addEventListener("submit", (event) => submitInventoryCatalog(event, "units", { name: inventoryUnitNameInput, internalId: inventoryUnitInternalIdInput }));
+inventoryTaxBaseForm?.addEventListener("submit", (event) => submitInventoryCatalog(event, "tax-bases", { name: inventoryTaxBaseNameInput, internalId: inventoryTaxBaseInternalIdInput, rate: inventoryTaxBaseRateInput }));
+inventoryHealthyTaxForm?.addEventListener("submit", (event) => submitInventoryCatalog(event, "healthy-taxes", { name: inventoryHealthyTaxNameInput, internalId: inventoryHealthyTaxInternalIdInput, rate: inventoryHealthyTaxRateInput }));
 inventoryCategoryInput?.addEventListener("change", renderInventorySubcategoryOptions);
 inventoryPriceBeforeTaxInput?.addEventListener("input", renderInventorySellingPrice);
 inventoryTaxClassificationInput?.addEventListener("change", renderInventorySellingPrice);
+inventoryHealthyTaxInput?.addEventListener("change", renderInventorySellingPrice);
+inventoryCostPriceInput?.addEventListener("input", renderInventorySellingPrice);
 inventoryCsvImportForm?.addEventListener("submit", importInventoryProductsCsv);
 inventoryImportCsvButton?.addEventListener("click", openInventoryCsvImportModal);
 inventoryCsvImportCloseButton?.addEventListener("click", closeInventoryCsvImportModal);

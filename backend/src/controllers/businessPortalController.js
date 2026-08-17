@@ -247,7 +247,7 @@ const customerAcquisitionSaleSchema = z.object({
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
 
-const inventoryTaxClassificationSchema = z.enum(["EXEMPT", "VAT_0", "VAT_5", "VAT_11", "VAT_19"]);
+const inventoryTaxClassificationSchema = z.enum(["EXEMPT", "EXCLUDED", "VAT_0", "VAT_5", "VAT_8", "VAT_11", "VAT_19"]);
 
 const inventoryProductSchema = z.object({
   internal_id: z.string().trim().min(2).max(100).optional().nullable(),
@@ -262,14 +262,22 @@ const inventoryProductSchema = z.object({
   subcategory_id: z.string().uuid().optional().nullable(),
   subcategory_internal_id: z.string().trim().min(2).max(100).optional().nullable(),
   brand: z.string().trim().max(120).optional().nullable(),
+  brand_id: z.string().uuid().optional().nullable(),
+  brand_internal_id: z.string().trim().min(2).max(100).optional().nullable(),
   unit_price: z.number().min(0).default(0),
   price_before_tax: z.number().min(0).optional(),
   tax_classification: inventoryTaxClassificationSchema.default("EXEMPT"),
+  tax_base_id: z.string().uuid().optional().nullable(),
+  tax_base: z.string().trim().max(120).optional().nullable(),
+  healthy_tax_id: z.string().uuid().optional().nullable(),
+  healthy_tax: z.string().trim().max(120).optional().nullable(),
   cost_price: z.number().min(0).optional().nullable(),
   currency: z.string().trim().max(12).default("COP"),
   stock_quantity: z.number().min(0).default(0),
   min_stock_quantity: z.number().min(0).default(0),
   unit_label: z.string().trim().max(40).default("unidad"),
+  unit_id: z.string().uuid().optional().nullable(),
+  unit_internal_id: z.string().trim().min(2).max(100).optional().nullable(),
   status: z.enum(["ACTIVE", "INACTIVE", "ARCHIVED"]).default("ACTIVE"),
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
@@ -287,6 +295,10 @@ const inventoryCategorySchema = z.object({
 
 const inventorySubcategorySchema = inventoryCategorySchema.extend({
   category_id: z.string().uuid(),
+});
+
+const inventoryReferenceSchema = inventoryCategorySchema.extend({
+  rate: z.number().min(0).max(1).optional(),
 });
 
 const acquisitionChannelSchema = z.object({
@@ -3674,16 +3686,32 @@ function inventorySearchWhere(search, params) {
 function inventoryTaxRate(classification = "EXEMPT") {
   return {
     EXEMPT: 0,
+    EXCLUDED: 0,
     VAT_0: 0,
     VAT_5: 0.05,
+    VAT_8: 0.08,
     VAT_11: 0.11,
     VAT_19: 0.19,
   }[classification] ?? 0;
 }
 
-function inventorySellingPrice(priceBeforeTax, classification = "EXEMPT") {
+function inventorySellingPrice(priceBeforeTax, classification = "EXEMPT", healthyTaxRate = 0) {
   const base = Math.max(0, Number(priceBeforeTax || 0));
-  return Math.round((base * (1 + inventoryTaxRate(classification)) + Number.EPSILON) * 100) / 100;
+  const total = base + (base * inventoryTaxRate(classification)) + (base * Math.max(0, Number(healthyTaxRate || 0)));
+  return Math.round((total + Number.EPSILON) * 100) / 100;
+}
+
+function inventoryEconomics(payload) {
+  const base = Math.max(0, Number(payload.price_before_tax || 0));
+  const cost = Math.max(0, Number(payload.cost_price || 0));
+  const taxBaseAmount = Math.round((base * inventoryTaxRate(payload.tax_classification) + Number.EPSILON) * 100) / 100;
+  const healthyTaxAmount = Math.round((base * Math.max(0, Number(payload.healthy_tax_rate || 0)) + Number.EPSILON) * 100) / 100;
+  return {
+    tax_base_amount: taxBaseAmount,
+    healthy_tax_amount: healthyTaxAmount,
+    utility_amount: Math.round((base - cost + Number.EPSILON) * 100) / 100,
+    margin_percent: base > 0 ? Math.round((((base - cost) / base) * 100 + Number.EPSILON) * 100) / 100 : 0,
+  };
 }
 
 async function ensureInventoryProductUnique(client, businessId, payload, excludeId = null) {
@@ -3724,14 +3752,23 @@ function mapInventoryPayload(body, userId) {
     subcategory_id: body.subcategory_id || null,
     subcategory_internal_id: body.subcategory_internal_id || null,
     brand: body.brand || null,
+    brand_id: body.brand_id || null,
+    brand_internal_id: body.brand_internal_id || null,
     price_before_tax: priceBeforeTax,
     tax_classification: taxClassification,
-    unit_price: inventorySellingPrice(priceBeforeTax, taxClassification),
+    tax_base_id: body.tax_base_id || null,
+    tax_base: body.tax_base || null,
+    healthy_tax_id: body.healthy_tax_id || null,
+    healthy_tax: body.healthy_tax || null,
+    healthy_tax_rate: 0,
+    unit_price: inventorySellingPrice(priceBeforeTax, taxClassification, 0),
     cost_price: body.cost_price === null || body.cost_price === undefined ? null : Number(body.cost_price || 0),
     currency: body.currency || "COP",
     stock_quantity: Number(body.stock_quantity || 0),
     min_stock_quantity: Number(body.min_stock_quantity || 0),
     unit_label: body.unit_label || "unidad",
+    unit_id: body.unit_id || null,
+    unit_internal_id: body.unit_internal_id || null,
     status: body.status || "ACTIVE",
     metadata: body.metadata || {},
     created_by_user_id: userId || null,
@@ -3753,6 +3790,14 @@ async function listInventoryProducts(req, res, next) {
               category.internal_id as category_internal_id,
               subcategory.name as subcategory_name,
               subcategory.internal_id as subcategory_internal_id,
+              brand_reference.name as brand_name,
+              unit_reference.name as unit_name,
+              tax_base.name as tax_base_name,
+              tax_base.rate as tax_base_rate,
+              healthy_tax.name as healthy_tax_name,
+              healthy_tax.rate as healthy_tax_rate,
+              round((coalesce(product.price_before_tax, 0) - coalesce(product.cost_price, 0))::numeric, 2) as utility_amount,
+              case when coalesce(product.price_before_tax, 0) > 0 then round((((product.price_before_tax - coalesce(product.cost_price, 0)) / product.price_before_tax) * 100)::numeric, 2) else 0 end as margin_percent,
               (product.stock_quantity <= product.min_stock_quantity) as low_stock,
               exists (
                 select 1
@@ -3770,6 +3815,10 @@ async function listInventoryProducts(req, res, next) {
        from business_inventory_products product
        left join business_product_categories category on category.id = product.category_id
        left join business_product_subcategories subcategory on subcategory.id = product.subcategory_id
+       left join business_product_brands brand_reference on brand_reference.id = product.brand_id
+       left join business_product_units unit_reference on unit_reference.id = product.unit_id
+       left join business_product_tax_bases tax_base on tax_base.id = product.tax_base_id
+       left join business_product_healthy_taxes healthy_tax on healthy_tax.id = product.healthy_tax_id
        where product.business_id = $1
          ${includeArchived ? "" : "and product.status <> 'ARCHIVED'"}
          ${searchWhere}
@@ -3889,10 +3938,10 @@ async function createInventoryProduct(req, res, next) {
       await ensureInventoryProductUnique(client, businessId, payload);
       return client.query(
         `insert into business_inventory_products
-          (business_id, internal_id, sku, barcode, name, description, category, category_id, subcategory_id, brand,
-           unit_price, price_before_tax, tax_classification, cost_price, currency, stock_quantity,
-           min_stock_quantity, unit_label, status, metadata, created_by_user_id)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20::jsonb, $21)
+          (business_id, internal_id, sku, barcode, name, description, category, category_id, subcategory_id, brand, brand_id,
+           unit_price, price_before_tax, tax_classification, tax_base_id, healthy_tax_id, cost_price, currency, stock_quantity,
+           min_stock_quantity, unit_label, unit_id, status, metadata, created_by_user_id)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25)
          returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
         [
           businessId,
@@ -3905,14 +3954,18 @@ async function createInventoryProduct(req, res, next) {
           payload.category_id,
           payload.subcategory_id,
           payload.brand,
+          payload.brand_id,
           payload.unit_price,
           payload.price_before_tax,
           payload.tax_classification,
+          payload.tax_base_id,
+          payload.healthy_tax_id,
           payload.cost_price,
           payload.currency,
           payload.stock_quantity,
           payload.min_stock_quantity,
           payload.unit_label,
+          payload.unit_id,
           payload.status,
           JSON.stringify(payload.metadata),
           payload.created_by_user_id,
@@ -3992,16 +4045,16 @@ async function importInventoryProductsCsv(req, res, next) {
         }
         const inserted = await client.query(
           `insert into business_inventory_products
-            (business_id, internal_id, sku, barcode, name, description, category, category_id, subcategory_id, brand,
-             unit_price, price_before_tax, tax_classification, cost_price, currency, stock_quantity,
-             min_stock_quantity, unit_label, status, metadata, created_by_user_id)
-           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20::jsonb, $21)
+            (business_id, internal_id, sku, barcode, name, description, category, category_id, subcategory_id, brand, brand_id,
+             unit_price, price_before_tax, tax_classification, tax_base_id, healthy_tax_id, cost_price, currency, stock_quantity,
+             min_stock_quantity, unit_label, unit_id, status, metadata, created_by_user_id)
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25)
            returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
           [
             businessId, payload.internal_id, payload.sku, payload.barcode, payload.name, payload.description,
-            payload.category, payload.category_id, payload.subcategory_id, payload.brand, payload.unit_price,
-            payload.price_before_tax, payload.tax_classification, payload.cost_price, payload.currency,
-            payload.stock_quantity, payload.min_stock_quantity, payload.unit_label, payload.status,
+            payload.category, payload.category_id, payload.subcategory_id, payload.brand, payload.brand_id, payload.unit_price,
+            payload.price_before_tax, payload.tax_classification, payload.tax_base_id, payload.healthy_tax_id, payload.cost_price, payload.currency,
+            payload.stock_quantity, payload.min_stock_quantity, payload.unit_label, payload.unit_id, payload.status,
             JSON.stringify(payload.metadata), payload.created_by_user_id,
           ]
         );
@@ -4049,10 +4102,10 @@ async function updateInventoryProduct(req, res, next) {
       return client.query(
         `update business_inventory_products
          set internal_id = $3, sku = $4, barcode = $5, name = $6, description = $7, category = $8,
-             category_id = $9, subcategory_id = $10, brand = $11, unit_price = $12,
-             price_before_tax = $13, tax_classification = $14, cost_price = $15, currency = $16,
-             stock_quantity = $17, min_stock_quantity = $18, unit_label = $19, status = $20,
-             metadata = $21::jsonb, updated_at = now()
+             category_id = $9, subcategory_id = $10, brand = $11, brand_id = $12, unit_price = $13,
+             price_before_tax = $14, tax_classification = $15, tax_base_id = $16, healthy_tax_id = $17,
+             cost_price = $18, currency = $19, stock_quantity = $20, min_stock_quantity = $21, unit_label = $22,
+             unit_id = $23, status = $24, metadata = $25::jsonb, updated_at = now()
          where id = $1 and business_id = $2
          returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
         [
@@ -4067,14 +4120,18 @@ async function updateInventoryProduct(req, res, next) {
           payload.category_id,
           payload.subcategory_id,
           payload.brand,
+          payload.brand_id,
           payload.unit_price,
           payload.price_before_tax,
           payload.tax_classification,
+          payload.tax_base_id,
+          payload.healthy_tax_id,
           payload.cost_price,
           payload.currency,
           payload.stock_quantity,
           payload.min_stock_quantity,
           payload.unit_label,
+          payload.unit_id,
           payload.status,
           JSON.stringify(payload.metadata),
         ]
@@ -4636,6 +4693,88 @@ async function createInventorySubcategory(req, res, next) {
   }
 }
 
+const inventoryCatalogDefinitions = Object.freeze({
+  brands: { table: "business_product_brands", key: "brand", label: "marca", hasRate: false },
+  units: { table: "business_product_units", key: "unit", label: "unidad de medida", hasRate: false },
+  "tax-bases": { table: "business_product_tax_bases", key: "tax_base", label: "IVA base", hasRate: true },
+  "healthy-taxes": { table: "business_product_healthy_taxes", key: "healthy_tax", label: "impuesto saludable", hasRate: true },
+});
+
+async function ensureInventoryCatalogDefaults(client, businessId) {
+  await client.query(
+    `insert into business_product_units (business_id, internal_id, name)
+     select $1, source.internal_id, source.name from (values ('METRO','Metro'),('KG','Kg'),('LITRO','Litro'),('UNIDAD','Unidad')) source(internal_id, name)
+     on conflict do nothing`, [businessId]
+  );
+  await client.query(
+    `insert into business_product_tax_bases (business_id, internal_id, name, rate)
+     select $1, source.internal_id, source.name, source.rate from (values ('EXENTO_0','Exento/0%',0::numeric),('EXCLUIDO','Excluido',0::numeric),('IVA_5','5%',.05::numeric),('IVA_8','8%',.08::numeric),('IVA_19','19%',.19::numeric)) source(internal_id, name, rate)
+     on conflict do nothing`, [businessId]
+  );
+  await client.query(
+    `insert into business_product_healthy_taxes (business_id, internal_id, name, rate)
+     select $1, source.internal_id, source.name, source.rate from (values ('NO_APLICA','No Aplica',0::numeric),('IMPUESTO_20','20%',.20::numeric)) source(internal_id, name, rate)
+     on conflict do nothing`, [businessId]
+  );
+}
+
+async function listInventoryCatalog(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const definition = inventoryCatalogDefinitions[req.params.catalog];
+    if (!definition) throw badRequest("Catálogo de producto no reconocido.");
+    const result = await withTransaction(async (client) => {
+      await ensureInventoryCatalogDefaults(client, businessId);
+      return client.query(`select id, internal_id, name${definition.hasRate ? ", rate" : ""}, created_at, updated_at from ${definition.table} where business_id = $1 order by name asc`, [businessId]);
+    });
+    res.json({ [definition.key + "s"]: result.rows });
+  } catch (error) { next(error); }
+}
+
+async function createInventoryCatalog(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const definition = inventoryCatalogDefinitions[req.params.catalog];
+    if (!definition) throw badRequest("Catálogo de producto no reconocido.");
+    const body = validate(inventoryReferenceSchema, req.body);
+    if (definition.hasRate && (body.rate === undefined || body.rate === null)) throw badRequest(`Indica el porcentaje de ${definition.label}.`);
+    const result = await query(
+      `insert into ${definition.table} (business_id, internal_id, name${definition.hasRate ? ", rate" : ""}, created_by_user_id)
+       values ($1, $2, $3${definition.hasRate ? ", $4" : ""}, $${definition.hasRate ? 5 : 4}) returning *`,
+      definition.hasRate ? [businessId, body.internal_id, body.name, body.rate, req.user.id] : [businessId, body.internal_id, body.name, req.user.id]
+    );
+    res.status(201).json({ [definition.key]: result.rows[0] });
+  } catch (error) { next(error); }
+}
+
+const inventoryReferenceTables = Object.freeze({
+  brand: { table: "business_product_brands", id: "brand_id", name: "brand", internal: "brand_internal_id", hasRate: false },
+  unit: { table: "business_product_units", id: "unit_id", name: "unit_label", internal: "unit_internal_id", hasRate: false },
+  taxBase: { table: "business_product_tax_bases", id: "tax_base_id", name: "tax_base", internal: "tax_base", hasRate: true },
+  healthyTax: { table: "business_product_healthy_taxes", id: "healthy_tax_id", name: "healthy_tax", internal: "healthy_tax", hasRate: true },
+});
+
+async function resolveInventoryReference(client, businessId, payload, kind) {
+  const config = inventoryReferenceTables[kind];
+  const id = payload[config.id] || null;
+  const lookup = id ? null : (payload[config.internal] || payload[config.name] || null);
+  if (!id && !lookup) return null;
+  const result = await client.query(
+    `select id, internal_id, name, ${config.hasRate ? "coalesce(rate, 0)::numeric" : "0::numeric"} as rate
+       from ${config.table}
+      where business_id = $1
+        and ($2::uuid is null or id = $2)
+        and ($3::text is null or lower(internal_id) = lower($3) or lower(name) = lower($3))
+      order by case when id = $2 then 0 when lower(internal_id) = lower($3) then 1 else 2 end
+      limit 1`,
+    [businessId, id, lookup]
+  );
+  if (!result.rowCount) throw badRequest(`La referencia de ${kind === "taxBase" ? "IVA base" : kind === "healthyTax" ? "impuesto saludable" : kind === "unit" ? "unidad de medida" : "marca"} no existe en este negocio.`);
+  return result.rows[0];
+}
+
 async function resolveInventoryTaxonomy(client, businessId, payload, options = {}) {
   let categoryId = payload.category_id || null;
   if (!categoryId && payload.category_internal_id) {
@@ -4730,11 +4869,30 @@ async function resolveInventoryTaxonomy(client, businessId, payload, options = {
       throw badRequest("La subcategoría debe pertenecer a la categoría elegida.");
     }
   }
-  return {
+  const [brand, unit, taxBase, healthyTax] = await Promise.all([
+    resolveInventoryReference(client, businessId, payload, "brand"),
+    resolveInventoryReference(client, businessId, payload, "unit"),
+    resolveInventoryReference(client, businessId, payload, "taxBase"),
+    resolveInventoryReference(client, businessId, payload, "healthyTax"),
+  ]);
+  const taxClassificationByRate = taxBase
+    ? (Number(taxBase.rate || 0) === 0 ? (String(taxBase.name).toLowerCase().includes("excl") ? "EXCLUDED" : "EXEMPT") : `VAT_${Math.round(Number(taxBase.rate) * 100)}`)
+    : payload.tax_classification;
+  const resolved = {
     category_id: category?.id || null,
     category: category?.name || payload.category || null,
     subcategory_id: subcategory?.id || null,
+    brand_id: brand?.id || null,
+    brand: brand?.name || payload.brand || null,
+    unit_id: unit?.id || null,
+    unit_label: unit?.name || payload.unit_label || "Unidad",
+    tax_base_id: taxBase?.id || null,
+    tax_classification: taxClassificationByRate || "EXEMPT",
+    healthy_tax_id: healthyTax?.id || null,
+    healthy_tax_rate: Number(healthyTax?.rate || 0),
   };
+  resolved.unit_price = inventorySellingPrice(payload.price_before_tax, resolved.tax_classification, resolved.healthy_tax_rate);
+  return resolved;
 }
 
 async function findExistingBusinessContact(client, businessId, contact = {}) {
@@ -6365,6 +6523,8 @@ module.exports = {
   createInventoryCategory,
   listInventorySubcategories,
   createInventorySubcategory,
+  listInventoryCatalog,
+  createInventoryCatalog,
   createInventoryProduct,
   importInventoryProductsCsv,
   getInventoryProductInsights,

@@ -58,6 +58,8 @@ const {
   createInventoryCategory,
   listInventorySubcategories,
   createInventorySubcategory,
+  listInventoryCatalog,
+  createInventoryCatalog,
   createInventoryProduct,
   importInventoryProductsCsv,
   getInventoryProductInsights,
@@ -319,6 +321,8 @@ router.get("/inventory/categories", standardBusinessCache, listInventoryCategori
 router.post("/inventory/categories", createInventoryCategory);
 router.get("/inventory/subcategories", standardBusinessCache, listInventorySubcategories);
 router.post("/inventory/subcategories", createInventorySubcategory);
+router.get("/inventory/catalog/:catalog(brands|units|tax-bases|healthy-taxes)", standardBusinessCache, listInventoryCatalog);
+router.post("/inventory/catalog/:catalog(brands|units|tax-bases|healthy-taxes)", createInventoryCatalog);
 router.get("/inventory/products", standardBusinessCache, listInventoryProducts);
 router.post("/inventory/products", createInventoryProduct);
 router.post("/inventory/products/import-csv", importInventoryProductsCsv);
