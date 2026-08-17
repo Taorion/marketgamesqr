@@ -1281,6 +1281,8 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
         category: selectedProduct?.category || "",
         unit_price: product.product_price_snapshot,
         currency: product.product_currency_snapshot,
+        quantity: Math.max(1, Number(selectedProduct?.quantity || 1)),
+        line_total: moneyNumber(product.product_price_snapshot) * Math.max(1, Number(selectedProduct?.quantity || 1)),
       });
     }
     if (isClassificationWrite && !snapshots.length && metadata.classification_source !== "manual_clear") {

@@ -2719,6 +2719,7 @@ let state = {
   inventoryTaxonomyLoading: null,
   inventoryLoaded: false,
   inventoryLoading: null,
+  inventoryLoadingScope: "",
   inventoryLoadError: "",
   inventorySearch: "",
   inventoryQuickFilter: "all",
@@ -3868,6 +3869,7 @@ function resetBusinessScopedState(options = {}) {
   state.inventoryProducts = [];
   state.inventoryLoaded = false;
   state.inventoryLoading = null;
+  state.inventoryLoadingScope = "";
   state.inventoryLoadError = "";
   state.inventorySearch = "";
   state.inventoryQuickFilter = "all";
@@ -22298,12 +22300,19 @@ function renderInventoryTaxonomyList() {
 
 async function loadInventoryProducts(options = {}) {
   if (state.inventoryLoaded && !options.force) return state.inventoryProducts;
-  if (state.inventoryLoading && !options.force) return state.inventoryLoading;
+  const scopeKey = businessScopeKey();
+  // Una carga iniciada para otra sesión no puede bloquear el catálogo de la
+  // empresa actual. Sin este corte, Asignación podía quedar en “Cargando el
+  // catálogo” después de entrar al portal o cambiar de empresa.
+  if (state.inventoryLoading && !options.force && state.inventoryLoadingScope === scopeKey) return state.inventoryLoading;
+  if (state.inventoryLoading && state.inventoryLoadingScope !== scopeKey) {
+    state.inventoryLoading = null;
+    state.inventoryLoadingScope = "";
+  }
   if (!options.quiet && inventoryTable) {
     inventoryTable.innerHTML = '<tr><td colspan="7">Cargando productos...</td></tr>';
   }
   state.inventoryLoadError = "";
-  const scopeKey = businessScopeKey();
   const request = (async () => {
     try {
       const data = await api("/api/business/inventory/products?limit=500", { headers: authHeaders(), planGate: false });
@@ -22316,8 +22325,11 @@ async function loadInventoryProducts(options = {}) {
     } finally {
       if (isCurrentBusinessScope(scopeKey)) {
         state.inventoryLoaded = true;
-        state.inventoryLoading = null;
         renderInventoryProductOptions();
+      }
+      if (state.inventoryLoading === request) {
+        state.inventoryLoading = null;
+        state.inventoryLoadingScope = "";
       }
     }
     if (isCurrentBusinessScope(scopeKey)) {
@@ -22326,6 +22338,7 @@ async function loadInventoryProducts(options = {}) {
     return state.inventoryProducts;
   })();
   state.inventoryLoading = request;
+  state.inventoryLoadingScope = scopeKey;
   return request;
 }
 
@@ -48615,9 +48628,15 @@ function rmsClassificationDraftFromDom(item = {}) {
   const quantityInputs = Array.from(document.querySelectorAll("[data-rms-product-quantity]")).filter((node) => node.dataset.rmsProductQuantity === item.id);
   const searchInput = Array.from(document.querySelectorAll("[data-rms-product-search]")).find((node) => node.dataset.rmsProductSearch === item.id);
   const openInput = Array.from(document.querySelectorAll("[data-rms-product-open]")).find((node) => node.dataset.rmsProductOpen === item.id);
-  const selectedValues = optionInputs.length
-    ? optionInputs.filter((input) => input.checked).map((input) => input.value).filter((value) => Boolean(findInventoryProduct(value)))
-    : rmsClassifiedProductValues(item);
+  // El desplegable solo renderiza las coincidencias visibles. Partir del
+  // estado completo evita que buscar un segundo producto borre el primero al
+  // guardar la asignación.
+  const selected = new Set(rmsClassifiedProductValues(item));
+  optionInputs.forEach((input) => {
+    if (input.checked) selected.add(input.value);
+    else selected.delete(input.value);
+  });
+  const selectedValues = Array.from(selected).filter((value) => Boolean(findInventoryProduct(value)));
   const quantities = { ...(rmsClassifiedProductDraft(item)?.product_quantities || {}) };
   quantityInputs.forEach((input) => {
     const value = input.dataset.rmsProductQuantityValue || "";
@@ -53629,7 +53648,7 @@ inventoryProductModalCloseButton?.addEventListener("click", closeInventoryProduc
 inventoryProductModal?.addEventListener("click", (event) => {
   if (event.target === inventoryProductModal) closeInventoryProductModal();
 });
-inventoryTaxonomyButton?.addEventListener("click", () => openInventoryTaxonomyModal().catch((error) => showFeedback(error.message, "error", { title: "Categorías" })));
+inventoryTaxonomyButton?.addEventListener("click", () => openInventoryTaxonomyModal().catch((error) => showFeedback(error.message, "error", { title: "Datos maestros" })));
 inventoryTaxonomyCloseButton?.addEventListener("click", closeInventoryTaxonomyModal);
 inventoryTaxonomyModal?.addEventListener("click", (event) => {
   if (event.target === inventoryTaxonomyModal) closeInventoryTaxonomyModal();

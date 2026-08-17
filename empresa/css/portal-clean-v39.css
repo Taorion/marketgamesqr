@@ -9843,6 +9843,8 @@ html body #actionFeedback:empty {
 html body #inventoryTaxonomyModal {
   align-items: center !important;
   padding: clamp(12px, 2vh, 24px) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
 }
 
 html body #inventoryTaxonomyModal .inventory-taxonomy-modal-card {
@@ -9851,6 +9853,30 @@ html body #inventoryTaxonomyModal .inventory-taxonomy-modal-card {
   overflow-y: auto !important;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+}
+
+/* Datos maestros puede contener seis formularios y listados largos. El
+   fondo se desplaza cuando hace falta y la tarjeta conserva todo su contenido
+   accesible, incluso en pantallas bajas. */
+html body #inventoryTaxonomyModal:not(.hidden) {
+  display: flex !important;
+  justify-content: center !important;
+}
+
+html body #inventoryTaxonomyModal .inventory-taxonomy-modal-card {
+  margin: auto !important;
+  padding: clamp(18px, 2.3vw, 28px) !important;
+}
+
+@media (max-height: 760px) {
+  html body #inventoryTaxonomyModal {
+    align-items: flex-start !important;
+  }
+
+  html body #inventoryTaxonomyModal .inventory-taxonomy-modal-card {
+    margin: 0 auto !important;
+    max-height: none !important;
+  }
 }
 
 html body #inventoryTaxonomyModal .inventory-taxonomy-list {
