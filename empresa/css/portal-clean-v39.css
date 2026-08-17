@@ -24311,3 +24311,286 @@ html body .content-shell > .action-feedback:not(.hidden) .action-feedback-dismis
   #rmsStationWorkspace .rms-commercial-station-summary > header { display: grid; }
   #rmsStationWorkspace .rms-commercial-station-summary > header .ghost-button { justify-self: start; }
 }
+
+/* Riesgos de fuga: control visual sereno, una decisión a la vez. */
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item {
+  grid-template-columns: minmax(268px, .72fr) minmax(0, 1.6fr) !important;
+  border-color: #c9ddec !important;
+  border-radius: 22px !important;
+  box-shadow: 0 16px 40px rgba(10, 59, 120, .075) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-work-lead {
+  gap: 16px !important;
+  padding: clamp(22px, 2.4vw, 34px) !important;
+  background:
+    radial-gradient(circle at 14% 8%, rgba(7, 89, 214, .12), transparent 35%),
+    linear-gradient(160deg, #eef7ff 0%, #f9fcff 72%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-work-console {
+  display: grid !important;
+  align-content: start !important;
+  gap: 18px !important;
+  padding: clamp(24px, 2.6vw, 38px) !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-deal-progress {
+  margin: 0 !important;
+  padding: 13px 15px !important;
+  border: 1px solid #d8e7f4 !important;
+  border-radius: 14px !important;
+  background: #f5faff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-console-head {
+  align-items: start !important;
+  padding: 0 0 20px !important;
+  border-bottom: 1px solid #dbe8f2 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-console-head h4 {
+  max-width: 34rem !important;
+  color: #092f70 !important;
+  font-size: clamp(1.18rem, 1.7vw, 1.52rem) !important;
+  line-height: 1.18 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-console-head p {
+  margin: 0 !important;
+  color: #54708f !important;
+  font-size: .9rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-state {
+  flex: 0 0 auto !important;
+  margin-top: 3px !important;
+  padding: 8px 11px !important;
+  border: 1px solid #b7d3e9 !important;
+  border-radius: 999px !important;
+  background: #eaf5ff !important;
+  color: #0b4f91 !important;
+  font-size: .71rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .02em !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-tabs {
+  margin: 0 !important;
+  padding: clamp(16px, 2vw, 23px) !important;
+  border-color: #c9dfef !important;
+  background: linear-gradient(135deg, #eff8ff 0%, #fbfdff 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-tabs > header {
+  align-items: center !important;
+  margin-bottom: 14px !important;
+  padding-bottom: 12px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-tabs [role="tab"] {
+  min-height: 76px !important;
+  padding: 14px 15px !important;
+  border-color: #cddfeb !important;
+  background: rgba(255, 255, 255, .88) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-tabs [role="tab"].is-active {
+  border-color: #0c70c5 !important;
+  background: #e4f4ff !important;
+  box-shadow: inset 3px 0 0 #0759d6, 0 0 0 3px rgba(7, 89, 214, .08) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block {
+  display: grid !important;
+  grid-template-columns: minmax(155px, .34fr) minmax(0, 1fr) !important;
+  align-items: start !important;
+  gap: 16px 24px !important;
+  margin: 0 !important;
+  padding: clamp(18px, 2vw, 25px) !important;
+  border: 1px solid #d7e6f1 !important;
+  border-radius: 17px !important;
+  background: #ffffff !important;
+  box-shadow: 0 7px 18px rgba(10, 59, 120, .035) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block h5 {
+  margin: 1px 0 0 !important;
+  color: #0b3b78 !important;
+  font-size: .82rem !important;
+  line-height: 1.3 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block :is(dl, label, .rms-commercial-note-field) {
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block dl {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block dl > div {
+  min-width: 0 !important;
+  padding: 11px 12px !important;
+  border: 1px solid #e0ecf5 !important;
+  border-radius: 11px !important;
+  background: #f8fbfe !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block dt {
+  color: #53718e !important;
+  font-size: .67rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .04em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block dd {
+  margin: 5px 0 0 !important;
+  color: #143e69 !important;
+  font-size: .82rem !important;
+  font-weight: 700 !important;
+  line-height: 1.38 !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist > div {
+  display: grid !important;
+  grid-template-columns: 27px minmax(0, 1fr) !important;
+  column-gap: 10px !important;
+  align-items: start !important;
+  min-width: 0 !important;
+  padding: 14px !important;
+  border: 1px solid #d5e5f0 !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist > div > .material-symbols-outlined {
+  color: #1769aa !important;
+  font-size: 1.28rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist > div.is-ready {
+  border-color: #b9ddcd !important;
+  background: #f4fcf8 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist > div.is-ready > .material-symbols-outlined {
+  color: #13845a !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist strong,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist small {
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist small {
+  grid-column: 2 !important;
+  margin-top: 3px !important;
+  color: #5c7890 !important;
+  line-height: 1.38 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block:has([data-rms-risk-decision]) {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block:has([data-rms-risk-decision]) h5,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block:has([data-rms-risk-decision]) .rms-commercial-note-field {
+  grid-column: 1 / -1 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-negotiation-route-preview {
+  margin: 0 !important;
+  padding: 14px 16px !important;
+  border: 1px solid #c9dfef !important;
+  border-radius: 14px !important;
+  background: #edf8ff !important;
+  color: #0b4f91 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-action-row {
+  position: sticky !important;
+  bottom: 14px !important;
+  z-index: 3 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  margin: 2px 0 0 !important;
+  padding: 13px 14px 13px 17px !important;
+  border: 1px solid #bdd7eb !important;
+  border-radius: 15px !important;
+  background: rgba(248, 252, 255, .96) !important;
+  box-shadow: 0 12px 26px rgba(10, 59, 120, .12) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-action-row small {
+  max-width: 58ch !important;
+  color: #466783 !important;
+  line-height: 1.4 !important;
+}
+
+@media (max-width: 1120px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-work-lead {
+    border-right: 0 !important;
+    border-bottom: 1px solid #dce8ef !important;
+  }
+}
+
+@media (max-width: 800px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block:has([data-rms-risk-decision]) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-action-row {
+    position: static !important;
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+}
+
+@media (max-width: 580px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item {
+    border-radius: 16px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item :is(.rms-commercial-work-lead, .rms-commercial-work-console) {
+    padding: 18px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-console-head {
+    flex-direction: column !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-tabs [role="tablist"],
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-risk-checklist,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item .rms-commercial-info-block dl {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
