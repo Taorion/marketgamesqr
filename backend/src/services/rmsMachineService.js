@@ -2543,7 +2543,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   if (result.duplicate) {
     const duplicateMovement = item.stage === "cierre" ? await moveRmsLeadPhase(businessId, user, {
       source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
-      to_phase: "postventa", priority: "HIGH", recommended_action: "Elegir y ejecutar una acción de Activación 2",
+      to_phase: "postventa", priority: "HIGH", recommended_action: "Elegir una acción de Valorización Clientes",
       last_operation: "attributed_sale_recovered_from_idempotency", last_material_sent: productName,
       revenue_potential: saleAmount, reason: "Reintento idempotente: la venta canónica ya existía.",
       metadata: { rms_attributed_sale_id: result.sale?.id || null, rms_sale_recorded_at: new Date().toISOString() },
@@ -2556,7 +2556,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     lead_id: item.lead_id || payload.lead_id || null,
     to_phase: "postventa",
     priority: "HIGH",
-    recommended_action: "Elegir y ejecutar una acción de Activación 2",
+    recommended_action: "Elegir una acción de Valorización Clientes",
     last_operation: "attributed_sale_registered",
     last_material_sent: productName,
     revenue_potential: saleAmount,
@@ -2565,11 +2565,12 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   }, RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE);
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
-    event_type: "sale_attributed", event_title: "Venta atribuida e incorporada a Inteligencia",
-    event_description: "La venta queda en Postventa para continuar la relación. Su recorrido comercial y economía se enviaron a Inteligencia RMS para análisis.",
+    event_type: "sale_attributed", event_title: "Venta atribuida enviada a Valorización Clientes",
+    event_description: "La venta pasa a Valorización Clientes para trabajar la relación. Su recorrido comercial y economía también se envían a Inteligencia RMS para análisis.",
     rms_phase: "postventa", metadata: {
       sale_id: result.sale.id,
       movement_id: movement.movement?.id || null,
+      next_operational_station: "postventa",
       quality_control: "revenue_generado_visual",
       intelligence_handoff: {
         status: "READY",

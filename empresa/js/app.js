@@ -44512,8 +44512,8 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
         </div>
         <label class="rms-commercial-note-field"><span>Evidencia y acuerdos de la venta</span><textarea rows="4" data-rms-sale-notes="${escapeHtml(item.id)}" placeholder="Explica condiciones, comprobante, factura, promesas y alertas de postventa.">${escapeHtml(inheritedNotes)}</textarea></label>
         <div class="rms-sale-economics" data-rms-sale-economics="${escapeHtml(item.id)}"></div>
-        <aside class="rms-sale-intelligence-handoff"><span class="material-symbols-outlined" aria-hidden="true">insights</span><div><strong>Inteligencia recibirá este resultado automáticamente</strong><small>Al registrar la venta se envían producto, cantidad, costos, canal y el recorrido comercial. El lead continuará en Postventa para atender recompra, soporte o referidos.</small></div></aside>
-        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">calculate</span>Utilidad neta = pago − costo del producto − beneficio − adquisición. Un segundo clic no duplica esta venta.</small><button class="solid-button compact" type="button" data-rms-save-attributed-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">paid</span>Registrar venta y enviar resultado a Inteligencia</button></div>
+        <aside class="rms-sale-intelligence-handoff"><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><div><strong>Siguiente estación: Valorización Clientes</strong><small>Al registrar la venta, este cliente pasa a Valorización para trabajar referidos, afiliación, puntos, sellos o recompra. Inteligencia RMS recibe el resultado automáticamente para análisis.</small></div></aside>
+        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">calculate</span>Utilidad neta = pago − costo del producto − beneficio − adquisición. Un segundo clic no duplica esta venta.</small><button class="solid-button compact" type="button" data-rms-save-attributed-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Registrar venta y enviar a Valorización</button></div>
           </div>
         </details>
       </section>
@@ -51012,7 +51012,7 @@ async function saveRmsAttributedSale(item, root) {
     ? ` Además, ${result.customer.name || "el comprador"} fue creado automáticamente como contacto cliente.`
     : "";
   showFeedback(
-    `${result?.duplicate ? "Esta venta ya estaba registrada; no se duplicó." : "Venta atribuida registrada con sus costos, utilidad y ROI. El resultado fue enviado a Inteligencia RMS; el lead continúa en Postventa."}${customerFeedback}`,
+    `${result?.duplicate ? "Esta venta ya estaba registrada; no se duplicó." : "Venta atribuida registrada con sus costos, utilidad y ROI. El cliente fue enviado a Valorización Clientes; Inteligencia RMS recibió el resultado para análisis."}${customerFeedback}`,
     "success",
     { title: "Ventas atribuidas" }
   );
