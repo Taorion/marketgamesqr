@@ -4496,10 +4496,15 @@ async function assertManualLeadWriteAccess(businessId) {
 }
 
 async function upsertManualLeadCollectorState(client, businessId, user, lead, options = {}) {
+  const sourceType = ["PLAYER", "MANUAL", "BUYER", "AFFILIATE"].includes(String(lead?.source_type || "").toUpperCase())
+    ? String(lead.source_type).toUpperCase()
+    : "MANUAL";
+  const sourceId = lead?.id;
+  if (!sourceId) throw badRequest("No se pudo identificar el contacto para ingresarlo al Recolector.");
   await client.query(
     `insert into rms_lead_state
        (business_id, source_type, source_id, lead_id, rms_phase, priority, recommended_action, last_operation, last_material_sent, revenue_potential, metadata, created_by, updated_by)
-     values ($1, 'MANUAL', $2, $2, 'recoleccion', $3, $4, $5, $6, 0, $7::jsonb, $8, $8)
+     values ($1, $2, $3, $4, 'recoleccion', $5, $6, $7, $8, 0, $9::jsonb, $10, $10)
      on conflict (business_id, source_type, source_id)
      do update set
        lead_id = excluded.lead_id,
@@ -4513,14 +4518,17 @@ async function upsertManualLeadCollectorState(client, businessId, user, lead, op
        updated_at = now()`,
     [
       businessId,
-      lead.id,
+      sourceType,
+      sourceId,
+      lead.lead_id || sourceId,
       lead.priority || options.priority || "MEDIUM",
       options.recommended_action || "Revisar lead ingresado al Recolector RMS",
       options.last_operation || null,
       options.last_material_sent || lead.source || "manual",
       JSON.stringify({
         source_module: "rms_machine",
-        source_flow: options.source_flow || "manual_lead_entry",
+        source_flow: options.source_flow || (sourceType === "MANUAL" ? "manual_lead_entry" : "collector_contact_reuse"),
+        source_type: sourceType,
         collector_type: options.collector_type || lead.source || "manual",
         customer_source: lead.source || "Manual",
         source_detail: lead.source_detail || null,
@@ -4802,6 +4810,12 @@ async function createManualLead(req, res, next) {
           attempted_name: body.name || null,
           interest: body.interest || null,
           source_detail: body.source_detail || null,
+        });
+        await upsertManualLeadCollectorState(client, businessId, req.user, existing, {
+          source_flow: "collector_existing_contact",
+          recommended_action: body.preferred_channel ? `Contactar por ${body.preferred_channel}` : "Revisar contacto ingresado al Recolector RMS",
+          last_material_sent: body.source || "Manual",
+          priority: body.priority || "MEDIUM",
         });
         return { lead: existing, existed: true };
       }

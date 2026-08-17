@@ -22859,11 +22859,23 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-product-classifier
 }
 html body[data-current-view="rms-machine"] .portal-shell .rms-product-assignment-results[hidden] { display:none !important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-product-assignment-results > strong {
+  display:flex !important;
+  align-items:baseline !important;
+  justify-content:space-between !important;
+  gap:10px !important;
   color:#173f70 !important;
   font-size:.78rem !important;
   font-weight:800 !important;
 }
+html body[data-current-view="rms-machine"] .portal-shell .rms-product-assignment-results > strong > small {
+  color:#69839a !important;
+  font-size:.7rem !important;
+  font-weight:700 !important;
+  white-space:nowrap !important;
+}
 html body[data-current-view="rms-machine"] .portal-shell .rms-product-assignment-results {
+  position:relative !important;
+  z-index:3 !important;
   gap:8px !important;
   margin-top:-8px !important;
   padding:11px !important;
@@ -23102,6 +23114,13 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-product-assignment
 html body[data-current-view="rms-machine"] .portal-shell label.rms-product-assignment-search {
   display:grid !important; grid-template-columns:20px minmax(0,1fr) !important; align-items:center !important; gap:9px !important;
   min-width:0 !important; padding:10px 12px !important; border:1px solid #bdd9ec !important; border-radius:11px !important; background:#fff !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell label.rms-product-assignment-search.is-open {
+  position:relative !important;
+  z-index:4 !important;
+  border-color:#0b63b6 !important;
+  border-radius:11px 11px 0 0 !important;
+  box-shadow:0 8px 18px rgba(11,97,181,.08) !important;
 }
 html body[data-current-view="rms-machine"] .portal-shell .rms-product-assignment-search .material-symbols-outlined { color:#0b61b5 !important; font-size:20px !important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-product-assignment-search input { min-width:0 !important; width:100% !important; border:0 !important; outline:0 !important; background:transparent !important; color:#0d3f78 !important; }
