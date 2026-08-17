@@ -36,6 +36,18 @@ const { errorHandler } = require("./middleware/errorHandler");
 const packageJson = require("../../package.json");
 
 const app = express();
+const legacyPublicHosts = new Set(["marketgamesqr.com", "www.marketgamesqr.com"]);
+
+app.use((req, res, next) => {
+  const host = String(req.hostname || "").trim().toLowerCase();
+  const isSafePublicRequest = req.method === "GET" || req.method === "HEAD";
+
+  if (!isSafePublicRequest || !legacyPublicHosts.has(host) || req.path.startsWith("/api/")) {
+    return next();
+  }
+
+  return res.redirect(308, `https://gosqori.com${req.originalUrl || "/"}`);
+});
 const projectRoot = path.join(__dirname, "../..");
 const qoriWebRoot = path.join(projectRoot, "qori-web");
 const staticOptions = { setHeaders: setUtf8StaticHeaders };
