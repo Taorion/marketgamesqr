@@ -815,3 +815,133 @@ html body[data-current-view="communications"] .portal-shell .communication-send-
     text-align: left;
   }
 }
+
+/* Progreso de guardado dentro del compositor: responde cerca del CTA y hace
+   visible cada etapa sin bloquear la lectura del formulario. */
+#communicationComposerModal .communication-composer-feedback {
+  display: none;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-width: min(100%, 360px);
+  margin: 0 !important;
+  padding: 8px 10px;
+  border: 1px solid rgba(8, 116, 207, .16);
+  border-radius: 11px;
+  background: #f3faff;
+  color: #07558d;
+  font-size: .76rem;
+  line-height: 1.25;
+}
+
+#communicationComposerModal .communication-composer-feedback.is-visible {
+  display: grid !important;
+}
+
+#communicationComposerModal .communication-composer-feedback::after {
+  content: "";
+  grid-column: 1 / -1;
+  width: var(--communication-save-progress, 0%);
+  height: 3px;
+  margin-top: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0759d6, #08aee0);
+  transition: width .24s ease;
+}
+
+#communicationComposerModal .communication-composer-feedback > .material-symbols-outlined {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 8px;
+  background: #e1f3ff;
+  color: #0767b8;
+  font-size: 16px;
+}
+
+#communicationComposerModal .communication-composer-feedback.is-progress > .material-symbols-outlined {
+  animation: qori-composer-progress-spin 1.15s linear infinite;
+}
+
+#communicationComposerModal .communication-composer-feedback-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+#communicationComposerModal .communication-composer-feedback strong {
+  color: currentColor;
+  font-size: .77rem;
+  font-weight: 850;
+}
+
+#communicationComposerModal .communication-composer-feedback small {
+  overflow: hidden;
+  color: currentColor;
+  font-size: .7rem;
+  opacity: .78;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#communicationComposerModal .communication-composer-feedback b {
+  min-width: 28px;
+  color: #0759d6;
+  font-size: .72rem;
+  text-align: right;
+}
+
+#communicationComposerModal .communication-composer-feedback.is-success {
+  border-color: rgba(8, 116, 93, .2);
+  background: #effbf6;
+  color: #08705a;
+}
+
+#communicationComposerModal .communication-composer-feedback.is-success > .material-symbols-outlined {
+  background: #dff7ec;
+  color: #08705a;
+}
+
+#communicationComposerModal .communication-composer-feedback.is-success::after {
+  background: #10a579;
+}
+
+#communicationComposerModal .communication-composer-feedback.is-error {
+  grid-template-columns: 28px minmax(0, 1fr);
+  border-color: rgba(180, 55, 73, .22);
+  background: #fff7f8;
+  color: #a12d43;
+}
+
+#communicationComposerModal .communication-composer-feedback.is-error > .material-symbols-outlined {
+  background: #ffe4e9;
+  color: #ad3148;
+}
+
+#communicationComposerModal .communication-composer-feedback.is-error::after {
+  background: #d85468;
+}
+
+#communicationComposerModal .communication-composer-form[data-communication-saving="true"] .communication-composer-scroll {
+  cursor: progress;
+}
+
+#communicationComposerModal .communication-composer-form[data-communication-saving="true"] .modal-button-row > button[type="submit"] {
+  opacity: .7;
+}
+
+@keyframes qori-composer-progress-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 760px) {
+  #communicationComposerModal .modal-actions {
+    gap: 10px !important;
+  }
+
+  #communicationComposerModal .communication-composer-feedback {
+    width: 100%;
+    min-width: 0;
+  }
+}

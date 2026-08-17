@@ -635,9 +635,33 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     });
   }
 
+  function setComposerSaveFeedback({ state: feedbackState = "progress", step = 1, total = 3, title = "Guardando", detail = "No cierres esta ventana mientras terminamos." } = {}) {
+    const message = document.getElementById("communicationComposerMessage");
+    if (!message) return;
+    const isError = feedbackState === "error";
+    const isSuccess = feedbackState === "success";
+    const icon = isError ? "error" : isSuccess ? "check_circle" : "sync";
+    message.className = `error-line communication-composer-feedback is-visible is-${feedbackState}`;
+    message.dataset.state = feedbackState;
+    message.style.setProperty("--communication-save-progress", `${Math.round((Math.max(0, Math.min(step, total)) / Math.max(1, total)) * 100)}%`);
+    message.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${icon}</span><span class="communication-composer-feedback-copy"><strong>${esc(title)}</strong><small>${esc(detail)}</small></span>${isError ? "" : `<b>${step}/${total}</b>`}`;
+  }
+
+  function setComposerSaveBusy(form, isBusy, submitter) {
+    if (!form) return;
+    form.dataset.communicationSaving = isBusy ? "true" : "false";
+    form.querySelectorAll('button[type="submit"]').forEach((button) => {
+      if (!button.dataset.communicationIdleLabel) button.dataset.communicationIdleLabel = button.textContent.trim();
+      button.disabled = isBusy;
+      if (isBusy && button === submitter) button.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">progress_activity</span> Guardando…';
+      if (!isBusy) button.textContent = button.dataset.communicationIdleLabel;
+    });
+  }
+
   async function save(event) {
     event.preventDefault();
     const form = event.currentTarget;
+    if (form?.dataset.communicationSaving === "true") return;
     const message = document.getElementById("communicationComposerMessage");
     const url = form.querySelector("#communicationImageInput")?.value.trim() || "";
     const assets = uploadedMedia();
@@ -647,10 +671,10 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     const whatsAppTemplate = whatsAppTemplateSelection();
     const promotionEnabled = Boolean(form.querySelector("#communicationProductPromotionEnabledInput")?.checked);
     const recipients = selectedRecipients(type === "WHATSAPP" ? "whatsapp" : "email");
-    if (action === "SEND" && !recipients.length) { message.textContent = "Selecciona al menos un contacto antes de enviar."; return; }
-    if (action === "SEND" && !document.getElementById("communicationComposerConsentInput")?.checked) { message.textContent = "Confirma el consentimiento antes de enviar."; return; }
-    if (action === "SEND" && type === "WHATSAPP" && !whatsAppTemplate.name) { message.textContent = "Elige una plantilla aprobada de Meta antes de lanzar el lote de WhatsApp."; return; }
-    if (action === "SEND" && type === "WHATSAPP" && whatsAppTemplate.variable_count !== whatsAppTemplate.body_parameters.length) { message.textContent = `La plantilla elegida espera ${whatsAppTemplate.variable_count} variable(s) y escribiste ${whatsAppTemplate.body_parameters.length}. Ajusta una línea por variable.`; return; }
+    if (action === "SEND" && !recipients.length) { setComposerSaveFeedback({ state: "error", title: "Falta audiencia", detail: "Selecciona al menos un contacto antes de enviar." }); return; }
+    if (action === "SEND" && !document.getElementById("communicationComposerConsentInput")?.checked) { setComposerSaveFeedback({ state: "error", title: "Confirma el consentimiento", detail: "Antes de enviar, confirma que la audiencia autorizó el contacto." }); return; }
+    if (action === "SEND" && type === "WHATSAPP" && !whatsAppTemplate.name) { setComposerSaveFeedback({ state: "error", title: "Falta plantilla aprobada", detail: "Elige una plantilla de Meta antes de lanzar el lote de WhatsApp." }); return; }
+    if (action === "SEND" && type === "WHATSAPP" && whatsAppTemplate.variable_count !== whatsAppTemplate.body_parameters.length) { setComposerSaveFeedback({ state: "error", title: "Revisa las variables", detail: `La plantilla espera ${whatsAppTemplate.variable_count} y escribiste ${whatsAppTemplate.body_parameters.length}. Usa una línea por variable.` }); return; }
     const payload = {
       title: form.querySelector("#communicationTitleInput")?.value.trim(), communication_type: form.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL",
       campaign_id: form.querySelector("#communicationCampaignInput")?.value || null, channel_id: form.querySelector("#communicationChannelInput")?.value || null, branch_id: form.querySelector("#communicationBranchInput")?.value || null, activation_id: form.querySelector("#communicationActivationInput")?.value || null, web_showcase_id: form.querySelector("#communicationWebShowcaseInput")?.value || null, web_showcase_product_id: form.querySelector("#communicationWebShowcaseProductInput")?.value || null,
@@ -661,39 +685,48 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     };
     if (promotionEnabled && !payload.web_showcase_product_id) {
       const reason = "Elige el producto específico de la vitrina antes de crear una promoción temporal.";
-      message.textContent = reason;
+      setComposerSaveFeedback({ state: "error", title: "Falta producto", detail: reason });
       showFeedback(reason, "info", { title: "Falta producto" });
       return;
     }
     if (action === "PUBLISH" && (!payload.channel_id || (!payload.activation_id && !payload.web_showcase_id))) {
       const reason = "Para registrar una publicación medida, selecciona el canal y una activación o vitrina web.";
-      message.textContent = reason;
+      setComposerSaveFeedback({ state: "error", title: "Falta conectar la publicación", detail: reason });
       showFeedback(reason, "info", { title: "Falta conectar la publicación" });
       return;
     }
     try {
-      message.textContent = action === "SEND" ? (type === "WHATSAPP" ? "Guardando y enviando el lote a Meta…" : "Guardando y preparando el envío…") : action === "PUBLISH" ? "Guardando y creando el enlace medido…" : "Guardando comunicación…";
+      const totalSteps = action === "DRAFT" ? 3 : 4;
+      const operationLabel = action === "SEND" ? (type === "WHATSAPP" ? "WhatsApp masivo" : "Envío por email") : action === "PUBLISH" ? "Publicación medida" : "Borrador";
+      setComposerSaveBusy(form, true, event.submitter);
+      setComposerSaveFeedback({ step: 1, total: totalSteps, title: `1 de ${totalSteps} · Revisando ${operationLabel.toLowerCase()}`, detail: "Estamos validando los datos antes de guardarlos." });
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
       const editingId = state.editingCommunicationId;
+      setComposerSaveFeedback({ step: 2, total: totalSteps, title: `2 de ${totalSteps} · Guardando ${operationLabel.toLowerCase()}`, detail: "La pieza y sus conexiones comerciales se están registrando." });
       const data = await api(editingId ? `/api/business/communications/${editingId}` : "/api/business/communications", { method: editingId ? "PATCH" : "POST", headers: authHeaders(), body: JSON.stringify(payload) });
       if (action === "SEND" && type === "WHATSAPP") {
-        message.textContent = "Enviando lote de WhatsApp a Meta…";
+        setComposerSaveFeedback({ step: 3, total: totalSteps, title: `3 de ${totalSteps} · Enviando a Meta`, detail: "Meta está recibiendo el lote y Qori registrará cada resultado." });
         const sent = await api(`/api/business/communications/${data.communication.id}/whatsapp/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, template: whatsAppTemplate, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
         const results = sent.results || {};
         const duplicateNote = Number(results.duplicate_phones || 0) ? ` Se omitieron ${results.duplicate_phones} número(s) duplicado(s).` : "";
         showFeedback(`Lote finalizado: ${results.sent || 0} aceptados por Meta, ${results.failed || 0} fallidos y ${results.skipped || 0} omitidos.${duplicateNote}${emailFailureNote(results)}`, Number(results.sent || 0) ? "success" : "error", { title: Number(results.sent || 0) ? "WhatsApp enviado" : "WhatsApp no se envió" });
       } else if (action === "SEND" && type !== "SOCIAL") {
-        message.textContent = "Enviando emails…";
+        setComposerSaveFeedback({ step: 3, total: totalSteps, title: `3 de ${totalSteps} · Enviando emails`, detail: "Estamos entregando la comunicación a la audiencia seleccionada." });
         const sent = await api(`/api/business/communications/${data.communication.id}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
         const sentCount = Number(sent.results?.sent || 0);
         const duplicateNote = Number(sent.results?.duplicate_emails || 0) ? ` Se omitieron ${sent.results.duplicate_emails} contacto${Number(sent.results.duplicate_emails) === 1 ? "" : "s"} con correo duplicado.` : "";
         showFeedback(`Envío finalizado: ${sentCount} enviados, ${sent.results?.failed || 0} fallidos y ${sent.results?.skipped || 0} omitidos.${duplicateNote}${emailFailureNote(sent.results)}`, sentCount ? "success" : "error", { title: sentCount ? "Comunicación enviada" : "No se enviaron correos" });
       }
       if (action === "PUBLISH") {
-        message.textContent = "Registrando la publicación medida…";
+        setComposerSaveFeedback({ step: 3, total: totalSteps, title: `3 de ${totalSteps} · Creando enlace medido`, detail: "La publicación quedará conectada a sus métricas, canal y campaña." });
         await api(`/api/business/communications/${data.communication.id}/publish`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ investment_amount: 0, external_publication_url: "" }) });
       }
+      setComposerSaveFeedback({ step: totalSteps, total: totalSteps, title: `${totalSteps} de ${totalSteps} · Actualizando historial`, detail: "Estamos dejando esta acción visible en tu Centro de Comunicaciones." });
       state.communicationsLoaded = false; await loadCommunications({ force: true }); state.selectedCommunicationId = data.communication?.id || state.selectedCommunicationId;
       if (action === "SEND") state.communicationSelectedRefs = [];
+      setComposerSaveFeedback({ state: "success", step: totalSteps, total: totalSteps, title: "Listo", detail: action === "DRAFT" ? "El borrador quedó guardado y ya aparece en el historial." : "La acción quedó registrada correctamente." });
+      await new Promise((resolve) => window.setTimeout(resolve, 240));
+      setComposerSaveBusy(form, false);
       state.editingCommunicationId = null; composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); render();
       if (action === "PUBLISH") showFeedback("La publicación quedó registrada con enlace medido. Ahora puedes copiarla, descargar imágenes o usar Compartir.", "success", { title: "Publicación medida lista" });
       else if (action !== "SEND") {
@@ -701,7 +734,13 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
         const channelNote = payload.channel_id ? ` También quedó vinculada automáticamente a Publicaciones y esfuerzos${selectedChannel ? ` del canal ${selectedChannel}` : ""}.` : "";
         showFeedback(`${editingId ? "La comunicación quedó actualizada." : "La comunicación quedó guardada. Puedes volver a abrirla para enviar o publicar."}${channelNote}`, "success", { title: editingId ? "Comunicación actualizada" : "Comunicación creada" });
       }
-    } catch (error) { const reason = error.message || "No se pudo guardar la comunicación."; message.textContent = reason; showFeedback(reason, "error", { title: action === "PUBLISH" ? "No se pudo registrar la publicación" : "No se pudo guardar la comunicación" }); }
+    } catch (error) {
+      const reason = error.message || "No se pudo guardar la comunicación.";
+      setComposerSaveFeedback({ state: "error", title: action === "PUBLISH" ? "No se pudo registrar la publicación" : "No se pudo guardar", detail: reason });
+      showFeedback(reason, "error", { title: action === "PUBLISH" ? "No se pudo registrar la publicación" : "No se pudo guardar la comunicación" });
+    } finally {
+      if (composerIsOpen()) setComposerSaveBusy(form, false);
+    }
   }
 
   async function loadWhatsAppDispatchQueue(communicationId) {
