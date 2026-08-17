@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="css/dashboard-open-flow.css?v=20260727-v156">
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159">
   <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=activation-builder-catalog-fix-20260728-v177">
-  <link rel="stylesheet" href="css/communications-flow.css?v=communications-hub-v326-20260817">
+  <link rel="stylesheet" href="css/communications-flow.css?v=email-attachments-v327-20260817">
   <link rel="stylesheet" href="css/revenue-center.css?v=revenue-center-v13-20260814">
   <link rel="stylesheet" href="css/mobile-shell-guard.css?v=20260729-v1">
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
@@ -7775,6 +7775,16 @@
             <input id="communicationMediaAssetsInput" type="hidden" value="[]">
             <div class="communication-media-preview-list" id="communicationMediaPreview" aria-live="polite"></div>
           </section>
+          <section class="communication-composer-section communication-email-attachments-section" id="communicationEmailAttachmentsSection" aria-labelledby="communicationEmailAttachmentsTitle">
+            <div class="communication-composer-section-head"><span class="communication-composer-step">04</span><div><span class="mono-label">Adjuntos de email</span><strong id="communicationEmailAttachmentsTitle">Comparte documentos con tu audiencia</strong><small>Se envían como archivos adjuntos solo por email; no se incluyen en WhatsApp ni en publicaciones.</small></div></div>
+            <label class="communication-email-attachment-upload-control">
+              <input id="communicationEmailAttachmentsUploadInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,application/zip" multiple>
+              <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
+              <span><strong>Adjuntar archivos</strong><small>PDF, Word, Excel, PowerPoint, CSV, TXT o ZIP · hasta 5 archivos y 8 MB en total</small></span>
+            </label>
+            <input id="communicationEmailAttachmentsInput" type="hidden" value="[]">
+            <div class="communication-email-attachment-list" id="communicationEmailAttachmentsPreview" aria-live="polite"></div>
+          </section>
           <section class="communication-composer-section communication-composer-audience" id="communicationComposerAudience" aria-labelledby="communicationComposerAudienceTitle">
             <div class="communication-composer-section-head"><span class="communication-composer-step">04</span><div><span class="mono-label">Audiencia de email</span><strong id="communicationComposerAudienceTitle">Elige quién recibirá esta comunicación</strong><small>Filtra primero y selecciona solo los contactos a los que quieres escribir. Este paso se oculta para una publicación exclusiva de redes.</small></div></div>
             <div class="communication-composer-audience-filters">
@@ -7800,7 +7810,7 @@
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
   <script src="js/app.js?v=attributed-sale-valuation-v92-20260817" defer></script>
-    <script src="js/communications.js?v=composer-progress-v324-20260817" defer></script>
+    <script src="js/communications.js?v=email-attachments-v325-20260817" defer></script>
 </body>
 </html>
 

@@ -767,6 +767,134 @@ html body[data-current-view="communications"] .portal-shell .communication-send-
   }
 }
 
+/* Adjuntos de email: se ven como documentos, no como otra galería de imágenes. */
+#communicationComposerModal .communication-email-attachments-section {
+  background: linear-gradient(135deg, #fbfdff, #f4faff) !important;
+}
+
+#communicationComposerModal .communication-email-attachment-upload-control {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 13px 15px;
+  border: 1px dashed rgba(5, 89, 214, .32);
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0a4f91;
+  cursor: pointer;
+}
+
+#communicationComposerModal .communication-email-attachment-upload-control:hover {
+  border-color: #0b68ca;
+  background: #f2f9ff;
+}
+
+#communicationComposerModal .communication-email-attachment-upload-control input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+#communicationComposerModal .communication-email-attachment-upload-control > .material-symbols-outlined {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: #e8f4ff;
+  color: #0759d6;
+}
+
+#communicationComposerModal .communication-email-attachment-upload-control > span:last-child,
+#communicationComposerModal .communication-email-attachment-upload-control > span:last-child strong,
+#communicationComposerModal .communication-email-attachment-upload-control > span:last-child small {
+  display: grid;
+  min-width: 0;
+}
+
+#communicationComposerModal .communication-email-attachment-upload-control strong {
+  color: #082f6b;
+  font-size: .86rem;
+}
+
+#communicationComposerModal .communication-email-attachment-upload-control small {
+  margin-top: 2px;
+  color: #58718c;
+  font-size: .74rem;
+  line-height: 1.35;
+}
+
+#communicationComposerModal .communication-email-attachment-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+#communicationComposerModal .communication-email-attachment-item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border: 1px solid rgba(49, 110, 166, .14);
+  border-radius: 11px;
+  background: #fff;
+}
+
+#communicationComposerModal .communication-email-attachment-item > .material-symbols-outlined {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 9px;
+  background: #edf6ff;
+  color: #0a64ba;
+  font-size: 18px;
+}
+
+#communicationComposerModal .communication-email-attachment-item > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+#communicationComposerModal .communication-email-attachment-item strong,
+#communicationComposerModal .communication-email-attachment-item small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#communicationComposerModal .communication-email-attachment-item strong { color: #123c71; font-size: .78rem; }
+#communicationComposerModal .communication-email-attachment-item small { color: #71859a; font-size: .68rem; }
+#communicationComposerModal .communication-email-attachment-item .icon-button { width: 30px; height: 30px; }
+
+#communicationComposerModal .communication-email-attachment-summary {
+  padding-left: 2px;
+  color: #54728f;
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+#communicationComposerModal .communication-email-attachment-empty {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 2px 0;
+  color: #72889e;
+  font-size: .76rem;
+}
+
+@media (max-width: 540px) {
+  #communicationComposerModal .communication-email-attachment-upload-control { padding: 12px; }
+  #communicationComposerModal .communication-email-attachment-upload-control small { white-space: normal; }
+}
+
 @media (max-width: 540px) {
   html body[data-current-view="communications"] .portal-shell .communication-history-overview,
   html body[data-current-view="communications"] .portal-shell .communication-audience-filters {

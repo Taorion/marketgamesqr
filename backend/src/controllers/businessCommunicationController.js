@@ -17,6 +17,28 @@ const mediaAssetSchema = z.object({
   type: z.enum(["image/png", "image/jpeg", "image/webp", "image/gif"]).optional(),
   size: z.number().int().positive().max(3 * 1024 * 1024).optional(),
 });
+const emailAttachmentDataUrl = z.string().regex(
+  /^data:(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|vnd\.ms-(excel|powerpoint)|zip|x-zip-compressed)|text\/(plain|csv));base64,[a-z0-9+/=\s]+$/i,
+  "El archivo adjunto no tiene un formato permitido.",
+).max(11_200_000, "Los adjuntos del email pueden pesar hasta 8 MB en total.");
+const emailAttachmentSchema = z.object({
+  source: emailAttachmentDataUrl,
+  name: z.string().trim().min(1).max(180),
+  type: z.enum([
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/zip",
+    "application/x-zip-compressed",
+    "text/plain",
+    "text/csv",
+  ]),
+  size: z.number().int().positive().max(8 * 1024 * 1024),
+});
 const communicationFieldsSchema = z.object({
   title: z.string().trim().min(3).max(180),
   communication_type: z.enum(["EMAIL", "SOCIAL", "MIXED", "WHATSAPP"]).default("EMAIL"),
@@ -45,9 +67,17 @@ const communicationFieldsSchema = z.object({
 
 function validateCommunicationMedia(body, ctx) {
   const media = body.metadata?.media_assets;
-  if (media === undefined) return;
-  const parsed = z.array(mediaAssetSchema).max(3, "Puedes adjuntar hasta 3 imágenes por comunicación.").safeParse(media);
-  if (!parsed.success) parsed.error.issues.forEach((issue) => ctx.addIssue({ ...issue, path: ["metadata", "media_assets", ...issue.path] }));
+  if (media !== undefined) {
+    const parsed = z.array(mediaAssetSchema).max(3, "Puedes adjuntar hasta 3 imágenes por comunicación.").safeParse(media);
+    if (!parsed.success) parsed.error.issues.forEach((issue) => ctx.addIssue({ ...issue, path: ["metadata", "media_assets", ...issue.path] }));
+  }
+  const attachments = body.metadata?.email_attachments;
+  if (attachments !== undefined) {
+    const parsed = z.array(emailAttachmentSchema).max(5, "Puedes adjuntar hasta 5 archivos por email.").safeParse(attachments);
+    if (!parsed.success) parsed.error.issues.forEach((issue) => ctx.addIssue({ ...issue, path: ["metadata", "email_attachments", ...issue.path] }));
+    const totalSize = Array.isArray(attachments) ? attachments.reduce((sum, attachment) => sum + Number(attachment?.size || 0), 0) : 0;
+    if (totalSize > 8 * 1024 * 1024) ctx.addIssue({ code: "custom", path: ["metadata", "email_attachments"], message: "Los adjuntos del email no pueden superar 8 MB en total." });
+  }
 }
 const communicationSchema = communicationFieldsSchema.superRefine((body, ctx) => {
   validateCommunicationMedia(body, ctx);

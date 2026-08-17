@@ -73,6 +73,19 @@ function normalizeMediaAssets(communication) {
   return unique.slice(0, 3);
 }
 
+function normalizeEmailAttachments(communication) {
+  const saved = Array.isArray(communication?.metadata?.email_attachments) ? communication.metadata.email_attachments : [];
+  const unique = [];
+  const seen = new Set();
+  saved.forEach((asset) => {
+    const source = String(asset?.source || "").trim();
+    if (!source || seen.has(source)) return;
+    seen.add(source);
+    unique.push({ source, name: String(asset?.name || "").trim(), type: String(asset?.type || "").trim() });
+  });
+  return unique.slice(0, 5);
+}
+
 function imageExtension(type = "") {
   return ({ "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif" }[type] || "png");
 }
@@ -86,6 +99,19 @@ function makeEmailAttachments(assets = []) {
     if (match) return { content: match[2].replace(/\s/g, ""), filename, content_id: cid, content_type: match[1] };
     return { path: source, filename, ...(cid ? { content_id: cid } : {}) };
   });
+}
+
+function makeEmailFileAttachments(assets = []) {
+  return assets.map((asset, index) => {
+    const source = String(asset.source || "");
+    const match = source.match(/^data:([^;,]+);base64,([a-z0-9+/=\s]+)$/i);
+    if (!match) return null;
+    return {
+      content: match[2].replace(/\s/g, ""),
+      filename: asset.name || `adjunto-${index + 1}`,
+      content_type: match[1],
+    };
+  }).filter(Boolean);
 }
 
 function buildEmailMarkup({ title, body, hasInlineImage, actionUrl, brandName = "Qori" }) {
@@ -730,7 +756,9 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
     const message = personalize(communication.email_body, contact);
     const actionUrl = communication.metadata?.web_showcase_id ? communication.action_url : emailTrackingUrl || communication.action_url;
     const mediaAssets = normalizeMediaAssets(communication);
-    const attachments = makeEmailAttachments(mediaAssets);
+    const imageAttachments = makeEmailAttachments(mediaAssets);
+    const fileAttachments = makeEmailFileAttachments(normalizeEmailAttachments(communication));
+    const attachments = [...imageAttachments, ...fileAttachments];
     try {
       const provider = await sendBusinessCommunicationEmail({
         apiKey: sender.apiKey,
@@ -739,7 +767,7 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
         replyTo: sender.replyTo,
         subject,
         text: messageWithActionUrl(message, actionUrl),
-        html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(attachments.length), actionUrl, brandName: sender.brandName }),
+        html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(imageAttachments.length), actionUrl, brandName: sender.brandName }),
         attachments,
       });
       await saveRecipient({ businessId, communicationId: id, contact, status: 'SENT', providerMessageId: provider.id, userId });
