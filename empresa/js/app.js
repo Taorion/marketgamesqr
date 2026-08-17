@@ -12779,6 +12779,7 @@ function renderDashboardBuilder() {
     if (description) description.textContent = "Selecciona solo lo que necesitas monitorear. Arrastra las tarjetas o usa las flechas para decidir su orden.";
   }
   const showWidgetLibrary = workspaceTab === "customize";
+  const dashboardLayoutNode = dashboardBuilderShell.querySelector(".dashboard-builder-layout");
   if (widgetLibrary) {
     widgetLibrary.hidden = !showWidgetLibrary;
     widgetLibrary.style.setProperty("display", showWidgetLibrary ? "grid" : "none", "important");
@@ -12786,6 +12787,25 @@ function renderDashboardBuilder() {
   if (dashboardCanvas) {
     dashboardCanvas.hidden = ["summary", "map"].includes(workspaceTab);
     dashboardCanvas.style.setProperty("display", ["summary", "map"].includes(workspaceTab) ? "none" : "grid", "important");
+  }
+  // En Personalizar la biblioteca no puede quedar como una barra lateral junto
+  // a un lienzo vacío: ambos bloques usan todo el ancho, uno debajo del otro.
+  if (showWidgetLibrary) {
+    dashboardLayoutNode?.style.setProperty("grid-template-columns", "minmax(0, 1fr)", "important");
+    widgetLibrary?.style.setProperty("grid-column", "1 / -1", "important");
+    widgetLibrary?.style.setProperty("width", "100%", "important");
+    dashboardCanvas?.style.setProperty("grid-column", "1 / -1", "important");
+    dashboardWidgetLibrary.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", "important");
+    dashboardWidgetLibrary.style.setProperty("max-height", "none", "important");
+    dashboardWidgetLibrary.style.setProperty("overflow", "visible", "important");
+  } else {
+    dashboardLayoutNode?.style.removeProperty("grid-template-columns");
+    widgetLibrary?.style.removeProperty("grid-column");
+    widgetLibrary?.style.removeProperty("width");
+    dashboardCanvas?.style.removeProperty("grid-column");
+    dashboardWidgetLibrary.style.removeProperty("grid-template-columns");
+    dashboardWidgetLibrary.style.removeProperty("max-height");
+    dashboardWidgetLibrary.style.removeProperty("overflow");
   }
   const showRevenueWorkspace = workspaceTab === "summary" || workspaceTab === "map";
   if (revenueWorkspace) {
