@@ -632,7 +632,7 @@ async function findOrCreateCatalogLead(client, catalog, product, body, userId = 
            email = coalesce(nullif($4, ''), email),
            phone = coalesce(nullif($5, ''), phone),
            interest = coalesce(nullif($6, ''), interest),
-           source = 'Catálogo Sales Machine',
+           source = 'Catálogo Qori',
            source_detail = $7,
            metadata = coalesce(metadata, '{}'::jsonb) || $8::jsonb,
            updated_at = now()
@@ -654,7 +654,7 @@ async function findOrCreateCatalogLead(client, catalog, product, body, userId = 
   const created = await client.query(
     `insert into business_manual_leads
       (business_id, created_by_user_id, name, email, phone, source, source_detail, interest, status, priority, notes, metadata)
-     values ($1, $2, $3, $4, $5, 'Catálogo Sales Machine', $6, $7, 'NEW', 'HIGH', $8, $9::jsonb)
+     values ($1, $2, $3, $4, $5, 'Catálogo Qori', $6, $7, 'NEW', 'HIGH', $8, $9::jsonb)
      returning *`,
     [
       catalog.business_id,
@@ -673,13 +673,13 @@ async function findOrCreateCatalogLead(client, catalog, product, body, userId = 
 
 function buildWhatsappMessage(catalog, product, lead, body = {}) {
   const template = product?.whatsapp_message_template || body.whatsapp_message_template || "";
-  const base = template || "Hola, vengo desde Sales Machine. Me interesa ordenar: {product_name}. Mi nombre es {lead_name}. Vi el catálogo: {catalog_title}. Origen: {origin}.";
+  const base = template || "Hola, vengo desde Qori. Me interesa ordenar: {product_name}. Mi nombre es {lead_name}. Vi el catálogo: {catalog_title}. Origen: {origin}.";
   return base
     .replace(/\{product_name\}/g, product?.name || "producto del catalogo")
     .replace(/\{lead_name\}/g, lead?.name || body.customer_name || "cliente interesado")
     .replace(/\{catalog_title\}/g, catalog.title)
     .replace(/\{campaign_name\}/g, body.campaign_name || catalog.metadata?.campaign_name || "catalogo")
-    .replace(/\{origin\}/g, body.source || body.referral_source || "catalogo Sales Machine");
+    .replace(/\{origin\}/g, body.source || body.referral_source || "catalogo Qori");
 }
 
 async function syncIntentWithRms(client, intent, lead, phase = "procesamiento", userId = null) {
@@ -712,7 +712,7 @@ async function syncIntentWithRms(client, intent, lead, phase = "procesamiento", 
       lead.id,
       phase,
       phase === "postventa" ? "Enviar encuesta, garantía o beneficio de recompra" : "Contactar por WhatsApp y cerrar pedido",
-      phase === "revenue_generado" ? "Venta marcada desde Catálogos Sales Machine" : "Intención de pedido detectada desde Catálogos Sales Machine",
+      phase === "revenue_generado" ? "Venta marcada desde Catálogos Qori" : "Intención de pedido detectada desde Catálogos Qori",
       revenuePotential,
       JSON.stringify(meta),
       userId,
@@ -911,7 +911,7 @@ async function markWon(businessId, intentId, body = {}, user) {
     const sale = await client.query(
       `insert into business_sales
         (business_id, campaign_id, customer_name, customer_phone, customer_email, product_name, sale_amount, currency, seller_user_id, acquisition_source, acquisition_channel, notes, metadata)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Catálogos Sales Machine', 'smart_catalog', $10, $11::jsonb)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Catálogos Qori', 'smart_catalog', $10, $11::jsonb)
        returning *`,
       [
         businessId,
@@ -1024,7 +1024,7 @@ async function sendPostSaleTicket(businessId, intentId, body = {}, user) {
     customer_phone: row.lead_phone || row.customer_phone,
     customer_email: row.lead_email || row.customer_email,
     product_name: row.product_name || "Compra desde catalogo",
-    notes: body.notes || "Ticket postventa generado desde Catálogos Sales Machine.",
+    notes: body.notes || "Ticket postventa generado desde Catálogos Qori.",
     expires_mode: body.expires_mode || "30_DAYS",
     expiration_days: Number(body.expiration_days || 30),
     metadata: {
@@ -1033,8 +1033,8 @@ async function sendPostSaleTicket(businessId, intentId, body = {}, user) {
       catalog_id: row.catalog_id,
       product_id: row.product_id,
       ticket_use_case: "smart_catalog_post_sale",
-      ticket_use_case_label: "Postventa Catalogo Sales Machine",
-      attribution_source: "Catálogos Sales Machine",
+      ticket_use_case_label: "Postventa Catalogo Qori",
+      attribution_source: "Catálogos Qori",
       attribution_subject: row.product_name || row.catalog_title,
     },
     benefit: {

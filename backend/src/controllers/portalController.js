@@ -58,7 +58,7 @@ async function createCampaign(req, res, next) {
     const businessId = req.params.id;
     ensureBusinessAccess(req.user, businessId);
     if (!["ADMIN_MARKET_GAMES", "ADMIN"].includes(req.user.role)) {
-      throw forbidden("Only Sales Machine admins can create campaigns.");
+      throw forbidden("Only Qori admins can create campaigns.");
     }
     const body = validate(campaignSchema, req.body);
 

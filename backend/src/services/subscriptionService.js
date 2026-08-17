@@ -183,7 +183,7 @@ const PLAN_CATALOG = {
     billing_period: "temporary",
     portal_value_cop: 0,
     recommended_start_package: "QR200",
-    best_for: "Negocios que compran T200 o mas y activan una campana gamificada disenada por Sales Machine.",
+    best_for: "Negocios que compran T200 o mas y activan una campana gamificada disenada por Qori.",
     access_summary: "Prueba Growth durante 3 meses con dashboard completo, embudo, mas historial y mas capacidad operativa. Al vencer vuelve a Portal Base.",
     pricing_note: "Growth temporal no borra datos al vencer; conserva tickets restantes y restringe funciones premium si no hay suscripcion.",
     included: [
@@ -869,7 +869,7 @@ function internalUnlimitedPlan(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
     ...plan,
     name: plan.code === PLAN_CODES.PRO ? "Enterprise Operado Interno" : plan.name,
     access_summary: isInternalAccount
-      ? "Cuenta interna Sales Machine QR con acceso completo para operar clientes propios sin bloqueos de plan."
+      ? "Cuenta interna Qori con acceso completo para operar clientes propios sin bloqueos de plan."
       : "Convenio premium vitalicio con acceso completo sin bloqueos de plan.",
     features: {
       ...Object.keys(PLAN_CATALOG[PLAN_CODES.PRO].features || {}).reduce((acc, feature) => ({ ...acc, [feature]: true }), {}),
@@ -1237,7 +1237,7 @@ function featurePrompts(plan = {}) {
   return {
     portal_locked: {
       title: "Activa tu Portal RMS",
-      message: "Activa un plan mensual para usar Sales Machine desde el portal privado de tu negocio.",
+      message: "Activa un plan mensual para usar Qori desde el portal privado de tu negocio.",
       cta: "Ver planes",
       url: "/paquetes/",
     },

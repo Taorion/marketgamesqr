@@ -149,7 +149,7 @@ function wrapSvgText(value, maxChars = 40, maxLines = 1) {
 
 function brandedQrTextRows({ businessName, activationTitle, rewardLabel, publicCode }) {
   return [
-    ...wrapSvgText(businessName || "Sales Machine", 34, 1).map((text) => ({ text, size: 30, weight: 900, fill: "#111827" })),
+    ...wrapSvgText(businessName || "Qori", 34, 1).map((text) => ({ text, size: 30, weight: 900, fill: "#111827" })),
     ...wrapSvgText(rewardLabel || "Beneficio desbloqueado", 42, 2).map((text, index) => ({ text, size: index ? 22 : 25, weight: 800, fill: "#111827" })),
     ...wrapSvgText(activationTitle || "Activacion interactiva", 46, 1).map((text) => ({ text, size: 18, weight: 700, fill: "#4b5563" })),
     { text: publicCode || "QR UNICO", size: 18, weight: 900, fill: "#111827" },
@@ -213,7 +213,7 @@ async function buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, rewa
        <rect x="44" y="44" width="992" height="170" rx="42" fill="${escapeSvg(brand.primary)}"/>
        <rect x="44" y="154" width="992" height="120" fill="${escapeSvg(brand.primary)}"/>`}
   ${logo ? `<rect x="410" y="78" width="260" height="118" rx="28" fill="#ffffff" opacity="0.95"/>
-  <image href="${escapeSvg(logo)}" x="430" y="96" width="220" height="82" preserveAspectRatio="xMidYMid meet"/>` : `<text x="${width / 2}" y="146" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="900" fill="#ffffff">Sales Machine</text>`}
+  <image href="${escapeSvg(logo)}" x="430" y="96" width="220" height="82" preserveAspectRatio="xMidYMid meet"/>` : `<text x="${width / 2}" y="146" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="900" fill="#ffffff">Qori</text>`}
   <rect x="${qrX - 34}" y="${qrY - 34}" width="${qrSize + 68}" height="${qrSize + 68}" rx="40" fill="#ffffff"/>
   <rect x="${qrX - 34}" y="${qrY - 34}" width="${qrSize + 68}" height="${qrSize + 68}" rx="40" fill="none" stroke="${escapeSvg(brand.secondary)}" stroke-width="10"/>
   <image href="${qrImage}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}"/>

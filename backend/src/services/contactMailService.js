@@ -111,10 +111,10 @@ async function sendViaSmtp({ subject, text, html, replyTo }) {
 }
 
 function buildContactMessage(body, metadata) {
-  const subject = `Nuevo contacto web - ${body.company || body.name || "Sales Machine"}`;
+  const subject = `Nuevo contacto web - ${body.company || body.name || "Qori"}`;
   const submittedAt = new Date().toISOString();
   const lines = [
-    "Nuevo mensaje desde la home de Sales Machine",
+    "Nuevo mensaje desde la home de Qori",
     "",
     `Nombre: ${body.name}`,
     `Email: ${body.email}`,
@@ -132,7 +132,7 @@ function buildContactMessage(body, metadata) {
   ];
 
   const html = `
-    <h2>Nuevo mensaje desde la home de Sales Machine</h2>
+    <h2>Nuevo mensaje desde la home de Qori</h2>
     <p><strong>Nombre:</strong> ${escapeHtml(body.name)}</p>
     <p><strong>Email:</strong> ${escapeHtml(body.email)}</p>
     <p><strong>Teléfono:</strong> ${escapeHtml(body.phone || "No especificado")}</p>
