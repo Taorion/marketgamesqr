@@ -423,3 +423,395 @@ body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-moda
   [data-view="communications"] .communication-history-item .communication-list-item-meta > .material-symbols-outlined { display: none; }
   [data-view="communications"] .communication-selected-actions { justify-content: flex-start; }
 }
+
+/* Centro de Comunicaciones Qori: composición operativa. Historial, pieza,
+   audiencia y salida se distinguen sin convertir la vista en un muro de cards. */
+html body[data-current-view="communications"] .portal-shell .view-section.active[data-view="communications"] {
+  gap: clamp(24px, 3vw, 40px) !important;
+  padding: clamp(18px, 2.4vw, 34px) clamp(18px, 3vw, 46px) clamp(42px, 5vw, 72px) !important;
+  border: 1px solid rgba(116, 165, 207, .16) !important;
+  border-radius: 26px !important;
+  background:
+    radial-gradient(circle at 96% 2%, rgba(8, 174, 224, .12), transparent 25rem),
+    linear-gradient(180deg, rgba(255, 255, 255, .88), rgba(246, 251, 255, .92)) !important;
+  box-shadow: 0 20px 52px rgba(3, 51, 119, .07) !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-view-head {
+  width: 100% !important;
+  max-width: 1380px !important;
+  min-height: 122px;
+  margin: 0 auto !important;
+  padding: clamp(20px, 2.4vw, 32px) !important;
+  border: 1px solid rgba(3, 65, 179, .14) !important;
+  border-radius: 20px !important;
+  background: linear-gradient(120deg, #ffffff 0%, #f3faff 68%, #e9f7ff 100%) !important;
+  box-shadow: 0 12px 30px rgba(3, 51, 119, .055) !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-view-head h2 {
+  margin-top: 5px !important;
+  color: #062c69 !important;
+  font-size: clamp(1.65rem, 3vw, 2.45rem) !important;
+  letter-spacing: -.045em !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-view-head p {
+  max-width: 66ch !important;
+  color: #58779a !important;
+  line-height: 1.55 !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-workspace {
+  width: 100% !important;
+  max-width: 1380px !important;
+  grid-template-columns: minmax(0, 1.52fr) minmax(300px, .78fr) !important;
+  gap: clamp(18px, 2.3vw, 30px) !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-workspace-intro {
+  grid-column: 1 / -1;
+  align-items: center !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 16px 18px !important;
+  border: 1px solid rgba(12, 126, 193, .14) !important;
+  border-radius: 16px !important;
+  background: rgba(235, 248, 255, .72) !important;
+  color: #537494 !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-workspace-intro .material-symbols-outlined {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #084bab, #08aee0);
+  color: #fff !important;
+  box-shadow: 0 8px 17px rgba(6, 84, 179, .16);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-workspace-intro strong {
+  color: #062c69 !important;
+  font-size: .95rem;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-library {
+  align-self: start;
+  min-width: 0;
+  border: 1px solid rgba(47, 110, 165, .15) !important;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, .9) !important;
+  box-shadow: 0 12px 30px rgba(3, 51, 119, .055) !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-overview {
+  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(82px, auto)) !important;
+  gap: 16px !important;
+  padding: 19px 20px !important;
+  background: linear-gradient(110deg, #f6fbff, #ffffff 72%) !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-bulk {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(47, 110, 165, .12);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-bulk > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-list-item.communication-history-item {
+  grid-template-columns: 36px minmax(0, 1fr) minmax(112px, auto) !important;
+  gap: 12px !important;
+  min-height: 90px;
+  padding: 14px 17px !important;
+  transition: background .18s ease, box-shadow .18s ease, transform .18s ease !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-list-item.communication-history-item:hover,
+html body[data-current-view="communications"] .portal-shell .communication-list-item.communication-history-item.is-selected {
+  padding-inline: 17px !important;
+  background: linear-gradient(90deg, rgba(6, 88, 197, .10), rgba(8, 174, 224, .025) 68%, transparent) !important;
+  box-shadow: inset 3px 0 0 #0787df;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-icon {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 11px !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-copy > strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #082f6e !important;
+  font-size: .93rem !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-item .communication-list-item-meta {
+  min-width: 112px !important;
+  padding-left: 13px !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-item .communication-list-item-meta strong {
+  font-size: 1.12rem !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-selected-summary {
+  position: sticky;
+  top: 18px;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  align-self: start;
+  gap: 16px !important;
+  min-width: 0;
+  margin: 0 !important;
+  padding: 20px !important;
+  border: 1px solid rgba(5, 89, 214, .18) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(145deg, #ffffff, #eef8ff) !important;
+  box-shadow: 0 14px 34px rgba(3, 51, 119, .075) !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-selected-summary > div:first-child {
+  min-width: 0;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-selected-summary p {
+  display: -webkit-box;
+  margin-top: 8px !important;
+  overflow: hidden;
+  color: #5a7898 !important;
+  line-height: 1.5 !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-delivery-metrics {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px !important;
+  margin-top: 15px !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-delivery-metrics > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid rgba(45, 111, 170, .11);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .74);
+  color: #6a86a2;
+  font-size: .72rem;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-delivery-metrics b {
+  overflow: hidden;
+  color: #073c84 !important;
+  font-size: .86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-selected-actions {
+  justify-content: flex-start !important;
+  padding-top: 14px;
+  border-top: 1px solid rgba(47, 110, 165, .12);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-audience-section {
+  width: 100% !important;
+  max-width: 1380px !important;
+  margin: 0 auto !important;
+  padding: clamp(20px, 2.6vw, 30px) !important;
+  border: 1px solid rgba(47, 110, 165, .15) !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, .9) !important;
+  box-shadow: 0 12px 32px rgba(3, 51, 119, .055) !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-section-heading {
+  align-items: center !important;
+  margin-bottom: 18px !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-section-heading h3 {
+  color: #062c69 !important;
+  font-size: clamp(1.2rem, 2vw, 1.55rem) !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-audience-summary {
+  padding: 9px 12px;
+  border: 1px solid rgba(4, 111, 194, .16);
+  border-radius: 999px;
+  background: #edf8ff;
+  color: #0668b5 !important;
+  font-size: .78rem;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-audience-filters {
+  grid-template-columns: minmax(190px, 1.55fr) repeat(4, minmax(116px, .9fr)) auto !important;
+  gap: 11px !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  border: 1px solid rgba(47, 110, 165, .12) !important;
+  border-radius: 15px !important;
+  background: #f7fbff !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-audience-actions {
+  min-height: 54px;
+  margin-top: 12px;
+  padding: 10px 2px !important;
+  border-bottom: 1px solid rgba(47, 110, 165, .11);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-audience-actions > span {
+  margin-left: auto;
+  color: #0a4d94;
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-audience-list {
+  gap: 8px !important;
+  margin-top: 13px;
+  border: 0 !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-contact-row {
+  grid-template-columns: auto 38px minmax(0, 1fr) minmax(150px, .85fr) auto !important;
+  min-height: 64px;
+  padding: 12px 14px !important;
+  border: 1px solid rgba(47, 110, 165, .12) !important;
+  border-radius: 13px !important;
+  background: #fff !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-contact-row:hover,
+html body[data-current-view="communications"] .portal-shell .communication-contact-row.is-selected {
+  padding-inline: 14px !important;
+  border-color: rgba(7, 117, 209, .28) !important;
+  background: linear-gradient(90deg, #f0f9ff, #ffffff) !important;
+  box-shadow: 0 8px 18px rgba(6, 74, 158, .06);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-send-bar {
+  min-height: 92px;
+  margin-top: 20px !important;
+  padding: 16px 18px !important;
+  border: 1px solid rgba(5, 100, 185, .18) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(105deg, #f5fbff, #ffffff 62%, #edf9ff) !important;
+}
+
+@media (max-width: 1180px) {
+  html body[data-current-view="communications"] .portal-shell .communication-workspace {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-selected-summary {
+    position: static;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-audience-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="communications"] .portal-shell .view-section.active[data-view="communications"] {
+    padding: 14px !important;
+    border-radius: 18px !important;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-view-head,
+  html body[data-current-view="communications"] .portal-shell .communication-audience-section {
+    padding: 18px !important;
+    border-radius: 16px !important;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-view-head,
+  html body[data-current-view="communications"] .portal-shell .communication-section-heading {
+    align-items: flex-start !important;
+    flex-direction: column;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-view-head .solid-button {
+    width: 100%;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-audience-filters {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-audience-filters > .solid-button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 540px) {
+  html body[data-current-view="communications"] .portal-shell .communication-history-overview,
+  html body[data-current-view="communications"] .portal-shell .communication-audience-filters {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-overview > div:not(:first-child) {
+    min-width: 0 !important;
+    padding-left: 0 !important;
+    border-left: 0 !important;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-bulk,
+  html body[data-current-view="communications"] .portal-shell .communication-audience-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-audience-actions > span {
+    margin-left: 0;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-contact-row {
+    grid-template-columns: auto 36px minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-contact-delivery,
+  html body[data-current-view="communications"] .portal-shell .communication-contact-metrics {
+    display: none;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-list-item.communication-history-item {
+    grid-template-columns: 34px minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-item .communication-list-item-meta {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    min-width: 0 !important;
+    padding: 8px 0 0 !important;
+    border-top: 1px solid rgba(47, 110, 165, .12);
+    border-left: 0 !important;
+    text-align: left;
+  }
+}
