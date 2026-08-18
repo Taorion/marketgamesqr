@@ -1100,6 +1100,7 @@ const inventoryProductModalCloseButton = document.getElementById("inventoryProdu
 const inventoryCsvImportModal = document.getElementById("inventoryCsvImportModal");
 const inventoryCsvImportForm = document.getElementById("inventoryCsvImportForm");
 const inventoryCsvFileInput = document.getElementById("inventoryCsvFileInput");
+const inventoryCsvCommaModeInput = document.getElementById("inventoryCsvCommaModeInput");
 const inventoryCsvSkipDuplicatesInput = document.getElementById("inventoryCsvSkipDuplicatesInput");
 const inventoryCsvImportMessage = document.getElementById("inventoryCsvImportMessage");
 const inventoryCsvImportSubmitButton = document.getElementById("inventoryCsvImportSubmitButton");
@@ -23205,6 +23206,7 @@ function openInventoryCsvImportModal() {
   if (!inventoryCsvImportModal) return;
   if (inventoryCsvImportModal.parentElement !== document.body) document.body.appendChild(inventoryCsvImportModal);
   inventoryCsvImportForm?.reset();
+  if (inventoryCsvCommaModeInput) inventoryCsvCommaModeInput.value = "THOUSANDS";
   if (inventoryCsvSkipDuplicatesInput) inventoryCsvSkipDuplicatesInput.checked = true;
   setInlineMessage(inventoryCsvImportMessage, "Carga el CSV o descarga primero la plantilla. Se validará antes de guardar.", "info");
   inventoryCsvImportModal.classList.remove("hidden");
@@ -23252,14 +23254,19 @@ function inventoryCsvParse(text = "") {
   return rows;
 }
 
-function inventoryCsvNumber(value, fallback = 0) {
+function inventoryCsvNumber(value, fallback = 0, commaMode = "AUTO") {
   const raw = String(value ?? "").trim().replace(/[^0-9,.-]/g, "");
   if (!raw) return fallback;
-  const normalized = raw.includes(",") && raw.includes(".")
-    ? (raw.lastIndexOf(".") > raw.lastIndexOf(",") ? raw.replace(/,/g, "") : raw.replace(/\./g, "").replace(",", "."))
-    : raw.includes(",")
-      ? raw.replace(",", ".")
-      : (/^-?\d{1,3}(\.\d{3})+$/.test(raw) ? raw.replace(/\./g, "") : raw);
+  const mode = ["THOUSANDS", "DECIMAL", "AUTO"].includes(commaMode) ? commaMode : "AUTO";
+  const normalized = mode === "THOUSANDS"
+    ? raw.replace(/,/g, "")
+    : mode === "DECIMAL"
+      ? (raw.includes(",") ? raw.replace(/\./g, "").replace(/,/g, ".") : raw)
+      : raw.includes(",") && raw.includes(".")
+        ? (raw.lastIndexOf(".") > raw.lastIndexOf(",") ? raw.replace(/,/g, "") : raw.replace(/\./g, "").replace(",", "."))
+        : raw.includes(",")
+          ? raw.replace(",", ".")
+          : (/^-?\d{1,3}(\.\d{3})+$/.test(raw) ? raw.replace(/\./g, "") : raw);
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : fallback;
 }
@@ -23285,7 +23292,8 @@ function inventoryCsvTaxClassification(value = "") {
   return "EXEMPT";
 }
 
-function inventoryProductsFromCsv(text = "") {
+function inventoryProductsFromCsv(text = "", options = {}) {
+  const commaMode = options.commaMode || "AUTO";
   const rows = inventoryCsvParse(text);
   if (rows.length < 2) return [];
   const headers = rows[0].map(normalizeCsvHeader);
@@ -23307,12 +23315,12 @@ function inventoryProductsFromCsv(text = "") {
       tax_base: inventoryCsvOptional(csvCell(record, ["iva_base", "iva", "tax_base", "tax"])),
       healthy_tax: inventoryCsvOptional(csvCell(record, ["impuesto_saludable", "healthy_tax"])),
       tax_classification: inventoryCsvTaxClassification(csvCell(record, ["iva_base", "iva", "tax", "tax_classification"])),
-      price_before_tax: inventoryCsvNumber(csvCell(record, ["precio_base", "precio_antes_iva", "price_before_tax", "precio_venta", "precio", "unit_price", "sale_price"]), 0),
+      price_before_tax: inventoryCsvNumber(csvCell(record, ["precio_base", "precio_antes_iva", "price_before_tax", "precio_venta", "precio", "unit_price", "sale_price"]), 0, commaMode),
       unit_price: 0,
-      cost_price: csvCell(record, ["costo_producto", "costo", "cost", "cost_price"]) ? inventoryCsvNumber(csvCell(record, ["costo_producto", "costo", "cost", "cost_price"]), 0) : null,
+      cost_price: csvCell(record, ["costo_producto", "costo", "cost", "cost_price"]) ? inventoryCsvNumber(csvCell(record, ["costo_producto", "costo", "cost", "cost_price"]), 0, commaMode) : null,
       currency: (csvCell(record, ["moneda", "currency"]) || "COP").toUpperCase(),
-      stock_quantity: inventoryCsvNumber(csvCell(record, ["stock", "cantidad", "stock_quantity"]), 0),
-      min_stock_quantity: inventoryCsvNumber(csvCell(record, ["stock_minimo", "min_stock", "min_stock_quantity"]), 0),
+      stock_quantity: inventoryCsvNumber(csvCell(record, ["stock", "cantidad", "stock_quantity"]), 0, commaMode),
+      min_stock_quantity: inventoryCsvNumber(csvCell(record, ["stock_minimo", "min_stock", "min_stock_quantity"]), 0, commaMode),
       unit_label: csvCell(record, ["unidad_de_medida", "unidad", "unidad_medida", "unit", "unit_label"]) || "Unidad",
       status: inventoryCsvStatus(csvCell(record, ["estado", "status"])),
       description: inventoryCsvOptional(csvCell(record, ["descripcion", "description", "detalle"])),
@@ -23340,13 +23348,15 @@ async function importInventoryProductsCsv(event) {
     return;
   }
   try {
-    const products = inventoryProductsFromCsv(await file.text());
+    const commaMode = inventoryCsvCommaModeInput?.value || "THOUSANDS";
+    const products = inventoryProductsFromCsv(await file.text(), { commaMode });
     const incomplete = products.filter((product) => !product.internal_id || !product.name || (!product.category_internal_id && !product.category));
     if (!products.length || incomplete.length) {
       throw new Error("Cada fila necesita ID de producto, nombre y una categoría existente (ID interno o nombre). Descarga la plantilla si necesitas la estructura exacta.");
     }
     setButtonLoading(inventoryCsvImportSubmitButton, true, "Importando...");
-    setInlineMessage(inventoryCsvImportMessage, `Validando ${products.length.toLocaleString("es-CO")} producto(s)...`, "info");
+    const commaDescription = commaMode === "DECIMAL" ? "coma decimal" : commaMode === "THOUSANDS" ? "coma de miles" : "detección automática";
+    setInlineMessage(inventoryCsvImportMessage, `Validando ${products.length.toLocaleString("es-CO")} producto(s) con ${commaDescription}...`, "info");
     const result = await api("/api/business/inventory/products/import-csv", {
       method: "POST",
       headers: authHeaders(),

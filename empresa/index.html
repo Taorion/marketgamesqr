@@ -5738,6 +5738,7 @@
                   </div>
                   <form class="modal-form inventory-csv-import-form" id="inventoryCsvImportForm">
                     <label class="span-2"><span>Archivo CSV</span><input id="inventoryCsvFileInput" type="file" accept=".csv,text/csv" required><small>Columnas: id_producto, nombre, categoria, subcategoria, codigo_barras, sku, marca, iva_base, impuesto_saludable, precio_base, costo_producto, moneda, stock, stock_minimo, unidad_de_medida, estado y descripcion. Categoría, marca, unidad e impuestos deben existir previamente.</small></label>
+                    <label class="span-2"><span>¿Cómo usa tu archivo la coma en precios y costos?</span><select id="inventoryCsvCommaModeInput"><option value="THOUSANDS" selected>La coma separa miles · 1,250.50</option><option value="DECIMAL">La coma es decimal · 1.250,50 o 1250,50</option><option value="AUTO">Detectar automáticamente</option></select><small>Esta decisión solo aplica a este archivo. Si la coma es decimal, guarda el CSV con punto y coma (;) entre columnas o deja los precios entre comillas.</small></label>
                     <p class="span-2 inventory-csv-duplicate-option"><strong>Validación completa:</strong> si algún ID de producto ya existe en Qori, no se cargará ninguna fila del archivo.</p>
                     <div class="inventory-csv-template span-2">
                       <div><strong>¿No tienes plantilla?</strong><small>Descarga una base con todos los campos y un ejemplo seguro.</small></div>
@@ -7850,7 +7851,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-    <script src="js/app.js?v=inventory-detail-scroll-v211-20260818" defer></script>
+    <script src="js/app.js?v=inventory-csv-comma-mode-v212-20260818" defer></script>
     <script src="js/communications.js?v=email-attachments-v325-20260817" defer></script>
 </body>
 </html>
