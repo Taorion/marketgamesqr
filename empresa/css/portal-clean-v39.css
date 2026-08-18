@@ -27273,3 +27273,81 @@ html body #inventoryTaxonomyModal:not(.hidden) > .inventory-taxonomy-modal-card 
   }
   html body #inventoryTaxonomyModal:not(.hidden) > .inventory-taxonomy-modal-card > .inventory-taxonomy-modal-scroll { padding-right: 7px !important; }
 }
+
+/* Activación 1: el lead abre cada operación como encabezado de renglón completo. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead {
+  display: grid !important;
+  grid-template-columns: auto minmax(220px, .9fr) minmax(0, 2.2fr) !important;
+  align-items: center !important;
+  gap: 14px clamp(18px, 2.4vw, 30px) !important;
+  width: 100% !important;
+  padding: 16px clamp(18px, 2.4vw, 30px) !important;
+  border-right: 0 !important;
+  border-bottom: 1px solid rgba(11, 99, 246, .14) !important;
+  background: linear-gradient(105deg, #edf8ff 0%, #f8fcff 62%, #ffffff 100%) !important;
+  box-sizing: border-box !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead .rms-activation-work-select {
+  width: auto !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead .rms-activation-work-person {
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead .rms-activation-work-facts {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-items: start !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  padding-left: clamp(16px, 2vw, 26px) !important;
+  border-left: 1px solid rgba(11, 99, 246, .13) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead .rms-activation-work-facts div {
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead .rms-activation-work-facts dd {
+  -webkit-line-clamp: 2 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item > .rms-activation-work-console {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 1120px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead {
+    grid-template-columns: auto minmax(220px, 1fr) !important;
+  }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead .rms-activation-work-facts {
+    grid-column: 1 / -1 !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    padding: 12px 0 0 !important;
+    border-top: 1px solid rgba(11, 99, 246, .11) !important;
+    border-left: 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    padding: 16px !important;
+  }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead .rms-activation-work-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-lead .rms-activation-work-select {
+    justify-self: start !important;
+  }
+}
