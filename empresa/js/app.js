@@ -16779,7 +16779,7 @@ function ensureGamingActivationBuilderModal(view = document.querySelector('.view
       }
       if (event.target.closest("[data-gaming-wizard-publish]")) {
         event.preventDefault();
-        if (validateGamingActivationWizard()) triviaLauncherForm?.requestSubmit();
+        launchGamingActivationFromWizard();
         return;
       }
       if (event.target.closest("[data-gaming-wizard-save-draft]")) {
@@ -17161,7 +17161,7 @@ function runGamingCenterAction(action = "") {
     return;
   }
   if (action === "launch-activation") {
-    triviaLauncherForm?.requestSubmit();
+    launchGamingActivationFromWizard();
   }
 }
 
@@ -17363,10 +17363,21 @@ function goToGamingActivationWizardStep(nextStep = 0, options = {}) {
 function continueOrLaunchGamingActivation() {
   const lastStep = Math.max(0, gamingActivationWizardSections().length - 1);
   if (Number(state.gamingActivationWizardStep || 0) >= lastStep) {
-    if (validateGamingActivationWizard()) triviaLauncherForm?.requestSubmit();
+    launchGamingActivationFromWizard();
     return;
   }
   goToGamingActivationWizardStep(Number(state.gamingActivationWizardStep || 0) + 1);
+}
+
+function launchGamingActivationFromWizard() {
+  if (!triviaLauncherForm || state.gamingActivationLaunchInFlight) return;
+  if (!validateGamingActivationWizard()) return;
+  // Los paneles de otros tipos de activación permanecen en el formulario, pero
+  // están ocultos. El submit nativo los valida igual y bloqueaba el último CTA
+  // sin mostrar ningún mensaje. Ejecutamos el mismo manejador canónico para que
+  // la validación comercial y el feedback del asistente sean los únicos que
+  // controlen el lanzamiento.
+  submitTriviaLauncher(new Event("submit", { bubbles: true, cancelable: true }));
 }
 
 function applyGamingActivationRecipe(recipeKey = "") {
@@ -17517,6 +17528,7 @@ function ensureGamingCenterUx() {
   const builderCard = view.querySelector(".gaming-activation-builder-card");
   if (builderCard && !builderCard.querySelector(".gaming-builder-assistant")) {
     triviaLauncherForm?.classList.add("is-gaming-activation-wizard");
+    if (triviaLauncherForm) triviaLauncherForm.noValidate = true;
     const legacyLaunchButton = triviaLauncherForm?.querySelector(".activation-launch-submit");
     legacyLaunchButton?.setAttribute("hidden", "");
     legacyLaunchButton?.setAttribute("aria-hidden", "true");
@@ -17649,7 +17661,7 @@ function ensureGamingCenterUx() {
       }
       if (event.target.closest("[data-gaming-wizard-publish]")) {
         event.preventDefault();
-        if (validateGamingActivationWizard()) triviaLauncherForm?.requestSubmit();
+        launchGamingActivationFromWizard();
         return;
       }
       const categoryButton = event.target.closest("[data-gaming-activation-category]");
@@ -27981,14 +27993,18 @@ function continueGamingActivationDraft(id) {
 
 async function submitTriviaLauncher(event) {
   event.preventDefault();
+  if (state.gamingActivationLaunchInFlight) return;
   if (!validateGamingActivationWizard()) return;
   const activationPayload = validateTriviaLauncherForm();
   if (!activationPayload) return;
   const type = currentActivationType();
   const submitButton = triviaLauncherForm.querySelector("button[type='submit']");
+  const wizardLaunchButton = triviaLauncherForm.querySelector("[data-gaming-wizard-next]");
   const draftId = state.gamingActivationDraftId;
   const previousLauncherActivationId = draftId ? null : state.currentLauncherActivationId;
+  state.gamingActivationLaunchInFlight = true;
   setButtonLoading(submitButton, true, "Lanzando...");
+  setButtonLoading(wizardLaunchButton, true, "Lanzando activación...");
   triviaLauncherResult?.classList.add("hidden");
   if (triviaLauncherResult) triviaLauncherResult.innerHTML = "";
   setInlineMessage(triviaLauncherMessage, `Creando activación ${activationTypeLabel(type).toLowerCase()} y generando link público.`, "info");
@@ -28044,7 +28060,9 @@ async function submitTriviaLauncher(event) {
     setInlineMessage(triviaLauncherMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo lanzar la activación" });
   } finally {
+    state.gamingActivationLaunchInFlight = false;
     setButtonLoading(submitButton, false);
+    setButtonLoading(wizardLaunchButton, false);
   }
 }
 
