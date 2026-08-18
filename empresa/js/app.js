@@ -21202,8 +21202,10 @@ function bindDigitalAssetDetailActions() {
   });
   root.querySelector("[data-disable-digital-asset]")?.addEventListener("click", async (event) => {
     const asset = (state.digitalAssets || []).find((item) => item.id === state.editingDigitalAssetId);
-    await updateDigitalAssetStatus(event.currentTarget.dataset.disableDigitalAsset, asset?.is_active === false);
-    renderDigitalAssetDetailModal();
+    const nextActive = asset?.is_active === false;
+    await updateDigitalAssetStatus(event.currentTarget.dataset.disableDigitalAsset, nextActive);
+    if (nextActive) renderDigitalAssetDetailModal();
+    else closeDigitalAssetDetail();
   });
   root.querySelector("[data-delete-digital-asset]")?.addEventListener("click", async (event) => {
     if (!window.confirm("¿Eliminar este archivo de forma permanente? Solo se permite si no se ha compartido con un lead.")) return;
