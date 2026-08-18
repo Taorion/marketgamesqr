@@ -26789,3 +26789,113 @@ html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .r
 @media (max-width: 440px) {
   html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-commercial-work-lead .rms-activation-work-facts { grid-template-columns:1fr !important; }
 }
+
+/* Riesgos de fuga: contrato estructural final. El encabezado del lead ocupa
+   el renglón superior completo; el formulario de control siempre continúa abajo. */
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1.12fr) minmax(0, 3fr) auto !important;
+  align-items: center !important;
+  gap: 16px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 16px clamp(18px, 2.4vw, 30px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(173, 218, 244, .38) !important;
+  border-radius: 0 !important;
+  background: linear-gradient(105deg, #012d76 0%, #0759d6 58%, #078dca 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-console {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-commercial-work-kicker {
+  grid-column: 1 / -1 !important;
+  margin: 0 !important;
+  color: #c4ecff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-person {
+  min-width: 0 !important;
+  padding: 0 16px 0 0 !important;
+  border: 0 !important;
+  border-right: 1px solid rgba(229, 251, 255, .24) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-person > .material-symbols-outlined {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, .16) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-person :is(strong, small) {
+  overflow: hidden !important;
+  color: #ffffff !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-person small {
+  color: #d9f2ff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-facts {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-facts > div {
+  min-width: 0 !important;
+  min-height: 52px !important;
+  padding: 8px 10px !important;
+  border: 1px solid rgba(229, 251, 255, .18) !important;
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, .1) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-facts :is(dt, dd) {
+  overflow: hidden !important;
+  color: #ffffff !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-facts dt { color: #c4ecff !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-actions { justify-content: flex-end !important; min-width: max-content !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-actions .ghost-button { border-color: rgba(255, 255, 255, .42) !important; color: #ffffff !important; background: rgba(255, 255, 255, .1) !important; }
+
+@media (max-width: 1180px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead { grid-template-columns: minmax(0, 1fr) auto !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-facts { grid-column: 1 / -1 !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 720px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead { grid-template-columns: 1fr !important; gap: 13px !important; padding: 16px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-person { padding: 0 0 12px !important; border-right: 0 !important; border-bottom: 1px solid rgba(229, 251, 255, .24) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-actions { justify-content: stretch !important; min-width: 0 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-actions .ghost-button { width: 100% !important; }
+}
+
+@media (max-width: 440px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="control"] .rms-risk-work-item > .rms-commercial-work-lead .rms-activation-work-facts { grid-template-columns: 1fr !important; }
+}
