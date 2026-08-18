@@ -2133,6 +2133,83 @@ function ensureSidebarRuntimeFeedbackStyles() {
       -webkit-text-fill-color: rgba(232, 245, 255, .9) !important;
       opacity: 1 !important;
     }
+    /* Señalador de ubicación: la vista actual debe leerse sin depender solo del color. */
+    body .portal-shell .sidebar .nav-item[data-sidebar-current-match="true"] {
+      position: relative !important;
+      isolation: isolate !important;
+      padding-left: 12px !important;
+      border: 1px solid rgba(105, 221, 255, .82) !important;
+      border-radius: 12px !important;
+      background:
+        repeating-linear-gradient(-45deg, rgba(255, 255, 255, .13) 0 1px, transparent 1px 7px),
+        linear-gradient(135deg, #0b63f6 0%, #0759d6 54%, #052a6b 100%) !important;
+      box-shadow: 0 10px 22px rgba(5, 42, 107, .26), inset 4px 0 0 #69ddff !important;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      transform: translateX(2px) !important;
+    }
+    body .portal-shell .sidebar .nav-item[data-sidebar-current-match="true"]::before {
+      display: block !important;
+      content: "" !important;
+      position: absolute !important;
+      left: 0 !important;
+      top: 7px !important;
+      bottom: 7px !important;
+      width: 4px !important;
+      border-radius: 0 4px 4px 0 !important;
+      background: #9aedff !important;
+      box-shadow: 0 0 16px rgba(105, 221, 255, .86) !important;
+    }
+    body .portal-shell .sidebar .nav-item[data-sidebar-current-match="true"]::after {
+      display: block !important;
+      content: "" !important;
+      position: absolute !important;
+      top: 9px !important;
+      right: 9px !important;
+      width: 7px !important;
+      height: 7px !important;
+      border: 2px solid #052a6b !important;
+      border-radius: 999px !important;
+      background: #9aedff !important;
+      box-shadow: 0 0 0 2px rgba(154, 237, 255, .28), 0 0 14px rgba(105, 221, 255, .8) !important;
+    }
+    body .portal-shell .sidebar .nav-item[data-sidebar-current-match="true"] > .material-symbols-outlined,
+    body .portal-shell .sidebar .nav-item[data-sidebar-current-match="true"] strong {
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+      opacity: 1 !important;
+    }
+    body .portal-shell .sidebar .nav-item[data-sidebar-current-match="true"] small {
+      color: #dff7ff !important;
+      -webkit-text-fill-color: #dff7ff !important;
+      opacity: 1 !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section.is-current > .nav-group-toggle {
+      position: relative !important;
+      margin: 4px 0 6px !important;
+      padding: 9px 9px 9px 12px !important;
+      border: 1px solid rgba(105, 221, 255, .34) !important;
+      border-radius: 10px !important;
+      background: linear-gradient(90deg, rgba(7, 89, 214, .28), rgba(7, 206, 251, .06)) !important;
+      box-shadow: inset 3px 0 0 rgba(105, 221, 255, .92) !important;
+    }
+    body .portal-shell .sidebar .sidebar-nav-section.is-current > .nav-group-toggle::after {
+      display: block !important;
+      content: "SECCIÓN ACTUAL" !important;
+      position: absolute !important;
+      right: 30px !important;
+      top: 50% !important;
+      width: auto !important;
+      height: auto !important;
+      transform: translateY(-50%) !important;
+      color: #9aedff !important;
+      background: transparent !important;
+      font-size: .54rem !important;
+      font-weight: 900 !important;
+      letter-spacing: .09em !important;
+      line-height: 1 !important;
+      opacity: .96 !important;
+    }
   `;
   document.head.appendChild(style);
   if (false) { // Legacy insertion kept inert; inventory styles are mounted by ensureInventoryUxStyles.
