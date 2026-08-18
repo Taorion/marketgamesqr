@@ -26549,3 +26549,64 @@ html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[da
   html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel .rms-sale-form-grid { grid-template-columns:1fr !important; }
   html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head { display:grid !important; }
 }
+
+/* Datos maestros: el contenido siempre se explora dentro de la tarjeta.
+   No se permite que el modal crezca fuera del viewport. */
+html body #inventoryTaxonomyModal:not(.hidden) {
+  display: grid !important;
+  place-items: center !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  padding: clamp(12px, 2vw, 28px) !important;
+  overflow: hidden !important;
+}
+
+html body #inventoryTaxonomyModal:not(.hidden) .inventory-taxonomy-modal-card {
+  display: block !important;
+  width: min(1000px, calc(100vw - 24px)) !important;
+  height: auto !important;
+  max-height: calc(100dvh - 24px) !important;
+  margin: 0 !important;
+  padding: clamp(18px, 2.3vw, 28px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+html body #inventoryTaxonomyModal:not(.hidden) .inventory-taxonomy-modal-card > .modal-head {
+  position: sticky !important;
+  top: calc(-1 * clamp(18px, 2.3vw, 28px)) !important;
+  z-index: 3 !important;
+  margin: calc(-1 * clamp(18px, 2.3vw, 28px)) calc(-1 * clamp(18px, 2.3vw, 28px)) 18px !important;
+  padding: clamp(18px, 2.3vw, 28px) clamp(18px, 2.3vw, 28px) 16px !important;
+  border-bottom: 1px solid #d8e8f3 !important;
+  background: rgba(255,255,255,.98) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+html body #inventoryTaxonomyModal:not(.hidden) .inventory-taxonomy-modal-card .inventory-taxonomy-grid,
+html body #inventoryTaxonomyModal:not(.hidden) .inventory-taxonomy-modal-card .inventory-taxonomy-list {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+html body #inventoryTaxonomyModal:not(.hidden) .inventory-taxonomy-modal-card::-webkit-scrollbar { width: 10px; }
+html body #inventoryTaxonomyModal:not(.hidden) .inventory-taxonomy-modal-card::-webkit-scrollbar-track { background: transparent; }
+html body #inventoryTaxonomyModal:not(.hidden) .inventory-taxonomy-modal-card::-webkit-scrollbar-thumb { border: 3px solid rgba(255,255,255,.98); border-radius: 999px; background: #a9c7dd; }
+
+@media (max-width: 620px) {
+  html body #inventoryTaxonomyModal:not(.hidden) { padding: 10px !important; }
+  html body #inventoryTaxonomyModal:not(.hidden) .inventory-taxonomy-modal-card {
+    width: 100% !important;
+    max-height: calc(100dvh - 20px) !important;
+    padding: 16px !important;
+  }
+  html body #inventoryTaxonomyModal:not(.hidden) .inventory-taxonomy-modal-card > .modal-head {
+    top: -16px !important;
+    margin: -16px -16px 14px !important;
+    padding: 16px 16px 13px !important;
+  }
+}
