@@ -1921,35 +1921,71 @@
                   <p>Selecciona una comunicación para ver su alcance. Las piezas por email se envían únicamente a contactos con autorización.</p>
                 </div>
               </div>
-              <div class="communication-library" id="businessCommunicationsList" aria-live="polite"></div>
-              <div class="communication-selected-summary" id="communicationSelectedSummary" aria-live="polite"></div>
+              <div class="communication-workspace-tabs" role="tablist" aria-label="Área de trabajo de comunicaciones">
+                <button class="is-active" type="button" role="tab" aria-selected="true" data-communication-workspace-tab="create">
+                  <span class="material-symbols-outlined" aria-hidden="true">edit_square</span>
+                  Crear y enviar
+                </button>
+                <button type="button" role="tab" aria-selected="false" data-communication-workspace-tab="history">
+                  <span class="material-symbols-outlined" aria-hidden="true">history</span>
+                  Historial
+                  <small id="communicationHistoryTabCount" aria-label="Comunicaciones creadas">0</small>
+                </button>
+              </div>
+
+              <section class="communication-workspace-panel" data-communication-workspace-panel="create" aria-label="Crear comunicación">
+                <section class="communication-create-hub">
+                <div class="communication-create-hub-copy">
+                  <span class="mono-label">Comunicación masiva</span>
+                  <h3>Prepara una pieza, elige la audiencia y envíala con control.</h3>
+                  <p>En un solo flujo puedes redactar email, WhatsApp o una publicación medida; después Qori conserva el alcance y los resultados en el historial.</p>
+                </div>
+                <div class="communication-create-hub-steps" aria-label="Pasos para crear una comunicación">
+                  <article><span>1</span><div><strong>Define el mensaje</strong><small>Canal, asunto, contenido, imágenes y archivos.</small></div></article>
+                  <article><span>2</span><div><strong>Elige a quién llegará</strong><small>Solo contactos autorizados para el canal elegido.</small></div></article>
+                  <article><span>3</span><div><strong>Envía y mide</strong><small>Consulta resultados, entregas y desempeño cuando quieras.</small></div></article>
+                </div>
+                <div class="communication-create-hub-actions">
+                  <button class="solid-button" type="button" data-open-communication-composer><span class="material-symbols-outlined" aria-hidden="true">add</span>Nueva comunicación</button>
+                  <button class="ghost-button" type="button" data-communication-workspace-tab="history"><span class="material-symbols-outlined" aria-hidden="true">history</span>Ver historial</button>
+                </div>
+                </section>
+
+                <section class="communication-audience-section" aria-label="Audiencia de comunicaciones">
+                  <div class="communication-section-heading">
+                    <div>
+                      <span class="mono-label">Audiencia</span>
+                      <h3>Elige a quién comunicar</h3>
+                      <p>Filtra por interés, ciudad, canal, campaña, compras o puntaje. El rango de edad aparecerá cuando el contacto tenga fecha de nacimiento registrada.</p>
+                    </div>
+                    <div class="communication-audience-summary" id="communicationAudienceSummary">Carga contactos para empezar.</div>
+                  </div>
+                  <form class="communication-audience-filters" id="communicationAudienceFilters">
+                    <label><span>Buscar</span><input id="communicationAudienceSearch" type="search" placeholder="Nombre, email o teléfono"></label>
+                    <label><span>Interés</span><input id="communicationAudienceInterest" type="search" placeholder="Producto o servicio"></label>
+                    <label><span>Ciudad</span><input id="communicationAudienceCity" type="search" placeholder="Ej. Bogotá"></label>
+                    <label><span>Compras</span><select id="communicationAudiencePurchases"><option value="">Todas</option><option value="true">Con compras</option><option value="false">Sin compras</option></select></label>
+                    <label><span>Puntaje mínimo</span><input id="communicationAudienceScore" type="number" min="0" placeholder="0"></label>
+                    <button class="solid-button" type="submit">Aplicar filtros</button>
+                  </form>
+                  <div class="communication-audience-actions">
+                    <button class="ghost-button compact" type="button" data-communication-select-loaded>Seleccionar contactos con email</button>
+                    <button class="text-button" type="button" data-communication-clear-selection>Limpiar selección</button>
+                    <span id="communicationSelectionSummary">0 contactos con email seleccionados</span>
+                  </div>
+                  <div class="communication-audience-list" id="communicationAudienceList"></div>
+                  <div class="communication-send-bar" id="communicationSendBar"></div>
+                </section>
+              </section>
+
+              <section class="communication-workspace-panel" data-communication-workspace-panel="history" aria-label="Historial de comunicaciones" hidden>
+                <div class="communication-history-layout">
+                  <div class="communication-library" id="businessCommunicationsList" aria-live="polite"></div>
+                  <div class="communication-selected-summary" id="communicationSelectedSummary" aria-live="polite"></div>
+                </div>
+              </section>
             </section>
 
-            <section class="communication-audience-section" aria-label="Audiencia de comunicaciones">
-              <div class="communication-section-heading">
-                <div>
-                  <span class="mono-label">Audiencia</span>
-                  <h3>Elige a quién comunicar</h3>
-                  <p>Filtra por interés, ciudad, canal, campaña, compras o puntaje. El rango de edad aparecerá cuando el contacto tenga fecha de nacimiento registrada.</p>
-                </div>
-                <div class="communication-audience-summary" id="communicationAudienceSummary">Carga contactos para empezar.</div>
-              </div>
-              <form class="communication-audience-filters" id="communicationAudienceFilters">
-                <label><span>Buscar</span><input id="communicationAudienceSearch" type="search" placeholder="Nombre, email o teléfono"></label>
-                <label><span>Interés</span><input id="communicationAudienceInterest" type="search" placeholder="Producto o servicio"></label>
-                <label><span>Ciudad</span><input id="communicationAudienceCity" type="search" placeholder="Ej. Bogotá"></label>
-                <label><span>Compras</span><select id="communicationAudiencePurchases"><option value="">Todas</option><option value="true">Con compras</option><option value="false">Sin compras</option></select></label>
-                <label><span>Puntaje mínimo</span><input id="communicationAudienceScore" type="number" min="0" placeholder="0"></label>
-                <button class="solid-button" type="submit">Aplicar filtros</button>
-              </form>
-              <div class="communication-audience-actions">
-                <button class="ghost-button compact" type="button" data-communication-select-loaded>Seleccionar contactos con email</button>
-                <button class="text-button" type="button" data-communication-clear-selection>Limpiar selección</button>
-                <span id="communicationSelectionSummary">0 contactos con email seleccionados</span>
-              </div>
-              <div class="communication-audience-list" id="communicationAudienceList"></div>
-              <div class="communication-send-bar" id="communicationSendBar"></div>
-            </section>
           </section>
 
           <section class="view-section" data-view="strategic-qr">
