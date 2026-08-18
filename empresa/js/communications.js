@@ -157,8 +157,19 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
   };
   const uploadedMedia = () => readJson(mediaInput()?.value);
   const setUploadedMedia = (items) => { const input = mediaInput(); if (input) input.value = JSON.stringify(items.slice(0, MAX_MEDIA_FILES)); renderMediaPreview(); };
-  const uploadedEmailAttachments = () => readJson(emailAttachmentsInput()?.value);
-  const setUploadedEmailAttachments = (items) => { const input = emailAttachmentsInput(); if (input) input.value = JSON.stringify(items.slice(0, MAX_EMAIL_ATTACHMENTS)); renderEmailAttachmentPreview(); };
+  const uploadedEmailAttachments = () => {
+    if (Array.isArray(state.communicationComposerEmailAttachments)) return state.communicationComposerEmailAttachments;
+    return readJson(emailAttachmentsInput()?.value);
+  };
+  const setUploadedEmailAttachments = (items) => {
+    const attachments = Array.isArray(items) ? items.slice(0, MAX_EMAIL_ATTACHMENTS) : [];
+    state.communicationComposerEmailAttachments = attachments;
+    const input = emailAttachmentsInput();
+    // El binario se conserva en memoria hasta guardar. Evitamos meter data URLs grandes en
+    // el DOM, que podía dejar el compositor en blanco al seleccionar documentos pesados.
+    if (input) input.value = JSON.stringify(attachments.map(({ name, type, size }) => ({ name, type, size })));
+    renderEmailAttachmentPreview();
+  };
   const hasEmail = (contact) => Boolean(String(contact?.email || "").trim());
   const normalizedWhatsAppPhone = (value) => {
     const digits = String(value || "").replace(/\D/g, "");
@@ -722,12 +733,16 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
       showFeedback("Los adjuntos del email pueden pesar hasta 8 MB en total.", "info", { title: "Adjuntos demasiado pesados" });
       return;
     }
+    const uploadControl = document.getElementById("communicationEmailAttachmentsUploadInput")?.closest("label");
+    uploadControl?.classList.add("is-loading");
     try {
       const converted = await Promise.all(incoming.map(async (file) => ({ source: await readFileAsDataUrl(file), name: file.name, type: emailAttachmentType(file), size: file.size })));
       setUploadedEmailAttachments([...current, ...converted]);
       renderComposerPreview();
     } catch (error) {
       showFeedback(error.message || "No se pudo preparar el archivo.", "error", { title: "Adjuntos" });
+    } finally {
+      uploadControl?.classList.remove("is-loading");
     }
   }
 

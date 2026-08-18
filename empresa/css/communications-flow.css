@@ -794,6 +794,17 @@ html body[data-current-view="communications"] .portal-shell .communication-send-
   background: #f2f9ff;
 }
 
+#communicationComposerModal .communication-email-attachment-upload-control.is-loading {
+  pointer-events: none;
+  border-color: #0a73c7;
+  background: #eef8ff;
+  opacity: .82;
+}
+
+#communicationComposerModal .communication-email-attachment-upload-control.is-loading > .material-symbols-outlined {
+  animation: qori-composer-progress-spin 1s linear infinite;
+}
+
 #communicationComposerModal .communication-email-attachment-upload-control input {
   position: absolute;
   width: 1px;

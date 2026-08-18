@@ -155,7 +155,10 @@ app.use(helmet({
   },
 }));
 app.use(cors({ origin: corsOrigin }));
-app.use(express.json({ limit: "15mb", verify: (req, _res, buffer) => { req.rawBody = Buffer.from(buffer); } }));
+// Email puede llevar hasta 8 MB de documentos y hasta 3 imágenes. Como ambos viajan
+// codificados en base64, el cuerpo JSON necesita margen suficiente sin relajar las
+// validaciones específicas de comunicaciones.
+app.use(express.json({ limit: "26mb", verify: (req, _res, buffer) => { req.rawBody = Buffer.from(buffer); } }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.get("/api/health", (_req, res) => {
