@@ -22566,6 +22566,34 @@ function ensureInventoryUxStyles() {
       flex-wrap: wrap;
       gap: 0.55rem;
     }
+    #inventoryProductDetailModal.inventory-product-detail-modal:not(.hidden) {
+      display: grid !important;
+      place-items: center !important;
+      box-sizing: border-box !important;
+      min-height: 100dvh !important;
+      max-height: 100dvh !important;
+      padding: clamp(12px, 2.4vh, 28px) !important;
+      overflow: auto !important;
+      overscroll-behavior: contain;
+    }
+    #inventoryProductDetailModal .inventory-product-detail-card {
+      box-sizing: border-box !important;
+      width: min(1040px, 100%) !important;
+      height: auto !important;
+      max-height: calc(100dvh - clamp(24px, 4.8vh, 56px)) !important;
+      margin: auto !important;
+      padding: clamp(16px, 2.2vw, 28px) !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+    }
+    #inventoryProductDetailModal .inventory-product-detail-card::-webkit-scrollbar { width: 11px; }
+    #inventoryProductDetailModal .inventory-product-detail-card::-webkit-scrollbar-thumb {
+      border: 3px solid #fff;
+      border-radius: 999px;
+      background: #8cb5d5;
+    }
     #inventoryTaxonomyModal .inventory-taxonomy-modal-card {
       width: min(960px, calc(100vw - 32px));
       max-height: calc(100vh - 42px);
@@ -22679,6 +22707,13 @@ function ensureInventoryUxStyles() {
       }
       .inventory-taxonomy-grid,
       .inventory-technical-sheet dl { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      #inventoryProductDetailModal.inventory-product-detail-modal:not(.hidden) { padding: 8px !important; }
+      #inventoryProductDetailModal .inventory-product-detail-card {
+        max-height: calc(100dvh - 16px) !important;
+        padding: 16px !important;
+      }
     }
   `;
   document.head.appendChild(style);
@@ -22841,6 +22876,7 @@ function renderInventoryView() {
 }
 
 function ensureInventoryProductDetailModal() {
+  ensureInventoryUxStyles();
   let modal = document.getElementById("inventoryProductDetailModal");
   if (modal) return modal;
   modal = document.createElement("div");
