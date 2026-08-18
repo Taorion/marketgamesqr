@@ -24780,6 +24780,17 @@ html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[da
   display: none !important;
 }
 
+/* Ventas atribuidas: el identificador del lead debe conservar contraste sobre el panel claro. */
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-work-lead .rms-activation-work-person strong {
+  color: #0b1e3d !important;
+  text-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-work-item .rms-commercial-work-lead .rms-activation-work-person > .material-symbols-outlined {
+  color: #0341b3 !important;
+  text-shadow: none !important;
+}
+
 /* Negociación: los documentos se cargan una vez y se envían como enlaces
    seguros, legibles dentro de la misma operación comercial. */
 html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="recovery"] .rms-negotiation-attachments-field {
