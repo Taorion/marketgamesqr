@@ -26380,3 +26380,172 @@ html body .content-shell > #actionFeedback.action-feedback:not([hidden]):not(.hi
 @media (prefers-reduced-motion: reduce) {
   html body .portal-shell .busy-overlay:not(.hidden) .busy-progress > i { animation: none !important; transform: translateX(65%) !important; }
 }
+
+/* Valorización Clientes: una venta ya confirmada se trabaja como una relación,
+   no como otra ficha comercial larga. */
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-work-item {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+  border-radius: 22px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-work-item > .rms-commercial-work-lead {
+  display: grid !important;
+  grid-template-columns: minmax(190px, 1.15fr) minmax(220px, 1.4fr) minmax(0, 2.8fr) auto !important;
+  align-items: center !important;
+  gap: 18px !important;
+  width: 100% !important;
+  padding: 17px clamp(18px, 2.5vw, 30px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid #c9e0ef !important;
+  background: linear-gradient(100deg, #e8f6ff 0%, #f8fcff 58%, #ffffff 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-commercial-work-kicker {
+  grid-column: 1 / -1 !important;
+  margin: 0 !important;
+  color: #0759d6 !important;
+  font-size: .66rem !important;
+  letter-spacing: .1em !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-person {
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-person strong,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-person small {
+  overflow: hidden !important;
+  color: #0b3269 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-facts {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-facts > div {
+  min-width: 0 !important;
+  padding: 7px 9px !important;
+  border: 1px solid #d4e5f0 !important;
+  border-radius: 10px !important;
+  background: rgba(255,255,255,.78) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-facts dt { color: #5c7a94 !important; font-size: .64rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-facts dd { overflow: hidden !important; color: #113b70 !important; font-size: .76rem !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-actions { justify-content: flex-end !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-work-item .rms-commercial-work-console {
+  display: grid !important;
+  gap: 17px !important;
+  padding: clamp(20px, 2.5vw, 34px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head {
+  display: flex !important;
+  gap: 18px !important;
+  margin: 0 !important;
+  padding: 0 0 4px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head::before { content: none !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head h4 { color: #082e67 !important; font-size: clamp(1.18rem, 1.8vw, 1.48rem) !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head p { max-width: 760px !important; color: #55728d !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip article {
+  display: grid !important;
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  column-gap: 9px !important;
+  min-width: 0 !important;
+  padding: 12px !important;
+  border: 1px solid #d4e7f2 !important;
+  border-radius: 13px !important;
+  background: #fbfdff !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip .material-symbols-outlined { grid-row: 1 / span 2 !important; display:grid !important; width:28px !important; height:28px !important; place-items:center !important; border-radius:8px !important; background:#e4f5ff !important; color:#0759d6 !important; font-size:17px !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip small { overflow:hidden !important; color:#5d7a92 !important; font-size:.65rem !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip strong { overflow:hidden !important; color:#0b3269 !important; font-size:.8rem !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip b { grid-column:2 !important; overflow:hidden !important; margin-top:3px !important; color:#0759d6 !important; font-size:.69rem !important; font-weight:700 !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-objective {
+  padding: 16px !important;
+  border: 1px solid #cfdfed !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #f0f9ff, #fbfdff 56%) !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-objective > header { margin-bottom: 13px !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-objective h5 { margin:3px 0 4px !important; color:#082e67 !important; font-size:1rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-objective p { margin:0 !important; color:#587690 !important; font-size:.8rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route-picker { margin:0 !important; gap:10px !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route { min-height:94px !important; padding:13px !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel { margin:0 !important; padding:clamp(17px,2vw,24px) !important; border-radius:16px !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel .rms-sale-form-grid { grid-template-columns:repeat(3,minmax(0,1fr)) !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish {
+  border: 1px solid #d5e5ef !important;
+  border-radius: 14px !important;
+  background: #fbfdff !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history { padding: 0 15px !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history summary,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish details summary { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:10px !important; padding:14px 0 !important; color:#0b3269 !important; cursor:pointer !important; font-weight:800 !important; list-style:none !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history summary::-webkit-details-marker,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish details summary::-webkit-details-marker { display:none !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history summary > span { display:flex !important; align-items:center !important; gap:8px !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history summary small { color:#5c7993 !important; font-weight:700 !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history ol { margin:0 0 14px !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish {
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) minmax(190px,.75fr) auto !important;
+  align-items:center !important;
+  gap:15px !important;
+  padding:15px 16px !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish strong { display:block !important; margin-top:3px !important; color:#082e67 !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish p { margin:4px 0 0 !important; color:#597690 !important; font-size:.76rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish details { min-width:0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish details summary { padding:5px 0 !important; color:#365f85 !important; font-size:.75rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish details label { display:grid !important; gap:5px !important; padding:0 0 8px !important; color:#365f85 !important; font-size:.72rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish .button-row { justify-content:flex-end !important; }
+
+@media (max-width: 1100px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-work-item > .rms-commercial-work-lead { grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) auto !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-facts { grid-column:1 / -1 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish { grid-template-columns:1fr auto !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish details { grid-column:1 / -1 !important; }
+}
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-work-item > .rms-commercial-work-lead,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish { grid-template-columns:1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-facts,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel .rms-sale-form-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish .button-row { justify-content:stretch !important; width:100% !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish .button-row button { flex:1 1 0 !important; }
+}
+@media (max-width: 520px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-work-item .rms-commercial-work-console { padding:16px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-facts,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel .rms-sale-form-grid { grid-template-columns:1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head { display:grid !important; }
+}
