@@ -2251,6 +2251,14 @@ function normalizeRiskRecoveryAuthorizations(value = {}) {
       enabled: Boolean(configured.gift?.enabled),
       label: String(configured.gift?.label || "").trim(),
     },
+    benefits: Array.isArray(configured.benefits) ? configured.benefits.map((benefit, index) => ({
+      id: String(benefit?.id || `benefit-${index + 1}`).trim(),
+      enabled: benefit?.enabled !== false,
+      type: String(benefit?.type || "OTHER").trim().toUpperCase(),
+      label: String(benefit?.label || "").trim(),
+      value: Math.max(0, Number(benefit?.value || 0)),
+      detail: String(benefit?.detail || "").trim(),
+    })).filter((benefit) => benefit.label) : [],
   };
 }
 
@@ -2277,9 +2285,12 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
   if (!["CLEARED", "RECYCLE"].includes(result)) throw badRequest("Riesgos de fuga solo puede enviar a Ventas atribuidas o a Reciclaje.");
   if (result === "RECYCLE" && !payload.recycle_reason) throw badRequest("Para Reciclaje indica el motivo principal.");
   const recoveryOffer = String(payload.recovery_offer || "NONE").toUpperCase();
-  if (!["NONE", "DISCOUNT", "TWO_FOR_ONE", "GIFT"].includes(recoveryOffer)) throw badRequest("Selecciona una alternativa de recuperación válida.");
+  if (!["NONE", "DISCOUNT", "TWO_FOR_ONE", "GIFT", "CUSTOM"].includes(recoveryOffer)) throw badRequest("Selecciona una alternativa de recuperación válida.");
   const discountPercent = Math.min(100, Math.max(0, Number(payload.discount_percent || 0)));
   const authorizations = await riskRecoveryAuthorizationsForBusiness(businessId);
+  const recoveryBenefitId = String(payload.recovery_benefit_id || "").trim() || null;
+  const customBenefit = recoveryOffer === "CUSTOM" ? authorizations.benefits.find((benefit) => benefit.enabled && benefit.id === recoveryBenefitId) : null;
+  if (recoveryOffer === "CUSTOM" && !customBenefit) throw badRequest("Selecciona un beneficio extraordinario autorizado en Cuenta.");
   if (recoveryOffer === "DISCOUNT") {
     if (!authorizations.discount.enabled) throw badRequest("Los descuentos extraordinarios no están autorizados en Cuenta.");
     if (discountPercent <= 0 || discountPercent > authorizations.discount.max_percent) throw badRequest(`El descuento debe estar entre 0% y ${authorizations.discount.max_percent}% según la autorización de Cuenta.`);
@@ -2295,6 +2306,8 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     signals: payload.signals || {}, ticket_action: payload.ticket_action || null,
     recovery_offer: {
       type: recoveryOffer,
+      benefit_id: recoveryBenefitId,
+      custom_benefit: customBenefit || null,
       discount_percent: recoveryOffer === "DISCOUNT" ? discountPercent : 0,
       detail: String(payload.recovery_detail || "").trim() || null,
       authorization_snapshot: authorizations,
@@ -2655,6 +2668,30 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     reason: "Venta cobrada y atribuida desde la estación de Ventas atribuidas.",
     metadata: { rms_attributed_sale_id: result.sale.id, rms_sale_recorded_at: new Date().toISOString(), rms_sale_product: productName, rms_sale_amount: saleAmount, rms_sale_economics: economics },
   }, RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE);
+  let riskRecoveryTicket = null;
+  const riskRecovery = workflowMetadata.risk_review?.result === "CLEARED" ? workflowMetadata.risk_review.recovery_offer : null;
+  if (riskRecovery && riskRecovery.type && riskRecovery.type !== "NONE") {
+    const custom = riskRecovery.custom_benefit || {};
+    const ticketType = riskRecovery.type === "DISCOUNT" || custom.type === "DISCOUNT" ? "DISCOUNT" : riskRecovery.type === "GIFT" || custom.type === "GIFT" ? "GIFT" : "BONUS";
+    riskRecoveryTicket = await createPostSaleQr(businessId, user, {
+      campaign_id: item.campaign_id || null,
+      existing_sale_id: result.sale.id,
+      sale_amount: saleAmount,
+      currency,
+      customer_name: result.customer?.name || item.name || null,
+      customer_phone: item.phone || null,
+      customer_email: item.email || null,
+      document_id: item.document_id || null,
+      product_name: productName,
+      benefit: {
+        reward_id: null,
+        benefit_type: ticketType,
+        benefit_label: custom.label || riskRecovery.detail || `Beneficio extraordinario ${riskRecovery.type}`,
+        benefit_value: { discount_percent: riskRecovery.discount_percent || custom.value || 0, detail: custom.detail || riskRecovery.detail || null, risk_recovery: true },
+      },
+      metadata: { qr_creation_context: "rms_risk_recovery", ticket_use_case: "risk_recovery", existing_sale_id: result.sale.id, recovery_benefit_id: riskRecovery.benefit_id || null },
+    });
+  }
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     event_type: "sale_attributed", event_title: "Venta atribuida enviada a Valorización Clientes",
@@ -2695,7 +2732,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
       },
     },
   });
-  return { sale: result.sale, economics, movement, customer: result.customer, affiliate: result.affiliate || null, duplicate: false };
+  return { sale: result.sale, economics, movement, customer: result.customer, affiliate: result.affiliate || null, risk_recovery_ticket: riskRecoveryTicket, duplicate: false };
 }
 
 async function canonicalAttributedSaleFor(client, businessId, sourceType, sourceId, requestedSaleId = null) {

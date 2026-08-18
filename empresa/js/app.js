@@ -547,6 +547,8 @@ const accountRiskTwoForOneEnabledInput = document.getElementById("accountRiskTwo
 const accountRiskTwoForOneLabelInput = document.getElementById("accountRiskTwoForOneLabelInput");
 const accountRiskGiftEnabledInput = document.getElementById("accountRiskGiftEnabledInput");
 const accountRiskGiftLabelInput = document.getElementById("accountRiskGiftLabelInput");
+const accountRiskCustomBenefits = document.getElementById("accountRiskCustomBenefits");
+const accountRiskAddBenefitButton = document.getElementById("accountRiskAddBenefitButton");
 const accountProfileMessage = document.getElementById("accountProfileMessage");
 const accountProfileSaveButton = document.getElementById("accountProfileSaveButton");
 const accountLogoPreview = document.getElementById("accountLogoPreview");
@@ -568,6 +570,7 @@ const digitalAssetFileInput = document.getElementById("digitalAssetFileInput");
 const digitalAssetCoverInput = document.getElementById("digitalAssetCoverInput");
 const digitalAssetButtonTextInput = document.getElementById("digitalAssetButtonTextInput");
 const digitalAssetMessage = document.getElementById("digitalAssetMessage");
+const digitalAssetClearFilesButton = document.getElementById("digitalAssetClearFilesButton");
 const digitalAssetSubmitButton = document.getElementById("digitalAssetSubmitButton");
 const digitalAssetsGrid = document.getElementById("digitalAssetsGrid");
 const refreshDigitalAssetsButton = document.getElementById("refreshDigitalAssetsButton");
@@ -1461,11 +1464,11 @@ const ACCOUNT_SCREEN_COPY = Object.freeze({
 
 const ACCOUNT_SECTION_SCREEN = Object.freeze({
   accountSectionCompany: "profile",
-  accountSectionSecurity: "security",
+  accountSectionSecurity: "profile",
   accountSectionData: "billing",
   accountSectionBilling: "billing",
   accountSectionAssets: "assets",
-  accountSectionUsers: "admin",
+  accountSectionUsers: "profile",
 });
 
 function normalizeAccountScreen(screen = "") {
@@ -6092,6 +6095,7 @@ function renderAccountView() {
   if (accountRiskTwoForOneLabelInput) accountRiskTwoForOneLabelInput.value = riskRecovery.two_for_one.label || "";
   if (accountRiskGiftEnabledInput) accountRiskGiftEnabledInput.checked = riskRecovery.gift.enabled;
   if (accountRiskGiftLabelInput) accountRiskGiftLabelInput.value = riskRecovery.gift.label || "";
+  renderAccountRiskCustomBenefits(riskRecovery.benefits);
 
   const logo = business.logo_data_url || "";
   if (accountLogoPreview) {
@@ -21466,6 +21470,7 @@ async function submitDigitalAsset(event) {
       }),
     });
     digitalAssetForm?.reset();
+    syncDigitalAssetFileControls();
     if (digitalAssetCategoryInput) digitalAssetCategoryInput.value = "catalogo";
     if (digitalAssetButtonTextInput) digitalAssetButtonTextInput.value = "Descargar ahora";
     await Promise.all([loadDigitalAssets({ force: true }), loadStorageQuota({ force: true })]);
@@ -21481,6 +21486,23 @@ async function submitDigitalAsset(event) {
   } finally {
     if (digitalAssetSubmitButton) digitalAssetSubmitButton.disabled = false;
   }
+}
+
+function syncDigitalAssetFileControls() {
+  if (!digitalAssetClearFilesButton) return;
+  const hasSelectedFile = Boolean(digitalAssetFileInput?.files?.length || digitalAssetCoverInput?.files?.length);
+  digitalAssetClearFilesButton.disabled = !hasSelectedFile;
+}
+
+function clearDigitalAssetFiles() {
+  if (digitalAssetFileInput) digitalAssetFileInput.value = "";
+  if (digitalAssetCoverInput) digitalAssetCoverInput.value = "";
+  syncDigitalAssetFileControls();
+  setInlineMessage(
+    digitalAssetMessage,
+    "Archivos retirados. Puedes seleccionar otros sin perder los demás datos del activo.",
+    "info",
+  );
 }
 
 async function updateDigitalAssetStatus(assetId, isActive) {
@@ -32025,6 +32047,28 @@ function optionalInputValue(input) {
   return value || null;
 }
 
+function accountRiskBenefitRowMarkup(benefit = {}) {
+  const id = String(benefit.id || `benefit-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  return `<div class="account-risk-custom-benefit" data-risk-benefit-row data-risk-benefit-id="${escapeHtml(id)}"><label class="checkbox-row"><input type="checkbox" data-risk-benefit-enabled ${benefit.enabled !== false ? "checked" : ""}><span>Activo</span></label><label><span>Nombre del beneficio</span><input type="text" maxlength="180" data-risk-benefit-label value="${escapeHtml(benefit.label || "")}" placeholder="Ej. 20% de descuento final"></label><label><span>Tipo</span><select data-risk-benefit-type><option value="DISCOUNT" ${benefit.type === "DISCOUNT" ? "selected" : ""}>Descuento (%)</option><option value="GIFT" ${benefit.type === "GIFT" ? "selected" : ""}>Obsequio</option><option value="BONUS" ${benefit.type === "BONUS" ? "selected" : ""}>Bono o extra</option><option value="OTHER" ${!['DISCOUNT','GIFT','BONUS'].includes(benefit.type) ? "selected" : ""}>Otro</option></select></label><label><span>Valor</span><input type="number" min="0" max="100" step="0.01" data-risk-benefit-value value="${escapeHtml(String(benefit.value || ""))}" placeholder="Opcional"></label><label class="span-2"><span>Detalle operativo</span><input type="text" maxlength="500" data-risk-benefit-detail value="${escapeHtml(benefit.detail || "")}" placeholder="Condición que debe cumplir el cliente"></label><button type="button" class="link-button danger-link" data-risk-benefit-remove>Eliminar beneficio</button></div>`;
+}
+
+function renderAccountRiskCustomBenefits(benefits = []) {
+  if (!accountRiskCustomBenefits) return;
+  accountRiskCustomBenefits.innerHTML = benefits.map(accountRiskBenefitRowMarkup).join("");
+}
+
+function collectAccountRiskCustomBenefits() {
+  if (!accountRiskCustomBenefits) return [];
+  return Array.from(accountRiskCustomBenefits.querySelectorAll("[data-risk-benefit-row]")).map((row) => ({
+    id: row.dataset.riskBenefitId || `benefit-${Date.now()}`,
+    enabled: row.querySelector("[data-risk-benefit-enabled]")?.checked !== false,
+    type: row.querySelector("[data-risk-benefit-type]")?.value || "OTHER",
+    label: row.querySelector("[data-risk-benefit-label]")?.value.trim() || "",
+    value: Number(row.querySelector("[data-risk-benefit-value]")?.value || 0),
+    detail: row.querySelector("[data-risk-benefit-detail]")?.value.trim() || "",
+  })).filter((benefit) => benefit.label);
+}
+
 async function submitAccountProfile(event) {
   event.preventDefault();
   if (!session?.user?.business_id) return;
@@ -32063,6 +32107,7 @@ async function submitAccountProfile(event) {
         enabled: Boolean(accountRiskGiftEnabledInput?.checked),
         label: optionalInputValue(accountRiskGiftLabelInput),
       },
+      benefits: collectAccountRiskCustomBenefits(),
     };
     const data = await api("/api/business/profile", {
       method: "PATCH",
@@ -54242,6 +54287,9 @@ rewardPassStatusFilter?.addEventListener("change", renderRewardPassesView);
 rewardPassCreateForm?.addEventListener("submit", submitRewardPass);
 leadCaptureForm?.addEventListener("submit", submitLeadCapture);
 digitalAssetForm?.addEventListener("submit", submitDigitalAsset);
+digitalAssetFileInput?.addEventListener("change", syncDigitalAssetFileControls);
+digitalAssetCoverInput?.addEventListener("change", syncDigitalAssetFileControls);
+digitalAssetClearFilesButton?.addEventListener("click", clearDigitalAssetFiles);
 leadCaptureAssetSelect?.addEventListener("change", renderLeadCaptureAssetPreview);
 leadCaptureOpenAssetsButton?.addEventListener("click", () => {
   setView("account");
@@ -54272,6 +54320,17 @@ branchDetailModal?.addEventListener("click", (event) => {
   if (event.target === branchDetailModal) closeBranchDetailModal();
 });
 accountProfileForm?.addEventListener("submit", submitAccountProfile);
+accountRiskAddBenefitButton?.addEventListener("click", () => {
+  const benefits = collectAccountRiskCustomBenefits();
+  benefits.push({ id: `benefit-${Date.now()}`, enabled: true, type: "DISCOUNT", label: "", value: 0, detail: "" });
+  renderAccountRiskCustomBenefits(benefits);
+  accountRiskCustomBenefits?.querySelector("[data-risk-benefit-label]:last-of-type")?.focus();
+});
+accountRiskCustomBenefits?.addEventListener("click", (event) => {
+  const remove = event.target.closest("[data-risk-benefit-remove]");
+  if (!remove) return;
+  remove.closest("[data-risk-benefit-row]")?.remove();
+});
 accountCommunicationConnectButton?.addEventListener("click", () => saveCommunicationEmailConnection());
 accountCommunicationDisconnectButton?.addEventListener("click", () => saveCommunicationEmailConnection({ removeApiKey: true }));
 accountCommunicationTestButton?.addEventListener("click", testCommunicationEmailConnection);
@@ -55067,6 +55126,14 @@ function rmsRiskRecoveryAuthorizations(raw = state.businessProfile?.rms_risk_rec
     },
     two_for_one: { enabled: Boolean(value.two_for_one?.enabled), label: String(value.two_for_one?.label || "").trim() },
     gift: { enabled: Boolean(value.gift?.enabled), label: String(value.gift?.label || "").trim() },
+    benefits: Array.isArray(value.benefits) ? value.benefits.map((benefit, index) => ({
+      id: String(benefit?.id || `benefit-${index + 1}`).trim(),
+      enabled: benefit?.enabled !== false,
+      type: String(benefit?.type || "OTHER").trim().toUpperCase(),
+      label: String(benefit?.label || "").trim(),
+      value: Math.max(0, Number(benefit?.value || 0)),
+      detail: String(benefit?.detail || "").trim(),
+    })).filter((benefit) => benefit.label) : [],
   };
 }
 
@@ -55076,12 +55143,15 @@ function rmsRiskRecoveryOfferOptions() {
   if (permissions.discount.enabled && permissions.discount.max_percent > 0) options.push(`<option value="DISCOUNT">Descuento autorizado · hasta ${escapeHtml(String(permissions.discount.max_percent))}%</option>`);
   if (permissions.two_for_one.enabled) options.push(`<option value="TWO_FOR_ONE">2x1 autorizado${permissions.two_for_one.label ? ` · ${escapeHtml(permissions.two_for_one.label)}` : ""}</option>`);
   if (permissions.gift.enabled) options.push(`<option value="GIFT">Obsequio autorizado${permissions.gift.label ? ` · ${escapeHtml(permissions.gift.label)}` : ""}</option>`);
+  permissions.benefits.filter((benefit) => benefit.enabled).forEach((benefit) => {
+    options.push(`<option value="BENEFIT:${escapeHtml(benefit.id)}">${escapeHtml(benefit.label)}${benefit.value ? ` · ${escapeHtml(String(benefit.value))}${benefit.type === "DISCOUNT" ? "%" : ""}` : ""}</option>`);
+  });
   return options.join("");
 }
 
 function rmsRiskRecoveryAvailabilityMarkup() {
   const permissions = rmsRiskRecoveryAuthorizations();
-  const enabled = [permissions.discount.enabled && permissions.discount.max_percent > 0 && `Descuento hasta ${permissions.discount.max_percent}%`, permissions.two_for_one.enabled && "2x1", permissions.gift.enabled && "Obsequio"].filter(Boolean);
+  const enabled = [permissions.discount.enabled && permissions.discount.max_percent > 0 && `Descuento hasta ${permissions.discount.max_percent}%`, permissions.two_for_one.enabled && "2x1", permissions.gift.enabled && "Obsequio", ...permissions.benefits.filter((benefit) => benefit.enabled).map((benefit) => benefit.label)].filter(Boolean);
   return enabled.length
     ? `<aside class="rms-risk-authorization-note"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><div><strong>Alternativas autorizadas para este riesgo</strong><small>${escapeHtml(enabled.join(" · "))}. Solo estas opciones pueden quedar registradas.</small></div></aside>`
     : `<aside class="rms-risk-authorization-note is-empty"><span class="material-symbols-outlined" aria-hidden="true">tune</span><div><strong>No hay concesiones extraordinarias autorizadas</strong><small>Puedes cerrar la venta sin una concesión o configurar permisos en Cuenta antes de ofrecer una alternativa.</small></div><button type="button" class="ghost-button compact" data-rms-open-risk-settings>Configurar en Cuenta</button></aside>`;
@@ -55152,12 +55222,25 @@ function activateRmsRiskTab(root, id, tabKey) {
 
 async function saveRmsRiskDecision(item, root) {
   const result = rmsCommercialNode(root, "[data-rms-risk-decision]", item.id)?.value || "CLEARED";
-  const reason = String(rmsCommercialNode(root, "[data-rms-risk-reason]", item.id)?.value || "").trim();
+  const reasonNode = rmsCommercialNode(root, "[data-rms-risk-reason]", item.id);
+  const recycleReasonNode = rmsCommercialNode(root, "[data-rms-risk-recycle-reason]", item.id);
+  const recycleReason = String(recycleReasonNode?.value || "").trim();
+  const recycleReasonLabel = recycleReasonNode?.selectedOptions?.[0]?.textContent?.trim() || recycleReason;
+  const typedReason = String(reasonNode?.value || "").trim();
+  const recoveryOfferNode = rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id);
+  const recoveryOfferValue = recoveryOfferNode?.value || "NONE";
+  const recoveryBenefitId = recoveryOfferValue.startsWith("BENEFIT:") ? recoveryOfferValue.slice(8) : null;
+  const selectedBenefit = recoveryBenefitId ? rmsRiskRecoveryAuthorizations().benefits.find((benefit) => benefit.id === recoveryBenefitId) : null;
+  const reason = typedReason || (result === "RECYCLE" && recycleReason
+    ? `Motivo de reciclaje: ${recycleReasonLabel}`
+    : result === "CLEARED" && selectedBenefit
+      ? `Beneficio extraordinario aplicado: ${selectedBenefit.label}`
+      : "");
   if (!reason) {
     showFeedback(result === "RECYCLE" ? "Explica por qué este caso debe ir a Reciclaje." : "Explica por qué la recuperación logró la venta.", "info", { title: "Riesgos de fuga" });
     return;
   }
-  const recoveryOffer = rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id)?.value || "NONE";
+  const recoveryOffer = recoveryBenefitId ? "CUSTOM" : recoveryOfferValue;
   const discountPercent = Number(rmsCommercialNode(root, "[data-rms-risk-discount-percent]", item.id)?.value || 0);
   const recoveryDetail = String(rmsCommercialNode(root, "[data-rms-risk-recovery-detail]", item.id)?.value || "").trim();
   const permissions = rmsRiskRecoveryAuthorizations();
@@ -55169,7 +55252,6 @@ async function saveRmsRiskDecision(item, root) {
     showFeedback("Describe la alternativa autorizada que aceptó el cliente.", "info", { title: "Riesgos de fuga" });
     return;
   }
-  const recycleReason = rmsCommercialNode(root, "[data-rms-risk-recycle-reason]", item.id)?.value || null;
   if (result === "RECYCLE" && !recycleReason) {
     showFeedback("Selecciona el motivo principal para enviar a Reciclaje.", "info", { title: "Riesgos de fuga" });
     return;
@@ -55183,6 +55265,7 @@ async function saveRmsRiskDecision(item, root) {
         source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null,
         result, reason,
         recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE",
+        recovery_benefit_id: result === "CLEARED" ? recoveryBenefitId : null,
         discount_percent: result === "CLEARED" ? discountPercent : 0,
         recovery_detail: result === "CLEARED" ? recoveryDetail || null : null,
         recycle_reason: result === "RECYCLE" ? recycleReason : null,

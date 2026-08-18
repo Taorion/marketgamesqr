@@ -206,6 +206,14 @@ const businessProfileSchema = z.object({
       enabled: z.boolean().optional().default(false),
       label: z.string().trim().max(180).optional().nullable(),
     }).optional().default({}),
+    benefits: z.array(z.object({
+      id: z.string().trim().min(1).max(120),
+      enabled: z.boolean().optional().default(true),
+      type: z.enum(["DISCOUNT", "GIFT", "BONUS", "OTHER"]).default("OTHER"),
+      label: z.string().trim().min(1).max(180),
+      value: z.number().min(0).max(100000000).optional().default(0),
+      detail: z.string().trim().max(500).optional().nullable(),
+    })).max(100).optional().default([]),
   }).optional(),
   logo_data_url: z.string().trim().max(2_000_000).optional().nullable(),
   ticket_frame_data_url: z.string().trim().max(2_500_000).optional().nullable(),
@@ -917,6 +925,14 @@ function riskRecoveryAuthorizationsFromSettings(settings = {}) {
       enabled: Boolean(configured.gift?.enabled),
       label: cleanSetting(configured.gift?.label),
     },
+    benefits: Array.isArray(configured.benefits) ? configured.benefits.map((benefit, index) => ({
+      id: cleanSetting(benefit?.id) || `benefit-${index + 1}`,
+      enabled: benefit?.enabled !== false,
+      type: cleanSetting(benefit?.type).toUpperCase() || "OTHER",
+      label: cleanSetting(benefit?.label),
+      value: Math.max(0, Number(benefit?.value || 0)),
+      detail: cleanSetting(benefit?.detail),
+    })).filter((benefit) => benefit.label) : [],
   };
 }
 

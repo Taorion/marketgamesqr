@@ -27651,3 +27651,71 @@ html body:not(#qoriCurrentMenuA#qoriCurrentMenuB#qoriCurrentMenuC#qoriCurrentMen
     grid-template-columns: 32px minmax(0, 1fr) 38px !important;
   }
 }
+
+/* Activo digital: jerarquía y control explícito de archivos seleccionados. */
+html body[data-current-view="account"] .portal-shell #digitalAssetForm .digital-asset-form-heading {
+  grid-column: 1 / -1 !important;
+  display: grid;
+  gap: 5px;
+  margin: 0 0 4px;
+  padding: clamp(16px, 2vw, 22px);
+  border: 1px solid rgba(7, 89, 214, .16);
+  border-left: 5px solid #0759d6;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f7fbff 0%, #edf6ff 100%);
+}
+
+html body[data-current-view="account"] .portal-shell #digitalAssetForm .digital-asset-form-heading h4 {
+  margin: 0;
+  color: #052a6b;
+  font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+  font-weight: 850;
+  letter-spacing: .035em;
+}
+
+html body[data-current-view="account"] .portal-shell #digitalAssetForm .digital-asset-form-heading p {
+  margin: 0;
+  color: #53677f;
+  line-height: 1.55;
+}
+
+html body[data-current-view="account"] .portal-shell #digitalAssetForm .modal-actions {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+html body[data-current-view="account"] .portal-shell #digitalAssetForm #digitalAssetMessage {
+  flex: 1 1 260px;
+  margin: 0;
+}
+
+html body[data-current-view="account"] .portal-shell #digitalAssetForm #digitalAssetClearFilesButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+html body[data-current-view="account"] .portal-shell #digitalAssetForm #digitalAssetClearFilesButton .material-symbols-outlined {
+  font-size: 19px;
+}
+
+@media (max-width: 680px) {
+  html body[data-current-view="account"] .portal-shell #digitalAssetForm .modal-actions > button {
+    width: 100%;
+  }
+}
+/* Beneficios extraordinarios configurables para Riesgos de fuga */
+.account-risk-custom-benefits{display:grid;gap:12px;margin:14px 0}
+.account-risk-custom-benefit{display:grid;grid-template-columns:minmax(120px,.7fr) minmax(180px,1.4fr) minmax(150px,1fr) minmax(110px,.6fr);gap:12px;align-items:end;padding:14px;border:1px solid var(--qori-line,#cde0f4);border-radius:14px;background:var(--qori-surface-soft,#f7fbff)}
+.account-risk-custom-benefit .checkbox-row{align-self:center}
+.account-risk-custom-benefit .span-2{grid-column:span 2}
+.account-risk-custom-benefit .danger-link{justify-self:start}
+@media (max-width:900px){.account-risk-custom-benefit{grid-template-columns:1fr 1fr}.account-risk-custom-benefit .span-2{grid-column:1/-1}}
+@media (max-width:560px){.account-risk-custom-benefit{grid-template-columns:1fr}}
