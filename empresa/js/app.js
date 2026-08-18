@@ -573,6 +573,11 @@ const digitalAssetMessage = document.getElementById("digitalAssetMessage");
 const digitalAssetClearFilesButton = document.getElementById("digitalAssetClearFilesButton");
 const digitalAssetSubmitButton = document.getElementById("digitalAssetSubmitButton");
 const digitalAssetsGrid = document.getElementById("digitalAssetsGrid");
+const digitalAssetDetailModal = document.getElementById("digitalAssetDetailModal");
+const digitalAssetDetailContent = document.getElementById("digitalAssetDetailContent");
+const digitalAssetDetailTitle = document.getElementById("digitalAssetDetailTitle");
+const digitalAssetDetailSubtitle = document.getElementById("digitalAssetDetailSubtitle");
+const digitalAssetDetailCloseButton = document.getElementById("digitalAssetDetailCloseButton");
 const refreshDigitalAssetsButton = document.getElementById("refreshDigitalAssetsButton");
 const accountPasswordForm = document.getElementById("accountPasswordForm");
 const accountCurrentPasswordInput = document.getElementById("accountCurrentPasswordInput");
@@ -21007,7 +21012,7 @@ function renderStorageQuota() {
   });
 }
 
-function renderDigitalAssets() {
+function renderDigitalAssetsLegacy() {
   renderStorageQuota();
   if (!digitalAssetsGrid) return;
   const assets = state.digitalAssets || [];
@@ -21102,6 +21107,112 @@ function renderDigitalAssets() {
   });
   digitalAssetsGrid.querySelectorAll("[data-disable-digital-asset]").forEach((button) => {
     button.addEventListener("click", () => updateDigitalAssetStatus(button.dataset.disableDigitalAsset, false));
+  });
+}
+
+function renderDigitalAssets() {
+  renderStorageQuota();
+  if (!digitalAssetsGrid) return;
+  const assets = state.digitalAssets || [];
+  digitalAssetsGrid.innerHTML = assets.map((asset) => `
+    <article class="digital-asset-list-row" data-open-digital-asset="${escapeHtml(asset.id)}" tabindex="0" role="button" aria-label="Abrir ${escapeHtml(asset.title || "activo digital")}">
+      <div class="digital-asset-list-media">${asset.cover_image_data_url ? `<img src="${escapeHtml(asset.cover_image_data_url)}" alt="">` : '<span class="material-symbols-outlined" aria-hidden="true">description</span>'}</div>
+      <div class="digital-asset-list-copy">
+        <span class="digital-asset-list-topline"><strong>${escapeHtml(asset.title || "Activo digital")}</strong><span class="status-chip ${asset.is_active === false ? "pending" : "ok"}">${asset.is_active === false ? "Inactivo" : "Activo"}</span></span>
+        <p>${escapeHtml(asset.description || "Sin descripción")}</p>
+        <small>${escapeHtml([asset.category || "Sin categoría", asset.file_name || "Archivo", storageBytesLabel(asset.file_size || 0), `${leadCapturesForDigitalAsset(asset.id).length} landing(s)`].join(" · "))}</small>
+      </div>
+      <button class="ghost-button compact digital-asset-list-open" type="button" data-open-digital-asset="${escapeHtml(asset.id)}"><span>Ver y editar</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
+    </article>
+  `).join("") || '<div class="empty-state compact">Aún no hay activos digitales. Carga aquí el catálogo, portafolio o brochure antes de crear un Ticket Relámpago.</div>';
+  digitalAssetsGrid.querySelectorAll("[data-open-digital-asset]").forEach((node) => {
+    const open = () => openDigitalAssetDetail(node.dataset.openDigitalAsset);
+    node.addEventListener("click", (event) => {
+      if (event.target.closest("button") && event.currentTarget !== event.target.closest("button")) return;
+      open();
+    });
+    node.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); }
+    });
+  });
+}
+
+function closeDigitalAssetDetail() {
+  state.editingDigitalAssetId = null;
+  digitalAssetDetailModal?.classList.add("hidden");
+  digitalAssetDetailModal?.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("digital-asset-detail-open");
+}
+
+function openDigitalAssetDetail(assetId) {
+  const asset = (state.digitalAssets || []).find((item) => item.id === assetId);
+  if (!asset || !digitalAssetDetailModal || !digitalAssetDetailContent) return;
+  state.editingDigitalAssetId = asset.id;
+  renderDigitalAssetDetailModal();
+  digitalAssetDetailModal.classList.remove("hidden");
+  digitalAssetDetailModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("digital-asset-detail-open");
+  window.requestAnimationFrame(() => digitalAssetDetailModal.querySelector(".digital-asset-detail-modal-card")?.focus());
+}
+
+function renderDigitalAssetDetailModal() {
+  const asset = (state.digitalAssets || []).find((item) => item.id === state.editingDigitalAssetId);
+  if (!asset || !digitalAssetDetailContent) return;
+  const shareUrl = digitalAssetShareUrl(asset.id);
+  const landings = leadCapturesForDigitalAsset(asset.id);
+  if (digitalAssetDetailTitle) digitalAssetDetailTitle.textContent = asset.title || "Activo digital";
+  if (digitalAssetDetailSubtitle) digitalAssetDetailSubtitle.textContent = `${asset.category || "Sin categoría"} · ${asset.is_active === false ? "Inactivo" : "Activo"}`;
+  digitalAssetDetailContent.innerHTML = `
+    <section class="digital-asset-detail-summary">
+      <div class="digital-asset-detail-cover">${asset.cover_image_data_url ? `<img src="${escapeHtml(asset.cover_image_data_url)}" alt="Portada de ${escapeHtml(asset.title || "activo digital")}">` : '<span class="material-symbols-outlined" aria-hidden="true">description</span>'}</div>
+      <dl><div><dt>Archivo</dt><dd>${escapeHtml(asset.file_name || "Sin nombre")}</dd></div><div><dt>Formato y tamaño</dt><dd>${escapeHtml(`${String(asset.file_type || "archivo").replace("application/", "").replace("image/", "").toUpperCase()} · ${storageBytesLabel(asset.file_size || 0)}`)}</dd></div><div><dt>Creado</dt><dd>${escapeHtml(formatDate(asset.created_at))}</dd></div><div><dt>Última actualización</dt><dd>${escapeHtml(formatDate(asset.updated_at))}</dd></div><div><dt>Uso</dt><dd>${landings.length} landing(s) vinculada(s)</dd></div><div><dt>Estado</dt><dd>${asset.is_active === false ? "Inactivo" : "Activo"}</dd></div></dl>
+    </section>
+    <section class="digital-asset-detail-actions">
+      <button class="ghost-button compact" type="button" data-use-digital-asset="${escapeHtml(asset.id)}">Usar en Ticket Relámpago</button>
+      ${shareUrl ? `<button class="ghost-button compact" type="button" data-copy-digital-asset-link="${escapeHtml(shareUrl)}">Copiar link público</button>` : `<button class="ghost-button compact" type="button" data-create-digital-asset-link="${escapeHtml(asset.id)}">Crear link para compartir</button>`}
+      <button class="ghost-button compact" type="button" data-disable-digital-asset="${escapeHtml(asset.id)}">${asset.is_active === false ? "Activar" : "Desactivar"}</button>
+      <button class="ghost-button compact danger-action" type="button" data-delete-digital-asset="${escapeHtml(asset.id)}">Eliminar y liberar espacio</button>
+    </section>
+    <section class="digital-asset-detail-editor"><div class="digital-asset-detail-section-head"><span class="mono-label">Edición</span><h4>Información y archivos</h4><p>Actualiza los datos o reemplaza únicamente los archivos que necesites.</p></div>${renderDigitalAssetEditor(asset)}</section>
+    ${renderDigitalAssetLandings(asset)}
+  `;
+  bindDigitalAssetDetailActions();
+}
+
+function bindDigitalAssetDetailActions() {
+  const root = digitalAssetDetailContent;
+  if (!root) return;
+  root.querySelector("[data-digital-asset-edit-form]")?.addEventListener("submit", (event) => submitDigitalAssetEdit(event, event.currentTarget.dataset.digitalAssetEditForm));
+  root.querySelector("[data-cancel-digital-asset-edit]")?.addEventListener("click", closeDigitalAssetDetail);
+  root.querySelectorAll("[data-copy-digital-asset-link], [data-copy-asset-landing]").forEach((button) => button.addEventListener("click", async () => {
+    const link = button.dataset.copyDigitalAssetLink || button.dataset.copyAssetLanding || "";
+    await navigator.clipboard?.writeText(link);
+    showFeedback("Link del activo copiado.", "success", { title: "Activo digital" });
+  }));
+  root.querySelectorAll("[data-create-digital-asset-link]").forEach((button) => button.addEventListener("click", () => createShareLinkForDigitalAsset(button.dataset.createDigitalAssetLink)));
+  root.querySelectorAll("[data-edit-asset-landing]").forEach((button) => button.addEventListener("click", () => {
+    closeDigitalAssetDetail(); state.contactCenterTab = "captures"; setView("leads"); setContactCenterTab?.("captures");
+    openLeadCaptureDetail(button.dataset.editAssetLanding, { focusContent: true }).catch((error) => showFeedback(error.message, "error"));
+  }));
+  root.querySelectorAll("[data-download-asset-landing-qr]").forEach((button) => button.addEventListener("click", () => downloadLeadCaptureQr(button.dataset.downloadAssetLandingQr)));
+  root.querySelector("[data-use-digital-asset]")?.addEventListener("click", (event) => {
+    const assetId = event.currentTarget.dataset.useDigitalAsset || ""; closeDigitalAssetDetail(); setView("strategic-qr");
+    if (leadCaptureAssetSelect) leadCaptureAssetSelect.value = assetId;
+    renderLeadCaptureAssetPreview(); leadCaptureForm?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+  root.querySelector("[data-disable-digital-asset]")?.addEventListener("click", async (event) => {
+    const asset = (state.digitalAssets || []).find((item) => item.id === state.editingDigitalAssetId);
+    await updateDigitalAssetStatus(event.currentTarget.dataset.disableDigitalAsset, asset?.is_active === false);
+    renderDigitalAssetDetailModal();
+  });
+  root.querySelector("[data-delete-digital-asset]")?.addEventListener("click", async (event) => {
+    if (!window.confirm("¿Eliminar este archivo de forma permanente? Solo se permite si no se ha compartido con un lead.")) return;
+    try {
+      await api(`/api/business/digital-assets/${encodeURIComponent(event.currentTarget.dataset.deleteDigitalAsset)}`, { method: "DELETE", headers: authHeaders() });
+      closeDigitalAssetDetail(); await Promise.all([loadDigitalAssets({ force: true }), loadStorageQuota({ force: true })]);
+      renderDigitalAssets(); renderLeadCaptureAssetOptions(); renderFlyerQrAssetOptions();
+      showFeedback("Archivo eliminado y cuota de almacenamiento actualizada.", "success", { title: "Almacenamiento" });
+    } catch (error) { showFeedback(error.message, "error", { title: "No se puede eliminar" }); }
   });
 }
 
@@ -21215,6 +21326,7 @@ async function createShareLinkForDigitalAsset(assetId) {
     state.leadCaptureLoaded = false;
     await loadLeadCaptureActivations({ force: true });
     renderDigitalAssets();
+    if (state.editingDigitalAssetId === asset.id) renderDigitalAssetDetailModal();
     renderLeadCaptureTable();
     renderFlyerQrAssetOptions();
     const link = result.activation?.public_url || digitalAssetShareUrl(asset.id);
@@ -21433,7 +21545,7 @@ async function submitDigitalAssetEdit(event, assetId) {
       headers: authHeaders(),
       body: JSON.stringify(payload),
     });
-    state.editingDigitalAssetId = null;
+    closeDigitalAssetDetail();
     await Promise.all([loadDigitalAssets({ force: true }), loadStorageQuota({ force: true })]);
     if (!state.leadCaptureLoaded) await loadLeadCaptureActivations({ force: true });
     renderDigitalAssets();
@@ -54290,6 +54402,13 @@ digitalAssetForm?.addEventListener("submit", submitDigitalAsset);
 digitalAssetFileInput?.addEventListener("change", syncDigitalAssetFileControls);
 digitalAssetCoverInput?.addEventListener("change", syncDigitalAssetFileControls);
 digitalAssetClearFilesButton?.addEventListener("click", clearDigitalAssetFiles);
+digitalAssetDetailCloseButton?.addEventListener("click", closeDigitalAssetDetail);
+digitalAssetDetailModal?.addEventListener("click", (event) => {
+  if (event.target === digitalAssetDetailModal) closeDigitalAssetDetail();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && digitalAssetDetailModal && !digitalAssetDetailModal.classList.contains("hidden")) closeDigitalAssetDetail();
+});
 leadCaptureAssetSelect?.addEventListener("change", renderLeadCaptureAssetPreview);
 leadCaptureOpenAssetsButton?.addEventListener("click", () => {
   setView("account");

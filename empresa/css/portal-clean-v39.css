@@ -27719,3 +27719,280 @@ html body[data-current-view="account"] .portal-shell #digitalAssetForm #digitalA
 .account-risk-custom-benefit .danger-link{justify-self:start}
 @media (max-width:900px){.account-risk-custom-benefit{grid-template-columns:1fr 1fr}.account-risk-custom-benefit .span-2{grid-column:1/-1}}
 @media (max-width:560px){.account-risk-custom-benefit{grid-template-columns:1fr}}
+
+/* Biblioteca de activos digitales: lista compacta y detalle modal editable */
+html body[data-current-view="account"] .portal-shell .digital-assets-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 10px !important;
+  margin-top: 18px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .digital-asset-list-row {
+  display: grid !important;
+  grid-template-columns: 58px minmax(0, 1fr) auto !important;
+  gap: 14px !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 12px 14px !important;
+  border: 1px solid #d7e6f3 !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 20px rgba(1, 34, 104, .045) !important;
+  cursor: pointer !important;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease !important;
+}
+
+html body[data-current-view="account"] .portal-shell .digital-asset-list-row:hover,
+html body[data-current-view="account"] .portal-shell .digital-asset-list-row:focus-visible {
+  border-color: #77b9f4 !important;
+  box-shadow: 0 14px 28px rgba(1, 65, 179, .1) !important;
+  transform: translateY(-1px) !important;
+  outline: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .digital-asset-list-media {
+  display: grid !important;
+  place-items: center !important;
+  width: 58px !important;
+  height: 58px !important;
+  overflow: hidden !important;
+  border: 1px solid #d9e9f5 !important;
+  border-radius: 12px !important;
+  background: linear-gradient(145deg, #eef7ff, #fff) !important;
+  color: #0759d6 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .digital-asset-list-media img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+html body[data-current-view="account"] .portal-shell .digital-asset-list-media .material-symbols-outlined {
+  font-size: 28px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .digital-asset-list-copy,
+html body[data-current-view="account"] .portal-shell .digital-asset-list-copy > * {
+  min-width: 0 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .digital-asset-list-topline {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .digital-asset-list-topline strong {
+  overflow: hidden !important;
+  color: #071832 !important;
+  font-size: .98rem !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="account"] .portal-shell .digital-asset-list-copy p {
+  margin: 4px 0 !important;
+  overflow: hidden !important;
+  color: #52697a !important;
+  font-size: .82rem !important;
+  line-height: 1.35 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="account"] .portal-shell .digital-asset-list-copy small {
+  display: block !important;
+  overflow: hidden !important;
+  color: #6b7f91 !important;
+  font-size: .7rem !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body.digital-asset-detail-open {
+  overflow: hidden !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal.digital-asset-detail-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1180 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: clamp(12px, 2.5vw, 30px) !important;
+  overflow: hidden !important;
+  background: rgba(3, 18, 42, .62) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal.hidden {
+  display: none !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-modal-card {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  width: min(980px, 100%) !important;
+  height: min(880px, calc(100dvh - 24px)) !important;
+  max-height: calc(100dvh - 24px) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(174, 210, 240, .9) !important;
+  border-radius: 20px !important;
+  background: #f8fbff !important;
+  box-shadow: 0 30px 80px rgba(1, 24, 72, .3) !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-head {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 2 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  margin: 0 !important;
+  padding: 18px clamp(18px, 3vw, 30px) !important;
+  border-bottom: 1px solid #dbe9f5 !important;
+  background: #fff !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-head h3 {
+  margin: 3px 0 4px !important;
+  color: #052a6b !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-head p {
+  margin: 0 !important;
+  color: #60778e !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-scroll {
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  padding: clamp(18px, 3vw, 30px) !important;
+  scrollbar-gutter: stable !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-summary {
+  display: grid !important;
+  grid-template-columns: 150px minmax(0, 1fr) !important;
+  gap: 22px !important;
+  padding: 18px !important;
+  border: 1px solid #dbe9f5 !important;
+  border-radius: 16px !important;
+  background: #fff !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-cover {
+  display: grid !important;
+  place-items: center !important;
+  width: 150px !important;
+  min-height: 130px !important;
+  overflow: hidden !important;
+  border-radius: 13px !important;
+  background: #edf6ff !important;
+  color: #0759d6 !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-cover img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-cover .material-symbols-outlined {
+  font-size: 42px !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-summary dl {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px 20px !important;
+  margin: 0 !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-summary dt {
+  color: #6a7f91 !important;
+  font-size: .68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .04em !important;
+  text-transform: uppercase !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-summary dd {
+  margin: 3px 0 0 !important;
+  overflow-wrap: anywhere !important;
+  color: #102d4b !important;
+  font-size: .84rem !important;
+  font-weight: 700 !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin: 14px 0 !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-editor,
+html body .portal-shell #digitalAssetDetailModal .digital-asset-landings {
+  margin-top: 16px !important;
+  padding: clamp(16px, 2.4vw, 24px) !important;
+  border: 1px solid #dbe9f5 !important;
+  border-radius: 16px !important;
+  background: #fff !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-section-head {
+  margin-bottom: 16px !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-section-head h4 {
+  margin: 3px 0 4px !important;
+  color: #052a6b !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-section-head p {
+  margin: 0 !important;
+  color: #60778e !important;
+}
+
+html body .portal-shell #digitalAssetDetailModal .digital-asset-edit-form {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+@media (max-width: 720px) {
+  html body[data-current-view="account"] .portal-shell .digital-asset-list-row {
+    grid-template-columns: 48px minmax(0, 1fr) !important;
+  }
+  html body[data-current-view="account"] .portal-shell .digital-asset-list-media {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  html body[data-current-view="account"] .portal-shell .digital-asset-list-open {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+  html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-summary {
+    grid-template-columns: 1fr !important;
+  }
+  html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-cover {
+    width: 100% !important;
+    height: 150px !important;
+  }
+  html body .portal-shell #digitalAssetDetailModal .digital-asset-detail-summary dl {
+    grid-template-columns: 1fr !important;
+  }
+}

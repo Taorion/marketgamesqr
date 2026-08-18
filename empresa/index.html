@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-    <link rel="stylesheet" href="css/portal-clean-v39.css?v=digital-asset-controls-v221-20260818">
+    <link rel="stylesheet" href="css/portal-clean-v39.css?v=digital-asset-library-v222-20260818">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -1802,6 +1802,20 @@
                 </form>
                 <div class="digital-assets-grid" id="digitalAssetsGrid"></div>
               </article>
+
+              <div class="modal-shell hidden digital-asset-detail-modal" id="digitalAssetDetailModal" role="dialog" aria-modal="true" aria-labelledby="digitalAssetDetailTitle" aria-hidden="true">
+                <article class="modal-card digital-asset-detail-modal-card" tabindex="-1">
+                  <div class="modal-head digital-asset-detail-head">
+                    <div>
+                      <span class="mono-label">Detalle del activo digital</span>
+                      <h3 id="digitalAssetDetailTitle">Activo digital</h3>
+                      <p id="digitalAssetDetailSubtitle">Consulta sus datos, uso y configuración.</p>
+                    </div>
+                    <button class="icon-button" id="digitalAssetDetailCloseButton" type="button" aria-label="Cerrar detalle del activo"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+                  </div>
+                  <div class="digital-asset-detail-scroll" id="digitalAssetDetailContent"></div>
+                </article>
+              </div>
 
               <article class="surface-card account-settings-card account-ticket-frame-card account-span-4" data-account-screen="assets">
                 <div class="table-card-head">
@@ -7877,7 +7891,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-    <script src="js/app.js?v=digital-asset-controls-v221-20260818" defer></script>
+    <script src="js/app.js?v=digital-asset-library-v222-20260818" defer></script>
     <script src="js/communications.js?v=email-attachments-v325-20260817" defer></script>
 </body>
 </html>
