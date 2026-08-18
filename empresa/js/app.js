@@ -3381,10 +3381,15 @@ function showBusyOverlay(title, message) {
   if (busyOverlayTitle) busyOverlayTitle.textContent = title || "Procesando";
   if (busyOverlayMessage) busyOverlayMessage.textContent = message || "Estamos sincronizando la información.";
   if (busyOverlay) {
-    busyOverlay.classList.remove("hidden");
-    busyOverlay.removeAttribute("aria-hidden");
-    busyOverlay.setAttribute("aria-busy", "true");
+    // La capa heredada no se muestra: usamos un único aviso global para no
+    // superponer el progreso con otro mensaje de estado.
+    busyOverlay.classList.add("hidden");
+    busyOverlay.setAttribute("aria-hidden", "true");
+    busyOverlay.setAttribute("aria-busy", "false");
   }
+  showFeedback(message || "Estamos sincronizando la información.", "loading", {
+    title: title || "Procesando",
+  });
 }
 
 function hideBusyOverlay(force = false) {
@@ -3394,6 +3399,7 @@ function hideBusyOverlay(force = false) {
     busyOverlay.setAttribute("aria-hidden", "true");
     busyOverlay.setAttribute("aria-busy", "false");
   }
+  if (!state.busyDepth && actionFeedback?.classList.contains("loading")) hideFeedback();
 }
 
 function setButtonLoading(button, isLoading, label) {
@@ -7291,7 +7297,7 @@ async function loadWorkspace() {
     showFeedback(
       lightTestMode ? "Modo ligero listo. Maquina de ventas cargada sin abrir dashboard pesado." : "Datos actualizados. Ya puedes revisar saldos, tickets y ventas.",
       "success",
-      { title: lightTestMode ? "Prueba ligera" : "Portal actualizado", timeout: 1800 }
+      { title: lightTestMode ? "Prueba ligera" : "Datos listos", timeout: 1800 }
     );
   } catch (error) {
     if (loadSeq !== state.workspaceLoadSeq || (session?.user?.business_id || null) !== loadBusinessId) return;
