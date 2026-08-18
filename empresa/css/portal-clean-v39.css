@@ -26342,6 +26342,41 @@ html body .portal-shell .busy-overlay:not(.hidden) .busy-progress > i {
   background: linear-gradient(90deg,#0759d6,#07cefb) !important;
   animation: qori-feedback-progress 1.35s cubic-bezier(.37,0,.63,1) infinite !important;
 }
+
+/* El feedback de acción es una tarjeta breve centrada, nunca una columna lateral
+   ni una capa de altura completa. Esta regla final neutraliza layouts heredados. */
+@keyframes qori-feedback-center-enter {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 10px)); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+html body .content-shell > #actionFeedback.action-feedback:not([hidden]):not(.hidden) {
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: 50% !important;
+  width: min(430px, calc(100vw - 40px)) !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: min(210px, calc(100vh - 48px)) !important;
+  grid-auto-rows: min-content !important;
+  align-content: start !important;
+  overflow: auto !important;
+  transform: translate(-50%, -50%) !important;
+  animation: qori-feedback-center-enter .22s var(--ease-out-premium, ease-out) both !important;
+}
+
+@media (max-width: 620px) {
+  html body .content-shell > #actionFeedback.action-feedback:not([hidden]):not(.hidden) {
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: 50% !important;
+    width: calc(100vw - 32px) !important;
+    max-height: min(220px, calc(100vh - 32px)) !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   html body .portal-shell .busy-overlay:not(.hidden) .busy-progress > i { animation: none !important; transform: translateX(65%) !important; }
 }
