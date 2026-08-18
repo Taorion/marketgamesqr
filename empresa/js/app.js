@@ -6395,29 +6395,78 @@ function forceSidebarMenuLeftAlignment() {
     setImportantStyle(badge, "white-space", "nowrap");
   });
 
-  if (document.body.dataset.currentView === "rms-machine") {
-    const rmsEntries = document.querySelectorAll(
-      '.sidebar .nav-item[data-view="rms-machine"], .sidebar .sidebar-primary-nav-item, .sidebar .nav-item.active'
-    );
-    rmsEntries.forEach((entry) => {
-      setImportantStyle(entry, "border", "1px solid rgba(105, 221, 255, .52)");
-      setImportantStyle(entry, "border-left", "3px solid #69ddff");
-      setImportantStyle(entry, "border-radius", "10px");
-      setImportantStyle(entry, "background", "linear-gradient(135deg, #0b63f6 0%, #0759d6 48%, #052a6b 100%)");
-      setImportantStyle(entry, "color", "#ffffff");
-      setImportantStyle(entry, "-webkit-text-fill-color", "#ffffff");
-      setImportantStyle(entry, "box-shadow", "0 12px 24px rgba(4, 55, 150, .34), 0 0 20px rgba(105, 221, 255, .14), inset 0 1px 0 rgba(255, 255, 255, .14)");
-      const rmsIcon = entry.querySelector(":scope > .material-symbols-outlined");
-      setImportantStyle(rmsIcon, "color", "#ffffff");
-      setImportantStyle(rmsIcon, "-webkit-text-fill-color", "#ffffff");
-      setImportantStyle(rmsIcon, "opacity", "1");
-      entry.querySelectorAll(":scope strong, :scope small").forEach((copy) => {
-        setImportantStyle(copy, "color", copy.tagName === "SMALL" ? "rgba(232, 245, 255, .9)" : "#ffffff");
-        setImportantStyle(copy, "-webkit-text-fill-color", copy.tagName === "SMALL" ? "rgba(232, 245, 255, .9)" : "#ffffff");
-        setImportantStyle(copy, "opacity", "1");
+  rows.forEach((entry) => {
+    const isCurrent = entry.dataset.sidebarCurrentMatch === "true"
+      || entry.getAttribute("aria-current") === "page";
+    const currentBadge = entry.querySelector(".sidebar-current-location-badge");
+    const icon = entry.querySelector(":scope > .material-symbols-outlined");
+    const text = entry.querySelector(":scope > span:not(.material-symbols-outlined):not(.feature-tier-badge)");
+
+    if (!isCurrent) {
+      [
+        "background", "border", "border-left", "box-shadow", "color",
+        "-webkit-text-fill-color", "margin", "width",
+      ].forEach((property) => entry.style.removeProperty(property));
+      setImportantStyle(entry, "border-radius", "0");
+      setImportantStyle(entry, "min-height", "54px");
+      setImportantStyle(entry, "padding", "8px 4px 8px 8px");
+      [icon, ...(text?.querySelectorAll(":scope > strong, :scope > small") || [])].forEach((node) => {
+        node?.style.removeProperty("color");
+        node?.style.removeProperty("-webkit-text-fill-color");
+        node?.style.removeProperty("opacity");
       });
+      currentBadge?.remove();
+      return;
+    }
+
+    setImportantStyle(entry, "background", "repeating-linear-gradient(135deg, rgba(255, 255, 255, .10) 0 8px, transparent 8px 17px), linear-gradient(135deg, #0877ff 0%, #0341b3 52%, #012268 100%)");
+    setImportantStyle(entry, "border", "2px solid #69ddff");
+    setImportantStyle(entry, "border-left", "5px solid #ffffff");
+    setImportantStyle(entry, "border-radius", "12px");
+    setImportantStyle(entry, "box-shadow", "0 14px 30px rgba(1, 34, 104, .42), 0 0 0 3px rgba(105, 221, 255, .18), inset 0 1px 0 rgba(255, 255, 255, .22)");
+    setImportantStyle(entry, "color", "#ffffff");
+    setImportantStyle(entry, "-webkit-text-fill-color", "#ffffff");
+    setImportantStyle(entry, "min-height", isDesktopCollapsed ? "52px" : "68px");
+    setImportantStyle(entry, "padding", isDesktopCollapsed ? "8px" : "9px 8px 9px 10px");
+    setImportantStyle(entry, "margin", "5px 2px");
+    setImportantStyle(entry, "width", "calc(100% - 4px)");
+    setImportantStyle(icon, "color", "#ffffff");
+    setImportantStyle(icon, "-webkit-text-fill-color", "#ffffff");
+    setImportantStyle(icon, "opacity", "1");
+    text?.querySelectorAll(":scope > strong, :scope > small").forEach((copy) => {
+      const color = copy.tagName === "SMALL" ? "rgba(235, 249, 255, .92)" : "#ffffff";
+      setImportantStyle(copy, "color", color);
+      setImportantStyle(copy, "-webkit-text-fill-color", color);
+      setImportantStyle(copy, "opacity", "1");
     });
-  }
+
+    if (isDesktopCollapsed) currentBadge?.remove();
+    if (!isDesktopCollapsed && text && !currentBadge) {
+      const badge = document.createElement("em");
+      badge.className = "sidebar-current-location-badge";
+      badge.setAttribute("aria-hidden", "true");
+      badge.textContent = "ESTÁS AQUÍ";
+      text.appendChild(badge);
+      setImportantStyle(badge, "display", "inline-flex");
+      setImportantStyle(badge, "align-items", "center");
+      setImportantStyle(badge, "align-self", "flex-start");
+      setImportantStyle(badge, "width", "fit-content");
+      setImportantStyle(badge, "margin", "5px 0 0");
+      setImportantStyle(badge, "padding", "3px 8px");
+      setImportantStyle(badge, "border", "1px solid rgba(255, 255, 255, .72)");
+      setImportantStyle(badge, "border-radius", "999px");
+      setImportantStyle(badge, "background", "#ffffff");
+      setImportantStyle(badge, "color", "#0341b3");
+      setImportantStyle(badge, "-webkit-text-fill-color", "#0341b3");
+      setImportantStyle(badge, "box-shadow", "0 4px 12px rgba(1, 34, 104, .24)");
+      setImportantStyle(badge, "font-size", ".58rem");
+      setImportantStyle(badge, "font-style", "normal");
+      setImportantStyle(badge, "font-weight", "950");
+      setImportantStyle(badge, "letter-spacing", ".09em");
+      setImportantStyle(badge, "line-height", "1.2");
+      setImportantStyle(badge, "white-space", "nowrap");
+    }
+  });
 }
 
 function viewNeedsCampaignData(view) {
