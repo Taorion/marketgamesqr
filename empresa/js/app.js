@@ -6325,7 +6325,7 @@ function forceSidebarMenuLeftAlignment() {
     setImportantStyle(chevron, "justify-self", isDesktopCollapsed ? "center" : "end");
   });
 
-  const rows = document.querySelectorAll(".sidebar .sidebar-nav-section-panel .nav-item, .sidebar .sidebar-primary-nav-item");
+  const rows = document.querySelectorAll(".sidebar .nav-item[data-view]");
   rows.forEach((row) => {
     setImportantStyle(row, "display", "grid");
     setImportantStyle(row, "grid-template-columns", "28px minmax(0, 1fr) 34px");
