@@ -45981,7 +45981,7 @@ function rmsStationVisualMeta(phase = "") {
     },
     clasificacion: {
       icon: "account_tree",
-      tone: "classifier",
+      tone: "activation",
       image: "/empresa/img/qori-station-04-activacion-1.jpg",
       imageAlt: "Estacion 04 Activacion 1",
       screenTitle: "Estacion de almacenamiento: Activación 1",

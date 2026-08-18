@@ -24774,3 +24774,176 @@ html body .content-shell > #actionFeedback.info:not([hidden]):not(.hidden) {
     width: calc(100vw - 24px) !important;
   }
 }
+
+/* Activación 1: una consola de contacto clara, con contexto primero y acción después. */
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-lean-activation-guide {
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 13px !important;
+  margin: 0 0 18px !important;
+  padding: 14px 16px !important;
+  border: 1px solid rgba(7, 151, 214, .18) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(100deg, #edf9ff, #ffffff 74%) !important;
+  box-shadow: 0 10px 26px rgba(3, 65, 142, .055) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-lean-activation-guide > .material-symbols-outlined {
+  display: grid !important;
+  width: 42px !important;
+  height: 42px !important;
+  place-items: center !important;
+  border-radius: 12px !important;
+  background: linear-gradient(145deg, #0759d6, #08aede) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 18px rgba(7, 89, 214, .18) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-work-list {
+  gap: clamp(18px, 2.2vw, 28px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-work-item {
+  border-color: rgba(4, 75, 159, .15) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 18px 44px rgba(1, 40, 104, .08) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-work-item:hover {
+  border-color: rgba(8, 134, 211, .28) !important;
+  box-shadow: 0 22px 50px rgba(1, 40, 104, .12) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-work-lead {
+  position: relative !important;
+  overflow: hidden !important;
+  background: radial-gradient(circle at 91% -42%, rgba(7, 206, 251, .38), transparent 47%), linear-gradient(118deg, #012268 0%, #0341b3 62%, #0769cf 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-work-person .rms-activation-lead-open {
+  display: inline-flex !important;
+  align-items: center !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  text-align: left !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-work-person .rms-activation-lead-open::after {
+  content: "open_in_new";
+  margin-left: 7px;
+  color: #9fddff;
+  font-family: "Material Symbols Outlined";
+  font-size: 16px;
+  font-weight: 400;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-work-person .rms-activation-lead-open:hover strong {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-work-facts div {
+  min-height: 48px !important;
+  padding: 8px 11px !important;
+  border: 1px solid rgba(255, 255, 255, .14) !important;
+  border-radius: 10px !important;
+  background: rgba(0, 24, 78, .16) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-work-console {
+  gap: 14px !important;
+  background: linear-gradient(155deg, #f3f9ff 0%, #ffffff 46%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-delivery-head {
+  position: relative !important;
+  overflow: hidden !important;
+  border-color: rgba(7, 104, 191, .16) !important;
+  background: linear-gradient(112deg, #ffffff, #eef8ff) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-delivery-head::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(#08b4e7, #0759d6);
+  content: "";
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-delivery-state {
+  border-color: rgba(7, 104, 191, .18) !important;
+  background: #e8f5ff !important;
+  color: #07519e !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-plan-controls,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-message-field {
+  border-color: rgba(15, 91, 165, .13) !important;
+  box-shadow: 0 8px 18px rgba(7, 64, 130, .035) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-plan-controls:focus-within,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-message-field:focus-within {
+  border-color: rgba(7, 111, 205, .36) !important;
+  box-shadow: 0 0 0 3px rgba(7, 144, 220, .08) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-message-field:has([data-rms-activation-message]) {
+  border-color: rgba(7, 105, 194, .2) !important;
+  background: linear-gradient(145deg, #f1f9ff, #ffffff) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] [data-rms-activation-message] {
+  min-height: 138px !important;
+  border-color: rgba(7, 105, 194, .22) !important;
+  background: #ffffff !important;
+  color: #123d70 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-action-row {
+  justify-content: flex-end !important;
+  border-color: rgba(7, 105, 194, .17) !important;
+  background: linear-gradient(100deg, #edf8ff, #f8fcff) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-outcome-row {
+  border-color: rgba(8, 148, 171, .2) !important;
+  background: linear-gradient(100deg, #effcff, #f5fbff) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-delivery-note {
+  display: block !important;
+  padding: 2px 4px 0 !important;
+  color: #547792 !important;
+  font-size: .76rem !important;
+  line-height: 1.5 !important;
+}
+
+@media (max-width: 860px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-lean-activation-guide {
+    grid-template-columns: 42px minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-lean-activation-guide-count {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 600px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-work-console {
+    gap: 12px !important;
+    padding: 14px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="activation"] .rms-activation-action-row {
+    justify-content: stretch !important;
+  }
+}
