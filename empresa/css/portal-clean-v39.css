@@ -27996,3 +27996,30 @@ html body .portal-shell #digitalAssetDetailModal .digital-asset-edit-form {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Sincronización final Cuenta: neutraliza selectores heredados por :target. */
+html body[data-current-view="account"] .portal-shell .account-admin-nav a:not(.is-active):not([aria-current="page"]) {
+  border-color: rgba(35, 111, 153, .18) !important;
+  color: #102d4b !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-admin-nav a:not(.is-active):not([aria-current="page"]) .material-symbols-outlined {
+  color: #0759d6 !important;
+  background: #eaf5ff !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-admin-nav a.is-active,
+html body[data-current-view="account"] .portal-shell .account-admin-nav a[aria-current="page"] {
+  border-color: #69c9f3 !important;
+  color: #033d92 !important;
+  background: linear-gradient(145deg, #eef9ff 0%, #ffffff 72%) !important;
+  box-shadow: 0 10px 24px rgba(3, 65, 179, .12), inset 0 3px 0 #078cff !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-admin-nav a.is-active .material-symbols-outlined,
+html body[data-current-view="account"] .portal-shell .account-admin-nav a[aria-current="page"] .material-symbols-outlined {
+  color: #ffffff !important;
+  background: linear-gradient(145deg, #078cff, #0341b3) !important;
+}

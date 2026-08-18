@@ -1469,11 +1469,19 @@ const ACCOUNT_SCREEN_COPY = Object.freeze({
 
 const ACCOUNT_SECTION_SCREEN = Object.freeze({
   accountSectionCompany: "profile",
-  accountSectionSecurity: "profile",
+  accountSectionSecurity: "security",
   accountSectionData: "billing",
   accountSectionBilling: "billing",
   accountSectionAssets: "assets",
-  accountSectionUsers: "profile",
+  accountSectionUsers: "admin",
+});
+
+const ACCOUNT_SCREEN_SECTION = Object.freeze({
+  profile: "accountSectionCompany",
+  assets: "accountSectionAssets",
+  admin: "accountSectionUsers",
+  billing: "accountSectionData",
+  security: "accountSectionSecurity",
 });
 
 function normalizeAccountScreen(screen = "") {
@@ -1483,6 +1491,33 @@ function normalizeAccountScreen(screen = "") {
 function accountScreenFromHash() {
   const sectionId = String(window.location.hash || "").replace(/^#/, "");
   return ACCOUNT_SECTION_SCREEN[sectionId] || "";
+}
+
+function accountSidebarScreen(screen = "") {
+  const normalized = normalizeAccountScreen(screen);
+  return normalized === "admin" || normalized === "security" ? "profile" : normalized;
+}
+
+function syncAccountNavigationState(screen = "") {
+  const normalized = normalizeAccountScreen(screen);
+  const currentSectionId = ACCOUNT_SCREEN_SECTION[normalized] || ACCOUNT_SCREEN_SECTION.profile;
+  document.querySelectorAll(".account-admin-nav a[href^='#accountSection']").forEach((link) => {
+    const sectionId = String(link.getAttribute("href") || "").replace(/^#/, "");
+    const isCurrent = sectionId === currentSectionId;
+    link.classList.toggle("is-active", isCurrent);
+    if (isCurrent) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
+  const sidebarScreen = accountSidebarScreen(normalized);
+  navButtons
+    .filter((button) => button.dataset.view === "account")
+    .forEach((button) => {
+      const isCurrent = button.dataset.accountScreen === sidebarScreen;
+      button.classList.toggle("active", isCurrent);
+      button.dataset.sidebarCurrentMatch = isCurrent ? "true" : "false";
+      if (isCurrent) button.setAttribute("aria-current", "page");
+      else button.removeAttribute("aria-current");
+    });
 }
 
 function applyAccountScreen() {
@@ -1506,11 +1541,19 @@ function applyAccountScreen() {
   const subtitle = document.getElementById("accountViewSubtitle");
   if (title) title.textContent = copy.title;
   if (subtitle) subtitle.textContent = copy.subtitle;
+  syncAccountNavigationState(screen);
 }
 
 function openAccountSection(screen = "") {
-  state.accountScreen = normalizeAccountScreen(screen);
+  const normalized = normalizeAccountScreen(screen);
+  state.accountScreen = normalized;
+  state.accountHashApplied = true;
+  const sectionId = ACCOUNT_SCREEN_SECTION[normalized];
+  if (sectionId && window.location.hash !== `#${sectionId}`) {
+    window.history.replaceState(window.history.state, "", `#${sectionId}`);
+  }
   setView("account");
+  applyAccountScreen();
 }
 
 function ensureSidebarRuntimeFeedbackStyles() {
@@ -6601,7 +6644,7 @@ function setView(view) {
       && (contactTarget === "agenda" ? state.contactCenterTab === "agenda" : state.contactCenterTab !== "agenda");
     const isAccountTarget = button.dataset.view === "account"
       && view === "account"
-      && accountTarget === state.accountScreen;
+      && accountTarget === accountSidebarScreen(state.accountScreen);
     const isRegular = button.dataset.view === view && view !== "leads" && view !== "account";
     const isActive = isLeadsBase || isAccountTarget || isRegular;
     button.classList.toggle("active", isActive);
