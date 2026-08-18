@@ -27034,3 +27034,64 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-decisio
   html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-decision-grid .rms-evaluation-choice { grid-template-columns: 34px minmax(0, 1fr) 20px !important; gap: 10px !important; padding: 13px !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-decision-grid .rms-evaluation-choice-icon { width: 34px !important; height: 34px !important; }
 }
+
+/* Datos maestros: una sola superficie desplazable, nunca contenido cortado. */
+html body #inventoryTaxonomyModal:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: var(--portal-modal, 1100) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: clamp(10px, 2vh, 24px) !important;
+  overflow: hidden !important;
+}
+
+html body #inventoryTaxonomyModal:not(.hidden) > .inventory-taxonomy-modal-card {
+  position: relative !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  width: min(1040px, calc(100vw - 20px)) !important;
+  height: calc(100dvh - 20px) !important;
+  max-height: calc(100dvh - 20px) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: clamp(16px, 2.2vw, 28px) !important;
+  overflow-x: hidden !important;
+  overflow-y: scroll !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+  mask: none !important;
+  -webkit-mask-image: none !important;
+}
+
+html body #inventoryTaxonomyModal:not(.hidden) > .inventory-taxonomy-modal-card > .modal-head {
+  position: sticky !important;
+  top: -1px !important;
+  z-index: 2 !important;
+  margin: 0 0 18px !important;
+  padding: 2px 0 16px !important;
+  background: var(--qori-surface, #ffffff) !important;
+  border-bottom: 1px solid var(--qori-line, #cde0f4) !important;
+}
+
+html body #inventoryTaxonomyModal:not(.hidden) > .inventory-taxonomy-modal-card :is(.inventory-taxonomy-grid, .inventory-taxonomy-list) {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 620px) {
+  html body #inventoryTaxonomyModal:not(.hidden) {
+    align-items: stretch !important;
+    padding: 10px !important;
+  }
+
+  html body #inventoryTaxonomyModal:not(.hidden) > .inventory-taxonomy-modal-card {
+    width: 100% !important;
+    height: calc(100dvh - 20px) !important;
+    max-height: calc(100dvh - 20px) !important;
+    padding: 16px !important;
+  }
+}
