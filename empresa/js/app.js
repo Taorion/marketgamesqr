@@ -22926,7 +22926,7 @@ function renderInventoryProductDetail(data = {}) {
     `).join("")
     : '<p class="empty-state compact">Las personas que compren este producto aparecerán aquí.</p>';
   modal.innerHTML = `
-    <article class="surface-card modal-card inventory-product-detail-card" role="document">
+    <article class="surface-card modal-card inventory-product-detail-card" role="document" style="width:min(1040px,calc(100vw - 24px))!important;max-height:calc(100dvh - 24px)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-gutter:stable!important">
       <div class="inventory-detail-heading">
         <div>
           <span class="mono-label">DETALLE DEL PRODUCTO</span>
