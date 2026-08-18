@@ -47968,19 +47968,38 @@ function bindRmsMachineActions(root) {
       const draft = rmsActivationDraftFromDom(root, activationId);
       const messageInput = Array.from(root.querySelectorAll("[data-rms-activation-message]")).find((node) => node.getAttribute("data-rms-activation-message") === activationId);
       const status = Array.from(root.querySelectorAll("[data-rms-activation-message-status]")).find((node) => node.getAttribute("data-rms-activation-message-status") === activationId);
+      // Sin adjuntos, preparar no debe esperar una escritura remota: el registro
+      // comercial se conserva cuando el usuario confirma el envío real.
+      if (draft.consent && !draft.files.length) {
+        const result = rmsActivationPrepareLocalMessage(item, draft);
+        if (messageInput) messageInput.value = result.message;
+        updateRmsActivationLinkBox(root, activationId, result);
+        if (status) {
+          status.dataset.state = "ready";
+          status.textContent = "Mensaje actualizado y listo para enviar. Revisa el contenido antes de abrir WhatsApp o email.";
+        }
+        return;
+      }
       if (!draft.consent) {
         if (status) status.textContent = "Marca la autorización comercial para guardar la preparación y generar los enlaces seguros.";
         return;
       }
       button.disabled = true;
-      if (status) status.textContent = "Guardando archivos y generando el mensaje con enlaces...";
+      if (status) {
+        status.dataset.state = "loading";
+        status.textContent = `Subiendo ${draft.files.length} archivo(s) y generando enlaces seguros...`;
+      }
       try {
         const result = await sendRmsActivationOffer(item, { ...draft, prepareOnly: true });
         if (result?.prepared && result?.message && messageInput) {
           messageInput.value = result.message;
           updateRmsActivationLinkBox(root, activationId, result);
-          if (status) status.textContent = "Mensaje actualizado. Revisa el ticket, documentos, valor, moneda y cobro antes de enviarlo.";
+          if (status) {
+            status.dataset.state = "ready";
+            status.textContent = "Mensaje actualizado y listo para enviar. Revisa el contenido antes de abrir WhatsApp o email.";
+          }
         } else if (status) {
+          status.dataset.state = "error";
           status.textContent = result?.error || "No se pudo actualizar. Revisa los campos obligatorios y vuelve a intentarlo.";
         }
       } finally {
@@ -47996,6 +48015,11 @@ function bindRmsMachineActions(root) {
         const id = card.dataset.rmsActivationDelivery;
         rmsActivationPreparedDeliveries.delete(id);
         updateRmsActivationLinkBox(root, id);
+        const status = Array.from(root.querySelectorAll("[data-rms-activation-message-status]")).find((node) => node.getAttribute("data-rms-activation-message-status") === id);
+        if (status) {
+          status.dataset.state = "idle";
+          status.textContent = "Cambiaste datos comerciales. Actualiza el mensaje antes de enviarlo.";
+        }
       }
     });
   });
@@ -48014,17 +48038,29 @@ function bindRmsMachineActions(root) {
         if (status) status.textContent = "Primero pulsa Actualizar mensaje y revisa los enlaces antes de enviar.";
         return;
       }
+      button.disabled = true;
+      if (status) {
+        status.dataset.state = "loading";
+        status.textContent = draft.channel === "email" ? "Abriendo email y registrando el envío..." : "Abriendo WhatsApp y registrando el envío...";
+      }
+      // Se abre en el mismo clic del usuario para evitar que el navegador bloquee
+      // WhatsApp; el registro continúa después sin congelar toda la estación.
       const opened = openRmsActivationMessage(item, { channel: draft.channel, message: draft.message });
       if (!opened) {
-        if (status) status.textContent = "No se pudo abrir el canal: verifica que el lead tenga WhatsApp o email.";
+        if (status) {
+          status.dataset.state = "error";
+          status.textContent = "No se pudo abrir el canal: verifica que el lead tenga WhatsApp o email.";
+        }
+        button.disabled = false;
         return;
       }
-      button.disabled = true;
-      if (status) status.textContent = "Canal abierto. Guardando el envío y el seguimiento...";
       const result = await sendRmsActivationOffer(item, { ...draft, skipOpen: true });
-      if (status) status.textContent = result?.sent
-        ? "Envío registrado en la ficha del contacto."
-        : (result?.error || "No se pudo registrar el envío. Revisa los datos e inténtalo de nuevo.");
+      if (status) {
+        status.dataset.state = result?.sent ? "ready" : "error";
+        status.textContent = result?.sent
+          ? "Envío registrado. La ficha se actualizará en segundo plano."
+          : (result?.error || "No se pudo registrar el envío. Revisa los datos e inténtalo de nuevo.");
+      }
       button.disabled = false;
     });
   });
@@ -49034,6 +49070,31 @@ function rmsActivationPaymentMessage(message = "", payment = {}) {
 const rmsActivationPreparedDeliveries = new Map();
 const rmsActivationUploadedAssets = new Map();
 
+function rmsActivationPrepareLocalMessage(item = {}, draft = {}) {
+  const delivery = rmsActivationDelivery(item);
+  const message = rmsActivationPaymentMessage(
+    draft.message || rmsActivationMessage(item, delivery),
+    draft,
+  );
+  const prepared = {
+    prepared: true,
+    local: true,
+    attachments: [],
+    payment: {
+      mode: draft.paymentMode || "NONE",
+      url: draft.paymentUrl || null,
+      instructions: draft.paymentInstructions || null,
+      reference: draft.paymentReference || null,
+      amount: draft.paymentAmount || null,
+      currency: draft.paymentCurrency || "COP",
+    },
+    whatsapp_message: message,
+    message,
+  };
+  rmsActivationPreparedDeliveries.set(item.id, prepared);
+  return prepared;
+}
+
 function openRmsActivationMessage(item = {}, options = {}) {
   const delivery = rmsActivationDelivery(item);
   const targetChannel = options.channel || delivery.channel || (item.phone ? "whatsapp" : "email");
@@ -49132,11 +49193,8 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
   }
   const previouslyScheduled = delivery.followUpAt && followUpAt && new Date(delivery.followUpAt).getTime() === new Date(followUpAt).getTime();
   try {
-    // Preparar el mensaje no envía ni mueve el lead: su estado se muestra en la
-    // propia tarjeta. El aviso persistente se reserva para el envío real.
-    if (!draft.prepareOnly) {
-      showFeedback("Confirmando el contacto y preparando seguimiento...", "loading", { title: "Activación 1", timeout: 0 });
-    }
+    // El progreso del envío se comunica dentro de la tarjeta. Evitamos un aviso
+    // global persistente que pueda parecer bloqueado mientras responde la API.
     const prepared = rmsActivationPreparedDeliveries.get(item.id) || null;
     const uploadedAssets = rmsActivationUploadedAssets.get(item.id) || [];
     const attachmentAssetIds = uploadedAssets.map((asset) => asset.id).filter(Boolean);
@@ -49162,7 +49220,7 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
     rmsActivationPreparedDeliveries.set(item.id, deliveryRecord);
     if (draft.prepareOnly) return { prepared: true, message: deliveryRecord.whatsapp_message || deliveredMessage, attachments: deliveryRecord.attachments || [] };
     if (!draft.skipOpen) openRmsActivationMessage(item, { channel: targetChannel, message: deliveredMessage });
-    await api("/api/business/rms-machine/lead/phase", {
+    const phaseUpdate = api("/api/business/rms-machine/lead/phase", {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify({
@@ -49195,13 +49253,19 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
         },
       }),
     });
-    if (followUpAt && !previouslyScheduled) {
-      await createRmsActivationFollowUpTask(item, followUpAt, { channel: targetChannel, offer, outcome: draft.outcome || "PENDING" });
-    }
+    const followUpTask = followUpAt && !previouslyScheduled
+      ? createRmsActivationFollowUpTask(item, followUpAt, { channel: targetChannel, offer, outcome: draft.outcome || "PENDING" })
+      : Promise.resolve();
+    await Promise.all([phaseUpdate, followUpTask]);
     rmsActivationPreparedDeliveries.delete(item.id);
     state.rmsMachineLoaded = false;
-    await loadRmsMachineData({ force: true, quiet: true });
-    renderRmsMachineView();
+    // La entrega y su trazabilidad ya estÃ¡n confirmadas. La recarga completa puede
+    // tomar mÃ¡s tiempo en bases grandes, por eso se hace sin bloquear el botÃ³n.
+    void loadRmsMachineData({ force: true, quiet: true })
+      .then(() => {
+        if (state.currentView === "rms-machine") renderRmsMachineView();
+      })
+      .catch(() => {});
     const contactNumber = Number(deliveryRecord.history?.contact_sequence || delivery.contactCount || 1);
     showFeedback(contactNumber > 1
       ? `Reenvío #${contactNumber} registrado en el historial del contacto.`
@@ -51501,7 +51565,7 @@ function rmsActivationDeliveryCardMarkup(item = {}) {
         <span>Mensaje final para ${escapeHtml(item.first_name || item.name || "el lead")}</span>
         <textarea rows="6" data-rms-activation-message="${escapeHtml(item.id)}" aria-label="Mensaje de activación para ${escapeHtml(item.name || "lead")}">${escapeHtml(rmsActivationMessage(item, delivery))}</textarea>
         <small>Primero completa los campos anteriores y pulsa “Actualizar mensaje”. Revisa o personaliza el resultado antes de enviarlo.</small>
-        <small data-rms-activation-message-status="${escapeHtml(item.id)}">Pendiente de actualizar con los datos comerciales.</small>
+        <small data-rms-activation-message-status="${escapeHtml(item.id)}" data-state="idle">Pendiente de actualizar con los datos comerciales.</small>
       </label>
       <div class="rms-activation-action-row">
         <button class="ghost-button compact" type="button" data-rms-open-activation="${escapeHtml(item.id)}" ${hasChannel ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar mensaje</button>
