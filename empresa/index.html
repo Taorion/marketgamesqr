@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-    <link rel="stylesheet" href="css/portal-clean-v39.css?v=master-data-feedback-v207-20260818">
+    <link rel="stylesheet" href="css/portal-clean-v39.css?v=risk-recovery-authorizations-v213-20260818">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -1715,6 +1715,21 @@
                   <label class="affiliate-only-config hidden"><span>Puntos por monto base</span><input id="accountAffiliatePointRateInput" type="number" min="0.01" step="0.01" value="1"></label>
                   <label class="affiliate-only-config hidden"><span>Redondeo de puntos</span><select id="accountAffiliatePointRoundingInput"><option value="floor">Hacia abajo</option><option value="ceil">Hacia arriba</option></select></label>
                   <p class="table-secondary span-2 affiliate-only-config hidden">Regla de afiliados: por cada monto comprado se asignan los puntos configurados. Ejemplo: 1 punto cada $1.000.</p>
+                  <section class="account-risk-recovery-settings span-2" id="accountRiskRecoveryAuthorizations" aria-labelledby="accountRiskRecoveryTitle">
+                    <header>
+                      <div>
+                        <span class="mono-label">Riesgos de fuga</span>
+                        <h4 id="accountRiskRecoveryTitle">Autorizaciones extraordinarias</h4>
+                        <p>Define qué alternativas puede ofrecer el equipo únicamente cuando un lead ya llegó a Riesgos de fuga.</p>
+                      </div>
+                    </header>
+                    <div class="account-risk-recovery-options">
+                      <label class="account-risk-recovery-option"><input id="accountRiskDiscountEnabledInput" type="checkbox"><span><strong>Descuento mayor</strong><small>Permite una concesión adicional limitada.</small></span><em>Máximo</em><input id="accountRiskDiscountMaxInput" type="number" min="1" max="100" step="0.01" inputmode="decimal" placeholder="Ej. 20"><b>%</b></label>
+                      <label class="account-risk-recovery-option"><input id="accountRiskTwoForOneEnabledInput" type="checkbox"><span><strong>2x1 autorizado</strong><small>Habilita una promoción de dos por uno solo en recuperación.</small></span><input id="accountRiskTwoForOneLabelInput" type="text" maxlength="180" placeholder="Ej. 2x1 en servicios seleccionados"></label>
+                      <label class="account-risk-recovery-option"><input id="accountRiskGiftEnabledInput" type="checkbox"><span><strong>Obsequio autorizado</strong><small>Permite un regalo o beneficio excepcional documentado.</small></span><input id="accountRiskGiftLabelInput" type="text" maxlength="180" placeholder="Ej. Obsequio de producto complementario"></label>
+                    </div>
+                    <small>Estas autorizaciones no se muestran en Negociación ni en otras estaciones. Cada uso queda guardado en el historial comercial.</small>
+                  </section>
                   <div class="modal-actions span-2">
                     <p class="error-line" id="accountProfileMessage"></p>
                     <button class="solid-button" id="accountProfileSaveButton" type="submit">Guardar cambios</button>
@@ -7851,7 +7866,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-    <script src="js/app.js?v=inventory-csv-comma-mode-v212-20260818" defer></script>
+    <script src="js/app.js?v=risk-recovery-authorizations-v213-20260818" defer></script>
     <script src="js/communications.js?v=email-attachments-v325-20260817" defer></script>
 </body>
 </html>

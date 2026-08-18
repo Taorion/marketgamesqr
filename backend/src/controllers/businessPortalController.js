@@ -193,6 +193,20 @@ const businessProfileSchema = z.object({
   affiliate_point_amount_cop: z.number().positive().optional().nullable(),
   affiliate_referral_points_rate: z.number().positive().optional().nullable(),
   affiliate_referral_points_rounding: z.enum(["floor", "ceil"]).optional().nullable(),
+  rms_risk_recovery_authorizations: z.object({
+    discount: z.object({
+      enabled: z.boolean().optional().default(false),
+      max_percent: z.number().min(0).max(100).optional().default(0),
+    }).optional().default({}),
+    two_for_one: z.object({
+      enabled: z.boolean().optional().default(false),
+      label: z.string().trim().max(180).optional().nullable(),
+    }).optional().default({}),
+    gift: z.object({
+      enabled: z.boolean().optional().default(false),
+      label: z.string().trim().max(180).optional().nullable(),
+    }).optional().default({}),
+  }).optional(),
   logo_data_url: z.string().trim().max(2_000_000).optional().nullable(),
   ticket_frame_data_url: z.string().trim().max(2_500_000).optional().nullable(),
 });
@@ -888,6 +902,24 @@ function cleanSetting(value) {
   return value === null || value === undefined ? "" : String(value).trim();
 }
 
+function riskRecoveryAuthorizationsFromSettings(settings = {}) {
+  const configured = settings?.rms_risk_recovery_authorizations || {};
+  return {
+    discount: {
+      enabled: Boolean(configured.discount?.enabled),
+      max_percent: Math.min(100, Math.max(0, Number(configured.discount?.max_percent || 0))),
+    },
+    two_for_one: {
+      enabled: Boolean(configured.two_for_one?.enabled),
+      label: cleanSetting(configured.two_for_one?.label),
+    },
+    gift: {
+      enabled: Boolean(configured.gift?.enabled),
+      label: cleanSetting(configured.gift?.label),
+    },
+  };
+}
+
 function wantsLogoPayload(req) {
   return ["1", "true", "yes"].includes(String(req.query.includeLogo || "").toLowerCase());
 }
@@ -910,6 +942,7 @@ function businessProfileFromRow(row, user = null, options = {}) {
     city: settings.city || "",
     address: settings.address || "",
     affiliate_points: rulesFromSettings(settings),
+    rms_risk_recovery_authorizations: riskRecoveryAuthorizationsFromSettings(settings),
     commercial_deal: settings.commercial_deal || null,
     logo_data_url: includeLogo ? (settings.logo_data_url || "") : "",
     has_logo_data_url: Boolean(row.has_logo_data_url ?? settings.logo_data_url),
@@ -1060,6 +1093,11 @@ async function updateBusinessProfile(req, res, next) {
         referral_rate: Number(body.affiliate_referral_points_rate || currentAffiliatePoints.referral_rate || 1),
         referral_rounding: body.affiliate_referral_points_rounding || currentAffiliatePoints.referral_rounding || "floor",
       };
+    }
+    if (Object.prototype.hasOwnProperty.call(body, "rms_risk_recovery_authorizations")) {
+      settingsPatch.rms_risk_recovery_authorizations = riskRecoveryAuthorizationsFromSettings({
+        rms_risk_recovery_authorizations: body.rms_risk_recovery_authorizations,
+      });
     }
 
     const includeLogo = Object.prototype.hasOwnProperty.call(body, "logo_data_url")

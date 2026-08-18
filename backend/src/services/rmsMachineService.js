@@ -73,10 +73,7 @@ const RMS_TRANSITION_CONTRACT = Object.freeze([
   { from: "accion_correctiva", decision: "RECYCLE", to: "accion_correctiva", creates_agenda_task: true },
   { from: "accion_correctiva", decision: "LOST", to: "accion_correctiva", lifecycle_status: "LOST_ANALYZED" },
   { from: "control_anti_fuga", decision: "CLEARED", to: "cierre" },
-  { from: "control_anti_fuga", decision: "RETURN_TO_NEGOTIATION", to: "accion_correctiva" },
-  { from: "control_anti_fuga", decision: "WAITING", to: "control_anti_fuga" },
-  { from: "control_anti_fuga", decision: "RECYCLE", to: "control_anti_fuga", creates_agenda_task: true },
-  { from: "control_anti_fuga", decision: "LOST", to: "control_anti_fuga", lifecycle_status: "LOST_ANALYZED" },
+  { from: "control_anti_fuga", decision: "RECYCLE", to: "reciclaje", creates_agenda_task: true },
   { from: "cierre", decision: "CANONICAL_SALE_RECORDED", to: "postventa" },
   { from: "postventa", decision: "RESULT_RECORDED", to: "postventa", lifecycle_status: "CYCLE_ANALYZED", analytical_only: true },
   { from: "accion_correctiva", decision: "RECYCLE_REACTIVATE_EVALUATION", to: "procesamiento" },
@@ -114,7 +111,6 @@ const RMS_PROTECTED_TRANSITIONS = Object.freeze({
   }),
   control_anti_fuga: Object.freeze({
     cierre: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
-    accion_correctiva: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
     reciclaje: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
     procesamiento: RMS_TRANSITION_AUTHORITY.RECYCLING,
     clasificacion: RMS_TRANSITION_AUTHORITY.RECYCLING,
@@ -2240,6 +2236,29 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
   return { round, agenda, recycling_case: recycling?.recycling_case || null, ...movement };
 }
 
+function normalizeRiskRecoveryAuthorizations(value = {}) {
+  const configured = value && typeof value === "object" ? value : {};
+  return {
+    discount: {
+      enabled: Boolean(configured.discount?.enabled),
+      max_percent: Math.min(100, Math.max(0, Number(configured.discount?.max_percent || 0))),
+    },
+    two_for_one: {
+      enabled: Boolean(configured.two_for_one?.enabled),
+      label: String(configured.two_for_one?.label || "").trim(),
+    },
+    gift: {
+      enabled: Boolean(configured.gift?.enabled),
+      label: String(configured.gift?.label || "").trim(),
+    },
+  };
+}
+
+async function riskRecoveryAuthorizationsForBusiness(businessId) {
+  const result = await query("select settings from businesses where id = $1 and is_active = true", [businessId]);
+  return normalizeRiskRecoveryAuthorizations(result.rows[0]?.settings?.rms_risk_recovery_authorizations);
+}
+
 async function recordRmsRiskReview(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
@@ -2255,21 +2274,32 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
   }
   const result = String(payload.result || "").toUpperCase();
   const reason = String(payload.reason || "").trim() || "Revisión registrada sin detalle adicional.";
-  if (!["CLEARED", "RETURN_TO_NEGOTIATION", "WAITING", "RECYCLE", "LOST"].includes(result)) throw badRequest("Selecciona una decisión de Riesgos de fuga válida.");
-  const hasSupport = Boolean(confirmation?.evidence || confirmation?.payment_reference || confirmation?.note);
-  const canClear = Boolean(item.name && (item.phone || item.email) && confirmation?.inventory_product_id && Number(confirmation.amount) > 0 && confirmation?.responsible && hasSupport);
-  if (result === "CLEARED" && !canClear) throw badRequest("No se puede liberar la venta: faltan contacto, producto, valor, responsable o soporte verificable.");
-  if (["WAITING", "RECYCLE"].includes(result) && !payload.next_action_at) throw badRequest("Programa la fecha de seguimiento o reactivación antes de guardar.");
-  if (result === "RECYCLE" && (!payload.recycle_reason || !payload.recycle_strategy)) {
-    throw badRequest("Para Reciclaje indica el motivo y la estrategia de reactivación.");
+  if (!["CLEARED", "RECYCLE"].includes(result)) throw badRequest("Riesgos de fuga solo puede enviar a Ventas atribuidas o a Reciclaje.");
+  if (result === "RECYCLE" && !payload.recycle_reason) throw badRequest("Para Reciclaje indica el motivo principal.");
+  const recoveryOffer = String(payload.recovery_offer || "NONE").toUpperCase();
+  if (!["NONE", "DISCOUNT", "TWO_FOR_ONE", "GIFT"].includes(recoveryOffer)) throw badRequest("Selecciona una alternativa de recuperación válida.");
+  const discountPercent = Math.min(100, Math.max(0, Number(payload.discount_percent || 0)));
+  const authorizations = await riskRecoveryAuthorizationsForBusiness(businessId);
+  if (recoveryOffer === "DISCOUNT") {
+    if (!authorizations.discount.enabled) throw badRequest("Los descuentos extraordinarios no están autorizados en Cuenta.");
+    if (discountPercent <= 0 || discountPercent > authorizations.discount.max_percent) throw badRequest(`El descuento debe estar entre 0% y ${authorizations.discount.max_percent}% según la autorización de Cuenta.`);
   }
+  if (recoveryOffer === "TWO_FOR_ONE" && !authorizations.two_for_one.enabled) throw badRequest("La alternativa 2x1 no está autorizada en Cuenta.");
+  if (recoveryOffer === "GIFT" && !authorizations.gift.enabled) throw badRequest("El obsequio extraordinario no está autorizado en Cuenta.");
+  if (["TWO_FOR_ONE", "GIFT"].includes(recoveryOffer) && !String(payload.recovery_detail || "").trim()) throw badRequest("Describe brevemente la alternativa autorizada que se ofreció.");
   const nonConversionCost = result === "RECYCLE"
     ? await getRmsUnconvertedLeadCost(businessId, { source_type: sourceType, source_id: payload.source_id }, item)
     : null;
   const review = {
     result, reason, reviewed_at: new Date().toISOString(), reviewed_by: user.id, confirmation_snapshot: confirmation,
     signals: payload.signals || {}, ticket_action: payload.ticket_action || null,
-    recycle: result === "RECYCLE" ? { reason: payload.recycle_reason || reason, reactivate_at: payload.next_action_at, strategy: payload.recycle_strategy || "NEW_CONTACT", responsible: payload.responsible || confirmation?.responsible || user.id, note: payload.recycle_note || null, non_conversion_cost: nonConversionCost } : null,
+    recovery_offer: {
+      type: recoveryOffer,
+      discount_percent: recoveryOffer === "DISCOUNT" ? discountPercent : 0,
+      detail: String(payload.recovery_detail || "").trim() || null,
+      authorization_snapshot: authorizations,
+    },
+    recycle: result === "RECYCLE" ? { reason: payload.recycle_reason || reason, reactivate_at: payload.next_action_at || new Date(Date.now() + (30 * 86400000)).toISOString(), strategy: payload.recycle_strategy || "NURTURE", responsible: payload.responsible || confirmation?.responsible || user.id, note: payload.recycle_note || reason, non_conversion_cost: nonConversionCost } : null,
   };
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
@@ -2286,20 +2316,19 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
   }
   const isCleared = result === "CLEARED";
   let agenda = null;
-  if (["RETURN_TO_NEGOTIATION", "WAITING", "RECYCLE"].includes(result)) {
-    const stage = result === "RETURN_TO_NEGOTIATION" ? "accion_correctiva" : "control_anti_fuga";
+  if (result === "RECYCLE") {
     agenda = await createRmsAgendaTask(businessId, user, {
       source_id: payload.source_id, source_type: sourceType, lead_id: item.lead_id || payload.lead_id || null,
-      stage, action_title: result === "RECYCLE" ? "Reactivar lead reciclado con contexto actualizado" : result === "WAITING" ? "Dar seguimiento al acuerdo antes de atribuir" : "Corregir la confirmación comercial antes de atribuir la venta",
-      note: `Riesgos de fuga: ${reason}`, due_at: payload.next_action_at || undefined, priority_score: result === "RECYCLE" ? 45 : 80,
+      stage: "reciclaje", action_title: "Reactivar lead reciclado con contexto actualizado",
+      note: `Riesgos de fuga: ${reason}`, due_at: review.recycle.reactivate_at, priority_score: 45,
       revenue_potential: confirmation?.amount || item.revenue_potential, metadata: { rms_risk_review: review },
     });
   }
   const recycling = result === "RECYCLE" ? await scheduleRmsRecyclingCase(businessId, user, {
     source_id: payload.source_id, source_type: sourceType, lead_id: item.lead_id || payload.lead_id || null,
     recycled_from_phase: "control_anti_fuga", recycle_reason: payload.recycle_reason || reason,
-    recycle_strategy: payload.recycle_strategy || "NEW_CONTACT", recycle_owner: payload.responsible || confirmation?.responsible || user.id,
-    recycle_at: payload.next_action_at, recycle_channel: null, recycle_consent: "NOT_REQUIRED", recycle_note: payload.recycle_note || reason,
+    recycle_strategy: payload.recycle_strategy || "NURTURE", recycle_owner: payload.responsible || confirmation?.responsible || user.id,
+    recycle_at: review.recycle.reactivate_at, recycle_channel: null, recycle_consent: "NOT_REQUIRED", recycle_note: payload.recycle_note || reason,
     recycle_target_phase: "procesamiento", idempotency_key: payload.idempotency_key ? `risk:${payload.idempotency_key}` : null,
     metadata: { risk_review_at: review.reviewed_at, agenda_note_id: agenda?.item?.id || null },
   }) : null;
@@ -2307,32 +2336,23 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     `update rms_recycling_cases set agenda_note_id=$3, updated_at=now() where business_id=$1 and id=$2`,
     [businessId, recycling.recycling_case.id, agenda.item.id]
   );
-  const toPhase = isCleared ? "cierre" : result === "RETURN_TO_NEGOTIATION" ? "accion_correctiva" : "control_anti_fuga";
+  const toPhase = isCleared ? "cierre" : "reciclaje";
   const movement = await moveRmsLeadPhase(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
-    to_phase: toPhase, priority: isCleared ? "HIGH" : result === "LOST" ? "LOW" : "URGENT",
-    recommended_action: isCleared ? "Registrar el resultado comercial atribuido" : result === "RECYCLE" ? "Reactivar en la fecha autorizada" : result === "LOST" ? "Conservar aprendizaje comercial" : result === "WAITING" ? "Dar seguimiento al acuerdo" : "Completar confirmación comercial",
-    last_operation: isCleared ? "risk_review_passed" : result === "RECYCLE" ? "lead_sent_to_recycling" : result === "LOST" ? "lead_marked_lost" : result === "WAITING" ? "risk_follow_up_scheduled" : "risk_review_returned_to_negotiation",
+    to_phase: toPhase, priority: isCleared ? "HIGH" : "LOW",
+    recommended_action: isCleared ? "Registrar el resultado comercial atribuido" : "Reactivar en la fecha autorizada",
+    last_operation: isCleared ? "risk_review_passed" : "lead_sent_to_recycling",
     last_material_sent: confirmation?.product_name || null, revenue_potential: confirmation?.amount || item.revenue_potential,
-    reason, metadata: { risk_review: review, risk_result: result, recovery_decision: result === "RETURN_TO_NEGOTIATION" ? "NEGOTIATION" : null, risk_return_task_id: agenda?.item?.id || null, recycling: result === "RECYCLE" ? { ...review.recycle, recycling_case_id: recycling?.recycling_case?.id || null } : null, commercial_status: result === "LOST" ? "LOST" : null },
+    reason, metadata: { risk_review: review, risk_result: result, recovery_offer: review.recovery_offer, risk_return_task_id: agenda?.item?.id || null, recycling: result === "RECYCLE" ? { ...review.recycle, recycling_case_id: recycling?.recycling_case?.id || null } : null },
   }, RMS_TRANSITION_AUTHORITY.RISK_REVIEW);
-  const eventType = isCleared ? "risk_cleared_for_attribution" : result === "RECYCLE" ? "lead_sent_to_recycling" : result === "LOST" ? "lead_marked_lost" : result === "WAITING" ? "risk_follow_up_scheduled" : "risk_returned_to_negotiation";
+  const eventType = isCleared ? "risk_cleared_for_attribution" : "lead_sent_to_recycling";
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     event_type: eventType,
-    event_title: isCleared ? "Validación anti-fuga aprobada" : result === "RECYCLE" ? "Lead enviado a Reciclaje comercial" : result === "LOST" ? "Pérdida definitiva documentada" : result === "WAITING" ? "Seguimiento de riesgo programado" : "Caso devuelto a Negociación",
+    event_title: isCleared ? "Recuperación autorizada convertida en venta" : "Lead enviado a Reciclaje comercial",
     event_description: reason, rms_phase: toPhase,
     metadata: { risk_review: review, recycling_case_id: recycling?.recycling_case?.id || null, movement_id: movement.movement?.id || null, task_id: agenda?.item?.id || null },
   });
-  if (result === "LOST") {
-    await markRmsLifecycleStatus(businessId, user, {
-      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
-      lifecycle_status: "LOST_ANALYZED", event_type: "risk_loss_analyzed",
-      event_title: "Pérdida en Riesgos de fuga analizada", reason,
-      idempotency_key: `risk-loss:${payload.idempotency_key || `${sourceType}:${payload.source_id}`}`,
-      metadata: { risk_review: review },
-    });
-  }
   if (result === "RECYCLE") {
     await markRmsLifecycleStatus(businessId, user, {
       source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,

@@ -541,6 +541,12 @@ const accountAddressInput = document.getElementById("accountAddressInput");
 const accountAffiliatePointAmountInput = document.getElementById("accountAffiliatePointAmountInput");
 const accountAffiliatePointRateInput = document.getElementById("accountAffiliatePointRateInput");
 const accountAffiliatePointRoundingInput = document.getElementById("accountAffiliatePointRoundingInput");
+const accountRiskDiscountEnabledInput = document.getElementById("accountRiskDiscountEnabledInput");
+const accountRiskDiscountMaxInput = document.getElementById("accountRiskDiscountMaxInput");
+const accountRiskTwoForOneEnabledInput = document.getElementById("accountRiskTwoForOneEnabledInput");
+const accountRiskTwoForOneLabelInput = document.getElementById("accountRiskTwoForOneLabelInput");
+const accountRiskGiftEnabledInput = document.getElementById("accountRiskGiftEnabledInput");
+const accountRiskGiftLabelInput = document.getElementById("accountRiskGiftLabelInput");
 const accountProfileMessage = document.getElementById("accountProfileMessage");
 const accountProfileSaveButton = document.getElementById("accountProfileSaveButton");
 const accountLogoPreview = document.getElementById("accountLogoPreview");
@@ -6001,6 +6007,13 @@ function renderAccountView() {
   if (accountAffiliatePointAmountInput) accountAffiliatePointAmountInput.value = String(affiliatePoints.point_amount_cop || 1000);
   if (accountAffiliatePointRateInput) accountAffiliatePointRateInput.value = String(affiliatePoints.referral_rate || 1);
   if (accountAffiliatePointRoundingInput) accountAffiliatePointRoundingInput.value = affiliatePoints.referral_rounding || "floor";
+  const riskRecovery = rmsRiskRecoveryAuthorizations(business.rms_risk_recovery_authorizations);
+  if (accountRiskDiscountEnabledInput) accountRiskDiscountEnabledInput.checked = riskRecovery.discount.enabled;
+  if (accountRiskDiscountMaxInput) accountRiskDiscountMaxInput.value = riskRecovery.discount.max_percent ? String(riskRecovery.discount.max_percent) : "";
+  if (accountRiskTwoForOneEnabledInput) accountRiskTwoForOneEnabledInput.checked = riskRecovery.two_for_one.enabled;
+  if (accountRiskTwoForOneLabelInput) accountRiskTwoForOneLabelInput.value = riskRecovery.two_for_one.label || "";
+  if (accountRiskGiftEnabledInput) accountRiskGiftEnabledInput.checked = riskRecovery.gift.enabled;
+  if (accountRiskGiftLabelInput) accountRiskGiftLabelInput.value = riskRecovery.gift.label || "";
 
   const logo = business.logo_data_url || "";
   if (accountLogoPreview) {
@@ -31891,6 +31904,20 @@ async function submitAccountProfile(event) {
       profilePayload.affiliate_referral_points_rate = Number(accountAffiliatePointRateInput?.value || 0);
       profilePayload.affiliate_referral_points_rounding = accountAffiliatePointRoundingInput?.value || "floor";
     }
+    profilePayload.rms_risk_recovery_authorizations = {
+      discount: {
+        enabled: Boolean(accountRiskDiscountEnabledInput?.checked),
+        max_percent: Number(accountRiskDiscountMaxInput?.value || 0),
+      },
+      two_for_one: {
+        enabled: Boolean(accountRiskTwoForOneEnabledInput?.checked),
+        label: optionalInputValue(accountRiskTwoForOneLabelInput),
+      },
+      gift: {
+        enabled: Boolean(accountRiskGiftEnabledInput?.checked),
+        label: optionalInputValue(accountRiskGiftLabelInput),
+      },
+    };
     const data = await api("/api/business/profile", {
       method: "PATCH",
       headers: authHeaders(),
@@ -54882,5 +54909,155 @@ document.addEventListener("change", (event) => {
   const card = event.target.closest?.(".rms-negotiation-compact[data-rms-station-lead]");
   if (card) updateRmsNegotiationDecisionUi(document, card.dataset.rmsStationLead || "");
 });
+
+// Riesgos de fuga es una recuperación excepcional: las autorizaciones viven en
+// Cuenta por empresa y la estación conserva únicamente sus dos salidas canónicas.
+function rmsRiskRecoveryAuthorizations(raw = state.businessProfile?.rms_risk_recovery_authorizations || {}) {
+  const value = raw && typeof raw === "object" ? raw : {};
+  return {
+    discount: {
+      enabled: Boolean(value.discount?.enabled),
+      max_percent: Math.min(100, Math.max(0, Number(value.discount?.max_percent || 0))),
+    },
+    two_for_one: { enabled: Boolean(value.two_for_one?.enabled), label: String(value.two_for_one?.label || "").trim() },
+    gift: { enabled: Boolean(value.gift?.enabled), label: String(value.gift?.label || "").trim() },
+  };
+}
+
+function rmsRiskRecoveryOfferOptions() {
+  const permissions = rmsRiskRecoveryAuthorizations();
+  const options = ['<option value="NONE">Sin concesión extraordinaria</option>'];
+  if (permissions.discount.enabled && permissions.discount.max_percent > 0) options.push(`<option value="DISCOUNT">Descuento autorizado · hasta ${escapeHtml(String(permissions.discount.max_percent))}%</option>`);
+  if (permissions.two_for_one.enabled) options.push(`<option value="TWO_FOR_ONE">2x1 autorizado${permissions.two_for_one.label ? ` · ${escapeHtml(permissions.two_for_one.label)}` : ""}</option>`);
+  if (permissions.gift.enabled) options.push(`<option value="GIFT">Obsequio autorizado${permissions.gift.label ? ` · ${escapeHtml(permissions.gift.label)}` : ""}</option>`);
+  return options.join("");
+}
+
+function rmsRiskRecoveryAvailabilityMarkup() {
+  const permissions = rmsRiskRecoveryAuthorizations();
+  const enabled = [permissions.discount.enabled && permissions.discount.max_percent > 0 && `Descuento hasta ${permissions.discount.max_percent}%`, permissions.two_for_one.enabled && "2x1", permissions.gift.enabled && "Obsequio"].filter(Boolean);
+  return enabled.length
+    ? `<aside class="rms-risk-authorization-note"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><div><strong>Alternativas autorizadas para este riesgo</strong><small>${escapeHtml(enabled.join(" · "))}. Solo estas opciones pueden quedar registradas.</small></div></aside>`
+    : `<aside class="rms-risk-authorization-note is-empty"><span class="material-symbols-outlined" aria-hidden="true">tune</span><div><strong>No hay concesiones extraordinarias autorizadas</strong><small>Puedes cerrar la venta sin una concesión o configurar permisos en Cuenta antes de ofrecer una alternativa.</small></div><button type="button" class="ghost-button compact" data-rms-open-risk-settings>Configurar en Cuenta</button></aside>`;
+}
+
+function rmsRiskTabsMarkup(item = {}) {
+  return `<section class="rms-risk-tabs" data-rms-risk-tabs="${escapeHtml(item.id)}" aria-label="Destino de Riesgos de fuga"><header><span class="mono-label">Resultado de la recuperación</span><strong>Solo una salida por caso.</strong></header><div role="tablist"><button class="is-active" type="button" role="tab" aria-selected="true" data-rms-risk-tab="${escapeHtml(item.id)}" data-rms-risk-tab-key="sale"><span class="material-symbols-outlined" aria-hidden="true">paid</span><span><strong>Venta lograda</strong><small>Enviar a Ventas atribuidas.</small></span></button><button type="button" role="tab" aria-selected="false" data-rms-risk-tab="${escapeHtml(item.id)}" data-rms-risk-tab-key="recycle"><span class="material-symbols-outlined" aria-hidden="true">autorenew</span><span><strong>Enviar a Reciclaje</strong><small>No fue viable continuar ahora.</small></span></button></div></section>`;
+}
+
+function rmsRiskValidationStationCardMarkup(item = {}) {
+  const flow = rmsCommercialWorkflow(item);
+  const confirmation = flow.confirmation || {};
+  const ticketStatus = item.redeemed_tickets ? "Beneficio redimido" : item.active_tickets ? "Beneficio activo" : item.expired_tickets ? "Beneficio vencido" : "Sin beneficio activo";
+  const agreement = [confirmation.product_name || rmsClassifiedProductName(item) || "Producto por confirmar", confirmation.amount ? money(confirmation.amount) : "Valor por confirmar", confirmation.negotiation?.channel || "Canal por confirmar"].join(" · ");
+  return `<article class="rms-commercial-work-item rms-risk-work-item rms-risk-recovery-work-item" data-rms-station-lead="${escapeHtml(item.id)}">${rmsCommercialLeadAsideMarkup(item, "Riesgos de fuga · recuperación excepcional")}<section class="rms-commercial-work-console">${rmsDealProgressMarkup("risk", "Usa solo las alternativas autorizadas. El resultado termina en Venta atribuida o Reciclaje.")}<header class="rms-commercial-console-head"><div><span class="mono-label">ESTACIÓN 07 · RIESGOS DE FUGA</span><h4>Recupera o libera el caso</h4><p>Este lead ya agotó la negociación habitual. Registra una alternativa autorizada solo si realmente ayudó a cerrar la venta.</p></div><span class="rms-commercial-state is-pending">Recuperación excepcional</span></header><section class="rms-risk-agreement-summary"><span class="material-symbols-outlined" aria-hidden="true">handshake</span><div><strong>${escapeHtml(agreement)}</strong><small>${escapeHtml([confirmation.responsible && `Responsable: ${confirmation.responsible}`, ticketStatus, item.campaign_name || item.source_detail || "Sin campaña"].filter(Boolean).join(" · "))}</small></div></section>${rmsRiskRecoveryAvailabilityMarkup()}<section class="rms-commercial-info-block rms-risk-recovery-form"><input type="hidden" data-rms-risk-decision="${escapeHtml(item.id)}" value="CLEARED"><div data-rms-risk-sale-panel="${escapeHtml(item.id)}"><h5>Alternativa aplicada y resultado</h5><div class="rms-sale-form-grid"><label><span>Alternativa de recuperación</span><select data-rms-risk-recovery-offer="${escapeHtml(item.id)}">${rmsRiskRecoveryOfferOptions()}</select><small>Solo aparecen las autorizaciones configuradas en Cuenta.</small></label><label data-rms-risk-discount-wrap="${escapeHtml(item.id)}" hidden><span>Descuento aplicado</span><div class="rms-risk-percent-field"><input type="number" min="0.01" max="${escapeHtml(String(rmsRiskRecoveryAuthorizations().discount.max_percent || 100))}" step="0.01" inputmode="decimal" data-rms-risk-discount-percent="${escapeHtml(item.id)}" placeholder="0"><b>%</b></div></label><label class="span-2" data-rms-risk-detail-wrap="${escapeHtml(item.id)}" hidden><span>Detalle de la alternativa</span><input type="text" maxlength="1000" data-rms-risk-recovery-detail="${escapeHtml(item.id)}" placeholder="Describe el 2x1 u obsequio autorizado que aceptó el cliente"></label></div><label class="rms-commercial-note-field"><span>Justificación de la venta</span><textarea rows="3" data-rms-risk-reason="${escapeHtml(item.id)}" placeholder="Qué alternativa se usó, qué aceptó el cliente y qué debe revisar Ventas atribuidas"></textarea></label></div><div data-rms-risk-recycle-panel="${escapeHtml(item.id)}" hidden><h5>Salida a Reciclaje</h5><div class="rms-sale-form-grid"><label><span>Motivo principal</span><select data-rms-risk-recycle-reason="${escapeHtml(item.id)}"><option value="BUDGET">Presupuesto</option><option value="TIMING">Momento inadecuado</option><option value="NO_RESPONSE">Sin respuesta</option><option value="WAITING_DECISION">Decisión aplazada</option><option value="NOT_VIABLE_NOW">No es viable ahora</option><option value="OTHER">Otro</option></select></label><label><span>Estrategia si se reactiva</span><select data-rms-risk-recycle-strategy="${escapeHtml(item.id)}"><option value="NURTURE">Nutrición comercial</option><option value="NEW_CONTACT">Nuevo contacto</option><option value="NEW_PROPOSAL">Nueva propuesta</option><option value="NEW_ACTIVATION">Nueva activación</option><option value="PERMITTED_BENEFIT">Beneficio permitido</option></select></label><label><span>Fecha de revisión <em>Opcional</em></span><input type="datetime-local" data-rms-risk-next-at="${escapeHtml(item.id)}"></label></div><label class="rms-commercial-note-field"><span>Por qué no fue viable</span><textarea rows="3" data-rms-risk-reason="${escapeHtml(item.id)}" placeholder="Resume qué se intentó y por qué no vale la pena seguir insistiendo ahora"></textarea></label></div></section><aside class="rms-negotiation-route-preview" data-rms-risk-preview="${escapeHtml(item.id)}"><strong>Siguiente paso: Ventas atribuidas</strong><small>La venta se termina de registrar allí con productos, pago, costos y atribución.</small></aside><div class="rms-commercial-action-row"><small data-rms-risk-help="${escapeHtml(item.id)}">Registra el resultado real. No hay retornos a Negociación ni seguimientos dentro de esta estación.</small><button class="solid-button compact" type="button" data-rms-save-risk-decision="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">paid</span>Enviar a Ventas atribuidas</button></div></section></article>`;
+}
+
+function rmsRiskRecoveryOfferUi(root, id) {
+  const offer = rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", id)?.value || "NONE";
+  const discount = rmsCommercialNode(root, "[data-rms-risk-discount-wrap]", id);
+  const detail = rmsCommercialNode(root, "[data-rms-risk-detail-wrap]", id);
+  if (discount) discount.hidden = offer !== "DISCOUNT";
+  if (detail) detail.hidden = !["TWO_FOR_ONE", "GIFT"].includes(offer);
+}
+
+function activateRmsRiskTab(root, id, tabKey) {
+  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
+  if (!card) return;
+  const isRecycle = tabKey === "recycle";
+  const decision = rmsCommercialNode(root, "[data-rms-risk-decision]", id);
+  if (decision) decision.value = isRecycle ? "RECYCLE" : "CLEARED";
+  const salePanel = rmsCommercialNode(root, "[data-rms-risk-sale-panel]", id);
+  const recyclePanel = rmsCommercialNode(root, "[data-rms-risk-recycle-panel]", id);
+  if (salePanel) salePanel.hidden = isRecycle;
+  if (recyclePanel) recyclePanel.hidden = !isRecycle;
+  card.querySelectorAll(`[data-rms-risk-tab="${CSS.escape(id)}"]`).forEach((button) => {
+    const active = button.dataset.rmsRiskTabKey === (isRecycle ? "recycle" : "sale");
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  const preview = rmsCommercialNode(root, "[data-rms-risk-preview]", id);
+  const button = rmsCommercialNode(root, "[data-rms-save-risk-decision]", id);
+  const help = rmsCommercialNode(root, "[data-rms-risk-help]", id);
+  if (isRecycle) {
+    if (preview) preview.innerHTML = "<strong>Siguiente paso: Reciclaje comercial</strong><small>El caso sale de Riesgos con motivo y estrategia conservados para una reactivación responsable.</small>";
+    if (button) button.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">autorenew</span>Enviar a Reciclaje';
+    if (help) help.textContent = "Reciclaje conserva la inversión y el contexto; no vuelve automáticamente a Negociación.";
+  } else {
+    if (preview) preview.innerHTML = "<strong>Siguiente paso: Ventas atribuidas</strong><small>La venta se termina de registrar allí con productos, pago, costos y atribución.</small>";
+    if (button) button.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">paid</span>Enviar a Ventas atribuidas';
+    if (help) help.textContent = "Registra solo la concesión excepcional que realmente se aplicó. El pago se confirma en Ventas atribuidas.";
+    rmsRiskRecoveryOfferUi(root, id);
+  }
+  const offer = rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", id);
+  if (offer && !offer.dataset.rmsRiskRecoveryBound) {
+    offer.dataset.rmsRiskRecoveryBound = "true";
+    offer.addEventListener("change", () => rmsRiskRecoveryOfferUi(root, id));
+  }
+  card.querySelectorAll("[data-rms-open-risk-settings]").forEach((settingsButton) => {
+    if (settingsButton.dataset.rmsRiskRecoveryBound) return;
+    settingsButton.dataset.rmsRiskRecoveryBound = "true";
+    settingsButton.addEventListener("click", () => {
+      setView("account");
+      window.setTimeout(() => document.getElementById("accountRiskRecoveryAuthorizations")?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+    });
+  });
+}
+
+async function saveRmsRiskDecision(item, root) {
+  const result = rmsCommercialNode(root, "[data-rms-risk-decision]", item.id)?.value || "CLEARED";
+  const reason = String(rmsCommercialNode(root, "[data-rms-risk-reason]", item.id)?.value || "").trim();
+  if (!reason) {
+    showFeedback(result === "RECYCLE" ? "Explica por qué este caso debe ir a Reciclaje." : "Explica por qué la recuperación logró la venta.", "info", { title: "Riesgos de fuga" });
+    return;
+  }
+  const recoveryOffer = rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id)?.value || "NONE";
+  const discountPercent = Number(rmsCommercialNode(root, "[data-rms-risk-discount-percent]", item.id)?.value || 0);
+  const recoveryDetail = String(rmsCommercialNode(root, "[data-rms-risk-recovery-detail]", item.id)?.value || "").trim();
+  const permissions = rmsRiskRecoveryAuthorizations();
+  if (result === "CLEARED" && recoveryOffer === "DISCOUNT" && (!permissions.discount.enabled || discountPercent <= 0 || discountPercent > permissions.discount.max_percent)) {
+    showFeedback(`El descuento debe respetar la autorización de Cuenta (máximo ${permissions.discount.max_percent || 0}%).`, "info", { title: "Riesgos de fuga" });
+    return;
+  }
+  if (result === "CLEARED" && ["TWO_FOR_ONE", "GIFT"].includes(recoveryOffer) && !recoveryDetail) {
+    showFeedback("Describe la alternativa autorizada que aceptó el cliente.", "info", { title: "Riesgos de fuga" });
+    return;
+  }
+  const recycleReason = rmsCommercialNode(root, "[data-rms-risk-recycle-reason]", item.id)?.value || null;
+  if (result === "RECYCLE" && !recycleReason) {
+    showFeedback("Selecciona el motivo principal para enviar a Reciclaje.", "info", { title: "Riesgos de fuga" });
+    return;
+  }
+  const button = rmsCommercialNode(root, "[data-rms-save-risk-decision]", item.id);
+  setButtonLoading(button, true, result === "RECYCLE" ? "Enviando..." : "Confirmando...");
+  try {
+    await api("/api/business/rms-machine/risk-review", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({
+        source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null,
+        result, reason,
+        recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE",
+        discount_percent: result === "CLEARED" ? discountPercent : 0,
+        recovery_detail: result === "CLEARED" ? recoveryDetail || null : null,
+        recycle_reason: result === "RECYCLE" ? recycleReason : null,
+        recycle_strategy: result === "RECYCLE" ? (rmsCommercialNode(root, "[data-rms-risk-recycle-strategy]", item.id)?.value || "NURTURE") : null,
+        recycle_note: result === "RECYCLE" ? reason : null,
+        next_action_at: result === "RECYCLE" ? rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-risk-next-at]", item.id)?.value || "") : null,
+        responsible: rmsCommercialWorkflow(item).confirmation?.responsible || null,
+      }),
+    });
+    state.rmsMachineLoaded = false;
+    if (result === "RECYCLE") {
+      setView("recycling");
+      showFeedback("Lead enviado a Reciclaje con el motivo, contexto y costo conservados.", "success", { title: "Riesgos de fuga" });
+    } else {
+      await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "cierre" });
+      showFeedback("Venta lograda. Ahora termina el registro de pago y productos en Ventas atribuidas.", "success", { title: "Riesgos de fuga" });
+      openRmsStation("cierre", { source: "risk-recovery" });
+    }
+  } finally {
+    setButtonLoading(button, false);
+  }
+}
 
 
