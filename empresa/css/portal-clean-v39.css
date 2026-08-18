@@ -26156,3 +26156,192 @@ html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[da
     border: 0 !important;
   }
 }
+
+/* Feedback global de proceso. Una única pieza, discreta y consistente para
+   cargas, guardados, importaciones y envíos del portal. */
+@keyframes qori-feedback-progress {
+  0% { transform: translateX(-150%); }
+  52% { transform: translateX(85%); }
+  100% { transform: translateX(280%); }
+}
+
+html body .content-shell > #actionFeedback.action-feedback:not(.hidden) {
+  position: fixed !important;
+  right: max(18px, env(safe-area-inset-right)) !important;
+  bottom: max(18px, env(safe-area-inset-bottom)) !important;
+  left: auto !important;
+  z-index: 1200 !important;
+  display: grid !important;
+  grid-template-columns: 34px minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  width: min(390px, calc(100vw - 36px)) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 13px 12px 13px 13px !important;
+  border: 1px solid #c9deef !important;
+  border-radius: 16px !important;
+  background: rgba(255,255,255,.97) !important;
+  box-shadow: 0 16px 38px rgba(1,40,104,.17) !important;
+  color: #0b3269 !important;
+  isolation: isolate !important;
+  transform: none !important;
+}
+
+html body .content-shell > #actionFeedback.action-feedback:not(.hidden)::before,
+html body .content-shell > #actionFeedback.action-feedback:not(.hidden)::after {
+  content: none !important;
+  display: none !important;
+}
+
+html body .content-shell > #actionFeedback.action-feedback.hidden { display: none !important; }
+
+html body .content-shell > #actionFeedback .action-feedback-icon {
+  display: grid !important;
+  width: 32px !important;
+  height: 32px !important;
+  place-items: center !important;
+  border-radius: 10px !important;
+  background: #e2f5ff !important;
+  color: #0759d6 !important;
+  font-size: 19px !important;
+}
+
+html body .content-shell > #actionFeedback .action-feedback-copy {
+  display: grid !important;
+  min-width: 0 !important;
+  gap: 2px !important;
+  padding: 1px 9px 0 9px !important;
+}
+
+html body .content-shell > #actionFeedback .action-feedback-copy strong {
+  color: #082d67 !important;
+  font-size: .83rem !important;
+  line-height: 1.28 !important;
+}
+
+html body .content-shell > #actionFeedback .action-feedback-copy p {
+  margin: 0 !important;
+  color: #4d708d !important;
+  font-size: .78rem !important;
+  line-height: 1.42 !important;
+}
+
+html body .content-shell > #actionFeedback .action-feedback-copy small {
+  margin-top: 5px !important;
+  color: #5b7891 !important;
+  font-size: .68rem !important;
+  line-height: 1.35 !important;
+}
+
+html body .content-shell > #actionFeedback .action-feedback-progress {
+  display: block !important;
+  width: 100% !important;
+  height: 4px !important;
+  margin-top: 7px !important;
+  overflow: hidden !important;
+  border-radius: 999px !important;
+  background: #dcecf9 !important;
+}
+
+html body .content-shell > #actionFeedback .action-feedback-progress > i {
+  display: block !important;
+  width: 44% !important;
+  height: 100% !important;
+  border-radius: inherit !important;
+  background: linear-gradient(90deg, #0759d6, #07cefb) !important;
+  animation: qori-feedback-progress 1.35s cubic-bezier(.37,0,.63,1) infinite !important;
+}
+
+html body .content-shell > #actionFeedback.loading {
+  border-color: #acd8f4 !important;
+  background: linear-gradient(145deg, #fafdff, #eef8ff) !important;
+}
+html body .content-shell > #actionFeedback.loading .action-feedback-icon {
+  background: #0759d6 !important;
+  color: #ffffff !important;
+}
+html body .content-shell > #actionFeedback.success .action-feedback-icon { background: #e4f7ed !important; color: #08754d !important; }
+html body .content-shell > #actionFeedback.error { border-color: #f0c4ca !important; background: #fffafb !important; }
+html body .content-shell > #actionFeedback.error .action-feedback-icon { background: #fde8eb !important; color: #b4233f !important; }
+html body .content-shell > #actionFeedback.info .action-feedback-icon { background: #fff4db !important; color: #9a5a00 !important; }
+
+html body .content-shell > #actionFeedback .action-feedback-dismiss {
+  display: grid !important;
+  width: 28px !important;
+  height: 28px !important;
+  flex: 0 0 28px !important;
+  place-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: #5d7890 !important;
+}
+html body .content-shell > #actionFeedback .action-feedback-dismiss:hover,
+html body .content-shell > #actionFeedback .action-feedback-dismiss:focus-visible { background: #eaf4fb !important; color: #082d67 !important; outline: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  html body .content-shell > #actionFeedback .action-feedback-progress > i { animation: none !important; transform: translateX(65%) !important; }
+}
+
+@media (max-width: 620px) {
+  html body .content-shell > #actionFeedback.action-feedback:not(.hidden) {
+    right: 12px !important;
+    bottom: 12px !important;
+    width: calc(100vw - 24px) !important;
+    border-radius: 14px !important;
+  }
+}
+
+html body .portal-shell .busy-overlay:not(.hidden) {
+  display: grid !important;
+  place-items: center !important;
+  padding: 20px !important;
+  background: rgba(235,246,255,.7) !important;
+  backdrop-filter: blur(5px) !important;
+}
+
+html body .portal-shell .busy-overlay:not(.hidden) .busy-card {
+  display: grid !important;
+  grid-template-columns: 34px minmax(0,1fr) !important;
+  gap: 12px !important;
+  width: min(440px, calc(100vw - 40px)) !important;
+  padding: 18px !important;
+  border: 1px solid #bdd9ed !important;
+  border-radius: 17px !important;
+  background: rgba(255,255,255,.98) !important;
+  box-shadow: 0 18px 42px rgba(1,40,104,.16) !important;
+}
+
+html body .portal-shell .busy-overlay:not(.hidden) .busy-card > div {
+  display: grid !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+}
+
+html body .portal-shell .busy-overlay:not(.hidden) .busy-card strong { color: #082d67 !important; font-size: .94rem !important; }
+html body .portal-shell .busy-overlay:not(.hidden) .busy-card p { margin: 0 !important; color: #52738e !important; font-size: .79rem !important; line-height: 1.42 !important; }
+html body .portal-shell .busy-overlay:not(.hidden) .busy-card small { margin-top: 5px !important; color: #607f98 !important; font-size: .68rem !important; }
+html body .portal-shell .busy-overlay:not(.hidden) .busy-spinner { width: 32px !important; height: 32px !important; border-color: #cce7fa !important; border-top-color: #0759d6 !important; }
+
+html body .portal-shell .busy-overlay:not(.hidden) .busy-progress {
+  display: block !important;
+  width: 100% !important;
+  height: 4px !important;
+  margin-top: 7px !important;
+  overflow: hidden !important;
+  border-radius: 999px !important;
+  background: #dcecf9 !important;
+}
+html body .portal-shell .busy-overlay:not(.hidden) .busy-progress > i {
+  display: block !important;
+  width: 44% !important;
+  height: 100% !important;
+  border-radius: inherit !important;
+  background: linear-gradient(90deg,#0759d6,#07cefb) !important;
+  animation: qori-feedback-progress 1.35s cubic-bezier(.37,0,.63,1) infinite !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html body .portal-shell .busy-overlay:not(.hidden) .busy-progress > i { animation: none !important; transform: translateX(65%) !important; }
+}

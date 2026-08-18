@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-    <link rel="stylesheet" href="css/portal-clean-v39.css?v=risk-lead-header-row-v193-20260818">
+    <link rel="stylesheet" href="css/portal-clean-v39.css?v=global-feedback-progress-v195-20260818">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -364,12 +364,14 @@
             </div>
             <div class="subscription-limits" id="subscriptionLimits"></div>
           </section>
-          <div class="busy-overlay hidden" id="busyOverlay" aria-hidden="true">
+          <div class="busy-overlay hidden" id="busyOverlay" aria-hidden="true" role="status" aria-live="polite" aria-busy="false">
             <div class="busy-card">
               <span class="busy-spinner" aria-hidden="true"></span>
               <div>
                 <strong id="busyOverlayTitle">Procesando</strong>
                 <p id="busyOverlayMessage">Estamos sincronizando la información.</p>
+                <span class="busy-progress" role="progressbar" aria-label="Proceso en curso" aria-valuetext="En proceso"><i></i></span>
+                <small>En proceso. Mantén esta pantalla abierta.</small>
               </div>
             </div>
           </div>

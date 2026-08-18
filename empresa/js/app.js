@@ -3261,6 +3261,7 @@ function hideFeedback() {
   actionFeedback.className = "action-feedback hidden";
   actionFeedback.hidden = true;
   actionFeedback.setAttribute("aria-hidden", "true");
+  actionFeedback.setAttribute("aria-busy", "false");
   actionFeedback.innerHTML = "";
 }
 
@@ -3334,20 +3335,31 @@ function togglePortalTheme() {
 function showFeedback(message, kind = "success", options = {}) {
   window.clearTimeout(state.feedbackTimer);
   if (!actionFeedback) return;
+  const isLoading = kind === "loading";
   const title = options.title || (
     kind === "error"
       ? "No se pudo completar"
-      : kind === "loading"
+      : isLoading
         ? "Procesando"
         : kind === "info"
           ? "Información"
           : "Listo"
   );
-  actionFeedback.className = `action-feedback ${kind}`;
+  const icon = kind === "error"
+    ? "error"
+    : isLoading
+      ? "progress_activity"
+      : kind === "info"
+        ? "info"
+        : "check_circle";
+  actionFeedback.className = `action-feedback ${kind}${isLoading ? " is-pending" : ""}`;
+  actionFeedback.setAttribute("aria-busy", String(isLoading));
   actionFeedback.innerHTML = `
-    <div>
+    <span class="action-feedback-icon material-symbols-outlined" aria-hidden="true">${icon}</span>
+    <div class="action-feedback-copy">
       <strong>${escapeHtml(title)}</strong>
       <p>${escapeHtml(message)}</p>
+      ${isLoading ? `<span class="action-feedback-progress" role="progressbar" aria-label="Proceso en curso" aria-valuetext="En proceso"><i></i></span><small>En proceso. Puedes seguir aquí mientras terminamos.</small>` : ""}
     </div>
     <button class="action-feedback-dismiss" type="button" data-dismiss-feedback aria-label="Cerrar aviso">
       <span class="material-symbols-outlined" aria-hidden="true">close</span>
@@ -3356,25 +3368,31 @@ function showFeedback(message, kind = "success", options = {}) {
   actionFeedback.hidden = false;
   actionFeedback.removeAttribute("aria-hidden");
   actionFeedback.classList.remove("hidden");
-  // Ninguna alerta global debe quedarse inmóvil sobre la operación. Los procesos
-  // largos ya muestran su estado dentro de la tarjeta que los inició.
-  const defaultTimeout = kind === "loading" ? 4200 : kind === "error" ? 4600 : kind === "info" ? 3000 : 2400;
+  // Las esperas permanecen visibles hasta que la operación informa éxito, error
+  // o la persona las cierra; los demás avisos se retiran automáticamente.
+  const defaultTimeout = isLoading ? 0 : kind === "error" ? 4600 : kind === "info" ? 3000 : 2400;
   const requestedTimeout = Number(options.timeout);
   const timeout = requestedTimeout > 0 ? Math.min(requestedTimeout, 6000) : defaultTimeout;
-  state.feedbackTimer = window.setTimeout(hideFeedback, timeout);
+  if (timeout > 0) state.feedbackTimer = window.setTimeout(hideFeedback, timeout);
 }
 
 function showBusyOverlay(title, message) {
   state.busyDepth += 1;
   if (busyOverlayTitle) busyOverlayTitle.textContent = title || "Procesando";
   if (busyOverlayMessage) busyOverlayMessage.textContent = message || "Estamos sincronizando la información.";
-  if (busyOverlay) busyOverlay.classList.remove("hidden");
+  if (busyOverlay) {
+    busyOverlay.classList.remove("hidden");
+    busyOverlay.removeAttribute("aria-hidden");
+    busyOverlay.setAttribute("aria-busy", "true");
+  }
 }
 
 function hideBusyOverlay(force = false) {
   state.busyDepth = force ? 0 : Math.max(0, state.busyDepth - 1);
   if (!state.busyDepth && busyOverlay) {
     busyOverlay.classList.add("hidden");
+    busyOverlay.setAttribute("aria-hidden", "true");
+    busyOverlay.setAttribute("aria-busy", "false");
   }
 }
 
