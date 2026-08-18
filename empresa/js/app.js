@@ -23129,22 +23129,39 @@ async function submitInventorySubcategory(event) {
 
 async function submitInventoryCatalog(event, catalog, fields) {
   event.preventDefault();
+  const form = event.currentTarget;
+  const submitButton = form?.querySelector('button[type="submit"]');
+  const key = catalog === "tax-bases" ? "inventoryTaxBases" : catalog === "healthy-taxes" ? "inventoryHealthyTaxes" : catalog === "brands" ? "inventoryBrands" : "inventoryUnits";
+  const label = catalog === "tax-bases" ? "IVA base" : catalog === "healthy-taxes" ? "impuesto saludable" : catalog === "brands" ? "marca" : "unidad de medida";
+  const name = fields.name?.value.trim() || "";
+  const internalId = fields.internalId?.value.trim() || "";
+  const existing = (state[key] || []).find((item) => String(item.internal_id || "").trim().toLocaleLowerCase("es") === internalId.toLocaleLowerCase("es"));
+  if (existing) {
+    setInlineMessage(inventoryTaxonomyMessage, `El ID interno “${internalId}” ya pertenece a la ${label} “${existing.name}”. Usa esa referencia en el producto o escribe un ID diferente.`, "error");
+    fields.internalId?.focus({ preventScroll: true });
+    return;
+  }
+  form?.classList.add("is-submitting");
+  setButtonLoading(submitButton, true, `Guardando ${label}…`);
+  setInlineMessage(inventoryTaxonomyMessage, `Guardando ${label}…`, "loading");
   try {
     const rateValue = fields.rate?.value;
     const body = {
-      name: fields.name?.value.trim() || "",
-      internal_id: fields.internalId?.value.trim() || "",
+      name,
+      internal_id: internalId,
       ...(fields.rate ? { rate: Math.max(0, Number(rateValue || 0)) / 100 } : {}),
     };
     const data = await api(`/api/business/inventory/catalog/${catalog}`, { method: "POST", headers: authHeaders(), body: JSON.stringify(body) });
-    const key = catalog === "tax-bases" ? "inventoryTaxBases" : catalog === "healthy-taxes" ? "inventoryHealthyTaxes" : catalog === "brands" ? "inventoryBrands" : "inventoryUnits";
     const resultKey = catalog === "tax-bases" ? "tax_base" : catalog === "healthy-taxes" ? "healthy_tax" : catalog === "brands" ? "brand" : "unit";
     state[key] = [...(state[key] || []), data[resultKey]].sort((a, b) => String(a.name).localeCompare(String(b.name), "es"));
-    event.currentTarget?.reset();
+    form?.reset();
     renderInventoryTaxonomyOptions();
-    setInlineMessage(inventoryTaxonomyMessage, "Catálogo actualizado y disponible para producto e importación CSV.", "success");
+    setInlineMessage(inventoryTaxonomyMessage, `${label.charAt(0).toUpperCase()}${label.slice(1)} creada y disponible para productos e importación CSV.`, "success");
   } catch (error) {
-    setInlineMessage(inventoryTaxonomyMessage, error.message || "No se pudo crear la referencia.", "error");
+    setInlineMessage(inventoryTaxonomyMessage, error.message || `No se pudo crear la ${label}. Revisa los datos e inténtalo de nuevo.`, "error");
+  } finally {
+    form?.classList.remove("is-submitting");
+    setButtonLoading(submitButton, false);
   }
 }
 

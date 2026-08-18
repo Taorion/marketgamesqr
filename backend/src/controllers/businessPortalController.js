@@ -4745,13 +4745,25 @@ async function createInventoryCatalog(req, res, next) {
     if (!definition) throw badRequest("Catálogo de producto no reconocido.");
     const body = validate(inventoryReferenceSchema, req.body);
     if (definition.hasRate && (body.rate === undefined || body.rate === null)) throw badRequest(`Indica el porcentaje de ${definition.label}.`);
+    const existing = await query(
+      `select name from ${definition.table} where business_id = $1 and lower(internal_id) = lower($2) limit 1`,
+      [businessId, body.internal_id]
+    );
+    if (existing.rowCount) {
+      throw badRequest(`El ID interno “${body.internal_id}” ya pertenece a la ${definition.label} “${existing.rows[0].name}”. Usa esa referencia o escribe un ID diferente.`);
+    }
     const result = await query(
       `insert into ${definition.table} (business_id, internal_id, name${definition.hasRate ? ", rate" : ""}, created_by_user_id)
        values ($1, $2, $3${definition.hasRate ? ", $4" : ""}, $${definition.hasRate ? 5 : 4}) returning *`,
       definition.hasRate ? [businessId, body.internal_id, body.name, body.rate, req.user.id] : [businessId, body.internal_id, body.name, req.user.id]
     );
     res.status(201).json({ [definition.key]: result.rows[0] });
-  } catch (error) { next(error); }
+  } catch (error) {
+    if (error?.code === "23505" && /internal_id/i.test(String(error.constraint || ""))) {
+      return next(badRequest(`Ese ID interno ya existe para esta ${inventoryCatalogDefinitions[req.params.catalog]?.label || "referencia"}. Escribe uno diferente.`));
+    }
+    next(error);
+  }
 }
 
 const inventoryReferenceTables = Object.freeze({
