@@ -23078,6 +23078,7 @@ async function openInventoryTaxonomyModal() {
   if (inventoryTaxonomyModal.parentElement !== document.body) document.body.appendChild(inventoryTaxonomyModal);
   inventoryTaxonomyModal.classList.remove("hidden");
   inventoryTaxonomyModal.removeAttribute("aria-hidden");
+  inventoryTaxonomyModal.querySelector(".inventory-taxonomy-modal-scroll")?.scrollTo({ top: 0, behavior: "auto" });
   setInlineMessage(inventoryTaxonomyMessage, "Crea categorías antes de asignarlas a productos. La subcategoría es opcional.", "info");
   window.setTimeout(() => inventoryCategoryNameInput?.focus({ preventScroll: true }), 80);
 }

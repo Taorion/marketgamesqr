@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-    <link rel="stylesheet" href="css/portal-clean-v39.css?v=unified-feedback-v204-20260818">
+    <link rel="stylesheet" href="css/portal-clean-v39.css?v=inventory-master-scroll-body-v205-20260818">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -5709,6 +5709,7 @@
               <div class="modal-shell hidden" id="inventoryTaxonomyModal" role="dialog" aria-modal="true" aria-labelledby="inventoryTaxonomyTitle" aria-hidden="true">
                 <article class="surface-card inventory-form-card modal-card inventory-taxonomy-modal-card">
                   <div class="modal-head"><div><span class="mono-label">Datos maestros de la empresa</span><h3 id="inventoryTaxonomyTitle">Referencias para tus productos</h3><p>Crea las referencias que usarás en productos y CSV: categoría, subcategoría, marca, unidad e impuestos.</p></div><button class="icon-button" id="inventoryTaxonomyCloseButton" type="button" aria-label="Cerrar datos maestros"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></div>
+                  <div class="inventory-taxonomy-modal-scroll" tabindex="0" aria-label="Contenido de datos maestros">
                   <div class="inventory-taxonomy-grid">
                     <form class="modal-form inventory-taxonomy-form" id="inventoryCategoryForm"><h4>Nueva categoría</h4><label><span>Nombre de categoría</span><input id="inventoryCategoryNameInput" type="text" maxlength="120" required></label><label><span>ID interno de categoría</span><input id="inventoryCategoryInternalIdInput" type="text" maxlength="100" placeholder="Ej. CAT-ROPA" required></label><button class="solid-button" type="submit">Crear categoría</button></form>
                     <form class="modal-form inventory-taxonomy-form" id="inventorySubcategoryForm"><h4>Nueva subcategoría</h4><label><span>Categoría</span><select id="inventorySubcategoryCategoryInput" required><option value="">Selecciona categoría</option></select></label><label><span>Nombre de subcategoría</span><input id="inventorySubcategoryNameInput" type="text" maxlength="120" required></label><label><span>ID interno de subcategoría</span><input id="inventorySubcategoryInternalIdInput" type="text" maxlength="100" placeholder="Ej. SUB-CAMISAS" required></label><button class="solid-button" type="submit">Crear subcategoría</button></form>
@@ -5719,6 +5720,7 @@
                   </div>
                   <p class="form-message" id="inventoryTaxonomyMessage"></p>
                   <div class="inventory-taxonomy-list" id="inventoryTaxonomyList"></div>
+                  </div>
                 </article>
               </div>
 
