@@ -2060,6 +2060,18 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
     : null;
   const current = await query(`select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`, [businessId, sourceType, payload.source_id]);
   const priorMetadata = current.rows[0]?.metadata || {};
+  const attachmentAssetIds = result === "WAITING"
+    ? [...new Set((payload.delivery_attachment_asset_ids || []).map(String).filter(Boolean))].slice(0, 4)
+    : [];
+  const attachmentAssets = attachmentAssetIds.length
+    ? await query(
+      `select id, title, file_name, file_type from digital_assets where business_id = $1 and is_active = true and id = any($2::uuid[])`,
+      [businessId, attachmentAssetIds]
+    )
+    : { rows: [] };
+  if (attachmentAssets.rows.length !== attachmentAssetIds.length) {
+    throw badRequest("Uno o mÃ¡s adjuntos no pertenecen a este negocio o ya no estÃ¡n disponibles.");
+  }
   const round = {
     id: payload.idempotency_key || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     result,
@@ -2086,6 +2098,7 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
       material: String(payload.delivery_material || "OTHER").trim() || "OTHER",
       message: String(payload.delivery_message || "").trim() || null,
       link: String(payload.delivery_link || "").trim() || null,
+      attachments: [],
     } : null,
     non_conversion_cost: nonConversionCost,
     recorded_at: new Date().toISOString(),
@@ -2094,6 +2107,54 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
   const history = Array.isArray(priorMetadata.negotiation_history) ? priorMetadata.negotiation_history.slice(-19) : [];
   const priorRound = payload.idempotency_key ? history.find((entry) => entry.id === payload.idempotency_key) : null;
   if (priorRound) return { round: priorRound, duplicate: true };
+  if (round.delivery && attachmentAssets.rows.length) {
+    const attachmentNote = await createLeadNote(businessId, user, payload.source_id, sourceType, {
+      note: `NegociaciÃ³n Â· ${attachmentAssets.rows.length} documento(s) compartido(s) por ${round.channel || "canal comercial"}.`,
+      note_type: "commercial",
+      metadata: {
+        source_module: "rms_negotiation",
+        negotiation_delivery: {
+          material: round.delivery.material,
+          channel: round.channel,
+          message: round.delivery.message,
+          link: round.delivery.link,
+        },
+      },
+    });
+    const attachments = [];
+    for (const asset of attachmentAssets.rows) {
+      const token = randomBytes(24).toString("base64url");
+      const created = await query(
+        `insert into rms_negotiation_attachments
+          (business_id, source_type, source_id, lead_id, negotiation_note_id, asset_id, public_token, metadata)
+         values ($1,$2,$3,$4,$5,$6,$7,$8::jsonb)
+         returning id, public_token`,
+        [
+          businessId, sourceType, payload.source_id, item.lead_id || payload.lead_id || null,
+          attachmentNote.id, asset.id, token,
+          JSON.stringify({ title: asset.title, file_name: asset.file_name, sent_by: user.id, negotiation_round_id: round.id }),
+        ]
+      );
+      attachments.push({
+        id: created.rows[0].id,
+        asset_id: asset.id,
+        title: asset.title,
+        file_name: asset.file_name,
+        file_type: asset.file_type,
+        url: negotiationAttachmentUrl(created.rows[0].public_token),
+      });
+    }
+    round.delivery.attachments = attachments;
+    round.delivery.message = [
+      round.delivery.message,
+      round.delivery.link ? `Enlace comercial: ${round.delivery.link}` : "",
+      `Documentos de esta propuesta:\n${attachments.map((asset) => `â€¢ ${asset.title || asset.file_name}: ${asset.url}`).join("\n")}`,
+    ].filter(Boolean).join("\n\n").slice(0, 5000);
+    await query(
+      `update lead_notes set metadata = metadata || $2::jsonb where id = $1`,
+      [attachmentNote.id, JSON.stringify({ negotiation_delivery: { ...round.delivery } })]
+    );
+  }
   let cancelledAgendaCount = 0;
   if (result === "LOST") {
     const cancelled = await query(
@@ -3048,6 +3109,10 @@ function activationAttachmentUrl(token) {
   return `${String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "")}/api/public/rms-attachments/${encodeURIComponent(token)}`;
 }
 
+function negotiationAttachmentUrl(token) {
+  return `${String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "")}/api/public/rms-attachments/${encodeURIComponent(token)}`;
+}
+
 async function recordActivationDelivery(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const sourceId = payload.source_id;
@@ -3119,14 +3184,27 @@ async function recordActivationDelivery(businessId, user, payload = {}) {
 }
 
 async function downloadActivationAttachment(publicToken) {
-  const result = await query(`select aa.id, aa.business_id, aa.lead_id, aa.source_type, aa.source_id, da.title, da.file_name, da.file_type, da.file_data_url from rms_activation_attachments aa join digital_assets da on da.id = aa.asset_id and da.business_id = aa.business_id and da.is_active = true where aa.public_token = $1`, [String(publicToken || "").trim()]);
+  const result = await query(`
+    select 'activation' as attachment_scope, aa.id, aa.business_id, aa.lead_id, aa.source_type, aa.source_id,
+           da.title, da.file_name, da.file_type, da.file_data_url
+      from rms_activation_attachments aa
+      join digital_assets da on da.id = aa.asset_id and da.business_id = aa.business_id and da.is_active = true
+     where aa.public_token = $1
+    union all
+    select 'negotiation' as attachment_scope, na.id, na.business_id, na.lead_id, na.source_type, na.source_id,
+           da.title, da.file_name, da.file_type, da.file_data_url
+      from rms_negotiation_attachments na
+      join digital_assets da on da.id = na.asset_id and da.business_id = na.business_id and da.is_active = true
+     where na.public_token = $1
+    limit 1`, [String(publicToken || "").trim()]);
   const row = result.rows[0];
   if (!row) throw notFound("Adjunto no encontrado o desactivado.");
   const match = String(row.file_data_url || "").match(/^data:([^;,]+);base64,([a-z0-9+/=]+)$/i);
   if (!match) throw notFound("El archivo adjunto no está disponible.");
   const buffer = Buffer.from(match[2], "base64");
   if (!buffer.length || buffer.length > 5 * 1024 * 1024) throw notFound("El archivo adjunto no es válido.");
-  await query(`update rms_activation_attachments set opened_at = coalesce(opened_at, now()), open_count = open_count + 1 where id = $1`, [row.id]);
+  const table = row.attachment_scope === "negotiation" ? "rms_negotiation_attachments" : "rms_activation_attachments";
+  await query(`update ${table} set opened_at = coalesce(opened_at, now()), open_count = open_count + 1 where id = $1`, [row.id]);
   return { buffer, file_name: row.file_name || "adjunto", file_type: row.file_type || match[1] };
 }
 

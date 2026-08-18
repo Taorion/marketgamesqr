@@ -48111,6 +48111,10 @@ function bindRmsMachineActions(root) {
     field.addEventListener("input", refresh);
     field.addEventListener("change", refresh);
   });
+  root.querySelectorAll("[data-rms-negotiation-files]").forEach((field) => {
+    const id = field.getAttribute("data-rms-negotiation-files") || "";
+    field.addEventListener("change", () => renderRmsNegotiationAttachmentPreview(root, id));
+  });
   root.querySelectorAll("[data-rms-save-negotiation-decision]").forEach((button) => {
     button.addEventListener("click", () => {
       const item = rmsOpportunityById(button.dataset.rmsSaveNegotiationDecision || "");
@@ -54194,6 +54198,73 @@ function rmsNegotiationDispatchUrl(item = {}, channel = "WHATSAPP", message = ""
   return phone ? `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(copy)}` : "";
 }
 
+const RMS_NEGOTIATION_ATTACHMENT_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+];
+const RMS_NEGOTIATION_ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024;
+const rmsNegotiationUploadedAssets = new Map();
+
+function rmsNegotiationAttachmentPreviewMarkup(items = [], options = {}) {
+  const attachments = Array.isArray(items) ? items : [];
+  if (!attachments.length) return '<small class="rms-negotiation-attachments-empty">Aún no hay documentos adjuntos.</small>';
+  return `<div class="rms-negotiation-attachment-list">${attachments.map((attachment) => {
+    const name = attachment.name || attachment.file_name || attachment.title || "Documento comercial";
+    const meta = attachment.size ? `${Math.max(1, Math.ceil(Number(attachment.size) / 1024))} KB` : attachment.file_type || attachment.type || "Listo para compartir";
+    const link = attachment.url ? `<a href="${escapeHtml(attachment.url)}" target="_blank" rel="noopener">Abrir</a>` : "";
+    return `<span><span class="material-symbols-outlined" aria-hidden="true">attach_file</span><strong>${escapeHtml(name)}</strong><small>${escapeHtml(meta)}</small>${link}</span>`;
+  }).join("")}</div>${options.pending ? "<small>Se subirán de forma segura cuando confirmes el envío.</small>" : ""}`;
+}
+
+function rmsNegotiationFilesFor(root, id) {
+  return Array.from(rmsCompactActiveNode(root, id, "[data-rms-negotiation-files]")?.files || []).slice(0, 4);
+}
+
+function renderRmsNegotiationAttachmentPreview(root, id) {
+  const preview = rmsCommercialNode(root, "[data-rms-negotiation-attachments-preview]", id);
+  if (!preview) return;
+  const files = rmsNegotiationFilesFor(root, id).map((file) => ({ name: file.name, type: file.type, size: file.size }));
+  preview.innerHTML = rmsNegotiationAttachmentPreviewMarkup(files, { pending: files.length > 0 });
+}
+
+async function uploadRmsNegotiationAttachments(item, files = []) {
+  const incoming = Array.isArray(files) ? files.slice(0, 4) : [];
+  if (!incoming.length) return [];
+  const invalid = incoming.find((file) => !RMS_NEGOTIATION_ATTACHMENT_TYPES.includes(String(file.type || "").toLowerCase()) || Number(file.size || 0) > RMS_NEGOTIATION_ATTACHMENT_MAX_BYTES);
+  if (invalid) throw new Error("Cada adjunto debe ser PDF, Word o imagen y pesar hasta 5 MB.");
+  const saved = rmsNegotiationUploadedAssets.get(item.id) || [];
+  const assetIds = [];
+  for (const file of incoming) {
+    const fileKey = `${file.name}:${file.size}:${file.type}`;
+    const existing = saved.find((asset) => asset.file_key === fileKey);
+    if (existing?.id) {
+      assetIds.push(existing.id);
+      continue;
+    }
+    const uploaded = await api("/api/business/digital-assets", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        title: file.name.replace(/\.[^.]+$/, "") || "Documento de negociación",
+        description: `Adjunto comercial de Negociación para ${item.name || "lead"}.`,
+        category: "comercial",
+        file_name: file.name,
+        file_data_url: await readFileAsDataUrl(file, RMS_NEGOTIATION_ATTACHMENT_MAX_BYTES, RMS_NEGOTIATION_ATTACHMENT_TYPES),
+        download_button_text: "Descargar documento",
+      }),
+    });
+    if (!uploaded?.asset?.id) throw new Error("No pudimos preparar uno de los adjuntos.");
+    saved.push({ id: uploaded.asset.id, file_key: fileKey });
+    assetIds.push(uploaded.asset.id);
+  }
+  rmsNegotiationUploadedAssets.set(item.id, saved);
+  return [...new Set(assetIds)];
+}
+
 // Renderizador canónico de Negociación: una decisión y un formulario por ruta.
 function rmsCommercialConfirmationStationCardMarkup(item = {}) {
   {
@@ -54206,6 +54277,7 @@ function rmsCommercialConfirmationStationCardMarkup(item = {}) {
     const material = saved.delivery_material || negotiation.delivery?.material || "QUOTE";
     const message = saved.delivery_message || negotiation.delivery?.message || "";
     const link = saved.delivery_link || negotiation.delivery?.link || "";
+    const existingAttachments = Array.isArray(negotiation.delivery?.attachments) ? negotiation.delivery.attachments : [];
     const nextAt = rmsActivationDatetimeLocal(saved.next_action_at || negotiation.next_action_at || "", 2);
     const response = saved.result === "RECYCLE" ? "RECYCLE" : "ACCEPTED";
     const responseReason = saved.reason || "";
@@ -54218,6 +54290,9 @@ function rmsCommercialConfirmationStationCardMarkup(item = {}) {
         <section class="rms-negotiation-active-form" data-rms-negotiation-active-form="${escapeHtml(item.id)}">
           <div data-rms-negotiation-path="send" ${current.key === "send" ? "" : "hidden"}><header><h5>Envía material y espera su respuesta</h5><p>Comparte una activación, atención, archivo o cotización. El lead se queda en Negociación hasta que respondan.</p></header><div class="rms-sale-form-grid">${rmsCompactField("Canal", `<select data-rms-negotiation-channel="${escapeHtml(item.id)}"><option value="WHATSAPP" ${channel === "WHATSAPP" ? "selected" : ""}>WhatsApp</option><option value="EMAIL" ${channel === "EMAIL" ? "selected" : ""}>Email</option></select>`)}${rmsCompactField("Qué enviarás", `<select data-rms-negotiation-delivery-material="${escapeHtml(item.id)}"><option value="ACTIVATION" ${material === "ACTIVATION" ? "selected" : ""}>Activación</option><option value="ATTENTION" ${material === "ATTENTION" ? "selected" : ""}>Atención o información</option><option value="FILE" ${material === "FILE" ? "selected" : ""}>Archivo</option><option value="QUOTE" ${material === "QUOTE" ? "selected" : ""}>Cotización</option><option value="OTHER" ${material === "OTHER" ? "selected" : ""}>Otro</option></select>`)}${rmsCompactField("Próximo seguimiento", `<input type="datetime-local" value="${escapeHtml(nextAt)}" data-rms-negotiation-next-at="${escapeHtml(item.id)}">`)}</div>${rmsCompactField("Mensaje o contexto", `<textarea rows="3" data-rms-negotiation-delivery-message="${escapeHtml(item.id)}" placeholder="Qué le envías y qué esperas que responda">${escapeHtml(message)}</textarea>`)}${rmsCompactField("Enlace de archivo o cotización", `<input type="url" value="${escapeHtml(link)}" data-rms-negotiation-delivery-link="${escapeHtml(item.id)}" placeholder="https://…">`, "<small>Opcional. Pega un enlace si compartes un archivo o una cotización.</small>")}</div>
           <div data-rms-negotiation-path="response" ${current.key === "response" ? "" : "hidden"}><header><h5>Registra la respuesta del cliente</h5><p>Justifica la decisión. Aquí no se registra el pago: ese detalle se completa en Ventas atribuidas.</p></header><div class="rms-sale-form-grid">${rmsCompactField("Respuesta", `<select data-rms-negotiation-response-outcome="${escapeHtml(item.id)}"><option value="ACCEPTED" ${response === "ACCEPTED" ? "selected" : ""}>Compró o confirmó compra → Ventas atribuidas</option><option value="RECYCLE" ${response === "RECYCLE" ? "selected" : ""}>No compra por ahora → Reciclaje</option></select>`)}</div>${rmsCompactField("Por qué tomas esta decisión", `<textarea rows="4" data-rms-negotiation-reason="${escapeHtml(item.id)}" placeholder="Resume lo que respondió el cliente y por qué lo envías a la siguiente etapa">${escapeHtml(responseReason)}</textarea>`, "<small>Este motivo queda en el historial del lead.</small>")}</div>
+          <section class="rms-negotiation-attachments-field" data-rms-negotiation-path="send" ${current.key === "send" ? "" : "hidden"}>
+            ${rmsCompactField("Adjuntar documentos", `<input type="file" multiple accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp" data-rms-negotiation-files="${escapeHtml(item.id)}">`, `<small>PDF, Word o imagen · hasta 4 archivos de 5 MB cada uno. Qori crea enlaces seguros para enviarlos por email o WhatsApp.</small><div class="rms-negotiation-attachments-preview" data-rms-negotiation-attachments-preview="${escapeHtml(item.id)}">${rmsNegotiationAttachmentPreviewMarkup(existingAttachments)}</div>`)}
+          </section>
         </section>
         <aside class="rms-negotiation-health-compact" data-rms-negotiation-health="${escapeHtml(item.id)}"></aside>
         <footer class="rms-negotiation-compact-actions"><small data-rms-negotiation-help="${escapeHtml(item.id)}"></small><div><button class="ghost-button compact" type="button" data-rms-save-negotiation-draft="${escapeHtml(item.id)}">Guardar borrador</button><a class="ghost-button compact" data-rms-negotiation-dispatch="${escapeHtml(item.id)}" href="${escapeHtml(dispatchUrl || "#")}" target="_blank" rel="noopener" ${current.key === "send" && dispatchUrl ? "" : "hidden"}><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span><span data-rms-negotiation-dispatch-label="${escapeHtml(item.id)}">Abrir ${channel === "EMAIL" ? "email" : "WhatsApp"}</span></a><button class="solid-button compact" type="button" data-rms-save-negotiation-decision="${escapeHtml(item.id)}" data-rms-negotiation-cta-button="${escapeHtml(item.id)}"><span data-rms-negotiation-cta="${escapeHtml(item.id)}"></span></button></div></footer>
@@ -54308,7 +54383,7 @@ function updateRmsNegotiationDecisionUi(root, id) {
     const dispatchLabel = rmsCommercialNode(root, "[data-rms-negotiation-dispatch-label]", id);
     const dispatchUrl = rmsNegotiationDispatchUrl(rmsOpportunityById(id) || {}, channel, message);
     if (dispatch) {
-      dispatch.hidden = active !== "send" || !dispatchUrl;
+      dispatch.hidden = true;
       dispatch.href = dispatchUrl || "#";
     }
     if (dispatchLabel) dispatchLabel.textContent = `Abrir ${channel === "EMAIL" ? "email" : "WhatsApp"}`;
@@ -54320,9 +54395,9 @@ function updateRmsNegotiationDecisionUi(root, id) {
         ? `<span class="material-symbols-outlined" aria-hidden="true">check_circle</span><strong>Decisión lista para registrar.</strong><small>${response === "ACCEPTED" ? "Se abrirá Ventas atribuidas para registrar el pago." : "Se programará Reciclaje con el contexto que escribiste."}</small>`
         : `<span class="material-symbols-outlined" aria-hidden="true">edit_note</span><strong>Falta explicar la respuesta.</strong><small>Escribe por qué el lead avanza a la siguiente etapa.</small>`;
     const cta = rmsCommercialNode(root, "[data-rms-negotiation-cta]", id);
-    if (cta) cta.textContent = active === "send" ? "Registrar envío y esperar respuesta" : response === "ACCEPTED" ? "Enviar a Ventas atribuidas" : "Enviar a Reciclaje";
+    if (cta) cta.textContent = active === "send" ? `Enviar material y abrir ${channel === "EMAIL" ? "email" : "WhatsApp"}` : response === "ACCEPTED" ? "Enviar a Ventas atribuidas" : "Enviar a Reciclaje";
     const help = rmsCommercialNode(root, "[data-rms-negotiation-help]", id);
-    if (help) help.textContent = active === "send" ? "Abre el canal, envía el material y registra el seguimiento para no perder el contexto." : "La justificación es el dato mínimo para mover al lead.";
+    if (help) help.textContent = active === "send" ? "Al confirmar, Qori guarda el envío, adjunta enlaces seguros y abre el canal elegido con todo el material." : "La justificación es el dato mínimo para mover al lead.";
     return;
   }
   const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
@@ -54402,8 +54477,33 @@ async function saveRmsNegotiationDecision(item, root) {
       }
     }
     if (button) button.disabled = true;
-    const key = rmsCommercialOperationKey("negotiation", item, `${draft.result}|${draft.reason}|${draft.next_action_at || ""}|${draft.delivery_material || ""}`);
-    await api("/api/business/rms-machine/negotiation-result", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft, idempotency_key: key }) });
+    const deliveryWindow = active === "send" ? window.open("", "_blank") : null;
+    if (deliveryWindow) deliveryWindow.opener = null;
+    try {
+      if (active === "send") {
+        showFeedback("Preparando documentos y registrando el envío…", "loading", { title: "Negociación", timeout: 0 });
+        draft.delivery_attachment_asset_ids = await uploadRmsNegotiationAttachments(item, draft.delivery_files || []);
+      }
+      const { delivery_files: _deliveryFiles, ...requestDraft } = draft;
+      const attachmentKey = (draft.delivery_files || []).map((file) => `${file.name}:${file.size}`).join(",");
+      const key = rmsCommercialOperationKey("negotiation", item, `${draft.result}|${draft.reason}|${draft.next_action_at || ""}|${draft.delivery_material || ""}|${attachmentKey}`);
+      const savedResult = await api("/api/business/rms-machine/negotiation-result", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...requestDraft, idempotency_key: key }) });
+      if (active === "send") {
+        const deliveryMessage = savedResult?.round?.delivery?.message || [draft.delivery_message, draft.delivery_link].filter(Boolean).join("\n\n");
+        const dispatchUrl = rmsNegotiationDispatchUrl(item, draft.channel, deliveryMessage);
+        if (!dispatchUrl) {
+          deliveryWindow?.close();
+          throw new Error(draft.channel === "EMAIL" ? "Este lead no tiene correo para enviar el material." : "Este lead no tiene WhatsApp para enviar el material.");
+        }
+        if (deliveryWindow) deliveryWindow.location.href = dispatchUrl;
+        else window.open(dispatchUrl, "_blank", "noopener");
+        rmsNegotiationUploadedAssets.delete(item.id);
+      }
+    } catch (error) {
+      deliveryWindow?.close();
+      if (button) button.disabled = false;
+      throw error;
+    }
     localStorage.removeItem(rmsNegotiationDraftStorageKey(item.id));
     state.rmsMachineLoaded = false;
     if (draft.result === "RECYCLE") {
@@ -54540,6 +54640,7 @@ function rmsNegotiationDraft(root, id) {
       delivery_material: activeValue("[data-rms-negotiation-delivery-material]", "QUOTE"),
       delivery_message: activeValue("[data-rms-negotiation-delivery-message]"),
       delivery_link: activeValue("[data-rms-negotiation-delivery-link]"),
+      delivery_files: rmsNegotiationFilesFor(root, id),
       summary: activeValue("[data-rms-negotiation-delivery-message]"),
       recycle_reason: null,
       recycle_strategy: null,

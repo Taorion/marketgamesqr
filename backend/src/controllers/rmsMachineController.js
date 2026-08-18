@@ -339,6 +339,7 @@ const negotiationResultSchema = z.object({
   delivery_material: z.enum(["ACTIVATION", "ATTENTION", "FILE", "QUOTE", "OTHER"]).optional().nullable(),
   delivery_message: z.string().trim().max(5000).optional().nullable(),
   delivery_link: z.string().trim().max(3000).optional().nullable(),
+  delivery_attachment_asset_ids: z.array(z.string().uuid()).max(4).optional().nullable(),
   idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
 });
 
