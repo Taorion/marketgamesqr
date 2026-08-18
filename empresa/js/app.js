@@ -23228,6 +23228,11 @@ function inventoryCsvNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function inventoryCsvOptional(value) {
+  const normalized = String(value ?? "").trim();
+  return normalized || null;
+}
+
 function inventoryCsvStatus(value = "") {
   const status = normalizeCsvHeader(value);
   if (["inactive", "inactivo"].includes(status)) return "INACTIVE";
@@ -23256,15 +23261,15 @@ function inventoryProductsFromCsv(text = "") {
       row_number: rowIndex + 2,
       internal_id: csvCell(record, ["id_producto", "product_id", "internal_id", "id"]),
       name,
-      barcode: csvCell(record, ["codigo_barras", "codigo_de_barras", "barcode"]),
-      sku: csvCell(record, ["sku", "referencia", "codigo"]),
-      category_internal_id: csvCell(record, ["categoria_id", "category_id", "category_internal_id"]),
-      category: csvCell(record, ["categoria", "category", "nombre_categoria", "category_name"]),
-      subcategory_internal_id: csvCell(record, ["subcategoria_id", "subcategory_id", "subcategory_internal_id"]),
-      subcategory: csvCell(record, ["subcategoria", "subcategory", "nombre_subcategoria", "subcategory_name"]),
-      brand: csvCell(record, ["marca", "brand"]),
-      tax_base: csvCell(record, ["iva_base", "iva", "tax_base", "tax"]),
-      healthy_tax: csvCell(record, ["impuesto_saludable", "healthy_tax"]),
+      barcode: inventoryCsvOptional(csvCell(record, ["codigo_barras", "codigo_de_barras", "barcode"])),
+      sku: inventoryCsvOptional(csvCell(record, ["sku", "referencia", "codigo"])),
+      category_internal_id: inventoryCsvOptional(csvCell(record, ["categoria_id", "category_id", "category_internal_id"])),
+      category: inventoryCsvOptional(csvCell(record, ["categoria", "category", "nombre_categoria", "category_name"])),
+      subcategory_internal_id: inventoryCsvOptional(csvCell(record, ["subcategoria_id", "subcategory_id", "subcategory_internal_id"])),
+      subcategory: inventoryCsvOptional(csvCell(record, ["subcategoria", "subcategory", "nombre_subcategoria", "subcategory_name"])),
+      brand: inventoryCsvOptional(csvCell(record, ["marca", "brand"])),
+      tax_base: inventoryCsvOptional(csvCell(record, ["iva_base", "iva", "tax_base", "tax"])),
+      healthy_tax: inventoryCsvOptional(csvCell(record, ["impuesto_saludable", "healthy_tax"])),
       tax_classification: inventoryCsvTaxClassification(csvCell(record, ["iva_base", "iva", "tax", "tax_classification"])),
       price_before_tax: inventoryCsvNumber(csvCell(record, ["precio_base", "precio_antes_iva", "price_before_tax", "precio_venta", "precio", "unit_price", "sale_price"]), 0),
       unit_price: 0,
@@ -23274,7 +23279,7 @@ function inventoryProductsFromCsv(text = "") {
       min_stock_quantity: inventoryCsvNumber(csvCell(record, ["stock_minimo", "min_stock", "min_stock_quantity"]), 0),
       unit_label: csvCell(record, ["unidad_de_medida", "unidad", "unidad_medida", "unit", "unit_label"]) || "Unidad",
       status: inventoryCsvStatus(csvCell(record, ["estado", "status"])),
-      description: csvCell(record, ["descripcion", "description", "detalle"]),
+      description: inventoryCsvOptional(csvCell(record, ["descripcion", "description", "detalle"])),
     };
   }).filter((product) => product.name || product.sku || product.barcode);
 }
