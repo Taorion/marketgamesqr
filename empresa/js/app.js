@@ -2208,21 +2208,8 @@ function ensureSidebarRuntimeFeedbackStyles() {
       box-shadow: inset 3px 0 0 rgba(105, 221, 255, .92) !important;
     }
     body .portal-shell .sidebar .sidebar-nav-section.is-current > .nav-group-toggle::after {
-      display: block !important;
-      content: "SECCIÓN ACTUAL" !important;
-      position: absolute !important;
-      right: 30px !important;
-      top: 50% !important;
-      width: auto !important;
-      height: auto !important;
-      transform: translateY(-50%) !important;
-      color: #9aedff !important;
-      background: transparent !important;
-      font-size: .54rem !important;
-      font-weight: 900 !important;
-      letter-spacing: .09em !important;
-      line-height: 1 !important;
-      opacity: .96 !important;
+      display: none !important;
+      content: none !important;
     }
   `;
   document.head.appendChild(style);
