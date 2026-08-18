@@ -740,14 +740,20 @@ async function leadRowsForStateRefs(businessId, refs = [], filters = {}) {
   }, {});
   const rows = [];
   for (const [sourceType, ids] of Object.entries(byType)) {
-    const data = await listLeadCrmRows(businessId, {
-      ...filters,
-      source_type: sourceType,
-      source_ids: ids.slice(0, 120),
-      limit: Math.min(ids.length, 120),
-      offset: 0,
-    });
-    rows.push(...(data.leads || data.rows || []));
+    // Las estaciones operativas no pueden perder un cliente solo porque su
+    // fila RMS ya no esté dentro de la primera página del CRM. Se resuelven
+    // todos los IDs persistidos por bloques compatibles con la consulta CRM.
+    for (let offset = 0; offset < ids.length; offset += 120) {
+      const sourceIds = ids.slice(offset, offset + 120);
+      const data = await listLeadCrmRows(businessId, {
+        ...filters,
+        source_type: sourceType,
+        source_ids: sourceIds,
+        limit: sourceIds.length,
+        offset: 0,
+      });
+      rows.push(...(data.leads || data.rows || []));
+    }
   }
   return rows;
 }
@@ -927,7 +933,12 @@ async function listRmsOpportunities(businessId, filters = {}) {
     offset: filters.offset || 0,
   });
   const baseRows = data.leads || data.rows || [];
-  const recentStateRows = await recentStateRowsForBusiness(businessId, 240);
+  // Cuando se abre una estación, su estado RMS es la fuente de verdad. La
+  // vista CRM puede estar paginada o fusionar el contacto con otra fuente,
+  // pero una venta que pasó a Valorización debe aparecer siempre allí.
+  const recentStateRows = phaseFilter
+    ? await recentStateRowsForBusiness(businessId, 500, phaseFilter)
+    : await recentStateRowsForBusiness(businessId, 240);
   const baseKeys = new Set(baseRows.map((row) => `${crmSourceType(row)}:${row.id}`));
   const missingStateRows = recentStateRows.filter((row) => !baseKeys.has(`${crmSourceType(row)}:${row.source_id}`));
   const extraRows = missingStateRows.length

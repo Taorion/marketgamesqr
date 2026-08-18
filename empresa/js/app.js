@@ -48499,6 +48499,15 @@ function openRmsStation(phase = "", options = {}) {
       })
       .catch(() => {});
   }
+  if (phase === "postventa") {
+    // La tarjeta de Valorización debe abrir con la actividad real de la venta:
+    // tickets de recompra, referidos, puntos y sellos anteriores.
+    loadRmsPostSaleActions({ force: true })
+      .then(() => {
+        if (state.rmsStationScreenOpen && state.rmsStationPhase === phase && state.rmsStationOpenSeq === openSeq) renderRmsStationOnly();
+      })
+      .catch((error) => console.warn("RMS post-sale history preload failed", error));
+  }
   if (phase === "inteligencia") {
     loadRmsIntelligenceData()
       .then(async () => {
