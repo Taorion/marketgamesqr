@@ -25993,3 +25993,84 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-evaluation-work-it
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+
+/* Corrección final de contraste y composición del resumen del lead en Evaluación.
+   Se declara contra #rmsStationWorkspace para prevalecer sobre los temas heredados. */
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead {
+  grid-template-columns: minmax(230px, .82fr) minmax(0, 1.72fr) !important;
+  align-items: center !important;
+  padding: 22px clamp(20px, 2.5vw, 34px) !important;
+  background: linear-gradient(105deg, #ffffff 0%, #eef7ff 58%, #f8fcff 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead :is(.rms-commercial-work-kicker, .rms-activation-work-person strong, .rms-activation-work-person small, .rms-activation-work-facts dt, .rms-activation-work-facts dd) {
+  color: #071d3e !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead .rms-commercial-work-kicker {
+  grid-column: 1 / -1 !important;
+  color: #164e87 !important;
+  font-size: .72rem !important;
+  letter-spacing: .055em !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead .rms-activation-work-person {
+  border: 0 !important;
+  padding: 0 22px 0 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead .rms-activation-work-person strong {
+  color: #071d3e !important;
+  font-size: 1rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead .rms-activation-work-person small,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead .rms-activation-work-facts dt {
+  color: #42647f !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead .rms-activation-work-facts {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead .rms-activation-work-facts > div {
+  padding: 10px 11px !important;
+  border: 1px solid #c9deef !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead .rms-activation-work-facts dd {
+  color: #071d3e !important;
+  font-size: .8rem !important;
+  font-weight: 800 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead .rms-activation-work-actions {
+  grid-column: 1 / -1 !important;
+  justify-content: flex-start !important;
+  padding: 2px 0 0 !important;
+}
+
+@media (max-width: 1180px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead {
+    grid-template-columns: minmax(210px, .72fr) minmax(0, 1.28fr) !important;
+  }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead .rms-activation-work-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+    padding: 18px !important;
+  }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead .rms-activation-work-person {
+    padding: 0 !important;
+  }
+}
