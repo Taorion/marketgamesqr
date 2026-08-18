@@ -44176,8 +44176,8 @@ function rmsActivationStationCardMarkup(item = {}) {
   const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
   const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
   return `
-    <article class="rms-activation-work-item ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}">
-      <aside class="rms-activation-work-lead">
+    <article class="rms-activation-work-item ${selected ? "is-selected" : ""}" data-rms-station-lead="${escapeHtml(item.id)}" style="grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto minmax(0,1fr)!important">
+      <aside class="rms-activation-work-lead rms-activation-work-lead-header" style="grid-column:1 / -1!important;grid-row:1!important">
         <label class="rms-activation-work-select">
           <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" aria-label="Seleccionar ${escapeHtml(item.name || "lead")}" ${selected ? "checked" : ""}>
           <span class="material-symbols-outlined" aria-hidden="true">${selected ? "check_circle" : "radio_button_unchecked"}</span>
@@ -44197,7 +44197,7 @@ function rmsActivationStationCardMarkup(item = {}) {
           <div><dt>Entrada</dt><dd>${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")}</dd></div>
         </dl>
       </aside>
-      <div class="rms-activation-work-console">
+      <div class="rms-activation-work-console" style="grid-column:1 / -1!important;grid-row:2!important">
         ${rmsActivationDeliveryCardMarkup(item)}
       </div>
     </article>
