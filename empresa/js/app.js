@@ -1378,6 +1378,7 @@ const sidebarSectionByView = Object.freeze({
   competition: "gos",
   branches: "operate",
   missions: "optimize",
+  recycling: "optimize",
   account: "admin",
   admin: "admin",
 });
@@ -2162,22 +2163,35 @@ function ensureSidebarRuntimeFeedbackStyles() {
     }
     body .portal-shell .sidebar .nav-item[data-sidebar-current-match="true"]::after {
       display: block !important;
-      content: "" !important;
+      content: "AQUÍ" !important;
       position: absolute !important;
-      top: 9px !important;
-      right: 9px !important;
-      width: 7px !important;
-      height: 7px !important;
-      border: 2px solid #052a6b !important;
+      top: 50% !important;
+      right: 7px !important;
+      width: auto !important;
+      height: 17px !important;
+      padding: 0 5px !important;
+      border: 1px solid rgba(255, 255, 255, .92) !important;
       border-radius: 999px !important;
-      background: #9aedff !important;
-      box-shadow: 0 0 0 2px rgba(154, 237, 255, .28), 0 0 14px rgba(105, 221, 255, .8) !important;
+      background: #ffffff !important;
+      color: #0341b3 !important;
+      box-shadow: 0 2px 10px rgba(1, 34, 104, .28) !important;
+      transform: translateY(-50%) !important;
+      font-size: .49rem !important;
+      font-weight: 950 !important;
+      letter-spacing: .08em !important;
+      line-height: 15px !important;
+      text-align: center !important;
+      opacity: 1 !important;
     }
     body .portal-shell .sidebar .nav-item[data-sidebar-current-match="true"] > .material-symbols-outlined,
     body .portal-shell .sidebar .nav-item[data-sidebar-current-match="true"] strong {
       color: #ffffff !important;
       -webkit-text-fill-color: #ffffff !important;
       opacity: 1 !important;
+    }
+    body .portal-shell .sidebar .nav-item[data-sidebar-current-match="true"] strong {
+      font-weight: 900 !important;
+      letter-spacing: .01em !important;
     }
     body .portal-shell .sidebar .nav-item[data-sidebar-current-match="true"] small {
       color: #dff7ff !important;
@@ -6543,10 +6557,11 @@ function setView(view) {
     const isAccountTarget = button.dataset.view === "account"
       && view === "account"
       && accountTarget === state.accountScreen;
-    const isRegular = button.dataset.view === view && view !== "leads" && view !== "rms-machine" && view !== "account";
+    const isRegular = button.dataset.view === view && view !== "leads" && view !== "account";
     const isActive = isLeadsBase || isAccountTarget || isRegular;
-    button.classList.remove("active");
-    button.removeAttribute("aria-current");
+    button.classList.toggle("active", isActive);
+    if (isActive) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
     button.dataset.sidebarCurrentMatch = isActive ? "true" : "false";
   });
   syncSidebarAccordionWithActiveNav(view);
