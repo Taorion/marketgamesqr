@@ -29698,6 +29698,8 @@ html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-ris
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-delivery-bar .checkbox-row { display: inline-flex !important; align-items: center !important; width: auto !important; min-height: 32px !important; margin: 0 !important; padding: 6px 10px !important; border: 0 !important; border-radius: 8px !important; background: transparent !important; color: #416078 !important; font-size: .76rem !important; line-height: 1.25 !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-delivery-bar .checkbox-row input { flex: 0 0 auto !important; width: 16px !important; height: 16px !important; margin: 0 8px 0 0 !important; accent-color: #0b76b5 !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-delivery-bar > div { display: flex !important; align-items: center !important; justify-content: flex-end !important; gap: 6px !important; flex-wrap: wrap !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-open-ticket,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-ready-actions { display: none !important; }
 @media (max-width: 780px) { html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-delivery-bar { align-items: flex-start !important; flex-direction: column !important; } html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-delivery-bar > div { justify-content: flex-start !important; } }
 @media (max-width: 780px) {
   html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-builder,
