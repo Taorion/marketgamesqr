@@ -129,6 +129,7 @@ const {
   recordCommercialConfirmation,
   recordEvaluationResponse: rmsRecordEvaluationResponse,
   recordNegotiationResult,
+  prepareRiskRecoveryResource,
   recordRiskReview,
   postSaleActions: rmsPostSaleActions,
   recordPostSaleAction: rmsRecordPostSaleAction,
@@ -226,6 +227,7 @@ router.post("/rms-machine/activation-delivery", recordActivationDeliveryAction);
 router.post("/rms-machine/evaluation-response", rmsRecordEvaluationResponse);
 router.post("/rms-machine/commercial-confirmation", recordCommercialConfirmation);
 router.post("/rms-machine/negotiation-result", recordNegotiationResult);
+router.post("/rms-machine/risk-recovery-resource", prepareRiskRecoveryResource);
 router.post("/rms-machine/risk-review", recordRiskReview);
 router.get("/rms-machine/post-sale-actions", shortBusinessCache, rmsPostSaleActions);
 router.post("/rms-machine/post-sale-actions", rmsRecordPostSaleAction);

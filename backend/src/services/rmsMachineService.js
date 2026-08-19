@@ -2,7 +2,7 @@ const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
 const { createLeadAgendaItem, createLeadNote, listLeadCrmRows } = require("./leadCrmService");
-const { createPostSaleQr } = require("./strategicQrService");
+const { createPostSaleQr, createRiskRecoveryQr } = require("./strategicQrService");
 const { createRewardPass } = require("./rewardPassService");
 const {
   affiliatePointRuleMetadata,
@@ -76,6 +76,8 @@ const RMS_TRANSITION_CONTRACT = Object.freeze([
   { from: "control_anti_fuga", decision: "RECYCLE", to: "reciclaje", creates_agenda_task: true },
   { from: "cierre", decision: "CANONICAL_SALE_RECORDED", to: "postventa" },
   { from: "postventa", decision: "RESULT_RECORDED", to: "postventa", lifecycle_status: "CYCLE_ANALYZED", analytical_only: true },
+  { from: "reciclaje", decision: "RECYCLE_REACTIVATE_EVALUATION", to: "procesamiento" },
+  { from: "reciclaje", decision: "RECYCLE_REACTIVATE_ACTIVATION", to: "clasificacion" },
   { from: "accion_correctiva", decision: "RECYCLE_REACTIVATE_EVALUATION", to: "procesamiento" },
   { from: "accion_correctiva", decision: "RECYCLE_REACTIVATE_ACTIVATION", to: "clasificacion" },
   { from: "control_anti_fuga", decision: "RECYCLE_REACTIVATE_EVALUATION", to: "procesamiento" },
@@ -112,6 +114,10 @@ const RMS_PROTECTED_TRANSITIONS = Object.freeze({
   control_anti_fuga: Object.freeze({
     cierre: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
     reciclaje: RMS_TRANSITION_AUTHORITY.RISK_REVIEW,
+    procesamiento: RMS_TRANSITION_AUTHORITY.RECYCLING,
+    clasificacion: RMS_TRANSITION_AUTHORITY.RECYCLING,
+  }),
+  reciclaje: Object.freeze({
     procesamiento: RMS_TRANSITION_AUTHORITY.RECYCLING,
     clasificacion: RMS_TRANSITION_AUTHORITY.RECYCLING,
   }),
@@ -1964,13 +1970,31 @@ async function updateRmsRecyclingCase(businessId, user, payload = {}) {
   if (!['SCHEDULED', 'REACTIVATING'].includes(recyclingCase.recycle_status)) throw badRequest("Este reciclaje ya fue cerrado.");
   if (recyclingCase.recycle_channel && recyclingCase.recycle_consent !== "CONFIRMED") throw badRequest("No puedes reactivar por contacto sin consentimiento confirmado.");
   const item = await findOpportunity(businessId, recyclingCase.source_type, recyclingCase.source_id);
-  const destination = payload.destination === "clasificacion" ? "clasificacion" : recyclingCase.recycle_target_phase;
-  const movement = await moveRmsLeadPhase(businessId, user, { source_id: recyclingCase.source_id, source_type: recyclingCase.source_type, lead_id: recyclingCase.lead_id || item.lead_id || null, to_phase: destination, priority: "MEDIUM", recommended_action: destination === "clasificacion" ? "Preparar una nueva Activación 1" : "Reevaluar contexto reciclado", last_operation: "recycled_lead_reactivated", reason: note, metadata: { recycle_result: "REACTIVATED", recycling_case_id: recyclingCase.id, negotiation_result: "RECYCLE" } }, RMS_TRANSITION_AUTHORITY.RECYCLING);
+  const destination = payload.destination === "clasificacion"
+    ? "clasificacion"
+    : payload.destination === "procesamiento"
+      ? "procesamiento"
+      : recyclingCase.recycle_target_phase === "clasificacion"
+        ? "clasificacion"
+        : "procesamiento";
+  const reactivatedAt = new Date().toISOString();
+  const movement = await moveRmsLeadPhase(businessId, user, { source_id: recyclingCase.source_id, source_type: recyclingCase.source_type, lead_id: recyclingCase.lead_id || item.lead_id || null, to_phase: destination, priority: "MEDIUM", recommended_action: destination === "clasificacion" ? "Preparar una nueva Activación 1" : "Reevaluar contexto reciclado", last_operation: "recycled_lead_reactivated", reason: note, metadata: { recycle_result: "REACTIVATED", recycling_case_id: recyclingCase.id, negotiation_result: "RECYCLE", recycling: { ...(item.state_metadata?.recycling || {}), status: "REACTIVATED", recycling_case_id: recyclingCase.id, reactivation_destination: destination, reactivation_note: note, reactivated_at: reactivatedAt, reactivated_by: user.id } } }, RMS_TRANSITION_AUTHORITY.RECYCLING);
   const updated = await query(`update rms_recycling_cases set recycle_status='REACTIVATED', recycle_note=$3, updated_by=$4, updated_at=now(), metadata=metadata || jsonb_build_object('reactivated_at',now()::text,'reactivation_destination',$5) where business_id=$1 and id=$2 returning *`, [businessId, recyclingCase.id, note, user.id, destination]);
   if (updated.rows[0].agenda_note_id) await query(`update lead_notes set agenda_status='COMPLETED', progress_percent=100, updated_at=now(), metadata=metadata || jsonb_build_object('rms_recycling_reactivated_at',now()::text) where business_id=$1 and id=$2`, [businessId, updated.rows[0].agenda_note_id]);
   await recordRmsRecyclingEvent(businessId, user, updated.rows[0], "REACTIVATED", "REACTIVATED", note, { destination, movement_id: movement.movement?.id || null }, operationKey);
   await recordRmsWorkflowEvent(businessId, user, { source_type: recyclingCase.source_type, source_id: recyclingCase.source_id, lead_id: recyclingCase.lead_id, event_type: "recycled_lead_reactivated", event_title: `Lead reciclado reactivado hacia ${destination === "clasificacion" ? "Activación 1" : "Evaluación"}`, event_description: note, rms_phase: destination, metadata: { recycling_case_id: recyclingCase.id, movement_id: movement.movement?.id || null } });
-  return { recycling_case: updated.rows[0], movement };
+  const lifecycle = await markRmsLifecycleStatus(businessId, user, {
+    source_type: recyclingCase.source_type,
+    source_id: recyclingCase.source_id,
+    lead_id: recyclingCase.lead_id || item.lead_id || null,
+    lifecycle_status: "ACTIVE",
+    event_type: "recycled_lead_reactivated_analyzed",
+    event_title: "Reciclaje reactivado",
+    reason: note,
+    idempotency_key: `recycling-reactivated:${recyclingCase.id}`,
+    metadata: { recycling_case_id: recyclingCase.id, destination, movement_id: movement.movement?.id || null },
+  });
+  return { recycling_case: updated.rows[0], movement, lifecycle };
 }
 
 function rmsExplicitBenefitCost(value = {}, benefitType = "") {
@@ -2267,6 +2291,113 @@ async function riskRecoveryAuthorizationsForBusiness(businessId) {
   return normalizeRiskRecoveryAuthorizations(result.rows[0]?.settings?.rms_risk_recovery_authorizations);
 }
 
+function validateRiskRecoveryOffer(payload, authorizations) {
+  const recoveryOffer = String(payload.recovery_offer || "NONE").toUpperCase();
+  if (!["NONE", "DISCOUNT", "TWO_FOR_ONE", "GIFT", "CUSTOM"].includes(recoveryOffer)) throw badRequest("Selecciona una alternativa de recuperación válida.");
+  const discountPercent = Math.min(100, Math.max(0, Number(payload.discount_percent || 0)));
+  const recoveryBenefitId = String(payload.recovery_benefit_id || "").trim() || null;
+  const customBenefit = recoveryOffer === "CUSTOM"
+    ? authorizations.benefits.find((benefit) => benefit.enabled && benefit.id === recoveryBenefitId)
+    : null;
+  if (recoveryOffer === "CUSTOM" && !customBenefit) throw badRequest("Selecciona un beneficio extraordinario autorizado en Cuenta.");
+  if (recoveryOffer === "DISCOUNT") {
+    if (!authorizations.discount.enabled) throw badRequest("Los descuentos extraordinarios no están autorizados en Cuenta.");
+    if (discountPercent <= 0 || discountPercent > authorizations.discount.max_percent) throw badRequest(`El descuento debe estar entre 0% y ${authorizations.discount.max_percent}% según la autorización de Cuenta.`);
+  }
+  if (recoveryOffer === "TWO_FOR_ONE" && !authorizations.two_for_one.enabled) throw badRequest("La alternativa 2x1 no esta autorizada en Cuenta.");
+  if (recoveryOffer === "GIFT" && !authorizations.gift.enabled) throw badRequest("El obsequio extraordinario no esta autorizado en Cuenta.");
+  const detail = String(payload.recovery_detail || "").trim();
+  if (["TWO_FOR_ONE", "GIFT"].includes(recoveryOffer) && !detail) throw badRequest("Describe brevemente la alternativa autorizada que se ofrecerá.");
+  const benefitType = recoveryOffer === "DISCOUNT" || customBenefit?.type === "DISCOUNT"
+    ? "DISCOUNT"
+    : recoveryOffer === "GIFT" || customBenefit?.type === "GIFT"
+      ? "GIFT"
+      : "BONUS";
+  const benefitLabel = customBenefit?.label
+    || (recoveryOffer === "DISCOUNT" ? `Descuento extraordinario del ${discountPercent}%`
+      : recoveryOffer === "TWO_FOR_ONE" ? (authorizations.two_for_one.label || "Beneficio 2x1")
+        : recoveryOffer === "GIFT" ? (authorizations.gift.label || "Obsequio extraordinario")
+          : "Beneficio extraordinario");
+  return { recoveryOffer, discountPercent, recoveryBenefitId, customBenefit, detail, benefitType, benefitLabel };
+}
+
+async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
+  const sourceType = crmSourceType({ source_type: payload.source_type });
+  const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  if (item.stage !== "control_anti_fuga") throw badRequest("El activo extraordinario solo se genera desde Riesgos de fuga.");
+  const authorizations = await riskRecoveryAuthorizationsForBusiness(businessId);
+  const offer = validateRiskRecoveryOffer(payload, authorizations);
+  if (offer.recoveryOffer === "NONE") throw badRequest("Selecciona un beneficio extraordinario antes de generar el ticket.");
+  const expirationDays = Math.min(90, Math.max(1, Number(payload.expiration_days || 7)));
+  const idempotencyKey = String(payload.idempotency_key || "").trim();
+  if (!idempotencyKey) throw badRequest("No fue posible identificar esta generación de ticket.");
+  const currentState = await query(
+    `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
+    [businessId, sourceType, payload.source_id]
+  );
+  const currentMetadata = currentState.rows[0]?.metadata || {};
+  const productName = currentMetadata.commercial_confirmation?.product_name || item.product_interest || null;
+  const ticket = await createRiskRecoveryQr(businessId, user, {
+    source_type: sourceType,
+    source_id: payload.source_id,
+    lead_id: item.lead_id || payload.lead_id || null,
+    product_name: productName,
+    expires_mode: "CUSTOM_DATE",
+    expires_at: new Date(Date.now() + expirationDays * 86400000).toISOString(),
+    idempotency_key: idempotencyKey,
+    recovery_offer: offer.recoveryOffer,
+    benefit: {
+      reward_id: null,
+      benefit_type: offer.benefitType,
+      benefit_label: offer.benefitLabel,
+      benefit_value: {
+        discount_percent: offer.discountPercent || offer.customBenefit?.value || 0,
+        detail: offer.customBenefit?.detail || offer.detail || null,
+        risk_recovery: true,
+      },
+    },
+    metadata: { recovery_benefit_id: offer.recoveryBenefitId, authorization_snapshot: authorizations },
+  });
+  const resource = {
+    qr_code_id: ticket.qr_code.id,
+    public_ticket_url: ticket.public_ticket_url,
+    validator_url: ticket.validator_url,
+    claim_url: ticket.claim_url,
+    filename: ticket.filename,
+    benefit: ticket.benefit,
+    expires_at: ticket.qr_code.expires_at,
+    generated_at: ticket.qr_code.created_at || new Date().toISOString(),
+    generated_by: user.id,
+    recovery_offer: {
+      type: offer.recoveryOffer,
+      benefit_id: offer.recoveryBenefitId,
+      discount_percent: offer.discountPercent,
+      detail: offer.detail || offer.customBenefit?.detail || null,
+      label: offer.benefitLabel,
+    },
+  };
+  await query(
+    `update rms_lead_state
+        set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object('risk_recovery_resource', $4::jsonb),
+            updated_at = now()
+      where business_id = $1 and source_type = $2 and source_id = $3`,
+    [businessId, sourceType, payload.source_id, JSON.stringify(resource)]
+  );
+  if (!ticket.duplicate) {
+    await recordRmsWorkflowEvent(businessId, user, {
+      source_type: sourceType,
+      source_id: payload.source_id,
+      lead_id: item.lead_id || payload.lead_id || null,
+      event_type: "risk_recovery_resource_created",
+      event_title: "Ticket extraordinario generado",
+      event_description: `${offer.benefitLabel}. El lead permanece en Riesgos de fuga hasta registrar su respuesta.`,
+      rms_phase: "control_anti_fuga",
+      metadata: { risk_recovery_resource: resource },
+    });
+  }
+  return { resource, ticket, duplicate: ticket.duplicate };
+}
+
 async function recordRmsRiskReview(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
@@ -2303,6 +2434,7 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     : null;
   const review = {
     result, reason, reviewed_at: new Date().toISOString(), reviewed_by: user.id, confirmation_snapshot: confirmation,
+    responsible: String(payload.responsible || confirmation?.responsible || user.id || "").trim() || null,
     signals: payload.signals || {}, ticket_action: payload.ticket_action || null,
     recovery_offer: {
       type: recoveryOffer,
@@ -2312,8 +2444,23 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
       detail: String(payload.recovery_detail || "").trim() || null,
       authorization_snapshot: authorizations,
     },
+    recovery_resource: metadata.risk_recovery_resource || null,
     recycle: result === "RECYCLE" ? { reason: payload.recycle_reason || reason, reactivate_at: payload.next_action_at || new Date(Date.now() + (30 * 86400000)).toISOString(), strategy: payload.recycle_strategy || "NURTURE", responsible: payload.responsible || confirmation?.responsible || user.id, note: payload.recycle_note || reason, non_conversion_cost: nonConversionCost } : null,
   };
+  const riskSaleHandoff = result === "CLEARED" ? {
+    from_phase: "control_anti_fuga",
+    to_phase: "cierre",
+    decision: result,
+    reason: review.reason,
+    reviewed_at: review.reviewed_at,
+    reviewed_by: review.reviewed_by,
+    responsible: review.responsible,
+    signals: review.signals,
+    ticket_action: review.ticket_action,
+    recovery_offer: review.recovery_offer,
+    recovery_resource: review.recovery_resource,
+    confirmation_snapshot: review.confirmation_snapshot,
+  } : null;
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     event_type: "risk_review_started", event_title: "Revisión de Riesgos de fuga iniciada",
@@ -2356,7 +2503,7 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     recommended_action: isCleared ? "Registrar el resultado comercial atribuido" : "Reactivar en la fecha autorizada",
     last_operation: isCleared ? "risk_review_passed" : "lead_sent_to_recycling",
     last_material_sent: confirmation?.product_name || null, revenue_potential: confirmation?.amount || item.revenue_potential,
-    reason, metadata: { risk_review: review, risk_result: result, recovery_offer: review.recovery_offer, risk_return_task_id: agenda?.item?.id || null, recycling: result === "RECYCLE" ? { ...review.recycle, recycling_case_id: recycling?.recycling_case?.id || null } : null },
+    reason, metadata: { risk_review: review, risk_sale_handoff: riskSaleHandoff, risk_result: result, recovery_offer: review.recovery_offer, risk_return_task_id: agenda?.item?.id || null, recycling: result === "RECYCLE" ? { ...review.recycle, recycling_case_id: recycling?.recycling_case?.id || null } : null },
   }, RMS_TRANSITION_AUTHORITY.RISK_REVIEW);
   const eventType = isCleared ? "risk_cleared_for_attribution" : "lead_sent_to_recycling";
   await recordRmsWorkflowEvent(businessId, user, {
@@ -2364,7 +2511,7 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     event_type: eventType,
     event_title: isCleared ? "Recuperación autorizada convertida en venta" : "Lead enviado a Reciclaje comercial",
     event_description: reason, rms_phase: toPhase,
-    metadata: { risk_review: review, recycling_case_id: recycling?.recycling_case?.id || null, movement_id: movement.movement?.id || null, task_id: agenda?.item?.id || null },
+    metadata: { risk_review: review, risk_sale_handoff: riskSaleHandoff, recycling_case_id: recycling?.recycling_case?.id || null, movement_id: movement.movement?.id || null, task_id: agenda?.item?.id || null },
   });
   if (result === "RECYCLE") {
     await markRmsLifecycleStatus(businessId, user, {
@@ -2434,6 +2581,50 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     [businessId, sourceType, payload.source_id]
   );
   const workflowMetadata = currentState.rows[0]?.metadata || {};
+  const riskReview = workflowMetadata.risk_review || {};
+  const riskSaleHandoff = workflowMetadata.risk_sale_handoff || (riskReview.result === "CLEARED" ? {
+    from_phase: "control_anti_fuga",
+    to_phase: "cierre",
+    decision: riskReview.result,
+    reason: riskReview.reason || null,
+    reviewed_at: riskReview.reviewed_at || null,
+    reviewed_by: riskReview.reviewed_by || null,
+    responsible: riskReview.responsible || riskReview.confirmation_snapshot?.responsible || null,
+    signals: riskReview.signals || {},
+    ticket_action: riskReview.ticket_action || null,
+    recovery_offer: riskReview.recovery_offer || null,
+    recovery_resource: riskReview.recovery_resource || workflowMetadata.risk_recovery_resource || null,
+    confirmation_snapshot: riskReview.confirmation_snapshot || null,
+  } : null);
+  const riskRecoveryOffer = riskSaleHandoff?.recovery_offer || riskReview.recovery_offer || null;
+  const riskCustomBenefit = riskRecoveryOffer?.custom_benefit || {};
+  const riskBenefitDescription = riskRecoveryOffer?.type === "DISCOUNT"
+    ? `Descuento extraordinario del ${Number(riskRecoveryOffer.discount_percent || 0)}%`
+    : riskRecoveryOffer?.type === "TWO_FOR_ONE"
+      ? (riskRecoveryOffer.detail || "Beneficio extraordinario 2x1")
+      : riskRecoveryOffer?.type === "GIFT"
+        ? (riskRecoveryOffer.detail || "Obsequio extraordinario")
+        : riskRecoveryOffer?.type === "CUSTOM"
+          ? (riskCustomBenefit.label || riskRecoveryOffer.detail || "Beneficio extraordinario personalizado")
+          : null;
+  const riskBenefitType = riskRecoveryOffer?.type === "DISCOUNT" || riskCustomBenefit.type === "DISCOUNT"
+    ? "DISCOUNT"
+    : riskRecoveryOffer?.type === "GIFT" || riskCustomBenefit.type === "GIFT"
+      ? "GIFT"
+      : ["TWO_FOR_ONE", "CUSTOM"].includes(riskRecoveryOffer?.type)
+        ? "BONUS"
+        : "NONE";
+  const requestedBenefitType = String(payload.benefit_type || "NONE").toUpperCase();
+  const effectiveBenefitType = requestedBenefitType === "NONE" && riskBenefitType !== "NONE" ? riskBenefitType : requestedBenefitType;
+  const effectiveBenefitDescription = String(payload.benefit_description || "").trim() || riskBenefitDescription;
+  const riskTraceNote = riskSaleHandoff
+    ? [
+        `Riesgos de fuga: ${riskSaleHandoff.reason || "venta liberada"}`,
+        riskBenefitDescription ? `Accion de recuperacion: ${riskBenefitDescription}` : null,
+        riskSaleHandoff.ticket_action && riskSaleHandoff.ticket_action !== "NONE" ? `Accion de ticket: ${riskSaleHandoff.ticket_action}` : null,
+        riskSaleHandoff.responsible ? `Responsable: ${riskSaleHandoff.responsible}` : null,
+      ].filter(Boolean).join(" · ")
+    : null;
   // Una compra directa registrada en Evaluación puede llegar a Ventas atribuidas
   // sin pasar por Negociación ni Riesgos de fuga. Esas estaciones son rutas de
   // apoyo, no un requisito para cerrar ni para alimentar Inteligencia RMS.
@@ -2490,7 +2681,11 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     },
     negotiated_product: negotiatedProduct,
     product_corrected_at_sale: productCorrectedAtSale,
-    benefit_description: String(payload.benefit_description || "").trim() || null,
+    benefit_description: effectiveBenefitDescription || null,
+    commercial_confirmation_snapshot: workflowMetadata.commercial_confirmation || null,
+    risk_review_snapshot: riskReview.result ? riskReview : null,
+    risk_sale_handoff: riskSaleHandoff,
+    risk_recovery_resource: workflowMetadata.risk_recovery_resource || riskReview.recovery_resource || null,
     economics,
     acquisition_channel: {
       id: item.acquisition_channel_id || null,
@@ -2538,9 +2733,9 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
         item.acquisition_channel_name_snapshot || item.channel || null,
         item.acquisition_channel_slug_snapshot || null,
         item.acquisition_channel_source || (item.channel ? "MANUAL_UNCONFIGURED" : null),
-        String(payload.notes || "").trim() || null,
+        String(payload.notes || "").trim() || riskTraceNote,
         JSON.stringify(saleMetadata), sourceType, payload.source_id, productRow?.id || null, quantity, unitCost,
-        productCostTotal, String(payload.benefit_type || "NONE").toUpperCase(), benefitCost, acquisitionCost,
+        productCostTotal, effectiveBenefitType, benefitCost, acquisitionCost,
         grossProfit, netProfit, roi, String(payload.payment_method || "OTHER").toUpperCase(), paidAt, idempotencyKey,
         productSnapshot.product_name_snapshot, productSnapshot.product_price_snapshot, productSnapshot.product_currency_snapshot, productSnapshot.product_source]
     );
@@ -2643,7 +2838,19 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
       `select * from business_sales where business_id = $1 and idempotency_key = $2 limit 1`,
       [businessId, idempotencyKey]
     );
-    return { sale: existing.rows[0], duplicate: true, customer: { id: customer.id, name: customer.name, created: customerLink.created }, affiliate: null };
+    let existingSale = existing.rows[0];
+    if (existingSale && riskSaleHandoff) {
+      const repaired = await client.query(
+        `update business_sales
+            set metadata = coalesce(metadata, '{}'::jsonb) || $3::jsonb,
+                notes = coalesce(nullif(notes, ''), $4)
+          where business_id = $1 and id = $2
+          returning *`,
+        [businessId, existingSale.id, JSON.stringify({ risk_review_snapshot: riskReview, risk_sale_handoff: riskSaleHandoff, risk_recovery_resource: workflowMetadata.risk_recovery_resource || riskReview.recovery_resource || null }), riskTraceNote]
+      );
+      existingSale = repaired.rows[0] || existingSale;
+    }
+    return { sale: existingSale, duplicate: true, customer: { id: customer.id, name: customer.name, created: customerLink.created }, affiliate: null };
   });
   if (result.duplicate) {
     const duplicateMovement = item.stage === "cierre" ? await moveRmsLeadPhase(businessId, user, {
@@ -2651,7 +2858,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
       to_phase: "postventa", priority: "HIGH", recommended_action: "Elegir una acción de Valorización Clientes",
       last_operation: "attributed_sale_recovered_from_idempotency", last_material_sent: productName,
       revenue_potential: saleAmount, reason: "Reintento idempotente: la venta canónica ya existía.",
-      metadata: { rms_attributed_sale_id: result.sale?.id || null, rms_sale_recorded_at: new Date().toISOString() },
+      metadata: { rms_attributed_sale_id: result.sale?.id || null, rms_sale_recorded_at: new Date().toISOString(), risk_review_snapshot: riskReview.result ? riskReview : null, risk_sale_handoff: riskSaleHandoff },
     }, RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE) : null;
     return { sale: result.sale, economics: result.sale?.metadata?.economics || economics, movement: duplicateMovement, customer: result.customer, affiliate: result.affiliate || null, duplicate: true };
   }
@@ -2666,11 +2873,29 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     last_material_sent: productName,
     revenue_potential: saleAmount,
     reason: "Venta cobrada y atribuida desde la estación de Ventas atribuidas.",
-    metadata: { rms_attributed_sale_id: result.sale.id, rms_sale_recorded_at: new Date().toISOString(), rms_sale_product: productName, rms_sale_amount: saleAmount, rms_sale_economics: economics },
+    metadata: { rms_attributed_sale_id: result.sale.id, rms_sale_recorded_at: new Date().toISOString(), rms_sale_product: productName, rms_sale_amount: saleAmount, rms_sale_economics: economics, risk_review_snapshot: riskReview.result ? riskReview : null, risk_sale_handoff: riskSaleHandoff },
   }, RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE);
   let riskRecoveryTicket = null;
-  const riskRecovery = workflowMetadata.risk_review?.result === "CLEARED" ? workflowMetadata.risk_review.recovery_offer : null;
-  if (riskRecovery && riskRecovery.type && riskRecovery.type !== "NONE") {
+  const riskRecovery = riskReview.result === "CLEARED" ? riskRecoveryOffer : null;
+  const preparedRiskResource = workflowMetadata.risk_recovery_resource || riskReview.recovery_resource || null;
+  if (preparedRiskResource?.qr_code_id) {
+    const linked = await query(
+      `update qr_codes
+          set sale_id = $3,
+              metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+                'attributed_sale_id', $3::text,
+                'risk_recovery_converted_at', now()::text
+              )
+        where business_id = $1 and id = $2 and sale_id is null
+        returning id, token, status, expires_at, benefit_type, benefit_value`,
+      [businessId, preparedRiskResource.qr_code_id, result.sale.id]
+    );
+    riskRecoveryTicket = {
+      qr_code: linked.rows[0] || { id: preparedRiskResource.qr_code_id },
+      public_ticket_url: preparedRiskResource.public_ticket_url,
+      reused_pre_sale_resource: true,
+    };
+  } else if (riskRecovery && riskRecovery.type && riskRecovery.type !== "NONE") {
     const custom = riskRecovery.custom_benefit || {};
     const ticketType = riskRecovery.type === "DISCOUNT" || custom.type === "DISCOUNT" ? "DISCOUNT" : riskRecovery.type === "GIFT" || custom.type === "GIFT" ? "GIFT" : "BONUS";
     riskRecoveryTicket = await createPostSaleQr(businessId, user, {
@@ -2692,6 +2917,29 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
       metadata: { qr_creation_context: "rms_risk_recovery", ticket_use_case: "risk_recovery", existing_sale_id: result.sale.id, recovery_benefit_id: riskRecovery.benefit_id || null },
     });
   }
+  if (riskRecoveryTicket) {
+    const riskTicketSnapshot = {
+      qr_code_id: riskRecoveryTicket.qr_code?.id || preparedRiskResource?.qr_code_id || null,
+      public_ticket_url: riskRecoveryTicket.public_ticket_url || preparedRiskResource?.public_ticket_url || null,
+      reused_pre_sale_resource: Boolean(riskRecoveryTicket.reused_pre_sale_resource),
+      recovery_offer: riskRecovery,
+    };
+    const updatedSale = await query(
+      `update business_sales
+          set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object('risk_recovery_ticket', $3::jsonb)
+        where business_id = $1 and id = $2
+        returning *`,
+      [businessId, result.sale.id, JSON.stringify(riskTicketSnapshot)]
+    );
+    result.sale = updatedSale.rows[0] || result.sale;
+    await query(
+      `update rms_lead_state
+          set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object('risk_recovery_ticket', $4::jsonb),
+              updated_at = now()
+        where business_id = $1 and source_type = $2 and source_id = $3`,
+      [businessId, sourceType, payload.source_id, JSON.stringify(riskTicketSnapshot)]
+    );
+  }
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     event_type: "sale_attributed", event_title: "Venta atribuida enviada a Valorización Clientes",
@@ -2712,6 +2960,13 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
         },
         evaluation: workflowMetadata.rms_evaluation || null,
         negotiation: confirmation?.negotiation || workflowMetadata.negotiation_current || null,
+        risk_review: riskReview.result ? riskReview : null,
+        risk_sale_handoff: riskSaleHandoff,
+        risk_recovery_resource: preparedRiskResource,
+        risk_recovery_ticket: riskRecoveryTicket ? {
+          qr_code_id: riskRecoveryTicket.qr_code?.id || preparedRiskResource?.qr_code_id || null,
+          public_ticket_url: riskRecoveryTicket.public_ticket_url || preparedRiskResource?.public_ticket_url || null,
+        } : null,
         confirmation: confirmation ? {
           inventory_product_id: confirmation.inventory_product_id,
           product_name: confirmation.product_name,
@@ -3301,6 +3556,7 @@ module.exports = {
   recordRmsEvaluationResponse,
   recordRmsNegotiationResult,
   recordRmsRiskReview,
+  prepareRmsRiskRecoveryResource,
   recordRmsPostSaleAction,
   reactivateRmsRecycledLead,
   updateRmsRecyclingCase,

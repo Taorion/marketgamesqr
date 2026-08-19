@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260811-rms-classifier-modal-v321";
+const APP_VERSION = "empresa-20260818-rms-post-sale-redesign-v228";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -109,6 +109,10 @@ const rmsStageSliderPrev = document.getElementById("rmsStageSliderPrev");
 const rmsStageSliderNext = document.getElementById("rmsStageSliderNext");
 const rmsStageSliderProgress = document.getElementById("rmsStageSliderProgress");
 const rmsStageSliderRange = document.getElementById("rmsStageSliderRange");
+const rmsStageQuickOpenButton = document.getElementById("rmsStageQuickOpenButton");
+const rmsStageQuickCloseButton = document.getElementById("rmsStageQuickCloseButton");
+const rmsStageQuickMenu = document.getElementById("rmsStageQuickMenu");
+const rmsStageQuickList = document.getElementById("rmsStageQuickList");
 const rmsStationWorkspace = document.getElementById("rmsStationWorkspace");
 const rmsQualityControlAccess = document.getElementById("rmsQualityControlAccess");
 const rmsMachineGeneratedAt = document.getElementById("rmsMachineGeneratedAt");
@@ -44790,7 +44794,52 @@ function rmsEvaluationStationCardMarkup(item = {}) {
 
 function rmsCommercialWorkflow(item = {}) {
   const metadata = item.state_metadata || item.metadata || item.rms_metadata || {};
-  return { evaluation: metadata.rms_evaluation || {}, confirmation: metadata.commercial_confirmation || {}, risk: metadata.risk_review || {} };
+  return { evaluation: metadata.rms_evaluation || {}, confirmation: metadata.commercial_confirmation || {}, risk: metadata.risk_review || {}, riskHandoff: metadata.risk_sale_handoff || {} };
+}
+
+function rmsRiskRecoveryPresentation(risk = {}, metadata = {}) {
+  const handoff = metadata.risk_sale_handoff || {};
+  const offer = handoff.recovery_offer || risk.recovery_offer || metadata.recovery_offer || {};
+  const custom = offer.custom_benefit || {};
+  const type = String(offer.type || "NONE").toUpperCase();
+  const label = type === "DISCOUNT"
+    ? `Descuento extraordinario del ${Number(offer.discount_percent || 0)}%`
+    : type === "TWO_FOR_ONE"
+      ? (offer.detail || "Beneficio extraordinario 2x1")
+      : type === "GIFT"
+        ? (offer.detail || "Obsequio extraordinario")
+        : type === "CUSTOM"
+          ? (custom.label || offer.detail || "Beneficio extraordinario personalizado")
+          : "Sin beneficio extraordinario";
+  const benefitType = type === "DISCOUNT" || custom.type === "DISCOUNT"
+    ? "DISCOUNT"
+    : type === "GIFT" || custom.type === "GIFT"
+      ? "GIFT"
+      : ["TWO_FOR_ONE", "CUSTOM"].includes(type)
+        ? "BONUS"
+        : "NONE";
+  const explicitCost = [custom.effective_cost_cop, custom.cost_cop, custom.cost, offer.effective_cost_cop, offer.cost_cop]
+    .map(Number)
+    .find((value) => Number.isFinite(value) && value >= 0);
+  const resource = handoff.recovery_resource || risk.recovery_resource || metadata.risk_recovery_resource || null;
+  const ticketAction = handoff.ticket_action || risk.ticket_action || "NONE";
+  const ticketActionLabel = ({ REMIND_ACTIVE: "Recordar ticket activo", PREPARE_NEW_ACTIVATION: "Preparar nueva activación", CONFIRM_REDEMPTION: "Confirmar redención", NONE: "Sin acción adicional de ticket" })[ticketAction] || ticketAction;
+  const signals = handoff.signals || risk.signals || {};
+  const signalCount = Object.values(signals).filter(Boolean).length;
+  return {
+    decision: handoff.decision || risk.result || "",
+    reason: handoff.reason || risk.reason || "",
+    responsible: handoff.responsible || risk.responsible || risk.confirmation_snapshot?.responsible || "",
+    reviewedAt: handoff.reviewed_at || risk.reviewed_at || "",
+    offer,
+    label,
+    benefitType,
+    benefitCost: explicitCost ?? 0,
+    ticketAction,
+    ticketActionLabel,
+    resource,
+    signalCount,
+  };
 }
 
 function rmsDealProgressMarkup(active = "evaluation", detail = "") {
@@ -44893,25 +44942,79 @@ function rmsRecyclingQueueMarkup(opportunities = []) {
 }
 
 function rmsRiskStationMetricsMarkup(rows = [], allOpportunities = []) {
-  const confirmed = rows.filter((item) => rmsCommercialWorkflow(item).confirmation?.product_name);
   const incomplete = rows.filter((item) => !rmsCommercialWorkflow(item).confirmation?.evidence && !rmsCommercialWorkflow(item).confirmation?.payment_reference && !rmsCommercialWorkflow(item).confirmation?.note);
   const today = rows.filter((item) => item.days_since_interaction >= 1 || item.redeemed_tickets > 0);
   const recoverable = rows.filter((item) => !rmsCommercialWorkflow(item).risk?.result || rmsCommercialWorkflow(item).risk?.result === "RETURN_TO_NEGOTIATION");
   const recycled = (allOpportunities || []).filter((item) => item.stage === "reciclaje");
-  const cards = [["Revisar hoy", today.length], ["Tickets por vencer / activos", rows.filter((item) => item.active_tickets > 0).length], ["Redimidos sin venta", rows.filter((item) => item.redeemed_tickets > 0 && !item.purchase_count).length], ["Acuerdos sin soporte", incomplete.length], ["Recuperables en Negociación", recoverable.length], ["Para Reciclaje", recycled.length], ["Liberados para atribución", confirmed.length]];
-  return `<section class="rms-risk-metrics" aria-label="Métricas de acción">${cards.map(([label, value]) => `<article><strong>${escapeHtml(String(value))}</strong><span>${escapeHtml(label)}</span></article>`).join("")}</section>`;
+  const released = (allOpportunities || []).filter((item) => item.stage === "cierre" && rmsCommercialWorkflow(item).risk?.result === "CLEARED");
+  const cards = [
+    { key: "today", label: "Revisar hoy", value: today.length, tone: "priority", title: "Casos que necesitan atención hoy", description: "Incluye leads con al menos un día sin interacción o con una redención que todavía exige comprobar el resultado comercial.", action: "Empieza por estos casos. Un número alto representa carga prioritaria, no ventas perdidas." },
+    { key: "tickets", label: "Tickets por vencer / activos", value: rows.filter((item) => item.active_tickets > 0).length, tone: "attention", title: "Beneficios todavía vigentes", description: "Cuenta leads de Riesgos de fuga que tienen uno o más tickets activos. El ticket es una señal contextual y no confirma una venta por sí solo.", action: "Revisa vigencia y condición antes de contactar; no reactives ni cambies el ticket automáticamente." },
+    { key: "redeemed", label: "Redimidos sin venta", value: rows.filter((item) => item.redeemed_tickets > 0 && !item.purchase_count).length, tone: "attention", title: "Beneficio usado sin venta atribuida", description: "Muestra clientes que redimieron un ticket, pero todavía no tienen una compra registrada y atribuida en Qori.", action: "Confirma si hubo compra, cuánto se pagó y qué producto se vendió. Si no hubo venta, documenta el resultado." },
+    { key: "support", label: "Acuerdos sin soporte", value: incomplete.length, tone: "warning", title: "Acuerdos sin evidencia verificable", description: "Son casos sin comprobante, referencia de pago, evidencia ni nota comercial suficiente para entender qué se acordó.", action: "Obtén al menos una evidencia o una nota concreta antes de liberar la venta." },
+    { key: "recoverable", label: "Recuperables en Negociación", value: recoverable.length, tone: "opportunity", title: "Oportunidades que aún pueden recuperarse", description: "Agrupa casos sin decisión final de Riesgos o con contexto comercial recuperable. No significa que la venta ya esté confirmada.", action: "Aplica únicamente una alternativa extraordinaria autorizada y registra la respuesta real del lead." },
+    { key: "recycling", label: "Para Reciclaje", value: recycled.length, tone: "neutral", title: "Casos fuera del intento de cierre actual", description: "Cuenta oportunidades enviadas a Reciclaje porque no fue viable convertirlas ahora, pero su historial debe conservarse.", action: "Respeta la fecha y estrategia de reactivación. Al retomarlas deben volver a Evaluación." },
+    { key: "released", label: "Liberados para atribución", value: released.length, tone: "success", title: "Ventas liberadas por Riesgos", description: "Son casos aprobados en Riesgos de fuga que ya están en Ventas atribuidas, pendientes de completar o confirmar el registro canónico de la compra.", action: "Registra producto, cantidad, pago y costos; después envía el cliente a Valorización." },
+  ];
+  return `<section class="rms-risk-metrics" aria-label="Métricas de acción">${cards.map((card) => {
+    const popoverId = `rms-risk-kpi-${card.key}`;
+    return `<article class="rms-risk-kpi is-${escapeHtml(card.tone)}" data-rms-risk-kpi="${escapeHtml(card.key)}"><div class="rms-risk-kpi-value"><strong>${escapeHtml(String(card.value))}</strong><span>${escapeHtml(card.label)}</span></div><button class="rms-risk-kpi-help" type="button" data-rms-risk-kpi-help aria-expanded="false" aria-controls="${popoverId}" aria-label="Explicar ${escapeHtml(card.label)}"><span class="material-symbols-outlined" aria-hidden="true">help</span></button><aside class="rms-risk-kpi-popover" id="${popoverId}" role="tooltip"><span class="mono-label">Cómo leer este indicador</span><strong>${escapeHtml(card.title)}</strong><p>${escapeHtml(card.description)}</p><small><b>Qué hacer:</b> ${escapeHtml(card.action)}</small></aside></article>`;
+  }).join("")}</section>`;
+}
+
+function bindRmsRiskMetricPopovers(root) {
+  root?.querySelectorAll("[data-rms-risk-kpi-help]").forEach((button) => {
+    if (button.dataset.rmsRiskKpiBound === "true") return;
+    button.dataset.rmsRiskKpiBound = "true";
+    const card = button.closest("[data-rms-risk-kpi]");
+    const close = () => {
+      card?.classList.remove("is-explaining");
+      button.setAttribute("aria-expanded", "false");
+    };
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const willOpen = !card?.classList.contains("is-explaining");
+      root.querySelectorAll("[data-rms-risk-kpi].is-explaining").forEach((item) => {
+        item.classList.remove("is-explaining");
+        item.querySelector("[data-rms-risk-kpi-help]")?.setAttribute("aria-expanded", "false");
+      });
+      card?.classList.toggle("is-explaining", willOpen);
+      button.setAttribute("aria-expanded", String(willOpen));
+    });
+    card?.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        close();
+        button.focus();
+      }
+    });
+  });
+  if (document.body && document.body.dataset.rmsRiskKpiDismissBound !== "true") {
+    document.body.dataset.rmsRiskKpiDismissBound = "true";
+    document.addEventListener("click", (event) => {
+      if (event.target.closest("[data-rms-risk-kpi]")) return;
+      document.querySelectorAll("[data-rms-risk-kpi].is-explaining").forEach((card) => {
+        card.classList.remove("is-explaining");
+        card.querySelector("[data-rms-risk-kpi-help]")?.setAttribute("aria-expanded", "false");
+      });
+    });
+  }
 }
 
 function rmsAttributedSaleStationCardMarkup(item = {}) {
   const workflow = rmsCommercialWorkflow(item);
+  const stateMetadata = item.state_metadata || item.metadata || item.rms_metadata || {};
   const confirmation = workflow.confirmation || {};
+  const risk = workflow.risk || {};
+  const riskContext = rmsRiskRecoveryPresentation(risk, stateMetadata);
   const negotiationResponse = (item.state_metadata || {}).negotiation_current || {};
   const evaluation = workflow.evaluation || {};
   const saleContext = confirmation.sale_context || negotiationResponse.sale_context || {};
   const activation = rmsActivationDelivery(item);
-  const saleOrigin = confirmation.route === "NEGOTIATION_CLEAN"
-    ? "Venta limpia confirmada desde Negociación"
-    : negotiationResponse.result === "ACCEPTED"
+  const saleOrigin = riskContext.decision === "CLEARED"
+    ? "Venta protegida y liberada desde Riesgos de fuga"
+    : confirmation.route === "NEGOTIATION_CLEAN"
+      ? "Venta limpia confirmada desde Negociación"
+      : negotiationResponse.result === "ACCEPTED"
       ? "Compra confirmada por el cliente en Negociación"
       : evaluation.response === "PAID_SALE"
         ? "Pago informado desde Evaluación"
@@ -44934,23 +45037,34 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
     || "";
   const quantity = Math.max(0.01, Number(saleContext.quantity || 1));
   const unitCost = Math.max(0, Number(inventoryProduct?.cost_price || 0));
-  const benefitType = String(saleContext.benefit_type || "NONE").toUpperCase();
-  const benefitCost = Math.max(0, Number(saleContext.benefit_cost || 0));
+  const benefitType = String(saleContext.benefit_type || riskContext.benefitType || "NONE").toUpperCase();
+  const benefitCost = Math.max(0, Number(saleContext.benefit_cost ?? riskContext.benefitCost ?? 0));
   const acquisitionCost = Math.max(0, Number(saleContext.acquisition_cost || 0));
   const inheritedAmount = confirmation.amount ?? evaluation.budget_amount ?? negotiationResponse.amount ?? "";
   const inheritedCurrency = confirmation.currency || evaluation.currency || negotiationResponse.currency || "COP";
   const inheritedChannel = confirmation.negotiation?.channel || negotiationResponse.channel || activation.channel || "";
-  const inheritedResponsible = confirmation.responsible || negotiationResponse.responsible || "";
+  const inheritedResponsible = riskContext.responsible || confirmation.responsible || negotiationResponse.responsible || "";
   const evaluationResponse = RMS_EVALUATION_RESPONSES.find((entry) => entry.value === evaluation.response)?.short || evaluation.response || "Sin respuesta registrada";
   const activationDetail = [activation.offer || defaultProduct, activation.channel ? `por ${activation.channel}` : "", activation.outcome ? rmsActivationOutcomeLabel(activation.outcome) : ""].filter(Boolean).join(" · ");
   const evaluationDetail = [evaluationResponse, evaluation.need, evaluation.objections, evaluation.decision_maker].filter(Boolean).join(" · ");
   const negotiationDetail = [confirmation.negotiation?.customer_condition, inheritedChannel, inheritedResponsible, confirmation.payment_reference, negotiationResponse.reason].filter(Boolean).join(" · ");
+  const riskDetail = [
+    riskContext.decision === "CLEARED" ? "Venta liberada" : riskContext.decision,
+    riskContext.reason,
+    riskContext.label,
+    riskContext.ticketActionLabel,
+  ].filter(Boolean).join(" · ");
   const inheritedNotes = [
     evaluation.note && `Evaluación: ${evaluation.note}`,
     confirmation.payment_reference,
     confirmation.evidence,
     confirmation.note,
     saleContext.benefit_description && `Beneficio o esfuerzo comercial: ${saleContext.benefit_description}`,
+    riskContext.decision && `Riesgos de fuga: ${riskContext.reason || "venta liberada"}`,
+    riskContext.offer?.type && riskContext.offer.type !== "NONE" && `Alternativa extraordinaria aplicada: ${riskContext.label}`,
+    riskContext.ticketAction !== "NONE" && `Acción sobre ticket: ${riskContext.ticketActionLabel}`,
+    riskContext.resource?.public_ticket_url && `Ticket de recuperación: ${riskContext.resource.public_ticket_url}`,
+    riskContext.responsible && `Responsable de liberación: ${riskContext.responsible}`,
   ].filter(Boolean).join(" · ");
   return `
     <article class="rms-commercial-work-item rms-sale-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
@@ -44966,7 +45080,7 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
         ${rmsDealProgressMarkup("sale", "La validación final fue aprobada. Registra el resultado comercial.")}
         <section class="rms-sale-trust-ribbon"><span class="material-symbols-outlined" aria-hidden="true">verified</span><div><strong>Venta lista para atribuir</strong><small>${escapeHtml(saleOrigin)}. Producto, valor y evidencia fueron precargados.</small></div></section>
         <header class="rms-commercial-console-head"><div><span class="mono-label">Compra confirmada</span><h4>Registra el pago y su rentabilidad</h4><p>La venta se atribuye a este contacto y a la ruta de Activación 1. Los costos son los que declare tu equipo.</p></div><span class="rms-commercial-state is-sale">Pago por registrar</span></header>
-        <details class="rms-sale-handoff"><summary><span class="material-symbols-outlined" aria-hidden="true">route</span><span><strong>Ver información heredada</strong><small>Activación, Evaluación y Negociación quedan guardadas. Ábrelo solo si necesitas revisar el contexto.</small></span></summary><div class="rms-sale-handoff-grid"><article><span>Activación</span><strong>${escapeHtml(activationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(activation.firstContactAt ? `Contacto ${formatDate(activation.firstContactAt)}` : "Sin fecha de contacto")}</small></article><article><span>Evaluación</span><strong>${escapeHtml(evaluationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(evaluation.next_action || "Sin próximo paso pendiente")}</small></article><article><span>Negociación</span><strong>${escapeHtml(negotiationDetail || "Venta confirmada")}</strong><small>${escapeHtml(confirmation.evidence ? "Evidencia registrada" : "Sin evidencia adicional")}</small></article></div></details>
+        <details class="rms-sale-handoff"><summary><span class="material-symbols-outlined" aria-hidden="true">route</span><span><strong>Ver información heredada</strong><small>Activación, Evaluación, Negociación y Riesgos de fuga quedan guardados. Ábrelo solo si necesitas revisar el contexto.</small></span></summary><div class="rms-sale-handoff-grid"><article><span>Activación</span><strong>${escapeHtml(activationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(activation.firstContactAt ? `Contacto ${formatDate(activation.firstContactAt)}` : "Sin fecha de contacto")}</small></article><article><span>Evaluación</span><strong>${escapeHtml(evaluationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(evaluation.next_action || "Sin próximo paso pendiente")}</small></article><article><span>Negociación</span><strong>${escapeHtml(negotiationDetail || "Venta confirmada")}</strong><small>${escapeHtml(confirmation.evidence ? "Evidencia registrada" : "Sin evidencia adicional")}</small></article><article class="rms-sale-handoff-risk"><span>Riesgos de fuga</span><strong>${escapeHtml(riskDetail || "No fue necesario intervenir")}</strong><small>${escapeHtml([riskContext.reviewedAt ? `Revisado ${formatDate(riskContext.reviewedAt)}` : "", riskContext.signalCount ? `${riskContext.signalCount} señal(es) revisada(s)` : ""].filter(Boolean).join(" · ") || "Sin revisión anti-fuga")}</small></article></div></details>
         <div class="rms-sale-form-grid">
           <label><span>Producto comprado</span><select data-rms-sale-product="${escapeHtml(item.id)}" aria-describedby="rms-sale-product-hint-${escapeHtml(item.id)}">${rmsInventoryProductPickerOptions(inheritedInventoryProductId, defaultProduct)}</select><small id="rms-sale-product-hint-${escapeHtml(item.id)}">Producto precargado desde ${escapeHtml(confirmation.inventory_product_id ? "Negociación" : evaluation.recommended_inventory_product_id ? "Evaluación" : "la asignación del lead")}. Cámbialo solo si el cliente compró otra referencia; Qori conservará ambas referencias en el historial.</small></label>
           <input type="hidden" value="${escapeHtml(defaultProduct)}" data-rms-sale-product-name="${escapeHtml(item.id)}">
@@ -45380,13 +45494,16 @@ function rmsPostSaleStationCardMarkup(item = {}) {
     <article class="rms-commercial-work-item rms-post-sale-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
       ${rmsCommercialLeadAsideMarkup(item, "Valorización Clientes · relación posterior a una venta atribuida")}
       <section class="rms-commercial-work-console">
-        <header class="rms-commercial-console-head rms-refinery-head"><div><span class="mono-label">ESTACIÓN 09 · VALORIZACIÓN CLIENTES</span><h4>Convierte esta venta en una relación que vuelve</h4><p>Elige una sola acción postventa. La venta original, su ROI y el historial se conservan sin duplicarse.</p></div><span class="rms-commercial-state is-sale">Venta registrada</span></header>
+        <header class="rms-commercial-console-head rms-refinery-head"><div class="rms-refinery-head-copy"><span class="rms-refinery-head-icon material-symbols-outlined" aria-hidden="true">diamond</span><div><span class="mono-label">ESTACIÓN 09 · VALORIZACIÓN CLIENTES</span><h4>Haz que esta compra produzca una relación de mayor valor</h4><p>Elige el siguiente movimiento. Solo verás los datos de referidos, fidelización o recompra que realmente vas a operar.</p></div></div><div class="rms-refinery-head-state"><small>Compra confirmada</small><span class="rms-commercial-state is-sale"><span class="material-symbols-outlined" aria-hidden="true">verified</span>Lista para valorizar</span></div></header>
         <input type="hidden" data-rms-refinery-path="${escapeHtml(item.id)}" value="REFERRAL">
+        <nav class="rms-refinery-journey" aria-label="Ruta de Valorización Clientes"><span class="is-complete"><b>1</b><small>Venta atribuida</small></span><i aria-hidden="true"></i><span class="is-current"><b>2</b><small>Elegir crecimiento</small></span><i aria-hidden="true"></i><span><b>3</b><small>Inteligencia RMS</small></span></nav>
         <section class="rms-refinery-value-strip" aria-label="Resumen de la venta"><article><span class="material-symbols-outlined" aria-hidden="true">shopping_bag</span><small>Compra atribuida</small><strong>${escapeHtml(saleProduct)}</strong><b>${escapeHtml(money(saleAmount))}</b></article><article><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><small>Fidelización</small><strong>${escapeHtml(affiliate ? "Cliente afiliado" : "Cliente por afiliar")}</strong><b>${escapeHtml(affiliateLabel)}</b></article><article><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span><small>Actividad postventa</small><strong>${escapeHtml(actionLabel)}</strong><b>${escapeHtml(recordedVisit ? `Sello más reciente: ${recordedVisit}` : "Aún sin actividad")}</b></article><article><span class="material-symbols-outlined" aria-hidden="true">insights</span><small>Cierre de estación</small><strong>Inteligencia RMS</strong><b>Con o sin acción postventa</b></article></section>
-        <section class="rms-refinery-objective"><header><div><span class="mono-label">SIGUIENTE MOVIMIENTO</span><h5>Elige un solo objetivo para este cliente</h5><p>Solo se abre el formulario de la acción elegida. Puedes pasar sin acción cuando no aplique.</p></div></header><div class="rms-refinery-route-picker" aria-label="Objetivo de Valorización Clientes">${RMS_POST_SALE_REFINERY_PATHS.map((path, index) => `<button type="button" class="rms-refinery-route ${index === 0 ? "is-active" : ""}" data-rms-refinery-route="${escapeHtml(item.id)}" data-rms-refinery-route-key="${path.key}" aria-pressed="${index === 0 ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">${path.icon}</span><span><strong>${path.title}</strong><small>${path.detail}</small></span></button>`).join("")}</div></section>
+        <section class="rms-refinery-workbench" aria-label="Operación de Valorización Clientes">
+        <aside class="rms-refinery-objective"><header><div><span class="mono-label">SIGUIENTE MOVIMIENTO</span><h5>¿Cómo quieres aumentar el valor de este cliente?</h5><p>Selecciona una ruta. El formulario de trabajo cambia sin perder la venta ni el historial.</p></div></header><div class="rms-refinery-route-picker" aria-label="Objetivo de Valorización Clientes">${RMS_POST_SALE_REFINERY_PATHS.map((path, index) => `<button type="button" class="rms-refinery-route ${index === 0 ? "is-active" : ""}" data-rms-refinery-route="${escapeHtml(item.id)}" data-rms-refinery-route-key="${path.key}" aria-pressed="${index === 0 ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">${path.icon}</span><span><strong>${path.title}</strong><small>${path.detail}</small></span><span class="material-symbols-outlined rms-refinery-route-arrow" aria-hidden="true">arrow_forward</span></button>`).join("")}</div><small class="rms-refinery-objective-note"><span class="material-symbols-outlined" aria-hidden="true">info</span>También puedes cerrar la estación sin crear una acción postventa.</small></aside>
         <section class="rms-refinery-panel" data-rms-refinery-panel="${escapeHtml(item.id)}" data-rms-refinery-panel-key="REFERRAL"><header><span class="mono-label">REFERIDOS</span><h5>Activa una recomendación con beneficio</h5><p>Genera el QR para el cliente. Los datos del referido solo se crean como lead con autorización explícita.</p></header><div class="rms-sale-form-grid"><label><span>Beneficio del QR</span><input type="text" data-rms-refinery-referral-benefit="${escapeHtml(item.id)}" placeholder="Ej.: 10% para quien recomienda"></label><label><span>Canal para compartirlo</span><select data-rms-refinery-channel="${escapeHtml(item.id)}"><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="">Solo generar QR</option></select></label><label><span>Nombre del referido</span><input type="text" data-rms-refinery-referral-name="${escapeHtml(item.id)}" placeholder="Opcional: nombre completo"></label><label><span>WhatsApp o teléfono</span><input type="text" data-rms-refinery-referral-phone="${escapeHtml(item.id)}" placeholder="Opcional: 300 000 0000"></label><label><span>Correo del referido</span><input type="email" data-rms-refinery-referral-email="${escapeHtml(item.id)}" placeholder="Opcional si dejó teléfono"></label><label><span>Interés del referido</span><input type="text" data-rms-refinery-referral-interest="${escapeHtml(item.id)}" placeholder="Producto o necesidad"></label></div><label class="rms-commercial-note-field"><span>Mensaje o instrucciones</span><textarea rows="2" data-rms-refinery-message="${escapeHtml(item.id)}" placeholder="Gracias por tu compra. Comparte este QR y recibe tu beneficio cuando tu referido se registre."></textarea></label><label class="rms-post-sale-consent"><input type="checkbox" data-rms-refinery-referral-consent="${escapeHtml(item.id)}"> <span>Confirmo que el referido autorizó compartir sus datos de contacto.</span></label></section>
         <section class="rms-refinery-panel" data-rms-refinery-panel="${escapeHtml(item.id)}" data-rms-refinery-panel-key="LOYALTY" hidden><header><span class="mono-label">FIDELIZACIÓN</span><h5>Reconoce esta compra sin crear una venta nueva</h5><p>${escapeHtml(affiliate ? "El cliente ya está afiliado. Registra puntos o sellos sobre la venta que acaba de hacer." : "Puedes afiliar al cliente y reconocer esta compra con puntos o sellos.")}</p></header><div class="rms-sale-form-grid"><label><span>Programa</span><select data-rms-refinery-loyalty-mode="${escapeHtml(item.id)}"><option value="POINTS">Sumar puntos por compra</option><option value="VISITS">Beneficio por número de compra</option></select></label><label><span>Estado de afiliación</span><select data-rms-refinery-affiliate-mode="${escapeHtml(item.id)}"><option value="${affiliate ? "EXISTING" : "ENROLL"}">${affiliate ? "Ya es afiliado" : "Afiliar a este cliente"}</option><option value="NONE">No afiliar en esta compra</option></select><small>${escapeHtml(affiliate ? "Se usará su cuenta actual de afiliado." : "Se crea una cuenta de afiliado con sus datos de cliente.")}</small></label><label data-rms-refinery-loyalty-detail="VISITS"><span>Compra número</span><input type="number" min="1" step="1" value="${visitNumber}" data-rms-refinery-visit-number="${escapeHtml(item.id)}"></label><label data-rms-refinery-loyalty-detail="VISITS"><span>Entregar beneficio en la compra #</span><input type="number" min="2" step="1" value="5" data-rms-refinery-visit-target="${escapeHtml(item.id)}"></label><label data-rms-refinery-loyalty-detail="VISITS"><span>Beneficio por completar sellos</span><input type="text" data-rms-refinery-visit-benefit="${escapeHtml(item.id)}" placeholder="Ej.: servicio gratis en la quinta visita"></label></div><label class="rms-commercial-note-field"><span>Nota de fidelización</span><textarea rows="2" data-rms-refinery-loyalty-note="${escapeHtml(item.id)}" placeholder="Opcional: condición del programa o beneficio entregado."></textarea></label></section>
         <section class="rms-refinery-panel" data-rms-refinery-panel="${escapeHtml(item.id)}" data-rms-refinery-panel-key="REBUY" hidden><header><span class="mono-label">RECOMPRA</span><h5>Deja listo el siguiente motivo para volver</h5><p>Crea un ticket QR ligado a esta relación. No altera el valor ni la atribución de la venta actual.</p></header><div class="rms-sale-form-grid"><label><span>Beneficio de recompra</span><input type="text" data-rms-refinery-rebuy-benefit="${escapeHtml(item.id)}" placeholder="Ej.: $20.000 en la próxima compra"></label><label><span>Canal para compartirlo</span><select data-rms-refinery-channel="${escapeHtml(item.id)}"><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="">Solo generar QR</option></select></label></div><label class="rms-commercial-note-field"><span>Mensaje para el cliente</span><textarea rows="2" data-rms-refinery-message="${escapeHtml(item.id)}" placeholder="Gracias por tu compra. Aquí tienes un beneficio para tu próxima visita."></textarea></label></section>
+        </section>
         <details class="rms-post-sale-history" ${actions.length ? "" : "open"}><summary><span><span class="material-symbols-outlined" aria-hidden="true">history</span>Actividad de esta venta</span><small>${escapeHtml(actionLabel)}</small></summary><ol>${activityMarkup}</ol></details>
         <section class="rms-refinery-finish"><div><span class="mono-label">CIERRE DE ESTACIÓN</span><strong>El resultado llega a Inteligencia RMS</strong><p>Registra la acción elegida o documenta por qué este cliente no requiere postventa ahora.</p></div><details><summary>Enviar sin acción postventa</summary><label><span>Nota para Inteligencia <em>Opcional</em></span><input type="text" data-rms-post-sale-result="${escapeHtml(item.id)}" placeholder="Ej.: no aplica beneficio en esta compra"></label></details><div class="button-row"><button class="ghost-button compact" type="button" data-rms-post-sale-skip-to-intelligence="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">insights</span>Enviar sin acción</button><button class="solid-button compact" type="button" data-rms-save-post-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span><span data-rms-refinery-submit-label="${escapeHtml(item.id)}">Crear QR de referido</span></button></div></section>
       </section>
@@ -47954,6 +48071,79 @@ function moveRmsStageSlider(direction = 1) {
   rmsStageBoard.scrollBy({ left: rmsStageSliderStep() * direction, behavior: "smooth" });
 }
 
+function closeRmsStageQuickNavigation({ restoreFocus = false } = {}) {
+  if (!rmsStageQuickMenu || rmsStageQuickMenu.hidden) return;
+  rmsStageQuickMenu.hidden = true;
+  rmsStageQuickOpenButton?.setAttribute("aria-expanded", "false");
+  if (restoreFocus) rmsStageQuickOpenButton?.focus();
+}
+
+function openRmsStageQuickNavigation() {
+  if (!rmsStageQuickMenu) return;
+  rmsStageQuickMenu.hidden = false;
+  rmsStageQuickOpenButton?.setAttribute("aria-expanded", "true");
+  window.requestAnimationFrame(() => rmsStageQuickList?.querySelector("[data-rms-quick-station]")?.focus());
+}
+
+function scrollRmsStageToPhase(phase = "") {
+  if (!rmsStageBoard || !phase) return;
+  const card = Array.from(rmsStageBoard.querySelectorAll("[data-rms-phase]")).find((item) => item.dataset.rmsPhase === phase);
+  if (!card) return;
+  const targetLeft = Math.max(0, card.offsetLeft - Math.max(0, (rmsStageBoard.clientWidth - card.offsetWidth) / 2));
+  rmsStageBoard.scrollTo({ left: targetLeft, behavior: "smooth" });
+  rmsStageBoard.querySelectorAll(".is-quick-target").forEach((item) => item.classList.remove("is-quick-target"));
+  card.classList.add("is-quick-target");
+  window.setTimeout(() => {
+    card.classList.remove("is-quick-target");
+    updateRmsStageSliderUi();
+  }, 900);
+}
+
+function bindRmsStageQuickNavigation() {
+  if (!rmsStageQuickOpenButton || rmsStageQuickOpenButton.dataset.quickNavBound === "true") return;
+  rmsStageQuickOpenButton.dataset.quickNavBound = "true";
+  rmsStageQuickOpenButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (rmsStageQuickMenu?.hidden) openRmsStageQuickNavigation();
+    else closeRmsStageQuickNavigation({ restoreFocus: true });
+  });
+  rmsStageQuickCloseButton?.addEventListener("click", () => closeRmsStageQuickNavigation({ restoreFocus: true }));
+  rmsStageQuickList?.addEventListener("click", (event) => {
+    const target = event.target.closest?.("[data-rms-quick-station]");
+    if (!target) return;
+    const phase = target.dataset.rmsQuickStation || "";
+    if (!phase) return;
+    scrollRmsStageToPhase(phase);
+    closeRmsStageQuickNavigation();
+    openRmsStation(phase, { source: "quick-station-navigation" });
+  });
+  document.addEventListener("click", (event) => {
+    if (rmsStageQuickMenu?.hidden || event.target.closest?.(".rms-stage-quick-nav")) return;
+    closeRmsStageQuickNavigation();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || rmsStageQuickMenu?.hidden) return;
+    closeRmsStageQuickNavigation({ restoreFocus: true });
+  });
+}
+
+function renderRmsStageQuickNavigation(stages = [], opportunities = []) {
+  if (!rmsStageQuickList) return;
+  rmsStageQuickList.innerHTML = stages.map((stage, index) => {
+    const leadCount = opportunities.filter((item) => item.stage === stage.key).length;
+    const visual = rmsStationVisualMeta(stage.key);
+    return `
+      <button type="button" class="rms-stage-quick-item ${leadCount ? "has-work" : ""}" data-rms-quick-station="${escapeHtml(stage.key)}">
+        <span class="rms-stage-quick-number">${String(index + 1).padStart(2, "0")}</span>
+        <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon || "factory")}</span>
+        <span class="rms-stage-quick-copy"><strong>${escapeHtml(stage.label || `Estación ${index + 1}`)}</strong><small>${leadCount ? `${leadCount.toLocaleString("es-CO")} lead${leadCount === 1 ? "" : "s"} para trabajar` : "Sin pendientes"}</small></span>
+        <span class="material-symbols-outlined rms-stage-quick-arrow" aria-hidden="true">arrow_forward</span>
+      </button>
+    `;
+  }).join("");
+  bindRmsStageQuickNavigation();
+}
+
 function rmsStationTargetFromPoint(x = 0, y = 0) {
   if (!rmsStageBoard) return null;
   const candidates = Array.from(rmsStageBoard.querySelectorAll("[data-rms-open-station], [data-rms-phase]"));
@@ -48098,6 +48288,7 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
       </article>
     `;
   }).join("");
+  renderRmsStageQuickNavigation(stages, opportunities);
   bindRmsMachineActions(rmsStageBoard);
   rmsStageBoard.querySelectorAll("[data-rms-phase]").forEach((card) => {
     card.addEventListener("click", (event) => {
@@ -48196,6 +48387,7 @@ function rmsStageLeadUnitMarkup(item = {}) {
 function bindRmsMachineActions(root) {
   upgradeRmsInventoryProductInputs(root);
   hydrateRmsIntelligenceJourney(root);
+  bindRmsRiskMetricPopovers(root);
   root.querySelectorAll("[data-rms-open-collector]").forEach((button) => {
     button.addEventListener("click", openRmsCollectorModal);
   });
@@ -48642,11 +48834,16 @@ function bindRmsMachineActions(root) {
   });
   root.querySelectorAll(".rms-risk-work-item[data-rms-station-lead]").forEach((card) => {
     const id = card.dataset.rmsStationLead || "";
+    const item = rmsOpportunityById(id);
+    if (item) mountRmsRiskOperatingFlow(card, item);
     const consoleNode = card.querySelector(".rms-commercial-work-console");
     const header = consoleNode?.querySelector(".rms-commercial-console-head");
     if (consoleNode && header && !consoleNode.querySelector("[data-rms-risk-tabs]")) {
       header.insertAdjacentHTML("afterend", rmsRiskTabsMarkup({ id }));
     }
+    const operatingFlow = card.querySelector(".rms-risk-operating-flow");
+    const destinationTabs = card.querySelector("[data-rms-risk-tabs]");
+    if (operatingFlow && destinationTabs) operatingFlow.insertAdjacentElement("afterend", destinationTabs);
     activateRmsRiskTab(root, id, "sale");
   });
   root.querySelectorAll("[data-rms-risk-tab]").forEach((button) => {
@@ -48659,6 +48856,54 @@ function bindRmsMachineActions(root) {
     button.addEventListener("click", () => {
       const item = rmsOpportunityById(button.dataset.rmsSaveRiskDecision || "");
       if (item) saveRmsRiskDecision(item, root).catch((error) => showFeedback(error.message || "No pudimos guardar la decisión de riesgo.", "error", { title: "Riesgos de fuga" }));
+    });
+  });
+  root.querySelectorAll("[data-rms-generate-risk-resource]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = rmsOpportunityById(button.dataset.rmsGenerateRiskResource || "");
+      if (item) generateRmsRiskRecoveryResource(item, root, button).catch((error) => showFeedback(error.message || "No pudimos generar el ticket extraordinario.", "error", { title: "Riesgos de fuga" }));
+    });
+  });
+  root.querySelectorAll("[data-rms-risk-whatsapp]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const item = rmsOpportunityById(button.dataset.rmsRiskWhatsapp || "");
+      if (!item) return;
+      const resource = requireRmsRiskShare(item, root);
+      if (!resource) return;
+      const digits = String(item.phone || "").replace(/\D/g, "");
+      const url = digits ? `https://wa.me/${encodeURIComponent(digits)}?text=${encodeURIComponent(rmsRiskShareMessage(item, resource))}` : "";
+      if (!url) return showFeedback("Este lead no tiene un WhatsApp valido registrado.", "info", { title: "Riesgos de fuga" });
+      window.open(url, "_blank", "noopener");
+      await api(`/api/business/leads/${encodeURIComponent(item.source_id)}/notes`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ source_type: item.source_type || "PLAYER", note: `Riesgos de fuga: ticket extraordinario preparado por WhatsApp (${resource.public_ticket_url}).`, note_type: "commercial", metadata: { source_module: "rms_risk_recovery", qr_code_id: resource.qr_code_id, delivery_channel: "WHATSAPP", delivery_state: "PREPARED" } }),
+      }).catch(() => null);
+      showFeedback("WhatsApp preparado con el beneficio y su ticket redimible.", "success", { title: "Riesgos de fuga" });
+    });
+  });
+  root.querySelectorAll("[data-rms-risk-email]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const item = rmsOpportunityById(button.dataset.rmsRiskEmail || "");
+      if (item) emailRmsRiskRecoveryResource(item, root, button).catch((error) => showFeedback(error.message || "No pudimos enviar el beneficio por email.", "error", { title: "Riesgos de fuga" }));
+    });
+  });
+  root.querySelectorAll("[data-rms-risk-copy-ticket]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const item = rmsOpportunityById(button.dataset.rmsRiskCopyTicket || "");
+      const resource = item ? rmsRiskRecoveryResourceFor(item) : null;
+      if (!resource?.public_ticket_url) return showFeedback("Genera primero el ticket extraordinario.", "info", { title: "Riesgos de fuga" });
+      await navigator.clipboard.writeText(resource.public_ticket_url);
+      showFeedback("Enlace del ticket copiado.", "success", { title: "Riesgos de fuga" });
+    });
+  });
+  root.querySelectorAll("[data-rms-risk-download-ticket]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const item = rmsOpportunityById(button.dataset.rmsRiskDownloadTicket || "");
+      const resource = item ? rmsRiskRecoveryResourceFor(item) : null;
+      if (!resource?.public_ticket_url) return showFeedback("Genera primero el ticket extraordinario.", "info", { title: "Riesgos de fuga" });
+      if (resource.qr_image_data_url) await downloadDataUrl(resource.filename || "beneficio-extraordinario.png", resource.qr_image_data_url);
+      else window.open(resource.public_ticket_url, "_blank", "noopener");
     });
   });
   root.querySelectorAll("[data-rms-reactivate-recycled]").forEach((button) => {
@@ -51477,20 +51722,33 @@ function updateRmsSaleEconomicsPreview(root, id) {
 function applyRmsNegotiationContextToAttributedSales(root) {
   root?.querySelectorAll(".rms-sale-work-item[data-rms-station-lead]").forEach((card) => {
     const item = rmsOpportunityById(card.dataset.rmsStationLead || "");
-    const context = rmsCommercialWorkflow(item || {}).confirmation?.sale_context || {};
+    const workflow = rmsCommercialWorkflow(item || {});
+    const context = workflow.confirmation?.sale_context || {};
+    const riskContext = rmsRiskRecoveryPresentation(workflow.risk || {}, item?.state_metadata || item?.metadata || {});
     const setValue = (selector, value) => {
       const field = card.querySelector(selector);
       if (field && value !== undefined && value !== null && value !== "") field.value = String(value);
     };
     setValue("[data-rms-sale-quantity]", Number(context.quantity) > 0 ? context.quantity : 1);
-    setValue("[data-rms-sale-benefit-type]", context.benefit_type || "NONE");
-    setValue("[data-rms-sale-benefit-cost]", Number(context.benefit_cost) || 0);
+    setValue("[data-rms-sale-benefit-type]", context.benefit_type || riskContext.benefitType || "NONE");
+    setValue("[data-rms-sale-benefit-cost]", Number(context.benefit_cost ?? riskContext.benefitCost) || 0);
     setValue("[data-rms-sale-acquisition-cost]", Number(context.acquisition_cost) || 0);
     const inventoryProduct = findInventoryProductById(rmsCommercialNode(root, "[data-rms-sale-product]", item?.id || "")?.value || "");
     setValue("[data-rms-sale-unit-cost]", Number(inventoryProduct?.cost_price) || 0);
     const notes = card.querySelector("[data-rms-sale-notes]");
     if (notes && context.benefit_description && !notes.value.includes(context.benefit_description)) {
       notes.value = [notes.value, `Beneficio o esfuerzo comercial: ${context.benefit_description}`].filter(Boolean).join(" · ");
+    }
+    const riskNotes = [
+      riskContext.decision && `Riesgos de fuga: ${riskContext.reason || "venta liberada"}`,
+      riskContext.offer?.type && riskContext.offer.type !== "NONE" && `Alternativa extraordinaria aplicada: ${riskContext.label}`,
+      riskContext.ticketAction !== "NONE" && `Acción sobre ticket: ${riskContext.ticketActionLabel}`,
+      riskContext.resource?.public_ticket_url && `Ticket de recuperación: ${riskContext.resource.public_ticket_url}`,
+      riskContext.responsible && `Responsable de liberación: ${riskContext.responsible}`,
+    ].filter(Boolean);
+    if (notes && riskNotes.length) {
+      const missingRiskNotes = riskNotes.filter((entry) => !notes.value.includes(entry));
+      if (missingRiskNotes.length) notes.value = [notes.value, ...missingRiskNotes].filter(Boolean).join(" · ");
     }
     const amountInput = card.querySelector("[data-rms-sale-amount]");
     const amountLabel = amountInput?.closest("label")?.querySelector(":scope > span");
@@ -55323,6 +55581,151 @@ function rmsRiskRecoveryAvailabilityMarkup() {
 
 function rmsRiskTabsMarkup(item = {}) {
   return `<section class="rms-risk-tabs" data-rms-risk-tabs="${escapeHtml(item.id)}" aria-label="Destino de Riesgos de fuga"><header><span class="mono-label">Resultado de la recuperación</span><strong>Solo una salida por caso.</strong></header><div role="tablist"><button class="is-active" type="button" role="tab" aria-selected="true" data-rms-risk-tab="${escapeHtml(item.id)}" data-rms-risk-tab-key="sale"><span class="material-symbols-outlined" aria-hidden="true">paid</span><span><strong>Venta lograda</strong><small>Enviar a Ventas atribuidas.</small></span></button><button type="button" role="tab" aria-selected="false" data-rms-risk-tab="${escapeHtml(item.id)}" data-rms-risk-tab-key="recycle"><span class="material-symbols-outlined" aria-hidden="true">autorenew</span><span><strong>Enviar a Reciclaje</strong><small>No fue viable continuar ahora.</small></span></button></div></section>`;
+}
+
+function rmsRiskRecoveryResourceFor(item = {}) {
+  const metadata = rmsQualityMetadata(item);
+  return state.rmsRiskGeneratedResources?.[item.id] || metadata.risk_recovery_resource || metadata.risk_review?.recovery_resource || null;
+}
+
+function rmsRiskRecoveryResourceMarkup(item = {}) {
+  const resource = rmsRiskRecoveryResourceFor(item);
+  if (!resource?.public_ticket_url) {
+    return `<div class="rms-risk-resource-empty"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2_add</span><div><strong>Aún no has generado el activo</strong><small>Selecciona una alternativa autorizada. Qori creará un ticket redimible y descargable sin sacar al lead de esta estación.</small></div></div>`;
+  }
+  const label = resource.recovery_offer?.label || resource.benefit?.label || "Beneficio extraordinario";
+  return `<article class="rms-risk-resource-ready"><span class="material-symbols-outlined" aria-hidden="true">verified</span><div><span class="mono-label">Activo listo</span><strong>${escapeHtml(label)}</strong><small>Vigente hasta ${escapeHtml(resource.expires_at ? formatDate(resource.expires_at) : "sin vencimiento")}. El lead continúa en Riesgos hasta que registres su respuesta.</small></div><a class="ghost-button compact" href="${escapeHtml(resource.public_ticket_url)}" target="_blank" rel="noopener">Abrir ticket</a></article>`;
+}
+
+function rmsRiskOperatingFlowMarkup(item = {}) {
+  return `<section class="rms-risk-operating-flow" aria-label="Operación de recuperación">
+    <header><span class="mono-label">RECUPERACIÓN EN 3 PASOS</span><strong>Prepara, entrega y registra la respuesta</strong></header>
+    <div class="rms-risk-flow-steps"><span class="is-active"><b>1</b>Beneficio</span><span><b>2</b>Ticket y activo</span><span><b>3</b>Respuesta</span></div>
+    <div class="rms-risk-resource-builder">
+      <div class="rms-risk-resource-fields"><label><span>Vigencia del ticket</span><select data-rms-risk-expiration-days="${escapeHtml(item.id)}"><option value="3">3 días</option><option value="7" selected>7 días</option><option value="15">15 días</option><option value="30">30 días</option></select></label></div>
+      <div class="rms-risk-resource-actions"><button class="solid-button compact" type="button" data-rms-generate-risk-resource="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>Generar ticket y activo</button><small>Consume un crédito QR solo la primera vez. Los reintentos no duplican el beneficio.</small></div>
+      <div data-rms-risk-resource-status="${escapeHtml(item.id)}">${rmsRiskRecoveryResourceMarkup(item)}</div>
+      <div class="rms-risk-delivery-bar"><label class="checkbox-row"><input type="checkbox" data-rms-risk-consent="${escapeHtml(item.id)}"> Confirmo que el lead autorizó contacto comercial.</label><div><button class="ghost-button compact" type="button" data-rms-risk-whatsapp="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</button><button class="ghost-button compact" type="button" data-rms-risk-email="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">mail</span>Email</button><button class="ghost-button compact" type="button" data-rms-risk-copy-ticket="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Copiar enlace</button><button class="ghost-button compact" type="button" data-rms-risk-download-ticket="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar activo</button></div></div>
+    </div>
+  </section>`;
+}
+
+function mountRmsRiskOperatingFlow(card, item) {
+  if (!card || card.querySelector(".rms-risk-operating-flow")) return;
+  const authorization = card.querySelector(".rms-risk-authorization-note");
+  const form = card.querySelector(".rms-risk-recovery-form");
+  (authorization || form)?.insertAdjacentHTML(authorization ? "afterend" : "beforebegin", rmsRiskOperatingFlowMarkup(item));
+  const fields = card.querySelector(".rms-risk-resource-fields");
+  const offer = card.querySelector(`[data-rms-risk-recovery-offer="${CSS.escape(item.id)}"]`)?.closest("label");
+  const discount = card.querySelector(`[data-rms-risk-discount-wrap="${CSS.escape(item.id)}"]`);
+  const detail = card.querySelector(`[data-rms-risk-detail-wrap="${CSS.escape(item.id)}"]`);
+  const existingResource = rmsRiskRecoveryResourceFor(item);
+  const offerSelect = offer?.querySelector("select");
+  const existingOffer = existingResource?.recovery_offer || {};
+  const restoredValue = existingOffer.benefit_id ? `BENEFIT:${existingOffer.benefit_id}` : existingOffer.type;
+  if (offerSelect && restoredValue && Array.from(offerSelect.options).some((option) => option.value === restoredValue)) offerSelect.value = restoredValue;
+  const discountInput = discount?.querySelector("input");
+  if (discountInput && existingOffer.discount_percent) discountInput.value = existingOffer.discount_percent;
+  const detailInput = detail?.querySelector("input");
+  if (detailInput && existingOffer.detail) detailInput.value = existingOffer.detail;
+  if (fields && offer) fields.prepend(offer);
+  if (fields && discount) fields.append(discount);
+  if (fields && detail) fields.append(detail);
+  const title = card.querySelector(".rms-commercial-console-head h4");
+  const copy = card.querySelector(".rms-commercial-console-head p");
+  if (title) title.textContent = "Recupera la oportunidad con una alternativa autorizada";
+  if (copy) copy.textContent = "Genera un beneficio redimible, compártelo y espera la respuesta. El lead permanece aquí hasta que confirmes el resultado.";
+}
+
+function rmsRiskSelectedOffer(root, item) {
+  const value = rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id)?.value || "NONE";
+  const benefitId = value.startsWith("BENEFIT:") ? value.slice(8) : null;
+  return {
+    value,
+    offer: benefitId ? "CUSTOM" : value,
+    benefitId,
+    discount: Number(rmsCommercialNode(root, "[data-rms-risk-discount-percent]", item.id)?.value || 0),
+    detail: String(rmsCommercialNode(root, "[data-rms-risk-recovery-detail]", item.id)?.value || "").trim(),
+  };
+}
+
+async function generateRmsRiskRecoveryResource(item, root, button) {
+  const selected = rmsRiskSelectedOffer(root, item);
+  if (selected.offer === "NONE") {
+    showFeedback("Selecciona una alternativa extraordinaria autorizada antes de generar el ticket.", "info", { title: "Riesgos de fuga" });
+    rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id)?.focus();
+    return;
+  }
+  const expirationDays = Number(rmsCommercialNode(root, "[data-rms-risk-expiration-days]", item.id)?.value || 7);
+  const fingerprint = [item.source_type || "PLAYER", item.source_id, selected.offer, selected.benefitId || "", selected.discount, selected.detail, expirationDays].join(":");
+  setButtonLoading(button, true, "Generando...");
+  try {
+    const response = await api("/api/business/rms-machine/risk-recovery-resource", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        source_id: item.source_id,
+        source_type: item.source_type || "PLAYER",
+        lead_id: item.lead_id || null,
+        recovery_offer: selected.offer,
+        recovery_benefit_id: selected.benefitId,
+        discount_percent: selected.discount,
+        recovery_detail: selected.detail || null,
+        expiration_days: expirationDays,
+        idempotency_key: `risk-resource:${fingerprint}`.slice(0, 180),
+      }),
+    });
+    state.rmsRiskGeneratedResources ||= {};
+    state.rmsRiskGeneratedResources[item.id] = { ...response.resource, qr_image_data_url: response.ticket?.qr_image_data_url, filename: response.ticket?.filename || response.resource?.filename };
+    const status = rmsCommercialNode(root, "[data-rms-risk-resource-status]", item.id);
+    if (status) status.innerHTML = rmsRiskRecoveryResourceMarkup(item);
+    showFeedback(response.duplicate ? "El ticket ya estaba listo; no se descontó otro crédito." : "Ticket y activo extraordinario generados. Ya puedes compartirlos.", "success", { title: "Riesgos de fuga" });
+  } finally {
+    setButtonLoading(button, false);
+  }
+}
+
+function rmsRiskShareMessage(item, resource) {
+  const name = item.name || item.first_name || "Hola";
+  const label = resource?.recovery_offer?.label || resource?.benefit?.label || "beneficio extraordinario";
+  return `${name}, preparamos ${label} para ayudarte a completar esta compra. Revisa y redime tu ticket aquí: ${resource.public_ticket_url}`;
+}
+
+function requireRmsRiskShare(item, root) {
+  const resource = rmsRiskRecoveryResourceFor(item);
+  if (!resource?.public_ticket_url) {
+    showFeedback("Genera primero el ticket extraordinario.", "info", { title: "Riesgos de fuga" });
+    return null;
+  }
+  if (!rmsCommercialNode(root, "[data-rms-risk-consent]", item.id)?.checked) {
+    showFeedback("Confirma la autorización de contacto antes de compartir el beneficio.", "info", { title: "Riesgos de fuga" });
+    return null;
+  }
+  return resource;
+}
+
+async function emailRmsRiskRecoveryResource(item, root, button) {
+  const resource = requireRmsRiskShare(item, root);
+  if (!resource) return;
+  if (!String(item.email || "").trim()) {
+    showFeedback("Este lead no tiene un email válido registrado.", "info", { title: "Riesgos de fuga" });
+    return;
+  }
+  const message = rmsRiskShareMessage(item, resource);
+  setButtonLoading(button, true, "Enviando...");
+  try {
+    const created = await api("/api/business/communications", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ title: `Recuperación RMS - ${item.name || item.email}`.slice(0, 180), communication_type: "EMAIL", status: "READY", subject: "Tu beneficio extraordinario está listo", email_body: message, action_url: resource.public_ticket_url, metadata: { source: "rms_risk_recovery", qr_code_id: resource.qr_code_id, source_type: item.source_type, source_id: item.source_id } }),
+    });
+    const communicationId = created.communication?.id;
+    if (!communicationId) throw new Error("No se pudo preparar el email.");
+    const delivery = await api(`/api/business/communications/${encodeURIComponent(communicationId)}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ recipients: [{ source_id: item.source_id, source_type: item.source_type || "PLAYER" }], consent_confirmed: true }) });
+    if (!Number(delivery?.results?.sent || 0)) throw new Error(delivery?.results?.failure_reasons?.[0]?.message || "El email no pudo entregarse.");
+    showFeedback("Beneficio enviado por email y registrado en Comunicaciones.", "success", { title: "Riesgos de fuga" });
+  } finally {
+    setButtonLoading(button, false);
+  }
 }
 
 function rmsRiskValidationStationCardMarkup(item = {}) {

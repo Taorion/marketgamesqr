@@ -449,6 +449,133 @@ async function createPostSaleQr(businessId, user, body) {
   });
 }
 
+/**
+ * Creates the last-chance benefit used by RMS Risk Review without inventing a
+ * sale. The ticket remains attached to the lead and can later be linked to the
+ * canonical attributed sale if the recovery succeeds.
+ */
+async function createRiskRecoveryQr(businessId, user, body = {}) {
+  return withTransaction(async (client) => {
+    const idempotencyKey = String(body.idempotency_key || "").trim();
+    if (!idempotencyKey) throw badRequest("La generación del ticket exige una clave de idempotencia.");
+    const sourceType = String(body.source_type || "PLAYER").trim().toUpperCase();
+    const sourceId = String(body.source_id || "").trim();
+    if (!sourceId) throw badRequest("Selecciona el lead que recibirá el beneficio extraordinario.");
+    await client.query("select pg_advisory_xact_lock(hashtext($1))", [`rms-risk-resource:${businessId}:${idempotencyKey}`]);
+
+    const existingResult = await client.query(
+      `select * from qr_codes
+        where business_id = $1
+          and metadata->>'rms_risk_resource_idempotency_key' = $2
+        order by created_at desc
+        limit 1`,
+      [businessId, idempotencyKey]
+    );
+    let qr = existingResult.rows[0] || null;
+    let creditAccount = null;
+    let benefitPayload = qr?.benefit_value || null;
+
+    if (!qr) {
+      const reward = await assertReward(client, businessId, body.benefit?.reward_id || null);
+      let player = null;
+      if (sourceType === "PLAYER") {
+        const playerResult = await client.query(
+          "select id from players where business_id = $1 and id = $2 limit 1",
+          [businessId, sourceId]
+        );
+        player = playerResult.rows[0] || null;
+      }
+      const token = createSecureToken();
+      const expiresAt = resolveExpiration(body);
+      benefitPayload = buildBenefitPayload(body.benefit || {}, reward);
+      const claimRequired = !player;
+      const created = await client.query(
+        `insert into qr_codes
+          (business_id, campaign_id, game_id, player_id, reward_id, token, status, metadata, expires_at,
+           batch_id, origin_type, benefit_type, benefit_value, sale_id, claim_required, claimed_at, claimed_by_player_id)
+         values ($1, null, null, $2, $3, $4, 'ACTIVE', $5::jsonb, $6, null, 'MANUAL_BENEFIT', $7, $8::jsonb,
+                 null, $9, $10, $11)
+         returning *`,
+        [
+          businessId,
+          player?.id || null,
+          body.benefit?.reward_id || null,
+          token,
+          JSON.stringify({
+            strategic_qr: true,
+            origin_label: "Recuperación extraordinaria RMS",
+            ticket_use_case: "risk_recovery",
+            qr_creation_context: "rms_risk_recovery",
+            source_type: sourceType,
+            source_id: sourceId,
+            lead_id: body.lead_id || null,
+            product_name: body.product_name || null,
+            rms_risk_resource_idempotency_key: idempotencyKey,
+            recovery_offer: body.recovery_offer || null,
+            created_by: user.id,
+            ...(body.metadata || {}),
+          }),
+          expiresAt,
+          body.benefit?.benefit_type,
+          JSON.stringify(benefitPayload),
+          claimRequired,
+          player ? new Date().toISOString() : null,
+          player?.id || null,
+        ]
+      );
+      qr = created.rows[0];
+      await ensureCreditAccount(client, businessId);
+      creditAccount = await consumeQrCredit(client, businessId, qr.id, user.id);
+      await logQrEvent(client, {
+        business_id: businessId,
+        campaign_id: null,
+        qr_code_id: qr.id,
+        player_id: player?.id || null,
+        user_id: user.id,
+        event_type: "QR_CREATED",
+        message: "RMS risk recovery ticket created.",
+        metadata: { origin_type: "MANUAL_BENEFIT", source_type: sourceType, source_id: sourceId, ticket_use_case: "risk_recovery" },
+      });
+    }
+
+    const links = buildPublicQrLinks(qr);
+    const sharedTicketUrl = links.scan_url;
+    const businessResult = await client.query(
+      `select id, name, ${BUSINESS_BRAND_SETTINGS_SQL} as business_settings from businesses b where id = $1`,
+      [businessId]
+    );
+    const business = businessResult.rows[0] || null;
+    const brand = getBrandStyle(business?.business_settings || {});
+    const hasFrame = Boolean(brand.ticketFrameUrl);
+    const image = hasFrame
+      ? await buildBrandedTicketSvgDataUrl({
+          scanUrl: sharedTicketUrl,
+          brand,
+          detailLines: buildTicketDetailLines({
+            label: benefitPayload?.label || body.benefit?.benefit_label || "Beneficio extraordinario",
+            expiresAt: qr.expires_at,
+            code: shortTicketCode(qr),
+            benefitValue: benefitPayload?.value || {},
+          }),
+        })
+      : await QRCode.toDataURL(sharedTicketUrl);
+
+    return {
+      duplicate: Boolean(existingResult.rowCount),
+      qr_code: qr,
+      business,
+      credit_account: creditAccount ? mapPublicCreditAccount(creditAccount) : null,
+      validator_url: links.validator_url,
+      claim_url: links.claim_url,
+      public_ticket_url: sharedTicketUrl,
+      qr_content: sharedTicketUrl,
+      qr_image_data_url: image,
+      filename: `recuperacion-rms-${String(qr.id).slice(0, 8)}.${hasFrame ? "svg" : "png"}`,
+      benefit: benefitPayload,
+    };
+  });
+}
+
 function buildBatchInsert(rows) {
   const values = [];
   const placeholders = rows.map((row, rowIndex) => {
@@ -2053,6 +2180,7 @@ module.exports = {
   buildValidatorUrl,
   buildClaimUrl,
   createPostSaleQr,
+  createRiskRecoveryQr,
   createQrBatch,
   createAffiliateReferralQrBatch,
   listQrBatches,

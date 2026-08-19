@@ -3984,6 +3984,7 @@ html body .portal-shell #rmsCollectorModal .rms-collector-lead-head strong {
   line-height: 1.22 !important;
 }
 
+
 html body > #rmsCollectorModal .rms-collector-identity-notice,
 html body .portal-shell #rmsCollectorModal .rms-collector-identity-notice {
   width: fit-content !important;
@@ -21442,7 +21443,7 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-risk-work-item .rm
 
 #rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid {
   display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 10px !important;
   padding: 0 14px 14px !important;
 }
@@ -24374,6 +24375,16 @@ html body .content-shell > .action-feedback:not(.hidden) .action-feedback-dismis
   #rmsStationWorkspace .rms-commercial-station-summary { margin-inline: 0; padding: 14px; }
   #rmsStationWorkspace .rms-commercial-station-summary > header { display: grid; }
   #rmsStationWorkspace .rms-commercial-station-summary > header .ghost-button { justify-self: start; }
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid .rms-sale-handoff-risk {
+  border-color: #bdd9ec !important;
+  background: linear-gradient(145deg, #f3f9ff 0%, #ffffff 100%) !important;
+  box-shadow: inset 3px 0 0 #0b5eaa !important;
+}
+
+#rmsStationWorkspace[data-station-theme="closing"] .rms-sale-handoff-grid .rms-sale-handoff-risk > span {
+  color: #0b5eaa !important;
 }
 
 /* Riesgos de fuga: control visual sereno, una decisión a la vez. */
@@ -28022,4 +28033,1423 @@ html body[data-current-view="account"] .portal-shell .account-admin-nav a.is-act
 html body[data-current-view="account"] .portal-shell .account-admin-nav a[aria-current="page"] .material-symbols-outlined {
   color: #ffffff !important;
   background: linear-gradient(145deg, #078cff, #0341b3) !important;
+}
+
+/* Riesgos de fuga: operacion de recuperacion extraordinaria en una sola lectura. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-recovery-work-item .rms-risk-operating-flow {
+  display: grid !important;
+  gap: 16px !important;
+  margin: 18px 0 !important;
+  padding: clamp(18px, 2.4vw, 28px) !important;
+  overflow: hidden !important;
+  border: 1px solid #b9d8ee !important;
+  border-radius: 20px !important;
+  background: linear-gradient(145deg, #f4faff 0%, #ffffff 58%, #f1f8ff 100%) !important;
+  box-shadow: 0 18px 44px rgba(3, 65, 179, .09) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-operating-flow > header {
+  display: grid !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-operating-flow > header strong {
+  color: #082a55 !important;
+  font-size: clamp(1rem, 1.5vw, 1.25rem) !important;
+  line-height: 1.25 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps span {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  padding: 9px 12px !important;
+  border: 1px solid #d7e7f3 !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, .82) !important;
+  color: #5d7488 !important;
+  font-size: .76rem !important;
+  font-weight: 800 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps span b {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  flex: 0 0 24px !important;
+  border-radius: 50% !important;
+  background: #e8f3fb !important;
+  color: #0759d6 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps span.is-active {
+  border-color: #72bff0 !important;
+  color: #033d92 !important;
+  background: #fff !important;
+  box-shadow: inset 0 -3px 0 #078cff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-builder {
+  display: grid !important;
+  grid-template-columns: minmax(180px, .35fr) minmax(240px, .65fr) !important;
+  gap: 14px 18px !important;
+  align-items: end !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-fields,
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-fields label {
+  display: grid !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-fields > .span-2 {
+  grid-column: 1 / -1 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-fields label > span {
+  color: #274761 !important;
+  font-size: .74rem !important;
+  font-weight: 850 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-actions {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-actions small {
+  max-width: 380px !important;
+  color: #60778d !important;
+  font-size: .7rem !important;
+  line-height: 1.45 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell [data-rms-risk-resource-status] {
+  grid-column: 1 / -1 !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-empty,
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-ready {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 13px !important;
+  min-width: 0 !important;
+  padding: 14px 16px !important;
+  border: 1px dashed #b7d2e5 !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, .78) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-empty {
+  grid-template-columns: auto minmax(0, 1fr) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell :is(.rms-risk-resource-empty, .rms-risk-resource-ready) > .material-symbols-outlined {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 12px !important;
+  color: #0759d6 !important;
+  background: #e7f4ff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell :is(.rms-risk-resource-empty, .rms-risk-resource-ready) div {
+  display: grid !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell :is(.rms-risk-resource-empty, .rms-risk-resource-ready) strong {
+  color: #0b2c4b !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell :is(.rms-risk-resource-empty, .rms-risk-resource-ready) small {
+  color: #61778a !important;
+  line-height: 1.45 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-delivery-bar {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 10px 16px !important;
+  padding-top: 12px !important;
+  border-top: 1px solid #d8e8f3 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-delivery-bar > div {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 7px !important;
+}
+
+@media (max-width: 780px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-builder,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-fields {
+    grid-template-columns: 1fr !important;
+  }
+  html body[data-current-view="rms-machine"] .portal-shell [data-rms-risk-resource-status],
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-delivery-bar {
+    grid-column: 1 !important;
+  }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-ready {
+    grid-template-columns: auto minmax(0, 1fr) !important;
+  }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-resource-ready > a {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-delivery-bar > div,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-delivery-bar button {
+    width: 100% !important;
+  }
+}
+
+/* RMS quick station navigation v225. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell,
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head,
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions {
+  overflow: visible !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-nav {
+  position: relative !important;
+  z-index: 80 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-open {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 42px !important;
+  padding: 9px 15px !important;
+  border: 1px solid #9fc8ed !important;
+  border-radius: 10px !important;
+  color: #0341b3 !important;
+  background: linear-gradient(180deg, #ffffff 0%, #edf7ff 100%) !important;
+  box-shadow: 0 8px 20px rgba(1, 65, 179, .09) !important;
+  font-weight: 850 !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-open:hover,
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-open[aria-expanded="true"] {
+  border-color: #0480fa !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #0341b3 0%, #0759d6 58%, #0480fa 100%) !important;
+  box-shadow: 0 12px 26px rgba(1, 65, 179, .2) !important;
+  transform: translateY(-1px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-menu[hidden] {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-menu {
+  position: absolute !important;
+  top: calc(100% + 10px) !important;
+  right: 0 !important;
+  z-index: 120 !important;
+  display: grid !important;
+  gap: 14px !important;
+  width: min(580px, calc(100vw - 48px)) !important;
+  max-height: min(620px, calc(100vh - 150px)) !important;
+  padding: 18px !important;
+  overflow: hidden !important;
+  border: 1px solid #b9d8ef !important;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, .985) !important;
+  box-shadow: 0 24px 64px rgba(1, 34, 104, .22), 0 0 0 1px rgba(255, 255, 255, .9) inset !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-menu > header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 12px !important;
+  padding: 0 0 13px !important;
+  border-bottom: 1px solid #dcebf6 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-menu > header > div {
+  display: grid !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-menu > header strong {
+  color: #092b50 !important;
+  font-size: 1.05rem !important;
+  line-height: 1.3 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-menu > header small {
+  color: #60758a !important;
+  line-height: 1.4 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-list {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+  max-height: min(470px, calc(100vh - 275px)) !important;
+  padding: 1px 4px 5px 1px !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #8ebbe2 #edf6fd !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-item {
+  display: grid !important;
+  grid-template-columns: 32px 36px minmax(0, 1fr) 22px !important;
+  align-items: center !important;
+  gap: 9px !important;
+  min-width: 0 !important;
+  min-height: 68px !important;
+  padding: 10px !important;
+  border: 1px solid #d5e6f2 !important;
+  border-radius: 13px !important;
+  color: #143854 !important;
+  background: #f8fbfe !important;
+  box-shadow: none !important;
+  text-align: left !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-item:hover,
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-item:focus-visible {
+  border-color: #50a5ed !important;
+  background: #eef7ff !important;
+  box-shadow: 0 10px 22px rgba(3, 65, 179, .11) !important;
+  transform: translateY(-1px) !important;
+  outline: 3px solid rgba(7, 206, 251, .18) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-item.has-work {
+  border-color: #a9d2ef !important;
+  background: linear-gradient(135deg, #ffffff 0%, #edf7ff 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-number {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 9px !important;
+  color: #ffffff !important;
+  background: #0341b3 !important;
+  font-size: .72rem !important;
+  font-weight: 900 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-item > .material-symbols-outlined:not(.rms-stage-quick-arrow) {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  color: #0759d6 !important;
+  background: #e3f3ff !important;
+  font-size: 21px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-copy {
+  display: grid !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-copy strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-copy small {
+  display: block !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-copy strong {
+  color: #0b3158 !important;
+  font-size: .86rem !important;
+  line-height: 1.25 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-copy small {
+  color: #687e91 !important;
+  font-size: .7rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-item.has-work .rms-stage-quick-copy small {
+  color: #0759d6 !important;
+  font-weight: 800 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-arrow {
+  color: #7190a8 !important;
+  font-size: 19px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-entry-card.is-quick-target {
+  border-color: #0480fa !important;
+  box-shadow: 0 0 0 4px rgba(7, 206, 251, .2), 0 22px 50px rgba(1, 65, 179, .18) !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head {
+    align-items: stretch !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions {
+    justify-content: flex-start !important;
+    width: 100% !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-nav,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-open {
+    flex: 1 1 180px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-open {
+    width: 100% !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-menu {
+    position: fixed !important;
+    inset: auto 12px 12px 12px !important;
+    width: auto !important;
+    max-height: min(78vh, 680px) !important;
+    padding: 15px !important;
+    border-radius: 18px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-list {
+    grid-template-columns: 1fr !important;
+    max-height: calc(78vh - 120px) !important;
+  }
+}
+
+/* RMS Riesgos de fuga: KPI explicables por hover, foco y toque. */
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)) !important;
+  gap: 11px !important;
+  overflow: visible !important;
+  padding: 3px 2px 10px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics .rms-risk-kpi {
+  position: relative !important;
+  isolation: isolate !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 30px !important;
+  align-items: start !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  min-height: 91px !important;
+  padding: 14px !important;
+  overflow: visible !important;
+  cursor: help !important;
+  transition: transform 180ms cubic-bezier(.16, 1, .3, 1), border-color 180ms ease, box-shadow 180ms ease !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics .rms-risk-kpi:hover,
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics .rms-risk-kpi:focus-within,
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics .rms-risk-kpi.is-explaining {
+  z-index: 30 !important;
+  transform: translateY(-2px) !important;
+  border-color: #78b9e8 !important;
+  box-shadow: 0 14px 32px rgba(1, 52, 118, .14) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-value {
+  display: grid !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-value > strong {
+  font-size: clamp(1.35rem, 1.8vw, 1.72rem) !important;
+  line-height: 1 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-value > span {
+  color: #405f78 !important;
+  font-size: .76rem !important;
+  line-height: 1.34 !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-help {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 30px !important;
+  height: 30px !important;
+  padding: 0 !important;
+  border: 1px solid #c6dbea !important;
+  border-radius: 9px !important;
+  background: #eef7ff !important;
+  color: #0759d6 !important;
+  cursor: help !important;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-help:hover,
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-help[aria-expanded="true"] {
+  background: #0759d6 !important;
+  color: #ffffff !important;
+  transform: scale(1.05) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-help .material-symbols-outlined {
+  color: inherit !important;
+  font-size: 18px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-popover {
+  position: absolute !important;
+  top: calc(100% + 9px) !important;
+  left: 0 !important;
+  z-index: var(--portal-popover, 1040) !important;
+  display: grid !important;
+  gap: 8px !important;
+  width: min(330px, calc(100vw - 38px)) !important;
+  padding: 16px !important;
+  border: 1px solid rgba(117, 211, 255, .42) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(145deg, #082b67 0%, #0341b3 100%) !important;
+  box-shadow: 0 20px 48px rgba(1, 34, 104, .28) !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: translateY(-7px) scale(.985) !important;
+  transform-origin: top left !important;
+  transition: opacity 170ms ease, transform 210ms cubic-bezier(.16, 1, .3, 1), visibility 170ms ease !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi:nth-last-child(-n + 2) .rms-risk-kpi-popover {
+  right: 0 !important;
+  left: auto !important;
+  transform-origin: top right !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi:hover .rms-risk-kpi-popover,
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi:focus-within .rms-risk-kpi-popover,
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi.is-explaining .rms-risk-kpi-popover {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) scale(1) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-popover .mono-label {
+  color: #8be8ff !important;
+  font-size: .63rem !important;
+  letter-spacing: .09em !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-popover > strong {
+  color: #ffffff !important;
+  font-size: .94rem !important;
+  line-height: 1.3 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-popover p,
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-popover small {
+  margin: 0 !important;
+  color: rgba(238, 248, 255, .9) !important;
+  font-size: .76rem !important;
+  line-height: 1.5 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-popover small {
+  padding-top: 8px !important;
+  border-top: 1px solid rgba(255, 255, 255, .18) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-popover small b {
+  color: #ffffff !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi-popover,
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi:nth-last-child(-n + 2) .rms-risk-kpi-popover {
+    position: fixed !important;
+    inset: 50% 14px auto 14px !important;
+    width: auto !important;
+    max-height: min(70vh, 430px) !important;
+    overflow-y: auto !important;
+    transform: translateY(-46%) scale(.985) !important;
+    transform-origin: center !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi:hover .rms-risk-kpi-popover,
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi:focus-within .rms-risk-kpi-popover,
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="control"] .rms-risk-kpi.is-explaining .rms-risk-kpi-popover {
+    transform: translateY(-50%) scale(1) !important;
+  }
+}
+
+@media (max-width: 430px) {
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="control"] .rms-risk-metrics {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="control"] :is(.rms-risk-kpi, .rms-risk-kpi-help, .rms-risk-kpi-popover) {
+    transition: none !important;
+  }
+}
+
+/* Valorización Clientes v2: cabina postventa profesional, compacta y progresiva. */
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-work-item {
+  border: 1px solid rgba(35, 111, 153, .2) !important;
+  border-radius: 24px !important;
+  background: #f4f9fd !important;
+  box-shadow: 0 22px 54px rgba(1, 34, 104, .1) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-work-item > .rms-commercial-work-lead {
+  grid-template-columns: minmax(220px, 1.15fr) minmax(0, 2.6fr) auto !important;
+  grid-template-rows: auto auto !important;
+  gap: 10px 22px !important;
+  padding: 18px clamp(20px, 2.6vw, 36px) !important;
+  border-bottom: 1px solid rgba(35, 111, 153, .18) !important;
+  background: linear-gradient(105deg, #ffffff 0%, #f1f9ff 52%, #e6f4fc 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-commercial-work-kicker {
+  grid-column: 1 / -1 !important;
+  color: #0759d6 !important;
+  -webkit-text-fill-color: #0759d6 !important;
+  font-size: .64rem !important;
+  font-weight: 900 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-person {
+  display: grid !important;
+  grid-template-columns: 40px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 11px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-person > .material-symbols-outlined {
+  display: grid !important;
+  width: 40px !important;
+  height: 40px !important;
+  place-items: center !important;
+  border: 1px solid #b9dbef !important;
+  border-radius: 12px !important;
+  background: linear-gradient(145deg, #dff5ff, #ffffff) !important;
+  color: #0759d6 !important;
+  -webkit-text-fill-color: #0759d6 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-person strong {
+  color: #071f4c !important;
+  -webkit-text-fill-color: #071f4c !important;
+  font-size: 1rem !important;
+  line-height: 1.25 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-person small {
+  display: block !important;
+  margin-top: 3px !important;
+  color: #496c8d !important;
+  -webkit-text-fill-color: #496c8d !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-facts {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-facts > div {
+  padding: 8px 10px !important;
+  border-color: rgba(35, 111, 153, .14) !important;
+  background: rgba(255, 255, 255, .82) !important;
+  box-shadow: 0 5px 14px rgba(1, 34, 104, .035) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-facts dd {
+  color: #163d67 !important;
+  -webkit-text-fill-color: #163d67 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-actions .ghost-button {
+  border-color: #b8d8eb !important;
+  background: #ffffff !important;
+  color: #0759d6 !important;
+  -webkit-text-fill-color: #0759d6 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-console {
+  gap: 18px !important;
+  padding: clamp(18px, 2.4vw, 32px) !important;
+  background:
+    radial-gradient(circle at 96% 4%, rgba(7, 206, 251, .09), transparent 28%),
+    linear-gradient(180deg, #f7fbff 0%, #f1f7fb 100%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  padding: clamp(20px, 2.6vw, 30px) !important;
+  border: 1px solid rgba(105, 221, 255, .38) !important;
+  border-radius: 19px !important;
+  background: linear-gradient(125deg, #012268 0%, #0341b3 55%, #087fff 100%) !important;
+  box-shadow: 0 18px 38px rgba(1, 34, 104, .2) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head-copy {
+  display: grid !important;
+  grid-template-columns: 48px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 15px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head-icon {
+  display: grid !important;
+  width: 48px !important;
+  height: 48px !important;
+  place-items: center !important;
+  border: 1px solid rgba(255, 255, 255, .38) !important;
+  border-radius: 15px !important;
+  background: rgba(255, 255, 255, .12) !important;
+  color: #8be8ff !important;
+  -webkit-text-fill-color: #8be8ff !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head :is(.mono-label, h4, p),
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head-state small {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head .mono-label {
+  opacity: .78 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head h4 {
+  margin: 4px 0 5px !important;
+  font-size: clamp(1.18rem, 2vw, 1.58rem) !important;
+  line-height: 1.2 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head p {
+  max-width: 780px !important;
+  margin: 0 !important;
+  opacity: .86 !important;
+  line-height: 1.5 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head-state {
+  display: grid !important;
+  flex: 0 0 auto !important;
+  justify-items: end !important;
+  gap: 6px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head-state small {
+  font-size: .66rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .06em !important;
+  opacity: .74 !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head-state .rms-commercial-state {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  margin: 0 !important;
+  border: 1px solid rgba(255, 255, 255, .48) !important;
+  background: #ffffff !important;
+  color: #0341b3 !important;
+  -webkit-text-fill-color: #0341b3 !important;
+  box-shadow: 0 9px 24px rgba(1, 34, 104, .2) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head-state .material-symbols-outlined {
+  font-size: 17px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-journey {
+  display: grid !important;
+  grid-template-columns: auto minmax(24px, 1fr) auto minmax(24px, 1fr) auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: min(760px, 100%) !important;
+  margin: 0 auto !important;
+  padding: 0 8px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-journey > span {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  color: #6b8298 !important;
+  -webkit-text-fill-color: #6b8298 !important;
+  font-size: .7rem !important;
+  font-weight: 800 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-journey b {
+  display: grid !important;
+  width: 25px !important;
+  height: 25px !important;
+  place-items: center !important;
+  border: 1px solid #bfd5e4 !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  color: #58748d !important;
+  -webkit-text-fill-color: #58748d !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-journey .is-complete,
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-journey .is-current {
+  color: #0759d6 !important;
+  -webkit-text-fill-color: #0759d6 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-journey .is-complete b,
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-journey .is-current b {
+  border-color: #0759d6 !important;
+  background: #0759d6 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-journey i {
+  height: 2px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, #0759d6, #8ecdf1) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip {
+  gap: 10px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip article {
+  min-height: 92px !important;
+  padding: 14px !important;
+  border: 1px solid rgba(35, 111, 153, .16) !important;
+  border-radius: 15px !important;
+  background: #ffffff !important;
+  box-shadow: 0 9px 24px rgba(1, 34, 104, .055) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip article:first-child {
+  border-color: rgba(7, 89, 214, .28) !important;
+  background: linear-gradient(145deg, #ffffff, #edf7ff) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip :is(strong, b, small) {
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-workbench {
+  display: grid !important;
+  grid-template-columns: minmax(260px, 310px) minmax(0, 1fr) !important;
+  align-items: start !important;
+  gap: 16px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-objective {
+  position: sticky !important;
+  top: calc(var(--qori-topbar, 62px) + 14px) !important;
+  display: grid !important;
+  gap: 15px !important;
+  padding: 18px !important;
+  border: 1px solid rgba(105, 221, 255, .26) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(155deg, #071f4c 0%, #012268 58%, #0341b3 100%) !important;
+  box-shadow: 0 16px 34px rgba(1, 34, 104, .16) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-objective :is(.mono-label, h5, p) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-objective h5 {
+  margin: 4px 0 6px !important;
+  font-size: 1rem !important;
+  line-height: 1.35 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-objective p {
+  margin: 0 !important;
+  font-size: .77rem !important;
+  line-height: 1.5 !important;
+  opacity: .78 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route-picker {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 9px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route {
+  display: grid !important;
+  grid-template-columns: 34px minmax(0, 1fr) 20px !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-height: 76px !important;
+  padding: 12px !important;
+  border: 1px solid rgba(255, 255, 255, .2) !important;
+  border-radius: 13px !important;
+  background: rgba(255, 255, 255, .08) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route:hover {
+  border-color: rgba(139, 232, 255, .62) !important;
+  background: rgba(255, 255, 255, .14) !important;
+  transform: translateX(2px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route.is-active {
+  border-color: #8be8ff !important;
+  background: #ffffff !important;
+  color: #0341b3 !important;
+  -webkit-text-fill-color: #0341b3 !important;
+  box-shadow: 0 12px 24px rgba(1, 20, 70, .24) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route > .material-symbols-outlined:first-child {
+  display: grid !important;
+  width: 34px !important;
+  height: 34px !important;
+  place-items: center !important;
+  border-radius: 10px !important;
+  background: rgba(139, 232, 255, .15) !important;
+  color: #8be8ff !important;
+  -webkit-text-fill-color: #8be8ff !important;
+  font-size: 19px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route.is-active > .material-symbols-outlined:first-child {
+  background: #e7f8ff !important;
+  color: #0759d6 !important;
+  -webkit-text-fill-color: #0759d6 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route strong {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: .85rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route small {
+  display: -webkit-box !important;
+  margin-top: 3px !important;
+  overflow: hidden !important;
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: .67rem !important;
+  line-height: 1.35 !important;
+  opacity: .76 !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route-arrow {
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: 18px !important;
+  opacity: .62 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-objective-note {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 7px !important;
+  color: rgba(235, 249, 255, .82) !important;
+  -webkit-text-fill-color: rgba(235, 249, 255, .82) !important;
+  font-size: .67rem !important;
+  line-height: 1.4 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-objective-note .material-symbols-outlined {
+  flex: 0 0 auto !important;
+  font-size: 16px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel {
+  min-width: 0 !important;
+  min-height: 100% !important;
+  padding: clamp(20px, 2.3vw, 30px) !important;
+  border: 1px solid rgba(35, 111, 153, .19) !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: 0 16px 36px rgba(1, 34, 104, .075) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel[hidden] {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel > header {
+  position: relative !important;
+  margin: 0 0 20px !important;
+  padding: 0 0 18px 17px !important;
+  border-bottom: 1px solid #dbe9f2 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel > header::before {
+  position: absolute !important;
+  top: 2px !important;
+  bottom: 18px !important;
+  left: 0 !important;
+  width: 4px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #07cefb, #0759d6) !important;
+  content: "" !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel > header h5 {
+  margin: 4px 0 5px !important;
+  color: #071f4c !important;
+  -webkit-text-fill-color: #071f4c !important;
+  font-size: 1.08rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel > header p {
+  max-width: 720px !important;
+  margin: 0 !important;
+  color: #52718d !important;
+  -webkit-text-fill-color: #52718d !important;
+  font-size: .8rem !important;
+  line-height: 1.5 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel .rms-sale-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel :is(label, .rms-commercial-note-field) > span {
+  color: #163d67 !important;
+  -webkit-text-fill-color: #163d67 !important;
+  font-size: .74rem !important;
+  font-weight: 850 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel :is(input:not([type="checkbox"]), select, textarea) {
+  border: 1px solid #c5d9e8 !important;
+  border-radius: 10px !important;
+  background: #fbfdff !important;
+  color: #102f55 !important;
+  -webkit-text-fill-color: #102f55 !important;
+  box-shadow: inset 0 1px 2px rgba(1, 34, 104, .025) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel :is(input:not([type="checkbox"]), select, textarea):focus {
+  border-color: #0480fa !important;
+  outline: 3px solid rgba(7, 206, 251, .16) !important;
+  background: #ffffff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-consent {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  margin-top: 14px !important;
+  padding: 12px 14px !important;
+  border: 1px solid #cfe4f0 !important;
+  border-radius: 11px !important;
+  background: #eef8fd !important;
+  color: #294f72 !important;
+  -webkit-text-fill-color: #294f72 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-consent input[type="checkbox"] {
+  flex: 0 0 18px !important;
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  height: 18px !important;
+  margin: 1px 0 0 !important;
+  accent-color: #0759d6 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-consent > span {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  color: #294f72 !important;
+  -webkit-text-fill-color: #294f72 !important;
+  font-weight: 700 !important;
+  line-height: 1.45 !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history {
+  overflow: hidden !important;
+  padding: 0 !important;
+  border-color: rgba(35, 111, 153, .18) !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 22px rgba(1, 34, 104, .045) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history summary {
+  padding: 15px 17px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history summary::after {
+  color: #0759d6 !important;
+  content: "expand_more" !important;
+  font-family: "Material Symbols Outlined" !important;
+  font-size: 20px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history[open] summary::after {
+  content: "expand_less" !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history ol {
+  display: grid !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 17px 16px !important;
+  list-style: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] details.rms-post-sale-history li {
+  display: grid !important;
+  gap: 3px !important;
+  padding: 11px 13px !important;
+  border: 1px solid #d9e7f0 !important;
+  border-radius: 10px !important;
+  background: #f7fbfe !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, .7fr) auto !important;
+  padding: 18px !important;
+  border: 1px solid rgba(7, 89, 214, .22) !important;
+  border-radius: 17px !important;
+  background: linear-gradient(120deg, #ffffff 0%, #eaf7ff 100%) !important;
+  box-shadow: 0 12px 28px rgba(1, 34, 104, .07) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish .button-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 9px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish .solid-button {
+  min-height: 42px !important;
+  border: 0 !important;
+  background: linear-gradient(135deg, #0341b3, #087fff) !important;
+  box-shadow: 0 10px 22px rgba(3, 65, 179, .22) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell
+#rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish .ghost-button {
+  min-height: 42px !important;
+  border-color: #b8d6e8 !important;
+  background: #ffffff !important;
+  color: #254e75 !important;
+  -webkit-text-fill-color: #254e75 !important;
+}
+
+@media (max-width: 1180px) {
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-work-item > .rms-commercial-work-lead {
+    grid-template-columns: minmax(220px, .9fr) minmax(0, 2fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-actions {
+    grid-column: 1 / -1 !important;
+    justify-content: flex-end !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-workbench {
+    grid-template-columns: minmax(230px, 270px) minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head {
+    align-items: flex-start !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-workbench {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-objective {
+    position: static !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route-picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route {
+    grid-template-columns: 34px minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route-arrow {
+    display: none !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish .button-row {
+    justify-content: flex-start !important;
+  }
+}
+
+@media (max-width: 700px) {
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-post-sale-work-item > .rms-commercial-work-lead {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head {
+    display: grid !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head-state {
+    justify-items: start !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-value-strip,
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route-picker,
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-panel .rms-sale-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route {
+    min-height: 68px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-journey {
+    grid-template-columns: 1fr !important;
+    justify-items: start !important;
+    gap: 7px !important;
+    padding-left: 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-journey i {
+    display: none !important;
+  }
+}
+
+@media (max-width: 460px) {
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-console {
+    padding: 13px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-head-copy {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-commercial-work-lead .rms-activation-work-facts {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish .button-row,
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-finish .button-row button {
+    width: 100% !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body[data-current-view="rms-machine"] .portal-shell
+  #rmsStationWorkspace[data-station-theme="post-sale"] .rms-refinery-route {
+    transition: none !important;
+  }
 }

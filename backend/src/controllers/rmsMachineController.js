@@ -18,6 +18,7 @@ const {
   recordRmsCommercialConfirmation,
   recordRmsEvaluationResponse,
   recordRmsNegotiationResult,
+  prepareRmsRiskRecoveryResource,
   recordRmsRiskReview,
   recordRmsPostSaleAction,
   reactivateRmsRecycledLead,
@@ -286,6 +287,18 @@ const riskReviewSchema = z.object({
   signals: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
+const riskRecoveryResourceSchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+  lead_id: z.string().uuid().optional().nullable(),
+  recovery_offer: z.enum(["DISCOUNT", "TWO_FOR_ONE", "GIFT", "CUSTOM"]),
+  recovery_benefit_id: z.string().trim().max(120).optional().nullable(),
+  discount_percent: z.number().min(0).max(100).optional().default(0),
+  recovery_detail: z.string().trim().max(1000).optional().nullable(),
+  expiration_days: z.number().int().min(1).max(90).optional().default(7),
+  idempotency_key: z.string().trim().min(8).max(180),
+});
+
 const recycleReactivateSchema = z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
@@ -482,6 +495,15 @@ async function recordRiskReview(req, res, next) {
   }
 }
 
+async function prepareRiskRecoveryResource(req, res, next) {
+  try {
+    const body = validate(riskRecoveryResourceSchema, req.body);
+    res.status(201).json(await prepareRmsRiskRecoveryResource(businessIdFor(req), req.user, body));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function recordNegotiationResult(req, res, next) {
   try {
     const body = validate(negotiationResultSchema, req.body);
@@ -621,6 +643,7 @@ module.exports = {
   recordCommercialConfirmation,
   recordEvaluationResponse,
   recordNegotiationResult,
+  prepareRiskRecoveryResource,
   recordRiskReview,
   reactivateRecycledLead,
   recyclingQueue,

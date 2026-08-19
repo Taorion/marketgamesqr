@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-    <link rel="stylesheet" href="css/portal-clean-v39.css?v=account-nav-sync-v223-20260818">
+    <link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-post-sale-redesign-v228-20260818">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -837,6 +837,23 @@
                     </div>
                   </div>
                   <div class="rms-stage-slider-actions">
+                    <div class="rms-stage-quick-nav">
+                      <button class="ghost-button compact rms-stage-quick-open" id="rmsStageQuickOpenButton" type="button" aria-expanded="false" aria-controls="rmsStageQuickMenu">
+                        <span class="material-symbols-outlined" aria-hidden="true">near_me</span>
+                        <span>Ir a estación</span>
+                      </button>
+                      <section class="rms-stage-quick-menu" id="rmsStageQuickMenu" aria-label="Acceso directo a las estaciones RMS" hidden>
+                        <header>
+                          <div>
+                            <span class="mono-label">Acceso directo</span>
+                            <strong>¿Qué estación quieres abrir?</strong>
+                            <small>Entra directamente sin recorrer todo el carrusel.</small>
+                          </div>
+                          <button class="icon-button" id="rmsStageQuickCloseButton" type="button" aria-label="Cerrar acceso directo"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+                        </header>
+                        <div class="rms-stage-quick-list" id="rmsStageQuickList"></div>
+                      </section>
+                    </div>
                     <span class="rms-stage-slider-range" id="rmsStageSliderRange" aria-live="polite">1 de 12</span>
                     <button class="ghost-button compact" id="rmsStageSliderPrev" type="button" aria-label="Ver estaciones anteriores" title="Estaciones anteriores"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span></button>
                     <button class="solid-button compact" id="rmsStageSliderNext" type="button" aria-label="Ver estaciones siguientes" title="Estaciones siguientes"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
@@ -7891,7 +7908,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-    <script src="js/app.js?v=account-nav-sync-v223-20260818" defer></script>
+    <script src="js/app.js?v=rms-post-sale-redesign-v228-20260818" defer></script>
     <script src="js/communications.js?v=email-attachments-v325-20260817" defer></script>
 </body>
 </html>
