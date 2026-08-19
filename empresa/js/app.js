@@ -56200,6 +56200,8 @@ syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified(card, item
   const preview = card.querySelector("[data-rms-risk-preview]");
   const actionRow = card.querySelector(".rms-commercial-action-row");
   if (responsePanel) [tabs, form, preview, actionRow].filter(Boolean).forEach((node) => responsePanel.appendChild(node));
+  const tabsHeader = tabs?.querySelector("header");
+  if (tabsHeader) tabsHeader.hidden = true;
   if (form) {
     const rename = (from, to) => {
       const field = form.querySelector(`[${from}="${CSS.escape(id)}"]`);
