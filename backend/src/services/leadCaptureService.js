@@ -742,7 +742,7 @@ async function submitPublicLeadCapture(token, body, reqMeta = {}) {
          limit 1
        ) da on true
        where a.public_token = $1
-       for update`,
+       for update of a`,
       [token]
     );
     const activation = result.rows[0];
@@ -857,7 +857,7 @@ async function downloadDigitalAsset(token, reqMeta = {}) {
        join lead_capture_activations a on a.id = d.activation_id
        left join campaigns c on c.id = a.campaign_id
        where d.download_token = $1
-       for update`,
+       for update of d`,
       [token]
     );
     const row = result.rows[0];
