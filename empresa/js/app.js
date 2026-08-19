@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260819-rms-risk-recovery-v280";
+const APP_VERSION = "empresa-20260819-rms-valuation-assets-v283";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -45603,7 +45603,7 @@ function syncRmsPostSaleRefinery(root, id) {
 function rmsPostSaleStationCardMarkup(item = {}) {
   const metadata = item.state_metadata || {};
   const saleId = metadata.rms_attributed_sale_id || metadata.rms_sale_id || "";
-  const actions = (state.rmsPostSaleActions || []).filter((action) => action.source_type === item.source_type && String(action.source_id) === String(item.source_id));
+  const actions = (state.rmsPostSaleActions || []).filter((action) => action.source_type === item.source_type && String(action.source_id) === String(item.source_id) && (!saleId || String(action.sale_id || "") === String(saleId)));
   const saleProduct = metadata.rms_sale_product || item.product_interest || item.top_product || "Producto registrado";
   const saleAmount = metadata.rms_sale_amount || item.total_spent || 0;
   const affiliate = rmsPostSaleAffiliateFor(item);
@@ -49305,6 +49305,14 @@ function bindRmsMachineActions(root) {
         .finally(() => { button.disabled = false; });
     });
   });
+  root.querySelectorAll("[data-rms-post-sale-copy-resource]").forEach((button) => {
+    button.addEventListener("click", () => copyRmsPostSaleAsset(button)
+      .catch((error) => showFeedback(error.message || "No pudimos copiar el enlace del activo.", "error", { title: "Valorización Clientes" })));
+  });
+  root.querySelectorAll("[data-rms-post-sale-share-resource]").forEach((button) => {
+    button.addEventListener("click", () => shareRmsPostSaleAsset(button)
+      .catch((error) => showFeedback(error.message || "No pudimos preparar el WhatsApp.", "error", { title: "Valorización Clientes" })));
+  });
   root.querySelectorAll("[data-rms-post-sale-skip-to-intelligence]").forEach((button) => {
     button.addEventListener("click", () => {
       const item = rmsOpportunityById(button.dataset.rmsPostSaleSkipToIntelligence || "");
@@ -52478,6 +52486,10 @@ async function saveRmsPostSaleAction(item, root) {
       sale_id: saleId, ...draft, send_to_intelligence: true, idempotency_key: rmsPostSaleActionKey(item.id),
     }),
   });
+  if (result?.resource && result?.action?.id) {
+    state.rmsPostSaleGeneratedResources ||= {};
+    state.rmsPostSaleGeneratedResources[result.action.id] = result.resource;
+  }
   if (state.rmsPostSaleActionKeys) delete state.rmsPostSaleActionKeys[item.id];
   let loyaltyResult = null;
   try { loyaltyResult = await applyRmsPostSaleLoyalty(item, result, draft); }
@@ -56312,6 +56324,85 @@ rmsRiskRecoveryResourceMarkup = function rmsRiskRecoveryResourceMarkupFinalAsset
   if (!resource.qr_image_data_url) return `<article class="rms-risk-resource-ready rms-risk-resource-visual"><div class="rms-risk-ticket-preview"><span class="rms-risk-image-unavailable">La imagen del ticket aún no está disponible. Genera el activo nuevamente.</span></div><div class="rms-risk-resource-copy"><span class="mono-label">ACTIVO LISTO</span><strong>${escapeHtml(label)}</strong><small>Comparte el enlace desde los canales de entrega cuando la imagen esté disponible.</small></div></article>`;
   return `<article class="rms-risk-resource-ready rms-risk-resource-visual"><div class="rms-risk-ticket-preview"><img class="rms-risk-ticket-image" src="${escapeHtml(resource.qr_image_data_url)}" alt="Ticket ${escapeHtml(label)}" loading="lazy"></div><div class="rms-risk-resource-copy"><span class="mono-label">TICKET LISTO PARA COMPARTIR</span><strong>${escapeHtml(label)}</strong><small>Vigente hasta ${escapeHtml(resource.expires_at ? formatDate(resource.expires_at) : "sin vencimiento")}.</small></div><div class="rms-risk-ticket-actions"><a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" download="${filename}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar imagen</a></div></article>`;
 };
+
+// Valorización: los activos creados se entregan desde la misma compra. La
+// historia se separa por venta para no mezclar recompras anteriores del cliente.
+function rmsPostSaleSaleActions(item = {}) {
+  const saleId = item.state_metadata?.rms_attributed_sale_id || item.state_metadata?.rms_sale_id || "";
+  return (state.rmsPostSaleActions || []).filter((action) => (
+    String(action.source_type || "") === String(item.source_type || "")
+    && String(action.source_id || "") === String(item.source_id || "")
+    && (!saleId || String(action.sale_id || "") === String(saleId))
+  ));
+}
+
+function rmsPostSaleResourceForAction(action = {}) {
+  return state.rmsPostSaleGeneratedResources?.[action.id] || null;
+}
+
+function rmsPostSaleAssetLabel(action = {}) {
+  return ({ REFERRAL: "QR de referidos", REBUY_TICKET: "Ticket de recompra", REWARD_PASS: "Activo de fidelización" })[action.action_type] || "Activo postventa";
+}
+
+function rmsPostSaleAssetsMarkup(item = {}) {
+  const assets = rmsPostSaleSaleActions(item).filter((action) => action.resource_url || rmsPostSaleResourceForAction(action)?.public_ticket_url);
+  if (!assets.length) return `<section class="rms-post-sale-assets rms-post-sale-assets-empty"><header><div><span class="mono-label">ACTIVOS DE ESTA COMPRA</span><h5>Aún no hay QR ni ticket para entregar</h5></div><small>Cuando crees un referido o una recompra, el activo aparecerá aquí para compartirlo.</small></header></section>`;
+  return `<section class="rms-post-sale-assets" aria-label="Activos de Valorización de esta compra"><header><div><span class="mono-label">ACTIVOS DE ESTA COMPRA</span><h5>QR y tickets listos para entregar</h5><p>Estos activos pertenecen solo a esta venta atribuida.</p></div><span class="rms-commercial-state is-sale">${assets.length} ${assets.length === 1 ? "activo" : "activos"}</span></header><div class="rms-post-sale-assets-list">${assets.slice(0, 4).map((action) => {
+    const resource = rmsPostSaleResourceForAction(action) || {};
+    const url = resource.public_ticket_url || action.resource_url || "";
+    const image = resource.qr_image_data_url ? `<img src="${escapeHtml(resource.qr_image_data_url)}" alt="${escapeHtml(rmsPostSaleAssetLabel(action))}" loading="lazy">` : `<span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>`;
+    const filename = escapeHtml(resource.filename || `qori-${String(action.id || "activo").slice(0, 8)}.png`);
+    return `<article data-rms-post-sale-asset="${escapeHtml(action.id)}"><div class="rms-post-sale-asset-preview">${image}</div><div class="rms-post-sale-asset-copy"><span class="mono-label">${escapeHtml(rmsPostSaleAssetLabel(action))}</span><strong>${escapeHtml(rmsPostSaleActionStatusLabel(action.status))}</strong><small>${escapeHtml(action.result_note || action.content || "Activo listo para compartir.")}</small></div><div class="rms-post-sale-asset-actions"><label class="rms-post-sale-share-consent"><input type="checkbox" data-rms-post-sale-share-consent="${escapeHtml(action.id)}"> Confirmo autorización de contacto.</label><div><button class="ghost-button compact" type="button" data-rms-post-sale-copy-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Copiar enlace</button><button class="ghost-button compact" type="button" data-rms-post-sale-share-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</button>${resource.qr_image_data_url ? `<a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" download="${filename}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar QR</a>` : ""}<a class="ghost-button compact" href="${escapeHtml(url)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>Abrir ticket</a></div></div></article>`;
+  }).join("")}</div></section>`;
+}
+
+const rmsPostSaleStationCardMarkupAssetBase = rmsPostSaleStationCardMarkup;
+rmsPostSaleStationCardMarkup = function rmsPostSaleStationCardMarkupAssets(item = {}) {
+  const actions = rmsPostSaleSaleActions(item);
+  const latest = actions[0] || null;
+  const activity = latest ? `${rmsPostSaleActionStatusLabel(latest.status)} · ${rmsPostSaleAssetLabel(latest)}` : "Sin acciones postventa";
+  let html = rmsPostSaleStationCardMarkupAssetBase(item);
+  html = html.replace(/(<small>Actividad postventa<\/small><strong>)[^<]*(<\/strong><b>)[^<]*(<\/b>)/, `$1${escapeHtml(actions.length === 1 ? "1 acción de esta compra" : `${actions.length} acciones de esta compra`)}$2${escapeHtml(activity)}$3`);
+  return html.replace('<section class="rms-refinery-workbench"', `${rmsPostSaleAssetsMarkup(item)}<section class="rms-refinery-workbench"`);
+};
+
+function rmsPostSaleActionFromButton(button) {
+  const actionId = button?.dataset.rmsPostSaleCopyResource || button?.dataset.rmsPostSaleShareResource || "";
+  return (state.rmsPostSaleActions || []).find((action) => String(action.id) === String(actionId)) || null;
+}
+
+function rmsPostSaleAssetUrl(action) {
+  return rmsPostSaleResourceForAction(action)?.public_ticket_url || action?.resource_url || "";
+}
+
+async function copyRmsPostSaleAsset(button) {
+  const url = rmsPostSaleAssetUrl(rmsPostSaleActionFromButton(button));
+  if (!url) throw new Error("No encontramos el enlace del activo.");
+  await navigator.clipboard.writeText(url);
+  showFeedback("Enlace del activo copiado. Ya puedes pegarlo en el canal autorizado.", "success", { title: "Valorización Clientes" });
+}
+
+function shareRmsPostSaleAsset(button) {
+  const action = rmsPostSaleActionFromButton(button);
+  const url = rmsPostSaleAssetUrl(action);
+  const card = button.closest("[data-rms-station-lead]");
+  const customer = rmsOpportunityById(card?.dataset.rmsStationLead || "");
+  const consent = card?.querySelector(`[data-rms-post-sale-share-consent="${CSS.escape(action?.id || "")}"]`);
+  if (!url) throw new Error("No encontramos el enlace del activo.");
+  if (!consent?.checked) {
+    showFeedback("Confirma la autorización de contacto antes de preparar el WhatsApp.", "info", { title: "Valorización Clientes" });
+    return;
+  }
+  const phone = String(customer?.phone || "").replace(/\D/g, "");
+  if (!phone) {
+    showFeedback("Este cliente no tiene un WhatsApp válido registrado. Copia el enlace o usa otro canal autorizado.", "info", { title: "Valorización Clientes" });
+    return;
+  }
+  const label = rmsPostSaleAssetLabel(action);
+  const message = `Hola ${customer?.name || ""}, gracias por tu compra. Aquí tienes tu ${label.toLowerCase()}: ${url}`.trim();
+  window.open(`https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`, "_blank", "noopener");
+  showFeedback("WhatsApp preparado con el activo de esta compra.", "success", { title: "Valorización Clientes" });
+}
 
 function rmsRiskSelectedOffer(root, item) {
   const value = rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id)?.value || "NONE";
