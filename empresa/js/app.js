@@ -48993,6 +48993,21 @@ function bindRmsMachineActions(root) {
     const operatingFlow = card.querySelector(".rms-risk-operating-flow");
     const destinationTabs = card.querySelector("[data-rms-risk-tabs]");
     if (operatingFlow && destinationTabs) operatingFlow.insertAdjacentElement("afterend", destinationTabs);
+    // Blindaje contra el markup legacy: convierte el stepper estatico en controles navegables.
+    const legacySteps = operatingFlow?.querySelector(".rms-risk-flow-steps");
+    if (legacySteps && !legacySteps.classList.contains("rms-risk-flow-journey")) {
+      legacySteps.classList.add("rms-risk-flow-journey");
+      legacySteps.querySelectorAll(":scope > span").forEach((step, index) => {
+        step.dataset.rmsFlowStep = String(index + 1);
+        step.dataset.step = String(index + 1);
+        step.setAttribute("role", "button");
+        step.setAttribute("tabindex", "0");
+        step.setAttribute("aria-label", `Abrir paso ${index + 1}`);
+      });
+      if (!operatingFlow.querySelector("[data-rms-risk-go-response]")) {
+        operatingFlow.insertAdjacentHTML("beforeend", `<div class="rms-risk-response-bridge"><div><span class="mono-label">PASO 3 · RESPUESTA</span><strong>¿Qué respondió el cliente?</strong><small>Elige Venta lograda o Reciclaje, escribe la justificación y guarda.</small></div><button class="solid-button compact" type="button" data-rms-risk-go-response="${id}"><span class="material-symbols-outlined" aria-hidden="true">edit_note</span>Registrar respuesta</button></div>`);
+      }
+    }
     operatingFlow?.querySelectorAll("[data-rms-flow-step]").forEach((step) => {
       const focusStep = () => {
         const key = step.dataset.rmsFlowStep;
