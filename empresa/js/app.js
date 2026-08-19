@@ -2682,6 +2682,8 @@ let state = {
   rmsIntelligenceSaving: false,
   rmsIntelligenceFilters: { days: "30", campaign: "", channel: "", product: "", seller: "", branch: "", source_type: "" },
   rmsMachineSelectedIds: [],
+  rmsActivationBulkOpen: false,
+  rmsActivationBulkQueue: null,
   rmsMachineInspectorId: "",
   rmsLeadQualityDraft: {},
   rmsProductClassificationDraft: {},
@@ -44705,7 +44707,7 @@ function rmsActivationStationCardMarkup(item = {}) {
         <label class="rms-activation-work-select">
           <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" aria-label="Seleccionar ${escapeHtml(item.name || "lead")}" ${selected ? "checked" : ""}>
           <span class="material-symbols-outlined" aria-hidden="true">${selected ? "check_circle" : "radio_button_unchecked"}</span>
-          <span>${selected ? "Listo para Evaluación" : "Seleccionar al completar"}</span>
+          <span>${selected ? "Incluido en activación masiva" : "Seleccionar para activación masiva"}</span>
         </label>
         <div class="rms-activation-work-person">
           <span class="material-symbols-outlined" aria-hidden="true">person</span>
@@ -47665,10 +47667,15 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   const nextPhase = rmsStationNextPhase(stage, stages);
   const previousStage = stages[stageIndex - 1] || null;
   const followingStage = stages[stageIndex + 1] || null;
-  const selectedRows = isDeferredList ? [] : rmsStationSelectedRows(phase, rows);
+  const selectedRows = isDeferredList
+    ? []
+    : phase === "clasificacion"
+      ? rmsActivationBulkSelectedRows()
+      : rmsStationSelectedRows(phase, rows);
   const riskCount = isDeferredList ? 0 : rows.filter((item) => Number(item.risk_score || 0) >= 50).length;
   const visual = rmsStationVisualMeta(phase);
   const isCollectorStation = phase === "recoleccion";
+  const isActivationStation = phase === "clasificacion";
   const selectAllLabel = phase === "recoleccion"
     ? "Seleccionar procesables"
     : phase === "alimentacion"
@@ -47676,7 +47683,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
       : phase === "curaduria"
         ? "Seleccionar asignados"
         : phase === "clasificacion"
-          ? "Seleccionar activados"
+          ? "Seleccionar visibles"
         : "Seleccionar salida";
   const commandActionsMarkup = isCollectorStation
     ? `
@@ -47688,6 +47695,7 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
     : `
           <button class="ghost-button compact" type="button" data-rms-station-clear-selection ${selectedRows.length ? "" : "disabled"}>Limpiar selección</button>
           <button class="ghost-button" type="button" data-rms-station-select-all="${escapeHtml(phase)}">${escapeHtml(selectAllLabel)}</button>
+          ${isActivationStation ? `<button class="solid-button" type="button" data-rms-open-bulk-activation ${selectedRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">group_work</span> Activación masiva</button>` : ""}
         `;
   rmsStationWorkspace.classList.remove("hidden");
   rmsStationWorkspace.hidden = false;
@@ -47721,6 +47729,8 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
           ${commandActionsMarkup}
         </div>
       </section>
+
+      ${isActivationStation && state.rmsActivationBulkOpen ? rmsActivationBulkComposerMarkup(selectedRows) : ""}
 
       <div class="rms-station-screen">
         <div class="rms-station-screen-head">
@@ -47773,6 +47783,48 @@ function renderRmsStationWorkspace(stages = [], opportunities = [], isEmpty = fa
   rmsStationWorkspace.querySelector("[data-rms-station-select-all]")?.addEventListener("click", () => {
     selectRmsPhaseForBulk(phase);
   });
+  rmsStationWorkspace.querySelector("[data-rms-open-bulk-activation]")?.addEventListener("click", () => {
+    state.rmsActivationBulkOpen = true;
+    renderRmsStationOnly();
+  });
+  rmsStationWorkspace.querySelector("[data-rms-close-bulk-activation]")?.addEventListener("click", () => {
+    state.rmsActivationBulkOpen = false;
+    renderRmsStationOnly();
+  });
+  rmsStationWorkspace.querySelector("[data-rms-prepare-bulk-activation]")?.addEventListener("click", () => {
+    prepareRmsBulkActivation(rmsStationWorkspace).catch((error) => showFeedback(error.message || "No se pudo preparar la activación masiva.", "error", { title: "Activación 1" }));
+  });
+  rmsStationWorkspace.querySelector("[data-rms-dispatch-next-bulk-activation]")?.addEventListener("click", () => {
+    dispatchNextRmsBulkActivation().catch((error) => showFeedback(error.message || "No se pudo registrar este envío.", "error", { title: "Activación 1" }));
+  });
+  const bulkActivationCatalog = rmsStationWorkspace.querySelector("[data-rms-bulk-activation-catalog]");
+  if (bulkActivationCatalog) {
+    const loadBulkActivationCatalog = async () => {
+      if (bulkActivationCatalog.dataset.rmsActivationLoading === "1") return;
+      bulkActivationCatalog.dataset.rmsActivationLoading = "1";
+      try {
+        const activations = await listRmsActivationCatalogOptions();
+        bulkActivationCatalog.innerHTML = `<option value="">Selecciona una activación publicada</option>${activations.map((activation) => {
+          const url = activation.public_url || activation.share_url || activation.claim_url;
+          const label = activation.title || activation.name || activation.campaign_name || "Activación publicada";
+          return `<option value="${escapeHtml(url)}">${escapeHtml(label)} · ${escapeHtml(activation.campaign_name || activation.type || "Activación")}</option>`;
+        }).join("")}`;
+        bulkActivationCatalog.disabled = !activations.length;
+        if (!activations.length) bulkActivationCatalog.innerHTML = '<option value="">No hay activaciones publicadas</option>';
+      } catch (_error) {
+        bulkActivationCatalog.innerHTML = '<option value="">No se pudieron cargar las activaciones</option>';
+        bulkActivationCatalog.disabled = true;
+      } finally {
+        delete bulkActivationCatalog.dataset.rmsActivationLoading;
+      }
+    };
+    bulkActivationCatalog.addEventListener("focus", loadBulkActivationCatalog, { once: true });
+    bulkActivationCatalog.addEventListener("pointerdown", loadBulkActivationCatalog, { once: true });
+    bulkActivationCatalog.addEventListener("change", () => {
+      const ticketInput = rmsStationWorkspace.querySelector("[data-rms-bulk-activation-ticket]");
+      if (ticketInput && bulkActivationCatalog.value) ticketInput.value = bulkActivationCatalog.value;
+    });
+  }
   rmsStationWorkspace.querySelector("[data-rms-station-bulk-next]")?.addEventListener("click", async () => {
     if (!nextPhase) return;
     await moveSelectedRmsPhase(nextPhase.key, phase);
@@ -47821,6 +47873,11 @@ function rmsStationEmptyScreenMarkup(stage = {}, operation = {}) {
 function rmsStationSelectedRows(phase = "", rows = []) {
   const selected = new Set(state.rmsMachineSelectedIds || []);
   return rmsStationOutputEligibleRows(phase, rows).filter((item) => item.stage === phase && selected.has(item.id));
+}
+
+function rmsActivationBulkSelectedRows() {
+  const selected = new Set(state.rmsMachineSelectedIds || []);
+  return rmsStationRows("clasificacion", state.rmsMachine?.opportunities || []).filter((item) => selected.has(item.id));
 }
 
 function rmsCollectorReadiness(item = {}) {
@@ -47964,6 +48021,8 @@ function resetRmsStationMode() {
   state.rmsStationListDeferred = false;
   state.rmsStationSyncing = false;
   state.rmsActivationWorkId = "";
+  state.rmsActivationBulkOpen = false;
+  state.rmsActivationBulkQueue = null;
   state.rmsMachineFilters.phase = "";
   state.rmsMachineFilters.search = "";
   state.rmsMachineSelectedIds = [];
@@ -49843,12 +49902,6 @@ function toggleRmsSelection(id = "", selected = false) {
     showFeedback("Primero asigna al menos un producto o servicio al lead.", "info", { title: "Asignación" });
     return;
   }
-  if (selected && state.rmsStationScreenOpen && state.rmsStationPhase === "clasificacion" && item?.stage === "clasificacion" && !rmsActivationReady(item)) {
-    const checkbox = Array.from(document.querySelectorAll("[data-rms-select]")).find((node) => node.dataset.rmsSelect === id);
-    if (checkbox) checkbox.checked = false;
-    showFeedback("Confirma el contacto y agenda el seguimiento antes de poner este lead en salida.", "info", { title: "Activación 1" });
-    return;
-  }
   const current = new Set(state.rmsMachineSelectedIds || []);
   if (selected) current.add(id);
   else current.delete(id);
@@ -49877,7 +49930,7 @@ function toggleRmsSelection(id = "", selected = false) {
 
 function selectRmsPhaseForBulk(phase = "") {
   const phaseRows = (state.rmsMachine?.opportunities || []).filter((item) => item.stage === phase);
-  const eligibleRows = rmsStationOutputEligibleRows(phase, phaseRows);
+  const eligibleRows = phase === "clasificacion" ? phaseRows : rmsStationOutputEligibleRows(phase, phaseRows);
   const ids = eligibleRows.map((item) => item.id);
   const stage = rmsPrimaryFactoryStages(state.rmsMachine || {}).find((item) => item.key === phase);
   const operation = stage?.operation || (state.rmsMachine?.operations || {})[phase] || {};
@@ -49899,7 +49952,10 @@ function selectRmsPhaseForBulk(phase = "") {
   state.rmsMachineSelectedIds = ids;
   if (state.rmsStationScreenOpen) renderRmsStationOnly();
   else renderRmsMachineView();
-  showFeedback(`${ids.length.toLocaleString("es-CO")} clientes listos para: ${operation.primaryAction || "operar estación"}.`, "success", { title: stage?.label || "Estación RMS" });
+  const selectionMessage = phase === "clasificacion"
+    ? `${ids.length.toLocaleString("es-CO")} lead${ids.length === 1 ? "" : "s"} seleccionado${ids.length === 1 ? "" : "s"} para activación masiva.`
+    : `${ids.length.toLocaleString("es-CO")} clientes listos para: ${operation.primaryAction || "operar estación"}.`;
+  showFeedback(selectionMessage, "success", { title: stage?.label || "Estación RMS" });
   rmsBulkToolbar?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
@@ -49993,6 +50049,82 @@ function openRmsWhatsApp(item = {}) {
     "Te puedo ayudar por este medio para avanzar con el siguiente paso.",
   ].filter(Boolean).join("\n\n");
   window.open(`https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`, "_blank", "noopener");
+}
+
+function rmsActivationBulkMessage(template = "", item = {}) {
+  const name = item.first_name || item.name || "hola";
+  return String(template || "").replaceAll("{nombre}", name).trim();
+}
+
+function rmsActivationBulkComposerMarkup(selectedRows = []) {
+  const queue = state.rmsActivationBulkQueue?.phase === "clasificacion" ? state.rmsActivationBulkQueue : null;
+  const pending = queue?.pending || [];
+  const sent = queue?.sent || [];
+  const names = pending.slice(0, 4).map((entry) => escapeHtml(entry.item?.name || "Contacto")).join(" · ");
+  const more = pending.length > 4 ? ` y ${pending.length - 4} más` : "";
+  return `
+    <section class="rms-activation-bulk-composer" aria-label="Activación masiva">
+      <header><div><span class="mono-label">OPERACIÓN MASIVA</span><h4>Una activación para ${selectedRows.length.toLocaleString("es-CO")} lead${selectedRows.length === 1 ? "" : "s"}</h4><p>Prepara el mismo mensaje y material para la selección. Qori personaliza <code>{nombre}</code> y conserva un registro individual por contacto.</p></div><span class="material-symbols-outlined" aria-hidden="true">group_work</span></header>
+      <div class="rms-activation-bulk-grid">
+        <label><span>Canal</span><select data-rms-bulk-activation-channel><option value="whatsapp">WhatsApp</option><option value="email">Email</option></select></label>
+        <label><span>Seguimiento</span><input type="datetime-local" value="${escapeHtml(rmsActivationDatetimeLocal(""))}" data-rms-bulk-activation-followup></label>
+        <label class="span-2"><span>Activación publicada <em>Opcional</em></span><select data-rms-bulk-activation-catalog><option value="">Abre para cargar activaciones disponibles</option></select><small>Elige una activación ya publicada para usar el mismo enlace con toda la selección.</small></label>
+        <label class="span-2"><span>O pega un ticket o enlace común <em>Opcional</em></span><input type="url" placeholder="https://..." data-rms-bulk-activation-ticket></label>
+        <label class="span-2"><span>Mensaje común</span><textarea rows="5" data-rms-bulk-activation-message>Hola {nombre},
+
+Tenemos una propuesta preparada para ti. ¿Te la comparto y resolvemos el siguiente paso?</textarea><small>Usa <code>{nombre}</code> para personalizar cada envío.</small></label>
+      </div>
+      <label class="rms-activation-bulk-consent"><input type="checkbox" data-rms-bulk-activation-consent> Confirmo que todos los leads seleccionados autorizaron contacto comercial.</label>
+      <div class="rms-activation-bulk-actions"><button class="solid-button" type="button" data-rms-prepare-bulk-activation ${selectedRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>Preparar activación para ${selectedRows.length.toLocaleString("es-CO")}</button><button class="ghost-button" type="button" data-rms-close-bulk-activation>Cerrar</button></div>
+      ${queue ? `<aside class="rms-activation-bulk-queue" aria-live="polite"><div><strong>${pending.length ? `${pending.length} envío${pending.length === 1 ? "" : "s"} listo${pending.length === 1 ? "" : "s"}` : "Cola completada"}</strong><small>${pending.length ? `${names}${more}. Abre y registra un canal a la vez para no marcar contactos que no se enviaron.` : `${sent.length} contacto${sent.length === 1 ? "" : "s"} registrado${sent.length === 1 ? "" : "s"}.`}</small></div>${pending.length ? `<button class="solid-button compact" type="button" data-rms-dispatch-next-bulk-activation><span class="material-symbols-outlined" aria-hidden="true">send</span>Abrir y registrar siguiente</button>` : ""}</aside>` : ""}
+    </section>
+  `;
+}
+
+async function prepareRmsBulkActivation(root = rmsStationWorkspace) {
+  const selectedRows = rmsActivationBulkSelectedRows();
+  const channel = root?.querySelector("[data-rms-bulk-activation-channel]")?.value || "whatsapp";
+  const message = String(root?.querySelector("[data-rms-bulk-activation-message]")?.value || "").trim();
+  const followUpAt = root?.querySelector("[data-rms-bulk-activation-followup]")?.value || "";
+  const ticketUrl = String(root?.querySelector("[data-rms-bulk-activation-ticket]")?.value || "").trim();
+  const consent = Boolean(root?.querySelector("[data-rms-bulk-activation-consent]")?.checked);
+  if (!selectedRows.length) return showFeedback("Selecciona al menos un lead para preparar la activación masiva.", "info", { title: "Activación 1" });
+  if (!consent) return showFeedback("Confirma la autorización comercial de los leads seleccionados antes de preparar el envío.", "info", { title: "Activación 1" });
+  if (!message) return showFeedback("Escribe el mensaje común de la activación.", "info", { title: "Activación 1" });
+  if (ticketUrl && !/^https?:\/\//i.test(ticketUrl)) return showFeedback("El enlace común debe comenzar por http:// o https://.", "info", { title: "Activación 1" });
+  const eligible = selectedRows.filter((item) => channel === "whatsapp" ? Boolean(item.phone) : Boolean(item.email));
+  const skipped = selectedRows.filter((item) => !eligible.includes(item));
+  if (!eligible.length) return showFeedback(`Ningún lead seleccionado tiene ${channel === "whatsapp" ? "WhatsApp" : "email"} disponible.`, "info", { title: "Activación 1" });
+  showFeedback(`Preparando la misma activación para ${eligible.length} lead${eligible.length === 1 ? "" : "s"}…`, "loading", { title: "Activación 1", timeout: 0 });
+  const results = await runBulkRequests(eligible, async (item) => {
+    const prepared = await api("/api/business/rms-machine/activation-delivery", {
+      method: "POST", headers: authHeaders(), body: JSON.stringify({
+        source_id: item.source_id, source_type: item.source_type || "PLAYER", attachment_asset_ids: [], ticket_url: ticketUrl || null,
+        payment: { mode: "NONE" }, message: rmsActivationBulkMessage(message, item), channel, delivery_state: "PREPARED",
+        contacted_at: new Date().toISOString(), contact_consent_confirmed: true,
+      }),
+    });
+    return { item, prepared };
+  }, { concurrency: 4 });
+  const pending = results.filter((result) => result.ok).map((result) => ({ item: result.item, prepared: result.value.prepared, message: result.value.prepared?.whatsapp_message || rmsActivationBulkMessage(message, result.item) }));
+  state.rmsActivationBulkQueue = { phase: "clasificacion", channel, message, followUpAt, ticketUrl, pending, sent: [], skipped: skipped.map((item) => item.id) };
+  renderRmsStationOnly();
+  const failures = results.length - pending.length;
+  showFeedback(`${pending.length} activación(es) preparada(s)${skipped.length ? ` · ${skipped.length} sin ${channel === "whatsapp" ? "WhatsApp" : "email"}` : ""}${failures ? ` · ${failures} con error` : ""}. Abre y registra la cola una por una.`, pending.length ? "success" : "error", { title: "Activación 1" });
+}
+
+async function dispatchNextRmsBulkActivation() {
+  const queue = state.rmsActivationBulkQueue;
+  const entry = queue?.pending?.[0];
+  if (!entry?.item) return;
+  const item = entry.item;
+  if (!openRmsActivationMessage(item, { channel: queue.channel, message: entry.message })) return;
+  rmsActivationPreparedDeliveries.set(item.id, entry.prepared || { whatsapp_message: entry.message, attachments: [] });
+  const result = await sendRmsActivationOffer(item, { channel: queue.channel, message: entry.message, followUpAt: queue.followUpAt, contactedAt: new Date().toISOString(), outcome: "PENDING", ticketUrl: queue.ticketUrl, paymentMode: "NONE", paymentUrl: "", paymentInstructions: "", paymentReference: "", paymentAmount: null, paymentCurrency: "COP", files: [], consent: true, skipOpen: true });
+  if (!result?.sent) return;
+  queue.pending = queue.pending.slice(1);
+  queue.sent = [...(queue.sent || []), entry];
+  renderRmsStationOnly();
 }
 
 function rmsActivationDraftFromDom(root, id) {
