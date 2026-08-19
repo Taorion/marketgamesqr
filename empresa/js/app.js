@@ -56020,9 +56020,15 @@ rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupPhased(item = {}
 // Inserta la consola de fases directamente en la tarjeta activa; no depende del montaje posterior.
 const rmsRiskValidationStationCardMarkupPhasedBase = rmsRiskValidationStationCardMarkup;
 rmsRiskValidationStationCardMarkup = function rmsRiskValidationStationCardMarkupPhased(item = {}) {
-  const html = rmsRiskValidationStationCardMarkupPhasedBase(item);
+  let html = rmsRiskValidationStationCardMarkupPhasedBase(item);
+  const formMarker = '<section class="rms-commercial-info-block rms-risk-recovery-form">';
+  const formIndex = html.indexOf(formMarker);
+  const legacyFlowIndex = html.indexOf('<section class="rms-risk-operating-flow');
+  if (legacyFlowIndex >= 0 && formIndex > legacyFlowIndex) {
+    html = `${html.slice(0, legacyFlowIndex)}${html.slice(formIndex)}`;
+  }
   if (html.includes("rms-risk-flow-phased")) return html;
-  return html.replace('<section class="rms-commercial-info-block rms-risk-recovery-form">', `${rmsRiskOperatingFlowMarkup(item)}<section class="rms-commercial-info-block rms-risk-recovery-form">`);
+  return html.replace(formMarker, `${rmsRiskOperatingFlowMarkup(item)}${formMarker}`);
 };
 
 function rmsRiskShareMessage(item, resource) {
