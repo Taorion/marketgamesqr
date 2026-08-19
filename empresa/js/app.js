@@ -56300,6 +56300,17 @@ saveRmsRiskDecision = async function saveRmsRiskDecisionUnified(item, root) {
   } finally { setButtonLoading(button, false); }
 };
 
+// El activo se ve dentro de la estación; no se ofrece un enlace ambiguo al
+// validador ni una pestaña vacía. La acción útil es descargar o compartir.
+rmsRiskRecoveryResourceMarkup = function rmsRiskRecoveryResourceMarkupFinalAsset(item = {}) {
+  const resource = rmsRiskRecoveryResourceFor(item);
+  if (!resource?.public_ticket_url) return `<div class="rms-risk-resource-empty"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2_add</span><div><strong>Aún no has generado el activo</strong><small>Selecciona una alternativa autorizada para crear el ticket.</small></div></div>`;
+  const label = resource.recovery_offer?.label || resource.benefit?.label || "Beneficio extraordinario";
+  const filename = escapeHtml(resource.filename || `ticket-${String(item.id || "qori").slice(0, 8)}.png`);
+  if (!resource.qr_image_data_url) return `<article class="rms-risk-resource-ready rms-risk-resource-visual"><div class="rms-risk-ticket-preview"><span class="rms-risk-image-unavailable">La imagen del ticket aún no está disponible. Genera el activo nuevamente.</span></div><div class="rms-risk-resource-copy"><span class="mono-label">ACTIVO LISTO</span><strong>${escapeHtml(label)}</strong><small>Comparte el enlace desde los canales de entrega cuando la imagen esté disponible.</small></div></article>`;
+  return `<article class="rms-risk-resource-ready rms-risk-resource-visual"><div class="rms-risk-ticket-preview"><img class="rms-risk-ticket-image" src="${escapeHtml(resource.qr_image_data_url)}" alt="Ticket ${escapeHtml(label)}" loading="lazy"></div><div class="rms-risk-resource-copy"><span class="mono-label">TICKET LISTO PARA COMPARTIR</span><strong>${escapeHtml(label)}</strong><small>Vigente hasta ${escapeHtml(resource.expires_at ? formatDate(resource.expires_at) : "sin vencimiento")}.</small></div><div class="rms-risk-ticket-actions"><a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" download="${filename}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar imagen</a></div></article>`;
+};
+
 function rmsRiskSelectedOffer(root, item) {
   const value = rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id)?.value || "NONE";
   const benefitId = value.startsWith("BENEFIT:") ? value.slice(8) : null;
