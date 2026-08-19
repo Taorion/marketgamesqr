@@ -55837,6 +55837,9 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
   }
 }
 
+// Asegura que el estado visual final sea el que usa el flujo después de cargar todas las declaraciones legacy.
+rmsRiskRecoveryResourceMarkup = rmsRiskRecoveryResourceMarkupVisual;
+
 // Reasignación final: la consola nueva prevalece sobre las declaraciones legacy.
 rmsRiskValidationStationCardMarkup = function rmsRiskValidationStationCardMarkupFinal(item = {}) {
   const flow = rmsCommercialWorkflow(item);
