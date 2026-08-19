@@ -48242,6 +48242,24 @@ function bindRmsStageQuickNavigation() {
 }
 
 function renderRmsStageQuickNavigation(stages = [], opportunities = []) {
+  const quickNav = document.querySelector(".rms-stage-quick-nav");
+  if (quickNav) {
+    quickNav.classList.add("rms-stage-quick-select-wrap");
+    quickNav.innerHTML = `<span>Ir a estación</span><select id="rmsStageQuickSelect" aria-label="Abrir estación directamente"><option value="">Selecciona una estación…</option>${stages.map((stage, index) => {
+      const leadCount = opportunities.filter((item) => item.stage === stage.key).length;
+      return `<option value="${escapeHtml(stage.key)}">${String(index + 1).padStart(2, "0")} · ${escapeHtml(stage.label || `Estación ${index + 1}`)} — ${leadCount ? `${leadCount.toLocaleString("es-CO")} lead${leadCount === 1 ? "" : "s"} para trabajar` : "Sin pendientes"}</option>`;
+    }).join("")}</select>`;
+    const select = quickNav.querySelector("#rmsStageQuickSelect");
+    if (select) {
+      select.addEventListener("change", () => {
+        const phase = select.value;
+        if (!phase) return;
+        openRmsStation(phase, { source: "quick-station-select" });
+        select.value = "";
+      });
+    }
+    return;
+  }
   if (!rmsStageQuickList) return;
   rmsStageQuickList.innerHTML = stages.map((stage, index) => {
     const leadCount = opportunities.filter((item) => item.stage === stage.key).length;
