@@ -29572,3 +29572,83 @@ html[data-theme="dark"] body[data-current-view="rms-machine"] .rms-risk-recovery
   body[data-current-view="rms-machine"] .rms-risk-agreement-summary,
   body[data-current-view="rms-machine"] .rms-risk-recovery-form { margin-inline: 14px; }
 }
+
+/* Composicion final: evita que los estilos legacy de la consola rompan el flujo. */
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-commercial-work-console {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-operating-flow,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-recovery-form,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-authorization-note,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-agreement-summary,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-command-strip,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-tabs,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-negotiation-route-preview,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-commercial-action-row {
+  width: auto !important;
+  max-width: none !important;
+  margin-inline: 0 !important;
+}
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-operating-flow {
+  order: 5 !important;
+  padding: 20px !important;
+  border: 1px solid #cfe4f4 !important;
+  border-radius: 20px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 24px rgba(13, 69, 111, .08) !important;
+}
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-steps {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-steps span {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+  background: #f2f8fd !important;
+  color: #3a5a73 !important;
+  font-size: .78rem !important;
+}
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-steps b { flex: 0 0 24px !important; display: grid !important; place-items: center !important; width: 24px !important; height: 24px !important; border-radius: 50% !important; background: #0b6fae !important; color: #fff !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-builder {
+  display: grid !important;
+  grid-template-columns: minmax(190px, .42fr) minmax(0, 1fr) !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-fields,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-actions { min-width: 0 !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-actions { display: grid !important; gap: 8px !important; align-content: start !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item [data-rms-risk-resource-status] { grid-column: 1 / -1 !important; min-width: 0 !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-ready {
+  display: grid !important;
+  grid-template-columns: 112px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 16px !important;
+  min-width: 0 !important;
+  padding: 16px !important;
+  border: 1px solid #a9d2e9 !important;
+  border-radius: 16px !important;
+  background: #f5fbff !important;
+}
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-qr-frame { display: grid !important; place-items: center !important; width: 112px !important; height: 112px !important; padding: 8px !important; border-radius: 12px !important; background: #fff !important; border: 1px solid #d7e9f4 !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-qr-preview { display: block !important; width: 96px !important; height: 96px !important; object-fit: contain !important; image-rendering: auto !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-copy { display: grid !important; gap: 5px !important; min-width: 0 !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-copy strong { overflow-wrap: anywhere !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-copy code { display: block !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; color: #25648e !important; font-size: .72rem !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-ready-actions { display: grid !important; gap: 8px !important; justify-items: stretch !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-delivery-bar { grid-column: 1 / -1 !important; display: flex !important; justify-content: space-between !important; gap: 12px !important; flex-wrap: wrap !important; }
+@media (max-width: 780px) {
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-builder,
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-ready { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-qr-frame { margin-inline: auto !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-ready-actions { grid-template-columns: 1fr 1fr !important; }
+}
