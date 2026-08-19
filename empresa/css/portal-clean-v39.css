@@ -29601,6 +29601,16 @@ html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-ris
   background: #fff !important;
   box-shadow: 0 8px 24px rgba(13, 69, 111, .08) !important;
 }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-builder-final,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-final { display: grid !important; grid-template-columns: minmax(0, 1fr) 220px !important; gap: 16px !important; align-items: stretch !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-config { display: grid !important; grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(120px, 1fr)) !important; gap: 12px !important; align-items: start !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-config label { display: grid !important; gap: 6px !important; min-width: 0 !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-config label:first-child { grid-column: span 2 !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-config span { color: #244a67 !important; font-size: .74rem !important; font-weight: 800 !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-config small,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-action small { color: #5c7488 !important; line-height: 1.35 !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-action { display: grid !important; align-content: center !important; gap: 8px !important; padding: 14px !important; border-radius: 16px !important; background: #eaf5fc !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-action .solid-button { width: 100% !important; justify-content: center !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-steps {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -29646,9 +29656,14 @@ html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-ris
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-copy code { display: block !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; color: #25648e !important; font-size: .72rem !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-ready-actions { display: grid !important; gap: 8px !important; justify-items: stretch !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-delivery-bar { grid-column: 1 / -1 !important; display: flex !important; justify-content: space-between !important; gap: 12px !important; flex-wrap: wrap !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-final + .rms-risk-recovery-form [data-rms-risk-sale-panel] > .rms-sale-form-grid { display: none !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-final + .rms-risk-recovery-form [data-rms-risk-sale-panel] > h5 { margin-top: 0 !important; }
 @media (max-width: 780px) {
   html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-builder,
   html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-ready { grid-template-columns: 1fr !important; }
   html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-qr-frame { margin-inline: auto !important; }
   html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-ready-actions { grid-template-columns: 1fr 1fr !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-final,
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-config { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-config label:first-child { grid-column: auto !important; }
 }
