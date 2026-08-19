@@ -55895,6 +55895,11 @@ function syncRmsRiskRecoveryPhases(card, item) {
       : '<span class="mono-label">FASE 2 · BLOQUEADA</span><strong>Primero genera y entrega el ticket.</strong><small>La respuesta se habilita cuando exista un activo QR válido para este lead.</small>';
     phaseLabel.classList.toggle("is-ready", hasResource);
   }
+  const flow = card.querySelector(".rms-risk-operating-flow");
+  const builder = flow?.querySelector(".rms-risk-builder-final");
+  if (builder && !flow.querySelector(".rms-risk-phase-ticket-label")) {
+    builder.insertAdjacentHTML("beforebegin", '<div class="rms-risk-phase-ticket-label"><span class="mono-label">FASE 1 · NEGOCIACIÓN EXTRAORDINARIA</span><strong>Prepara la concesión, genera el ticket y entrégalo al cliente.</strong><small>El lead permanece en Riesgos de fuga mientras esperas la respuesta.</small></div>');
+  }
 }
 
 function rmsRiskSelectedOffer(root, item) {
