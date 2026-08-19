@@ -83,6 +83,10 @@ h1 {
   cursor: pointer;
 }
 
+.claim-contact-note { color:#4d5d69; font-size:12px; line-height:1.4; }
+.claim-consent { display:flex!important; align-items:flex-start; gap:9px; color:#4d5d69; font-size:12px!important; line-height:1.4; }
+.claim-consent input { width:16px!important; min-width:16px!important; min-height:16px!important; height:16px!important; margin:1px 0 0!important; padding:0!important; }
+
 .result-block {
   padding: 16px 18px;
   border-radius: 16px;

@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-<link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-valuation-fast-v285-20260819">
+<link rel="stylesheet" href="css/portal-clean-v39.css?v=rms-referral-capture-v287-20260819">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -1731,7 +1731,9 @@
                   <label class="affiliate-only-config hidden"><span>Monto base afiliados</span><input id="accountAffiliatePointAmountInput" type="number" min="1" step="100" value="1000"></label>
                   <label class="affiliate-only-config hidden"><span>Puntos por monto base</span><input id="accountAffiliatePointRateInput" type="number" min="0.01" step="0.01" value="1"></label>
                   <label class="affiliate-only-config hidden"><span>Redondeo de puntos</span><select id="accountAffiliatePointRoundingInput"><option value="floor">Hacia abajo</option><option value="ceil">Hacia arriba</option></select></label>
-                  <p class="table-secondary span-2 affiliate-only-config hidden">Regla de afiliados: por cada monto comprado se asignan los puntos configurados. Ejemplo: 1 punto cada $1.000.</p>
+                  <label class="affiliate-only-config hidden"><span>Puntos por referido registrado</span><input id="accountAffiliateReferralRegistrationPointsInput" type="number" min="0" step="1" value="0"><small>Se acreditan cuando el referido deja nombre y un contacto en el enlace.</small></label>
+                  <label class="affiliate-only-config hidden"><span>Puntos por referido comprador</span><input id="accountAffiliateReferralPurchasePointsInput" type="number" min="0" step="1" value="0"><small>Si es mayor a 0, reemplaza la regla variable por monto para esa compra.</small></label>
+                  <p class="table-secondary span-2 affiliate-only-config hidden">El cliente comparte un enlace de referido; el contacto recibe su ticket solo después de completar sus datos. Configura los beneficios canjeables en Afiliados · Premios por puntos.</p>
                   <section class="account-risk-recovery-settings span-2" id="accountRiskRecoveryAuthorizations" aria-labelledby="accountRiskRecoveryTitle">
                     <header>
                       <div>
@@ -7908,7 +7910,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=rms-valuation-fast-v286-20260819" defer></script>
+<script src="js/app.js?v=rms-referral-capture-v287-20260819" defer></script>
     <script src="js/communications.js?v=email-attachments-v325-20260817" defer></script>
 </body>
 </html>

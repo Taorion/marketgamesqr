@@ -193,6 +193,8 @@ const businessProfileSchema = z.object({
   affiliate_point_amount_cop: z.number().positive().optional().nullable(),
   affiliate_referral_points_rate: z.number().positive().optional().nullable(),
   affiliate_referral_points_rounding: z.enum(["floor", "ceil"]).optional().nullable(),
+  affiliate_referral_registration_points: z.number().int().min(0).max(1000000).optional().nullable(),
+  affiliate_referral_purchase_points: z.number().int().min(0).max(1000000).optional().nullable(),
   rms_risk_recovery_authorizations: z.object({
     discount: z.object({
       enabled: z.boolean().optional().default(false),
@@ -1097,6 +1099,8 @@ async function updateBusinessProfile(req, res, next) {
       Object.prototype.hasOwnProperty.call(body, "affiliate_point_amount_cop")
       || Object.prototype.hasOwnProperty.call(body, "affiliate_referral_points_rate")
       || Object.prototype.hasOwnProperty.call(body, "affiliate_referral_points_rounding")
+      || Object.prototype.hasOwnProperty.call(body, "affiliate_referral_registration_points")
+      || Object.prototype.hasOwnProperty.call(body, "affiliate_referral_purchase_points")
     ) {
       const currentSettings = await query(
         "select settings from businesses where id = $1 and is_active = true",
@@ -1108,6 +1112,12 @@ async function updateBusinessProfile(req, res, next) {
         point_amount_cop: Number(body.affiliate_point_amount_cop || currentAffiliatePoints.point_amount_cop || 1000),
         referral_rate: Number(body.affiliate_referral_points_rate || currentAffiliatePoints.referral_rate || 1),
         referral_rounding: body.affiliate_referral_points_rounding || currentAffiliatePoints.referral_rounding || "floor",
+        referral_registration_points: Object.prototype.hasOwnProperty.call(body, "affiliate_referral_registration_points")
+          ? Number(body.affiliate_referral_registration_points || 0)
+          : Number(currentAffiliatePoints.referral_registration_points || 0),
+        referral_purchase_points: Object.prototype.hasOwnProperty.call(body, "affiliate_referral_purchase_points")
+          ? Number(body.affiliate_referral_purchase_points || 0)
+          : Number(currentAffiliatePoints.referral_purchase_points || 0),
       };
     }
     if (Object.prototype.hasOwnProperty.call(body, "rms_risk_recovery_authorizations")) {

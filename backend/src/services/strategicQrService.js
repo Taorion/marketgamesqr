@@ -7,6 +7,7 @@ const { badRequest, notFound } = require("../utils/http");
 const { createSecureToken, normalizeToken } = require("../utils/token");
 const { logQrEvent } = require("./auditService");
 const { consumeQrCredit, consumeQrCredits, ensureCreditAccount, mapPublicCreditAccount } = require("./qrCreditService");
+const { getAffiliatePointRules, referralRegistrationPoints, affiliatePointRuleMetadata } = require("./affiliatePointRulesService");
 
 const CANONICAL_BENEFIT_TYPES = new Set([
   "PERCENT_DISCOUNT",
@@ -303,10 +304,12 @@ function safeFilenamePart(value, fallback = "ticket") {
 
 async function createPostSaleQr(businessId, user, body) {
   return withTransaction(async (client) => {
-    const [reward, campaign] = await Promise.all([
+    const isReferralClaim = body.metadata?.ticket_use_case === "referral" && Boolean(body.metadata?.referral_claim_required);
+    const [reward, campaign, affiliate] = await Promise.all([
       assertReward(client, businessId, body.benefit.reward_id),
       assertCampaign(client, businessId, body.campaign_id),
       assertBranch(client, businessId, body.branch_id),
+      isReferralClaim ? assertAffiliate(client, businessId, body.affiliate_id) : Promise.resolve(null),
     ]);
     const isGenericTicket = body.metadata?.qr_creation_context === "business_owner_generic_ticket" || Boolean(body.metadata?.ticket_use_case);
 
@@ -314,7 +317,7 @@ async function createPostSaleQr(businessId, user, body) {
       client,
       businessId,
       body.campaign_id,
-      {
+      isReferralClaim ? {} : {
         customer_name: body.customer_name,
         customer_phone: body.customer_phone,
         customer_email: body.customer_email,
@@ -379,10 +382,11 @@ async function createPostSaleQr(businessId, user, body) {
     const ticketUseCaseLabel = body.metadata?.ticket_use_case_label || (isGenericTicket ? "Ticket generico" : "Beneficio postventa");
     const ticketOriginLabel = body.metadata?.origin_label || (isGenericTicket ? `Ticket generico - ${ticketUseCaseLabel}` : "QR postventa");
 
+    const claimRequired = isReferralClaim;
     const qrResult = await client.query(
       `insert into qr_codes
-        (business_id, campaign_id, game_id, player_id, reward_id, token, status, metadata, expires_at, batch_id, origin_type, benefit_type, benefit_value, sale_id, claim_required, claimed_at, claimed_by_player_id)
-       values ($1, $2, null, $3, $4, $5, 'ACTIVE', $6, $7, null, 'POST_SALE', $8, $9, $10, false, $11, $12)
+        (business_id, campaign_id, game_id, player_id, reward_id, token, status, metadata, expires_at, batch_id, origin_type, benefit_type, benefit_value, sale_id, claim_required, claimed_at, claimed_by_player_id, affiliate_id)
+       values ($1, $2, null, $3, $4, $5, $6, $7, $8, null, $9, $10, $11, $12, $13, $14, $15, $16, $17)
        returning *`,
       [
         businessId,
@@ -390,6 +394,7 @@ async function createPostSaleQr(businessId, user, body) {
         player?.id || null,
         body.benefit.reward_id || null,
         token,
+        claimRequired ? "UNCLAIMED" : "ACTIVE",
         {
           strategic_qr: true,
           origin_label: ticketOriginLabel,
@@ -397,14 +402,16 @@ async function createPostSaleQr(businessId, user, body) {
           campaign_name: campaign?.name || null,
           notes: body.notes || null,
           product_name: body.product_name || null,
+          referral_claim_required: claimRequired,
+          referral_affiliate_id: affiliate?.id || null,
+          referral_affiliate_name: affiliate?.full_name || null,
           ...body.metadata,
         },
-        expiresAt,
-        benefit.benefit_type,
-        benefitPayload,
-        sale.id,
-        player ? new Date().toISOString() : null,
-        player?.id || null,
+        expiresAt, null,
+        isReferralClaim ? "AFFILIATE_REFERRAL" : "POST_SALE",
+        benefit.benefit_type, benefitPayload, sale.id, claimRequired,
+        claimRequired ? null : (player ? new Date().toISOString() : null),
+        claimRequired ? null : (player?.id || null), affiliate?.id || null,
       ]
     );
     const qr = qrResult.rows[0];
@@ -433,9 +440,10 @@ async function createPostSaleQr(businessId, user, body) {
       },
     });
 
-    const validatorUrl = buildValidatorUrl(token);
-    const claimUrl = buildClaimUrl(token);
-    const sharedTicketUrl = isGenericTicket ? claimUrl : validatorUrl;
+    const links = buildPublicQrLinks(qr);
+    const validatorUrl = links.validator_url;
+    const claimUrl = links.claim_url;
+    const sharedTicketUrl = isReferralClaim ? links.scan_url : (isGenericTicket ? claimUrl : validatorUrl);
     const businessResult = await client.query(
       `select id, name, ${BUSINESS_BRAND_SETTINGS_SQL} as business_settings
        from businesses b
@@ -1964,6 +1972,9 @@ async function claimQr(tokenInput, body) {
     if (!qr.claim_required) {
       throw badRequest("Este QR no requiere activacion previa.");
     }
+    if (qr.origin_type === "AFFILIATE_REFERRAL" && !body.metadata?.contact_consent_confirmed) {
+      throw badRequest("Confirma la autorización de contacto para recibir el ticket de referido.");
+    }
     if (qr.status === "REDEEMED") {
       throw badRequest("Este QR ya fue redimido.");
     }
@@ -2112,6 +2123,32 @@ async function claimQr(tokenInput, body) {
       },
     });
 
+    let referralReward = null;
+    if (qr.origin_type === "AFFILIATE_REFERRAL" && qr.affiliate_id) {
+      const pointRules = await getAffiliatePointRules(qr.business_id, client);
+      const points = referralRegistrationPoints(pointRules);
+      if (points > 0) {
+        await client.query(
+          `insert into affiliate_point_ledger
+            (business_id, affiliate_id, created_by_user_id, amount, points_awarded, reason, metadata)
+           values ($1, $2, null, 0, $3, 'REFERRAL_LEAD_QR', $4::jsonb)`,
+          [qr.business_id, qr.affiliate_id, points, JSON.stringify({
+            source_qr_code_id: qr.id,
+            final_qr_code_id: finalQr.id,
+            referred_player_id: player.id,
+            referred_customer: player.name || player.phone || player.email || null,
+            ...affiliatePointRuleMetadata(pointRules),
+          })]
+        );
+        const updated = await client.query(
+          `update affiliates set points_total = points_total + $3, updated_at = now()
+            where id = $1 and business_id = $2 returning points_total`,
+          [qr.affiliate_id, qr.business_id, points]
+        );
+        referralReward = { points, points_total: Number(updated.rows[0]?.points_total || 0) };
+      }
+    }
+
     const businessResult = await client.query(
       `select id, name, ${BUSINESS_BRAND_SETTINGS_SQL} as business_settings
        from businesses b
@@ -2177,6 +2214,7 @@ async function claimQr(tokenInput, body) {
             phone: qr.affiliate_phone,
           }
         : null,
+      referral_reward: referralReward,
     };
   });
 }

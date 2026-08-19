@@ -10,13 +10,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=ecommerce-code-20260705">
+  <link rel="stylesheet" href="styles.css?v=referral-capture-v287-20260819">
 </head>
 <body>
   <main class="claim-shell">
     <section class="claim-card">
       <span class="eyebrow">Qori</span>
-      <h1>Activa tu beneficio</h1>
+      <h1 id="claimTitle">Activa tu beneficio</h1>
       <p class="intro" id="claimMessage">Validando QR...</p>
 
       <div class="status-panel" id="statusPanel">
@@ -32,7 +32,7 @@
           <input id="nameInput" type="text" required>
         </label>
         <label>
-          <span>Telefono</span>
+          <span>WhatsApp o teléfono</span>
           <input id="phoneInput" type="tel">
         </label>
         <label>
@@ -43,7 +43,9 @@
           <span>Documento</span>
           <input id="documentInput" type="text">
         </label>
+        <label class="claim-consent"><input id="contactConsentInput" type="checkbox" required><span>Autorizo el uso de mis datos para recibir este beneficio y el contacto comercial relacionado.</span></label>
         <button type="submit">Activar beneficio</button>
+        <small class="claim-contact-note">Necesitamos al menos WhatsApp o correo para enviarte el ticket y dar seguimiento a tu solicitud.</small>
       </form>
 
       <div class="result-block hidden" id="resultBlock"></div>
@@ -73,6 +75,6 @@
     </section>
   </main>
 
-  <script src="app.js?v=ecommerce-code-20260705"></script>
+  <script src="app.js?v=referral-capture-v287-20260819"></script>
 </body>
 </html>

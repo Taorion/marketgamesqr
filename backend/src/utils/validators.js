@@ -462,6 +462,9 @@ const qrClaimSchema = z.object({
   document_id: z.string().trim().max(40).optional().nullable(),
   source: z.string().trim().max(80).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional(),
+}).refine((value) => Boolean(value.phone || value.email), {
+  message: "Ingresa WhatsApp o correo para recibir el ticket.",
+  path: ["phone"],
 });
 
 module.exports = {

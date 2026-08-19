@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260819-rms-valuation-fast-v286";
+const APP_VERSION = "empresa-20260819-rms-referral-capture-v287";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -545,6 +545,8 @@ const accountAddressInput = document.getElementById("accountAddressInput");
 const accountAffiliatePointAmountInput = document.getElementById("accountAffiliatePointAmountInput");
 const accountAffiliatePointRateInput = document.getElementById("accountAffiliatePointRateInput");
 const accountAffiliatePointRoundingInput = document.getElementById("accountAffiliatePointRoundingInput");
+const accountAffiliateReferralRegistrationPointsInput = document.getElementById("accountAffiliateReferralRegistrationPointsInput");
+const accountAffiliateReferralPurchasePointsInput = document.getElementById("accountAffiliateReferralPurchasePointsInput");
 const accountRiskDiscountEnabledInput = document.getElementById("accountRiskDiscountEnabledInput");
 const accountRiskDiscountMaxInput = document.getElementById("accountRiskDiscountMaxInput");
 const accountRiskTwoForOneEnabledInput = document.getElementById("accountRiskTwoForOneEnabledInput");
@@ -6145,6 +6147,8 @@ function renderAccountView() {
   if (accountAffiliatePointAmountInput) accountAffiliatePointAmountInput.value = String(affiliatePoints.point_amount_cop || 1000);
   if (accountAffiliatePointRateInput) accountAffiliatePointRateInput.value = String(affiliatePoints.referral_rate || 1);
   if (accountAffiliatePointRoundingInput) accountAffiliatePointRoundingInput.value = affiliatePoints.referral_rounding || "floor";
+  if (accountAffiliateReferralRegistrationPointsInput) accountAffiliateReferralRegistrationPointsInput.value = String(affiliatePoints.referral_registration_points || 0);
+  if (accountAffiliateReferralPurchasePointsInput) accountAffiliateReferralPurchasePointsInput.value = String(affiliatePoints.referral_purchase_points || 0);
   const riskRecovery = rmsRiskRecoveryAuthorizations(business.rms_risk_recovery_authorizations);
   if (accountRiskDiscountEnabledInput) accountRiskDiscountEnabledInput.checked = riskRecovery.discount.enabled;
   if (accountRiskDiscountMaxInput) accountRiskDiscountMaxInput.value = riskRecovery.discount.max_percent ? String(riskRecovery.discount.max_percent) : "";
@@ -32259,6 +32263,8 @@ async function submitAccountProfile(event) {
       profilePayload.affiliate_point_amount_cop = Number(accountAffiliatePointAmountInput?.value || 0);
       profilePayload.affiliate_referral_points_rate = Number(accountAffiliatePointRateInput?.value || 0);
       profilePayload.affiliate_referral_points_rounding = accountAffiliatePointRoundingInput?.value || "floor";
+      profilePayload.affiliate_referral_registration_points = Number(accountAffiliateReferralRegistrationPointsInput?.value || 0);
+      profilePayload.affiliate_referral_purchase_points = Number(accountAffiliateReferralPurchasePointsInput?.value || 0);
     }
     profilePayload.rms_risk_recovery_authorizations = {
       discount: {
@@ -52298,11 +52304,11 @@ function rmsPostSaleDraftFromDom(root, id) {
   if (path === "REFERRAL") {
     const benefit = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-referral-benefit]") || "").trim();
     const channel = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-channel]") || "").trim();
-    const name = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-referral-name]") || "").trim();
-    const phone = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-referral-phone]") || "").trim();
-    const email = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-referral-email]") || "").trim();
-    const interest = String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-referral-interest]") || "").trim();
-    const consent = rmsPostSaleRefineryChecked(root, id, path, "[data-rms-refinery-referral-consent]");
+    const name = "";
+    const phone = "";
+    const email = "";
+    const interest = "";
+    const consent = false;
     return {
       refinery_path: path,
       action_type: "REFERRAL", execution_mode: "NEW_TICKET", status: "ISSUED",
@@ -52311,7 +52317,7 @@ function rmsPostSaleDraftFromDom(root, id) {
       result_note: "Activación de referidos creada desde la venta atribuida.",
       ticket: { benefit: { benefit_type: "CUSTOM", benefit_label: benefit, benefit_value: {} }, expires_mode: "30_DAYS" },
       referred_contact: { name: name || null, phone: phone || null, email: email || null, interest: interest || null, preferred_channel: channel || null, note: "Referido capturado desde Valorización Clientes.", contact_consent_confirmed: consent },
-      metadata: { refinery_path: path, referral_capture: Boolean(name || phone || email) },
+      metadata: { refinery_path: path, referral_capture: "public_claim_link", referral_claim_required: true },
     };
   }
   if (path === "REBUY") {
@@ -56350,9 +56356,11 @@ function rmsPostSaleAssetsMarkup(item = {}) {
   return `<section class="rms-post-sale-assets" aria-label="Activos de Valorización de esta compra"><header><div><span class="mono-label">ACTIVOS DE ESTA COMPRA</span><h5>QR y tickets listos para entregar</h5><p>Estos activos pertenecen solo a esta venta atribuida.</p></div><span class="rms-commercial-state is-sale">${assets.length} ${assets.length === 1 ? "activo" : "activos"}</span></header><div class="rms-post-sale-assets-list">${assets.slice(0, 4).map((action) => {
     const resource = rmsPostSaleResourceForAction(action) || {};
     const url = resource.public_ticket_url || action.resource_url || "";
+    const referralCapture = action.action_type === "REFERRAL";
+    const openLabel = referralCapture ? "Abrir formulario" : "Abrir ticket";
     const image = resource.qr_image_data_url ? `<img src="${escapeHtml(resource.qr_image_data_url)}" alt="${escapeHtml(rmsPostSaleAssetLabel(action))}" loading="lazy">` : `<span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>`;
     const filename = escapeHtml(resource.filename || `qori-${String(action.id || "activo").slice(0, 8)}.png`);
-    return `<article data-rms-post-sale-asset="${escapeHtml(action.id)}"><div class="rms-post-sale-asset-preview">${image}</div><div class="rms-post-sale-asset-copy"><span class="mono-label">${escapeHtml(rmsPostSaleAssetLabel(action))}</span><strong>${escapeHtml(rmsPostSaleActionStatusLabel(action.status))}</strong><small>${escapeHtml(action.result_note || action.content || "Activo listo para compartir.")}</small></div><div class="rms-post-sale-asset-actions"><label class="rms-post-sale-share-consent" title="Confirmar autorización de contacto"><input type="checkbox" style="width:13px!important;min-width:13px!important;max-width:13px!important;height:13px!important;min-height:0!important;max-height:13px!important;margin:0!important;padding:0!important" data-rms-post-sale-share-consent="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><span>Contacto autorizado</span></label><div><button class="ghost-button compact" type="button" data-rms-post-sale-copy-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Copiar enlace</button><button class="ghost-button compact" type="button" data-rms-post-sale-share-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</button>${resource.qr_image_data_url ? `<a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" download="${filename}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar QR</a>` : ""}<a class="ghost-button compact" href="${escapeHtml(url)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>Abrir ticket</a></div></div></article>`;
+    return `<article data-rms-post-sale-asset="${escapeHtml(action.id)}"><div class="rms-post-sale-asset-preview">${image}</div><div class="rms-post-sale-asset-copy"><span class="mono-label">${escapeHtml(rmsPostSaleAssetLabel(action))}</span><strong>${escapeHtml(rmsPostSaleActionStatusLabel(action.status))}</strong><small>${escapeHtml(referralCapture ? "Enlace de captura: el referido recibe el ticket al completar sus datos." : (action.result_note || action.content || "Activo listo para compartir."))}</small></div><div class="rms-post-sale-asset-actions"><label class="rms-post-sale-share-consent" title="Confirmar autorización de contacto"><input type="checkbox" style="width:13px!important;min-width:13px!important;max-width:13px!important;height:13px!important;min-height:0!important;max-height:13px!important;margin:0!important;padding:0!important" data-rms-post-sale-share-consent="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><span>Contacto autorizado</span></label><div><button class="ghost-button compact" type="button" data-rms-post-sale-copy-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Copiar enlace</button><button class="ghost-button compact" type="button" data-rms-post-sale-share-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</button>${resource.qr_image_data_url ? `<a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" download="${filename}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar QR</a>` : ""}<a class="ghost-button compact" href="${escapeHtml(url)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>${escapeHtml(openLabel)}</a></div></div></article>`;
   }).join("")}</div></section>`;
 }
 
@@ -56364,6 +56372,16 @@ rmsPostSaleStationCardMarkup = function rmsPostSaleStationCardMarkupAssets(item 
   let html = rmsPostSaleStationCardMarkupAssetBase(item);
   html = html.replace(/(<small>Actividad postventa<\/small><strong>)[^<]*(<\/strong><b>)[^<]*(<\/b>)/, `$1${escapeHtml(actions.length === 1 ? "1 acción de esta compra" : `${actions.length} acciones de esta compra`)}$2${escapeHtml(activity)}$3`);
   return html.replace('<section class="rms-refinery-workbench"', `${rmsPostSaleAssetsMarkup(item)}<section class="rms-refinery-workbench"`);
+};
+
+const rmsPostSaleStationCardMarkupReferralCaptureBase = rmsPostSaleStationCardMarkup;
+rmsPostSaleStationCardMarkup = function rmsPostSaleStationCardMarkupReferralCapture(item = {}) {
+  const id = escapeHtml(item.id);
+  const referralPanel = `<section class="rms-refinery-panel rms-referral-capture-panel" data-rms-refinery-panel="${id}" data-rms-refinery-panel-key="REFERRAL"><header><span class="mono-label">REFERIDOS · ENLACE DE CAPTURA</span><h5>Entrega un enlace que captura al referido</h5><p>El cliente comparte este QR. Su contacto deja nombre y teléfono o correo; solo después recibe su ticket. El cliente acumula los puntos configurados por registro y por compra.</p></header><div class="rms-sale-form-grid"><label><span>Beneficio para el referido</span><input type="text" data-rms-refinery-referral-benefit="${id}" placeholder="Ej.: 10% en la primera compra"></label><label><span>Canal para compartir el enlace</span><select data-rms-refinery-channel="${id}"><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="">Solo generar enlace</option></select></label></div><label class="rms-commercial-note-field"><span>Mensaje que compartirá el cliente</span><textarea rows="2" data-rms-refinery-message="${id}" placeholder="Comparte este enlace: registra tus datos y recibe tu beneficio."></textarea></label><div class="rms-referral-capture-note"><span class="material-symbols-outlined" aria-hidden="true">person_add</span><span><strong>Captura estratégica</strong><small>Los datos se solicitan en el enlace público; aquí no se registra ni se entrega el ticket antes de la captura.</small></span></div></section>`;
+  return rmsPostSaleStationCardMarkupReferralCaptureBase(item).replace(
+    /<section class="rms-refinery-panel" data-rms-refinery-panel="[^"]+" data-rms-refinery-panel-key="REFERRAL">[\s\S]*?<\/section>(?=<section class="rms-refinery-panel"[^>]+data-rms-refinery-panel-key="LOYALTY")/,
+    referralPanel
+  );
 };
 
 function rmsPostSaleActionFromButton(button) {

@@ -3,6 +3,7 @@ const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
 const { createLeadAgendaItem, createLeadNote, listLeadCrmRows } = require("./leadCrmService");
 const { createPostSaleQr, createRiskRecoveryQr } = require("./strategicQrService");
+const { createSecureToken } = require("../utils/token");
 const { createRewardPass } = require("./rewardPassService");
 const {
   affiliatePointRuleMetadata,
@@ -3150,6 +3151,41 @@ async function listRmsPostSaleActions(businessId, filters = {}) {
   return { actions: result.rows };
 }
 
+async function ensurePostSaleReferrerAffiliate(businessId, user, sale, item, action) {
+  const fullName = String(sale.customer_name || item.name || "").trim();
+  const phone = String(sale.customer_phone || item.phone || "").trim() || null;
+  const email = String(sale.customer_email || item.email || "").trim() || null;
+  const documentId = String(sale.customer_document_id || "").trim() || null;
+  if (!fullName || (!phone && !email && !documentId)) {
+    throw badRequest("Para activar referidos, la venta debe tener nombre y al menos teléfono, correo o documento del cliente.");
+  }
+  return withTransaction(async (client) => {
+    await client.query("select pg_advisory_xact_lock(hashtext($1))", [`rms-referrer:${businessId}:${sale.id}`]);
+    const existing = await client.query(
+      `select id, full_name, points_total from affiliates
+       where business_id = $1 and status = 'ACTIVE' and (
+         ($2::text is not null and nullif(document_id, '') = $2)
+         or ($3::text is not null and nullif(phone, '') = $3)
+         or ($4::text is not null and lower(nullif(email, '')) = lower($4))
+       ) order by created_at desc limit 1 for update`,
+      [businessId, documentId, phone, email]
+    );
+    if (existing.rowCount) return existing.rows[0];
+    const created = await client.query(
+      `insert into affiliates
+        (business_id, created_by_user_id, full_name, document_id, phone, email, qr_token, status, notes, card_metadata)
+       values ($1,$2,$3,$4,$5,$6,$7,'ACTIVE',$8,$9::jsonb)
+       returning id, full_name, points_total`,
+      [
+        businessId, user.id, fullName, documentId, phone, email, createSecureToken(),
+        "Cliente afiliado automáticamente al activar su enlace de referidos desde Valorización Clientes.",
+        JSON.stringify({ source: "rms_post_sale_referral", sale_id: sale.id, post_sale_action_id: action.id }),
+      ]
+    );
+    return created.rows[0];
+  });
+}
+
 async function recordRmsPostSaleAction(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const actionType = normalizePostSaleActionType(payload.action_type);
@@ -3219,6 +3255,9 @@ async function recordRmsPostSaleAction(businessId, user, payload = {}) {
     if (!payload.ticket?.benefit?.benefit_type || !payload.ticket?.benefit?.benefit_label) {
       throw badRequest("Selecciona el beneficio del ticket de recompra o referido.");
     }
+    const referrerAffiliate = actionType === "REFERRAL"
+      ? await ensurePostSaleReferrerAffiliate(businessId, user, created.sale, item, created.action)
+      : null;
     resource = await createPostSaleQr(businessId, user, {
       ...(payload.ticket || {}),
       campaign_id: payload.ticket?.campaign_id || created.sale.campaign_id || created.action.campaign_id || null,
@@ -3226,7 +3265,8 @@ async function recordRmsPostSaleAction(businessId, user, payload = {}) {
       customer_name: created.sale.customer_name || item.name, customer_phone: created.sale.customer_phone || item.phone || null,
       customer_email: created.sale.customer_email || item.email || null, document_id: created.sale.customer_document_id || null,
       product_name: created.sale.product_name, existing_sale_id: created.sale.id,
-      metadata: { ...(payload.ticket?.metadata || {}), qr_creation_context: "rms_activation_2", rms_post_sale_action_id: created.action.id, existing_sale_id: created.sale.id, ticket_use_case: actionType === "REFERRAL" ? "referral" : "rebuy" },
+      affiliate_id: referrerAffiliate?.id || null,
+      metadata: { ...(payload.ticket?.metadata || {}), qr_creation_context: "rms_activation_2", rms_post_sale_action_id: created.action.id, existing_sale_id: created.sale.id, ticket_use_case: actionType === "REFERRAL" ? "referral" : "rebuy", referral_claim_required: actionType === "REFERRAL", referrer_affiliate_id: referrerAffiliate?.id || null },
     });
     const ticketId = resource?.qr_code?.id || resource?.ticket?.id || null;
     await query(
