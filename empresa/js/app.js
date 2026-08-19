@@ -52347,7 +52347,7 @@ function rmsPostSaleDraftFromDom(root, id) {
 }
 
 async function loadRmsPostSaleActions(options = {}) {
-  const data = await apiSafe("/api/business/rms-machine/post-sale-actions?include_assets=true", { headers: authHeaders() }, { actions: [] });
+  const data = await apiSafe("/api/business/rms-machine/post-sale-actions?include_assets=true&fresh=1", { headers: authHeaders() }, { actions: [] });
   state.rmsPostSaleActions = Array.isArray(data.actions) ? data.actions : [];
   return state.rmsPostSaleActions;
 }
