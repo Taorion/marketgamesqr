@@ -29795,3 +29795,25 @@ html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-ris
   html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-config { grid-template-columns: 1fr !important; }
   html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-config label:first-child { grid-column: auto !important; }
 }
+
+/* Acceso directo: cada estación se lee como una opción completa. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-nav { position: relative !important; z-index: 130 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-menu { width: min(720px, calc(100vw - 32px)) !important; padding: 20px !important; gap: 16px !important; border-radius: 22px !important; border-color: rgba(7,89,214,.22) !important; box-shadow: 0 28px 80px rgba(5,42,107,.24), 0 0 0 1px rgba(255,255,255,.92) inset !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-menu > header { grid-template-columns: minmax(0,1fr) 40px !important; align-items: center !important; padding-bottom: 16px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-menu > header strong { display: block !important; color: #052a6b !important; font-size: clamp(1.05rem,2vw,1.28rem) !important; line-height: 1.2 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-list { grid-template-columns: 1fr !important; gap: 8px !important; max-height: min(560px,calc(100vh - 245px)) !important; padding: 2px 4px 6px 1px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-item { grid-template-columns: 42px 42px minmax(0,1fr) 28px !important; min-height: 72px !important; gap: 12px !important; padding: 11px 13px !important; border-radius: 15px !important; text-decoration: none !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-number { width: 42px !important; height: 42px !important; border-radius: 12px !important; font-size: .76rem !important; background: linear-gradient(145deg,#052a6b,#0759d6) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-item > .material-symbols-outlined:not(.rms-stage-quick-arrow) { width: 42px !important; height: 42px !important; border-radius: 12px !important; font-size: 22px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-copy { gap: 4px !important; align-content: center !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-copy strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-copy small { overflow: visible !important; text-overflow: clip !important; white-space: normal !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-copy strong { font-size: .94rem !important; line-height: 1.2 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-copy small { font-size: .74rem !important; line-height: 1.25 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-arrow { justify-self: end !important; color: #0759d6 !important; font-size: 22px !important; }
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-menu { inset: auto 10px 10px 10px !important; width: auto !important; padding: 16px !important; border-radius: 18px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-item { grid-template-columns: 36px 36px minmax(0,1fr) 24px !important; min-height: 64px !important; gap: 9px !important; padding: 9px 10px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-number,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-item > .material-symbols-outlined:not(.rms-stage-quick-arrow) { width: 36px !important; height: 36px !important; }
+}
