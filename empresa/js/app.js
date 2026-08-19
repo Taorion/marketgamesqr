@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260819-rms-referral-capture-v288";
+const APP_VERSION = "empresa-20260819-rms-post-sale-delivery-v289";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -49319,6 +49319,9 @@ function bindRmsMachineActions(root) {
     button.addEventListener("click", () => shareRmsPostSaleAsset(button)
       .catch((error) => showFeedback(error.message || "No pudimos preparar el WhatsApp.", "error", { title: "Valorización Clientes" })));
   });
+  root.querySelectorAll("[data-rms-post-sale-email-resource]").forEach((button) => {
+    button.addEventListener("click", () => emailRmsPostSaleAsset(button));
+  });
   root.querySelectorAll("[data-rms-post-sale-skip-to-intelligence]").forEach((button) => {
     button.addEventListener("click", () => {
       const item = rmsOpportunityById(button.dataset.rmsPostSaleSkipToIntelligence || "");
@@ -56384,8 +56387,35 @@ rmsPostSaleStationCardMarkup = function rmsPostSaleStationCardMarkupReferralCapt
   );
 };
 
+// Valorización: el ticket de recompra tiene que sentirse como una entrega,
+// no como otra fila de historial. Esta bandeja conserva los activos por venta
+// y prioriza las acciones que el operador necesita para enviarlo.
+rmsPostSaleAssetsMarkup = function rmsPostSaleAssetsMarkupDelivery(item = {}) {
+  const assets = rmsPostSaleSaleActions(item).filter((action) => action.resource_url || rmsPostSaleResourceForAction(action)?.public_ticket_url);
+  if (!assets.length) return `<section class="rms-post-sale-assets rms-post-sale-assets-empty"><header><div><span class="mono-label">ENTREGA DE ACTIVOS</span><h5>Aún no hay ticket para entregar</h5></div><small>Cuando crees una recompra o un referido, aparecerá en esta bandeja de entrega.</small></header></section>`;
+  return `<section class="rms-post-sale-assets rms-post-sale-assets-delivery" aria-label="Entrega de QR y tickets de esta compra"><header><div><span class="mono-label">ENTREGA DE ACTIVOS DE ESTA VENTA</span><h5>Tickets y QR listos para enviar</h5><p>Este es el lugar para encontrar, ver y enviar los activos creados; no necesitas buscarlos en el historial.</p></div><span class="rms-commercial-state is-sale">${assets.length} ${assets.length === 1 ? "activo" : "activos"}</span></header><div class="rms-post-sale-assets-list">${assets.slice(0, 4).map((action) => {
+    const resource = rmsPostSaleResourceForAction(action) || {};
+    const url = resource.public_ticket_url || action.resource_url || "";
+    const referralCapture = action.action_type === "REFERRAL";
+    const rebuyTicket = action.action_type === "REBUY_TICKET";
+    const assetLabel = rmsPostSaleAssetLabel(action);
+    const image = resource.qr_image_data_url ? `<img src="${escapeHtml(resource.qr_image_data_url)}" alt="${escapeHtml(assetLabel)}" loading="lazy">` : `<span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span>`;
+    const filename = escapeHtml(resource.filename || `qori-${String(action.id || "activo").slice(0, 8)}.png`);
+    const assetTitle = rebuyTicket ? (action.result_note || action.content || "Beneficio de recompra") : rmsPostSaleActionStatusLabel(action.status);
+    const note = referralCapture
+      ? "Enlace de captura: el referido recibe el ticket al completar sus datos."
+      : (rebuyTicket
+        ? "Listo para entregar. Confirma el contacto y usa uno de los canales de envío de esta tarjeta."
+        : (action.result_note || action.content || "Activo listo para compartir."));
+    const deliveryGuide = rebuyTicket ? `<ol class="rms-post-sale-delivery-steps"><li>Marca <b>Contacto autorizado</b>.</li><li>Envía el ticket por WhatsApp o correo.</li><li>El cliente abre <b>Ver ticket y QR</b> para redimirlo.</li></ol>` : "";
+    const standardActions = `<button class="ghost-button compact" type="button" data-rms-post-sale-copy-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Copiar enlace</button><button class="ghost-button compact" type="button" data-rms-post-sale-share-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</button>`;
+    const rebuyActions = `<button class="solid-button compact" type="button" data-rms-post-sale-share-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">chat</span>Enviar por WhatsApp</button><button class="ghost-button compact" type="button" data-rms-post-sale-email-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">mail</span>Enviar por correo</button><button class="ghost-button compact" type="button" data-rms-post-sale-copy-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Copiar enlace</button>`;
+    return `<article class="${rebuyTicket ? "is-rebuy-ticket" : ""}" data-rms-post-sale-asset="${escapeHtml(action.id)}"><div class="rms-post-sale-asset-preview">${image}</div><div class="rms-post-sale-asset-copy"><span class="mono-label">${escapeHtml(rebuyTicket ? "TICKET DE RECOMPRA · LISTO PARA ENVIAR" : assetLabel)}</span><strong>${escapeHtml(assetTitle)}</strong><small>${escapeHtml(note)}</small>${deliveryGuide}</div><div class="rms-post-sale-asset-actions"><label class="rms-post-sale-share-consent" title="Confirmar autorización de contacto"><input type="checkbox" style="width:13px!important;min-width:13px!important;max-width:13px!important;height:13px!important;min-height:0!important;max-height:13px!important;margin:0!important;padding:0!important" data-rms-post-sale-share-consent="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><span>Contacto autorizado</span></label><div>${rebuyTicket ? rebuyActions : standardActions}${resource.qr_image_data_url ? `<a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" download="${filename}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar QR</a>` : ""}<a class="ghost-button compact" href="${escapeHtml(url)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>${referralCapture ? "Abrir formulario" : (rebuyTicket ? "Ver ticket y QR" : "Ver activo")}</a></div></div></article>`;
+  }).join("")}</div></section>`;
+};
+
 function rmsPostSaleActionFromButton(button) {
-  const actionId = button?.dataset.rmsPostSaleCopyResource || button?.dataset.rmsPostSaleShareResource || "";
+  const actionId = button?.dataset.rmsPostSaleCopyResource || button?.dataset.rmsPostSaleShareResource || button?.dataset.rmsPostSaleEmailResource || "";
   return (state.rmsPostSaleActions || []).find((action) => String(action.id) === String(actionId)) || null;
 }
 
@@ -56420,6 +56450,28 @@ function shareRmsPostSaleAsset(button) {
   const message = `Hola ${customer?.name || ""}, gracias por tu compra. Aquí tienes tu ${label.toLowerCase()}: ${url}`.trim();
   window.open(`https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(message)}`, "_blank", "noopener");
   showFeedback("WhatsApp preparado con el activo de esta compra.", "success", { title: "Valorización Clientes" });
+}
+
+function emailRmsPostSaleAsset(button) {
+  const action = rmsPostSaleActionFromButton(button);
+  const card = button.closest("[data-rms-station-lead]");
+  const customer = rmsOpportunityById(card?.dataset.rmsStationLead || "");
+  const consent = card?.querySelector(`[data-rms-post-sale-share-consent="${CSS.escape(action?.id || "")}"]`);
+  if (!consent?.checked) {
+    showFeedback("Confirma la autorización de contacto antes de preparar el correo.", "info", { title: "Valorización Clientes" });
+    return;
+  }
+  const email = String(customer?.email || "").trim();
+  if (!email) {
+    showFeedback("Este cliente no tiene un correo registrado. Usa WhatsApp o copia el enlace.", "info", { title: "Valorización Clientes" });
+    return;
+  }
+  const url = rmsPostSaleAssetUrl(action);
+  const name = String(customer?.name || "").trim();
+  const subject = "Tu ticket de recompra Qori";
+  const message = `Hola${name ? ` ${name}` : ""}, gracias por tu compra. Aquí tienes tu ticket de recompra. Ábrelo y presenta el QR antes de que venza: ${url}`;
+  window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+  showFeedback("Correo preparado con el ticket de recompra.", "success", { title: "Valorización Clientes" });
 }
 
 function rmsRiskSelectedOffer(root, item) {
