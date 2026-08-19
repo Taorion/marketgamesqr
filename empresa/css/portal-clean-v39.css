@@ -30045,4 +30045,4 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-activation-bulk-co
 
 /* Slider RMS: elimina el marco oscuro heredado sin recortar la ilustración útil. */
 html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media{background:#fff!important;overflow:hidden!important;border-radius:18px!important}
-html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media img{background:#fff!important;filter:none!important;transform:scale(1.022)!important;transform-origin:center!important}
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media img{background:#fff!important;filter:none!important;transform:scale(1.022)!important;transform-origin:center!important;clip-path:inset(1.25% round 14px)!important}
