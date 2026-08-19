@@ -45169,7 +45169,7 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
     <article class="rms-commercial-work-item rms-sale-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
       ${rmsCommercialLeadAsideMarkup(item, "Ventas atribuidas · evidencia de una compra real")}
       <section class="rms-commercial-work-console">
-        <details class="rms-attributed-sale-entry">
+        <details class="rms-attributed-sale-entry" open>
           <summary>
             <span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span>
             <span><strong>Registrar venta atribuida</strong><small>${escapeHtml([defaultProduct || "Producto por confirmar", inheritedAmount ? money(inheritedAmount) : "Valor por confirmar", inheritedChannel || "Canal por confirmar"].join(" · "))}</small></span>
