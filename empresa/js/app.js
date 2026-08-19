@@ -48265,6 +48265,16 @@ function bindRmsStageQuickNavigation() {
   });
 }
 
+function rmsStationEntityLabel(stageKey = "", count = 0) {
+  const customerStation = ["cierre", "revenue_generado", "postventa", "inteligencia"].includes(String(stageKey || "").toLowerCase());
+  const noun = customerStation ? "cliente" : "lead";
+  return `${Number(count || 0).toLocaleString("es-CO")} ${noun}${Number(count || 0) === 1 ? "" : "s"}`;
+}
+
+function rmsStationWorkCountLabel(stageKey = "", count = 0) {
+  return Number(count || 0) ? `${rmsStationEntityLabel(stageKey, count)} para trabajar` : "Sin pendientes";
+}
+
 function renderRmsStageQuickNavigation(stages = [], opportunities = []) {
   const quickNav = document.querySelector(".rms-stage-quick-nav");
   if (quickNav) {
@@ -48273,6 +48283,13 @@ function renderRmsStageQuickNavigation(stages = [], opportunities = []) {
       const leadCount = opportunities.filter((item) => item.stage === stage.key).length;
       return `<option value="${escapeHtml(stage.key)}">${String(index + 1).padStart(2, "0")} · ${escapeHtml(stage.label || `Estación ${index + 1}`)} — ${leadCount ? `${leadCount.toLocaleString("es-CO")} lead${leadCount === 1 ? "" : "s"} para trabajar` : "Sin pendientes"}</option>`;
     }).join("")}</select>`;
+    quickNav.querySelectorAll("option[value]").forEach((option) => {
+      const stage = stages.find((entry) => entry.key === option.value);
+      if (!stage) return;
+      const count = opportunities.filter((item) => item.stage === stage.key).length;
+      const index = stages.indexOf(stage) + 1;
+      option.textContent = `${String(index).padStart(2, "0")} · ${stage.label || `Estación ${index}`} — ${rmsStationWorkCountLabel(stage.key, count)}`;
+    });
     const select = quickNav.querySelector("#rmsStageQuickSelect");
     if (select) {
       select.addEventListener("change", () => {
@@ -48297,6 +48314,12 @@ function renderRmsStageQuickNavigation(stages = [], opportunities = []) {
       </button>
     `;
   }).join("");
+  rmsStageQuickList.querySelectorAll("[data-rms-quick-station]").forEach((item) => {
+    const stage = stages.find((entry) => entry.key === item.dataset.rmsQuickStation);
+    const count = opportunities.filter((entry) => entry.stage === stage?.key).length;
+    const label = item.querySelector(".rms-stage-quick-copy small");
+    if (stage && label) label.textContent = rmsStationWorkCountLabel(stage.key, count);
+  });
   bindRmsStageQuickNavigation();
 }
 
@@ -48444,6 +48467,12 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
       </article>
     `;
   }).join("");
+  rmsStageBoard.querySelectorAll(".rms-station-entry-card[data-rms-phase]").forEach((card) => {
+    const stageKey = card.dataset.rmsPhase || "";
+    const count = opportunities.filter((item) => item.stage === stageKey).length;
+    const label = card.querySelector(".rms-station-entry-count");
+    if (label) label.textContent = rmsStationEntityLabel(stageKey, count);
+  });
   renderRmsStageQuickNavigation(stages, opportunities);
   bindRmsMachineActions(rmsStageBoard);
   rmsStageBoard.querySelectorAll("[data-rms-phase]").forEach((card) => {
