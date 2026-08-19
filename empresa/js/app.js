@@ -55828,7 +55828,7 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
       }),
     });
     state.rmsRiskGeneratedResources ||= {};
-    state.rmsRiskGeneratedResources[item.id] = { ...response.resource, qr_image_data_url: response.ticket?.qr_image_data_url, filename: response.ticket?.filename || response.resource?.filename };
+    state.rmsRiskGeneratedResources[item.id] = { ...response.resource, qr_image_data_url: response.ticket?.qr_image_data_url || response.resource?.qr_image_data_url || null, filename: response.ticket?.filename || response.resource?.filename };
     const status = rmsCommercialNode(root, "[data-rms-risk-resource-status]", item.id);
     if (status) status.innerHTML = rmsRiskRecoveryResourceMarkup(item);
     showFeedback(response.duplicate ? "El ticket ya estaba listo; no se descontó otro crédito." : "Ticket y activo extraordinario generados. Ya puedes compartirlos.", "success", { title: "Riesgos de fuga" });

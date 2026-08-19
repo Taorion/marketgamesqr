@@ -29725,6 +29725,40 @@ html body[data-current-view="rms-machine"] .rms-station-navigation-hub-compact .
   html body[data-current-view="rms-machine"] .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex-basis: calc(100% - 16px) !important; width: calc(100% - 16px) !important; min-width: calc(100% - 16px) !important; padding: 16px !important; }
   html body[data-current-view="rms-machine"] .rms-station-navigation-hub-compact .rms-station-navigation-arrows { grid-template-columns: 1fr !important; }
 }
+
+/* Riesgos: en responsive cada bloque ocupa su propia fila y el cierre queda despues del QR. */
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item {
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item > .rms-commercial-work-console {
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-operating-flow { order: 40 !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-commercial-action-row { order: 50 !important; width: 100% !important; margin-top: 0 !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-commercial-action-row button { min-width: 0 !important; max-width: 100% !important; white-space: normal !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-operating-flow,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-status-final,
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-delivery-bar { min-width: 0 !important; max-width: 100% !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-ticket-preview { min-height: 120px !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-ticket-image { visibility: visible !important; opacity: 1 !important; object-fit: contain !important; }
+@media (max-width: 900px) {
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item > .rms-commercial-work-lead,
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item > .rms-commercial-work-console { grid-column: 1 !important; width: 100% !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-commercial-work-console-head { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-commercial-work-console-head > .rms-commercial-state { justify-self: start !important; }
+}
+@media (max-width: 620px) {
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-command-strip { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-steps { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-final { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-commercial-action-row { flex-direction: column !important; align-items: stretch !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-commercial-action-row button { width: 100% !important; }
+}
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-delivery-bar { grid-column: 1 / -1 !important; display: flex !important; justify-content: space-between !important; gap: 12px !important; flex-wrap: wrap !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-final + .rms-risk-recovery-form [data-rms-risk-sale-panel] > .rms-sale-form-grid { display: none !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-final + .rms-risk-recovery-form [data-rms-risk-sale-panel] > h5 { margin-top: 0 !important; }
