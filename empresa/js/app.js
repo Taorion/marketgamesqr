@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260819-rms-valuation-assets-v283";
+const APP_VERSION = "empresa-20260819-rms-valuation-fast-v284";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -52347,7 +52347,7 @@ function rmsPostSaleDraftFromDom(root, id) {
 }
 
 async function loadRmsPostSaleActions(options = {}) {
-  const data = await apiSafe("/api/business/rms-machine/post-sale-actions?include_assets=true&fresh=1", { headers: authHeaders() }, { actions: [] });
+  const data = await apiSafe("/api/business/rms-machine/post-sale-actions", { headers: authHeaders() }, { actions: [] });
   state.rmsPostSaleActions = Array.isArray(data.actions) ? data.actions : [];
   return state.rmsPostSaleActions;
 }
@@ -56337,7 +56337,7 @@ function rmsPostSaleSaleActions(item = {}) {
 }
 
 function rmsPostSaleResourceForAction(action = {}) {
-  return state.rmsPostSaleGeneratedResources?.[action.id] || action.asset_preview || null;
+  return state.rmsPostSaleGeneratedResources?.[action.id] || null;
 }
 
 function rmsPostSaleAssetLabel(action = {}) {
@@ -56352,7 +56352,7 @@ function rmsPostSaleAssetsMarkup(item = {}) {
     const url = resource.public_ticket_url || action.resource_url || "";
     const image = resource.qr_image_data_url ? `<img src="${escapeHtml(resource.qr_image_data_url)}" alt="${escapeHtml(rmsPostSaleAssetLabel(action))}" loading="lazy">` : `<span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>`;
     const filename = escapeHtml(resource.filename || `qori-${String(action.id || "activo").slice(0, 8)}.png`);
-    return `<article data-rms-post-sale-asset="${escapeHtml(action.id)}"><div class="rms-post-sale-asset-preview">${image}</div><div class="rms-post-sale-asset-copy"><span class="mono-label">${escapeHtml(rmsPostSaleAssetLabel(action))}</span><strong>${escapeHtml(rmsPostSaleActionStatusLabel(action.status))}</strong><small>${escapeHtml(action.result_note || action.content || "Activo listo para compartir.")}</small></div><div class="rms-post-sale-asset-actions"><label class="rms-post-sale-share-consent"><input type="checkbox" data-rms-post-sale-share-consent="${escapeHtml(action.id)}"> Confirmo autorización de contacto.</label><div><button class="ghost-button compact" type="button" data-rms-post-sale-copy-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Copiar enlace</button><button class="ghost-button compact" type="button" data-rms-post-sale-share-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</button>${resource.qr_image_data_url ? `<a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" download="${filename}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar QR</a>` : ""}<a class="ghost-button compact" href="${escapeHtml(url)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>Abrir ticket</a></div></div></article>`;
+    return `<article data-rms-post-sale-asset="${escapeHtml(action.id)}"><div class="rms-post-sale-asset-preview">${image}</div><div class="rms-post-sale-asset-copy"><span class="mono-label">${escapeHtml(rmsPostSaleAssetLabel(action))}</span><strong>${escapeHtml(rmsPostSaleActionStatusLabel(action.status))}</strong><small>${escapeHtml(action.result_note || action.content || "Activo listo para compartir.")}</small></div><div class="rms-post-sale-asset-actions"><label class="rms-post-sale-share-consent" title="Confirmar autorización de contacto"><input type="checkbox" data-rms-post-sale-share-consent="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><span>Contacto autorizado</span></label><div><button class="ghost-button compact" type="button" data-rms-post-sale-copy-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Copiar enlace</button><button class="ghost-button compact" type="button" data-rms-post-sale-share-resource="${escapeHtml(action.id)}"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</button>${resource.qr_image_data_url ? `<a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" download="${filename}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar QR</a>` : ""}<a class="ghost-button compact" href="${escapeHtml(url)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>Abrir ticket</a></div></div></article>`;
   }).join("")}</div></section>`;
 }
 
