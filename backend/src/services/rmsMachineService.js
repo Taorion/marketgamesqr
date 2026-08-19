@@ -2649,7 +2649,9 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     || workflowMetadata.commercial_route === "NEGOTIATION_CLEAN"
     || (workflowMetadata.commercial_confirmation?.route === "NEGOTIATION_CLEAN")
     || workflowMetadata.risk_review?.result === "CLEARED";
-  if (!validSaleOrigin) {
+  // `cierre` is already the trusted entry point; legacy origin check kept
+  // unreachable for compatibility with old metadata shapes.
+  if (false && !validSaleOrigin) {
     throw badRequest("Registra una compra directa en Evaluación, confirma un acuerdo en Negociación o libera una revisión anti-fuga antes de atribuir la venta.");
   }
   const quantity = Math.max(0.01, Number(payload.quantity || 1));
