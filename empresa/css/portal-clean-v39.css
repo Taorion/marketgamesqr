@@ -29692,6 +29692,39 @@ html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-ris
   html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-ticket-image { width: 180px !important; height: 130px !important; }
   html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-ticket-actions { grid-template-columns: 1fr 1fr !important; }
 }
+
+/* Carrusel de estaciones: en anchos intermedios se apila para no cruzar CTA, selector y flechas. */
+html body[data-current-view="rms-machine"] .rms-station-navigation-hub-compact .rms-station-navigation-primary {
+  min-width: 0 !important;
+}
+@media (max-width: 1100px) {
+  html body[data-current-view="rms-machine"] .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card {
+    flex-basis: min(760px, calc(100% - 28px)) !important;
+    width: min(760px, calc(100% - 28px)) !important;
+    min-width: min(760px, calc(100% - 28px)) !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 190px auto auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+  html body[data-current-view="rms-machine"] .rms-stage-slider-shell .rms-station-entry-media { grid-column: 1 !important; grid-row: 2 !important; height: 190px !important; }
+  html body[data-current-view="rms-machine"] .rms-stage-slider-shell .rms-station-entry-main { grid-column: 1 !important; grid-row: 1 !important; align-self: start !important; }
+  html body[data-current-view="rms-machine"] .rms-stage-slider-shell .rms-station-entry-flow { grid-column: 1 !important; grid-row: 3 !important; }
+  html body[data-current-view="rms-machine"] .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card > button { grid-column: 1 !important; grid-row: 4 !important; justify-self: stretch !important; width: 100% !important; }
+}
+@media (max-width: 820px) {
+  html body[data-current-view="rms-machine"] .rms-station-navigation-hub-compact .rms-station-navigation-primary { grid-template-columns: 1fr !important; gap: 10px !important; }
+  html body[data-current-view="rms-machine"] .rms-station-navigation-hub-compact .rms-station-map-button,
+  html body[data-current-view="rms-machine"] .rms-station-navigation-hub-compact .rms-station-quick-jump,
+  html body[data-current-view="rms-machine"] .rms-station-navigation-hub-compact .rms-station-navigation-arrows { grid-column: 1 !important; width: 100% !important; }
+  html body[data-current-view="rms-machine"] .rms-station-navigation-hub-compact .rms-station-map-button { justify-content: flex-start !important; }
+  html body[data-current-view="rms-machine"] .rms-station-navigation-hub-compact .rms-station-navigation-arrows { grid-template-columns: 1fr 1fr !important; }
+}
+@media (max-width: 560px) {
+  html body[data-current-view="rms-machine"] .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex-basis: calc(100% - 16px) !important; width: calc(100% - 16px) !important; min-width: calc(100% - 16px) !important; padding: 16px !important; }
+  html body[data-current-view="rms-machine"] .rms-station-navigation-hub-compact .rms-station-navigation-arrows { grid-template-columns: 1fr !important; }
+}
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-delivery-bar { grid-column: 1 / -1 !important; display: flex !important; justify-content: space-between !important; gap: 12px !important; flex-wrap: wrap !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-final + .rms-risk-recovery-form [data-rms-risk-sale-panel] > .rms-sale-form-grid { display: none !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-final + .rms-risk-recovery-form [data-rms-risk-sale-panel] > h5 { margin-top: 0 !important; }
