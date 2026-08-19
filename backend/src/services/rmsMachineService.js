@@ -3052,12 +3052,12 @@ async function canonicalAttributedSaleFor(client, businessId, sourceType, source
     [businessId, sourceType, sourceId, requestedSaleId || null]
   );
   const sale = result.rows[0];
-  if (!sale) throw badRequest("Activación 2 exige una venta atribuida canónica de este negocio.");
+  if (!sale) throw badRequest("Valorización Clientes exige una venta atribuida canónica de este negocio.");
   if (!String(sale.product_name || "").trim() || moneyNumber(sale.sale_amount) <= 0) {
     throw badRequest("La venta atribuida debe tener producto o servicio y un valor mayor a cero.");
   }
   if (requestedSaleId && (sale.rms_source_type !== sourceType || String(sale.rms_source_id) !== String(sourceId))) {
-    throw badRequest("La venta indicada no pertenece a la oportunidad RMS de esta Activación 2.");
+    throw badRequest("La venta indicada no pertenece a la oportunidad RMS de esta estación de Valorización.");
   }
   return sale;
 }
@@ -3073,7 +3073,7 @@ async function createPostSaleAgendaInTransaction(client, businessId, user, item,
     REFERRAL: "Preparar invitación de referido",
     FOLLOW_UP: "Realizar seguimiento postventa",
     INCIDENT: "Dar seguimiento a incidencia postventa",
-  }[action.action_type] || "Registrar resultado de Activación 2";
+  }[action.action_type] || "Registrar resultado de Valorización Clientes";
   const note = await client.query(
     `insert into lead_notes
       (business_id, lead_id, source_type, source_id, note, note_type, next_action, reminder_at, agenda_priority, progress_percent, checklist, metadata, created_by)
@@ -3105,7 +3105,7 @@ async function createReferredOpportunityInTransaction(client, businessId, user, 
      returning id, name, email, phone`,
     [
       businessId, user.id, name, email, phone,
-      `Venta ${String(action.sale_id).slice(0, 8)} · Activación 2`,
+      `Venta ${String(action.sale_id).slice(0, 8)} · Valorización Clientes`,
       String(referred.interest || "").trim() || null,
       "Referido identificado después de una venta atribuida",
       String(referred.preferred_channel || (phone ? "WhatsApp" : "Email")).trim(),
@@ -3155,7 +3155,7 @@ async function recordRmsPostSaleAction(businessId, user, payload = {}) {
   const actionType = normalizePostSaleActionType(payload.action_type);
   const executionMode = String(payload.execution_mode || "TASK").trim().toUpperCase();
   const idempotencyKey = String(payload.idempotency_key || "").trim();
-  if (!payload.source_id || !idempotencyKey) throw badRequest("Activación 2 exige oportunidad e idempotency_key.");
+  if (!payload.source_id || !idempotencyKey) throw badRequest("Valorización Clientes exige oportunidad e idempotency_key.");
   if (requiresContactConsent(actionType, executionMode) && (!payload.contact_consent_confirmed || !String(payload.contact_channel || "").trim())) {
     throw badRequest("Para preparar un contacto debes confirmar consentimiento y canal permitido; el sistema no enviará nada automáticamente.");
   }
@@ -3163,7 +3163,7 @@ async function recordRmsPostSaleAction(businessId, user, payload = {}) {
     throw badRequest("Explica por qué no aplica una acción de continuidad.");
   }
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
-  if (item.stage !== "postventa") throw badRequest("Activación 2 solo opera casos que ya están en Postventa.");
+  if (item.stage !== "postventa") throw badRequest("Valorización Clientes solo opera clientes que ya llegaron a esta estación.");
   const created = await withTransaction(async (client) => {
     const duplicate = await client.query(
       "select * from rms_post_sale_actions where business_id = $1 and idempotency_key = $2 for update",
@@ -3203,12 +3203,12 @@ async function recordRmsPostSaleAction(businessId, user, payload = {}) {
     await client.query(
       `insert into rms_post_sale_action_events (business_id, post_sale_action_id, event_type, event_description, status, metadata, created_by)
        values ($1,$2,'post_sale_action_created',$3,$4,$5::jsonb,$6)`,
-      [businessId, action.id, "Acción de Activación 2 registrada sobre la venta original.", status, JSON.stringify({ sale_id: sale.id, agenda_note_id: agenda?.id || null, referral_contact_id: referral?.id || null }), user.id]
+      [businessId, action.id, "Acción de Valorización registrada sobre la venta original.", status, JSON.stringify({ sale_id: sale.id, agenda_note_id: agenda?.id || null, referral_contact_id: referral?.id || null }), user.id]
     );
     await client.query(
       `insert into rms_machine_events
         (business_id, source_type, source_id, lead_id, event_type, event_title, event_description, rms_phase, operation_key, created_by, metadata)
-       values ($1,$2,$3,$4,'post_sale_action_created','Activación 2 registrada',$5,'postventa','activation_2',$6,$7::jsonb)`,
+        values ($1,$2,$3,$4,'post_sale_action_created','Valorización registrada',$5,'postventa','activation_2',$6,$7::jsonb)`,
       [businessId, sourceType, payload.source_id, item.lead_id || null, actionType, user.id, JSON.stringify({ post_sale_action_id: action.id, sale_id: sale.id, status, agenda_note_id: agenda?.id || null, referral_contact_id: referral?.id || null })]
     );
     return { action, sale, duplicate: false, agenda, referral };
@@ -3238,7 +3238,7 @@ async function recordRmsPostSaleAction(businessId, user, payload = {}) {
       ...(payload.reward_pass || {}), campaign_id: payload.reward_pass?.campaign_id || created.sale.campaign_id || created.action.campaign_id || null,
       buyer_name: created.sale.customer_name || item.name, buyer_email: created.sale.customer_email || item.email || null,
       buyer_phone: created.sale.customer_phone || item.phone || null, source_sale_id: created.sale.id, rms_post_sale_action_id: created.action.id,
-      internal_notes: [payload.reward_pass?.internal_notes, `Activación 2 ${created.action.id}; venta original ${created.sale.id}`].filter(Boolean).join("\n"),
+      internal_notes: [payload.reward_pass?.internal_notes, `Valorización ${created.action.id}; venta original ${created.sale.id}`].filter(Boolean).join("\n"),
     });
     await query(
       `update rms_post_sale_actions set status = 'ISSUED', resource_type = 'REWARD_PASS', resource_id = $3, resource_url = $4, updated_by = $5 where business_id = $1 and id = $2`,
@@ -3249,7 +3249,7 @@ async function recordRmsPostSaleAction(businessId, user, payload = {}) {
     await query(
       `insert into rms_post_sale_action_events (business_id, post_sale_action_id, event_type, event_description, status, metadata, created_by)
        values ($1,$2,'post_sale_resource_linked',$3,'ISSUED',$4::jsonb,$5)`,
-      [businessId, created.action.id, "Recurso de Activación 2 vinculado a la venta original.", JSON.stringify({ resource_type: executionMode, resource_id: resource?.id || resource?.qr_code?.id || null, sale_id: created.sale.id }), user.id]
+      [businessId, created.action.id, "Recurso de Valorización vinculado a la venta original.", JSON.stringify({ resource_type: executionMode, resource_id: resource?.id || resource?.qr_code?.id || null, sale_id: created.sale.id }), user.id]
     );
   }
   const current = (await listRmsPostSaleActions(businessId, { sale_id: created.sale.id })).actions.find((entry) => entry.id === created.action.id) || created.action;
@@ -3259,7 +3259,7 @@ async function recordRmsPostSaleAction(businessId, user, payload = {}) {
     intelligence = await markRmsLifecycleStatus(businessId, user, {
       source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || null, sale_id: created.sale.id,
       lifecycle_status: "CYCLE_ANALYZED", event_type: "activation_2_result_analyzed",
-      event_title: "Resultado de Activación 2 incorporado a Inteligencia",
+      event_title: "Resultado de Valorización incorporado a Inteligencia GOS",
       reason: current.result_note || current.evidence,
       idempotency_key: `post-sale-analysis:${current.id}:${current.status}`,
       metadata: { rms_post_sale_action_id: current.id, sale_id: created.sale.id, activation_2_status: current.status },

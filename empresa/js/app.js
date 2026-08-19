@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260818-rms-post-sale-redesign-v228";
+const APP_VERSION = "empresa-20260819-rms-valuation-refinery-v279";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -45629,7 +45629,7 @@ function rmsPostSaleStationCardMarkup(item = {}) {
         <section class="rms-refinery-panel" data-rms-refinery-panel="${escapeHtml(item.id)}" data-rms-refinery-panel-key="REBUY" hidden><header><span class="mono-label">RECOMPRA</span><h5>Deja listo el siguiente motivo para volver</h5><p>Crea un ticket QR ligado a esta relación. No altera el valor ni la atribución de la venta actual.</p></header><div class="rms-sale-form-grid"><label><span>Beneficio de recompra</span><input type="text" data-rms-refinery-rebuy-benefit="${escapeHtml(item.id)}" placeholder="Ej.: $20.000 en la próxima compra"></label><label><span>Canal para compartirlo</span><select data-rms-refinery-channel="${escapeHtml(item.id)}"><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="">Solo generar QR</option></select></label></div><label class="rms-commercial-note-field"><span>Mensaje para el cliente</span><textarea rows="2" data-rms-refinery-message="${escapeHtml(item.id)}" placeholder="Gracias por tu compra. Aquí tienes un beneficio para tu próxima visita."></textarea></label></section>
         </section>
         <details class="rms-post-sale-history" ${actions.length ? "" : "open"}><summary><span><span class="material-symbols-outlined" aria-hidden="true">history</span>Actividad de esta venta</span><small>${escapeHtml(actionLabel)}</small></summary><ol>${activityMarkup}</ol></details>
-        <section class="rms-refinery-finish"><div><span class="mono-label">CIERRE DE ESTACIÓN</span><strong>El resultado llega a Inteligencia GOS</strong><p>Registra la acción elegida o documenta por qué este cliente no requiere postventa ahora.</p></div><details><summary>Enviar sin acción postventa</summary><label><span>Nota para Inteligencia <em>Opcional</em></span><input type="text" data-rms-post-sale-result="${escapeHtml(item.id)}" placeholder="Ej.: no aplica beneficio en esta compra"></label></details><div class="button-row"><button class="ghost-button compact" type="button" data-rms-post-sale-skip-to-intelligence="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">insights</span>Enviar sin acción</button><button class="solid-button compact" type="button" data-rms-save-post-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span><span data-rms-refinery-submit-label="${escapeHtml(item.id)}">Crear QR de referido</span></button></div></section>
+        <section class="rms-refinery-finish"><div><span class="mono-label">CIERRE DE LA GESTIÓN</span><strong>La acción queda registrada en Inteligencia GOS</strong><p>Al guardar un referido, fidelización o recompra se conserva el resultado. Si no activarás nada, registra el motivo para cerrar el caso con contexto.</p></div><details><summary>Cerrar sin activar</summary><label><span>Motivo para Inteligencia <em>Opcional</em></span><input type="text" data-rms-post-sale-result="${escapeHtml(item.id)}" placeholder="Ej.: no aplica beneficio en esta compra"></label></details><div class="button-row"><button class="ghost-button compact" type="button" data-rms-post-sale-skip-to-intelligence="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">insights</span>Cerrar sin activación</button><button class="solid-button compact" type="button" data-rms-save-post-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span><span data-rms-refinery-submit-label="${escapeHtml(item.id)}">Crear QR de referido</span></button></div></section>
       </section>
     </article>`;
 }
@@ -46776,7 +46776,7 @@ function rmsStationVisualMeta(phase = "") {
       screenTitle: "Estación de almacenamiento: Ventas atribuidas",
       visualLabel: "Inventario: compras por completar",
       input: "Compra directa, acuerdo limpio de Negociación o acuerdo liberado por Riesgos.",
-      output: "Venta atribuida con producto, cantidad, pago, fuente y evidencia para Activación 2.",
+      output: "Venta atribuida con producto, cantidad, pago, fuente y evidencia para Valorización Clientes.",
       focus: "Completar la compra real y dejar claro qué acción produjo revenue, puntos y continuidad.",
       checklist: ["Producto", "Cantidad", "Valor pagado", "Fuente", "Evidencia"],
     },
@@ -46794,11 +46794,11 @@ function rmsStationVisualMeta(phase = "") {
     },
     postventa: {
       icon: "redeem",
-      tone: "postsale",
+      tone: "post-sale",
       image: "/empresa/img/qori-station-09-valorizacion-slider.png",
       imageAlt: "Estación 09 Valorización Clientes",
-      screenTitle: "Estación de almacenamiento: Activación 2",
-      visualLabel: "Inventario: clientes para refinar",
+      screenTitle: "Estación de Valorización Clientes: relación que crece",
+      visualLabel: "Clientes listos para crecer, recomendar o volver",
       input: "Clientes con venta atribuida y datos de compra heredados.",
       output: "Referido, afiliación, puntos, sellos o recompra registrados para Inteligencia GOS.",
       focus: "Elegir una sola acción postventa que aumente referidos, fidelización o recompra; también puede pasar sin acción.",
@@ -48067,7 +48067,7 @@ const RMS_STATION_HANDOFFS = Object.freeze({
   procesamiento: { receives: "Activación enviada y respuesta", decides: "Negociar, proteger, vender o reciclar", delivers: "Destino con contexto" },
   accion_correctiva: { receives: "Interés, detalle o condición pendiente", decides: "Resultado de la negociación", delivers: "Ventas, Riesgos o Reciclaje" },
   control_anti_fuga: { receives: "Acuerdo con señal crítica", decides: "Liberar, devolver o reciclar", delivers: "Venta protegida o siguiente acción" },
-  cierre: { receives: "Compra reportada o acuerdo confirmado", decides: "Datos finales de la venta", delivers: "Cliente para Activación 2" },
+  cierre: { receives: "Compra reportada o acuerdo confirmado", decides: "Datos finales de la venta", delivers: "Cliente para Valorización Clientes" },
   postventa: { receives: "Cliente y venta atribuida", decides: "Referido, fidelización o recompra", delivers: "Señal para Inteligencia GOS" },
   inteligencia: { receives: "Recorrido y resultado comercial", decides: "Qué repetir, corregir o dejar de hacer", delivers: "Aprendizaje para Recolector" },
 });
@@ -49301,7 +49301,7 @@ function bindRmsMachineActions(root) {
       if (!item) return;
       button.disabled = true;
       saveRmsPostSaleAction(item, root)
-        .catch((error) => showFeedback(error.message || "No pudimos registrar la Activación 2.", "error", { title: "Activación 2" }))
+        .catch((error) => showFeedback(error.message || "No pudimos registrar la acción de Valorización.", "error", { title: "Valorización Clientes" }))
         .finally(() => { button.disabled = false; });
     });
   });
@@ -49310,7 +49310,7 @@ function bindRmsMachineActions(root) {
       const item = rmsOpportunityById(button.dataset.rmsPostSaleSkipToIntelligence || "");
       if (!item) return;
       sendRmsPostSaleToIntelligence(item, root)
-        .catch((error) => showFeedback(error.message || "No pudimos enviar esta decisión a Inteligencia GOS.", "error", { title: "Activación 2" }));
+        .catch((error) => showFeedback(error.message || "No pudimos enviar esta decisión a Inteligencia GOS.", "error", { title: "Valorización Clientes" }));
     });
   });
   root.querySelectorAll("[data-rms-intelligence-view]").forEach((button) => {
@@ -50007,11 +50007,11 @@ function handleRmsEmptyStationOperation(phase = "", stage = {}, operation = {}) 
     },
     revenue_generado: () => {
       setView("sales");
-      showFeedback("Valida Control de calidad 2: valor, fuente, producto y siguiente acción de Activación 2.", "info", { title });
+      showFeedback("Valida Control de calidad 2: valor, fuente, producto y siguiente acción de Valorización Clientes.", "info", { title });
     },
     postventa: () => {
       setView("reward-passes");
-      showFeedback("Ejecuta Activación 2 con recompensa, reward pass, beneficio VIP o ticket de próxima compra.", "info", { title });
+      showFeedback("Elige si este cliente crece por referidos, fidelización o recompra.", "info", { title });
     },
     inteligencia: () => {
       setView("dashboard");
@@ -52302,7 +52302,7 @@ function rmsPostSaleDraftFromDom(root, id) {
       content: String(rmsPostSaleRefineryValue(root, id, path, "[data-rms-refinery-message]") || "").trim() || null,
       result_note: "Activación de referidos creada desde la venta atribuida.",
       ticket: { benefit: { benefit_type: "CUSTOM", benefit_label: benefit, benefit_value: {} }, expires_mode: "30_DAYS" },
-      referred_contact: { name: name || null, phone: phone || null, email: email || null, interest: interest || null, preferred_channel: channel || null, note: "Referido capturado desde Activación 2.", contact_consent_confirmed: consent },
+      referred_contact: { name: name || null, phone: phone || null, email: email || null, interest: interest || null, preferred_channel: channel || null, note: "Referido capturado desde Valorización Clientes.", contact_consent_confirmed: consent },
       metadata: { refinery_path: path, referral_capture: Boolean(name || phone || email) },
     };
   }
@@ -52434,7 +52434,7 @@ async function applyRmsPostSaleLoyalty(item, result, draft) {
       method: "POST", headers: authHeaders(),
       body: JSON.stringify({
         full_name: item.name || "Cliente Qori", phone: item.phone || null, email: item.email || null,
-        notes: "Afiliado desde Activación 2 tras una venta atribuida.",
+        notes: "Afiliado desde Valorización Clientes tras una venta atribuida.",
         card_metadata: { source: "rms_activation_2", source_id: item.source_id, sale_id: result?.sale?.id || null },
       }),
     });
@@ -52475,7 +52475,7 @@ async function saveRmsPostSaleAction(item, root) {
     headers: authHeaders(),
     body: JSON.stringify({
       source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null,
-      sale_id: saleId, ...draft, idempotency_key: rmsPostSaleActionKey(item.id),
+      sale_id: saleId, ...draft, send_to_intelligence: true, idempotency_key: rmsPostSaleActionKey(item.id),
     }),
   });
   if (state.rmsPostSaleActionKeys) delete state.rmsPostSaleActionKeys[item.id];
@@ -52489,7 +52489,7 @@ async function saveRmsPostSaleAction(item, root) {
   const loyaltyMessage = loyaltyResult?.awarded
     ? ` Se acreditaron ${loyaltyResult.awarded.toLocaleString("es-CO")} puntos al afiliado.`
     : draft.refinery_path === "LOYALTY" && loyaltyResult ? " La afiliación quedó vinculada a esta compra." : "";
-  showFeedback(result?.duplicate ? "Esta acción ya estaba registrada; no se duplicó el recurso ni la venta." : `Activación 2 registrada sobre la venta original.${loyaltyMessage}`, "success", { title: "Activación 2" });
+  showFeedback(result?.duplicate ? "Esta acción ya estaba registrada; no se duplicó el recurso ni la venta." : `Acción de Valorización registrada y resultado enviado a Inteligencia GOS.${loyaltyMessage}`, "success", { title: "Valorización Clientes" });
   openRmsStation("postventa", { source: "post-sale-action" });
 }
 
@@ -52531,7 +52531,7 @@ async function sendRmsPostSaleToIntelligence(item, root) {
       loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "postventa" }),
       loadRmsIntelligenceData({ force: true }),
     ]);
-    showFeedback(result?.duplicate ? "Esta decisión ya estaba registrada; no se duplicó." : "Sin acción postventa: la decisión fue registrada y enviada a Inteligencia GOS.", "success", { title: "Activación 2" });
+    showFeedback(result?.duplicate ? "Esta decisión ya estaba registrada; no se duplicó." : "Sin activación adicional: la decisión quedó registrada y enviada a Inteligencia GOS.", "success", { title: "Valorización Clientes" });
     openRmsStation("postventa", { source: "post-sale-intelligence" });
   } catch (error) {
     if (button) button.disabled = false;
