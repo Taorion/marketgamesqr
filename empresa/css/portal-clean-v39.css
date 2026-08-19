@@ -29611,6 +29611,27 @@ html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-ris
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-action small { color: #5c7488 !important; line-height: 1.35 !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-action { display: grid !important; align-content: center !important; gap: 8px !important; padding: 14px !important; border-radius: 16px !important; background: #eaf5fc !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-action .solid-button { width: 100% !important; justify-content: center !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-action .solid-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 9px !important;
+  min-height: 44px !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+}
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-builder-action .solid-button .material-symbols-outlined {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 22px !important;
+  width: 22px !important;
+  height: 22px !important;
+  margin: 0 !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+}
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-steps {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
