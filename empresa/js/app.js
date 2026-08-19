@@ -55542,7 +55542,8 @@ function ensureRmsNegotiationSaleContextFields(card, id) {
 }
 
 function rmsNegotiationDraft(root, id) {
-  {
+  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
+  if (!card?.classList.contains("rms-negotiation-compact")) {
     const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"]`);
     const active = card?.querySelector("[data-rms-negotiation-tab].is-active")?.dataset.rmsNegotiationTabKey || "send";
     const activeValue = (selector, fallback = "") => String(rmsCompactActiveNode(root, id, selector)?.value || fallback).trim();
@@ -55571,7 +55572,7 @@ function rmsNegotiationDraft(root, id) {
     };
   }
   const confirmation = rmsCommercialConfirmationDraft(root, id);
-  const active = root.querySelector(`[data-rms-station-lead="${CSS.escape(id)}"] [data-rms-negotiation-tab].is-active`)?.dataset.rmsNegotiationTabKey || "conversion";
+  const active = card.querySelector("[data-rms-negotiation-tab].is-active")?.dataset.rmsNegotiationTabKey || "conversion";
   const activeValue = (selector, fallback = "") => String(rmsCompactActiveNode(root, id, selector)?.value || fallback).trim();
   const resultChoice = activeValue("[data-rms-negotiation-result-choice]", "WAITING");
   return {
