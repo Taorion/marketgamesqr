@@ -958,6 +958,15 @@ async function listRmsOpportunities(businessId, filters = {}) {
     ...recentStateRows.map((row) => [`${crmSourceType(row)}:${row.source_id}`, row]),
     ...Array.from((await stateRowsFor(businessId, mergedRows)).entries()),
   ]);
+  const openRecyclingRows = phaseFilter === "accion_correctiva"
+    ? await query(
+      `select source_type, source_id
+         from rms_recycling_cases
+        where business_id = $1 and recycle_status in ('SCHEDULED', 'REACTIVATING')`,
+      [businessId]
+    )
+    : { rows: [] };
+  const openRecyclingKeys = new Set((openRecyclingRows.rows || []).map((row) => `${crmSourceType(row)}:${row.source_id}`));
   const needsInventory = true;
   const inventoryProducts = needsInventory ? await inventoryProductsForBusiness(businessId) : [];
   const canonicalRows = collapseRmsDuplicateContacts(mergedRows, stateMap);
@@ -967,7 +976,8 @@ async function listRmsOpportunities(businessId, filters = {}) {
   // Reciclaje es una salida lateral de Negociación: el estado histórico
   // conserva `accion_correctiva` para auditoría, pero el caso no puede
   // seguir apareciendo como operable en esa estación.
-  const isOpenRecycled = (item) => item.state_metadata?.recycling?.status === "RECYCLED";
+  const isOpenRecycled = (item) => item.state_metadata?.recycling?.status === "RECYCLED"
+    || openRecyclingKeys.has(`${item.source_type}:${item.source_id}`);
   const opportunities = phaseFilter
     ? allOpportunities.filter((item) => item.stage === phaseFilter && !(phaseFilter === "accion_correctiva" && isOpenRecycled(item)))
     : allOpportunities;
