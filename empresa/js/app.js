@@ -48992,6 +48992,21 @@ function bindRmsMachineActions(root) {
     const operatingFlow = card.querySelector(".rms-risk-operating-flow");
     const destinationTabs = card.querySelector("[data-rms-risk-tabs]");
     if (operatingFlow && destinationTabs) operatingFlow.insertAdjacentElement("afterend", destinationTabs);
+    operatingFlow?.querySelectorAll("[data-rms-flow-step]").forEach((step) => {
+      const focusStep = () => {
+        const key = step.dataset.rmsFlowStep;
+        const target = key === "1" ? operatingFlow.querySelector(".rms-risk-builder-final") : key === "2" ? operatingFlow.querySelector("[data-rms-risk-resource-status]") : card.querySelector("[data-rms-risk-tabs]");
+        target?.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (key === "3") target?.querySelector("[data-rms-risk-tab]")?.focus();
+      };
+      step.addEventListener("click", focusStep);
+      step.addEventListener("keydown", (event) => { if (["Enter", " "].includes(event.key)) { event.preventDefault(); focusStep(); } });
+    });
+    operatingFlow?.querySelector("[data-rms-risk-go-response]")?.addEventListener("click", () => {
+      const target = card.querySelector("[data-rms-risk-tabs]");
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+      target?.querySelector("[data-rms-risk-tab]")?.focus();
+    });
     activateRmsRiskTab(root, id, "sale");
   });
   root.querySelectorAll("[data-rms-risk-tab]").forEach((button) => {
@@ -55874,6 +55889,14 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
 // Asegura que el estado visual final sea el que usa el flujo después de cargar todas las declaraciones legacy.
 rmsRiskRecoveryResourceMarkup = rmsRiskRecoveryResourceMarkupVisual;
 rmsRiskOperatingFlowMarkup = rmsRiskOperatingFlowMarkupJourney;
+
+// Convierte el stepper en navegación operativa: cada estado abre su bloque real.
+const rmsRiskOperatingFlowMarkupBase = rmsRiskOperatingFlowMarkup;
+rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupInteractive(item = {}) {
+  let html = rmsRiskOperatingFlowMarkupBase(item);
+  html = html.replace(/data-step="(\d+)"/g, 'data-step="$1" data-rms-flow-step="$1" role="button" tabindex="0"');
+  return html.replace('</section>', `<div class="rms-risk-response-bridge"><div><span class="mono-label">PASO 3 · RESPUESTA</span><strong>¿Qué respondió el cliente?</strong><small>Abre el resultado, escribe la justificación y envíalo a Ventas atribuidas o Reciclaje.</small></div><button class="solid-button compact" type="button" data-rms-risk-go-response="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">edit_note</span>Registrar respuesta</button></div></section>`);
+};
 
 // Nunca uses el validador como sustituto de la imagen: si no hay imagen, se informa y no se navega.
 rmsRiskRecoveryResourceMarkup = function rmsRiskRecoveryResourceMarkupImageOnly(item = {}) {
