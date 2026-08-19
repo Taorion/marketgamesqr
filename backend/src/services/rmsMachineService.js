@@ -2,7 +2,7 @@ const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
 const { createLeadAgendaItem, createLeadNote, listLeadCrmRows } = require("./leadCrmService");
-const { createPostSaleQr, createRiskRecoveryQr } = require("./strategicQrService");
+const { createPostSaleQr, createRiskRecoveryQr, getIndividualQrDownload } = require("./strategicQrService");
 const { createRewardPass } = require("./rewardPassService");
 const {
   affiliatePointRuleMetadata,
@@ -3127,6 +3127,7 @@ async function listRmsPostSaleActions(businessId, filters = {}) {
   const sourceType = filters.source_type ? crmSourceType({ source_type: filters.source_type }) : null;
   const sourceId = filters.source_id || null;
   const saleId = filters.sale_id || null;
+  const includeAssets = filters.include_assets === true || String(filters.include_assets || "").toLowerCase() === "true";
   const result = await query(
     `select a.*, s.product_name as sale_product_name, s.sale_amount, s.currency, s.paid_at,
             coalesce(json_agg(e order by e.created_at desc) filter (where e.id is not null), '[]'::json) as events
@@ -3147,7 +3148,17 @@ async function listRmsPostSaleActions(businessId, filters = {}) {
       limit 120`,
     [businessId, sourceType, sourceId, saleId]
   );
-  return { actions: result.rows };
+  const actions = includeAssets
+    ? await Promise.all(result.rows.map(async (action) => {
+        if (action.resource_type !== "QR_TICKET" || !action.resource_id) return action;
+        try {
+          return { ...action, asset_preview: await getIndividualQrDownload(businessId, action.resource_id, { publicClaimUrl: true }) };
+        } catch (_) {
+          return action;
+        }
+      }))
+    : result.rows;
+  return { actions };
 }
 
 async function recordRmsPostSaleAction(businessId, user, payload = {}) {

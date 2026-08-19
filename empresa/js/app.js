@@ -52347,7 +52347,7 @@ function rmsPostSaleDraftFromDom(root, id) {
 }
 
 async function loadRmsPostSaleActions(options = {}) {
-  const data = await apiSafe("/api/business/rms-machine/post-sale-actions", { headers: authHeaders() }, { actions: [] });
+  const data = await apiSafe("/api/business/rms-machine/post-sale-actions?include_assets=true", { headers: authHeaders() }, { actions: [] });
   state.rmsPostSaleActions = Array.isArray(data.actions) ? data.actions : [];
   return state.rmsPostSaleActions;
 }
@@ -56337,7 +56337,7 @@ function rmsPostSaleSaleActions(item = {}) {
 }
 
 function rmsPostSaleResourceForAction(action = {}) {
-  return state.rmsPostSaleGeneratedResources?.[action.id] || null;
+  return state.rmsPostSaleGeneratedResources?.[action.id] || action.asset_preview || null;
 }
 
 function rmsPostSaleAssetLabel(action = {}) {
