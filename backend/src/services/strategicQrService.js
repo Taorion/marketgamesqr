@@ -386,7 +386,7 @@ async function createPostSaleQr(businessId, user, body) {
     const qrResult = await client.query(
       `insert into qr_codes
         (business_id, campaign_id, game_id, player_id, reward_id, token, status, metadata, expires_at, batch_id, origin_type, benefit_type, benefit_value, sale_id, claim_required, claimed_at, claimed_by_player_id, affiliate_id)
-       values ($1, $2, null, $3, $4, $5, $6, $7, $8, null, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+       values ($1, $2, null, $3, $4, $5, $6, $7, $8, null, $9, $10, $11, $12, $13, $14, $15, $16)
        returning *`,
       [
         businessId,
@@ -407,7 +407,7 @@ async function createPostSaleQr(businessId, user, body) {
           referral_affiliate_name: affiliate?.full_name || null,
           ...body.metadata,
         },
-        expiresAt, null,
+        expiresAt,
         isReferralClaim ? "AFFILIATE_REFERRAL" : "POST_SALE",
         benefit.benefit_type, benefitPayload, sale.id, claimRequired,
         claimRequired ? null : (player ? new Date().toISOString() : null),
