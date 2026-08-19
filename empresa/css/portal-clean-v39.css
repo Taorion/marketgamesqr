@@ -29453,3 +29453,58 @@ html body[data-current-view="rms-machine"] .portal-shell
     transition: none !important;
   }
 }
+
+/* Activación 1: una sola consola pesada abierta y feedback de sincronización visible. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item.is-work-compact {
+  grid-template-columns: minmax(0, 1fr) !important;
+  box-shadow: 0 8px 20px rgba(19, 78, 129, .05) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item.is-work-compact .rms-activation-work-lead {
+  position: static !important;
+  border-right: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-activation-work-item.is-work-open {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  border-color: rgba(7, 89, 214, .34) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-progress {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 14px 0 0 !important;
+  padding: 13px 15px !important;
+  border: 1px solid rgba(7, 89, 214, .18) !important;
+  border-radius: 14px !important;
+  background: #eff7ff !important;
+  color: #0b397f !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-progress .busy-spinner {
+  flex: 0 0 auto !important;
+  width: 22px !important;
+  height: 22px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-progress strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-progress small {
+  display: block !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-station-progress small {
+  margin-top: 2px !important;
+  color: #52708f !important;
+}
+
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-progress {
+  border-color: rgba(158, 217, 255, .24) !important;
+  background: rgba(12, 53, 89, .88) !important;
+  color: #edf9ff !important;
+}
+
+html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-progress small {
+  color: #b8d8ee !important;
+}
