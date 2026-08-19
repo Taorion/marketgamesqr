@@ -30006,3 +30006,28 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-risk-tabs.rms-risk
 html body[data-current-view="rms-machine"] .portal-shell .rms-risk-recovery-form.rms-risk-phase-locked::after { content: none !important; display: none !important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-risk-tabs.rms-risk-phase-locked { border-color: #d7e5ec !important; background: #f7fafc !important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-risk-recovery-form.rms-risk-phase-locked { border-color: #d7e5ec !important; background: #fbfdfe !important; }
+
+/* Render nuevo de Riesgos: tres tarjetas de fase, sin mezclar generación y resultado. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-phased { display: grid !important; gap: 14px !important; padding: 18px !important; border: 1px solid #cfe2ed !important; border-radius: 20px !important; background: #f5fafc !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phased-head { display: grid !important; gap: 4px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phased-head h5 { margin: 0 !important; color: #052a6b !important; font-size: clamp(1.1rem,2vw,1.45rem) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phased-head p { margin: 0 !important; color: #5d788a !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-rail { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 8px !important; margin: 0 !important; padding: 0 !important; list-style: none !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-rail li { display: flex !important; align-items: center !important; gap: 9px !important; min-width: 0 !important; padding: 9px 10px !important; border: 1px solid #d9e8ef !important; border-radius: 12px !important; background: #fff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-rail li b { display: grid !important; place-items: center !important; flex: 0 0 28px !important; width: 28px !important; height: 28px !important; border-radius: 50% !important; background: #cbdde7 !important; color: #527084 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-rail li span { display: grid !important; gap: 1px !important; min-width: 0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-rail strong { color: #315b78 !important; font-size: .76rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-rail small { color: #78909e !important; font-size: .66rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-rail li.is-active { border-color: #75bfe0 !important; background: #eef9fe !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-rail li.is-active b { background: #087fbd !important; color: #fff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-card { display: grid !important; gap: 14px !important; padding: 16px !important; border: 1px solid #d6e6ee !important; border-radius: 16px !important; background: #fff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-card > header { display: flex !important; align-items: flex-start !important; gap: 11px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-number { display: grid !important; place-items: center !important; flex: 0 0 34px !important; width: 34px !important; height: 34px !important; border-radius: 10px !important; background: #e8f4ff !important; color: #0759d6 !important; font-size: .72rem !important; font-weight: 900 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-card > header > div { display: grid !important; gap: 3px !important; min-width: 0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-card h6 { margin: 0 !important; color: #123f5b !important; font-size: 1rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-card header small { color: #6b8493 !important; line-height: 1.35 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-phased .rms-risk-builder-config { display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 10px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-phased .rms-risk-builder-config label { display: grid !important; gap: 5px !important; min-width: 0 !important; color: #315b78 !important; font-size: .7rem !important; font-weight: 900 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-phased .rms-risk-builder-config :is(input,select) { width: 100% !important; min-height: 42px !important; border: 1px solid #c9dce7 !important; border-radius: 10px !important; background: #fbfdfe !important; color: #123f5b !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-response-note { padding: 12px 13px !important; border-radius: 10px !important; background: #f1f7fa !important; color: #5d788a !important; font-size: .78rem !important; }
+@media (max-width: 700px) { html body[data-current-view="rms-machine"] .portal-shell .rms-risk-phase-rail { grid-template-columns: 1fr !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-phased .rms-risk-builder-config { grid-template-columns: 1fr !important; } }
