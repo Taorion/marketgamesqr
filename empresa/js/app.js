@@ -49012,6 +49012,18 @@ function bindRmsMachineActions(root) {
       const focusStep = () => {
         const key = step.dataset.rmsFlowStep;
         const target = key === "1" ? operatingFlow.querySelector(".rms-risk-builder-final") : key === "2" ? operatingFlow.querySelector("[data-rms-risk-resource-status]") : card.querySelector("[data-rms-risk-tabs]");
+        operatingFlow.querySelectorAll("[data-rms-flow-step]").forEach((node) => { node.classList.remove("is-selected"); node.removeAttribute("aria-current"); });
+        step.classList.add("is-selected");
+        step.setAttribute("aria-current", "step");
+        const next = operatingFlow.querySelector(".rms-risk-flow-next strong");
+        const nextDetail = operatingFlow.querySelector(".rms-risk-flow-next small");
+        const copy = {
+          "1": ["Paso 1 activo: prepara el beneficio", "Selecciona una alternativa autorizada y luego genera el ticket."],
+          "2": ["Paso 2 activo: revisa y comparte el ticket", "Confirma que el QR esté visible; el lead permanece en Riesgos."],
+          "3": ["Paso 3 activo: registra la respuesta", "Elige Venta lograda o Reciclaje, escribe la justificación y guarda."],
+        }[key] || [];
+        if (next && copy[0]) next.textContent = copy[0];
+        if (nextDetail && copy[1]) nextDetail.textContent = copy[1];
         target?.scrollIntoView({ behavior: "smooth", block: "center" });
         if (key === "3") target?.querySelector("[data-rms-risk-tab]")?.focus();
       };
@@ -49020,9 +49032,16 @@ function bindRmsMachineActions(root) {
     });
     operatingFlow?.querySelector("[data-rms-risk-go-response]")?.addEventListener("click", () => {
       const target = card.querySelector("[data-rms-risk-tabs]");
+      operatingFlow.querySelectorAll("[data-rms-flow-step]").forEach((node) => { node.classList.remove("is-selected"); node.removeAttribute("aria-current"); });
+      const responseStep = operatingFlow.querySelector('[data-rms-flow-step="3"]');
+      responseStep?.classList.add("is-selected");
+      responseStep?.setAttribute("aria-current", "step");
       target?.scrollIntoView({ behavior: "smooth", block: "center" });
       target?.querySelector("[data-rms-risk-tab]")?.focus();
     });
+    const initialStep = operatingFlow?.querySelector("[data-rms-flow-step].is-active") || operatingFlow?.querySelector('[data-rms-flow-step="1"]');
+    initialStep?.classList.add("is-selected");
+    initialStep?.setAttribute("aria-current", "step");
     activateRmsRiskTab(root, id, "sale");
   });
   root.querySelectorAll("[data-rms-risk-tab]").forEach((button) => {

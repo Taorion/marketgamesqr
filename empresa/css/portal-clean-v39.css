@@ -29623,6 +29623,67 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-risk-response-brid
 html body[data-current-view="rms-machine"] .portal-shell .rms-risk-response-bridge small { color: #53677f !important; line-height: 1.35 !important; }
 @media (max-width: 620px) { html body[data-current-view="rms-machine"] .portal-shell .rms-risk-response-bridge { align-items: stretch !important; flex-direction: column !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-risk-response-bridge button { width: 100% !important; } }
 
+/* Paso a paso visible: elimina el aspecto de texto corrido y hace evidente el estado activo. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  padding: 4px !important;
+  background: #edf5fa !important;
+  border: 1px solid #d4e5ef !important;
+  border-radius: 16px !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey::before { display: none !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 38px minmax(0,1fr) !important;
+  grid-template-rows: auto auto !important;
+  align-items: center !important;
+  min-height: 70px !important;
+  gap: 2px 9px !important;
+  padding: 10px 12px !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span b {
+  grid-row: 1 / 3 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: #c9dce7 !important;
+  color: #48687b !important;
+  font-size: .82rem !important;
+  font-weight: 900 !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span strong { color: #486579 !important; font-size: .82rem !important; line-height: 1.15 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span small { color: #718999 !important; font-size: .68rem !important; line-height: 1.2 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span.is-active,
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span.is-selected {
+  border-color: #0784c8 !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(7,89,150,.14) !important;
+  transform: translateY(-1px) !important;
+}
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span.is-active b,
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span.is-selected b { background: #087fbd !important; color: #fff !important; box-shadow: 0 0 0 4px rgba(8,127,189,.16) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span.is-active strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span.is-selected strong { color: #064f7d !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span.is-complete { background: #f2fbf7 !important; border-color: #a6d9c5 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span.is-complete b { background: #16956d !important; color: #fff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span.is-complete strong { color: #146c54 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span.is-pending { opacity: .72 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-next { margin-top: 10px !important; border: 1px solid #b8ddec !important; background: #eef9fe !important; box-shadow: none !important; }
+@media (max-width: 700px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey { grid-template-columns: 1fr !important; gap: 6px !important; padding: 6px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span { min-height: 58px !important; }
+}
+
 /* Composicion final: evita que los estilos legacy de la consola rompan el flujo. */
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-commercial-work-console {
   display: flex !important;
