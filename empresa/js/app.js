@@ -49001,6 +49001,12 @@ function bindRmsMachineActions(root) {
     const operatingFlow = card.querySelector(".rms-risk-operating-flow");
     const destinationTabs = card.querySelector("[data-rms-risk-tabs]");
     if (operatingFlow && destinationTabs) operatingFlow.insertAdjacentElement("afterend", destinationTabs);
+    const activePhasedFlow = card.querySelector(".rms-risk-flow-phased");
+    const recoveryForm = card.querySelector(".rms-risk-recovery-form");
+    if (activePhasedFlow) {
+      if (destinationTabs) activePhasedFlow.insertAdjacentElement("afterend", destinationTabs);
+      if (recoveryForm) (destinationTabs || activePhasedFlow).insertAdjacentElement("afterend", recoveryForm);
+    }
     // Blindaje contra el markup legacy: convierte el stepper estatico en controles navegables.
     const legacySteps = operatingFlow?.querySelector(".rms-risk-flow-steps");
     if (legacySteps && !legacySteps.classList.contains("rms-risk-flow-journey")) {
