@@ -2667,9 +2667,24 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const productRow = productSnapshot.inventory_product;
   const productName = productSnapshot.product_name;
   const productCorrectedAtSale = Boolean(confirmation?.inventory_product_id) && String(payload.inventory_product_id) !== String(confirmation.inventory_product_id);
-  const unitPrice = Math.max(0, roundedMoney(productSnapshot.product_price_snapshot));
-  const saleAmount = roundedMoney(unitPrice * quantity);
-  if (unitPrice <= 0 || saleAmount <= 0) {
+  const originalUnitPrice = Math.max(0, roundedMoney(productSnapshot.product_price_snapshot));
+  const originalAmount = roundedMoney(originalUnitPrice * quantity);
+  const confirmedAmount = Math.max(0, roundedMoney(confirmation?.amount));
+  const negotiatedAmount = confirmedAmount > 0 ? confirmedAmount : originalAmount;
+  const negotiatedUnitPrice = quantity > 0 ? roundedMoney(negotiatedAmount / quantity) : 0;
+  const riskDiscountPercent = Math.min(100, Math.max(0, Number(riskRecoveryOffer?.discount_percent || 0)));
+  const riskDiscountAmount = riskDiscountPercent > 0
+    ? roundedMoney(negotiatedAmount * riskDiscountPercent / 100)
+    : 0;
+  const requestedFinalAmount = Math.max(0, roundedMoney(payload.sale_amount));
+  const saleAmount = riskDiscountAmount > 0
+    ? roundedMoney(negotiatedAmount - riskDiscountAmount)
+    : requestedFinalAmount > 0 && !confirmation?.amount
+      ? requestedFinalAmount
+      : negotiatedAmount;
+  const discountAmount = roundedMoney(Math.max(0, originalAmount - saleAmount));
+  const discountPercent = originalAmount > 0 ? roundedMoney((discountAmount / originalAmount) * 100) : 0;
+  if (originalUnitPrice <= 0 || saleAmount <= 0) {
     throw badRequest("El producto confirmado debe tener un precio de venta mayor a cero para calcular el valor pagado.");
   }
   const unitCost = Math.max(0, roundedMoney(payload.unit_cost ?? productRow?.cost_price ?? 0));
@@ -2680,7 +2695,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const roi = invested > 0 ? Math.round((netProfit / invested) * 1000000) / 1000000 : null;
   const paidAt = payload.paid_at || new Date().toISOString();
   const currency = String(payload.currency || "COP").trim().toUpperCase().slice(0, 8) || "COP";
-  const economics = { quantity, unit_price: unitPrice, sale_amount: saleAmount, unit_cost: unitCost, product_cost_total: productCostTotal, benefit_cost: benefitCost, acquisition_cost: acquisitionCost, gross_profit: grossProfit, net_profit: netProfit, roi, currency };
+  const economics = { quantity, unit_price: negotiatedUnitPrice, original_unit_price: originalUnitPrice, original_amount: originalAmount, negotiated_amount: negotiatedAmount, discount_amount: discountAmount, discount_percent: discountPercent, final_amount: saleAmount, sale_amount: saleAmount, unit_cost: unitCost, product_cost_total: productCostTotal, benefit_cost: benefitCost, acquisition_cost: acquisitionCost, gross_profit: grossProfit, net_profit: netProfit, roi, currency };
   const metadata = {
     source_module: "rms_machine",
     rms_source_type: sourceType,
@@ -2702,6 +2717,14 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     risk_sale_handoff: riskSaleHandoff,
     risk_recovery_resource: workflowMetadata.risk_recovery_resource || riskReview.recovery_resource || null,
     economics,
+    pricing_breakdown: {
+      original_amount: originalAmount,
+      negotiated_amount: negotiatedAmount,
+      discount_amount: discountAmount,
+      discount_percent: discountPercent,
+      final_amount: saleAmount,
+      currency,
+    },
     acquisition_channel: {
       id: item.acquisition_channel_id || null,
       name_snapshot: item.acquisition_channel_name_snapshot || item.channel || null,

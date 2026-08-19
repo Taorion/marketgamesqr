@@ -45099,6 +45099,27 @@ function bindRmsRiskMetricPopovers(root) {
   }
 }
 
+function rmsAttributedSalePricing({ inventoryProduct = {}, quantity = 1, confirmation = {}, saleContext = {}, riskContext = {}, currency = "COP" } = {}) {
+  const originalUnitPrice = Math.max(0, Number(inventoryProduct?.unit_price || confirmation.product_price_snapshot || 0));
+  const originalAmount = Math.round(originalUnitPrice * quantity * 100) / 100;
+  const confirmedAmount = Math.max(0, Number(confirmation.amount || 0));
+  const negotiatedAmount = confirmedAmount > 0 ? confirmedAmount : originalAmount;
+  const riskDiscountPercent = Math.min(100, Math.max(0, Number(riskContext.offer?.discount_percent || 0)));
+  const riskDiscountAmount = riskDiscountPercent > 0 ? Math.round(negotiatedAmount * riskDiscountPercent) / 100 : 0;
+  const finalAmount = Math.max(0, Math.round((riskDiscountAmount > 0 ? negotiatedAmount - riskDiscountAmount : negotiatedAmount) * 100) / 100);
+  const discountAmount = Math.max(0, Math.round((originalAmount - finalAmount) * 100) / 100);
+  return {
+    originalUnitPrice,
+    originalAmount,
+    negotiatedAmount,
+    finalAmount,
+    discountAmount,
+    discountPercent: originalAmount > 0 ? Math.round((discountAmount / originalAmount) * 10000) / 100 : 0,
+    currency,
+    detail: saleContext.benefit_description || riskContext.offer?.label || "Beneficio negociado",
+  };
+}
+
 function rmsAttributedSaleStationCardMarkup(item = {}) {
   const workflow = rmsCommercialWorkflow(item);
   const stateMetadata = item.state_metadata || item.metadata || item.rms_metadata || {};
@@ -45141,6 +45162,7 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
   const acquisitionCost = Math.max(0, Number(saleContext.acquisition_cost || 0));
   const inheritedAmount = confirmation.amount ?? evaluation.budget_amount ?? negotiationResponse.amount ?? "";
   const inheritedCurrency = confirmation.currency || evaluation.currency || negotiationResponse.currency || "COP";
+  const pricing = rmsAttributedSalePricing({ inventoryProduct, quantity, confirmation, saleContext, riskContext, currency: inheritedCurrency });
   const inheritedChannel = confirmation.negotiation?.channel || negotiationResponse.channel || activation.channel || "";
   const inheritedResponsible = riskContext.responsible || confirmation.responsible || negotiationResponse.responsible || "";
   const evaluationResponse = RMS_EVALUATION_RESPONSES.find((entry) => entry.value === evaluation.response)?.short || evaluation.response || "Sin respuesta registrada";
@@ -45178,13 +45200,14 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
           <div class="rms-attributed-sale-entry-body">
         ${rmsDealProgressMarkup("sale", "La validación final fue aprobada. Registra el resultado comercial.")}
         <section class="rms-sale-trust-ribbon"><span class="material-symbols-outlined" aria-hidden="true">verified</span><div><strong>Venta lista para atribuir</strong><small>${escapeHtml(saleOrigin)}. Producto, valor y evidencia fueron precargados.</small></div></section>
+        <section class="rms-sale-price-journey" data-rms-sale-pricing="${escapeHtml(item.id)}" aria-label="Trazabilidad del precio"><header><div><span class="mono-label">TRAZABILIDAD DEL PRECIO</span><strong>Así se calculó lo que pagó el cliente</strong></div><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span></header><div class="rms-sale-price-journey-track"><article><small>Precio original</small><strong data-rms-sale-original-price="${escapeHtml(item.id)}">${escapeHtml(rmsCommercialMoney(pricing.originalAmount, inheritedCurrency))}</strong><span>${escapeHtml(`${quantity} unidad(es) · ${rmsCommercialMoney(pricing.originalUnitPrice, inheritedCurrency)} c/u`)}</span></article><span class="material-symbols-outlined rms-sale-price-arrow" aria-hidden="true">arrow_forward</span><article class="is-benefit"><small>Beneficio negociado</small><strong data-rms-sale-discount="${escapeHtml(item.id)}">-${escapeHtml(rmsCommercialMoney(pricing.discountAmount, inheritedCurrency))}</strong><span data-rms-sale-discount-detail="${escapeHtml(item.id)}">${escapeHtml(pricing.detail)}</span></article><span class="material-symbols-outlined rms-sale-price-arrow" aria-hidden="true">arrow_forward</span><article class="is-final"><small>Precio final cobrado</small><strong data-rms-sale-final-price="${escapeHtml(item.id)}">${escapeHtml(rmsCommercialMoney(pricing.finalAmount, inheritedCurrency))}</strong><span data-rms-sale-final-detail="${escapeHtml(item.id)}">${pricing.discountPercent > 0 ? `${pricing.discountPercent}% menos` : "Valor confirmado"}</span></article></div><small class="rms-sale-price-journey-note">El descuento se arrastra desde la negociación o la liberación anti-fuga; el valor final es el que se registra como dinero recibido.</small></section>
         <header class="rms-commercial-console-head"><div><span class="mono-label">Compra confirmada</span><h4>Registra el pago y su rentabilidad</h4><p>La venta se atribuye a este contacto y a la ruta de Activación 1. Los costos son los que declare tu equipo.</p></div><span class="rms-commercial-state is-sale">Pago por registrar</span></header>
         <details class="rms-sale-handoff"><summary><span class="material-symbols-outlined" aria-hidden="true">route</span><span><strong>Ver información heredada</strong><small>Activación, Evaluación, Negociación y Riesgos de fuga quedan guardados. Ábrelo solo si necesitas revisar el contexto.</small></span></summary><div class="rms-sale-handoff-grid"><article><span>Activación</span><strong>${escapeHtml(activationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(activation.firstContactAt ? `Contacto ${formatDate(activation.firstContactAt)}` : "Sin fecha de contacto")}</small></article><article><span>Evaluación</span><strong>${escapeHtml(evaluationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(evaluation.next_action || "Sin próximo paso pendiente")}</small></article><article><span>Negociación</span><strong>${escapeHtml(negotiationDetail || "Venta confirmada")}</strong><small>${escapeHtml(confirmation.evidence ? "Evidencia registrada" : "Sin evidencia adicional")}</small></article><article class="rms-sale-handoff-risk"><span>Riesgos de fuga</span><strong>${escapeHtml(riskDetail || "No fue necesario intervenir")}</strong><small>${escapeHtml([riskContext.reviewedAt ? `Revisado ${formatDate(riskContext.reviewedAt)}` : "", riskContext.signalCount ? `${riskContext.signalCount} señal(es) revisada(s)` : ""].filter(Boolean).join(" · ") || "Sin revisión anti-fuga")}</small></article></div></details>
         <div class="rms-sale-form-grid">
           <label><span>Producto comprado</span><select data-rms-sale-product="${escapeHtml(item.id)}" aria-describedby="rms-sale-product-hint-${escapeHtml(item.id)}">${rmsInventoryProductPickerOptions(inheritedInventoryProductId, defaultProduct)}</select><small id="rms-sale-product-hint-${escapeHtml(item.id)}">Producto precargado desde ${escapeHtml(confirmation.inventory_product_id ? "Negociación" : evaluation.recommended_inventory_product_id ? "Evaluación" : "la asignación del lead")}. Cámbialo solo si el cliente compró otra referencia; Qori conservará ambas referencias en el historial.</small></label>
           <input type="hidden" value="${escapeHtml(defaultProduct)}" data-rms-sale-product-name="${escapeHtml(item.id)}">
           <label><span>Cantidad comprada</span><input type="number" min="0.01" step="0.01" value="${escapeHtml(String(quantity))}" data-rms-sale-quantity="${escapeHtml(item.id)}"></label>
-          <label><span>Dinero recibido</span><input type="number" min="1" step="0.01" value="${escapeHtml(inheritedAmount)}" data-rms-sale-amount="${escapeHtml(item.id)}" placeholder="0"></label>
+          <label><span>Dinero recibido</span><input type="number" min="1" step="0.01" value="${escapeHtml(String(pricing.finalAmount || inheritedAmount || ""))}" data-rms-sale-amount="${escapeHtml(item.id)}" placeholder="0"></label>
           <label><span>Moneda</span><select data-rms-sale-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${currency === inheritedCurrency ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
           <label><span>Costo unitario</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(unitCost))}" data-rms-sale-unit-cost="${escapeHtml(item.id)}"></label>
           <label><span>Medio de pago</span><select data-rms-sale-payment="${escapeHtml(item.id)}"><option value="TRANSFER">Transferencia</option><option value="CASH">Efectivo</option><option value="CARD">Tarjeta</option><option value="PAYMENT_LINK">Link de pago</option><option value="OTHER">Otro</option></select></label>
@@ -51907,12 +51930,13 @@ function rmsSaleDraftFromDom(root, id) {
   const inventoryProduct = findInventoryProductById(productSelect?.value || "");
   const quantity = Math.max(0.01, rmsCommercialNumber(root, "[data-rms-sale-quantity]", id) || 1);
   const unitPrice = Math.max(0, Number(inventoryProduct?.unit_price || 0));
+  const saleAmount = Math.max(0, rmsCommercialNumber(root, "[data-rms-sale-amount]", id));
   return {
     inventory_product_id: inventoryProduct?.id || null,
     product_name: inventoryProduct?.name || "",
     quantity,
     unit_price: unitPrice,
-    sale_amount: Math.round(unitPrice * quantity * 100) / 100,
+    sale_amount: Math.round(saleAmount * 100) / 100,
     currency: rmsCommercialNode(root, "[data-rms-sale-currency]", id)?.value || "COP",
     unit_cost: Math.max(0, rmsCommercialNumber(root, "[data-rms-sale-unit-cost]", id)),
     benefit_type: rmsCommercialNode(root, "[data-rms-sale-benefit-type]", id)?.value || "NONE",
@@ -51929,15 +51953,25 @@ function updateRmsSaleEconomicsPreview(root, id) {
   if (!preview) return;
   const draft = rmsSaleDraftFromDom(root, id);
   const amountInput = rmsCommercialNode(root, "[data-rms-sale-amount]", id);
-  if (amountInput) amountInput.value = String(draft.sale_amount || "");
+  if (amountInput && !amountInput.readOnly) amountInput.value = String(draft.sale_amount || "");
   const unitPrice = rmsCommercialNode(root, "[data-rms-sale-unit-price]", id);
   if (unitPrice) unitPrice.textContent = rmsCommercialMoney(draft.unit_price, draft.currency);
   const total = rmsCommercialNode(root, "[data-rms-sale-calculated-total]", id);
   if (total) total.textContent = rmsCommercialMoney(draft.sale_amount, draft.currency);
+  const item = rmsOpportunityById(id) || {};
+  const workflow = rmsCommercialWorkflow(item);
+  const confirmation = workflow.confirmation || {};
+  const saleContext = confirmation.sale_context || {};
+  const riskContext = rmsRiskRecoveryPresentation(workflow.risk || {}, item.state_metadata || item.metadata || {});
+  const pricing = rmsAttributedSalePricing({ inventoryProduct: findInventoryProductById(draft.inventory_product_id), quantity: draft.quantity, confirmation: { ...confirmation, amount: draft.sale_amount || confirmation.amount }, saleContext, riskContext, currency: draft.currency });
+  const priceValue = (selector, value) => { const node = rmsCommercialNode(root, selector, id); if (node) node.textContent = value; };
+  priceValue("[data-rms-sale-original-price]", rmsCommercialMoney(pricing.originalAmount, draft.currency));
+  priceValue("[data-rms-sale-discount]", `-${rmsCommercialMoney(pricing.discountAmount, draft.currency)}`);
+  priceValue("[data-rms-sale-discount-detail]", pricing.detail || "Sin beneficio registrado");
+  priceValue("[data-rms-sale-final-price]", rmsCommercialMoney(draft.sale_amount || pricing.finalAmount, draft.currency));
+  priceValue("[data-rms-sale-final-detail]", pricing.discountPercent > 0 ? `${pricing.discountPercent}% menos` : "Valor confirmado");
   const productHint = root.querySelector?.(`#rms-sale-product-hint-${CSS.escape(id)}`);
-  const saleWorkflow = rmsCommercialWorkflow(rmsOpportunityById(id) || {});
-  const confirmation = saleWorkflow.confirmation || {};
-  const evaluation = saleWorkflow.evaluation || {};
+  const evaluation = workflow.evaluation || {};
   const inheritedProductId = confirmation.inventory_product_id
     || evaluation.recommended_inventory_product_id
     || rmsOpportunityById(id)?.classified_product_id
@@ -51958,7 +51992,6 @@ function updateRmsSaleEconomicsPreview(root, id) {
   const netProfit = grossProfit - draft.acquisition_cost;
   const invested = productCost + draft.benefit_cost + draft.acquisition_cost;
   const roi = invested > 0 ? netProfit / invested : null;
-  const item = rmsOpportunityById(id) || {};
   const hasAffiliate = Boolean(item.is_affiliate || item.affiliate_id || item.source_type === "AFFILIATE");
   const points = hasAffiliate ? affiliateReferralPointsEstimateDetail(draft.sale_amount) : null;
   const affiliateBox = rmsCommercialNode(root, "[data-rms-sale-affiliate]", id);
@@ -52003,6 +52036,8 @@ function applyRmsNegotiationContextToAttributedSales(root) {
     const amountLabel = amountInput?.closest("label")?.querySelector(":scope > span");
     if (amountInput) amountInput.readOnly = true;
     if (amountLabel) amountLabel.textContent = "Valor pagado (calculado)";
+    const pricing = rmsAttributedSalePricing({ inventoryProduct, quantity: Number(context.quantity) > 0 ? Number(context.quantity) : 1, confirmation: workflow.confirmation || {}, saleContext: context, riskContext, currency: workflow.confirmation?.currency || "COP" });
+    if (amountInput && pricing.finalAmount > 0) amountInput.value = String(pricing.finalAmount);
     if (!card.querySelector("[data-rms-sale-cost-details]")) {
       const details = document.createElement("details");
       details.className = "rms-sale-cost-details";
