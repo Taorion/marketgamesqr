@@ -29679,9 +29679,17 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey 
 html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span.is-complete strong { color: #146c54 !important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span.is-pending { opacity: .72 !important; }
 html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-next { margin-top: 10px !important; border: 1px solid #b8ddec !important; background: #eef9fe !important; box-shadow: none !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps:not(.rms-risk-flow-journey) { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 10px !important; padding: 4px !important; border: 1px solid #d4e5ef !important; border-radius: 16px !important; background: #edf5fa !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps:not(.rms-risk-flow-journey) > span { display: flex !important; align-items: center !important; gap: 9px !important; min-height: 58px !important; padding: 10px 12px !important; border: 1px solid transparent !important; border-radius: 12px !important; background: transparent !important; color: #486579 !important; font-weight: 800 !important; cursor: pointer !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps:not(.rms-risk-flow-journey) > span b { display: grid !important; place-items: center !important; flex: 0 0 32px !important; width: 32px !important; height: 32px !important; border-radius: 50% !important; background: #c9dce7 !important; color: #48687b !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps:not(.rms-risk-flow-journey) > span.is-active,
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps:not(.rms-risk-flow-journey) > span.is-selected { border-color: #0784c8 !important; background: #fff !important; color: #064f7d !important; box-shadow: 0 8px 18px rgba(7,89,150,.14) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps:not(.rms-risk-flow-journey) > span.is-active b,
+html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps:not(.rms-risk-flow-journey) > span.is-selected b { background: #087fbd !important; color: #fff !important; box-shadow: 0 0 0 4px rgba(8,127,189,.16) !important; }
 @media (max-width: 700px) {
   html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey { grid-template-columns: 1fr !important; gap: 6px !important; padding: 6px !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-journey > span { min-height: 58px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-risk-flow-steps:not(.rms-risk-flow-journey) { grid-template-columns: 1fr !important; gap: 6px !important; padding: 6px !important; }
 }
 
 /* Composicion final: evita que los estilos legacy de la consola rompan el flujo. */
