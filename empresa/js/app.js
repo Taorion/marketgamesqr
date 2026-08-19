@@ -44128,6 +44128,15 @@ rmsRiskRecoveryResourceMarkup = function rmsRiskRecoveryResourceMarkupFinal(item
   return `<article class="rms-risk-resource-ready"><div class="rms-risk-qr-frame">${image}</div><div class="rms-risk-resource-copy"><span class="mono-label">ACTIVO LISTO</span><strong>${escapeHtml(label)}</strong><small>Vigente hasta ${escapeHtml(resource.expires_at ? formatDate(resource.expires_at) : "sin vencimiento")}. El lead continúa en Riesgos hasta que registres su respuesta.</small><code>${escapeHtml(resource.public_ticket_url)}</code></div><div class="rms-risk-resource-ready-actions"><a class="ghost-button compact" href="${escapeHtml(resource.public_ticket_url)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>Abrir ticket</a><button class="ghost-button compact" type="button" data-rms-risk-copy-ready>Copiar enlace</button></div></article>`;
 };
 
+// Estado compacto: no muestra la URL larga ni duplica las acciones de entrega.
+rmsRiskRecoveryResourceMarkup = function rmsRiskRecoveryResourceMarkupCompact(item = {}) {
+  const resource = rmsRiskRecoveryResourceFor(item);
+  if (!resource?.public_ticket_url) return `<div class="rms-risk-resource-empty"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2_add</span><div><strong>Aún no has generado el activo</strong><small>Selecciona una alternativa autorizada para crear el ticket.</small></div></div>`;
+  const label = resource.recovery_offer?.label || resource.benefit?.label || "Beneficio extraordinario";
+  const image = resource.qr_image_data_url ? `<img class="rms-risk-qr-preview" src="${escapeHtml(resource.qr_image_data_url)}" alt="Código QR de ${escapeHtml(label)}" loading="lazy">` : `<span class="rms-risk-qr-fallback material-symbols-outlined" aria-hidden="true">qr_code_2</span>`;
+  return `<article class="rms-risk-resource-ready rms-risk-resource-compact"><div class="rms-risk-qr-frame">${image}</div><div class="rms-risk-resource-copy"><span class="mono-label">ACTIVO LISTO</span><strong>${escapeHtml(label)}</strong><small>Vigente hasta ${escapeHtml(resource.expires_at ? formatDate(resource.expires_at) : "sin vencimiento")}. El lead continúa en Riesgos.</small></div><a class="ghost-button compact rms-risk-open-ticket" href="${escapeHtml(resource.public_ticket_url)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>Abrir ticket</a></article>`;
+};
+
 // Flujo final compacto: evita que el reordenamiento legacy mezcle campos y acciones.
 rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupFinal(item = {}) {
   const id = escapeHtml(item.id);
