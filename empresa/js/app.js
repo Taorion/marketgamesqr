@@ -34405,7 +34405,7 @@ const LEAD_DIRECTORY_RMS_STATIONS = {
   cierre: { label: "Estación 08 · Ventas atribuidas", short: "08 Ventas atribuidas" },
   revenue_generado: { label: "Tablero auxiliar · Control de calidad 2", short: "Control calidad 2" },
   postventa: { label: "Estación 09 · Valorización Clientes", short: "09 Valorización" },
-  inteligencia: { label: "Estación 10 · Inteligencia RMS", short: "10 Inteligencia" },
+  inteligencia: { label: "Estación 10 · Inteligencia GOS", short: "10 Inteligencia GOS" },
 };
 
 function leadDirectoryStationInfo(item = {}) {
@@ -37975,7 +37975,7 @@ const LEAD_RMS_CONVERSION_PATH = [
   { key: "cierre", label: "Ventas atribuidas", progress: 94 },
   { key: "revenue_generado", label: "Revisión auxiliar 2", progress: 97, auxiliary: true },
   { key: "postventa", label: "Valorización Clientes", progress: 100 },
-  { key: "inteligencia", label: "Inteligencia RMS", progress: 100 },
+  { key: "inteligencia", label: "Inteligencia GOS", progress: 100 },
 ].sort((left, right) => rmsFlowIndex(left.key) - rmsFlowIndex(right.key));
 
 function leadRmsJourneyModel(detail = {}) {
@@ -42289,7 +42289,7 @@ const RMS_FACTORY_STAGE_BLUEPRINT = [
   },
   {
     key: "inteligencia",
-    label: "Inteligencia RMS",
+    label: "Inteligencia GOS",
     short_label: "Inteligencia",
     storageLabel: "Almacena aprendizajes de cada recorrido comercial",
     operation: {
@@ -43063,7 +43063,7 @@ const RMS_QUALITY_JOURNEY_STAGES = Object.freeze([
   { key: "control_anti_fuga", label: "Riesgos de fuga" },
   { key: "cierre", label: "Ventas atribuidas" },
   { key: "postventa", label: "Valorización Clientes" },
-  { key: "inteligencia", label: "Inteligencia RMS" },
+  { key: "inteligencia", label: "Inteligencia GOS" },
 ]);
 
 function rmsQualityCaseKey(item = {}) {
@@ -44332,16 +44332,16 @@ const RMS_TUTORIAL_STEPS = [
     action: "station",
     input: "Clientes con una venta atribuida y toda su información de compra heredada.",
     operation: "Elige una acción: referido, afiliación/puntos/sellos o beneficio de recompra. También puede pasar sin acción a Inteligencia.",
-    output: "Señales de recompra, satisfacción o referido para Inteligencia RMS.",
+    output: "Señales de recompra, satisfacción o referido para Inteligencia GOS.",
     operatorHint: "Una venta termina mejor cuando abre la posibilidad de una segunda compra o recomendación.",
   },
   {
     key: "inteligencia",
     phase: "inteligencia",
     icon: "psychology",
-    title: "Estación 10 · Inteligencia RMS",
+    title: "Estación 10 · Inteligencia GOS",
     subtitle: "Optimizar",
-    actionLabel: "Abrir Inteligencia RMS",
+    actionLabel: "Abrir Inteligencia GOS",
     action: "station",
     input: "El viaje completo: origen, calidad, productos, activaciones, respuestas, riesgos, venta y postventa.",
     operation: "Explica qué produjo revenue, costo, beneficios, fuga o recompra y devuelve aprendizajes para la siguiente captura.",
@@ -45220,7 +45220,7 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
         </div>
         <label class="rms-commercial-note-field"><span>Evidencia y acuerdos de la venta</span><textarea rows="4" data-rms-sale-notes="${escapeHtml(item.id)}" placeholder="Explica condiciones, comprobante, factura, promesas y alertas de postventa.">${escapeHtml(inheritedNotes)}</textarea></label>
         <div class="rms-sale-economics" data-rms-sale-economics="${escapeHtml(item.id)}"></div>
-        <aside class="rms-sale-intelligence-handoff"><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><div><strong>Siguiente estación: Valorización Clientes</strong><small>Al registrar la venta, este cliente pasa a Valorización para trabajar referidos, afiliación, puntos, sellos o recompra. Inteligencia RMS recibe el resultado automáticamente para análisis.</small></div></aside>
+        <aside class="rms-sale-intelligence-handoff"><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><div><strong>Siguiente estación: Valorización Clientes</strong><small>Al registrar la venta, este cliente pasa a Valorización para trabajar referidos, afiliación, puntos, sellos o recompra. Inteligencia GOS recibe el resultado automáticamente para análisis.</small></div></aside>
         <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">calculate</span>Utilidad neta = pago − costo del producto − beneficio − adquisición. Un segundo clic no duplica esta venta.</small><button class="solid-button compact" type="button" data-rms-save-attributed-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Registrar venta y enviar a Valorización</button></div>
           </div>
         </details>
@@ -45620,8 +45620,8 @@ function rmsPostSaleStationCardMarkup(item = {}) {
       <section class="rms-commercial-work-console">
         <header class="rms-commercial-console-head rms-refinery-head"><div class="rms-refinery-head-copy"><span class="rms-refinery-head-icon material-symbols-outlined" aria-hidden="true">diamond</span><div><span class="mono-label">ESTACIÓN 09 · VALORIZACIÓN CLIENTES</span><h4>Haz que esta compra produzca una relación de mayor valor</h4><p>Elige el siguiente movimiento. Solo verás los datos de referidos, fidelización o recompra que realmente vas a operar.</p></div></div><div class="rms-refinery-head-state"><small>Compra confirmada</small><span class="rms-commercial-state is-sale"><span class="material-symbols-outlined" aria-hidden="true">verified</span>Lista para valorizar</span></div></header>
         <input type="hidden" data-rms-refinery-path="${escapeHtml(item.id)}" value="REFERRAL">
-        <nav class="rms-refinery-journey" aria-label="Ruta de Valorización Clientes"><span class="is-complete"><b>1</b><small>Venta atribuida</small></span><i aria-hidden="true"></i><span class="is-current"><b>2</b><small>Elegir crecimiento</small></span><i aria-hidden="true"></i><span><b>3</b><small>Inteligencia RMS</small></span></nav>
-        <section class="rms-refinery-value-strip" aria-label="Resumen de la venta"><article><span class="material-symbols-outlined" aria-hidden="true">shopping_bag</span><small>Compra atribuida</small><strong>${escapeHtml(saleProduct)}</strong><b>${escapeHtml(money(saleAmount))}</b></article><article><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><small>Fidelización</small><strong>${escapeHtml(affiliate ? "Cliente afiliado" : "Cliente por afiliar")}</strong><b>${escapeHtml(affiliateLabel)}</b></article><article><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span><small>Actividad postventa</small><strong>${escapeHtml(actionLabel)}</strong><b>${escapeHtml(recordedVisit ? `Sello más reciente: ${recordedVisit}` : "Aún sin actividad")}</b></article><article><span class="material-symbols-outlined" aria-hidden="true">insights</span><small>Cierre de estación</small><strong>Inteligencia RMS</strong><b>Con o sin acción postventa</b></article></section>
+        <nav class="rms-refinery-journey" aria-label="Ruta de Valorización Clientes"><span class="is-complete"><b>1</b><small>Venta atribuida</small></span><i aria-hidden="true"></i><span class="is-current"><b>2</b><small>Elegir crecimiento</small></span><i aria-hidden="true"></i><span><b>3</b><small>Inteligencia GOS</small></span></nav>
+        <section class="rms-refinery-value-strip" aria-label="Resumen de la venta"><article><span class="material-symbols-outlined" aria-hidden="true">shopping_bag</span><small>Compra atribuida</small><strong>${escapeHtml(saleProduct)}</strong><b>${escapeHtml(money(saleAmount))}</b></article><article><span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><small>Fidelización</small><strong>${escapeHtml(affiliate ? "Cliente afiliado" : "Cliente por afiliar")}</strong><b>${escapeHtml(affiliateLabel)}</b></article><article><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span><small>Actividad postventa</small><strong>${escapeHtml(actionLabel)}</strong><b>${escapeHtml(recordedVisit ? `Sello más reciente: ${recordedVisit}` : "Aún sin actividad")}</b></article><article><span class="material-symbols-outlined" aria-hidden="true">insights</span><small>Cierre de estación</small><strong>Inteligencia GOS</strong><b>Con o sin acción postventa</b></article></section>
         <section class="rms-refinery-workbench" aria-label="Operación de Valorización Clientes">
         <aside class="rms-refinery-objective"><header><div><span class="mono-label">SIGUIENTE MOVIMIENTO</span><h5>¿Cómo quieres aumentar el valor de este cliente?</h5><p>Selecciona una ruta. El formulario de trabajo cambia sin perder la venta ni el historial.</p></div></header><div class="rms-refinery-route-picker" aria-label="Objetivo de Valorización Clientes">${RMS_POST_SALE_REFINERY_PATHS.map((path, index) => `<button type="button" class="rms-refinery-route ${index === 0 ? "is-active" : ""}" data-rms-refinery-route="${escapeHtml(item.id)}" data-rms-refinery-route-key="${path.key}" aria-pressed="${index === 0 ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">${path.icon}</span><span><strong>${path.title}</strong><small>${path.detail}</small></span><span class="material-symbols-outlined rms-refinery-route-arrow" aria-hidden="true">arrow_forward</span></button>`).join("")}</div><small class="rms-refinery-objective-note"><span class="material-symbols-outlined" aria-hidden="true">info</span>También puedes cerrar la estación sin crear una acción postventa.</small></aside>
         <section class="rms-refinery-panel" data-rms-refinery-panel="${escapeHtml(item.id)}" data-rms-refinery-panel-key="REFERRAL"><header><span class="mono-label">REFERIDOS</span><h5>Activa una recomendación con beneficio</h5><p>Genera el QR para el cliente. Los datos del referido solo se crean como lead con autorización explícita.</p></header><div class="rms-sale-form-grid"><label><span>Beneficio del QR</span><input type="text" data-rms-refinery-referral-benefit="${escapeHtml(item.id)}" placeholder="Ej.: 10% para quien recomienda"></label><label><span>Canal para compartirlo</span><select data-rms-refinery-channel="${escapeHtml(item.id)}"><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="">Solo generar QR</option></select></label><label><span>Nombre del referido</span><input type="text" data-rms-refinery-referral-name="${escapeHtml(item.id)}" placeholder="Opcional: nombre completo"></label><label><span>WhatsApp o teléfono</span><input type="text" data-rms-refinery-referral-phone="${escapeHtml(item.id)}" placeholder="Opcional: 300 000 0000"></label><label><span>Correo del referido</span><input type="email" data-rms-refinery-referral-email="${escapeHtml(item.id)}" placeholder="Opcional si dejó teléfono"></label><label><span>Interés del referido</span><input type="text" data-rms-refinery-referral-interest="${escapeHtml(item.id)}" placeholder="Producto o necesidad"></label></div><label class="rms-commercial-note-field"><span>Mensaje o instrucciones</span><textarea rows="2" data-rms-refinery-message="${escapeHtml(item.id)}" placeholder="Gracias por tu compra. Comparte este QR y recibe tu beneficio cuando tu referido se registre."></textarea></label><label class="rms-post-sale-consent"><input type="checkbox" data-rms-refinery-referral-consent="${escapeHtml(item.id)}"> <span>Confirmo que el referido autorizó compartir sus datos de contacto.</span></label></section>
@@ -45629,7 +45629,7 @@ function rmsPostSaleStationCardMarkup(item = {}) {
         <section class="rms-refinery-panel" data-rms-refinery-panel="${escapeHtml(item.id)}" data-rms-refinery-panel-key="REBUY" hidden><header><span class="mono-label">RECOMPRA</span><h5>Deja listo el siguiente motivo para volver</h5><p>Crea un ticket QR ligado a esta relación. No altera el valor ni la atribución de la venta actual.</p></header><div class="rms-sale-form-grid"><label><span>Beneficio de recompra</span><input type="text" data-rms-refinery-rebuy-benefit="${escapeHtml(item.id)}" placeholder="Ej.: $20.000 en la próxima compra"></label><label><span>Canal para compartirlo</span><select data-rms-refinery-channel="${escapeHtml(item.id)}"><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="">Solo generar QR</option></select></label></div><label class="rms-commercial-note-field"><span>Mensaje para el cliente</span><textarea rows="2" data-rms-refinery-message="${escapeHtml(item.id)}" placeholder="Gracias por tu compra. Aquí tienes un beneficio para tu próxima visita."></textarea></label></section>
         </section>
         <details class="rms-post-sale-history" ${actions.length ? "" : "open"}><summary><span><span class="material-symbols-outlined" aria-hidden="true">history</span>Actividad de esta venta</span><small>${escapeHtml(actionLabel)}</small></summary><ol>${activityMarkup}</ol></details>
-        <section class="rms-refinery-finish"><div><span class="mono-label">CIERRE DE ESTACIÓN</span><strong>El resultado llega a Inteligencia RMS</strong><p>Registra la acción elegida o documenta por qué este cliente no requiere postventa ahora.</p></div><details><summary>Enviar sin acción postventa</summary><label><span>Nota para Inteligencia <em>Opcional</em></span><input type="text" data-rms-post-sale-result="${escapeHtml(item.id)}" placeholder="Ej.: no aplica beneficio en esta compra"></label></details><div class="button-row"><button class="ghost-button compact" type="button" data-rms-post-sale-skip-to-intelligence="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">insights</span>Enviar sin acción</button><button class="solid-button compact" type="button" data-rms-save-post-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span><span data-rms-refinery-submit-label="${escapeHtml(item.id)}">Crear QR de referido</span></button></div></section>
+        <section class="rms-refinery-finish"><div><span class="mono-label">CIERRE DE ESTACIÓN</span><strong>El resultado llega a Inteligencia GOS</strong><p>Registra la acción elegida o documenta por qué este cliente no requiere postventa ahora.</p></div><details><summary>Enviar sin acción postventa</summary><label><span>Nota para Inteligencia <em>Opcional</em></span><input type="text" data-rms-post-sale-result="${escapeHtml(item.id)}" placeholder="Ej.: no aplica beneficio en esta compra"></label></details><div class="button-row"><button class="ghost-button compact" type="button" data-rms-post-sale-skip-to-intelligence="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">insights</span>Enviar sin acción</button><button class="solid-button compact" type="button" data-rms-save-post-sale="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span><span data-rms-refinery-submit-label="${escapeHtml(item.id)}">Crear QR de referido</span></button></div></section>
       </section>
     </article>`;
 }
@@ -45690,7 +45690,7 @@ function upgradeRmsIntelligenceRecyclingView(root) {
       state.rmsIntelligenceView = "case";
       loadRmsIntelligenceCase(control.dataset.rmsIntelligenceRecyclingCase || "")
         .then(() => renderRmsStationOnly())
-        .catch((error) => showFeedback(error.message || "No pudimos abrir el expediente de reciclaje.", "error", { title: "Inteligencia RMS" }));
+        .catch((error) => showFeedback(error.message || "No pudimos abrir el expediente de reciclaje.", "error", { title: "Inteligencia GOS" }));
     });
   });
 }
@@ -45730,7 +45730,7 @@ function rmsIntelligenceStationMarkup(rows = []) {
     </section>` : `<div class="empty-state compact"><strong>No hay casos listos para aprender</strong><p>Inteligencia recibe resultados reales de Activación 2; no reinicia clientes ni inventa oportunidades.</p></div>`;
   const patternsView = `<section class="rms-intelligence-patterns"><header><div><span class="mono-label">PATRONES DE LA FÁBRICA</span><h4>${escapeHtml(patterns.period?.label || "Últimos 30 días")}</h4><p>${escapeHtml(patterns.caveat || "Las agrupaciones muestran hechos, no causalidad automática.")}</p></div><button class="ghost-button compact" type="button" data-rms-refresh-intelligence-patterns>Actualizar</button></header><div class="rms-intelligence-filter-grid"><label><span>Período</span><select data-rms-intelligence-filter="days"><option value="7" ${intelligenceFilters.days === "7" ? "selected" : ""}>7 días</option><option value="30" ${intelligenceFilters.days === "30" ? "selected" : ""}>30 días</option><option value="90" ${intelligenceFilters.days === "90" ? "selected" : ""}>90 días</option><option value="365" ${intelligenceFilters.days === "365" ? "selected" : ""}>365 días</option></select></label><label><span>Campaña</span><input data-rms-intelligence-filter="campaign" value="${escapeHtml(intelligenceFilters.campaign || "")}" placeholder="Nombre o parte"></label><label><span>Canal</span><input data-rms-intelligence-filter="channel" value="${escapeHtml(intelligenceFilters.channel || "")}" placeholder="WhatsApp, QR..."></label><label><span>Producto</span><input data-rms-intelligence-filter="product" value="${escapeHtml(intelligenceFilters.product || "")}" placeholder="Producto o servicio"></label><label><span>Vendedor</span><input data-rms-intelligence-filter="seller" value="${escapeHtml(intelligenceFilters.seller || "")}" placeholder="Nombre o ID"></label><label><span>Sede</span><input data-rms-intelligence-filter="branch" value="${escapeHtml(intelligenceFilters.branch || "")}" placeholder="Sede o ID"></label><label><span>Tipo de lead</span><select data-rms-intelligence-filter="source_type"><option value="">Todos</option><option value="PLAYER" ${intelligenceFilters.source_type === "PLAYER" ? "selected" : ""}>Jugador</option><option value="MANUAL" ${intelligenceFilters.source_type === "MANUAL" ? "selected" : ""}>Manual</option><option value="BUYER" ${intelligenceFilters.source_type === "BUYER" ? "selected" : ""}>Comprador</option><option value="AFFILIATE" ${intelligenceFilters.source_type === "AFFILIATE" ? "selected" : ""}>Afiliado</option></select></label></div><div class="rms-intelligence-pattern-grid"><section><h5>Cuellos de botella</h5><ol>${(patterns.bottlenecks || []).map((row) => `<li><strong>${escapeHtml(row.key || "Sin fase")}</strong><span>${escapeHtml(row.sample_label || `Muestra: ${row.sample_size || 0}`)}</span>${rmsIntelligenceCaseRefMarkup(row.case_refs?.[0])}</li>`).join("") || "<li><strong>Sin datos suficientes</strong><span>Se requiere historial RMS para agrupar.</span></li>"}</ol></section><section><h5>Objeciones registradas</h5><ol>${(patterns.objections || []).map((row) => `<li><strong>${escapeHtml(row.key || "No registrada")}</strong><span>${escapeHtml(row.sample_label || `Muestra: ${row.sample_size || 0}`)}</span>${rmsIntelligenceCaseRefMarkup(row.case_refs?.[0])}</li>`).join("") || "<li><strong>Sin datos suficientes</strong><span>Registra la objeción al evaluar o negociar.</span></li>"}</ol></section><section><h5>Ventas atribuidas</h5><ol>${(patterns.attributed_sales || []).map((row) => `<li><strong>${escapeHtml(`${row.campaign || "Sin campaña"} · ${row.product || "Sin producto"}`)}</strong><span>${escapeHtml(`${money(row.attributed_value || 0)} · ${row.sample_label || `Muestra: ${row.sample_size || 0}`}`)}</span>${rmsIntelligenceCaseRefMarkup(row.case_refs?.[0])}</li>`).join("") || "<li><strong>Sin datos suficientes</strong><span>No hay ventas RMS en este período.</span></li>"}</ol></section><section><h5>Resultados de Activación 2</h5><ol>${(patterns.activation_2 || []).map((row) => `<li><strong>${escapeHtml(`${row.key || "Acción"} · ${rmsPostSaleActionStatusLabel(row.status)}`)}</strong><span>${escapeHtml(row.sample_label || `Muestra: ${row.sample_size || 0}`)}</span>${rmsIntelligenceCaseRefMarkup(row.case_refs?.[0])}</li>`).join("") || "<li><strong>Sin datos suficientes</strong><span>Los resultados llegarán desde Postventa.</span></li>"}</ol></section></div></section>`;
   const decisionsView = `<section class="rms-intelligence-decisions"><header><div><span class="mono-label">EXPERIMENTOS Y DECISIONES</span><h4>Aprendizajes que esperan una acción explícita</h4><p>Guardar un insight no crea campañas, mensajes, descuentos ni leads. Una tarea se crea solo al confirmarla.</p></div></header><ol>${insights.map((insight) => `<li><div><strong>${escapeHtml(insight.recommendation || insight.observation || "Aprendizaje")}</strong><span>${escapeHtml(`${insight.status || "PENDING"} · ${insight.priority || "MEDIUM"}${insight.expected_metric ? ` · ${insight.expected_metric}` : ""}`)}</span><small>${escapeHtml(insight.evidence_note || "Sin evidencia narrativa adicional")}</small></div>${insight.source_id ? `<button class="ghost-button compact" type="button" data-rms-intelligence-create-task="${escapeHtml(insight.id)}">Crear tarea explícita</button>` : ""}</li>`).join("") || "<li><div><strong>Aún no hay recomendaciones guardadas</strong><span>Selecciona un caso y documenta una observación respaldada.</span></div></li>"}</ol></section>`;
-  return `<section class="rms-intelligence-console" aria-label="Inteligencia RMS"><header class="rms-intelligence-console-head"><div><span class="mono-label">ESTACIÓN 10 · MEMORIA OPERATIVA</span><h3>Inteligencia convierte hechos en decisiones verificables</h3><p>Conecta la historia del lead, la venta y Activación 2; no reinicia clientes ni ejecuta cambios automáticos.</p></div><label><span>Caso</span><select data-rms-intelligence-case-select>${caseOptions || "<option>Sin casos</option>"}</select></label></header><nav class="rms-intelligence-tabs" aria-label="Vistas de Inteligencia"><button type="button" data-rms-intelligence-view="case" class="${view === "case" ? "is-active" : ""}">Caso individual</button><button type="button" data-rms-intelligence-view="patterns" class="${view === "patterns" ? "is-active" : ""}">Patrones de la fábrica</button><button type="button" data-rms-intelligence-view="decisions" class="${view === "decisions" ? "is-active" : ""}">Experimentos y decisiones</button></nav>${view === "case" ? card : view === "patterns" ? patternsView : decisionsView}</section>`;
+  return `<section class="rms-intelligence-console" aria-label="Inteligencia GOS"><header class="rms-intelligence-console-head"><div><span class="mono-label">ESTACIÓN 10 · MEMORIA OPERATIVA</span><h3>Inteligencia GOS convierte hechos en decisiones verificables</h3><p>Conecta la historia del lead, la venta y Activación 2; no reinicia clientes ni ejecuta cambios automáticos.</p></div><label><span>Caso</span><select data-rms-intelligence-case-select>${caseOptions || "<option>Sin casos</option>"}</select></label></header><nav class="rms-intelligence-tabs" aria-label="Vistas de Inteligencia GOS"><button type="button" data-rms-intelligence-view="case" class="${view === "case" ? "is-active" : ""}">Caso individual</button><button type="button" data-rms-intelligence-view="patterns" class="${view === "patterns" ? "is-active" : ""}">Patrones de la fábrica</button><button type="button" data-rms-intelligence-view="decisions" class="${view === "decisions" ? "is-active" : ""}">Experimentos y decisiones</button></nav>${view === "case" ? card : view === "patterns" ? patternsView : decisionsView}</section>`;
 }
 
 function rmsIntelligenceJourneyMarkup(facts = {}) {
@@ -46800,7 +46800,7 @@ function rmsStationVisualMeta(phase = "") {
       screenTitle: "Estación de almacenamiento: Activación 2",
       visualLabel: "Inventario: clientes para refinar",
       input: "Clientes con venta atribuida y datos de compra heredados.",
-      output: "Referido, afiliación, puntos, sellos o recompra registrados para Inteligencia RMS.",
+      output: "Referido, afiliación, puntos, sellos o recompra registrados para Inteligencia GOS.",
       focus: "Elegir una sola acción postventa que aumente referidos, fidelización o recompra; también puede pasar sin acción.",
       checklist: ["Venta heredada", "Referido", "Afiliación", "Puntos o sellos", "Recompra"],
     },
@@ -46809,7 +46809,7 @@ function rmsStationVisualMeta(phase = "") {
       tone: "intelligence",
       image: "/empresa/img/qori-station-10-inteligencia-gos-slider.png",
       imageAlt: "Estación 10 Inteligencia GOS",
-      screenTitle: "Estación de Inteligencia: aprendizaje operativo",
+      screenTitle: "Estación de Inteligencia GOS: aprendizaje operativo",
       visualLabel: "Memoria operativa: aprendizaje RMS",
       input: "Origen, calidad, productos, activaciones, respuestas, riesgos, ventas y postventa.",
       output: "Aprendizaje accionable para mejorar la siguiente captura y su costo de adquisición.",
@@ -48068,7 +48068,7 @@ const RMS_STATION_HANDOFFS = Object.freeze({
   accion_correctiva: { receives: "Interés, detalle o condición pendiente", decides: "Resultado de la negociación", delivers: "Ventas, Riesgos o Reciclaje" },
   control_anti_fuga: { receives: "Acuerdo con señal crítica", decides: "Liberar, devolver o reciclar", delivers: "Venta protegida o siguiente acción" },
   cierre: { receives: "Compra reportada o acuerdo confirmado", decides: "Datos finales de la venta", delivers: "Cliente para Activación 2" },
-  postventa: { receives: "Cliente y venta atribuida", decides: "Referido, fidelización o recompra", delivers: "Señal para Inteligencia RMS" },
+  postventa: { receives: "Cliente y venta atribuida", decides: "Referido, fidelización o recompra", delivers: "Señal para Inteligencia GOS" },
   inteligencia: { receives: "Recorrido y resultado comercial", decides: "Qué repetir, corregir o dejar de hacer", delivers: "Aprendizaje para Recolector" },
 });
 
@@ -49310,7 +49310,7 @@ function bindRmsMachineActions(root) {
       const item = rmsOpportunityById(button.dataset.rmsPostSaleSkipToIntelligence || "");
       if (!item) return;
       sendRmsPostSaleToIntelligence(item, root)
-        .catch((error) => showFeedback(error.message || "No pudimos enviar esta decisión a Inteligencia RMS.", "error", { title: "Activación 2" }));
+        .catch((error) => showFeedback(error.message || "No pudimos enviar esta decisión a Inteligencia GOS.", "error", { title: "Activación 2" }));
     });
   });
   root.querySelectorAll("[data-rms-intelligence-view]").forEach((button) => {
@@ -49323,7 +49323,7 @@ function bindRmsMachineActions(root) {
     select.addEventListener("change", () => {
       loadRmsIntelligenceCase(select.value)
         .then(() => renderRmsStationOnly())
-        .catch((error) => showFeedback(error.message || "No pudimos cargar la ficha de aprendizaje.", "error", { title: "Inteligencia RMS" }));
+        .catch((error) => showFeedback(error.message || "No pudimos cargar la ficha de aprendizaje.", "error", { title: "Inteligencia GOS" }));
     });
   });
   root.querySelectorAll("[data-rms-intelligence-case-ref]").forEach((button) => {
@@ -49331,7 +49331,7 @@ function bindRmsMachineActions(root) {
       state.rmsIntelligenceView = "case";
       loadRmsIntelligenceCase(button.dataset.rmsIntelligenceCaseRef || "")
         .then(() => renderRmsStationOnly())
-        .catch((error) => showFeedback(error.message || "No pudimos abrir el caso que respalda este patrón.", "error", { title: "Inteligencia RMS" }));
+        .catch((error) => showFeedback(error.message || "No pudimos abrir el caso que respalda este patrón.", "error", { title: "Inteligencia GOS" }));
     });
   });
   root.querySelectorAll("[data-rms-refresh-intelligence-patterns]").forEach((button) => {
@@ -49339,7 +49339,7 @@ function bindRmsMachineActions(root) {
       button.disabled = true;
       loadRmsIntelligenceData({ force: true })
         .then(() => renderRmsStationOnly())
-        .catch((error) => showFeedback(error.message || "No pudimos actualizar los patrones.", "error", { title: "Inteligencia RMS" }))
+        .catch((error) => showFeedback(error.message || "No pudimos actualizar los patrones.", "error", { title: "Inteligencia GOS" }))
         .finally(() => { button.disabled = false; });
     });
   });
@@ -49353,7 +49353,7 @@ function bindRmsMachineActions(root) {
       apply();
       loadRmsIntelligenceData({ force: true })
         .then(() => renderRmsStationOnly())
-        .catch((error) => showFeedback(error.message || "No pudimos aplicar los filtros de Inteligencia.", "error", { title: "Inteligencia RMS" }));
+        .catch((error) => showFeedback(error.message || "No pudimos aplicar los filtros de Inteligencia.", "error", { title: "Inteligencia GOS" }));
     });
     field.addEventListener("input", () => {
       apply();
@@ -49361,7 +49361,7 @@ function bindRmsMachineActions(root) {
       state.rmsIntelligenceFilterTimer = window.setTimeout(() => {
         loadRmsIntelligenceData({ force: true })
           .then(() => renderRmsStationOnly())
-          .catch((error) => showFeedback(error.message || "No pudimos aplicar los filtros de Inteligencia.", "error", { title: "Inteligencia RMS" }));
+          .catch((error) => showFeedback(error.message || "No pudimos aplicar los filtros de Inteligencia.", "error", { title: "Inteligencia GOS" }));
       }, 350);
     });
   });
@@ -49370,7 +49370,7 @@ function bindRmsMachineActions(root) {
       button.disabled = true;
       saveRmsIntelligenceInsight(root, button.dataset.rmsSaveIntelligenceInsight || "")
         .then(() => renderRmsStationOnly())
-        .catch((error) => showFeedback(error.message || "No pudimos guardar el aprendizaje.", "error", { title: "Inteligencia RMS" }))
+        .catch((error) => showFeedback(error.message || "No pudimos guardar el aprendizaje.", "error", { title: "Inteligencia GOS" }))
         .finally(() => { button.disabled = false; });
     });
   });
@@ -49379,7 +49379,7 @@ function bindRmsMachineActions(root) {
       button.disabled = true;
       createRmsIntelligenceAgendaTask(button.dataset.rmsIntelligenceCreateTask || "")
         .then(() => renderRmsStationOnly())
-        .catch((error) => showFeedback(error.message || "No pudimos crear la tarea explícita.", "error", { title: "Inteligencia RMS" }))
+        .catch((error) => showFeedback(error.message || "No pudimos crear la tarea explícita.", "error", { title: "Inteligencia GOS" }))
         .finally(() => { button.disabled = false; });
     });
   });
@@ -51524,7 +51524,7 @@ function rmsEvaluationRoute(response = "", destination = "") {
     NEGOTIATION: { label: "Pasa a Negociación", detail: "Continúa el acuerdo de precio, alcance, plazos o forma de pago.", icon: "handshake" },
     MISSING_INFORMATION: { label: "Pasa a Negociación", detail: "Acorda la información que falta y el siguiente compromiso comercial.", icon: "handshake" },
     NURTURE: { label: "Pasa a Negociación", detail: "Acorda el siguiente compromiso comercial y programa el seguimiento.", icon: "handshake" },
-    NOT_QUALIFIED: { label: "Pasa a Inteligencia RMS", detail: "Conserva el aprendizaje sin seguir presionando al contacto.", icon: "psychology" },
+    NOT_QUALIFIED: { label: "Pasa a Inteligencia GOS", detail: "Conserva el aprendizaje sin seguir presionando al contacto.", icon: "psychology" },
     RECYCLE: { label: "Pasa a Reciclaje", detail: "Registra el motivo y conserva el caso para una posible reactivación responsable.", icon: "autorenew" },
   };
   return routes[response] || { label: "Enviar a Negociación", detail: "La Evaluación abre la conversación comercial antes de Riesgos de fuga.", icon: "alt_route" };
@@ -52269,7 +52269,7 @@ async function saveRmsAttributedSale(item, root) {
     ? ` Además, ${result.customer.name || "el comprador"} fue creado automáticamente como contacto cliente.`
     : "";
   showFeedback(
-    `${result?.duplicate ? "Esta venta ya estaba registrada; no se duplicó." : "Venta atribuida registrada con sus costos, utilidad y ROI. El cliente fue enviado a Valorización Clientes; Inteligencia RMS recibió el resultado para análisis."}${customerFeedback}`,
+    `${result?.duplicate ? "Esta venta ya estaba registrada; no se duplicó." : "Venta atribuida registrada con sus costos, utilidad y ROI. El cliente fue enviado a Valorización Clientes; Inteligencia GOS recibió el resultado para análisis."}${customerFeedback}`,
     "success",
     { title: "Ventas atribuidas" }
   );
@@ -52408,7 +52408,7 @@ async function saveRmsIntelligenceInsight(root, key) {
       method: "POST", headers: authHeaders(), body: JSON.stringify(draft),
     });
     await loadRmsIntelligenceData({ force: true });
-    showFeedback(result?.duplicate ? "Ese aprendizaje ya estaba guardado; no se duplicó." : "Aprendizaje guardado. No se creó ninguna campaña, venta ni lead.", "success", { title: "Inteligencia RMS" });
+    showFeedback(result?.duplicate ? "Ese aprendizaje ya estaba guardado; no se duplicó." : "Aprendizaje guardado. No se creó ninguna campaña, venta ni lead.", "success", { title: "Inteligencia GOS" });
   } finally {
     state.rmsIntelligenceSaving = false;
   }
@@ -52419,7 +52419,7 @@ async function createRmsIntelligenceAgendaTask(insightId) {
     method: "POST", headers: authHeaders(), body: JSON.stringify({ insight_id: insightId, confirm: true }),
   });
   await loadRmsIntelligenceData({ force: true });
-  showFeedback(result?.task ? "Tarea creada por tu confirmación explícita." : "No se pudo crear la tarea.", "success", { title: "Inteligencia RMS" });
+  showFeedback(result?.task ? "Tarea creada por tu confirmación explícita." : "No se pudo crear la tarea.", "success", { title: "Inteligencia GOS" });
 }
 
 async function applyRmsPostSaleLoyalty(item, result, draft) {
@@ -52531,7 +52531,7 @@ async function sendRmsPostSaleToIntelligence(item, root) {
       loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "postventa" }),
       loadRmsIntelligenceData({ force: true }),
     ]);
-    showFeedback(result?.duplicate ? "Esta decisión ya estaba registrada; no se duplicó." : "Sin acción postventa: la decisión fue registrada y enviada a Inteligencia RMS.", "success", { title: "Activación 2" });
+    showFeedback(result?.duplicate ? "Esta decisión ya estaba registrada; no se duplicó." : "Sin acción postventa: la decisión fue registrada y enviada a Inteligencia GOS.", "success", { title: "Activación 2" });
     openRmsStation("postventa", { source: "post-sale-intelligence" });
   } catch (error) {
     if (button) button.disabled = false;

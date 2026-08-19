@@ -29,7 +29,7 @@ const RMS_OPERATIONAL_STAGES = Object.freeze([
   { key: "control_anti_fuga", order: 7, label: "Riesgos de fuga", short_label: "Riesgos de fuga" },
   { key: "cierre", order: 8, label: "Ventas atribuidas", short_label: "Ventas atribuidas" },
   { key: "postventa", order: 9, label: "Valorización Clientes", short_label: "Valorización" },
-  { key: "inteligencia", order: 10, label: "Inteligencia RMS", short_label: "Inteligencia", analytical_only: true },
+  { key: "inteligencia", order: 10, label: "Inteligencia GOS", short_label: "Inteligencia GOS", analytical_only: true },
 ]);
 const RMS_QUALITY_CONTROLS = Object.freeze([
   { key: "preprocesamiento", label: "Control de calidad 1", observes_after: "clasificacion", observes_before: "procesamiento", visual_only: true },
@@ -149,7 +149,7 @@ const INDUSTRIAL_PROCESS = [
   { key: "control", label: "Riesgos de fuga", phase: "control_anti_fuga", description: "Se protege un acuerdo frágil con soporte, responsable y seguimiento verificables." },
   { key: "cierre", label: "Ventas atribuidas", phase: "cierre", description: "Completa producto, cantidad, pago, fuente y evidencia de una compra real." },
   { key: "postventa", label: "Valorización Clientes", phase: "postventa", description: "Valora la relación del cliente con referidos, afiliación, puntos, sellos o recompra sin alterar la venta original." },
-  { key: "optimizar", label: "Inteligencia RMS", phase: "inteligencia", description: "El resultado vuelve a la inteligencia RMS para optimizar campanas, ganchos y operaciones." },
+  { key: "optimizar", label: "Inteligencia GOS", phase: "inteligencia", description: "El resultado vuelve a Inteligencia GOS para optimizar campanas, ganchos y operaciones." },
 ].sort((left, right) => RMS_FLOW_ORDER.findIndex((phase) => phase.key === left.phase) - RMS_FLOW_ORDER.findIndex((phase) => phase.key === right.phase));
 
 const PHASE_OPERATIONS = {
@@ -2642,7 +2642,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     : null;
   // Una compra directa registrada en Evaluación puede llegar a Ventas atribuidas
   // sin pasar por Negociación ni Riesgos de fuga. Esas estaciones son rutas de
-  // apoyo, no un requisito para cerrar ni para alimentar Inteligencia RMS.
+  // apoyo, no un requisito para cerrar ni para alimentar Inteligencia GOS.
   const directEvaluationSale = workflowMetadata.rms_evaluation?.response === "PAID_SALE";
   const validSaleOrigin = directEvaluationSale
     || workflowMetadata.negotiation_result === "ACCEPTED"
@@ -2989,7 +2989,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     event_type: "sale_attributed", event_title: "Venta atribuida enviada a Valorización Clientes",
-    event_description: "La venta pasa a Valorización Clientes para trabajar la relación. Su recorrido comercial y economía también se envían a Inteligencia RMS para análisis.",
+    event_description: "La venta pasa a Valorización Clientes para trabajar la relación. Su recorrido comercial y economía también se envían a Inteligencia GOS para análisis.",
     rms_phase: "postventa", metadata: {
       sale_id: result.sale.id,
       movement_id: movement.movement?.id || null,
