@@ -44142,7 +44142,7 @@ rmsRiskRecoveryResourceMarkup = function rmsRiskRecoveryResourceMarkupVisual(ite
   const resource = rmsRiskRecoveryResourceFor(item);
   if (!resource?.public_ticket_url) return `<div class="rms-risk-resource-empty"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2_add</span><div><strong>Aún no has generado el activo</strong><small>Selecciona una alternativa autorizada para crear el ticket.</small></div></div>`;
   const label = resource.recovery_offer?.label || resource.benefit?.label || "Beneficio extraordinario";
-  const imageUrl = resource.qr_image_data_url || resource.public_ticket_url;
+  const imageUrl = resource.qr_image_data_url || "";
   const image = resource.qr_image_data_url ? `<img class="rms-risk-ticket-image" src="${escapeHtml(resource.qr_image_data_url)}" alt="Ticket ${escapeHtml(label)}" loading="lazy">` : `<span class="rms-risk-qr-fallback material-symbols-outlined" aria-hidden="true">qr_code_2</span>`;
   const filename = escapeHtml(resource.filename || `ticket-${String(item.id || "qori").slice(0, 8)}.png`);
   return `<article class="rms-risk-resource-ready rms-risk-resource-visual"><div class="rms-risk-ticket-preview">${image}</div><div class="rms-risk-resource-copy"><span class="mono-label">TICKET LISTO PARA COMPARTIR</span><strong>${escapeHtml(label)}</strong><small>Vigente hasta ${escapeHtml(resource.expires_at ? formatDate(resource.expires_at) : "sin vencimiento")}. Puedes verlo, descargarlo o enviarlo desde la barra inferior.</small></div><div class="rms-risk-ticket-actions"><a class="ghost-button compact" href="${escapeHtml(imageUrl)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">visibility</span>Ver imagen</a>${resource.qr_image_data_url ? `<a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" download="${filename}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar imagen</a>` : `<a class="ghost-button compact" href="${escapeHtml(resource.public_ticket_url)}" target="_blank" rel="noopener">Ver ticket público</a>`}</div></article>`;
@@ -55839,6 +55839,17 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
 
 // Asegura que el estado visual final sea el que usa el flujo después de cargar todas las declaraciones legacy.
 rmsRiskRecoveryResourceMarkup = rmsRiskRecoveryResourceMarkupVisual;
+
+// Nunca uses el validador como sustituto de la imagen: si no hay imagen, se informa y no se navega.
+rmsRiskRecoveryResourceMarkup = function rmsRiskRecoveryResourceMarkupImageOnly(item = {}) {
+  const resource = rmsRiskRecoveryResourceFor(item);
+  if (!resource?.public_ticket_url) return `<div class="rms-risk-resource-empty"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2_add</span><div><strong>Aún no has generado el activo</strong><small>Selecciona una alternativa autorizada para crear el ticket.</small></div></div>`;
+  const label = resource.recovery_offer?.label || resource.benefit?.label || "Beneficio extraordinario";
+  const filename = escapeHtml(resource.filename || `ticket-${String(item.id || "qori").slice(0, 8)}.png`);
+  if (!resource.qr_image_data_url) return `<article class="rms-risk-resource-ready rms-risk-resource-visual"><div class="rms-risk-ticket-preview"><span class="rms-risk-image-unavailable">La imagen del ticket aún no está disponible. Genera el activo nuevamente.</span></div><div class="rms-risk-resource-copy"><span class="mono-label">ACTIVO LISTO</span><strong>${escapeHtml(label)}</strong><small>El enlace público no se mostrará como si fuera la imagen.</small></div></article>`;
+  const image = `<img class="rms-risk-ticket-image" src="${escapeHtml(resource.qr_image_data_url)}" alt="Ticket ${escapeHtml(label)}" loading="lazy">`;
+  return `<article class="rms-risk-resource-ready rms-risk-resource-visual"><div class="rms-risk-ticket-preview">${image}</div><div class="rms-risk-resource-copy"><span class="mono-label">TICKET LISTO PARA COMPARTIR</span><strong>${escapeHtml(label)}</strong><small>Vigente hasta ${escapeHtml(resource.expires_at ? formatDate(resource.expires_at) : "sin vencimiento")}.</small></div><div class="rms-risk-ticket-actions"><a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">visibility</span>Ver imagen</a><a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" download="${filename}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar imagen</a></div></article>`;
+};
 
 // Reasignación final: la consola nueva prevalece sobre las declaraciones legacy.
 rmsRiskValidationStationCardMarkup = function rmsRiskValidationStationCardMarkupFinal(item = {}) {

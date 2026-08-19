@@ -2375,6 +2375,7 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
   const resource = {
     qr_code_id: ticket.qr_code.id,
     public_ticket_url: ticket.public_ticket_url,
+    qr_image_data_url: ticket.qr_image_data_url || null,
     validator_url: ticket.validator_url,
     claim_url: ticket.claim_url,
     filename: ticket.filename,
