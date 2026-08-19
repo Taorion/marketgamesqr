@@ -2025,13 +2025,13 @@ async function getRmsUnconvertedLeadCost(businessId, payload = {}, knownItem = n
       where q.business_id = $1
         and (q.redeemed_at is not null or q.status = 'REDEEMED' or r.id is not null)
         and (
-          ($2 = 'PLAYER' and q.player_id = $3::uuid)
-          or ($2 = 'AFFILIATE' and q.affiliate_id = $3::uuid)
+          ($2::text = 'PLAYER' and q.player_id = $3::uuid)
+          or ($2::text = 'AFFILIATE' and q.affiliate_id = $3::uuid)
           or exists (
             select 1 from lead_activations la
              where la.business_id = q.business_id
                and la.qr_code_id = q.id
-               and la.source_type = $2
+               and la.source_type = $2::text
                and la.source_id = $3::uuid
           )
         )`,
