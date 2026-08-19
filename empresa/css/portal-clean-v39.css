@@ -29681,6 +29681,16 @@ html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-ris
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-compact .rms-risk-qr-preview { width: 68px !important; height: 68px !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-compact .rms-risk-resource-copy { gap: 2px !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-compact .rms-risk-resource-copy small { font-size: .74rem !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-visual { grid-template-columns: 150px minmax(0, 1fr) auto !important; align-items: center !important; padding: 14px !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-ticket-preview { display: grid !important; place-items: center !important; width: 150px !important; min-height: 116px !important; padding: 8px !important; border-radius: 14px !important; background: #fff !important; border: 1px solid #d7e9f4 !important; overflow: hidden !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-ticket-image { display: block !important; width: 132px !important; max-width: 100% !important; height: 100px !important; object-fit: contain !important; }
+html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-ticket-actions { display: grid !important; gap: 8px !important; }
+@media (max-width: 780px) {
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-resource-visual { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-ticket-preview { width: 100% !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-ticket-image { width: 180px !important; height: 130px !important; }
+  html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-ticket-actions { grid-template-columns: 1fr 1fr !important; }
+}
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-delivery-bar { grid-column: 1 / -1 !important; display: flex !important; justify-content: space-between !important; gap: 12px !important; flex-wrap: wrap !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-final + .rms-risk-recovery-form [data-rms-risk-sale-panel] > .rms-sale-form-grid { display: none !important; }
 html body[data-current-view="rms-machine"] .rms-risk-recovery-work-item .rms-risk-flow-final + .rms-risk-recovery-form [data-rms-risk-sale-panel] > h5 { margin-top: 0 !important; }
