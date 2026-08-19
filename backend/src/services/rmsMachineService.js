@@ -2911,7 +2911,13 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     };
   } else if (riskRecovery && riskRecovery.type && riskRecovery.type !== "NONE") {
     const custom = riskRecovery.custom_benefit || {};
-    const ticketType = riskRecovery.type === "DISCOUNT" || custom.type === "DISCOUNT" ? "DISCOUNT" : riskRecovery.type === "GIFT" || custom.type === "GIFT" ? "GIFT" : "BONUS";
+    const ticketType = riskRecovery.type === "DISCOUNT" || custom.type === "DISCOUNT"
+      ? "PERCENT_DISCOUNT"
+      : riskRecovery.type === "GIFT" || custom.type === "GIFT"
+        ? "FREE_GIFT"
+        : riskRecovery.type === "TWO_FOR_ONE"
+          ? "BUY_X_GET_Y"
+          : "CUSTOM";
     riskRecoveryTicket = await createPostSaleQr(businessId, user, {
       campaign_id: item.campaign_id || null,
       existing_sale_id: result.sale.id,

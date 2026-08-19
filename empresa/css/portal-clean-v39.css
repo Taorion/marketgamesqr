@@ -29508,3 +29508,67 @@ html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms
 html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-station-progress small {
   color: #b8d8ee !important;
 }
+
+/* Riesgos de fuga: consola de decision rapida, con jerarquia Qori y foco en el siguiente paso. */
+body[data-current-view="rms-machine"] .rms-risk-command-console {
+  background: linear-gradient(145deg, #f7fbff 0%, #eef7ff 58%, #ffffff 100%);
+  border: 1px solid rgba(27, 113, 177, .18);
+  box-shadow: 0 18px 48px rgba(16, 76, 122, .12);
+}
+body[data-current-view="rms-machine"] .rms-risk-hero {
+  padding: 22px 24px 18px;
+  border-bottom: 0;
+}
+body[data-current-view="rms-machine"] .rms-risk-hero h4 {
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
+  letter-spacing: -.03em;
+}
+body[data-current-view="rms-machine"] .rms-risk-command-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 24px 16px;
+}
+body[data-current-view="rms-machine"] .rms-risk-command-strip > div {
+  display: grid;
+  gap: 4px;
+  min-height: 88px;
+  padding: 14px 16px;
+  border: 1px solid rgba(27, 113, 177, .16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .84);
+}
+body[data-current-view="rms-machine"] .rms-risk-command-strip small {
+  color: #55718b;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+body[data-current-view="rms-machine"] .rms-risk-command-strip strong { color: #0c426f; font-size: 1.05rem; }
+body[data-current-view="rms-machine"] .rms-risk-command-strip span { color: #5c7590; font-size: .8rem; }
+body[data-current-view="rms-machine"] .rms-risk-agreement-summary {
+  margin: 0 24px 16px;
+  border-radius: 16px;
+  background: #0c426f;
+  color: #f3fbff;
+  box-shadow: 0 10px 25px rgba(12, 66, 111, .18);
+}
+body[data-current-view="rms-machine"] .rms-risk-agreement-summary small { color: #c6e5f8; }
+body[data-current-view="rms-machine"] .rms-risk-recovery-form { margin: 0 24px 16px; border-radius: 18px; }
+body[data-current-view="rms-machine"] .rms-risk-recovery-form h5 { font-size: 1rem; color: #0c426f; }
+body[data-current-view="rms-machine"] .rms-risk-recovery-form select:focus,
+body[data-current-view="rms-machine"] .rms-risk-recovery-form input:focus,
+body[data-current-view="rms-machine"] .rms-risk-recovery-form textarea:focus {
+  border-color: #1b8fd1;
+  box-shadow: 0 0 0 4px rgba(27, 143, 209, .14);
+}
+html[data-theme="dark"] body[data-current-view="rms-machine"] .rms-risk-command-console { background: linear-gradient(145deg, #0c2942, #102f4c); border-color: rgba(158, 217, 255, .2); }
+html[data-theme="dark"] body[data-current-view="rms-machine"] .rms-risk-command-strip > div { background: rgba(13, 50, 78, .9); border-color: rgba(158, 217, 255, .2); }
+html[data-theme="dark"] body[data-current-view="rms-machine"] .rms-risk-command-strip strong,
+html[data-theme="dark"] body[data-current-view="rms-machine"] .rms-risk-recovery-form h5 { color: #dff4ff; }
+@media (max-width: 760px) {
+  body[data-current-view="rms-machine"] .rms-risk-command-strip { grid-template-columns: 1fr; margin-inline: 14px; }
+  body[data-current-view="rms-machine"] .rms-risk-agreement-summary,
+  body[data-current-view="rms-machine"] .rms-risk-recovery-form { margin-inline: 14px; }
+}

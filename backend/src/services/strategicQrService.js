@@ -8,6 +8,30 @@ const { createSecureToken, normalizeToken } = require("../utils/token");
 const { logQrEvent } = require("./auditService");
 const { consumeQrCredit, consumeQrCredits, ensureCreditAccount, mapPublicCreditAccount } = require("./qrCreditService");
 
+const CANONICAL_BENEFIT_TYPES = new Set([
+  "PERCENT_DISCOUNT",
+  "FIXED_AMOUNT_DISCOUNT",
+  "FREE_GIFT",
+  "FREE_SAMPLE",
+  "UPGRADE",
+  "VIP_ACCESS",
+  "RAFFLE_ENTRY",
+  "BUY_X_GET_Y",
+  "CUSTOM",
+]);
+
+function normalizeBenefitType(value, options = {}) {
+  const normalized = String(value || "").trim().toUpperCase();
+  if (CANONICAL_BENEFIT_TYPES.has(normalized)) return normalized;
+  if (normalized === "DISCOUNT") {
+    return Number(options.discount_percent || options.benefit_value?.discount_percent || 0) > 0 ? "PERCENT_DISCOUNT" : "FIXED_AMOUNT_DISCOUNT";
+  }
+  if (normalized === "GIFT") return "FREE_GIFT";
+  if (normalized === "TWO_FOR_ONE") return "BUY_X_GET_Y";
+  if (normalized === "BONUS" || normalized === "NONE" || !normalized) return "CUSTOM";
+  return "CUSTOM";
+}
+
 const BUSINESS_BRAND_SETTINGS_SQL = `
   jsonb_strip_nulls(jsonb_build_object(
     'brand_primary', b.settings->>'brand_primary',
@@ -350,7 +374,8 @@ async function createPostSaleQr(businessId, user, body) {
 
     const token = createSecureToken();
     const expiresAt = resolveExpiration(body);
-    const benefitPayload = buildBenefitPayload(body.benefit, reward);
+    const benefit = { ...(body.benefit || {}), benefit_type: normalizeBenefitType(body.benefit?.benefit_type, body.benefit) };
+    const benefitPayload = buildBenefitPayload(benefit, reward);
     const ticketUseCaseLabel = body.metadata?.ticket_use_case_label || (isGenericTicket ? "Ticket generico" : "Beneficio postventa");
     const ticketOriginLabel = body.metadata?.origin_label || (isGenericTicket ? `Ticket generico - ${ticketUseCaseLabel}` : "QR postventa");
 
@@ -375,7 +400,7 @@ async function createPostSaleQr(businessId, user, body) {
           ...body.metadata,
         },
         expiresAt,
-        body.benefit.benefit_type,
+        benefit.benefit_type,
         benefitPayload,
         sale.id,
         player ? new Date().toISOString() : null,
@@ -403,7 +428,7 @@ async function createPostSaleQr(businessId, user, body) {
       metadata: {
         origin_type: "POST_SALE",
         sale_id: sale.id,
-        benefit_type: body.benefit.benefit_type,
+        benefit_type: benefit.benefit_type,
         ticket_use_case: body.metadata?.ticket_use_case || null,
       },
     });
@@ -425,7 +450,7 @@ async function createPostSaleQr(businessId, user, body) {
           scanUrl: sharedTicketUrl,
           brand,
           detailLines: buildTicketDetailLines({
-            label: benefitPayload?.label || body.benefit.benefit_type || "Beneficio",
+            label: benefitPayload?.label || benefit.benefit_type || "Beneficio",
             expiresAt,
             code: shortTicketCode(qr),
             benefitValue: benefitPayload?.value || {},
@@ -487,7 +512,8 @@ async function createRiskRecoveryQr(businessId, user, body = {}) {
       }
       const token = createSecureToken();
       const expiresAt = resolveExpiration(body);
-      benefitPayload = buildBenefitPayload(body.benefit || {}, reward);
+      const benefit = { ...(body.benefit || {}), benefit_type: normalizeBenefitType(body.benefit?.benefit_type, body) };
+      benefitPayload = buildBenefitPayload(benefit, reward);
       const claimRequired = !player;
       const created = await client.query(
         `insert into qr_codes
@@ -516,7 +542,7 @@ async function createRiskRecoveryQr(businessId, user, body = {}) {
             ...(body.metadata || {}),
           }),
           expiresAt,
-          body.benefit?.benefit_type,
+          benefit.benefit_type,
           JSON.stringify(benefitPayload),
           claimRequired,
           player ? new Date().toISOString() : null,
@@ -618,7 +644,8 @@ async function createQrBatch(businessId, user, body) {
     const campaign = await assertCampaign(client, businessId, body.campaign_id);
     const affiliate = await assertAffiliate(client, businessId, body.affiliate_id);
     const expiresAt = resolveExpiration(body);
-    const benefitPayload = buildBenefitPayload(body.benefit, reward);
+    const benefit = { ...(body.benefit || {}), benefit_type: normalizeBenefitType(body.benefit?.benefit_type, body.benefit) };
+    const benefitPayload = buildBenefitPayload(benefit, reward);
     const claimRequired = true;
 
     const batchResult = await client.query(
@@ -634,7 +661,7 @@ async function createQrBatch(businessId, user, body) {
         body.description || body.notes || null,
         body.quantity,
         body.qr_origin_type,
-        body.benefit.benefit_type,
+        benefit.benefit_type,
         benefitPayload,
         expiresAt,
         body.expiration_days || null,
@@ -677,7 +704,7 @@ async function createQrBatch(businessId, user, body) {
         expires_at: expiresAt,
         batch_id: batch.id,
         origin_type: body.qr_origin_type,
-        benefit_type: body.benefit.benefit_type,
+        benefit_type: benefit.benefit_type,
         benefit_value: benefitPayload,
         claim_required: claimRequired,
         claimed_at: null,
@@ -2177,6 +2204,7 @@ function buildClaimMessage(status) {
 }
 
 module.exports = {
+  normalizeBenefitType,
   buildValidatorUrl,
   buildClaimUrl,
   createPostSaleQr,
