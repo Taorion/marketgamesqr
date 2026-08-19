@@ -45853,10 +45853,15 @@ function renderRmsStationLeanOnly() {
   prepareRmsCommercialAccordions(rmsStationWorkspace);
   bindRmsMachineActions(rmsStationWorkspace);
   rmsStationWorkspace.querySelectorAll("[data-rms-close-station]").forEach((button) => button.addEventListener("click", closeRmsStation));
-  rmsStationWorkspace.querySelectorAll("[data-rms-station-summary]").forEach((button) => button.addEventListener("click", () => {
-    state.rmsStationSummaryOpen = !state.rmsStationSummaryOpen;
-    renderRmsStationOnly();
-  }));
+  rmsStationWorkspace.querySelectorAll("[data-rms-station-summary]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      state.rmsStationSummaryOpen = !state.rmsStationSummaryOpen;
+      button.setAttribute("aria-expanded", state.rmsStationSummaryOpen ? "true" : "false");
+      renderRmsStationOnly();
+    });
+  });
   rmsStationWorkspace.querySelector("[data-rms-station-picker]")?.addEventListener("change", (event) => openRmsStation(event.target.value || "", { source: "picker" }));
   rmsStationWorkspace.querySelector("[data-rms-station-search]")?.addEventListener("input", (event) => {
     state.rmsStationSearch = event.target.value || "";
