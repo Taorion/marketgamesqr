@@ -49042,6 +49042,7 @@ function bindRmsMachineActions(root) {
     const initialStep = operatingFlow?.querySelector("[data-rms-flow-step].is-active") || operatingFlow?.querySelector('[data-rms-flow-step="1"]');
     initialStep?.classList.add("is-selected");
     initialStep?.setAttribute("aria-current", "step");
+    syncRmsRiskRecoveryPhases(card, item);
     activateRmsRiskTab(root, id, "sale");
   });
   root.querySelectorAll("[data-rms-risk-tab]").forEach((button) => {
@@ -55873,6 +55874,29 @@ function mountRmsRiskOperatingFlow(card, item) {
   if (copy) copy.textContent = "Genera un beneficio redimible, compártelo y espera la respuesta. El lead permanece aquí hasta que confirmes el resultado.";
 }
 
+function syncRmsRiskRecoveryPhases(card, item) {
+  if (!card || !item) return;
+  const hasResource = Boolean(rmsRiskRecoveryResourceFor(item)?.public_ticket_url);
+  const tabs = card.querySelector("[data-rms-risk-tabs]");
+  const form = card.querySelector(".rms-risk-recovery-form");
+  [tabs, form].filter(Boolean).forEach((node) => {
+    node.classList.toggle("rms-risk-phase-locked", !hasResource);
+    node.setAttribute("aria-disabled", hasResource ? "false" : "true");
+  });
+  let phaseLabel = card.querySelector(".rms-risk-phase-response-label");
+  if (!phaseLabel && tabs) {
+    phaseLabel = document.createElement("div");
+    phaseLabel.className = "rms-risk-phase-response-label";
+    tabs.parentNode.insertBefore(phaseLabel, tabs);
+  }
+  if (phaseLabel) {
+    phaseLabel.innerHTML = hasResource
+      ? '<span class="mono-label">FASE 2 · RESPUESTA Y CIERRE</span><strong>El ticket está listo. Ahora registra qué respondió el cliente.</strong><small>Selecciona Venta lograda o Reciclaje y completa la justificación.</small>'
+      : '<span class="mono-label">FASE 2 · BLOQUEADA</span><strong>Primero genera y entrega el ticket.</strong><small>La respuesta se habilita cuando exista un activo QR válido para este lead.</small>';
+    phaseLabel.classList.toggle("is-ready", hasResource);
+  }
+}
+
 function rmsRiskSelectedOffer(root, item) {
   const value = rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id)?.value || "NONE";
   const benefitId = value.startsWith("BENEFIT:") ? value.slice(8) : null;
@@ -55915,6 +55939,7 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
     state.rmsRiskGeneratedResources[item.id] = { ...response.resource, qr_image_data_url: response.ticket?.qr_image_data_url || response.resource?.qr_image_data_url || null, filename: response.ticket?.filename || response.resource?.filename };
     const status = rmsCommercialNode(root, "[data-rms-risk-resource-status]", item.id);
     if (status) status.innerHTML = rmsRiskRecoveryResourceMarkup(item);
+    syncRmsRiskRecoveryPhases(root.querySelector(`[data-rms-station-lead="${CSS.escape(item.id)}"]`), item);
     showFeedback(response.duplicate ? "El ticket ya estaba listo; no se descontó otro crédito." : "Ticket y activo extraordinario generados. Ya puedes compartirlos.", "success", { title: "Riesgos de fuga" });
   } finally {
     setButtonLoading(button, false);
