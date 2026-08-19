@@ -56003,6 +56003,14 @@ rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupPhased(item = {}
   </section>`;
 };
 
+// Inserta la consola de fases directamente en la tarjeta activa; no depende del montaje posterior.
+const rmsRiskValidationStationCardMarkupPhasedBase = rmsRiskValidationStationCardMarkup;
+rmsRiskValidationStationCardMarkup = function rmsRiskValidationStationCardMarkupPhased(item = {}) {
+  const html = rmsRiskValidationStationCardMarkupPhasedBase(item);
+  if (html.includes("rms-risk-flow-phased")) return html;
+  return html.replace('<section class="rms-commercial-info-block rms-risk-recovery-form">', `${rmsRiskOperatingFlowMarkup(item)}<section class="rms-commercial-info-block rms-risk-recovery-form">`);
+};
+
 function rmsRiskShareMessage(item, resource) {
   const name = item.name || item.first_name || "Hola";
   const label = resource?.recovery_offer?.label || resource?.benefit?.label || "beneficio extraordinario";
