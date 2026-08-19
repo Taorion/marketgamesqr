@@ -55460,6 +55460,7 @@ async function saveRmsNegotiationDecision(item, root) {
   if (draft.result === "LOST" && !draft.lost_classification) { showFeedback("Selecciona la clasificación de pérdida.", "info", { title: "Negociación" }); return; }
   if (draft.result === "RECYCLE" && (!draft.recycle_reason || !draft.recycle_strategy || !draft.recycle_consent || !draft.channel || !draft.next_action_at)) { showFeedback("Para Reciclaje define motivo, estrategia, canal, consentimiento y fecha.", "info", { title: "Negociación" }); return; }
   if (button) button.disabled = true;
+  showFeedback(draft.result === "RECYCLE" ? "Registrando la respuesta y enviando el lead a Reciclaje…" : "Guardando la respuesta de Negociación…", "loading", { title: "Negociación", timeout: 0 });
   const key = rmsCommercialOperationKey("negotiation", item, `${draft.result}|${draft.reason}|${draft.next_action_at || ""}`);
   await api("/api/business/rms-machine/negotiation-result", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft, idempotency_key: key }) });
   localStorage.removeItem(rmsNegotiationDraftStorageKey(item.id));
