@@ -46735,7 +46735,7 @@ function rmsStationVisualMeta(phase = "") {
     procesamiento: {
       icon: "precision_manufacturing",
       tone: "conversion",
-      image: "/empresa/img/qori-station-05-evaluacion.png",
+      image: "/empresa/img/qori-station-05-evaluacion-slider.png",
       imageAlt: "Estación 05 Evaluación",
       screenTitle: "Estacion de almacenamiento: Evaluación",
       visualLabel: "Inventario: respuestas para decidir destino",
@@ -46747,7 +46747,7 @@ function rmsStationVisualMeta(phase = "") {
     control_anti_fuga: {
       icon: "monitor_heart",
       tone: "control",
-      image: "/empresa/img/qori-station-07-riesgos-fuga.png",
+      image: "/empresa/img/qori-station-07-riesgos-fuga-slider.png",
       imageAlt: "Estación 07 Riesgos de fuga",
       screenTitle: "Estación 08: Riesgos de fuga",
       visualLabel: "Control anti-fuga",
@@ -46759,7 +46759,7 @@ function rmsStationVisualMeta(phase = "") {
     accion_correctiva: {
       icon: "build_circle",
       tone: "recovery",
-      image: "/empresa/img/qori-station-06-negociacion.png",
+      image: "/empresa/img/qori-station-06-negociacion-slider.png",
       imageAlt: "Estación 06 Negociación",
       screenTitle: "Estación 07: Negociación",
       visualLabel: "Inventario: respuestas de negociación pendientes",
@@ -46771,7 +46771,7 @@ function rmsStationVisualMeta(phase = "") {
     cierre: {
       icon: "payments",
       tone: "closing",
-      image: "/empresa/img/qori-station-08-ventas-atribuidas.png",
+      image: "/empresa/img/qori-station-08-ventas-atribuidas-slider.png",
       imageAlt: "Estación 08 Ventas atribuidas",
       screenTitle: "Estación de almacenamiento: Ventas atribuidas",
       visualLabel: "Inventario: compras por completar",
@@ -46795,7 +46795,7 @@ function rmsStationVisualMeta(phase = "") {
     postventa: {
       icon: "redeem",
       tone: "postsale",
-      image: "/empresa/img/qori-station-09-valorizacion.png",
+      image: "/empresa/img/qori-station-09-valorizacion-slider.png",
       imageAlt: "Estación 09 Valorización Clientes",
       screenTitle: "Estación de almacenamiento: Activación 2",
       visualLabel: "Inventario: clientes para refinar",
@@ -46807,7 +46807,7 @@ function rmsStationVisualMeta(phase = "") {
     inteligencia: {
       icon: "psychology",
       tone: "intelligence",
-      image: "/empresa/img/qori-station-10-inteligencia-gos.png",
+      image: "/empresa/img/qori-station-10-inteligencia-gos-slider.png",
       imageAlt: "Estación 10 Inteligencia GOS",
       screenTitle: "Estación de Inteligencia: aprendizaje operativo",
       visualLabel: "Memoria operativa: aprendizaje RMS",
@@ -47026,7 +47026,7 @@ function ensureRmsStationUxStyles() {
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card.has-risk { border-color: rgba(207, 94, 79, .38) !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card:hover { border-color: rgba(7, 89, 214, .34) !important; background: linear-gradient(115deg,#ffffff 0%,#eefaff 54%,#ffffff 100%) !important; box-shadow: 0 34px 78px rgba(5, 42, 107, .18) !important; transform: none !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media { grid-column: 2 !important; grid-row: 1 / -1 !important; align-self: stretch !important; width: 100% !important; height: 100% !important; min-height: 0 !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; overflow: visible !important; }
-    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media img { width: 100% !important; height: 100% !important; display: block !important; object-fit: contain !important; object-position: center right !important; background: #fff !important; filter: none !important; transform: scale(1.022) !important; transform-origin: center !important; clip-path: inset(1.25% round 14px) !important; }
+    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media img { width: 100% !important; height: 100% !important; display: block !important; object-fit: contain !important; object-position: center right !important; background: #fff !important; filter: none !important; transform: none !important; clip-path: none !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-topline { grid-column: 1 !important; grid-row: 1 !important; align-self: start !important; z-index: 2 !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main { grid-column: 1 !important; grid-row: 2 !important; align-self: center !important; z-index: 2 !important; display: grid !important; grid-template-columns: 48px minmax(0,1fr) !important; gap: 14px !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-number { padding: 5px 8px !important; border-radius: 999px !important; background: #f6fbff !important; color: #53677f !important; letter-spacing: .05em !important; }
