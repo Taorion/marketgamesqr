@@ -48441,6 +48441,7 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
     const riskCount = rowsAll.filter((item) => Number(item.risk_score || 0) >= 50).length;
     const nextPhase = rmsPrimaryStationNextPhase(stage, stages);
     const nextLabel = nextPhase ? nextPhase.label : "Revenue medido";
+    const showNextStation = !["procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "revenue_generado", "postventa", "inteligencia"].includes(stage.key);
     const visual = rmsStationVisualMeta(stage.key);
     return `
       <article class="rms-stage-column rms-station-entry-card ${rowsAll.length ? "has-stage-material" : "is-empty-stage"} ${riskCount ? "has-risk" : ""} ${nextPhase ? "has-next-stage" : "is-final-stage"}" data-rms-phase="${escapeHtml(stage.key)}" data-station-tone="${escapeHtml(visual.tone || "default")}" tabindex="0" role="button" aria-label="Abrir estación ${escapeHtml(stage.label || `Estación ${index + 1}`)}">
@@ -48461,7 +48462,7 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
         </div>
         <div class="rms-station-entry-flow">
           <span class="rms-station-entry-alert ${riskCount ? "is-risk" : rowsAll.length ? "is-ready" : "is-clear"}"><span class="material-symbols-outlined" aria-hidden="true">${riskCount ? "warning" : rowsAll.length ? "play_circle" : "check_circle"}</span>${riskCount ? `${riskCount.toLocaleString("es-CO")} en riesgo` : rowsAll.length ? "Lista para operar" : "Sin pendientes"}</span>
-          <span class="rms-station-entry-next"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>${escapeHtml(nextLabel)}</span>
+          ${showNextStation ? `<span class="rms-station-entry-next"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>${escapeHtml(nextLabel)}</span>` : ""}
         </div>
         <button class="solid-button" type="button" data-rms-open-station="${escapeHtml(stage.key)}"><span>Entrar y trabajar</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
       </article>
