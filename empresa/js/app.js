@@ -45805,7 +45805,6 @@ function renderRmsStationLeanOnly() {
         ${phase === "inteligencia" ? rmsIntelligenceStationMarkup(state.rmsIntelligenceCases || rows) : ""}
         ${phase !== "inteligencia" ? `
         ${phase === "control_anti_fuga" ? rmsRiskStationMetricsMarkup(rows, allOpportunities) : ""}
-        ${phase === "control_anti_fuga" ? rmsRecyclingQueueMarkup(allOpportunities) : ""}
         <div class="rms-activation-work-list" aria-label="Consolas comerciales RMS">
           ${renderedRows.map((item) => rmsActivationStationCardMarkup(item)).join("") || `<div class="empty-state compact">${escapeHtml(isEmpty ? "No hay leads todavía." : "No hay leads con este filtro.")}</div>`}
         </div>
