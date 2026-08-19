@@ -48985,6 +48985,14 @@ function bindRmsMachineActions(root) {
     const id = card.dataset.rmsStationLead || "";
     const item = rmsOpportunityById(id);
     if (item) mountRmsRiskOperatingFlow(card, item);
+    const riskFlows = card.querySelectorAll(".rms-risk-operating-flow");
+    const phasedFlow = card.querySelector(".rms-risk-flow-phased");
+    if (phasedFlow) {
+      riskFlows.forEach((flow) => { if (flow !== phasedFlow) flow.remove(); });
+    } else if (riskFlows.length && item) {
+      riskFlows.forEach((flow) => flow.remove());
+      card.querySelector(".rms-risk-recovery-form")?.insertAdjacentHTML("beforebegin", rmsRiskOperatingFlowMarkup(item));
+    }
     const consoleNode = card.querySelector(".rms-commercial-work-console");
     const header = consoleNode?.querySelector(".rms-commercial-console-head");
     if (consoleNode && header && !consoleNode.querySelector("[data-rms-risk-tabs]")) {
