@@ -540,7 +540,7 @@ async function getSeriesAndCharts(businessId, filters) {
          affiliateColumn: "coalesce(s.referred_affiliate_id, q.affiliate_id)",
          channelExpression: "coalesce(nullif(s.acquisition_channel, ''), s.acquisition_source, 'QR_REDEMPTION')",
        })}
-       group by channel
+       group by 1
        order by revenue desc, sales desc
        limit 12`,
       salesParams
@@ -703,7 +703,7 @@ async function getSeriesAndCharts(businessId, filters) {
            and p.created_at >= $${matrixParams.push(filters.startDate)}::timestamptz
            and p.created_at < ($${matrixParams.push(filters.endDate)}::date + interval '1 day')
            and ($${matrixParams.push(filters.campaignId)}::uuid is null or coalesce(latest_capture.campaign_id, p.campaign_id) = $${matrixParams.length}::uuid)
-         group by coalesce(latest_capture.campaign_id, p.campaign_id), coalesce(latest_capture.campaign_name, c.name, 'Sin campana'), channel
+         group by 1, 2, 3
        ),
        manual_contact_events as (
          select cmc.campaign_id,
@@ -722,7 +722,7 @@ async function getSeriesAndCharts(businessId, filters) {
            and cmc.created_at >= $${matrixParams.push(filters.startDate)}::timestamptz
            and cmc.created_at < ($${matrixParams.push(filters.endDate)}::date + interval '1 day')
            and ($${matrixParams.push(filters.campaignId)}::uuid is null or cmc.campaign_id = $${matrixParams.length}::uuid)
-         group by cmc.campaign_id, c.name, channel
+         group by 1, 2, 3
        ),
        qr_events as (
          select q.campaign_id,
@@ -743,7 +743,7 @@ async function getSeriesAndCharts(businessId, filters) {
            and ($${matrixParams.push(filters.qrStatus)}::text is null or q.status::text = $${matrixParams.length}::text)
            and ($${matrixParams.push(filters.qrType)}::text is null or q.origin_type::text = $${matrixParams.length}::text)
            and ($${matrixParams.push(filters.affiliateId)}::uuid is null or q.affiliate_id = $${matrixParams.length}::uuid)
-         group by q.campaign_id, c.name, channel
+         group by 1, 2, 3
        ),
        redemption_events as (
          select rd.campaign_id,
@@ -767,7 +767,7 @@ async function getSeriesAndCharts(businessId, filters) {
            and ($${matrixParams.push(filters.qrType)}::text is null or q.origin_type::text = $${matrixParams.length}::text)
            and ($${matrixParams.push(filters.affiliateId)}::uuid is null or q.affiliate_id = $${matrixParams.length}::uuid)
            and ($${matrixParams.push(filters.sellerId)}::uuid is null or rd.redeemed_by_user_id = $${matrixParams.length}::uuid)
-         group by rd.campaign_id, c.name, channel
+         group by 1, 2, 3
        ),
        sale_events as (
          select s.campaign_id,
@@ -790,7 +790,7 @@ async function getSeriesAndCharts(businessId, filters) {
            and ($${matrixParams.push(filters.qrType)}::text is null or q.origin_type::text = $${matrixParams.length}::text)
            and ($${matrixParams.push(filters.affiliateId)}::uuid is null or coalesce(s.referred_affiliate_id, q.affiliate_id) = $${matrixParams.length}::uuid)
            and ($${matrixParams.push(filters.sellerId)}::uuid is null or s.seller_user_id = $${matrixParams.length}::uuid)
-         group by s.campaign_id, c.name, channel
+         group by 1, 2, 3
        ),
        events as (
          select * from lead_events
@@ -812,7 +812,7 @@ async function getSeriesAndCharts(businessId, filters) {
               round(case when sum(leads) > 0 then (sum(sales)::numeric / sum(leads)::numeric) * 100 else 0 end, 1) as conversion_rate
        from events
        where ($${matrixParams.push(filters.channel)}::text is null or channel = $${matrixParams.length}::text)
-       group by campaign_id, campaign_name, channel
+       group by 1, 2, 3
        order by revenue desc, sales desc, leads desc
        limit 240`,
       matrixParams
@@ -979,7 +979,7 @@ async function getSeriesAndCharts(businessId, filters) {
               case when bool_or(investment_source = 'manual') then 'manual' else 'allocated' end as investment_source
        from investments
        where ($${channelInvestmentParams.push(filters.channel)}::text is null or channel = $${channelInvestmentParams.length}::text)
-       group by campaign_id, campaign_name, channel
+       group by 1, 2, 3
        order by investment desc, campaign_name asc`,
       channelInvestmentParams
     ),
