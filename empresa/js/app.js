@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-risk-flow-v300";
+const APP_VERSION = "empresa-20260820-risk-flow-v301";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -56199,7 +56199,7 @@ function rmsRiskRecoveryAvailabilityMarkup() {
 }
 
 function rmsRiskTabsMarkup(item = {}) {
-  return `<section class="rms-risk-tabs" data-rms-risk-tabs="${escapeHtml(item.id)}" aria-label="Destino de Riesgos de fuga"><header><span class="mono-label">Resultado de la recuperación</span><strong>Solo una salida por caso.</strong></header><div role="tablist"><button class="is-active" type="button" role="tab" aria-selected="true" data-rms-risk-tab="${escapeHtml(item.id)}" data-rms-risk-tab-key="sale"><span class="material-symbols-outlined" aria-hidden="true">paid</span><span><strong>Venta lograda</strong><small>Enviar a Ventas atribuidas.</small></span></button><button type="button" role="tab" aria-selected="false" data-rms-risk-tab="${escapeHtml(item.id)}" data-rms-risk-tab-key="recycle"><span class="material-symbols-outlined" aria-hidden="true">autorenew</span><span><strong>Enviar a Reciclaje</strong><small>No fue viable continuar ahora.</small></span></button></div></section>`;
+  return `<section class="rms-risk-tabs" data-rms-risk-tabs="${escapeHtml(item.id)}" aria-label="Elige el resultado de la recuperación"><div role="tablist"><button class="is-active" type="button" role="tab" aria-selected="true" data-rms-risk-tab="${escapeHtml(item.id)}" data-rms-risk-tab-key="sale"><span class="material-symbols-outlined" aria-hidden="true">paid</span><span><strong>Venta lograda</strong><small>Enviar a Ventas atribuidas.</small></span></button><button type="button" role="tab" aria-selected="false" data-rms-risk-tab="${escapeHtml(item.id)}" data-rms-risk-tab-key="recycle"><span class="material-symbols-outlined" aria-hidden="true">autorenew</span><span><strong>Enviar a Reciclaje</strong><small>No fue viable continuar ahora.</small></span></button></div></section>`;
 }
 
 function rmsRiskRecoveryResourceFor(item = {}) {
