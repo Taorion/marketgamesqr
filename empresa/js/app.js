@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-rms-station-bootfix-v295";
+const APP_VERSION = "empresa-20260820-intelligence-gos-v296";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -45662,6 +45662,66 @@ function rmsIntelligenceRecyclingMarkup(rows = []) {
   return `<section class="rms-intelligence-recycling" aria-label="Reciclaje y conversiones descartadas"><header><div><span class="mono-label">RECICLAJE · MEMORIA DE OPORTUNIDADES NO CONVERTIDAS</span><h4>Qué no convirtió y qué puede recuperarse</h4><p>Reciclaje conserva su cola operativa. Los descartados quedan aquí para aprender de la no conversión; esta vista no contacta, no mueve ni reactiva leads.</p></div><span class="rms-commercial-state is-pending">${recycled.length} por reactivar</span></header><div class="rms-intelligence-pattern-grid"><section><h5>Reciclaje programado</h5><ol>${list(recycled, "recycled")}</ol></section><section><h5>Conversión descartada</h5><ol>${list(discarded, "discarded")}</ol></section></div></section>`;
 }
 
+function upgradeRmsIntelligenceCommandDeck(root) {
+  const consoleNode = root?.querySelector?.(".rms-intelligence-console");
+  const head = consoleNode?.querySelector?.(".rms-intelligence-console-head");
+  if (!consoleNode || !head || consoleNode.querySelector("[data-rms-intelligence-command-deck]")) return;
+  const cases = Array.isArray(state.rmsIntelligenceCases) ? state.rmsIntelligenceCases : [];
+  const patterns = state.rmsIntelligencePatterns || {};
+  const insights = Array.isArray(state.rmsIntelligenceInsights) ? state.rmsIntelligenceInsights : [];
+  const patternGroups = [patterns.bottlenecks, patterns.objections, patterns.attributed_sales, patterns.activation_2]
+    .filter(Array.isArray)
+    .flat();
+  const lowEvidence = patternGroups.filter((row) => Number(row?.sample_size || 0) > 0 && Number(row.sample_size) < 5).length;
+  const attributedSales = (patterns.attributed_sales || []).reduce((total, row) => total + Number(row?.sample_size || 0), 0);
+  const decisionsOpen = insights.filter((insight) => ["PENDING", "MEASURING"].includes(String(insight?.status || "").toUpperCase())).length;
+  const currentView = state.rmsIntelligenceView || "case";
+  const nextAction = decisionsOpen
+    ? `${decisionsOpen} aprendizaje${decisionsOpen === 1 ? "" : "s"} requiere${decisionsOpen === 1 ? "" : "n"} seguimiento.`
+    : lowEvidence
+      ? "Aumenta la evidencia antes de convertir una señal en decisión."
+      : cases.length
+        ? "Revisa el caso y convierte solo hechos respaldados en una decisión."
+        : "Cuando exista una venta o resultado de Valorización, aparecerá aquí para aprender.";
+  const deck = document.createElement("section");
+  deck.className = "rms-intelligence-command-deck";
+  deck.dataset.rmsIntelligenceCommandDeck = "true";
+  deck.setAttribute("aria-label", "Resumen operativo de Inteligencia GOS");
+  deck.innerHTML = `
+    <div class="rms-intelligence-command-copy">
+      <span class="mono-label">PANEL DE DECISIÓN</span>
+      <strong>${escapeHtml(nextAction)}</strong>
+      <small>Inteligencia organiza evidencia; no contacta, mueve ni crea recursos comerciales por sí sola.</small>
+    </div>
+    <dl class="rms-intelligence-command-metrics">
+      <div><dt>Casos con historia</dt><dd>${cases.length}</dd><small>Disponibles para revisar</small></div>
+      <div><dt>Ventas en la lectura</dt><dd>${attributedSales}</dd><small>${escapeHtml(patterns.period?.label || "Período actual")}</small></div>
+      <div class="${decisionsOpen ? "is-attention" : ""}"><dt>Decisiones abiertas</dt><dd>${decisionsOpen}</dd><small>Pendientes o por medir</small></div>
+      <div class="${lowEvidence ? "is-caution" : ""}"><dt>Señales por validar</dt><dd>${lowEvidence}</dd><small>Muestra menor de 5</small></div>
+    </dl>
+    <div class="rms-intelligence-command-actions">
+      <button class="ghost-button compact ${currentView === "case" ? "is-active" : ""}" type="button" data-rms-intelligence-deck-view="case"><span class="material-symbols-outlined" aria-hidden="true">person_search</span>Revisar caso</button>
+      <button class="ghost-button compact ${currentView === "patterns" ? "is-active" : ""}" type="button" data-rms-intelligence-deck-view="patterns"><span class="material-symbols-outlined" aria-hidden="true">query_stats</span>Ver patrones</button>
+      <button class="ghost-button compact ${currentView === "decisions" ? "is-active" : ""}" type="button" data-rms-intelligence-deck-view="decisions"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span>Dar seguimiento</button>
+      <button class="solid-button compact" type="button" data-rms-intelligence-deck-refresh><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar evidencia</button>
+    </div>`;
+  head.insertAdjacentElement("afterend", deck);
+  deck.querySelectorAll("[data-rms-intelligence-deck-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.rmsIntelligenceView = button.dataset.rmsIntelligenceDeckView || "case";
+      renderRmsStationOnly();
+    });
+  });
+  deck.querySelector("[data-rms-intelligence-deck-refresh]")?.addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    loadRmsIntelligenceData({ force: true })
+      .then(() => renderRmsStationOnly())
+      .catch((error) => showFeedback(error.message || "No pudimos actualizar la evidencia de Inteligencia GOS.", "error", { title: "Inteligencia GOS" }))
+      .finally(() => { button.disabled = false; });
+  });
+}
+
 function upgradeRmsIntelligenceRecyclingView(root) {
   const consoleNode = root?.querySelector?.(".rms-intelligence-console");
   const tabs = consoleNode?.querySelector?.(".rms-intelligence-tabs");
@@ -48637,6 +48697,7 @@ function rmsStageLeadUnitMarkup(item = {}) {
 
 function bindRmsMachineActions(root) {
   upgradeRmsInventoryProductInputs(root);
+  upgradeRmsIntelligenceCommandDeck(root);
   hydrateRmsIntelligenceJourney(root);
   bindRmsRiskMetricPopovers(root);
   root.querySelectorAll("[data-rms-open-collector]").forEach((button) => {
