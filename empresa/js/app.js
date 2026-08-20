@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-revenue-center-v305";
+const APP_VERSION = "empresa-20260820-revenue-center-v306";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -13203,6 +13203,39 @@ function renderRevenueAdvancedBoard() {
     </section>`;
 }
 
+function renderRevenueDashboardComposer(layout = []) {
+  const activeProfile = getDashboardProfile();
+  return `
+    <section class="revenue-dashboard-composer" aria-label="Compositor de radar de Revenue">
+      <header class="revenue-composer-hero">
+        <div><span class="mono-label">Compositor de señales</span><h4>Diseña tu radar de revenue</h4><p>Elige una lectura y activa únicamente las señales que necesitas para tomar decisiones. Esta configuración no altera los datos del negocio.</p></div>
+        <div class="revenue-composer-live"><i></i><strong>${layout.length}</strong><span>señales activas</span></div>
+      </header>
+      <section class="revenue-composer-presets" aria-label="Lecturas recomendadas">
+        ${Object.entries(DASHBOARD_BUILDER_PROFILES).filter(([key]) => key !== "custom").map(([key, item]) => `
+          <button type="button" class="revenue-composer-preset ${key === activeProfile ? "is-active" : ""}" data-dashboard-template-profile="${escapeHtml(key)}">
+            <span class="material-symbols-outlined" aria-hidden="true">${key === "marketing" ? "campaign" : key === "commercial" ? "point_of_sale" : key === "tickets" ? "confirmation_number" : "radar"}</span>
+            <span><small>${key === activeProfile ? "Lectura activa" : "Lectura recomendada"}</small><strong>${escapeHtml(item.label)}</strong></span>
+            <span class="material-symbols-outlined revenue-composer-preset-arrow" aria-hidden="true">${key === activeProfile ? "check_circle" : "arrow_forward"}</span>
+          </button>`).join("")}
+      </section>
+      <section class="revenue-composer-catalog">
+        <header><div><span class="mono-label">Biblioteca de señales</span><h5>Activa lo que realmente vas a monitorear</h5></div><small>Se agrega a tu lienzo al activarla.</small></header>
+        <div class="revenue-composer-signal-grid">
+          ${DASHBOARD_WIDGET_CATALOG.map((widget) => {
+            const active = layout.includes(widget.id);
+            return `<button class="revenue-composer-signal ${active ? "is-active" : ""}" type="button" data-dashboard-add-widget="${escapeHtml(widget.id)}" aria-pressed="${active ? "true" : "false"}">
+              <span class="material-symbols-outlined revenue-composer-signal-icon" aria-hidden="true">${escapeHtml(widget.icon)}</span>
+              <span class="revenue-composer-signal-copy"><small>${escapeHtml(widget.category)}</small><strong>${escapeHtml(widget.title)}</strong><em>${escapeHtml(widget.description)}</em></span>
+              <span class="revenue-composer-signal-state"><span class="material-symbols-outlined" aria-hidden="true">${active ? "check" : "add"}</span>${active ? "Activa" : "Activar"}</span>
+            </button>`;
+          }).join("")}
+        </div>
+      </section>
+      <footer class="revenue-composer-foot"><span class="material-symbols-outlined" aria-hidden="true">drag_indicator</span><span>Para reordenar o retirar una señal, usa las tarjetas del lienzo debajo.</span></footer>
+    </section>`;
+}
+
 function renderDashboardBuilder() {
   renderDashboardBusinessEconomics();
   if (!dashboardBuilderShell || !dashboardWidgetGrid || !dashboardWidgetLibrary) return;
@@ -13393,8 +13426,8 @@ function renderDashboardBuilder() {
     `).join("");
   }
   if (dashboardTemplateGallery) {
-    dashboardTemplateGallery.hidden = workspaceTab !== "customize";
-    dashboardTemplateGallery.style.setProperty("display", workspaceTab === "customize" ? "grid" : "none", "important");
+    dashboardTemplateGallery.hidden = true;
+    dashboardTemplateGallery.style.setProperty("display", "none", "important");
     dashboardTemplateGallery.innerHTML = `
       <div class="dashboard-template-copy"><span class="mono-label">Plantillas base</span><h4>Empieza con una vista que ya sabe qué medir</h4><p>Elige una plantilla y luego ajusta sus bloques a tu forma de operar.</p></div>
       <div class="dashboard-template-list">
@@ -13430,6 +13463,9 @@ function renderDashboardBuilder() {
   }).join("") || `
     <div class="dashboard-library-empty"><span class="material-symbols-outlined" aria-hidden="true">dashboard_customize</span><strong>No hay bloques en esta vista.</strong><p>Elige otra categoría o agrega un indicador.</p></div>
   `;
+  if (workspaceTab === "customize") {
+    dashboardWidgetLibrary.innerHTML = renderRevenueDashboardComposer(layout);
+  }
   dashboardWidgetGrid.innerHTML = visibleWidgets.map((widget, index) => {
     const rendered = renderDashboardWidget(widget, stats);
     return `
@@ -54109,6 +54145,13 @@ dashboardProfileTabs?.addEventListener("click", (event) => {
   renderDashboardBuilder();
 });
 dashboardWidgetLibrary?.addEventListener("click", (event) => {
+  const preset = event.target.closest("[data-dashboard-template-profile]");
+  if (preset) {
+    setDashboardProfile(preset.dataset.dashboardTemplateProfile || "marketing");
+    state.dashboardLibraryFilter = "selected";
+    renderDashboardBuilder();
+    return;
+  }
   const button = event.target.closest("[data-dashboard-add-widget]");
   if (!button) return;
   addDashboardWidget(button.dataset.dashboardAddWidget);
