@@ -1,0 +1,24 @@
+/* Final cascade for Revenue Center: this file loads after portal-clean. */
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell:is([data-workspace-tab="summary"], [data-workspace-tab="analysis"]) .dashboard-canvas,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell:is([data-workspace-tab="summary"], [data-workspace-tab="analysis"]) .dashboard-widget-grid {
+  display: block !important;
+  min-height: 0 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell:is([data-workspace-tab="summary"], [data-workspace-tab="analysis"]) .dashboard-profile-tabs[hidden],
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell:is([data-workspace-tab="summary"], [data-workspace-tab="analysis"]) #dashboardAdvancedToggleButton[hidden],
+html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell:is([data-workspace-tab="summary"], [data-workspace-tab="analysis"]) #dashboardResetProfileButton[hidden] {
+  display: none !important;
+}
+
+/* The executive cards are light in every portal theme, so their text is black. */
+html body[data-current-view="dashboard"] .portal-shell #dashboardBusinessRoiValue,
+html body[data-current-view="dashboard"] .portal-shell #dashboardBusinessCacValue,
+html body[data-current-view="dashboard"] .portal-shell #dashboardBusinessRoiMeta,
+html body[data-current-view="dashboard"] .portal-shell #dashboardBusinessCacMeta {
+  color: #111111 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item .mono-label {
+  color: #111111 !important;
+}
