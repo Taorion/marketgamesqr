@@ -49595,6 +49595,11 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll(".rms-risk-work-item[data-rms-station-lead]").forEach((card) => {
     const id = card.dataset.rmsStationLead || "";
     const item = rmsOpportunityById(id);
+    // Riesgos de fuga conserva compatibilidad con tickets ya emitidos y con
+    // tarjetas abiertas antes de los cambios de interfaz. Una mejora de
+    // presentación nunca puede derribar la estación ni devolver al operador
+    // al mapa después de que Evaluación ya guardó el movimiento.
+    try {
     if (item) mountRmsRiskOperatingFlow(card, item);
     const riskFlows = card.querySelectorAll(".rms-risk-operating-flow");
     const phasedFlow = card.querySelector(".rms-risk-flow-phased");
@@ -49669,6 +49674,11 @@ function bindRmsMachineActions(root) {
     initialStep?.setAttribute("aria-current", "step");
     syncRmsRiskRecoveryPhases(card, item);
     activateRmsRiskTab(root, id, "sale");
+    } catch (error) {
+      console.error("RMS risk card enhancement failed", { id, error });
+      card.dataset.rmsRiskEnhancement = "degraded";
+      card.querySelector(".rms-commercial-work-console")?.classList.add("rms-risk-safe-mode");
+    }
   });
   root.querySelectorAll("[data-rms-risk-tab]").forEach((button) => {
     button.addEventListener("click", () => {
