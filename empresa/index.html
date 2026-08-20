@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=activation-modal-flow-20260810-v196">
+  <link rel="stylesheet" href="css/styles.css?v=campaign-summary-v304-20260820">
   <link rel="stylesheet" href="css/dashboard-open-flow.css?v=20260727-v156">
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159">
   <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=activation-builder-catalog-fix-20260728-v177">
@@ -4047,13 +4047,11 @@
           <section class="view-section" data-view="campaigns">
             <div class="view-head campaign-head">
               <div>
-                <nav class="breadcrumb campaign-breadcrumb" aria-label="Ruta de campañas">
-                  <span>Campañas y QR</span>
-                  <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
-                  <span id="campaignBreadcrumb">Sin campaña seleccionada</span>
+                <nav class="breadcrumb campaign-breadcrumb" aria-label="Ruta de campañas" hidden>
+                  <span id="campaignBreadcrumb">Campañas</span>
                 </nav>
-                <h2 id="campaignHeroTitle">Campañas y QR</h2>
-                <p id="campaignHeroSubtitle">Crea campañas, conecta QR y mide leads, redenciones, revenue y ROI.</p>
+                <h2 id="campaignHeroTitle">Campañas</h2>
+                <p id="campaignHeroSubtitle" hidden></p>
               </div>
               <div class="head-actions">
                 <button class="ghost-button" id="exportCampaignReportButton" type="button">Exportar Reporte</button>
@@ -4078,6 +4076,26 @@
             </section>
 
             <section class="kpi-grid sales-kpis" id="campaignStateGrid" data-campaign-tab-panel="analysis"></section>
+
+            <details class="campaign-summary-panel" id="campaignSummaryPanel" data-campaign-tab-panel="analysis">
+              <summary>
+                <span class="material-symbols-outlined" aria-hidden="true">table_chart</span>
+                <span class="campaign-summary-copy"><strong>Resumen</strong><small>Vista rápida de todas las campañas y su vigencia</small></span>
+                <span class="campaign-summary-toggle">Desplegar <span class="material-symbols-outlined" aria-hidden="true">expand_more</span></span>
+              </summary>
+              <div class="campaign-summary-content">
+                <div class="campaign-summary-intro">
+                  <div><span class="mono-label">Resumen de campañas</span><strong>Estado, resultados y vigencia en una sola tabla</strong></div>
+                  <small>El estado visual se calcula con las fechas de inicio y cierre guardadas.</small>
+                </div>
+                <div class="table-wrap campaign-summary-table-wrap">
+                  <table>
+                    <thead><tr><th>Campaña</th><th>Vigencia</th><th>Estado</th><th>Canales</th><th>Leads</th><th>Tickets</th><th>Redenciones</th><th>Ventas</th><th>Inversión</th><th>Revenue</th><th>ROI</th></tr></thead>
+                    <tbody id="campaignSummaryTable"><tr><td colspan="11">Cargando campañas.</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </details>
 
             <details class="campaign-insights-panel" id="campaignInsightsPanel" data-campaign-tab-panel="analysis">
               <summary>
@@ -4606,6 +4624,13 @@
                           <strong id="campaignRelatedCustomersCount">0</strong>
                         </div>
                         <div class="campaign-related-list" id="campaignRelatedCustomersList"></div>
+                      </section>
+                      <section class="campaign-related-panel campaign-related-activations">
+                        <div class="campaign-related-head">
+                          <span class="mono-label">Activaciones relacionadas</span>
+                          <strong id="campaignRelatedActivationsCount">0</strong>
+                        </div>
+                        <div class="campaign-related-list" id="campaignRelatedActivationsList"></div>
                       </section>
                       <section class="campaign-related-panel campaign-related-affiliates hidden">
                         <div class="campaign-related-head">
@@ -7913,7 +7938,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=revenue-command-pro-v311-20260820" defer></script>
+<script src="js/app.js?v=campaign-summary-v304-20260820" defer></script>
     <script src="js/communications.js?v=email-attachments-v325-20260817" defer></script>
 </body>
 </html>

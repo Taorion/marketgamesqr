@@ -417,6 +417,8 @@ const campaignRelatedLeadsCount = document.getElementById("campaignRelatedLeadsC
 const campaignRelatedLeadsList = document.getElementById("campaignRelatedLeadsList");
 const campaignRelatedCustomersCount = document.getElementById("campaignRelatedCustomersCount");
 const campaignRelatedCustomersList = document.getElementById("campaignRelatedCustomersList");
+const campaignRelatedActivationsCount = document.getElementById("campaignRelatedActivationsCount");
+const campaignRelatedActivationsList = document.getElementById("campaignRelatedActivationsList");
 const campaignRelatedAffiliatesCount = document.getElementById("campaignRelatedAffiliatesCount");
 const campaignAffiliateForm = document.getElementById("campaignAffiliateForm");
 const campaignAffiliateSelect = document.getElementById("campaignAffiliateSelect");
@@ -2640,6 +2642,7 @@ let state = {
   selectedCampaignId: null,
   selectedCampaign: null,
   selectedCampaignAffiliates: [],
+  campaignRelatedActivations: [],
   campaignSectionTab: "analysis",
   campaignCostCalculator: null,
   campaignCostCalculatorCampaignId: null,
@@ -3934,6 +3937,7 @@ function resetBusinessScopedState(options = {}) {
   state.selectedCampaignId = null;
   state.selectedCampaign = null;
   state.selectedCampaignAffiliates = [];
+  state.campaignRelatedActivations = [];
   state.campaignCostCalculator = null;
   state.campaignCostCalculatorCampaignId = null;
   state.campaignModalMode = "edit";
@@ -14905,14 +14909,91 @@ function ensureCampaignQoriCenterStyles() {
   document.head.appendChild(style);
 }
 
+function campaignValidityState(campaign = {}, now = Date.now()) {
+  const status = String(campaign.status || "").trim().toUpperCase();
+  const startsAt = campaign.starts_at ? new Date(campaign.starts_at).getTime() : null;
+  const endsAt = campaign.ends_at ? new Date(campaign.ends_at).getTime() : null;
+  const start = Number.isFinite(startsAt) ? startsAt : null;
+  const end = Number.isFinite(endsAt) ? endsAt : null;
+  const hasValidDates = Boolean(start || end);
+  const dateRange = formatCampaignDuration(campaign);
+
+  if (["DRAFT", "ARCHIVED", "FINISHED", "CANCELLED", "INACTIVE"].includes(status)) {
+    return { key: "inactive", label: "No activa", detail: status === "DRAFT" ? "Borrador sin publicar" : `${statusLabel(status)} · fuera de operación`, dateRange };
+  }
+  if (start && end && end < start) {
+    return { key: "inactive", label: "No activa", detail: "Revisa las fechas de vigencia", dateRange };
+  }
+  if (!hasValidDates) {
+    return { key: "missing", label: "Sin vigencia", detail: "Configura inicio y cierre para calcular su estado", dateRange };
+  }
+  if (start && now < start) {
+    return { key: "scheduled", label: "Programada", detail: `Inicia ${formatDateShort(campaign.starts_at)}`, dateRange };
+  }
+  if (end && now > end) {
+    return { key: "ended", label: "No activa", detail: `Terminó ${formatDateShort(campaign.ends_at)}`, dateRange };
+  }
+  return { key: "active", label: "Activa", detail: end ? `Vigente hasta ${formatDateShort(campaign.ends_at)}` : "Vigencia abierta", dateRange };
+}
+
+function campaignValidityBadgeMarkup(campaign = {}) {
+  const validity = campaignValidityState(campaign);
+  return `<span class="campaign-validity-badge is-${escapeHtml(validity.key)}" title="${escapeHtml(validity.detail)}"><i aria-hidden="true"></i>${escapeHtml(validity.label)}</span>`;
+}
+
+function syncCampaignSummaryDisclosure() {
+  const panel = document.getElementById("campaignSummaryPanel");
+  const action = panel?.querySelector(".campaign-summary-toggle");
+  if (!panel || !action) return;
+  const icon = action.querySelector(".material-symbols-outlined");
+  action.replaceChildren(document.createTextNode(panel.open ? "Ocultar " : "Desplegar "));
+  if (icon) action.appendChild(icon);
+}
+
+function renderCampaignSummary() {
+  const panel = document.getElementById("campaignSummaryPanel");
+  const table = document.getElementById("campaignSummaryTable");
+  if (!table) return;
+  if (panel && !panel.dataset.summaryBound) {
+    panel.dataset.summaryBound = "true";
+    panel.addEventListener("toggle", syncCampaignSummaryDisclosure);
+  }
+  syncCampaignSummaryDisclosure();
+  const campaigns = Array.isArray(state.campaigns) ? state.campaigns : [];
+  table.innerHTML = campaigns.length ? campaigns.map((campaign) => {
+    const validity = campaignValidityState(campaign);
+    const leads = toNumber(campaign.total_leads);
+    const tickets = toNumber(campaign.total_qr_generated);
+    const redemptions = toNumber(campaign.total_qr_redeemed);
+    const sales = toNumber(campaign.direct_sales_count || campaign.attributed_sales_count);
+    return `
+      <tr>
+        <td><strong>${escapeHtml(campaign.name || "Campaña sin nombre")}</strong><small>${escapeHtml(campaign.objective || campaign.strategy_summary || "Sin objetivo cargado")}</small></td>
+        <td><strong>${escapeHtml(validity.dateRange)}</strong><small>${escapeHtml(validity.detail)}</small></td>
+        <td>${campaignValidityBadgeMarkup(campaign)}</td>
+        <td>${escapeHtml(launchChannelsLabel(campaign.launch_channels) || "Sin definir")}</td>
+        <td>${leads.toLocaleString("es-CO")}</td>
+        <td>${tickets.toLocaleString("es-CO")}</td>
+        <td>${redemptions.toLocaleString("es-CO")}</td>
+        <td>${sales.toLocaleString("es-CO")}</td>
+        <td>${escapeHtml(money(toNumber(campaign.budget_total || campaign.investment)))}</td>
+        <td>${escapeHtml(money(toNumber(campaign.attributed_revenue || campaign.observed_revenue)))}</td>
+        <td>${escapeHtml(ratioLabel(campaign.estimated_roi))}</td>
+      </tr>
+    `;
+  }).join("") : '<tr><td colspan="11">Aún no hay campañas creadas.</td></tr>';
+}
+
 function campaignListCardMarkup(campaign = {}) {
   const active = campaign.id === state.selectedCampaignId;
   const channel = launchChannelsLabel(campaign.launch_channels);
+  const validity = campaignValidityState(campaign);
   return `
     <article class="campaign-item ${active ? "active" : ""}" data-campaign-id="${escapeHtml(campaign.id)}">
       <div class="campaign-item-main">
         <div class="campaign-item-title">
           <h3>${escapeHtml(campaign.name || "Campaña sin nombre")}</h3>
+          ${campaignValidityBadgeMarkup(campaign)}
         </div>
         <p>${escapeHtml(campaign.objective || campaign.strategy_summary || "Sin objetivo cargado.")}</p>
         <small class="campaign-item-channel">${escapeHtml(channel || "Canal sin definir")}</small>
@@ -15022,6 +15103,7 @@ function bindCampaignListActions(container) {
 function renderCampaignList() {
   ensureCampaignLibraryUxStyles();
   ensureCampaignQoriCenterStyles();
+  renderCampaignSummary();
   const campaigns = currentCampaignRows();
   const emptyMarkup = `
     <article class="campaign-empty-list">
@@ -15257,12 +15339,13 @@ async function selectCampaign(campaignId) {
   renderCampaignAssociationInputs();
 
   try {
-    const [campaignData, reportData, leadsData, redemptionsData, salesData] = await Promise.all([
+    const [campaignData, reportData, leadsData, redemptionsData, salesData, activationsData] = await Promise.all([
       api(`/api/business/campaigns/${campaignId}`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/report`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/leads?limit=150`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/redemptions?limit=150`, { headers: authHeaders() }),
       api(`/api/business/campaigns/${campaignId}/sales?limit=150`, { headers: authHeaders() }),
+      apiSafe("/api/business/interactive-activations?limit=120&include_archived=true", { headers: authHeaders() }, { activations: [] }),
     ]);
 
     if (!isCurrentBusinessScope(scopeKey) || state.selectedCampaignId !== campaignId) return;
@@ -15275,6 +15358,7 @@ async function selectCampaign(campaignId) {
     state.selectedRedemptions = redemptionsData.redemptions || [];
     state.selectedSales = salesData.sales || [];
     state.selectedCampaignAffiliates = [];
+    state.campaignRelatedActivations = activationsData.activations || activationsData.trivias || [];
 
     renderCampaignInsights();
     renderCampaignView();
@@ -16205,12 +16289,44 @@ function campaignRelatedCustomerCard(customer = {}) {
   `;
 }
 
+function campaignRelatedActivationRows() {
+  const campaignId = String(state.selectedCampaignId || state.selectedCampaign?.id || "");
+  if (!campaignId) return [];
+  return (state.campaignRelatedActivations || [])
+    .filter((activation) => String(activation.campaign_id || "") === campaignId)
+    .sort((left, right) => new Date(right.created_at || 0) - new Date(left.created_at || 0));
+}
+
+function campaignRelatedActivationCard(activation = {}) {
+  const activity = [
+    `${Number(activation.attempts_count || 0).toLocaleString("es-CO")} participantes`,
+    `${Number(activation.winners_count || 0).toLocaleString("es-CO")} tickets`,
+  ].join(" · ");
+  const timing = activation.ends_at
+    ? `Vence ${formatDate(activation.ends_at)}`
+    : activation.starts_at
+      ? `Disponible desde ${formatDate(activation.starts_at)}`
+      : "Sin vigencia definida";
+  return `
+    <article class="campaign-related-item campaign-related-activation-item">
+      <div>
+        <strong>${escapeHtml(activation.title || "Activación sin título")}</strong>
+        <span>${escapeHtml(activationTypeLabel(activation.activation_type) || "Activación")}</span>
+        <small>${escapeHtml([activationStatusLabel(activation.status), timing, activity].filter(Boolean).join(" · "))}</small>
+      </div>
+      <b>${escapeHtml(activationStatusLabel(activation.status))}</b>
+    </article>
+  `;
+}
+
 function renderCampaignRelationsPanel() {
   const leads = state.selectedLeads || [];
   const customers = campaignRelatedCustomerRows();
+  const activations = campaignRelatedActivationRows();
   const affiliates = state.selectedCampaignAffiliates || [];
   if (campaignRelatedLeadsCount) campaignRelatedLeadsCount.textContent = leads.length.toLocaleString("es-CO");
   if (campaignRelatedCustomersCount) campaignRelatedCustomersCount.textContent = customers.length.toLocaleString("es-CO");
+  if (campaignRelatedActivationsCount) campaignRelatedActivationsCount.textContent = activations.length.toLocaleString("es-CO");
   if (campaignRelatedAffiliatesCount) campaignRelatedAffiliatesCount.textContent = affiliates.length.toLocaleString("es-CO");
   if (campaignRelatedLeadsList) {
     campaignRelatedLeadsList.innerHTML = leads.slice(0, 8).map(campaignRelatedLeadCard).join("")
@@ -16225,6 +16341,10 @@ function renderCampaignRelationsPanel() {
   if (campaignRelatedCustomersList) {
     campaignRelatedCustomersList.innerHTML = customers.slice(0, 8).map(campaignRelatedCustomerCard).join("")
       || '<div class="campaign-related-empty">Sin clientes o ventas atribuidas a esta campaña.</div>';
+  }
+  if (campaignRelatedActivationsList) {
+    campaignRelatedActivationsList.innerHTML = activations.slice(0, 8).map(campaignRelatedActivationCard).join("")
+      || '<div class="campaign-related-empty">Esta campaña aún no tiene activaciones relacionadas.</div>';
   }
   renderCampaignAffiliatesPanel();
 }
@@ -16404,9 +16524,9 @@ function renderCampaignView() {
     return;
   }
 
-  campaignBreadcrumb.textContent = campaign.name;
-  campaignHeroTitle.textContent = `Campaña: ${campaign.name}`;
-  campaignHeroSubtitle.textContent = campaign.strategy_summary || "Campaña lista para medición operativa y comercial.";
+  campaignBreadcrumb.textContent = "Campañas";
+  campaignHeroTitle.textContent = "Campañas";
+  campaignHeroSubtitle.textContent = "";
   campaignInsightText.textContent = buildInsight(campaign);
   campaignObjectiveValue.textContent = campaign.objective || "Sin objetivo definido";
   campaignDurationValue.textContent = formatCampaignDuration(campaign);
@@ -29634,9 +29754,9 @@ function renderNoCampaignState() {
   campaignList.innerHTML = '<article class="campaign-item"><p>No hay campañas disponibles.</p></article>';
   renderCampaignCommandKpis();
   renderCampaignInsights();
-  campaignBreadcrumb.textContent = "Sin campaña seleccionada";
-  campaignHeroTitle.textContent = "Campañas y QR";
-  campaignHeroSubtitle.textContent = "Crea campañas, conecta QR y mide leads, redenciones, revenue y ROI.";
+  campaignBreadcrumb.textContent = "Campañas";
+  campaignHeroTitle.textContent = "Campañas";
+  campaignHeroSubtitle.textContent = "";
   editCampaignButton.classList.add("hidden");
   markReadyCampaignButton.classList.add("hidden");
   campaignInsightText.textContent = "No hay campañas registradas para este negocio.";
@@ -29677,10 +29797,13 @@ function renderNoCampaignState() {
   renderCampaignConfigurationGrid(null);
   if (campaignRelatedLeadsCount) campaignRelatedLeadsCount.textContent = "0";
   if (campaignRelatedCustomersCount) campaignRelatedCustomersCount.textContent = "0";
+  if (campaignRelatedActivationsCount) campaignRelatedActivationsCount.textContent = "0";
   if (campaignRelatedAffiliatesCount) campaignRelatedAffiliatesCount.textContent = "0";
   if (campaignRelatedLeadsList) campaignRelatedLeadsList.innerHTML = '<div class="campaign-related-empty">Selecciona una campaña.</div>';
   if (campaignRelatedCustomersList) campaignRelatedCustomersList.innerHTML = '<div class="campaign-related-empty">Selecciona una campaña.</div>';
+  if (campaignRelatedActivationsList) campaignRelatedActivationsList.innerHTML = '<div class="campaign-related-empty">Selecciona una campaña.</div>';
   state.selectedCampaignAffiliates = [];
+  state.campaignRelatedActivations = [];
   if (campaignAffiliateSelect) campaignAffiliateSelect.innerHTML = '<option value="">Sin campaña</option>';
   if (campaignAffiliateAssignButton) campaignAffiliateAssignButton.disabled = true;
   if (campaignAffiliatesTable) campaignAffiliatesTable.innerHTML = '<tr><td colspan="6">Selecciona una campaña.</td></tr>';
