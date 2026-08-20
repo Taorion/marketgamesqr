@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-risk-flow-v301";
+const APP_VERSION = "empresa-20260820-revenue-center-v302";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -67,6 +67,7 @@ const commandCenterRoot = document.getElementById("commandCenterRoot");
 const revenuePathGuide = document.getElementById("revenuePathGuide");
 const nextBestActionCard = document.getElementById("nextBestActionCard");
 const revenuePulseStrip = document.getElementById("revenuePulseStrip");
+const revenueDecisionDeck = document.getElementById("revenueDecisionDeck");
 const revenueQuickActions = document.getElementById("revenueQuickActions");
 const dashboardRevenueActionButton = document.getElementById("dashboardRevenueActionButton");
 const dashboardBuilderShell = document.getElementById("dashboardBuilderShell");
@@ -6556,7 +6557,7 @@ async function ensureSelectedCampaignLoaded(options = {}) {
 
 async function loadDashboardData(options = {}) {
   if (!session?.user?.business_id) return;
-  if (state.dashboard && state.commandCenter && !options.force) return;
+  if (state.dashboard && !options.force) return;
   if (state.dashboardLoading && !options.force) return;
   const scopeKey = businessScopeKey();
   state.dashboardLoading = true;
@@ -6564,13 +6565,9 @@ async function loadDashboardData(options = {}) {
     showFeedback("Cargando Centro de Revenue bajo demanda.", "loading", { title: "Dashboard", timeout: 0 });
   }
   try {
-    const [dashboardData, commandCenterData] = await Promise.all([
-      api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }),
-      apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, state.commandCenter),
-    ]);
+    const dashboardData = await api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() });
     if (!isCurrentBusinessScope(scopeKey)) return;
     state.dashboard = dashboardData || null;
-    state.commandCenter = commandCenterData || null;
     state.subscription = dashboardData?.subscription || state.subscription || session.user?.subscription || null;
   } finally {
     if (isCurrentBusinessScope(scopeKey)) state.dashboardLoading = false;
@@ -10654,6 +10651,60 @@ function renderRevenuePulseStrip(summary = {}, dashboard = {}, path = []) {
   `).join("");
 }
 
+function renderRevenueDecisionDeck(summary = {}, dashboard = {}) {
+  if (!revenueDecisionDeck) return;
+  const leads = toNumber(summary.total_leads);
+  const activeQr = toNumber(dashboard.summary?.active_qr);
+  const redeemed = toNumber(summary.total_qr_redeemed);
+  const sales = toNumber(summary.observed_sales_count ?? summary.direct_sales_count);
+  const openAgenda = (state.leadAgenda || []).filter((item) => !["DONE", "CLOSED", "COMPLETED", "CANCELLED"].includes(String(item.status || item.agenda_status || "").toUpperCase())).length;
+  const economics = dashboardCommercialEconomics();
+  const signals = [];
+
+  if (!leads) {
+    signals.push({ tone: "is-priority", icon: "person_add", label: "Entrada comercial", value: "Sin leads", detail: "Aún no hay contactos para convertir. Crea una fuente de entrada antes de medir rendimiento.", route: "campaigns", cta: "Crear entrada" });
+  } else if (!openAgenda) {
+    signals.push({ tone: "is-priority", icon: "event_available", label: "Seguimiento", value: "Sin tareas", detail: `${leads.toLocaleString("es-CO")} contactos no tienen una próxima acción visible.`, route: "agenda", cta: "Crear seguimiento" });
+  } else {
+    signals.push({ tone: "is-healthy", icon: "event_note", label: "Seguimiento", value: openAgenda.toLocaleString("es-CO"), detail: `${leads.toLocaleString("es-CO")} leads registrados · tareas abiertas para mover la conversación.`, route: "agenda", cta: "Ver agenda" });
+  }
+
+  if (activeQr && !redeemed) {
+    signals.push({ tone: "is-priority", icon: "confirmation_number", label: "Activación", value: `${activeQr.toLocaleString("es-CO")} activos`, detail: "Hay beneficios vigentes sin redención registrada. Revisa entrega, vigencia y recordatorio.", route: "strategic-qr", cta: "Revisar tickets" });
+  } else {
+    signals.push({ tone: "is-neutral", icon: "qr_code_scanner", label: "Activación", value: redeemed.toLocaleString("es-CO"), detail: activeQr ? `${activeQr.toLocaleString("es-CO")} tickets siguen activos para impulsar la siguiente visita.` : "Sin tickets activos pendientes de revisión.", route: "redemptions", cta: "Ver redenciones" });
+  }
+
+  if (redeemed > sales) {
+    signals.push({ tone: "is-priority", icon: "point_of_sale", label: "Conversión", value: `${redeemed - sales} por revisar`, detail: "La señal de redención supera las ventas registradas. Confirma cuáles visitas terminaron en compra.", route: "sales", cta: "Registrar ventas" });
+  } else {
+    signals.push({ tone: "is-healthy", icon: "paid", label: "Conversión", value: sales.toLocaleString("es-CO"), detail: sales ? "Ventas reales disponibles para calcular ticket promedio y retorno." : "Aún no hay ventas registradas en este período.", route: "sales", cta: "Ver ventas" });
+  }
+
+  const economicsSignal = economics.investment > 0
+    ? { tone: "is-neutral", icon: "account_balance_wallet", label: "Base económica", value: money(economics.investment), detail: `${economics.sourceLabel}. ROI y CAC usan inversión registrada, no estimaciones inventadas.`, route: "channels", cta: "Ver inversión" }
+    : { tone: "is-priority", icon: "account_balance_wallet", label: "Base económica", value: "Sin inversión", detail: "Registra la inversión de campaña o canal para habilitar un ROI y CAC confiables.", route: "channels", cta: "Registrar inversión" };
+  signals.push(economicsSignal);
+
+  revenueDecisionDeck.innerHTML = `
+    <header>
+      <div><span class="mono-label">Diagnóstico operativo</span><h3>Qué está frenando o moviendo el revenue</h3><p>Son señales de trabajo: abre la acción correspondiente y conserva la trazabilidad en Qori.</p></div>
+      <span class="revenue-decision-deck-key"><i></i>Acciones priorizadas</span>
+    </header>
+    <div class="revenue-decision-grid">
+      ${signals.map((signal) => `
+        <article class="${escapeHtml(signal.tone)}">
+          <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(signal.icon)}</span>
+          <div><small>${escapeHtml(signal.label)}</small><strong>${escapeHtml(signal.value)}</strong><p>${escapeHtml(signal.detail)}</p></div>
+          <button class="ghost-button compact" type="button" data-revenue-decision-route="${escapeHtml(signal.route)}">${escapeHtml(signal.cta)}<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
+        </article>
+      `).join("")}
+    </div>`;
+  revenueDecisionDeck.querySelectorAll("[data-revenue-decision-route]").forEach((button) => {
+    button.addEventListener("click", () => navigateRevenueRoute(button.dataset.revenueDecisionRoute));
+  });
+}
+
 function renderRevenueWorkspace() {
   ensureRevenueCenterUxStyles();
   const summary = state.summary || {};
@@ -10673,6 +10724,7 @@ function renderRevenueWorkspace() {
     { key: "loyalty", label: "Fidelizar", count: summary.referral_sales_count || state.rewardPasses?.length || 0, meta: "recompra / referido", action: "Activar recompra", target: "reward-passes" },
   ];
   renderRevenuePulseStrip(summary, dashboard, path);
+  renderRevenueDecisionDeck(summary, dashboard);
   if (revenuePathGuide) {
     revenuePathGuide.innerHTML = path.map((step, index) => `
       <article class="revenue-path-step ${Number(step.count || 0) > 0 ? "is-active" : ""}">
@@ -12351,7 +12403,7 @@ const DASHBOARD_WIDGET_CATALOG = [
   { id: "tickets", title: "Tickets emitidos", category: "Número", icon: "confirmation_number", route: "strategic-qr", description: "Beneficios emitidos para activar o reactivar clientes." },
   { id: "redemptions", title: "Redenciones", category: "Número", icon: "qr_code_scanner", route: "redemptions", description: "Clientes que usaron un beneficio o ticket." },
   { id: "redemption_rate", title: "Tasa de redención", category: "Número", icon: "percent", route: "redemptions", description: "Porcentaje de tickets emitidos que terminaron redimidos." },
-  { id: "revenue_funnel", title: "Embudo visual RMS", category: "Gráfico", icon: "conversion_path", route: "rms-machine", description: "Lectura compacta de leads, tickets, redenciones y ventas." },
+  { id: "revenue_funnel", title: "Actividad comercial", category: "Gráfico", icon: "conversion_path", route: "rms-machine", description: "Leads, tickets, redenciones y ventas registradas en el período." },
   { id: "channel_roi", title: "ROI de medios de adquisición", category: "Gráfico", icon: "hub", route: "channels", description: "Compara Instagram, Facebook, Google, web, WhatsApp y otros medios." },
   { id: "campaign_roi", title: "Gráfico ROI campañas", category: "Gráfico", icon: "campaign", route: "campaigns", description: "Mide inversión vs revenue atribuido por campaña." },
   { id: "source_mix", title: "Medios de adquisición", category: "Gráfico", icon: "donut_large", route: "channels", description: "Muestra qué medio de adquisición trae más revenue." },
@@ -12671,10 +12723,10 @@ function dashboardBuilderBars(rows = [], key = "revenue") {
 
 function dashboardBuilderFunnel(stats) {
   const stages = [
-    { label: "Leads", value: stats.totalLeads, meta: "captados" },
-    { label: "Tickets", value: stats.totalQrGenerated, meta: "emitidos" },
-    { label: "Redenciones", value: stats.totalQrRedeemed, meta: "validadas" },
-    { label: "Ventas", value: stats.salesCount, meta: "registradas" },
+    { label: "Leads", value: stats.totalLeads, meta: "creados en el período" },
+    { label: "Tickets", value: stats.totalQrGenerated, meta: "emitidos en el período" },
+    { label: "Redenciones", value: stats.totalQrRedeemed, meta: "registradas en el período" },
+    { label: "Ventas", value: stats.salesCount, meta: "registradas en el período" },
   ];
   const maxValue = Math.max(...stages.map((stage) => toNumber(stage.value)), 1);
   return `
@@ -12902,7 +12954,7 @@ function renderDashboardWidget(widget, stats) {
     return { value: value === null ? "—" : money(value), meta: `${customers.toLocaleString("es-CO")} cliente(s) con compra atribuida`, body: investment > 0 ? `${money(investment)} de inversión comercial registrada.` : "Registra inversión en campañas, canales o esfuerzos para calcularlo.", tone: "chart" };
   }
   if (widget.id === "avg_ticket") return { value: money(stats.avgTicket), meta: `${stats.salesCount} ventas registradas`, body: "Úsalo para comparar CAC, inversión y revenue por canal.", tone: "money" };
-  if (widget.id === "revenue_funnel") return { value: `${stats.totalLeads} leads`, meta: "Captura a venta registrada", body: dashboardBuilderFunnel(stats), tone: "chart" };
+  if (widget.id === "revenue_funnel") return { value: `${stats.totalLeads} leads`, meta: "Actividad del período, no cohorte", body: dashboardBuilderFunnel(stats), tone: "chart" };
   if (widget.id === "sales") return { value: stats.salesCount, meta: "ventas observadas", body: `${money(stats.observedRevenue)} revenue medido.`, tone: "neutral" };
   if (widget.id === "channel_roi") return { value: ratioLabel(stats.channelRoi), meta: `${money(stats.channelInvestment)} invertido`, body: dashboardBuilderBars(stats.topChannels, "revenue"), tone: "chart" };
   if (widget.id === "campaign_roi") return { value: ratioLabel(stats.campaignRoi), meta: `${money(stats.campaignInvestment)} invertido`, body: dashboardBuilderBars(stats.topCampaigns, "revenue"), tone: "chart" };
@@ -13090,6 +13142,7 @@ function renderDashboardBuilder() {
     };
     const revenueHead = revenueWorkspace.querySelector(".revenue-workspace-head");
     const revenuePulse = revenueWorkspace.querySelector("#revenuePulseStrip");
+    const revenueDecision = revenueWorkspace.querySelector("#revenueDecisionDeck");
     const revenueMain = revenueWorkspace.querySelector(".revenue-main-grid");
     const revenueRoute = revenueWorkspace.querySelector(".revenue-path-guide");
     const revenueOnboardingPanel = revenueWorkspace.querySelector(".revenue-onboarding");
@@ -13099,6 +13152,7 @@ function renderDashboardBuilder() {
 
     setSurfaceVisibility(revenueHead, isSummaryWorkspace);
     setSurfaceVisibility(revenuePulse, isSummaryWorkspace);
+    setSurfaceVisibility(revenueDecision, isSummaryWorkspace);
     setSurfaceVisibility(revenueMain, isSummaryWorkspace);
     setSurfaceVisibility(revenueRoute, false);
     setSurfaceVisibility(revenueOnboardingPanel, false);
@@ -13373,7 +13427,9 @@ function renderDashboardKpiFallback() {
 
 function renderDashboard() {
   renderDashboardBuilder();
-  renderCommandCenter();
+  // El análisis RMS profundo sigue disponible para sus destinos heredados,
+  // pero no se renderiza ni se consulta mientras el usuario opera el Centro.
+  if (state.commandCenter && !dashboardLegacySurfaces?.hidden) renderCommandCenter();
   const summary = state.summary || {};
   const dashboard = state.dashboard || {};
   const recentRedemptions = withFilters(
