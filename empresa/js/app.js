@@ -346,6 +346,7 @@ const campaignStatusFilter = document.getElementById("campaignStatusFilter");
 const campaignBreadcrumb = document.getElementById("campaignBreadcrumb");
 const campaignHeroTitle = document.getElementById("campaignHeroTitle");
 const campaignHeroSubtitle = document.getElementById("campaignHeroSubtitle");
+const campaignSummaryOpenButton = document.getElementById("campaignSummaryOpenButton");
 const campaignSectionTabs = Array.from(document.querySelectorAll("[data-campaign-section-tab]"));
 const campaignSectionTabOpenButtons = Array.from(document.querySelectorAll("[data-campaign-tab-open]"));
 const campaignSectionPanels = Array.from(document.querySelectorAll("[data-campaign-tab-panel]"));
@@ -15051,10 +15052,26 @@ function syncCampaignSummaryDisclosure() {
   if (icon) action.appendChild(icon);
 }
 
+function positionCampaignSummaryPanel() {
+  const panel = document.getElementById("campaignSummaryPanel");
+  const library = campaignQuickList?.closest(".campaign-library-shell");
+  if (!panel || !library?.parentElement || panel.parentElement !== library.parentElement) return;
+  if (library.previousElementSibling !== panel) library.before(panel);
+}
+
+function openCampaignSummaryPanel() {
+  const panel = document.getElementById("campaignSummaryPanel");
+  if (!panel) return;
+  panel.open = true;
+  syncCampaignSummaryDisclosure();
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function renderCampaignSummary() {
   const panel = document.getElementById("campaignSummaryPanel");
   const table = document.getElementById("campaignSummaryTable");
   if (!table) return;
+  positionCampaignSummaryPanel();
   if (panel && !panel.dataset.summaryBound) {
     panel.dataset.summaryBound = "true";
     panel.addEventListener("toggle", syncCampaignSummaryDisclosure);
@@ -54954,6 +54971,7 @@ portalSearchResults?.addEventListener("click", (event) => {
   runPortalSearch(searchInput?.value || "", result.dataset.portalSearchView || "");
 });
 campaignStatusFilter.addEventListener("change", renderCampaignList);
+campaignSummaryOpenButton?.addEventListener("click", openCampaignSummaryPanel);
 campaignSectionTabs.forEach((button) => {
   button.addEventListener("click", () => setCampaignSectionTab(button.dataset.campaignSectionTab));
 });

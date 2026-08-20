@@ -62512,6 +62512,45 @@ html body[data-current-view="campaigns"] .portal-shell .campaign-related-activat
 html body[data-current-view="campaigns"] .portal-shell .campaign-related-activation-item > div > span { color: #0759d6; font-weight: 750; }
 html body[data-current-view="campaigns"] .portal-shell .campaign-related-activation-item > b { color: #375b7b; font-size: .72rem; text-transform: capitalize; }
 
+/* Campañas v305: el resumen vive al inicio y la calculadora nunca corta su contenido. */
+html body[data-current-view="campaigns"] .portal-shell #campaignSummaryOpenButton {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  border-color:#b8daf0;
+  background:#f2faff;
+  color:#0759d6;
+  font-weight:850;
+}
+
+html body[data-current-view="campaigns"] .portal-shell #campaignSummaryOpenButton .material-symbols-outlined { font-size:18px; }
+html body[data-current-view="campaigns"] .portal-shell .campaign-summary-panel {
+  scroll-margin-top:18px;
+  border-color:#a9cfe9;
+  box-shadow:0 16px 32px rgba(5,42,107,.08);
+}
+
+html body #campaignCalculatorModal .campaign-calculator-modal-card {
+  box-sizing:border-box !important;
+  width:min(960px,calc(100vw - 24px)) !important;
+  max-height:calc(100dvh - 24px) !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+  scrollbar-width:thin;
+  scrollbar-color:#70b9df #edf6fb;
+}
+
+html body #campaignCalculatorModal .campaign-calculator-modal-card::-webkit-scrollbar { width:10px; }
+html body #campaignCalculatorModal .campaign-calculator-modal-card::-webkit-scrollbar-track { background:#edf6fb; }
+html body #campaignCalculatorModal .campaign-calculator-modal-card::-webkit-scrollbar-thumb { border:3px solid #edf6fb; border-radius:99px; background:#70b9df; }
+
+@media (max-width:760px) {
+  html body[data-current-view="campaigns"] .portal-shell #campaignSummaryOpenButton { width:100%; }
+  html body #campaignCalculatorModal .campaign-calculator-modal-card { width:calc(100vw - 12px) !important; max-height:calc(100dvh - 12px) !important; }
+}
+
 @media (max-width: 760px) {
   html body[data-current-view="campaigns"] .portal-shell .campaign-summary-panel > summary { min-height: 0; padding: 13px; grid-template-columns: auto minmax(0, 1fr); }
   html body[data-current-view="campaigns"] .portal-shell .campaign-summary-toggle { grid-column: 2; justify-self: start; }
