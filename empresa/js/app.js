@@ -46483,6 +46483,36 @@ function renderRmsStationLeanOnly() {
   renderRmsBulkToolbar();
 }
 
+function renderRmsRiskStationFallback(error) {
+  if (!rmsStationWorkspace) return false;
+  const opportunities = Array.isArray(state.rmsMachine?.opportunities) ? state.rmsMachine.opportunities : [];
+  const rows = opportunities.filter((item) => item?.stage === "control_anti_fuga");
+  const cards = rows.map((item) => {
+    const id = escapeHtml(item.id || "");
+    return `<article class="rms-commercial-work-item rms-risk-work-item rms-risk-safe-mode" data-rms-station-lead="${id}"><header class="rms-commercial-console-head"><div><span class="mono-label">RIESGOS DE FUGA · MODO SEGURO</span><h4>${escapeHtml(item.name || item.first_name || item.email || "Lead sin nombre")}</h4><p>${escapeHtml(item.campaign_name || item.source_detail || item.channel || "Contexto comercial disponible")}</p></div></header><p class="rms-risk-safe-copy">El lead ya está en Riesgos. Registra una salida real; no se creará una copia.</p><input type="hidden" data-rms-risk-decision="${id}" value="CLEARED"><div class="rms-sale-form-grid"><label><span>Resultado</span><select data-rms-risk-safe-result="${id}"><option value="CLEARED">Venta lograda · Ventas atribuidas</option><option value="RECYCLE">No fue viable · Reciclaje</option></select></label><label data-rms-risk-safe-recycle-wrap="${id}" hidden><span>Motivo</span><select data-rms-risk-recycle-reason="${id}"><option value="BUDGET">Presupuesto</option><option value="TIMING">Momento inadecuado</option><option value="NO_RESPONSE">Sin respuesta</option><option value="WAITING_DECISION">Decisión aplazada</option><option value="NOT_VIABLE_NOW">No es viable ahora</option><option value="OTHER">Otro</option></select></label></div><label class="rms-commercial-note-field"><span>Justificación</span><textarea rows="3" data-rms-risk-reason="${id}" placeholder="Qué ocurrió y qué debe conocer la siguiente estación"></textarea></label><div class="rms-commercial-action-row"><button class="solid-button compact" type="button" data-rms-save-risk-decision="${id}"><span class="material-symbols-outlined" aria-hidden="true">paid</span>Enviar a Ventas atribuidas</button></div></article>`;
+  }).join("") || '<div class="empty-state compact">No hay casos disponibles en Riesgos de fuga.</div>';
+  rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.hidden = false;
+  rmsStationWorkspace.innerHTML = `<section class="rms-lean-station rms-risk-safe-station"><header class="rms-lean-station-head"><button class="ghost-button compact" type="button" data-rms-close-station><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Estaciones</button><div class="rms-lean-station-title"><div><span class="mono-label">ESTACIÓN 07 · QORI RMS</span><h3>Riesgos de fuga</h3><p>El movimiento desde Evaluación se conservó. Puedes registrar el resultado sin volver al mapa.</p></div></div></header><div class="rms-activation-work-list">${cards}</div></section>`;
+  rmsStationWorkspace.querySelectorAll("[data-rms-close-station]").forEach((button) => button.addEventListener("click", closeRmsStation));
+  rmsStationWorkspace.querySelectorAll("[data-rms-risk-safe-result]").forEach((select) => select.addEventListener("change", () => {
+    const id = select.dataset.rmsRiskSafeResult || "";
+    const recycle = select.value === "RECYCLE";
+    const decision = rmsCommercialNode(rmsStationWorkspace, "[data-rms-risk-decision]", id);
+    const recycleWrap = rmsCommercialNode(rmsStationWorkspace, "[data-rms-risk-safe-recycle-wrap]", id);
+    const button = rmsCommercialNode(rmsStationWorkspace, "[data-rms-save-risk-decision]", id);
+    if (decision) decision.value = recycle ? "RECYCLE" : "CLEARED";
+    if (recycleWrap) recycleWrap.hidden = !recycle;
+    if (button) button.innerHTML = recycle ? '<span class="material-symbols-outlined" aria-hidden="true">autorenew</span>Enviar a Reciclaje' : '<span class="material-symbols-outlined" aria-hidden="true">paid</span>Enviar a Ventas atribuidas';
+  }));
+  rmsStationWorkspace.querySelectorAll("[data-rms-save-risk-decision]").forEach((button) => button.addEventListener("click", async () => {
+    const item = opportunities.find((row) => row?.id === button.dataset.rmsSaveRiskDecision);
+    if (item) await saveRmsRiskDecision(item, rmsStationWorkspace);
+  }));
+  console.error("RMS risk station fallback", error);
+  return true;
+}
+
 function renderRmsStationOnly() {
   if (!state.rmsStationScreenOpen) {
     hideRmsStationWorkspace();
@@ -46501,6 +46531,10 @@ function renderRmsStationOnly() {
     renderRmsStationLeanOnly();
   } catch (error) {
     console.error("RMS station simple render failed", error);
+    if (state.rmsStationPhase === "control_anti_fuga" && renderRmsRiskStationFallback(error)) {
+      showFeedback("Riesgos de fuga se abrió en modo seguro. El movimiento se conservó y puedes registrar el resultado.", "info", { title: "Riesgos de fuga" });
+      return;
+    }
     resetRmsStationMode();
     renderRmsMachineView();
     showFeedback("La estación falló y volvimos al mapa para no bloquear el portal.", "error", { title: "Estaciones" });
