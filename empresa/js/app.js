@@ -15007,7 +15007,25 @@ function campaignQoriCenterCss() {
       body[data-current-view="campaigns"] .portal-shell .campaign-insights-grid { grid-template-columns: 1fr !important; }
     }
 
-    /* Campaign command center v311: visible planning tools and launch readiness. */
+    /* Campaign command center v313: visible planning tools and launch readiness. */
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-hero h3 {
+      color: #ffffff !important;
+      text-shadow: 0 8px 24px rgba(0, 16, 70, .22) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-hero h3 em,
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-hero .mono-label {
+      color: #bdf6ff !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-hero p,
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-metrics small {
+      color: rgba(238, 252, 255, .88) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-metrics span {
+      color: #bdf4ff !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-metrics strong {
+      color: #ffffff !important;
+    }
     body[data-current-view="campaigns"] .portal-shell .campaign-premium-hero-actions {
       display: grid !important;
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -15109,9 +15127,27 @@ function campaignQoriCenterCss() {
       flex-wrap: wrap !important;
       gap: 8px !important;
     }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-toolbar {
+      display: grid !important;
+      grid-template-columns: minmax(260px, 1fr) minmax(190px, auto) auto !important;
+      align-items: center !important;
+      gap: 10px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-toolbar > label {
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-toolbar > select,
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-toolbar > button {
+      width: auto !important;
+      min-width: 0 !important;
+    }
     @media (max-width: 760px) {
       body[data-current-view="campaigns"] .portal-shell .campaign-premium-hero-actions,
-      body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-list { grid-template-columns: 1fr !important; }
+      body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-list,
+      body[data-current-view="campaigns"] .portal-shell .campaign-premium-toolbar { grid-template-columns: 1fr !important; }
+      body[data-current-view="campaigns"] .portal-shell .campaign-premium-toolbar > select,
+      body[data-current-view="campaigns"] .portal-shell .campaign-premium-toolbar > button { width: 100% !important; }
       body[data-current-view="campaigns"] .portal-shell .campaign-premium-detail-footer > div,
       body[data-current-view="campaigns"] .portal-shell .campaign-premium-detail-footer > div > button { width: 100% !important; }
     }

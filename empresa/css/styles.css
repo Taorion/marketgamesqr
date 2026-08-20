@@ -68072,12 +68072,13 @@ html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-l
   }
 }
 
-/* Campaign command center v312: override the legacy simple-flow visibility rule. */
+/* Campaign command center v313: override legacy simple-flow visibility and duplicate header. */
 html body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"].campaign-premium-enabled > #campaignPremiumWorkspace {
   display: grid !important;
 }
 
-html body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"].campaign-premium-enabled > .campaign-library-shell {
+html body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"].campaign-premium-enabled .campaign-library-shell,
+html body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"].campaign-premium-enabled > .campaign-head {
   display: none !important;
 }
 
