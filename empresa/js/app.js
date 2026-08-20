@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-revenue-center-v304";
+const APP_VERSION = "empresa-20260820-revenue-center-v305";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -7755,7 +7755,7 @@ async function loadCommandCenterData({ quiet = false } = {}) {
   if (state.commandCenterLoading) return;
   state.commandCenterLoading = true;
   state.commandCenterError = "";
-  if (getDashboardWorkspaceTab() === "analysis") renderRevenueAdvancedBoard();
+  if (isRevenueIntelligenceWorkspace()) renderRevenueAdvancedBoard();
   if (!quiet) {
     commandCenterRoot?.classList.add("is-loading");
   } else {
@@ -7766,7 +7766,7 @@ async function loadCommandCenterData({ quiet = false } = {}) {
     // El análisis profundo se abre bajo demanda desde el Centro de Revenue.
     // El panel heredado sigue aislado: no debe volver a pintar una segunda
     // consola debajo del tablero actual.
-    if (getDashboardWorkspaceTab() === "analysis") renderDashboardBuilder();
+    if (isRevenueIntelligenceWorkspace()) renderDashboardBuilder();
     else if (!dashboardLegacySurfaces?.hidden) renderCommandCenter();
     if (state.chartFocus.open) renderChartFocusMode();
   } catch (error) {
@@ -7776,7 +7776,7 @@ async function loadCommandCenterData({ quiet = false } = {}) {
     }
   } finally {
     state.commandCenterLoading = false;
-    if (getDashboardWorkspaceTab() === "analysis" && !state.commandCenter) renderDashboardBuilder();
+    if (isRevenueIntelligenceWorkspace() && !state.commandCenter) renderDashboardBuilder();
     commandCenterRoot?.classList.remove("is-loading");
     commandCenterRoot?.classList.remove("is-recalculating");
   }
@@ -13049,6 +13049,10 @@ function setDashboardWorkspaceTab(tab) {
   }
 }
 
+function isRevenueIntelligenceWorkspace(tab = getDashboardWorkspaceTab()) {
+  return tab === "summary" || tab === "analysis";
+}
+
 function dashboardWidgetsForWorkspaceTab(layout, tab) {
   const widgets = (layout || []).map((id) => DASHBOARD_WIDGET_CATALOG.find((widget) => widget.id === id)).filter(Boolean);
   if (tab === "customize") return widgets;
@@ -13219,6 +13223,15 @@ function renderDashboardBuilder() {
   dashboardSection?.classList.add("dashboard-builder-mode");
   dashboardSection?.classList.remove("dashboard-advanced-active");
   dashboardBuilderShell.dataset.workspaceTab = workspaceTab;
+  const dashboardIntro = dashboardBuilderShell.querySelector(".dashboard-builder-intro");
+  if (dashboardIntro && isRevenueIntelligenceWorkspace(workspaceTab)) {
+    const eyebrow = dashboardIntro.querySelector(".mono-label");
+    const title = dashboardIntro.querySelector("h3");
+    const text = dashboardIntro.querySelector("p");
+    if (eyebrow) eyebrow.textContent = "Qori Revenue Intelligence";
+    if (title) title.textContent = "El negocio entero, conectado para decidir.";
+    if (text) text.textContent = "No son tarjetas sueltas: aquí ves qué entra, qué se activa, qué vende, dónde se invierte y qué conviene hacer después.";
+  }
   if (dashboardWorkspaceGuide) {
     const workspaceGuide = {
       summary: { icon: "dashboard", eyebrow: "Para decidir hoy", title: "Resumen: retorno, costo y siguiente movimiento", text: "Aquí no hay gráficas largas. Revisa el pulso del negocio y la acción comercial recomendada." },
@@ -13251,8 +13264,8 @@ function renderDashboardBuilder() {
     widgetLibrary.style.setProperty("display", showWidgetLibrary ? "grid" : "none", "important");
   }
   if (dashboardCanvas) {
-    dashboardCanvas.hidden = ["summary", "map"].includes(workspaceTab);
-    dashboardCanvas.style.setProperty("display", ["summary", "map"].includes(workspaceTab) ? "none" : "grid", "important");
+    dashboardCanvas.hidden = workspaceTab === "map";
+    dashboardCanvas.style.setProperty("display", workspaceTab === "map" ? "none" : isRevenueIntelligenceWorkspace(workspaceTab) ? "block" : "grid", "important");
   }
   // En Personalizar la biblioteca no puede quedar como una barra lateral junto
   // a un lienzo vacío: ambos bloques usan todo el ancho, uno debajo del otro.
@@ -13273,7 +13286,7 @@ function renderDashboardBuilder() {
     dashboardWidgetLibrary.style.removeProperty("max-height");
     dashboardWidgetLibrary.style.removeProperty("overflow");
   }
-  const showRevenueWorkspace = workspaceTab === "summary" || workspaceTab === "map";
+  const showRevenueWorkspace = workspaceTab === "map";
   if (revenueWorkspace) {
     revenueWorkspace.hidden = !showRevenueWorkspace;
     revenueWorkspace.classList.toggle("hidden", !showRevenueWorkspace);
@@ -13299,7 +13312,7 @@ function renderDashboardBuilder() {
     const revenueRoute = revenueWorkspace.querySelector(".revenue-path-guide");
     const revenueOnboardingPanel = revenueWorkspace.querySelector(".revenue-onboarding");
     const revenueMap = revenueWorkspace.querySelector(".portal-module-map");
-    const isSummaryWorkspace = workspaceTab === "summary";
+    const isSummaryWorkspace = false;
     const isMapWorkspace = workspaceTab === "map";
 
     setSurfaceVisibility(revenueHead, isSummaryWorkspace);
@@ -13315,7 +13328,7 @@ function renderDashboardBuilder() {
   }
   const dashboardLayout = dashboardBuilderShell.querySelector(".dashboard-builder-layout");
   if (dashboardLayout) {
-    const showDashboardLayout = ["analysis", "tables", "customize"].includes(workspaceTab);
+    const showDashboardLayout = ["summary", "analysis", "tables", "customize"].includes(workspaceTab);
     dashboardLayout.hidden = !showDashboardLayout;
     if (showDashboardLayout) {
       dashboardLayout.style.removeProperty("display");
@@ -13323,7 +13336,7 @@ function renderDashboardBuilder() {
       dashboardLayout.style.setProperty("display", "none", "important");
     }
   }
-  dashboardAdvancedToggleButton?.classList.toggle("active", workspaceTab === "analysis");
+  dashboardAdvancedToggleButton?.classList.toggle("active", isRevenueIntelligenceWorkspace(workspaceTab));
   if (dashboardAdvancedToggleButton) {
     dashboardAdvancedToggleButton.innerHTML = `
       <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
@@ -13341,6 +13354,11 @@ function renderDashboardBuilder() {
   if (dashboardProfileLabel) dashboardProfileLabel.textContent = `${workspaceTab === "customize" ? "Vista personal" : "Centro de Revenue"} · ${profile.label}`;
   if (dashboardProfileTitle) dashboardProfileTitle.textContent = workspace.title;
   if (dashboardProfileDescription) dashboardProfileDescription.textContent = workspace.description;
+  if (isRevenueIntelligenceWorkspace(workspaceTab)) {
+    if (dashboardProfileLabel) dashboardProfileLabel.textContent = "Qori Revenue Intelligence";
+    if (dashboardProfileTitle) dashboardProfileTitle.textContent = "Centro de decisión comercial";
+    if (dashboardProfileDescription) dashboardProfileDescription.textContent = "Lectura conectada de actividad, atribución, inversión y decisiones de revenue.";
+  }
   dashboardWorkspaceTabs?.querySelectorAll("[data-dashboard-workspace-tab]").forEach((button) => {
     const active = button.dataset.dashboardWorkspaceTab === workspaceTab;
     button.classList.toggle("active", active);
@@ -13349,9 +13367,10 @@ function renderDashboardBuilder() {
   dashboardProfileTabs?.querySelectorAll("[data-dashboard-profile]").forEach((button) => {
     button.classList.toggle("active", button.dataset.dashboardProfile === state.dashboardBuilderProfile);
   });
-  dashboardProfileTabs?.toggleAttribute("hidden", workspaceTab === "analysis");
-  dashboardResetProfileButton?.toggleAttribute("hidden", workspaceTab === "analysis");
-  if (workspaceTab === "analysis") {
+  dashboardProfileTabs?.toggleAttribute("hidden", isRevenueIntelligenceWorkspace(workspaceTab));
+  dashboardResetProfileButton?.toggleAttribute("hidden", isRevenueIntelligenceWorkspace(workspaceTab));
+  dashboardAdvancedToggleButton?.toggleAttribute("hidden", isRevenueIntelligenceWorkspace(workspaceTab));
+  if (isRevenueIntelligenceWorkspace(workspaceTab)) {
     renderRevenueAdvancedBoard();
     return;
   }
@@ -13541,7 +13560,7 @@ async function refreshRevenueCenter() {
   if (!session?.user?.business_id || state.dashboardLoading) return;
   setButtonLoading(dashboardRevenueRefreshButton, true, "Actualizando...");
   try {
-    const refreshDeepAnalysis = getDashboardWorkspaceTab() === "analysis" || Boolean(state.commandCenter);
+    const refreshDeepAnalysis = isRevenueIntelligenceWorkspace() || Boolean(state.commandCenter);
     if (refreshDeepAnalysis) state.commandCenter = null;
     const results = await Promise.allSettled([
       loadDashboardData({ force: true, quiet: true }),
