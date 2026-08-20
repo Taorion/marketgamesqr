@@ -13310,6 +13310,48 @@ function revenueCommandCoverageMarkup(totals = {}, economics = {}, channels = []
   return `<div class="revenue-command-coverage"><header><div><span class="mono-label">Calidad de la lectura</span><h3>${ready}/3 fuentes conectadas</h3></div><span class="revenue-command-coverage-score">${Math.round((ready / checks.length) * 100)}%</span></header><div>${checks.map((check) => `<article class="${check.ready ? "is-ready" : "is-pending"}"><span class="material-symbols-outlined" aria-hidden="true">${check.icon}</span><div><strong>${check.label}</strong><small>${check.copy}</small></div><span class="material-symbols-outlined" aria-hidden="true">${check.ready ? "check_circle" : "add_circle"}</span></article>`).join("")}</div><p>La consola solo calcula rentabilidad cuando hay ventas e inversión registradas; no rellena resultados con estimaciones.</p></div>`;
 }
 
+function revenueCommandRadarPoint(index, total, value = 100, radius = 74, center = 110) {
+  const angle = ((Math.PI * 2 * index) / Math.max(1, total)) - Math.PI / 2;
+  const distance = radius * (Math.max(0, Math.min(100, toNumber(value))) / 100);
+  return `${(center + Math.cos(angle) * distance).toFixed(1)},${(center + Math.sin(angle) * distance).toFixed(1)}`;
+}
+
+function revenueCommandRadarMarkup(score = {}) {
+  const dimensions = (Array.isArray(score.dimensions) ? score.dimensions : []).slice(0, 8);
+  if (!dimensions.length) return `<div class="revenue-command-empty compact"><span class="material-symbols-outlined" aria-hidden="true">radar</span><strong>La salud comercial aparecerá al calcular la lectura.</strong></div>`;
+  const total = dimensions.length;
+  const polygon = dimensions.map((item, index) => revenueCommandRadarPoint(index, total, item.score)).join(" ");
+  const rings = [25, 50, 75, 100].map((level) => `<polygon points="${dimensions.map((_, index) => revenueCommandRadarPoint(index, total, level)).join(" ")}"/>`).join("");
+  const axes = dimensions.map((_, index) => {
+    const end = revenueCommandRadarPoint(index, total, 100).split(",");
+    return `<line x1="110" y1="110" x2="${end[0]}" y2="${end[1]}"/>`;
+  }).join("");
+  const labels = dimensions.map((item, index) => {
+    const angle = ((Math.PI * 2 * index) / total) - Math.PI / 2;
+    const x = 110 + Math.cos(angle) * 99;
+    const y = 110 + Math.sin(angle) * 99;
+    const anchor = Math.abs(Math.cos(angle)) < .24 ? "middle" : Math.cos(angle) > 0 ? "start" : "end";
+    const label = String(item.label || item.key || "Señal").replace(/ de | a /g, " ");
+    return `<text x="${x.toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="${anchor}">${escapeHtml(label)}</text>`;
+  }).join("");
+  return `<div class="revenue-command-radar"><svg viewBox="0 0 220 220" role="img" aria-label="Radar de salud comercial"><g class="revenue-command-radar-grid">${rings}${axes}</g><polygon class="revenue-command-radar-area" points="${polygon}"/>${dimensions.map((item, index) => { const point = revenueCommandRadarPoint(index, total, item.score).split(","); return `<circle class="revenue-command-radar-dot" cx="${point[0]}" cy="${point[1]}" r="3.2"><title>${escapeHtml(item.label)}: ${toNumber(item.score)}/100</title></circle>`; }).join("")}<g class="revenue-command-radar-labels">${labels}</g></svg><div class="revenue-command-radar-legend">${dimensions.map((item) => `<span><i style="--score-width:${Math.max(4, toNumber(item.score))}%"></i><small>${escapeHtml(item.label)}</small><strong>${toNumber(item.score)}</strong></span>`).join("")}</div></div>`;
+}
+
+function revenueCommandChannelBarsMarkup(rows = []) {
+  const channels = (Array.isArray(rows) ? rows : []).filter((row) => toNumber(row.revenue) || toNumber(row.sales) || toNumber(row.leads)).slice(0, 5);
+  if (!channels.length) return `<div class="revenue-command-empty compact"><span class="material-symbols-outlined" aria-hidden="true">bar_chart</span><strong>Aún no hay canales comparables.</strong></div>`;
+  const maxRevenue = Math.max(1, ...channels.map((row) => toNumber(row.revenue)));
+  return `<div class="revenue-command-channel-bars">${channels.map((row, index) => { const share = Math.max(4, Math.round((toNumber(row.revenue) / maxRevenue) * 100)); return `<article><div class="revenue-command-bar-label"><span>${String(index + 1).padStart(2, "0")}</span><strong>${escapeHtml(row.label || "Sin canal")}</strong><small>${toNumber(row.sales)} ventas</small></div><div class="revenue-command-bar-track"><i style="--bar-width:${share}%"></i></div><strong class="revenue-command-bar-value">${money(row.revenue)}</strong></article>`; }).join("")}</div>`;
+}
+
+function revenueCommandWaterfallMarkup(rows = [], totalRevenue = 0) {
+  const channels = (Array.isArray(rows) ? rows : []).filter((row) => toNumber(row.revenue) > 0).slice(0, 5);
+  if (!channels.length || !toNumber(totalRevenue)) return `<div class="revenue-command-empty compact"><span class="material-symbols-outlined" aria-hidden="true">waterfall_chart</span><strong>El revenue se desglosará cuando haya atribución por canal.</strong></div>`;
+  const maxRevenue = Math.max(1, toNumber(totalRevenue), ...channels.map((row) => toNumber(row.revenue)));
+  const bars = [{ label: "Total", value: toNumber(totalRevenue), tone: "total" }, ...channels.map((row, index) => ({ label: row.label || "Canal", value: toNumber(row.revenue), tone: `tone-${index % 4}` }))];
+  return `<div class="revenue-command-waterfall">${bars.map((bar) => `<article class="is-${bar.tone}"><div><i style="--waterfall-height:${Math.max(10, Math.round((bar.value / maxRevenue) * 100))}%"></i></div><strong>${money(bar.value)}</strong><small>${escapeHtml(bar.label)}</small></article>`).join("")}</div>`;
+}
+
 function revenueCommandPortfolioMarkup(rows = []) {
   const campaigns = [...(Array.isArray(rows) ? rows : [])].sort((left, right) => toNumber(right.revenue) - toNumber(left.revenue)).slice(0, 6);
   if (!campaigns.length) return `<div class="revenue-command-empty"><span class="material-symbols-outlined" aria-hidden="true">campaign</span><strong>Aún no hay campañas atribuibles</strong><p>Crea una campaña y conecta su canal e inversión para que aparezca en el portafolio.</p></div>`;
@@ -13368,6 +13410,12 @@ function renderRevenueCommandCenter() {
     <section class="revenue-command-pro-priority is-${escapeHtml(priority.tone)}">
       <div class="revenue-command-pro-priority-icon"><span class="material-symbols-outlined" aria-hidden="true">${priority.icon}</span></div><div><span class="mono-label">${escapeHtml(priority.eyebrow)}</span><h3>${escapeHtml(priority.title)}</h3><p>${escapeHtml(priority.description)}</p></div><button type="button" class="primary-button" data-revenue-command-route="${escapeHtml(priority.route)}">${escapeHtml(priority.action)}<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
     </section>
+    <section class="revenue-command-pro-visual-grid">
+      <article class="revenue-command-pro-panel revenue-command-pro-radar-panel"><header><div><span class="mono-label">Radar de salud</span><h3>Equilibrio comercial</h3><p>Ocho dimensiones en una sola lectura.</p></div><span class="revenue-command-chart-tag">${toNumber(score.score)}/100</span></header>${revenueCommandRadarMarkup(score)}</article>
+      <article class="revenue-command-pro-panel revenue-command-pro-bars-panel"><header><div><span class="mono-label">Ranking de canales</span><h3>Revenue comparado</h3><p>Barras por ingreso atribuido.</p></div><button type="button" class="icon-button" aria-label="Gestionar canales" data-revenue-command-route="channels"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></header>${revenueCommandChannelBarsMarkup(channels)}</article>
+      <article class="revenue-command-pro-panel revenue-command-pro-waterfall-panel"><header><div><span class="mono-label">Composición del revenue</span><h3>De dónde se forma</h3><p>Distribución del ingreso confirmado.</p></div></header>${revenueCommandWaterfallMarkup(channels, totals.revenue)}</article>
+    </section>
+    <section class="revenue-command-pro-panel revenue-command-pro-timeline-panel"><header><div><span class="mono-label">Tendencia multiseñal</span><h3>Cómo se mueve el negocio en el tiempo</h3><p>Leads, tickets, redenciones y ventas para encontrar picos y fricción operativa.</p></div><span class="revenue-command-data-badge"><i></i>Datos del corte</span></header>${revenueAdvancedTimelineMarkup(data.timeline || [])}</section>
     <section class="revenue-command-pro-main-grid">
       <article class="revenue-command-pro-panel revenue-command-pro-funnel"><header><div><span class="mono-label">Flujo de conversión</span><h3>Qué avanza y dónde se corta</h3><p>Actividad del periodo: no es una cohorte y no mezcla proyecciones.</p></div>${revenueCommandRing(conversion, "lead a venta")}</header>${revenueCommandFunnelMarkup(totals)}<button type="button" class="revenue-command-text-action" data-revenue-command-route="rms-machine">Abrir oportunidades en RMS <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>
       <article class="revenue-command-pro-panel revenue-command-pro-actions"><header><div><span class="mono-label">Mesa de decisiones</span><h3>Lo que el equipo puede hacer ahora</h3></div><span class="revenue-command-data-badge"><i></i>Lectura actual</span></header><div class="revenue-command-pro-action-list">${insights.map((item) => `<article class="is-${escapeHtml(item.priority || "opportunity")}"><span class="material-symbols-outlined" aria-hidden="true">${item.priority === "risk" ? "priority_high" : item.priority === "alert" ? "warning" : item.priority === "win" ? "workspace_premium" : "lightbulb"}</span><div><strong>${escapeHtml(item.title || "Señal comercial")}</strong><p>${escapeHtml(item.explanation || item.metric || "")}</p></div><button type="button" aria-label="Operar esta señal" data-revenue-command-route="${item.priority === "win" ? "campaigns" : "rms-machine"}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>`).join("") || `<div class="revenue-command-empty"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span><strong>Sin señales urgentes en este corte</strong><p>La operación está lista para revisar eficiencia y crecimiento.</p></div>`}</div></article>
