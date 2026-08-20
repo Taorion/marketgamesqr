@@ -2929,9 +2929,9 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   if (preparedRiskResource?.qr_code_id) {
     const linked = await query(
       `update qr_codes
-          set sale_id = $3,
+          set sale_id = $3::uuid,
               metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
-                'attributed_sale_id', $3::text,
+                'attributed_sale_id', $3::uuid::text,
                 'risk_recovery_converted_at', now()::text
               )
         where business_id = $1 and id = $2 and sale_id is null
