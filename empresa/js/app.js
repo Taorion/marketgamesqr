@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-intelligence-gos-v296";
+const APP_VERSION = "empresa-20260820-intelligence-gos-v297";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -45675,7 +45675,7 @@ function upgradeRmsIntelligenceCommandDeck(root) {
   const lowEvidence = patternGroups.filter((row) => Number(row?.sample_size || 0) > 0 && Number(row.sample_size) < 5).length;
   const attributedSales = (patterns.attributed_sales || []).reduce((total, row) => total + Number(row?.sample_size || 0), 0);
   const decisionsOpen = insights.filter((insight) => ["PENDING", "MEASURING"].includes(String(insight?.status || "").toUpperCase())).length;
-  const currentView = state.rmsIntelligenceView || "case";
+  const currentView = ["case", "patterns", "decisions", "recycling"].includes(state.rmsIntelligenceView) ? state.rmsIntelligenceView : "case";
   const nextAction = decisionsOpen
     ? `${decisionsOpen} aprendizaje${decisionsOpen === 1 ? "" : "s"} requiere${decisionsOpen === 1 ? "" : "n"} seguimiento.`
     : lowEvidence
@@ -45703,6 +45703,7 @@ function upgradeRmsIntelligenceCommandDeck(root) {
       <button class="ghost-button compact ${currentView === "case" ? "is-active" : ""}" type="button" data-rms-intelligence-deck-view="case"><span class="material-symbols-outlined" aria-hidden="true">person_search</span>Revisar caso</button>
       <button class="ghost-button compact ${currentView === "patterns" ? "is-active" : ""}" type="button" data-rms-intelligence-deck-view="patterns"><span class="material-symbols-outlined" aria-hidden="true">query_stats</span>Ver patrones</button>
       <button class="ghost-button compact ${currentView === "decisions" ? "is-active" : ""}" type="button" data-rms-intelligence-deck-view="decisions"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span>Dar seguimiento</button>
+      <button class="ghost-button compact ${currentView === "recycling" ? "is-active" : ""}" type="button" data-rms-intelligence-deck-view="recycling"><span class="material-symbols-outlined" aria-hidden="true">history</span>Aprender de pérdidas</button>
       <button class="solid-button compact" type="button" data-rms-intelligence-deck-refresh><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar evidencia</button>
     </div>`;
   head.insertAdjacentElement("afterend", deck);
@@ -45720,6 +45721,43 @@ function upgradeRmsIntelligenceCommandDeck(root) {
       .catch((error) => showFeedback(error.message || "No pudimos actualizar la evidencia de Inteligencia GOS.", "error", { title: "Inteligencia GOS" }))
       .finally(() => { button.disabled = false; });
   });
+}
+
+function upgradeRmsIntelligenceClarity(root) {
+  const consoleNode = root?.querySelector?.(".rms-intelligence-console");
+  if (!consoleNode) return;
+  consoleNode.dataset.intelligenceActiveView = state.rmsIntelligenceView || "case";
+  const insightForm = consoleNode.querySelector(".rms-intelligence-insight-form");
+  if (insightForm && !insightForm.dataset.rmsIntelligenceDisclosure) {
+    const title = insightForm.querySelector("h5");
+    const disclosure = document.createElement("details");
+    disclosure.className = "rms-intelligence-insight-disclosure";
+    disclosure.dataset.rmsIntelligenceDisclosure = "true";
+    const summary = document.createElement("summary");
+    summary.innerHTML = `<span><strong>Documentar un aprendizaje</strong><small>Solo cuando el caso tenga una observación y una recomendación respaldadas.</small></span><span class="material-symbols-outlined" aria-hidden="true">add_circle</span>`;
+    disclosure.appendChild(summary);
+    Array.from(insightForm.children).forEach((node) => {
+      if (node !== title) disclosure.appendChild(node);
+    });
+    insightForm.replaceChildren(disclosure);
+  }
+  const filters = consoleNode.querySelector(".rms-intelligence-filter-grid");
+  if (filters && !filters.parentElement?.matches(".rms-intelligence-filter-disclosure")) {
+    const disclosure = document.createElement("details");
+    disclosure.className = "rms-intelligence-filter-disclosure";
+    const summary = document.createElement("summary");
+    summary.innerHTML = `<span><strong>Filtrar la lectura</strong><small>Usa filtros solo si necesitas aislar una campaña, canal o producto.</small></span><span class="material-symbols-outlined" aria-hidden="true">tune</span>`;
+    filters.insertAdjacentElement("beforebegin", disclosure);
+    disclosure.appendChild(summary);
+    disclosure.appendChild(filters);
+  }
+  const patterns = consoleNode.querySelector(".rms-intelligence-patterns");
+  if (patterns && !patterns.querySelector(".rms-intelligence-reading-hint")) {
+    const hint = document.createElement("aside");
+    hint.className = "rms-intelligence-reading-hint";
+    hint.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">visibility</span><div><strong>Cómo leer esta pantalla</strong><small>Primero identifica una señal repetida; después abre un caso que la respalde. Una muestra menor de 5 orienta, pero no justifica una decisión general.</small></div>`;
+    patterns.querySelector("header")?.insertAdjacentElement("afterend", hint);
+  }
 }
 
 function upgradeRmsIntelligenceRecyclingView(root) {
@@ -45744,7 +45782,7 @@ function upgradeRmsIntelligenceRecyclingView(root) {
       tab.setAttribute("aria-pressed", "false");
     });
   }
-  const previousViews = Array.from(consoleNode.children).filter((node) => node !== tabs && !node.matches(".rms-intelligence-console-head"));
+  const previousViews = Array.from(consoleNode.children).filter((node) => node !== tabs && !node.matches(".rms-intelligence-console-head, .rms-intelligence-command-deck"));
   const recyclingView = document.createElement("div");
   recyclingView.dataset.rmsIntelligenceRecyclingPanel = "true";
   recyclingView.hidden = !isActive;
@@ -48698,6 +48736,7 @@ function rmsStageLeadUnitMarkup(item = {}) {
 function bindRmsMachineActions(root) {
   upgradeRmsInventoryProductInputs(root);
   upgradeRmsIntelligenceCommandDeck(root);
+  upgradeRmsIntelligenceClarity(root);
   hydrateRmsIntelligenceJourney(root);
   bindRmsRiskMetricPopovers(root);
   root.querySelectorAll("[data-rms-open-collector]").forEach((button) => {
