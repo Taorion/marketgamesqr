@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-intelligence-timeline-v298";
+const APP_VERSION = "empresa-20260820-intelligence-compact-cases-v299";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -45757,6 +45757,42 @@ function upgradeRmsIntelligenceClarity(root) {
     hint.className = "rms-intelligence-reading-hint";
     hint.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">visibility</span><div><strong>Cómo leer esta pantalla</strong><small>Primero identifica una señal repetida; después abre un caso que la respalde. Una muestra menor de 5 orienta, pero no justifica una decisión general.</small></div>`;
     patterns.querySelector("header")?.insertAdjacentElement("afterend", hint);
+  }
+  consoleNode.querySelectorAll(".rms-intelligence-case-columns > section").forEach((section) => {
+    if (section.querySelector(".rms-intelligence-case-disclosure")) return;
+    const header = section.querySelector(":scope > header");
+    const list = section.querySelector(":scope > ol");
+    if (!header || !list) return;
+    const title = String(header.querySelector("h5")?.textContent || "Detalle del caso").trim();
+    const description = String(header.querySelector("small")?.textContent || "Abre para revisar el detalle.").trim();
+    const itemCount = list.querySelectorAll(":scope > li").length;
+    const disclosure = document.createElement("details");
+    disclosure.className = "rms-intelligence-case-disclosure";
+    const summary = document.createElement("summary");
+    summary.innerHTML = `<span><span class="mono-label">DETALLE BAJO DEMANDA</span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(description)}</small></span><span class="rms-intelligence-disclosure-count">${itemCount}</span><span class="material-symbols-outlined" aria-hidden="true">expand_more</span>`;
+    disclosure.appendChild(summary);
+    disclosure.appendChild(list);
+    section.replaceChildren(disclosure);
+  });
+  const caseSelect = consoleNode.querySelector("[data-rms-intelligence-case-select]");
+  const caseLabel = caseSelect?.closest("label");
+  if (caseSelect && caseLabel && !caseLabel.querySelector("[data-rms-intelligence-case-pager]")) {
+    const cases = Array.from(caseSelect.options).filter((option) => option.value);
+    const selectedIndex = Math.max(0, cases.findIndex((option) => option.value === caseSelect.value));
+    const pager = document.createElement("div");
+    pager.className = "rms-intelligence-case-pager";
+    pager.dataset.rmsIntelligenceCasePager = "true";
+    pager.innerHTML = `<small>${cases.length ? `Caso ${selectedIndex + 1} de ${cases.length}` : "Sin casos disponibles"} · escribe en el selector para buscar</small><div><button class="icon-button" type="button" data-rms-intelligence-case-step="-1" aria-label="Caso anterior" ${selectedIndex <= 0 ? "disabled" : ""}><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span></button><button class="icon-button" type="button" data-rms-intelligence-case-step="1" aria-label="Caso siguiente" ${selectedIndex >= cases.length - 1 ? "disabled" : ""}><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></button></div>`;
+    caseSelect.insertAdjacentElement("afterend", pager);
+    pager.querySelectorAll("[data-rms-intelligence-case-step]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const next = cases[selectedIndex + Number(button.dataset.rmsIntelligenceCaseStep || 0)];
+        if (!next) return;
+        loadRmsIntelligenceCase(next.value)
+          .then(() => renderRmsStationOnly())
+          .catch((error) => showFeedback(error.message || "No pudimos abrir el caso seleccionado.", "error", { title: "Inteligencia GOS" }));
+      });
+    });
   }
 }
 
