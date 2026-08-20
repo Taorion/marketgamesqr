@@ -2673,8 +2673,15 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const originalUnitPrice = Math.max(0, roundedMoney(productSnapshot.product_price_snapshot));
   const originalAmount = roundedMoney(originalUnitPrice * quantity);
   const confirmedAmount = Math.max(0, roundedMoney(confirmation?.amount));
-  const negotiatedAmount = confirmedAmount > 0 ? confirmedAmount : originalAmount;
-  const negotiatedUnitPrice = quantity > 0 ? roundedMoney(negotiatedAmount / quantity) : 0;
+  const confirmedQuantity = Math.max(0.01, Number(confirmation?.sale_context?.quantity || 1));
+  // El acuerdo heredado tiene una cantidad propia. Al cambiar la cantidad en
+  // Ventas atribuidas, se conserva la condición por unidad y se recalcula el
+  // total; si el producto fue corregido al cierre, manda el precio real de la
+  // nueva referencia en lugar del valor pactado para otro producto.
+  const negotiatedUnitPrice = confirmedAmount > 0 && !productCorrectedAtSale
+    ? roundedMoney(confirmedAmount / confirmedQuantity)
+    : originalUnitPrice;
+  const negotiatedAmount = roundedMoney(negotiatedUnitPrice * quantity);
   const riskDiscountPercent = Math.min(100, Math.max(0, Number(riskRecoveryOffer?.discount_percent || 0)));
   const riskDiscountAmount = riskDiscountPercent > 0
     ? roundedMoney(negotiatedAmount * riskDiscountPercent / 100)

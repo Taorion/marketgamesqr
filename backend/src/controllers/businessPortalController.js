@@ -3905,7 +3905,16 @@ async function getInventoryProductInsights(req, res, next) {
     const businessId = businessIdFor(req);
     await assertFeatureForRequest(req, businessId, "gift_inventory");
     const productResult = await query(
-      "select * from business_inventory_products where id = $1 and business_id = $2 limit 1",
+      `select product.*,
+              tax_base.name as tax_base_name,
+              tax_base.rate as tax_base_rate,
+              healthy_tax.name as healthy_tax_name,
+              healthy_tax.rate as healthy_tax_rate
+         from business_inventory_products product
+         left join business_product_tax_bases tax_base on tax_base.id = product.tax_base_id
+         left join business_product_healthy_taxes healthy_tax on healthy_tax.id = product.healthy_tax_id
+        where product.id = $1 and product.business_id = $2
+        limit 1`,
       [req.params.productId, businessId]
     );
     if (!productResult.rowCount) throw badRequest("Producto de inventario no encontrado.");

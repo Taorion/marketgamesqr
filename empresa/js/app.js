@@ -22956,6 +22956,23 @@ function inventoryTaxRate(classification = "EXEMPT") {
   return { EXEMPT: 0, EXCLUDED: 0, VAT_0: 0, VAT_5: 0.05, VAT_8: 0.08, VAT_11: 0.11, VAT_19: 0.19 }[classification] || 0;
 }
 
+function inventoryTaxRateLabel(rate, fallback = "No aplica") {
+  const value = Number(rate);
+  return Number.isFinite(value) ? `${Math.round(value * 10000) / 100}%` : fallback;
+}
+
+function inventoryBaseVatLabel(product = {}) {
+  const fallback = { EXEMPT: "Exento", VAT_0: "0%", VAT_5: "5%", VAT_8: "8%", VAT_11: "11%", VAT_19: "19%" }[product.tax_classification] || "Exento";
+  if (!product.tax_base_name) return fallback;
+  const rate = inventoryTaxRateLabel(product.tax_base_rate, fallback);
+  return `${product.tax_base_name} · ${rate}`;
+}
+
+function inventoryHealthyTaxLabel(product = {}) {
+  if (!product.healthy_tax_name) return "No aplica";
+  return `${product.healthy_tax_name} · ${inventoryTaxRateLabel(product.healthy_tax_rate, "0%")}`;
+}
+
 function renderInventorySellingPrice() {
   if (!inventoryUnitPriceInput) return;
   const base = Math.max(0, Number(inventoryPriceBeforeTaxInput?.value || 0));
@@ -23650,8 +23667,9 @@ function renderInventoryProductDetail(data = {}) {
           <div><dt>Categoría</dt><dd>${escapeHtml(product.category_name || product.category || "-")}</dd></div>
           <div><dt>Subcategoría</dt><dd>${escapeHtml(product.subcategory_name || "Sin subcategoría")}</dd></div>
           <div><dt>Precio antes de IVA</dt><dd>${escapeHtml(money(product.price_before_tax ?? product.unit_price ?? 0))}</dd></div>
-          <div><dt>IVA</dt><dd>${escapeHtml({ EXEMPT: "Exento", VAT_0: "0%", VAT_5: "5%", VAT_11: "11%", VAT_19: "19%" }[product.tax_classification] || "Exento")}</dd></div>
-          <div><dt>Precio de venta</dt><dd>${escapeHtml(money(product.unit_price || 0))} <small>Incluye IVA</small></dd></div>
+          <div><dt>IVA</dt><dd>${escapeHtml(inventoryBaseVatLabel(product))}</dd></div>
+          <div><dt>Impuesto Saludable</dt><dd>${escapeHtml(inventoryHealthyTaxLabel(product))}</dd></div>
+          <div><dt>Precio de venta</dt><dd>${escapeHtml(money(product.unit_price || 0))} <small>Incluye impuestos</small></dd></div>
           <div><dt>Unidad</dt><dd>${escapeHtml(product.unit_label || "unidad")}</dd></div>
           <div><dt>Stock</dt><dd>${escapeHtml(`${Number(product.stock_quantity || 0).toLocaleString("es-CO")} · mínimo ${Number(product.min_stock_quantity || 0).toLocaleString("es-CO")}`)}</dd></div>
         </dl>
@@ -45147,14 +45165,16 @@ function rmsCommercialLeadAsideMarkup(item = {}, nextLabel = "") {
   `;
 }
 
-const RMS_COMMERCIAL_SUMMARY_PHASES = new Set(["procesamiento", "accion_correctiva", "control_anti_fuga", "cierre"]);
+const RMS_COMMERCIAL_SUMMARY_PHASES = new Set(["curaduria", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "postventa"]);
 
 function rmsCommercialSummaryStageLabel(phase = "") {
   return {
+    curaduria: "Asignación",
     procesamiento: "Evaluación",
     accion_correctiva: "Negociación",
     control_anti_fuga: "Riesgos de fuga",
     cierre: "Ventas atribuidas",
+    postventa: "Valorización Clientes",
   }[phase] || "estación comercial";
 }
 
@@ -45180,6 +45200,27 @@ function rmsCommercialSummaryReason(item = {}, phase = "") {
 
 function rmsCommercialStationSummaryMarkup(rows = [], phase = "") {
   const title = rmsCommercialSummaryStageLabel(phase);
+  const isAssignment = phase === "curaduria";
+  const isValuation = phase === "postventa";
+  if (isAssignment || isValuation) {
+    const tableHead = isAssignment
+      ? "<tr><th>Lead</th><th>Producto asignado</th><th>Interés declarado</th><th>Entrada</th><th>Estado</th></tr>"
+      : "<tr><th>Cliente</th><th>Compra atribuida</th><th>Activación previa</th><th>Último movimiento</th><th>Estado</th></tr>";
+    const tableRows = rows.map((item) => {
+      const workflow = rmsCommercialWorkflow(item);
+      const confirmation = workflow.confirmation || {};
+      const activation = rmsActivationDelivery(item);
+      const product = confirmation.product_name || rmsClassifiedProductName(item) || item.product_interest || "Sin producto definido";
+      const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
+      if (isAssignment) return `<tr><td><strong>${escapeHtml(item.name || "Contacto")}</strong><small>${escapeHtml(contact)}</small></td><td><strong>${escapeHtml(product)}</strong><small>${escapeHtml(rmsClassificationSourceLabel(item) || "Pendiente de confirmar")}</small></td><td>${escapeHtml(item.product_interest || item.top_interest || "Sin interés declarado")}</td><td>${escapeHtml(item.created_at ? formatDate(item.created_at) : "Sin fecha")}</td><td>${escapeHtml(rmsHasConfirmedProductClassification(item) ? "Listo para Activación 1" : "Completa la asignación")}</td></tr>`;
+      const amount = confirmation.amount || item.state_metadata?.rms_attributed_sale_amount || 0;
+      return `<tr><td><strong>${escapeHtml(item.name || "Cliente")}</strong><small>${escapeHtml(contact)}</small></td><td><strong>${escapeHtml(product)}</strong><small>${escapeHtml(amount ? money(amount) : "Valor registrado al atribuir")}</small></td><td>${escapeHtml(activation.offer || "Sin activación previa")}</td><td>${escapeHtml(item.last_interaction_at ? formatDate(item.last_interaction_at) : "Pendiente de valorización")}</td><td>${escapeHtml(workflow.risk?.result === "RECYCLE" ? "Reciclaje" : "Valorización activa")}</td></tr>`;
+    }).join("") || `<tr><td colspan="5">No hay ${isValuation ? "clientes" : "leads"} en esta estación.</td></tr>`;
+    const intro = isAssignment
+      ? "Consulta la asignación de producto antes de activar a cada lead."
+      : "Consulta los clientes atribuidos antes de activar recompra, referidos o fidelización.";
+    return `<section class="rms-commercial-station-summary" aria-label="Resumen de ${escapeHtml(title)}"><header><div><span class="mono-label">Resumen de estación</span><h4>${escapeHtml(title)} · ${rows.length.toLocaleString("es-CO")} ${isValuation ? "cliente" : "lead"}${rows.length === 1 ? "" : "s"}</h4><p>${escapeHtml(intro)}</p></div><button class="ghost-button compact" type="button" data-rms-station-summary aria-expanded="true"><span class="material-symbols-outlined" aria-hidden="true">visibility_off</span> Ocultar resumen</button></header><div class="rms-commercial-summary-table-wrap"><table><thead>${tableHead}</thead><tbody>${tableRows}</tbody></table></div></section>`;
+  }
   return `
     <section class="rms-commercial-station-summary" aria-label="Resumen de ${escapeHtml(title)}">
       <header>
@@ -45463,10 +45504,16 @@ function bindRmsRiskMetricPopovers(root) {
 }
 
 function rmsAttributedSalePricing({ inventoryProduct = {}, quantity = 1, confirmation = {}, saleContext = {}, riskContext = {}, currency = "COP" } = {}) {
+  const saleQuantity = Math.max(0.01, Number(quantity || 1));
   const originalUnitPrice = Math.max(0, Number(inventoryProduct?.unit_price || confirmation.product_price_snapshot || 0));
-  const originalAmount = Math.round(originalUnitPrice * quantity * 100) / 100;
+  const originalAmount = Math.round(originalUnitPrice * saleQuantity * 100) / 100;
   const confirmedAmount = Math.max(0, Number(confirmation.amount || 0));
-  const negotiatedAmount = confirmedAmount > 0 ? confirmedAmount : originalAmount;
+  const confirmedQuantity = Math.max(0.01, Number(saleContext.quantity || 1));
+  const productMatchesConfirmation = !confirmation.inventory_product_id || !inventoryProduct?.id || String(confirmation.inventory_product_id) === String(inventoryProduct.id);
+  const negotiatedUnitPrice = confirmedAmount > 0 && productMatchesConfirmation
+    ? confirmedAmount / confirmedQuantity
+    : originalUnitPrice;
+  const negotiatedAmount = Math.round(negotiatedUnitPrice * saleQuantity * 100) / 100;
   const riskDiscountPercent = Math.min(100, Math.max(0, Number(riskContext.offer?.discount_percent || 0)));
   const riskDiscountAmount = riskDiscountPercent > 0 ? Math.round(negotiatedAmount * riskDiscountPercent) / 100 : 0;
   const finalAmount = Math.max(0, Math.round((riskDiscountAmount > 0 ? negotiatedAmount - riskDiscountAmount : negotiatedAmount) * 100) / 100);
@@ -45474,6 +45521,7 @@ function rmsAttributedSalePricing({ inventoryProduct = {}, quantity = 1, confirm
   return {
     originalUnitPrice,
     originalAmount,
+    negotiatedUnitPrice,
     negotiatedAmount,
     finalAmount,
     discountAmount,
@@ -46269,7 +46317,9 @@ function renderRmsStationLeanOnly() {
   const rows = rmsStationRows(phase, allOpportunities);
   const display = rmsStationDisplayRows(rows, phase);
   const renderedRows = display.visibleRows;
-  const selectedRows = rmsStationSelectedRows(phase, rows);
+  const selectedRows = phase === "clasificacion"
+    ? rmsActivationBulkSelectedRows()
+    : rmsStationSelectedRows(phase, rows);
   const eligibleRows = rmsStationOutputEligibleRows(phase, rows);
   const visual = rmsStationVisualMeta(phase);
   const stationControlLabel = phase === "curaduria" ? "Producto" : phase === "alimentacion" ? "Calidad" : "Estado";
@@ -46335,6 +46385,7 @@ function renderRmsStationLeanOnly() {
         <div class="rms-lean-station-actions">
           ${phase === "recoleccion" ? `<button class="ghost-button compact" type="button" data-rms-open-collector><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Nuevo lead</button>` : ""}
           ${supportsCommercialSummary ? `<button class="ghost-button compact" type="button" data-rms-station-summary aria-expanded="${state.rmsStationSummaryOpen ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">table_chart</span> ${state.rmsStationSummaryOpen ? "Ocultar resumen" : "Resumen"}</button>` : ""}
+          ${isActivationStation ? `<button class="solid-button compact" type="button" data-rms-open-bulk-activation ${selectedRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">group_work</span> Activación masiva (${selectedRows.length.toLocaleString("es-CO")})</button>` : ""}
           ${hasStandardHandoff ? `
             <button class="ghost-button compact" type="button" data-rms-station-clear-selection ${selectedRows.length ? "" : "disabled"}>Limpiar selección</button>
             <button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> ${escapeHtml(selectReadyLabel)}</button>
@@ -46343,6 +46394,7 @@ function renderRmsStationLeanOnly() {
         </div>
       </header>
       ${supportsCommercialSummary && state.rmsStationSummaryOpen ? rmsCommercialStationSummaryMarkup(rows, phase) : ""}
+      ${isActivationStation && state.rmsActivationBulkOpen ? rmsActivationBulkComposerMarkup(selectedRows) : ""}
       ${isCurationStation ? `
         <section class="rms-lean-quality-guide" aria-label="Prioridad de Curaduría">
           <span class="material-symbols-outlined" aria-hidden="true">grade</span>
@@ -46436,6 +46488,48 @@ function renderRmsStationLeanOnly() {
       renderRmsStationOnly();
     });
   });
+  rmsStationWorkspace.querySelector("[data-rms-open-bulk-activation]")?.addEventListener("click", () => {
+    state.rmsActivationBulkOpen = true;
+    renderRmsStationOnly();
+  });
+  rmsStationWorkspace.querySelector("[data-rms-close-bulk-activation]")?.addEventListener("click", () => {
+    state.rmsActivationBulkOpen = false;
+    renderRmsStationOnly();
+  });
+  rmsStationWorkspace.querySelector("[data-rms-prepare-bulk-activation]")?.addEventListener("click", () => {
+    prepareRmsBulkActivation(rmsStationWorkspace).catch((error) => showFeedback(error.message || "No se pudo preparar la activación masiva.", "error", { title: "Activación 1" }));
+  });
+  rmsStationWorkspace.querySelector("[data-rms-dispatch-next-bulk-activation]")?.addEventListener("click", () => {
+    dispatchNextRmsBulkActivation().catch((error) => showFeedback(error.message || "No se pudo registrar este envío.", "error", { title: "Activación 1" }));
+  });
+  const bulkActivationCatalog = rmsStationWorkspace.querySelector("[data-rms-bulk-activation-catalog]");
+  if (bulkActivationCatalog) {
+    const loadBulkActivationCatalog = async () => {
+      if (bulkActivationCatalog.dataset.rmsActivationLoading === "1") return;
+      bulkActivationCatalog.dataset.rmsActivationLoading = "1";
+      try {
+        const activations = await listRmsActivationCatalogOptions();
+        bulkActivationCatalog.innerHTML = `<option value="">Selecciona una activación publicada</option>${activations.map((activation) => {
+          const url = activation.public_url || activation.share_url || activation.claim_url;
+          const label = activation.title || activation.name || activation.campaign_name || "Activación publicada";
+          return `<option value="${escapeHtml(url)}">${escapeHtml(label)} · ${escapeHtml(activation.campaign_name || activation.type || "Activación")}</option>`;
+        }).join("")}`;
+        bulkActivationCatalog.disabled = !activations.length;
+        if (!activations.length) bulkActivationCatalog.innerHTML = '<option value="">No hay activaciones publicadas</option>';
+      } catch (_error) {
+        bulkActivationCatalog.innerHTML = '<option value="">No se pudieron cargar las activaciones</option>';
+        bulkActivationCatalog.disabled = true;
+      } finally {
+        delete bulkActivationCatalog.dataset.rmsActivationLoading;
+      }
+    };
+    bulkActivationCatalog.addEventListener("focus", loadBulkActivationCatalog, { once: true });
+    bulkActivationCatalog.addEventListener("pointerdown", loadBulkActivationCatalog, { once: true });
+    bulkActivationCatalog.addEventListener("change", () => {
+      const ticketInput = rmsStationWorkspace.querySelector("[data-rms-bulk-activation-ticket]");
+      if (ticketInput && bulkActivationCatalog.value) ticketInput.value = bulkActivationCatalog.value;
+    });
+  }
   rmsStationWorkspace.querySelector("[data-rms-station-picker]")?.addEventListener("change", (event) => openRmsStation(event.target.value || "", { source: "picker" }));
   rmsStationWorkspace.querySelector("[data-rms-station-search]")?.addEventListener("input", (event) => {
     state.rmsStationSearch = event.target.value || "";
@@ -52669,17 +52763,19 @@ function updateRmsSaleEconomicsPreview(root, id) {
   if (!preview) return;
   const draft = rmsSaleDraftFromDom(root, id);
   const amountInput = rmsCommercialNode(root, "[data-rms-sale-amount]", id);
-  if (amountInput && !amountInput.readOnly) amountInput.value = String(draft.sale_amount || "");
-  const unitPrice = rmsCommercialNode(root, "[data-rms-sale-unit-price]", id);
-  if (unitPrice) unitPrice.textContent = rmsCommercialMoney(draft.unit_price, draft.currency);
-  const total = rmsCommercialNode(root, "[data-rms-sale-calculated-total]", id);
-  if (total) total.textContent = rmsCommercialMoney(draft.sale_amount, draft.currency);
   const item = rmsOpportunityById(id) || {};
   const workflow = rmsCommercialWorkflow(item);
   const confirmation = workflow.confirmation || {};
   const saleContext = confirmation.sale_context || {};
   const riskContext = rmsRiskRecoveryPresentation(workflow.risk || {}, item.state_metadata || item.metadata || {});
-  const pricing = rmsAttributedSalePricing({ inventoryProduct: findInventoryProductById(draft.inventory_product_id), quantity: draft.quantity, confirmation: { ...confirmation, amount: draft.sale_amount || confirmation.amount }, saleContext, riskContext, currency: draft.currency });
+  const pricing = rmsAttributedSalePricing({ inventoryProduct: findInventoryProductById(draft.inventory_product_id), quantity: draft.quantity, confirmation, saleContext, riskContext, currency: draft.currency });
+  if (amountInput?.readOnly) amountInput.value = String(pricing.finalAmount || 0);
+  else if (amountInput) amountInput.value = String(draft.sale_amount || pricing.finalAmount || "");
+  draft.sale_amount = amountInput?.readOnly ? pricing.finalAmount : (draft.sale_amount || pricing.finalAmount);
+  const unitPrice = rmsCommercialNode(root, "[data-rms-sale-unit-price]", id);
+  if (unitPrice) unitPrice.textContent = rmsCommercialMoney(pricing.negotiatedUnitPrice || draft.unit_price, draft.currency);
+  const total = rmsCommercialNode(root, "[data-rms-sale-calculated-total]", id);
+  if (total) total.textContent = rmsCommercialMoney(draft.sale_amount, draft.currency);
   const priceValue = (selector, value) => { const node = rmsCommercialNode(root, selector, id); if (node) node.textContent = value; };
   priceValue("[data-rms-sale-original-price]", rmsCommercialMoney(pricing.originalAmount, draft.currency));
   priceValue("[data-rms-sale-discount]", `-${rmsCommercialMoney(pricing.discountAmount, draft.currency)}`);
@@ -52752,7 +52848,7 @@ function applyRmsNegotiationContextToAttributedSales(root) {
     const amountLabel = amountInput?.closest("label")?.querySelector(":scope > span");
     if (amountInput) amountInput.readOnly = true;
     if (amountLabel) amountLabel.textContent = "Valor pagado (calculado)";
-    const pricing = rmsAttributedSalePricing({ inventoryProduct, quantity: Number(context.quantity) > 0 ? Number(context.quantity) : 1, confirmation: workflow.confirmation || {}, saleContext: context, riskContext, currency: workflow.confirmation?.currency || "COP" });
+    const pricing = rmsAttributedSalePricing({ inventoryProduct, quantity: Number(card.querySelector("[data-rms-sale-quantity]")?.value || context.quantity || 1), confirmation: workflow.confirmation || {}, saleContext: context, riskContext, currency: workflow.confirmation?.currency || "COP" });
     if (amountInput && pricing.finalAmount > 0) amountInput.value = String(pricing.finalAmount);
     if (!card.querySelector("[data-rms-sale-cost-details]")) {
       const details = document.createElement("details");
