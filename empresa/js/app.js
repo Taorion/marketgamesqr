@@ -27413,7 +27413,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
   };
   const base = {
     campaign_id: triviaCampaignInput.value || null,
-    branch_id: triviaBranchInput?.value || null,
+    branch_id: interactiveActivationBranchId(),
     title: triviaTitleInput.value.trim(),
     description: triviaDescriptionInput.value.trim() || null,
     max_rewards: triviaMaxWinnersInput.value ? Number(triviaMaxWinnersInput.value) : null,
@@ -27439,6 +27439,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     },
     visual_config: {
       source: "ticket_center_activation_builder",
+      branch_scope: interactiveActivationBranchScope(),
       invite_message_template: triviaInviteMessageInput?.value.trim() || defaultActivationInviteTemplate({ title: triviaTitleInput.value.trim() }),
     },
     metadata: {
@@ -28956,7 +28957,7 @@ async function saveGamingActivationDraft() {
     category: interactiveCategoryForType(type),
     title: draftTitle.length >= 4 ? draftTitle : "Borrador de activacion",
     description: triviaDescriptionInput?.value.trim() || null,
-    branch_id: triviaBranchInput?.value || null,
+    branch_id: interactiveActivationBranchId(),
     reward_ticket_cost: 1,
     reward_mode: "fixed",
     reward_config: {
@@ -28970,6 +28971,7 @@ async function saveGamingActivationDraft() {
     },
     visual_config: {
       source: "ticket_center_activation_builder",
+      branch_scope: interactiveActivationBranchScope(),
       invite_message_template: triviaInviteMessageInput?.value.trim() || "",
       builder_draft: snapshot,
     },
@@ -46990,15 +46992,28 @@ function renderManualLeadBranchOptions() {
 
 function renderInteractiveActivationBranchOptions() {
   if (!triviaBranchInput) return;
+  if (!state.businessBranchesLoaded && !state.businessBranchesLoading && session?.user?.business_id) {
+    loadBusinessBranches({ quiet: true }).then(renderInteractiveActivationBranchOptions).catch(() => {});
+  }
   const selected = triviaBranchInput.value || "";
   const rows = (state.businessBranches || []).filter((branch) => branch.is_active !== false);
   triviaBranchInput.innerHTML = [
     `<option value="">${state.businessBranchesLoading ? "Cargando sedes..." : "Sin sede asignada"}</option>`,
+    `<option value="__ALL_BRANCHES__">Todas las sedes</option>`,
     ...rows.map((branch) => `<option value="${escapeHtml(branch.id)}">${escapeHtml(branch.name)}</option>`),
   ].join("");
-  if (selected && rows.some((branch) => String(branch.id) === String(selected))) {
+  if (selected === "__ALL_BRANCHES__" || (selected && rows.some((branch) => String(branch.id) === String(selected)))) {
     triviaBranchInput.value = selected;
   }
+}
+
+function interactiveActivationBranchId() {
+  const selected = String(triviaBranchInput?.value || "").trim();
+  return selected && selected !== "__ALL_BRANCHES__" ? selected : null;
+}
+
+function interactiveActivationBranchScope() {
+  return triviaBranchInput?.value === "__ALL_BRANCHES__" ? "ALL" : interactiveActivationBranchId() ? "SINGLE" : "UNASSIGNED";
 }
 
 function renderRmsMachineFilterFeedback(data = state.rmsMachine || {}, rows = data.opportunities || []) {
