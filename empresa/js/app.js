@@ -8515,6 +8515,12 @@ function exportCommandCenterCsv() {
   ]);
 }
 
+function exportRevenueCommandData(chartId) {
+  const records = chartFocusRecords(chartId, {});
+  downloadCsv(`qori-revenue-${chartId || "analysis"}`, [records.columns, ...records.rows]);
+  showFeedback("Datos exportados para tu informe.", "success");
+}
+
 function commandFocusButton(chartId, label = "Analizar") {
   return `<button class="command-focus-button" type="button" data-command-focus="${escapeHtml(chartId)}" aria-label="Abrir ${escapeHtml(label)} en RMS Data Explorer">
     <span class="material-symbols-outlined">open_in_full</span>${escapeHtml(label)}
@@ -8850,6 +8856,12 @@ function closeChartFocusMode() {
 function chartFocusRecords(chartId, context = {}) {
   const data = state.commandCenter || {};
   const metric = state.commandCenterFilters.matrixMetric || "revenue";
+  if (chartId === "revenue-score") {
+    return {
+      columns: ["Dimensión", "Score", "Lectura"],
+      rows: (data.revenue_score?.dimensions || []).map((row) => [row.label || row.key, `${toNumber(row.score)}/100`, toNumber(row.score) >= 70 ? "Fortaleza" : toNumber(row.score) >= 45 ? "En observación" : "Prioridad de mejora"]),
+    };
+  }
   if (chartId === "rms-funnel") {
     return {
       columns: ["Etapa", "Valor", "Conversión anterior", "Fuga"],
@@ -9110,6 +9122,7 @@ function renderChartFocusMode() {
   const direction = state.chartFocus.direction;
   const meta = chartFocusMeta(chartId);
   const metric = focusPrimaryMetric(chartId, context);
+  const visualExportable = ["revenue-score", "timeline", "campaign-comparison", "branch-ranking", "qr-status", "scatter", "waterfall", "sankey"].includes(chartId);
   const tabs = [
     ["summary", "Resumen"],
     ["breakdown", "Desglose"],
@@ -9137,6 +9150,7 @@ function renderChartFocusMode() {
           <button type="button" data-focus-journey><span class="material-symbols-outlined">route</span>${state.chartFocus.journeyMode ? "Salir historia" : "Explorar historia"}</button>
           <button type="button" data-focus-presentation><span class="material-symbols-outlined">present_to_all</span>Presentar</button>
           <button type="button" data-focus-copy><span class="material-symbols-outlined">link</span>Copiar</button>
+          ${visualExportable ? `<button type="button" data-focus-export-visual><span class="material-symbols-outlined">image</span>Imagen</button>` : ""}
           <button type="button" data-focus-export><span class="material-symbols-outlined">download</span>Exportar</button>
           <button type="button" data-focus-close aria-label="Cerrar RMS Data Explorer"><span class="material-symbols-outlined">close</span></button>
         </div>
@@ -9186,6 +9200,39 @@ function renderChartFocusMode() {
   state.chartFocus.direction = 0;
 }
 
+function downloadChartFocusVisual() {
+  const chartId = state.chartFocus.chartId || "revenue-chart";
+  const canvas = chartFocusRoot.querySelector("#chartFocusCanvas");
+  if (canvas?.toDataURL) {
+    const link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png");
+    link.download = `qori-revenue-${chartId}.png`;
+    link.click();
+    showFeedback("Gráfico descargado como imagen.", "success");
+    return;
+  }
+  if (chartId === "sankey") {
+    return {
+      columns: ["Origen", "Destino", "Valor atribuido"],
+      rows: (data.attribution_sankey?.links || []).map((row) => [row.source, row.target, row.value]),
+    };
+  }
+  const svg = chartFocusRoot.querySelector(".chart-focus-stage svg");
+  if (svg) {
+    const source = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `qori-revenue-${chartId}.svg`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    showFeedback("Gráfico descargado como SVG.", "success");
+    return;
+  }
+  showFeedback("Esta lectura se exporta como CSV de datos.", "info");
+}
+
 function bindChartFocusEvents() {
   chartFocusRoot.querySelector(".chart-focus-overlay")?.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -9216,6 +9263,7 @@ function bindChartFocusEvents() {
     const records = chartFocusRecords(state.chartFocus.chartId, state.chartFocus.context);
     downloadCsv(`rms-data-explorer-${state.chartFocus.chartId}`, [records.columns, ...records.rows]);
   });
+  chartFocusRoot.querySelector("[data-focus-export-visual]")?.addEventListener("click", downloadChartFocusVisual);
   chartFocusRoot.querySelector("[data-focus-presentation]")?.addEventListener("click", () => {
     state.chartFocus.presentation = !state.chartFocus.presentation;
     renderChartFocusMode();
@@ -13370,8 +13418,45 @@ function revenueCommandExploreButton(chartId, label) {
   return `<button type="button" class="revenue-command-explore-button" data-revenue-command-focus="${escapeHtml(chartId)}" aria-label="Abrir análisis ampliado de ${escapeHtml(label)}"><span class="material-symbols-outlined" aria-hidden="true">open_in_full</span><span>Explorar</span></button>`;
 }
 
+function revenueCommandExportButton(chartId, label) {
+  return `<button type="button" class="revenue-command-export-button" data-revenue-command-export="${escapeHtml(chartId)}" aria-label="Exportar datos de ${escapeHtml(label)}"><span class="material-symbols-outlined" aria-hidden="true">download</span><span>CSV</span></button>`;
+}
+
 function revenueCommandInteractiveChart(chartId, label, content) {
   return `<div class="revenue-command-interactive-chart" data-revenue-command-focus="${escapeHtml(chartId)}" tabindex="0" role="button" aria-label="Abrir análisis ampliado de ${escapeHtml(label)}">${content}<span class="revenue-command-interactive-hint"><span class="material-symbols-outlined" aria-hidden="true">open_in_full</span>Clic para ampliar y explorar</span></div>`;
+}
+
+function revenueCommandChannelIcon(label) {
+  const value = String(label || "").toLowerCase();
+  if (value.includes("instagram") || value.includes("facebook") || value.includes("red") || value.includes("tiktok")) return "share";
+  if (value.includes("google") || value.includes("buscador") || value.includes("web")) return "travel_explore";
+  if (value.includes("whatsapp") || value.includes("mensaje") || value.includes("llamada")) return "forum";
+  if (value.includes("afili") || value.includes("refer")) return "diversity_3";
+  if (value.includes("vitrina") || value.includes("tienda") || value.includes("punto")) return "storefront";
+  if (value.includes("qr") || value.includes("catálogo") || value.includes("catalog")) return "qr_code_2";
+  return "hub";
+}
+
+function revenueCommandAcquisitionMarkup(rows = []) {
+  const channels = (Array.isArray(rows) ? rows : []).filter((row) => toNumber(row.revenue) || toNumber(row.leads) || toNumber(row.investment)).slice(0, 8);
+  if (!channels.length) return `<div class="revenue-command-empty"><span class="material-symbols-outlined" aria-hidden="true">hub</span><strong>Aún no hay medios comparables</strong><p>Al registrar origen, inversión y ventas, Qori dibuja la eficiencia de cada medio.</p></div>`;
+  const totalRevenue = Math.max(1, channels.reduce((sum, row) => sum + toNumber(row.revenue), 0));
+  return `<div class="revenue-command-acquisition-grid">${channels.map((row, index) => {
+    const share = Math.round((toNumber(row.revenue) / totalRevenue) * 100);
+    const roi = row.roi === null || row.roi === undefined ? null : toNumber(row.roi);
+    const health = toNumber(row.sales) > 0 && (roi === null || roi >= 0) ? "is-healthy" : toNumber(row.leads) > 0 ? "is-opportunity" : "is-watch";
+    return `<article class="${health}">
+      <div class="revenue-command-acquisition-top"><span class="revenue-command-acquisition-icon material-symbols-outlined" aria-hidden="true">${revenueCommandChannelIcon(row.label)}</span><div><strong>${escapeHtml(row.label || "Sin canal")}</strong><small>${escapeHtml(row.top_campaign || "Sin campaña dominante")}</small></div><em>${share}% del revenue</em></div>
+      <div class="revenue-command-acquisition-revenue"><strong>${money(row.revenue)}</strong><span>${toNumber(row.sales)} ventas · ${toNumber(row.leads)} leads</span></div>
+      <div class="revenue-command-acquisition-stats"><span><small>ROI</small><strong>${roi === null ? "—" : ratioLabel(roi)}</strong></span><span><small>Conversión</small><strong>${toNumber(row.conversion_rate)}%</strong></span><span><small>Ticket</small><strong>${money(row.avg_ticket)}</strong></span></div>
+      <div class="revenue-command-acquisition-track"><i style="--acquisition-share:${Math.max(3, share)}%"></i></div>
+    </article>`;
+  }).join("")}</div>`;
+}
+
+function drawRevenueCommandInlineCharts(data = {}) {
+  const ticketStatusCanvas = revenueCommandSurface?.querySelector('[data-revenue-command-canvas="qr-status"]');
+  if (ticketStatusCanvas) drawDonutChart(ticketStatusCanvas, data.qr_status || [], ["#0759d6", "#10c6df", "#11b98d", "#f0ae43", "#c084fc"]);
 }
 
 function renderRevenueCommandCenter() {
@@ -13423,13 +13508,20 @@ function renderRevenueCommandCenter() {
       <div class="revenue-command-pro-priority-icon"><span class="material-symbols-outlined" aria-hidden="true">${priority.icon}</span></div><div><span class="mono-label">${escapeHtml(priority.eyebrow)}</span><h3>${escapeHtml(priority.title)}</h3><p>${escapeHtml(priority.description)}</p></div><button type="button" class="primary-button" data-revenue-command-route="${escapeHtml(priority.route)}">${escapeHtml(priority.action)}<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
     </section>
     <section class="revenue-command-pro-visual-grid">
-      <article class="revenue-command-pro-panel revenue-command-pro-radar-panel"><header><div><span class="mono-label">Radar de salud</span><h3>Equilibrio comercial</h3><p>Ocho dimensiones en una sola lectura.</p></div><div class="revenue-command-panel-actions">${revenueCommandExploreButton("revenue-score", "el radar de salud")}<span class="revenue-command-chart-tag">${toNumber(score.score)}/100</span></div></header>${revenueCommandInteractiveChart("revenue-score", "el radar de salud", revenueCommandRadarMarkup(score))}</article>
-      <article class="revenue-command-pro-panel revenue-command-pro-bars-panel"><header><div><span class="mono-label">Ranking de canales</span><h3>Revenue comparado</h3><p>Barras por ingreso atribuido.</p></div><div class="revenue-command-panel-actions">${revenueCommandExploreButton("channel-performance", "el ranking de canales")}<button type="button" class="icon-button" aria-label="Gestionar canales" data-revenue-command-route="channels"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></div></header>${revenueCommandInteractiveChart("channel-performance", "el ranking de canales", revenueCommandChannelBarsMarkup(channels))}</article>
-      <article class="revenue-command-pro-panel revenue-command-pro-waterfall-panel"><header><div><span class="mono-label">Composición del revenue</span><h3>De dónde se forma</h3><p>Distribución del ingreso confirmado.</p></div>${revenueCommandExploreButton("waterfall", "la composición del revenue")}</header>${revenueCommandInteractiveChart("waterfall", "la composición del revenue", revenueCommandWaterfallMarkup(channels, totals.revenue))}</article>
+      <article class="revenue-command-pro-panel revenue-command-pro-radar-panel"><header><div><span class="mono-label">Radar de salud</span><h3>Equilibrio comercial</h3><p>Ocho dimensiones en una sola lectura.</p></div><div class="revenue-command-panel-actions">${revenueCommandExportButton("revenue-score", "el radar de salud")}${revenueCommandExploreButton("revenue-score", "el radar de salud")}<span class="revenue-command-chart-tag">${toNumber(score.score)}/100</span></div></header>${revenueCommandInteractiveChart("revenue-score", "el radar de salud", revenueCommandRadarMarkup(score))}</article>
+      <article class="revenue-command-pro-panel revenue-command-pro-bars-panel"><header><div><span class="mono-label">Ranking de canales</span><h3>Revenue comparado</h3><p>Barras por ingreso atribuido.</p></div><div class="revenue-command-panel-actions">${revenueCommandExportButton("channel-performance", "el ranking de canales")}${revenueCommandExploreButton("channel-performance", "el ranking de canales")}<button type="button" class="icon-button" aria-label="Gestionar canales" data-revenue-command-route="channels"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></div></header>${revenueCommandInteractiveChart("channel-performance", "el ranking de canales", revenueCommandChannelBarsMarkup(channels))}</article>
+      <article class="revenue-command-pro-panel revenue-command-pro-waterfall-panel"><header><div><span class="mono-label">Composición del revenue</span><h3>De dónde se forma</h3><p>Distribución del ingreso confirmado.</p></div><div class="revenue-command-panel-actions">${revenueCommandExportButton("waterfall", "la composición del revenue")}${revenueCommandExploreButton("waterfall", "la composición del revenue")}</div></header>${revenueCommandInteractiveChart("waterfall", "la composición del revenue", revenueCommandWaterfallMarkup(channels, totals.revenue))}</article>
     </section>
-    <section class="revenue-command-pro-panel revenue-command-pro-timeline-panel"><header><div><span class="mono-label">Tendencia multiseñal</span><h3>Cómo se mueve el negocio en el tiempo</h3><p>Leads, tickets, redenciones y ventas para encontrar picos y fricción operativa.</p></div><div class="revenue-command-panel-actions">${revenueCommandExploreButton("timeline", "la tendencia multiseñal")}<span class="revenue-command-data-badge"><i></i>Datos del corte</span></div></header>${revenueCommandInteractiveChart("timeline", "la tendencia multiseñal", revenueAdvancedTimelineMarkup(data.timeline || []))}</section>
+    <section class="revenue-command-pro-panel revenue-command-pro-timeline-panel"><header><div><span class="mono-label">Tendencia multiseñal</span><h3>Cómo se mueve el negocio en el tiempo</h3><p>Leads, tickets, redenciones y ventas para encontrar picos y fricción operativa.</p></div><div class="revenue-command-panel-actions">${revenueCommandExportButton("timeline", "la tendencia multiseñal")}${revenueCommandExploreButton("timeline", "la tendencia multiseñal")}<span class="revenue-command-data-badge"><i></i>Datos del corte</span></div></header>${revenueCommandInteractiveChart("timeline", "la tendencia multiseñal", revenueAdvancedTimelineMarkup(data.timeline || []))}</section>
+    <section class="revenue-command-pro-panel revenue-command-pro-acquisition-panel"><header><div><span class="mono-label">Inteligencia de adquisición</span><h3>Qué medio trae clientes, dinero y eficiencia</h3><p>Lectura visual por origen: volumen, conversión, ticket promedio, retorno y campaña dominante.</p></div><div class="revenue-command-panel-actions">${revenueCommandExportButton("channel-performance", "la inteligencia de adquisición")}${revenueCommandExploreButton("channel-performance", "la inteligencia de adquisición")}</div></header>${revenueCommandInteractiveChart("channel-performance", "la inteligencia de adquisición", revenueCommandAcquisitionMarkup(channels))}</section>
+    <section class="revenue-command-pro-analysis-grid" aria-label="Análisis avanzados de revenue">
+      <article class="revenue-command-pro-panel"><header><div><span class="mono-label">Momento de conversión</span><h3>Mapa de calor horario</h3><p>Identifica cuándo concentrar equipo, pauta y recordatorios.</p></div><div class="revenue-command-panel-actions">${revenueCommandExportButton("heatmap", "el mapa de calor")}${revenueCommandExploreButton("heatmap", "el mapa de calor")}</div></header>${revenueCommandInteractiveChart("heatmap", "el mapa de calor horario", renderHeatmapChart(data.heatmap || []))}</article>
+      <article class="revenue-command-pro-panel"><header><div><span class="mono-label">Inventario de activación</span><h3>Estados de tickets</h3><p>Activos, reclamados, redimidos y vencidos para decidir seguimiento.</p></div><div class="revenue-command-panel-actions">${revenueCommandExportButton("qr-status", "los estados de tickets")}${revenueCommandExploreButton("qr-status", "los estados de tickets")}</div></header>${revenueCommandInteractiveChart("qr-status", "los estados de tickets", `<canvas class="revenue-command-inline-canvas" data-revenue-command-canvas="qr-status" width="640" height="360"></canvas>`)}</article>
+      <article class="revenue-command-pro-panel"><header><div><span class="mono-label">Ruta de atribución</span><h3>Del medio al ingreso</h3><p>Relaciona canales, campañas, activación y ventas reales.</p></div><div class="revenue-command-panel-actions">${revenueCommandExportButton("sankey", "la ruta de atribución")}${revenueCommandExploreButton("sankey", "la ruta de atribución")}</div></header>${revenueCommandInteractiveChart("sankey", "la ruta de atribución", renderSankeyChart(data.attribution_sankey || {}))}</article>
+      <article class="revenue-command-pro-panel"><header><div><span class="mono-label">Fidelización medible</span><h3>Cohortes de recompra</h3><p>Mide si la venta inicial vuelve a generar tickets y redenciones.</p></div><div class="revenue-command-panel-actions">${revenueCommandExportButton("cohorts", "las cohortes de recompra")}${revenueCommandExploreButton("cohorts", "las cohortes de recompra")}</div></header>${revenueCommandInteractiveChart("cohorts", "las cohortes de recompra", renderCohortChart(data.cohorts || []))}</article>
+    </section>
     <section class="revenue-command-pro-main-grid">
-      <article class="revenue-command-pro-panel revenue-command-pro-funnel"><header><div><span class="mono-label">Flujo de conversión</span><h3>Qué avanza y dónde se corta</h3><p>Actividad del periodo: no es una cohorte y no mezcla proyecciones.</p></div><div class="revenue-command-panel-actions">${revenueCommandExploreButton("rms-funnel", "el flujo de conversión")}${revenueCommandRing(conversion, "lead a venta")}</div></header>${revenueCommandInteractiveChart("rms-funnel", "el flujo de conversión", revenueCommandFunnelMarkup(totals))}<button type="button" class="revenue-command-text-action" data-revenue-command-route="rms-machine">Abrir oportunidades en RMS <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>
+      <article class="revenue-command-pro-panel revenue-command-pro-funnel"><header><div><span class="mono-label">Flujo de conversión</span><h3>Qué avanza y dónde se corta</h3><p>Actividad del periodo: no es una cohorte y no mezcla proyecciones.</p></div><div class="revenue-command-panel-actions">${revenueCommandExportButton("rms-funnel", "el flujo de conversión")}${revenueCommandExploreButton("rms-funnel", "el flujo de conversión")}${revenueCommandRing(conversion, "lead a venta")}</div></header>${revenueCommandInteractiveChart("rms-funnel", "el flujo de conversión", revenueCommandFunnelMarkup(totals))}<button type="button" class="revenue-command-text-action" data-revenue-command-route="rms-machine">Abrir oportunidades en RMS <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>
       <article class="revenue-command-pro-panel revenue-command-pro-actions"><header><div><span class="mono-label">Mesa de decisiones</span><h3>Lo que el equipo puede hacer ahora</h3></div><span class="revenue-command-data-badge"><i></i>Lectura actual</span></header><div class="revenue-command-pro-action-list">${insights.map((item) => `<article class="is-${escapeHtml(item.priority || "opportunity")}"><span class="material-symbols-outlined" aria-hidden="true">${item.priority === "risk" ? "priority_high" : item.priority === "alert" ? "warning" : item.priority === "win" ? "workspace_premium" : "lightbulb"}</span><div><strong>${escapeHtml(item.title || "Señal comercial")}</strong><p>${escapeHtml(item.explanation || item.metric || "")}</p></div><button type="button" aria-label="Operar esta señal" data-revenue-command-route="${item.priority === "win" ? "campaigns" : "rms-machine"}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>`).join("") || `<div class="revenue-command-empty"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span><strong>Sin señales urgentes en este corte</strong><p>La operación está lista para revisar eficiencia y crecimiento.</p></div>`}</div></article>
     </section>
     <section class="revenue-command-pro-intelligence-grid">
@@ -13438,6 +13530,7 @@ function renderRevenueCommandCenter() {
     </section>
     <section class="revenue-command-pro-panel revenue-command-pro-portfolio"><header><div><span class="mono-label">Portafolio comercial</span><h3>Decide dónde poner el siguiente peso</h3><p>Revenue, ventas y retorno en una lectura ordenada para escalar, optimizar, corregir o medir.</p></div><button type="button" class="primary-button" data-revenue-command-route="campaigns"><span class="material-symbols-outlined" aria-hidden="true">campaign</span>Gestionar campañas</button></header>${revenueCommandPortfolioMarkup(campaigns)}</section>
   `;
+  drawRevenueCommandInlineCharts(data);
   return true;
 }
 
@@ -54635,6 +54728,12 @@ dashboardTemplateGallery?.addEventListener("click", (event) => {
   renderDashboardBuilder();
 });
 revenueCommandSurface?.addEventListener("click", (event) => {
+  const exportButton = event.target.closest("[data-revenue-command-export]");
+  if (exportButton) {
+    event.preventDefault();
+    exportRevenueCommandData(exportButton.dataset.revenueCommandExport || "channel-performance");
+    return;
+  }
   const focus = event.target.closest("[data-revenue-command-focus]");
   if (focus && !event.target.closest("[data-revenue-command-route]")) {
     event.preventDefault();

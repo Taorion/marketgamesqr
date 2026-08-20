@@ -469,3 +469,148 @@ html body[data-current-view="dashboard"] .portal-shell .revenue-command-interact
   html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-chart { padding-bottom:29px; }
   html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-hint { left:9px; right:auto; bottom:7px; }
 }
+
+/* Revenue Command v9: inteligencia de adquisición, analítica ampliada y exportación por panel. */
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-export-button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  min-height:30px;
+  padding:0 9px;
+  border:1px solid #d4e5f2;
+  border-radius:99px;
+  background:#fff;
+  color:#46708f;
+  font:800 .6rem/1 Manrope, sans-serif;
+  cursor:pointer;
+  transition:border-color .16s ease, color .16s ease, transform .16s ease;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-export-button .material-symbols-outlined { font-size:14px; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-export-button:hover,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-export-button:focus-visible {
+  outline:0;
+  transform:translateY(-1px);
+  border-color:#0878c4;
+  color:#0759d6;
+  box-shadow:0 6px 14px rgba(7,89,214,.12);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-acquisition-panel {
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 96% 0, rgba(13,189,222,.11), transparent 27%),
+    linear-gradient(145deg,#fff,#f3faff) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-grid article {
+  position:relative;
+  display:grid;
+  gap:12px;
+  min-width:0;
+  padding:14px;
+  border:1px solid #ddebf6;
+  border-radius:16px;
+  background:linear-gradient(150deg,#fff,#f7fbff);
+  box-shadow:0 6px 14px rgba(5,72,150,.04);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-grid article.is-healthy { border-top:3px solid #14a979; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-grid article.is-opportunity { border-top:3px solid #0ca7cc; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-grid article.is-watch { border-top:3px solid #d59127; }
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-top {
+  display:grid;
+  grid-template-columns:32px minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-icon {
+  display:grid;
+  width:32px;
+  height:32px;
+  place-items:center;
+  border-radius:10px;
+  background:linear-gradient(135deg,#e1f7ff,#e7edff);
+  color:#0759d6;
+  font-size:17px;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-top strong,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-top small,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-top em {
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-top strong { display:block; color:#0a356e; font-size:.72rem; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-top small { display:block; margin-top:2px; color:#718ca3; font-size:.56rem; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-top em { grid-column:1/-1; color:#0878c4; font-size:.57rem; font-style:normal; font-weight:850; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-revenue { display:grid; gap:2px; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-revenue strong { color:#063b83; font-size:1.05rem; letter-spacing:-.045em; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-revenue span { color:#718ca3; font-size:.58rem; }
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-stats {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;
+  padding-top:10px;
+  border-top:1px solid #e5eff7;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-stats span { min-width:0; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-stats small { display:block; overflow:hidden; color:#7790a6; font-size:.5rem; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-stats strong { display:block; overflow:hidden; margin-top:3px; color:#194b81; font-size:.61rem; text-overflow:ellipsis; white-space:nowrap; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-track { height:5px; overflow:hidden; border-radius:99px; background:#e4edf5; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-track i { display:block; width:var(--acquisition-share); height:100%; border-radius:inherit; background:linear-gradient(90deg,#0759d6,#0fc5df); }
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-analysis-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-analysis-grid .revenue-command-pro-panel {
+  min-height:340px;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-analysis-grid .revenue-command-interactive-chart {
+  display:grid;
+  align-content:center;
+  min-height:242px;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-inline-canvas {
+  display:block;
+  width:100% !important;
+  height:260px !important;
+  max-height:260px;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-analysis-grid .command-sankey,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-analysis-grid .command-heatmap,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-analysis-grid .cohort-grid {
+  width:100%;
+  min-height:220px;
+}
+
+@media (max-width:1180px) {
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+@media (max-width:720px) {
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-analysis-grid,
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-acquisition-grid { grid-template-columns:1fr; }
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-analysis-grid .revenue-command-pro-panel { min-height:300px; }
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-inline-canvas { height:230px !important; }
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-export-button { min-height:34px; padding:0 11px; }
+}
