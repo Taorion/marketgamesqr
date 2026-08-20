@@ -68072,6 +68072,15 @@ html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-l
   }
 }
 
+/* Campaign command center v312: override the legacy simple-flow visibility rule. */
+html body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"].campaign-premium-enabled > #campaignPremiumWorkspace {
+  display: grid !important;
+}
+
+html body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"].campaign-premium-enabled > .campaign-library-shell {
+  display: none !important;
+}
+
 /* Campaign Command Center: one premium operating surface instead of stacked legacy panels. */
 html body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"].campaign-premium-enabled > :not(.view-head):not(#campaignPremiumWorkspace) { display:none !important; }
 html body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"].campaign-premium-enabled .campaign-head .head-actions { display:none !important; }
