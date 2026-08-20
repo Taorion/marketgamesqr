@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-revenue-center-v307";
+const APP_VERSION = "empresa-20260820-revenue-center-v308";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -72,6 +72,7 @@ const revenueQuickActions = document.getElementById("revenueQuickActions");
 const dashboardRevenueActionButton = document.getElementById("dashboardRevenueActionButton");
 const dashboardBuilderShell = document.getElementById("dashboardBuilderShell");
 const revenueCommandSurface = document.getElementById("revenueCommandSurface");
+const revenueWorkspace = document.getElementById("revenueWorkspace");
 const dashboardLegacySurfaces = document.getElementById("dashboardLegacySurfaces");
 const dashboardBusinessRoiValue = document.getElementById("dashboardBusinessRoiValue");
 const dashboardBusinessRoiMeta = document.getElementById("dashboardBusinessRoiMeta");
