@@ -1138,6 +1138,10 @@ html body[data-current-view="dashboard"] .portal-shell .revenue-decision-grid > 
 }
 
 /* Centro de Revenue v15: consola de decisión, no colección de tarjetas. */
+/* Los indicadores ejecutivos deben mantener contraste pleno sobre el fondo claro. */
+html body[data-current-view="dashboard"] .portal-shell .dashboard-business-economics-item :is(.mono-label, strong, small) {
+  color: #111111 !important;
+}
 html body[data-current-view="dashboard"] .portal-shell .dashboard-builder-shell[data-workspace-tab="analysis"] .dashboard-canvas {
   display: block !important;
   padding: 0 !important;
