@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-revenue-center-v303";
+const APP_VERSION = "empresa-20260820-revenue-center-v304";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -10673,7 +10673,7 @@ function renderRevenueDecisionDeck(summary = {}, dashboard = {}) {
   const openAgenda = (state.leadAgenda || []).filter((item) => !["DONE", "CLOSED", "COMPLETED", "CANCELLED"].includes(String(item.status || item.agenda_status || "").toUpperCase())).length;
   // La inversión configurada es una base comercial acumulada; se etiqueta
   // explícitamente para no presentarla como si fuera gasto diario del corte.
-  const economics = data.business_economics || dashboardCommercialEconomics();
+  const economics = dashboardCommercialEconomics();
   const signals = [];
 
   if (!leads) {
@@ -13163,7 +13163,7 @@ function renderRevenueAdvancedBoard() {
     return;
   }
   const totals = data.totals || {};
-  const economics = dashboardCommercialEconomics();
+  const economics = data.business_economics || dashboardCommercialEconomics();
   const revenue = toNumber(totals.revenue);
   const revenueScore = data.revenue_score || {};
   const periodLabel = COMMAND_CENTER_RANGE_LABELS[state.commandCenterFilters?.range] || "Periodo seleccionado";
