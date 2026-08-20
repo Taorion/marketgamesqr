@@ -126,17 +126,68 @@ function phaseDurations(movements = [], state = null) {
   let phase = ordered[0]?.from_phase || state?.rms_phase || null;
   ordered.forEach((movement) => {
     const endedAt = new Date(movement.created_at);
-    if (phase && startedAt && !Number.isNaN(endedAt.getTime())) {
-      durations.push({ phase, started_at: startedAt.toISOString(), ended_at: endedAt.toISOString(), milliseconds: Math.max(0, endedAt - startedAt), label: elapsedLabel(endedAt - startedAt) });
-    }
-    phase = movement.to_phase;
+    const nextPhase = movement.to_phase || phase;
+    if (!phase || !startedAt || Number.isNaN(endedAt.getTime()) || nextPhase === phase) return;
+    const milliseconds = Math.max(0, endedAt - startedAt);
+    durations.push({ phase, phase_label: phaseLabel(phase), started_at: startedAt.toISOString(), ended_at: endedAt.toISOString(), milliseconds, label: elapsedLabel(milliseconds) });
+    phase = nextPhase;
     startedAt = endedAt;
   });
   if (phase && startedAt) {
     const now = new Date();
-    durations.push({ phase, started_at: startedAt.toISOString(), ended_at: null, milliseconds: Math.max(0, now - startedAt), label: elapsedLabel(now - startedAt), is_open: true });
+    const milliseconds = Math.max(0, now - startedAt);
+    durations.push({ phase, phase_label: phaseLabel(phase), started_at: startedAt.toISOString(), ended_at: null, milliseconds, label: elapsedLabel(milliseconds), is_open: true });
   }
   return durations;
+}
+
+function meaningfulTimeline(movements = [], events = [], sales = [], postSaleActions = []) {
+  const duplicateEventTitles = new Set(["Cliente movido de fase"]);
+  return [
+    ...movements.map((row) => {
+      const fromPhase = row.from_phase || "origen";
+      const toPhase = row.to_phase || fromPhase;
+      const isUpdate = fromPhase === toPhase;
+      return {
+        kind: isUpdate ? "update" : "phase",
+        at: row.created_at,
+        phase: toPhase,
+        title: isUpdate ? `Actualización en ${phaseLabel(toPhase)}` : `${phaseLabel(fromPhase)} → ${phaseLabel(toPhase)}`,
+        detail: row.reason || (isUpdate ? "Dato operativo actualizado." : "Cambio de estación registrado."),
+        evidence_id: row.id,
+      };
+    }),
+    ...events.filter((row) => !duplicateEventTitles.has(String(row.event_title || "").trim())).map((row) => ({ kind: "event", at: row.created_at, phase: row.rms_phase, title: row.event_title, detail: row.event_description || "Hecho RMS registrado", evidence_id: row.id })),
+    ...sales.map((sale) => ({ kind: "sale", at: sale.paid_at || sale.created_at, phase: "cierre", title: "Venta atribuida", detail: `${sale.currency || "COP"} ${sale.sale_amount} · ${sale.product_name || "Producto sin nombre"}`, evidence_id: sale.id })),
+    ...postSaleActions.map((action) => ({ kind: "post_sale", at: action.updated_at || action.created_at, phase: "postventa", title: `Activación 2 · ${action.action_type}`, detail: `${action.status}${action.result_note ? ` · ${action.result_note}` : ""}`, evidence_id: action.id })),
+  ].sort((left, right) => new Date(left.at) - new Date(right.at));
+}
+
+function intelligenceDataQualityFlags(movements = [], events = []) {
+  const narrative = [...movements.map((row) => row.reason), ...events.map((row) => `${row.event_title || ""} ${row.event_description || ""}`)].join(" ").toLowerCase();
+  const flags = [];
+  if (narrative.includes("respondió con interés") && narrative.includes("no respondió")) {
+    flags.push({ level: "warning", title: "Respuesta de Activación 1 inconsistente", detail: "El historial registra interés y también falta de respuesta. Valida cuál fue la respuesta final antes de reutilizar este caso como aprendizaje." });
+  }
+  const repeatedUpdates = movements.filter((row) => row.from_phase && row.from_phase === row.to_phase).length;
+  if (repeatedUpdates >= 3) {
+    flags.push({ level: "info", title: "Varias actualizaciones dentro de una estación", detail: `${repeatedUpdates} actualizaciones se consolidaron en el recorrido. La duración ahora se calcula por permanencia real, no por cada edición.` });
+  }
+  return flags;
+}
+
+function reprocessCount(movements = []) {
+  const seen = new Set();
+  let currentPhase = null;
+  let count = 0;
+  movements.forEach((movement) => {
+    const nextPhase = movement.to_phase || currentPhase;
+    if (!nextPhase || nextPhase === currentPhase) return;
+    if (seen.has(nextPhase)) count += 1;
+    seen.add(nextPhase);
+    currentPhase = nextPhase;
+  });
+  return count;
 }
 
 function caseMissingFields({ profile = {}, state = {}, sales = [], postSaleActions = [] }) {
@@ -189,13 +240,8 @@ async function learningCase(businessId, params = {}) {
     tickets: qrResult.rows,
     rewardPasses: rewardPassResult.rows,
   });
-  const timeline = [
-    ...movements.map((row) => ({ kind: "phase", at: row.created_at, phase: row.to_phase, title: `${row.from_phase || "Origen"} → ${row.to_phase}`, detail: row.reason || "Movimiento RMS registrado", evidence_id: row.id })),
-    ...events.map((row) => ({ kind: "event", at: row.created_at, phase: row.rms_phase, title: row.event_title, detail: row.event_description || "Hecho RMS registrado", evidence_id: row.id })),
-    ...analyticalEvents.map((row) => ({ kind: "intelligence", at: row.created_at, phase: row.operational_phase, title: "Inteligencia actualizada", detail: row.event_type, evidence_id: row.id })),
-    ...sales.map((sale) => ({ kind: "sale", at: sale.paid_at || sale.created_at, phase: "cierre", title: "Venta atribuida", detail: `${sale.currency || "COP"} ${sale.sale_amount} · ${sale.product_name || "Producto sin nombre"}`, evidence_id: sale.id })),
-    ...postSaleResult.rows.map((action) => ({ kind: "post_sale", at: action.updated_at || action.created_at, phase: "postventa", title: `Activación 2 · ${action.action_type}`, detail: `${action.status}${action.result_note ? ` · ${action.result_note}` : ""}`, evidence_id: action.id })),
-  ].sort((left, right) => new Date(left.at) - new Date(right.at));
+  const timeline = meaningfulTimeline(movements, events, sales, postSaleResult.rows);
+  const dataQualityFlags = intelligenceDataQualityFlags(movements, events);
   const profile = {
     source_type: type, source_id: sourceId, lead_id: state?.lead_id || null,
     lead_name: opportunity.name || null,
@@ -213,8 +259,8 @@ async function learningCase(businessId, params = {}) {
     },
     facts: { state, movements, events, analytical_events: analyticalEvents, sales, post_sale_actions: postSaleResult.rows, tickets: qrResult.rows, reward_passes: rewardPassResult.rows, agenda_and_notes: notesResult.rows, journey },
     learning: {
-      timeline, phase_durations: durations, longest_phase: longest,
-      reprocess_count: movements.filter((row) => ["clasificacion", "procesamiento", "accion_correctiva", "reciclaje"].includes(row.to_phase)).length,
+      timeline, phase_durations: durations, longest_phase: longest, data_quality_flags: dataQualityFlags,
+      reprocess_count: reprocessCount(movements),
       primary_objection: stateMetadata.commercial_confirmation?.objection_type || stateMetadata.negotiation?.objection_type || null,
       loss_or_risk_reason: stateMetadata.risk_review?.reason || stateMetadata.negotiation?.reason || null,
       winning_condition: stateMetadata.commercial_confirmation?.customer_condition || stateMetadata.commercial_confirmation?.note || null,
