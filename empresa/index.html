@@ -4054,7 +4054,7 @@
                 <p id="campaignHeroSubtitle" hidden></p>
               </div>
               <div class="head-actions">
-                <button class="ghost-button" id="campaignSummaryOpenButton" type="button" aria-controls="campaignSummaryPanel" aria-expanded="false"><span class="material-symbols-outlined" aria-hidden="true">table_chart</span>Ver resumen</button>
+                <button class="ghost-button" id="campaignSummaryOpenButton" type="button" aria-controls="campaignSummaryPanel" aria-expanded="false" onclick="event.stopImmediatePropagation();var panel=document.getElementById('campaignSummaryPanel');if(panel){panel.open=!panel.open;this.setAttribute('aria-expanded',panel.open?'true':'false');this.innerHTML='<span class=&quot;material-symbols-outlined&quot; aria-hidden=&quot;true&quot;>'+ (panel.open?'expand_less':'table_chart') +'</span>'+ (panel.open?'Ocultar resumen':'Ver resumen');if(panel.open){panel.scrollIntoView({behavior:'smooth',block:'start'});}}"><span class="material-symbols-outlined" aria-hidden="true">table_chart</span>Ver resumen</button>
                 <button class="ghost-button" id="exportCampaignReportButton" type="button">Exportar Reporte</button>
                 <button class="ghost-button hidden" id="markReadyCampaignButton" type="button">Marcar lista</button>
                 <button class="solid-button" id="requestCampaignButton" type="button">Nueva campaña</button>
