@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-revenue-center-v306";
+const APP_VERSION = "empresa-20260820-revenue-center-v307";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -71,6 +71,7 @@ const revenueDecisionDeck = document.getElementById("revenueDecisionDeck");
 const revenueQuickActions = document.getElementById("revenueQuickActions");
 const dashboardRevenueActionButton = document.getElementById("dashboardRevenueActionButton");
 const dashboardBuilderShell = document.getElementById("dashboardBuilderShell");
+const revenueCommandSurface = document.getElementById("revenueCommandSurface");
 const dashboardLegacySurfaces = document.getElementById("dashboardLegacySurfaces");
 const dashboardBusinessRoiValue = document.getElementById("dashboardBusinessRoiValue");
 const dashboardBusinessRoiMeta = document.getElementById("dashboardBusinessRoiMeta");
@@ -13236,8 +13237,89 @@ function renderRevenueDashboardComposer(layout = []) {
     </section>`;
 }
 
+function revenueCommandRing(value = 0, label = "Conversión") {
+  const safeValue = Math.max(0, Math.min(100, toNumber(value)));
+  const circumference = 251.2;
+  const offset = circumference - (circumference * safeValue) / 100;
+  return `<div class="revenue-command-ring" aria-label="${escapeHtml(label)} ${safeValue}%"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="40" class="revenue-command-ring-track"/><circle cx="50" cy="50" r="40" class="revenue-command-ring-value" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/></svg><div><strong>${safeValue.toLocaleString("es-CO", { maximumFractionDigits: 1 })}%</strong><small>${escapeHtml(label)}</small></div></div>`;
+}
+
+function revenueCommandChannelMap(rows = []) {
+  const channels = (Array.isArray(rows) ? rows : []).filter((row) => toNumber(row.revenue) || toNumber(row.leads)).slice(0, 6);
+  const total = Math.max(1, channels.reduce((sum, row) => sum + toNumber(row.revenue), 0));
+  if (!channels.length) return `<div class="revenue-command-empty"><span class="material-symbols-outlined" aria-hidden="true">hub</span><strong>Sin canales atribuibles todavía</strong><p>Registra el origen al capturar y cerrar ventas para construir el mapa de contribución.</p></div>`;
+  return `<div class="revenue-command-channel-map">${channels.map((row, index) => {
+    const share = Math.max(10, Math.round((toNumber(row.revenue) / total) * 100));
+    return `<article class="is-channel-${index % 5}" style="--channel-share:${share}%"><small>${escapeHtml(row.label || "Sin canal")}</small><strong>${money(row.revenue)}</strong><span>${toNumber(row.sales)} ventas · ${toNumber(row.leads)} leads</span></article>`;
+  }).join("")}</div>`;
+}
+
+function renderRevenueCommandCenter() {
+  if (!revenueCommandSurface) return false;
+  const legacyHeader = document.querySelector('.view-section[data-view="dashboard"] > .dashboard-revenue-head');
+  legacyHeader?.setAttribute("hidden", "");
+  legacyHeader?.style.setProperty("display", "none", "important");
+  dashboardBuilderShell?.setAttribute("hidden", "");
+  dashboardBuilderShell?.style.setProperty("display", "none", "important");
+  revenueWorkspace?.setAttribute("hidden", "");
+  revenueWorkspace?.style.setProperty("display", "none", "important");
+  revenueCommandSurface.hidden = false;
+  revenueCommandSurface.style.setProperty("display", "grid", "important");
+
+  const data = state.commandCenter;
+  const dashboard = state.dashboard || {};
+  const summary = state.summary || dashboard.summary || {};
+  if (!data) {
+    const observedRevenue = toNumber(summary.observed_revenue ?? summary.attributed_revenue);
+    const observedSales = toNumber(summary.observed_sales_count ?? summary.direct_sales_count);
+    revenueCommandSurface.innerHTML = `
+      <section class="revenue-command-loading" aria-live="polite">
+        <div class="revenue-command-loading-mark"><span class="material-symbols-outlined" aria-hidden="true">radar</span></div>
+        <div><span class="mono-label">Qori Revenue Command</span><h2>${state.commandCenterError ? "La lectura necesita reintentarse" : "Construyendo el mapa de ingresos"}</h2><p>${state.commandCenterError ? escapeHtml(state.commandCenterError) : "Conectamos captación, activación, ventas, inversión y atribución en una sola lectura operable."}</p></div>
+        <div class="revenue-command-loading-kpis"><span><small>Revenue registrado</small><strong>${money(observedRevenue)}</strong></span><span><small>Ventas</small><strong>${observedSales}</strong></span></div>
+        <button type="button" class="primary-button" data-revenue-command-retry><span class="material-symbols-outlined" aria-hidden="true">${state.commandCenterError ? "refresh" : "insights"}</span>${state.commandCenterError ? "Reintentar lectura" : "Abrir inteligencia"}</button>
+      </section>`;
+    if (!state.commandCenterLoading && !state.commandCenterError) void loadCommandCenterData({ quiet: true });
+    return true;
+  }
+
+  const totals = data.totals || {};
+  const economics = data.business_economics || dashboardCommercialEconomics();
+  const timeline = Array.isArray(data.timeline) ? data.timeline : [];
+  const channels = Array.isArray(data.channel_performance) ? data.channel_performance : [];
+  const campaigns = Array.isArray(data.power_table) ? data.power_table.slice(0, 5) : [];
+  const insights = Array.isArray(data.insights) ? data.insights.slice(0, 3) : [];
+  const conversion = toNumber(totals.leads) ? (toNumber(totals.sales_count) / Math.max(1, toNumber(totals.leads))) * 100 : 0;
+  const journey = [
+    { label: "Capturados", icon: "person_add", value: toNumber(totals.leads), tone: "lead" },
+    { label: "Activados", icon: "qr_code_2", value: toNumber(totals.qr_generated), tone: "ticket" },
+    { label: "Visitaron", icon: "qr_code_scanner", value: toNumber(totals.redemptions), tone: "redemption" },
+    { label: "Compraron", icon: "paid", value: toNumber(totals.sales_count), tone: "sale" },
+  ];
+  const score = data.revenue_score || {};
+  const range = data.filters?.startDate && data.filters?.endDate ? `${data.filters.startDate} — ${data.filters.endDate}` : "Corte actual";
+  revenueCommandSurface.innerHTML = `
+    <header class="revenue-command-hero">
+      <div class="revenue-command-hero-top"><span class="revenue-command-live"><i></i>Qori Revenue Command</span><span class="revenue-command-range">${escapeHtml(range)}</span></div>
+      <div class="revenue-command-hero-main"><div><h2>El ingreso no se mira.<br><em>Se dirige.</em></h2><p>Una sola consola para saber qué impulsa ventas, qué se está perdiendo y cuál es el siguiente movimiento.</p></div><div class="revenue-command-hero-actions"><button type="button" class="ghost-button" data-revenue-command-refresh><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar</button><button type="button" class="primary-button" data-revenue-command-route="rms-machine"><span class="material-symbols-outlined" aria-hidden="true">account_tree</span>Operar pipeline</button></div></div>
+      <div class="revenue-command-metric-ribbon"><article><small>Revenue confirmado</small><strong>${money(totals.revenue)}</strong><span>${toNumber(totals.sales_count)} ventas registradas</span></article><article><small>Ticket promedio</small><strong>${money(totals.avg_ticket)}</strong><span>por venta confirmada</span></article><article><small>ROI base comercial</small><strong>${economics.roi === null ? "—" : ratioLabel(economics.roi)}</strong><span>${economics.investment ? `${money(economics.investment)} invertidos` : "Falta inversión registrada"}</span></article><article class="is-score"><small>Índice de comando</small><strong>${toNumber(score.score)}/100</strong><span>${escapeHtml(score.status || "En lectura")}</span></article></div>
+    </header>
+    <section class="revenue-command-priority-grid">
+      <article class="revenue-command-journey-card"><header><div><span class="mono-label">Ruta de conversión</span><h3>El viaje que sí está ocurriendo</h3></div>${revenueCommandRing(conversion, "lead a venta")}</header><div class="revenue-command-journey">${journey.map((step, index) => `<div class="is-${step.tone}"><span class="material-symbols-outlined" aria-hidden="true">${step.icon}</span><small>${step.label}</small><strong>${step.value.toLocaleString("es-CO")}</strong>${index < journey.length - 1 ? `<i style="--journey-progress:${Math.max(7, Math.round((journey[index + 1].value / Math.max(1, step.value)) * 100))}%"></i>` : ""}</div>`).join("")}</div><p>El embudo se calcula con eventos reales del período, no con estimaciones de alcance.</p></article>
+      <article class="revenue-command-timeline-card"><header><div><span class="mono-label">Pulso de actividad</span><h3>Movimiento, no ruido</h3></div><span class="revenue-command-data-badge"><i></i>En vivo</span></header>${revenueAdvancedTimelineMarkup(timeline)}</article>
+    </section>
+    <section class="revenue-command-intelligence-grid">
+      <article class="revenue-command-panel revenue-command-channel-panel"><header><div><span class="mono-label">Mapa de contribución</span><h3>Qué canal trae el ingreso</h3></div><button type="button" class="ghost-button compact" data-revenue-command-route="channels">Gestionar canales <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></header>${revenueCommandChannelMap(channels)}</article>
+      <article class="revenue-command-panel revenue-command-insight-panel"><header><div><span class="mono-label">Decisiones ahora</span><h3>La lectura se convierte en acción</h3></div><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span></header><div class="revenue-command-insights">${insights.map((item) => `<article class="is-${escapeHtml(item.priority || "opportunity")}"><span class="material-symbols-outlined" aria-hidden="true">${item.priority === "risk" ? "priority_high" : item.priority === "win" ? "workspace_premium" : "lightbulb"}</span><div><strong>${escapeHtml(item.title || "Señal comercial")}</strong><p>${escapeHtml(item.explanation || item.metric || "")}</p><em>${escapeHtml(item.action || "")}</em></div></article>`).join("") || `<div class="revenue-command-empty"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span><strong>Sin alertas críticas en este corte</strong></div>`}</div></article>
+    </section>
+    <section class="revenue-command-panel revenue-command-campaign-panel"><header><div><span class="mono-label">Portafolio comercial</span><h3>Dónde poner el siguiente peso</h3><p>Resultados observados frente a la inversión registrada. Cada campaña tiene una decisión, no solo un número.</p></div><button type="button" class="primary-button" data-revenue-command-route="campaigns"><span class="material-symbols-outlined" aria-hidden="true">campaign</span>Gestionar campañas</button></header><div class="revenue-command-campaign-grid">${campaigns.map((row) => { const roi = row.roi === null || row.roi === undefined ? null : toNumber(row.roi); const decision = roi === null ? "Medir" : roi > .35 ? "Escalar" : roi < 0 ? "Corregir" : "Optimizar"; return `<article><div><small>${escapeHtml(row.campaign_status || "Campaña")}</small><strong>${escapeHtml(row.campaign_name || "Sin nombre")}</strong></div><span class="revenue-command-decision is-${decision.toLowerCase()}">${decision}</span><dl><div><dt>Revenue</dt><dd>${money(row.revenue)}</dd></div><div><dt>Ventas</dt><dd>${toNumber(row.sales)}</dd></div><div><dt>ROI</dt><dd>${roi === null ? "—" : ratioLabel(roi)}</dd></div></dl></article>`; }).join("") || `<div class="revenue-command-empty"><span class="material-symbols-outlined" aria-hidden="true">campaign</span><strong>Sin campañas atribuibles para este corte</strong><p>Crea una campaña o registra su origen para convertir actividad en lectura de revenue.</p></div>`}</div></section>
+  `;
+  return true;
+}
+
 function renderDashboardBuilder() {
   renderDashboardBusinessEconomics();
+  if (renderRevenueCommandCenter()) return;
   if (!dashboardBuilderShell || !dashboardWidgetGrid || !dashboardWidgetLibrary) return;
   dashboardBuilderShell.classList.remove("quiet-zone", "is-collapsed");
   const dashboardQuietHead = dashboardBuilderShell.querySelector(":scope > .quiet-zone-control-head");
@@ -54168,6 +54250,22 @@ dashboardTemplateGallery?.addEventListener("click", (event) => {
   setDashboardProfile(button.dataset.dashboardTemplateProfile || "marketing");
   state.dashboardLibraryFilter = "selected";
   renderDashboardBuilder();
+});
+revenueCommandSurface?.addEventListener("click", (event) => {
+  const retry = event.target.closest("[data-revenue-command-retry]");
+  if (retry) {
+    state.commandCenter = null;
+    state.commandCenterError = "";
+    loadCommandCenterData({ quiet: true });
+    return;
+  }
+  const refresh = event.target.closest("[data-revenue-command-refresh]");
+  if (refresh) {
+    refreshRevenueCenter();
+    return;
+  }
+  const route = event.target.closest("[data-revenue-command-route]");
+  if (route) openDashboardBuilderRoute(route.dataset.revenueCommandRoute);
 });
 dashboardWidgetGrid?.addEventListener("click", (event) => {
   const advancedLoadButton = event.target.closest("[data-revenue-advanced-load]");
