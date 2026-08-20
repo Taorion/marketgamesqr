@@ -3128,6 +3128,37 @@ async function listRmsPostSaleActions(businessId, filters = {}) {
   const sourceType = filters.source_type ? crmSourceType({ source_type: filters.source_type }) : null;
   const sourceId = filters.source_id || null;
   const saleId = filters.sale_id || null;
+  const lite = String(filters.lite || "").toLowerCase() === "1" || String(filters.lite || "").toLowerCase() === "true";
+  const requestedLimit = Number(filters.limit || (lite ? 48 : 120));
+  const limit = Math.min(Math.max(Number.isFinite(requestedLimit) ? Math.trunc(requestedLimit) : (lite ? 48 : 120), 1), lite ? 80 : 120);
+  const values = [businessId];
+  const where = ["a.business_id = $1"];
+  if (sourceType) {
+    values.push(sourceType);
+    where.push(`a.source_type = $${values.length}`);
+  }
+  if (sourceId) {
+    values.push(sourceId);
+    where.push(`a.source_id = $${values.length}`);
+  }
+  if (saleId) {
+    values.push(saleId);
+    where.push(`a.sale_id = $${values.length}`);
+  }
+  values.push(limit);
+  const whereSql = where.join(" and ");
+  if (lite) {
+    const result = await query(
+      `select a.*, s.product_name as sale_product_name, s.sale_amount, s.currency, s.paid_at, '[]'::json as events
+         from rms_post_sale_actions a
+         join business_sales s on s.id = a.sale_id and s.business_id = a.business_id
+        where ${whereSql}
+        order by a.updated_at desc
+        limit $${values.length}`,
+      values
+    );
+    return { actions: result.rows };
+  }
   const result = await query(
     `select a.*, s.product_name as sale_product_name, s.sale_amount, s.currency, s.paid_at,
             coalesce(json_agg(e order by e.created_at desc) filter (where e.id is not null), '[]'::json) as events
@@ -3139,14 +3170,11 @@ async function listRmsPostSaleActions(businessId, filters = {}) {
           where business_id = a.business_id and post_sale_action_id = a.id
           order by created_at desc limit 12
        ) e on true
-      where a.business_id = $1
-        and ($2::text is null or a.source_type = $2)
-        and ($3::uuid is null or a.source_id = $3)
-        and ($4::uuid is null or a.sale_id = $4)
+      where ${whereSql}
       group by a.id, s.id
       order by a.updated_at desc
-      limit 120`,
-    [businessId, sourceType, sourceId, saleId]
+      limit $${values.length}`,
+    values
   );
   return { actions: result.rows };
 }

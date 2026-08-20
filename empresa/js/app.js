@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260819-rms-post-sale-delivery-v289";
+const APP_VERSION = "empresa-20260819-rms-post-sale-fast-v290";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -49607,7 +49607,7 @@ function openRmsStation(phase = "", options = {}) {
   if (phase === "postventa") {
     // La tarjeta de Valorización debe abrir con la actividad real de la venta:
     // tickets de recompra, referidos, puntos y sellos anteriores.
-    loadRmsPostSaleActions({ force: true })
+    loadRmsPostSaleActions()
       .then(() => {
         if (state.rmsStationScreenOpen && state.rmsStationPhase === phase && state.rmsStationOpenSeq === openSeq) renderRmsStationOnly();
       })
@@ -52356,9 +52356,21 @@ function rmsPostSaleDraftFromDom(root, id) {
 }
 
 async function loadRmsPostSaleActions(options = {}) {
-  const data = await apiSafe("/api/business/rms-machine/post-sale-actions", { headers: authHeaders() }, { actions: [] });
-  state.rmsPostSaleActions = Array.isArray(data.actions) ? data.actions : [];
-  return state.rmsPostSaleActions;
+  const maxAge = 45_000;
+  const loadedAt = Number(state.rmsPostSaleActionsLoadedAt || 0);
+  if (!options.force && Array.isArray(state.rmsPostSaleActions) && Date.now() - loadedAt < maxAge) {
+    return state.rmsPostSaleActions;
+  }
+  if (state.rmsPostSaleActionsLoading) return state.rmsPostSaleActionsLoading;
+  const request = apiSafe("/api/business/rms-machine/post-sale-actions?lite=1&limit=48", { headers: authHeaders() }, { actions: [] })
+    .then((data) => {
+      state.rmsPostSaleActions = Array.isArray(data.actions) ? data.actions : [];
+      state.rmsPostSaleActionsLoadedAt = Date.now();
+      return state.rmsPostSaleActions;
+    })
+    .finally(() => { state.rmsPostSaleActionsLoading = null; });
+  state.rmsPostSaleActionsLoading = request;
+  return request;
 }
 
 function rmsIntelligenceSourceFromKey(key = "") {
