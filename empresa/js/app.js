@@ -15046,10 +15046,17 @@ function campaignValidityBadgeMarkup(campaign = {}) {
 function syncCampaignSummaryDisclosure() {
   const panel = document.getElementById("campaignSummaryPanel");
   const action = panel?.querySelector(".campaign-summary-toggle");
-  if (!panel || !action) return;
-  const icon = action.querySelector(".material-symbols-outlined");
-  action.replaceChildren(document.createTextNode(panel.open ? "Ocultar " : "Desplegar "));
-  if (icon) action.appendChild(icon);
+  if (!panel) return;
+  const isOpen = panel.open;
+  if (action) {
+    const icon = action.querySelector(".material-symbols-outlined");
+    action.replaceChildren(document.createTextNode(isOpen ? "Ocultar " : "Desplegar "));
+    if (icon) action.appendChild(icon);
+  }
+  if (campaignSummaryOpenButton) {
+    campaignSummaryOpenButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    campaignSummaryOpenButton.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${isOpen ? "expand_less" : "table_chart"}</span>${isOpen ? "Ocultar resumen" : "Ver resumen"}`;
+  }
 }
 
 function positionCampaignSummaryPanel() {
@@ -15059,12 +15066,12 @@ function positionCampaignSummaryPanel() {
   if (library.previousElementSibling !== panel) library.before(panel);
 }
 
-function openCampaignSummaryPanel() {
+function toggleCampaignSummaryPanel() {
   const panel = document.getElementById("campaignSummaryPanel");
   if (!panel) return;
-  panel.open = true;
+  panel.open = !panel.open;
   syncCampaignSummaryDisclosure();
-  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (panel.open) panel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderCampaignSummary() {
@@ -54971,7 +54978,7 @@ portalSearchResults?.addEventListener("click", (event) => {
   runPortalSearch(searchInput?.value || "", result.dataset.portalSearchView || "");
 });
 campaignStatusFilter.addEventListener("change", renderCampaignList);
-campaignSummaryOpenButton?.addEventListener("click", openCampaignSummaryPanel);
+campaignSummaryOpenButton?.addEventListener("click", toggleCampaignSummaryPanel);
 campaignSectionTabs.forEach((button) => {
   button.addEventListener("click", () => setCampaignSectionTab(button.dataset.campaignSectionTab));
 });

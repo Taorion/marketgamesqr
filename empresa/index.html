@@ -4054,7 +4054,7 @@
                 <p id="campaignHeroSubtitle" hidden></p>
               </div>
               <div class="head-actions">
-                <button class="ghost-button" id="campaignSummaryOpenButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">table_chart</span>Resumen de campañas</button>
+                <button class="ghost-button" id="campaignSummaryOpenButton" type="button" aria-controls="campaignSummaryPanel" aria-expanded="false"><span class="material-symbols-outlined" aria-hidden="true">table_chart</span>Ver resumen</button>
                 <button class="ghost-button" id="exportCampaignReportButton" type="button">Exportar Reporte</button>
                 <button class="ghost-button hidden" id="markReadyCampaignButton" type="button">Marcar lista</button>
                 <button class="solid-button" id="requestCampaignButton" type="button">Nueva campaña</button>
@@ -4078,7 +4078,7 @@
 
             <section class="kpi-grid sales-kpis" id="campaignStateGrid" data-campaign-tab-panel="analysis"></section>
 
-            <details class="campaign-summary-panel" id="campaignSummaryPanel" open>
+            <details class="campaign-summary-panel" id="campaignSummaryPanel">
               <summary>
                 <span class="material-symbols-outlined" aria-hidden="true">table_chart</span>
                 <span class="campaign-summary-copy"><strong>Resumen</strong><small>Vista rápida de todas las campañas y su vigencia</small></span>
