@@ -13366,6 +13366,14 @@ function revenueCommandPortfolioMarkup(rows = []) {
   }).join("")}</div>`;
 }
 
+function revenueCommandExploreButton(chartId, label) {
+  return `<button type="button" class="revenue-command-explore-button" data-revenue-command-focus="${escapeHtml(chartId)}" aria-label="Abrir análisis ampliado de ${escapeHtml(label)}"><span class="material-symbols-outlined" aria-hidden="true">open_in_full</span><span>Explorar</span></button>`;
+}
+
+function revenueCommandInteractiveChart(chartId, label, content) {
+  return `<div class="revenue-command-interactive-chart" data-revenue-command-focus="${escapeHtml(chartId)}" tabindex="0" role="button" aria-label="Abrir análisis ampliado de ${escapeHtml(label)}">${content}<span class="revenue-command-interactive-hint"><span class="material-symbols-outlined" aria-hidden="true">open_in_full</span>Clic para ampliar y explorar</span></div>`;
+}
+
 function renderRevenueCommandCenter() {
   if (!revenueCommandSurface) return false;
   const legacyHeader = document.querySelector('.view-section[data-view="dashboard"] > .dashboard-revenue-head');
@@ -13415,17 +13423,17 @@ function renderRevenueCommandCenter() {
       <div class="revenue-command-pro-priority-icon"><span class="material-symbols-outlined" aria-hidden="true">${priority.icon}</span></div><div><span class="mono-label">${escapeHtml(priority.eyebrow)}</span><h3>${escapeHtml(priority.title)}</h3><p>${escapeHtml(priority.description)}</p></div><button type="button" class="primary-button" data-revenue-command-route="${escapeHtml(priority.route)}">${escapeHtml(priority.action)}<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
     </section>
     <section class="revenue-command-pro-visual-grid">
-      <article class="revenue-command-pro-panel revenue-command-pro-radar-panel"><header><div><span class="mono-label">Radar de salud</span><h3>Equilibrio comercial</h3><p>Ocho dimensiones en una sola lectura.</p></div><span class="revenue-command-chart-tag">${toNumber(score.score)}/100</span></header>${revenueCommandRadarMarkup(score)}</article>
-      <article class="revenue-command-pro-panel revenue-command-pro-bars-panel"><header><div><span class="mono-label">Ranking de canales</span><h3>Revenue comparado</h3><p>Barras por ingreso atribuido.</p></div><button type="button" class="icon-button" aria-label="Gestionar canales" data-revenue-command-route="channels"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></header>${revenueCommandChannelBarsMarkup(channels)}</article>
-      <article class="revenue-command-pro-panel revenue-command-pro-waterfall-panel"><header><div><span class="mono-label">Composición del revenue</span><h3>De dónde se forma</h3><p>Distribución del ingreso confirmado.</p></div></header>${revenueCommandWaterfallMarkup(channels, totals.revenue)}</article>
+      <article class="revenue-command-pro-panel revenue-command-pro-radar-panel"><header><div><span class="mono-label">Radar de salud</span><h3>Equilibrio comercial</h3><p>Ocho dimensiones en una sola lectura.</p></div><div class="revenue-command-panel-actions">${revenueCommandExploreButton("revenue-score", "el radar de salud")}<span class="revenue-command-chart-tag">${toNumber(score.score)}/100</span></div></header>${revenueCommandInteractiveChart("revenue-score", "el radar de salud", revenueCommandRadarMarkup(score))}</article>
+      <article class="revenue-command-pro-panel revenue-command-pro-bars-panel"><header><div><span class="mono-label">Ranking de canales</span><h3>Revenue comparado</h3><p>Barras por ingreso atribuido.</p></div><div class="revenue-command-panel-actions">${revenueCommandExploreButton("channel-performance", "el ranking de canales")}<button type="button" class="icon-button" aria-label="Gestionar canales" data-revenue-command-route="channels"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></div></header>${revenueCommandInteractiveChart("channel-performance", "el ranking de canales", revenueCommandChannelBarsMarkup(channels))}</article>
+      <article class="revenue-command-pro-panel revenue-command-pro-waterfall-panel"><header><div><span class="mono-label">Composición del revenue</span><h3>De dónde se forma</h3><p>Distribución del ingreso confirmado.</p></div>${revenueCommandExploreButton("waterfall", "la composición del revenue")}</header>${revenueCommandInteractiveChart("waterfall", "la composición del revenue", revenueCommandWaterfallMarkup(channels, totals.revenue))}</article>
     </section>
-    <section class="revenue-command-pro-panel revenue-command-pro-timeline-panel"><header><div><span class="mono-label">Tendencia multiseñal</span><h3>Cómo se mueve el negocio en el tiempo</h3><p>Leads, tickets, redenciones y ventas para encontrar picos y fricción operativa.</p></div><span class="revenue-command-data-badge"><i></i>Datos del corte</span></header>${revenueAdvancedTimelineMarkup(data.timeline || [])}</section>
+    <section class="revenue-command-pro-panel revenue-command-pro-timeline-panel"><header><div><span class="mono-label">Tendencia multiseñal</span><h3>Cómo se mueve el negocio en el tiempo</h3><p>Leads, tickets, redenciones y ventas para encontrar picos y fricción operativa.</p></div><div class="revenue-command-panel-actions">${revenueCommandExploreButton("timeline", "la tendencia multiseñal")}<span class="revenue-command-data-badge"><i></i>Datos del corte</span></div></header>${revenueCommandInteractiveChart("timeline", "la tendencia multiseñal", revenueAdvancedTimelineMarkup(data.timeline || []))}</section>
     <section class="revenue-command-pro-main-grid">
-      <article class="revenue-command-pro-panel revenue-command-pro-funnel"><header><div><span class="mono-label">Flujo de conversión</span><h3>Qué avanza y dónde se corta</h3><p>Actividad del periodo: no es una cohorte y no mezcla proyecciones.</p></div>${revenueCommandRing(conversion, "lead a venta")}</header>${revenueCommandFunnelMarkup(totals)}<button type="button" class="revenue-command-text-action" data-revenue-command-route="rms-machine">Abrir oportunidades en RMS <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>
+      <article class="revenue-command-pro-panel revenue-command-pro-funnel"><header><div><span class="mono-label">Flujo de conversión</span><h3>Qué avanza y dónde se corta</h3><p>Actividad del periodo: no es una cohorte y no mezcla proyecciones.</p></div><div class="revenue-command-panel-actions">${revenueCommandExploreButton("rms-funnel", "el flujo de conversión")}${revenueCommandRing(conversion, "lead a venta")}</div></header>${revenueCommandInteractiveChart("rms-funnel", "el flujo de conversión", revenueCommandFunnelMarkup(totals))}<button type="button" class="revenue-command-text-action" data-revenue-command-route="rms-machine">Abrir oportunidades en RMS <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>
       <article class="revenue-command-pro-panel revenue-command-pro-actions"><header><div><span class="mono-label">Mesa de decisiones</span><h3>Lo que el equipo puede hacer ahora</h3></div><span class="revenue-command-data-badge"><i></i>Lectura actual</span></header><div class="revenue-command-pro-action-list">${insights.map((item) => `<article class="is-${escapeHtml(item.priority || "opportunity")}"><span class="material-symbols-outlined" aria-hidden="true">${item.priority === "risk" ? "priority_high" : item.priority === "alert" ? "warning" : item.priority === "win" ? "workspace_premium" : "lightbulb"}</span><div><strong>${escapeHtml(item.title || "Señal comercial")}</strong><p>${escapeHtml(item.explanation || item.metric || "")}</p></div><button type="button" aria-label="Operar esta señal" data-revenue-command-route="${item.priority === "win" ? "campaigns" : "rms-machine"}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>`).join("") || `<div class="revenue-command-empty"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span><strong>Sin señales urgentes en este corte</strong><p>La operación está lista para revisar eficiencia y crecimiento.</p></div>`}</div></article>
     </section>
     <section class="revenue-command-pro-intelligence-grid">
-      <article class="revenue-command-pro-panel revenue-command-pro-channels"><header><div><span class="mono-label">Contribución de canales</span><h3>De dónde viene el ingreso</h3><p>Compara impacto comercial por origen, no solo volumen.</p></div><button type="button" class="ghost-button compact" data-revenue-command-route="channels">Gestionar medios <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></header>${revenueCommandChannelMap(channels)}</article>
+      <article class="revenue-command-pro-panel revenue-command-pro-channels"><header><div><span class="mono-label">Contribución de canales</span><h3>De dónde viene el ingreso</h3><p>Compara impacto comercial por origen, no solo volumen.</p></div><div class="revenue-command-panel-actions">${revenueCommandExploreButton("channel-performance", "la contribución de canales")}<button type="button" class="ghost-button compact" data-revenue-command-route="channels">Gestionar medios <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></div></header>${revenueCommandInteractiveChart("channel-performance", "la contribución de canales", revenueCommandChannelMap(channels))}</article>
       <article class="revenue-command-pro-panel revenue-command-pro-coverage-panel">${revenueCommandCoverageMarkup(totals, economics, channels)}</article>
     </section>
     <section class="revenue-command-pro-panel revenue-command-pro-portfolio"><header><div><span class="mono-label">Portafolio comercial</span><h3>Decide dónde poner el siguiente peso</h3><p>Revenue, ventas y retorno en una lectura ordenada para escalar, optimizar, corregir o medir.</p></div><button type="button" class="primary-button" data-revenue-command-route="campaigns"><span class="material-symbols-outlined" aria-hidden="true">campaign</span>Gestionar campañas</button></header>${revenueCommandPortfolioMarkup(campaigns)}</section>
@@ -54627,6 +54635,12 @@ dashboardTemplateGallery?.addEventListener("click", (event) => {
   renderDashboardBuilder();
 });
 revenueCommandSurface?.addEventListener("click", (event) => {
+  const focus = event.target.closest("[data-revenue-command-focus]");
+  if (focus && !event.target.closest("[data-revenue-command-route]")) {
+    event.preventDefault();
+    openChartFocusMode(focus.dataset.revenueCommandFocus, {}, focus);
+    return;
+  }
   const retry = event.target.closest("[data-revenue-command-retry]");
   if (retry) {
     state.commandCenter = null;
@@ -54641,6 +54655,12 @@ revenueCommandSurface?.addEventListener("click", (event) => {
   }
   const route = event.target.closest("[data-revenue-command-route]");
   if (route) openDashboardBuilderRoute(route.dataset.revenueCommandRoute);
+});
+revenueCommandSurface?.addEventListener("keydown", (event) => {
+  const focus = event.target.closest("[data-revenue-command-focus]");
+  if (!focus || (event.key !== "Enter" && event.key !== " ")) return;
+  event.preventDefault();
+  openChartFocusMode(focus.dataset.revenueCommandFocus, {}, focus);
 });
 dashboardWidgetGrid?.addEventListener("click", (event) => {
   const advancedLoadButton = event.target.closest("[data-revenue-advanced-load]");

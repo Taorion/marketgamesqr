@@ -365,3 +365,107 @@ html body[data-current-view="dashboard"] .portal-shell .revenue-command-portfoli
   html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-metrics article { min-height:82px; }
   html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-panel::before { right:18px; left:18px; }
 }
+
+/* Revenue Command v8: cada visual abre un análisis ampliado, no una gráfica estática. */
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-panel-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-explore-button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  min-height:30px;
+  padding:0 10px;
+  border:1px solid #b9dbf1;
+  border-radius:99px;
+  background:#f4fbff;
+  color:#0759d6;
+  font:800 .63rem/1 Manrope, sans-serif;
+  letter-spacing:.01em;
+  cursor:pointer;
+  transition:transform .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-explore-button .material-symbols-outlined {
+  font-size:15px;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-explore-button:hover,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-explore-button:focus-visible {
+  outline:0;
+  transform:translateY(-1px);
+  background:#0759d6;
+  color:#fff;
+  box-shadow:0 7px 16px rgba(7,89,214,.22);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-chart {
+  position:relative;
+  min-width:0;
+  padding:5px 3px 25px;
+  border-radius:16px;
+  cursor:zoom-in;
+  transition:background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-chart::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  border:1px solid transparent;
+  border-radius:inherit;
+  pointer-events:none;
+  transition:border-color .16s ease, box-shadow .16s ease;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-chart:hover,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-chart:focus-visible {
+  outline:0;
+  transform:translateY(-2px);
+  background:linear-gradient(145deg,rgba(228,245,255,.72),rgba(255,255,255,.82));
+  box-shadow:0 12px 22px rgba(5,72,150,.09);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-chart:hover::after,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-chart:focus-visible::after {
+  border-color:#72c9ed;
+  box-shadow:0 0 0 3px rgba(17,157,214,.1);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-hint {
+  position:absolute;
+  right:10px;
+  bottom:5px;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  color:#4f789b;
+  font:800 .58rem/1 Manrope, sans-serif;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  opacity:.76;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-hint .material-symbols-outlined {
+  font-size:14px;
+  color:#0759d6;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-chart:hover .revenue-command-interactive-hint,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-chart:focus-visible .revenue-command-interactive-hint {
+  color:#0759d6;
+  opacity:1;
+}
+
+@media (max-width:720px) {
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-panel-actions { justify-content:flex-start; }
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-explore-button { min-height:34px; padding:0 12px; }
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-chart { padding-bottom:29px; }
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-interactive-hint { left:9px; right:auto; bottom:7px; }
+}
