@@ -116,3 +116,252 @@ html body[data-current-view="dashboard"] .portal-shell .revenue-command-waterfal
 html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-timeline-panel .revenue-advanced-legend { margin-bottom:9px !important; }.revenue-command-pro-timeline-panel .revenue-advanced-chart-wrap { border:1px solid #e0edf8 !important; border-radius:16px !important; background:#fff !important; }.revenue-command-pro-timeline-panel .revenue-advanced-linechart { min-height:285px !important; }
 @media (max-width:1180px) { html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-visual-grid { grid-template-columns:1fr 1fr !important; }.revenue-command-pro-waterfall-panel { grid-column:1/-1 !important; }.revenue-command-waterfall { max-width:650px !important; } }
 @media (max-width:720px) { html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-visual-grid { grid-template-columns:1fr !important; }.revenue-command-pro-waterfall-panel { grid-column:auto !important; }.revenue-command-radar { grid-template-columns:1fr !important; }.revenue-command-radar svg { height:260px !important; }.revenue-command-radar-legend { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }.revenue-command-channel-bars article { grid-template-columns:minmax(96px,.8fr) minmax(55px,1fr) !important; }.revenue-command-bar-value { grid-column:2 !important; }.revenue-command-waterfall { gap:5px !important; }.revenue-command-waterfall strong { font-size:.53rem !important; } }
+
+/* Revenue Command v7: contraste alto y una sala de mando más legible. */
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero {
+  position:relative !important;
+  isolation:isolate;
+  border:1px solid rgba(155, 235, 255, .28) !important;
+  background:
+    radial-gradient(circle at 84% 14%, rgba(82, 243, 255, .42), transparent 23%),
+    radial-gradient(circle at 3% 96%, rgba(66, 126, 255, .54), transparent 38%),
+    linear-gradient(132deg, #021033 0%, #063991 54%, #0578c7 100%) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero::before,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero::after {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  border-radius:50%;
+  pointer-events:none;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero::before {
+  width:280px;
+  height:280px;
+  top:-150px;
+  right:14%;
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:0 0 0 35px rgba(255,255,255,.035), 0 0 0 70px rgba(255,255,255,.02);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero::after {
+  width:180px;
+  height:180px;
+  bottom:-110px;
+  left:30%;
+  background:rgba(23, 218, 255, .1);
+  filter:blur(10px);
+}
+
+/* Todo texto sobre azul se mantiene blanco: no hay etiquetas de bajo contraste. */
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .mono-label,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-live,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-range,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-northstar small,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-northstar span,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-metrics small,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-metrics em,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-metrics strong,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-title p,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .ghost-button,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-channel-map article :is(small, strong, span) {
+  color:#ffffff !important;
+  opacity:1 !important;
+  text-shadow:0 1px 1px rgba(0, 20, 68, .28);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-live i {
+  background:#ffffff !important;
+  box-shadow:0 0 0 5px rgba(255,255,255,.18), 0 0 18px rgba(126,245,255,.94) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-top {
+  min-height:38px;
+  padding-bottom:14px;
+  border-bottom:1px solid rgba(255,255,255,.16);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-range {
+  padding:7px 11px !important;
+  border-color:rgba(255,255,255,.42) !important;
+  background:rgba(1,16,61,.26) !important;
+  font-weight:800 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .ghost-button {
+  min-height:38px !important;
+  border-color:rgba(255,255,255,.48) !important;
+  background:rgba(255,255,255,.14) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .ghost-button:hover {
+  background:rgba(255,255,255,.24) !important;
+  transform:translateY(-1px);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-title h2 {
+  max-width:760px !important;
+  text-shadow:0 6px 24px rgba(0, 17, 67, .34);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-title h2 em {
+  color:#bff7ff !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-northstar {
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(255,255,255,.34) !important;
+  background:linear-gradient(145deg, rgba(3, 25, 85, .56), rgba(10, 161, 213, .2)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 12px 26px rgba(1,19,70,.18);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-northstar::after {
+  content:"";
+  position:absolute;
+  inset:auto -16px -26px auto;
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  background:rgba(115,239,255,.17);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-northstar strong {
+  position:relative;
+  z-index:1;
+  font-size:clamp(2.4rem, 4vw, 3.15rem) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-metrics article {
+  position:relative;
+  overflow:hidden;
+  min-height:88px;
+  border-color:rgba(255,255,255,.28) !important;
+  background:linear-gradient(145deg, rgba(255,255,255,.19), rgba(255,255,255,.075)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 10px 22px rgba(1,25,82,.13);
+  transition:transform .18s ease, background .18s ease, border-color .18s ease;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-metrics article::after {
+  content:"";
+  position:absolute;
+  right:-18px;
+  bottom:-22px;
+  width:70px;
+  height:70px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:50%;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-metrics article:hover {
+  transform:translateY(-3px);
+  border-color:rgba(195,249,255,.72) !important;
+  background:linear-gradient(145deg, rgba(255,255,255,.28), rgba(255,255,255,.12)) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-metrics article > .material-symbols-outlined {
+  color:#ffffff !important;
+  background:rgba(255,255,255,.2) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+}
+
+/* Las superficies de análisis dejan de ser planas: se leen como bloques de comando. */
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-panel {
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(24, 102, 191, .2) !important;
+  background:linear-gradient(145deg, #ffffff 0%, #f4faff 100%) !important;
+  box-shadow:0 15px 34px rgba(1, 47, 119, .075), inset 0 1px 0 #ffffff !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-panel::before {
+  content:"";
+  position:absolute;
+  top:0;
+  right:30px;
+  left:30px;
+  height:3px;
+  border-radius:0 0 999px 999px;
+  background:linear-gradient(90deg, transparent, #17c5df 30%, #0759d6 68%, transparent);
+  opacity:.76;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-panel > header {
+  position:relative;
+  z-index:1;
+  padding-bottom:13px;
+  border-bottom:1px solid #e0edf8;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-panel > header p,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-panel .revenue-command-coverage > p {
+  color:#456987 !important;
+  font-size:.74rem !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-panel .mono-label {
+  display:inline-flex;
+  align-items:center;
+  min-height:22px;
+  padding:3px 7px;
+  border-radius:999px;
+  background:#e8f4ff;
+  color:#0759d6 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-chart-tag,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-data-badge {
+  border:1px solid #b8ddf5;
+  box-shadow:0 4px 12px rgba(7,89,214,.08);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-action-list article {
+  border-color:#d8e9f7 !important;
+  box-shadow:0 4px 12px rgba(7,89,214,.035);
+  transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-action-list article:hover {
+  transform:translateX(3px);
+  border-color:#78cde9 !important;
+  box-shadow:0 9px 20px rgba(7,89,214,.09);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-channel-map article {
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.25);
+  box-shadow:0 10px 20px rgba(1,43,112,.16);
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-channel-map article::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(145deg, rgba(255,255,255,.16), transparent 42%);
+  pointer-events:none;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-channel-map article > * { position:relative; z-index:1; }
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-portfolio-list article {
+  position:relative;
+  padding:15px 10px !important;
+  border-radius:13px;
+  transition:background .16s ease, transform .16s ease;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-portfolio-list article:hover {
+  transform:translateX(3px);
+  background:#eaf7ff;
+}
+
+@media (max-width:720px) {
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-top { align-items:flex-start !important; }
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-top .revenue-command-range { order:3; width:max-content; }
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-metrics article { min-height:82px; }
+  html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-panel::before { right:18px; left:18px; }
+}
