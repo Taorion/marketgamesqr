@@ -165,6 +165,28 @@ const ownerCampaignSchema = z.object({
 
 const ownerCampaignPatchSchema = ownerCampaignSchema.partial();
 
+function assertCampaignOperationalReadiness(campaign = {}) {
+  const status = String(campaign.status || "DRAFT").toUpperCase();
+  if (!["ACTIVE", "SCHEDULED"].includes(status)) return;
+  const startsAt = campaign.starts_at ? new Date(campaign.starts_at) : null;
+  const endsAt = campaign.ends_at ? new Date(campaign.ends_at) : null;
+  if (!String(campaign.objective || "").trim()) {
+    throw badRequest("Antes de activar o programar la campaña, define el objetivo comercial.");
+  }
+  if (!startsAt || Number.isNaN(startsAt.getTime()) || !endsAt || Number.isNaN(endsAt.getTime())) {
+    throw badRequest("Antes de activar o programar la campaña, define fecha de inicio y cierre.");
+  }
+  if (endsAt <= startsAt) {
+    throw badRequest("La fecha de cierre debe ser posterior a la fecha de inicio.");
+  }
+  if (Number(campaign.budget_total || 0) <= 0) {
+    throw badRequest("Antes de activar o programar la campaña, registra una inversión mayor que cero.");
+  }
+  if (!Array.isArray(campaign.launch_channels) || !campaign.launch_channels.length) {
+    throw badRequest("Antes de activar o programar la campaña, selecciona al menos un canal.");
+  }
+}
+
 const salesSnapshotSchema = z.object({
   period_type: z.enum(["BEFORE", "DURING", "AFTER"]),
   start_date: z.string().date(),
@@ -4315,6 +4337,7 @@ async function createCampaign(req, res, next) {
       body.launch_channels || []
     ));
     const launchChannelNames = launchChannelRefs.map((channel) => channel.name_snapshot).filter(Boolean);
+    assertCampaignOperationalReadiness({ ...body, launch_channels: launchChannelNames });
 
     const result = await query(
       `insert into campaigns
@@ -4364,7 +4387,7 @@ async function updateCampaign(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     await assertFeatureForRequest(req, businessId, "campaign_reports");
-    await requireCampaignForBusiness(req.params.id, businessId);
+    const current = await requireCampaignForBusiness(req.params.id, businessId);
     const body = validate(ownerCampaignPatchSchema, req.body);
     const hasLaunchChannels = Object.prototype.hasOwnProperty.call(body, "launch_channels")
       || Object.prototype.hasOwnProperty.call(body, "launch_channel_refs");
@@ -4372,6 +4395,15 @@ async function updateCampaign(req, res, next) {
       ? await withTransaction((client) => resolveCampaignChannelReferences(client, businessId, body.launch_channel_refs, body.launch_channels || []))
       : null;
     const launchChannelNames = launchChannelRefs ? launchChannelRefs.map((channel) => channel.name_snapshot).filter(Boolean) : null;
+    assertCampaignOperationalReadiness({
+      ...current,
+      ...body,
+      objective: body.objective ?? current.objective,
+      starts_at: body.starts_at ?? current.starts_at,
+      ends_at: body.ends_at ?? current.ends_at,
+      budget_total: body.budget_total ?? current.budget_total,
+      launch_channels: launchChannelNames ?? current.launch_channels,
+    });
     const deliveredAssets = Object.prototype.hasOwnProperty.call(body, "delivered_assets")
       ? JSON.stringify(body.delivered_assets || {})
       : null;
@@ -4524,12 +4556,9 @@ async function confirmLaunch(req, res, next) {
     const current = await requireCampaignForBusiness(req.params.id, businessId);
     assertClientSetupEditable(current.status);
 
-    if (!current.budget_total || !current.starts_at || !current.ends_at || !Array.isArray(current.launch_channels) || !current.launch_channels.length) {
-      throw badRequest("The campaign still needs budget, dates, and launch channels before launch confirmation.");
-    }
-
     const startsAt = new Date(current.starts_at);
     const nextStatus = startsAt <= new Date() ? "ACTIVE" : "SCHEDULED";
+    assertCampaignOperationalReadiness({ ...current, status: nextStatus });
     const activatedAt = nextStatus === "ACTIVE" ? new Date().toISOString() : null;
     const result = await query(
       `update campaigns

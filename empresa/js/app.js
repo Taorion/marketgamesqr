@@ -15006,6 +15006,115 @@ function campaignQoriCenterCss() {
       body[data-current-view="campaigns"] .portal-shell .campaign-insights-toolbar select { width: 100% !important; }
       body[data-current-view="campaigns"] .portal-shell .campaign-insights-grid { grid-template-columns: 1fr !important; }
     }
+
+    /* Campaign command center v311: visible planning tools and launch readiness. */
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-hero-actions {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 8px !important;
+      align-self: start !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-hero-actions > button {
+      min-width: 0 !important;
+      min-height: 44px !important;
+      justify-content: center !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-hero-actions > .solid-button {
+      grid-column: 1 / -1 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness {
+      display: grid !important;
+      gap: 10px !important;
+      padding: 14px !important;
+      border: 1px solid rgba(5, 42, 107, .12) !important;
+      border-radius: 16px !important;
+      background: linear-gradient(145deg, #f8fbff, #eef6ff) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness.is-ready {
+      border-color: rgba(0, 168, 120, .26) !important;
+      background: linear-gradient(145deg, #f5fffb, #eafff6) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-head {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-head > div {
+      display: grid !important;
+      gap: 3px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-head > span {
+      color: #0759d6 !important;
+      font-size: 1rem !important;
+      font-weight: 900 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-track {
+      height: 7px !important;
+      overflow: hidden !important;
+      border-radius: 999px !important;
+      background: rgba(5, 42, 107, .1) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-track > i {
+      display: block !important;
+      height: 100% !important;
+      border-radius: inherit !important;
+      background: linear-gradient(90deg, #0759d6, #00bfe5) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness.is-ready .campaign-premium-readiness-track > i {
+      background: linear-gradient(90deg, #008f67, #18c993) !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-list {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 7px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-list > span {
+      min-width: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      color: #53677f !important;
+      font-size: .72rem !important;
+      font-weight: 800 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-list > span > i {
+      color: #9aacc0 !important;
+      font-size: 17px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-list > .is-ready,
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-list > .is-ready > i {
+      color: #008f67 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-alert {
+      display: flex !important;
+      align-items: flex-start !important;
+      gap: 7px !important;
+      margin: 0 !important;
+      padding: 9px 10px !important;
+      border-radius: 10px !important;
+      background: #fff5df !important;
+      color: #8a5a00 !important;
+      font-size: .72rem !important;
+      font-weight: 800 !important;
+      line-height: 1.35 !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-alert .material-symbols-outlined {
+      font-size: 18px !important;
+    }
+    body[data-current-view="campaigns"] .portal-shell .campaign-premium-detail-footer > div {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-end !important;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+    }
+    @media (max-width: 760px) {
+      body[data-current-view="campaigns"] .portal-shell .campaign-premium-hero-actions,
+      body[data-current-view="campaigns"] .portal-shell .campaign-premium-readiness-list { grid-template-columns: 1fr !important; }
+      body[data-current-view="campaigns"] .portal-shell .campaign-premium-detail-footer > div,
+      body[data-current-view="campaigns"] .portal-shell .campaign-premium-detail-footer > div > button { width: 100% !important; }
+    }
   `;
 }
 
@@ -15183,6 +15292,7 @@ function openCampaignInterstitial(campaign = state.selectedCampaign) {
     <div class="modal-card campaign-interstitial-card">
       <div class="modal-head"><div><span class="mono-label">Campaña</span><h3>${escapeHtml(campaign.name || "Campaña")}</h3></div><button class="icon-button" type="button" data-close-campaign-interstitial aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button></div>
       <p class="table-secondary">${escapeHtml(campaign.objective || campaign.strategy_summary || "Sin objetivo cargado.")}</p>
+      ${campaignReadinessChecklistMarkup(campaign)}
       <section class="campaign-interstitial-summary" aria-label="Resumen de rendimiento">
         <div class="campaign-interstitial-metrics"><div><span>Leads</span><strong>${leads.toLocaleString("es-CO")}</strong></div><div><span>Tickets</span><strong>${tickets.toLocaleString("es-CO")}</strong></div><div><span>Redenciones</span><strong>${redemptions.toLocaleString("es-CO")}</strong></div><div><span>Ventas</span><strong>${sales.toLocaleString("es-CO")}</strong></div><div><span>Revenue</span><strong>${escapeHtml(money(revenue))}</strong></div><div><span>ROI</span><strong>${escapeHtml(ratioLabel(campaign.estimated_roi))}</strong></div></div>
         <div class="campaign-performance-grid">
@@ -15242,6 +15352,49 @@ function campaignPremiumActivationCount(campaignId) {
   return rows.filter((activation) => String(activation.campaign_id || "") === String(campaignId || "")).length;
 }
 
+function campaignOperationalReadiness(campaign = {}) {
+  const activations = campaignPremiumActivationCount(campaign.id);
+  const startsAt = campaign.starts_at ? new Date(campaign.starts_at).getTime() : 0;
+  const endsAt = campaign.ends_at ? new Date(campaign.ends_at).getTime() : 0;
+  const assets = campaign.delivered_assets || {};
+  const checks = [
+    { key: "objective", label: "Objetivo comercial", ready: Boolean(String(campaign.objective || "").trim()), action: "edit" },
+    { key: "dates", label: "Vigencia definida", ready: Boolean(startsAt && endsAt && endsAt > startsAt), action: "edit" },
+    { key: "channels", label: "Canales seleccionados", ready: Array.isArray(campaign.launch_channels) && campaign.launch_channels.length > 0, action: "edit" },
+    { key: "budget", label: "Inversión registrada", ready: toNumber(campaign.budget_total) > 0, action: "calculator" },
+    { key: "activation", label: "Experiencia conectada", ready: activations > 0 || Boolean(assets.primary_link || assets.landing_url || assets.game_url), action: "activation" },
+  ];
+  const complete = checks.filter((check) => check.ready).length;
+  const missing = checks.filter((check) => !check.ready);
+  const operationalStatus = ["ACTIVE", "SCHEDULED"].includes(String(campaign.status || "").toUpperCase());
+  return {
+    checks,
+    complete,
+    total: checks.length,
+    percent: Math.round((complete / checks.length) * 100),
+    missing,
+    ready: missing.length === 0,
+    inconsistent: operationalStatus && missing.length > 0,
+    nextAction: missing[0]?.action || "activation",
+  };
+}
+
+function campaignReadinessChecklistMarkup(campaign = {}) {
+  const readiness = campaignOperationalReadiness(campaign);
+  return `
+    <section class="campaign-premium-readiness ${readiness.ready ? "is-ready" : ""}">
+      <div class="campaign-premium-readiness-head">
+        <div><span class="mono-label">Preparación operativa</span><strong>${readiness.ready ? "Lista para operar" : `${readiness.complete} de ${readiness.total} condiciones listas`}</strong></div>
+        <span>${readiness.percent}%</span>
+      </div>
+      <div class="campaign-premium-readiness-track" aria-label="Preparación ${readiness.percent}%"><i style="width:${readiness.percent}%"></i></div>
+      <div class="campaign-premium-readiness-list">
+        ${readiness.checks.map((check) => `<span class="${check.ready ? "is-ready" : "is-pending"}"><i class="material-symbols-outlined" aria-hidden="true">${check.ready ? "check_circle" : "radio_button_unchecked"}</i>${escapeHtml(check.label)}</span>`).join("")}
+      </div>
+      ${readiness.inconsistent ? '<p class="campaign-premium-readiness-alert"><span class="material-symbols-outlined" aria-hidden="true">warning</span>Esta campaña figura activa, pero aún tiene condiciones de lanzamiento pendientes.</p>' : ""}
+    </section>`;
+}
+
 function ensureCampaignPremiumActivationIndex() {
   if (!session?.user?.business_id || state.campaignPremiumActivationsLoading || state.campaignPremiumActivationsLoaded) return;
   state.campaignPremiumActivationsLoading = true;
@@ -15286,11 +15439,19 @@ function ensureCampaignPremiumWorkspace() {
         renderCampaignPremiumWorkspace();
       }
     });
-    workspace.addEventListener("click", (event) => {
+    workspace.addEventListener("click", async (event) => {
+      const operation = event.target.closest("[data-campaign-premium-operation]");
       const select = event.target.closest("[data-campaign-premium-select]");
       const action = event.target.closest("[data-campaign-premium-action]");
+      if (operation?.dataset.campaignPremiumOperation) {
+        await selectCampaign(operation.dataset.campaignPremiumOperation);
+        if (String(state.selectedCampaign?.id || "") === String(operation.dataset.campaignPremiumOperation)) {
+          openCampaignInterstitial(state.selectedCampaign);
+        }
+        return;
+      }
       if (select?.dataset.campaignPremiumSelect) {
-        selectCampaign(select.dataset.campaignPremiumSelect);
+        await selectCampaign(select.dataset.campaignPremiumSelect);
         return;
       }
       if (!action) return;
@@ -15298,6 +15459,15 @@ function ensureCampaignPremiumWorkspace() {
       if (kind === "create") requestCampaignButton?.click();
       if (kind === "edit") editCampaignButton?.click();
       if (kind === "export") exportCampaignReportButton?.click();
+      if (kind === "assistant") openStrategyWizard({ fromScratch: true });
+      if (kind === "calculator") {
+        openCampaignModal(state.selectedCampaign ? "edit" : "create");
+        document.getElementById("campaignCalculatorEntryButton")?.click();
+      }
+      if (kind === "activation") {
+        setView("strategic-qr");
+        showFeedback("Crea o selecciona una activación y asóciala a la campaña elegida.", "info", { title: "Conectar experiencia" });
+      }
       if (kind === "table") {
         state.campaignPremiumTableOpen = !state.campaignPremiumTableOpen;
         renderCampaignPremiumWorkspace();
@@ -15324,6 +15494,7 @@ function renderCampaignPremiumWorkspace() {
   const revenue = campaigns.reduce((sum, campaign) => sum + toNumber(campaign.attributed_revenue), 0);
   const roi = investment ? (revenue - investment) / investment : null;
   const selectedValidity = selected ? campaignValidityState(selected) : null;
+  const selectedReadiness = selected ? campaignOperationalReadiness(selected) : null;
   const selectedActivations = selected ? campaignPremiumActivationCount(selected.id) : 0;
   const selectedLeads = selected ? toNumber(selected.total_leads) : 0;
   const selectedTickets = selected ? toNumber(selected.total_qr_generated) : 0;
@@ -15342,29 +15513,29 @@ function renderCampaignPremiumWorkspace() {
     const campaignRoi = campaignBudget ? (campaignRevenue - campaignBudget) / campaignBudget : null;
     return `<button type="button" class="campaign-premium-row ${isSelected ? "is-selected" : ""}" data-campaign-premium-select="${escapeHtml(campaign.id)}">
       <span class="campaign-premium-row-mark"><i></i>${escapeHtml(validity.label)}</span>
-      <span class="campaign-premium-row-title"><strong>${escapeHtml(campaign.name || "Campana sin nombre")}</strong><small>${escapeHtml(campaign.objective || "Sin objetivo definido")}</small></span>
+      <span class="campaign-premium-row-title"><strong>${escapeHtml(campaign.name || "Campaña sin nombre")}</strong><small>${escapeHtml(campaign.objective || "Sin objetivo definido")}</small></span>
       <span class="campaign-premium-row-value"><small>Revenue</small><strong>${escapeHtml(money(campaignRevenue))}</strong></span>
-      <span class="campaign-premium-row-value"><small>ROI</small><strong>${escapeHtml(campaignRoi === null ? "Sin inversion" : ratioLabel(campaignRoi))}</strong></span>
+      <span class="campaign-premium-row-value"><small>ROI</small><strong>${escapeHtml(campaignRoi === null ? "Sin inversión" : ratioLabel(campaignRoi))}</strong></span>
       <span class="campaign-premium-row-arrow material-symbols-outlined" aria-hidden="true">arrow_forward</span>
     </button>`;
-  }).join("") || `<div class="campaign-premium-empty"><span class="material-symbols-outlined" aria-hidden="true">campaign</span><strong>No hay campanas en esta vista.</strong><p>Cambia el filtro o crea una nueva campana para empezar a medir.</p></div>`;
+  }).join("") || `<div class="campaign-premium-empty"><span class="material-symbols-outlined" aria-hidden="true">campaign</span><strong>No hay campañas en esta vista.</strong><p>Cambia el filtro o crea una nueva campaña para empezar a medir.</p></div>`;
   const tableRows = campaigns.map((campaign) => {
     const validity = campaignValidityState(campaign);
     const campaignRevenue = toNumber(campaign.attributed_revenue);
     const campaignBudget = toNumber(campaign.budget_total);
     const campaignRoi = campaignBudget ? (campaignRevenue - campaignBudget) / campaignBudget : null;
-    return `<tr><td><button type="button" data-campaign-premium-select="${escapeHtml(campaign.id)}">${escapeHtml(campaign.name || "Campana sin nombre")}</button></td><td><span class="campaign-premium-status is-${escapeHtml(validity.key)}">${escapeHtml(validity.label)}</span></td><td>${escapeHtml(validity.dateRange)}</td><td>${campaignPremiumActivationCount(campaign.id)}</td><td>${toNumber(campaign.total_leads).toLocaleString("es-CO")}</td><td>${toNumber(campaign.total_qr_generated).toLocaleString("es-CO")}</td><td>${toNumber(campaign.direct_sales_count || campaign.attributed_sales_count).toLocaleString("es-CO")}</td><td>${escapeHtml(money(campaignBudget))}</td><td>${escapeHtml(money(campaignRevenue))}</td><td>${escapeHtml(campaignRoi === null ? "—" : ratioLabel(campaignRoi))}</td></tr>`;
-  }).join("") || '<tr><td colspan="10">No hay campanas creadas.</td></tr>';
+    return `<tr><td><button type="button" data-campaign-premium-select="${escapeHtml(campaign.id)}">${escapeHtml(campaign.name || "Campaña sin nombre")}</button></td><td><span class="campaign-premium-status is-${escapeHtml(validity.key)}">${escapeHtml(validity.label)}</span></td><td>${escapeHtml(validity.dateRange)}</td><td>${campaignPremiumActivationCount(campaign.id)}</td><td>${toNumber(campaign.total_leads).toLocaleString("es-CO")}</td><td>${toNumber(campaign.total_qr_generated).toLocaleString("es-CO")}</td><td>${toNumber(campaign.direct_sales_count || campaign.attributed_sales_count).toLocaleString("es-CO")}</td><td>${escapeHtml(money(campaignBudget))}</td><td>${escapeHtml(money(campaignRevenue))}</td><td>${escapeHtml(campaignRoi === null ? "—" : ratioLabel(campaignRoi))}</td></tr>`;
+  }).join("") || '<tr><td colspan="10">No hay campañas creadas.</td></tr>';
 
   workspace.innerHTML = `
     <section class="campaign-premium-hero">
-      <div class="campaign-premium-hero-copy"><span class="mono-label">Qori GOS · Campanas</span><h3>Portafolio comercial<br><em>para decidir y operar.</em></h3><p>Una sola vista para saber que esta activa, que requiere intervencion y donde esta regresando el dinero.</p></div>
-      <div class="campaign-premium-hero-actions"><button type="button" class="solid-button" data-campaign-premium-action="create"><span class="material-symbols-outlined" aria-hidden="true">add</span>Nueva campana</button><button type="button" class="ghost-button" data-campaign-premium-action="export"><span class="material-symbols-outlined" aria-hidden="true">download</span>Exportar</button></div>
-      <div class="campaign-premium-metrics"><article><span>Portafolio</span><strong>${campaigns.length}</strong><small>${active.length} activas ahora</small></article><article><span>Inversion</span><strong>${escapeHtml(money(investment))}</strong><small>presupuesto registrado</small></article><article><span>Revenue atribuido</span><strong>${escapeHtml(money(revenue))}</strong><small>${campaigns.reduce((sum, campaign) => sum + toNumber(campaign.direct_sales_count || campaign.attributed_sales_count), 0)} ventas confirmadas</small></article><article><span>ROI de cartera</span><strong>${escapeHtml(roi === null ? "—" : ratioLabel(roi))}</strong><small>${roi === null ? "registra inversion para medir" : "retorno sobre inversion"}</small></article></div>
+      <div class="campaign-premium-hero-copy"><span class="mono-label">Qori GOS · Campañas</span><h3>Portafolio comercial<br><em>para decidir y operar.</em></h3><p>Diseña la estrategia, prepara la experiencia y lee el retorno desde un solo centro de control.</p></div>
+      <div class="campaign-premium-hero-actions"><button type="button" class="solid-button" data-campaign-premium-action="assistant"><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>Diseñar con asistente</button><button type="button" class="ghost-button" data-campaign-premium-action="create"><span class="material-symbols-outlined" aria-hidden="true">add</span>Creación manual</button><button type="button" class="ghost-button" data-campaign-premium-action="calculator"><span class="material-symbols-outlined" aria-hidden="true">calculate</span>Calcular viabilidad</button><button type="button" class="ghost-button" data-campaign-premium-action="export"><span class="material-symbols-outlined" aria-hidden="true">download</span>Exportar</button></div>
+      <div class="campaign-premium-metrics"><article><span>Portafolio</span><strong>${campaigns.length}</strong><small>${active.length} activas ahora</small></article><article><span>Inversión</span><strong>${escapeHtml(money(investment))}</strong><small>presupuesto registrado</small></article><article><span>Revenue atribuido</span><strong>${escapeHtml(money(revenue))}</strong><small>${campaigns.reduce((sum, campaign) => sum + toNumber(campaign.direct_sales_count || campaign.attributed_sales_count), 0)} ventas confirmadas</small></article><article><span>ROI de cartera</span><strong>${escapeHtml(roi === null ? "—" : ratioLabel(roi))}</strong><small>${roi === null ? "registra inversión para medir" : "retorno sobre inversión"}</small></article></div>
     </section>
-    <section class="campaign-premium-toolbar"><label><span class="material-symbols-outlined" aria-hidden="true">search</span><input data-campaign-premium-search type="search" value="${escapeHtml(state.campaignPremiumSearch || "")}" placeholder="Buscar por campana, objetivo o canal"></label><select data-campaign-premium-status aria-label="Filtrar campanas"><option value="ALL" ${filter === "ALL" ? "selected" : ""}>Todas las campanas</option><option value="active" ${filter === "active" ? "selected" : ""}>Activas</option><option value="scheduled" ${filter === "scheduled" ? "selected" : ""}>Programadas</option><option value="paused" ${filter === "paused" ? "selected" : ""}>Pausadas</option><option value="draft" ${filter === "draft" ? "selected" : ""}>Borradores</option><option value="ended" ${filter === "ended" ? "selected" : ""}>Finalizadas</option></select><button type="button" class="ghost-button" data-campaign-premium-action="table"><span class="material-symbols-outlined" aria-hidden="true">table_chart</span>${tableOpen ? "Ocultar tabla" : "Tabla operativa"}</button></section>
-    <section class="campaign-premium-command-grid"><div class="campaign-premium-list"><header><div><span class="mono-label">Cartera de campanas</span><strong>${filtered.length} para revisar</strong></div><small>Selecciona una para abrir su lectura comercial.</small></header><div class="campaign-premium-rows">${rows}</div></div><aside class="campaign-premium-detail ${selected ? "" : "is-empty"}">${selected ? `<div class="campaign-premium-detail-head"><div><span class="campaign-premium-status is-${escapeHtml(selectedValidity.key)}">${escapeHtml(selectedValidity.label)}</span><h4>${escapeHtml(selected.name || "Campana sin nombre")}</h4><p>${escapeHtml(selected.objective || selected.strategy_summary || "Define el objetivo comercial de esta campana.")}</p></div><button type="button" class="icon-button" data-campaign-premium-action="edit" aria-label="Editar campana"><span class="material-symbols-outlined" aria-hidden="true">edit</span></button></div><div class="campaign-premium-detail-meta"><span><i class="material-symbols-outlined" aria-hidden="true">calendar_month</i>${escapeHtml(selectedValidity.detail)}</span><span><i class="material-symbols-outlined" aria-hidden="true">hub</i>${escapeHtml(launchChannelsLabel(selected.launch_channels) || "Canal por definir")}</span></div><div class="campaign-premium-funnel"><div><span>Leads</span><strong>${selectedLeads}</strong><i style="--fill:100%"></i></div><div><span>Tickets</span><strong>${selectedTickets}</strong><i style="--fill:${Math.min(100, selectedLeads ? Math.round(selectedTickets / selectedLeads * 100) : 0)}%"></i></div><div><span>Redenciones</span><strong>${selectedRedemptions}</strong><i style="--fill:${Math.min(100, selectedTickets ? Math.round(selectedRedemptions / selectedTickets * 100) : 0)}%"></i></div><div><span>Ventas</span><strong>${selectedSales}</strong><i style="--fill:${Math.min(100, selectedLeads ? Math.round(selectedSales / selectedLeads * 100) : 0)}%"></i></div></div><div class="campaign-premium-detail-kpis"><span><small>Inversion</small><strong>${escapeHtml(money(selectedBudget))}</strong></span><span><small>Revenue</small><strong>${escapeHtml(money(selectedRevenue))}</strong></span><span><small>ROI</small><strong>${escapeHtml(selectedRoi === null ? "—" : ratioLabel(selectedRoi))}</strong></span><span><small>Activaciones</small><strong>${selectedActivations}</strong></span></div><div class="campaign-premium-detail-footer"><span>${selectedReportLoaded ? "Lectura actualizada con actividad real." : "Selecciona la campana para cargar su lectura completa."}</span><button type="button" class="ghost-button compact" data-campaign-premium-select="${escapeHtml(selected.id)}">Ver operacion<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></div>` : `<span class="material-symbols-outlined" aria-hidden="true">campaign</span><strong>Selecciona una campana</strong><p>Abriremos sus indicadores, activos y operacion desde este panel.</p>`}</aside></section>
-    <section class="campaign-premium-table ${tableOpen ? "is-open" : ""}" ${tableOpen ? "" : "hidden"}><header><div><span class="mono-label">Resumen operativo</span><h4>Una fila por campana</h4></div><small>Fechas, activaciones, embudo, inversion y retorno.</small></header><div class="table-wrap"><table><thead><tr><th>Campana</th><th>Estado</th><th>Vigencia</th><th>Activ.</th><th>Leads</th><th>Tickets</th><th>Ventas</th><th>Inversion</th><th>Revenue</th><th>ROI</th></tr></thead><tbody>${tableRows}</tbody></table></div></section>`;
+    <section class="campaign-premium-toolbar"><label><span class="material-symbols-outlined" aria-hidden="true">search</span><input data-campaign-premium-search type="search" value="${escapeHtml(state.campaignPremiumSearch || "")}" placeholder="Buscar por campaña, objetivo o canal"></label><select data-campaign-premium-status aria-label="Filtrar campañas"><option value="ALL" ${filter === "ALL" ? "selected" : ""}>Todas las campañas</option><option value="active" ${filter === "active" ? "selected" : ""}>Activas</option><option value="scheduled" ${filter === "scheduled" ? "selected" : ""}>Programadas</option><option value="paused" ${filter === "paused" ? "selected" : ""}>Pausadas</option><option value="draft" ${filter === "draft" ? "selected" : ""}>Borradores</option><option value="ended" ${filter === "ended" ? "selected" : ""}>Finalizadas</option></select><button type="button" class="ghost-button" data-campaign-premium-action="table"><span class="material-symbols-outlined" aria-hidden="true">table_chart</span>${tableOpen ? "Ocultar tabla" : "Tabla operativa"}</button></section>
+    <section class="campaign-premium-command-grid"><div class="campaign-premium-list"><header><div><span class="mono-label">Cartera de campañas</span><strong>${filtered.length} para revisar</strong></div><small>Selecciona una para abrir su lectura comercial.</small></header><div class="campaign-premium-rows">${rows}</div></div><aside class="campaign-premium-detail ${selected ? "" : "is-empty"}">${selected ? `<div class="campaign-premium-detail-head"><div><span class="campaign-premium-status is-${escapeHtml(selectedValidity.key)}">${escapeHtml(selectedValidity.label)}</span><h4>${escapeHtml(selected.name || "Campaña sin nombre")}</h4><p>${escapeHtml(selected.objective || selected.strategy_summary || "Define el objetivo comercial de esta campaña.")}</p></div><button type="button" class="icon-button" data-campaign-premium-action="edit" aria-label="Editar campaña"><span class="material-symbols-outlined" aria-hidden="true">edit</span></button></div><div class="campaign-premium-detail-meta"><span><i class="material-symbols-outlined" aria-hidden="true">calendar_month</i>${escapeHtml(selectedValidity.detail)}</span><span><i class="material-symbols-outlined" aria-hidden="true">hub</i>${escapeHtml(launchChannelsLabel(selected.launch_channels) || "Canal por definir")}</span></div><div class="campaign-premium-funnel"><div><span>Leads</span><strong>${selectedLeads}</strong><i style="--fill:100%"></i></div><div><span>Tickets</span><strong>${selectedTickets}</strong><i style="--fill:${Math.min(100, selectedLeads ? Math.round(selectedTickets / selectedLeads * 100) : 0)}%"></i></div><div><span>Redenciones</span><strong>${selectedRedemptions}</strong><i style="--fill:${Math.min(100, selectedTickets ? Math.round(selectedRedemptions / selectedTickets * 100) : 0)}%"></i></div><div><span>Ventas</span><strong>${selectedSales}</strong><i style="--fill:${Math.min(100, selectedLeads ? Math.round(selectedSales / selectedLeads * 100) : 0)}%"></i></div></div><div class="campaign-premium-detail-kpis"><span><small>Inversión</small><strong>${escapeHtml(money(selectedBudget))}</strong></span><span><small>Revenue</small><strong>${escapeHtml(money(selectedRevenue))}</strong></span><span><small>ROI</small><strong>${escapeHtml(selectedRoi === null ? "—" : ratioLabel(selectedRoi))}</strong></span><span><small>Activaciones</small><strong>${selectedActivations}</strong></span></div>${campaignReadinessChecklistMarkup(selected)}<div class="campaign-premium-detail-footer"><span>${selectedReportLoaded ? "Lectura actualizada con actividad real." : "Selecciona la campaña para cargar su lectura completa."}</span><div><button type="button" class="ghost-button compact" data-campaign-premium-action="${escapeHtml(selectedReadiness.nextAction)}">${selectedReadiness.ready ? "Conectar experiencia" : "Resolver siguiente pendiente"}</button><button type="button" class="solid-button compact" data-campaign-premium-operation="${escapeHtml(selected.id)}">Abrir operación<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></div></div>` : `<span class="material-symbols-outlined" aria-hidden="true">campaign</span><strong>Selecciona una campaña</strong><p>Abriremos sus indicadores, activos y operación desde este panel.</p>`}</aside></section>
+    <section class="campaign-premium-table ${tableOpen ? "is-open" : ""}" ${tableOpen ? "" : "hidden"}><header><div><span class="mono-label">Resumen operativo</span><h4>Una fila por campaña</h4></div><small>Fechas, activaciones, embudo, inversión y retorno.</small></header><div class="table-wrap"><table><thead><tr><th>Campaña</th><th>Estado</th><th>Vigencia</th><th>Activ.</th><th>Leads</th><th>Tickets</th><th>Ventas</th><th>Inversión</th><th>Revenue</th><th>ROI</th></tr></thead><tbody>${tableRows}</tbody></table></div></section>`;
   ensureCampaignPremiumActivationIndex();
 }
 
@@ -30239,10 +30410,13 @@ const STRATEGY_WIZARD_STEPS = [
   ] },
   { id: "assets", kicker: "Paso 11", title: "URLs y activos", help: "Define los activos que necesita la experiencia para funcionar de forma trazable.", fields: [
     { key: "hasLanding", label: "Tendrá landing", type: "single", options: ["Sí", "No"] },
+    { key: "landingUrl", label: "URL real de landing", type: "text", placeholder: "https://tu-dominio.com/campana", when: { key: "hasLanding", value: "Sí" } },
     { key: "hasGame", label: "Tendrá juego o formulario", type: "single", options: ["Sí", "No"] },
+    { key: "gameUrl", label: "URL real del juego o formulario", type: "text", placeholder: "https://...", when: { key: "hasGame", value: "Sí" } },
     { key: "hasValidator", label: "Usará validación interna", type: "single", options: ["Sí", "No"] },
+    { key: "validatorUrl", label: "URL real de validación", type: "text", placeholder: "https://...", when: { key: "hasValidator", value: "Sí" } },
     { key: "hasDigitalAsset", label: "Incluye activo descargable", type: "single", options: ["Sí", "No"] },
-    { key: "digitalAssetUrl", label: "URL de descarga o archivo", type: "text", placeholder: "https://..." },
+    { key: "digitalAssetUrl", label: "URL de descarga o archivo", type: "text", placeholder: "https://...", when: { key: "hasDigitalAsset", value: "Sí" } },
   ] },
   { id: "tickets", kicker: "Paso 12", title: "Tickets y lógica interna", help: "Qori usa tickets operativos para trazabilidad, beneficios, redenciones y seguimiento.", fields: [
     { key: "maxParticipants", label: "Participaciones máximas", type: "number", placeholder: "300" },
@@ -30307,8 +30481,13 @@ function strategyWizardHasAnswer(value) {
   return String(value ?? "").trim().length > 0;
 }
 
+function strategyWizardFieldIsVisible(field = {}) {
+  if (!field.when) return true;
+  return strategyWizardAnswer(field.when.key) === field.when.value;
+}
+
 function strategyWizardStepCompletion(step = strategyWizardCurrentStep()) {
-  const fields = (step.fields || []).filter((field) => !["note", "summary", "templates"].includes(field.type));
+  const fields = (step.fields || []).filter((field) => strategyWizardFieldIsVisible(field) && !["note", "summary", "templates"].includes(field.type));
   const missing = fields.filter((field) => !strategyWizardHasAnswer(strategyWizardAnswer(field.key)));
   return {
     total: fields.length,
@@ -30496,21 +30675,24 @@ function strategyScoreRecommendation(score, answers = state.strategyWizardAnswer
   return "Campaña riesgosa; conviene hacer piloto de 15 días, reducir descuento o usar activo digital en vez de obsequio físico.";
 }
 
-function strategyUrls(slug = strategySlug()) {
-  const base = "https://www.marketgamesqr.com";
+function strategyUrls(answers = state.strategyWizardAnswers || {}) {
+  const landingUrl = String(answers.landingUrl || "").trim();
+  const gameUrl = String(answers.gameUrl || "").trim();
+  const validatorUrl = String(answers.validatorUrl || "").trim();
+  const digitalAssetUrl = String(answers.digitalAssetUrl || "").trim();
   return {
-    landing_url: `${base}/campana/${slug}`,
-    validator_url: `${base}/validar/${slug}`,
-    game_url: `${base}/jugar/${slug}`,
-    primary_link: `${base}/campana/${slug}`,
-    qr_landing_url: `${base}/ticket/${slug}`,
+    landing_url: landingUrl,
+    validator_url: validatorUrl,
+    game_url: gameUrl,
+    primary_link: landingUrl || gameUrl || digitalAssetUrl,
+    qr_landing_url: landingUrl || gameUrl,
   };
 }
 
 function buildStrategyCampaignPayload(answers = state.strategyWizardAnswers || {}) {
   const totals = strategyBudgetTotals(answers);
   const slug = strategySlug(answers);
-  const urls = strategyUrls(slug);
+  const urls = strategyUrls(answers);
   return {
     name: strategyCampaignName(answers),
     slug,
@@ -30562,7 +30744,7 @@ function renderStrategyWizard() {
   strategyWizardStepKicker.textContent = step.kicker;
   strategyWizardStepTitle.textContent = step.title;
   strategyWizardStepHelp.textContent = step.help;
-  strategyWizardStepBody.innerHTML = step.fields.map(renderStrategyWizardField).join("");
+  strategyWizardStepBody.innerHTML = step.fields.filter(strategyWizardFieldIsVisible).map(renderStrategyWizardField).join("");
   strategyWizardBackButton.disabled = state.strategyWizardStep === 0;
   const completion = strategyWizardStepCompletion(step);
   const pendingCount = Math.max(0, completion.total - completion.complete);
@@ -30706,6 +30888,15 @@ function closeStrategyWizard() {
   setFormMessage(strategyWizardMessage, "", "info");
 }
 
+function strategyWizardHasValidUrl(value) {
+  try {
+    const parsed = new URL(String(value || "").trim());
+    return ["http:", "https:"].includes(parsed.protocol);
+  } catch (_error) {
+    return false;
+  }
+}
+
 function validateStrategyWizardPayload(payload = buildStrategyCampaignPayload()) {
   if (!payload.name.trim()) return "El nombre de campaña es requerido.";
   if (!payload.objective.trim()) return "El objetivo es requerido.";
@@ -30713,9 +30904,11 @@ function validateStrategyWizardPayload(payload = buildStrategyCampaignPayload())
   if (payload.starts_at && payload.ends_at && new Date(payload.ends_at) <= new Date(payload.starts_at)) return "La fecha de cierre debe ser posterior a la fecha de inicio.";
   const maxParticipants = Number(strategyWizardAnswer("maxParticipants") || 0);
   if (maxParticipants && Number(payload.expected_redemptions_goal || 0) > maxParticipants) return "Meta redenciones no puede superar las participaciones máximas.";
+  if (strategyWizardAnswer("hasLanding") === "Sí" && !strategyWizardHasValidUrl(payload.delivered_assets.landing_url)) return "Si la campaña tendrá landing, agrega una URL real y válida.";
   if (strategyWizardAnswer("requiresValidation") === "Sí" && !payload.delivered_assets.validator_url && !strategyWizardAnswer("redemptionMethod")) return "Si hay beneficio redimible, define validación o método de validación.";
-  if (strategyWizardAnswer("hasDigitalAsset") === "Sí" && !strategyWizardAnswer("digitalAssetUrl")) return "Si hay activo digital, agrega URL o archivo de descarga.";
-  if (strategyWizardAnswer("hasGame") === "Sí" && !payload.delivered_assets.game_url) return "Si hay juego o formulario, debe existir una URL sugerida o generada.";
+  if (strategyWizardAnswer("hasValidator") === "Sí" && !strategyWizardHasValidUrl(payload.delivered_assets.validator_url)) return "Si usarás validación interna, agrega una URL real y válida.";
+  if (strategyWizardAnswer("hasDigitalAsset") === "Sí" && !strategyWizardHasValidUrl(strategyWizardAnswer("digitalAssetUrl"))) return "Si hay activo digital, agrega una URL real y válida de descarga.";
+  if (strategyWizardAnswer("hasGame") === "Sí" && !strategyWizardHasValidUrl(payload.delivered_assets.game_url)) return "Si hay juego o formulario, agrega una URL real y válida.";
   if (normalizeInventoryLookup(strategyWizardAnswer("objective")).includes("refer") && !(strategyWizardAnswer("ticketLogic") || []).includes("Referral ticket")) return "Si es campaña de referidos, incluye lógica de referido.";
   if (normalizeInventoryLookup(strategyWizardAnswer("rewardType")).includes("giftcard") && (!strategyWizardAnswer("rewardValue") || !strategyWizardAnswer("rewardExpires"))) return "Si eliges giftcard, define valor nominal y vencimiento.";
   return "";
@@ -31069,6 +31262,29 @@ function closeSnapshotModal() {
   state.snapshotEditingId = null;
 }
 
+function validateCampaignOperationalPayload(payload = {}) {
+  const status = String(payload.status || "DRAFT").toUpperCase();
+  const startsAt = payload.starts_at ? new Date(payload.starts_at).getTime() : 0;
+  const endsAt = payload.ends_at ? new Date(payload.ends_at).getTime() : 0;
+  if (startsAt && endsAt && endsAt <= startsAt) {
+    return { message: "La fecha de cierre debe ser posterior a la fecha de inicio.", field: campaignFormEndsAt };
+  }
+  if (!["ACTIVE", "SCHEDULED"].includes(status)) return null;
+  if (!String(payload.objective || "").trim()) {
+    return { message: "Antes de activar o programar, define el objetivo comercial.", field: campaignFormObjective };
+  }
+  if (!startsAt || !endsAt) {
+    return { message: "Antes de activar o programar, define fecha de inicio y cierre.", field: !startsAt ? campaignFormStartsAt : campaignFormEndsAt };
+  }
+  if (toNumber(payload.budget_total) <= 0) {
+    return { message: "Antes de activar o programar, registra una inversión mayor que cero.", field: campaignFormBudget };
+  }
+  if (!Array.isArray(payload.launch_channels) || !payload.launch_channels.length) {
+    return { message: "Antes de activar o programar, selecciona al menos un canal.", field: campaignFormLaunchChannels };
+  }
+  return null;
+}
+
 async function submitCampaignModal(event) {
   event.preventDefault();
   if (!session?.user?.business_id) return;
@@ -31118,6 +31334,14 @@ async function submitCampaignModal(event) {
       creative_notes: campaignFormAssetNotes.value.trim() || null,
     },
   };
+
+  const operationalIssue = validateCampaignOperationalPayload(payload);
+  if (operationalIssue) {
+    setInlineMessage(campaignModalMessage, operationalIssue.message, "error");
+    operationalIssue.field?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    operationalIssue.field?.focus?.();
+    return;
+  }
 
   campaignModalMessage.textContent = "Guardando...";
 
