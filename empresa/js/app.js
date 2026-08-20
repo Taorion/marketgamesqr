@@ -13255,6 +13255,71 @@ function revenueCommandChannelMap(rows = []) {
   }).join("")}</div>`;
 }
 
+function revenueCommandPriority(insights = [], totals = {}, economics = {}) {
+  const ranked = [...(Array.isArray(insights) ? insights : [])].sort((left, right) => {
+    const order = { risk: 0, alert: 1, opportunity: 2, win: 3 };
+    return (order[left?.priority] ?? 4) - (order[right?.priority] ?? 4);
+  });
+  const first = ranked[0];
+  if (first) {
+    return {
+      eyebrow: first.priority === "risk" ? "Prioridad crítica" : first.priority === "alert" ? "Prioridad de hoy" : "Mejor siguiente movimiento",
+      title: first.title || "Revisar señal comercial",
+      description: first.explanation || first.metric || "Hay una señal que merece una decisión comercial.",
+      action: first.action || "Abrir operación RMS",
+      icon: first.priority === "risk" ? "priority_high" : first.priority === "alert" ? "crisis_alert" : first.priority === "win" ? "workspace_premium" : "tips_and_updates",
+      tone: first.priority || "opportunity",
+      route: first.priority === "win" ? "campaigns" : "rms-machine",
+    };
+  }
+  if (toNumber(totals.qr_generated) > toNumber(totals.redemptions)) {
+    return { eyebrow: "Prioridad de hoy", title: "Convertir tickets activos en visita", description: `${toNumber(totals.qr_generated) - toNumber(totals.redemptions)} ticket(s) aún no registran redención en este corte.`, action: "Revisar redenciones", icon: "confirmation_number", tone: "opportunity", route: "redemptions" };
+  }
+  if (!toNumber(economics.investment)) {
+    return { eyebrow: "Cobertura de medición", title: "Completa inversión para hacer rentable la lectura", description: "Ya puedes observar ventas; registra inversión por canal o campaña para convertirlas en ROI y CAC accionables.", action: "Gestionar inversión", icon: "account_balance_wallet", tone: "alert", route: "channels" };
+  }
+  return { eyebrow: "Centro de mando", title: "El sistema está listo para tu siguiente lectura", description: "Mantén origen, inversión y resultado conectados para conservar una atribución útil.", action: "Abrir operación RMS", icon: "radar", tone: "win", route: "rms-machine" };
+}
+
+function revenueCommandFunnelMarkup(totals = {}) {
+  const stages = [
+    { key: "leads", label: "Captura", icon: "person_add", note: "contactos identificados", tone: "lead" },
+    { key: "qr_generated", label: "Activación", icon: "qr_code_2", note: "tickets emitidos", tone: "ticket" },
+    { key: "redemptions", label: "Visita", icon: "qr_code_scanner", note: "beneficios redimidos", tone: "visit" },
+    { key: "sales_count", label: "Ingreso", icon: "payments", note: "ventas confirmadas", tone: "sale" },
+  ].map((stage) => ({ ...stage, value: toNumber(totals[stage.key]) }));
+  const max = Math.max(1, ...stages.map((stage) => stage.value));
+  return `<div class="revenue-command-funnel" aria-label="Flujo comercial del periodo">${stages.map((stage, index) => {
+    const previous = stages[index - 1]?.value;
+    const rate = index === 0 || !previous ? "Base" : `${Math.min(999, Math.round((stage.value / previous) * 100))}% del paso anterior`;
+    const width = Math.max(7, Math.round((stage.value / max) * 100));
+    return `<article class="is-${stage.tone}">
+      <div class="revenue-command-funnel-label"><span class="material-symbols-outlined" aria-hidden="true">${stage.icon}</span><div><small>${stage.label}</small><strong>${stage.value.toLocaleString("es-CO")}</strong></div><em>${rate}</em></div>
+      <div class="revenue-command-funnel-track"><i style="--funnel-width:${width}%"></i></div><p>${stage.note}</p>
+    </article>`;
+  }).join("")}</div>`;
+}
+
+function revenueCommandCoverageMarkup(totals = {}, economics = {}, channels = []) {
+  const checks = [
+    { label: "Origen", ready: channels.length > 0, copy: channels.length ? `${channels.length} canal(es) con señal` : "Sin canales atribuidos", icon: "hub" },
+    { label: "Inversión", ready: toNumber(economics.investment) > 0, copy: toNumber(economics.investment) > 0 ? `${money(economics.investment)} registrada` : "Pendiente de registrar", icon: "account_balance_wallet" },
+    { label: "Conversión", ready: toNumber(totals.sales_count) > 0, copy: toNumber(totals.sales_count) ? `${toNumber(totals.sales_count)} venta(s) confirmada(s)` : "Sin ventas en el corte", icon: "verified" },
+  ];
+  const ready = checks.filter((check) => check.ready).length;
+  return `<div class="revenue-command-coverage"><header><div><span class="mono-label">Calidad de la lectura</span><h3>${ready}/3 fuentes conectadas</h3></div><span class="revenue-command-coverage-score">${Math.round((ready / checks.length) * 100)}%</span></header><div>${checks.map((check) => `<article class="${check.ready ? "is-ready" : "is-pending"}"><span class="material-symbols-outlined" aria-hidden="true">${check.icon}</span><div><strong>${check.label}</strong><small>${check.copy}</small></div><span class="material-symbols-outlined" aria-hidden="true">${check.ready ? "check_circle" : "add_circle"}</span></article>`).join("")}</div><p>La consola solo calcula rentabilidad cuando hay ventas e inversión registradas; no rellena resultados con estimaciones.</p></div>`;
+}
+
+function revenueCommandPortfolioMarkup(rows = []) {
+  const campaigns = [...(Array.isArray(rows) ? rows : [])].sort((left, right) => toNumber(right.revenue) - toNumber(left.revenue)).slice(0, 6);
+  if (!campaigns.length) return `<div class="revenue-command-empty"><span class="material-symbols-outlined" aria-hidden="true">campaign</span><strong>Aún no hay campañas atribuibles</strong><p>Crea una campaña y conecta su canal e inversión para que aparezca en el portafolio.</p></div>`;
+  return `<div class="revenue-command-portfolio-list">${campaigns.map((row, index) => {
+    const roi = row.roi === null || row.roi === undefined ? null : toNumber(row.roi);
+    const decision = roi === null ? "Medir" : roi > .35 ? "Escalar" : roi < 0 ? "Corregir" : "Optimizar";
+    return `<article><span class="revenue-command-portfolio-rank">${String(index + 1).padStart(2, "0")}</span><div class="revenue-command-portfolio-name"><strong>${escapeHtml(row.campaign_name || "Sin campaña")}</strong><small>${escapeHtml(row.campaign_status || "Sin estado")} · ${toNumber(row.leads)} leads · ${toNumber(row.sales)} ventas</small></div><div><small>Revenue</small><strong>${money(row.revenue)}</strong></div><div><small>ROI</small><strong>${roi === null ? "—" : ratioLabel(roi)}</strong></div><span class="revenue-command-decision is-${decision.toLowerCase()}">${decision}</span></article>`;
+  }).join("")}</div>`;
+}
+
 function renderRevenueCommandCenter() {
   if (!revenueCommandSurface) return false;
   const legacyHeader = document.querySelector('.view-section[data-view="dashboard"] > .dashboard-revenue-head');
@@ -13286,34 +13351,32 @@ function renderRevenueCommandCenter() {
 
   const totals = data.totals || {};
   const economics = data.business_economics || dashboardCommercialEconomics();
-  const timeline = Array.isArray(data.timeline) ? data.timeline : [];
   const channels = Array.isArray(data.channel_performance) ? data.channel_performance : [];
-  const campaigns = Array.isArray(data.power_table) ? data.power_table.slice(0, 5) : [];
-  const insights = Array.isArray(data.insights) ? data.insights.slice(0, 3) : [];
+  const campaigns = Array.isArray(data.power_table) ? data.power_table : [];
+  const insights = Array.isArray(data.insights) ? data.insights.slice(0, 4) : [];
   const conversion = toNumber(totals.leads) ? (toNumber(totals.sales_count) / Math.max(1, toNumber(totals.leads))) * 100 : 0;
-  const journey = [
-    { label: "Capturados", icon: "person_add", value: toNumber(totals.leads), tone: "lead" },
-    { label: "Activados", icon: "qr_code_2", value: toNumber(totals.qr_generated), tone: "ticket" },
-    { label: "Visitaron", icon: "qr_code_scanner", value: toNumber(totals.redemptions), tone: "redemption" },
-    { label: "Compraron", icon: "paid", value: toNumber(totals.sales_count), tone: "sale" },
-  ];
   const score = data.revenue_score || {};
   const range = data.filters?.startDate && data.filters?.endDate ? `${data.filters.startDate} — ${data.filters.endDate}` : "Corte actual";
+  const priority = revenueCommandPriority(insights, totals, economics);
+  const topChannel = [...channels].sort((left, right) => toNumber(right.revenue) - toNumber(left.revenue))[0];
   revenueCommandSurface.innerHTML = `
-    <header class="revenue-command-hero">
-      <div class="revenue-command-hero-top"><span class="revenue-command-live"><i></i>Qori Revenue Command</span><span class="revenue-command-range">${escapeHtml(range)}</span></div>
-      <div class="revenue-command-hero-main"><div><h2>El ingreso no se mira.<br><em>Se dirige.</em></h2><p>Una sola consola para saber qué impulsa ventas, qué se está perdiendo y cuál es el siguiente movimiento.</p></div><div class="revenue-command-hero-actions"><button type="button" class="ghost-button" data-revenue-command-refresh><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar</button><button type="button" class="primary-button" data-revenue-command-route="rms-machine"><span class="material-symbols-outlined" aria-hidden="true">account_tree</span>Operar pipeline</button></div></div>
-      <div class="revenue-command-metric-ribbon"><article><small>Revenue confirmado</small><strong>${money(totals.revenue)}</strong><span>${toNumber(totals.sales_count)} ventas registradas</span></article><article><small>Ticket promedio</small><strong>${money(totals.avg_ticket)}</strong><span>por venta confirmada</span></article><article><small>ROI base comercial</small><strong>${economics.roi === null ? "—" : ratioLabel(economics.roi)}</strong><span>${economics.investment ? `${money(economics.investment)} invertidos` : "Falta inversión registrada"}</span></article><article class="is-score"><small>Índice de comando</small><strong>${toNumber(score.score)}/100</strong><span>${escapeHtml(score.status || "En lectura")}</span></article></div>
+    <header class="revenue-command-pro-hero">
+      <div class="revenue-command-pro-top"><span class="revenue-command-live"><i></i>Qori Revenue Command</span><span class="revenue-command-range">${escapeHtml(range)}</span><button type="button" class="ghost-button compact" data-revenue-command-refresh><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar datos</button></div>
+      <div class="revenue-command-pro-title"><div><span class="mono-label">Sala de mando comercial</span><h2>Decide el próximo<br><em>movimiento de revenue.</em></h2><p>Una lectura ejecutiva que conecta el dinero, el flujo comercial y las acciones que el equipo puede tomar ahora.</p></div><div class="revenue-command-pro-northstar"><small>Índice de comando</small><strong>${toNumber(score.score)}<em>/100</em></strong><span>${escapeHtml(score.status || "Lectura disponible")}</span></div></div>
+      <div class="revenue-command-pro-metrics"><article><span class="material-symbols-outlined" aria-hidden="true">payments</span><small>Revenue confirmado</small><strong>${money(totals.revenue)}</strong><em>${toNumber(totals.sales_count)} ventas registradas</em></article><article><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><small>Ticket promedio</small><strong>${money(totals.avg_ticket)}</strong><em>valor por venta confirmada</em></article><article><span class="material-symbols-outlined" aria-hidden="true">trending_up</span><small>ROI comercial</small><strong>${economics.roi === null ? "—" : ratioLabel(economics.roi)}</strong><em>${economics.investment ? `${money(economics.investment)} invertidos` : "sin inversión registrada"}</em></article><article><span class="material-symbols-outlined" aria-hidden="true">hub</span><small>Canal líder</small><strong>${escapeHtml(topChannel?.label || "—")}</strong><em>${topChannel ? money(topChannel.revenue) : "sin atribución suficiente"}</em></article></div>
     </header>
-    <section class="revenue-command-priority-grid">
-      <article class="revenue-command-journey-card"><header><div><span class="mono-label">Ruta de conversión</span><h3>El viaje que sí está ocurriendo</h3></div>${revenueCommandRing(conversion, "lead a venta")}</header><div class="revenue-command-journey">${journey.map((step, index) => `<div class="is-${step.tone}"><span class="material-symbols-outlined" aria-hidden="true">${step.icon}</span><small>${step.label}</small><strong>${step.value.toLocaleString("es-CO")}</strong>${index < journey.length - 1 ? `<i style="--journey-progress:${Math.max(7, Math.round((journey[index + 1].value / Math.max(1, step.value)) * 100))}%"></i>` : ""}</div>`).join("")}</div><p>El embudo se calcula con eventos reales del período, no con estimaciones de alcance.</p></article>
-      <article class="revenue-command-timeline-card"><header><div><span class="mono-label">Pulso de actividad</span><h3>Movimiento, no ruido</h3></div><span class="revenue-command-data-badge"><i></i>En vivo</span></header>${revenueAdvancedTimelineMarkup(timeline)}</article>
+    <section class="revenue-command-pro-priority is-${escapeHtml(priority.tone)}">
+      <div class="revenue-command-pro-priority-icon"><span class="material-symbols-outlined" aria-hidden="true">${priority.icon}</span></div><div><span class="mono-label">${escapeHtml(priority.eyebrow)}</span><h3>${escapeHtml(priority.title)}</h3><p>${escapeHtml(priority.description)}</p></div><button type="button" class="primary-button" data-revenue-command-route="${escapeHtml(priority.route)}">${escapeHtml(priority.action)}<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
     </section>
-    <section class="revenue-command-intelligence-grid">
-      <article class="revenue-command-panel revenue-command-channel-panel"><header><div><span class="mono-label">Mapa de contribución</span><h3>Qué canal trae el ingreso</h3></div><button type="button" class="ghost-button compact" data-revenue-command-route="channels">Gestionar canales <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></header>${revenueCommandChannelMap(channels)}</article>
-      <article class="revenue-command-panel revenue-command-insight-panel"><header><div><span class="mono-label">Decisiones ahora</span><h3>La lectura se convierte en acción</h3></div><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span></header><div class="revenue-command-insights">${insights.map((item) => `<article class="is-${escapeHtml(item.priority || "opportunity")}"><span class="material-symbols-outlined" aria-hidden="true">${item.priority === "risk" ? "priority_high" : item.priority === "win" ? "workspace_premium" : "lightbulb"}</span><div><strong>${escapeHtml(item.title || "Señal comercial")}</strong><p>${escapeHtml(item.explanation || item.metric || "")}</p><em>${escapeHtml(item.action || "")}</em></div></article>`).join("") || `<div class="revenue-command-empty"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span><strong>Sin alertas críticas en este corte</strong></div>`}</div></article>
+    <section class="revenue-command-pro-main-grid">
+      <article class="revenue-command-pro-panel revenue-command-pro-funnel"><header><div><span class="mono-label">Flujo de conversión</span><h3>Qué avanza y dónde se corta</h3><p>Actividad del periodo: no es una cohorte y no mezcla proyecciones.</p></div>${revenueCommandRing(conversion, "lead a venta")}</header>${revenueCommandFunnelMarkup(totals)}<button type="button" class="revenue-command-text-action" data-revenue-command-route="rms-machine">Abrir oportunidades en RMS <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>
+      <article class="revenue-command-pro-panel revenue-command-pro-actions"><header><div><span class="mono-label">Mesa de decisiones</span><h3>Lo que el equipo puede hacer ahora</h3></div><span class="revenue-command-data-badge"><i></i>Lectura actual</span></header><div class="revenue-command-pro-action-list">${insights.map((item) => `<article class="is-${escapeHtml(item.priority || "opportunity")}"><span class="material-symbols-outlined" aria-hidden="true">${item.priority === "risk" ? "priority_high" : item.priority === "alert" ? "warning" : item.priority === "win" ? "workspace_premium" : "lightbulb"}</span><div><strong>${escapeHtml(item.title || "Señal comercial")}</strong><p>${escapeHtml(item.explanation || item.metric || "")}</p></div><button type="button" aria-label="Operar esta señal" data-revenue-command-route="${item.priority === "win" ? "campaigns" : "rms-machine"}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></article>`).join("") || `<div class="revenue-command-empty"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span><strong>Sin señales urgentes en este corte</strong><p>La operación está lista para revisar eficiencia y crecimiento.</p></div>`}</div></article>
     </section>
-    <section class="revenue-command-panel revenue-command-campaign-panel"><header><div><span class="mono-label">Portafolio comercial</span><h3>Dónde poner el siguiente peso</h3><p>Resultados observados frente a la inversión registrada. Cada campaña tiene una decisión, no solo un número.</p></div><button type="button" class="primary-button" data-revenue-command-route="campaigns"><span class="material-symbols-outlined" aria-hidden="true">campaign</span>Gestionar campañas</button></header><div class="revenue-command-campaign-grid">${campaigns.map((row) => { const roi = row.roi === null || row.roi === undefined ? null : toNumber(row.roi); const decision = roi === null ? "Medir" : roi > .35 ? "Escalar" : roi < 0 ? "Corregir" : "Optimizar"; return `<article><div><small>${escapeHtml(row.campaign_status || "Campaña")}</small><strong>${escapeHtml(row.campaign_name || "Sin nombre")}</strong></div><span class="revenue-command-decision is-${decision.toLowerCase()}">${decision}</span><dl><div><dt>Revenue</dt><dd>${money(row.revenue)}</dd></div><div><dt>Ventas</dt><dd>${toNumber(row.sales)}</dd></div><div><dt>ROI</dt><dd>${roi === null ? "—" : ratioLabel(roi)}</dd></div></dl></article>`; }).join("") || `<div class="revenue-command-empty"><span class="material-symbols-outlined" aria-hidden="true">campaign</span><strong>Sin campañas atribuibles para este corte</strong><p>Crea una campaña o registra su origen para convertir actividad en lectura de revenue.</p></div>`}</div></section>
+    <section class="revenue-command-pro-intelligence-grid">
+      <article class="revenue-command-pro-panel revenue-command-pro-channels"><header><div><span class="mono-label">Contribución de canales</span><h3>De dónde viene el ingreso</h3><p>Compara impacto comercial por origen, no solo volumen.</p></div><button type="button" class="ghost-button compact" data-revenue-command-route="channels">Gestionar medios <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></header>${revenueCommandChannelMap(channels)}</article>
+      <article class="revenue-command-pro-panel revenue-command-pro-coverage-panel">${revenueCommandCoverageMarkup(totals, economics, channels)}</article>
+    </section>
+    <section class="revenue-command-pro-panel revenue-command-pro-portfolio"><header><div><span class="mono-label">Portafolio comercial</span><h3>Decide dónde poner el siguiente peso</h3><p>Revenue, ventas y retorno en una lectura ordenada para escalar, optimizar, corregir o medir.</p></div><button type="button" class="primary-button" data-revenue-command-route="campaigns"><span class="material-symbols-outlined" aria-hidden="true">campaign</span>Gestionar campañas</button></header>${revenueCommandPortfolioMarkup(campaigns)}</section>
   `;
   return true;
 }
