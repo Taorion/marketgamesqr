@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-revenue-center-v302";
+const APP_VERSION = "empresa-20260820-revenue-center-v303";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2552,7 +2552,7 @@ let state = {
   currentView: PORTAL_DEFAULT_VIEW,
   accountScreen: "profile",
   dashboardBuilderProfile: "marketing",
-  dashboardWorkspaceTab: "summary",
+  dashboardWorkspaceTab: "analysis",
   dashboardBuilderExpanded: false,
   dashboardBuilderDragWidget: "",
   ticketCenterTab: "trivia",
@@ -2563,6 +2563,8 @@ let state = {
   activityRefreshInFlight: false,
   apiResponseCache: new Map(),
   commandCenter: null,
+  commandCenterLoading: false,
+  commandCenterError: "",
   commandCenterFilters: {
     range: "30d",
     startDate: "",
@@ -7750,6 +7752,10 @@ function commandEmpty(title = "Aún no hay datos suficientes.", action = "Activa
 
 async function loadCommandCenterData({ quiet = false } = {}) {
   if (!session?.user?.business_id) return;
+  if (state.commandCenterLoading) return;
+  state.commandCenterLoading = true;
+  state.commandCenterError = "";
+  if (getDashboardWorkspaceTab() === "analysis") renderRevenueAdvancedBoard();
   if (!quiet) {
     commandCenterRoot?.classList.add("is-loading");
   } else {
@@ -7757,13 +7763,20 @@ async function loadCommandCenterData({ quiet = false } = {}) {
   }
   try {
     state.commandCenter = await api(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() });
-    renderCommandCenter();
+    // El análisis profundo se abre bajo demanda desde el Centro de Revenue.
+    // El panel heredado sigue aislado: no debe volver a pintar una segunda
+    // consola debajo del tablero actual.
+    if (getDashboardWorkspaceTab() === "analysis") renderDashboardBuilder();
+    else if (!dashboardLegacySurfaces?.hidden) renderCommandCenter();
     if (state.chartFocus.open) renderChartFocusMode();
   } catch (error) {
+    state.commandCenterError = error.message || "No fue posible calcular la lectura profunda.";
     if (commandCenterRoot) {
       commandCenterRoot.innerHTML = commandEmpty("No se pudo cargar RMS Command Center.", error.message || "Reintenta la sincronizacion del portal.");
     }
   } finally {
+    state.commandCenterLoading = false;
+    if (getDashboardWorkspaceTab() === "analysis" && !state.commandCenter) renderDashboardBuilder();
     commandCenterRoot?.classList.remove("is-loading");
     commandCenterRoot?.classList.remove("is-recalculating");
   }
@@ -10658,7 +10671,9 @@ function renderRevenueDecisionDeck(summary = {}, dashboard = {}) {
   const redeemed = toNumber(summary.total_qr_redeemed);
   const sales = toNumber(summary.observed_sales_count ?? summary.direct_sales_count);
   const openAgenda = (state.leadAgenda || []).filter((item) => !["DONE", "CLOSED", "COMPLETED", "CANCELLED"].includes(String(item.status || item.agenda_status || "").toUpperCase())).length;
-  const economics = dashboardCommercialEconomics();
+  // La inversión configurada es una base comercial acumulada; se etiqueta
+  // explícitamente para no presentarla como si fuera gasto diario del corte.
+  const economics = data.business_economics || dashboardCommercialEconomics();
   const signals = [];
 
   if (!leads) {
@@ -12319,7 +12334,7 @@ async function smartCatalogIntentAction(intentId, action) {
 const DASHBOARD_BUILDER_STORAGE_KEY = "marketgames_dashboard_builder_v2";
 const DASHBOARD_BUILDER_PROFILE_KEY = "marketgames_dashboard_profile_v1";
 const DASHBOARD_BUILDER_EXPANDED_KEY = "marketgames_dashboard_advanced_v1";
-const DASHBOARD_WORKSPACE_TAB_KEY = "marketgames_dashboard_workspace_tab_v1";
+const DASHBOARD_WORKSPACE_TAB_KEY = "marketgames_dashboard_workspace_tab_v2";
 
 const DASHBOARD_WORKSPACE_TABS = {
   summary: {
@@ -13018,15 +13033,15 @@ function renderDashboardBusinessEconomics() {
 
 function getDashboardWorkspaceTab() {
   try {
-    const stored = window.localStorage.getItem(DASHBOARD_WORKSPACE_TAB_KEY) || state.dashboardWorkspaceTab || "summary";
-    return DASHBOARD_WORKSPACE_TABS[stored] ? stored : "summary";
+    const stored = window.localStorage.getItem(DASHBOARD_WORKSPACE_TAB_KEY) || state.dashboardWorkspaceTab || "analysis";
+    return DASHBOARD_WORKSPACE_TABS[stored] ? stored : "analysis";
   } catch {
-    return DASHBOARD_WORKSPACE_TABS[state.dashboardWorkspaceTab] ? state.dashboardWorkspaceTab : "summary";
+    return DASHBOARD_WORKSPACE_TABS[state.dashboardWorkspaceTab] ? state.dashboardWorkspaceTab : "analysis";
   }
 }
 
 function setDashboardWorkspaceTab(tab) {
-  state.dashboardWorkspaceTab = DASHBOARD_WORKSPACE_TABS[tab] ? tab : "summary";
+  state.dashboardWorkspaceTab = DASHBOARD_WORKSPACE_TABS[tab] ? tab : "analysis";
   try {
     window.localStorage.setItem(DASHBOARD_WORKSPACE_TAB_KEY, state.dashboardWorkspaceTab);
   } catch {
@@ -13045,6 +13060,143 @@ function dashboardWidgetsForWorkspaceTab(layout, tab) {
   const preferred = ["revenue", "avg_ticket", "sales", "leads", "revenue_funnel", "redemption_rate"];
   const summary = preferred.map((id) => widgets.find((widget) => widget.id === id)).filter(Boolean);
   return summary.length ? summary.slice(0, 5) : widgets.slice(0, 4);
+}
+
+function revenueAdvancedPolyline(rows, key, { width = 720, height = 220, padding = 18 } = {}) {
+  const source = Array.isArray(rows) ? rows : [];
+  const values = source.map((row) => toNumber(row?.[key]));
+  const max = Math.max(1, ...values);
+  const usableWidth = width - padding * 2;
+  const usableHeight = height - padding * 2;
+  return values.map((value, index) => {
+    const x = padding + (values.length < 2 ? usableWidth / 2 : (index / (values.length - 1)) * usableWidth);
+    const y = height - padding - (value / max) * usableHeight;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+}
+
+function revenueAdvancedTimelineMarkup(timeline = []) {
+  const rows = Array.isArray(timeline) ? timeline : [];
+  const hasSignal = rows.some((row) => ["leads", "qr_generated", "redemptions", "sales"].some((key) => toNumber(row[key]) > 0));
+  if (!hasSignal) return `
+    <div class="revenue-advanced-empty">
+      <span class="material-symbols-outlined" aria-hidden="true">insights</span>
+      <strong>Esperando señales comerciales</strong>
+      <p>Cuando Qori reciba capturas, tickets, redenciones o ventas, la tendencia se dibujará aquí sin mezclar periodos.</p>
+    </div>`;
+  const first = rows[0]?.date || "";
+  const last = rows[rows.length - 1]?.date || "";
+  return `
+    <div class="revenue-advanced-legend" aria-label="Series de actividad">
+      <span><i class="is-lead"></i>Leads</span><span><i class="is-ticket"></i>Tickets</span><span><i class="is-redemption"></i>Redenciones</span><span><i class="is-sale"></i>Ventas</span>
+    </div>
+    <div class="revenue-advanced-chart-wrap">
+      <svg class="revenue-advanced-linechart" viewBox="0 0 720 220" role="img" aria-label="Tendencia diaria de actividad comercial">
+        <defs>
+          <linearGradient id="revenueGridFade" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#e5f1ff"/><stop offset="1" stop-color="#fff"/></linearGradient>
+        </defs>
+        <rect x="0" y="0" width="720" height="220" rx="14" fill="url(#revenueGridFade)"/>
+        <path d="M18 54H702M18 110H702M18 166H702" class="revenue-advanced-gridline"/>
+        <polyline points="${revenueAdvancedPolyline(rows, "leads")}" class="revenue-advanced-line is-lead"/>
+        <polyline points="${revenueAdvancedPolyline(rows, "qr_generated")}" class="revenue-advanced-line is-ticket"/>
+        <polyline points="${revenueAdvancedPolyline(rows, "redemptions")}" class="revenue-advanced-line is-redemption"/>
+        <polyline points="${revenueAdvancedPolyline(rows, "sales")}" class="revenue-advanced-line is-sale"/>
+      </svg>
+    </div>
+    <div class="revenue-advanced-chart-range"><span>${escapeHtml(first)}</span><span>${escapeHtml(last)}</span><small>Cada línea usa su propia escala para revelar el movimiento, no para comparar volúmenes distintos.</small></div>`;
+}
+
+function revenueAdvancedFlowMarkup(totals = {}) {
+  const stages = [
+    { key: "leads", label: "Capturados", icon: "person_add", value: toNumber(totals.leads), tone: "lead" },
+    { key: "qr_generated", label: "Tickets", icon: "qr_code_2", value: toNumber(totals.qr_generated), tone: "ticket" },
+    { key: "redemptions", label: "Redimidos", icon: "qr_code_scanner", value: toNumber(totals.redemptions), tone: "redemption" },
+    { key: "sales_count", label: "Ventas", icon: "paid", value: toNumber(totals.sales_count), tone: "sale" },
+  ];
+  return `<div class="revenue-advanced-flow">${stages.map((stage, index) => `
+    <div class="revenue-flow-step is-${stage.tone}">
+      <span class="material-symbols-outlined" aria-hidden="true">${stage.icon}</span>
+      <small>${stage.label}</small><strong>${stage.value.toLocaleString("es-CO")}</strong>
+    </div>
+    ${index < stages.length - 1 ? `<span class="material-symbols-outlined revenue-flow-arrow" aria-hidden="true">arrow_forward</span>` : ""}
+  `).join("")}</div>`;
+}
+
+function revenueAdvancedInsightMarkup(insights = []) {
+  const iconByPriority = { win: "workspace_premium", opportunity: "lightbulb", alert: "warning", risk: "priority_high" };
+  const safeInsights = Array.isArray(insights) ? insights.slice(0, 4) : [];
+  return safeInsights.map((item) => `
+    <article class="revenue-advanced-insight is-${escapeHtml(item.priority || "opportunity")}">
+      <span class="material-symbols-outlined" aria-hidden="true">${iconByPriority[item.priority] || "insights"}</span>
+      <div><small>${escapeHtml(item.priority === "win" ? "Oportunidad confirmada" : item.priority === "risk" ? "Riesgo a resolver" : "Señal de revenue")}</small><strong>${escapeHtml(item.title || "Señal comercial")}</strong><p>${escapeHtml(item.explanation || item.metric || "")}</p><em>${escapeHtml(item.action || "")}</em></div>
+    </article>`).join("") || `<div class="revenue-advanced-empty compact"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span><strong>Sin alertas críticas para este corte</strong></div>`;
+}
+
+function revenueAdvancedPerformanceMarkup(rows = []) {
+  const channels = (Array.isArray(rows) ? rows : []).slice(0, 6);
+  if (!channels.length) return `<div class="revenue-advanced-empty compact"><span class="material-symbols-outlined" aria-hidden="true">hub</span><strong>Aún no hay canales con actividad atribuida</strong><p>Registra el origen al capturar y cerrar una venta para comparar eficiencia.</p></div>`;
+  const maxRevenue = Math.max(1, ...channels.map((row) => toNumber(row.revenue)));
+  return `<div class="revenue-advanced-performance">${channels.map((row, index) => {
+    const revenue = toNumber(row.revenue);
+    const width = Math.max(4, Math.round((revenue / maxRevenue) * 100));
+    const roi = row.roi === null || row.roi === undefined ? "Sin inversión" : ratioLabel(row.roi);
+    return `<article>
+      <div class="revenue-performance-rank">${String(index + 1).padStart(2, "0")}</div>
+      <div class="revenue-performance-main"><strong>${escapeHtml(row.label || "Sin canal")}</strong><span><i style="--revenue-width:${width}%"></i></span><small>${toNumber(row.leads)} leads · ${toNumber(row.sales)} ventas</small></div>
+      <div class="revenue-performance-value"><strong>${money(revenue)}</strong><small>${escapeHtml(roi)}</small></div>
+    </article>`;
+  }).join("")}</div>`;
+}
+
+function renderRevenueAdvancedBoard() {
+  if (!dashboardWidgetGrid) return;
+  const data = state.commandCenter;
+  if (!data) {
+    const hasError = Boolean(state.commandCenterError);
+    dashboardWidgetGrid.innerHTML = `
+      <section class="revenue-advanced-loading" aria-live="polite">
+        <span class="material-symbols-outlined" aria-hidden="true">${hasError ? "cloud_off" : "query_stats"}</span>
+        <div><small>Inteligencia de revenue</small><strong>${hasError ? "No pudimos completar la lectura" : state.commandCenterLoading ? "Preparando la lectura profunda…" : "Listo para calcular el panorama comercial"}</strong><p>${hasError ? escapeHtml(state.commandCenterError) : "Consolidamos señales de leads, tickets, ventas, inversión y canales únicamente cuando abres este análisis."}</p></div>
+        ${state.commandCenterLoading ? `<span class="revenue-advanced-spinner" aria-label="Cargando"></span>` : `<button type="button" class="primary-button" data-revenue-advanced-load><span class="material-symbols-outlined" aria-hidden="true">${hasError ? "refresh" : "auto_graph"}</span>${hasError ? "Reintentar" : "Calcular análisis"}</button>`}
+      </section>`;
+    if (!state.commandCenterLoading && !hasError) void loadCommandCenterData({ quiet: true });
+    return;
+  }
+  const totals = data.totals || {};
+  const economics = dashboardCommercialEconomics();
+  const revenue = toNumber(totals.revenue);
+  const revenueScore = data.revenue_score || {};
+  const periodLabel = COMMAND_CENTER_RANGE_LABELS[state.commandCenterFilters?.range] || "Periodo seleccionado";
+  const kpis = [
+    { icon: "payments", label: "Revenue confirmado", value: money(revenue), note: `${toNumber(totals.sales_count)} ventas reales`, tone: "blue" },
+    { icon: "receipt_long", label: "Ticket promedio", value: money(totals.avg_ticket), note: "sobre ventas registradas", tone: "cyan" },
+    { icon: "trending_up", label: "ROI de la base comercial", value: economics.roi === null ? "Por completar" : ratioLabel(economics.roi), note: economics.investment ? `${money(economics.investment)} de inversión registrada` : "Registra inversión para calcularlo", tone: "gold" },
+    { icon: "target", label: "Señal Qori", value: `${toNumber(revenueScore.score)}/100`, note: revenueScore.status || "En lectura", tone: "green" },
+  ];
+  dashboardWidgetGrid.innerHTML = `
+    <section class="revenue-advanced-board" aria-label="Consola avanzada de Revenue">
+      <header class="revenue-advanced-hero">
+        <div class="revenue-advanced-kicker"><span class="material-symbols-outlined" aria-hidden="true">radar</span>Qori Revenue Intelligence <i></i> ${escapeHtml(periodLabel)}</div>
+        <div class="revenue-advanced-hero-copy"><div><h3>De la señal a la decisión.</h3><p>Una lectura conectada de captación, activación, venta y retorno. Sin métricas aisladas ni gráficos de relleno.</p></div><div class="revenue-advanced-hero-actions"><button type="button" class="ghost-button" data-revenue-advanced-refresh><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar lectura</button><button type="button" class="primary-button" data-dashboard-nav="channels"><span class="material-symbols-outlined" aria-hidden="true">tune</span>Gestionar inversión</button></div></div>
+        <div class="revenue-advanced-kpi-grid">${kpis.map((item) => `<article class="is-${item.tone}"><span class="material-symbols-outlined" aria-hidden="true">${item.icon}</span><small>${item.label}</small><strong>${escapeHtml(item.value)}</strong><em>${escapeHtml(item.note)}</em></article>`).join("")}</div>
+      </header>
+      <div class="revenue-advanced-major-grid">
+        <article class="revenue-advanced-panel revenue-advanced-timeline"><header><div><span class="mono-label">Ritmo comercial</span><h4>Cómo viajan las oportunidades</h4></div><span class="revenue-panel-status"><i></i>Datos reales</span></header>${revenueAdvancedTimelineMarkup(data.timeline || [])}</article>
+        <article class="revenue-advanced-panel revenue-advanced-journey"><header><div><span class="mono-label">Recorrido medible</span><h4>Del contacto al ingreso</h4></div><small>Periodo actual</small></header>${revenueAdvancedFlowMarkup(totals)}<p class="revenue-advanced-journey-note">${toNumber(totals.leads) ? `${ratioLabel(toNumber(totals.sales_count) / Math.max(1, toNumber(totals.leads)))} de los leads capturados termina como venta registrada.` : "Aún no hay leads suficientes para calcular la conversión."}</p></article>
+      </div>
+      <div class="revenue-advanced-signal-grid">
+        <section class="revenue-advanced-panel revenue-advanced-insights"><header><div><span class="mono-label">Qué importa ahora</span><h4>Señales que piden decisión</h4></div><button type="button" class="ghost-button compact" data-dashboard-nav="rms-machine">Abrir operación <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></header><div class="revenue-advanced-insight-list">${revenueAdvancedInsightMarkup(data.insights)}</div></section>
+        <section class="revenue-advanced-panel revenue-advanced-channels"><header><div><span class="mono-label">Atribución operable</span><h4>Canales que mueven revenue</h4></div><button type="button" class="ghost-button compact" data-dashboard-nav="channels">Ver canales <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></header>${revenueAdvancedPerformanceMarkup(data.channel_performance)}</section>
+      </div>
+      <section class="revenue-advanced-panel revenue-advanced-campaigns"><header><div><span class="mono-label">Decisión de portafolio</span><h4>Campañas: dónde escalar, ajustar o detenerse</h4><p>La tabla cruza resultados observados con la inversión registrada; no rellena la lectura con proyecciones.</p></div><button type="button" class="ghost-button" data-dashboard-nav="campaigns"><span class="material-symbols-outlined" aria-hidden="true">campaign</span>Abrir campañas</button></header>
+        <div class="revenue-advanced-table-wrap"><table><thead><tr><th>Campaña</th><th>Leads</th><th>Tickets</th><th>Ventas</th><th>Revenue</th><th>ROI</th><th>Decisión</th></tr></thead><tbody>${(data.power_table || []).slice(0, 8).map((row) => {
+          const roi = row.roi === null || row.roi === undefined ? null : toNumber(row.roi);
+          const action = roi === null ? "Medir inversión" : roi > .35 ? "Escalar" : roi < 0 ? "Revisar" : "Optimizar";
+          const tone = action === "Escalar" ? "positive" : action === "Revisar" ? "negative" : "neutral";
+          return `<tr><td><strong>${escapeHtml(row.campaign_name || "Sin campaña")}</strong><small>${escapeHtml(row.campaign_status || "")}</small></td><td>${toNumber(row.leads)}</td><td>${toNumber(row.qr_generated)}</td><td>${toNumber(row.sales)}</td><td><strong>${money(row.revenue)}</strong></td><td>${roi === null ? "—" : escapeHtml(ratioLabel(roi))}</td><td><span class="revenue-action-pill is-${tone}">${action}</span></td></tr>`;
+        }).join("") || `<tr><td colspan="7" class="revenue-advanced-table-empty">Aún no hay campañas con actividad atribuible dentro de este período.</td></tr>`}</tbody></table></div>
+      </section>
+    </section>`;
 }
 
 function renderDashboardBuilder() {
@@ -13197,6 +13349,12 @@ function renderDashboardBuilder() {
   dashboardProfileTabs?.querySelectorAll("[data-dashboard-profile]").forEach((button) => {
     button.classList.toggle("active", button.dataset.dashboardProfile === state.dashboardBuilderProfile);
   });
+  dashboardProfileTabs?.toggleAttribute("hidden", workspaceTab === "analysis");
+  dashboardResetProfileButton?.toggleAttribute("hidden", workspaceTab === "analysis");
+  if (workspaceTab === "analysis") {
+    renderRevenueAdvancedBoard();
+    return;
+  }
   dashboardWidgetLibrary.closest(".dashboard-widget-library")?.toggleAttribute("hidden", workspaceTab !== "customize");
   const libraryFilter = ["selected", "indicator", "chart", "table", "all"].includes(state.dashboardLibraryFilter)
     ? state.dashboardLibraryFilter
@@ -13383,11 +13541,14 @@ async function refreshRevenueCenter() {
   if (!session?.user?.business_id || state.dashboardLoading) return;
   setButtonLoading(dashboardRevenueRefreshButton, true, "Actualizando...");
   try {
+    const refreshDeepAnalysis = getDashboardWorkspaceTab() === "analysis" || Boolean(state.commandCenter);
+    if (refreshDeepAnalysis) state.commandCenter = null;
     const results = await Promise.allSettled([
       loadDashboardData({ force: true, quiet: true }),
       loadAcquisitionChannels({ force: true, quiet: true }),
       loadChannelEfforts({ force: true, quiet: true }),
       loadLeadAgendaData({ force: true, quiet: true }),
+      refreshDeepAnalysis ? loadCommandCenterData({ quiet: true }) : Promise.resolve(),
     ]);
     renderDashboard();
     const failed = results.filter((result) => result.status === "rejected").length;
@@ -53947,6 +54108,22 @@ dashboardTemplateGallery?.addEventListener("click", (event) => {
   renderDashboardBuilder();
 });
 dashboardWidgetGrid?.addEventListener("click", (event) => {
+  const advancedLoadButton = event.target.closest("[data-revenue-advanced-load]");
+  if (advancedLoadButton) {
+    loadCommandCenterData({ quiet: true });
+    return;
+  }
+  const advancedRefreshButton = event.target.closest("[data-revenue-advanced-refresh]");
+  if (advancedRefreshButton) {
+    state.commandCenter = null;
+    loadCommandCenterData({ quiet: true });
+    return;
+  }
+  const advancedRouteButton = event.target.closest("[data-dashboard-nav]");
+  if (advancedRouteButton) {
+    openDashboardBuilderRoute(advancedRouteButton.dataset.dashboardNav);
+    return;
+  }
   const removeButton = event.target.closest("[data-dashboard-remove-widget]");
   if (removeButton) {
     removeDashboardWidget(removeButton.dataset.dashboardRemoveWidget);
