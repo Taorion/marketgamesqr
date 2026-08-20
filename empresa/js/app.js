@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-intelligence-compact-cases-v299";
+const APP_VERSION = "empresa-20260820-risk-flow-v300";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -56707,20 +56707,6 @@ rmsRiskValidationStationCardMarkup = function rmsRiskValidationStationCardMarkup
 const rmsRiskRecoveryResourceMarkupDownloadOnlyBase = rmsRiskRecoveryResourceMarkup;
 rmsRiskRecoveryResourceMarkup = function rmsRiskRecoveryResourceMarkupDownloadOnly(item = {}) {
   return rmsRiskRecoveryResourceMarkupDownloadOnlyBase(item).replace(/<a[^>]*>\s*<span[^>]*>visibility<\/span>\s*Ver imagen<\/a>/, "");
-};
-
-// Render activo de Riesgos: fases visibles y operables, sin depender del stepper legacy.
-rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupPhased(item = {}) {
-  const id = escapeHtml(item.id);
-  const resource = rmsRiskRecoveryResourceFor(item);
-  const hasResource = Boolean(resource?.public_ticket_url);
-  return `<section class="rms-risk-operating-flow rms-risk-flow-phased" aria-label="Flujo de recuperación extraordinaria">
-    <header class="rms-risk-phased-head"><span class="mono-label">RECUPERACIÓN EXTRAORDINARIA</span><h5>Gestiona el ticket, espera la respuesta y registra un único resultado</h5><p>El lead permanece en Riesgos de fuga hasta que documentes qué ocurrió.</p></header>
-    <ol class="rms-risk-phase-rail" aria-label="Fases de recuperación"><li class="is-active"><b>1</b><span><strong>Negociar</strong><small>Beneficio y ticket</small></span></li><li class="${hasResource ? "is-active" : "is-pending"}"><b>2</b><span><strong>Entregar</strong><small>QR y contacto</small></span></li><li class="is-pending"><b>3</b><span><strong>Responder</strong><small>Venta o Reciclaje</small></span></li></ol>
-    <section class="rms-risk-phase-card rms-risk-phase-ticket"><header><span class="rms-risk-phase-number">01</span><div><span class="mono-label">NEGOCIACIÓN EXTRAORDINARIA</span><h6>Prepara la concesión autorizada</h6><small>Selecciona el beneficio, su vigencia y el detalle que aceptará el cliente.</small></div></header><div class="rms-risk-builder-config"><label><span>Alternativa de recuperación</span><select data-rms-risk-recovery-offer="${id}">${rmsRiskRecoveryOfferOptions()}</select><small>Solo se pueden usar autorizaciones válidas de Qori.</small></label><label><span>Vigencia del ticket</span><select data-rms-risk-expiration-days="${id}"><option value="3">3 días</option><option value="7" selected>7 días</option><option value="15">15 días</option><option value="30">30 días</option></select></label><label data-rms-risk-discount-wrap="${id}" hidden><span>Descuento aplicado</span><input type="number" min="0.01" max="100" step="0.01" data-rms-risk-discount-percent="${id}" placeholder="0"></label><label data-rms-risk-detail-wrap="${id}" hidden><span>Detalle autorizado</span><input type="text" maxlength="1000" data-rms-risk-recovery-detail="${id}" placeholder="Describe el 2x1 u obsequio autorizado"></label></div><button class="solid-button" type="button" data-rms-generate-risk-resource="${id}"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>Generar ticket y QR</button></section>
-    <section class="rms-risk-phase-card rms-risk-phase-delivery"><header><span class="rms-risk-phase-number">02</span><div><span class="mono-label">ENTREGA Y CONTACTO</span><h6>Comparte el activo y espera la respuesta</h6><small>El QR queda visible aquí. El lead no sale de Riesgos durante la espera.</small></div></header><div class="rms-risk-resource-status-final" data-rms-risk-resource-status="${id}">${rmsRiskRecoveryResourceMarkup(item)}</div><div class="rms-risk-delivery-bar"><label class="checkbox-row"><input type="checkbox" data-rms-risk-consent="${id}"> Confirmo que el lead autorizó contacto comercial.</label><div><button class="ghost-button compact" type="button" data-rms-risk-whatsapp="${id}"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</button><button class="ghost-button compact" type="button" data-rms-risk-email="${id}"><span class="material-symbols-outlined" aria-hidden="true">mail</span>Email</button><button class="ghost-button compact" type="button" data-rms-risk-copy-ticket="${id}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Copiar enlace</button><button class="ghost-button compact" type="button" data-rms-risk-download-ticket="${id}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar activo</button></div></div></section>
-    <section class="rms-risk-phase-card rms-risk-phase-response"><header><span class="rms-risk-phase-number">03</span><div><span class="mono-label">RESPUESTA Y RESULTADO</span><h6>Registra lo que respondió el cliente</h6><small>Selecciona una salida y escribe la justificación. La decisión se guarda una sola vez.</small></div></header><div class="rms-risk-phase-response-note">El resultado de esta fase aparece debajo, con los campos de Venta lograda y Reciclaje.</div></section>
-  </section>`;
 };
 
 // Inserta la consola de fases directamente en la tarjeta activa; no depende del montaje posterior.
