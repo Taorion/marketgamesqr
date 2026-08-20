@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260819-rms-rebuy-button-v293";
+const APP_VERSION = "empresa-20260820-rms-station-bootfix-v294";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -56535,8 +56535,7 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
   }
 }
 
-// Asegura que el estado visual final sea el que usa el flujo después de cargar todas las declaraciones legacy.
-rmsRiskRecoveryResourceMarkup = rmsRiskRecoveryResourceMarkupVisual;
+// El renderizador activo se define por las implementaciones concretas de abajo.
 rmsRiskOperatingFlowMarkup = rmsRiskOperatingFlowMarkupJourney;
 
 // Convierte el stepper en navegación operativa: cada estado abre su bloque real.
