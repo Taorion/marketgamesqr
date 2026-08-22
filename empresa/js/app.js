@@ -58201,10 +58201,9 @@ function setRmsRiskRecoveryPhase(card, id, requestedPhase, { focus = true } = {}
   if (!card) return;
   const resource = rmsRiskRecoveryResourceFor(rmsOpportunityById(id) || {});
   const hasResource = Boolean(resource?.public_ticket_url);
-  let phase = requestedPhase;
-  if (!hasResource && phase !== "prepare") {
-    showFeedback("Primero prepara y genera el ticket de recuperación.", "info", { title: "Riesgos de fuga" });
-    phase = "prepare";
+  const phase = requestedPhase === "deliver" && !hasResource ? "prepare" : requestedPhase;
+  if (requestedPhase === "deliver" && !hasResource) {
+    showFeedback("Genera primero el ticket para habilitar la entrega. Puedes registrar la respuesta sin crear un ticket.", "info", { title: "Riesgos de fuga" });
   }
   card.dataset.rmsRiskActivePhase = phase;
   const order = ["prepare", "deliver", "result"];
@@ -58244,12 +58243,12 @@ rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupUnified(item = {
   const resource = rmsRiskRecoveryResourceFor(item);
   const hasResource = Boolean(resource?.public_ticket_url);
   const current = hasResource ? "deliver" : "prepare";
-  const step = (key, number, title, detail) => `<li class="${key === current ? "is-active" : key === "prepare" && hasResource ? "is-complete" : "is-pending"}"><button type="button" data-rms-risk-phase="${id}" data-rms-risk-phase-key="${key}" ${key === current ? 'aria-current="step"' : ""}><b>${number}</b><span><strong>${title}</strong><small>${detail}</small></span></button></li>`;
+  const step = (key, number, title, detail, disabled = false) => `<li class="${key === current ? "is-active" : key === "prepare" && hasResource ? "is-complete" : "is-pending"}"><button type="button" data-rms-risk-phase="${id}" data-rms-risk-phase-key="${key}" ${key === current ? 'aria-current="step"' : ""} ${disabled ? 'disabled aria-disabled="true"' : ""}><b>${number}</b><span><strong>${title}</strong><small>${detail}</small></span></button></li>`;
   return `<section class="rms-risk-operating-flow rms-risk-flow-phased" aria-label="Flujo de recuperación extraordinaria">
     <header class="rms-risk-phased-head"><span class="mono-label">RECUPERACIÓN EXTRAORDINARIA</span><h5>Negocia, entrega y cierra sin perder el contexto</h5><p>Una concesión autorizada, un ticket reutilizable y una única salida para el caso.</p></header>
-    <ol class="rms-risk-phase-rail" aria-label="Fases de recuperación">${step("prepare", "1", "Negociar", "Beneficio y ticket")}${step("deliver", "2", "Entregar", "QR y contacto")}${step("result", "3", "Responder", "Venta o Reciclaje")}</ol>
+    <ol class="rms-risk-phase-rail" aria-label="Fases de recuperación">${step("prepare", "1", "Preparar", "Beneficio opcional")}${step("deliver", "2", "Entregar", hasResource ? "QR y contacto" : "Requiere ticket", !hasResource)}${step("result", "3", "Responder", "Venta o Reciclaje")}</ol>
     <div class="rms-risk-phase-status" data-rms-risk-phase-status><strong>${hasResource ? "Fase 2 activa" : "Fase 1 activa"}</strong><small>${hasResource ? "Comparte el activo y registra la respuesta cuando el cliente confirme." : "Define una alternativa autorizada antes de generar el ticket."}</small></div>
-    <section class="rms-risk-phase-card rms-risk-phase-ticket" data-rms-risk-phase-panel="prepare"><header><span class="rms-risk-phase-number">01</span><div><span class="mono-label">NEGOCIACIÓN EXTRAORDINARIA</span><h6>Prepara la concesión autorizada</h6><small>Solo esta fase crea el ticket. Generarlo no mueve ni duplica el lead.</small></div></header><div class="rms-risk-builder-config"><label><span>Alternativa de recuperación</span><select data-rms-risk-recovery-offer="${id}">${rmsRiskRecoveryOfferOptions()}</select><small>Solo aparecen opciones válidas de Qori.</small></label><label><span>Vigencia del ticket</span><select data-rms-risk-expiration-days="${id}"><option value="3">3 días</option><option value="7" selected>7 días</option><option value="15">15 días</option><option value="30">30 días</option></select></label><label data-rms-risk-discount-wrap="${id}" hidden><span>Descuento aplicado</span><input type="number" min="0.01" max="100" step="0.01" data-rms-risk-discount-percent="${id}" placeholder="0"></label><label data-rms-risk-detail-wrap="${id}" hidden><span>Detalle autorizado</span><input type="text" maxlength="1000" data-rms-risk-recovery-detail="${id}" placeholder="Describe el 2x1 u obsequio autorizado"></label></div><div class="rms-risk-phase-actions"><button class="solid-button" type="button" data-rms-generate-risk-resource="${id}"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>Generar ticket y QR</button><small>El mismo beneficio reutiliza el activo: los reintentos no consumen otro crédito.</small></div></section>
+    <section class="rms-risk-phase-card rms-risk-phase-ticket" data-rms-risk-phase-panel="prepare"><header><span class="rms-risk-phase-number">01</span><div><span class="mono-label">NEGOCIACIÓN EXTRAORDINARIA</span><h6>Prepara una concesión solo si hace falta</h6><small>El ticket es opcional. Si ya conoces la respuesta, regístrala directamente.</small></div></header><div class="rms-risk-builder-config"><label><span>Alternativa de recuperación</span><select data-rms-risk-recovery-offer="${id}">${rmsRiskRecoveryOfferOptions()}</select><small>Solo aparecen opciones válidas de Qori.</small></label><label><span>Vigencia del ticket</span><select data-rms-risk-expiration-days="${id}"><option value="3">3 días</option><option value="7" selected>7 días</option><option value="15">15 días</option><option value="30">30 días</option></select></label><label data-rms-risk-discount-wrap="${id}" hidden><span>Descuento aplicado</span><input type="number" min="0.01" max="100" step="0.01" data-rms-risk-discount-percent="${id}" placeholder="0"></label><label data-rms-risk-detail-wrap="${id}" hidden><span>Detalle autorizado</span><input type="text" maxlength="1000" data-rms-risk-recovery-detail="${id}" placeholder="Describe el 2x1 u obsequio autorizado"></label></div><div class="rms-risk-phase-actions"><button class="solid-button" type="button" data-rms-generate-risk-resource="${id}"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>Generar ticket y QR</button><button class="ghost-button" type="button" data-rms-risk-phase="${id}" data-rms-risk-phase-key="result"><span class="material-symbols-outlined" aria-hidden="true">edit_note</span>Registrar respuesta sin ticket</button><small>El mismo beneficio reutiliza el activo: los reintentos no consumen otro crédito.</small></div></section>
     <section class="rms-risk-phase-card rms-risk-phase-delivery" data-rms-risk-phase-panel="deliver" ${hasResource ? "" : "hidden"}><header><span class="rms-risk-phase-number">02</span><div><span class="mono-label">ENTREGA Y CONTACTO</span><h6>Comparte el activo y espera la respuesta</h6><small>El lead permanece en Riesgos de fuga hasta que el resultado quede registrado.</small></div></header><div class="rms-risk-resource-status-final" data-rms-risk-resource-status="${id}">${rmsRiskRecoveryResourceMarkup(item)}</div><div class="rms-risk-delivery-bar"><label class="checkbox-row"><input type="checkbox" data-rms-risk-consent="${id}"> Confirmo que el lead autorizó contacto comercial.</label><div><button class="ghost-button compact" type="button" data-rms-risk-whatsapp="${id}"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</button><button class="ghost-button compact" type="button" data-rms-risk-email="${id}"><span class="material-symbols-outlined" aria-hidden="true">mail</span>Email</button><button class="ghost-button compact" type="button" data-rms-risk-copy-ticket="${id}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Copiar enlace</button><button class="ghost-button compact" type="button" data-rms-risk-download-ticket="${id}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar activo</button></div></div><div class="rms-risk-phase-actions rms-risk-result-cta"><button class="solid-button compact" type="button" data-rms-risk-open-result="${id}"><span class="material-symbols-outlined" aria-hidden="true">edit_note</span>Registrar respuesta</button><small>Solo después de conocer la respuesta decide Venta lograda o Reciclaje.</small></div></section>
     <section class="rms-risk-phase-card rms-risk-phase-response" data-rms-risk-phase-panel="result" hidden><header><span class="rms-risk-phase-number">03</span><div><span class="mono-label">RESULTADO DE LA RECUPERACIÓN</span><h6>Registra una sola salida</h6><small>El beneficio usado se conserva para que Ventas reciba la condición correcta.</small></div></header><div class="rms-risk-phase-response-note">Selecciona el resultado, explica qué ocurrió y guarda. No se crean copias del lead.</div></section>
   </section>`;
@@ -58291,6 +58290,13 @@ syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified(card, item
     rmsRiskOutcomeOfferUi(card, id);
   }
   const hasResource = Boolean(rmsRiskRecoveryResourceFor(item)?.public_ticket_url);
+  const deliverButton = card.querySelector('[data-rms-risk-phase-key="deliver"]');
+  if (deliverButton) {
+    deliverButton.disabled = !hasResource;
+    deliverButton.setAttribute("aria-disabled", String(!hasResource));
+    const detail = deliverButton.querySelector("small");
+    if (detail) detail.textContent = hasResource ? "QR y contacto" : "Requiere ticket";
+  }
   card.querySelectorAll("[data-rms-risk-phase]").forEach((button) => {
     if (button.dataset.rmsRiskPhaseBound) return;
     button.dataset.rmsRiskPhaseBound = "true";
@@ -58360,10 +58366,14 @@ saveRmsRiskDecision = async function saveRmsRiskDecisionUnified(item, root) {
   const button = rmsCommercialNode(root, "[data-rms-save-risk-decision]", item.id);
   setButtonLoading(button, true, result === "RECYCLE" ? "Enviando..." : "Confirmando...");
   try {
-    await api("/api/business/rms-machine/risk-review", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, result, reason, recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE", recovery_benefit_id: result === "CLEARED" ? recoveryBenefitId : null, discount_percent: result === "CLEARED" ? discountPercent : 0, recovery_detail: result === "CLEARED" ? recoveryDetail || null : null, recycle_reason: result === "RECYCLE" ? recycleReason : null, recycle_strategy: result === "RECYCLE" ? (rmsCommercialNode(root, "[data-rms-risk-recycle-strategy]", item.id)?.value || "NURTURE") : null, recycle_note: result === "RECYCLE" ? reason : null, next_action_at: result === "RECYCLE" ? rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-risk-next-at]", item.id)?.value || "") : null, responsible: rmsCommercialWorkflow(item).confirmation?.responsible || null }) });
-    state.rmsMachineLoaded = false;
+    const review = await api("/api/business/rms-machine/risk-review", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, result, reason, recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE", recovery_benefit_id: result === "CLEARED" ? recoveryBenefitId : null, discount_percent: result === "CLEARED" ? discountPercent : 0, recovery_detail: result === "CLEARED" ? recoveryDetail || null : null, recycle_reason: result === "RECYCLE" ? recycleReason : null, recycle_strategy: result === "RECYCLE" ? (rmsCommercialNode(root, "[data-rms-risk-recycle-strategy]", item.id)?.value || "NURTURE") : null, recycle_note: result === "RECYCLE" ? reason : null, next_action_at: result === "RECYCLE" ? rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-risk-next-at]", item.id)?.value || "") : null, responsible: rmsCommercialWorkflow(item).confirmation?.responsible || null }) });
+    item.stage = result === "RECYCLE" ? "reciclaje" : "cierre";
+    item.rms_phase = item.stage;
+    item.risk_review = review?.review || review?.risk_review || { ...(item.risk_review || {}), result, reason, recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE", recovery_benefit_id: result === "CLEARED" ? recoveryBenefitId : null, discount_percent: result === "CLEARED" ? discountPercent : 0, recovery_detail: result === "CLEARED" ? recoveryDetail || null : null };
+    rebuildRmsOpportunityIndex(state.rmsMachine?.opportunities || []);
+    state.rmsMachineLoaded = true;
     if (result === "RECYCLE") { setView("recycling"); showFeedback("Lead enviado a Reciclaje con el motivo y contexto conservados.", "success", { title: "Riesgos de fuga" }); }
-    else { await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "cierre" }); showFeedback("Venta lograda. Continúa el pago y productos en Ventas atribuidas.", "success", { title: "Riesgos de fuga" }); openRmsStation("cierre", { source: "risk-recovery" }); }
+    else { showFeedback("Venta lograda. Continúa el pago y productos en Ventas atribuidas.", "success", { title: "Riesgos de fuga" }); openRmsStation("cierre", { source: "risk-recovery" }); }
   } finally { setButtonLoading(button, false); }
 };
 
@@ -58726,7 +58736,9 @@ async function saveRmsRiskDecision(item, root) {
   const recycleReason = String(recycleReasonNode?.value || "").trim();
   const recycleReasonLabel = recycleReasonNode?.selectedOptions?.[0]?.textContent?.trim() || recycleReason;
   const typedReason = String(reasonNode?.value || "").trim();
-  const recoveryOfferNode = rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id);
+  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(item.id)}"]`);
+  const recoveryOfferNode = card?.querySelector(`[data-rms-risk-outcome-offer="${CSS.escape(item.id)}"]`)
+    || rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id);
   const recoveryOfferValue = recoveryOfferNode?.value || "NONE";
   const recoveryBenefitId = recoveryOfferValue.startsWith("BENEFIT:") ? recoveryOfferValue.slice(8) : null;
   const selectedBenefit = recoveryBenefitId ? rmsRiskRecoveryAuthorizations().benefits.find((benefit) => benefit.id === recoveryBenefitId) : null;
@@ -58740,8 +58752,12 @@ async function saveRmsRiskDecision(item, root) {
     return;
   }
   const recoveryOffer = recoveryBenefitId ? "CUSTOM" : recoveryOfferValue;
-  const discountPercent = Number(rmsCommercialNode(root, "[data-rms-risk-discount-percent]", item.id)?.value || 0);
-  const recoveryDetail = String(rmsCommercialNode(root, "[data-rms-risk-recovery-detail]", item.id)?.value || "").trim();
+  const discountPercent = Number(card?.querySelector(`[data-rms-risk-outcome-discount-percent="${CSS.escape(item.id)}"]`)?.value
+    || rmsCommercialNode(root, "[data-rms-risk-discount-percent]", item.id)?.value
+    || 0);
+  const recoveryDetail = String(card?.querySelector(`[data-rms-risk-outcome-detail="${CSS.escape(item.id)}"]`)?.value
+    || rmsCommercialNode(root, "[data-rms-risk-recovery-detail]", item.id)?.value
+    || "").trim();
   const permissions = rmsRiskRecoveryAuthorizations();
   if (result === "CLEARED" && recoveryOffer === "DISCOUNT" && (!permissions.discount.enabled || discountPercent <= 0 || discountPercent > permissions.discount.max_percent)) {
     showFeedback(`El descuento debe respetar la autorización de Cuenta (máximo ${permissions.discount.max_percent || 0}%).`, "info", { title: "Riesgos de fuga" });
@@ -58758,7 +58774,7 @@ async function saveRmsRiskDecision(item, root) {
   const button = rmsCommercialNode(root, "[data-rms-save-risk-decision]", item.id);
   setButtonLoading(button, true, result === "RECYCLE" ? "Enviando..." : "Confirmando...");
   try {
-    await api("/api/business/rms-machine/risk-review", {
+    const review = await api("/api/business/rms-machine/risk-review", {
       method: "POST", headers: authHeaders(),
       body: JSON.stringify({
         source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null,
@@ -58774,12 +58790,26 @@ async function saveRmsRiskDecision(item, root) {
         responsible: rmsCommercialWorkflow(item).confirmation?.responsible || null,
       }),
     });
-    state.rmsMachineLoaded = false;
+    // El POST ya confirmó la transición. Reflejamos el destino de inmediato y
+    // dejamos que la estación de destino haga una sola sincronización ligera.
+    // Antes se cargaba RMS aquí y openRmsStation volvía a cargarlo enseguida.
+    item.stage = result === "RECYCLE" ? "reciclaje" : "cierre";
+    item.rms_phase = item.stage;
+    item.risk_review = review?.review || review?.risk_review || {
+      ...(item.risk_review || {}),
+      result,
+      reason,
+      recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE",
+      recovery_benefit_id: result === "CLEARED" ? recoveryBenefitId : null,
+      discount_percent: result === "CLEARED" ? discountPercent : 0,
+      recovery_detail: result === "CLEARED" ? recoveryDetail || null : null,
+    };
+    rebuildRmsOpportunityIndex(state.rmsMachine?.opportunities || []);
+    state.rmsMachineLoaded = true;
     if (result === "RECYCLE") {
       setView("recycling");
       showFeedback("Lead enviado a Reciclaje con el motivo, contexto y costo conservados.", "success", { title: "Riesgos de fuga" });
     } else {
-      await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "cierre" });
       showFeedback("Venta lograda. Ahora termina el registro de pago y productos en Ventas atribuidas.", "success", { title: "Riesgos de fuga" });
       openRmsStation("cierre", { source: "risk-recovery" });
     }
