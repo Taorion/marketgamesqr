@@ -1665,6 +1665,8 @@ html body[data-current-view="communications"] .portal-shell .communication-histo
 
 html body[data-current-view="communications"] .portal-shell .communication-history-results {
   display: grid;
+  grid-auto-rows: max-content;
+  align-items: start;
   max-height: min(64vh, 720px);
   margin-top: 10px;
   overflow-y: auto;
@@ -1820,6 +1822,10 @@ html body[data-current-view="communications"] .portal-shell .communication-selec
   html body[data-current-view="communications"] .portal-shell .communication-list-item.communication-history-item {
     grid-template-columns: 24px 34px minmax(0, 1fr) !important;
     gap: 8px !important;
+    align-self: start;
+    align-items: start;
+    height: auto !important;
+    min-height: 0;
     padding: 14px 12px !important;
   }
 

@@ -92,8 +92,9 @@ test("communications history is isolated, filterable, and visually bounded", () 
   assert.match(css, /communication-history-toolbar \[hidden\][\s\S]+display:\s*none\s*!important/);
   assert.match(css, /communication-history-results[\s\S]+max-height:[^;]+;[\s\S]+overflow-y:\s*auto/);
   assert.match(css, /grid-template-columns:\s*24px 34px minmax\(0, 1fr\)\s*!important/);
+  assert.match(css, /communication-history-results[\s\S]+grid-auto-rows:\s*max-content/);
   assert.match(frontend, /data-communication-history-filters/);
   assert.match(frontend, /communicationHistoryStatus/);
   assert.match(frontend, /communication-history-results/);
-  assert.match(html, /communications-history-v332-20260822/);
+  assert.match(html, /communications-history-v333-20260822/);
 });
