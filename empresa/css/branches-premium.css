@@ -593,6 +593,27 @@ html body[data-current-view="branches"] .portal-shell .branches-premium-view.act
   }
 }
 
+html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active .branches-toolbar .branch-search-field > .sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active .branches-filter-field > span {
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  writing-mode: horizontal-tb !important;
+}
+
 /* The portal foundation intentionally uses high-specificity guards. This view
    owns its rhythm, so its stable id outranks those guards without touching
    any other module. */
