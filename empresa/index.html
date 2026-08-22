@@ -48,6 +48,7 @@
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
 <link rel="stylesheet" href="css/portal-clean-v39.css?v=campaign-calculator-scroll-v319-20260822">
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-pro-v11-20260820">
+<link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v1-20260822">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -6568,31 +6569,89 @@
             </article>
           </section>
 
-          <section class="view-section" data-view="branches">
-            <div class="view-head">
-              <div>
+          <section class="view-section branches-premium-view" data-view="branches" data-quiet-zone-ignore>
+            <header class="branches-hero">
+              <div class="branches-hero-copy">
+                <span class="branches-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">hub</span> Red comercial</span>
                 <h2>Sedes</h2>
-                <p>Consulta tus puntos de venta y consignaciones. Abre una sede para revisar sus resultados y movimientos.</p>
+                <p>Controla cada punto de venta y consignación desde una sola vista. Compara actividad, responsables e ingresos sin perder el historial.</p>
               </div>
-              <div class="head-actions">
-                <button class="solid-button" id="newBranchButton" type="button">
+              <div class="branches-hero-actions">
+                <span class="branches-live-signal"><i aria-hidden="true"></i> Datos operativos</span>
+                <button class="solid-button branches-create-button" id="newBranchButton" type="button">
                   <span class="material-symbols-outlined" aria-hidden="true">add_business</span>
                   Crear sede
                 </button>
               </div>
-            </div>
-            <section class="kpi-grid sales-kpis" id="branchKpiGrid"></section>
-            <article class="surface-card data-table-card" id="branchFormPanel">
-              <div class="table-card-head">
-                <div>
-                  <span class="mono-label">Nueva sede</span>
-                  <strong>Sede o consignación</strong>
-                </div>
-                <button class="icon-button" id="branchFormCloseButton" type="button" aria-label="Cerrar formulario de sede">
-                  <span class="material-symbols-outlined" aria-hidden="true">close</span>
-                </button>
+            </header>
+
+            <section class="branches-kpi-grid" id="branchKpiGrid" aria-label="Resumen de sedes"></section>
+
+            <article class="branches-unassigned-card hidden" id="branchUnassignedCard" data-quiet-zone-ignore>
+              <div class="branches-unassigned-icon" aria-hidden="true"><span class="material-symbols-outlined">location_off</span></div>
+              <div class="branches-unassigned-copy">
+                <span class="mono-label">Atención operativa</span>
+                <strong id="branchUnassignedTitle">Actividad pendiente de atribuir</strong>
+                <p id="branchUnassignedSummary"></p>
               </div>
-              <form class="lead-agenda-create-form" id="branchCreateForm">
+              <button class="ghost-button" id="branchUnassignedDetailButton" type="button">
+                Revisar actividad
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+              </button>
+            </article>
+
+            <article class="branches-directory" data-quiet-zone-ignore>
+              <div class="branches-directory-head">
+                <div>
+                  <span class="mono-label">Directorio territorial</span>
+                  <h3>Puntos registrados</h3>
+                  <p>Abre una sede para consultar ventas, redenciones y contexto operativo.</p>
+                </div>
+                <span class="branches-count" id="branchListCount" aria-live="polite"></span>
+              </div>
+              <div class="branches-toolbar">
+                <label class="branch-search-field">
+                  <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                  <span class="sr-only">Buscar sede</span>
+                  <input id="branchSearchInput" type="search" placeholder="Buscar sede, responsable o ciudad">
+                </label>
+                <label class="branches-filter-field">
+                  <span>Tipo</span>
+                  <select id="branchTypeFilter">
+                    <option value="ALL">Todos</option>
+                    <option value="BRANCH">Sedes</option>
+                    <option value="CONSIGNMENT">Consignaciones</option>
+                  </select>
+                </label>
+                <label class="branches-filter-field">
+                  <span>Estado</span>
+                  <select id="branchStatusFilter">
+                    <option value="ALL">Todos</option>
+                    <option value="ACTIVE">Activos</option>
+                    <option value="INACTIVE">Inactivos</option>
+                  </select>
+                </label>
+              </div>
+              <div class="branches-table-wrap">
+                <table class="branches-table">
+                  <thead><tr><th>Sede</th><th>Responsable</th><th>Rendimiento</th><th>Estado</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+                  <tbody id="branchTable"></tbody>
+                </table>
+              </div>
+              <div class="branches-mobile-list" id="branchMobileList"></div>
+            </article>
+
+            <div class="branch-modal-shell hidden" id="branchFormPanel" aria-hidden="true">
+              <article class="branch-modal-card branch-form-card" role="dialog" aria-modal="true" aria-labelledby="branchFormTitle" data-quiet-zone-ignore>
+                <div class="branch-modal-head">
+                  <div>
+                    <span class="mono-label" id="branchFormEyebrow">Nueva sede</span>
+                    <h3 id="branchFormTitle">Sede o consignación</h3>
+                    <p>Registra el punto y su responsable. El historial comercial permanecerá asociado a esta sede.</p>
+                  </div>
+                  <button class="icon-button" id="branchFormCloseButton" type="button" aria-label="Cerrar formulario de sede"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+                </div>
+                <form class="branch-premium-form" id="branchCreateForm">
                 <label>
                   <span>Tipo</span>
                   <select id="branchTypeInput">
@@ -6620,51 +6679,24 @@
                   <span>Notas</span>
                   <textarea id="branchNotesInput" rows="2" maxlength="1000" placeholder="Condiciones de consignación, horario, inventario entregado o reglas operativas"></textarea>
                 </label>
-                <button class="solid-button" id="branchSubmitButton" type="submit">Agregar sede</button>
-                <button class="ghost-button hidden" id="branchCancelEditButton" type="button">Cancelar edición</button>
-                <p class="form-message" id="branchCreateMessage"></p>
-              </form>
-            </article>
-            <article class="surface-card data-table-card">
-              <div class="table-card-head">
-                <div>
-                  <span class="mono-label">Sedes registradas</span>
-                  <h3>Rendimiento por punto</h3>
-                </div>
-                <div class="branch-list-tools">
-                  <label class="branch-search-field">
-                    <span class="material-symbols-outlined" aria-hidden="true">search</span>
-                    <input id="branchSearchInput" type="search" placeholder="Buscar sede, responsable o ciudad">
-                  </label>
-                  <span class="table-secondary" id="branchListCount" aria-live="polite"></span>
-                </div>
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Sede</th>
-                      <th>Responsable</th>
-                      <th>Resultados</th>
-                      <th>Estado</th>
-                      <th aria-label="Acciones"></th>
-                    </tr>
-                  </thead>
-                  <tbody id="branchTable"></tbody>
-                </table>
-              </div>
-            </article>
-            <div class="branch-detail-modal hidden" id="branchDetailModal" aria-hidden="true">
-              <article class="surface-card branch-detail-card" role="dialog" aria-modal="true" aria-labelledby="branchDetailTitle">
-                <div class="branch-detail-head">
+                  <p class="form-message span-2" id="branchCreateMessage" aria-live="polite"></p>
+                  <div class="branch-form-actions span-2">
+                    <button class="ghost-button" id="branchCancelEditButton" type="button">Cancelar</button>
+                    <button class="solid-button" id="branchSubmitButton" type="submit"><span class="material-symbols-outlined" aria-hidden="true">save</span> Guardar sede</button>
+                  </div>
+                </form>
+              </article>
+            </div>
+
+            <div class="branch-modal-shell hidden" id="branchDetailModal" aria-hidden="true">
+              <article class="branch-modal-card branch-detail-card" role="dialog" aria-modal="true" aria-labelledby="branchDetailTitle" data-quiet-zone-ignore>
+                <div class="branch-modal-head branch-detail-head">
                   <div>
                     <span class="mono-label">Detalle de sede</span>
                     <h3 id="branchDetailTitle">Sede</h3>
                     <p id="branchDetailSummary">Resultados comerciales, redenciones, ventas y datos básicos.</p>
                   </div>
-                  <button class="icon-button" id="branchDetailCloseButton" type="button" aria-label="Cerrar detalle de sede">
-                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
-                  </button>
+                  <button class="icon-button" id="branchDetailCloseButton" type="button" aria-label="Cerrar detalle de sede"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
                 </div>
                 <div class="branch-detail-body" id="branchDetailBody"></div>
               </article>
@@ -7963,7 +7995,7 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=activation-branches-calculator-v320-20260822" defer></script>
+<script src="js/app.js?v=activation-calculator-branches-premium-v321-20260822" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
     <script src="js/communications.js?v=email-attachments-v325-20260817" defer></script>
 </body>

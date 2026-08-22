@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260822-activation-branches-calculator-v320";
+const APP_VERSION = "empresa-20260822-activation-calculator-branches-premium-v321";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -50,14 +50,24 @@ const salesKpiGrid = document.getElementById("salesKpiGrid");
 const branchKpiGrid = document.getElementById("branchKpiGrid");
 const newBranchButton = document.getElementById("newBranchButton");
 const branchSearchInput = document.getElementById("branchSearchInput");
+const branchTypeFilter = document.getElementById("branchTypeFilter");
+const branchStatusFilter = document.getElementById("branchStatusFilter");
 const branchListCount = document.getElementById("branchListCount");
+const branchMobileList = document.getElementById("branchMobileList");
+const branchUnassignedCard = document.getElementById("branchUnassignedCard");
+const branchUnassignedTitle = document.getElementById("branchUnassignedTitle");
+const branchUnassignedSummary = document.getElementById("branchUnassignedSummary");
+const branchUnassignedDetailButton = document.getElementById("branchUnassignedDetailButton");
 const branchFormPanel = document.getElementById("branchFormPanel");
 const branchFormCloseButton = document.getElementById("branchFormCloseButton");
+const branchFormEyebrow = document.getElementById("branchFormEyebrow");
+const branchFormTitle = document.getElementById("branchFormTitle");
 const branchDetailModal = document.getElementById("branchDetailModal");
 const branchDetailCloseButton = document.getElementById("branchDetailCloseButton");
 const branchDetailTitle = document.getElementById("branchDetailTitle");
 const branchDetailSummary = document.getElementById("branchDetailSummary");
 const branchDetailBody = document.getElementById("branchDetailBody");
+let branchModalReturnFocus = null;
 const competitionKpiGrid = document.getElementById("competitionKpiGrid");
 const adminKpiGrid = document.getElementById("adminKpiGrid");
 const recentRedemptionsTable = document.getElementById("recentRedemptionsTable");
@@ -6666,6 +6676,10 @@ function setView(view) {
     closeBranchDetailModal();
   }
   state.currentView = view;
+  const staleAccountHash = String(window.location.hash || "").replace(/^#/, "");
+  if (view !== "account" && ACCOUNT_SECTION_SCREEN[staleAccountHash]) {
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}`);
+  }
   if (previousView !== view) {
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
   }
@@ -17422,45 +17436,6 @@ function renderSalesView() {
     </tr>
   `).join("") || '<tr><td colspan="7">Sin ventas para los filtros actuales.</td></tr>';
   bindSalesTableRows(sales);
-}
-
-function renderBranchesView() {
-  const summary = new Map();
-  (state.selectedRedemptions || []).forEach((item) => {
-    const key = item.branch_name || "Sin sucursal";
-    if (!summary.has(key)) summary.set(key, { branch: key, redemptions: 0, sales: 0, revenue: 0 });
-    summary.get(key).redemptions += 1;
-  });
-  (state.selectedSales || []).forEach((item) => {
-    const key = item.branch_name || "Sin sucursal";
-    if (!summary.has(key)) summary.set(key, { branch: key, redemptions: 0, sales: 0, revenue: 0 });
-    summary.get(key).sales += 1;
-    summary.get(key).revenue += toNumber(item.sale_amount);
-  });
-
-  const rows = Array.from(summary.values()).sort((a, b) => b.revenue - a.revenue);
-  const totalRevenue = rows.reduce((sum, row) => sum + row.revenue, 0);
-  const topBranch = rows[0]?.branch || "Sin datos";
-  branchKpiGrid.innerHTML = [
-    ["Sucursales activas", rows.length, topBranch],
-    ["Redenciones", state.selectedRedemptions.length, `${rows.length ? Math.round(state.selectedRedemptions.length / rows.length) : 0} promedio/sucursal`],
-    ["Ingresos", money(totalRevenue), `${state.selectedSales.length} ventas`],
-  ].map(([label, value, meta]) => `
-    <article class="kpi-card">
-      <span class="mono-label">${escapeHtml(label)}</span>
-      <strong>${escapeHtml(value)}</strong>
-      <div class="kpi-meta">${escapeHtml(meta)}</div>
-    </article>
-  `).join("");
-
-  branchTable.innerHTML = rows.map((row) => `
-    <tr>
-      <td>${escapeHtml(row.branch)}</td>
-      <td>${escapeHtml(row.redemptions)}</td>
-      <td>${escapeHtml(row.sales)}</td>
-      <td>${escapeHtml(money(row.revenue))}</td>
-    </tr>
-  `).join("") || '<tr><td colspan="8">Sin datos por sucursal.</td></tr>';
 }
 
 function renderAdminView() {
@@ -44024,6 +43999,9 @@ function branchTypeLabel(value = "") {
 }
 
 function ensureBranchesUxStyles() {
+  // Sedes has a dedicated static final stylesheet. Keep this hook for older callers.
+  return;
+  /* legacy runtime styles retained below for backwards-compatible diffs */
   if (document.getElementById("branchesUxStylesV78")) return;
   const style = document.createElement("style");
   style.id = "branchesUxStylesV78";
@@ -44209,9 +44187,11 @@ function branchesViewSection() {
 
 function openBranchFormModal() {
   ensureBranchesUxStyles();
+  branchModalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : newBranchButton;
   if (branchFormPanel?.parentElement !== document.body) document.body.appendChild(branchFormPanel);
-  branchesViewSection()?.classList.add("branch-modal-open");
-  branchFormPanel?.classList.add("is-branch-modal-open");
+  branchFormPanel?.classList.remove("hidden");
+  branchFormPanel?.removeAttribute("aria-hidden");
+  document.body.classList.add("branch-overlay-open");
 }
 
 function rmsPrimaryFactoryStages(data = {}) {
@@ -45127,8 +45107,11 @@ function renderRmsQualityControlDashboard(key = "") {
 }
 
 function closeBranchFormModal() {
-  branchFormPanel?.classList.remove("is-branch-modal-open");
-  branchesViewSection()?.classList.remove("branch-modal-open");
+  branchFormPanel?.classList.add("hidden");
+  branchFormPanel?.setAttribute("aria-hidden", "true");
+  if (branchDetailModal?.classList.contains("hidden") !== false) document.body.classList.remove("branch-overlay-open");
+  branchModalReturnFocus?.focus?.();
+  branchModalReturnFocus = null;
 }
 
 function branchRowKey(row = {}) {
@@ -45136,17 +45119,28 @@ function branchRowKey(row = {}) {
 }
 
 function branchRowByKey(key = "") {
+  if (key === "unassigned") return branchUnassignedActivity();
   return branchActivityRows().find((row) => branchRowKey(row) === key) || null;
 }
 
 function branchSalesForRow(row = {}) {
-  const branchName = String(row.branch || "").trim();
-  return (state.selectedSales || []).filter((item) => String(item.branch_name || "Sin sucursal").trim() === branchName);
+  const branchId = String(row.id || "").trim();
+  const branchName = String(row.branch || "").trim().toLowerCase();
+  return filteredBranchSales().filter((item) => {
+    if (row.is_unassigned) return !businessBranchForActivity(item);
+    if (branchId && item.branch_id) return String(item.branch_id) === branchId;
+    return String(item.branch_name || "").trim().toLowerCase() === branchName;
+  });
 }
 
 function branchRedemptionsForRow(row = {}) {
-  const branchName = String(row.branch || "").trim();
-  return (state.selectedRedemptions || []).filter((item) => String(item.branch_name || "Sin sucursal").trim() === branchName);
+  const branchId = String(row.id || "").trim();
+  const branchName = String(row.branch || "").trim().toLowerCase();
+  return filteredBranchRedemptions().filter((item) => {
+    if (row.is_unassigned) return !businessBranchForActivity(item);
+    if (branchId && item.branch_id) return String(item.branch_id) === branchId;
+    return String(item.branch_name || "").trim().toLowerCase() === branchName;
+  });
 }
 
 function branchDetailTable(headers = [], rows = [], empty = "Sin datos para esta sede.") {
@@ -45161,6 +45155,10 @@ function branchDetailTable(headers = [], rows = [], empty = "Sin datos para esta
   `;
 }
 
+function canManageBranches() {
+  return ["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(String(session?.user?.role || "").toUpperCase());
+}
+
 function openBranchDetailModal(key = "") {
   const row = branchRowByKey(key);
   if (!row || !branchDetailModal) return;
@@ -45169,7 +45167,9 @@ function openBranchDetailModal(key = "") {
   const avgTicket = row.sales ? row.revenue / row.sales : 0;
   if (branchDetailTitle) branchDetailTitle.textContent = row.branch || "Sede";
   if (branchDetailSummary) {
-    branchDetailSummary.textContent = `${branchTypeLabel(row.branch_type)} · ${row.address || "Sin ubicación"} · ${row.is_active === false ? "Inactiva" : "Activa"}`;
+    branchDetailSummary.textContent = row.is_unassigned
+      ? "Actividad comercial que todavía no está asociada a una sede registrada."
+      : `${branchTypeLabel(row.branch_type)} · ${row.address || "Sin ubicación"} · ${row.is_active === false ? "Inactiva" : "Activa"}`;
   }
   if (branchDetailBody) {
     branchDetailBody.innerHTML = `
@@ -45181,13 +45181,13 @@ function openBranchDetailModal(key = "") {
         <div class="branch-detail-box"><span>Responsable</span><strong>${escapeHtml([row.contact_name, row.contact_phone].filter(Boolean).join(" · ") || "-")}</strong></div>
         <div class="branch-detail-box"><span>Notas</span><strong>${escapeHtml(row.notes || "-")}</strong></div>
       </div>
-      ${row.id ? `
+      ${row.id && canManageBranches() ? `
         <div class="branch-detail-actions">
           <button class="ghost-button" type="button" data-branch-detail-edit="${escapeHtml(row.id)}">Editar sede</button>
           <button class="ghost-button ${row.is_active ? "danger" : ""}" type="button" data-branch-detail-toggle="${escapeHtml(row.id)}" data-branch-next-active="${row.is_active ? "false" : "true"}">${row.is_active ? "Desactivar sede" : "Reactivar sede"}</button>
         </div>
       ` : ""}
-      <h4>Ventas atribuidas a esta sede</h4>
+      <h4>${row.is_unassigned ? "Ventas pendientes de atribuir" : "Ventas atribuidas a esta sede"}</h4>
       ${branchDetailTable(["Cliente", "Valor", "Producto", "Pago", "Canal", "Fecha"], sales.slice(0, 80).map((item) => `
         <tr>
           <td><strong>${escapeHtml(item.player_name || "-")}</strong><span class="table-secondary">${escapeHtml(item.phone || item.document_id || "")}</span></td>
@@ -45198,7 +45198,7 @@ function openBranchDetailModal(key = "") {
           <td>${escapeHtml(formatDate(item.created_at))}</td>
         </tr>
       `), "Sin ventas registradas en esta sede.")}
-      <h4>Redenciones asociadas</h4>
+      <h4>${row.is_unassigned ? "Redenciones pendientes de atribuir" : "Redenciones asociadas"}</h4>
       ${branchDetailTable(["Cliente", "Beneficio", "Validador", "Estado", "Fecha"], redemptions.slice(0, 80).map((item) => `
         <tr>
           <td><strong>${escapeHtml(item.player_name || "-")}</strong><span class="table-secondary">${escapeHtml(item.phone || item.document_id || "")}</span></td>
@@ -45218,14 +45218,37 @@ function openBranchDetailModal(key = "") {
       toggleBranchActive(row.id, row.is_active !== true);
     });
   }
+  branchModalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  if (branchDetailModal.parentElement !== document.body) document.body.appendChild(branchDetailModal);
   branchDetailModal.classList.remove("hidden");
   branchDetailModal.removeAttribute("aria-hidden");
+  document.body.classList.add("branch-overlay-open");
+  window.requestAnimationFrame(() => branchDetailCloseButton?.focus());
 }
 
 function closeBranchDetailModal() {
   if (!branchDetailModal) return;
   branchDetailModal.classList.add("hidden");
   branchDetailModal.setAttribute("aria-hidden", "true");
+  if (branchFormPanel?.classList.contains("hidden") !== false) document.body.classList.remove("branch-overlay-open");
+  branchModalReturnFocus?.focus?.();
+  branchModalReturnFocus = null;
+}
+
+function trapBranchModalFocus(event, modal) {
+  if (event.key !== "Tab" || !modal || modal.classList.contains("hidden")) return;
+  const focusable = Array.from(modal.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'))
+    .filter((element) => element.offsetParent !== null);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 function renderCustomerAcquisitionBranchOptions() {
@@ -45257,8 +45280,10 @@ function branchById(branchId = "") {
 function resetBranchForm() {
   state.branchEditingId = null;
   branchCreateForm?.reset();
-  if (branchSubmitButton) branchSubmitButton.textContent = "Agregar sede";
-  branchCancelEditButton?.classList.add("hidden");
+  if (branchFormEyebrow) branchFormEyebrow.textContent = "Nueva sede";
+  if (branchFormTitle) branchFormTitle.textContent = "Sede o consignación";
+  if (branchSubmitButton) branchSubmitButton.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">save</span> Crear sede';
+  branchCancelEditButton?.classList.remove("hidden");
   setInlineMessage(branchCreateMessage, "", "info");
 }
 
@@ -45273,7 +45298,9 @@ function editBranch(branchId = "") {
   if (branchContactInput) branchContactInput.value = metadata.contact_name || "";
   if (branchPhoneInput) branchPhoneInput.value = metadata.contact_phone || "";
   if (branchNotesInput) branchNotesInput.value = metadata.notes || "";
-  if (branchSubmitButton) branchSubmitButton.textContent = "Guardar sede";
+  if (branchFormEyebrow) branchFormEyebrow.textContent = "Editar punto";
+  if (branchFormTitle) branchFormTitle.textContent = branch.name || "Editar sede";
+  if (branchSubmitButton) branchSubmitButton.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">save</span> Guardar cambios';
   branchCancelEditButton?.classList.remove("hidden");
   setInlineMessage(branchCreateMessage, "Editando sede existente.", "info");
   openBranchFormModal();
@@ -45321,36 +45348,31 @@ async function loadBusinessBranches(options = {}) {
   }
 }
 
+function filteredBranchSales() {
+  return withFilters(state.selectedSales || [], ["branch_name", "player_name", "product_or_service"], ["created_at"]);
+}
+
+function filteredBranchRedemptions() {
+  return withFilters(state.selectedRedemptions || [], ["branch_name", "player_name", "reward_name", "validator_name"], ["redeemed_at"]);
+}
+
+function businessBranchForActivity(item = {}) {
+  const itemId = String(item.branch_id || "").trim();
+  if (itemId) {
+    const byId = (state.businessBranches || []).find((branch) => String(branch.id) === itemId);
+    if (byId) return byId;
+  }
+  const itemName = String(item.branch_name || "").trim().toLowerCase();
+  if (!itemName || itemName === "sin sucursal") return null;
+  return (state.businessBranches || []).find((branch) => String(branch.name || "").trim().toLowerCase() === itemName) || null;
+}
+
 function branchActivityRows() {
-  const summary = new Map();
-  withFilters(
-    state.selectedRedemptions || [],
-    ["branch_name", "player_name", "reward_name", "validator_name"],
-    ["redeemed_at"]
-  ).forEach((item) => {
-    const key = item.branch_name || "Sin sucursal";
-    if (!summary.has(key)) summary.set(key, { branch: key, redemptions: 0, sales: 0, revenue: 0 });
-    summary.get(key).redemptions += 1;
-  });
-
-  withFilters(
-    state.selectedSales || [],
-    ["branch_name", "player_name", "product_or_service"],
-    ["created_at"]
-  ).forEach((item) => {
-    const key = item.branch_name || "Sin sucursal";
-    if (!summary.has(key)) summary.set(key, { branch: key, redemptions: 0, sales: 0, revenue: 0 });
-    summary.get(key).sales += 1;
-    summary.get(key).revenue += toNumber(item.sale_amount);
-  });
-
-  (state.businessBranches || []).forEach((branch) => {
-    const key = branch.name || "Sin sucursal";
+  const summary = new Map((state.businessBranches || []).map((branch) => {
     const metadata = branchMetadata(branch);
-    const current = summary.get(key) || { branch: key, redemptions: 0, sales: 0, revenue: 0 };
-    summary.set(key, {
-      ...current,
+    return [String(branch.id), {
       id: branch.id,
+      branch: branch.name || "Sede sin nombre",
       slug: branch.slug,
       address: branch.address || "",
       is_active: branch.is_active !== false,
@@ -45358,10 +45380,55 @@ function branchActivityRows() {
       contact_name: metadata.contact_name || "",
       contact_phone: metadata.contact_phone || "",
       notes: metadata.notes || "",
-    });
+      redemptions: 0,
+      sales: 0,
+      revenue: 0,
+    }];
+  }));
+  filteredBranchRedemptions().forEach((item) => {
+    const branch = businessBranchForActivity(item);
+    if (branch && summary.has(String(branch.id))) summary.get(String(branch.id)).redemptions += 1;
   });
+  filteredBranchSales().forEach((item) => {
+    const branch = businessBranchForActivity(item);
+    if (!branch || !summary.has(String(branch.id))) return;
+    const row = summary.get(String(branch.id));
+    row.sales += 1;
+    row.revenue += toNumber(item.sale_amount);
+  });
+  return Array.from(summary.values()).sort((a, b) => b.revenue - a.revenue || String(a.branch).localeCompare(String(b.branch), "es"));
+}
 
-  return Array.from(summary.values()).sort((a, b) => b.revenue - a.revenue || String(a.branch).localeCompare(String(b.branch)));
+function branchUnassignedActivity() {
+  const sales = filteredBranchSales().filter((item) => !businessBranchForActivity(item));
+  const redemptions = filteredBranchRedemptions().filter((item) => !businessBranchForActivity(item));
+  return {
+    branch: "Actividad sin sede",
+    branch_type: "UNASSIGNED",
+    address: "Pendiente de atribución",
+    is_active: true,
+    is_unassigned: true,
+    sales: sales.length,
+    redemptions: redemptions.length,
+    revenue: sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0),
+  };
+}
+
+function branchStatusMarkup(row = {}) {
+  return `<span class="branch-status-chip ${row.is_active ? "is-active" : "is-inactive"}"><i aria-hidden="true"></i>${row.is_active ? "Activo" : "Inactivo"}</span>`;
+}
+
+function branchOpenButtonMarkup(row = {}) {
+  return `<button class="branch-open-button" type="button" data-branch-detail="${escapeHtml(branchRowKey(row))}"><span class="material-symbols-outlined" aria-hidden="true">visibility</span> Ver sede</button>`;
+}
+
+function bindBranchDirectoryActions(root) {
+  if (!root) return;
+  root.querySelectorAll("[data-branch-detail-row]").forEach((row) => row.addEventListener("click", (event) => {
+    if (event.target.closest("button, a, input, select, textarea")) return;
+    openBranchDetailModal(row.dataset.branchDetailRow || "");
+  }));
+  root.querySelectorAll("[data-branch-detail]").forEach((button) => button.addEventListener("click", () => openBranchDetailModal(button.dataset.branchDetail || "")));
 }
 
 function renderBranchesView() {
@@ -45370,64 +45437,54 @@ function renderBranchesView() {
     loadBusinessBranches().then(renderBranchesView).catch((error) => showFeedback(error.message, "error"));
   }
   const allRows = branchActivityRows();
+  const unassigned = branchUnassignedActivity();
   const branchSearch = String(branchSearchInput?.value || "").trim().toLowerCase();
-  const rows = allRows.filter((row) => !branchSearch || [
-    row.branch,
-    row.address,
-    row.contact_name,
-    row.contact_phone,
-    row.branch_type,
-  ].join(" ").toLowerCase().includes(branchSearch));
-  const totalRevenue = rows.reduce((sum, row) => sum + row.revenue, 0);
-  const topBranch = rows[0]?.branch || "Sin datos";
-  const activeBranches = (state.businessBranches || []).filter((branch) => branch.is_active !== false).length;
-  const consignmentCount = (state.businessBranches || []).filter((branch) => String(branchMetadata(branch).branch_type || "").toUpperCase() === "CONSIGNMENT").length;
-  branchKpiGrid.innerHTML = [
-    ["Sedes activas", activeBranches || rows.length, `${consignmentCount} consignación`],
-    ["Redenciones", rows.reduce((sum, row) => sum + row.redemptions, 0), `${rows.length ? Math.round(rows.reduce((sum, row) => sum + row.redemptions, 0) / rows.length) : 0} promedio/sucursal`],
-    ["Ingresos", money(totalRevenue), `${rows.reduce((sum, row) => sum + row.sales, 0)} ventas · líder ${topBranch}`],
-  ].map(([label, value, meta]) => `
-    <article class="kpi-card">
-      <span class="mono-label">${escapeHtml(label)}</span>
-      <strong>${escapeHtml(value)}</strong>
-      <div class="kpi-meta">${escapeHtml(meta)}</div>
-    </article>
-  `).join("");
-  if (branchListCount) branchListCount.textContent = `${rows.length} de ${allRows.length} sede${allRows.length === 1 ? "" : "s"}`;
-
-  branchTable.innerHTML = rows.map((row) => `
+  const typeFilter = String(branchTypeFilter?.value || "ALL");
+  const statusFilter = String(branchStatusFilter?.value || "ALL");
+  const rows = allRows.filter((row) => {
+    const matchesSearch = !branchSearch || [row.branch, row.address, row.contact_name, row.contact_phone, branchTypeLabel(row.branch_type)].join(" ").toLowerCase().includes(branchSearch);
+    const matchesType = typeFilter === "ALL" || String(row.branch_type).toUpperCase() === typeFilter;
+    const matchesStatus = statusFilter === "ALL" || (statusFilter === "ACTIVE" ? row.is_active : !row.is_active);
+    return matchesSearch && matchesType && matchesStatus;
+  });
+  const activeBranches = allRows.filter((row) => row.is_active).length;
+  const consignmentCount = allRows.filter((row) => String(row.branch_type).toUpperCase() === "CONSIGNMENT").length;
+  const totalRevenue = allRows.reduce((sum, row) => sum + row.revenue, 0);
+  const attributedSales = allRows.reduce((sum, row) => sum + row.sales, 0);
+  const allSalesCount = attributedSales + unassigned.sales;
+  const attributionRate = allSalesCount ? Math.round((attributedSales / allSalesCount) * 100) : 100;
+  const topBranch = allRows.find((row) => row.sales || row.redemptions)?.branch || "Sin actividad";
+  if (newBranchButton) newBranchButton.classList.toggle("hidden", !canManageBranches());
+  if (branchKpiGrid) branchKpiGrid.innerHTML = [
+    ["storefront", "Sedes activas", activeBranches, `${allRows.length} registradas`],
+    ["inventory_2", "Consignaciones", consignmentCount, `${Math.max(allRows.length - consignmentCount, 0)} puntos propios`],
+    ["payments", "Ingresos atribuidos", money(totalRevenue), `${attributedSales} ventas · líder ${topBranch}`],
+    ["verified", "Cobertura de atribución", `${attributionRate}%`, unassigned.sales ? `${unassigned.sales} ventas por revisar` : "Toda venta tiene sede"],
+  ].map(([icon, label, value, meta]) => `<article class="branch-kpi-card"><span class="branch-kpi-icon"><span class="material-symbols-outlined" aria-hidden="true">${icon}</span></span><span class="branch-kpi-copy"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(meta)}</small></span></article>`).join("");
+  const hasUnassigned = Boolean(unassigned.sales || unassigned.redemptions);
+  branchUnassignedCard?.classList.toggle("hidden", !hasUnassigned);
+  if (hasUnassigned) {
+    if (branchUnassignedTitle) branchUnassignedTitle.textContent = `${unassigned.sales + unassigned.redemptions} movimiento${unassigned.sales + unassigned.redemptions === 1 ? "" : "s"} sin sede`;
+    if (branchUnassignedSummary) branchUnassignedSummary.textContent = `${unassigned.sales} ventas · ${unassigned.redemptions} redenciones · ${money(unassigned.revenue)} pendientes de atribuir.`;
+  }
+  if (branchListCount) branchListCount.textContent = rows.length === allRows.length ? `${allRows.length} punto${allRows.length === 1 ? "" : "s"}` : `${rows.length} de ${allRows.length}`;
+  const emptyMessage = state.businessBranchesLoading ? "Cargando sedes..." : "No encontramos puntos con estos filtros.";
+  if (branchTable) branchTable.innerHTML = rows.map((row) => `
     <tr data-branch-detail-row="${escapeHtml(branchRowKey(row))}">
-      <td>
-        <span class="branch-simple-cell">
-          <strong>${escapeHtml(row.branch)}</strong>
-          <small>${escapeHtml([branchTypeLabel(row.branch_type), row.address].filter(Boolean).join(" · ") || "Haz clic para ver resultados")}</small>
-        </span>
-      </td>
-      <td>${escapeHtml([row.contact_name, row.contact_phone].filter(Boolean).join(" · ") || "-")}</td>
-      <td><span class="branch-performance"><strong>${escapeHtml(money(row.revenue))}</strong><small>${escapeHtml(`${row.sales} ventas · ${row.redemptions} redenciones`)}</small></span></td>
-      <td><span class="status-chip ${row.id && row.is_active !== false ? "ok" : "pending"}">${escapeHtml(row.id ? (row.is_active ? "Activo" : "Inactivo") : "Actividad sin sede")}</span></td>
-      <td>
-        <span class="branch-row-actions">
-          <button class="ghost-button compact" type="button" data-branch-detail="${escapeHtml(branchRowKey(row))}">Abrir</button>
-        </span>
-      </td>
-    </tr>
-  `).join("") || `<tr><td colspan="5">${state.businessBranchesLoading ? "Cargando sedes..." : "No encontramos sedes con esa búsqueda."}</td></tr>`;
-  branchTable.querySelectorAll("[data-branch-detail-row]").forEach((row) => {
-    row.addEventListener("click", (event) => {
-      if (event.target.closest("button, a, input, select, textarea")) return;
-      openBranchDetailModal(row.dataset.branchDetailRow || "");
-    });
-  });
-  branchTable.querySelectorAll("[data-branch-detail]").forEach((button) => {
-    button.addEventListener("click", () => openBranchDetailModal(button.dataset.branchDetail || ""));
-  });
-  branchTable.querySelectorAll("[data-branch-edit]").forEach((button) => {
-    button.addEventListener("click", () => editBranch(button.dataset.branchEdit));
-  });
-  branchTable.querySelectorAll("[data-branch-toggle]").forEach((button) => {
-    button.addEventListener("click", () => toggleBranchActive(button.dataset.branchToggle, button.dataset.branchNextActive === "true"));
-  });
+      <td><span class="branch-name-cell"><strong>${escapeHtml(row.branch)}</strong><span class="branch-type-chip">${escapeHtml(branchTypeLabel(row.branch_type))}</span><small>${escapeHtml(row.address || "Ubicación sin registrar")}</small></span></td>
+      <td><span class="branch-contact-cell"><strong>${escapeHtml(row.contact_name || "Sin responsable")}</strong><small>${escapeHtml(row.contact_phone || "Contacto no registrado")}</small></span></td>
+      <td><span class="branch-performance-cell"><strong>${escapeHtml(money(row.revenue))}</strong><small>${escapeHtml(`${row.sales} ventas · ${row.redemptions} redenciones`)}</small></span></td>
+      <td>${branchStatusMarkup(row)}</td>
+      <td>${branchOpenButtonMarkup(row)}</td>
+    </tr>`).join("") || `<tr><td colspan="5"><div class="empty-state compact"><strong>${escapeHtml(emptyMessage)}</strong><p>Ajusta la búsqueda o los filtros para recuperar el directorio.</p></div></td></tr>`;
+  if (branchMobileList) branchMobileList.innerHTML = rows.map((row) => `
+    <article class="branch-mobile-card" data-branch-detail-row="${escapeHtml(branchRowKey(row))}">
+      <div class="branch-mobile-head"><div><strong>${escapeHtml(row.branch)}</strong><small>${escapeHtml(row.address || "Ubicación sin registrar")}</small></div>${branchStatusMarkup(row)}</div>
+      <div class="branch-mobile-metrics"><div><span>Ingresos</span><strong>${escapeHtml(money(row.revenue))}</strong></div><div><span>Ventas</span><strong>${escapeHtml(row.sales)}</strong></div><div><span>Redenciones</span><strong>${escapeHtml(row.redemptions)}</strong></div></div>
+      <div class="branch-mobile-footer"><span class="branch-type-chip">${escapeHtml(branchTypeLabel(row.branch_type))}</span>${branchOpenButtonMarkup(row)}</div>
+    </article>`).join("") || `<div class="empty-state compact"><strong>${escapeHtml(emptyMessage)}</strong><p>Ajusta la búsqueda o los filtros.</p></div>`;
+  bindBranchDirectoryActions(branchTable);
+  bindBranchDirectoryActions(branchMobileList);
 }
 
 async function submitBranchCreate(event) {
@@ -57087,12 +57144,20 @@ rewardPassDownloadPdfButton?.addEventListener("click", () => downloadSelectedRew
 rewardPassReceiptButton?.addEventListener("click", () => downloadSelectedRewardPassPdf("receipt").catch((error) => showFeedback(error.message, "error")));
 branchCreateForm?.addEventListener("submit", submitBranchCreate);
 branchSearchInput?.addEventListener("input", renderBranchesView);
+branchTypeFilter?.addEventListener("change", renderBranchesView);
+branchStatusFilter?.addEventListener("change", renderBranchesView);
+branchUnassignedDetailButton?.addEventListener("click", () => openBranchDetailModal("unassigned"));
 newBranchButton?.addEventListener("click", () => {
   resetBranchForm();
   openBranchFormModal();
   branchNameInput?.focus();
 });
 branchFormCloseButton?.addEventListener("click", () => {
+  resetBranchForm();
+  closeBranchFormModal();
+});
+branchFormPanel?.addEventListener("click", (event) => {
+  if (event.target !== branchFormPanel) return;
   resetBranchForm();
   closeBranchFormModal();
 });
@@ -57103,6 +57168,14 @@ branchCancelEditButton?.addEventListener("click", () => {
 branchDetailCloseButton?.addEventListener("click", closeBranchDetailModal);
 branchDetailModal?.addEventListener("click", (event) => {
   if (event.target === branchDetailModal) closeBranchDetailModal();
+});
+document.addEventListener("keydown", (event) => {
+  const activeBranchModal = branchDetailModal && !branchDetailModal.classList.contains("hidden") ? branchDetailModal : branchFormPanel;
+  trapBranchModalFocus(event, activeBranchModal);
+  if (event.key === "Escape") {
+    if (branchDetailModal && !branchDetailModal.classList.contains("hidden")) closeBranchDetailModal();
+    else if (branchFormPanel && !branchFormPanel.classList.contains("hidden")) closeBranchFormModal();
+  }
 });
 accountProfileForm?.addEventListener("submit", submitAccountProfile);
 accountRiskAddBenefitButton?.addEventListener("click", () => {
