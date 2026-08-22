@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260822-campaign-relations-quality-table-v319";
+const APP_VERSION = "empresa-20260822-activation-branches-calculator-v320";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2906,6 +2906,7 @@ let state = {
   businessBranches: [],
   businessBranchesLoaded: false,
   businessBranchesLoading: false,
+  businessBranchesLoadPromise: null,
   branchEditingId: null,
   strategicQrLoaded: false,
   ticketCenterLoadedAt: {},
@@ -4081,6 +4082,7 @@ function resetBusinessScopedState(options = {}) {
   state.businessBranches = [];
   state.businessBranchesLoaded = false;
   state.businessBranchesLoading = false;
+  state.businessBranchesLoadPromise = null;
   state.branchEditingId = null;
   state.strategicQrLoaded = false;
   state.ticketCenterLoadedAt = {};
@@ -7461,6 +7463,7 @@ async function loadWorkspace() {
     state.businessBranches = [];
     state.businessBranchesLoaded = false;
     state.businessBranchesLoading = false;
+    state.businessBranchesLoadPromise = null;
     state.branchEditingId = null;
     state.loadedBusinessId = session.user.business_id || null;
     state.affiliates = [];
@@ -18140,7 +18143,14 @@ function openGamingActivationBuilderModal(options = {}) {
   setTicketCenterTab("trivia");
   const modal = ensureGamingActivationBuilderModal();
   if (!modal) return;
+  const branchLoad = loadBusinessBranches({ force: true });
   renderInteractiveActivationBranchOptions();
+  branchLoad.then(() => {
+    renderInteractiveActivationBranchOptions();
+  }).catch((error) => {
+    renderInteractiveActivationBranchOptions();
+    showFeedback(error.message || "No se pudieron cargar las sedes de la cuenta.", "error", { title: "Sedes" });
+  });
   if (options.reset !== false) {
     state.gamingActivationWizardStep = 0;
     state.gamingActivationDraftId = null;
@@ -45272,20 +45282,35 @@ async function loadBusinessBranches(options = {}) {
     state.businessBranches = [];
     state.businessBranchesLoaded = true;
     state.businessBranchesLoading = false;
+    state.businessBranchesLoadPromise = null;
     return [];
   }
   if (state.businessBranchesLoaded && !options.force) return state.businessBranches;
-  if (state.businessBranchesLoading) return state.businessBranches;
+  if (state.businessBranchesLoading && state.businessBranchesLoadPromise) {
+    return state.businessBranchesLoadPromise;
+  }
   state.businessBranchesLoading = true;
   const scopeKey = businessScopeKey();
-  try {
-    const data = await apiSafe("/api/business/branches", { headers: authHeaders() }, { branches: [] });
+  const endpoint = options.force ? "/api/business/branches?fresh=1" : "/api/business/branches";
+  const loadPromise = api(endpoint, {
+    headers: {
+      ...authHeaders(),
+      "Cache-Control": "no-cache",
+    },
+  }).then((data) => {
     if (!isCurrentBusinessScope(scopeKey)) return state.businessBranches;
     state.businessBranches = Array.isArray(data.branches) ? data.branches : [];
     state.businessBranchesLoaded = true;
     return state.businessBranches;
+  });
+  state.businessBranchesLoadPromise = loadPromise;
+  try {
+    return await loadPromise;
   } finally {
-    if (isCurrentBusinessScope(scopeKey)) state.businessBranchesLoading = false;
+    if (isCurrentBusinessScope(scopeKey) && state.businessBranchesLoadPromise === loadPromise) {
+      state.businessBranchesLoading = false;
+      state.businessBranchesLoadPromise = null;
+    }
   }
 }
 

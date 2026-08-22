@@ -30213,3 +30213,25 @@ html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .r
   overflow-wrap: normal !important;
   word-break: normal !important;
 }
+
+/* Campaign calculator v318: keep its content scrollable above the generic modal-card guard. */
+html body:not(#qoriV132A#qoriV132B#qoriV132C) #campaignCalculatorModal.modal-shell:not(.hidden) > .campaign-calculator-modal-card {
+  display: grid !important;
+  width: min(100%, 960px) !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-height: calc(100dvh - clamp(24px, 6vh, 64px)) !important;
+  margin-block: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable;
+  touch-action: pan-y;
+}
+
+@media (max-height: 760px), (max-width: 720px) {
+  html body:not(#qoriV132A#qoriV132B#qoriV132C) #campaignCalculatorModal.modal-shell:not(.hidden) > .campaign-calculator-modal-card {
+    max-height: calc(100dvh - 24px) !important;
+  }
+}
