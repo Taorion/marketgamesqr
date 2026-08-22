@@ -68,6 +68,50 @@
   };
   loadLeadCrmData = premiumLoadLeadCrmData;
 
+  let directorySearchTimer = 0;
+  bindContactDirectoryControls = (board) => {
+    const filters = leadDirectoryCurrentFilters();
+    const rerender = (focusId = "", selectionStart = null) => {
+      renderContactDirectoryCards(state.leadCrmRows || []);
+      if (!focusId) return;
+      requestAnimationFrame(() => {
+        const target = document.getElementById(focusId);
+        if (!target) return;
+        target.focus();
+        if (target instanceof HTMLInputElement && Number.isFinite(selectionStart)) {
+          target.setSelectionRange(selectionStart, selectionStart);
+        }
+      });
+    };
+    const searchInput = board.querySelector("#contactDirectorySearchInput");
+    const signalFilter = board.querySelector("#contactDirectorySignalFilter");
+    const sortSelect = board.querySelector("#contactDirectorySortSelect");
+    const clearButton = board.querySelector("#contactDirectoryClearFilters");
+    searchInput?.addEventListener("input", () => {
+      filters.search = searchInput.value;
+      const caret = searchInput.selectionStart;
+      window.clearTimeout(directorySearchTimer);
+      directorySearchTimer = window.setTimeout(() => rerender("contactDirectorySearchInput", caret), 180);
+    });
+    signalFilter?.addEventListener("change", () => {
+      window.clearTimeout(directorySearchTimer);
+      filters.signal = signalFilter.value;
+      rerender("contactDirectorySignalFilter");
+    });
+    sortSelect?.addEventListener("change", () => {
+      window.clearTimeout(directorySearchTimer);
+      filters.sort = sortSelect.value || "recommended";
+      rerender("contactDirectorySortSelect");
+    });
+    clearButton?.addEventListener("click", () => {
+      window.clearTimeout(directorySearchTimer);
+      filters.search = "";
+      filters.signal = "";
+      filters.sort = "recommended";
+      rerender("contactDirectorySearchInput", 0);
+    });
+  };
+
   const baseSortRows = leadDirectorySortRows;
   leadDirectorySortRows = (rows = [], sortKey = "recommended") => {
     if (sortKey === "purchase_recent") return rows.slice().sort((a, b) => new Date(b.last_purchase_at || 0) - new Date(a.last_purchase_at || 0) || String(a.name || "").localeCompare(String(b.name || ""), "es"));
@@ -163,7 +207,7 @@
       <div class="contact-directory-hero-actions">${audience === "customers" ? '<button class="solid-button" id="customerCsvImportOpenButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">upload_file</span>Importar clientes CSV</button>' : '<button class="solid-button" id="contactDirectoryAddLeadButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">person_add</span>Agregar contacto</button>'}</div>
       <div class="contact-directory-summary" aria-label="Resumen con datos reales"><span><small>Contactos</small><strong>${(customersTotal + leadsTotal).toLocaleString("es-CO")}</strong></span><span><small>Clientes con compras</small><strong>${customersTotal.toLocaleString("es-CO")}</strong></span><span><small>Leads activos</small><strong>${leadsTotal.toLocaleString("es-CO")}</strong></span><span><small>Seguimiento pendiente</small><strong>${followUps.toLocaleString("es-CO")}</strong></span><span><small>Revenue cargado</small><strong>${escapeHtml(money(loadedRevenue))}</strong></span>${audience === "customers" ? `<span><small>Sin actividad 90 días</small><strong>${inactiveCustomers.toLocaleString("es-CO")}</strong></span>` : ""}</div>
     </div>
-    <section class="contact-directory-toolbar" aria-label="Búsqueda y filtros del directorio"><label class="contact-directory-search-control"><span class="material-symbols-outlined" aria-hidden="true">search</span><input id="contactDirectorySearchInput" type="search" value="${escapeHtml(filters.search || "")}" placeholder="Buscar nombre, documento, correo, teléfono o empresa"></label><label class="contact-directory-select-control"><span>Filtro</span><select id="contactDirectorySignalFilter">${leadDirectoryFilterOptionMarkup(options, filters.signal)}</select></label><label class="contact-directory-select-control"><span>Ordenar</span><select id="contactDirectorySortSelect">${leadDirectoryFilterOptionMarkup([["recommended","Recomendado"],["purchase_recent","Compra más reciente"],["purchase_count","Cantidad de compras"],["revenue","Valor acumulado"],["priority","Prioridad"],["activations","Activaciones"],["tickets","Tickets activos"],["name","Nombre A-Z"]], filters.sort || "recommended")}</select></label><button class="ghost-button contact-directory-clear" id="contactDirectoryClearFilters" type="button" ${hasFilters || filters.sort !== "recommended" ? "" : "disabled"}>Limpiar</button><small class="contact-directory-result-note">Mostrando ${visibleRows.length.toLocaleString("es-CO")} de ${filteredRows.length.toLocaleString("es-CO")} coincidencias cargadas · ${audienceTotal.toLocaleString("es-CO")} ${leadDirectoryAudienceLabel(audience).toLowerCase()} en total.</small></section>
+    <section class="contact-directory-toolbar" aria-label="Búsqueda y filtros del directorio"><label class="contact-directory-search-control"><span class="material-symbols-outlined" aria-hidden="true">search</span><input id="contactDirectorySearchInput" type="search" value="${escapeHtml(filters.search || "")}" placeholder="Buscar nombre, documento, correo, teléfono o empresa"></label><label class="contact-directory-select-control"><span>Filtro</span><select id="contactDirectorySignalFilter">${leadDirectoryFilterOptionMarkup(options, filters.signal)}</select></label><label class="contact-directory-select-control"><span>Ordenar</span><select id="contactDirectorySortSelect">${leadDirectoryFilterOptionMarkup([["recommended","Recomendado"],["purchase_recent","Compra más reciente"],["purchase_count","Cantidad de compras"],["revenue","Valor acumulado"],["priority","Prioridad"],["activations","Activaciones"],["tickets","Tickets activos"],["name","Nombre A-Z"]], filters.sort || "recommended")}</select></label><button class="ghost-button contact-directory-clear" id="contactDirectoryClearFilters" type="button" ${hasFilters || filters.sort !== "recommended" ? "" : "disabled"}>Limpiar</button><small class="contact-directory-result-note" aria-live="polite">Mostrando ${visibleRows.length.toLocaleString("es-CO")} de ${filteredRows.length.toLocaleString("es-CO")} coincidencias cargadas · ${audienceTotal.toLocaleString("es-CO")} ${leadDirectoryAudienceLabel(audience).toLowerCase()} en total.</small></section>
     <div class="contact-directory-list-head" aria-hidden="true"><span>Contacto</span><span>Empresa / canal</span><span>${audience === "customers" ? "Historial comercial" : "Estado"}</span><span>Próxima acción</span><span>Ficha</span></div><div class="contact-directory-list contact-directory-unified-list">${visibleRows.length ? visibleRows.map((item) => premiumCard(item, audience === "customers" ? "customer" : "lead")).join("") : `<div class="empty-state compact">${escapeHtml(empty)}</div>`}</div>${(visibleRows.length < filteredRows.length || baseRows.length < audienceTotal) ? '<div class="contact-directory-more"><button class="ghost-button" id="contactDirectoryLoadMore" type="button">Cargar más</button></div>' : ""}`;
     const pagination = document.getElementById("leadCrmPaginationLabel");
     if (pagination) pagination.textContent = `${(customersTotal + leadsTotal).toLocaleString("es-CO")} contactos`;

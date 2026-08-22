@@ -762,25 +762,43 @@ async function listLeadCrmRows(businessId, filters = {}) {
        select * from affiliate_rows
      ),
      deduplicated_rows as (
-       select distinct on (
-         coalesce(
-           nullif(regexp_replace(lower(coalesce(document_id, '')), '[^a-z0-9]', '', 'g'), ''),
-           nullif(lower(coalesce(email, '')), ''),
-           nullif(regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g'), ''),
-           id::text
-         )
-       ) *
-       from all_rows
-       order by
-         coalesce(
-           nullif(regexp_replace(lower(coalesce(document_id, '')), '[^a-z0-9]', '', 'g'), ''),
-           nullif(lower(coalesce(email, '')), ''),
-           nullif(regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g'), ''),
-           id::text
-         ),
-         case source_type when 'PLAYER' then 1 when 'AFFILIATE' then 2 else 3 end,
-         created_at asc,
-         id asc
+       select candidate.*
+       from all_rows candidate
+       where not exists (
+         select 1
+         from all_rows preferred
+         where (preferred.source_type, preferred.id) <> (candidate.source_type, candidate.id)
+           and not (
+             nullif(regexp_replace(lower(coalesce(preferred.document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null
+             and nullif(regexp_replace(lower(coalesce(candidate.document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null
+             and regexp_replace(lower(preferred.document_id), '[^a-z0-9]', '', 'g')
+               <> regexp_replace(lower(candidate.document_id), '[^a-z0-9]', '', 'g')
+           )
+           and (
+             (
+               nullif(regexp_replace(lower(coalesce(preferred.document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null
+               and regexp_replace(lower(preferred.document_id), '[^a-z0-9]', '', 'g')
+                 = regexp_replace(lower(coalesce(candidate.document_id, '')), '[^a-z0-9]', '', 'g')
+             )
+             or (
+               nullif(lower(btrim(coalesce(preferred.email, ''))), '') is not null
+               and lower(btrim(preferred.email)) = lower(btrim(coalesce(candidate.email, '')))
+             )
+             or (
+               nullif(regexp_replace(coalesce(preferred.phone, ''), '[^0-9]', '', 'g'), '') is not null
+               and regexp_replace(preferred.phone, '[^0-9]', '', 'g')
+                 = regexp_replace(coalesce(candidate.phone, ''), '[^0-9]', '', 'g')
+             )
+           )
+           and (
+             case preferred.source_type when 'PLAYER' then 1 when 'AFFILIATE' then 2 else 3 end
+               < case candidate.source_type when 'PLAYER' then 1 when 'AFFILIATE' then 2 else 3 end
+             or (
+               preferred.source_type = candidate.source_type
+               and (preferred.created_at, preferred.id) < (candidate.created_at, candidate.id)
+             )
+           )
+       )
      ),
      rms_rows as (
        select ar.*,
