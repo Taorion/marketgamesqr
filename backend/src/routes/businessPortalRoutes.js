@@ -100,12 +100,16 @@ const {
   createNote,
   deleteAgendaItem,
   deleteContact,
+  downloadCustomerCsvErrors,
+  downloadCustomerCsvTemplate,
+  importCustomersCsv,
   leadDetail,
   listLeadsCrm,
   markActivationOpened,
   registerLeadWhatsAppContact,
   removeInterest,
   sendActivation,
+  previewCustomerCsvImport,
   updateAgendaItem,
 } = require("../controllers/leadCrmController");
 const {
@@ -201,6 +205,10 @@ router.get("/contacts/feed", standardBusinessCache, contactFeed);
 router.get("/contacts/manual", standardBusinessCache, listManualLeads);
 router.post("/contacts/manual", createManualLead);
 router.post("/contacts/manual/import-csv", importManualLeadsCsv);
+router.get("/contacts/customers/import-template.csv", downloadCustomerCsvTemplate);
+router.post("/contacts/customers/import-csv/preview", previewCustomerCsvImport);
+router.post("/contacts/customers/import-csv", importCustomersCsv);
+router.get("/contacts/customers/imports/:batchId/errors.csv", downloadCustomerCsvErrors);
 router.post("/contacts/manual/from-lead/:leadId", createManualLeadFromExistingLead);
 router.post("/contacts/manual/:manualLeadId/campaigns", assignManualLeadToCampaign);
 router.delete("/contacts/manual/:manualLeadId/campaigns/:campaignId", removeManualLeadFromCampaign);

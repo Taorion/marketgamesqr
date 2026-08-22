@@ -47,6 +47,7 @@
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
 <link rel="stylesheet" href="css/portal-clean-v39.css?v=activation-studio-premium-v331-20260822">
+<link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-premium-v333-20260822">
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-pro-v11-20260820">
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822">
 </head>
@@ -1220,7 +1221,7 @@
                     <textarea id="rmsCollectorExpectedInput" rows="3">Lead ingresado manualmente desde Nuevo lead.</textarea>
                   </label>
                   <div class="rms-collector-summary span-2" id="rmsCollectorSummary"></div>
-                  <div class="modal-actions span-2">
+                  <div class="modal-actions span-2 rms-collector-config-actions">
                     <button class="ghost-button" type="button" id="rmsCollectorCancelButton">Cancelar</button>
                     <button class="solid-button" type="submit" id="rmsCollectorSubmitButton">Activar solo captura</button>
                   </div>
@@ -4825,7 +4826,7 @@
                 </button>
                 <button class="contact-center-tab-card" id="contactTabManual" data-contact-center-tab="manual" type="button" role="tab" aria-selected="false" aria-controls="contactPanelManual" tabindex="-1" hidden>
                   <span class="material-symbols-outlined contact-tab-icon" aria-hidden="true">person_add</span>
-                  <span class="contact-tab-copy"><strong>Prospectos</strong><small>Manual y referidos</small></span>
+                  <span class="contact-tab-copy"><strong>Contactos agregados</strong><small>Manual y referidos</small></span>
                   <em id="contactTabManualCount">0</em>
                 </button>
                 <button class="contact-center-tab-card" id="contactTabSales" data-contact-center-tab="sales" type="button" role="tab" aria-selected="false" aria-controls="contactPanelSales" tabindex="-1" hidden>
@@ -5132,15 +5133,6 @@
                 <span class="pill muted">Seguimiento operativo</span>
               </div>
               <p class="chart-explainer">Registra contactos que llegan por correo, WhatsApp, llamada, feria o la página de contacto. Quedan mezclados en el feed comercial y en la exportación.</p>
-              <form class="modal-form" id="manualLeadCsvImportForm">
-                <label class="span-2"><span>CSV de clientes</span><input id="manualLeadCsvFileInput" type="file" accept=".csv,text/csv"></label>
-                <label><span>Fuente del lote</span><input id="manualLeadCsvSourceInput" type="text" maxlength="120" value="CSV import" placeholder="CSV import, feria, base propia..."></label>
-                <label><span>Detalle lote</span><input id="manualLeadCsvSourceDetailInput" type="text" maxlength="220" placeholder="Campana, canal, activacion o evento"></label>
-                <label class="span-2"><span>Interes por defecto</span><input id="manualLeadCsvInterestInput" type="text" maxlength="500" placeholder="Se usa si la fila no trae interes"></label>
-                <p class="form-message span-2" id="manualLeadCsvMessage"></p>
-                <small class="field-help span-2">Acepta CSV de Excel separados por coma, punto y coma o tabulación. Columnas reconocidas: nombre, correo, teléfono, documento, tipo de documento, empresa, interés, origen y canal.</small>
-                <button class="ghost-button" id="manualLeadCsvSubmitButton" type="submit">Importar clientes a recolectados</button>
-              </form>
               <form class="modal-form" id="manualLeadForm">
                 <label><span>Nombre</span><input id="manualLeadNameInput" type="text" maxlength="160" required placeholder="Nombre del prospecto"></label>
                 <label><span>Empresa</span><input id="manualLeadCompanyInput" type="text" maxlength="180" placeholder="Empresa o marca"></label>
@@ -7996,7 +7988,42 @@
     </article>
   </div>
   <script src="/vendor/jsqr/jsQR.js" defer></script>
-<script src="js/app.js?v=risk-station-reliable-v332-20260822" defer></script>
+<div class="modal-shell hidden customer-csv-modal" id="customerCsvImportModal" role="dialog" aria-modal="true" aria-labelledby="customerCsvImportTitle" aria-describedby="customerCsvImportHelp" aria-hidden="true">
+  <section class="modal-card customer-csv-modal-card" tabindex="-1">
+    <header class="modal-head customer-csv-modal-head">
+      <div>
+        <span class="mono-label">Clientes · operación segura</span>
+        <h3 id="customerCsvImportTitle">Importar clientes CSV</h3>
+        <p id="customerCsvImportHelp">Crea clientes únicamente cuando cada fila aporta evidencia comercial verificable.</p>
+      </div>
+      <button class="icon-button" id="customerCsvImportClose" type="button" aria-label="Cerrar importación"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+    </header>
+    <div class="customer-csv-modal-body">
+      <section class="customer-csv-guidance" aria-label="Requisitos de la plantilla">
+        <div><strong>Plantilla preparada para Excel</strong><p>CSV separado por comas, codificación UTF-8. Fecha: AAAA-MM-DD. Teléfono: 7 a 15 dígitos, puede incluir prefijo. Valor monetario: sin símbolo; admite 1250000.00 o 1.250.000,00.</p></div>
+        <button class="ghost-button" id="customerCsvTemplateButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar plantilla CSV</button>
+      </section>
+      <section class="customer-csv-rules">
+        <p><strong>Obligatorios:</strong> nombre; documento, correo o teléfono; fecha de última compra; total_compras mayor a 0; valor_acumulado mayor a 0.</p>
+        <p><strong>Duplicados:</strong> documento primero, después correo y teléfono normalizados. Un cliente existente se omite y nunca se sobrescribe.</p>
+        <p><strong>Clasificación:</strong> la fila se convierte en Cliente solo después de persistir su evidencia en el historial canónico de ventas. Una fila sin evidencia se reporta como error, no como Lead.</p>
+      </section>
+      <label class="customer-csv-dropzone" id="customerCsvDropzone" for="customerCsvFileInput" tabindex="0">
+        <span class="material-symbols-outlined" aria-hidden="true">upload_file</span><strong>Arrastra el CSV o selecciónalo</strong><small>Máximo 2 MB y 2.000 filas</small>
+        <input id="customerCsvFileInput" type="file" accept=".csv,text/csv" hidden>
+      </label>
+      <div class="customer-csv-file-summary hidden" id="customerCsvFileSummary"><span class="material-symbols-outlined" aria-hidden="true">description</span><span><strong id="customerCsvFileName">—</strong><small id="customerCsvFileSize">—</small></span><button class="icon-button" id="customerCsvFileRemove" type="button" aria-label="Quitar archivo"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button></div>
+      <div class="customer-csv-progress hidden" id="customerCsvProgress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span><small>Validando archivo…</small></div>
+      <div class="customer-csv-counters hidden" id="customerCsvCounters" aria-label="Resultado de validación"></div>
+      <section class="customer-csv-preview hidden" id="customerCsvPreviewSection"><div class="customer-csv-preview-head"><strong>Vista previa</strong><small>Primeras 8 filas</small></div><div class="customer-csv-preview-scroll"><table><thead><tr><th>Fila</th><th>Cliente</th><th>Identificación</th><th>Compra</th><th>Estado</th></tr></thead><tbody id="customerCsvPreviewBody"></tbody></table></div></section>
+      <section class="customer-csv-result hidden" id="customerCsvResult"></section>
+      <p class="form-message customer-csv-message" id="customerCsvMessage" aria-live="polite"></p>
+    </div>
+    <footer class="customer-csv-modal-footer"><button class="ghost-button hidden" id="customerCsvErrorsButton" type="button">Descargar errores</button><button class="ghost-button" id="customerCsvCancelButton" type="button">Cancelar</button><button class="solid-button" id="customerCsvSubmitButton" type="button" disabled>Importar clientes</button></footer>
+  </section>
+</div>
+<script src="js/app.js?v=contacts-premium-v333-20260822" defer></script>
+<script src="js/contacts-premium-v333.js?v=contacts-premium-v333-20260822" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
     <script src="js/communications.js?v=communications-history-v333-20260822" defer></script>

@@ -17,6 +17,12 @@ const {
   markLeadActivationOpened,
   updateLeadAgendaItem,
 } = require("../services/leadCrmService");
+const {
+  customerImportErrorsCsv,
+  customerTemplateCsv,
+  importCustomerCsv,
+  previewCustomerCsv,
+} = require("../services/customerCsvImportService");
 
 function businessIdFor(req) {
   if (!req.user.business_id) {
@@ -102,6 +108,14 @@ const purchaseSchema = z.object({
   customer_email: z.string().trim().email().max(180).optional().nullable(),
   customer_document_id: z.string().trim().max(80).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
+});
+
+const customerCsvSchema = z.object({
+  file_name: z.string().trim().min(5).max(240).regex(/\.csv$/i),
+  file_size: z.number().int().min(1).max(2 * 1024 * 1024),
+  mime_type: z.string().trim().max(120).optional().nullable(),
+  csv_text: z.string().min(1).max(2 * 1024 * 1024),
+  idempotency_key: z.string().trim().min(8).max(160).optional(),
 });
 
 const activationSchema = z.object({
@@ -267,6 +281,48 @@ async function addPurchase(req, res, next) {
   }
 }
 
+function downloadCustomerCsvTemplate(req, res, next) {
+  try {
+    businessIdFor(req);
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="plantilla-clientes.csv"');
+    res.send(customerTemplateCsv());
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function previewCustomerCsvImport(req, res, next) {
+  try {
+    const body = validate(customerCsvSchema.omit({ idempotency_key: true }), req.body);
+    res.json(await previewCustomerCsv(businessIdFor(req), body));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function importCustomersCsv(req, res, next) {
+  try {
+    const body = validate(customerCsvSchema.required({ idempotency_key: true }), req.body);
+    const result = await importCustomerCsv(businessIdFor(req), req.user, body);
+    res.status(result.reused ? 200 : 201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function downloadCustomerCsvErrors(req, res, next) {
+  try {
+    const batchId = validate(z.string().uuid(), req.params.batchId);
+    const csv = await customerImportErrorsCsv(businessIdFor(req), batchId);
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="errores-clientes-${batchId}.csv"`);
+    res.send(csv);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function removeInterest(req, res, next) {
   try {
     res.json(await deleteLeadInterest(
@@ -339,6 +395,10 @@ async function registerLeadWhatsAppContact(req, res, next) {
 module.exports = {
   addInterest,
   addPurchase,
+  downloadCustomerCsvErrors,
+  downloadCustomerCsvTemplate,
+  importCustomersCsv,
+  previewCustomerCsvImport,
   agenda,
   createAgendaItem,
   createNote,

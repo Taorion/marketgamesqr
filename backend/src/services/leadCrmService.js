@@ -43,6 +43,13 @@ function moneyNumber(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function salePurchaseContribution(sale = {}) {
+  const imported = Number.parseInt(sale.metadata?.imported_purchase_count, 10);
+  return sale.metadata?.source_module === "customer_csv_import" && Number.isInteger(imported) && imported > 0
+    ? imported
+    : 1;
+}
+
 function suggestedStatus(row = {}) {
   const purchases = Number(row.purchase_count || 0);
   const spent = moneyNumber(row.total_spent);
@@ -306,6 +313,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          p.document_id,
          p.email,
          p.phone,
+         coalesce(p.metadata->>'company', '') as company,
          p.created_at,
          coalesce(latest_capture.campaign_id, p.campaign_id) as campaign_id,
          coalesce(latest_capture.campaign_name, c.name) as campaign_name,
@@ -418,9 +426,15 @@ async function listLeadCrmRows(businessId, filters = {}) {
          limit 1
        ) latest_capture on true
        left join lateral (
-         select count(*)::int as purchase_count,
+         select coalesce(sum(case
+                  when bs.metadata->>'source_module' = 'customer_csv_import'
+                   and coalesce(bs.metadata->>'imported_purchase_count', '') ~ '^[1-9][0-9]*$'
+                  then (bs.metadata->>'imported_purchase_count')::int else 1 end), 0)::int as purchase_count,
                 coalesce(sum(bs.sale_amount), 0)::numeric as total_spent,
-                coalesce(avg(bs.sale_amount), 0)::numeric as avg_ticket,
+                coalesce(sum(bs.sale_amount) / nullif(sum(case
+                  when bs.metadata->>'source_module' = 'customer_csv_import'
+                   and coalesce(bs.metadata->>'imported_purchase_count', '') ~ '^[1-9][0-9]*$'
+                  then (bs.metadata->>'imported_purchase_count')::int else 1 end), 0), 0)::numeric as avg_ticket,
                 max(bs.created_at) as last_purchase_at,
                 (array_agg(bs.product_name order by bs.created_at desc))[1] as top_product,
                 string_agg(distinct nullif(btrim(bs.product_name), ''), ' ') as purchased_products,
@@ -505,9 +519,10 @@ async function listLeadCrmRows(businessId, filters = {}) {
          ml.name,
          split_part(coalesce(ml.name, ''), ' ', 1) as first_name,
          trim(substr(coalesce(ml.name, ''), length(split_part(coalesce(ml.name, ''), ' ', 1)) + 1)) as last_name,
-         null::text as document_id,
+         ml.document_id,
          ml.email,
          ml.phone,
+         ml.company,
          ml.created_at,
          ca.campaign_id,
          ca.campaign_name,
@@ -570,16 +585,23 @@ async function listLeadCrmRows(businessId, filters = {}) {
            and cmc.status = 'ACTIVE'
        ) ca on true
        left join lateral (
-         select count(*)::int as purchase_count,
+         select coalesce(sum(case
+                  when bs.metadata->>'source_module' = 'customer_csv_import'
+                   and coalesce(bs.metadata->>'imported_purchase_count', '') ~ '^[1-9][0-9]*$'
+                  then (bs.metadata->>'imported_purchase_count')::int else 1 end), 0)::int as purchase_count,
                 coalesce(sum(bs.sale_amount), 0)::numeric as total_spent,
-                coalesce(avg(bs.sale_amount), 0)::numeric as avg_ticket,
+                coalesce(sum(bs.sale_amount) / nullif(sum(case
+                  when bs.metadata->>'source_module' = 'customer_csv_import'
+                   and coalesce(bs.metadata->>'imported_purchase_count', '') ~ '^[1-9][0-9]*$'
+                  then (bs.metadata->>'imported_purchase_count')::int else 1 end), 0), 0)::numeric as avg_ticket,
                 max(bs.created_at) as last_purchase_at,
                 (array_agg(bs.product_name order by bs.created_at desc))[1] as top_product,
                 string_agg(distinct nullif(btrim(bs.product_name), ''), ' ') as purchased_products,
                 (array_agg(coalesce(bs.metadata->>'category', bs.acquisition_channel) order by bs.created_at desc))[1] as top_category
          from business_sales bs
          where bs.business_id = ml.business_id
-           and ((nullif(ml.phone, '') is not null and bs.customer_phone = ml.phone)
+           and ((nullif(ml.document_id, '') is not null and bs.customer_document_id = ml.document_id)
+             or (nullif(ml.phone, '') is not null and regexp_replace(coalesce(bs.customer_phone, ''), '\D', '', 'g') = regexp_replace(ml.phone, '\D', '', 'g'))
              or (nullif(ml.email, '') is not null and lower(bs.customer_email) = lower(ml.email))
              or (bs.metadata->>'crm_source_type' = 'MANUAL' and bs.metadata->>'crm_source_id' = ml.id::text))
        ) s on true
@@ -611,6 +633,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          fa.document_id,
          fa.email,
          fa.phone,
+         coalesce(fa.card_metadata->>'company', '') as company,
          fa.created_at,
          ca.campaign_id,
          ca.campaign_name,
@@ -665,9 +688,15 @@ async function listLeadCrmRows(businessId, filters = {}) {
          limit 1
        ) ca on true
        left join lateral (
-         select count(*)::int as purchase_count,
+         select coalesce(sum(case
+                  when bs.metadata->>'source_module' = 'customer_csv_import'
+                   and coalesce(bs.metadata->>'imported_purchase_count', '') ~ '^[1-9][0-9]*$'
+                  then (bs.metadata->>'imported_purchase_count')::int else 1 end), 0)::int as purchase_count,
                 coalesce(sum(bs.sale_amount), 0)::numeric as total_spent,
-                coalesce(avg(bs.sale_amount), 0)::numeric as avg_ticket,
+                coalesce(sum(bs.sale_amount) / nullif(sum(case
+                  when bs.metadata->>'source_module' = 'customer_csv_import'
+                   and coalesce(bs.metadata->>'imported_purchase_count', '') ~ '^[1-9][0-9]*$'
+                  then (bs.metadata->>'imported_purchase_count')::int else 1 end), 0), 0)::numeric as avg_ticket,
                 max(bs.created_at) as last_purchase_at,
                 (array_agg(bs.product_name order by bs.created_at desc))[1] as top_product,
                 string_agg(distinct nullif(btrim(bs.product_name), ''), ' ') as purchased_products,
@@ -789,10 +818,10 @@ async function listLeadCrmRows(businessId, filters = {}) {
          regexp_replace(translate(lower(coalesce(city, '')), 'áéíóúüñ', 'aeiouun'), '[^a-z0-9]', '', 'g') as normalized_city,
          regexp_replace(translate(lower(coalesce(top_interest, '')), 'áéíóúüñ', 'aeiouun'), '[^a-z0-9]', '', 'g') as normalized_top_interest,
          regexp_replace(translate(lower(coalesce(purchased_products, '') || ' ' || coalesce(top_product, '')), 'áéíóúüñ', 'aeiouun'), '[^a-z0-9]', '', 'g') as normalized_purchased_products,
-         regexp_replace(lower(
-           coalesce(name, '') || ' ' || coalesce(email, '') || ' ' || coalesce(phone, '') || ' ' ||
+         regexp_replace(translate(lower(
+           coalesce(name, '') || ' ' || coalesce(email, '') || ' ' || coalesce(phone, '') || ' ' || coalesce(company, '') || ' ' ||
            coalesce(document_id, '') || ' ' || coalesce(campaign_name, '') || ' ' ||
-           coalesce(channel, '') || ' ' || coalesce(top_interest, '') || ' ' || coalesce(top_product, '') || ' ' || coalesce(purchased_products, '') || ' ' || coalesce(affiliate_code, '')),
+           coalesce(channel, '') || ' ' || coalesce(top_interest, '') || ' ' || coalesce(top_product, '') || ' ' || coalesce(purchased_products, '') || ' ' || coalesce(affiliate_code, '')), 'áéíóúüñ', 'aeiouun'),
            '[^a-z0-9@.]+', '', 'g'
          ) as search_blob
        from rms_rows
@@ -1385,7 +1414,7 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     : inferInterests(purchaseRows, gameRows, ticketRows, lead);
 
   const totalSpent = purchaseRows.reduce((sum, item) => sum + moneyNumber(item.sale_amount), 0);
-  const purchaseCount = purchaseRows.length;
+  const purchaseCount = purchaseRows.reduce((sum, item) => sum + salePurchaseContribution(item), 0);
   const scoreTotal = gameRows.reduce((sum, item) => sum + Number(item.score || 0), 0);
   const scoreAverage = gameRows.length ? scoreTotal / gameRows.length : 0;
   const bestScore = gameRows.reduce((max, item) => Math.max(max, Number(item.score || 0)), 0);
