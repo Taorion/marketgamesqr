@@ -512,3 +512,83 @@ body.branch-overlay-open { overflow: hidden; }
   html body[data-current-view="branches"] .portal-shell .branch-search-field { grid-column: auto; }
   html body[data-current-view="branches"] .portal-shell .branch-mobile-metrics { grid-template-columns: 1fr 1fr; }
 }
+
+/* Final isolation from the portal-wide rhythm and color layers. */
+html body[data-current-view="branches"] .portal-shell .content-shell > .view-section.branches-premium-view.active {
+  display: grid !important;
+  gap: 18px !important;
+  padding: 0 0 40px !important;
+  border-radius: 0 !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-hero {
+  gap: 24px !important;
+  padding: clamp(24px, 3vw, 42px) !important;
+  border-radius: 28px !important;
+  color: #fff !important;
+  background:
+    radial-gradient(circle at 82% 16%, rgba(34, 211, 238, .3), transparent 30%),
+    radial-gradient(circle at 12% 110%, rgba(59, 130, 246, .28), transparent 40%),
+    linear-gradient(135deg, #07172f 0%, #0a2850 54%, #074e68 100%) !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-hero :is(h2) {
+  color: #fff !important;
+  text-shadow: 0 8px 28px rgba(0, 10, 35, .2) !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-hero :is(p) {
+  color: rgba(232, 249, 255, .86) !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-hero :is(.branches-eyebrow, .branches-live-signal) {
+  color: #c8f7ff !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > #branchKpiGrid {
+  gap: 12px !important;
+  padding: 0 !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > #branchUnassignedCard {
+  gap: 15px !important;
+  padding: 16px 18px !important;
+  border: 1px solid rgba(245, 158, 11, .25) !important;
+  border-radius: 20px !important;
+  background: linear-gradient(120deg, rgba(255, 251, 235, .98), rgba(255, 247, 237, .92)) !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-directory {
+  gap: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(148, 163, 184, .18) !important;
+  border-radius: 24px !important;
+  background: rgba(255, 255, 255, .95) !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="branches"] .portal-shell .content-shell > .view-section.branches-premium-view.active {
+    gap: 12px !important;
+    padding: 0 0 24px !important;
+  }
+
+  html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-hero {
+    gap: 18px !important;
+    padding: 22px 18px !important;
+    border-radius: 22px !important;
+  }
+
+  html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > #branchKpiGrid {
+    gap: 8px !important;
+  }
+
+  html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > #branchUnassignedCard {
+    gap: 12px !important;
+    padding: 14px !important;
+  }
+
+  html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-directory {
+    border-radius: 20px !important;
+  }
+}
