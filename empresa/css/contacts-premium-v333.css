@@ -225,3 +225,76 @@ html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV
 html body:not(#contactsGapA#contactsGapB#contactsGapC#contactsGapD#contactsGapE#contactsGapF#contactsGapG#contactsGapH#contactsGapI#contactsGapJ#contactsGapK#contactsGapL)[data-current-view="leads"] .portal-shell .view-section.active[data-view="leads"] {
   gap: 18px !important;
 }
+
+html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetricsD#contactsMetricsE#contactsMetricsF#contactsMetricsG#contactsMetricsH#contactsMetricsI#contactsMetricsJ#contactsMetricsK#contactsMetricsL)[data-current-view="leads"] .portal-shell .contact-directory-hero {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas: "copy action" "metrics metrics" !important;
+  align-items: end !important;
+  gap: 18px 24px !important;
+}
+
+html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetricsD#contactsMetricsE#contactsMetricsF#contactsMetricsG#contactsMetricsH#contactsMetricsI#contactsMetricsJ#contactsMetricsK#contactsMetricsL)[data-current-view="leads"] .portal-shell .contact-directory-hero > div:first-child {
+  grid-area: copy !important;
+}
+
+html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetricsD#contactsMetricsE#contactsMetricsF#contactsMetricsG#contactsMetricsH#contactsMetricsI#contactsMetricsJ#contactsMetricsK#contactsMetricsL)[data-current-view="leads"] .portal-shell .contact-directory-hero-actions {
+  grid-area: action !important;
+  justify-self: end !important;
+}
+
+html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetricsD#contactsMetricsE#contactsMetricsF#contactsMetricsG#contactsMetricsH#contactsMetricsI#contactsMetricsJ#contactsMetricsK#contactsMetricsL)[data-current-view="leads"] .portal-shell .contact-directory-summary {
+  grid-area: metrics !important;
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  justify-self: stretch !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  text-align: left !important;
+}
+
+html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetricsD#contactsMetricsE#contactsMetricsF#contactsMetricsG#contactsMetricsH#contactsMetricsI#contactsMetricsJ#contactsMetricsK#contactsMetricsL)[data-current-view="leads"] .portal-shell .contact-directory-summary > span {
+  display: grid !important;
+  align-content: center !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+  min-height: 64px !important;
+  padding: 10px 12px !important;
+  border: 1px solid #dce5ef !important;
+  border-radius: 12px !important;
+  background: #f7f9fc !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetricsD#contactsMetricsE#contactsMetricsF#contactsMetricsG#contactsMetricsH#contactsMetricsI#contactsMetricsJ#contactsMetricsK#contactsMetricsL)[data-current-view="leads"] .portal-shell .contact-directory-summary > span > small {
+  min-width: 0 !important;
+  overflow: visible !important;
+  color: #607087 !important;
+  line-height: 1.25 !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+@media (max-width: 1080px) {
+  html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetricsD#contactsMetricsE#contactsMetricsF#contactsMetricsG#contactsMetricsH#contactsMetricsI#contactsMetricsJ#contactsMetricsK#contactsMetricsL)[data-current-view="leads"] .portal-shell .contact-directory-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 680px) {
+  html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetricsD#contactsMetricsE#contactsMetricsF#contactsMetricsG#contactsMetricsH#contactsMetricsI#contactsMetricsJ#contactsMetricsK#contactsMetricsL)[data-current-view="leads"] .portal-shell .contact-directory-hero {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: "copy" "action" "metrics" !important;
+  }
+
+  html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetricsD#contactsMetricsE#contactsMetricsF#contactsMetricsG#contactsMetricsH#contactsMetricsI#contactsMetricsJ#contactsMetricsK#contactsMetricsL)[data-current-view="leads"] .portal-shell .contact-directory-hero-actions {
+    justify-self: stretch !important;
+  }
+
+  html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetricsD#contactsMetricsE#contactsMetricsF#contactsMetricsG#contactsMetricsH#contactsMetricsI#contactsMetricsJ#contactsMetricsK#contactsMetricsL)[data-current-view="leads"] .portal-shell .contact-directory-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
