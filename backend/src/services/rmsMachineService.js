@@ -920,6 +920,44 @@ function opportunityFromRow(row = {}, stateRow = null, inventoryProducts = []) {
   };
 }
 
+async function acceptedRmsActivationDeliveryMap(businessId) {
+  const accepted = await query(
+    `select distinct on (r.source_type, r.source_id)
+            r.source_type, r.source_id, r.sent_at, r.provider_message_id, r.metadata as recipient_metadata,
+            c.id as communication_id, c.activation_id, c.email_body, c.action_url,
+            coalesce(a.title, c.title) as activation_title
+       from business_communication_recipients r
+       join business_communications c on c.id = r.communication_id and c.business_id = r.business_id
+       join rms_lead_state s on s.business_id = r.business_id and s.source_type = r.source_type and s.source_id = r.source_id
+       left join interactive_activations a on a.id = c.activation_id and a.company_id = c.business_id
+      where r.business_id = $1 and r.status = 'SENT' and s.rms_phase = 'clasificacion'
+        and c.metadata->>'source_module' = 'rms_activation_1'
+      order by r.source_type, r.source_id, r.sent_at desc nulls last`,
+    [businessId]
+  );
+  return new Map(accepted.rows.map((row) => {
+    const sentAt = row.sent_at ? new Date(row.sent_at) : new Date();
+    const persistedFollowUp = row.recipient_metadata?.rms_activation_follow_up_at;
+    const followUpAt = persistedFollowUp || new Date(sentAt.getTime() + 24 * 60 * 60 * 1000).toISOString();
+    return [`${crmSourceType(row)}:${row.source_id}`, {
+      activation_offer_sent_at: sentAt.toISOString(),
+      activation_first_contact_at: sentAt.toISOString(),
+      activation_contact_count: 1,
+      activation_delivery_channel: "email",
+      activation_offer_name: row.activation_title || "Activación enviada",
+      activation_offer_note: "Activación masiva aceptada por Resend · Canal: email.",
+      activation_message: row.email_body || "",
+      activation_ticket_url: row.action_url || null,
+      activation_follow_up_at: followUpAt,
+      activation_outcome: "PENDING",
+      activation_id: row.activation_id || null,
+      business_communication_id: row.communication_id,
+      resend_message_id: row.provider_message_id || null,
+      activation_delivery_source: "resend_bulk_acceptance",
+    }];
+  }));
+}
+
 async function listRmsOpportunities(businessId, filters = {}) {
   const limit = Math.min(Number(filters.limit || 120), 180);
   const phaseFilter = normalizePhase(filters.rms_phase || filters.phase, "");
@@ -959,6 +997,14 @@ async function listRmsOpportunities(businessId, filters = {}) {
     ...recentStateRows.map((row) => [`${crmSourceType(row)}:${row.source_id}`, row]),
     ...Array.from((await stateRowsFor(businessId, mergedRows)).entries()),
   ]);
+  if (phaseFilter === "clasificacion") {
+    const acceptedDeliveries = await acceptedRmsActivationDeliveryMap(businessId);
+    acceptedDeliveries.forEach((delivery, key) => {
+      const stateRow = stateMap.get(key);
+      if (!stateRow || stateRow.metadata?.activation_offer_sent_at) return;
+      stateMap.set(key, { ...stateRow, metadata: { ...(stateRow.metadata || {}), ...delivery } });
+    });
+  }
   const openRecyclingRows = phaseFilter === "accion_correctiva"
     ? await query(
       `select source_type, source_id

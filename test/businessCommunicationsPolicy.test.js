@@ -62,3 +62,24 @@ test("RMS activation email uses the same working Resend configuration as Communi
   assert.doesNotMatch(rmsActivationSend, /connection\.sender_verified/);
   assert.match(service, /sendBusinessCommunicationEmail/);
 });
+
+test("accepted RMS bulk emails enable the persisted activation response flow", () => {
+  const service = read("backend/src/services/businessCommunicationService.js");
+  const rmsService = read("backend/src/services/rmsMachineService.js");
+  const controller = read("backend/src/controllers/rmsMachineController.js");
+  const frontend = read("empresa/js/rms-activation-bulk-email.js");
+  const start = service.indexOf("async function syncRmsActivationAcceptedRecipients");
+  const end = service.indexOf("async function sendRmsActivationBulkEmail", start);
+  const sync = service.slice(start, end);
+  assert.match(sync, /r\.status = 'SENT'/);
+  assert.match(sync, /recordActivationDelivery/);
+  assert.match(sync, /moveRmsLeadPhase/);
+  assert.match(sync, /activation_offer_sent_at/);
+  assert.match(sync, /activation_follow_up_at/);
+  assert.doesNotMatch(sync, /status = 'FAILED'/);
+  assert.match(controller, /sendRmsActivationBulkEmail\(businessIdFor\(req\), req\.user, body, req\.user\.email\)/);
+  assert.match(frontend, /await loadRmsMachineData\(\{ force: true, quiet: true, lite: true, stationPhase: "clasificacion" \}\)/);
+  assert.match(rmsService, /async function acceptedRmsActivationDeliveryMap/);
+  assert.match(rmsService, /activation_delivery_source: "resend_bulk_acceptance"/);
+  assert.match(rmsService, /if \(!stateRow \|\| stateRow\.metadata\?\.activation_offer_sent_at\) return/);
+});

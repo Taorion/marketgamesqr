@@ -453,7 +453,7 @@ async function recordActivationDeliveryAction(req, res, next) {
 async function sendActivationBulkEmail(req, res, next) {
   try {
     const body = validate(activationBulkEmailSchema, req.body);
-    res.json(await sendRmsActivationBulkEmail(businessIdFor(req), req.user.id, body, req.user.email));
+    res.json(await sendRmsActivationBulkEmail(businessIdFor(req), req.user, body, req.user.email));
   } catch (error) {
     next(error);
   }

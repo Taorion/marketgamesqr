@@ -2,6 +2,7 @@ const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
 const { listLeadCrmRows } = require("./leadCrmService");
+const { moveRmsLeadPhase, recordActivationDelivery } = require("./rmsMachineService");
 const { sendBusinessCommunicationEmail } = require("./businessCommunicationMailService");
 const { getEmailConnectionStatus, getWhatsAppConnectionStatus, isMarketGamesInternalAccount, ownResendApiKey, saveEmailConnection, saveWhatsAppConnection } = require("./businessCommunicationCredentialService");
 const { listApprovedWhatsAppTemplates, sendWhatsAppTemplate } = require("./businessCommunicationWhatsAppService");
@@ -984,7 +985,88 @@ async function getRmsActivationEmailSummary(businessId) {
   };
 }
 
-async function sendRmsActivationBulkEmail(businessId, userId, payload, connectedUserEmail = null) {
+async function syncRmsActivationAcceptedRecipients(businessId, user, communication, activation) {
+  const accepted = await query(
+    `select r.id, r.source_type, r.source_id, r.lead_id, r.recipient_name, r.provider_message_id, r.sent_at,
+            s.rms_phase, s.priority, s.revenue_potential
+       from business_communication_recipients r
+       join rms_lead_state s on s.business_id = r.business_id and s.source_type = r.source_type and s.source_id = r.source_id
+      where r.business_id = $1 and r.communication_id = $2 and r.status = 'SENT'
+        and s.rms_phase = 'clasificacion'
+        and coalesce(r.metadata->>'rms_activation_state_registered_at', '') = ''`,
+    [businessId, communication.id]
+  );
+  const results = { registered: 0, failed: 0, errors: [] };
+  await runWithConcurrency(accepted.rows, 6, async (recipient) => {
+    const contactedAt = recipient.sent_at ? new Date(recipient.sent_at) : new Date();
+    const followUpAt = new Date(contactedAt.getTime() + 24 * 60 * 60 * 1000);
+    const personalizedMessage = personalize(communication.email_body, {
+      first_name: String(recipient.recipient_name || "").trim().split(/\s+/)[0],
+      name: recipient.recipient_name,
+    });
+    try {
+      await recordActivationDelivery(businessId, user, {
+        source_id: recipient.source_id,
+        source_type: recipient.source_type,
+        attachment_asset_ids: [],
+        ticket_url: communication.action_url || null,
+        payment: { mode: "NONE" },
+        message: personalizedMessage,
+        channel: "email",
+        delivery_state: "SENT",
+        contacted_at: contactedAt.toISOString(),
+        contact_consent_confirmed: true,
+      });
+      await moveRmsLeadPhase(businessId, user, {
+        source_id: recipient.source_id,
+        source_type: recipient.source_type,
+        lead_id: recipient.lead_id || null,
+        to_phase: recipient.rms_phase,
+        priority: recipient.priority || "MEDIUM",
+        recommended_action: "Medir la respuesta a la activación y acordar el siguiente paso comercial",
+        last_operation: "activation_contact_confirmed",
+        last_material_sent: activation.title,
+        revenue_potential: Number(recipient.revenue_potential || 0),
+        reason: `Activación enviada colectivamente por email: ${activation.title}.`,
+        metadata: {
+          source_module: "rms_machine",
+          source_flow: "activation_offer_delivery",
+          from_phase: recipient.rms_phase,
+          activation_offer_sent_at: contactedAt.toISOString(),
+          activation_first_contact_at: contactedAt.toISOString(),
+          activation_contact_count: 1,
+          activation_delivery_channel: "email",
+          activation_offer_name: activation.title,
+          activation_offer_note: `Activación ${activation.title} · Canal: email · Aceptado por Resend.`,
+          activation_message: personalizedMessage,
+          activation_ticket_url: communication.action_url || null,
+          activation_follow_up_at: followUpAt.toISOString(),
+          activation_outcome: "PENDING",
+          activation_id: activation.id,
+          business_communication_id: communication.id,
+          resend_message_id: recipient.provider_message_id || null,
+        },
+      });
+      await query(
+        `update business_communication_recipients
+            set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+              'rms_activation_state_registered_at', now()::text,
+              'rms_activation_follow_up_at', $3::text
+            ), updated_at = now()
+          where id = $1 and business_id = $2`,
+        [recipient.id, businessId, followUpAt.toISOString()]
+      );
+      results.registered += 1;
+    } catch (error) {
+      results.failed += 1;
+      results.errors.push({ source_id: recipient.source_id, message: String(error.publicMessage || error.message || "No se pudo actualizar el estado RMS.").slice(0, 280) });
+    }
+  });
+  return results;
+}
+
+async function sendRmsActivationBulkEmail(businessId, user, payload, connectedUserEmail = null) {
+  const userId = user.id;
   const activation = await query(
     `select id, title, campaign_id from interactive_activations where id = $1 and company_id = $2 and status = 'active'`,
     [payload.activation_id, businessId]
@@ -1031,9 +1113,10 @@ async function sendRmsActivationBulkEmail(businessId, userId, payload, connected
     retryFailedOnly: Boolean(payload.retry_failed_only),
     idempotencyKey: payload.idempotency_key,
   });
+  const rmsRegistration = await syncRmsActivationAcceptedRecipients(businessId, user, communication, activation.rows[0]);
   return {
     idempotent_replay: reused,
-    results: { ...(await rmsActivationDispatchSummary(businessId, communication.id)), attempted: sent.results.attempted, failure_reasons: sent.results.failure_reasons },
+    results: { ...(await rmsActivationDispatchSummary(businessId, communication.id)), attempted: sent.results.attempted, failure_reasons: sent.results.failure_reasons, rms_registered: rmsRegistration.registered, rms_registration_failed: rmsRegistration.failed, rms_registration_errors: rmsRegistration.errors },
     station_summary: await getRmsActivationEmailSummary(businessId),
   };
 }

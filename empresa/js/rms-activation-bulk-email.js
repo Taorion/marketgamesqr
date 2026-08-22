@@ -68,7 +68,7 @@
       </div>
       <label class="rms-activation-bulk-consent"><input type="checkbox" data-rms-resend-consent> Confirmo que todos los leads seleccionados autorizaron contacto comercial.</label>
       <div class="rms-activation-bulk-actions"><button class="solid-button" type="button" data-rms-prepare-bulk-activation ${selectedRows.length && !queue?.processing ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">send</span>${queue?.processing ? "Enviando…" : "Enviar activación a seleccionados"}</button><button class="ghost-button" type="button" data-rms-open-resend-settings>Configurar remitente</button><button class="ghost-button" type="button" data-rms-close-bulk-activation>Cerrar</button></div>
-      ${queue?.results ? `<aside class="rms-activation-bulk-queue" aria-live="polite"><div><strong>${result.accepted || 0} aceptados por Resend · ${result.pending_confirmation || 0} pendientes de confirmación · ${result.failed || 0} fallidos · ${result.skipped || 0} omitidos</strong><small>Aceptado no significa entregado. Sin webhook de email, permanece pendiente de confirmación.</small></div>${result.failed ? '<button class="solid-button compact" type="button" data-rms-dispatch-next-bulk-activation><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Reintentar solo fallidos</button>' : ""}</aside>` : ""}
+      ${queue?.results ? `<aside class="rms-activation-bulk-queue" aria-live="polite"><div><strong>${result.accepted || 0} aceptados por Resend · ${result.pending_confirmation || 0} pendientes de confirmación · ${result.failed || 0} fallidos · ${result.skipped || 0} omitidos</strong><small>${result.rms_registration_failed ? `${result.rms_registration_failed} aceptados requieren actualizar su estado RMS. ` : ""}Aceptado no significa entregado. Sin webhook de email, permanece pendiente de confirmación.</small></div>${result.failed ? '<button class="solid-button compact" type="button" data-rms-dispatch-next-bulk-activation><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Reintentar solo fallidos</button>' : ""}</aside>` : ""}
     </section>`;
   };
 
@@ -94,9 +94,12 @@
       const response = await api("/api/business/rms-machine/activation-email/bulk-send", { method: "POST", headers: authHeaders(), body: JSON.stringify({ ...payload, idempotency_key: idempotencyKey }) });
       state.rmsActivationEmailSummary = response.station_summary || {};
       state.rmsActivationBulkQueue = { phase: "clasificacion", processing: false, payload, idempotencyKey, results: response.results || {} };
+      state.rmsMachineLoaded = false;
+      await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "clasificacion" });
       renderRmsStationOnly();
       const result = response.results || {};
-      showFeedback(`${result.accepted || 0} aceptados por Resend · ${result.pending_confirmation || 0} pendientes de confirmación · ${result.failed || 0} fallidos · ${result.skipped || 0} omitidos`, result.failed ? "info" : "success", { title: "Activación 1" });
+      const rmsWarning = result.rms_registration_failed ? ` · ${result.rms_registration_failed} sin actualizar en RMS` : "";
+      showFeedback(`${result.accepted || 0} aceptados por Resend · ${result.pending_confirmation || 0} pendientes de confirmación · ${result.failed || 0} fallidos · ${result.skipped || 0} omitidos${rmsWarning}`, result.failed || result.rms_registration_failed ? "info" : "success", { title: "Activación 1" });
     } catch (error) {
       state.rmsActivationBulkQueue = { phase: "clasificacion", processing: false, payload, idempotencyKey };
       renderRmsStationOnly();
@@ -117,6 +120,8 @@
       const response = await api("/api/business/rms-machine/activation-email/bulk-send", { method: "POST", headers: authHeaders(), body: JSON.stringify({ ...queue.payload, communication_id: queue.results.communication_id, retry_failed_only: true, idempotency_key: retryIdempotencyKey }) });
       state.rmsActivationEmailSummary = response.station_summary || {};
       state.rmsActivationBulkQueue = { ...queue, processing: false, retryAttempt, retryIdempotencyKey: null, results: response.results || {} };
+      state.rmsMachineLoaded = false;
+      await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: "clasificacion" });
       renderRmsStationOnly();
     } catch (error) {
       queue.processing = false;
