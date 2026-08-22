@@ -142,90 +142,82 @@ body[data-current-view="leads"] .contact-directory-more button { min-width: 190p
   .customer-csv-modal-footer button { width: 100%; }
 }
 
-/* Contactos v335: neutraliza el espaciado y el rail heredados sin afectar otros módulos. */
-html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"] {
+/* La hoja heredada usa especificidad artificial; esta capa final queda limitada a Contactos. */
+html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell .view-section[data-view="leads"] {
   gap: 18px !important;
   padding-block: 28px 64px !important;
 }
 
-html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"] > .view-head {
+html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell .view-section[data-view="leads"] > .view-head {
   min-height: 0 !important;
   padding: 24px 28px !important;
   gap: 24px !important;
-  border-radius: 24px !important;
 }
 
-html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] {
+html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] {
   gap: 14px !important;
 }
 
-html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] #contactCenterTabs.contact-center-tab-rail {
-  display: grid !important;
+html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] #contactCenterTabs.contact-center-tab-rail {
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 8px !important;
   overflow: visible !important;
-  padding: 7px !important;
 }
 
-html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] #contactCenterTabs.contact-center-tab-rail > button[hidden] {
+html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell #contactCenterTabs > button[hidden] {
   display: none !important;
 }
 
-html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card:not([hidden]) {
+html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell #contactCenterTabs > button.contact-center-tab-card:not([hidden]) {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) auto !important;
   align-items: center !important;
   gap: 10px !important;
-  min-width: 0 !important;
   min-height: 62px !important;
   padding: 10px 12px !important;
 }
 
-html body[data-current-view="leads"] .portal-shell #contactCenterTabs .contact-center-tab-card .contact-tab-icon {
+html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell #contactCenterTabs .contact-tab-icon {
   display: none !important;
 }
 
-html body[data-current-view="leads"] .portal-shell #contactCenterTabs .contact-center-tab-card .contact-tab-copy {
+html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell #contactCenterTabs .contact-tab-copy {
   display: grid !important;
   min-width: 0 !important;
   gap: 2px !important;
 }
 
-html body[data-current-view="leads"] .portal-shell #contactCenterTabs .contact-center-tab-card .contact-tab-copy strong,
-html body[data-current-view="leads"] .portal-shell #contactCenterTabs .contact-center-tab-card .contact-tab-copy small {
-  max-width: 100% !important;
+html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell #contactCenterTabs .contact-tab-copy :is(strong, small) {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
 }
 
-html body[data-current-view="leads"] .portal-shell #contactCenterTabs .contact-center-tab-card em {
+html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell #contactCenterTabs .contact-center-tab-card em {
   position: static !important;
   justify-self: end !important;
-  flex: 0 0 auto !important;
   margin: 0 !important;
 }
 
 @media (max-width: 820px) {
-  html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"] {
+  html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell .view-section[data-view="leads"] {
     padding-block: 16px 42px !important;
   }
 
-  html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"] > .view-head {
+  html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell .view-section[data-view="leads"] > .view-head {
     padding: 20px !important;
   }
 
-  html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] #contactCenterTabs.contact-center-tab-rail {
+  html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] #contactCenterTabs.contact-center-tab-rail {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
 @media (max-width: 480px) {
-  html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] #contactCenterTabs.contact-center-tab-rail {
+  html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] #contactCenterTabs.contact-center-tab-rail {
     grid-template-columns: 1fr !important;
   }
 
-  html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card:not([hidden]) {
+  html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell #contactCenterTabs > button.contact-center-tab-card:not([hidden]) {
     min-height: 54px !important;
   }
 }
