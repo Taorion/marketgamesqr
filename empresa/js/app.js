@@ -46217,11 +46217,12 @@ function rmsCommercialLeadAsideMarkup(item = {}, nextLabel = "") {
   `;
 }
 
-const RMS_COMMERCIAL_SUMMARY_PHASES = new Set(["curaduria", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "postventa"]);
+const RMS_COMMERCIAL_SUMMARY_PHASES = new Set(["curaduria", "clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "postventa"]);
 
 function rmsCommercialSummaryStageLabel(phase = "") {
   return {
     curaduria: "Asignación",
+    clasificacion: "Activación 1",
     procesamiento: "Evaluación",
     accion_correctiva: "Negociación",
     control_anti_fuga: "Riesgos de fuga",
@@ -46253,7 +46254,26 @@ function rmsCommercialSummaryReason(item = {}, phase = "") {
 function rmsCommercialStationSummaryMarkup(rows = [], phase = "") {
   const title = rmsCommercialSummaryStageLabel(phase);
   const isAssignment = phase === "curaduria";
+  const isActivation = phase === "clasificacion";
   const isValuation = phase === "postventa";
+  if (isActivation) {
+    const tableRows = rows.map((item) => {
+      const delivery = rmsActivationDelivery(item);
+      const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
+      const channel = delivery.channel === "email" ? "Email" : delivery.channel === "whatsapp" ? "WhatsApp" : "Sin canal";
+      const offer = delivery.offer || rmsClassifiedProductName(item) || item.product_interest || "Sin oferta definida";
+      const followUp = delivery.followUpAt ? formatDate(delivery.followUpAt) : "Sin seguimiento";
+      const status = rmsActivationReadyForEvaluation(item)
+        ? "Listo para Evaluación"
+        : rmsActivationReady(item)
+          ? "Respuesta pendiente"
+          : delivery.sentAt
+            ? "Seguimiento pendiente"
+            : "Por activar";
+      return `<tr><td><strong>${escapeHtml(item.name || "Contacto")}</strong><small>${escapeHtml(contact)}</small></td><td><strong>${escapeHtml(offer)}</strong><small>${escapeHtml(item.campaign_name || "Sin campaña")}</small></td><td><strong>${escapeHtml(channel)}</strong><small>${escapeHtml(delivery.sentAt ? formatDate(delivery.sentAt) : "Sin envío registrado")}</small></td><td><strong>${escapeHtml(rmsActivationOutcomeLabel(delivery.outcome))}</strong><small>${escapeHtml(followUp)}</small></td><td>${escapeHtml(status)}</td></tr>`;
+    }).join("") || '<tr><td colspan="5">No hay leads en Activación 1.</td></tr>';
+    return `<section class="rms-commercial-station-summary" aria-label="Resumen de Activación 1"><header><div><span class="mono-label">Resumen de estación</span><h4>Activación 1 · ${rows.length.toLocaleString("es-CO")} lead${rows.length === 1 ? "" : "s"}</h4><p>Consulta oferta, canal, respuesta y seguimiento antes de enviar la selección a Evaluación.</p></div><button class="ghost-button compact" type="button" data-rms-station-summary aria-expanded="true"><span class="material-symbols-outlined" aria-hidden="true">visibility_off</span> Ocultar resumen</button></header><div class="rms-commercial-summary-table-wrap"><table><thead><tr><th>Lead</th><th>Oferta</th><th>Canal y envío</th><th>Respuesta y seguimiento</th><th>Estado</th></tr></thead><tbody>${tableRows}</tbody></table></div></section>`;
+  }
   if (isAssignment || isValuation) {
     const tableHead = isAssignment
       ? "<tr><th>Lead</th><th>Producto asignado</th><th>Interés declarado</th><th>Entrada</th><th>Estado</th></tr>"
@@ -47378,6 +47398,8 @@ function renderRmsStationLeanOnly() {
   const isCurationStation = phase === "alimentacion";
   const isClassifierStation = phase === "curaduria";
   const isActivationStation = phase === "clasificacion";
+  const activationEvaluationRows = isActivationStation ? rows.filter((item) => rmsActivationReadyForEvaluation(item)) : [];
+  const selectedActivationEvaluationRows = isActivationStation ? selectedRows.filter((item) => rmsActivationReadyForEvaluation(item)) : [];
   const isCommercialStation = ["clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "postventa", "inteligencia"].includes(phase);
   const supportsCommercialSummary = RMS_COMMERCIAL_SUMMARY_PHASES.has(phase);
   const hasStandardHandoff = ["recoleccion", "alimentacion", "curaduria"].includes(phase) && Boolean(nextPhase);
@@ -47437,7 +47459,9 @@ function renderRmsStationLeanOnly() {
         <div class="rms-lean-station-actions">
           ${phase === "recoleccion" ? `<button class="ghost-button compact" type="button" data-rms-open-collector><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Nuevo lead</button>` : ""}
           ${supportsCommercialSummary ? `<button class="ghost-button compact" type="button" data-rms-station-summary aria-expanded="${state.rmsStationSummaryOpen ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">table_chart</span> ${state.rmsStationSummaryOpen ? "Ocultar resumen" : "Resumen"}</button>` : ""}
+          ${isActivationStation ? `<button class="ghost-button compact" type="button" data-rms-select-activation-evaluation ${activationEvaluationRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> Seleccionar listos (${activationEvaluationRows.length.toLocaleString("es-CO")})</button>` : ""}
           ${isActivationStation ? `<button class="solid-button compact" type="button" data-rms-open-bulk-activation ${selectedRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">group_work</span> Activación masiva (${selectedRows.length.toLocaleString("es-CO")})</button>` : ""}
+          ${isActivationStation ? `<button class="solid-button compact" type="button" data-rms-send-selected-activation-evaluation ${selectedActivationEvaluationRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span> Enviar a Evaluación (${selectedActivationEvaluationRows.length.toLocaleString("es-CO")})</button>` : ""}
           ${hasStandardHandoff ? `
             <button class="ghost-button compact" type="button" data-rms-station-clear-selection ${selectedRows.length ? "" : "disabled"}>Limpiar selección</button>
             <button class="ghost-button compact" type="button" data-rms-station-select-ready="${escapeHtml(phase)}" ${eligibleRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> ${escapeHtml(selectReadyLabel)}</button>
@@ -47539,6 +47563,14 @@ function renderRmsStationLeanOnly() {
       button.setAttribute("aria-expanded", state.rmsStationSummaryOpen ? "true" : "false");
       renderRmsStationOnly();
     });
+  });
+  rmsStationWorkspace.querySelector("[data-rms-select-activation-evaluation]")?.addEventListener("click", () => {
+    state.rmsMachineSelectedIds = activationEvaluationRows.map((item) => item.id);
+    renderRmsStationOnly();
+  });
+  rmsStationWorkspace.querySelector("[data-rms-send-selected-activation-evaluation]")?.addEventListener("click", (event) => {
+    event.currentTarget.disabled = true;
+    moveSelectedRmsActivationsToEvaluation().catch((error) => showFeedback(error.message || "No se pudieron enviar los leads a Evaluación.", "error", { title: "Activación 1" }));
   });
   rmsStationWorkspace.querySelector("[data-rms-open-bulk-activation]")?.addEventListener("click", () => {
     state.rmsActivationBulkOpen = true;
@@ -51790,7 +51822,7 @@ Tenemos una propuesta preparada para ti. ¿Te la comparto y resolvemos el siguie
       </div>
       <label class="rms-activation-bulk-consent"><input type="checkbox" data-rms-bulk-activation-consent> Confirmo que todos los leads seleccionados autorizaron contacto comercial.</label>
       <div class="rms-activation-bulk-actions"><button class="solid-button" type="button" data-rms-prepare-bulk-activation ${selectedRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>Preparar activación para ${selectedRows.length.toLocaleString("es-CO")}</button><button class="ghost-button" type="button" data-rms-close-bulk-activation>Cerrar</button></div>
-      ${queue ? `<aside class="rms-activation-bulk-queue" aria-live="polite"><div><strong>${pending.length ? `${pending.length} envío${pending.length === 1 ? "" : "s"} listo${pending.length === 1 ? "" : "s"}` : "Cola completada"}</strong><small>${pending.length ? `${names}${more}. Abre y registra un canal a la vez para no marcar contactos que no se enviaron.` : `${sent.length} contacto${sent.length === 1 ? "" : "s"} registrado${sent.length === 1 ? "" : "s"}.`}</small></div>${pending.length ? `<button class="solid-button compact" type="button" data-rms-dispatch-next-bulk-activation><span class="material-symbols-outlined" aria-hidden="true">send</span>Abrir y registrar siguiente</button>` : ""}</aside>` : ""}
+      ${queue ? `<aside class="rms-activation-bulk-queue" aria-live="polite"><div><strong>${pending.length ? `${pending.length} envío${pending.length === 1 ? "" : "s"} listo${pending.length === 1 ? "" : "s"}` : "Envío masivo completado"}</strong><small>${pending.length ? `${names}${more}. El botón abre los canales y registra conjuntamente todos los contactos preparados.` : `${sent.length} contacto${sent.length === 1 ? "" : "s"} registrado${sent.length === 1 ? "" : "s"}.`}</small></div>${pending.length ? `<button class="solid-button compact" type="button" data-rms-dispatch-next-bulk-activation><span class="material-symbols-outlined" aria-hidden="true">send</span>Abrir, enviar y registrar todos</button>` : ""}</aside>` : ""}
     </section>
   `;
 }
@@ -51824,21 +51856,68 @@ async function prepareRmsBulkActivation(root = rmsStationWorkspace) {
   state.rmsActivationBulkQueue = { phase: "clasificacion", channel, message, followUpAt, ticketUrl, pending, sent: [], skipped: skipped.map((item) => item.id) };
   renderRmsStationOnly();
   const failures = results.length - pending.length;
-  showFeedback(`${pending.length} activación(es) preparada(s)${skipped.length ? ` · ${skipped.length} sin ${channel === "whatsapp" ? "WhatsApp" : "email"}` : ""}${failures ? ` · ${failures} con error` : ""}. Abre y registra la cola una por una.`, pending.length ? "success" : "error", { title: "Activación 1" });
+  showFeedback(`${pending.length} activación(es) preparada(s)${skipped.length ? ` · ${skipped.length} sin ${channel === "whatsapp" ? "WhatsApp" : "email"}` : ""}${failures ? ` · ${failures} con error` : ""}. Ya puedes abrir y registrar todos los envíos juntos.`, pending.length ? "success" : "error", { title: "Activación 1" });
 }
 
 async function dispatchNextRmsBulkActivation() {
   const queue = state.rmsActivationBulkQueue;
-  const entry = queue?.pending?.[0];
-  if (!entry?.item) return;
-  const item = entry.item;
-  if (!openRmsActivationMessage(item, { channel: queue.channel, message: entry.message })) return;
-  rmsActivationPreparedDeliveries.set(item.id, entry.prepared || { whatsapp_message: entry.message, attachments: [] });
-  const result = await sendRmsActivationOffer(item, { channel: queue.channel, message: entry.message, followUpAt: queue.followUpAt, contactedAt: new Date().toISOString(), outcome: "PENDING", ticketUrl: queue.ticketUrl, paymentMode: "NONE", paymentUrl: "", paymentInstructions: "", paymentReference: "", paymentAmount: null, paymentCurrency: "COP", files: [], consent: true, skipOpen: true });
-  if (!result?.sent) return;
-  queue.pending = queue.pending.slice(1);
-  queue.sent = [...(queue.sent || []), entry];
-  renderRmsStationOnly();
+  const pending = Array.isArray(queue?.pending) ? [...queue.pending] : [];
+  if (!pending.length) return;
+  const button = rmsStationWorkspace?.querySelector("[data-rms-dispatch-next-bulk-activation]");
+  if (button?.disabled) return;
+  if (button) button.disabled = true;
+  const opened = pending.filter((entry) => entry?.item && openRmsActivationMessage(entry.item, { channel: queue.channel, message: entry.message }));
+  if (!opened.length) {
+    if (button) button.disabled = false;
+    showFeedback("No se pudo abrir ningún canal para la selección.", "error", { title: "Activación 1" });
+    return;
+  }
+  opened.forEach((entry) => {
+    rmsActivationPreparedDeliveries.set(entry.item.id, entry.prepared || { whatsapp_message: entry.message, attachments: [] });
+  });
+  showFeedback(`Registrando conjuntamente ${opened.length.toLocaleString("es-CO")} envío${opened.length === 1 ? "" : "s"}…`, "loading", { title: "Activación 1", timeout: 0 });
+  const results = await runBulkRequests(opened, async (entry) => {
+    const result = await sendRmsActivationOffer(entry.item, {
+      channel: queue.channel,
+      message: entry.message,
+      followUpAt: queue.followUpAt,
+      contactedAt: new Date().toISOString(),
+      outcome: "PENDING",
+      ticketUrl: queue.ticketUrl,
+      paymentMode: "NONE",
+      paymentUrl: "",
+      paymentInstructions: "",
+      paymentReference: "",
+      paymentAmount: null,
+      paymentCurrency: "COP",
+      files: [],
+      consent: true,
+      skipOpen: true,
+      skipRefresh: true,
+      quiet: true,
+    });
+    if (!result?.sent) throw new Error(result?.error || "No se pudo registrar el contacto.");
+    return result;
+  }, { concurrency: 6 });
+  const sentEntries = results.filter((result) => result.ok).map((result) => result.item);
+  const failedEntries = results.filter((result) => !result.ok).map((result) => result.item);
+  const notOpenedIds = new Set(pending.filter((entry) => !opened.includes(entry)).map((entry) => entry.item?.id));
+  queue.pending = [...failedEntries, ...pending.filter((entry) => notOpenedIds.has(entry.item?.id))];
+  queue.sent = [...(queue.sent || []), ...sentEntries];
+  const sentIds = new Set(sentEntries.map((entry) => entry.item.id));
+  state.rmsMachineSelectedIds = (state.rmsMachineSelectedIds || []).filter((id) => !sentIds.has(id));
+  if (sentEntries.length) {
+    state.rmsMachineLoaded = false;
+    await refreshRmsOpenStation("clasificacion");
+  } else {
+    renderRmsStationOnly();
+  }
+  const failures = queue.pending.length;
+  showFeedback(
+    `${sentEntries.length.toLocaleString("es-CO")} envío${sentEntries.length === 1 ? "" : "s"} abierto${sentEntries.length === 1 ? "" : "s"} y registrado${sentEntries.length === 1 ? "" : "s"} conjuntamente${failures ? ` · ${failures} pendiente${failures === 1 ? "" : "s"} por error` : ""}.`,
+    failures ? "info" : "success",
+    { title: "Activación 1" }
+  );
 }
 
 function rmsActivationDraftFromDom(root, id) {
@@ -51978,6 +52057,7 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
   if (!item?.source_id) return;
   const delivery = rmsActivationDelivery(item);
   const draft = typeof options === "string" ? { channel: options } : options;
+  const quiet = Boolean(draft.quiet);
   const targetChannel = draft.channel || delivery.channel || (item.phone ? "whatsapp" : "email");
   if (targetChannel === "whatsapp" && !item.phone) {
     showFeedback("Este lead no tiene WhatsApp. Selecciona email o completa el teléfono.", "info", { title: "Activación 1" });
@@ -52017,7 +52097,7 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
   }
   const previouslyScheduled = delivery.followUpAt && followUpAt && new Date(delivery.followUpAt).getTime() === new Date(followUpAt).getTime();
   try {
-    showFeedback(draft.prepareOnly
+    if (!quiet) showFeedback(draft.prepareOnly
       ? `Preparando materiales y enlaces${draft.files?.length ? ` · ${draft.files.length} archivo(s)` : ""}…`
       : "Registrando el contacto y creando el seguimiento… Puedes continuar en el canal mientras terminamos.", "loading", { title: "Activación 1", timeout: 0 });
     const prepared = rmsActivationPreparedDeliveries.get(item.id) || null;
@@ -52048,7 +52128,7 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
     const failedUpload = uploadedResults.find((result) => result.status === "rejected");
     if (failedUpload) throw failedUpload.reason;
     if (draft.prepareOnly) {
-      showFeedback("Guardando la preparación y generando enlaces seguros…", "loading", { title: "Activación 1", timeout: 0 });
+      if (!quiet) showFeedback("Guardando la preparación y generando enlaces seguros…", "loading", { title: "Activación 1", timeout: 0 });
     }
     const preparedAssetIds = (prepared?.attachments || []).map((asset) => asset.asset_id).filter(Boolean);
     const deliveryRecord = draft.prepareOnly && prepared
@@ -52057,7 +52137,7 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
     const deliveredMessage = draft.message || deliveryRecord.whatsapp_message || message;
     rmsActivationPreparedDeliveries.set(item.id, deliveryRecord);
     if (draft.prepareOnly) {
-      showFeedback("Mensaje y materiales listos para revisar antes del envío.", "success", { title: "Activación 1" });
+      if (!quiet) showFeedback("Mensaje y materiales listos para revisar antes del envío.", "success", { title: "Activación 1" });
       return { prepared: true, message: deliveryRecord.whatsapp_message || deliveredMessage, attachments: deliveryRecord.attachments || [] };
     }
     if (!draft.skipOpen) openRmsActivationMessage(item, { channel: targetChannel, message: deliveredMessage });
@@ -52102,15 +52182,15 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
     state.rmsMachineLoaded = false;
     // La trazabilidad ya está confirmada. Actualizamos solo esta estación y no
     // bloqueamos el botón esperando una recarga completa de toda la máquina.
-    void refreshRmsOpenStation("clasificacion").catch(() => {});
+    if (!draft.skipRefresh) void refreshRmsOpenStation("clasificacion").catch(() => {});
     const contactNumber = Number(deliveryRecord.history?.contact_sequence || delivery.contactCount || 1);
-    showFeedback(contactNumber > 1
+    if (!quiet) showFeedback(contactNumber > 1
       ? `Reenvío #${contactNumber} registrado en el historial del contacto.`
       : (followUpAt ? "Primer contacto registrado y seguimiento creado en Agenda." : "Primer contacto registrado. Programa un seguimiento antes de pasar a Evaluación."), "success", { title: "Activación 1" });
     return { sent: true, delivery: deliveryRecord };
   } catch (error) {
     const message = error.message || (draft.prepareOnly ? "No se pudo preparar el mensaje." : "No se pudo confirmar el contacto.");
-    showFeedback(message, "error", { title: "Activación 1" });
+    if (!quiet) showFeedback(message, "error", { title: "Activación 1" });
     return { prepared: false, sent: false, error: message };
   }
 }
@@ -54292,6 +54372,77 @@ function rmsActivationReady(item = {}) {
   return Boolean(delivery.sentAt && delivery.followUpAt);
 }
 
+function rmsActivationEvaluationMovePayload(item = {}) {
+  const delivery = rmsActivationDelivery(item);
+  return {
+    source_id: item.source_id,
+    source_type: item.source_type || "PLAYER",
+    lead_id: item.lead_id || null,
+    to_phase: "procesamiento",
+    priority: rmsPriorityCode(item),
+    recommended_action: "Evaluar la respuesta y definir el siguiente paso comercial",
+    last_operation: "activation_sent_to_evaluation",
+    last_material_sent: delivery.offer,
+    revenue_potential: Number(item.revenue_potential || 0),
+    reason: `Activación 1 completada: ${rmsActivationOutcomeLabel(delivery.outcome)}.`,
+    metadata: {
+      source_module: "rms_machine",
+      source_flow: "activation_to_evaluation",
+      from_phase: "clasificacion",
+      activation_offer_sent_at: delivery.sentAt,
+      activation_delivery_channel: delivery.channel,
+      activation_offer_name: delivery.offer,
+      activation_offer_note: delivery.note,
+      activation_message: delivery.message,
+      activation_follow_up_at: delivery.followUpAt,
+      activation_outcome: delivery.outcome,
+      activation_outcome_updated_at: new Date().toISOString(),
+    },
+  };
+}
+
+async function moveSelectedRmsActivationsToEvaluation() {
+  const selectedIds = new Set(state.rmsMachineSelectedIds || []);
+  const selectedRows = rmsStationRows("clasificacion", state.rmsMachine?.opportunities || [])
+    .filter((item) => selectedIds.has(item.id));
+  if (!selectedRows.length) {
+    showFeedback("Selecciona al menos un lead de Activación 1.", "info", { title: "Activación 1" });
+    return;
+  }
+  const readyRows = selectedRows.filter((item) => rmsActivationReadyForEvaluation(item));
+  const blockedRows = selectedRows.filter((item) => !readyRows.includes(item));
+  if (!readyRows.length) {
+    showFeedback("Los leads seleccionados necesitan contacto, seguimiento y una respuesta guardada antes de pasar a Evaluación.", "info", { title: "Activación 1" });
+    return;
+  }
+  showFeedback(`Enviando ${readyRows.length.toLocaleString("es-CO")} lead${readyRows.length === 1 ? "" : "s"} a Evaluación…`, "loading", { title: "Activación 1", timeout: 0 });
+  const results = await runBulkRequests(readyRows, (item) => api("/api/business/rms-machine/lead/phase", {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify(rmsActivationEvaluationMovePayload(item)),
+  }), { concurrency: 6 });
+  const movedIds = results.filter((result) => result.ok).map((result) => result.item.id);
+  const failedIds = results.filter((result) => !result.ok).map((result) => result.item.id);
+  state.rmsMachineSelectedIds = [...blockedRows.map((item) => item.id), ...failedIds];
+  if (movedIds.includes(state.rmsActivationWorkId)) state.rmsActivationWorkId = "";
+  state.rmsMachineLoaded = false;
+  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: movedIds.length ? "procesamiento" : "clasificacion" });
+  if (movedIds.length) openRmsStation("procesamiento", { source: "activation-bulk-evaluation" });
+  const omitted = blockedRows.length;
+  const failed = failedIds.length;
+  const detail = [
+    omitted ? `${omitted} sin requisitos completos` : "",
+    failed ? `${failed} con error` : "",
+  ].filter(Boolean).join(" · ");
+  showFeedback(
+    movedIds.length
+      ? `${movedIds.length.toLocaleString("es-CO")} lead${movedIds.length === 1 ? "" : "s"} enviado${movedIds.length === 1 ? "" : "s"} conjuntamente a Evaluación${detail ? ` · ${detail}` : ""}.`
+      : `No se movieron leads${detail ? ` · ${detail}` : ""}.`,
+    failed || omitted ? "info" : "success",
+    { title: "Activación 1" }
+  );
+}
+
 async function moveRmsActivationToEvaluation(item = {}) {
   if (!item?.source_id) return;
   if (!rmsActivationReady(item)) {
@@ -54302,37 +54453,12 @@ async function moveRmsActivationToEvaluation(item = {}) {
     showFeedback("Guarda una respuesta del lead antes de pasarlo a Evaluación.", "info", { title: "Activación 1" });
     return;
   }
-  const delivery = rmsActivationDelivery(item);
   try {
     showFeedback("Enviando el lead a Evaluación…", "loading", { title: "Activación 1", timeout: 0 });
     await api("/api/business/rms-machine/lead/phase", {
       method: "PATCH",
       headers: authHeaders(),
-      body: JSON.stringify({
-        source_id: item.source_id,
-        source_type: item.source_type || "PLAYER",
-        lead_id: item.lead_id || null,
-        to_phase: "procesamiento",
-        priority: rmsPriorityCode(item),
-        recommended_action: "Evaluar la respuesta y definir el siguiente paso comercial",
-        last_operation: "activation_sent_to_evaluation",
-        last_material_sent: delivery.offer,
-        revenue_potential: Number(item.revenue_potential || 0),
-        reason: `Activación 1 completada: ${rmsActivationOutcomeLabel(delivery.outcome)}.`,
-        metadata: {
-          source_module: "rms_machine",
-          source_flow: "activation_to_evaluation",
-          from_phase: "clasificacion",
-          activation_offer_sent_at: delivery.sentAt,
-          activation_delivery_channel: delivery.channel,
-          activation_offer_name: delivery.offer,
-          activation_offer_note: delivery.note,
-          activation_message: delivery.message,
-          activation_follow_up_at: delivery.followUpAt,
-          activation_outcome: delivery.outcome,
-          activation_outcome_updated_at: new Date().toISOString(),
-        },
-      }),
+      body: JSON.stringify(rmsActivationEvaluationMovePayload(item)),
     });
     state.rmsMachineSelectedIds = (state.rmsMachineSelectedIds || []).filter((id) => id !== item.id);
     state.rmsMachineLoaded = false;
