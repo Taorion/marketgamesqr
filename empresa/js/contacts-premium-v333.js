@@ -68,47 +68,59 @@
   };
   loadLeadCrmData = premiumLoadLeadCrmData;
 
-  let directorySearchTimer = 0;
   bindContactDirectoryControls = (board) => {
     const filters = leadDirectoryCurrentFilters();
-    const rerender = (focusId = "", selectionStart = null) => {
-      renderContactDirectoryCards(state.leadCrmRows || []);
-      if (!focusId) return;
-      requestAnimationFrame(() => {
-        const target = document.getElementById(focusId);
-        if (!target) return;
-        target.focus();
-        if (target instanceof HTMLInputElement && Number.isFinite(selectionStart)) {
-          target.setSelectionRange(selectionStart, selectionStart);
-        }
-      });
-    };
     const searchInput = board.querySelector("#contactDirectorySearchInput");
     const signalFilter = board.querySelector("#contactDirectorySignalFilter");
     const sortSelect = board.querySelector("#contactDirectorySortSelect");
     const clearButton = board.querySelector("#contactDirectoryClearFilters");
+    const refreshMatches = () => {
+      const audience = leadDirectoryAudience();
+      const { baseRows, filteredRows, sortedRows } = leadDirectoryFilteredResult(state.leadCrmRows || [], audience);
+      const visibleRows = sortedRows.slice(0, Math.max(24, Number(state.leadDirectoryVisibleLimit || 24)));
+      const audienceTotal = Number(state.leadDirectoryAudienceTotals?.[audience] || baseRows.length);
+      const hasFilters = Boolean(String(filters.search || "").trim() || filters.signal);
+      const empty = audience === "customers"
+        ? (hasFilters ? "No hay clientes que coincidan con los filtros." : "Aún no hay clientes con una venta registrada.")
+        : (hasFilters ? "No hay leads que coincidan con los filtros." : "Aún no hay leads activos.");
+      const list = board.querySelector(".contact-directory-list");
+      if (list) {
+        list.innerHTML = visibleRows.length
+          ? visibleRows.map((item) => premiumCard(item, audience === "customers" ? "customer" : "lead")).join("")
+          : `<div class="empty-state compact">${escapeHtml(empty)}</div>`;
+        list.querySelectorAll("[data-lead-id]").forEach((row) => {
+          const open = () => openLeadDetail({ id: row.dataset.leadId, source_type: row.dataset.sourceType || "PLAYER" });
+          row.addEventListener("click", open);
+          row.addEventListener("keydown", (event) => { if (["Enter", " "].includes(event.key)) { event.preventDefault(); open(); } });
+        });
+      }
+      const note = board.querySelector(".contact-directory-result-note");
+      if (note) note.textContent = `Mostrando ${visibleRows.length.toLocaleString("es-CO")} de ${filteredRows.length.toLocaleString("es-CO")} coincidencias cargadas · ${audienceTotal.toLocaleString("es-CO")} ${leadDirectoryAudienceLabel(audience).toLowerCase()} en total.`;
+      if (clearButton) clearButton.disabled = !(hasFilters || filters.sort !== "recommended");
+      const more = board.querySelector(".contact-directory-more");
+      if (more) more.hidden = !(visibleRows.length < filteredRows.length || baseRows.length < audienceTotal);
+    };
     searchInput?.addEventListener("input", () => {
       filters.search = searchInput.value;
-      const caret = searchInput.selectionStart;
-      window.clearTimeout(directorySearchTimer);
-      directorySearchTimer = window.setTimeout(() => rerender("contactDirectorySearchInput", caret), 180);
+      refreshMatches();
     });
     signalFilter?.addEventListener("change", () => {
-      window.clearTimeout(directorySearchTimer);
       filters.signal = signalFilter.value;
-      rerender("contactDirectorySignalFilter");
+      refreshMatches();
     });
     sortSelect?.addEventListener("change", () => {
-      window.clearTimeout(directorySearchTimer);
       filters.sort = sortSelect.value || "recommended";
-      rerender("contactDirectorySortSelect");
+      refreshMatches();
     });
     clearButton?.addEventListener("click", () => {
-      window.clearTimeout(directorySearchTimer);
       filters.search = "";
       filters.signal = "";
       filters.sort = "recommended";
-      rerender("contactDirectorySearchInput", 0);
+      if (searchInput) searchInput.value = "";
+      if (signalFilter) signalFilter.value = "";
+      if (sortSelect) sortSelect.value = "recommended";
+      refreshMatches();
+      searchInput?.focus();
     });
   };
 

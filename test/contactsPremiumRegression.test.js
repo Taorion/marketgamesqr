@@ -16,15 +16,17 @@ test("el directorio unifica identidades entre fuentes sin cruzar documentos inco
   assert.match(service, /case preferred\.source_type when 'PLAYER' then 1 when 'AFFILIATE' then 2 else 3 end/);
 });
 
-test("la búsqueda espera a que termine la edición antes de reconstruir el directorio", () => {
+test("la búsqueda actualiza resultados sin reconstruir el campo de edición", () => {
   const script = read("empresa/js/contacts-premium-v333.js");
-  assert.match(script, /directorySearchTimer/);
   assert.match(script, /filters\.search = searchInput\.value/);
-  assert.match(script, /setTimeout\(\(\) => rerender\("contactDirectorySearchInput", caret\), 180\)/);
+  assert.match(script, /const refreshMatches = \(\) =>/);
+  assert.match(script, /list\.innerHTML = visibleRows\.length/);
+  assert.doesNotMatch(script, /setTimeout\(\(\) => rerender\("contactDirectorySearchInput"/);
   assert.match(script, /contact-directory-result-note" aria-live="polite"/);
 });
 
 test("el progreso CSV oculto no deja residuos visuales", () => {
   const styles = read("empresa/css/contacts-premium-v333.css");
   assert.match(styles, /\.customer-csv-progress\.hidden \{ display: none !important; \}/);
+  assert.match(styles, /\.lead-export-actions \{\s*display: none !important;/);
 });

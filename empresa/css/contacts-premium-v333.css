@@ -228,6 +228,10 @@ html body:not(#contactsGapA#contactsGapB#contactsGapC#contactsGapD#contactsGapE#
   gap: 18px !important;
 }
 
+html body:not(#contactsExportA#contactsExportB#contactsExportC#contactsExportD#contactsExportE#contactsExportF)[data-current-view="leads"] .portal-shell .view-section[data-view="leads"] > .view-head .lead-export-actions {
+  display: none !important;
+}
+
 html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetricsD#contactsMetricsE#contactsMetricsF#contactsMetricsG#contactsMetricsH#contactsMetricsI#contactsMetricsJ#contactsMetricsK#contactsMetricsL)[data-current-view="leads"] .portal-shell .contact-directory-hero {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) auto !important;
