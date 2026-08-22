@@ -31018,6 +31018,14 @@ html body:not(#qoriAP1#qoriAP2#qoriAP3#qoriAP4#qoriAP5#qoriAP6#qoriAP7#qoriAP8#q
 html body:not(#qoriAP1#qoriAP2#qoriAP3#qoriAP4#qoriAP5#qoriAP6#qoriAP7#qoriAP8#qoriAP9#qoriAP10)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head-actions button { width: 100% !important; }
 html body:not(#qoriAP1#qoriAP2#qoriAP3#qoriAP4#qoriAP5#qoriAP6#qoriAP7#qoriAP8#qoriAP9#qoriAP10)[data-current-view="strategic-qr"] .portal-shell .activation-premium-review { border-color: rgba(255, 255, 255, .24) !important; background: rgba(255, 255, 255, .08) !important; color: #fff !important; }
 
+html body:not(#qoriAP1#qoriAP2#qoriAP3#qoriAP4#qoriAP5#qoriAP6#qoriAP7#qoriAP8#qoriAP9#qoriAP10)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command .gaming-center-quick-action.is-primary {
+  border-color: rgba(44, 207, 236, .72) !important;
+  background: linear-gradient(135deg, #0844bb 0%, #0789df 62%, #09b3d4 100%) !important;
+  color: #fff !important;
+}
+html body:not(#qoriAP1#qoriAP2#qoriAP3#qoriAP4#qoriAP5#qoriAP6#qoriAP7#qoriAP8#qoriAP9#qoriAP10)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command .gaming-center-quick-action.is-primary :is(strong, small, .activation-command-arrow) { color: #fff !important; }
+html body:not(#qoriAP1#qoriAP2#qoriAP3#qoriAP4#qoriAP5#qoriAP6#qoriAP7#qoriAP8#qoriAP9#qoriAP10)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command .gaming-center-quick-action.is-primary small { opacity: .82 !important; }
+
 html body:not(#qoriAP1#qoriAP2#qoriAP3#qoriAP4#qoriAP5#qoriAP6#qoriAP7#qoriAP8#qoriAP9#qoriAP10)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command {
   display: grid !important;
   visibility: visible !important;
