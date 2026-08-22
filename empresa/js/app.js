@@ -18098,6 +18098,7 @@ function openGamingActivationBuilderModal(options = {}) {
   setTicketCenterTab("trivia");
   const modal = ensureGamingActivationBuilderModal();
   if (!modal) return;
+  renderInteractiveActivationBranchOptions();
   if (options.reset !== false) {
     state.gamingActivationWizardStep = 0;
     state.gamingActivationDraftId = null;
