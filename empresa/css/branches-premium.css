@@ -386,6 +386,18 @@ body > .branch-modal-shell {
 
 body > .branch-modal-shell.hidden { display: none !important; }
 
+/* The portal foundation hides these legacy panel ids with id-level selectors.
+   Once promoted to body-level dialogs, Sedes must explicitly own visibility. */
+html body[data-current-view="branches"] > #branchFormPanel#branchFormPanel#branchFormPanel#branchFormPanel#branchFormPanel,
+html body[data-current-view="branches"] > #branchDetailModal#branchDetailModal#branchDetailModal#branchDetailModal#branchDetailModal {
+  display: grid !important;
+}
+
+html body[data-current-view="branches"] > #branchFormPanel#branchFormPanel#branchFormPanel#branchFormPanel#branchFormPanel.hidden,
+html body[data-current-view="branches"] > #branchDetailModal#branchDetailModal#branchDetailModal#branchDetailModal#branchDetailModal.hidden {
+  display: none !important;
+}
+
 body > .branch-modal-shell .branch-modal-card {
   width: min(920px, 100%);
   max-height: calc(100vh - 40px);

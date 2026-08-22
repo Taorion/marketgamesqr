@@ -44,7 +44,9 @@ test("Sedes administration stays role-aware and tenant scoped", () => {
 
 test("Sedes premium assets are versioned and loaded after the portal final layers", () => {
   const cleanLayer = html.indexOf("css/portal-clean-v39.css");
-  const branchesLayer = html.indexOf("css/branches-premium.css?v=branches-premium-v4-20260822");
+  const branchesLayer = html.indexOf("css/branches-premium.css?v=branches-premium-v5-20260822");
   assert.ok(cleanLayer >= 0 && branchesLayer > cleanLayer);
-  assert.match(app, /empresa-20260822-activation-calculator-branches-premium-v324/);
+  assert.match(app, /empresa-20260822-activation-calculator-branches-premium-v325/);
+  assert.match(css, /#branchFormPanel#branchFormPanel[\s\S]*display:\s*grid\s*!important/);
+  assert.match(css, /#branchDetailModal#branchDetailModal[\s\S]*display:\s*grid\s*!important/);
 });
