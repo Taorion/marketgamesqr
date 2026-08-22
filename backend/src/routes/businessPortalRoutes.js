@@ -282,7 +282,7 @@ router.get("/communications/:id/whatsapp/queue", communicationWhatsAppQueue);
 router.post("/communications/:id/whatsapp/opened", markCommunicationWhatsAppOpened);
 router.get("/activity", businessActivity);
 router.get("/analytics/command-center", heavyBusinessCache, commandCenterAnalytics);
-router.get("/branches", standardBusinessCache, listBranches);
+router.get("/branches", listBranches);
 router.post("/branches", createBranch);
 router.patch("/branches/:branchId", updateBranch);
 router.delete("/branches/:branchId", deleteBranch);

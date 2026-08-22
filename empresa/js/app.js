@@ -2907,6 +2907,7 @@ let state = {
   businessBranchesLoaded: false,
   businessBranchesLoading: false,
   businessBranchesLoadPromise: null,
+  businessBranchesLoadSeq: 0,
   branchEditingId: null,
   strategicQrLoaded: false,
   ticketCenterLoadedAt: {},
@@ -4083,6 +4084,7 @@ function resetBusinessScopedState(options = {}) {
   state.businessBranchesLoaded = false;
   state.businessBranchesLoading = false;
   state.businessBranchesLoadPromise = null;
+  state.businessBranchesLoadSeq = 0;
   state.branchEditingId = null;
   state.strategicQrLoaded = false;
   state.ticketCenterLoadedAt = {};
@@ -7464,6 +7466,7 @@ async function loadWorkspace() {
     state.businessBranchesLoaded = false;
     state.businessBranchesLoading = false;
     state.businessBranchesLoadPromise = null;
+    state.businessBranchesLoadSeq = 0;
     state.branchEditingId = null;
     state.loadedBusinessId = session.user.business_id || null;
     state.affiliates = [];
@@ -45286,11 +45289,13 @@ async function loadBusinessBranches(options = {}) {
     return [];
   }
   if (state.businessBranchesLoaded && !options.force) return state.businessBranches;
-  if (state.businessBranchesLoading && state.businessBranchesLoadPromise) {
+  if (!options.force && state.businessBranchesLoading && state.businessBranchesLoadPromise) {
     return state.businessBranchesLoadPromise;
   }
   state.businessBranchesLoading = true;
   const scopeKey = businessScopeKey();
+  const loadSeq = Number(state.businessBranchesLoadSeq || 0) + 1;
+  state.businessBranchesLoadSeq = loadSeq;
   const endpoint = options.force ? "/api/business/branches?fresh=1" : "/api/business/branches";
   const loadPromise = api(endpoint, {
     headers: {
@@ -45298,7 +45303,9 @@ async function loadBusinessBranches(options = {}) {
       "Cache-Control": "no-cache",
     },
   }).then((data) => {
-    if (!isCurrentBusinessScope(scopeKey)) return state.businessBranches;
+    if (!isCurrentBusinessScope(scopeKey) || state.businessBranchesLoadSeq !== loadSeq) {
+      return state.businessBranches;
+    }
     state.businessBranches = Array.isArray(data.branches) ? data.branches : [];
     state.businessBranchesLoaded = true;
     return state.businessBranches;
@@ -45307,9 +45314,9 @@ async function loadBusinessBranches(options = {}) {
   try {
     return await loadPromise;
   } finally {
-    if (isCurrentBusinessScope(scopeKey) && state.businessBranchesLoadPromise === loadPromise) {
+    if (isCurrentBusinessScope(scopeKey) && state.businessBranchesLoadSeq === loadSeq) {
       state.businessBranchesLoading = false;
-      state.businessBranchesLoadPromise = null;
+      if (state.businessBranchesLoadPromise === loadPromise) state.businessBranchesLoadPromise = null;
     }
   }
 }

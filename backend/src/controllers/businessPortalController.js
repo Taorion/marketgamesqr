@@ -1289,6 +1289,7 @@ async function listBranches(req, res, next) {
        order by is_active desc, name asc`,
       [businessId]
     );
+    res.set("Cache-Control", "private, no-store");
     res.json({ branches: result.rows });
   } catch (error) {
     next(error);
