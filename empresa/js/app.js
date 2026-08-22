@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260820-revenue-center-v308";
+const APP_VERSION = "empresa-20260822-rms-quality-1-premium-v315";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -121,6 +121,7 @@ const rmsQualityControlAccess = document.getElementById("rmsQualityControlAccess
 const rmsMachineGeneratedAt = document.getElementById("rmsMachineGeneratedAt");
 const rmsMachineOpportunityCount = document.getElementById("rmsMachineOpportunityCount");
 const rmsMachineRefreshButton = document.getElementById("rmsMachineRefreshButton");
+const rmsMachineQualityOneButton = document.getElementById("rmsMachineQualityOneButton");
 const rmsMachineOpenAgendaButton = document.getElementById("rmsMachineOpenAgendaButton");
 const rmsMachineCollectorButton = document.getElementById("rmsMachineCollectorButton");
 const rmsMachineHookButton = document.getElementById("rmsMachineHookButton");
@@ -44505,7 +44506,11 @@ function renderRmsQualityControlAccess(data = {}, opportunities = []) {
     const config = rmsQualityControlConfig(stage.key);
     if (!config) return "";
     const visual = rmsStationVisualMeta(stage.key);
-    const count = opportunities.filter((item) => config.phases.includes(item.stage)).length;
+    const observed = opportunities.filter((item) => config.phases.includes(item.stage));
+    const audits = observed.map((item) => rmsQualityAuditForItem(stage.key, item));
+    const count = observed.length;
+    const readiness = audits.length ? Math.round(audits.reduce((sum, audit) => sum + audit.readiness, 0) / audits.length) : 0;
+    const urgent = audits.filter((audit) => audit.status === "critical").length;
     const legacy = opportunities.filter((item) => item.stage === stage.key).length;
     const route = config.phases
       .map((phase) => allStages.find((item) => item.key === phase)?.short_label)
@@ -44531,8 +44536,8 @@ function renderRmsQualityControlAccess(data = {}, opportunities = []) {
         </div>
         </div>
         <footer class="rms-quality-control-card-footer">
-        <div class="rms-quality-control-metric"><strong>${count.toLocaleString("es-CO")}</strong><span>leads observados</span>${legacy ? `<small>${legacy.toLocaleString("es-CO")} en revisión</small>` : ""}</div>
-        <button class="ghost-button compact" type="button" data-rms-open-quality-control="${escapeHtml(stage.key)}">Abrir tablero</button>
+        <div class="rms-quality-control-metric"><strong>${readiness}%</strong><span>índice de preparación</span><small>${count.toLocaleString("es-CO")} observado(s)${urgent ? ` · ${urgent.toLocaleString("es-CO")} crítico(s)` : legacy ? ` · ${legacy.toLocaleString("es-CO")} en revisión` : ""}</small></div>
+        <button class="solid-button compact" type="button" data-rms-open-quality-control="${escapeHtml(stage.key)}">Abrir centro de calidad <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
         </footer>
       </article>
     `;
@@ -44699,8 +44704,8 @@ function rmsQualityOwner(item = {}) {
   );
 }
 
-function rmsQualityCriterion(label, ready, missing, impact, ownerPhase) {
-  return { label, ready: Boolean(ready), missing, impact, ownerPhase };
+function rmsQualityCriterion(label, ready, missing, impact, ownerPhase, correction = "", actionMode = "station") {
+  return { label, ready: Boolean(ready), missing, impact, ownerPhase, correction, actionMode };
 }
 
 function rmsQualityAuditForItem(key, item = {}) {
@@ -44709,10 +44714,13 @@ function rmsQualityAuditForItem(key, item = {}) {
   const product = rmsQualityProduct(item);
   const owner = rmsQualityOwner(item);
   const contact = rmsQualityContact(item);
-  const source = rmsQualityValue(item.campaign_name, item.channel, item.entry_summary, item.source_label, metadata.acquisition_channel_name_snapshot, metadata.source);
+  const activationChannel = rmsQualityValue(metadata.activation_channel, metadata.activation_delivery_channel, item.channel);
+  const source = rmsQualityValue(item.campaign_name, activationChannel, item.entry_summary, item.source_label, metadata.acquisition_channel_name_snapshot, metadata.source);
   const activationMaterial = rmsQualityValue(metadata.activation_ticket_url, metadata.activation_message, item.activation_name, item.last_material_sent, Array.isArray(metadata.activation_attachments) && metadata.activation_attachments.length);
   const nextStep = rmsQualityValue(metadata.activation_follow_up_at, metadata.next_action_at, metadata.next_contact_at, item.next_action_at, item.follow_up_at, item.last_operation);
-  const hasConsent = metadata.activation_contact_consent_confirmed === true || metadata.contact_consent_confirmed === true || metadata.consent_confirmed === true || !rmsQualityValue(metadata.activation_channel, item.channel);
+  const hasConsent = metadata.activation_contact_consent_confirmed === true || metadata.contact_consent_confirmed === true || metadata.consent_confirmed === true;
+  const updatedAt = new Date(item.updated_at || item.last_interaction_at || item.created_at || 0).getTime();
+  const ageDays = updatedAt ? Math.max(0, Math.floor((Date.now() - updatedAt) / 86400000)) : null;
   const saleId = rmsQualityValue(metadata.rms_attributed_sale_id, metadata.rms_sale_id, item.rms_attributed_sale_id, item.sale_id);
   const saleAmount = Number(rmsQualityValue(metadata.rms_sale_amount, confirmation.amount, confirmation.final_amount, item.sale_amount, 0));
   const saleCurrency = rmsQualityValue(confirmation.currency, item.sale_currency, metadata.rms_sale_currency);
@@ -44722,13 +44730,14 @@ function rmsQualityAuditForItem(key, item = {}) {
   const duplicateSignal = Boolean(metadata.rms_sale_duplicate || metadata.sale_duplicate_suspected || metadata.duplicate_sale_risk);
   const criteria = key === "preprocesamiento"
     ? [
-      rmsQualityCriterion("Lead identificable", Boolean(item.name && contact), "Falta nombre o un canal de contacto.", "Sin identidad no es posible interpretar una respuesta comercial.", "recoleccion"),
-      rmsQualityCriterion("Consentimiento y canal", hasConsent && Boolean(rmsQualityValue(metadata.activation_channel, item.channel)), "Falta confirmar consentimiento o el canal usado.", "El contacto debe ser demostrable y permitido.", "clasificacion"),
-      rmsQualityCriterion("Origen atribuible", Boolean(source), "Falta campaña, medio de adquisición, QR, referido u origen.", "Sin origen se pierde la atribución del resultado.", "recoleccion"),
-      rmsQualityCriterion("Producto u oferta", Boolean(product), "Falta producto de inventario, oferta, ticket o activación.", "Evaluación no puede contrastar el interés con una propuesta concreta.", "curaduria"),
-      rmsQualityCriterion("Material enviado o programado", Boolean(activationMaterial), "Falta evidencia de activación, propuesta, ticket o material.", "No hay soporte para evaluar qué recibió el lead.", "clasificacion"),
-      rmsQualityCriterion("Responsable", Boolean(owner), "Falta responsable de la siguiente acción.", "No hay una persona trazable para continuar el caso.", "clasificacion"),
-      rmsQualityCriterion("Próximo paso", Boolean(nextStep), "Falta tarea, fecha o seguimiento.", "La oportunidad puede quedar sin continuidad.", "clasificacion"),
+      rmsQualityCriterion("Lead identificable", Boolean(item.name && contact), "Falta nombre o un canal de contacto.", "Sin identidad no es posible interpretar una respuesta comercial.", "recoleccion", "Completa nombre, teléfono o correo en la ficha del lead."),
+      rmsQualityCriterion("Canal comercial", Boolean(activationChannel), "Falta registrar el canal usado para contactar.", "Sin canal no se puede demostrar cómo ocurrió la activación.", "clasificacion", "Selecciona WhatsApp o email en Activación 1."),
+      rmsQualityCriterion("Consentimiento confirmado", hasConsent, "Falta confirmar el consentimiento comercial.", "El contacto debe estar autorizado y quedar demostrado.", "clasificacion", "Marca la confirmación de consentimiento en Activación 1."),
+      rmsQualityCriterion("Origen atribuible", Boolean(source), "Falta campaña, medio de adquisición, QR, referido u origen.", "Sin origen se pierde la atribución del resultado.", "recoleccion", "Conecta el lead con su fuente real."),
+      rmsQualityCriterion("Producto u oferta", Boolean(product), "Falta producto de inventario, oferta, ticket o activación.", "Evaluación no puede contrastar el interés con una propuesta concreta.", "curaduria", "Asigna el producto u oferta que realmente se presentó."),
+      rmsQualityCriterion("Material enviado o programado", Boolean(activationMaterial), "Falta evidencia de activación, propuesta, ticket o material.", "No hay soporte para evaluar qué recibió el lead.", "clasificacion", "Adjunta o registra el material entregado."),
+      rmsQualityCriterion("Responsable comercial", Boolean(owner), "Falta asignar responsable comercial.", "No hay una persona trazable para continuar el caso.", "clasificacion", "Asigna responsable desde la agenda del lead.", "tasks"),
+      rmsQualityCriterion("Próximo paso", Boolean(nextStep), "Falta tarea, fecha o seguimiento.", "La oportunidad puede quedar sin continuidad.", "clasificacion", "Programa el siguiente contacto en la agenda del lead.", "tasks"),
     ]
     : [
       rmsQualityCriterion("Cliente identificable", Boolean(item.name && contact), "Falta cliente o dato de contacto verificable.", "La atribución no puede relacionarse con una persona real.", "cierre"),
@@ -44741,18 +44750,28 @@ function rmsQualityAuditForItem(key, item = {}) {
       rmsQualityCriterion("Continuidad definida", postSaleDefined, "Falta una acción de Postventa, ticket, Reward Pass, activación o tarea de continuidad.", "La relación posterior a la compra aún no está definida.", "postventa"),
     ];
   const pending = criteria.filter((criterion) => !criterion.ready);
+  const readiness = criteria.length ? Math.round(((criteria.length - pending.length) / criteria.length) * 100) : 0;
+  const stale = ageDays !== null && ageDays >= 14;
+  const overdue = ageDays !== null && ageDays >= 30;
   const status = !criteria.some((criterion) => criterion.ready) ? "insufficient"
-    : (key === "revenue_generado" && (!saleId || duplicateSignal)) || (key === "preprocesamiento" && !criteria[0].ready) ? "critical"
+    : (key === "revenue_generado" && (!saleId || duplicateSignal)) || (key === "preprocesamiento" && (!criteria[0].ready || (pending.length && overdue))) ? "critical"
       : pending.length ? "attention" : "complete";
   const primary = pending[0] || criteria[0];
   return {
-    item, criteria, pending, status, primary,
+    item, criteria, pending, status, primary, readiness, ageDays, stale, overdue,
     product: product || "Sin producto u oferta",
     source: source || "Origen sin documentar",
     owner: owner || "Responsable pendiente",
     destination: primary.ownerPhase,
-    action: `Corregir en ${primary.ownerPhase === "cierre" ? "Ventas atribuidas" : primary.ownerPhase === "clasificacion" ? "Activación 1" : primary.ownerPhase === "procesamiento" ? "Evaluación" : primary.ownerPhase === "postventa" ? "Postventa" : primary.ownerPhase === "curaduria" ? "Curaduría" : "Recolección"}`,
+    action: primary.actionMode === "tasks" ? "Abrir agenda del lead" : `Corregir en ${primary.ownerPhase === "cierre" ? "Ventas atribuidas" : primary.ownerPhase === "clasificacion" ? "Activación 1" : primary.ownerPhase === "procesamiento" ? "Evaluación" : primary.ownerPhase === "postventa" ? "Postventa" : primary.ownerPhase === "curaduria" ? "Asignación" : "Recolector"}`,
   };
+}
+
+function rmsQualityAgeLabel(audit = {}) {
+  if (audit.ageDays === null || audit.ageDays === undefined) return "Sin fecha verificable";
+  if (audit.ageDays === 0) return "Actualizado hoy";
+  if (audit.ageDays === 1) return "Sin movimiento hace 1 día";
+  return `Sin movimiento hace ${audit.ageDays.toLocaleString("es-CO")} días`;
 }
 
 function rmsQualityStatusLabel(status = "") {
@@ -44766,7 +44785,7 @@ function rmsQualitySelectOptions(values = [], selected = "", emptyLabel = "Todos
   })].join("");
 }
 
-function renderRmsQualityControlDashboard(key = "") {
+function renderRmsQualityControlDashboardReadOnlyLegacy(key = "") {
   const config = rmsQualityControlConfig(key);
   if (!config || !rmsStationWorkspace) return;
   const data = state.rmsMachine || {};
@@ -44866,6 +44885,183 @@ function renderRmsQualityControlDashboard(key = "") {
     renderRmsQualityControlDashboard(key);
   });
   rmsStationWorkspace.querySelectorAll("[data-rms-quality-navigate]").forEach((control) => control.addEventListener("click", () => openRmsStation(control.dataset.rmsQualityNavigate || "")));
+}
+
+function rmsQualityCorrectionButtonMarkup(audit = {}, options = {}) {
+  const criterion = options.criterion || audit.primary || {};
+  const compact = options.compact !== false;
+  const itemId = audit.item?.id || "";
+  const sourceId = audit.item?.source_id || audit.item?.lead_id || itemId;
+  const sourceType = audit.item?.source_type || "PLAYER";
+  if (criterion.actionMode === "tasks") {
+    return `<button class="solid-button ${compact ? "compact" : ""}" type="button" data-rms-quality-open-tasks="${escapeHtml(sourceId)}" data-rms-quality-source-type="${escapeHtml(sourceType)}"><span class="material-symbols-outlined" aria-hidden="true">event_note</span>${escapeHtml(criterion.label === "Responsable comercial" ? "Asignar responsable" : "Programar seguimiento")}</button>`;
+  }
+  const phase = criterion.ownerPhase || audit.destination || "recoleccion";
+  const label = ({ recoleccion: "Corregir en Recolector", alimentacion: "Corregir en Curaduría", curaduria: "Corregir en Asignación", clasificacion: "Corregir en Activación 1", procesamiento: "Corregir en Evaluación", cierre: "Corregir en Ventas atribuidas", postventa: "Corregir en Postventa" })[phase] || audit.action || "Corregir en estación";
+  return `<button class="solid-button ${compact ? "compact" : ""}" type="button" data-rms-quality-navigate="${escapeHtml(phase)}" data-rms-quality-case="${escapeHtml(itemId)}"><span class="material-symbols-outlined" aria-hidden="true">north_east</span>${escapeHtml(label)}</button>`;
+}
+
+/* Premium quality cockpit. It remains read-only: every correction is executed in
+   the canonical station or the lead agenda, never inside the observatory. */
+function renderRmsQualityControlDashboard(key = "") {
+  const config = rmsQualityControlConfig(key);
+  if (!config || !rmsStationWorkspace) return;
+  const data = state.rmsMachine || {};
+  const stages = rmsFactoryStages(data);
+  const stageName = (phase) => stages.find((stage) => stage.key === phase)?.short_label || phase || "-";
+  const visual = rmsStationVisualMeta(key);
+  const audits = (data.opportunities || [])
+    .filter((item) => config.phases.includes(item.stage))
+    .map((item) => rmsQualityAuditForItem(key, item));
+  const filters = state.rmsQualityControlFilters || { status: "", owner: "", campaign: "", channel: "", product: "", period: "" };
+  const now = Date.now();
+  const filtered = audits.filter((audit) => {
+    const item = audit.item;
+    const updated = new Date(item.updated_at || item.last_interaction_at || 0).getTime();
+    return (!filters.status || audit.status === filters.status)
+      && (!filters.owner || audit.owner === filters.owner)
+      && (!filters.campaign || String(item.campaign_name || "") === filters.campaign)
+      && (!filters.channel || String(item.channel || "") === filters.channel)
+      && (!filters.product || audit.product === filters.product)
+      && (!filters.period || (updated && updated >= now - Number(filters.period) * 86400000));
+  });
+  const statusOrder = { critical: 0, insufficient: 1, attention: 2, complete: 3 };
+  const orderedAudits = [...audits].sort((left, right) => (statusOrder[left.status] - statusOrder[right.status]) || (right.ageDays || 0) - (left.ageDays || 0) || left.readiness - right.readiness);
+  const priority = orderedAudits[0] || null;
+  const totals = ["complete", "attention", "critical", "insufficient"].map((status) => ({ status, count: audits.filter((audit) => audit.status === status).length }));
+  const readiness = audits.length ? Math.round(audits.reduce((sum, audit) => sum + audit.readiness, 0) / audits.length) : 0;
+  const completeCount = audits.filter((audit) => audit.status === "complete").length;
+  const criticalCount = audits.filter((audit) => audit.status === "critical").length;
+  const overdueCount = audits.filter((audit) => audit.overdue && audit.pending.length).length;
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const missingOwner = audits.filter((audit) => audit.pending.length).reduce((counts, audit) => {
+    counts[audit.primary.ownerPhase] = (counts[audit.primary.ownerPhase] || 0) + 1;
+    return counts;
+  }, {});
+  const mostMissing = Object.entries(missingOwner).sort((left, right) => right[1] - left[1])[0];
+  const selected = audits.find((audit) => String(audit.item.id) === String(state.rmsQualityControlCaseId || ""));
+  const selectedCaseKey = selected ? rmsQualityCaseKey(selected.item) : "";
+  const selectedCase = key === "revenue_generado" && selectedCaseKey === state.rmsQualityControlCaseKey ? state.rmsQualityControlCase : null;
+  const selectedCaseLoading = key === "revenue_generado" && selectedCaseKey === state.rmsQualityControlCaseKey && state.rmsQualityControlCaseLoading;
+  const consoleShell = rmsStationWorkspace.closest(".rms-factory-console");
+  consoleShell?.classList.add("is-station-mode");
+  rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.hidden = false;
+  rmsStationWorkspace.dataset.stationTheme = visual.tone || "default";
+  rmsStationWorkspace.innerHTML = `
+    <section class="rms-quality-dashboard rms-quality-premium" aria-label="${escapeHtml(config.title)}">
+      <header class="rms-quality-dashboard-head rms-quality-premium-head">
+        <button class="ghost-button compact" type="button" data-rms-close-station><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Estaciones</button>
+        <div>
+          <span class="rms-quality-live-badge"><i aria-hidden="true"></i> Observatorio premium · solo lectura</span>
+          <h3>${escapeHtml(config.title)}</h3>
+          <p>${escapeHtml(config.description)}</p>
+          <div class="rms-quality-trust-line"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><span>Detecta</span><i></i><span>Explica</span><i></i><span>Devuelve a la estación responsable</span></div>
+        </div>
+        <figure><img src="${escapeHtml(visual.image || "")}" alt="${escapeHtml(visual.imageAlt || config.title)}" decoding="async"></figure>
+      </header>
+
+      <section class="rms-quality-command-strip" aria-label="Pulso de calidad">
+        <article class="is-readiness"><span>Índice de preparación</span><strong>${readiness}%</strong><small>${audits.length ? "Promedio de señales verificables" : "Esperando casos observables"}</small><i style="--quality-progress:${readiness}%" aria-hidden="true"></i></article>
+        <article class="is-critical"><span>Acción inmediata</span><strong>${criticalCount.toLocaleString("es-CO")}</strong><small>${criticalCount === 1 ? "caso crítico" : "casos críticos"}</small><span class="material-symbols-outlined" aria-hidden="true">crisis_alert</span></article>
+        <article class="is-overdue"><span>Sin movimiento +30 días</span><strong>${overdueCount.toLocaleString("es-CO")}</strong><small>Casos abiertos que envejecieron</small><span class="material-symbols-outlined" aria-hidden="true">schedule</span></article>
+        <article class="is-protected"><span>Listos para continuar</span><strong>${completeCount.toLocaleString("es-CO")}</strong><small>Sin faltantes detectados</small><span class="material-symbols-outlined" aria-hidden="true">shield_with_heart</span></article>
+      </section>
+
+      <section class="rms-quality-decision-brief ${priority ? `is-${escapeHtml(priority.status)}` : "is-empty"}">
+        <div class="rms-quality-decision-icon"><span class="material-symbols-outlined" aria-hidden="true">${priority?.status === "critical" ? "priority_high" : priority?.pending.length ? "rule" : "task_alt"}</span></div>
+        <div>
+          <span class="mono-label">DECISIÓN RECOMENDADA AHORA</span>
+          <h4>${escapeHtml(priority ? priority.primary.missing : "No hay correcciones pendientes")}</h4>
+          <p>${escapeHtml(priority ? `${priority.item.name || "Caso"}: ${priority.primary.impact}` : "La puerta de calidad no detecta faltantes en el alcance actual.")}</p>
+          ${priority ? `<small>${escapeHtml(rmsQualityAgeLabel(priority))} · Preparación ${priority.readiness}%</small>` : ""}
+        </div>
+        <div class="rms-quality-decision-action">
+          ${priority?.pending.length ? `<span>${escapeHtml(priority.primary.correction || "Corrige el faltante en su estación responsable.")}</span>${rmsQualityCorrectionButtonMarkup(priority)}` : `<span>Continúa observando; Calidad 1 no mueve oportunidades.</span>`}
+        </div>
+      </section>
+
+      <section class="rms-quality-dashboard-context rms-quality-premium-context">
+        <div><span class="mono-label">ALCANCE PROTEGIDO</span><strong>${escapeHtml(config.subtitle)}</strong><p>${escapeHtml(config.focus)}</p></div>
+        <dl class="rms-quality-dashboard-summary">
+          <div><dt>Casos observados</dt><dd>${audits.length.toLocaleString("es-CO")}</dd></div>
+          ${totals.map((entry) => `<div class="is-${escapeHtml(entry.status)}"><dt>${escapeHtml(rmsQualityStatusLabel(entry.status))}</dt><dd>${entry.count.toLocaleString("es-CO")}</dd></div>`).join("")}
+        </dl>
+        <div class="rms-quality-owner-focus"><span class="mono-label">CUELLO DE BOTELLA</span><strong>${escapeHtml(mostMissing ? stageName(mostMissing[0]) : "Sin faltantes")}</strong><p>${mostMissing ? `${mostMissing[1]} caso(s) necesitan corrección en esta estación.` : "El flujo está completo en el alcance observado."}</p></div>
+      </section>
+
+      <section class="rms-quality-dashboard-filters rms-quality-premium-filters" aria-label="Filtros de calidad">
+        <div class="rms-quality-filter-title"><div><span class="material-symbols-outlined" aria-hidden="true">tune</span><strong>Enfoca la revisión</strong><small>${filtered.length.toLocaleString("es-CO")} de ${audits.length.toLocaleString("es-CO")} casos visibles</small></div><button class="ghost-button compact" type="button" data-rms-quality-reset ${activeFilterCount ? "" : "disabled"}>Limpiar filtros${activeFilterCount ? ` (${activeFilterCount})` : ""}</button></div>
+        <div class="rms-quality-filter-grid">
+          <label><span>Estado</span><select data-rms-quality-filter="status">${rmsQualitySelectOptions(["critical", "attention", "insufficient", "complete"].map((status) => `${status}|${rmsQualityStatusLabel(status)}`), filters.status, "Todos")}</select></label>
+          <label><span>Responsable</span><select data-rms-quality-filter="owner">${rmsQualitySelectOptions([...new Set(audits.map((audit) => audit.owner))], filters.owner, "Todos")}</select></label>
+          <label><span>Campaña</span><select data-rms-quality-filter="campaign">${rmsQualitySelectOptions([...new Set(audits.map((audit) => audit.item.campaign_name).filter(Boolean))], filters.campaign, "Todas")}</select></label>
+          <label><span>Canal</span><select data-rms-quality-filter="channel">${rmsQualitySelectOptions([...new Set(audits.map((audit) => audit.item.channel).filter(Boolean))], filters.channel, "Todos")}</select></label>
+          <label><span>Producto / servicio</span><select data-rms-quality-filter="product">${rmsQualitySelectOptions([...new Set(audits.map((audit) => audit.product))], filters.product, "Todos")}</select></label>
+          <label><span>Periodo</span><select data-rms-quality-filter="period"><option value="">Todo el historial</option><option value="30"${filters.period === "30" ? " selected" : ""}>Últimos 30 días</option><option value="90"${filters.period === "90" ? " selected" : ""}>Últimos 90 días</option></select></label>
+        </div>
+      </section>
+
+      ${selected ? `<section class="rms-quality-case-detail rms-quality-premium-detail" aria-label="Detalle de observación">
+        <header>
+          <div class="rms-quality-detail-identity"><span class="mono-label">EXPEDIENTE DE CALIDAD</span><h4>${escapeHtml(selected.item.name || "Contacto")}</h4><p>${escapeHtml(rmsQualityContact(selected.item) || "Sin contacto")} · ${escapeHtml(stageName(selected.item.stage))}</p></div>
+          <div class="rms-quality-detail-score"><span class="rms-quality-readiness-ring" style="--quality-progress:${selected.readiness}%"><strong>${selected.readiness}%</strong></span><div><strong>${escapeHtml(rmsQualityStatusLabel(selected.status))}</strong><small>${escapeHtml(rmsQualityAgeLabel(selected))}</small></div></div>
+          <button class="ghost-button compact" type="button" data-rms-quality-close-detail>Cerrar detalle</button>
+        </header>
+        ${key === "revenue_generado" ? rmsQualityJourneyMarkup(selected, selectedCase, selectedCaseLoading) : ""}
+        <div class="rms-quality-detail-guidance"><span class="material-symbols-outlined" aria-hidden="true">assistant_direction</span><div><strong>${escapeHtml(selected.primary.correction || "Revisa el faltante principal.")}</strong><small>${escapeHtml(selected.primary.impact)}</small></div>${selected.pending.length ? rmsQualityCorrectionButtonMarkup(selected, { criterion: selected.primary }) : ""}</div>
+        <ol>${selected.criteria.map((criterion) => `<li class="${criterion.ready ? "is-ready" : "is-pending"}"><span class="material-symbols-outlined" aria-hidden="true">${criterion.ready ? "check_circle" : "error"}</span><div><strong>${escapeHtml(criterion.label)}</strong><span>${escapeHtml(criterion.ready ? "Evidencia encontrada en las fuentes del caso." : criterion.missing)}</span><small>${escapeHtml(criterion.ready ? "Sin acción requerida." : criterion.correction || `Impacto: ${criterion.impact}`)}</small></div>${criterion.ready ? "" : rmsQualityCorrectionButtonMarkup(selected, { criterion })}</li>`).join("")}</ol>
+        <div class="rms-quality-case-evidence"><span class="material-symbols-outlined" aria-hidden="true">database</span><div><strong>Evidencia heredada</strong><span>${escapeHtml([selected.product, selected.source, selected.owner, selected.item.last_operation || "Sin operación reciente"].filter(Boolean).join(" · "))}</span><small>La evidencia y el historial se conservan en las estaciones y ficha del lead; este observatorio no los edita.</small></div></div>
+      </section>` : ""}
+
+      <section class="rms-quality-dashboard-list rms-quality-premium-list" aria-label="Casos observados">
+        <header><div><span class="mono-label">COLA PRIORIZADA</span><h4>Casos ordenados por riesgo y antigüedad</h4></div><small>Abre un expediente para entender cada señal antes de corregir.</small></header>
+        <div class="rms-quality-dashboard-table-wrap"><table class="rms-quality-dashboard-table rms-quality-premium-table"><thead><tr><th>Lead / cliente</th><th>Preparación</th><th>Contexto</th><th>Faltante principal</th><th>Antigüedad</th><th>Acciones</th></tr></thead><tbody>
+          ${filtered.map((audit) => `<tr class="is-${escapeHtml(audit.status)}"><td data-label="Lead / cliente"><button class="rms-quality-lead-cell" type="button" data-rms-quality-detail="${escapeHtml(audit.item.id)}"><strong>${escapeHtml(audit.item.name || "Contacto")}</strong><small>${escapeHtml(rmsQualityContact(audit.item) || "Sin contacto")}</small><span>${escapeHtml(stageName(audit.item.stage))}</span></button></td><td data-label="Preparación"><span class="rms-quality-status is-${escapeHtml(audit.status)}">${escapeHtml(rmsQualityStatusLabel(audit.status))}</span><div class="rms-quality-inline-score"><i style="--quality-progress:${audit.readiness}%"></i><strong>${audit.readiness}%</strong></div><small>${audit.criteria.length - audit.pending.length} de ${audit.criteria.length} señales</small></td><td data-label="Contexto"><strong>${escapeHtml(audit.product)}</strong><small>${escapeHtml(audit.source)}</small><small>${escapeHtml(audit.owner)}</small></td><td data-label="Faltante principal"><strong>${escapeHtml(audit.pending.length ? audit.primary.missing : "Sin faltantes detectados")}</strong><small>${escapeHtml(audit.pending.length ? audit.primary.correction : "El caso está listo para continuar.")}</small></td><td data-label="Antigüedad"><span class="rms-quality-age ${audit.overdue ? "is-overdue" : audit.stale ? "is-stale" : ""}">${escapeHtml(rmsQualityAgeLabel(audit))}</span><small>${escapeHtml(formatDate(audit.item.updated_at || audit.item.last_interaction_at) || "Sin fecha")}</small></td><td class="rms-quality-table-action"><button class="ghost-button compact" type="button" data-rms-quality-detail="${escapeHtml(audit.item.id)}"><span class="material-symbols-outlined" aria-hidden="true">visibility</span>Ver expediente</button>${audit.pending.length ? rmsQualityCorrectionButtonMarkup(audit) : ""}</td></tr>`).join("") || '<tr><td colspan="6"><div class="empty-state compact"><strong>No hay casos con estos filtros</strong><p>Limpia filtros o cambia el periodo para recuperar la cola completa.</p></div></td></tr>'}
+        </tbody></table></div>
+      </section>
+    </section>`;
+
+  rmsStationWorkspace.querySelector("[data-rms-close-station]")?.addEventListener("click", closeRmsStation);
+  rmsStationWorkspace.querySelectorAll("[data-rms-quality-filter]").forEach((control) => control.addEventListener("change", () => {
+    state.rmsQualityControlFilters = { ...filters, [control.dataset.rmsQualityFilter]: control.value || "" };
+    renderRmsQualityControlDashboard(key);
+  }));
+  rmsStationWorkspace.querySelector("[data-rms-quality-reset]")?.addEventListener("click", () => {
+    state.rmsQualityControlFilters = { status: "", owner: "", campaign: "", channel: "", product: "", period: "" };
+    renderRmsQualityControlDashboard(key);
+  });
+  rmsStationWorkspace.querySelectorAll("[data-rms-quality-detail]").forEach((control) => control.addEventListener("click", () => {
+    state.rmsQualityControlCaseId = control.dataset.rmsQualityDetail || "";
+    const audit = audits.find((entry) => String(entry.item.id) === String(state.rmsQualityControlCaseId));
+    state.rmsQualityControlCase = null;
+    state.rmsQualityControlCaseKey = "";
+    state.rmsQualityControlCaseLoading = false;
+    renderRmsQualityControlDashboard(key);
+    rmsStationWorkspace.querySelector(".rms-quality-case-detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (key === "revenue_generado" && audit) {
+      loadRmsQualityControlCase(audit.item)
+        .then(() => renderRmsQualityControlDashboard(key))
+        .catch((error) => {
+          state.rmsQualityControlCaseLoading = false;
+          renderRmsQualityControlDashboard(key);
+          showFeedback(error.message || "No pudimos cargar el viaje RMS de este lead.", "error", { title: "Control de calidad 2" });
+        });
+    }
+  }));
+  rmsStationWorkspace.querySelector("[data-rms-quality-close-detail]")?.addEventListener("click", () => {
+    state.rmsQualityControlCaseId = "";
+    state.rmsQualityControlCase = null;
+    state.rmsQualityControlCaseKey = "";
+    state.rmsQualityControlCaseLoading = false;
+    renderRmsQualityControlDashboard(key);
+  });
+  rmsStationWorkspace.querySelectorAll("[data-rms-quality-open-tasks]").forEach((control) => control.addEventListener("click", () => {
+    openLeadDetail({ id: control.dataset.rmsQualityOpenTasks, source_type: control.dataset.rmsQualitySourceType || "PLAYER" }, { tab: "tasks" });
+  }));
+  rmsStationWorkspace.querySelectorAll("[data-rms-quality-navigate]").forEach((control) => control.addEventListener("click", () => {
+    openRmsStation(control.dataset.rmsQualityNavigate || "", { focusId: control.dataset.rmsQualityCase || "" });
+  }));
 }
 
 function closeBranchFormModal() {
@@ -50996,7 +51192,7 @@ function openRmsStation(phase = "", options = {}) {
     state.rmsStationSearch = "";
     state.rmsStationViewMode = "all";
     state.rmsStationSummaryOpen = false;
-    state.rmsActivationWorkId = "";
+    state.rmsActivationWorkId = options.focusId || "";
   }
   state.rmsStationPhase = phase;
   state.rmsRecyclingFocus = false;
@@ -51008,6 +51204,7 @@ function openRmsStation(phase = "", options = {}) {
   state.rmsStationPage = 1;
   state.rmsStationListDeferred = false;
   state.rmsStationSyncing = true;
+  if (phase === "clasificacion" && options.focusId) state.rmsActivationWorkId = options.focusId;
   if (state.rmsStationFastRenderTimer) {
     window.clearTimeout(state.rmsStationFastRenderTimer);
     state.rmsStationFastRenderTimer = null;
@@ -55560,6 +55757,7 @@ rmsMachineRefreshButton?.addEventListener("click", () => {
     showFeedback(error.message || "No se pudo actualizar la Maquina RMS.", "error", { title: "Maquina RMS" });
   });
 });
+rmsMachineQualityOneButton?.addEventListener("click", () => openRmsQualityControl("preprocesamiento"));
 document.querySelector("[data-recycling-refresh]")?.addEventListener("click", () => {
   loadRmsRecyclingData({}).then(renderRmsRecyclingView).catch((error) => {
     showFeedback(error.message || "No se pudo actualizar Reciclaje.", "error", { title: "Reciclaje" });

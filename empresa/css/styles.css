@@ -68072,6 +68072,328 @@ html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-l
   }
 }
 
+/* Control de calidad 1 premium cockpit · 2026-08-22 */
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-one-quick-access {
+  border-color: rgba(21, 126, 158, .38) !important;
+  background: linear-gradient(135deg, #e7fbff, #f4fffb) !important;
+  color: #075b78 !important;
+  box-shadow: 0 8px 20px rgba(6, 103, 137, .08) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-one-quick-access:hover {
+  border-color: #29a7c7 !important;
+  background: linear-gradient(135deg, #d8f7ff, #eafff6) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium {
+  gap: 22px !important;
+  padding: clamp(18px, 3vw, 34px) !important;
+  background:
+    radial-gradient(circle at 93% 3%, rgba(59, 221, 205, .13), transparent 25%),
+    linear-gradient(180deg, #f7fbff 0%, #ffffff 36%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head {
+  grid-template-columns: auto minmax(0, 1fr) 132px !important;
+  gap: 24px !important;
+  padding: clamp(24px, 4vw, 42px) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(106, 211, 224, .26) !important;
+  border-radius: 28px !important;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,.08), transparent 30%),
+    linear-gradient(135deg, #041e4d 0%, #063f79 56%, #087f91 100%) !important;
+  box-shadow: 0 24px 60px rgba(3, 39, 89, .2) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head > div h3 {
+  color: #fff !important;
+  font-size: clamp(1.75rem, 3.2vw, 2.7rem) !important;
+  text-shadow: 0 8px 30px rgba(0, 13, 48, .26) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head > div p {
+  max-width: 720px !important;
+  color: rgba(235, 251, 255, .84) !important;
+  font-size: .92rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head > .ghost-button {
+  align-self: start !important;
+  border-color: rgba(255, 255, 255, .34) !important;
+  background: rgba(255, 255, 255, .08) !important;
+  color: #fff !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head figure {
+  width: 132px !important;
+  height: 132px !important;
+  border: 1px solid rgba(255, 255, 255, .25) !important;
+  border-radius: 32px !important;
+  box-shadow: 0 22px 45px rgba(0, 20, 58, .3) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-live-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: fit-content !important;
+  padding: 7px 11px !important;
+  border: 1px solid rgba(168, 244, 237, .34) !important;
+  border-radius: 999px !important;
+  background: rgba(6, 24, 70, .22) !important;
+  color: #c5fff4 !important;
+  font-size: .69rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .055em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-live-badge i {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: #52e6b6 !important;
+  box-shadow: 0 0 0 5px rgba(82, 230, 182, .13) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-trust-line {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin-top: 16px !important;
+  color: rgba(226, 250, 255, .76) !important;
+  font-size: .72rem !important;
+  font-weight: 700 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-trust-line .material-symbols-outlined { color: #75efd0 !important; font-size: 1.1rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-trust-line i { width: 18px !important; height: 1px !important; background: rgba(190, 240, 246, .35) !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article {
+  position: relative !important;
+  display: grid !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+  min-height: 136px !important;
+  padding: 20px !important;
+  overflow: hidden !important;
+  border: 1px solid #dbe8f2 !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, .94) !important;
+  box-shadow: 0 12px 30px rgba(15, 64, 108, .07) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article > span:first-child {
+  color: #55718b !important;
+  font-size: .67rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .055em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article > strong {
+  color: #063376 !important;
+  font-size: 2rem !important;
+  line-height: 1 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article > small { color: #678096 !important; line-height: 1.35 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article > .material-symbols-outlined { position: absolute !important; right: 16px !important; bottom: 14px !important; color: rgba(4, 85, 142, .16) !important; font-size: 2.7rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article.is-critical { border-color: rgba(206, 76, 68, .24) !important; background: linear-gradient(145deg, #fff, #fff7f6) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article.is-overdue { border-color: rgba(219, 139, 42, .26) !important; background: linear-gradient(145deg, #fff, #fffaf1) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article.is-protected { border-color: rgba(35, 154, 110, .24) !important; background: linear-gradient(145deg, #fff, #f2fff9) !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article > i {
+  display: block !important;
+  width: 100% !important;
+  height: 7px !important;
+  margin-top: 8px !important;
+  overflow: hidden !important;
+  border-radius: 999px !important;
+  background: #e4edf4 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article > i::after {
+  display: block !important;
+  width: var(--quality-progress) !important;
+  height: 100% !important;
+  border-radius: inherit !important;
+  background: linear-gradient(90deg, #0879d5, #20c2a8) !important;
+  content: "" !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-decision-brief {
+  display: grid !important;
+  grid-template-columns: 54px minmax(0, 1.4fr) minmax(250px, .8fr) !important;
+  align-items: center !important;
+  gap: 18px !important;
+  padding: 20px 22px !important;
+  border: 1px solid rgba(13, 115, 167, .22) !important;
+  border-left: 5px solid #1687b3 !important;
+  border-radius: 18px !important;
+  background: linear-gradient(110deg, #eefaff, #fff) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-decision-brief.is-critical { border-left-color: #cf4b43 !important; background: linear-gradient(110deg, #fff3f1, #fff) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-decision-icon { display: grid !important; width: 54px !important; height: 54px !important; place-items: center !important; border-radius: 16px !important; background: #0b6599 !important; color: #fff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-decision-brief.is-critical .rms-quality-decision-icon { background: #b8423d !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-decision-brief h4 { margin: 5px 0 0 !important; color: #082e70 !important; font-size: 1.08rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-decision-brief p { margin: 5px 0 0 !important; color: #506c85 !important; line-height: 1.45 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-decision-brief small { display: block !important; margin-top: 7px !important; color: #7a5a32 !important; font-weight: 740 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-decision-action { display: grid !important; justify-items: start !important; gap: 9px !important; padding-left: 18px !important; border-left: 1px solid rgba(14, 81, 148, .13) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-decision-action > span { color: #345e7d !important; font-size: .77rem !important; line-height: 1.4 !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-context {
+  grid-template-columns: minmax(250px, 1.15fr) minmax(390px, 1.4fr) minmax(190px, .7fr) !important;
+  gap: 24px !important;
+  padding: 20px 4px !important;
+  border: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-context .rms-quality-dashboard-summary { display: grid !important; grid-template-columns: repeat(5, minmax(70px, 1fr)) !important; gap: 8px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-context .rms-quality-dashboard-summary > div { min-width: 0 !important; padding: 11px !important; border-radius: 12px !important; background: #f2f7fb !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-context .rms-quality-dashboard-summary > div.is-critical { background: #fff0ee !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-context .rms-quality-dashboard-summary > div.is-complete { background: #eaf9f2 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-owner-focus { min-width: 0 !important; padding-left: 20px !important; border-left: 1px solid #dce7ef !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-filters {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 18px !important;
+  border-radius: 18px !important;
+  background: #f2f8fc !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-title { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 16px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-title > div { display: grid !important; grid-template-columns: auto 1fr !important; align-items: center !important; gap: 2px 8px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-title .material-symbols-outlined { grid-row: 1 / span 2 !important; color: #0876aa !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-title strong { color: #0b3972 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-title small { color: #658098 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-grid { display: grid !important; grid-template-columns: repeat(6, minmax(0, 1fr)) !important; gap: 10px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-grid label { display: grid !important; gap: 5px !important; min-width: 0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-grid label > span { color: #4e7089 !important; font-size: .65rem !important; font-weight: 800 !important; letter-spacing: .05em !important; text-transform: uppercase !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-grid select { min-width: 0 !important; min-height: 42px !important; border: 1px solid #cddde9 !important; border-radius: 11px !important; background: #fff !important; color: #143e66 !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail {
+  padding: clamp(18px, 3vw, 28px) !important;
+  border: 1px solid rgba(13, 111, 157, .2) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 18px 42px rgba(14, 66, 108, .08) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail > header { display: grid !important; grid-template-columns: minmax(0, 1fr) auto auto !important; align-items: center !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-detail-score { display: flex !important; align-items: center !important; gap: 10px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-detail-score > div { display: grid !important; gap: 2px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-detail-score small { color: #668097 !important; font-size: .7rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-readiness-ring { display: grid !important; width: 64px !important; height: 64px !important; place-items: center !important; border-radius: 50% !important; background: radial-gradient(circle at center, #fff 57%, transparent 59%), conic-gradient(#16ad94 var(--quality-progress), #dfebf2 0) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-readiness-ring strong { color: #073a72 !important; font-size: .86rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-detail-guidance { display: grid !important; grid-template-columns: auto minmax(0, 1fr) auto !important; align-items: center !important; gap: 12px !important; margin: 18px 0 !important; padding: 14px !important; border-radius: 14px !important; background: #eaf8ff !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-detail-guidance > .material-symbols-outlined { color: #0879b2 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-detail-guidance > div { display: grid !important; gap: 3px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-detail-guidance small { color: #55718b !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail > ol { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail > ol > li { grid-template-columns: auto minmax(0, 1fr) !important; align-items: start !important; gap: 10px !important; min-height: 116px !important; padding: 14px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail > ol > li > .material-symbols-outlined { color: #27966f !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail > ol > li.is-pending > .material-symbols-outlined { color: #c47b1d !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail > ol > li > div { display: grid !important; gap: 4px !important; min-width: 0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail > ol > li > button { grid-column: 2 !important; justify-self: start !important; max-width: 100% !important; white-space: normal !important; text-align: left !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail .rms-quality-case-evidence { grid-template-columns: auto minmax(0, 1fr) !important; align-items: start !important; gap: 10px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail .rms-quality-case-evidence > .material-symbols-outlined { color: #0879b2 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail .rms-quality-case-evidence > div { display: grid !important; gap: 4px !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-list { padding-top: 0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-list > header { display: flex !important; align-items: end !important; justify-content: space-between !important; gap: 16px !important; padding: 6px 2px 12px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-list > header h4 { margin: 4px 0 0 !important; color: #082e70 !important; font-size: 1.08rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-list > header > small { color: #647d93 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table { min-width: 1180px !important; table-layout: fixed !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table th:nth-child(1) { width: 18% !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table th:nth-child(2) { width: 14% !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table th:nth-child(3) { width: 17% !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table th:nth-child(4) { width: 23% !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table th:nth-child(5) { width: 12% !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table th:nth-child(6) { width: 16% !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table tbody tr.is-critical { background: linear-gradient(90deg, rgba(255, 239, 237, .72), transparent 48%) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table td > strong,
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table td > small { display: block !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table td > small { margin-top: 4px !important; color: #627c93 !important; font-size: .72rem !important; line-height: 1.35 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-lead-cell span { color: #0d75a4 !important; font-size: .68rem !important; font-weight: 780 !important; text-transform: uppercase !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-inline-score { display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important; align-items: center !important; gap: 7px !important; margin-top: 8px !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-inline-score i { display: block !important; height: 6px !important; overflow: hidden !important; border-radius: 999px !important; background: #e1eaf0 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-inline-score i::after { display: block !important; width: var(--quality-progress) !important; height: 100% !important; border-radius: inherit !important; background: linear-gradient(90deg, #0879d5, #20b99f) !important; content: "" !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-inline-score strong { color: #0b548b !important; font-size: .73rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-age { display: inline-flex !important; padding: 5px 8px !important; border-radius: 999px !important; background: #edf5fa !important; color: #48677e !important; font-size: .69rem !important; font-weight: 760 !important; line-height: 1.25 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-age.is-stale { background: #fff3dc !important; color: #8b5911 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-age.is-overdue { background: #ffebe8 !important; color: #a53d36 !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table .rms-quality-table-action { display: grid !important; justify-items: stretch !important; gap: 7px !important; text-align: left !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table .rms-quality-table-action button { width: 100% !important; max-width: 100% !important; min-width: 0 !important; justify-content: flex-start !important; white-space: normal !important; text-align: left !important; }
+
+@media (max-width: 1180px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-context { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-owner-focus { grid-column: 1 / -1 !important; padding: 14px 0 0 !important; border-top: 1px solid #dce7ef !important; border-left: 0 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium { padding: 12px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head { grid-template-columns: 1fr auto !important; padding: 22px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head > .ghost-button { grid-column: 1 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head > div { grid-column: 1 / -1 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head figure { grid-column: 2 !important; grid-row: 1 !important; width: 68px !important; height: 68px !important; border-radius: 20px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip { grid-template-columns: 1fr 1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article { min-height: 122px !important; padding: 16px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-decision-brief { grid-template-columns: auto minmax(0, 1fr) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-decision-action { grid-column: 1 / -1 !important; padding: 14px 0 0 !important; border-top: 1px solid rgba(14, 81, 148, .13) !important; border-left: 0 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-context { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-context .rms-quality-dashboard-summary { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail > header { grid-template-columns: 1fr auto !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-detail-score { grid-column: 1 / -1 !important; grid-row: 2 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-detail-guidance { grid-template-columns: auto minmax(0, 1fr) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-detail-guidance > button { grid-column: 1 / -1 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail > ol { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table tbody { min-width: 0 !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table tbody tr { grid-template-columns: 1fr 1fr !important; padding: 16px !important; border: 1px solid #dce7ef !important; border-radius: 16px !important; margin-bottom: 12px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table td:first-child,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table td:nth-child(4),
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table .rms-quality-table-action { grid-column: 1 / -1 !important; }
+}
+
+@media (max-width: 520px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-title { align-items: start !important; flex-direction: column !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-grid { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table tbody tr { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table td { grid-column: 1 !important; }
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium {
+  background: radial-gradient(circle at 90% 0, rgba(23, 172, 169, .12), transparent 26%), #081827 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-detail,
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-table tbody tr {
+  border-color: rgba(150, 204, 232, .2) !important;
+  background: #10263a !important;
+  color: #eff9ff !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-filters { border-color: rgba(150, 204, 232, .2) !important; background: #0d2235 !important; }
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms-quality-filter-grid select { border-color: rgba(150, 204, 232, .22) !important; background: #142c43 !important; color: #eff9ff !important; }
+
 /* Campaign command center v313: override legacy simple-flow visibility and duplicate header. */
 html body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"].campaign-premium-enabled > #campaignPremiumWorkspace {
   display: grid !important;
