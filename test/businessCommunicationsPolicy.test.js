@@ -42,3 +42,13 @@ test("communication history redacts heavy payloads and hydrates only on edit", (
   assert.match(frontend, /hydrateCommunicationPayload/);
   assert.match(frontend, /communicationCommandStrip/);
 });
+
+test("communications audience stays operable without a page-length contact list", () => {
+  const html = read("empresa/index.html");
+  const css = read("empresa/css/communications-flow.css");
+  const frontend = read("empresa/js/communications.js");
+  assert.ok(html.indexOf('id="communicationSendBar"') < html.indexOf('id="communicationAudienceList"'));
+  assert.match(css, /communication-audience-list[\s\S]+max-height:[^;]+;[\s\S]+overflow-y:\s*auto/);
+  assert.match(frontend, /communication-readiness/);
+  assert.match(frontend, /Seleccionar \$\{audienceChannel === "whatsapp"/);
+});
