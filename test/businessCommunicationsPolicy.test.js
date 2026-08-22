@@ -83,3 +83,16 @@ test("accepted RMS bulk emails enable the persisted activation response flow", (
   assert.match(rmsService, /activation_delivery_source: "resend_bulk_acceptance"/);
   assert.match(rmsService, /if \(!stateRow \|\| stateRow\.metadata\?\.activation_offer_sent_at\) return/);
 });
+
+test("communications history is isolated, filterable, and visually bounded", () => {
+  const html = read("empresa/index.html");
+  const css = read("empresa/css/communications-flow.css");
+  const frontend = read("empresa/js/communications.js");
+  assert.match(css, /communication-workspace-panel\[hidden\][\s\S]+display:\s*none\s*!important/);
+  assert.match(css, /communication-history-toolbar \[hidden\][\s\S]+display:\s*none\s*!important/);
+  assert.match(css, /communication-history-results[\s\S]+max-height:[^;]+;[\s\S]+overflow-y:\s*auto/);
+  assert.match(frontend, /data-communication-history-filters/);
+  assert.match(frontend, /communicationHistoryStatus/);
+  assert.match(frontend, /communication-history-results/);
+  assert.match(html, /communications-history-v330-20260822/);
+});

@@ -1528,3 +1528,290 @@ html body[data-current-view="communications"] .portal-shell .communication-conta
   html body[data-current-view="communications"] .portal-shell .communication-audience-list { max-height: 440px; }
   html body[data-current-view="communications"] .portal-shell .communication-contact-row { padding: 11px 10px; }
 }
+
+/* Communications History Console · v330 */
+html body[data-current-view="communications"] .portal-shell .communication-workspace-panel[hidden] {
+  display: none !important;
+}
+
+html body[data-current-view="communications"] .portal-shell [data-communication-workspace-panel="history"] {
+  min-width: 0;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, .75fr) !important;
+  gap: clamp(18px, 2.2vw, 30px) !important;
+  align-items: start;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-layout .communication-library {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(11, 88, 165, .14);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 24px 60px rgba(7, 61, 126, .10);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-overview {
+  grid-template-columns: minmax(210px, 1fr) repeat(4, minmax(82px, .28fr)) !important;
+  gap: 10px !important;
+  padding: 20px !important;
+  background: linear-gradient(118deg, #f2f9ff, #fff 58%, #f3fcfb) !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-overview > div:not(:first-child) {
+  min-width: 0 !important;
+  min-height: 72px;
+  padding: 12px 13px !important;
+  border: 1px solid rgba(11, 91, 167, .11) !important;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .78);
+  box-shadow: 0 6px 18px rgba(9, 69, 137, .045);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-overview > div:not(:first-child) strong {
+  font-size: 1.38rem;
+  line-height: 1.1;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-bulk {
+  padding-top: 14px;
+  border-top: 1px solid rgba(11, 91, 167, .11);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) repeat(2, minmax(145px, .72fr)) auto auto;
+  gap: 10px;
+  align-items: end;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(11, 88, 165, .11);
+  background: #fbfdff;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar label > span {
+  color: #496986;
+  font-size: .69rem;
+  font-weight: 850;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar label > div {
+  position: relative;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar label > div > .material-symbols-outlined {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  color: #6a87a4;
+  font-size: 19px;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar input,
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar select {
+  width: 100%;
+  min-height: 43px;
+  border: 1px solid rgba(12, 83, 154, .18);
+  border-radius: 12px;
+  background-color: #fff;
+  color: #123b67;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar input {
+  padding-left: 39px;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar button {
+  min-height: 43px;
+  justify-content: center;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar [hidden] {
+  display: none !important;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar > small {
+  grid-column: 1 / -1;
+  color: #66809b;
+  font-size: .76rem;
+  font-weight: 750;
+  text-align: right;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar input:focus-visible,
+html body[data-current-view="communications"] .portal-shell .communication-history-toolbar select:focus-visible {
+  border-color: #0787df;
+  outline: 3px solid rgba(7, 135, 223, .15);
+  outline-offset: 1px;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-summary {
+  margin: 14px 20px 8px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(8, 65, 132, .045);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-results {
+  display: grid;
+  max-height: min(64vh, 720px);
+  margin-top: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border-top: 1px solid rgba(11, 88, 165, .1);
+  background: #fff;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-list-item.communication-history-item {
+  cursor: pointer;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-list-item.communication-history-item.is-selected {
+  background: linear-gradient(90deg, rgba(6, 88, 197, .12), rgba(8, 174, 224, .045) 72%, transparent) !important;
+  box-shadow: inset 4px 0 0 #087fda, inset 0 1px 0 rgba(7, 109, 195, .06);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-list-item.communication-history-item:focus-within {
+  outline: 3px solid rgba(7, 135, 223, .16);
+  outline-offset: -3px;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-empty {
+  min-height: 250px;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, #fbfdff, #f5faff);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-selected-summary {
+  position: sticky;
+  top: 18px;
+  overflow: hidden;
+  padding: 22px !important;
+  border: 1px solid rgba(11, 88, 165, .15);
+  border-radius: 22px;
+  background: linear-gradient(145deg, #fff, #f6fbff 70%);
+  box-shadow: 0 24px 55px rgba(7, 61, 126, .105);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-selected-summary::before {
+  content: "Detalle de la comunicación";
+  grid-column: 1 / -1;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(11, 88, 165, .11);
+  color: #54728f;
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-selected-summary > div:first-of-type {
+  min-width: 0;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-selected-summary .communication-delivery-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-selected-summary .communication-delivery-metrics > span {
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+  border: 1px solid rgba(11, 88, 165, .1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .78);
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-selected-actions {
+  grid-column: 1 / -1;
+  justify-content: flex-start;
+  padding-top: 14px;
+  border-top: 1px solid rgba(11, 88, 165, .1);
+}
+
+@media (max-width: 1180px) {
+  html body[data-current-view="communications"] .portal-shell .communication-history-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-selected-summary {
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  html body[data-current-view="communications"] .portal-shell .communication-history-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-toolbar label:first-child {
+    grid-column: 1 / -1;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-toolbar > small {
+    text-align: left;
+  }
+}
+
+@media (max-width: 680px) {
+  html body[data-current-view="communications"] .portal-shell .communication-history-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-overview > div:first-child,
+  html body[data-current-view="communications"] .portal-shell .communication-history-bulk {
+    grid-column: 1 / -1;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-overview > div:not(:first-child) {
+    min-height: 64px;
+    padding: 10px 12px !important;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 15px;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-toolbar label:first-child,
+  html body[data-current-view="communications"] .portal-shell .communication-history-toolbar > small {
+    grid-column: auto;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-toolbar button {
+    width: 100%;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-summary {
+    margin-inline: 15px;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-summary > summary {
+    align-items: flex-start;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-results {
+    max-height: 560px;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-selected-summary {
+    padding: 18px !important;
+    border-radius: 18px;
+  }
+}
