@@ -33,6 +33,8 @@ body[data-current-view="leads"] #contactCenterShell .contact-center-operator-pan
 body[data-current-view="leads"] #contactCenterShell .contact-center-operator-panel h3 { margin: 2px 0 3px; color: var(--contacts-ink); }
 body[data-current-view="leads"] #contactCenterShell .contact-center-operator-panel p { margin: 0; color: var(--contacts-muted); }
 body[data-current-view="leads"] #contactCenterShell .contact-center-tab-rail { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; padding: 7px; border: 1px solid var(--contacts-line); border-radius: 18px; background: #fff; }
+html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] #contactCenterTabs.contact-center-tab-rail { display: grid !important; }
+html body[data-current-view="leads"] .portal-shell #contactCenterShell[data-contact-directory-ux="simple"] #contactCenterTabs.contact-center-tab-rail > button.contact-center-tab-card[data-contact-center-tab] { display: grid !important; }
 body[data-current-view="leads"] #contactCenterShell .contact-center-tab-card { min-width: 0; min-height: 64px; padding: 10px 12px; border: 1px solid transparent; border-radius: 13px; background: transparent; }
 body[data-current-view="leads"] #contactCenterShell .contact-center-tab-card.active { border-color: #c7dcfb; background: #eef5ff; box-shadow: inset 0 -2px 0 var(--contacts-blue); }
 body[data-current-view="leads"] #contactCenterShell .contact-center-tab-card:focus-visible { outline: 3px solid rgba(7,89,214,.28); outline-offset: 2px; }
