@@ -221,3 +221,7 @@ html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV
     min-height: 54px !important;
   }
 }
+
+html body:not(#contactsGapA#contactsGapB#contactsGapC#contactsGapD#contactsGapE#contactsGapF#contactsGapG#contactsGapH#contactsGapI#contactsGapJ#contactsGapK#contactsGapL)[data-current-view="leads"] .portal-shell .view-section.active[data-view="leads"] {
+  gap: 18px !important;
+}
