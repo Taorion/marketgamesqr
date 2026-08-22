@@ -62263,25 +62263,27 @@ html body .campaign-calculator-modal-card {
 }
 
 html body .campaign-calculator-modal-card > .modal-head {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  margin: -1px -1px 0;
-  padding: 16px 16px 12px;
-  border-bottom: 1px solid #dceaf5;
-  background: rgba(255, 255, 255, .97);
-  backdrop-filter: blur(10px);
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+  margin: -1px -1px 0 !important;
+  padding: 16px 16px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #dceaf5 !important;
+  background: rgba(255, 255, 255, .97) !important;
+  backdrop-filter: blur(10px) !important;
 }
 
 html body .campaign-calculator-modal-card > .modal-actions {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
-  margin: 0 -1px -1px;
-  padding: 12px 16px 16px;
-  border-top: 1px solid #dceaf5;
-  background: rgba(255, 255, 255, .97);
-  backdrop-filter: blur(10px);
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 3 !important;
+  margin: 0 -1px -1px !important;
+  padding: 12px 16px 16px !important;
+  border: 0 !important;
+  border-top: 1px solid #dceaf5 !important;
+  background: rgba(255, 255, 255, .97) !important;
+  backdrop-filter: blur(10px) !important;
 }
 
 html body .campaign-quick-estimates {
@@ -62399,8 +62401,8 @@ html body .campaign-quick-cost-note {
 
   html body .campaign-calculator-modal-card > .modal-head,
   html body .campaign-calculator-modal-card > .modal-actions {
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
   }
 
   html body .campaign-quick-estimates,
@@ -62531,13 +62533,32 @@ html body[data-current-view="campaigns"] .portal-shell .campaign-summary-panel {
   box-shadow:0 16px 32px rgba(5,42,107,.08);
 }
 
-html body #campaignCalculatorModal .campaign-calculator-modal-card {
+html:has(#campaignCalculatorModal.modal-shell:not(.hidden)),
+html body:has(#campaignCalculatorModal.modal-shell:not(.hidden)) {
+  overflow:hidden !important;
+  overscroll-behavior:none !important;
+}
+
+html body #campaignCalculatorModal.modal-shell:not(.hidden) {
   box-sizing:border-box !important;
-  width:min(960px,calc(100vw - 24px)) !important;
-  max-height:calc(100dvh - 24px) !important;
+  align-items:center !important;
+  justify-items:center !important;
+  padding:clamp(12px,3vh,32px) !important;
   overflow-x:hidden !important;
   overflow-y:auto !important;
   overscroll-behavior:contain !important;
+}
+
+html body #campaignCalculatorModal .campaign-calculator-modal-card {
+  box-sizing:border-box !important;
+  width:min(100%,960px) !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  max-height:calc(100dvh - clamp(24px,6vh,64px)) !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior:contain !important;
+  scrollbar-gutter:stable both-edges;
   scrollbar-width:thin;
   scrollbar-color:#70b9df #edf6fb;
 }
@@ -62548,7 +62569,18 @@ html body #campaignCalculatorModal .campaign-calculator-modal-card::-webkit-scro
 
 @media (max-width:760px) {
   html body[data-current-view="campaigns"] .portal-shell #campaignSummaryOpenButton { width:100%; }
-  html body #campaignCalculatorModal .campaign-calculator-modal-card { width:calc(100vw - 12px) !important; max-height:calc(100dvh - 12px) !important; }
+}
+
+@media (max-height:760px), (max-width:720px) {
+  html body #campaignCalculatorModal.modal-shell:not(.hidden) {
+    align-items:start !important;
+    padding:12px !important;
+  }
+
+  html body #campaignCalculatorModal .campaign-calculator-modal-card {
+    width:min(100%,960px) !important;
+    max-height:calc(100dvh - 24px) !important;
+  }
 }
 
 @media (max-width: 760px) {
