@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260822-rms-quality-1-premium-v316";
+const APP_VERSION = "empresa-20260822-campaign-activation-relations-v317";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2645,6 +2645,8 @@ let state = {
   selectedCampaign: null,
   selectedCampaignAffiliates: [],
   campaignRelatedActivations: [],
+  campaignRelatedActivationsCampaignId: null,
+  campaignRelatedActivationsLoading: false,
   campaignSectionTab: "analysis",
   campaignCostCalculator: null,
   campaignCostCalculatorCampaignId: null,
@@ -3940,6 +3942,8 @@ function resetBusinessScopedState(options = {}) {
   state.selectedCampaign = null;
   state.selectedCampaignAffiliates = [];
   state.campaignRelatedActivations = [];
+  state.campaignRelatedActivationsCampaignId = null;
+  state.campaignRelatedActivationsLoading = false;
   state.campaignPremiumActivations = [];
   state.campaignPremiumActivationsLoaded = false;
   state.campaignPremiumActivationsLoading = false;
@@ -15389,8 +15393,37 @@ function campaignPremiumActivationCount(campaignId) {
   return rows.filter((activation) => String(activation.campaign_id || "") === String(campaignId || "")).length;
 }
 
+function campaignConnectedActivationRows(campaignId) {
+  const normalizedCampaignId = String(campaignId || "");
+  if (!normalizedCampaignId) return [];
+  const selectedIndexIsCurrent = String(state.campaignRelatedActivationsCampaignId || "") === normalizedCampaignId;
+  const rows = selectedIndexIsCurrent
+    ? state.campaignRelatedActivations
+    : state.campaignPremiumActivations;
+  return (Array.isArray(rows) ? rows : [])
+    .filter((activation) => String(activation.campaign_id || "") === normalizedCampaignId)
+    .sort((left, right) => new Date(right.created_at || 0) - new Date(left.created_at || 0));
+}
+
+function campaignConnectedExperiencesMarkup(campaign = {}) {
+  const campaignId = String(campaign.id || "");
+  const isLoading = Boolean(
+    state.campaignRelatedActivationsLoading
+    && String(state.campaignRelatedActivationsCampaignId || "") === campaignId
+  );
+  const activations = campaignConnectedActivationRows(campaignId);
+  const content = isLoading
+    ? '<div class="campaign-related-empty">Cargando activaciones...</div>'
+    : activations.map(campaignRelatedActivationCard).join("")
+      || '<div class="campaign-related-empty">Sin Activaciones</div>';
+  return `<section class="campaign-related-panel campaign-premium-connected-experiences" data-campaign-connected-experiences="${escapeHtml(campaignId)}">
+    <div class="campaign-related-head"><span class="mono-label">Conectar experiencia</span><strong>${isLoading ? "..." : activations.length.toLocaleString("es-CO")}</strong></div>
+    <div class="campaign-related-list">${content}</div>
+  </section>`;
+}
+
 function campaignOperationalReadiness(campaign = {}) {
-  const activations = campaignPremiumActivationCount(campaign.id);
+  const activations = campaignConnectedActivationRows(campaign.id).length;
   const startsAt = campaign.starts_at ? new Date(campaign.starts_at).getTime() : 0;
   const endsAt = campaign.ends_at ? new Date(campaign.ends_at).getTime() : 0;
   const assets = campaign.delivered_assets || {};
@@ -15434,19 +15467,24 @@ function campaignReadinessChecklistMarkup(campaign = {}) {
 
 function ensureCampaignPremiumActivationIndex() {
   if (!session?.user?.business_id || state.campaignPremiumActivationsLoading || state.campaignPremiumActivationsLoaded) return;
+  const scopeKey = businessScopeKey();
   state.campaignPremiumActivationsLoading = true;
   apiSafe("/api/business/interactive-activations?limit=300&include_archived=true", { headers: authHeaders() }, { activations: [] })
     .then((data) => {
+      if (!isCurrentBusinessScope(scopeKey)) return;
       state.campaignPremiumActivations = data.activations || data.trivias || [];
       state.campaignPremiumActivationsLoaded = true;
       renderCampaignPremiumWorkspace();
     })
     .catch(() => {
+      if (!isCurrentBusinessScope(scopeKey)) return;
       state.campaignPremiumActivations = [];
       state.campaignPremiumActivationsLoaded = true;
       renderCampaignPremiumWorkspace();
     })
-    .finally(() => { state.campaignPremiumActivationsLoading = false; });
+    .finally(() => {
+      if (isCurrentBusinessScope(scopeKey)) state.campaignPremiumActivationsLoading = false;
+    });
 }
 
 function ensureCampaignPremiumWorkspace() {
@@ -15532,7 +15570,7 @@ function renderCampaignPremiumWorkspace() {
   const roi = investment ? (revenue - investment) / investment : null;
   const selectedValidity = selected ? campaignValidityState(selected) : null;
   const selectedReadiness = selected ? campaignOperationalReadiness(selected) : null;
-  const selectedActivations = selected ? campaignPremiumActivationCount(selected.id) : 0;
+  const selectedActivations = selected ? campaignConnectedActivationRows(selected.id).length : 0;
   const selectedLeads = selected ? toNumber(selected.total_leads) : 0;
   const selectedTickets = selected ? toNumber(selected.total_qr_generated) : 0;
   const selectedRedemptions = selected ? toNumber(selected.total_qr_redeemed) : 0;
@@ -15571,7 +15609,7 @@ function renderCampaignPremiumWorkspace() {
       <div class="campaign-premium-metrics"><article><span>Portafolio</span><strong>${campaigns.length}</strong><small>${active.length} activas ahora</small></article><article><span>Inversión</span><strong>${escapeHtml(money(investment))}</strong><small>presupuesto registrado</small></article><article><span>Revenue atribuido</span><strong>${escapeHtml(money(revenue))}</strong><small>${campaigns.reduce((sum, campaign) => sum + toNumber(campaign.direct_sales_count || campaign.attributed_sales_count), 0)} ventas confirmadas</small></article><article><span>ROI de cartera</span><strong>${escapeHtml(roi === null ? "—" : ratioLabel(roi))}</strong><small>${roi === null ? "registra inversión para medir" : "retorno sobre inversión"}</small></article></div>
     </section>
     <section class="campaign-premium-toolbar"><label><span class="material-symbols-outlined" aria-hidden="true">search</span><input data-campaign-premium-search type="search" value="${escapeHtml(state.campaignPremiumSearch || "")}" placeholder="Buscar por campaña, objetivo o canal"></label><select data-campaign-premium-status aria-label="Filtrar campañas"><option value="ALL" ${filter === "ALL" ? "selected" : ""}>Todas las campañas</option><option value="active" ${filter === "active" ? "selected" : ""}>Activas</option><option value="scheduled" ${filter === "scheduled" ? "selected" : ""}>Programadas</option><option value="paused" ${filter === "paused" ? "selected" : ""}>Pausadas</option><option value="draft" ${filter === "draft" ? "selected" : ""}>Borradores</option><option value="ended" ${filter === "ended" ? "selected" : ""}>Finalizadas</option></select><button type="button" class="ghost-button" data-campaign-premium-action="table"><span class="material-symbols-outlined" aria-hidden="true">table_chart</span>${tableOpen ? "Ocultar tabla" : "Tabla operativa"}</button></section>
-    <section class="campaign-premium-command-grid"><div class="campaign-premium-list"><header><div><span class="mono-label">Cartera de campañas</span><strong>${filtered.length} para revisar</strong></div><small>Selecciona una para abrir su lectura comercial.</small></header><div class="campaign-premium-rows">${rows}</div></div><aside class="campaign-premium-detail ${selected ? "" : "is-empty"}">${selected ? `<div class="campaign-premium-detail-head"><div><span class="campaign-premium-status is-${escapeHtml(selectedValidity.key)}">${escapeHtml(selectedValidity.label)}</span><h4>${escapeHtml(selected.name || "Campaña sin nombre")}</h4><p>${escapeHtml(selected.objective || selected.strategy_summary || "Define el objetivo comercial de esta campaña.")}</p></div><button type="button" class="icon-button" data-campaign-premium-action="edit" aria-label="Editar campaña"><span class="material-symbols-outlined" aria-hidden="true">edit</span></button></div><div class="campaign-premium-detail-meta"><span><i class="material-symbols-outlined" aria-hidden="true">calendar_month</i>${escapeHtml(selectedValidity.detail)}</span><span><i class="material-symbols-outlined" aria-hidden="true">hub</i>${escapeHtml(launchChannelsLabel(selected.launch_channels) || "Canal por definir")}</span></div><div class="campaign-premium-funnel"><div><span>Leads</span><strong>${selectedLeads}</strong><i style="--fill:100%"></i></div><div><span>Tickets</span><strong>${selectedTickets}</strong><i style="--fill:${Math.min(100, selectedLeads ? Math.round(selectedTickets / selectedLeads * 100) : 0)}%"></i></div><div><span>Redenciones</span><strong>${selectedRedemptions}</strong><i style="--fill:${Math.min(100, selectedTickets ? Math.round(selectedRedemptions / selectedTickets * 100) : 0)}%"></i></div><div><span>Ventas</span><strong>${selectedSales}</strong><i style="--fill:${Math.min(100, selectedLeads ? Math.round(selectedSales / selectedLeads * 100) : 0)}%"></i></div></div><div class="campaign-premium-detail-kpis"><span><small>Inversión</small><strong>${escapeHtml(money(selectedBudget))}</strong></span><span><small>Revenue</small><strong>${escapeHtml(money(selectedRevenue))}</strong></span><span><small>ROI</small><strong>${escapeHtml(selectedRoi === null ? "—" : ratioLabel(selectedRoi))}</strong></span><span><small>Activaciones</small><strong>${selectedActivations}</strong></span></div>${campaignReadinessChecklistMarkup(selected)}<div class="campaign-premium-detail-footer"><span>${selectedReportLoaded ? "Lectura actualizada con actividad real." : "Selecciona la campaña para cargar su lectura completa."}</span><div><button type="button" class="ghost-button compact" data-campaign-premium-action="${escapeHtml(selectedReadiness.nextAction)}">${selectedReadiness.ready ? "Conectar experiencia" : "Resolver siguiente pendiente"}</button><button type="button" class="solid-button compact" data-campaign-premium-operation="${escapeHtml(selected.id)}">Abrir operación<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></div></div>` : `<span class="material-symbols-outlined" aria-hidden="true">campaign</span><strong>Selecciona una campaña</strong><p>Abriremos sus indicadores, activos y operación desde este panel.</p>`}</aside></section>
+    <section class="campaign-premium-command-grid"><div class="campaign-premium-list"><header><div><span class="mono-label">Cartera de campañas</span><strong>${filtered.length} para revisar</strong></div><small>Selecciona una para abrir su lectura comercial.</small></header><div class="campaign-premium-rows">${rows}</div></div><aside class="campaign-premium-detail ${selected ? "" : "is-empty"}">${selected ? `<div class="campaign-premium-detail-head"><div><span class="campaign-premium-status is-${escapeHtml(selectedValidity.key)}">${escapeHtml(selectedValidity.label)}</span><h4>${escapeHtml(selected.name || "Campaña sin nombre")}</h4><p>${escapeHtml(selected.objective || selected.strategy_summary || "Define el objetivo comercial de esta campaña.")}</p></div><button type="button" class="icon-button" data-campaign-premium-action="edit" aria-label="Editar campaña"><span class="material-symbols-outlined" aria-hidden="true">edit</span></button></div><div class="campaign-premium-detail-meta"><span><i class="material-symbols-outlined" aria-hidden="true">calendar_month</i>${escapeHtml(selectedValidity.detail)}</span><span><i class="material-symbols-outlined" aria-hidden="true">hub</i>${escapeHtml(launchChannelsLabel(selected.launch_channels) || "Canal por definir")}</span></div><div class="campaign-premium-funnel"><div><span>Leads</span><strong>${selectedLeads}</strong><i style="--fill:100%"></i></div><div><span>Tickets</span><strong>${selectedTickets}</strong><i style="--fill:${Math.min(100, selectedLeads ? Math.round(selectedTickets / selectedLeads * 100) : 0)}%"></i></div><div><span>Redenciones</span><strong>${selectedRedemptions}</strong><i style="--fill:${Math.min(100, selectedTickets ? Math.round(selectedRedemptions / selectedTickets * 100) : 0)}%"></i></div><div><span>Ventas</span><strong>${selectedSales}</strong><i style="--fill:${Math.min(100, selectedLeads ? Math.round(selectedSales / selectedLeads * 100) : 0)}%"></i></div></div><div class="campaign-premium-detail-kpis"><span><small>Inversión</small><strong>${escapeHtml(money(selectedBudget))}</strong></span><span><small>Revenue</small><strong>${escapeHtml(money(selectedRevenue))}</strong></span><span><small>ROI</small><strong>${escapeHtml(selectedRoi === null ? "—" : ratioLabel(selectedRoi))}</strong></span><span><small>Activaciones</small><strong>${selectedActivations}</strong></span></div>${campaignConnectedExperiencesMarkup(selected)}${campaignReadinessChecklistMarkup(selected)}<div class="campaign-premium-detail-footer"><span>${selectedReportLoaded ? "Lectura actualizada con actividad real." : "Selecciona la campaña para cargar su lectura completa."}</span><div><button type="button" class="ghost-button compact" data-campaign-premium-action="${escapeHtml(selectedReadiness.nextAction)}">${selectedReadiness.ready ? "Conectar experiencia" : "Resolver siguiente pendiente"}</button><button type="button" class="solid-button compact" data-campaign-premium-operation="${escapeHtml(selected.id)}">Abrir operación<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button></div></div>` : `<span class="material-symbols-outlined" aria-hidden="true">campaign</span><strong>Selecciona una campaña</strong><p>Abriremos sus indicadores, activos y operación desde este panel.</p>`}</aside></section>
     <section class="campaign-premium-table ${tableOpen ? "is-open" : ""}" ${tableOpen ? "" : "hidden"}><header><div><span class="mono-label">Resumen operativo</span><h4>Una fila por campaña</h4></div><small>Fechas, activaciones, embudo, inversión y retorno.</small></header><div class="table-wrap"><table><thead><tr><th>Campaña</th><th>Estado</th><th>Vigencia</th><th>Activ.</th><th>Leads</th><th>Tickets</th><th>Ventas</th><th>Inversión</th><th>Revenue</th><th>ROI</th></tr></thead><tbody>${tableRows}</tbody></table></div></section>`;
   ensureCampaignPremiumActivationIndex();
 }
@@ -15813,6 +15851,9 @@ async function selectCampaign(campaignId) {
   const scopeKey = businessScopeKey();
   state.selectedCampaignId = campaignId;
   state.campaignPremiumLoadingId = campaignId;
+  state.campaignRelatedActivationsCampaignId = campaignId;
+  state.campaignRelatedActivationsLoading = true;
+  state.campaignRelatedActivations = [];
   renderCampaignList();
   renderCampaignAssociationInputs();
 
@@ -15823,7 +15864,7 @@ async function selectCampaign(campaignId) {
       apiSafe(`/api/business/campaigns/${campaignId}/leads?limit=150`, { headers: authHeaders() }, { leads: [] }),
       apiSafe(`/api/business/campaigns/${campaignId}/redemptions?limit=150`, { headers: authHeaders() }, { redemptions: [] }),
       apiSafe(`/api/business/campaigns/${campaignId}/sales?limit=150`, { headers: authHeaders() }, { sales: [] }),
-      apiSafe("/api/business/interactive-activations?limit=300&include_archived=true", { headers: authHeaders() }, { activations: [] }),
+      apiSafe(`/api/business/interactive-activations?campaign_id=${encodeURIComponent(campaignId)}&limit=300&include_archived=true`, { headers: authHeaders() }, { activations: [] }),
     ]);
 
     if (!isCurrentBusinessScope(scopeKey) || state.selectedCampaignId !== campaignId) return;
@@ -15837,8 +15878,8 @@ async function selectCampaign(campaignId) {
     state.selectedSales = salesData.sales || [];
     state.selectedCampaignAffiliates = [];
     state.campaignRelatedActivations = activationsData.activations || activationsData.trivias || [];
-    state.campaignPremiumActivations = state.campaignRelatedActivations;
-    state.campaignPremiumActivationsLoaded = true;
+    state.campaignRelatedActivationsCampaignId = campaignId;
+    state.campaignRelatedActivationsLoading = false;
     state.campaignPremiumLoadingId = null;
 
     renderCampaignInsights();
@@ -15851,6 +15892,9 @@ async function selectCampaign(campaignId) {
     renderBranchesView();
   } catch (error) {
     if (state.selectedCampaignId === campaignId) {
+      state.campaignRelatedActivations = [];
+      state.campaignRelatedActivationsCampaignId = campaignId;
+      state.campaignRelatedActivationsLoading = false;
       state.campaignPremiumLoadingId = null;
       renderCampaignPremiumWorkspace();
     }
@@ -16777,16 +16821,13 @@ function campaignRelatedCustomerCard(customer = {}) {
 
 function campaignRelatedActivationRows() {
   const campaignId = String(state.selectedCampaignId || state.selectedCampaign?.id || "");
-  if (!campaignId) return [];
-  return (state.campaignRelatedActivations || [])
-    .filter((activation) => String(activation.campaign_id || "") === campaignId)
-    .sort((left, right) => new Date(right.created_at || 0) - new Date(left.created_at || 0));
+  return campaignConnectedActivationRows(campaignId);
 }
 
 function campaignRelatedActivationCard(activation = {}) {
   const activity = [
-    `${Number(activation.attempts_count || 0).toLocaleString("es-CO")} participantes`,
-    `${Number(activation.winners_count || 0).toLocaleString("es-CO")} tickets`,
+    `${Number(activation.participants_count ?? activation.attempts_count ?? 0).toLocaleString("es-CO")} participantes`,
+    `${Number(activation.rewards_count ?? activation.winners_count ?? 0).toLocaleString("es-CO")} tickets`,
   ].join(" · ");
   const timing = activation.ends_at
     ? `Vence ${formatDate(activation.ends_at)}`
@@ -16829,8 +16870,8 @@ function renderCampaignRelationsPanel() {
       || '<div class="campaign-related-empty">Sin clientes o ventas atribuidas a esta campaña.</div>';
   }
   if (campaignRelatedActivationsList) {
-    campaignRelatedActivationsList.innerHTML = activations.slice(0, 8).map(campaignRelatedActivationCard).join("")
-      || '<div class="campaign-related-empty">Esta campaña aún no tiene activaciones relacionadas.</div>';
+    campaignRelatedActivationsList.innerHTML = activations.map(campaignRelatedActivationCard).join("")
+      || '<div class="campaign-related-empty">Sin Activaciones</div>';
   }
   renderCampaignAffiliatesPanel();
 }
@@ -30293,6 +30334,8 @@ function renderNoCampaignState() {
   if (campaignRelatedActivationsList) campaignRelatedActivationsList.innerHTML = '<div class="campaign-related-empty">Selecciona una campaña.</div>';
   state.selectedCampaignAffiliates = [];
   state.campaignRelatedActivations = [];
+  state.campaignRelatedActivationsCampaignId = null;
+  state.campaignRelatedActivationsLoading = false;
   if (campaignAffiliateSelect) campaignAffiliateSelect.innerHTML = '<option value="">Sin campaña</option>';
   if (campaignAffiliateAssignButton) campaignAffiliateAssignButton.disabled = true;
   if (campaignAffiliatesTable) campaignAffiliatesTable.innerHTML = '<tr><td colspan="6">Selecciona una campaña.</td></tr>';

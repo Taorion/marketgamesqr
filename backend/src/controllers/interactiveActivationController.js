@@ -1,3 +1,4 @@
+const { z } = require("zod");
 const { forbidden } = require("../utils/http");
 const {
   validate,
@@ -34,6 +35,10 @@ function businessIdFor(req) {
   }
   return req.user.business_id;
 }
+
+const interactiveActivationListQuerySchema = z.object({
+  campaign_id: z.string().uuid().optional(),
+});
 
 function reqMeta(req) {
   return {
@@ -81,7 +86,15 @@ async function list(req, res, next) {
     const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 120, 1), 300);
     const includeArchived = ["1", "true", "yes"].includes(String(req.query.include_archived || "").toLowerCase());
     const availableOnly = ["1", "true", "yes"].includes(String(req.query.available_only || "").toLowerCase());
-    const activations = await listInteractiveActivations(businessIdFor(req), { limit, includeArchived, availableOnly });
+    const { campaign_id: campaignId } = validate(interactiveActivationListQuerySchema, {
+      campaign_id: req.query.campaign_id || undefined,
+    });
+    const activations = await listInteractiveActivations(businessIdFor(req), {
+      limit,
+      includeArchived,
+      availableOnly,
+      campaignId,
+    });
     res.json({ activations, trivias: activations });
   } catch (error) {
     next(error);

@@ -780,12 +780,14 @@ async function listInteractiveActivations(businessId, options = {}) {
   const limit = Math.min(Math.max(Number(options.limit || 120), 1), 300);
   const includeArchived = Boolean(options.includeArchived);
   const availableOnly = Boolean(options.availableOnly);
+  const campaignId = options.campaignId || null;
   const result = await query(
     `with recent_activations as (
        select *
-       from interactive_activations
-       where company_id = $1
-         and ($3::boolean or status <> 'archived')
+        from interactive_activations
+        where company_id = $1
+          and ($5::uuid is null or campaign_id = $5::uuid)
+          and ($3::boolean or status <> 'archived')
          and (
            not $4::boolean
            or (status = 'active'
@@ -823,13 +825,13 @@ async function listInteractiveActivations(businessId, options = {}) {
             coalesce(r.rewards_count, 0)::int as rewards_count,
             coalesce(d.digital_asset_downloads, 0)::int as digital_asset_downloads
      from recent_activations a
-     left join campaigns c on c.id = a.campaign_id
-     left join branches br on br.id = a.branch_id
+     left join campaigns c on c.id = a.campaign_id and c.business_id = a.company_id
+     left join branches br on br.id = a.branch_id and br.business_id = a.company_id
      left join participant_counts p on p.activation_id = a.id
      left join reward_counts r on r.activation_id = a.id
      left join asset_download_counts d on d.activation_id = a.id
      order by a.created_at desc`,
-    [businessId, limit, includeArchived, availableOnly]
+    [businessId, limit, includeArchived, availableOnly, campaignId]
   );
   return result.rows.map(mapActivation);
 }
