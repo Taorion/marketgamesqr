@@ -18,6 +18,10 @@
   ]);
   const AUDIENCE_PAGE_SIZE = 120;
   const MAX_EMAIL_RECIPIENTS = 120;
+  const dispatchKey = () => window.crypto?.randomUUID?.() || "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+    const value = Math.floor(Math.random() * 16);
+    return (char === "x" ? value : (value & 0x3) | 0x8).toString(16);
+  });
 const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentacion: "Curaduría", curaduria: "Asignación", clasificacion: "Activación 1", preprocesamiento: "Control de calidad 1", procesamiento: "Evaluación", accion_correctiva: "Negociación", control_anti_fuga: "Riesgos de fuga", cierre: "Ventas atribuidas", revenue_generado: "Control de calidad 2", postventa: "Valorización Clientes", inteligencia: "Inteligencia RMS" }[String(phase || "").toLowerCase()] || "Leads recolectados");
   const metricMoney = (value) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(value || 0));
   const refKey = (contact) => `${contact?.source_type || "PLAYER"}:${contact?.source_id || contact?.id || ""}`;
@@ -293,12 +297,23 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     if (!session?.user?.business_id || state.communicationsLoading || (state.communicationsLoaded && !options.force)) return;
     state.communicationsLoading = true;
     try {
+      if (!state.communicationEmailConnectionLoaded) {
+        state.communicationEmailConnection = await api("/api/business/communications/email-connection", { headers: authHeaders() });
+        state.communicationEmailConnectionLoaded = true;
+      }
       if (!state.communicationWhatsAppConnectionLoaded && typeof window.loadCommunicationWhatsAppConnection === "function") await window.loadCommunicationWhatsAppConnection();
       const data = await api("/api/business/communications", { headers: authHeaders() });
       state.communications = data.communications || [];
       state.communicationsLoaded = true;
       if (!state.selectedCommunicationId && state.communications[0]?.id) state.selectedCommunicationId = state.communications[0].id;
     } finally { state.communicationsLoading = false; }
+  }
+
+  async function hydrateCommunicationPayload(item) {
+    if (!item?.id || !item.metadata?.payloads_redacted) return item;
+    const data = await api(`/api/business/communications/${encodeURIComponent(item.id)}`, { headers: authHeaders() });
+    if (data.communication) Object.assign(item, data.communication);
+    return item;
   }
 
   async function loadAudience(options = {}) {
@@ -563,6 +578,17 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     });
   }
 
+  function renderCommunicationCommandStrip() {
+    const strip = document.getElementById("communicationCommandStrip");
+    if (!strip) return;
+    const email = state.communicationEmailConnection || {};
+    const whatsapp = state.communicationWhatsAppConnection || {};
+    const audienceTotal = Number(state.communicationAudienceTotal || 0);
+    const sent = (state.communications || []).reduce((total, item) => total + Number(item.recipients_sent || 0), 0);
+    const statusCard = (ready, icon, title, readyCopy, pendingCopy) => `<article class="communication-command-status ${ready ? "is-ready" : "is-pending"}"><span class="material-symbols-outlined" aria-hidden="true">${ready ? "verified" : icon}</span><div><small>${esc(title)}</small><strong>${ready ? "Listo" : "Requiere conexión"}</strong><p>${esc(ready ? readyCopy : pendingCopy)}</p></div></article>`;
+    strip.innerHTML = `<div class="communication-command-title"><span class="mono-label">Control de lanzamiento</span><strong>Tu operación de comunicaciones</strong><p>Conexiones, audiencia y trazabilidad visibles antes de enviar.</p></div><div class="communication-command-grid">${statusCard(Boolean(email.ready), "mark_email_unread", "Email / Resend", email.sender_email || "Remitente verificado", "Configura un remitente y prueba la conexión.")}${statusCard(Boolean(whatsapp.ready), "chat_error", "WhatsApp Business", whatsapp.phone_number_id ? `Número conectado · ${whatsapp.phone_number_id}` : "Cuenta conectada", "Conecta Meta y carga una plantilla aprobada.")}<article class="communication-command-status is-metric"><span class="material-symbols-outlined" aria-hidden="true">groups</span><div><small>Audiencia disponible</small><strong>${audienceTotal}</strong><p>Hasta ${MAX_EMAIL_RECIPIENTS} por lote.</p></div></article><article class="communication-command-status is-metric"><span class="material-symbols-outlined" aria-hidden="true">outbox</span><div><small>Entregas registradas</small><strong>${sent}</strong><p>Con historial por destinatario.</p></div></article></div><button class="ghost-button compact" type="button" data-open-communication-settings><span class="material-symbols-outlined" aria-hidden="true">settings</span>Administrar conexiones</button>`;
+  }
+
   function render() {
     const list = document.getElementById("businessCommunicationsList");
     const audience = document.getElementById("communicationAudienceList");
@@ -572,11 +598,12 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     const selectedPiece = document.getElementById("communicationSelectedSummary");
     if (!list || !audience || !summary || !selectedSummary || !sendBar) return;
     const communications = state.communications || [];
+    renderCommunicationCommandStrip();
     const historyTabCount = document.getElementById("communicationHistoryTabCount");
     if (historyTabCount) historyTabCount.textContent = String(communications.length);
     const activeCommunication = communications.find((item) => String(item.id) === String(state.selectedCommunicationId));
     const audienceChannel = isWhatsAppCommunication(activeCommunication) ? "whatsapp" : "email";
-    const canDeleteCommunications = ["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_Qori"].includes(session?.user?.role);
+    const canDeleteCommunications = ["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
     const sentHistory = communications.filter((item) => Number(item.recipients_sent || 0) > 0 || String(item.status || "").toUpperCase() === "SENT");
     const failedHistory = communications.reduce((total, item) => total + Number(item.recipients_failed || 0), 0);
     const recipientTotal = (item) => Number(item.recipients_total || 0) || (Number(item.recipients_sent || 0) + Number(item.recipients_failed || 0) + Number(item.recipients_skipped || 0));
@@ -829,16 +856,17 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
       const data = await api(editingId ? `/api/business/communications/${editingId}` : "/api/business/communications", { method: editingId ? "PATCH" : "POST", headers: authHeaders(), body: JSON.stringify(payload) });
       if (action === "SEND" && type === "WHATSAPP") {
         setComposerSaveFeedback({ step: 3, total: totalSteps, title: `3 de ${totalSteps} · Enviando a Meta`, detail: "Meta está recibiendo el lote y Qori registrará cada resultado." });
-        const sent = await api(`/api/business/communications/${data.communication.id}/whatsapp/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, template: whatsAppTemplate, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
+        const sent = await api(`/api/business/communications/${data.communication.id}/whatsapp/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, idempotency_key: dispatchKey(), template: whatsAppTemplate, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
         const results = sent.results || {};
         const duplicateNote = Number(results.duplicate_phones || 0) ? ` Se omitieron ${results.duplicate_phones} número(s) duplicado(s).` : "";
         showFeedback(`Lote finalizado: ${results.sent || 0} aceptados por Meta, ${results.failed || 0} fallidos y ${results.skipped || 0} omitidos.${duplicateNote}${emailFailureNote(results)}`, Number(results.sent || 0) ? "success" : "error", { title: Number(results.sent || 0) ? "WhatsApp enviado" : "WhatsApp no se envió" });
       } else if (action === "SEND" && type !== "SOCIAL") {
         setComposerSaveFeedback({ step: 3, total: totalSteps, title: `3 de ${totalSteps} · Enviando emails`, detail: "Estamos entregando la comunicación a la audiencia seleccionada." });
-        const sent = await api(`/api/business/communications/${data.communication.id}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
+        const sent = await api(`/api/business/communications/${data.communication.id}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, idempotency_key: dispatchKey(), recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
         const sentCount = Number(sent.results?.sent || 0);
         const duplicateNote = Number(sent.results?.duplicate_emails || 0) ? ` Se omitieron ${sent.results.duplicate_emails} contacto${Number(sent.results.duplicate_emails) === 1 ? "" : "s"} con correo duplicado.` : "";
-        showFeedback(`Envío finalizado: ${sentCount} enviados, ${sent.results?.failed || 0} fallidos y ${sent.results?.skipped || 0} omitidos.${duplicateNote}${emailFailureNote(sent.results)}`, sentCount ? "success" : "error", { title: sentCount ? "Comunicación enviada" : "No se enviaron correos" });
+        const optOutNote = Number(sent.results?.opted_out || 0) ? ` ${sent.results.opted_out} contacto(s) con baja activa fueron protegidos.` : "";
+        showFeedback(`Envío finalizado: ${sentCount} enviados, ${sent.results?.failed || 0} fallidos y ${sent.results?.skipped || 0} omitidos.${duplicateNote}${optOutNote}${emailFailureNote(sent.results)}`, sentCount ? "success" : "error", { title: sentCount ? "Comunicación enviada" : "No se enviaron correos" });
       }
       if (action === "PUBLISH") {
         setComposerSaveFeedback({ step: 3, total: totalSteps, title: `3 de ${totalSteps} · Creando enlace medido`, detail: "La publicación quedará conectada a sus métricas, canal y campaña." });
@@ -880,12 +908,14 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     if (!prepare && !loadQueue && !openNext && !sendWhatsApp) return;
     const control = prepare || loadQueue || openNext || sendWhatsApp;
     const communicationId = control.dataset.prepareCommunicationWhatsapp || control.dataset.loadCommunicationWhatsappQueue || control.dataset.openNextCommunicationWhatsapp || control.dataset.sendCommunicationWhatsapp;
+    if ((prepare || sendWhatsApp) && state.communicationDispatching) { showFeedback("Ya hay un envío en proceso. Espera el resultado.", "info", { title: "Envío protegido" }); return; }
     try {
+      if (prepare || sendWhatsApp) { state.communicationDispatching = true; control.disabled = true; }
       if (prepare) {
         const recipients = selectedRecipients("whatsapp");
         if (!recipients.length) throw new Error("Selecciona al menos un contacto con WhatsApp.");
         if (!document.getElementById("communicationConsentInput")?.checked) throw new Error("Confirma el consentimiento antes de preparar el lote.");
-        const data = await api(`/api/business/communications/${communicationId}/whatsapp/prepare`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
+        const data = await api(`/api/business/communications/${communicationId}/whatsapp/prepare`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, idempotency_key: dispatchKey(), recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
         state.communicationWhatsAppQueue = { communicationId, ...(data.queue || {}) };
         state.communicationSelectedRefs = [];
         showFeedback(`Lote preparado: ${data.results?.queued || 0} contactos con WhatsApp. Abre el siguiente para continuar.`, "success", { title: "WhatsApp masivo" });
@@ -907,7 +937,7 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
         if (!recipients.length) throw new Error("Selecciona al menos un contacto con WhatsApp.");
         if (!document.getElementById("communicationConsentInput")?.checked) throw new Error("Confirma el consentimiento antes de enviar.");
         showFeedback("Enviando el lote a Meta…", "loading", { title: "WhatsApp masivo", timeout: 0 });
-        const data = await api(`/api/business/communications/${communicationId}/whatsapp/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, template, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
+        const data = await api(`/api/business/communications/${communicationId}/whatsapp/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, idempotency_key: dispatchKey(), template, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) });
         const results = data.results || {};
         state.communicationSelectedRefs = [];
         showFeedback(`Lote finalizado: ${results.sent || 0} aceptados por Meta, ${results.failed || 0} fallidos y ${results.skipped || 0} omitidos.${emailFailureNote(results)}`, Number(results.sent || 0) ? "success" : "error", { title: Number(results.sent || 0) ? "WhatsApp enviado" : "WhatsApp no se envió" });
@@ -917,16 +947,21 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
       render();
     } catch (error) {
       showFeedback(error.message || "No se pudo preparar el envío por WhatsApp.", "error", { title: "WhatsApp masivo" });
+    } finally {
+      if (prepare || sendWhatsApp) { state.communicationDispatching = false; if (control.isConnected) control.disabled = false; }
     }
   });
 
   document.addEventListener("click", async (event) => {
     const workspaceTab = event.target.closest("[data-communication-workspace-tab]"); const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const historyPick = event.target.closest("[data-communication-history-select], [data-communication-history-select-control]"); const historySelectVisible = event.target.closest("[data-communication-history-select-visible]"); const historyArchive = event.target.closest("[data-communication-history-archive]"); const historyDelete = event.target.closest("[data-communication-history-delete]"); const all = event.target.closest("[data-communication-select-loaded]"); const clearSelection = event.target.closest("[data-communication-clear-selection]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const share = event.target.closest("[data-share-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const publish = event.target.closest("[data-publish-communication]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const removeEmailAttachment = event.target.closest("[data-remove-communication-email-attachment]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const remove = event.target.closest("[data-delete-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const loadMoreComposerAudience = event.target.closest("[data-load-more-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]"); const clearComposerAudience = event.target.closest("[data-composer-clear-audience]");
+    const openSettings = event.target.closest("[data-open-communication-settings]");
+    if (openSettings) { event.preventDefault(); document.querySelector('.nav-item[data-view="account"][data-account-screen="profile"]')?.click(); window.setTimeout(() => document.getElementById("accountSectionEmail")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120); return; }
     if (workspaceTab) { event.preventDefault(); setCommunicationWorkspaceTab(workspaceTab.dataset.communicationWorkspaceTab); return; }
     if (historyPick) { event.stopPropagation(); const input = historyPick.matches("input") ? historyPick : historyPick.querySelector("[data-communication-history-select]"); if (!input) return; if (historyPick !== input) { input.checked = !input.checked; event.preventDefault(); } const selected = new Set(communicationHistorySelection()); const id = String(input.dataset.communicationHistorySelect || ""); if (!id) return; if (input.checked) selected.add(id); else selected.delete(id); state.communicationHistorySelectedIds = Array.from(selected); render(); return; }
     if (historySelectVisible) { event.preventDefault(); event.stopPropagation(); const ids = (state.communications || []).map((item) => String(item.id)); const selected = communicationHistorySelection(); state.communicationHistorySelectedIds = selected.length === ids.length ? [] : ids; render(); return; }
     if (historyArchive) { event.preventDefault(); event.stopPropagation(); await runCommunicationHistoryBulk("archive"); return; }
     if (historyDelete) { event.preventDefault(); event.stopPropagation(); await runCommunicationHistoryBulk("delete"); return; }
+    if (edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = state.communications.find((row) => String(row.id) === String(key)); try { await hydrateCommunicationPayload(item); } catch (error) { showFeedback(error.message || "No se pudo cargar el contenido completo de la comunicación.", "error", { title: "Comunicación" }); return; } }
     if (open || edit || duplicate) { const relationKey = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const related = relationKey ? state.communications.find((row) => String(row.id) === String(relationKey)) : null; state.communicationPendingShowcaseId = related?.metadata?.web_showcase_id || ""; state.communicationPendingProductId = related?.metadata?.web_showcase_product_id || ""; state.communicationPendingPromotion = related?.metadata?.product_promotion || null; if (state.communicationPendingShowcaseId) { try { await loadCommunicationShowcaseProducts(state.communicationPendingShowcaseId); } catch (error) { console.warn("No se pudieron cargar los productos de la vitrina.", error); } } }
     if (open || edit || duplicate) { try { await prepareComposerRelations(); } catch (error) { console.warn("No se pudieron actualizar los canales para comunicaciones.", error); } renderOptions(); positionComposerAudience(); }
     if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationWebShowcaseInput").value = item.metadata?.web_showcase_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationWhatsAppBodyInput").value = item.whatsapp_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); setUploadedEmailAttachments(Array.isArray(item.metadata?.email_attachments) ? item.metadata.email_attachments : []); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); setUploadedEmailAttachments([]); } try { await window.loadCommunicationWhatsAppConnection?.({ force: true }); if (state.communicationWhatsAppConnection?.ready && !state.communicationWhatsAppTemplates?.length) await window.loadCommunicationWhatsAppTemplates?.(); } catch (error) { console.warn("No se pudo preparar la conexión de WhatsApp.", error); } renderWhatsAppTemplateOptions(item?.metadata?.whatsapp_template?.name || "", item?.metadata?.whatsapp_template?.body_parameters || []); document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
@@ -945,7 +980,7 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     if (copy) { const item = state.communications.find((row) => String(row.id) === String(copy.dataset.copyCommunicationSocial)); const content = [item?.social_copy, item?.tracking_url || item?.action_url].filter(Boolean).join("\n\n"); try { await navigator.clipboard.writeText(content); showFeedback("Publicación copiada con su enlace medido.", "success", { title: "Texto copiado" }); } catch { window.prompt("Copia esta publicación", content); } return; }
     if (share) { const item = state.communications.find((row) => String(row.id) === String(share.dataset.shareCommunicationSocial)); try { const result = await shareSocialPublication(item); showFeedback(result === "shared" ? "Se abrió el selector de compartir del dispositivo." : "La publicación medida quedó copiada para compartirla.", "success", { title: "Compartir publicación" }); } catch (error) { if (error?.name !== "AbortError") showFeedback(error.message || "No se pudo preparar la publicación para compartir.", "error", { title: "Compartir publicación" }); } return; }
     if (publish) { try { const investment = document.getElementById("communicationPublicationInvestment")?.value || 0; const externalUrl = document.getElementById("communicationPublicationUrl")?.value.trim() || ""; const data = await api(`/api/business/communications/${publish.dataset.publishCommunication}/publish`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ investment_amount: Number(investment), external_publication_url: externalUrl }) }); const item = state.communications.find((row) => String(row.id) === String(publish.dataset.publishCommunication)); if (item) Object.assign(item, data.communication); state.communicationsLoaded = false; await loadCommunications({ force: true }); render(); showFeedback("Publicación registrada. Usa el texto copiado con el enlace medido de Qori.", "success", { title: "Publicación medida" }); } catch (error) { showFeedback(error.message || "No se pudo registrar la publicación.", "error", { title: "Publicación" }); } return; }
-    if (send) { const recipients = selectedRecipients(); if (!recipients.length) { showFeedback("Selecciona al menos un contacto que tenga email.", "info", { title: "Destinatarios" }); return; } if (!document.getElementById("communicationConsentInput")?.checked) { showFeedback("Confirma el consentimiento antes de enviar.", "info", { title: "Consentimiento requerido" }); return; } try { showFeedback("Enviando emails…", "loading", { title: "Comunicación", timeout: 0 }); const data = await api(`/api/business/communications/${send.dataset.sendCommunication}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) }); state.communicationSelectedRefs = []; state.communicationsLoaded = false; await loadCommunications({ force: true }); render(); const results = data.results || {}; const feedbackType = Number(results.sent || 0) ? "success" : "error"; const duplicateNote = Number(results.duplicate_emails || 0) ? ` ${results.duplicate_emails} contacto${Number(results.duplicate_emails) === 1 ? "" : "s"} con correo duplicado se omitieron.` : ""; showFeedback(`Envío finalizado: ${results.sent || 0} enviados, ${results.failed || 0} fallidos y ${results.skipped || 0} omitidos.${duplicateNote}${emailFailureNote(results)}`, feedbackType, { title: Number(results.sent || 0) ? "Comunicación enviada" : "No se enviaron correos" }); } catch (error) { showFeedback(error.message || "No se pudo completar el envío.", "error", { title: "Comunicación" }); } }
+    if (send) { const recipients = selectedRecipients(); if (!recipients.length) { showFeedback("Selecciona al menos un contacto que tenga email.", "info", { title: "Destinatarios" }); return; } if (!document.getElementById("communicationConsentInput")?.checked) { showFeedback("Confirma el consentimiento antes de enviar.", "info", { title: "Consentimiento requerido" }); return; } if (state.communicationDispatching) { showFeedback("Ya hay un envío en proceso. Espera el resultado.", "info", { title: "Envío protegido" }); return; } try { state.communicationDispatching = true; send.disabled = true; showFeedback("Enviando emails…", "loading", { title: "Comunicación", timeout: 0 }); const data = await api(`/api/business/communications/${send.dataset.sendCommunication}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ consent_confirmed: true, idempotency_key: dispatchKey(), recipients: recipients.map((row) => ({ source_type: row.source_type, source_id: row.source_id })) }) }); state.communicationSelectedRefs = []; state.communicationsLoaded = false; await loadCommunications({ force: true }); render(); const results = data.results || {}; const feedbackType = Number(results.sent || 0) ? "success" : "error"; const duplicateNote = Number(results.duplicate_emails || 0) ? ` ${results.duplicate_emails} contacto${Number(results.duplicate_emails) === 1 ? "" : "s"} con correo duplicado se omitieron.` : ""; const optOutNote = Number(results.opted_out || 0) ? ` ${results.opted_out} contacto(s) con baja activa fueron protegidos.` : ""; showFeedback(`Envío finalizado: ${results.sent || 0} enviados, ${results.failed || 0} fallidos y ${results.skipped || 0} omitidos.${duplicateNote}${optOutNote}${emailFailureNote(results)}`, feedbackType, { title: Number(results.sent || 0) ? "Comunicación enviada" : "No se enviaron correos" }); } catch (error) { showFeedback(error.message || "No se pudo completar el envío.", "error", { title: "Comunicación" }); } finally { state.communicationDispatching = false; if (send.isConnected) send.disabled = false; } }
   });
 
   document.addEventListener("click", (event) => {

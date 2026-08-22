@@ -22,6 +22,7 @@ const publicQrRoutes = require("./routes/publicQrRoutes");
 const publicAffiliateRoutes = require("./routes/publicAffiliateRoutes");
 const publicSmartCatalogRoutes = require("./routes/publicSmartCatalogRoutes");
 const contactRoutes = require("./routes/contactRoutes");
+const publicCommunicationPreferenceRoutes = require("./routes/publicCommunicationPreferenceRoutes");
 const packageSalesRoutes = require("./routes/packageSalesRoutes");
 const { publicAttachmentDownload } = require("./controllers/rmsMachineController");
 const paymentRoutes = require("./routes/paymentRoutes");
@@ -185,6 +186,7 @@ app.use("/api", (_req, res, next) => {
 });
 
 app.use("/api/public", contactRoutes);
+app.use("/api/public", publicCommunicationPreferenceRoutes);
 app.use("/api/webhooks", whatsAppWebhookRoutes);
 
 app.use((req, res, next) => {

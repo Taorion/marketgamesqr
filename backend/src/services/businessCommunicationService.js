@@ -34,6 +34,74 @@ function normalizedRecipientEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function publicCommunicationUrl(pathname) {
+  return `${String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "")}${pathname}`;
+}
+
+async function emailPreferencesForAudience(businessId, emails = []) {
+  const normalized = [...new Set(emails.map(normalizedRecipientEmail).filter(Boolean))];
+  if (!normalized.length) return new Map();
+  await query(
+    `insert into business_communication_email_preferences (business_id, recipient_email)
+     select $1, email from unnest($2::text[]) as email
+     on conflict (business_id, recipient_email) do nothing`,
+    [businessId, normalized]
+  );
+  const result = await query(
+    `select recipient_email, unsubscribe_token, unsubscribed_at
+     from business_communication_email_preferences
+     where business_id = $1 and recipient_email = any($2::text[])`,
+    [businessId, normalized]
+  );
+  return new Map(result.rows.map((row) => [row.recipient_email, row]));
+}
+
+async function beginCommunicationDispatch({ businessId, communicationId, idempotencyKey, channel, userId, recipientCount }) {
+  const communication = await query("select id from business_communications where id = $1 and business_id = $2", [communicationId, businessId]);
+  if (!communication.rowCount) throw notFound("Comunicación no encontrada.");
+  const inserted = await query(
+    `insert into business_communication_dispatches
+      (business_id, communication_id, idempotency_key, channel, requested_by, recipient_count)
+     values ($1,$2,$3,$4,$5,$6)
+     on conflict (business_id, idempotency_key) do nothing
+     returning id, status, result`,
+    [businessId, communicationId, idempotencyKey, channel, userId, recipientCount]
+  );
+  if (inserted.rowCount) return { dispatchId: inserted.rows[0].id, replay: null };
+  const existing = await query(
+    `select id, communication_id, channel, status, result
+     from business_communication_dispatches
+     where business_id = $1 and idempotency_key = $2`,
+    [businessId, idempotencyKey]
+  );
+  const dispatch = existing.rows[0];
+  if (!dispatch || String(dispatch.communication_id) !== String(communicationId) || dispatch.channel !== channel) {
+    throw badRequest("La clave de seguridad del envío ya fue usada para otra operación.");
+  }
+  if (dispatch.status === "COMPLETED") return { dispatchId: dispatch.id, replay: { ...(dispatch.result || {}), idempotent_replay: true } };
+  if (dispatch.status === "PROCESSING") throw badRequest("Este envío ya está en proceso. Espera el resultado antes de intentarlo de nuevo.");
+  throw badRequest("Este intento de envío ya terminó con error. Inicia un nuevo intento desde Comunicaciones.");
+}
+
+async function completeCommunicationDispatch(dispatchId, result) {
+  await query(
+    `update business_communication_dispatches
+     set status = 'COMPLETED', result = $2::jsonb, completed_at = now(), updated_at = now()
+     where id = $1`,
+    [dispatchId, JSON.stringify(result || {})]
+  );
+}
+
+async function failCommunicationDispatch(dispatchId, error) {
+  if (!dispatchId) return;
+  await query(
+    `update business_communication_dispatches
+     set status = 'FAILED', error_message = $2, completed_at = now(), updated_at = now()
+     where id = $1`,
+    [dispatchId, String(error?.message || "Error de envío").slice(0, 1000)]
+  );
+}
+
 function communicationSenderName(value) {
   return String(value || "").replace(/[<>\"\r\n]/g, "").trim();
 }
@@ -114,7 +182,7 @@ function makeEmailFileAttachments(assets = []) {
   }).filter(Boolean);
 }
 
-function buildEmailMarkup({ title, body, hasInlineImage, actionUrl, brandName = "Qori" }) {
+function buildEmailMarkup({ title, body, hasInlineImage, actionUrl, unsubscribeUrl, brandName = "Qori" }) {
   const safeBrand = escapeHtml(String(brandName || "Qori").trim() || "Qori");
   const safeTitle = escapeHtml(String(title || "Información para ti").trim() || "Información para ti");
   const safeBody = escapeHtml(String(body || "").trim()).replace(/\r?\n/g, "<br>");
@@ -161,7 +229,7 @@ function buildEmailMarkup({ title, body, hasInlineImage, actionUrl, brandName = 
           ${action}
           <tr><td class="qori-padding" style="padding:25px 32px 28px;">
             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tr><td style="height:1px;line-height:1px;background:#E6ECF3;font-size:0;">&nbsp;</td></tr></table>
-            <p style="margin:17px 0 0;color:#75859A;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:18px;">Recibiste este correo de ${safeBrand}. Si tienes preguntas, responde a este mensaje.</p>
+            <p style="margin:17px 0 0;color:#75859A;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:18px;">Recibiste este correo de ${safeBrand}. Si tienes preguntas, responde a este mensaje.${unsubscribeUrl ? ` <a href="${escapeHtml(unsubscribeUrl)}" style="color:#52657D;text-decoration:underline;">Dejar de recibir estas comunicaciones</a>.` : ""}</p>
           </td></tr>
         </table>
         <!--[if mso]></td></tr></table><![endif]-->
@@ -227,14 +295,24 @@ async function assertRelationBelongsToBusiness(businessId, payload) {
 
 async function listBusinessCommunications(businessId) {
   const result = await query(
-    `select bc.*, c.name as campaign_name, ch.name as channel_name, br.name as branch_name, ia.title as activation_name, ia.public_slug as activation_public_slug,
+    `select bc.id, bc.business_id, bc.title, bc.communication_type, bc.status, bc.campaign_id, bc.channel_id, bc.branch_id,
+       bc.activation_id, bc.subject, bc.email_body, bc.whatsapp_body, bc.social_copy, bc.action_url, bc.audience_filters,
+       bc.created_by, bc.updated_by, bc.created_at, bc.updated_at, bc.publication_status, bc.published_at, bc.published_by,
+       bc.external_publication_url, bc.tracking_token,
+       c.name as campaign_name, ch.name as channel_name, br.name as branch_name, ia.title as activation_name, ia.public_slug as activation_public_slug,
        sw.title as web_showcase_title, sw.slug as web_showcase_slug, sw.status as web_showcase_status,
        coalesce(rc.recipients_total, 0)::int as recipients_total, coalesce(rc.sent_count, 0)::int as recipients_sent, coalesce(rc.prepared_count, 0)::int as recipients_prepared, coalesce(rc.queued_count, 0)::int as recipients_queued, coalesce(rc.failed_count, 0)::int as recipients_failed, coalesce(rc.delivered_count, 0)::int as recipients_delivered, coalesce(rc.read_count, 0)::int as recipients_read,
        coalesce(rc.skipped_count, 0)::int as recipients_skipped,
        coalesce(em.views, 0)::int as views, coalesce(em.starts, 0)::int as starts, coalesce(em.leads, 0)::int as leads,
        coalesce(em.completions, 0)::int as completions, coalesce(em.rewards, 0)::int as rewards,
        coalesce(sm.sales, 0)::int as sales, coalesce(sm.revenue, 0)::numeric as revenue, coalesce(sm.customers, 0)::int as customers,
-       coalesce(pm.investment, 0)::numeric as investment
+       coalesce(pm.investment, 0)::numeric as investment,
+       (coalesce(bc.metadata, '{}'::jsonb) - 'media_assets' - 'email_attachments') || jsonb_build_object(
+         'payloads_redacted', true,
+         'media_asset_count', case when jsonb_typeof(bc.metadata->'media_assets') = 'array' then jsonb_array_length(bc.metadata->'media_assets') else 0 end,
+         'email_attachment_count', case when jsonb_typeof(bc.metadata->'email_attachments') = 'array' then jsonb_array_length(bc.metadata->'email_attachments') else 0 end
+       ) as metadata,
+       case when bc.image_url like 'data:%' then null else bc.image_url end as image_url
      from business_communications bc
      left join campaigns c on c.id = bc.campaign_id and c.business_id = bc.business_id
      left join business_acquisition_channels ch on ch.id = bc.channel_id and ch.business_id = bc.business_id
@@ -282,6 +360,24 @@ async function listBusinessCommunications(businessId) {
     const investment = Number(row.investment || 0); const revenue = Number(row.revenue || 0); const customers = Number(row.customers || 0);
     return { ...row, ...trackingUrls(row), views: Number(row.views || 0), starts: Number(row.starts || 0), leads: Number(row.leads || 0), completions: Number(row.completions || 0), rewards: Number(row.rewards || 0), sales: Number(row.sales || 0), revenue, investment, cac: customers ? investment / customers : null, roi: investment ? (revenue - investment) / investment : null };
   }) };
+}
+
+async function getBusinessCommunication(businessId, id) {
+  const result = await query(
+    `select bc.*, c.name as campaign_name, ch.name as channel_name, br.name as branch_name,
+            ia.title as activation_name, ia.public_slug as activation_public_slug,
+            sw.title as web_showcase_title, sw.slug as web_showcase_slug, sw.status as web_showcase_status
+     from business_communications bc
+     left join campaigns c on c.id = bc.campaign_id and c.business_id = bc.business_id
+     left join business_acquisition_channels ch on ch.id = bc.channel_id and ch.business_id = bc.business_id
+     left join branches br on br.id = bc.branch_id and br.business_id = bc.business_id
+     left join interactive_activations ia on ia.id = bc.activation_id and ia.company_id = bc.business_id
+     left join smart_catalogs sw on sw.id::text = bc.metadata->>'web_showcase_id' and sw.business_id = bc.business_id
+     where bc.id = $1 and bc.business_id = $2`,
+    [id, businessId]
+  );
+  if (!result.rowCount) throw notFound("Comunicación no encontrada.");
+  return { communication: { ...result.rows[0], ...trackingUrls(result.rows[0]) } };
 }
 
 function publicActivationUrl(slug, trackingToken, source = "social") {
@@ -676,7 +772,7 @@ async function logLeadCommunication({ businessId, contact, communication, status
   );
 }
 
-async function sendBusinessCommunication(businessId, userId, id, recipientRefs, consentConfirmed, connectedUserEmail = null) {
+async function sendBusinessCommunicationCore(businessId, userId, id, recipientRefs, consentConfirmed, connectedUserEmail = null) {
   if (!consentConfirmed) throw badRequest("Confirma que los destinatarios aceptaron recibir esta comunicación antes de enviarla.");
   const found = await query("select * from business_communications where id = $1 and business_id = $2", [id, businessId]);
   if (!found.rowCount) throw notFound("Comunicación no encontrada.");
@@ -733,8 +829,11 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
     sent: 0,
     failed: 0,
     skipped: 0,
+    opted_out: 0,
     failure_reasons: [],
   };
+  const emailPreferences = await emailPreferencesForAudience(businessId, recipientsForDelivery.map((contact) => contact.email));
+  const consentMetadata = { consent_confirmed: true, consent_confirmed_at: new Date().toISOString(), consent_confirmed_by: userId };
   for (const contact of duplicateEmailRecipients) {
     await saveRecipient({
       businessId,
@@ -743,13 +842,22 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
       status: 'SKIPPED',
       errorMessage: 'Correo duplicado en la audiencia: se envió una sola copia a esta dirección.',
       userId,
+      metadata: consentMetadata,
     });
     results.skipped += 1;
   }
   for (const contact of recipientsForDelivery) {
     if (!contact.email) {
-      await saveRecipient({ businessId, communicationId: id, contact, status: 'SKIPPED', errorMessage: 'Sin correo electrónico', userId });
+      await saveRecipient({ businessId, communicationId: id, contact, status: 'SKIPPED', errorMessage: 'Sin correo electrónico', userId, metadata: consentMetadata });
       results.skipped += 1;
+      continue;
+    }
+    const recipientEmail = normalizedRecipientEmail(contact.email);
+    const preference = emailPreferences.get(recipientEmail);
+    if (preference?.unsubscribed_at) {
+      await saveRecipient({ businessId, communicationId: id, contact, status: 'SKIPPED', errorMessage: 'El contacto solicitó no recibir más comunicaciones.', userId, metadata: { ...consentMetadata, opted_out: true } });
+      results.skipped += 1;
+      results.opted_out += 1;
       continue;
     }
     const subject = personalize(communication.subject, contact);
@@ -759,6 +867,9 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
     const imageAttachments = makeEmailAttachments(mediaAssets);
     const fileAttachments = makeEmailFileAttachments(normalizeEmailAttachments(communication));
     const attachments = [...imageAttachments, ...fileAttachments];
+    const unsubscribeUrl = preference?.unsubscribe_token
+      ? publicCommunicationUrl(`/api/public/communications/unsubscribe/${preference.unsubscribe_token}`)
+      : "";
     try {
       const provider = await sendBusinessCommunicationEmail({
         apiKey: sender.apiKey,
@@ -767,14 +878,15 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
         replyTo: sender.replyTo,
         subject,
         text: messageWithActionUrl(message, actionUrl),
-        html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(imageAttachments.length), actionUrl, brandName: sender.brandName }),
+        html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(imageAttachments.length), actionUrl, unsubscribeUrl, brandName: sender.brandName }),
         attachments,
+        headers: unsubscribeUrl ? { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } : {},
       });
-      await saveRecipient({ businessId, communicationId: id, contact, status: 'SENT', providerMessageId: provider.id, userId });
+      await saveRecipient({ businessId, communicationId: id, contact, status: 'SENT', providerMessageId: provider.id, userId, metadata: { ...consentMetadata, unsubscribe_token: preference?.unsubscribe_token || null } });
       await logLeadCommunication({ businessId, contact, communication, status: 'SENT', message, userId });
       results.sent += 1;
     } catch (error) {
-      await saveRecipient({ businessId, communicationId: id, contact, status: 'FAILED', errorMessage: error.message, userId });
+      await saveRecipient({ businessId, communicationId: id, contact, status: 'FAILED', errorMessage: error.message, userId, metadata: consentMetadata });
       await logLeadCommunication({ businessId, contact, communication, status: 'FAILED', message, errorMessage: error.message, userId });
       results.failed += 1;
       const reason = String(error.publicMessage || "No se pudo entregar el correo. Revisa la configuración del envío.").slice(0, 280);
@@ -786,6 +898,19 @@ async function sendBusinessCommunication(businessId, userId, id, recipientRefs, 
   const updated = await query("update business_communications set status = $3, updated_by = $4, updated_at = now() where id = $1 and business_id = $2 returning *", [id, businessId, results.sent ? 'SENT' : communication.status, userId]);
   await syncCommunicationChannelEffort(businessId, userId, updated.rows[0] || communication);
   return { results };
+}
+
+async function sendBusinessCommunication(businessId, userId, id, recipientRefs, consentConfirmed, connectedUserEmail = null, idempotencyKey) {
+  const dispatch = await beginCommunicationDispatch({ businessId, communicationId: id, idempotencyKey, channel: "EMAIL", userId, recipientCount: recipientRefs?.length || 0 });
+  if (dispatch.replay) return dispatch.replay;
+  try {
+    const response = await sendBusinessCommunicationCore(businessId, userId, id, recipientRefs, consentConfirmed, connectedUserEmail);
+    await completeCommunicationDispatch(dispatch.dispatchId, response);
+    return response;
+  } catch (error) {
+    await failCommunicationDispatch(dispatch.dispatchId, error);
+    throw error;
+  }
 }
 
 function normalizedWhatsAppPhone(value) {
@@ -833,7 +958,7 @@ async function runWithConcurrency(items, limit, callback) {
   await Promise.all(workers);
 }
 
-async function sendBusinessCommunicationWhatsApp(businessId, userId, id, recipientRefs, consentConfirmed, suppliedTemplate = null) {
+async function sendBusinessCommunicationWhatsAppCore(businessId, userId, id, recipientRefs, consentConfirmed, suppliedTemplate = null) {
   if (!consentConfirmed) throw badRequest("Confirma que los destinatarios aceptaron recibir esta comunicación antes de enviarla.");
   const found = await query("select * from business_communications where id = $1 and business_id = $2", [id, businessId]);
   if (!found.rowCount) throw notFound("Comunicación no encontrada.");
@@ -885,7 +1010,20 @@ async function sendBusinessCommunicationWhatsApp(businessId, userId, id, recipie
   return { results };
 }
 
-async function prepareBusinessCommunicationWhatsApp(businessId, userId, id, recipientRefs, consentConfirmed) {
+async function sendBusinessCommunicationWhatsApp(businessId, userId, id, recipientRefs, consentConfirmed, suppliedTemplate = null, idempotencyKey) {
+  const dispatch = await beginCommunicationDispatch({ businessId, communicationId: id, idempotencyKey, channel: "WHATSAPP", userId, recipientCount: recipientRefs?.length || 0 });
+  if (dispatch.replay) return dispatch.replay;
+  try {
+    const response = await sendBusinessCommunicationWhatsAppCore(businessId, userId, id, recipientRefs, consentConfirmed, suppliedTemplate);
+    await completeCommunicationDispatch(dispatch.dispatchId, response);
+    return response;
+  } catch (error) {
+    await failCommunicationDispatch(dispatch.dispatchId, error);
+    throw error;
+  }
+}
+
+async function prepareBusinessCommunicationWhatsAppCore(businessId, userId, id, recipientRefs, consentConfirmed) {
   if (!consentConfirmed) throw badRequest("Confirma que los destinatarios aceptaron recibir esta comunicación antes de prepararla.");
   const found = await query("select * from business_communications where id = $1 and business_id = $2", [id, businessId]);
   if (!found.rowCount) throw notFound("Comunicación no encontrada.");
@@ -911,6 +1049,19 @@ async function prepareBusinessCommunicationWhatsApp(businessId, userId, id, reci
   const updated = await query("update business_communications set status = case when $3 > 0 then 'READY' else status end, updated_by = $4, updated_at = now() where id = $1 and business_id = $2 returning *", [id, businessId, results.queued, userId]);
   await syncCommunicationChannelEffort(businessId, userId, updated.rows[0] || communication);
   return { results, queue: await listBusinessCommunicationWhatsAppQueue(businessId, id) };
+}
+
+async function prepareBusinessCommunicationWhatsApp(businessId, userId, id, recipientRefs, consentConfirmed, idempotencyKey) {
+  const dispatch = await beginCommunicationDispatch({ businessId, communicationId: id, idempotencyKey, channel: "WHATSAPP", userId, recipientCount: recipientRefs?.length || 0 });
+  if (dispatch.replay) return dispatch.replay;
+  try {
+    const response = await prepareBusinessCommunicationWhatsAppCore(businessId, userId, id, recipientRefs, consentConfirmed);
+    await completeCommunicationDispatch(dispatch.dispatchId, response);
+    return response;
+  } catch (error) {
+    await failCommunicationDispatch(dispatch.dispatchId, error);
+    throw error;
+  }
 }
 
 async function listBusinessCommunicationWhatsAppQueue(businessId, id) {
@@ -1005,6 +1156,7 @@ async function sendWhatsAppConnectionTest(businessId, payload) {
 module.exports = {
   createBusinessCommunication,
   deleteBusinessCommunication,
+  getBusinessCommunication,
   getEmailConnectionStatus,
   getWhatsAppConnectionStatus,
   listAudience,

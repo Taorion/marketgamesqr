@@ -1,5 +1,5 @@
 const express = require("express");
-const { authRequired } = require("../middleware/auth");
+const { authRequired, requireRoles } = require("../middleware/auth");
 const {
   cacheBusinessResponse,
   invalidateBusinessResponseCache,
@@ -157,6 +157,7 @@ const {
 const {
   audience: communicationAudience,
   create: createCommunication,
+  detail: communicationDetail,
   remove: deleteCommunication,
   emailConnection: communicationEmailConnection,
   list: listCommunications,
@@ -262,6 +263,7 @@ router.post("/leads/:leadId/activations/:activationId/opened", markActivationOpe
 router.post("/leads/:leadId/whatsapp", registerLeadWhatsAppContact);
 
 router.use(requirePortalAccess);
+router.use("/communications", requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"));
 router.get("/communications/email-connection", communicationEmailConnection);
 router.patch("/communications/email-connection", saveCommunicationEmailConnection);
 router.post("/communications/email-connection/test", testCommunicationEmailConnection);
@@ -271,6 +273,7 @@ router.get("/communications/whatsapp-connection/templates", communicationWhatsAp
 router.post("/communications/whatsapp-connection/test", testCommunicationWhatsAppConnection);
 router.get("/communications/audience", shortBusinessCache, communicationAudience);
 router.get("/communications", standardBusinessCache, listCommunications);
+router.get("/communications/:id", communicationDetail);
 router.post("/communications", createCommunication);
 router.patch("/communications/:id", patchCommunication);
 router.delete("/communications/:id", deleteCommunication);

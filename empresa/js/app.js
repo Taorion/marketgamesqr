@@ -28958,6 +28958,7 @@ async function sendActivationShareEmail() {
       body: JSON.stringify({
         recipients: [{ source_id: recipient.id, source_type: sourceType }],
         consent_confirmed: true,
+        idempotency_key: crypto.randomUUID(),
       }),
     });
     const sent = Number(delivery?.results?.sent || 0);
@@ -58577,7 +58578,7 @@ async function emailRmsRiskRecoveryResource(item, root, button) {
     });
     const communicationId = created.communication?.id;
     if (!communicationId) throw new Error("No se pudo preparar el email.");
-    const delivery = await api(`/api/business/communications/${encodeURIComponent(communicationId)}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ recipients: [{ source_id: item.source_id, source_type: item.source_type || "PLAYER" }], consent_confirmed: true }) });
+    const delivery = await api(`/api/business/communications/${encodeURIComponent(communicationId)}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ recipients: [{ source_id: item.source_id, source_type: item.source_type || "PLAYER" }], consent_confirmed: true, idempotency_key: crypto.randomUUID() }) });
     if (!Number(delivery?.results?.sent || 0)) throw new Error(delivery?.results?.failure_reasons?.[0]?.message || "El email no pudo entregarse.");
     showFeedback("Beneficio enviado por email y registrado en Comunicaciones.", "success", { title: "Riesgos de fuga" });
   } finally {

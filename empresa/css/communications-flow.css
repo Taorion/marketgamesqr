@@ -34,6 +34,73 @@
   gap: clamp(34px, 4.8vw, 64px);
   padding-block: clamp(12px, 2vw, 28px) clamp(40px, 6vw, 84px);
 }
+
+/* Qori Communications Command Center · premium safety pass 2026-08-22 */
+.communication-command-strip {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(220px, .7fr) minmax(0, 2fr) auto;
+  gap: 18px;
+  align-items: center;
+  margin: 18px 0 22px;
+  padding: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(93, 230, 193, .22);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(70, 214, 198, .17), transparent 35%),
+    linear-gradient(135deg, rgba(8, 26, 43, .98), rgba(12, 39, 61, .94));
+  box-shadow: 0 22px 60px rgba(3, 13, 24, .22);
+}
+
+.communication-command-strip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, .04), transparent 68%);
+}
+
+.communication-command-title,
+.communication-command-grid,
+.communication-command-strip > button { position: relative; z-index: 1; }
+.communication-command-title { display: grid; gap: 5px; }
+.communication-command-title strong { color: #f5fbff; font-size: 1.05rem; }
+.communication-command-title p { margin: 0; color: #9db2c6; font-size: .78rem; line-height: 1.45; }
+.communication-command-grid { display: grid; grid-template-columns: repeat(4, minmax(125px, 1fr)); gap: 9px; }
+.communication-command-status {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 9px;
+  min-height: 84px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 17px;
+  background: rgba(255,255,255,.045);
+}
+.communication-command-status > .material-symbols-outlined { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: rgba(255,255,255,.08); color: #a8bfd3; font-size: 19px; }
+.communication-command-status div { min-width: 0; display: grid; align-content: start; gap: 2px; }
+.communication-command-status small { color: #8da5bb; font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; }
+.communication-command-status strong { color: #f6fbff; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.communication-command-status p { margin: 0; color: #9eb2c5; font-size: .68rem; line-height: 1.35; }
+.communication-command-status.is-ready { border-color: rgba(85,230,193,.26); background: rgba(44,183,154,.09); }
+.communication-command-status.is-ready > .material-symbols-outlined { color: #55e6c1; background: rgba(85,230,193,.13); }
+.communication-command-status.is-pending { border-color: rgba(255,184,92,.24); background: rgba(255,167,66,.075); }
+.communication-command-status.is-pending > .material-symbols-outlined { color: #ffc06b; background: rgba(255,184,92,.12); }
+.communication-command-status.is-metric > .material-symbols-outlined { color: #8bc9ff; background: rgba(70,154,230,.13); }
+.communication-command-strip-loading { display: flex; align-items: center; gap: 10px; color: #a9bfd1; }
+
+@media (max-width: 1180px) {
+  .communication-command-strip { grid-template-columns: 1fr; }
+  .communication-command-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .communication-command-strip > button { justify-self: start; }
+}
+
+@media (max-width: 640px) {
+  .communication-command-strip { padding: 17px; border-radius: 20px; }
+  .communication-command-grid { grid-template-columns: 1fr; }
+  .communication-command-status { min-height: 0; }
+}
 [data-view="communications"] .communication-view-head {
   margin: 0;
   padding-inline: clamp(22px, 4vw, 58px);
