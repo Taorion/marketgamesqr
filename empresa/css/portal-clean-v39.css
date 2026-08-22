@@ -30106,3 +30106,40 @@ html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[da
 html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-case-pager{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin-top:7px!important;padding-top:7px!important;border-top:1px solid #dceaf1!important}html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-case-pager small{color:#6a8395!important;font-size:.66rem!important;line-height:1.3!important}html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-case-pager>div{display:flex!important;gap:4px!important}.rms-intelligence-case-pager .icon-button{display:grid!important;place-items:center!important;width:29px!important;height:29px!important;min-height:29px!important;padding:0!important;border:1px solid #c9dfeb!important;border-radius:8px!important;background:#f5fbfe!important;color:#12649a!important}.rms-intelligence-case-pager .icon-button:disabled{opacity:.35!important;cursor:not-allowed!important}.rms-intelligence-case-pager .material-symbols-outlined{font-size:18px!important}
 html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-case-columns{grid-template-columns:1fr!important;gap:8px!important}.rms-intelligence-case-columns>section{padding:0!important;border:0!important;background:transparent!important}.rms-intelligence-case-disclosure{display:block!important;overflow:hidden!important;border:1px solid #d8e7ef!important;border-radius:13px!important;background:#fbfdff!important}.rms-intelligence-case-disclosure>summary{display:grid!important;grid-template-columns:minmax(0,1fr) auto auto!important;align-items:center!important;gap:10px!important;min-height:62px!important;padding:12px 14px!important;cursor:pointer!important;list-style:none!important}.rms-intelligence-case-disclosure>summary::-webkit-details-marker{display:none!important}.rms-intelligence-case-disclosure>summary>span:first-child{display:grid!important;gap:2px!important;min-width:0!important}.rms-intelligence-case-disclosure>summary strong{color:#164c80!important;font-size:.82rem!important}.rms-intelligence-case-disclosure>summary small{color:#698295!important;font-size:.7rem!important;line-height:1.35!important}.rms-intelligence-disclosure-count{display:grid!important;place-items:center!important;min-width:27px!important;height:24px!important;padding:0 6px!important;border-radius:999px!important;background:#e3f3fa!important;color:#126b99!important;font-size:.68rem!important;font-weight:900!important}.rms-intelligence-case-disclosure>summary>.material-symbols-outlined{color:#087fbd!important;transition:transform .16s ease!important}.rms-intelligence-case-disclosure[open]>summary{border-bottom:1px solid #dceaf1!important;background:#f2f9fd!important}.rms-intelligence-case-disclosure[open]>summary>.material-symbols-outlined{transform:rotate(180deg)!important}.rms-intelligence-case-disclosure>.rms-intelligence-timeline,.rms-intelligence-case-disclosure>.rms-intelligence-durations{margin:0!important;padding:4px 14px 14px!important;background:#fff!important}.rms-intelligence-case-disclosure>.rms-intelligence-timeline li:first-child{margin-top:8px!important}
 @media (max-width:620px){html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-case-pager{align-items:flex-start!important;flex-direction:column!important}.rms-intelligence-case-pager>div{align-self:flex-end!important}.rms-intelligence-case-disclosure>summary{grid-template-columns:minmax(0,1fr) auto!important}.rms-intelligence-case-disclosure>summary>.material-symbols-outlined{grid-column:2!important;grid-row:1!important}.rms-intelligence-disclosure-count{grid-column:2!important;grid-row:2!important;justify-self:end!important}}
+
+/* Control de calidad 1 v317: contraste final y separación inviolable de iconos. */
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-premium-head > div > h3,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-premium-head > div > p,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-trust-item > span:last-child {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-trust-item {
+  display: inline-grid !important;
+  grid-template-columns: 22px minmax(0, auto) !important;
+  align-items: center !important;
+  column-gap: 8px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-trust-item > .material-symbols-outlined {
+  display: grid !important;
+  place-items: center !important;
+  width: 22px !important;
+  min-width: 22px !important;
+  height: 22px !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  color: #75efd0 !important;
+  -webkit-text-fill-color: #75efd0 !important;
+  font-size: 18px !important;
+  line-height: 22px !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-trust-item {
+    grid-template-columns: 22px minmax(0, 1fr) !important;
+    width: 100% !important;
+  }
+}
