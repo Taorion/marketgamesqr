@@ -28,7 +28,7 @@ function resendDeliveryMessage(status, detail = "") {
   return "Resend rechazó el correo. Revisa la verificación del dominio remitente y la configuración de envío.";
 }
 
-async function sendBusinessCommunicationEmail({ apiKey, from, to, subject, text, html, replyTo, attachments = [], headers = {} }) {
+async function sendBusinessCommunicationEmail({ apiKey, from, to, subject, text, html, replyTo, attachments = [], headers = {}, idempotencyKey = "" }) {
   const resendApiKey = String(apiKey || env.resendApiKey || "").trim();
   if (!resendApiKey) {
     throw serviceUnavailable("Conecta tu cuenta de Resend en Cuenta > Correo masivo antes de enviar.");
@@ -44,6 +44,7 @@ async function sendBusinessCommunicationEmail({ apiKey, from, to, subject, text,
       Authorization: `Bearer ${resendApiKey}`,
       "Content-Type": "application/json",
       "User-Agent": "Qori-RMS/1.0",
+      ...(idempotencyKey ? { "Idempotency-Key": String(idempotencyKey).slice(0, 256) } : {}),
     },
     body: JSON.stringify({
       from,

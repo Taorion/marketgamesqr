@@ -1,4 +1,4 @@
-const { query } = require("../config/db");
+const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
 const { listLeadCrmRows } = require("./leadCrmService");
@@ -274,6 +274,15 @@ async function listAudience(businessId, filters = {}) {
   const contacts = normalizeAudience(result.leads || []);
   const pagination = result.pagination || { total: contacts.length, limit: contacts.length, offset: 0, has_more: false };
   return { contacts, returned: contacts.length, total: Number(pagination.total || contacts.length), pagination, capped: false };
+}
+
+async function listAudienceForSourceIds(businessId, sourceIds = []) {
+  const contacts = [];
+  for (let offset = 0; offset < sourceIds.length; offset += 120) {
+    const batch = await listAudience(businessId, { source_ids: sourceIds.slice(offset, offset + 120), limit: 120 });
+    contacts.push(...(batch.contacts || []));
+  }
+  return { contacts };
 }
 
 async function assertRelationBelongsToBusiness(businessId, payload) {
@@ -772,7 +781,7 @@ async function logLeadCommunication({ businessId, contact, communication, status
   );
 }
 
-async function sendBusinessCommunicationCore(businessId, userId, id, recipientRefs, consentConfirmed, connectedUserEmail = null) {
+async function sendBusinessCommunicationCore(businessId, userId, id, recipientRefs, consentConfirmed, connectedUserEmail = null, options = {}) {
   if (!consentConfirmed) throw badRequest("Confirma que los destinatarios aceptaron recibir esta comunicación antes de enviarla.");
   const found = await query("select * from business_communications where id = $1 and business_id = $2", [id, businessId]);
   if (!found.rowCount) throw notFound("Comunicación no encontrada.");
@@ -800,8 +809,9 @@ async function sendBusinessCommunicationCore(businessId, userId, id, recipientRe
   }
   const sourceIds = [...new Set(requestedRecipients.map((item) => item.source_id))];
   if (!sourceIds.length) throw badRequest("Selecciona al menos un contacto con el que comunicarte.");
-  if (sourceIds.length > 120) throw badRequest("Envía máximo 120 contactos por lote para mantener el control del envío.");
-  const audience = await listAudience(businessId, { source_ids: sourceIds });
+  const maximumRecipients = options.rmsActivationBulk ? 2000 : 120;
+  if (sourceIds.length > maximumRecipients) throw badRequest(`Envía máximo ${maximumRecipients} contactos por operación.`);
+  const audience = await listAudienceForSourceIds(businessId, sourceIds);
   const byId = new Map(audience.contacts.map((contact) => [contact.source_id, contact]));
   const byTypedId = new Map(audience.contacts.map((contact) => [`${String(contact.source_type || "").toUpperCase()}:${contact.source_id}`, contact]));
   const selected = requestedRecipients.map((recipient) => (
@@ -827,6 +837,9 @@ async function sendBusinessCommunicationCore(businessId, userId, id, recipientRe
     unique_emails: seenEmails.size,
     duplicate_emails: duplicateEmailRecipients.length,
     sent: 0,
+    accepted: 0,
+    pending_confirmation: 0,
+    delivered: 0,
     failed: 0,
     skipped: 0,
     opted_out: 0,
@@ -842,13 +855,24 @@ async function sendBusinessCommunicationCore(businessId, userId, id, recipientRe
       status: 'SKIPPED',
       errorMessage: 'Correo duplicado en la audiencia: se envió una sola copia a esta dirección.',
       userId,
-      metadata: consentMetadata,
+      metadata: { ...consentMetadata, delivery_status: "OMITTED", channel: "EMAIL", sender: sender.from, activation_id: communication.activation_id || null },
     });
     results.skipped += 1;
   }
-  for (const contact of recipientsForDelivery) {
-    if (!contact.email) {
-      await saveRecipient({ businessId, communicationId: id, contact, status: 'SKIPPED', errorMessage: 'Sin correo electrónico', userId, metadata: consentMetadata });
+  const existingRecipients = options.rmsActivationBulk ? await query(
+    `select source_type, source_id, status, metadata from business_communication_recipients where business_id = $1 and communication_id = $2`,
+    [businessId, id]
+  ) : { rows: [] };
+  const existingBySource = new Map(existingRecipients.rows.map((row) => [`${row.source_type}:${row.source_id}`, row]));
+  const deliveryBatches = [];
+  for (let offset = 0; offset < recipientsForDelivery.length; offset += 50) deliveryBatches.push(recipientsForDelivery.slice(offset, offset + 50));
+  for (const deliveryBatch of deliveryBatches) for (const contact of deliveryBatch) {
+    const normalizedEmail = normalizedRecipientEmail(contact.email);
+    const existingRecipient = existingBySource.get(`${contact.source_type}:${contact.source_id}`);
+    if (options.retryFailedOnly && existingRecipient?.status !== "FAILED") continue;
+    if (!options.retryFailedOnly && existingRecipient && ["SENT", "PREPARED"].includes(existingRecipient.status)) continue;
+    if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      await saveRecipient({ businessId, communicationId: id, contact, status: 'SKIPPED', errorMessage: contact.email ? 'Correo electrónico inválido' : 'Sin correo electrónico', userId, metadata: { ...consentMetadata, delivery_status: "OMITTED", channel: "EMAIL", sender: sender.from, activation_id: communication.activation_id || null } });
       results.skipped += 1;
       continue;
     }
@@ -881,12 +905,15 @@ async function sendBusinessCommunicationCore(businessId, userId, id, recipientRe
         html: buildEmailMarkup({ title: subject, body: message, hasInlineImage: Boolean(imageAttachments.length), actionUrl, unsubscribeUrl, brandName: sender.brandName }),
         attachments,
         headers: unsubscribeUrl ? { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } : {},
+        idempotencyKey: options.idempotencyKey ? `${options.idempotencyKey}:${normalizedEmail}` : "",
       });
-      await saveRecipient({ businessId, communicationId: id, contact, status: 'SENT', providerMessageId: provider.id, userId, metadata: { ...consentMetadata, unsubscribe_token: preference?.unsubscribe_token || null } });
+      await saveRecipient({ businessId, communicationId: id, contact, status: 'SENT', providerMessageId: provider.id, userId, metadata: { ...consentMetadata, unsubscribe_token: preference?.unsubscribe_token || null, channel: "EMAIL", delivery_status: "PENDING_CONFIRMATION", accepted_at: new Date().toISOString(), sender: sender.from, activation_id: communication.activation_id || null } });
       await logLeadCommunication({ businessId, contact, communication, status: 'SENT', message, userId });
       results.sent += 1;
+      results.accepted += 1;
+      results.pending_confirmation += 1;
     } catch (error) {
-      await saveRecipient({ businessId, communicationId: id, contact, status: 'FAILED', errorMessage: error.message, userId, metadata: consentMetadata });
+      await saveRecipient({ businessId, communicationId: id, contact, status: 'FAILED', errorMessage: error.message, userId, metadata: { ...consentMetadata, delivery_status: "FAILED", channel: "EMAIL", sender: sender.from, activation_id: communication.activation_id || null } });
       await logLeadCommunication({ businessId, contact, communication, status: 'FAILED', message, errorMessage: error.message, userId });
       results.failed += 1;
       const reason = String(error.publicMessage || "No se pudo entregar el correo. Revisa la configuración del envío.").slice(0, 280);
@@ -900,17 +927,116 @@ async function sendBusinessCommunicationCore(businessId, userId, id, recipientRe
   return { results };
 }
 
-async function sendBusinessCommunication(businessId, userId, id, recipientRefs, consentConfirmed, connectedUserEmail = null, idempotencyKey) {
+async function sendBusinessCommunication(businessId, userId, id, recipientRefs, consentConfirmed, connectedUserEmail = null, idempotencyKeyOrOptions) {
+  const options = idempotencyKeyOrOptions && typeof idempotencyKeyOrOptions === "object"
+    ? idempotencyKeyOrOptions
+    : { idempotencyKey: idempotencyKeyOrOptions };
+  const idempotencyKey = options.idempotencyKey;
   const dispatch = await beginCommunicationDispatch({ businessId, communicationId: id, idempotencyKey, channel: "EMAIL", userId, recipientCount: recipientRefs?.length || 0 });
   if (dispatch.replay) return dispatch.replay;
   try {
-    const response = await sendBusinessCommunicationCore(businessId, userId, id, recipientRefs, consentConfirmed, connectedUserEmail);
+    const response = await sendBusinessCommunicationCore(businessId, userId, id, recipientRefs, consentConfirmed, connectedUserEmail, options);
     await completeCommunicationDispatch(dispatch.dispatchId, response);
     return response;
   } catch (error) {
     await failCommunicationDispatch(dispatch.dispatchId, error);
     throw error;
   }
+}
+
+async function rmsActivationDispatchSummary(businessId, communicationId) {
+  const result = await query(
+    `select count(*) filter (where status = 'SENT')::int as accepted,
+            count(*) filter (where status = 'SENT' and metadata->>'delivery_status' = 'PENDING_CONFIRMATION')::int as pending_confirmation,
+            count(*) filter (where metadata->>'delivery_status' = 'DELIVERED')::int as delivered,
+            count(*) filter (where status = 'FAILED')::int as failed,
+            count(*) filter (where status = 'SKIPPED')::int as skipped
+       from business_communication_recipients
+      where business_id = $1 and communication_id = $2`,
+    [businessId, communicationId]
+  );
+  return {
+    communication_id: communicationId,
+    accepted: Number(result.rows[0]?.accepted || 0),
+    pending_confirmation: Number(result.rows[0]?.pending_confirmation || 0),
+    delivered: Number(result.rows[0]?.delivered || 0),
+    failed: Number(result.rows[0]?.failed || 0),
+    skipped: Number(result.rows[0]?.skipped || 0),
+  };
+}
+
+async function getRmsActivationEmailSummary(businessId) {
+  const result = await query(
+    `select count(*) filter (where r.status = 'SENT')::int as accepted,
+            count(*) filter (where r.status = 'SENT' and r.metadata->>'delivery_status' = 'PENDING_CONFIRMATION')::int as pending_confirmation,
+            count(*) filter (where r.metadata->>'delivery_status' = 'DELIVERED')::int as delivered,
+            count(*) filter (where r.status = 'FAILED')::int as failed,
+            count(*) filter (where r.status = 'SKIPPED')::int as skipped
+       from business_communication_recipients r
+       join business_communications c on c.id = r.communication_id and c.business_id = r.business_id and c.metadata->>'source_module' = 'rms_activation_1'
+       join rms_lead_state s on s.business_id = r.business_id and s.source_type = r.source_type and s.source_id = r.source_id and s.rms_phase = 'clasificacion'
+      where r.business_id = $1`,
+    [businessId]
+  );
+  return {
+    accepted: Number(result.rows[0]?.accepted || 0), pending_confirmation: Number(result.rows[0]?.pending_confirmation || 0),
+    delivered: Number(result.rows[0]?.delivered || 0), failed: Number(result.rows[0]?.failed || 0), skipped: Number(result.rows[0]?.skipped || 0),
+  };
+}
+
+async function sendRmsActivationBulkEmail(businessId, userId, payload, connectedUserEmail = null) {
+  const activation = await query(
+    `select id, title, campaign_id from interactive_activations where id = $1 and company_id = $2 and status = 'active'`,
+    [payload.activation_id, businessId]
+  );
+  if (!activation.rowCount) throw badRequest("Selecciona una activación activa que pertenezca a este negocio.");
+  const connection = await getEmailConnectionStatus(businessId);
+  const missing = [];
+  if (!connection.sender_name) missing.push("Nombre del remitente");
+  if (!connection.sender_email) missing.push("Correo remitente");
+  if (!connection.api_key_configured) missing.push("Conexión de Resend");
+  if (!connection.sender_verified) missing.push("Dominio remitente verificado");
+  if (missing.length) {
+    throw badRequest(`No se puede realizar el envío colectivo porque Resend no está configurado para este negocio.\n\nFalta configurar:\n${missing.map((item) => `• ${item}`).join("\n")}\n\nConfigura y prueba el remitente en Cuenta > Correo masivo y vuelve a intentarlo.`);
+  }
+  const sender = await businessCommunicationSender(businessId, connectedUserEmail);
+  const recipientRefs = payload.recipients || [];
+  if (!recipientRefs.length) throw badRequest("Selecciona al menos un lead con correo válido.");
+  const audiencePreview = await listAudienceForSourceIds(businessId, [...new Set(recipientRefs.map((item) => item.source_id))]);
+  if (!audiencePreview.contacts.some((contact) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedRecipientEmail(contact.email)))) {
+    throw badRequest("Selecciona al menos un lead con correo válido.");
+  }
+  let communication;
+  let reused = false;
+  if (payload.retry_failed_only) {
+    const found = await query(`select * from business_communications where id = $1 and business_id = $2 and activation_id = $3 and metadata->>'source_module' = 'rms_activation_1'`, [payload.communication_id, businessId, payload.activation_id]);
+    if (!found.rowCount) throw notFound("No se encontró el envío de Activación 1 que quieres reintentar.");
+    communication = found.rows[0];
+  } else {
+    const ensured = await withTransaction(async (client) => {
+      await client.query("select pg_advisory_xact_lock(hashtext($1))", [`rms-activation-email:${businessId}:${payload.idempotency_key}`]);
+      const existing = await client.query(`select * from business_communications where business_id = $1 and metadata->>'rms_idempotency_key' = $2 limit 1`, [businessId, payload.idempotency_key]);
+      if (existing.rowCount) return { communication: existing.rows[0], reused: true };
+      const created = await client.query(
+        `insert into business_communications (business_id, title, communication_type, status, campaign_id, activation_id, subject, email_body, action_url, audience_filters, metadata, created_by, updated_by)
+         values ($1,$2,'EMAIL','READY',$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10,$10) returning *`,
+        [businessId, `RMS Activación 1 · ${activation.rows[0].title}`, activation.rows[0].campaign_id || null, activation.rows[0].id, payload.subject, payload.message, payload.action_url || null, JSON.stringify({ source: "rms_activation_1", recipients: recipientRefs }), JSON.stringify({ source_module: "rms_activation_1", rms_idempotency_key: payload.idempotency_key }), userId]
+      );
+      return { communication: created.rows[0], reused: false };
+    });
+    communication = ensured.communication;
+    reused = ensured.reused;
+  }
+  const sent = await sendBusinessCommunication(businessId, userId, communication.id, recipientRefs, true, connectedUserEmail, {
+    rmsActivationBulk: true,
+    retryFailedOnly: Boolean(payload.retry_failed_only),
+    idempotencyKey: payload.idempotency_key,
+  });
+  return {
+    idempotent_replay: reused,
+    results: { ...(await rmsActivationDispatchSummary(businessId, communication.id)), attempted: sent.results.attempted, failure_reasons: sent.results.failure_reasons },
+    station_summary: await getRmsActivationEmailSummary(businessId),
+  };
 }
 
 function normalizedWhatsAppPhone(value) {
@@ -1138,6 +1264,10 @@ async function sendEmailConnectionTest(businessId, userEmail, recipientEmail) {
       brandName: sender.brandName,
     }),
   });
+  await query(
+    `update businesses set settings = coalesce(settings, '{}'::jsonb) || jsonb_build_object('communication_sender_verified_email', $2::text, 'communication_sender_verified_at', now()::text), updated_at = now() where id = $1`,
+    [businessId, normalizedRecipientEmail(sender.from.match(/<([^>]+)>/)?.[1] || "")]
+  );
   return { ok: true, provider_message_id: provider.id || null, recipient_email: recipient };
 }
 
@@ -1158,6 +1288,7 @@ module.exports = {
   deleteBusinessCommunication,
   getBusinessCommunication,
   getEmailConnectionStatus,
+  getRmsActivationEmailSummary,
   getWhatsAppConnectionStatus,
   listAudience,
   listBusinessCommunications,
@@ -1166,6 +1297,7 @@ module.exports = {
   listBusinessCommunicationWhatsAppQueue,
   markBusinessCommunicationWhatsAppOpened,
   sendBusinessCommunication,
+  sendRmsActivationBulkEmail,
   sendBusinessCommunicationWhatsApp,
   saveEmailConnection,
   saveWhatsAppConnection,

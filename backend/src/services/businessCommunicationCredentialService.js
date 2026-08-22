@@ -69,6 +69,8 @@ async function getEmailConnectionStatus(businessId) {
     provider: "RESEND",
     sender_name: connection.sender_name,
     sender_email: connection.sender_email,
+    sender_verified: (connection.is_internal_marketgames && connection.sender_email === MARKETGAMES_SENDER_EMAIL && Boolean(env.resendApiKey)) || normalizeEmail(connection.business.settings?.communication_sender_verified_email) === connection.sender_email,
+    sender_verified_at: connection.business.settings?.communication_sender_verified_at || null,
     api_key_configured: connection.has_own_resend_key || (connection.is_internal_marketgames && Boolean(env.resendApiKey)),
     using_platform_sender: connection.is_internal_marketgames && !connection.has_own_resend_key,
     ready: Boolean(connection.sender_email && (connection.has_own_resend_key || (connection.is_internal_marketgames && env.resendApiKey))),
@@ -78,12 +80,16 @@ async function getEmailConnectionStatus(businessId) {
 async function saveEmailConnection(businessId, payload) {
   const connection = await emailConnectionForBusiness(businessId);
   const requestedSender = normalizeEmail(payload.sender_email);
+  const credentialChanged = Boolean(payload.remove_api_key || payload.resend_api_key);
+  const keepsVerifiedSender = !credentialChanged && normalizeEmail(connection.business.settings?.communication_sender_verified_email) === requestedSender;
   if (usesMarketGamesDomain(requestedSender) && !connection.is_internal_marketgames) {
     throw badRequest("El remitente @marketgamesqr.com está reservado para la cuenta interna de MarketGames. Configura un correo verificado de tu propio dominio.");
   }
   const patch = {
     communication_sender_name: String(payload.sender_name || connection.sender_name || connection.business.name || "").trim() || null,
     communication_sender_email: requestedSender,
+    communication_sender_verified_email: keepsVerifiedSender ? requestedSender : "",
+    communication_sender_verified_at: keepsVerifiedSender ? connection.business.settings?.communication_sender_verified_at || "" : "",
   };
   if (payload.remove_api_key) {
     patch.communication_resend_api_key_ciphertext = null;

@@ -109,6 +109,7 @@ const {
   updateAgendaItem,
 } = require("../controllers/leadCrmController");
 const {
+  activationEmailSummary: rmsActivationEmailSummary,
   createAgendaTask: createRmsAgendaTask,
   dailyQueue: rmsDailyQueue,
   events: rmsEvents,
@@ -125,6 +126,7 @@ const {
   unconvertedCost: rmsUnconvertedCost,
   movePhase: moveRmsPhase,
   recordActivationDeliveryAction,
+  sendActivationBulkEmail: sendRmsActivationBulkEmail,
   recordAttributedSale: rmsRecordAttributedSale,
   recordCommercialConfirmation,
   recordEvaluationResponse: rmsRecordEvaluationResponse,
@@ -225,6 +227,8 @@ router.post("/rms-machine/intelligence/agenda-task", rmsCreateInsightAgendaTask)
 router.post("/rms-machine/actions/create-task", createRmsAgendaTask);
 router.post("/rms-machine/action", executeRmsAction);
 router.post("/rms-machine/activation-delivery", recordActivationDeliveryAction);
+router.get("/rms-machine/activation-email/summary", rmsActivationEmailSummary);
+router.post("/rms-machine/activation-email/bulk-send", sendRmsActivationBulkEmail);
 router.post("/rms-machine/evaluation-response", rmsRecordEvaluationResponse);
 router.post("/rms-machine/commercial-confirmation", recordCommercialConfirmation);
 router.post("/rms-machine/negotiation-result", recordNegotiationResult);

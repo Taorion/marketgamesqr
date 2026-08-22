@@ -25,6 +25,7 @@ const {
   updateRmsRecyclingCase,
   rmsMetrics,
 } = require("../services/rmsMachineService");
+const { getRmsActivationEmailSummary, sendRmsActivationBulkEmail } = require("../services/businessCommunicationService");
 const {
   createIntelligenceAgendaTask,
   intelligencePatterns,
@@ -98,6 +99,22 @@ const activationDeliverySchema = z.object({
   delivery_state: z.enum(["PREPARED", "SENT"]).optional().default("PREPARED"),
   contacted_at: z.string().datetime().optional().nullable(),
   contact_consent_confirmed: z.boolean(),
+});
+
+const activationBulkEmailSchema = z.object({
+  activation_id: z.string().uuid(),
+  subject: z.string().trim().min(2).max(220),
+  message: z.string().trim().min(2).max(12000),
+  action_url: z.string().trim().url().max(1800).optional().nullable(),
+  recipients: z.array(z.object({
+    source_id: z.string().uuid(),
+    source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
+  })).min(1).max(2000),
+  idempotency_key: z.string().trim().min(8).max(180),
+  retry_failed_only: z.boolean().optional().default(false),
+  communication_id: z.string().uuid().optional().nullable(),
+}).superRefine((body, ctx) => {
+  if (body.retry_failed_only && !body.communication_id) ctx.addIssue({ code: "custom", path: ["communication_id"], message: "Falta el envío que quieres reintentar." });
 });
 
 const evaluationResponseSchema = z.preprocess((value) => {
@@ -433,6 +450,23 @@ async function recordActivationDeliveryAction(req, res, next) {
   }
 }
 
+async function sendActivationBulkEmail(req, res, next) {
+  try {
+    const body = validate(activationBulkEmailSchema, req.body);
+    res.json(await sendRmsActivationBulkEmail(businessIdFor(req), req.user.id, body, req.user.email));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function activationEmailSummary(req, res, next) {
+  try {
+    res.json({ summary: await getRmsActivationEmailSummary(businessIdFor(req)) });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function recordEvaluationResponse(req, res, next) {
   try {
     const body = validate(evaluationResponseSchema, req.body);
@@ -620,6 +654,7 @@ async function createInsightAgendaTask(req, res, next) {
 }
 
 module.exports = {
+  activationEmailSummary,
   createAgendaTask,
   dailyQueue,
   events,
@@ -637,6 +672,7 @@ module.exports = {
   movePhase,
   publicAttachmentDownload,
   recordActivationDeliveryAction,
+  sendActivationBulkEmail,
   recordAttributedSale,
   postSaleActions,
   recordPostSaleAction,
