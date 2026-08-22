@@ -995,7 +995,6 @@ async function sendRmsActivationBulkEmail(businessId, userId, payload, connected
   if (!connection.sender_name) missing.push("Nombre del remitente");
   if (!connection.sender_email) missing.push("Correo remitente");
   if (!connection.api_key_configured) missing.push("Conexión de Resend");
-  if (!connection.sender_verified) missing.push("Dominio remitente verificado");
   if (missing.length) {
     throw badRequest(`No se puede realizar el envío colectivo porque Resend no está configurado para este negocio.\n\nFalta configurar:\n${missing.map((item) => `• ${item}`).join("\n")}\n\nConfigura y prueba el remitente en Cuenta > Correo masivo y vuelve a intentarlo.`);
   }

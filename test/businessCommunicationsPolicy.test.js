@@ -52,3 +52,13 @@ test("communications audience stays operable without a page-length contact list"
   assert.match(frontend, /communication-readiness/);
   assert.match(frontend, /Seleccionar \$\{audienceChannel === "whatsapp"/);
 });
+
+test("RMS activation email uses the same working Resend configuration as Communications", () => {
+  const service = read("backend/src/services/businessCommunicationService.js");
+  const start = service.indexOf("async function sendRmsActivationBulkEmail");
+  const end = service.indexOf("function normalizedWhatsAppPhone", start);
+  const rmsActivationSend = service.slice(start, end);
+  assert.match(rmsActivationSend, /connection\.api_key_configured/);
+  assert.doesNotMatch(rmsActivationSend, /connection\.sender_verified/);
+  assert.match(service, /sendBusinessCommunicationEmail/);
+});
