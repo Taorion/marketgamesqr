@@ -1675,7 +1675,14 @@ html body[data-current-view="communications"] .portal-shell .communication-histo
 }
 
 html body[data-current-view="communications"] .portal-shell .communication-list-item.communication-history-item {
+  grid-template-columns: 26px 36px minmax(0, 1fr) minmax(112px, auto) !important;
   cursor: pointer;
+}
+
+html body[data-current-view="communications"] .portal-shell .communication-history-item > .communication-history-select,
+html body[data-current-view="communications"] .portal-shell .communication-history-item > .communication-history-icon {
+  align-self: start;
+  margin-top: 2px;
 }
 
 html body[data-current-view="communications"] .portal-shell .communication-list-item.communication-history-item.is-selected {
@@ -1808,6 +1815,33 @@ html body[data-current-view="communications"] .portal-shell .communication-selec
 
   html body[data-current-view="communications"] .portal-shell .communication-history-results {
     max-height: 560px;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-list-item.communication-history-item {
+    grid-template-columns: 24px 34px minmax(0, 1fr) !important;
+    gap: 8px !important;
+    padding: 14px 12px !important;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-copy {
+    grid-column: 3;
+    min-width: 0;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-copy > strong {
+    white-space: normal;
+  }
+
+  html body[data-current-view="communications"] .portal-shell .communication-history-item .communication-list-item-meta {
+    grid-column: 3 !important;
+    grid-row: 2 !important;
+    display: flex;
+    flex-wrap: wrap;
+    min-width: 0 !important;
+    padding: 8px 0 0 !important;
+    border-top: 1px solid rgba(11, 88, 165, .1);
+    border-left: 0 !important;
+    text-align: left;
   }
 
   html body[data-current-view="communications"] .portal-shell .communication-selected-summary {
