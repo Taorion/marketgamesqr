@@ -18703,6 +18703,12 @@ function updateGamingPublishedFilters() {
   const status = state.gamingActivationStatusFilter || "all";
   let visible = 0;
   const rows = Array.from(triviaLauncherTable.querySelectorAll("[data-gaming-published-activation]"));
+  const statusCounts = rows.reduce((counts, row) => {
+    const key = row.dataset.gamingActivationStatus || "draft";
+    counts.all += 1;
+    counts[key] = Number(counts[key] || 0) + 1;
+    return counts;
+  }, { all: 0 });
   rows.forEach((row) => {
     const matchesSearch = !query || String(row.dataset.gamingActivationSearch || row.textContent || "").toLowerCase().includes(query);
     const matchesStatus = status === "all" || row.dataset.gamingActivationStatus === status;
@@ -18712,7 +18718,23 @@ function updateGamingPublishedFilters() {
   });
   const count = document.querySelector("[data-gaming-published-count]");
   if (count) count.textContent = `${visible} de ${rows.length} activaciones`;
+  document.querySelectorAll("[data-activation-status-count]").forEach((element) => {
+    element.textContent = Number(statusCounts[element.dataset.activationStatusCount] || 0).toLocaleString("es-CO");
+  });
+  document.querySelectorAll("[data-gaming-published-status-pill]").forEach((button) => {
+    const active = button.dataset.gamingPublishedStatusPill === status;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
   document.querySelector("[data-gaming-published-empty]")?.classList.toggle("hidden", visible > 0 || rows.length === 0);
+  const visibleIds = activationBulkVisibleIds();
+  const selectedIds = new Set(activationBulkIds());
+  const selectVisible = document.getElementById("activationBulkSelectVisible");
+  if (selectVisible) {
+    selectVisible.checked = Boolean(visibleIds.length) && visibleIds.every((id) => selectedIds.has(id));
+    selectVisible.indeterminate = visibleIds.some((id) => selectedIds.has(id)) && !selectVisible.checked;
+  }
+  renderActivationBulkToolbar();
 }
 
 function updateGamingCenterCreationTools() {
@@ -18754,34 +18776,24 @@ function ensureGamingCenterUx() {
   if (!view || !menu) return;
   state.ticketCenterTab = "trivia";
   ensureGamingCenterUxStyles();
-  if (!view.querySelector(".gaming-center-command-center") && !view.querySelector(":scope > .view-head")) {
+  if (!view.querySelector(".gaming-center-command-center")) {
     const gamingViewHead = view.querySelector(":scope > .view-head");
     (gamingViewHead || strategicQrKpiGrid)?.insertAdjacentHTML("afterend", `
-      <section class="gaming-center-command-center" aria-label="Acciones rápidas del Gaming Center">
+      <section class="gaming-center-command-center activation-premium-command" aria-label="Centro de operación de Activaciones">
         <div class="gaming-center-command-copy">
-          <span class="mono-label">Activaciones</span>
-          <h3>Activaciones creadas</h3>
-          <p>Consulta lo creado en una lista simple y abre el detalle para ver rendimiento, campaña, canal y leads.</p>
+          <span class="mono-label">Centro de operación</span>
+          <h3>Diseña, activa y aprende</h3>
+          <p>Empieza con una receta, publica la experiencia y usa la evidencia para decidir la siguiente acción comercial.</p>
         </div>
         <div class="gaming-center-quick-actions">
-          <button class="gaming-center-quick-action" type="button" data-gaming-center-action="create-activation"><span class="material-symbols-outlined">add_circle</span><span><strong>Crear activación</strong><small>Abre el configurador paso a paso.</small></span></button>
-          <button class="gaming-center-quick-action" type="button" data-gaming-center-action="published-activations"><span class="material-symbols-outlined">list_alt</span><span><strong>Ver activaciones</strong><small>Lista creada, rendimiento y estado.</small></span></button>
+          <button class="gaming-center-quick-action is-primary" type="button" data-gaming-center-action="create-activation"><span class="material-symbols-outlined">add_circle</span><span><strong>Nueva activación</strong><small>Constructor guiado en cinco pasos.</small></span><span class="material-symbols-outlined activation-command-arrow">arrow_forward</span></button>
+          <button class="gaming-center-quick-action" type="button" data-gaming-center-action="published-activations"><span class="material-symbols-outlined">query_stats</span><span><strong>Biblioteca y resultados</strong><small>Estado, leads, tickets y conversión.</small></span><span class="material-symbols-outlined activation-command-arrow">arrow_downward</span></button>
         </div>
       </section>
     `);
   }
-  if (!view.querySelector(".gaming-center-nav-heading")) {
-    menu.insertAdjacentHTML("beforebegin", '<div class="gaming-center-nav-heading"><div><span class="mono-label">Centro de control</span><h3>Opera, mide y optimiza</h3></div><p>Las herramientas están organizadas según la decisión que necesitas tomar.</p></div>');
-  }
-  if (!view.querySelector(".gaming-center-advanced-nav")) {
-    const heading = view.querySelector(".gaming-center-nav-heading");
-    const advanced = document.createElement("details");
-    advanced.className = "gaming-center-advanced-nav";
-    advanced.innerHTML = '<summary><span class="material-symbols-outlined">monitoring</span><span>Métricas y control avanzado</span><span class="material-symbols-outlined">expand_more</span></summary>';
-    heading?.parentElement?.insertBefore(advanced, heading);
-    if (heading) advanced.appendChild(heading);
-    advanced.appendChild(menu);
-  }
+  menu.hidden = true;
+  menu.setAttribute("aria-hidden", "true");
   const tabShortLabels = {
     center: "Crear y emitir", trivia: "Diseñar y publicar", flow: "Seguir recorrido", loop: "Generar retorno", revenue: "Medir ventas",
     channels: "Comparar origen", branches: "Comparar tiendas", sellers: "Acompañar equipo", shield: "Controlar riesgo", next: "Elegir acción",
@@ -18898,9 +18910,18 @@ function ensureGamingCenterUx() {
     `);
     publishedCard.querySelector(".table-card-head")?.insertAdjacentHTML("afterend", `
       <div class="gaming-published-toolbar">
-        <label><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" data-gaming-published-search placeholder="Buscar por nombre, campaña o tipo" aria-label="Buscar activaciones publicadas"></label>
-        <select data-gaming-published-status aria-label="Filtrar activaciones por estado"><option value="all">Todos los estados</option><option value="active">Activas</option><option value="paused">Pausadas</option><option value="draft">Borradores</option><option value="closed">Cerradas</option><option value="archived">Archivadas</option></select>
-        <strong data-gaming-published-count>0 activaciones</strong>
+        <div class="gaming-published-toolbar-main">
+          <label><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" data-gaming-published-search placeholder="Buscar por nombre, campaña o tipo" aria-label="Buscar activaciones publicadas"></label>
+          <select data-gaming-published-status aria-label="Filtrar activaciones por estado"><option value="all">Todos los estados</option><option value="active">Activas</option><option value="paused">Pausadas</option><option value="draft">Borradores</option><option value="closed">Cerradas</option><option value="archived">Archivadas</option></select>
+          <strong data-gaming-published-count>0 activaciones</strong>
+        </div>
+        <div class="gaming-published-status-pills" role="group" aria-label="Vista rápida por estado">
+          <button class="is-active" type="button" data-gaming-published-status-pill="all">Todas <b data-activation-status-count="all">0</b></button>
+          <button type="button" data-gaming-published-status-pill="active">Activas <b data-activation-status-count="active">0</b></button>
+          <button type="button" data-gaming-published-status-pill="draft">Borradores <b data-activation-status-count="draft">0</b></button>
+          <button type="button" data-gaming-published-status-pill="paused">Pausadas <b data-activation-status-count="paused">0</b></button>
+          <button type="button" data-gaming-published-status-pill="archived">Archivadas <b data-activation-status-count="archived">0</b></button>
+        </div>
       </div>
     `);
     publishedCard.querySelector(".table-wrap")?.insertAdjacentHTML("afterend", '<div class="gaming-published-empty hidden" data-gaming-published-empty><strong>No hay activaciones con estos filtros.</strong><br><small>Cambia la búsqueda o vuelve a todos los estados.</small></div>');
@@ -18924,6 +18945,15 @@ function ensureGamingCenterUx() {
       if (action) {
         event.preventDefault();
         runGamingCenterAction(action);
+        return;
+      }
+      const publishedStatus = event.target.closest("[data-gaming-published-status-pill]")?.dataset.gamingPublishedStatusPill;
+      if (publishedStatus) {
+        event.preventDefault();
+        state.gamingActivationStatusFilter = publishedStatus;
+        const select = view.querySelector("[data-gaming-published-status]");
+        if (select) select.value = publishedStatus;
+        updateGamingPublishedFilters();
         return;
       }
       const anchor = event.target.closest("[data-gaming-builder-anchor]")?.dataset.gamingBuilderAnchor;
@@ -28343,9 +28373,20 @@ function activationBulkIds() {
   return Array.from(new Set(state.triviaLauncherBulkSelection || []));
 }
 
+function activationBulkVisibleIds() {
+  const query = String(state.gamingActivationSearchPublished || "").trim().toLowerCase();
+  const status = state.gamingActivationStatusFilter || "all";
+  return (state.triviaLaunchers || [])
+    .filter((item) => {
+      const search = [item.title, activationTypeLabel(item.activation_type), item.campaign_name, item.public_slug].filter(Boolean).join(" ").toLowerCase();
+      return (!query || search.includes(query)) && (status === "all" || item.status === status);
+    })
+    .map((item) => String(item.id));
+}
+
 function renderActivationBulkToolbar() {
   const toolbar = document.getElementById("activationBulkToolbar");
-  const visibleIds = (state.triviaLaunchers || []).map((item) => String(item.id));
+  const visibleIds = activationBulkVisibleIds();
   const selected = activationBulkIds().filter((id) => visibleIds.includes(String(id)));
   state.triviaLauncherBulkSelection = selected;
   if (!toolbar) return;
@@ -28406,54 +28447,86 @@ async function deleteInteractiveActivationsBulk() {
   showFeedback(`${completed.length} activaci\u00f3n(es) eliminadas o archivadas${failed ? `. ${failed} no se pudieron procesar.` : "."}`, failed ? "info" : "success", { title: "Operaci\u00f3n masiva" });
 }
 
+function activationCountLabel(value, singular, plural) {
+  return Number(value || 0) === 1 ? singular : plural;
+}
+
+function activationTypeVisualMeta(type = "") {
+  const normalized = String(type || "").toUpperCase();
+  if (/SCRATCH|SPIN|ROULETTE|REWARD|BENEFIT|LUCK|DOOR|REVEAL/.test(normalized)) return { icon: "redeem", tone: "reward" };
+  if (/SURVEY|QUESTION|TRIVIA|QUIZ|DIAGNOSTIC|VOTE|TRUE_FALSE|ORDER_OPTIONS/.test(normalized)) return { icon: "quiz", tone: "insight" };
+  if (/STORE|CHECK|PURCHASE|INVOICE|BRANCH|TIME_BASED/.test(normalized)) return { icon: "storefront", tone: "store" };
+  if (/REFERRAL|RECOMMENDATION|GROUP|DOUBLE_PASS|ALLIANCE/.test(normalized)) return { icon: "diversity_3", tone: "network" };
+  if (/WAITLIST|PRESALE|QUOTE|APPOINTMENT|RECOVERY|RESERVATION|VIP|PREMIUM/.test(normalized)) return { icon: "workspace_premium", tone: "premium" };
+  if (/SPACE|BREAKOUT|SNAKE|CATCH|MEMORY|TAP|MAZE|WHACK|RUNNER|BALLOON|TOUCH|BATTLESHIP|CONNECTORS/.test(normalized)) return { icon: "sports_esports", tone: "game" };
+  return { icon: "bolt", tone: "default" };
+}
+
+function renderActivationPremiumMetrics() {
+  if (!strategicQrKpiGrid) return;
+  const activations = state.triviaLaunchers || [];
+  const active = activations.filter((item) => item.status === "active").length;
+  const drafts = activations.filter((item) => ["draft", "paused"].includes(item.status)).length;
+  const leads = activations.reduce((total, item) => total + Number(item.attempts_count || 0), 0);
+  const tickets = activations.reduce((total, item) => total + Number(item.winners_count || 0), 0);
+  const rate = leads ? (tickets / leads) * 100 : 0;
+  strategicQrKpiGrid.classList.add("activation-premium-kpi-grid");
+  strategicQrKpiGrid.innerHTML = `
+    <article class="activation-premium-kpi is-live"><span class="material-symbols-outlined" aria-hidden="true">bolt</span><div><small>Activas ahora</small><strong>${active.toLocaleString("es-CO")}</strong><p>Listas para recibir participaciones</p></div></article>
+    <article class="activation-premium-kpi"><span class="material-symbols-outlined" aria-hidden="true">group</span><div><small>Leads capturados</small><strong>${leads.toLocaleString("es-CO")}</strong><p>${activationCountLabel(leads, "Persona registrada", "Personas registradas")}</p></div></article>
+    <article class="activation-premium-kpi"><span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span><div><small>Tickets generados</small><strong>${tickets.toLocaleString("es-CO")}</strong><p>Beneficios entregados</p></div></article>
+    <article class="activation-premium-kpi is-conversion"><span class="material-symbols-outlined" aria-hidden="true">trending_up</span><div><small>Conversión global</small><strong>${rate.toFixed(1)}%</strong><p>Tickets sobre participaciones</p></div></article>
+    <article class="activation-premium-kpi ${drafts ? "is-attention" : ""}"><span class="material-symbols-outlined" aria-hidden="true">pending_actions</span><div><small>Por completar</small><strong>${drafts.toLocaleString("es-CO")}</strong><p>Borradores o pausadas</p></div></article>
+  `;
+}
+
 function renderTriviaLaunchers() {
   if (!triviaLauncherTable) return;
   const selectedIds = new Set(activationBulkIds());
   triviaLauncherTable.innerHTML = (state.triviaLaunchers || []).length
     ? state.triviaLaunchers.map((item) => {
-      const attemptsCount = Number(item.attempts_count || 0).toLocaleString("es-CO");
-      const winnersCount = Number(item.winners_count || 0).toLocaleString("es-CO");
+      const attemptsValue = Number(item.attempts_count || 0);
+      const winnersValue = Number(item.winners_count || 0);
+      const attemptsCount = attemptsValue.toLocaleString("es-CO");
+      const winnersCount = winnersValue.toLocaleString("es-CO");
       const rate = activationPerformanceRate(item).toFixed(1);
+      const visual = activationTypeVisualMeta(item.activation_type);
+      const archived = item.status === "archived";
+      const shareable = activationIsUsable(item);
       return `
       <tr class="gaming-activation-list-row ${selectedIds.has(String(item.id)) ? "is-bulk-selected" : ""}" data-open-activation-detail="${escapeHtml(item.id)}" data-gaming-published-activation="${escapeHtml(item.id)}" data-gaming-activation-status="${escapeHtml(item.status || "draft")}" data-gaming-activation-search="${escapeHtml([item.title, activationTypeLabel(item.activation_type), item.campaign_name, item.public_slug].filter(Boolean).join(" ").toLowerCase())}" tabindex="0">
         <td class="bulk-table-select"><label class="bulk-row-check" title="Seleccionar activación"><input type="checkbox" data-activation-bulk-select="${escapeHtml(item.id)}" aria-label="Seleccionar ${escapeHtml(item.title || "activación")}" ${selectedIds.has(String(item.id)) ? "checked" : ""}><span></span></label></td>
-        <td>
-          <div class="activation-summary-cell">
-            <strong class="activation-title">${escapeHtml(item.title || "Activación sin título")}</strong>
-            <div class="activation-meta-line">
-              <span>${escapeHtml(activationTypeLabel(item.activation_type))}</span>
-              <span>${escapeHtml(item.campaign_name || "Sin campaña")}</span>
+        <td data-label="Activación">
+          <div class="activation-summary-cell activation-summary-premium">
+            <span class="activation-type-emblem is-${visual.tone}"><span class="material-symbols-outlined" aria-hidden="true">${visual.icon}</span></span>
+            <div class="activation-summary-copy">
+              <strong class="activation-title">${escapeHtml(item.title || "Activación sin título")}</strong>
+              <div class="activation-meta-line"><span>${escapeHtml(activationTypeLabel(item.activation_type))}</span><span>${escapeHtml(item.campaign_name || "Sin campaña")}</span></div>
+              <small>Creada ${escapeHtml(formatDate(item.created_at))} · ${escapeHtml(activationParticipantPolicyLabel(item))}</small>
             </div>
-            <small>Creada ${escapeHtml(formatDate(item.created_at))} · ${escapeHtml(activationParticipantPolicyLabel(item))}</small>
           </div>
         </td>
-        <td>
-          <div class="activation-status-cell">
-            <span class="status-chip ${activationStatusClass(item.status)}">${escapeHtml(activationStatusLabel(item.status))}</span>
-            <small>${item.ends_at ? `Vence ${escapeHtml(formatDate(item.ends_at))}` : "Sin vencimiento"}</small>
+        <td data-label="Estado"><div class="activation-status-cell"><span class="status-chip ${activationStatusClass(item.status)}">${escapeHtml(activationStatusLabel(item.status))}</span><small>${item.ends_at ? `Vence ${escapeHtml(formatDate(item.ends_at))}` : "Sin vencimiento"}</small></div></td>
+        <td data-label="Resultado"><div class="activation-outcome-cell activation-outcome-premium"><div><strong>${escapeHtml(attemptsCount)}</strong><small>${activationCountLabel(attemptsValue, "Lead", "Leads")}</small></div><div><strong>${escapeHtml(winnersCount)}</strong><small>${activationCountLabel(winnersValue, "Ticket", "Tickets")}</small></div><span><strong>${escapeHtml(rate)}%</strong> conversión</span></div></td>
+        <td data-label="Operación">
+          <div class="activation-row-actions activation-row-command">
+            ${item.status === "draft" ? `<button class="activation-primary-row-action" type="button" data-continue-activation-draft="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">edit_square</span><span>Continuar</span></button>` : `<button class="activation-primary-row-action" type="button" data-open-activation-detail="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">analytics</span><span>${archived ? "Ver historial" : "Abrir detalle"}</span></button>`}
+            <details class="activation-row-menu"><summary aria-label="Más acciones para ${escapeHtml(item.title || "esta activación")}" title="Más acciones"><span class="material-symbols-outlined" aria-hidden="true">more_horiz</span></summary><div role="menu">
+              ${shareable ? `<button type="button" role="menuitem" data-share-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">send</span>Enviar a un lead</button>` : ""}
+              ${item.public_url ? `<button type="button" role="menuitem" data-copy-activation-link="${escapeHtml(item.public_url)}"><span class="material-symbols-outlined" aria-hidden="true">link</span>Copiar enlace</button>` : ""}
+              ${!archived ? `<button type="button" role="menuitem" data-edit-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">tune</span>Editar configuración</button>` : ""}
+              <button type="button" role="menuitem" data-recycle-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Crear una copia</button>
+              ${!archived ? `<button class="is-danger" type="button" role="menuitem" data-delete-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">archive</span>Eliminar o archivar</button>` : ""}
+            </div></details>
           </div>
         </td>
-        <td>
-          <div class="activation-outcome-cell">
-            <strong>${escapeHtml(attemptsCount)} leads · ${escapeHtml(winnersCount)} tickets</strong>
-            <small>${escapeHtml(rate)}% de conversión</small>
-          </div>
-        </td>
-        <td>
-          <div class="activation-row-actions">
-            ${item.status === "draft" ? `<button class="solid-button compact" type="button" data-continue-activation-draft="${escapeHtml(item.id)}">Continuar</button>` : `<button class="ghost-button compact" type="button" data-open-activation-detail="${escapeHtml(item.id)}">Abrir</button>`}
-            <button class="ghost-button compact" type="button" data-share-activation="${escapeHtml(item.id)}">Enviar</button>
-            <button class="ghost-button compact" type="button" data-edit-activation="${escapeHtml(item.id)}">Editar</button>
-            <button class="ghost-button compact danger" type="button" data-delete-activation="${escapeHtml(item.id)}">Eliminar</button>
-          </div>
-        </td>
-      </tr>
-    `;
+      </tr>`;
     }).join("")
     : '<tr><td colspan="5" class="activation-empty-state">Sin activaciones creadas. Usa Crear activación para configurar la primera.</td></tr>';
 
+  renderActivationPremiumMetrics();
   renderActivationBulkToolbar();
-  const visibleIds = (state.triviaLaunchers || []).map((item) => String(item.id));
+  const visibleIds = activationBulkVisibleIds();
   const selectVisible = document.getElementById("activationBulkSelectVisible");
   if (selectVisible) {
     selectVisible.checked = Boolean(visibleIds.length) && visibleIds.every((id) => selectedIds.has(id));
@@ -28473,7 +28546,6 @@ function renderTriviaLaunchers() {
       renderTriviaLaunchers();
     });
   });
-
   triviaLauncherTable.querySelectorAll("[data-open-activation-detail]").forEach((row) => {
     const open = (event) => {
       if (row.matches("button")) {
@@ -28483,7 +28555,7 @@ function renderTriviaLaunchers() {
         openGamingActivationDetail(row.dataset.openActivationDetail);
         return;
       }
-      if (event.target.closest("button, a, input, select, textarea")) return;
+      if (event.target.closest("button, a, input, select, textarea, summary, details")) return;
       event.preventDefault();
       openGamingActivationDetail(row.dataset.openActivationDetail);
     };
@@ -28493,29 +28565,31 @@ function renderTriviaLaunchers() {
       open(event);
     });
   });
-
   triviaLauncherTable.querySelectorAll("[data-edit-activation]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      editInteractiveActivation(button.dataset.editActivation);
-    });
+    button.addEventListener("click", (event) => { event.stopPropagation(); editInteractiveActivation(button.dataset.editActivation); });
   });
-
   triviaLauncherTable.querySelectorAll("[data-share-activation]").forEach((button) => {
-    button.addEventListener("click", (event) => {
+    button.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); openActivationShareModal(button.dataset.shareActivation); });
+  });
+  triviaLauncherTable.querySelectorAll("[data-copy-activation-link]").forEach((button) => {
+    button.addEventListener("click", async (event) => {
       event.preventDefault();
       event.stopPropagation();
-      openActivationShareModal(button.dataset.shareActivation);
+      try {
+        await navigator.clipboard?.writeText(button.dataset.copyActivationLink || "");
+        button.closest("details")?.removeAttribute("open");
+        showFeedback("Enlace público copiado.", "success", { title: "Activación lista para compartir" });
+      } catch {
+        showFeedback("No se pudo copiar el enlace. Abre el detalle para intentarlo de nuevo.", "error", { title: "Activaciones" });
+      }
     });
   });
-
+  triviaLauncherTable.querySelectorAll("[data-recycle-activation]").forEach((button) => {
+    button.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); button.closest("details")?.removeAttribute("open"); recycleInteractiveActivation(button.dataset.recycleActivation); });
+  });
   triviaLauncherTable.querySelectorAll("[data-delete-activation]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      deleteInteractiveActivation(button.dataset.deleteActivation);
-    });
+    button.addEventListener("click", (event) => { event.stopPropagation(); deleteInteractiveActivation(button.dataset.deleteActivation); });
   });
-
   updateGamingPublishedFilters();
 }
 
