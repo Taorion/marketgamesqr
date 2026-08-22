@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260822-rms-quality-1-premium-v315";
+const APP_VERSION = "empresa-20260822-rms-quality-1-premium-v316";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -44956,7 +44956,13 @@ function renderRmsQualityControlDashboard(key = "") {
           <span class="rms-quality-live-badge"><i aria-hidden="true"></i> Observatorio premium · solo lectura</span>
           <h3>${escapeHtml(config.title)}</h3>
           <p>${escapeHtml(config.description)}</p>
-          <div class="rms-quality-trust-line"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><span>Detecta</span><i></i><span>Explica</span><i></i><span>Devuelve a la estación responsable</span></div>
+          <div class="rms-quality-trust-line" aria-label="Detecta, explica y devuelve a la estación responsable">
+            <span class="rms-quality-trust-item"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><span>Detecta</span></span>
+            <i class="rms-quality-trust-divider" aria-hidden="true"></i>
+            <span class="rms-quality-trust-item"><span class="material-symbols-outlined" aria-hidden="true">description</span><span>Explica</span></span>
+            <i class="rms-quality-trust-divider" aria-hidden="true"></i>
+            <span class="rms-quality-trust-item"><span class="material-symbols-outlined" aria-hidden="true">assignment_return</span><span>Devuelve a la estación responsable</span></span>
+          </div>
         </div>
         <figure><img src="${escapeHtml(visual.image || "")}" alt="${escapeHtml(visual.imageAlt || config.title)}" decoding="async"></figure>
       </header>

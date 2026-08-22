@@ -68146,8 +68146,9 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-he
 
 html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head > div p {
   max-width: 720px !important;
-  color: rgba(235, 251, 255, .84) !important;
+  color: #fff !important;
   font-size: .92rem !important;
+  line-height: 1.55 !important;
 }
 
 html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head > .ghost-button {
@@ -68194,15 +68195,43 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-quality-trust-line
   display: flex !important;
   align-items: center !important;
   flex-wrap: wrap !important;
-  gap: 8px !important;
+  gap: 10px !important;
   margin-top: 16px !important;
-  color: rgba(226, 250, 255, .76) !important;
+  color: #fff !important;
   font-size: .72rem !important;
   font-weight: 700 !important;
 }
 
-html body[data-current-view="rms-machine"] .portal-shell .rms-quality-trust-line .material-symbols-outlined { color: #75efd0 !important; font-size: 1.1rem !important; }
-html body[data-current-view="rms-machine"] .portal-shell .rms-quality-trust-line i { width: 18px !important; height: 1px !important; background: rgba(190, 240, 246, .35) !important; }
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-trust-item {
+  display: inline-grid !important;
+  grid-template-columns: 20px minmax(0, auto) !important;
+  align-items: center !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+  color: #fff !important;
+  line-height: 1.35 !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-trust-item .material-symbols-outlined {
+  display: block !important;
+  width: 20px !important;
+  min-width: 20px !important;
+  overflow: hidden !important;
+  color: #75efd0 !important;
+  font-size: 1.1rem !important;
+  line-height: 20px !important;
+  text-align: center !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-quality-trust-divider {
+  display: block !important;
+  flex: 0 0 18px !important;
+  width: 18px !important;
+  height: 1px !important;
+  margin: 0 2px !important;
+  background: rgba(190, 240, 246, .45) !important;
+}
 
 html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip {
   display: grid !important;
@@ -68383,6 +68412,9 @@ html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-ta
   html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head > .ghost-button { grid-column: 1 !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head > div { grid-column: 1 / -1 !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-quality-premium-head figure { grid-column: 2 !important; grid-row: 1 !important; width: 68px !important; height: 68px !important; border-radius: 20px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-trust-line { align-items: stretch !important; flex-direction: column !important; gap: 9px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-trust-item { width: 100% !important; white-space: normal !important; }
+  html body[data-current-view="rms-machine"] .portal-shell .rms-quality-trust-divider { display: none !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip { grid-template-columns: 1fr 1fr !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-quality-command-strip article { min-height: 122px !important; padding: 16px !important; }
   html body[data-current-view="rms-machine"] .portal-shell .rms-quality-decision-brief { grid-template-columns: auto minmax(0, 1fr) !important; }
