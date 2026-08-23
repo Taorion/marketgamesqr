@@ -30,3 +30,10 @@ test("el progreso CSV oculto no deja residuos visuales", () => {
   assert.match(styles, /\.customer-csv-progress\.hidden \{ display: none !important; \}/);
   assert.match(styles, /\.lead-export-actions \{\s*display: none !important;/);
 });
+
+test("el lector CSV recupera archivos de Excel con codificación Windows", () => {
+  const script = read("empresa/js/contacts-premium-v333.js");
+  assert.match(script, /utf8\.includes\("\\uFFFD"\)/);
+  assert.match(script, /TextDecoder\("windows-1252"\)/);
+  assert.match(script, /csvState\.text=await readCsvText\(file\)/);
+});

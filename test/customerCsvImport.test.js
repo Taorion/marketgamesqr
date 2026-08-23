@@ -45,8 +45,35 @@ test("interpreta comas, comillas, saltos y caracteres especiales", () => {
 
 test("rechaza CSV vacío y encabezados incorrectos", () => {
   assert.throws(() => parseCustomerCsv(payload(" ")), /vacío/i);
-  assert.throws(() => parseCustomerCsv(payload("nombre,correo\nAna,ana@example.com")), /encabezados/i);
+  assert.throws(() => parseCustomerCsv(payload("dato,otro\nAna,ana@example.com")), /columna de nombre/i);
   assert.throws(() => parseCustomerCsv({ ...payload(`${header}\nAna,Gómez,CC,1,a@b.co,3001112233,Qori,Email,2026-08-15,1,1000,Ok\n`), mime_type: "application/pdf" }), /tipo de archivo/i);
+});
+
+test("acepta el CSV de Excel separado por punto y coma", () => {
+  const csv = "nombre;apellido;documento;email;celular;fecha_compra;compras;valor_total\r\nAna;Gómez;102030;ana@example.com;3001112233;2026-08-15;2;1.250.000,50\r\n";
+  const parsed = parseCustomerCsv(payload(csv));
+  assert.equal(parsed.delimiter, ";");
+  assert.equal(parsed.rows[0].document_id, "102030");
+  assert.equal(parsed.rows[0].total_spent, 1250000.5);
+  assert.equal(parsed.rows[0].has_commercial_evidence, true);
+  assert.deepEqual(parsed.rows[0].errors, []);
+});
+
+test("acepta encabezados parciales y columnas adicionales", () => {
+  const csv = "nombre completo,email,empresa,campo_interno\nLaura,laura@example.com,Qori,no se importa\n";
+  const parsed = parseCustomerCsv(payload(csv));
+  assert.deepEqual(parsed.ignoredHeaders, ["campo_interno"]);
+  assert.equal(parsed.rows[0].name, "Laura");
+  assert.equal(parsed.rows[0].has_commercial_evidence, false);
+  assert.deepEqual(parsed.rows[0].errors, []);
+  assert.match(parsed.rows[0].warnings.join(" "), /Contacto/i);
+});
+
+test("solo exige nombre y permite completar el identificador después", () => {
+  const rows = parseCustomerCsv(payload("nombre,correo\n,ana@example.com\nAna,correo-invalido\n")).rows;
+  assert.match(rows[0].errors.join(" "), /nombre/i);
+  assert.deepEqual(rows[1].errors, []);
+  assert.match(rows[1].warnings.join(" "), /sin identificador/i);
 });
 
 test("detecta duplicados internos por prioridad documento, correo y teléfono", () => {
@@ -57,26 +84,33 @@ test("detecta duplicados internos por prioridad documento, correo y teléfono", 
   assert.match(rows[1].errors.join(" "), /Documento duplicado dentro del archivo/i);
 });
 
-test("no clasifica como válida una fila sin evidencia comercial", () => {
+test("una fila sin evidencia comercial queda válida como contacto pendiente", () => {
   const csv = `${header}\nPedro,Pérez,CC,456,pedro@example.com,3001112233,Qori,Email,,0,0,Sin compra\n`;
   const row = parseCustomerCsv(payload(csv)).rows[0];
-  assert.match(row.errors.join(" "), /Fecha incorrecta/i);
-  assert.match(row.errors.join(" "), /Evidencia comercial insuficiente/i);
-  assert.match(row.errors.join(" "), /Valor monetario inválido/i);
+  assert.deepEqual(row.errors, []);
+  assert.equal(row.has_commercial_evidence, false);
+  assert.match(row.warnings.join(" "), /Contacto/i);
 });
 
-test("reporta filas con una cantidad de columnas distinta a la plantilla", () => {
+test("tolera filas cortas y avisa si sobran valores sin encabezado", () => {
+  const shortRow = parseCustomerCsv(payload(`${header}\nAna,Gómez,CC,123\n`)).rows[0];
+  assert.deepEqual(shortRow.errors, []);
+  assert.equal(shortRow.has_commercial_evidence, false);
   const row = parseCustomerCsv(payload(`${header}\nAna,Gómez,CC,123,ana@example.com,3001112233,Qori,WhatsApp,2026-08-15,1,100000,Nota,extra\n`)).rows[0];
-  assert.match(row.errors.join(" "), /Cantidad de columnas incorrecta/i);
+  assert.deepEqual(row.errors, []);
+  assert.match(row.warnings.join(" "), /valor\(es\) sin encabezado/i);
 });
 
 test("valida fechas reales, correo, teléfono y dinero local", () => {
   const csv = `${header}\nSol,Rojas,CC,789,correo-invalido,12,Qori,WhatsApp,2026-02-30,1,no-es-dinero,Error\n`;
   const row = parseCustomerCsv(payload(csv)).rows[0];
-  assert.match(row.errors.join(" "), /Correo inválido/i);
-  assert.match(row.errors.join(" "), /Teléfono inválido/i);
-  assert.match(row.errors.join(" "), /Fecha incorrecta/i);
-  assert.match(row.errors.join(" "), /Valor monetario inválido/i);
+  assert.deepEqual(row.errors, []);
+  assert.equal(row.email, "");
+  assert.equal(row.phone, "");
+  assert.match(row.warnings.join(" "), /Correo omitido/i);
+  assert.match(row.warnings.join(" "), /Teléfono omitido/i);
+  assert.match(row.warnings.join(" "), /Fecha de compra pendiente/i);
+  assert.match(row.warnings.join(" "), /Valor acumulado pendiente/i);
   assert.equal(parseMoney("1.234.567,89"), 1234567.89);
   assert.equal(parseMoney("1,234,567.89"), 1234567.89);
 });
@@ -90,4 +124,7 @@ test("el contrato de importación conserva tenant, venta canónica, lotes e idem
   assert.match(source, /business_customer_import_batches/);
   assert.match(source, /pg_advisory_xact_lock/);
   assert.match(source, /savepoint customer_csv_row/);
+  assert.match(source, /commercial_data_pending/);
+  assert.match(source, /row\.has_commercial_evidence \? "CONVERTED" : "NEW"/);
+  assert.match(source, /if \(!row\.has_commercial_evidence\)/);
 });

@@ -5,6 +5,21 @@ const CUSTOMER_CSV_HEADERS = [
   "nombre", "apellido", "tipo_documento", "numero_documento", "correo", "telefono",
   "empresa", "canal_preferido", "fecha_ultima_compra", "total_compras", "valor_acumulado", "notas",
 ];
+const CUSTOMER_CSV_REQUIRED_HEADERS = ["nombre"];
+const CUSTOMER_CSV_HEADER_ALIASES = Object.freeze({
+  nombres: "nombre", nombre_completo: "nombre", cliente: "nombre",
+  apellidos: "apellido",
+  tipo_de_documento: "tipo_documento", tipo_doc: "tipo_documento",
+  documento: "numero_documento", numero_de_documento: "numero_documento", nro_documento: "numero_documento",
+  email: "correo", correo_electronico: "correo", e_mail: "correo",
+  celular: "telefono", movil: "telefono", numero_telefono: "telefono",
+  compania: "empresa", organizacion: "empresa",
+  canal: "canal_preferido", medio_preferido: "canal_preferido",
+  ultima_compra: "fecha_ultima_compra", fecha_compra: "fecha_ultima_compra",
+  compras: "total_compras", numero_compras: "total_compras", cantidad_compras: "total_compras",
+  valor_total: "valor_acumulado", total_gastado: "valor_acumulado", revenue: "valor_acumulado",
+  observaciones: "notas", nota: "notas",
+});
 const MAX_CSV_BYTES = 2 * 1024 * 1024;
 const MAX_CSV_ROWS = 2000;
 const IMPORT_CHUNK_SIZE = 50;
@@ -12,6 +27,11 @@ const IMPORT_CHUNK_SIZE = 50;
 function normalizeHeader(value) {
   return String(value || "").replace(/^\uFEFF/, "").trim().normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+function canonicalHeader(value) {
+  const normalized = normalizeHeader(value);
+  return CUSTOMER_CSV_HEADER_ALIASES[normalized] || normalized;
 }
 
 function normalizeDocument(value) {
@@ -26,8 +46,23 @@ function normalizePhone(value) {
   return String(value || "").replace(/\D/g, "");
 }
 
+function detectCsvDelimiter(text) {
+  const source = String(text || "").replace(/^\uFEFF/, "");
+  const counts = new Map([[",", 0], [";", 0], ["\t", 0]]);
+  let quoted = false;
+  for (let index = 0; index < source.length; index += 1) {
+    const character = source[index];
+    if (character === '"' && quoted && source[index + 1] === '"') { index += 1; continue; }
+    if (character === '"') { quoted = !quoted; continue; }
+    if (!quoted && (character === "\n" || character === "\r")) break;
+    if (!quoted && counts.has(character)) counts.set(character, counts.get(character) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || ",";
+}
+
 function parseCsv(text) {
   const source = String(text || "").replace(/^\uFEFF/, "");
+  const delimiter = detectCsvDelimiter(source);
   const rows = [];
   let row = [];
   let field = "";
@@ -45,7 +80,7 @@ function parseCsv(text) {
       }
     } else if (character === '"') {
       quoted = true;
-    } else if (character === ",") {
+    } else if (character === delimiter) {
       row.push(field);
       field = "";
     } else if (character === "\n") {
@@ -60,7 +95,7 @@ function parseCsv(text) {
   if (quoted) throw badRequest("El CSV contiene una comilla sin cerrar.");
   row.push(field.replace(/\r$/, ""));
   if (row.some((value) => String(value).trim())) rows.push(row);
-  return rows;
+  return { delimiter, rows };
 }
 
 function parseMoney(value) {
@@ -102,7 +137,7 @@ function validateCsvEnvelope(payload = {}) {
   const actualSize = Buffer.byteLength(csvText, "utf8");
   if (!/\.csv$/i.test(fileName)) throw badRequest("El archivo debe tener extensión .csv.");
   const mimeType = String(payload.mime_type || "").trim().toLowerCase();
-  const allowedMimeTypes = new Set(["", "text/csv", "application/csv", "text/plain", "application/vnd.ms-excel"]);
+  const allowedMimeTypes = new Set(["", "text/csv", "application/csv", "text/plain", "text/tab-separated-values", "application/vnd.ms-excel", "application/octet-stream"]);
   if (!allowedMimeTypes.has(mimeType)) throw badRequest("El tipo de archivo no corresponde a un CSV.");
   if (!csvText.trim()) throw badRequest("El archivo CSV está vacío.");
   if (declaredSize > MAX_CSV_BYTES || actualSize > MAX_CSV_BYTES) throw badRequest("El CSV supera el máximo permitido de 2 MB.");
@@ -111,21 +146,29 @@ function validateCsvEnvelope(payload = {}) {
 
 function parseCustomerCsv(payload = {}) {
   const envelope = validateCsvEnvelope(payload);
-  const parsed = parseCsv(envelope.csvText);
+  const csv = parseCsv(envelope.csvText);
+  const parsed = csv.rows;
   if (parsed.length < 2) throw badRequest("El CSV no contiene filas de clientes.");
-  const headers = parsed[0].map(normalizeHeader);
-  if (new Set(headers).size !== headers.length || headers.some((header) => !header)) {
-    throw badRequest("El CSV contiene encabezados vacíos o repetidos.");
-  }
-  const missing = CUSTOMER_CSV_HEADERS.filter((header) => !headers.includes(header));
-  const extra = headers.filter((header) => header && !CUSTOMER_CSV_HEADERS.includes(header));
-  if (missing.length || extra.length) {
-    throw badRequest("Los encabezados del CSV no corresponden a la plantilla.", { missing_headers: missing, unexpected_headers: extra });
+  const headers = parsed[0].map(canonicalHeader);
+  const recognizedHeaders = headers.filter((header) => CUSTOMER_CSV_HEADERS.includes(header));
+  const duplicateHeaders = recognizedHeaders.filter((header, index) => recognizedHeaders.indexOf(header) !== index);
+  if (duplicateHeaders.length) throw badRequest("El CSV contiene encabezados repetidos.", { duplicate_headers: [...new Set(duplicateHeaders)] });
+  const missingRequired = CUSTOMER_CSV_REQUIRED_HEADERS.filter((header) => !recognizedHeaders.includes(header));
+  if (missingRequired.length || !recognizedHeaders.length) {
+    throw badRequest("No pudimos reconocer la columna de nombre. Conserva al menos 'nombre' y usa coma, punto y coma o tabulación como separador.", { missing_headers: missingRequired, received_headers: parsed[0] });
   }
   if (parsed.length - 1 > MAX_CSV_ROWS) throw badRequest(`El CSV supera el máximo de ${MAX_CSV_ROWS} filas.`);
-  const headerIndex = new Map(headers.map((header, index) => [header, index]));
+  const headerIndex = new Map(headers.map((header, index) => [header, index]).filter(([header]) => CUSTOMER_CSV_HEADERS.includes(header)));
+  const ignoredHeaders = headers.filter((header) => header && !CUSTOMER_CSV_HEADERS.includes(header));
   const rows = parsed.slice(1).map((values, index) => {
-    const original = Object.fromEntries(CUSTOMER_CSV_HEADERS.map((header) => [header, String(values[headerIndex.get(header)] || "").trim()]));
+    const original = Object.fromEntries(CUSTOMER_CSV_HEADERS.map((header) => {
+      const columnIndex = headerIndex.get(header);
+      return [header, columnIndex === undefined ? "" : String(values[columnIndex] || "").trim()];
+    }));
+    const normalizedEmail = normalizeEmail(original.correo);
+    const normalizedPhone = normalizePhone(original.telefono);
+    const emailIsValid = !normalizedEmail || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
+    const phoneIsValid = !normalizedPhone || (normalizedPhone.length >= 7 && normalizedPhone.length <= 15);
     const row = {
       row_number: index + 2,
       original,
@@ -134,8 +177,8 @@ function parseCustomerCsv(payload = {}) {
       name: [original.nombre, original.apellido].filter(Boolean).join(" ").trim(),
       document_type: String(original.tipo_documento || "").trim().toUpperCase(),
       document_id: normalizeDocument(original.numero_documento),
-      email: normalizeEmail(original.correo),
-      phone: normalizePhone(original.telefono),
+      email: emailIsValid ? normalizedEmail : "",
+      phone: phoneIsValid ? normalizedPhone : "",
       company: original.empresa,
       preferred_channel: original.canal_preferido,
       purchase_date: parsePurchaseDate(original.fecha_ultima_compra),
@@ -143,16 +186,19 @@ function parseCustomerCsv(payload = {}) {
       total_spent: parseMoney(original.valor_acumulado),
       notes: original.notas,
       errors: [],
+      warnings: [],
     };
-    if (values.length !== headers.length) row.errors.push(`Cantidad de columnas incorrecta: se esperaban ${headers.length} y llegaron ${values.length}.`);
+    if (values.length > headers.length) row.warnings.push(`Se ignoraron ${values.length - headers.length} valor(es) sin encabezado.`);
     if (!row.name) row.errors.push("Campo obligatorio vacío: nombre.");
-    if (!row.document_id && !row.email && !row.phone) row.errors.push("Se requiere documento, correo o teléfono válido.");
-    if (row.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) row.errors.push("Correo inválido.");
-    if (row.phone && (row.phone.length < 7 || row.phone.length > 15)) row.errors.push("Teléfono inválido.");
-    if (row.document_id && !row.document_type) row.errors.push("Campo obligatorio vacío: tipo_documento.");
-    if (!row.purchase_date) row.errors.push("Fecha incorrecta; usa AAAA-MM-DD.");
-    if (!Number.isInteger(row.purchase_count) || row.purchase_count < 1) row.errors.push("Evidencia comercial insuficiente: total_compras debe ser un entero mayor a cero.");
-    if (!row.total_spent) row.errors.push("Valor monetario inválido o sin revenue positivo.");
+    if (!row.document_id && !row.email && !row.phone) row.warnings.push("Contacto sin identificador; completa documento, correo o teléfono cuando esté disponible.");
+    if (normalizedEmail && !emailIsValid) row.warnings.push("Correo omitido porque su formato no es válido.");
+    if (normalizedPhone && !phoneIsValid) row.warnings.push("Teléfono omitido porque su formato no es válido.");
+    if (row.document_id && !row.document_type) row.warnings.push("Tipo de documento pendiente.");
+    if (original.fecha_ultima_compra && !row.purchase_date) row.warnings.push("Fecha de compra pendiente o incorrecta; usa AAAA-MM-DD.");
+    if (original.total_compras && (!Number.isInteger(row.purchase_count) || row.purchase_count < 1)) row.warnings.push("Cantidad de compras pendiente o inválida.");
+    if (original.valor_acumulado && !row.total_spent) row.warnings.push("Valor acumulado pendiente o inválido.");
+    row.has_commercial_evidence = Boolean(row.purchase_date && Number.isInteger(row.purchase_count) && row.purchase_count > 0 && row.total_spent > 0);
+    if (!row.has_commercial_evidence) row.warnings.push("Datos comerciales pendientes: se importará como Contacto y podrá completarse después.");
     return row;
   });
 
@@ -168,11 +214,14 @@ function parseCustomerCsv(payload = {}) {
     }
     candidates.forEach(([kind, value]) => { if (value && !seen[kind].has(value)) seen[kind].set(value, row.row_number); });
   });
-  return { fileName: envelope.fileName, rows };
+  return { fileName: envelope.fileName, delimiter: csv.delimiter, ignoredHeaders, rows };
 }
 
 function identityKey(row) {
-  return row.document_id ? `document:${row.document_id}` : row.email ? `email:${row.email}` : `phone:${row.phone}`;
+  if (row.document_id) return `document:${row.document_id}`;
+  if (row.email) return `email:${row.email}`;
+  if (row.phone) return `phone:${row.phone}`;
+  return `pending:${normalizeHeader(row.name)}:${row.row_number}`;
 }
 
 async function existingContactsForRows(businessId, rows, db = query) {
@@ -226,19 +275,26 @@ async function previewCustomerCsv(businessId, payload) {
     const existing = row.errors.length ? null : matchExisting(row, contacts);
     const errors = [...row.errors];
     if (existing?.is_customer) errors.push("Cliente existente.");
+    else if (existing && !row.has_commercial_evidence) errors.push("Contacto existente; no se sobrescribirá.");
+    const validStatus = row.has_commercial_evidence ? "VALID_CUSTOMER" : "VALID_CONTACT";
     return {
       row_number: row.row_number,
       data: row.original,
-      normalized: { name: row.name, document_id: row.document_id, email: row.email, phone: row.phone, purchase_count: row.purchase_count, total_spent: row.total_spent, purchase_date: row.purchase_date },
-      status: errors.length ? (errors.some((item) => /duplicad|existente/i.test(item)) ? "DUPLICATE" : "ERROR") : "VALID",
+      normalized: { name: row.name, document_id: row.document_id, email: row.email, phone: row.phone, purchase_count: row.purchase_count, total_spent: row.total_spent, purchase_date: row.purchase_date, has_commercial_evidence: row.has_commercial_evidence },
+      status: errors.length ? (errors.some((item) => /duplicad|existente/i.test(item)) ? "DUPLICATE" : "ERROR") : validStatus,
       reasons: errors,
+      warnings: row.warnings,
       existing_contact: existing ? { id: existing.id, source_type: existing.source_type, name: existing.name, is_customer: existing.is_customer } : null,
     };
   });
   return {
     file_name: parsed.fileName,
+    separator: parsed.delimiter === "\t" ? "tabulación" : parsed.delimiter,
+    ignored_headers: parsed.ignoredHeaders,
     total_rows: previewRows.length,
-    valid_rows: previewRows.filter((row) => row.status === "VALID").length,
+    valid_rows: previewRows.filter((row) => row.status.startsWith("VALID_")).length,
+    customer_rows: previewRows.filter((row) => row.status === "VALID_CUSTOMER").length,
+    pending_contact_rows: previewRows.filter((row) => row.status === "VALID_CONTACT").length,
     duplicate_rows: previewRows.filter((row) => row.status === "DUPLICATE").length,
     invalid_rows: previewRows.filter((row) => row.status === "ERROR").length,
     rows: previewRows,
@@ -253,18 +309,31 @@ async function createCustomerFromRow(client, businessId, user, row, batchId, ide
   if (contact?.document_id && row.document_id && contact.document_id !== row.document_id) {
     return { outcome: "ERROR", reason: "El correo o teléfono pertenece a un contacto con otro documento.", contact: null };
   }
+  if (contact && !row.has_commercial_evidence) {
+    return { outcome: "DUPLICATE", reason: "Contacto existente; no se sobrescribió.", contact };
+  }
   if (!contact) {
     const created = await client.query(
       `insert into business_manual_leads
         (business_id, created_by_user_id, name, email, phone, document_type, document_id, company, source,
          preferred_channel, status, priority, notes, metadata)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, 'Importación CSV', $9, 'CONVERTED', 'MEDIUM', $10, $11::jsonb)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, 'Importación CSV', $9, $10, 'MEDIUM', $11, $12::jsonb)
        returning id, name, email, phone, document_id`,
       [businessId, user?.id || null, row.name, row.email || null, row.phone || null, row.document_type || null,
-        row.document_id || null, row.company || null, row.preferred_channel || null, row.notes || null,
-        JSON.stringify({ source: "customer_csv_import", import_batch_id: batchId, csv_row: row.row_number, created_by_email: user?.email || null })]
+        row.document_id || null, row.company || null, row.preferred_channel || null,
+        row.has_commercial_evidence ? "CONVERTED" : "NEW", row.notes || null,
+        JSON.stringify({
+          source: "customer_csv_import", import_batch_id: batchId, csv_row: row.row_number,
+          created_by_email: user?.email || null,
+          import_classification: row.has_commercial_evidence ? "CUSTOMER" : "CONTACT_PENDING",
+          commercial_data_pending: !row.has_commercial_evidence,
+          import_warnings: row.warnings,
+        })]
     );
     contact = { ...created.rows[0], source_type: "MANUAL", is_customer: false };
+  }
+  if (!row.has_commercial_evidence) {
+    return { outcome: "CREATED", reason: "Contacto creado; datos comerciales pendientes.", contact, sale_id: null };
   }
   const sale = await client.query(
     `insert into business_sales
@@ -307,7 +376,7 @@ async function importCustomerCsv(businessId, user, payload) {
       `insert into business_customer_import_batches
         (business_id, created_by_user_id, idempotency_key, original_filename, total_rows, metadata)
        values ($1, $2, $3, $4, $5, $6::jsonb) returning *`,
-      [businessId, user?.id || null, idempotencyKey, preview.file_name, preview.total_rows, JSON.stringify({ source: "customer_csv_import", encoding: "UTF-8", separator: "," })]
+      [businessId, user?.id || null, idempotencyKey, preview.file_name, preview.total_rows, JSON.stringify({ source: "customer_csv_import", encoding: "UTF-8", separator: preview.separator, flexible_headers: true })]
     );
     return { batch: batch.rows[0], reused: false };
   });
@@ -374,7 +443,13 @@ async function importBatchResult(businessId, batchId, reused = false) {
              from business_customer_import_rows where batch_id = $1 and business_id = $2 order by row_number`, [batchId, businessId]),
   ]);
   if (!batch.rowCount) throw notFound("El lote de importación no existe.");
-  return { batch: batch.rows[0], rows: rows.rows, reused };
+  const createdCustomerCount = rows.rows.filter((row) => row.outcome === "CREATED" && row.sale_id).length;
+  const pendingContactCount = rows.rows.filter((row) => row.outcome === "CREATED" && !row.sale_id).length;
+  return {
+    batch: { ...batch.rows[0], created_customer_count: createdCustomerCount, pending_contact_count: pendingContactCount },
+    rows: rows.rows,
+    reused,
+  };
 }
 
 async function customerImportErrorsCsv(businessId, batchId) {

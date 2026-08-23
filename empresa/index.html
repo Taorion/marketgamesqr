@@ -47,7 +47,7 @@
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
 <link rel="stylesheet" href="css/portal-clean-v39.css?v=activation-studio-premium-v331-20260822">
-<link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-premium-v340-20260823">
+<link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-premium-v341-20260823">
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-pro-v11-20260820">
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822">
 </head>
@@ -7994,19 +7994,19 @@
       <div>
         <span class="mono-label">Clientes · operación segura</span>
         <h3 id="customerCsvImportTitle">Importar clientes CSV</h3>
-        <p id="customerCsvImportHelp">Crea clientes únicamente cuando cada fila aporta evidencia comercial verificable.</p>
+        <p id="customerCsvImportHelp">Carga la base aunque falten datos. Solo los registros con compra completa se clasifican como Clientes.</p>
       </div>
       <button class="icon-button" id="customerCsvImportClose" type="button" aria-label="Cerrar importación"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
     </header>
     <div class="customer-csv-modal-body">
       <section class="customer-csv-guidance" aria-label="Requisitos de la plantilla">
-        <div><strong>Plantilla preparada para Excel</strong><p>CSV separado por comas, codificación UTF-8. Fecha: AAAA-MM-DD. Teléfono: 7 a 15 dígitos, puede incluir prefijo. Valor monetario: sin símbolo; admite 1250000.00 o 1.250.000,00.</p></div>
+        <div><strong>Compatible con Excel</strong><p>Acepta coma, punto y coma o tabulación, además de encabezados equivalentes como email, celular, documento u observaciones. Fecha sugerida: AAAA-MM-DD.</p></div>
         <button class="ghost-button" id="customerCsvTemplateButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar plantilla CSV</button>
       </section>
       <section class="customer-csv-rules">
-        <p><strong>Obligatorios:</strong> nombre; documento, correo o teléfono; fecha de última compra; total_compras mayor a 0; valor_acumulado mayor a 0.</p>
+        <p><strong>Mínimo necesario:</strong> nombre. Documento, correo o teléfono son recomendados para detectar duplicados; apellido, empresa, canal y datos de compra pueden completarse después.</p>
         <p><strong>Duplicados:</strong> documento primero, después correo y teléfono normalizados. Un cliente existente se omite y nunca se sobrescribe.</p>
-        <p><strong>Clasificación:</strong> la fila se convierte en Cliente solo después de persistir su evidencia en el historial canónico de ventas. Una fila sin evidencia se reporta como error, no como Lead.</p>
+        <p><strong>Clasificación:</strong> con fecha, cantidad y valor de compras válidos se crea un Cliente. Si falta esa evidencia, se guarda como Contacto pendiente, sin inventar venta ni revenue.</p>
       </section>
       <label class="customer-csv-dropzone" id="customerCsvDropzone" for="customerCsvFileInput" tabindex="0">
         <span class="material-symbols-outlined" aria-hidden="true">upload_file</span><strong>Arrastra el CSV o selecciónalo</strong><small>Máximo 2 MB y 2.000 filas</small>
@@ -8023,7 +8023,7 @@
   </section>
 </div>
 <script src="js/app.js?v=contacts-premium-v333-20260822" defer></script>
-<script src="js/contacts-premium-v333.js?v=contacts-premium-v340-20260822" defer></script>
+<script src="js/contacts-premium-v333.js?v=contacts-premium-v341-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
     <script src="js/communications.js?v=communications-history-v333-20260822" defer></script>
