@@ -37,3 +37,26 @@ test("el lector CSV recupera archivos de Excel con codificación Windows", () =>
   assert.match(script, /TextDecoder\("windows-1252"\)/);
   assert.match(script, /csvState\.text=await readCsvText\(file\)/);
 });
+
+test("el responsable comercial aparece en importación, búsqueda y directorio", () => {
+  const script = read("empresa/js/contacts-premium-v333.js");
+  const app = read("empresa/js/app.js");
+  const html = read("empresa/index.html");
+  assert.match(script, /metadata\.commercial_owner_name/);
+  assert.match(script, /Responsable: \$\{owner\}/);
+  assert.match(app, /metadata\.commercial_owner_email/);
+  assert.match(html, /responsable_comercial/);
+  assert.match(html, /contacts-owner-v342-20260823/);
+});
+
+test("el alta y la edición manual permiten un responsable opcional del mismo negocio", () => {
+  const controller = read("backend/src/controllers/businessPortalController.js");
+  const app = read("empresa/js/app.js");
+  const html = read("empresa/index.html");
+  assert.match(controller, /commercial_owner_user_id: z\.string\(\)\.uuid\(\)\.optional\(\)\.nullable\(\)/);
+  assert.match(controller, /where id = \$1[\s\S]*and business_id = \$2[\s\S]*and is_active = true/);
+  assert.match(controller, /commercial_owner_name/);
+  assert.match(app, /manualLeadCommercialOwnerInput/);
+  assert.match(app, /manualLeadEditCommercialOwnerInput/);
+  assert.match(html, /Solo muestra usuarios activos de este negocio/);
+});

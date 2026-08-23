@@ -5,6 +5,7 @@ const path = require("node:path");
 const {
   CUSTOMER_CSV_HEADERS,
   customerTemplateCsv,
+  matchCommercialOwner,
   parseCustomerCsv,
   parseMoney,
 } = require("../backend/src/services/customerCsvImportService");
@@ -29,6 +30,7 @@ test("la plantilla UTF-8 se puede volver a procesar y trae evidencia comercial",
   assert.equal(parsed.rows[0].name, "Ana Gómez");
   assert.equal(parsed.rows[0].purchase_count, 3);
   assert.equal(parsed.rows[0].total_spent, 1250000);
+  assert.equal(parsed.rows[0].commercial_owner_reference, "vendedor@empresa.com");
 });
 
 test("interpreta comas, comillas, saltos y caracteres especiales", () => {
@@ -76,6 +78,27 @@ test("solo exige nombre y permite completar el identificador después", () => {
   assert.match(rows[1].warnings.join(" "), /sin identificador/i);
 });
 
+test("el responsable comercial es opcional y se resuelve por correo o nombre único", () => {
+  const owners = [
+    { id: "11111111-1111-4111-8111-111111111111", full_name: "María Gómez", email: "maria@qori.co" },
+    { id: "22222222-2222-4222-8222-222222222222", full_name: "Carlos Ruiz", email: "carlos@qori.co" },
+  ];
+  assert.equal(matchCommercialOwner("MARIA@QORI.CO", owners).owner.id, owners[0].id);
+  assert.equal(matchCommercialOwner("Maria Gomez", owners).owner.id, owners[0].id);
+  assert.equal(matchCommercialOwner("", owners).owner, null);
+  assert.match(matchCommercialOwner("No existe", owners).warning, /sin asignar/i);
+});
+
+test("un nombre de responsable repetido exige correo y no bloquea la fila", () => {
+  const owners = [
+    { id: "1", full_name: "Ana Torres", email: "ana1@qori.co" },
+    { id: "2", full_name: "Ana Torres", email: "ana2@qori.co" },
+  ];
+  const resolved = matchCommercialOwner("Ana Torres", owners);
+  assert.equal(resolved.owner, null);
+  assert.match(resolved.warning, /ambiguo/i);
+});
+
 test("detecta duplicados internos por prioridad documento, correo y teléfono", () => {
   const first = "Ana,Gómez,CC,123,ana@example.com,3001112233,Qori,WhatsApp,2026-08-15,1,100000,Uno";
   const second = "Ana,Otra,CC,123,otra@example.com,3009998877,Qori,Email,2026-08-16,1,200000,Dos";
@@ -96,7 +119,7 @@ test("tolera filas cortas y avisa si sobran valores sin encabezado", () => {
   const shortRow = parseCustomerCsv(payload(`${header}\nAna,Gómez,CC,123\n`)).rows[0];
   assert.deepEqual(shortRow.errors, []);
   assert.equal(shortRow.has_commercial_evidence, false);
-  const row = parseCustomerCsv(payload(`${header}\nAna,Gómez,CC,123,ana@example.com,3001112233,Qori,WhatsApp,2026-08-15,1,100000,Nota,extra\n`)).rows[0];
+  const row = parseCustomerCsv(payload(`${header}\nAna,Gómez,CC,123,ana@example.com,3001112233,Qori,WhatsApp,2026-08-15,1,100000,Nota,responsable@qori.co,extra\n`)).rows[0];
   assert.deepEqual(row.errors, []);
   assert.match(row.warnings.join(" "), /valor\(es\) sin encabezado/i);
 });
@@ -125,6 +148,8 @@ test("el contrato de importación conserva tenant, venta canónica, lotes e idem
   assert.match(source, /pg_advisory_xact_lock/);
   assert.match(source, /savepoint customer_csv_row/);
   assert.match(source, /commercial_data_pending/);
+  assert.match(source, /commercial_owner_user_id/);
+  assert.match(source, /where business_id = \$1[\s\S]*and is_active = true/);
   assert.match(source, /row\.has_commercial_evidence \? "CONVERTED" : "NEW"/);
   assert.match(source, /if \(!row\.has_commercial_evidence\)/);
 });

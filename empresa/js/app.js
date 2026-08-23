@@ -335,6 +335,7 @@ const manualLeadEmailInput = document.getElementById("manualLeadEmailInput");
 const manualLeadSourceInput = document.getElementById("manualLeadSourceInput");
 const manualLeadSourceDetailInput = document.getElementById("manualLeadSourceDetailInput");
 const manualLeadBranchInput = document.getElementById("manualLeadBranchInput");
+const manualLeadCommercialOwnerInput = document.getElementById("manualLeadCommercialOwnerInput");
 const manualLeadPriorityInput = document.getElementById("manualLeadPriorityInput");
 const manualLeadStatusInput = document.getElementById("manualLeadStatusInput");
 const manualLeadPreferredChannelInput = document.getElementById("manualLeadPreferredChannelInput");
@@ -5895,6 +5896,7 @@ function renderBusinessUsers() {
   const canManage = isBusinessOwnerUser();
   const canDeactivate = canDeactivateBusinessUsers();
   const users = state.businessUsers || [];
+  renderManualLeadCommercialOwnerOptions();
   if (accountUserForm) {
     accountUserForm.classList.toggle("hidden", !canManage);
   }
@@ -5920,6 +5922,25 @@ function renderBusinessUsers() {
       </tr>
     `;
   }).join("") || '<tr><td colspan="6">No hay usuarios cargados para este negocio.</td></tr>';
+}
+
+function businessCommercialOwnerOptions(selectedId = "") {
+  const users = [...(state.businessUsers || [])];
+  const current = session?.user;
+  if (current?.id && current?.business_id && !users.some((user) => user.id === current.id)) {
+    users.push(current);
+  }
+  const active = users.filter((user) => user?.id && user.is_active !== false);
+  return [
+    '<option value="">Sin responsable asignado</option>',
+    ...active.map((user) => `<option value="${escapeHtml(user.id)}"${String(user.id) === String(selectedId || "") ? " selected" : ""}>${escapeHtml(user.full_name || user.email || "Usuario")} · ${escapeHtml(user.email || accountRoleLabel(user.role))}</option>`),
+  ].join("");
+}
+
+function renderManualLeadCommercialOwnerOptions() {
+  if (!manualLeadCommercialOwnerInput) return;
+  const selected = manualLeadCommercialOwnerInput.value || "";
+  manualLeadCommercialOwnerInput.innerHTML = businessCommercialOwnerOptions(selected);
 }
 
 function ensureAccountAdminUxStyles() {
@@ -35134,6 +35155,7 @@ async function createManualLead(event) {
     source: String(manualLeadSourceInput?.value || "Manual").trim(),
     source_detail: optionalInputValue(manualLeadSourceDetailInput),
     branch_id: manualLeadBranchInput?.value || null,
+    commercial_owner_user_id: manualLeadCommercialOwnerInput?.value || null,
     ...acquisitionChannel,
     priority: manualLeadPriorityInput?.value || "MEDIUM",
     status: manualLeadStatusInput?.value || "NEW",
@@ -35765,6 +35787,8 @@ function leadDirectorySearchHaystack(item = {}) {
     metadata.manual_job_title,
     metadata.manual_source,
     metadata.manual_importance_reason,
+    metadata.commercial_owner_name,
+    metadata.commercial_owner_email,
   ].filter(Boolean).join(" ");
 }
 
@@ -39320,6 +39344,7 @@ async function updateManualLeadFromForm(event) {
     interest: optionalInputValue(document.getElementById("manualLeadEditInterestInput")),
     importance_reason: optionalInputValue(document.getElementById("manualLeadEditImportanceInput")),
     notes: optionalInputValue(document.getElementById("manualLeadEditNotesInput")),
+    commercial_owner_user_id: document.getElementById("manualLeadEditCommercialOwnerInput")?.value || null,
   };
   if (!payload.name || (!payload.phone && !payload.email)) {
     setFormMessage(message, "Agrega nombre y al menos telefono o correo.", "error");
@@ -39424,6 +39449,7 @@ function renderManualLeadEditForm(lead = {}) {
       </label>
       <label><span>Canal preferido</span><input id="manualLeadEditPreferredChannelInput" type="text" maxlength="120" value="${escapeHtml(manualLeadEditValue(lead, "preferred_channel"))}"></label>
       <label><span>Hora o momento</span><input id="manualLeadEditPreferredTimeInput" type="text" maxlength="120" value="${escapeHtml(manualLeadEditValue(lead, "preferred_contact_time"))}"></label>
+      <label><span>Responsable comercial</span><select id="manualLeadEditCommercialOwnerInput">${businessCommercialOwnerOptions(leadDirectoryMetadata(lead).commercial_owner_user_id || "")}</select><small class="field-help">Opcional. La asignación queda vinculada al usuario activo del negocio.</small></label>
       <label class="span-2"><span>Interés</span><input id="manualLeadEditInterestInput" type="text" maxlength="500" value="${escapeHtml(manualLeadEditValue(lead, "interest"))}"></label>
       <label class="span-2"><span>Por qué es importante</span><textarea id="manualLeadEditImportanceInput" rows="2" maxlength="1000">${escapeHtml(manualLeadEditValue(lead, "importance_reason"))}</textarea></label>
       <label class="span-2"><span>Nota de seguimiento</span><textarea id="manualLeadEditNotesInput" rows="3" maxlength="2000">${escapeHtml(manualLeadEditValue(lead, "notes"))}</textarea></label>

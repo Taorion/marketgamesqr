@@ -5152,6 +5152,7 @@
                 <label><span>Detalle origen</span><input id="manualLeadSourceDetailInput" type="text" maxlength="220" placeholder="Asunto del correo, campaña, referido..."></label>
                 <label class="acquisition-channel-picker" data-acquisition-channel-picker="manual-lead"><span>Medio de adquisición</span><select id="manualLeadAcquisitionChannelPicker" aria-describedby="manualLeadAcquisitionChannelHelp"></select><input id="manualLeadAcquisitionChannelInput" type="text" maxlength="180" placeholder="Escribe el medio temporal" hidden><small id="manualLeadAcquisitionChannelHelp" class="field-help"></small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar medios en GOS</button></label>
                 <label><span>Sede</span><select id="manualLeadBranchInput"><option value="">Sin sede asignada</option></select><small class="field-help">La sede acompaña este contacto en su trazabilidad y KPIs.</small></label>
+                <label><span>Responsable comercial</span><select id="manualLeadCommercialOwnerInput"><option value="">Sin responsable asignado</option></select><small class="field-help">Opcional. Solo muestra usuarios activos de este negocio.</small></label>
                 <label><span>Prioridad</span>
                   <select id="manualLeadPriorityInput">
                     <option value="HIGH">Alta</option>
@@ -7994,17 +7995,18 @@
       <div>
         <span class="mono-label">Clientes · operación segura</span>
         <h3 id="customerCsvImportTitle">Importar clientes CSV</h3>
-        <p id="customerCsvImportHelp">Carga la base aunque falten datos. Solo los registros con compra completa se clasifican como Clientes.</p>
+        <p id="customerCsvImportHelp">Carga la base aunque falten datos y asigna opcionalmente un responsable comercial. Solo los registros con compra completa se clasifican como Clientes.</p>
       </div>
       <button class="icon-button" id="customerCsvImportClose" type="button" aria-label="Cerrar importación"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
     </header>
     <div class="customer-csv-modal-body">
       <section class="customer-csv-guidance" aria-label="Requisitos de la plantilla">
-        <div><strong>Compatible con Excel</strong><p>Acepta coma, punto y coma o tabulación, además de encabezados equivalentes como email, celular, documento u observaciones. Fecha sugerida: AAAA-MM-DD.</p></div>
+        <div><strong>Compatible con Excel</strong><p>Acepta coma, punto y coma o tabulación, además de encabezados equivalentes como email, celular, documento, asesor o vendedor. Fecha sugerida: AAAA-MM-DD.</p></div>
         <button class="ghost-button" id="customerCsvTemplateButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar plantilla CSV</button>
       </section>
       <section class="customer-csv-rules">
         <p><strong>Mínimo necesario:</strong> nombre. Documento, correo o teléfono son recomendados para detectar duplicados; apellido, empresa, canal y datos de compra pueden completarse después.</p>
+        <p><strong>Responsable comercial opcional:</strong> usa su correo corporativo en <code>responsable_comercial</code>; también se acepta el nombre completo si es único dentro del negocio. Si no coincide, el contacto se importa sin asignar y se muestra una advertencia.</p>
         <p><strong>Duplicados:</strong> documento primero, después correo y teléfono normalizados. Un cliente existente se omite y nunca se sobrescribe.</p>
         <p><strong>Clasificación:</strong> con fecha, cantidad y valor de compras válidos se crea un Cliente. Si falta esa evidencia, se guarda como Contacto pendiente, sin inventar venta ni revenue.</p>
       </section>
@@ -8022,8 +8024,8 @@
     <footer class="customer-csv-modal-footer"><button class="ghost-button hidden" id="customerCsvErrorsButton" type="button">Descargar errores</button><button class="ghost-button" id="customerCsvCancelButton" type="button">Cancelar</button><button class="solid-button" id="customerCsvSubmitButton" type="button" disabled>Importar clientes</button></footer>
   </section>
 </div>
-<script src="js/app.js?v=contacts-premium-v333-20260822" defer></script>
-<script src="js/contacts-premium-v333.js?v=contacts-premium-v341-20260823" defer></script>
+<script src="js/app.js?v=contacts-owner-v342-20260823" defer></script>
+<script src="js/contacts-premium-v333.js?v=contacts-owner-v342-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
     <script src="js/communications.js?v=communications-history-v333-20260822" defer></script>

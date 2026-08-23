@@ -622,6 +622,7 @@ const manualLeadSchema = z.object({
   source: z.string().trim().min(2).max(120).default("Manual"),
   source_detail: nullableText(220),
   branch_id: z.string().uuid().optional().nullable(),
+  commercial_owner_user_id: z.string().uuid().optional().nullable(),
   acquisition_channel_id: z.string().uuid().optional().nullable(),
   acquisition_channel: nullableText(180),
   interest: nullableText(500),
@@ -666,6 +667,21 @@ function businessIdFor(req) {
     throw forbidden("This user is not assigned to a business.");
   }
   return req.user.business_id;
+}
+
+async function commercialOwnerForBusiness(businessId, userId, db = query) {
+  if (!userId) return null;
+  const result = await db(
+    `select id, full_name, email, role
+       from app_users
+      where id = $1
+        and business_id = $2
+        and is_active = true
+        and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')`,
+    [userId, businessId]
+  );
+  if (!result.rowCount) throw badRequest("El responsable comercial no existe o no está activo en este negocio.");
+  return result.rows[0];
 }
 
 function requireBusinessOwner(req) {
@@ -5115,6 +5131,11 @@ async function createManualLead(req, res, next) {
         );
         if (!branch.rowCount) throw badRequest("La sede seleccionada no existe o no está activa para este negocio.");
       }
+      const commercialOwner = await commercialOwnerForBusiness(
+        businessId,
+        body.commercial_owner_user_id,
+        (...args) => client.query(...args)
+      );
       const existing = await findExistingBusinessContact(client, businessId, body);
       if (existing) {
         const incomingIdentity = manualContactIdentity(body);
@@ -5181,6 +5202,9 @@ async function createManualLead(req, res, next) {
               source: acquisitionChannel.acquisition_channel_source,
             },
             created_by_email: req.user.email || null,
+            commercial_owner_user_id: commercialOwner?.id || null,
+            commercial_owner_name: commercialOwner?.full_name || null,
+            commercial_owner_email: commercialOwner?.email || null,
             manual_job_title: body.job_title || null,
             manual_importance_reason: body.importance_reason || null,
             identity_document: body.document_id ? {
@@ -5366,6 +5390,7 @@ async function updateManualLead(req, res, next) {
       throw badRequest("Agrega al menos telefono o correo para poder contactar el prospecto.");
     }
 
+    const commercialOwner = await commercialOwnerForBusiness(businessId, body.commercial_owner_user_id);
     const result = await query(
       `update business_manual_leads
           set name = $3,
@@ -5394,7 +5419,10 @@ async function updateManualLead(req, res, next) {
                      'manual_notes', $16::text,
                      'updated_by_email', $17::text,
                      'document_type', $18::text,
-                     'document_id', $19::text
+                     'document_id', $19::text,
+                     'commercial_owner_user_id', $20::text,
+                     'commercial_owner_name', $21::text,
+                     'commercial_owner_email', $22::text
                    ),
               updated_at = now()
         where id = $1
@@ -5420,6 +5448,9 @@ async function updateManualLead(req, res, next) {
         req.user.email || null,
         body.document_type || null,
         body.document_id || null,
+        commercialOwner?.id || null,
+        commercialOwner?.full_name || null,
+        commercialOwner?.email || null,
       ]
     );
 

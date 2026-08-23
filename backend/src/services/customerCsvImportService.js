@@ -3,7 +3,7 @@ const { badRequest, notFound } = require("../utils/http");
 
 const CUSTOMER_CSV_HEADERS = [
   "nombre", "apellido", "tipo_documento", "numero_documento", "correo", "telefono",
-  "empresa", "canal_preferido", "fecha_ultima_compra", "total_compras", "valor_acumulado", "notas",
+  "empresa", "canal_preferido", "fecha_ultima_compra", "total_compras", "valor_acumulado", "notas", "responsable_comercial",
 ];
 const CUSTOMER_CSV_REQUIRED_HEADERS = ["nombre"];
 const CUSTOMER_CSV_HEADER_ALIASES = Object.freeze({
@@ -15,6 +15,9 @@ const CUSTOMER_CSV_HEADER_ALIASES = Object.freeze({
   celular: "telefono", movil: "telefono", numero_telefono: "telefono",
   compania: "empresa", organizacion: "empresa",
   canal: "canal_preferido", medio_preferido: "canal_preferido",
+  responsable: "responsable_comercial", asesor: "responsable_comercial", asesor_comercial: "responsable_comercial",
+  comercial: "responsable_comercial", vendedor: "responsable_comercial", ejecutivo_comercial: "responsable_comercial",
+  responsable_email: "responsable_comercial", correo_responsable: "responsable_comercial",
   ultima_compra: "fecha_ultima_compra", fecha_compra: "fecha_ultima_compra",
   compras: "total_compras", numero_compras: "total_compras", cantidad_compras: "total_compras",
   valor_total: "valor_acumulado", total_gastado: "valor_acumulado", revenue: "valor_acumulado",
@@ -126,7 +129,7 @@ function csvEscape(value) {
 }
 
 function customerTemplateCsv() {
-  const example = ["Ana", "Gómez", "CC", "1020304050", "ana.gomez@ejemplo.com", "+57 300 123 4567", "Empresa Ejemplo", "WhatsApp", "2026-08-15", "3", "1250000.00", "Cliente histórico de ejemplo"];
+  const example = ["Ana", "Gómez", "CC", "1020304050", "ana.gomez@ejemplo.com", "+57 300 123 4567", "Empresa Ejemplo", "WhatsApp", "2026-08-15", "3", "1250000.00", "Cliente histórico de ejemplo", "vendedor@empresa.com"];
   return `\uFEFF${CUSTOMER_CSV_HEADERS.join(",")}\r\n${example.map(csvEscape).join(",")}\r\n`;
 }
 
@@ -181,6 +184,8 @@ function parseCustomerCsv(payload = {}) {
       phone: phoneIsValid ? normalizedPhone : "",
       company: original.empresa,
       preferred_channel: original.canal_preferido,
+      commercial_owner_reference: String(original.responsable_comercial || "").trim(),
+      commercial_owner: null,
       purchase_date: parsePurchaseDate(original.fecha_ultima_compra),
       purchase_count: /^\d+$/.test(original.total_compras) ? Number(original.total_compras) : null,
       total_spent: parseMoney(original.valor_acumulado),
@@ -215,6 +220,45 @@ function parseCustomerCsv(payload = {}) {
     candidates.forEach(([kind, value]) => { if (value && !seen[kind].has(value)) seen[kind].set(value, row.row_number); });
   });
   return { fileName: envelope.fileName, delimiter: csv.delimiter, ignoredHeaders, rows };
+}
+
+function normalizeOwnerReference(value) {
+  return String(value || "").trim().normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ");
+}
+
+function matchCommercialOwner(reference, owners = []) {
+  const raw = String(reference || "").trim();
+  if (!raw) return { owner: null, warning: null };
+  const normalized = normalizeOwnerReference(raw);
+  const idMatch = owners.find((owner) => String(owner.id) === raw);
+  const emailMatch = owners.find((owner) => normalizeEmail(owner.email) === normalizeEmail(raw));
+  const nameMatches = owners.filter((owner) => normalizeOwnerReference(owner.full_name) === normalized);
+  const owner = idMatch || emailMatch || (nameMatches.length === 1 ? nameMatches[0] : null);
+  if (owner) return { owner, warning: null };
+  if (nameMatches.length > 1) {
+    return { owner: null, warning: `Responsable comercial ambiguo: ${raw}. Usa su correo corporativo.` };
+  }
+  return { owner: null, warning: `Responsable comercial no encontrado en este negocio: ${raw}. El contacto quedará sin asignar.` };
+}
+
+async function resolveCommercialOwners(businessId, rows, db = query) {
+  if (!rows.some((row) => row.commercial_owner_reference)) return rows;
+  const result = await db(
+    `select id, full_name, email, role
+       from app_users
+      where business_id = $1
+        and is_active = true
+        and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')
+      order by full_name asc, email asc`,
+    [businessId]
+  );
+  rows.forEach((row) => {
+    const resolved = matchCommercialOwner(row.commercial_owner_reference, result.rows);
+    row.commercial_owner = resolved.owner;
+    if (resolved.warning) row.warnings.push(resolved.warning);
+  });
+  return rows;
 }
 
 function identityKey(row) {
@@ -270,6 +314,7 @@ function matchExisting(row, contacts) {
 
 async function previewCustomerCsv(businessId, payload) {
   const parsed = parseCustomerCsv(payload);
+  await resolveCommercialOwners(businessId, parsed.rows);
   const contacts = await existingContactsForRows(businessId, parsed.rows.filter((row) => !row.errors.length));
   const previewRows = parsed.rows.map((row) => {
     const existing = row.errors.length ? null : matchExisting(row, contacts);
@@ -280,7 +325,7 @@ async function previewCustomerCsv(businessId, payload) {
     return {
       row_number: row.row_number,
       data: row.original,
-      normalized: { name: row.name, document_id: row.document_id, email: row.email, phone: row.phone, purchase_count: row.purchase_count, total_spent: row.total_spent, purchase_date: row.purchase_date, has_commercial_evidence: row.has_commercial_evidence },
+      normalized: { name: row.name, document_id: row.document_id, email: row.email, phone: row.phone, purchase_count: row.purchase_count, total_spent: row.total_spent, purchase_date: row.purchase_date, has_commercial_evidence: row.has_commercial_evidence, commercial_owner: row.commercial_owner ? { id: row.commercial_owner.id, name: row.commercial_owner.full_name, email: row.commercial_owner.email } : null },
       status: errors.length ? (errors.some((item) => /duplicad|existente/i.test(item)) ? "DUPLICATE" : "ERROR") : validStatus,
       reasons: errors,
       warnings: row.warnings,
@@ -327,10 +372,26 @@ async function createCustomerFromRow(client, businessId, user, row, batchId, ide
           created_by_email: user?.email || null,
           import_classification: row.has_commercial_evidence ? "CUSTOMER" : "CONTACT_PENDING",
           commercial_data_pending: !row.has_commercial_evidence,
+          commercial_owner_user_id: row.commercial_owner?.id || null,
+          commercial_owner_name: row.commercial_owner?.full_name || null,
+          commercial_owner_email: row.commercial_owner?.email || null,
           import_warnings: row.warnings,
         })]
     );
     contact = { ...created.rows[0], source_type: "MANUAL", is_customer: false };
+  }
+  if (contact.source_type === "MANUAL" && row.commercial_owner) {
+    await client.query(
+      `update business_manual_leads
+          set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+                'commercial_owner_user_id', $3::text,
+                'commercial_owner_name', $4::text,
+                'commercial_owner_email', $5::text
+              ),
+              updated_at = now()
+        where id = $1 and business_id = $2`,
+      [contact.id, businessId, row.commercial_owner.id, row.commercial_owner.full_name, row.commercial_owner.email]
+    );
   }
   if (!row.has_commercial_evidence) {
     return { outcome: "CREATED", reason: "Contacto creado; datos comerciales pendientes.", contact, sale_id: null };
@@ -343,11 +404,13 @@ async function createCustomerFromRow(client, businessId, user, row, batchId, ide
              'CUSTOMER_CSV_IMPORT', $8, $9, $10::timestamptz, $11, $12::jsonb)
      returning id`,
     [businessId, row.name, row.phone || null, row.email || null, row.document_id || null, row.total_spent,
-      user?.id || null, row.preferred_channel || "Importación CSV", row.notes || null, row.purchase_date,
+      row.commercial_owner?.id || user?.id || null, row.preferred_channel || "Importación CSV", row.notes || null, row.purchase_date,
       `${idempotencyKey}:${row.row_number}`, JSON.stringify({
         source_module: "customer_csv_import", source_label: "Importación CSV", import_batch_id: batchId,
         csv_row: row.row_number, imported_purchase_count: row.purchase_count, aggregate_evidence: true,
         crm_source_type: contact.source_type, crm_source_id: contact.id,
+        commercial_owner_user_id: row.commercial_owner?.id || null,
+        commercial_owner_name: row.commercial_owner?.full_name || null,
       })]
   );
   if (contact.source_type === "MANUAL") {
@@ -359,7 +422,7 @@ async function createCustomerFromRow(client, businessId, user, row, batchId, ide
      values ($1, $2, $3, $4, 'purchase_registered', 'Historial comercial importado', $5, $6::jsonb, $7)`,
     [businessId, contact.source_type === "PLAYER" ? contact.id : null, contact.source_type, contact.id,
       `${row.purchase_count} compra(s) históricas por ${row.total_spent.toLocaleString("es-CO")} COP.`,
-      JSON.stringify({ sale_id: sale.rows[0].id, import_batch_id: batchId, csv_row: row.row_number, source: "customer_csv_import" }), user?.id || null]
+      JSON.stringify({ sale_id: sale.rows[0].id, import_batch_id: batchId, csv_row: row.row_number, source: "customer_csv_import", commercial_owner_user_id: row.commercial_owner?.id || null, commercial_owner_name: row.commercial_owner?.full_name || null }), user?.id || null]
   );
   return { outcome: "CREATED", contact, sale_id: sale.rows[0].id };
 }
@@ -383,6 +446,7 @@ async function importCustomerCsv(businessId, user, payload) {
   if (batchStart.reused) return importBatchResult(businessId, batchStart.batch.id, true);
   const batchId = batchStart.batch.id;
   const parsed = parseCustomerCsv(payload);
+  await resolveCommercialOwners(businessId, parsed.rows);
   for (let start = 0; start < parsed.rows.length; start += IMPORT_CHUNK_SIZE) {
     const chunk = parsed.rows.slice(start, start + IMPORT_CHUNK_SIZE);
     await withTransaction(async (client) => {
@@ -469,6 +533,7 @@ module.exports = {
   normalizeDocument,
   normalizeEmail,
   normalizePhone,
+  matchCommercialOwner,
   parseCsv,
   parseCustomerCsv,
   parseMoney,
