@@ -44797,6 +44797,9 @@ function renderAcquisitionChannelDetail() {
 
 function renderAcquisitionChannelsView() {
   ensureAcquisitionChannelsUxStyles();
+  acquisitionChannelKpiGrid?.style.setProperty("display", "none", "important");
+  acquisitionAttributionBoard?.style.setProperty("padding", "0", "important");
+  acquisitionChannelsViewSection()?.style.setProperty("gap", "1rem", "important");
   const channels = withFilters(
     state.acquisitionChannels || [],
     ["name", "platform", "channel_type", "status", "notes"],

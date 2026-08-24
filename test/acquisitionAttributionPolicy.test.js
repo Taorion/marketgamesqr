@@ -44,6 +44,7 @@ test("portal exposes exclusive source linking and an executive attribution cente
   assert.match(portalApp, /QR emitidos/);
   assert.match(portalApp, /data-acquisition-start/);
   assert.match(portalApp, /exportAcquisitionReport/);
+  assert.match(portalApp, /acquisitionChannelKpiGrid\?\.style\.setProperty\("display", "none", "important"\)/);
   assert.match(acquisitionCss, /@media\(max-width:620px\)/);
   assert.match(acquisitionCss, /channel-list-card,[^\n]+channel-matrix-card\{display:none!important\}/);
 });
