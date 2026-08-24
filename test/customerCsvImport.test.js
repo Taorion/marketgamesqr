@@ -68,7 +68,7 @@ test("acepta encabezados parciales y columnas adicionales", () => {
   assert.equal(parsed.rows[0].name, "Laura");
   assert.equal(parsed.rows[0].has_commercial_evidence, false);
   assert.deepEqual(parsed.rows[0].errors, []);
-  assert.match(parsed.rows[0].warnings.join(" "), /Contacto/i);
+  assert.match(parsed.rows[0].warnings.join(" "), /Cliente/i);
 });
 
 test("solo exige nombre y permite completar el identificador después", () => {
@@ -107,12 +107,12 @@ test("detecta duplicados internos por prioridad documento, correo y teléfono", 
   assert.match(rows[1].errors.join(" "), /Documento duplicado dentro del archivo/i);
 });
 
-test("una fila sin evidencia comercial queda válida como contacto pendiente", () => {
+test("una fila sin evidencia comercial queda válida como cliente con historial pendiente", () => {
   const csv = `${header}\nPedro,Pérez,CC,456,pedro@example.com,3001112233,Qori,Email,,0,0,Sin compra\n`;
   const row = parseCustomerCsv(payload(csv)).rows[0];
   assert.deepEqual(row.errors, []);
   assert.equal(row.has_commercial_evidence, false);
-  assert.match(row.warnings.join(" "), /Contacto/i);
+  assert.match(row.warnings.join(" "), /Cliente/i);
 });
 
 test("tolera filas cortas y avisa si sobran valores sin encabezado", () => {
@@ -150,6 +150,9 @@ test("el contrato de importación conserva tenant, venta canónica, lotes e idem
   assert.match(source, /commercial_data_pending/);
   assert.match(source, /commercial_owner_user_id/);
   assert.match(source, /where business_id = \$1[\s\S]*and is_active = true/);
-  assert.match(source, /row\.has_commercial_evidence \? "CONVERTED" : "NEW"/);
+  assert.match(source, /"CONVERTED", row\.notes/);
+  assert.match(source, /customer_import_declared: true/);
+  assert.match(source, /customer_import_evidence: "CSV_DECLARATION"/);
+  assert.match(source, /customer_history_pending_count/);
   assert.match(source, /if \(!row\.has_commercial_evidence\)/);
 });

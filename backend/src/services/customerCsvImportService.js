@@ -203,7 +203,7 @@ function parseCustomerCsv(payload = {}) {
     if (original.total_compras && (!Number.isInteger(row.purchase_count) || row.purchase_count < 1)) row.warnings.push("Cantidad de compras pendiente o inválida.");
     if (original.valor_acumulado && !row.total_spent) row.warnings.push("Valor acumulado pendiente o inválido.");
     row.has_commercial_evidence = Boolean(row.purchase_date && Number.isInteger(row.purchase_count) && row.purchase_count > 0 && row.total_spent > 0);
-    if (!row.has_commercial_evidence) row.warnings.push("Datos comerciales pendientes: se importará como Contacto y podrá completarse después.");
+    if (!row.has_commercial_evidence) row.warnings.push("Historial comercial pendiente: se importará como Cliente con cero compras y cero revenue hasta completar datos reales.");
     return row;
   });
 
@@ -276,26 +276,29 @@ async function existingContactsForRows(businessId, rows, db = query) {
   const result = await db(
     `with contacts as (
        select p.id, 'PLAYER'::text as source_type, p.name, regexp_replace(upper(coalesce(p.document_id, '')), '[^A-Z0-9]', '', 'g') as document_id,
-              lower(nullif(p.email, '')) as email, regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g') as phone
+              lower(nullif(p.email, '')) as email, regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g') as phone,
+              coalesce(p.metadata->>'customer_import_declared', 'false') = 'true' as declared_customer
          from players p where p.business_id = $1 and coalesce(p.metadata->>'lifecycle_status', 'ACTIVE') <> 'ARCHIVED'
        union all
        select ml.id, 'MANUAL'::text, ml.name, regexp_replace(upper(coalesce(ml.document_id, '')), '[^A-Z0-9]', '', 'g'),
-              lower(nullif(ml.email, '')), regexp_replace(coalesce(ml.phone, ''), '\\D', '', 'g')
+              lower(nullif(ml.email, '')), regexp_replace(coalesce(ml.phone, ''), '\\D', '', 'g'),
+              coalesce(ml.metadata->>'customer_import_declared', 'false') = 'true'
          from business_manual_leads ml where ml.business_id = $1 and ml.status <> 'ARCHIVED'
        union all
        select a.id, 'AFFILIATE'::text, a.full_name, regexp_replace(upper(coalesce(a.document_id, '')), '[^A-Z0-9]', '', 'g'),
-              lower(nullif(a.email, '')), regexp_replace(coalesce(a.phone, ''), '\\D', '', 'g')
+              lower(nullif(a.email, '')), regexp_replace(coalesce(a.phone, ''), '\\D', '', 'g'),
+              coalesce(a.card_metadata->>'customer_import_declared', 'false') = 'true'
          from affiliates a where a.business_id = $1 and a.status <> 'DELETED'
      )
      select c.*,
-            exists (
+            (c.declared_customer or exists (
               select 1 from business_sales bs where bs.business_id = $1 and (
                 (nullif(c.document_id, '') is not null and regexp_replace(upper(coalesce(bs.customer_document_id, '')), '[^A-Z0-9]', '', 'g') = c.document_id)
                 or (nullif(c.email, '') is not null and lower(bs.customer_email) = c.email)
                 or (nullif(c.phone, '') is not null and regexp_replace(coalesce(bs.customer_phone, ''), '\\D', '', 'g') = c.phone)
                 or (bs.metadata->>'crm_source_type' = c.source_type and bs.metadata->>'crm_source_id' = c.id::text)
               )
-            ) as is_customer
+            )) as is_customer
        from contacts c
       where (cardinality($2::text[]) > 0 and c.document_id = any($2::text[]))
          or (cardinality($3::text[]) > 0 and c.email = any($3::text[]))
@@ -320,8 +323,7 @@ async function previewCustomerCsv(businessId, payload) {
     const existing = row.errors.length ? null : matchExisting(row, contacts);
     const errors = [...row.errors];
     if (existing?.is_customer) errors.push("Cliente existente.");
-    else if (existing && !row.has_commercial_evidence) errors.push("Contacto existente; no se sobrescribirá.");
-    const validStatus = row.has_commercial_evidence ? "VALID_CUSTOMER" : "VALID_CONTACT";
+    const validStatus = "VALID_CUSTOMER";
     return {
       row_number: row.row_number,
       data: row.original,
@@ -339,7 +341,8 @@ async function previewCustomerCsv(businessId, payload) {
     total_rows: previewRows.length,
     valid_rows: previewRows.filter((row) => row.status.startsWith("VALID_")).length,
     customer_rows: previewRows.filter((row) => row.status === "VALID_CUSTOMER").length,
-    pending_contact_rows: previewRows.filter((row) => row.status === "VALID_CONTACT").length,
+    pending_contact_rows: 0,
+    customer_history_pending_rows: previewRows.filter((row) => row.status === "VALID_CUSTOMER" && !row.normalized.has_commercial_evidence).length,
     duplicate_rows: previewRows.filter((row) => row.status === "DUPLICATE").length,
     invalid_rows: previewRows.filter((row) => row.status === "ERROR").length,
     rows: previewRows,
@@ -354,9 +357,6 @@ async function createCustomerFromRow(client, businessId, user, row, batchId, ide
   if (contact?.document_id && row.document_id && contact.document_id !== row.document_id) {
     return { outcome: "ERROR", reason: "El correo o teléfono pertenece a un contacto con otro documento.", contact: null };
   }
-  if (contact && !row.has_commercial_evidence) {
-    return { outcome: "DUPLICATE", reason: "Contacto existente; no se sobrescribió.", contact };
-  }
   if (!contact) {
     const created = await client.query(
       `insert into business_manual_leads
@@ -366,11 +366,14 @@ async function createCustomerFromRow(client, businessId, user, row, batchId, ide
        returning id, name, email, phone, document_id`,
       [businessId, user?.id || null, row.name, row.email || null, row.phone || null, row.document_type || null,
         row.document_id || null, row.company || null, row.preferred_channel || null,
-        row.has_commercial_evidence ? "CONVERTED" : "NEW", row.notes || null,
+        "CONVERTED", row.notes || null,
         JSON.stringify({
           source: "customer_csv_import", import_batch_id: batchId, csv_row: row.row_number,
           created_by_email: user?.email || null,
-          import_classification: row.has_commercial_evidence ? "CUSTOMER" : "CONTACT_PENDING",
+          import_classification: "CUSTOMER",
+          customer_import_declared: true,
+          customer_import_evidence: "CSV_DECLARATION",
+          customer_imported_at: new Date().toISOString(),
           commercial_data_pending: !row.has_commercial_evidence,
           commercial_owner_user_id: row.commercial_owner?.id || null,
           commercial_owner_name: row.commercial_owner?.full_name || null,
@@ -380,21 +383,30 @@ async function createCustomerFromRow(client, businessId, user, row, batchId, ide
     );
     contact = { ...created.rows[0], source_type: "MANUAL", is_customer: false };
   }
-  if (contact.source_type === "MANUAL" && row.commercial_owner) {
+  if (contact) {
+    const target = {
+      PLAYER: { table: "players", metadata: "metadata" },
+      MANUAL: { table: "business_manual_leads", metadata: "metadata" },
+      AFFILIATE: { table: "affiliates", metadata: "card_metadata" },
+    }[contact.source_type];
+    if (!target) return { outcome: "ERROR", reason: "Tipo de contacto no compatible con la importación.", contact: null };
     await client.query(
-      `update business_manual_leads
-          set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
-                'commercial_owner_user_id', $3::text,
-                'commercial_owner_name', $4::text,
-                'commercial_owner_email', $5::text
-              ),
-              updated_at = now()
+      `update ${target.table}
+          set ${target.metadata} = coalesce(${target.metadata}, '{}'::jsonb) || jsonb_strip_nulls(jsonb_build_object(
+                'customer_import_declared', true,
+                'customer_import_evidence', 'CSV_DECLARATION',
+                'customer_import_batch_id', $3::text,
+                'customer_imported_at', now(),
+                'commercial_owner_user_id', $4::text,
+                'commercial_owner_name', $5::text,
+                'commercial_owner_email', $6::text
+              ))
         where id = $1 and business_id = $2`,
-      [contact.id, businessId, row.commercial_owner.id, row.commercial_owner.full_name, row.commercial_owner.email]
+      [contact.id, businessId, batchId, row.commercial_owner?.id || null, row.commercial_owner?.full_name || null, row.commercial_owner?.email || null]
     );
   }
   if (!row.has_commercial_evidence) {
-    return { outcome: "CREATED", reason: "Contacto creado; datos comerciales pendientes.", contact, sale_id: null };
+    return { outcome: "CREATED", reason: "Cliente importado; historial comercial pendiente.", contact, sale_id: null };
   }
   const sale = await client.query(
     `insert into business_sales
@@ -507,10 +519,10 @@ async function importBatchResult(businessId, batchId, reused = false) {
              from business_customer_import_rows where batch_id = $1 and business_id = $2 order by row_number`, [batchId, businessId]),
   ]);
   if (!batch.rowCount) throw notFound("El lote de importación no existe.");
-  const createdCustomerCount = rows.rows.filter((row) => row.outcome === "CREATED" && row.sale_id).length;
-  const pendingContactCount = rows.rows.filter((row) => row.outcome === "CREATED" && !row.sale_id).length;
+  const createdCustomerCount = rows.rows.filter((row) => row.outcome === "CREATED").length;
+  const customerHistoryPendingCount = rows.rows.filter((row) => row.outcome === "CREATED" && !row.sale_id).length;
   return {
-    batch: { ...batch.rows[0], created_customer_count: createdCustomerCount, pending_contact_count: pendingContactCount },
+    batch: { ...batch.rows[0], created_customer_count: createdCustomerCount, pending_contact_count: 0, customer_history_pending_count: customerHistoryPendingCount },
     rows: rows.rows,
     reused,
   };

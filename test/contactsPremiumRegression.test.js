@@ -46,7 +46,22 @@ test("el responsable comercial aparece en importación, búsqueda y directorio",
   assert.match(script, /Responsable: \$\{owner\}/);
   assert.match(app, /metadata\.commercial_owner_email/);
   assert.match(html, /responsable_comercial/);
-  assert.match(html, /contacts-owner-v342-20260823/);
+  assert.match(html, /contacts-client-import-v343-20260823/);
+});
+
+test("la importación CSV persiste clientes y los excluye de Leads aunque no tengan compras", () => {
+  const importService = read("backend/src/services/customerCsvImportService.js");
+  const crmService = read("backend/src/services/leadCrmService.js");
+  const app = read("empresa/js/app.js");
+  const premium = read("empresa/js/contacts-premium-v333.js");
+  assert.match(importService, /customer_import_declared: true/);
+  assert.match(importService, /Cliente importado; historial comercial pendiente/);
+  assert.match(importService, /if \(!row\.has_commercial_evidence\)[\s\S]*sale_id: null/);
+  assert.match(crmService, /purchase_count = 0 and coalesce\(metadata->>'customer_import_declared', 'false'\) <> 'true'/);
+  assert.match(crmService, /purchase_count > 0 or coalesce\(metadata->>'customer_import_declared', 'false'\) = 'true'/);
+  assert.match(app, /metadata\.customer_import_declared/);
+  assert.match(premium, /Cliente · historial pendiente/);
+  assert.doesNotMatch(premium, /Contacto pendiente/);
 });
 
 test("el alta y la edición manual permiten un responsable opcional del mismo negocio", () => {

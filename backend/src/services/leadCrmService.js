@@ -249,8 +249,8 @@ function listWhere(filters, params) {
     params.push(`%${normalizeSearch(filters.city)}%`);
     clauses.push(`normalized_city like $${params.length}`);
   }
-  if (filters.audience_type === "LEAD") clauses.push("purchase_count = 0");
-  if (filters.audience_type === "CLIENT") clauses.push("purchase_count > 0");
+  if (filters.audience_type === "LEAD") clauses.push("purchase_count = 0 and coalesce(metadata->>'customer_import_declared', 'false') <> 'true'");
+  if (filters.audience_type === "CLIENT") clauses.push("(purchase_count > 0 or coalesce(metadata->>'customer_import_declared', 'false') = 'true')");
   if (filters.has_purchases === "true") clauses.push("purchase_count > 0");
   if (filters.has_purchases === "false") clauses.push("purchase_count = 0");
   if (filters.is_affiliate === "true") clauses.push("is_affiliate = true");

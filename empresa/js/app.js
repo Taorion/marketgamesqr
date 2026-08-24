@@ -35567,7 +35567,10 @@ function leadDirectoryMetadata(item = {}) {
 }
 
 function leadDirectoryIsCustomer(item = {}) {
-  return Number(item.purchase_count || item.sales_count || item.purchases_count || 0) > 0
+  const metadata = leadDirectoryMetadata(item);
+  return metadata.customer_import_declared === true
+    || String(metadata.customer_import_declared || "").toLowerCase() === "true"
+    || Number(item.purchase_count || item.sales_count || item.purchases_count || 0) > 0
     || Number(item.total_spent || item.sales_total || item.purchase_total || item.sale_amount || 0) > 0
     || Boolean(item.last_purchase_at || item.last_sale_at);
 }

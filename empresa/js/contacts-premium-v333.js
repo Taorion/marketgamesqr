@@ -251,7 +251,7 @@
     ui.counters.innerHTML = [
       [data.total_rows, "Filas"],
       [data.customer_rows, "Clientes listos"],
-      [data.pending_contact_rows, "Contactos pendientes"],
+      [data.customer_history_pending_rows, "Historial pendiente"],
       [data.duplicate_rows, "Duplicadas"],
       [data.invalid_rows, "Con errores"],
     ].map(([value, label]) => `<article><strong>${Number(value || 0).toLocaleString("es-CO")}</strong><small>${label}</small></article>`).join("");
@@ -259,9 +259,8 @@
     ui.previewBody.innerHTML = (data.rows || []).slice(0, 8).map((row) => {
       const raw = row.data || {};
       const isCustomer = row.status === "VALID_CUSTOMER";
-      const isContact = row.status === "VALID_CONTACT";
-      const tone = isCustomer ? "ok" : (isContact || row.status === "DUPLICATE") ? "pending" : "danger";
-      const label = isCustomer ? "Cliente listo" : isContact ? "Contacto pendiente" : row.status === "DUPLICATE" ? "Duplicada" : "Error";
+      const tone = isCustomer ? "ok" : row.status === "DUPLICATE" ? "pending" : "danger";
+      const label = isCustomer ? (row.normalized?.has_commercial_evidence ? "Cliente con historial" : "Cliente · historial pendiente") : row.status === "DUPLICATE" ? "Duplicada" : "Error";
       const detail = [...(row.reasons || []), ...(row.warnings || [])].join(" ");
       const owner = row.normalized?.commercial_owner?.name || raw.responsable_comercial || "Sin responsable";
       return `<tr><td>${row.row_number}</td><td><strong>${escapeHtml([raw.nombre, raw.apellido].filter(Boolean).join(" ") || "—")}</strong><small>${escapeHtml(`${raw.empresa || "Sin empresa"} · Responsable: ${owner}`)}</small></td><td>${escapeHtml(raw.numero_documento || raw.correo || raw.telefono || "Sin identificador")}</td><td>${escapeHtml(isCustomer ? `${raw.total_compras || 0} compra(s) · ${raw.valor_acumulado || "0"}` : "Completar después")}</td><td><span class="status-chip ${tone}">${label}</span><small>${escapeHtml(detail)}</small></td></tr>`;
@@ -288,10 +287,10 @@
       csvState.batchId = batch.id || "";
       progress(100, "Importación completada");
       const created = (result.rows || []).filter((row) => row.outcome === "CREATED");
-      ui.result.innerHTML = `<strong>Lote procesado</strong><div class="customer-csv-result-grid"><span><strong>${Number(batch.total_rows || 0)}</strong><small>filas procesadas</small></span><span><strong>${Number(batch.created_customer_count || 0)}</strong><small>clientes creados</small></span><span><strong>${Number(batch.pending_contact_count || 0)}</strong><small>contactos pendientes</small></span><span><strong>${Number(batch.duplicate_count || 0)}</strong><small>duplicados omitidos</small></span><span><strong>${Number(batch.error_count || 0)}</strong><small>filas con errores</small></span></div>${created.length ? `<div class="customer-csv-created-links">${created.slice(0, 8).map((row) => `<button class="text-button" type="button" data-open-imported-customer="${escapeHtml(row.contact_source_id)}" data-source-type="${escapeHtml(row.contact_source_type || "MANUAL")}">Abrir ${row.sale_id ? "cliente" : "contacto pendiente"} de la fila ${row.row_number}</button>`).join("")}</div>` : ""}`;
+      ui.result.innerHTML = `<strong>Lote procesado</strong><div class="customer-csv-result-grid"><span><strong>${Number(batch.total_rows || 0)}</strong><small>filas procesadas</small></span><span><strong>${Number(batch.created_customer_count || 0)}</strong><small>clientes creados</small></span><span><strong>${Number(batch.customer_history_pending_count || 0)}</strong><small>historial pendiente</small></span><span><strong>${Number(batch.duplicate_count || 0)}</strong><small>duplicados omitidos</small></span><span><strong>${Number(batch.error_count || 0)}</strong><small>filas con errores</small></span></div>${created.length ? `<div class="customer-csv-created-links">${created.slice(0, 8).map((row) => `<button class="text-button" type="button" data-open-imported-customer="${escapeHtml(row.contact_source_id)}" data-source-type="${escapeHtml(row.contact_source_type || "MANUAL")}">Abrir cliente de la fila ${row.row_number}</button>`).join("")}</div>` : ""}`;
       ui.result.classList.remove("hidden");
       ui.errors.classList.toggle("hidden", !(Number(batch.duplicate_count || 0) + Number(batch.error_count || 0)));
-      message("Clientes y contactos pendientes actualizados sin recargar la página.", "success");
+      message("Clientes actualizados sin recargar la página.", "success");
       state.leadCrmLoaded = false;
       await premiumLoadLeadCrmData({ force: true, quiet: true });
       renderLeadsView();

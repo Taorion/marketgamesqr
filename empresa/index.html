@@ -7995,7 +7995,7 @@
       <div>
         <span class="mono-label">Clientes · operación segura</span>
         <h3 id="customerCsvImportTitle">Importar clientes CSV</h3>
-        <p id="customerCsvImportHelp">Carga la base aunque falten datos y asigna opcionalmente un responsable comercial. Solo los registros con compra completa se clasifican como Clientes.</p>
+        <p id="customerCsvImportHelp">Carga clientes aunque falten datos y asigna opcionalmente un responsable comercial. El historial puede completarse después.</p>
       </div>
       <button class="icon-button" id="customerCsvImportClose" type="button" aria-label="Cerrar importación"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
     </header>
@@ -8008,7 +8008,7 @@
         <p><strong>Mínimo necesario:</strong> nombre. Documento, correo o teléfono son recomendados para detectar duplicados; apellido, empresa, canal y datos de compra pueden completarse después.</p>
         <p><strong>Responsable comercial opcional:</strong> usa su correo corporativo en <code>responsable_comercial</code>; también se acepta el nombre completo si es único dentro del negocio. Si no coincide, el contacto se importa sin asignar y se muestra una advertencia.</p>
         <p><strong>Duplicados:</strong> documento primero, después correo y teléfono normalizados. Un cliente existente se omite y nunca se sobrescribe.</p>
-        <p><strong>Clasificación:</strong> con fecha, cantidad y valor de compras válidos se crea un Cliente. Si falta esa evidencia, se guarda como Contacto pendiente, sin inventar venta ni revenue.</p>
+        <p><strong>Clasificación:</strong> toda fila válida de esta importación se guarda como Cliente. Si falta el historial, queda marcado como pendiente, con cero compras y cero revenue hasta registrar datos reales.</p>
       </section>
       <label class="customer-csv-dropzone" id="customerCsvDropzone" for="customerCsvFileInput" tabindex="0">
         <span class="material-symbols-outlined" aria-hidden="true">upload_file</span><strong>Arrastra el CSV o selecciónalo</strong><small>Máximo 2 MB y 2.000 filas</small>
@@ -8024,8 +8024,8 @@
     <footer class="customer-csv-modal-footer"><button class="ghost-button hidden" id="customerCsvErrorsButton" type="button">Descargar errores</button><button class="ghost-button" id="customerCsvCancelButton" type="button">Cancelar</button><button class="solid-button" id="customerCsvSubmitButton" type="button" disabled>Importar clientes</button></footer>
   </section>
 </div>
-<script src="js/app.js?v=contacts-owner-v342-20260823" defer></script>
-<script src="js/contacts-premium-v333.js?v=contacts-owner-v342-20260823" defer></script>
+<script src="js/app.js?v=contacts-client-import-v343-20260823" defer></script>
+<script src="js/contacts-premium-v333.js?v=contacts-client-import-v343-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
     <script src="js/communications.js?v=communications-history-v333-20260822" defer></script>
