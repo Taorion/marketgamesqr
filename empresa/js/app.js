@@ -6769,6 +6769,7 @@ function setView(view) {
   if (state.currentView === "channels" && view !== "channels") {
     closeAcquisitionChannelModal();
     closeChannelEffortModal();
+    closeAcquisitionChannelInsights();
   }
   if (state.currentView === "competition" && view !== "competition") {
     closeCompetitorFormModal();
@@ -44195,6 +44196,100 @@ function channelEffortsForChannel(channel = {}) {
   });
 }
 
+function acquisitionChannelPortfolioMetrics(channel = {}, efforts = channelEffortsForChannel(channel)) {
+  const base = channel.metrics || {};
+  const effortTotals = efforts.reduce((acc, effort) => {
+    const metrics = effort.metrics || {};
+    ["views", "starts", "leads", "completions", "downloads", "qr_generated", "redemptions", "sales", "revenue"].forEach((key) => {
+      acc[key] += Number(metrics[key] || 0);
+    });
+    return acc;
+  }, { views: 0, starts: 0, leads: 0, completions: 0, downloads: 0, qr_generated: 0, redemptions: 0, sales: 0, revenue: 0 });
+  const investment = Number(base.investment || channel.period_budget || 0);
+  const leads = Math.max(Number(base.leads || 0), effortTotals.leads);
+  const sales = Math.max(Number(base.sales || 0), effortTotals.sales);
+  const revenue = Math.max(Number(base.revenue || 0), effortTotals.revenue);
+  return {
+    ...effortTotals,
+    leads,
+    sales,
+    revenue,
+    investment,
+    cac: leads > 0 ? Number((investment / leads).toFixed(2)) : null,
+    roi: investment > 0 ? Number((((revenue - investment) / investment) * 100).toFixed(2)) : null,
+  };
+}
+
+function ensureAcquisitionChannelInsightsModal() {
+  let modal = document.getElementById("acquisitionChannelInsightsModal");
+  if (modal) return modal;
+  modal = document.createElement("div");
+  modal.id = "acquisitionChannelInsightsModal";
+  modal.className = "acq-insights-overlay hidden";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-labelledby", "acqInsightsTitle");
+  modal.innerHTML = `<section class="acq-insights-modal"><header><div><span class="mono-label">Inteligencia del medio</span><h3 id="acqInsightsTitle">Detalle de adquisición</h3><p id="acqInsightsSubtitle"></p></div><button class="icon-button" type="button" data-close-channel-insights aria-label="Cerrar detalle del medio"><span class="material-symbols-outlined">close</span></button></header><div class="acq-insights-body" id="acqInsightsBody"></div></section>`;
+  document.body.appendChild(modal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal || event.target.closest("[data-close-channel-insights]")) closeAcquisitionChannelInsights();
+  });
+  return modal;
+}
+
+function closeAcquisitionChannelInsights() {
+  document.getElementById("acquisitionChannelInsightsModal")?.classList.add("hidden");
+  document.body.classList.remove("acq-insights-open");
+}
+
+function acquisitionLeadReason(lead = {}) {
+  if (lead.source_kind === "INTERACTIVE_ACTIVATION") {
+    if (lead.redeemed) return "Redimió el beneficio QR";
+    if (lead.qr_generated) return "Completó y recibió un beneficio QR";
+    return "Dejó sus datos en la activación";
+  }
+  return lead.downloaded ? "Descargó el activo digital" : "Completó el formulario de captura";
+}
+
+function renderAcquisitionChannelInsights(channel, data = {}) {
+  const modal = ensureAcquisitionChannelInsightsModal();
+  const efforts = Array.isArray(data.efforts) ? data.efforts : channelEffortsForChannel(channel);
+  const leads = Array.isArray(data.leads) ? data.leads : [];
+  const metrics = acquisitionChannelPortfolioMetrics(channel, efforts);
+  modal.querySelector("#acqInsightsTitle").textContent = channel.name || "Medio";
+  modal.querySelector("#acqInsightsSubtitle").textContent = `${channel.platform || acquisitionChannelTypeLabel(channel.channel_type)} · ${efforts.length} atracción${efforts.length === 1 ? "" : "es"} medible${efforts.length === 1 ? "" : "s"}`;
+  modal.querySelector("#acqInsightsBody").innerHTML = `
+    <section class="acq-insights-kpis">
+      <article><span>Leads del medio</span><strong>${metrics.leads}</strong><small>Conciliados desde sus atracciones</small></article>
+      <article><span>Revenue</span><strong>${escapeHtml(money(metrics.revenue))}</strong><small>${metrics.sales} ventas atribuidas</small></article>
+      <article><span>QR emitidos</span><strong>${metrics.qr_generated}</strong><small>${metrics.redemptions} redenciones</small></article>
+      <article><span>Descargas</span><strong>${metrics.downloads}</strong><small>${metrics.completions} experiencias completadas</small></article>
+      <article><span>Inversión</span><strong>${escapeHtml(money(metrics.investment))}</strong><small>CAC ${metrics.cac === null ? "-" : escapeHtml(money(metrics.cac))}</small></article>
+      <article><span>ROI del medio</span><strong>${escapeHtml(channelRoiLabel(metrics.roi))}</strong><small>${escapeHtml(roiDecisionLabel(metrics.roi, metrics.revenue, metrics.investment))}</small></article>
+    </section>
+    <section class="acq-insights-section"><div class="acq-insights-heading"><div><span class="mono-label">Por qué atracción</span><h4>Contribución al medio</h4></div><span>${efforts.length} registradas</span></div><div class="acq-insights-efforts">${efforts.map((effort) => { const m = effort.metrics || {}; const source = effort.interactive_activation_name || effort.lead_capture_activation_name || effort.digital_asset_name || "Sin fuente exclusiva"; return `<article><div><strong>${escapeHtml(effort.title || "Atracción")}</strong><small>${escapeHtml(source)}</small></div><dl><div><dt>Leads</dt><dd>${Number(m.leads || 0)}</dd></div><div><dt>Descargas</dt><dd>${Number(m.downloads || 0)}</dd></div><div><dt>QR</dt><dd>${Number(m.qr_generated || 0)}</dd></div><div><dt>Redenciones</dt><dd>${Number(m.redemptions || 0)}</dd></div><div><dt>Ventas</dt><dd>${Number(m.sales || 0)}</dd></div><div><dt>Revenue</dt><dd>${escapeHtml(money(m.revenue || 0))}</dd></div></dl></article>`; }).join("") || '<div class="acq-insights-empty">Este medio todavía no tiene atracciones medibles enlazadas.</div>'}</div></section>
+    <section class="acq-insights-section"><div class="acq-insights-heading"><div><span class="mono-label">Leads atribuibles</span><h4>Personas que llegaron por este medio</h4></div><span>${leads.length} señales</span></div><div class="acq-insights-leads">${leads.map((lead) => `<article><div class="acq-lead-avatar">${escapeHtml(String(lead.name || "L").trim().charAt(0).toUpperCase() || "L")}</div><div><strong>${escapeHtml(lead.name || "Lead sin nombre")}</strong><small>${escapeHtml([lead.email, lead.phone, lead.document_id].filter(Boolean).join(" · ") || "Contacto capturado")}</small><p>${escapeHtml(acquisitionLeadReason(lead))} mediante <b>${escapeHtml(lead.effort_title || "atracción")}</b> · ${escapeHtml(lead.source_name || "fuente enlazada")}</p></div><time>${escapeHtml(formatDateShort(lead.captured_at))}</time></article>`).join("") || '<div class="acq-insights-empty">No hay leads identificables para este medio en el periodo seleccionado.</div>'}</div></section>`;
+}
+
+async function openAcquisitionChannelInsights(channelId = "") {
+  const channel = acquisitionChannelById(channelId);
+  if (!channel?.id) return;
+  const modal = ensureAcquisitionChannelInsightsModal();
+  document.body.classList.add("acq-insights-open");
+  modal.classList.remove("hidden");
+  modal.querySelector("#acqInsightsTitle").textContent = channel.name || "Medio";
+  modal.querySelector("#acqInsightsSubtitle").textContent = "Construyendo el recorrido desde sus atracciones...";
+  modal.querySelector("#acqInsightsBody").innerHTML = '<div class="acq-insights-loading">Conciliando atracciones, leads, descargas, QR y ventas...</div>';
+  try {
+    const period = acquisitionReportingPeriod();
+    const params = new URLSearchParams({ start_date: period.start, end_date: period.end });
+    const data = await api(`/api/business/channels/${encodeURIComponent(channel.id)}/insights?${params.toString()}`, { headers: authHeaders() });
+    renderAcquisitionChannelInsights(channel, data);
+  } catch (error) {
+    modal.querySelector("#acqInsightsBody").innerHTML = `<div class="acq-insights-empty">No fue posible cargar el detalle: ${escapeHtml(error.message)}</div>`;
+  }
+}
+
 function resetChannelEffortForm(effort = null) {
   state.channelEffortEditingId = effort?.id || null;
   renderChannelEffortOptions();
@@ -44504,8 +44599,8 @@ function renderAcquisitionAttributionBoard(rows = []) {
   const period = acquisitionReportingPeriod();
   const channels = (state.acquisitionChannels || []).filter((channel) => channel.id && channel.status !== "ARCHIVED");
   const channelCards = channels.map((channel) => {
-    const metrics = channel.metrics || {};
     const channelEfforts = rows.filter((effort) => effort.channel_id === channel.id);
+    const metrics = acquisitionChannelPortfolioMetrics(channel, channelEfforts);
     const linked = channelEfforts.filter((effort) => effort.metrics?.attribution_quality === "EXACT_LINK").length;
     const investment = Number(metrics.investment || channel.period_budget || 0);
     return `<article class="acq-channel-card">
@@ -44513,7 +44608,7 @@ function renderAcquisitionAttributionBoard(rows = []) {
       <div class="acq-channel-score"><strong>${escapeHtml(channelRoiLabel(metrics.roi))}</strong><span>ROI del medio</span></div>
       <dl><div><dt>Revenue</dt><dd>${escapeHtml(money(metrics.revenue || 0))}</dd></div><div><dt>Inversión</dt><dd>${escapeHtml(money(investment))}</dd></div><div><dt>Ventas</dt><dd>${Number(metrics.sales || 0)}</dd></div><div><dt>Leads</dt><dd>${Number(metrics.leads || 0)}</dd></div></dl>
       <div class="acq-progress"><span><b>${linked}</b> de ${channelEfforts.length} atracciones exactas</span><i><b style="width:${acquisitionPercent(linked, channelEfforts.length)}%"></b></i></div>
-      <div class="acq-card-actions"><button class="ghost-button compact" type="button" data-channel-edit="${escapeHtml(channel.id)}">Configurar</button><button class="solid-button compact" type="button" data-channel-add-effort="${escapeHtml(channel.id)}">Crear atracción</button></div>
+      <div class="acq-card-actions"><button class="solid-button compact" type="button" data-channel-insights="${escapeHtml(channel.id)}">Ver análisis</button><button class="ghost-button compact" type="button" data-channel-edit="${escapeHtml(channel.id)}">Configurar</button><button class="ghost-button compact" type="button" data-channel-add-effort="${escapeHtml(channel.id)}">Crear atracción</button></div>
     </article>`;
   }).join("");
   const cards = rows.map((effort) => {
@@ -57301,6 +57396,7 @@ acquisitionAttributionBoard?.addEventListener("click", async (event) => {
   const editButton = event.target.closest("[data-channel-effort-edit]");
   const channelEditButton = event.target.closest("[data-channel-edit]");
   const channelEffortButton = event.target.closest("[data-channel-add-effort]");
+  const insightsButton = event.target.closest("[data-channel-insights]");
   const applyButton = event.target.closest("[data-acquisition-apply]");
   const daysButton = event.target.closest("[data-acquisition-days]");
   const exportButton = event.target.closest("[data-acquisition-export]");
@@ -57322,6 +57418,7 @@ acquisitionAttributionBoard?.addEventListener("click", async (event) => {
     resetChannelEffortForm({ channel_id: channelEffortButton.dataset.channelAddEffort || "" });
     openChannelEffortModal();
   }
+  if (insightsButton) openAcquisitionChannelInsights(insightsButton.dataset.channelInsights);
   if (newChannelButton) {
     resetAcquisitionChannelForm();
     openAcquisitionChannelModal();
@@ -57509,6 +57606,12 @@ document.addEventListener("change", (event) => {
     manual.hidden = select.value !== "__MANUAL__";
     if (select.value !== "__MANUAL__") manual.value = "";
     if (select.value === "__MANUAL__") manual.focus();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !document.getElementById("acquisitionChannelInsightsModal")?.classList.contains("hidden")) {
+    closeAcquisitionChannelInsights();
   }
 });
 

@@ -2936,7 +2936,7 @@ async function listAcquisitionChannels(req, res, next) {
     const businessId = businessIdFor(req);
     const { start, end } = channelDateRange(req.query);
     const campaignId = req.query.campaign_id || null;
-    const [channelsResult, activityRows, campaignBreakdownRows] = await Promise.all([
+    const [channelsResult, activityRows, campaignBreakdownRows, linkedEffortsResult] = await Promise.all([
       query(
         `select *
          from business_acquisition_channels
@@ -2947,7 +2947,33 @@ async function listAcquisitionChannels(req, res, next) {
       ),
       channelActivityRows(businessId, { start, end, campaign_id: campaignId }),
       channelCampaignBreakdownRows(businessId, { start, end, campaign_id: campaignId }),
+      query(
+        `select e.*, ch.name channel_name, ch.slug channel_slug, ch.platform channel_platform
+           from business_acquisition_channel_efforts e
+           join business_acquisition_channels ch on ch.id=e.channel_id and ch.business_id=e.business_id
+          where e.business_id=$1 and e.status <> 'ARCHIVED'
+            and ($2::uuid is null or e.campaign_id=$2::uuid)
+            and coalesce(e.ends_at,e.starts_at,e.published_at,e.created_at) >= $3
+            and coalesce(e.starts_at,e.published_at,e.created_at) <= $4`,
+        [businessId, campaignId, start.toISOString(), end.toISOString()]
+      ),
     ]);
+
+    const exactMetricsByChannel = new Map();
+    await Promise.all(linkedEffortsResult.rows.map(async (effort) => {
+      if (!effort.interactive_activation_id && !effort.lead_capture_activation_id && !effort.digital_asset_id) return;
+      const metrics = await metricsForChannelEffort(businessId, effort);
+      const current = exactMetricsByChannel.get(String(effort.channel_id)) || emptyChannelMetrics();
+      exactMetricsByChannel.set(String(effort.channel_id), {
+        ...current,
+        leads: Number(current.leads || 0) + Number(metrics.leads || 0),
+        qr_generated: Number(current.qr_generated || 0) + Number(metrics.qr_generated || 0),
+        redemptions: Number(current.redemptions || 0) + Number(metrics.redemptions || 0),
+        sales: Number(current.sales || 0) + Number(metrics.sales || 0),
+        unique_customers: Number(current.unique_customers || 0) + Number(metrics.unique_customers || metrics.leads || 0),
+        revenue: Number(current.revenue || 0) + Number(metrics.revenue || 0),
+      });
+    }));
 
     const metricsBySlug = new Map();
     activityRows.forEach((row) => {
@@ -3011,7 +3037,17 @@ async function listAcquisitionChannels(req, res, next) {
       .sort((a, b) => Number(b.revenue || 0) - Number(a.revenue || 0));
 
     const directory = channelsResult.rows.map((row) => {
-      const { metrics, key } = readMetricsForChannel(row);
+      const { metrics: historicalMetrics, key } = readMetricsForChannel(row);
+      const exactMetrics = exactMetricsByChannel.get(String(row.id)) || emptyChannelMetrics();
+      const metrics = {
+        ...historicalMetrics,
+        leads: Math.max(Number(historicalMetrics.leads || 0), Number(exactMetrics.leads || 0)),
+        qr_generated: Math.max(Number(historicalMetrics.qr_generated || 0), Number(exactMetrics.qr_generated || 0)),
+        redemptions: Math.max(Number(historicalMetrics.redemptions || 0), Number(exactMetrics.redemptions || 0)),
+        sales: Math.max(Number(historicalMetrics.sales || 0), Number(exactMetrics.sales || 0)),
+        unique_customers: Math.max(Number(historicalMetrics.unique_customers || 0), Number(exactMetrics.unique_customers || 0)),
+        revenue: Math.max(Number(historicalMetrics.revenue || 0), Number(exactMetrics.revenue || 0)),
+      };
       const { rows: breakdownRows } = readBreakdownForChannel(row);
       channelMatchKeys(row).forEach((matchKey) => {
         metricsBySlug.delete(matchKey);
@@ -3577,6 +3613,82 @@ if (endDate && Number.isNaN(endDate.getTime())) throw badRequest("Fecha final in
           : null,
         net_revenue: Number((totals.revenue - totals.investment).toFixed(2)),
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getAcquisitionChannelInsights(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const { start, end } = channelDateRange(req.query);
+    const channelResult = await query(
+      "select * from business_acquisition_channels where id=$1 and business_id=$2 limit 1",
+      [req.params.channelId, businessId]
+    );
+    if (!channelResult.rowCount) throw notFound("Medio de adquisicion no encontrado.");
+    const effortsResult = await query(
+      `select e.*, ch.name channel_name, ch.slug channel_slug, ch.platform channel_platform,
+              c.name campaign_name, ia.title interactive_activation_name,
+              lca.name lead_capture_activation_name, da.title digital_asset_name
+         from business_acquisition_channel_efforts e
+         join business_acquisition_channels ch on ch.id=e.channel_id and ch.business_id=e.business_id
+         left join campaigns c on c.id=e.campaign_id and c.business_id=e.business_id
+         left join interactive_activations ia on ia.id=e.interactive_activation_id and ia.company_id=e.business_id
+         left join lead_capture_activations lca on lca.id=e.lead_capture_activation_id and lca.business_id=e.business_id
+         left join digital_assets da on da.id=e.digital_asset_id and da.business_id=e.business_id
+        where e.business_id=$1 and e.channel_id=$2 and e.status <> 'ARCHIVED'
+          and coalesce(e.ends_at,e.starts_at,e.published_at,e.created_at) >= $3
+          and coalesce(e.starts_at,e.published_at,e.created_at) <= $4
+        order by coalesce(e.starts_at,e.published_at,e.created_at) desc`,
+      [businessId, req.params.channelId, start.toISOString(), end.toISOString()]
+    );
+    const efforts = await Promise.all(effortsResult.rows.map(async (row) => normalizeChannelEffortRow({
+      ...row,
+      tracked_url: effortTrackedUrl(row),
+      metrics: await metricsForChannelEffort(businessId, row),
+    })));
+    const leadsResult = await query(
+      `with attributed_leads as (
+         select e.id effort_id, e.title effort_title, 'INTERACTIVE_ACTIVATION'::text source_kind,
+                ia.title source_name, p.id signal_id, p.player_id contact_id,
+                p.name, p.email, p.phone, p.document document_id, p.created_at captured_at,
+                p.status lead_status,
+                exists(select 1 from interactive_activation_rewards ar where ar.participant_id=p.id) qr_generated,
+                exists(select 1 from interactive_activation_rewards ar join redemptions rd on rd.qr_code_id=ar.qr_code_id where ar.participant_id=p.id) redeemed,
+                false downloaded
+           from business_acquisition_channel_efforts e
+           join interactive_activations ia on ia.id=e.interactive_activation_id and ia.company_id=e.business_id
+           join interactive_activation_participants p on p.activation_id=ia.id and p.company_id=e.business_id
+          where e.business_id=$1 and e.channel_id=$2 and e.status <> 'ARCHIVED' and p.created_at between $3 and $4
+         union all
+         select e.id, e.title, 'LEAD_CAPTURE'::text,
+                coalesce(lca.name,da.title,'Activo digital'), s.id, s.lead_id,
+                coalesce(nullif(p.name,''),nullif(s.form_data->>'name',''),nullif(concat_ws(' ',s.form_data->>'first_name',s.form_data->>'last_name'),''),'Lead capturado'),
+                coalesce(nullif(p.email,''),nullif(s.form_data->>'email','')),
+                coalesce(nullif(p.phone,''),nullif(s.form_data->>'phone','')),
+                coalesce(nullif(p.document_id,''),nullif(s.form_data->>'document_id','')),
+                s.created_at, case when s.lead_was_existing then 'existing' else 'new' end,
+                false, false,
+                exists(select 1 from digital_asset_downloads dl where dl.submission_id=s.id and dl.downloaded_at is not null)
+           from business_acquisition_channel_efforts e
+           left join lead_capture_activations lca on lca.id=e.lead_capture_activation_id and lca.business_id=e.business_id
+           left join digital_assets da on da.id=e.digital_asset_id and da.business_id=e.business_id
+           join lead_capture_submissions s on s.business_id=e.business_id and (
+             (e.lead_capture_activation_id is not null and s.activation_id=e.lead_capture_activation_id)
+             or (e.digital_asset_id is not null and s.asset_id=e.digital_asset_id)
+           )
+           left join players p on p.id=s.lead_id and p.business_id=e.business_id
+          where e.business_id=$1 and e.channel_id=$2 and e.status <> 'ARCHIVED' and s.created_at between $3 and $4
+       ) select * from attributed_leads order by captured_at desc limit 300`,
+      [businessId, req.params.channelId, start.toISOString(), end.toISOString()]
+    );
+    res.json({
+      channel: channelResult.rows[0],
+      efforts,
+      leads: leadsResult.rows,
+      filters: { start_date: start.toISOString(), end_date: end.toISOString() },
     });
   } catch (error) {
     next(error);
@@ -6829,6 +6941,7 @@ module.exports = {
   updateCompetitorProduct,
   archiveCompetitorProduct,
   listAcquisitionChannels,
+  getAcquisitionChannelInsights,
   createAcquisitionChannel,
   updateAcquisitionChannel,
   archiveAcquisitionChannel,

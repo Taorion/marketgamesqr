@@ -45,6 +45,7 @@ const {
   updateCompetitorProduct,
   archiveCompetitorProduct,
   listAcquisitionChannels,
+  getAcquisitionChannelInsights,
   createAcquisitionChannel,
   updateAcquisitionChannel,
   archiveAcquisitionChannel,
@@ -327,6 +328,7 @@ router.patch("/competitor-products/:productId", updateCompetitorProduct);
 router.delete("/competitor-products/:productId", archiveCompetitorProduct);
 router.get("/channels", standardBusinessCache, listAcquisitionChannels);
 router.post("/channels", createAcquisitionChannel);
+router.get("/channels/:channelId/insights", standardBusinessCache, getAcquisitionChannelInsights);
 router.get("/channel-efforts", standardBusinessCache, listAcquisitionChannelEfforts);
 router.post("/channel-efforts", createAcquisitionChannelEffort);
 router.patch("/channel-efforts/:effortId", updateAcquisitionChannelEffort);
