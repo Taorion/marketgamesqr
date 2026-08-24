@@ -17729,24 +17729,35 @@ function renderValidatorPurchaseItems() {
   if (!state.validatorPurchaseItems.length) {
     state.validatorPurchaseItems = [validatorPurchaseItem()];
   }
+  const availableProducts = activeInventoryProducts();
+  const catalogStatus = state.inventoryLoaded
+    ? `${availableProducts.length.toLocaleString("es-CO")} producto${availableProducts.length === 1 ? "" : "s"} disponible${availableProducts.length === 1 ? "" : "s"} en Productos`
+    : state.inventoryLoadError
+      ? "No se pudo cargar Productos. Pulsa Actualizar e intenta de nuevo."
+      : "Cargando productos y precios registrados...";
   validatorPurchaseItems.innerHTML = state.validatorPurchaseItems.map((item, index) => {
     const selectedProduct = item.inventory_product_id ? findInventoryProductById(item.inventory_product_id) : null;
-    const selectedValue = selectedProduct
-      ? inventoryProductSelectValue(selectedProduct)
-      : item.name ? OPEN_PRODUCT_VALUE : "";
-    const productPlaceholder = state.inventoryLoaded
-      ? "Selecciona un producto registrado"
-      : "Cargando productos del inventario...";
+    const searchValue = selectedProduct ? inventoryProductLabel(selectedProduct) : item.name || "";
+    const datalistId = `validator-inventory-products-${item.id}`;
     return `
     <article class="validator-purchase-item" data-validator-purchase-item="${escapeHtml(item.id)}">
       <span class="validator-purchase-index">${index + 1}</span>
-      <label>
-        <span>Producto o servicio</span>
-        <select data-validator-item-field="product_select" data-product-select>${inventoryProductSelectOptions(selectedValue, {
-          placeholder: productPlaceholder,
-          openLabel: "Producto abierto / servicio no registrado",
-        })}</select>
-        <input class="open-product-input ${selectedValue === OPEN_PRODUCT_VALUE ? "" : "hidden"}" data-validator-item-field="name" type="text" maxlength="200" autocomplete="off" value="${escapeHtml(selectedValue === OPEN_PRODUCT_VALUE ? item.name : "")}" placeholder="Nombre del producto o servicio" ${selectedValue === OPEN_PRODUCT_VALUE ? "" : "disabled"}>
+      <label class="validator-product-picker">
+        <span>Buscar producto registrado</span>
+        <span class="validator-product-search-control">
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          <input data-validator-item-field="product_search" type="search" list="${escapeHtml(datalistId)}" maxlength="200" autocomplete="off" value="${escapeHtml(searchValue)}" placeholder="Escribe nombre, SKU o código">
+        </span>
+        <datalist id="${escapeHtml(datalistId)}">
+          ${availableProducts.map((product) => {
+            const refs = [product.sku, product.barcode].filter(Boolean).join(" / ");
+            const stock = product.stock_quantity !== undefined && product.stock_quantity !== null
+              ? ` · stock ${Number(product.stock_quantity || 0).toLocaleString("es-CO")}`
+              : "";
+            return `<option value="${escapeHtml(inventoryProductLabel(product))}" label="${escapeHtml(`${money(product.unit_price || 0)}${stock}`)}"></option>`;
+          }).join("")}
+        </datalist>
+        <small class="validator-product-catalog-status">${escapeHtml(catalogStatus)} · puedes escribir un producto abierto si no existe.</small>
       </label>
       <label><span>Cantidad</span><input data-validator-item-field="quantity" type="number" min="0.01" step="0.01" inputmode="decimal" value="${escapeHtml(item.quantity)}"></label>
       <label><span>Precio unitario</span><input data-validator-item-field="unit_price" type="number" min="0" step="100" inputmode="decimal" value="${escapeHtml(item.unit_price || "")}" placeholder="$0"></label>
@@ -24093,7 +24104,7 @@ function findInventoryProduct(value) {
   const needle = normalizeInventoryLookup(raw);
   if (!needle) return null;
   return (state.inventoryProducts || []).find((product) => {
-    const candidates = [product.name, product.sku, product.barcode].map(normalizeInventoryLookup);
+    const candidates = [product.name, product.sku, product.barcode, inventoryProductLabel(product)].map(normalizeInventoryLookup);
     return candidates.includes(needle);
   }) || null;
 }
@@ -57801,7 +57812,17 @@ gamingCenterCoreButton?.addEventListener("click", openGamingCenterEntry);
 redemptionInsightButton.addEventListener("click", () => setView("redemptions"));
 dashboardInsightButton.addEventListener("click", () => setView("campaigns"));
 qrWorkflowCampaignButton?.addEventListener("click", () => setView("campaigns"));
-refreshValidatorHistoryButton.addEventListener("click", loadValidatorHistory);
+refreshValidatorHistoryButton.addEventListener("click", () => {
+  loadValidatorHistory();
+  loadInventoryProducts({ force: true, quiet: true }).then(() => {
+    if (state.validatorRedemptionMode === "PURCHASE") {
+      renderValidatorPurchaseItems();
+      calculateValidatorCheckoutPreview();
+    }
+  }).catch(() => {
+    if (state.validatorRedemptionMode === "PURCHASE") renderValidatorPurchaseItems();
+  });
+});
 startValidatorScannerButton.addEventListener("click", startValidatorScanner);
 stopValidatorScannerButton.addEventListener("click", stopValidatorScanner);
 validateValidatorManualButton.addEventListener("click", () => validateValidatorToken(validatorQrTokenInput.value));
@@ -57840,14 +57861,27 @@ validatorPurchaseItems?.addEventListener("input", (event) => {
   const item = state.validatorPurchaseItems.find((candidate) => candidate.id === row.dataset.validatorPurchaseItem);
   if (!item) return;
   const key = field.dataset.validatorItemField;
-  if (key === "product_select") return;
+  if (key === "product_search") {
+    const product = findInventoryProduct(field.value);
+    item.name = product?.name || field.value.trim();
+    item.inventory_product_id = product?.id || null;
+    if (product) {
+      item.unit_price = Math.max(0, Number(product.unit_price || 0));
+      const priceInput = row.querySelector('[data-validator-item-field="unit_price"]');
+      if (priceInput) priceInput.value = item.unit_price || "";
+    }
+    const total = Number(item.quantity || 0) * Number(item.unit_price || 0);
+    row.querySelector(".validator-purchase-line-total strong").textContent = money(total);
+    calculateValidatorCheckoutPreview();
+    return;
+  }
   item[key] = key === "name" ? field.value : Math.max(0, Number(field.value || 0));
   const total = Number(item.quantity || 0) * Number(item.unit_price || 0);
   row.querySelector(".validator-purchase-line-total strong").textContent = money(total);
   calculateValidatorCheckoutPreview();
 });
 validatorPurchaseItems?.addEventListener("change", (event) => {
-  const field = event.target.closest("[data-validator-item-field='product_select']");
+  const field = event.target.closest("[data-validator-item-field='product_search']");
   const row = event.target.closest("[data-validator-purchase-item]");
   if (!field || !row) return;
   const item = state.validatorPurchaseItems.find((candidate) => candidate.id === row.dataset.validatorPurchaseItem);
@@ -57858,18 +57892,11 @@ validatorPurchaseItems?.addEventListener("change", (event) => {
     item.unit_price = Math.max(0, Number(product.unit_price || 0));
     item.inventory_product_id = product.id;
   } else {
-    item.name = "";
-    item.unit_price = 0;
+    item.name = field.value.trim();
     item.inventory_product_id = null;
   }
-  const openProductSelected = !product && field.value === OPEN_PRODUCT_VALUE;
   renderValidatorPurchaseItems();
   calculateValidatorCheckoutPreview();
-  if (openProductSelected) {
-    validatorPurchaseItems
-      ?.querySelector(`[data-validator-purchase-item="${CSS.escape(item.id)}"] [data-validator-item-field="name"]`)
-      ?.focus();
-  }
 });
 validatorPurchaseItems?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-validator-remove-item]");
