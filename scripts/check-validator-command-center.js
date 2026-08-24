@@ -106,11 +106,12 @@ assert.match(app, /loadInventoryProducts\(\{ force: true, quiet: true \}\)/);
 assert.match(app, /data-validator-item-field="product_search"/);
 assert.match(app, /type="search" list="\$\{escapeHtml\(datalistId\)\}"/);
 assert.match(app, /validator-product-catalog-status/);
-assert.match(app, /findInventoryProduct\(field\.value\)/);
+assert.match(app, /findValidatorInventoryProduct\(field\.value\)/);
+assert.match(app, /function validatorInventoryProductSearchValue/);
 assert.match(css, /\[hidden\][^{]*\{[^}]*display:\s*none\s*!important/s);
 assert.match(css, /\.validator-product-search-control/);
 assert.match(html, /validator-product-search-v351-20260824/g);
-assert.match(html, /acquisition-validator-product-search-v351-20260824/g);
+assert.match(html, /acquisition-insights-validator-search-v352-20260824/g);
 assert.match(checkoutMigration, /benefit_discount_amount/);
 assert.match(checkoutMigration, /application_mode/);
 

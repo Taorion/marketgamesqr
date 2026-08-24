@@ -17724,6 +17724,19 @@ function validatorLineItems() {
   })).filter((item) => item.name && item.quantity > 0);
 }
 
+function validatorInventoryProductSearchValue(product = {}) {
+  const reference = product.sku || product.barcode || (product.id ? `ID ${String(product.id).slice(0, 8)}` : "");
+  return reference ? `${product.name} · ${reference}` : String(product.name || "");
+}
+
+function findValidatorInventoryProduct(value) {
+  const needle = normalizeInventoryLookup(value);
+  if (!needle) return null;
+  return activeInventoryProducts().find((product) => (
+    normalizeInventoryLookup(validatorInventoryProductSearchValue(product)) === needle
+  )) || findInventoryProduct(value);
+}
+
 function renderValidatorPurchaseItems() {
   if (!validatorPurchaseItems) return;
   if (!state.validatorPurchaseItems.length) {
@@ -17737,7 +17750,7 @@ function renderValidatorPurchaseItems() {
       : "Cargando productos y precios registrados...";
   validatorPurchaseItems.innerHTML = state.validatorPurchaseItems.map((item, index) => {
     const selectedProduct = item.inventory_product_id ? findInventoryProductById(item.inventory_product_id) : null;
-    const searchValue = selectedProduct ? inventoryProductLabel(selectedProduct) : item.name || "";
+    const searchValue = selectedProduct ? validatorInventoryProductSearchValue(selectedProduct) : item.name || "";
     const datalistId = `validator-inventory-products-${item.id}`;
     return `
     <article class="validator-purchase-item" data-validator-purchase-item="${escapeHtml(item.id)}">
@@ -17754,7 +17767,7 @@ function renderValidatorPurchaseItems() {
             const stock = product.stock_quantity !== undefined && product.stock_quantity !== null
               ? ` · stock ${Number(product.stock_quantity || 0).toLocaleString("es-CO")}`
               : "";
-            return `<option value="${escapeHtml(inventoryProductLabel(product))}" label="${escapeHtml(`${money(product.unit_price || 0)}${stock}`)}"></option>`;
+            return `<option value="${escapeHtml(validatorInventoryProductSearchValue(product))}" label="${escapeHtml(`${money(product.unit_price || 0)}${stock}`)}"></option>`;
           }).join("")}
         </datalist>
         <small class="validator-product-catalog-status">${escapeHtml(catalogStatus)} · puedes escribir un producto abierto si no existe.</small>
@@ -57862,7 +57875,7 @@ validatorPurchaseItems?.addEventListener("input", (event) => {
   if (!item) return;
   const key = field.dataset.validatorItemField;
   if (key === "product_search") {
-    const product = findInventoryProduct(field.value);
+    const product = findValidatorInventoryProduct(field.value);
     item.name = product?.name || field.value.trim();
     item.inventory_product_id = product?.id || null;
     if (product) {
@@ -57886,7 +57899,7 @@ validatorPurchaseItems?.addEventListener("change", (event) => {
   if (!field || !row) return;
   const item = state.validatorPurchaseItems.find((candidate) => candidate.id === row.dataset.validatorPurchaseItem);
   if (!item) return;
-  const product = findInventoryProduct(field.value);
+  const product = findValidatorInventoryProduct(field.value);
   if (product) {
     item.name = product.name || "";
     item.unit_price = Math.max(0, Number(product.unit_price || 0));
