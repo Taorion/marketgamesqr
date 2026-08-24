@@ -90,6 +90,8 @@ assert.match(salesController, /purchase_subtotal/);
 assert.match(benefitCheckoutService, /purchase_required/);
 assert.match(benefitCheckoutService, /BUY_X_GET_Y/);
 assert.match(qrService, /assertStandaloneBusinessFeature\(user, accessRow\.business_id, "qr_validator"\)/);
+assert.match(qrService, /JSON\.stringify\(checkout\.line_items\)/);
+assert.match(qrService, /\$12::jsonb/);
 assert.match(rewardPassService, /assertStandaloneBusinessFeature\(user, accessRow\.company_id, "qr_validator"\)/);
 assert.match(subscriptionService, /async function assertStandaloneBusinessFeature/);
 
@@ -99,8 +101,12 @@ assert.match(css, /\.validator-history-cards/);
 assert.match(css, /\.validator-redemption-modes/);
 assert.match(css, /\.validator-checkout-summary/);
 assert.match(css, /validatorSurfaceL/);
+assert.match(app, /loadInventoryProducts\(\{ quiet: true \}\)/);
+assert.match(app, /data-validator-item-field="product_select"/);
+assert.match(app, /findInventoryProduct\(field\.value\)/);
 assert.match(css, /\[hidden\][^{]*\{[^}]*display:\s*none\s*!important/s);
 assert.match(html, /validator-benefit-checkout-v345-20260824/g);
+assert.match(html, /validator-inventory-acquisition-v349-20260824/g);
 assert.match(checkoutMigration, /benefit_discount_amount/);
 assert.match(checkoutMigration, /application_mode/);
 

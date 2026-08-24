@@ -17728,16 +17728,32 @@ function renderValidatorPurchaseItems() {
   if (!state.validatorPurchaseItems.length) {
     state.validatorPurchaseItems = [validatorPurchaseItem()];
   }
-  validatorPurchaseItems.innerHTML = state.validatorPurchaseItems.map((item, index) => `
+  validatorPurchaseItems.innerHTML = state.validatorPurchaseItems.map((item, index) => {
+    const selectedProduct = item.inventory_product_id ? findInventoryProductById(item.inventory_product_id) : null;
+    const selectedValue = selectedProduct
+      ? inventoryProductSelectValue(selectedProduct)
+      : item.name ? OPEN_PRODUCT_VALUE : "";
+    const productPlaceholder = state.inventoryLoaded
+      ? "Selecciona un producto registrado"
+      : "Cargando productos del inventario...";
+    return `
     <article class="validator-purchase-item" data-validator-purchase-item="${escapeHtml(item.id)}">
       <span class="validator-purchase-index">${index + 1}</span>
-      <label><span>Producto o servicio</span><input data-validator-item-field="name" type="text" maxlength="200" autocomplete="off" value="${escapeHtml(item.name)}" placeholder="Ej: Camisa premium"></label>
+      <label>
+        <span>Producto o servicio</span>
+        <select data-validator-item-field="product_select" data-product-select>${inventoryProductSelectOptions(selectedValue, {
+          placeholder: productPlaceholder,
+          openLabel: "Producto abierto / servicio no registrado",
+        })}</select>
+        <input class="open-product-input ${selectedValue === OPEN_PRODUCT_VALUE ? "" : "hidden"}" data-validator-item-field="name" type="text" maxlength="200" autocomplete="off" value="${escapeHtml(selectedValue === OPEN_PRODUCT_VALUE ? item.name : "")}" placeholder="Nombre del producto o servicio" ${selectedValue === OPEN_PRODUCT_VALUE ? "" : "disabled"}>
+      </label>
       <label><span>Cantidad</span><input data-validator-item-field="quantity" type="number" min="0.01" step="0.01" inputmode="decimal" value="${escapeHtml(item.quantity)}"></label>
       <label><span>Precio unitario</span><input data-validator-item-field="unit_price" type="number" min="0" step="100" inputmode="decimal" value="${escapeHtml(item.unit_price || "")}" placeholder="$0"></label>
       <div class="validator-purchase-line-total"><span>Total línea</span><strong>${money(Number(item.quantity || 0) * Number(item.unit_price || 0))}</strong></div>
       <button class="icon-button" data-validator-remove-item="${escapeHtml(item.id)}" type="button" aria-label="Eliminar producto" ${state.validatorPurchaseItems.length === 1 ? "disabled" : ""}><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
     </article>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function calculateValidatorCheckoutPreview() {
@@ -18248,6 +18264,12 @@ function renderValidatorBranchOptions() {
 
 async function renderValidatorView() {
   ensureValidatorQrUx();
+  loadInventoryProducts({ quiet: true }).then(() => {
+    if (state.validatorRedemptionMode === "PURCHASE") {
+      renderValidatorPurchaseItems();
+      calculateValidatorCheckoutPreview();
+    }
+  }).catch(() => {});
   if (!state.businessBranchesLoaded && !state.businessBranchesLoading && session?.user?.business_id && hasPlanFeature("multi_branch")) {
     loadBusinessBranches({ quiet: true }).then(renderValidatorBranchOptions).catch(() => {});
   } else {
@@ -30577,12 +30599,16 @@ async function validateValidatorToken(rawValue) {
     state.validatorLastRedemption = null;
     if (data.allowed) {
       if (data.kind !== "reward_pass") {
+        await loadInventoryProducts({ quiet: true });
+        if (!isCurrentBusinessScope(scopeKey) || state.validatorLastToken !== token) return;
+        const scopedInventoryProduct = findInventoryProductById(data.benefit_application?.product_scope?.inventory_product_id || "");
         state.validatorRedemptionMode = data.benefit_application?.purchase_required ? "PURCHASE" : "STANDALONE";
         state.validatorPurchaseItems = [validatorPurchaseItem({
-          name: data.benefit_application?.product_scope?.mode === "applies_to_product"
+          name: scopedInventoryProduct?.name || (data.benefit_application?.product_scope?.mode === "applies_to_product"
             ? data.benefit_application.product_scope.product_name || ""
-            : "",
-          inventory_product_id: data.benefit_application?.product_scope?.inventory_product_id || null,
+            : ""),
+          unit_price: scopedInventoryProduct?.unit_price || 0,
+          inventory_product_id: scopedInventoryProduct?.id || data.benefit_application?.product_scope?.inventory_product_id || null,
         })];
       }
       setValidatorResult("ok", data.kind === "reward_pass" ? "Reward Pass válido" : "Ticket válido", data.message, data);
@@ -57711,10 +57737,36 @@ validatorPurchaseItems?.addEventListener("input", (event) => {
   const item = state.validatorPurchaseItems.find((candidate) => candidate.id === row.dataset.validatorPurchaseItem);
   if (!item) return;
   const key = field.dataset.validatorItemField;
+  if (key === "product_select") return;
   item[key] = key === "name" ? field.value : Math.max(0, Number(field.value || 0));
   const total = Number(item.quantity || 0) * Number(item.unit_price || 0);
   row.querySelector(".validator-purchase-line-total strong").textContent = money(total);
   calculateValidatorCheckoutPreview();
+});
+validatorPurchaseItems?.addEventListener("change", (event) => {
+  const field = event.target.closest("[data-validator-item-field='product_select']");
+  const row = event.target.closest("[data-validator-purchase-item]");
+  if (!field || !row) return;
+  const item = state.validatorPurchaseItems.find((candidate) => candidate.id === row.dataset.validatorPurchaseItem);
+  if (!item) return;
+  const product = findInventoryProduct(field.value);
+  if (product) {
+    item.name = product.name || "";
+    item.unit_price = Math.max(0, Number(product.unit_price || 0));
+    item.inventory_product_id = product.id;
+  } else {
+    item.name = "";
+    item.unit_price = 0;
+    item.inventory_product_id = null;
+  }
+  const openProductSelected = !product && field.value === OPEN_PRODUCT_VALUE;
+  renderValidatorPurchaseItems();
+  calculateValidatorCheckoutPreview();
+  if (openProductSelected) {
+    validatorPurchaseItems
+      ?.querySelector(`[data-validator-purchase-item="${CSS.escape(item.id)}"] [data-validator-item-field="name"]`)
+      ?.focus();
+  }
 });
 validatorPurchaseItems?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-validator-remove-item]");

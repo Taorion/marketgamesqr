@@ -399,13 +399,13 @@ async function recordAffiliateCheckout(client, qr, attributedSale, checkout, pur
     qr.affiliate_id,
     points,
     purchase.notes || null,
-    {
+    JSON.stringify({
       source: "affiliate_referral_qr",
       redemption_id: attributedSale.redemption_id,
       attributed_sale_id: attributedSale.id,
       checkout,
       ...ruleMetadata,
-    },
+    }),
   ];
   let businessSale;
   if (existing) {
@@ -429,7 +429,7 @@ async function recordAffiliateCheckout(client, qr, attributedSale, checkout, pur
          customer_document_id, product_name, sale_amount, currency, seller_user_id, branch_id,
          acquisition_source, acquisition_channel, referred_affiliate_id, referral_points_awarded, notes, metadata)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, coalesce($12::uuid, $13::uuid),
-         'FRIEND_REFERRAL', 'QR recomendacion afiliado', $14, $15, $16, $17)
+         'FRIEND_REFERRAL', 'QR recomendacion afiliado', $14, $15, $16, $17::jsonb)
        returning *`,
       values
     );
@@ -444,14 +444,14 @@ async function recordAffiliateCheckout(client, qr, attributedSale, checkout, pur
     await client.query(
       `insert into affiliate_point_ledger
         (business_id, affiliate_id, created_by_user_id, amount, points_awarded, reason, metadata)
-       values ($1, $2, $3, $4, $5, 'REFERRAL_PURCHASE_QR', $6)`,
+       values ($1, $2, $3, $4, $5, 'REFERRAL_PURCHASE_QR', $6::jsonb)`,
       [
         qr.business_id,
         qr.affiliate_id,
         user.id,
         checkout.final_total,
         pointDelta,
-        {
+        JSON.stringify({
           business_sale_id: businessSale.id,
           attributed_sale_id: attributedSale.id,
           qr_code_id: qr.id,
@@ -459,7 +459,7 @@ async function recordAffiliateCheckout(client, qr, attributedSale, checkout, pur
           previous_points: previousPoints,
           referral_points: points,
           ...ruleMetadata,
-        },
+        }),
       ]
     );
   }
@@ -577,7 +577,7 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
     const redemption = await client.query(
       `insert into redemptions
         (business_id, campaign_id, game_id, qr_code_id, reward_id, player_id, redeemed_by_user_id, branch_id, metadata)
-       values ($1, $2, $3, $4, $5, $6, $7, coalesce($8::uuid, $9::uuid), $10)
+       values ($1, $2, $3, $4, $5, $6, $7, coalesce($8::uuid, $9::uuid), $10::jsonb)
        returning *`,
       [
         qr.business_id,
@@ -589,7 +589,7 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
         user.id,
         checkoutPayload.purchase?.branch_id || null,
         user.branch_id || null,
-        redemptionMetadata,
+        JSON.stringify(redemptionMetadata),
       ]
     );
 
@@ -609,7 +609,7 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
          values
           ($1, $2, $3, $4, $5,
            $6, $7, $8, $9, $10,
-           $11, $12, $13, $14, 'PURCHASE',
+           $11::jsonb, $12::jsonb, $13::jsonb, $14, 'PURCHASE',
            $15, $16, coalesce($17::uuid, $18::uuid), $19, $20, $21)
          returning *`,
         [
@@ -623,9 +623,9 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
           checkout.discount_amount,
           checkout.benefit.type,
           checkout.benefit.label,
-          checkout.benefit,
-          checkout.line_items,
-          checkout,
+          JSON.stringify(checkout.benefit),
+          JSON.stringify(checkout.line_items),
+          JSON.stringify(checkout),
           checkout.purchase_required,
           purchase.currency || "COP",
           user.id,
