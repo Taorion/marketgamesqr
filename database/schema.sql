@@ -236,8 +236,10 @@ create table if not exists questionnaires (
   id uuid primary key default gen_random_uuid(),
   business_id uuid not null references businesses(id) on delete cascade,
   game_id uuid not null references games(id) on delete cascade,
-  player_id uuid not null references players(id) on delete cascade,
+  player_id uuid references players(id) on delete cascade,
+  interactive_participant_id uuid,
   answers jsonb not null default '{}',
+  constraint questionnaires_subject_check check (player_id is not null or interactive_participant_id is not null),
   created_at timestamptz not null default now()
 );
 

@@ -2104,14 +2104,16 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
   const validatorUrl = buildValidatorUrl(token);
 
   const questionnaireResult = await client.query(
-    `insert into questionnaires (business_id, campaign_id, game_id, player_id, answers)
-     values ($1, $2, $3, $4, $5::jsonb)
+    `insert into questionnaires
+      (business_id, campaign_id, game_id, player_id, interactive_participant_id, answers)
+     values ($1, $2, $3, $4, $5, $6::jsonb)
      returning id`,
     [
       activation.company_id,
       activation.campaign_id || null,
       await defaultGameId(client, activation.company_id),
       participant.player_id || null,
+      participant.id,
       jsonParam({
         activation_id: activation.id,
         participant_id: participant.id,
