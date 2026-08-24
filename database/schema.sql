@@ -1086,10 +1086,33 @@ create table if not exists business_acquisition_channel_efforts (
   creative_url text,
   source_url text,
   notes text,
+  tracking_token uuid not null default gen_random_uuid(),
+  attribution_model text not null default 'LEGACY_WINDOW' check (attribution_model in ('DIRECT_LINK', 'TRACKED_LINK', 'LEGACY_WINDOW')),
+  interactive_activation_id uuid references interactive_activations(id) on delete set null,
+  lead_capture_activation_id uuid references lead_capture_activations(id) on delete set null,
+  digital_asset_id uuid references digital_assets(id) on delete set null,
   metadata jsonb not null default '{}'::jsonb,
   created_by_user_id uuid references app_users(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+create table if not exists business_acquisition_events (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references businesses(id) on delete cascade,
+  effort_id uuid not null references business_acquisition_channel_efforts(id) on delete cascade,
+  channel_id uuid not null references business_acquisition_channels(id) on delete cascade,
+  event_type text not null,
+  source_type text not null,
+  source_id uuid,
+  lead_id uuid references players(id) on delete set null,
+  participant_id uuid references interactive_activation_participants(id) on delete set null,
+  qr_code_id uuid references qr_codes(id) on delete set null,
+  revenue_amount numeric(14, 2) not null default 0,
+  dedupe_key text,
+  occurred_at timestamptz not null default now(),
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
 );
 
 create index if not exists idx_business_acquisition_channel_efforts_channel_dates

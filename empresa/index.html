@@ -48,9 +48,10 @@
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
 <link rel="stylesheet" href="css/portal-clean-v39.css?v=activation-studio-premium-v331-20260822">
 <link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-premium-v341-20260823">
-<link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-pro-v11-20260820">
+<link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-white-titles-v12-20260824">
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822">
 <link rel="stylesheet" href="css/reward-pass-premium-v342.css?v=reward-pass-branches-v344-20260823">
+<link rel="stylesheet" href="css/acquisition-command-center.css?v=acquisition-attribution-v1-20260824">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -5546,6 +5547,7 @@
             </div>
 
             <section class="kpi-grid sales-kpis" id="acquisitionChannelKpiGrid"></section>
+            <section class="acquisition-attribution-board" id="acquisitionAttributionBoard" aria-live="polite"></section>
 
             <section class="channel-command-strip">
               <article class="surface-card channel-command-card">
@@ -5579,6 +5581,8 @@
                   <input id="channelEffortIdInput" type="hidden">
                   <label><span>Medio</span><select id="channelEffortChannelInput" required></select></label>
                   <label><span>Campaña asociada</span><select id="channelEffortCampaignInput"><option value="">Sin campaña</option></select></label>
+                  <label class="span-2"><span>Fuente medible exclusiva</span><select id="channelEffortAttributionSourceInput"><option value="">Sin enlace (medición histórica)</option></select><small>La activación o activo elegido quedará atribuido únicamente a esta atracción mientras esté activa.</small></label>
+                  <label class="span-2 acquisition-link-preview" id="channelEffortLinkPreview"><span>Enlace medible</span><output>Se genera al guardar la atracción.</output></label>
                   <label class="span-2"><span>Título del esfuerzo</span><input id="channelEffortTitleInput" type="text" maxlength="180" required placeholder="Post Instagram colección premium julio"></label>
                   <label><span>Tipo de pieza</span>
                     <select id="channelEffortTypeInput">

@@ -81,12 +81,16 @@ const contentSchema = z.object({
 const publicSubmissionSchema = z.object({
   form_data: z.record(z.string(), z.unknown()).default({}),
   consent_accepted: z.boolean().default(false),
+  acquisition_tracking_token: z.string().uuid().optional().nullable(),
+  acquisition_tracking_source: z.string().trim().max(40).optional().nullable(),
 });
 
 function reqMeta(req) {
   return {
     ip: req.ip || req.headers["x-forwarded-for"] || "",
     userAgent: req.headers["user-agent"] || "",
+    acquisitionTrackingToken: req.query.qori_ref || null,
+    acquisitionTrackingSource: req.query.qori_source || null,
   };
 }
 
@@ -155,7 +159,7 @@ async function publicGet(req, res, next) {
 async function publicSubmit(req, res, next) {
   try {
     const body = validate(publicSubmissionSchema, req.body);
-    res.status(201).json(await submitPublicLeadCapture(req.params.token, body, reqMeta(req)));
+    res.status(201).json(await submitPublicLeadCapture(req.params.token, body, { ...reqMeta(req), acquisitionTrackingToken: body.acquisition_tracking_token || null, acquisitionTrackingSource: body.acquisition_tracking_source || null }));
   } catch (error) {
     next(error);
   }

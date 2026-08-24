@@ -2,6 +2,9 @@ const captureCard = document.getElementById("captureCard");
 const token = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).pop() || "");
 let currentPayload = null;
 const SALES_MACHINE_LOGO = "/img/qori-favicon.png";
+const trackingParams = new URLSearchParams(window.location.search);
+const acquisitionTrackingToken = trackingParams.get("qori_ref") || null;
+const acquisitionTrackingSource = trackingParams.get("qori_source") || null;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -150,7 +153,7 @@ async function submitCapture(event) {
   const message = document.getElementById("captureMessage");
   const submitButton = form.querySelector("button[type='submit']");
   const formData = new FormData(form);
-  const payload = { form_data: {}, consent_accepted: formData.get("consent_accepted") === "on" };
+  const payload = { form_data: {}, consent_accepted: formData.get("consent_accepted") === "on", acquisition_tracking_token: acquisitionTrackingToken, acquisition_tracking_source: acquisitionTrackingSource };
   for (const [key, value] of formData.entries()) {
     if (key !== "consent_accepted") payload.form_data[key] = String(value || "").trim();
   }
@@ -181,7 +184,7 @@ async function boot() {
     return;
   }
   try {
-    render(await api(`/api/public/lead-captures/${encodeURIComponent(token)}`));
+    render(await api(`/api/public/lead-captures/${encodeURIComponent(token)}${window.location.search}`));
   } catch (error) {
     captureCard.innerHTML = `<div class="capture-error">${escapeHtml(error.message || "Este recurso ya no esta disponible.")}</div>`;
   }

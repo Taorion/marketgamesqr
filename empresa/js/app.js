@@ -1075,6 +1075,9 @@ const channelEffortFormTitle = document.getElementById("channelEffortFormTitle")
 const channelEffortIdInput = document.getElementById("channelEffortIdInput");
 const channelEffortChannelInput = document.getElementById("channelEffortChannelInput");
 const channelEffortCampaignInput = document.getElementById("channelEffortCampaignInput");
+const channelEffortAttributionSourceInput = document.getElementById("channelEffortAttributionSourceInput");
+const channelEffortLinkPreview = document.getElementById("channelEffortLinkPreview");
+const acquisitionAttributionBoard = document.getElementById("acquisitionAttributionBoard");
 const channelEffortTitleInput = document.getElementById("channelEffortTitleInput");
 const channelEffortTypeInput = document.getElementById("channelEffortTypeInput");
 const channelEffortObjectiveInput = document.getElementById("channelEffortObjectiveInput");
@@ -6945,6 +6948,9 @@ function setView(view) {
     Promise.all([
       loadAcquisitionChannels({ quiet: true }),
       loadChannelEfforts({ quiet: true }),
+      loadStrategicQrData({ groups: ["activations"], quiet: true }),
+      loadLeadCaptureActivations({ quiet: true }),
+      loadDigitalAssets({ quiet: true }),
     ]).then(renderAcquisitionChannelsView);
     renderAcquisitionChannelsView();
   }
@@ -43281,12 +43287,9 @@ function ensureAcquisitionChannelsUxStyles() {
       color: #64748b;
     }
     body[data-current-view="channels"] .portal-shell .channel-command-strip,
-    body[data-current-view="channels"] .portal-shell .channel-detail-card,
     body[data-current-view="channels"] .portal-shell .channel-effort-results-card,
     body[data-current-view="channels"] .portal-shell .channel-matrix-card,
-    body[data-current-view="channels"] .portal-shell #acquisitionChannelKpiGrid {
-      display: none !important;
-    }
+    body[data-current-view="channels"] .portal-shell #acquisitionChannelKpiGrid { display: grid !important; }
     body[data-current-view="channels"] .portal-shell .channel-effort-layout,
     body[data-current-view="channels"] .portal-shell .channel-analytics-layout {
       display: block !important;
@@ -43304,9 +43307,7 @@ function ensureAcquisitionChannelsUxStyles() {
       overflow: auto;
       border-radius: 18px;
     }
-    body[data-current-view="channels"] .portal-shell .channel-analytics-layout > .data-table-card table {
-      min-width: 1180px;
-    }
+    body[data-current-view="channels"] .portal-shell .channel-analytics-layout > .data-table-card table { min-width: 900px; }
     body[data-current-view="channels"] .portal-shell .channel-analytics-layout > .data-table-card tbody tr:hover {
       background: rgba(14, 165, 233, .06);
     }
@@ -43401,7 +43402,24 @@ function acquisitionChannelsViewSection() {
   return document.querySelector('.view-section[data-view="channels"]');
 }
 
+let acquisitionModalTrigger = null;
+
+function prepareAcquisitionModal(panel, titleId) {
+  if (!panel) return;
+  acquisitionModalTrigger = document.activeElement;
+  panel.setAttribute("role", "dialog");
+  panel.setAttribute("aria-modal", "true");
+  panel.setAttribute("aria-labelledby", titleId);
+}
+
+function restoreAcquisitionModalFocus(panel) {
+  panel?.removeAttribute("aria-modal");
+  if (acquisitionModalTrigger?.isConnected) acquisitionModalTrigger.focus();
+  acquisitionModalTrigger = null;
+}
+
 function openAcquisitionChannelModal() {
+  prepareAcquisitionModal(acquisitionChannelFormPanel, "acquisitionChannelFormTitle");
   if (acquisitionChannelFormPanel?.parentElement !== document.body) document.body.appendChild(acquisitionChannelFormPanel);
   document.body.classList.add("channel-operation-modal-open");
   acquisitionChannelsViewSection()?.classList.add("channel-modal-open");
@@ -43414,9 +43432,11 @@ function closeAcquisitionChannelModal() {
     document.body.classList.remove("channel-operation-modal-open");
     acquisitionChannelsViewSection()?.classList.remove("channel-modal-open");
   }
+  restoreAcquisitionModalFocus(acquisitionChannelFormPanel);
 }
 
 function openChannelEffortModal() {
+  prepareAcquisitionModal(channelEffortFormPanel, "channelEffortFormTitle");
   if (channelEffortFormPanel?.parentElement !== document.body) document.body.appendChild(channelEffortFormPanel);
   document.body.classList.add("channel-operation-modal-open");
   acquisitionChannelsViewSection()?.classList.add("channel-modal-open");
@@ -43429,6 +43449,7 @@ function closeChannelEffortModal() {
     document.body.classList.remove("channel-operation-modal-open");
     acquisitionChannelsViewSection()?.classList.remove("channel-modal-open");
   }
+  restoreAcquisitionModalFocus(channelEffortFormPanel);
 }
 
 function acquisitionChannelTypeLabel(value = "") {
@@ -43683,6 +43704,7 @@ function resetChannelEffortForm(effort = null) {
   if (channelEffortIdInput) channelEffortIdInput.value = effort?.id || "";
   if (channelEffortChannelInput) channelEffortChannelInput.value = effort?.channel_id || channelEffortChannelInput.value || "";
   if (channelEffortCampaignInput) channelEffortCampaignInput.value = effort?.campaign_id || "";
+  renderChannelEffortAttributionOptions(effort);
   if (channelEffortTitleInput) channelEffortTitleInput.value = effort?.title || "";
   if (channelEffortTypeInput) channelEffortTypeInput.value = effort?.content_type || "POST";
   if (channelEffortObjectiveInput) channelEffortObjectiveInput.value = effort?.objective || "";
@@ -43699,7 +43721,25 @@ function resetChannelEffortForm(effort = null) {
   setInlineMessage(channelEffortMessage, "", "info");
 }
 
+function effortAttributionValue(effort = {}) {
+  if (effort.interactive_activation_id) return `interactive:${effort.interactive_activation_id}`;
+  if (effort.lead_capture_activation_id) return `capture:${effort.lead_capture_activation_id}`;
+  if (effort.digital_asset_id) return `asset:${effort.digital_asset_id}`;
+  return "";
+}
+
+function renderChannelEffortAttributionOptions(effort = null) {
+  if (!channelEffortAttributionSourceInput) return;
+  const interactive = (state.triviaLaunchers || []).map((item) => `<option value="interactive:${escapeHtml(item.id)}">Activación · ${escapeHtml(item.title || item.name || item.public_code || "Sin nombre")}</option>`);
+  const captures = (state.leadCaptureActivations || []).map((item) => `<option value="capture:${escapeHtml(item.id)}">Captura + activo · ${escapeHtml(item.name || item.asset?.title || "Sin nombre")}</option>`);
+  const assets = (state.digitalAssets || []).filter((item) => !item.activation_id).map((item) => `<option value="asset:${escapeHtml(item.id)}">Activo digital · ${escapeHtml(item.title || item.file_name || "Sin nombre")}</option>`);
+  channelEffortAttributionSourceInput.innerHTML = `<option value="">Sin enlace (medición histórica)</option><optgroup label="Activaciones interactivas">${interactive.join("")}</optgroup><optgroup label="Capturas y activos">${captures.join("")}${assets.join("")}</optgroup>`;
+  channelEffortAttributionSourceInput.value = effortAttributionValue(effort || {});
+  if (channelEffortLinkPreview) channelEffortLinkPreview.querySelector("output").textContent = effort?.tracked_url || "Se genera al guardar la atracción.";
+}
+
 function channelEffortPayload() {
+  const [attributionType, attributionId] = String(channelEffortAttributionSourceInput?.value || "").split(":");
   return {
     channel_id: channelEffortChannelInput?.value || "",
     campaign_id: channelEffortCampaignInput?.value || null,
@@ -43716,6 +43756,10 @@ function channelEffortPayload() {
     status: channelEffortStatusInput?.value || "ACTIVE",
     description: channelEffortDescriptionInput?.value?.trim() || null,
     notes: channelEffortNotesInput?.value?.trim() || null,
+    attribution_model: attributionId ? "DIRECT_LINK" : "LEGACY_WINDOW",
+    interactive_activation_id: attributionType === "interactive" ? attributionId : null,
+    lead_capture_activation_id: attributionType === "capture" ? attributionId : null,
+    digital_asset_id: attributionType === "asset" ? attributionId : null,
     metadata: {
       source_module: "channels_roi",
       measured_as: "channel_effort",
@@ -43911,6 +43955,18 @@ function effortDateRangeLabel(effort = {}) {
   return formatDate(start || end);
 }
 
+function renderAcquisitionAttributionBoard(rows = []) {
+  if (!acquisitionAttributionBoard) return;
+  const exactCount = rows.filter((item) => item.metrics?.attribution_quality === "EXACT_LINK").length;
+  const cards = rows.slice(0, 8).map((effort) => {
+    const metrics = effort.metrics || {};
+    const exact = metrics.attribution_quality === "EXACT_LINK";
+    const sourceName = effort.interactive_activation_name || effort.lead_capture_activation_name || effort.digital_asset_name || "Ventana histórica";
+    return `<article class="acquisition-effort-card"><div class="acq-card-head"><div><span class="mono-label">${escapeHtml(effort.channel_name || "Medio")}</span><h4>${escapeHtml(effort.title || "Atracción")}</h4><small>${escapeHtml(sourceName)}</small></div><span class="acq-badge ${exact ? "" : "legacy"}">${exact ? "Atribución exacta" : "Estimación"}</span></div><div class="acq-funnel"><div><strong>${Number(metrics.views || 0)}</strong><span>Vistas</span></div><div><strong>${Number(metrics.leads || 0)}</strong><span>Leads</span></div><div><strong>${Number(metrics.completions || 0)}</strong><span>Completadas</span></div><div><strong>${Number(metrics.downloads || 0)}</strong><span>Descargas</span></div><div><strong>${Number(metrics.qr_generated || 0)}</strong><span>Beneficios QR</span></div><div><strong>${Number(metrics.redemptions || 0)}</strong><span>Redenciones</span></div></div><div class="acq-card-footer"><div><small>Revenue atribuido</small><br><strong>${escapeHtml(money(metrics.revenue || 0))}</strong> · ${escapeHtml(channelRoiLabel(metrics.roi))}</div>${effort.tracked_url ? `<button class="ghost-button compact" type="button" data-copy-acquisition-url="${escapeHtml(effort.tracked_url)}">Copiar enlace medible</button>` : `<button class="ghost-button compact" type="button" data-channel-effort-edit="${escapeHtml(effort.id)}">Conectar fuente</button>`}</div></article>`;
+  }).join("");
+  acquisitionAttributionBoard.innerHTML = `<article class="acquisition-control-card"><header><div><span class="mono-label">Motor de atribución</span><h3>${exactCount} de ${rows.length} atracciones con trazabilidad exacta</h3><p>Una fuente enlazada pertenece a un solo medio activo. El enlace medible conserva el origen en participantes, leads, descargas y tickets QR; el validador devuelve la redención al mismo medio.</p></div><span class="acq-badge">Sin doble atribución</span></header></article>${cards || `<article class="acquisition-effort-card"><h4>Crea tu primera atracción medible</h4><p>Elige un medio y conecta una activación o activo digital para comenzar a ver el embudo completo.</p></article>`}`;
+}
+
 function renderChannelEffortsView() {
   renderChannelEffortOptions();
   if (channelEffortTotalsChip) {
@@ -43923,6 +43979,7 @@ function renderChannelEffortsView() {
     ["title", "channel_name", "campaign_name", "content_type", "objective", "description", "notes"],
     ["published_at", "starts_at", "ends_at", "created_at"]
   );
+  renderAcquisitionAttributionBoard(rows);
   if (state.acquisitionChannelEffortsLoading && !rows.length) {
     channelEffortTable.innerHTML = '<tr><td colspan="12">Cargando esfuerzos y publicaciones...</td></tr>';
     return;
@@ -56660,9 +56717,29 @@ refreshAcquisitionChannelsButton?.addEventListener("click", () => {
   Promise.all([
     loadAcquisitionChannels({ force: true }),
     loadChannelEfforts({ force: true }),
+    loadStrategicQrData({ groups: ["activations"], force: true, quiet: true }),
+    loadLeadCaptureActivations({ force: true, quiet: true }),
+    loadDigitalAssets({ force: true, quiet: true }),
   ]).then(renderAcquisitionChannelsView).catch((error) => {
     showFeedback(error.message || "No se pudieron cargar los medios.", "error", { title: "Medios de adquisición" });
   });
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  if (channelEffortFormPanel?.classList.contains("is-channel-modal-open")) closeChannelEffortModal();
+  else if (acquisitionChannelFormPanel?.classList.contains("is-channel-modal-open")) closeAcquisitionChannelModal();
+});
+acquisitionAttributionBoard?.addEventListener("click", async (event) => {
+  const copyButton = event.target.closest("[data-copy-acquisition-url]");
+  const editButton = event.target.closest("[data-channel-effort-edit]");
+  if (copyButton) {
+    await navigator.clipboard?.writeText(copyButton.dataset.copyAcquisitionUrl || "");
+    showFeedback("Enlace medible copiado. Comparte este enlace únicamente en el medio indicado.", "success", { title: "Atribución lista" });
+  }
+  if (editButton) {
+    resetChannelEffortForm((state.acquisitionChannelEfforts || []).find((item) => item.id === editButton.dataset.channelEffortEdit));
+    openChannelEffortModal();
+  }
 });
 acquisitionChannelTable?.addEventListener("click", (event) => {
   const editButton = event.target.closest("[data-channel-edit]");

@@ -614,3 +614,23 @@ html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-anal
   html body[data-current-view="dashboard"] .portal-shell .revenue-command-inline-canvas { height:230px !important; }
   html body[data-current-view="dashboard"] .portal-shell .revenue-command-export-button { min-height:34px; padding:0 11px; }
 }
+
+/* Revenue Command v12: all hero titles and headline data remain pure white. */
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-live,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-range,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-top .ghost-button,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-title .mono-label,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-title h2,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-title h2 em,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-title p,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-northstar small,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-northstar strong,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-northstar strong em,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-northstar span,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-metrics article > .material-symbols-outlined,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-metrics small,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-metrics strong,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-metrics em {
+  color:#ffffff !important;
+  opacity:1 !important;
+}

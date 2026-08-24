@@ -1083,13 +1083,24 @@ async function communicationAttribution(client, activation, token, source = "soc
        and (publication_status='PUBLISHED' or ($4 = 'email' and communication_type in ('EMAIL', 'MIXED')))`,
     [activation.company_id, activation.id, token, trackingSource]
   );
-  return result.rowCount ? { ...result.rows[0], tracking_source: trackingSource } : null;
+  if (result.rowCount) return { ...result.rows[0], communication_id: result.rows[0].id, tracking_source: trackingSource };
+  const effort = await client.query(
+    `select e.id as effort_id, e.campaign_id, e.channel_id, c.name as campaign_name, ch.name as channel_name
+     from business_acquisition_channel_efforts e
+     left join campaigns c on c.id=e.campaign_id and c.business_id=e.business_id
+     join business_acquisition_channels ch on ch.id=e.channel_id and ch.business_id=e.business_id
+     where e.business_id=$1 and e.interactive_activation_id=$2 and e.tracking_token=$3::uuid and e.status='ACTIVE'
+     limit 1`,
+    [activation.company_id, activation.id, token]
+  );
+  return effort.rowCount ? { ...effort.rows[0], tracking_source: "acquisition" } : null;
 }
 function communicationAttributionMetadata(attribution) {
-  if (!attribution?.id) return {};
+  if (!attribution?.id && !attribution?.effort_id) return {};
   return {
     communication_attribution: {
-      communication_id: attribution.id,
+      communication_id: attribution.communication_id || attribution.id || null,
+      acquisition_effort_id: attribution.effort_id || null,
       tracking_source: attribution.tracking_source,
       campaign_id: attribution.campaign_id || null,
       channel_id: attribution.channel_id || null,
@@ -1099,12 +1110,25 @@ function communicationAttributionMetadata(attribution) {
     acquisition_channel_id: attribution.channel_id || null,
     acquisition_channel_name_snapshot: attribution.channel_name || null,
     acquisition_channel_source: "COMMUNICATION",
+    acquisition_effort_id: attribution.effort_id || null,
     channel: attribution.channel_name || null,
   };
 }
 async function recordCommunicationEvent(client, activation, attribution, eventType, extra = {}) {
-  if (!attribution?.id) return;
-  await client.query("insert into business_communication_events (business_id, communication_id, activation_id, participant_id, qr_code_id, event_type, metadata) values ($1,$2,$3,$4,$5,$6,$7::jsonb)", [activation.company_id, attribution.id, activation.id, extra.participant_id || null, extra.qr_code_id || null, eventType, JSON.stringify({ tracking_source: attribution.tracking_source || null, ...(extra.metadata || {}) })]);
+  if (!attribution?.id && !attribution?.effort_id) return;
+  if (attribution.communication_id || attribution.id) {
+    await client.query("insert into business_communication_events (business_id, communication_id, activation_id, participant_id, qr_code_id, event_type, metadata) values ($1,$2,$3,$4,$5,$6,$7::jsonb)", [activation.company_id, attribution.communication_id || attribution.id, activation.id, extra.participant_id || null, extra.qr_code_id || null, eventType, JSON.stringify({ tracking_source: attribution.tracking_source || null, ...(extra.metadata || {}) })]);
+  }
+  if (attribution.effort_id) {
+    const mappedType = ({ ACTIVATION_VIEWED: "VIEW", ACTIVATION_STARTED: "START", LEAD_CAPTURED: "LEAD", ACTIVATION_COMPLETED: "COMPLETE", REWARD_ISSUED: "QR_GENERATED" })[eventType] || eventType;
+    await client.query(
+      `insert into business_acquisition_events
+        (business_id, effort_id, channel_id, event_type, source_type, source_id, participant_id, qr_code_id, dedupe_key, metadata)
+       values ($1,$2,$3,$4,'INTERACTIVE_ACTIVATION',$5,$6,$7,$8,$9::jsonb)
+       on conflict (business_id, effort_id, dedupe_key) where dedupe_key is not null do nothing`,
+      [activation.company_id, attribution.effort_id, attribution.channel_id, mappedType, activation.id, extra.participant_id || null, extra.qr_code_id || null, extra.participant_id ? `${mappedType}:${extra.participant_id}` : null, JSON.stringify({ tracking_source: attribution.tracking_source || null, ...(extra.metadata || {}) })]
+    );
+  }
 }
 
 async function getPublicInteractiveActivation(slug, trackingToken = null, trackingSource = null) {
@@ -2151,6 +2175,7 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
         activation_form: participant.metadata?.activation_form || null,
         rms_intake: participant.metadata?.rms_intake || null,
         communication_id: participant.metadata?.communication_attribution?.communication_id || null,
+        acquisition_effort_id: participant.metadata?.acquisition_effort_id || participant.metadata?.communication_attribution?.acquisition_effort_id || null,
         reward_source: rewardPayload.reward_source,
         selected_benefit: rewardPayload,
       }, {}),

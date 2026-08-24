@@ -456,6 +456,19 @@ async function redeemQr(tokenInput, user) {
       },
     });
 
+    const acquisitionEffortId = qr.metadata?.acquisition_effort_id || null;
+    if (acquisitionEffortId) {
+      await client.query(
+        `insert into business_acquisition_events
+          (business_id, effort_id, channel_id, event_type, source_type, source_id, lead_id, qr_code_id, dedupe_key, metadata)
+         select $1, e.id, e.channel_id, 'REDEMPTION', 'QR_CODE', $2, $3, $2, $4, $5::jsonb
+         from business_acquisition_channel_efforts e
+         where e.id=$6 and e.business_id=$1
+         on conflict (business_id, effort_id, dedupe_key) where dedupe_key is not null do nothing`,
+        [qr.business_id, qr.id, qr.player_id || null, `REDEMPTION:${qr.id}`, JSON.stringify({ redemption_id: redemption.rows[0].id, validator_user_id: user.id }), acquisitionEffortId]
+      );
+    }
+
     return {
       status: "REDEEMED",
       message: "Beneficio redimido correctamente.",

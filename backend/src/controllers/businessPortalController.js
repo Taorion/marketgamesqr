@@ -395,6 +395,10 @@ const acquisitionChannelEffortSchema = z.object({
   currency: z.string().trim().max(12).default("COP"),
   creative_url: nullableText(800).optional(),
   source_url: nullableText(800).optional(),
+  attribution_model: z.enum(["DIRECT_LINK", "TRACKED_LINK", "LEGACY_WINDOW"]).default("LEGACY_WINDOW"),
+  interactive_activation_id: z.string().uuid().optional().nullable(),
+  lead_capture_activation_id: z.string().uuid().optional().nullable(),
+  digital_asset_id: z.string().uuid().optional().nullable(),
   notes: nullableText(1600).optional(),
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
@@ -3266,6 +3270,42 @@ async function assertCampaignForBusinessOrNull(campaignId, businessId) {
   return campaignId;
 }
 
+async function assertEffortAttributionTargets(body, businessId, excludeEffortId = null) {
+  const targets = [body.interactive_activation_id, body.lead_capture_activation_id, body.digital_asset_id].filter(Boolean);
+  if (targets.length > 1) throw badRequest("Una atraccion solo puede tener una fuente medible principal.");
+  if (body.interactive_activation_id) {
+    const found = await query("select id from interactive_activations where id = $1 and company_id = $2", [body.interactive_activation_id, businessId]);
+    if (!found.rowCount) throw notFound("Activacion interactiva no encontrada para este negocio.");
+  }
+  if (body.lead_capture_activation_id) {
+    const found = await query("select id, asset_id from lead_capture_activations where id = $1 and business_id = $2", [body.lead_capture_activation_id, businessId]);
+    if (!found.rowCount) throw notFound("Captura de activo no encontrada para este negocio.");
+    if (body.digital_asset_id && found.rows[0].asset_id !== body.digital_asset_id) throw badRequest("El activo no pertenece a la captura seleccionada.");
+  }
+  if (body.digital_asset_id) {
+    const found = await query("select id from digital_assets where id = $1 and business_id = $2 and is_active = true", [body.digital_asset_id, businessId]);
+    if (!found.rowCount) throw notFound("Activo digital no encontrado para este negocio.");
+  }
+  if (targets.length) {
+    const duplicate = await query(
+      `select id, title from business_acquisition_channel_efforts
+       where business_id = $1 and status <> 'ARCHIVED' and ($5::uuid is null or id <> $5::uuid)
+         and (($2::uuid is not null and interactive_activation_id = $2::uuid)
+           or ($3::uuid is not null and lead_capture_activation_id = $3::uuid)
+           or ($4::uuid is not null and digital_asset_id = $4::uuid)) limit 1`,
+      [businessId, body.interactive_activation_id || null, body.lead_capture_activation_id || null, body.digital_asset_id || null, excludeEffortId]
+    );
+    if (duplicate.rowCount) throw badRequest(`Esta fuente ya esta atribuida a "${duplicate.rows[0].title}". Archivala o edita su vinculo antes de reasignarla.`);
+  }
+}
+
+function effortTrackedUrl(row = {}) {
+  const base = String(env.publicAppUrl || "").replace(/\/$/, "");
+  if (row.interactive_activation_slug) return `${base}/activacion/${encodeURIComponent(row.interactive_activation_slug)}?qori_ref=${encodeURIComponent(row.tracking_token)}&qori_source=acquisition`;
+  if (row.lead_capture_public_token) return `${base}/captura/${encodeURIComponent(row.lead_capture_public_token)}?qori_ref=${encodeURIComponent(row.tracking_token)}&qori_source=acquisition`;
+  return row.source_url || null;
+}
+
 async function salesDetailForChannelEffort(businessId, effort, start, end) {
   const terms = channelEffortSearchTerms(effort);
   if (!terms.length) {
@@ -3384,6 +3424,48 @@ async function metricsForCommunicationChannelEffort(businessId, effort, communic
 }
 
 async function metricsForChannelEffort(businessId, effort = {}) {
+  if (effort.interactive_activation_id || effort.lead_capture_activation_id || effort.digital_asset_id) {
+    const exact = await query(
+      `with event_metrics as (
+         select count(*) filter (where event_type='VIEW')::int as views,
+                count(*) filter (where event_type='START')::int as starts
+         from business_acquisition_events where business_id=$1 and effort_id=$2
+       ), interactive_metrics as (
+         select count(distinct p.id)::int as leads,
+                count(distinct p.id) filter (where p.status in ('completed','rewarded'))::int as completions,
+                count(distinct r.qr_code_id)::int as qr_generated,
+                count(distinct rd.id)::int as redemptions,
+                count(distinct d.id) filter (where d.downloaded_at is not null)::int as downloads,
+                count(distinct s.id) filter (where s.sale_status='PAID')::int as sales,
+                coalesce((select sum(bs.sale_amount) from business_sales bs join interactive_activation_rewards ar on ar.qr_code_id=bs.qr_code_id where ar.activation_id=$3 and bs.business_id=$1 and bs.sale_status='PAID'),0)::numeric as revenue
+         from interactive_activation_participants p
+         left join interactive_activation_rewards r on r.participant_id=p.id
+         left join redemptions rd on rd.qr_code_id=r.qr_code_id
+         left join interactive_activation_asset_downloads d on d.participant_id=p.id
+         left join business_sales s on s.qr_code_id=r.qr_code_id
+         where $3::uuid is not null and p.company_id=$1 and p.activation_id=$3
+       ), capture_metrics as (
+         select count(distinct s.id)::int as leads,
+                count(distinct d.id) filter (where d.downloaded_at is not null)::int as downloads
+         from lead_capture_submissions s
+         left join digital_asset_downloads d on d.submission_id=s.id
+         where s.business_id=$1 and (($4::uuid is not null and s.activation_id=$4) or ($5::uuid is not null and s.asset_id=$5))
+       )
+       select coalesce(e.views,0)::int as views, coalesce(e.starts,0)::int as starts,
+              (coalesce(i.leads,0)+coalesce(c.leads,0))::int as leads, coalesce(i.completions,0)::int as completions,
+              coalesce(i.qr_generated,0)::int as qr_generated, coalesce(i.redemptions,0)::int as redemptions,
+              (coalesce(i.downloads,0)+coalesce(c.downloads,0))::int as downloads,
+              coalesce(i.sales,0)::int as sales, coalesce(i.revenue,0)::numeric as revenue
+       from event_metrics e cross join interactive_metrics i cross join capture_metrics c`,
+      [businessId, effort.id, effort.interactive_activation_id || null, effort.lead_capture_activation_id || null, effort.digital_asset_id || null]
+    );
+    const row = exact.rows[0] || {};
+    const investment = Number(effort.budget_amount || 0);
+    const revenue = Number(row.revenue || 0);
+    const leads = Number(row.leads || 0);
+    const sales = Number(row.sales || 0);
+    return { ...row, investment, net_revenue: revenue - investment, roi: safeRoi(revenue, investment), cac: leads ? Number((investment / leads).toFixed(2)) : null, conversion_rate: leads ? Number(((sales / leads) * 100).toFixed(1)) : 0, unique_customers: leads, rebuy_sales: 0, referral_sales: 0, attribution_quality: "EXACT_LINK" };
+  }
   const communicationId = String(effort?.metadata?.communication_id || "").trim();
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(communicationId)) {
     return metricsForCommunicationChannelEffort(businessId, effort, communicationId);
@@ -3448,9 +3530,15 @@ if (endDate && Number.isNaN(endDate.getTime())) throw badRequest("Fecha final in
               ch.platform as channel_platform,
               ch.channel_type,
               c.name as campaign_name
+              , ia.title as interactive_activation_name, ia.public_slug as interactive_activation_slug
+              , lca.name as lead_capture_activation_name, lca.public_token as lead_capture_public_token
+              , da.title as digital_asset_name
        from business_acquisition_channel_efforts e
        join business_acquisition_channels ch on ch.id = e.channel_id and ch.business_id = e.business_id
        left join campaigns c on c.id = e.campaign_id and c.business_id = e.business_id
+       left join interactive_activations ia on ia.id=e.interactive_activation_id and ia.company_id=e.business_id
+       left join lead_capture_activations lca on lca.id=e.lead_capture_activation_id and lca.business_id=e.business_id
+       left join digital_assets da on da.id=e.digital_asset_id and da.business_id=e.business_id
        where e.business_id = $1
          and e.status <> 'ARCHIVED'
          and ($2::uuid is null or e.channel_id = $2::uuid)
@@ -3467,10 +3555,7 @@ if (endDate && Number.isNaN(endDate.getTime())) throw badRequest("Fecha final in
         endDate ? endDate.toISOString() : null,
       ]
     );
-    const efforts = await Promise.all(result.rows.map(async (row) => normalizeChannelEffortRow({
-      ...row,
-      metrics: await metricsForChannelEffort(businessId, row),
-    })));
+    const efforts = await Promise.all(result.rows.map(async (row) => normalizeChannelEffortRow({ ...row, tracked_url: effortTrackedUrl(row), metrics: await metricsForChannelEffort(businessId, row) })));
     const totals = efforts.reduce((acc, effort) => {
       acc.efforts += 1;
       acc.investment += Number(effort.metrics?.investment || 0);
@@ -3504,12 +3589,14 @@ async function createAcquisitionChannelEffort(req, res, next) {
     const body = validate(acquisitionChannelEffortSchema, req.body);
     await requireAcquisitionChannelForBusiness(body.channel_id, businessId);
     await assertCampaignForBusinessOrNull(body.campaign_id, businessId);
+    await assertEffortAttributionTargets(body, businessId);
     const result = await query(
       `insert into business_acquisition_channel_efforts
         (business_id, channel_id, campaign_id, title, description, objective, content_type, status,
-         published_at, starts_at, ends_at, budget_amount, currency, creative_url, source_url, notes, metadata, created_by_user_id)
+         published_at, starts_at, ends_at, budget_amount, currency, creative_url, source_url, notes, metadata, created_by_user_id,
+         attribution_model, interactive_activation_id, lead_capture_activation_id, digital_asset_id)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9::timestamptz, $10::timestamptz, $11::timestamptz,
-               $12, $13, $14, $15, $16, $17::jsonb, $18)
+               $12, $13, $14, $15, $16, $17::jsonb, $18, $19, $20, $21, $22)
        returning *`,
       [
         businessId,
@@ -3530,6 +3617,10 @@ async function createAcquisitionChannelEffort(req, res, next) {
         body.notes || null,
         JSON.stringify(body.metadata || {}),
         req.user.id,
+        body.attribution_model || (body.interactive_activation_id || body.lead_capture_activation_id || body.digital_asset_id ? "DIRECT_LINK" : "LEGACY_WINDOW"),
+        body.interactive_activation_id || null,
+        body.lead_capture_activation_id || null,
+        body.digital_asset_id || null,
       ]
     );
     res.status(201).json({ effort: normalizeChannelEffortRow(result.rows[0]) });
@@ -3550,6 +3641,7 @@ async function updateAcquisitionChannelEffort(req, res, next) {
     const merged = { ...existing.rows[0], ...body };
     await requireAcquisitionChannelForBusiness(merged.channel_id, businessId);
     await assertCampaignForBusinessOrNull(merged.campaign_id, businessId);
+    await assertEffortAttributionTargets(merged, businessId, req.params.effortId);
     const result = await query(
       `update business_acquisition_channel_efforts
        set channel_id = $3,
@@ -3568,6 +3660,10 @@ async function updateAcquisitionChannelEffort(req, res, next) {
            source_url = $16,
            notes = $17,
            metadata = $18::jsonb,
+           attribution_model = $19,
+           interactive_activation_id = $20,
+           lead_capture_activation_id = $21,
+           digital_asset_id = $22,
            updated_at = now()
        where id = $1 and business_id = $2
        returning *`,
@@ -3590,6 +3686,10 @@ async function updateAcquisitionChannelEffort(req, res, next) {
         merged.source_url || null,
         merged.notes || null,
         JSON.stringify(merged.metadata || {}),
+        merged.attribution_model || "LEGACY_WINDOW",
+        merged.interactive_activation_id || null,
+        merged.lead_capture_activation_id || null,
+        merged.digital_asset_id || null,
       ]
     );
     res.json({ effort: normalizeChannelEffortRow(result.rows[0]) });
