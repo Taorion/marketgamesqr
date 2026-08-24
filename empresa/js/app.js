@@ -732,6 +732,9 @@ const leadCaptureDetail = document.getElementById("leadCaptureDetail");
 const rewardPassIssuedAtInput = document.getElementById("rewardPassIssuedAtInput");
 const rewardPassExpiresAtInput = document.getElementById("rewardPassExpiresAtInput");
 const rewardPassBranchInput = document.getElementById("rewardPassBranchInput");
+const rewardPassBranchStatus = document.getElementById("rewardPassBranchStatus");
+const rewardPassBranchRetryButton = document.getElementById("rewardPassBranchRetryButton");
+const rewardPassOpenBranchesButton = document.getElementById("rewardPassOpenBranchesButton");
 const rewardPassPaymentMethodInput = document.getElementById("rewardPassPaymentMethodInput");
 const rewardPassPartialInput = document.getElementById("rewardPassPartialInput");
 const rewardPassTransferableInput = document.getElementById("rewardPassTransferableInput");
@@ -748,6 +751,15 @@ const rewardPassDownloadImageButton = document.getElementById("rewardPassDownloa
 const rewardPassDownloadPdfButton = document.getElementById("rewardPassDownloadPdfButton");
 const rewardPassReceiptButton = document.getElementById("rewardPassReceiptButton");
 const rewardPassStatusFilter = document.getElementById("rewardPassStatusFilter");
+const rewardPassSearchInput = document.getElementById("rewardPassSearchInput");
+const rewardPassBranchFilter = document.getElementById("rewardPassBranchFilter");
+const rewardPassClearFiltersButton = document.getElementById("rewardPassClearFiltersButton");
+const rewardPassResultCount = document.getElementById("rewardPassResultCount");
+const rewardPassMobileCards = document.getElementById("rewardPassMobileCards");
+const rewardPassInsight = document.getElementById("rewardPassInsight");
+const rewardPassPrevPageButton = document.getElementById("rewardPassPrevPageButton");
+const rewardPassNextPageButton = document.getElementById("rewardPassNextPageButton");
+const rewardPassPageLabel = document.getElementById("rewardPassPageLabel");
 const rewardPassTable = document.getElementById("rewardPassTable");
 const rewardPassDetailTitle = document.getElementById("rewardPassDetailTitle");
 const rewardPassDetailGrid = document.getElementById("rewardPassDetailGrid");
@@ -2641,6 +2653,11 @@ let state = {
   rewardPasses: [],
   rewardPassMetrics: null,
   rewardPassContext: null,
+  rewardPassPagination: { total: 0, limit: 50, offset: 0, has_more: false },
+  rewardPassLoading: false,
+  rewardPassError: "",
+  rewardPassIssuanceKey: "",
+  rewardPassRedemptionKey: "",
   digitalAssets: [],
   digitalAssetsLoaded: false,
   storageQuota: null,
@@ -2919,6 +2936,7 @@ let state = {
   businessBranchesLoading: false,
   businessBranchesLoadPromise: null,
   businessBranchesLoadSeq: 0,
+  businessBranchesLoadError: "",
   branchEditingId: null,
   strategicQrLoaded: false,
   ticketCenterLoadedAt: {},
@@ -3951,6 +3969,11 @@ function resetBusinessScopedState(options = {}) {
   state.selectedLeadCaptureDetail = null;
   state.selectedRewardPassId = null;
   state.selectedRewardPass = null;
+  state.rewardPassPagination = { total: 0, limit: 50, offset: 0, has_more: false };
+  state.rewardPassLoading = false;
+  state.rewardPassError = "";
+  state.rewardPassIssuanceKey = "";
+  state.rewardPassRedemptionKey = "";
   state.selectedCampaignId = null;
   state.selectedCampaign = null;
   state.selectedCampaignAffiliates = [];
@@ -4096,6 +4119,7 @@ function resetBusinessScopedState(options = {}) {
   state.businessBranchesLoading = false;
   state.businessBranchesLoadPromise = null;
   state.businessBranchesLoadSeq = 0;
+  state.businessBranchesLoadError = "";
   state.branchEditingId = null;
   state.strategicQrLoaded = false;
   state.ticketCenterLoadedAt = {};
@@ -7502,6 +7526,7 @@ async function loadWorkspace() {
     state.businessBranchesLoading = false;
     state.businessBranchesLoadPromise = null;
     state.businessBranchesLoadSeq = 0;
+    state.businessBranchesLoadError = "";
     state.branchEditingId = null;
     state.loadedBusinessId = session.user.business_id || null;
     state.affiliates = [];
@@ -17499,6 +17524,19 @@ function currentRewardPassValidation() {
     : null;
 }
 
+function renderValidatorRewardPassBranchOptions(pass = currentRewardPassValidation()) {
+  if (!validatorRewardPassBranchInput || validatorRewardPassBranchInput.tagName !== "SELECT") return;
+  const branches = (state.businessBranches || []).filter((branch) => branch.is_active !== false);
+  const authorizedId = String(pass?.authorized_branch_id || "");
+  const available = authorizedId ? branches.filter((branch) => String(branch.id) === authorizedId) : branches;
+  validatorRewardPassBranchInput.innerHTML = [
+    `<option value="">${available.length ? "Selecciona la sede de redención" : "No hay sedes activas"}</option>`,
+    ...available.map((branch) => `<option value="${escapeHtml(branch.id)}">${escapeHtml(branch.name)}</option>`),
+  ].join("");
+  const preferred = authorizedId || String(session?.user?.branch_id || "");
+  if (preferred && available.some((branch) => String(branch.id) === preferred)) validatorRewardPassBranchInput.value = preferred;
+}
+
 function rewardPassBalancePreview(syncRedeemInput = false) {
   const pass = currentRewardPassValidation();
   const invoiceValue = Math.max(0, Number(validatorSaleAmountInput?.value || 0));
@@ -17580,6 +17618,7 @@ function setValidatorResult(mode, title, message, data = null) {
     data?.player?.email,
     data?.player?.phone,
     data?.reward_pass ? `Saldo: ${money(data.reward_pass.current_balance_cop)}` : "",
+    data?.reward_pass ? `Sede autorizada: ${rewardPassAuthorizedBranchLabel(data.reward_pass)}` : "",
     data?.sale?.product_name ? `Venta: ${data.sale.product_name}` : "",
     data?.affiliate?.name ? `Recomendado por: ${data.affiliate.name}` : "",
   ].filter(Boolean).join(" | ") || "-";
@@ -17590,6 +17629,10 @@ function setValidatorResult(mode, title, message, data = null) {
     if (validatorRewardPassDocumentInput) validatorRewardPassDocumentInput.value = data.reward_pass?.beneficiary_document || "";
     if (validatorSaleAmountInput) validatorSaleAmountInput.value = "";
     rewardPassBalancePreview(true);
+    renderValidatorRewardPassBranchOptions(data.reward_pass);
+    if (!state.businessBranchesLoaded) {
+      loadBusinessBranches({ quiet: true }).then(() => renderValidatorRewardPassBranchOptions(data.reward_pass)).catch(() => {});
+    }
   } else {
     rewardPassBalancePreview(false);
   }
@@ -17602,6 +17645,7 @@ function resetValidatorSaleForm() {
   if (validatorRewardPassRedeemInput) validatorRewardPassRedeemInput.value = "";
   if (validatorRewardPassBranchInput) validatorRewardPassBranchInput.value = "";
   if (validatorRewardPassDocumentInput) validatorRewardPassDocumentInput.value = "";
+  state.rewardPassRedemptionKey = "";
   validatorPaymentMethodInput.value = "";
   setProductInputValue(validatorProductServiceInput, "");
   validatorSaleNotesInput.value = "";
@@ -30162,6 +30206,10 @@ async function redeemValidatorToken() {
       if (!rewardPassPreview.coverage) {
         throw new Error("No hay saldo disponible para cubrir esta factura.");
       }
+      if (!validatorRewardPassBranchInput?.value) {
+        validatorRewardPassBranchInput?.focus();
+        throw new Error("Selecciona la sede donde se realizará la redención.");
+      }
       if (!rewardPassPreview.partialAllowed && rewardPassPreview.remaining > 0) {
         const acceptsSingleUse = window.confirm("Este Reward Pass es de un solo uso y la factura no consume todo el saldo. Confirma que el consumidor conoce y acepta las condiciones antes de registrar la redención.");
         if (!acceptsSingleUse) {
@@ -30178,14 +30226,16 @@ async function redeemValidatorToken() {
         invoice_number: validatorRewardPassInvoiceInput?.value.trim(),
         purchase_value_cop: rewardPassPreview.invoiceValue,
         redeemed_value_cop: rewardPassPreview.coverage,
-        branch: validatorRewardPassBranchInput?.value.trim() || null,
+        branch_id: validatorRewardPassBranchInput?.value || null,
         observations: validatorSaleNotesInput?.value.trim() || null,
         document_checked: validatorRewardPassDocumentInput?.value.trim() || null,
         confirm_full_consumption: !rewardPassPreview.partialAllowed && rewardPassPreview.remaining > 0,
+        idempotency_key: state.rewardPassRedemptionKey || (state.rewardPassRedemptionKey = createRewardPassOperationKey("reward-pass-redeem")),
       }) : undefined,
     });
     if (!isCurrentBusinessScope(scopeKey)) return;
     state.validatorLastRedemption = data.redemption;
+    state.rewardPassRedemptionKey = "";
     state.validatorLastValidation = {
       ...state.validatorLastValidation,
       allowed: false,
@@ -41013,6 +41063,59 @@ function rewardPassStatusClass(status) {
 }
 
 const REWARD_PASS_BACKEND_STATUS_FILTERS = new Set(["active", "pending_claim", "partially_redeemed", "fully_redeemed", "expired", "cancelled", "extended"]);
+const REWARD_PASS_ALL_BRANCHES_VALUE = "ALL_BRANCHES";
+
+function rewardPassAuthorizedBranchLabel(pass = {}) {
+  if (pass.branch_authorization_scope === REWARD_PASS_ALL_BRANCHES_VALUE) return "Todas las Sedes";
+  return pass.authorized_branch_label || pass.authorized_branch_name || pass.authorized_branch || "Todas las Sedes";
+}
+
+function selectedRewardPassBranchLabel() {
+  if (!rewardPassBranchInput || rewardPassBranchInput.disabled) return "Sede pendiente de configurar";
+  if (rewardPassBranchInput.value === REWARD_PASS_ALL_BRANCHES_VALUE) return "Todas las Sedes";
+  return rewardPassBranchInput.selectedOptions?.[0]?.textContent?.trim() || "Sede pendiente de configurar";
+}
+
+function createRewardPassOperationKey(prefix = "rp") {
+  const random = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `${prefix}:${session?.user?.business_id || "business"}:${random}`;
+}
+
+function renderRewardPassBranchOptions() {
+  const branches = (state.businessBranches || []).filter((branch) => branch.is_active !== false);
+  const currentCreate = rewardPassBranchInput?.value || REWARD_PASS_ALL_BRANCHES_VALUE;
+  const currentFilter = rewardPassBranchFilter?.value || "";
+  const options = branches.map((branch) => `<option value="${escapeHtml(branch.id)}">${escapeHtml(branch.name || "Sede sin nombre")}</option>`).join("");
+  if (rewardPassBranchInput) {
+    const isLoading = !state.businessBranchesLoaded && !state.businessBranchesLoadError;
+    const loadError = String(state.businessBranchesLoadError || "");
+    rewardPassBranchRetryButton?.classList.toggle("hidden", !loadError);
+    rewardPassOpenBranchesButton?.classList.toggle("hidden", isLoading || Boolean(loadError) || branches.length > 0);
+    if (isLoading) {
+      rewardPassBranchInput.innerHTML = '<option value="">Cargando sedes...</option>';
+      rewardPassBranchInput.disabled = true;
+      if (rewardPassBranchStatus) rewardPassBranchStatus.textContent = "Cargando sedes...";
+    } else if (loadError) {
+      rewardPassBranchInput.innerHTML = '<option value="">No se pudieron cargar las sedes</option>';
+      rewardPassBranchInput.disabled = true;
+      if (rewardPassBranchStatus) rewardPassBranchStatus.textContent = `No pudimos consultar Opera → Sedes. ${loadError}`;
+    } else if (!branches.length) {
+      rewardPassBranchInput.innerHTML = '<option value="">No tienes sedes registradas</option>';
+      rewardPassBranchInput.disabled = true;
+      if (rewardPassBranchStatus) rewardPassBranchStatus.textContent = "Crea una sede activa en Opera → Sedes antes de emitir el Reward Pass.";
+    } else {
+      rewardPassBranchInput.innerHTML = `<option value="${REWARD_PASS_ALL_BRANCHES_VALUE}">Todas las Sedes</option>${options}`;
+      rewardPassBranchInput.disabled = false;
+      rewardPassBranchInput.value = branches.some((branch) => String(branch.id) === String(currentCreate)) ? currentCreate : REWARD_PASS_ALL_BRANCHES_VALUE;
+      if (rewardPassBranchStatus) rewardPassBranchStatus.textContent = `${branches.length} ${branches.length === 1 ? "sede activa disponible" : "sedes activas disponibles"}.`;
+    }
+    if (rewardPassCreateButton) rewardPassCreateButton.disabled = rewardPassBranchInput.disabled;
+  }
+  if (rewardPassBranchFilter) {
+    rewardPassBranchFilter.innerHTML = `<option value="">Todas las sedes</option>${options}`;
+    if (branches.some((branch) => String(branch.id) === String(currentFilter))) rewardPassBranchFilter.value = currentFilter;
+  }
+}
 
 function ensureRewardPassUxStyles() {
   ensureAccountAdminUxStyles();
@@ -41105,9 +41208,19 @@ function ensureRewardPassUxStyles() {
   document.head.appendChild(style);
 }
 
-function openRewardPassCreateModal() {
+async function openRewardPassCreateModal() {
   if (!rewardPassCreateModal) return;
   if (rewardPassCreateModal.parentElement !== document.body) document.body.appendChild(rewardPassCreateModal);
+  state.rewardPassIssuanceKey = createRewardPassOperationKey("reward-pass-issue");
+  renderRewardPassBranchOptions();
+  if (!state.businessBranchesLoaded) {
+    try {
+      await loadBusinessBranches({ quiet: true });
+    } catch (error) {
+      state.businessBranchesLoadError = error.message || "No fue posible cargar las sedes.";
+    }
+  }
+  renderRewardPassBranchOptions();
   setRewardPassDefaults();
   renderRewardPassContext();
   renderRewardPassPreview(null);
@@ -41117,6 +41230,24 @@ function openRewardPassCreateModal() {
 
 function closeRewardPassCreateModal() {
   rewardPassCreateModal?.classList.add("hidden");
+  state.rewardPassIssuanceKey = "";
+}
+
+async function retryRewardPassBranches() {
+  state.businessBranchesLoaded = false;
+  state.businessBranchesLoadError = "";
+  renderRewardPassBranchOptions();
+  try {
+    await loadBusinessBranches({ force: true, quiet: true });
+  } catch (error) {
+    state.businessBranchesLoadError = error.message || "No fue posible cargar las sedes.";
+  }
+  renderRewardPassBranchOptions();
+}
+
+function openBranchesFromRewardPass() {
+  closeRewardPassCreateModal();
+  setView("branches");
 }
 
 function rewardPassDefaultExpiry() {
@@ -41136,6 +41267,7 @@ function setRewardPassDefaults() {
     rewardPassTermsInput.value = state.rewardPassContext.default_terms;
   }
   renderRewardPassCampaignOptions();
+  renderRewardPassBranchOptions();
 }
 
 function renderRewardPassCampaignOptions() {
@@ -41158,12 +41290,20 @@ async function loadRewardPasses() {
   const scopeKey = businessScopeKey();
   const queryParams = new URLSearchParams();
   const statusFilter = rewardPassStatusFilter?.value || "";
-  if (REWARD_PASS_BACKEND_STATUS_FILTERS.has(statusFilter)) queryParams.set("status", statusFilter);
-  if (state.filter) queryParams.set("search", state.filter);
+  if (statusFilter) queryParams.set("status", statusFilter);
+  const search = rewardPassSearchInput?.value.trim() || "";
+  if (search) queryParams.set("search", search);
+  if (rewardPassBranchFilter?.value) queryParams.set("branch_id", rewardPassBranchFilter.value);
+  const pagination = state.rewardPassPagination || { limit: 50, offset: 0 };
+  queryParams.set("limit", String(pagination.limit || 50));
+  queryParams.set("offset", String(pagination.offset || 0));
+  state.rewardPassLoading = true;
+  state.rewardPassError = "";
   const data = await api(`/api/business/reward-passes?${queryParams.toString()}`, { headers: authHeaders() });
   if (!isCurrentBusinessScope(scopeKey)) return false;
   state.rewardPasses = data.reward_passes || [];
   state.rewardPassMetrics = data.metrics || null;
+  state.rewardPassPagination = data.pagination || { total: state.rewardPasses.length, limit: 50, offset: 0, has_more: false };
   state.rewardPassContext = {
     ...(state.rewardPassContext || {}),
     context: data.context || data.reward_pass_context || data.context,
@@ -41171,6 +41311,7 @@ async function loadRewardPasses() {
   if (!state.selectedRewardPassId && state.rewardPasses[0]) {
     state.selectedRewardPassId = state.rewardPasses[0].id;
   }
+  state.rewardPassLoading = false;
   return true;
 }
 
@@ -41205,6 +41346,16 @@ function renderRewardPassMetrics() {
   }
 }
 
+function renderRewardPassInsight() {
+  if (!rewardPassInsight) return;
+  const metrics = state.rewardPassMetrics || {};
+  const pending = toNumber(metrics.pending_claim_count || 0);
+  const expiring = toNumber(metrics.expiring_soon_count || 0);
+  const title = pending ? `${pending} por activar` : expiring ? `${expiring} vencen pronto` : "La operación está al día";
+  const copy = pending ? "Comparte el enlace y el PIN desde la ficha." : expiring ? "Envía recordatorios antes del vencimiento." : "No detectamos activaciones pendientes ni vencimientos próximos.";
+  rewardPassInsight.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${pending ? "lock_clock" : expiring ? "schedule" : "verified"}</span><div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(copy)}</p></div>`;
+}
+
 function renderRewardPassPreview(pass = state.selectedRewardPass) {
   const isPending = !pass || pass.status === "pending_claim";
   const beneficiary = pass?.beneficiary_name || rewardPassBeneficiaryNameInput?.value || "Beneficiario por activar";
@@ -41212,9 +41363,10 @@ function renderRewardPassPreview(pass = state.selectedRewardPass) {
   if (rewardPassPreviewValue) rewardPassPreviewValue.textContent = isPending ? "ACTIVACION" : "GIFT CARD OFICIAL";
   if (rewardPassPreviewBeneficiary) rewardPassPreviewBeneficiary.textContent = isPending ? "Escanea para reclamar el QR definitivo" : beneficiary;
   if (rewardPassPreviewMeta) {
+    const branchLabel = pass ? rewardPassAuthorizedBranchLabel(pass) : selectedRewardPassBranchLabel();
     rewardPassPreviewMeta.textContent = pass
-      ? (isPending ? `Link de reclamo: ${pass.public_url}. El beneficiario escanea este QR, completa sus datos y recibe el QR definitivo redimible.` : `Link público: ${pass.public_url}. QR redimible listo para validador.`)
-      : "El QR y los datos completos apareceran después de emitir o seleccionar un Reward Pass.";
+      ? (isPending ? `Sede autorizada: ${branchLabel}. Comparte el enlace y el PIN de activación.` : `Sede autorizada: ${branchLabel}. QR redimible listo para validador.`)
+      : `Sede autorizada: ${branchLabel}. El QR aparecerá después de emitir el Reward Pass.`;
   }
   [rewardPassDownloadImageButton, rewardPassDownloadPdfButton, rewardPassReceiptButton].forEach((button) => {
     if (button) button.disabled = !pass;
@@ -41295,7 +41447,7 @@ function renderRewardPassCharts(rows = filteredRewardPassRows()) {
   `;
 }
 
-function renderRewardPassTable() {
+function renderRewardPassTableLegacy() {
   if (!rewardPassTable) return;
   const rows = filteredRewardPassRows();
   rewardPassTable.innerHTML = rows.map((item) => {
@@ -41325,6 +41477,49 @@ function renderRewardPassTable() {
   });
 }
 
+function renderRewardPassTable() {
+  if (!rewardPassTable) return;
+  const rows = filteredRewardPassRows();
+  if (state.rewardPassLoading) {
+    rewardPassTable.innerHTML = '<tr><td colspan="7"><div class="empty-state compact">Cargando Reward Pass…</div></td></tr>';
+    if (rewardPassMobileCards) rewardPassMobileCards.innerHTML = '<div class="empty-state compact">Cargando Reward Pass…</div>';
+    return;
+  }
+  if (state.rewardPassError) {
+    rewardPassTable.innerHTML = `<tr><td colspan="7"><div class="empty-state compact"><strong>No pudimos cargar Reward Pass</strong><p>${escapeHtml(state.rewardPassError)}</p><button class="ghost-button compact" type="button" data-rp-retry>Reintentar</button></div></td></tr>`;
+    if (rewardPassMobileCards) rewardPassMobileCards.innerHTML = `<div class="empty-state compact"><strong>No pudimos cargar Reward Pass</strong><p>${escapeHtml(state.rewardPassError)}</p></div>`;
+  } else {
+    rewardPassTable.innerHTML = rows.map((item) => `
+      <tr class="${item.id === state.selectedRewardPassId ? "active" : ""}">
+        <td><button class="link-button reward-pass-table-main" type="button" data-rp-view="${escapeHtml(item.id)}"><strong>${escapeHtml(item.public_code)}</strong><small>Ver ficha</small></button></td>
+        <td><strong>${escapeHtml(item.buyer_name || "-")}</strong><div class="reward-pass-table-contact">${escapeHtml(rewardPassBuyerContact(item))}</div></td>
+        <td><strong>${escapeHtml(item.beneficiary_name || "Pendiente")}</strong><div class="reward-pass-table-contact">${escapeHtml(item.beneficiary_document || "Por activar")}</div></td>
+        <td>${escapeHtml(money(item.current_balance_cop || 0))}</td>
+        <td><span class="status-chip ${rewardPassStatusClass(item.status)}">${escapeHtml(rewardPassStatusLabel(item.status))}</span></td>
+        <td><strong>${escapeHtml(formatDateShort(item.expires_at))}</strong><div class="reward-pass-table-contact">${escapeHtml(rewardPassAuthorizedBranchLabel(item))}</div></td>
+        <td><button class="ghost-button compact" type="button" data-rp-view="${escapeHtml(item.id)}">Abrir</button></td>
+      </tr>
+    `).join("") || '<tr><td colspan="7"><div class="empty-state compact">Sin Reward Pass para estos filtros.</div></td></tr>';
+    if (rewardPassMobileCards) rewardPassMobileCards.innerHTML = rows.map((item) => `
+      <article class="reward-pass-mobile-card">
+        <div class="reward-pass-mobile-card-head"><div><strong>${escapeHtml(item.public_code)}</strong><small>${escapeHtml(item.beneficiary_name || "Pendiente de activar")}</small></div><span class="status-chip ${rewardPassStatusClass(item.status)}">${escapeHtml(rewardPassStatusLabel(item.status))}</span></div>
+        <div class="reward-pass-mobile-card-grid"><div><span>Saldo</span><strong>${escapeHtml(money(item.current_balance_cop || 0))}</strong></div><div><span>Sede</span><strong>${escapeHtml(rewardPassAuthorizedBranchLabel(item))}</strong></div></div>
+        <div class="reward-pass-mobile-card-actions"><button class="solid-button compact" type="button" data-rp-view="${escapeHtml(item.id)}">Abrir ficha</button></div>
+      </article>
+    `).join("") || '<div class="empty-state compact">Sin Reward Pass para estos filtros.</div>';
+  }
+  const pagination = state.rewardPassPagination || { total: rows.length, limit: 50, offset: 0, has_more: false };
+  const total = toNumber(pagination.total || rows.length);
+  const page = Math.floor(toNumber(pagination.offset || 0) / Math.max(1, toNumber(pagination.limit || 50))) + 1;
+  const pages = Math.max(1, Math.ceil(total / Math.max(1, toNumber(pagination.limit || 50))));
+  if (rewardPassResultCount) rewardPassResultCount.textContent = `${total} Reward Pass`;
+  if (rewardPassPageLabel) rewardPassPageLabel.textContent = `Página ${page} de ${pages}`;
+  if (rewardPassPrevPageButton) rewardPassPrevPageButton.disabled = toNumber(pagination.offset || 0) <= 0;
+  if (rewardPassNextPageButton) rewardPassNextPageButton.disabled = !pagination.has_more;
+  [rewardPassTable, rewardPassMobileCards].filter(Boolean).forEach((root) => root.querySelectorAll("[data-rp-view]").forEach((button) => button.addEventListener("click", () => selectRewardPass(button.dataset.rpView))));
+  rewardPassTable.querySelector("[data-rp-retry]")?.addEventListener("click", renderRewardPassesView);
+}
+
 function renderRewardPassDetail() {
   const pass = state.selectedRewardPass;
   if (!pass) {
@@ -41345,7 +41540,7 @@ function renderRewardPassDetail() {
       ["Saldo disponible", money(pass.current_balance_cop)],
       ["Estado", rewardPassStatusLabel(pass.status)],
       ["Vigencia", formatDate(pass.expires_at)],
-      ["Sede autorizada", pass.authorized_branch || "-"],
+      ["Sede autorizada", rewardPassAuthorizedBranchLabel(pass)],
       ["Condiciones", pass.partial_redemption_allowed ? "Permite redenciones parciales" : "De un solo uso"],
       ["Link público", pass.public_url || "-"],
     ];
@@ -41417,6 +41612,7 @@ function renderRewardPassDetailModal() {
   const redemptionRows = Array.isArray(pass.redemptions) ? pass.redemptions : [];
   const ticketRows = Array.isArray(pass.ticket_transactions) ? pass.ticket_transactions : [];
   const reminderPhone = String(pass.beneficiary_phone || pass.buyer_phone || "").replace(/\D/g, "");
+  const activationPin = String(pass.security_pin || "");
   const reminderTarget = pass.beneficiary_name || pass.buyer_name || "la persona beneficiaria";
   const reminderText = hasClaim
     ? `Hola ${reminderTarget}, te recordamos que tu giftcard ${pass.public_code} tiene un saldo disponible de ${money(pass.current_balance_cop || 0)}. Puedes usarla antes del ${formatDateShort(pass.expires_at)}.`
@@ -41447,6 +41643,10 @@ function renderRewardPassDetailModal() {
         <span class="material-symbols-outlined" aria-hidden="true">${hasClaim ? "verified" : "lock"}</span>
         <div><strong>${hasClaim ? "Valor revelado" : "Valor pendiente de revelar"}</strong><p>${hasClaim ? "El beneficiario completó sus datos; la giftcard puede utilizarse según su vigencia." : "El valor solo se revela cuando el beneficiario completa el formulario con sus datos."}</p></div>
       </section>
+      <section class="reward-pass-detail-security" aria-label="Seguridad de activación">
+        <div><span class="mono-label">Seguridad del beneficiario</span><strong>${hasClaim ? "Activación completada" : "PIN de activación"}</strong>${hasClaim ? "" : `<code>${escapeHtml(activationPin || "------")}</code>`}</div>
+        ${hasClaim ? '<span class="status-chip ok">Identidad vinculada</span>' : '<button class="ghost-button compact" type="button" data-rp-copy-pin>Copiar PIN y enlace</button>'}
+      </section>
       <section class="reward-pass-history-panel" aria-label="Historial de la giftcard">
         <div class="reward-pass-history-heading">
           <div>
@@ -41476,16 +41676,26 @@ function renderRewardPassDetailModal() {
       </section>
       <section class="reward-pass-admin-panel" aria-label="Datos operativos de la giftcard">
         <div><span>Permite saldo parcial</span><strong>${pass.partial_redemption_allowed ? "Sí" : "No, es de un solo uso"}</strong></div>
-        <div><span>Sede autorizada</span><strong>${escapeHtml(pass.authorized_branch || "Cualquier sede autorizada")}</strong></div>
+        <div><span>Sede autorizada</span><strong>${escapeHtml(rewardPassAuthorizedBranchLabel(pass))}</strong></div>
         <div><span>Movimientos Qori</span><strong>${escapeHtml(`${ticketRows.length} ${ticketRows.length === 1 ? "registro" : "registros"}`)}</strong></div>
       </section>
       <div class="modal-actions reward-pass-detail-actions">
         <button class="ghost-button" type="button" data-rp-detail-close>Cerrar</button>
+        <button class="ghost-button" type="button" data-rp-copy-link>Copiar enlace</button>
+        <button class="ghost-button" type="button" data-rp-download="pdf">PDF</button>
+        <button class="ghost-button" type="button" data-rp-download="receipt">Comprobante</button>
+        ${!["cancelled", "fully_redeemed"].includes(pass.status) ? '<button class="ghost-button" type="button" data-rp-extend>Prorrogar</button>' : ""}
+        ${redemptionRows.length === 0 && !["cancelled", "fully_redeemed"].includes(pass.status) ? '<button class="ghost-button danger" type="button" data-rp-cancel>Anular</button>' : ""}
         ${whatsappUrl ? `<a class="solid-button" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">chat</span> Recordar por WhatsApp</a>` : '<span class="table-secondary">Agrega un celular para enviar recordatorios por WhatsApp.</span>'}
       </div>
     </article>
   `;
   modal.classList.remove("hidden");
+  modal.querySelector("[data-rp-copy-pin]")?.addEventListener("click", () => copyRewardPassActivation(pass));
+  modal.querySelector("[data-rp-copy-link]")?.addEventListener("click", () => copyRewardPassLink(pass.public_url));
+  modal.querySelectorAll("[data-rp-download]").forEach((button) => button.addEventListener("click", () => downloadSelectedRewardPassPdf(button.dataset.rpDownload).catch((error) => showFeedback(error.message, "error"))));
+  modal.querySelector("[data-rp-extend]")?.addEventListener("click", () => extendSelectedRewardPass(pass.id));
+  modal.querySelector("[data-rp-cancel]")?.addEventListener("click", () => cancelSelectedRewardPass(pass.id));
 }
 
 async function selectRewardPass(id) {
@@ -41512,19 +41722,35 @@ async function renderRewardPassesView() {
   ensureRewardPassUxStyles();
   renderRewardPassContext();
   setRewardPassDefaults();
+  state.rewardPassLoading = true;
+  renderRewardPassTable();
   try {
+    if (!state.businessBranchesLoaded) {
+      try {
+        await loadBusinessBranches({ quiet: true });
+      } catch (branchError) {
+        state.businessBranchesLoadError = branchError.message || "No fue posible cargar las sedes.";
+      }
+      if (!isCurrentBusinessScope(scopeKey)) return;
+      renderRewardPassBranchOptions();
+    }
     if (!state.rewardPassContext?.default_terms) {
       const contextLoaded = await loadRewardPassContext();
       if (contextLoaded === false || !isCurrentBusinessScope(scopeKey)) return;
     }
     const passesLoaded = await loadRewardPasses();
     if (passesLoaded === false || !isCurrentBusinessScope(scopeKey)) return;
+    state.rewardPassError = "";
+    renderRewardPassMetrics();
+    renderRewardPassInsight();
+    renderRewardPassCharts();
     renderRewardPassTable();
-    state.selectedRewardPass = null;
-    state.selectedRewardPassId = null;
   } catch (error) {
     if (!isCurrentBusinessScope(scopeKey)) return;
-    if (rewardPassTable) rewardPassTable.innerHTML = `<tr><td colspan="6">${escapeHtml(error.message)}</td></tr>`;
+    state.rewardPassLoading = false;
+    state.rewardPassError = error.message || "No pudimos cargar Reward Pass.";
+    state.rewardPasses = [];
+    renderRewardPassTable();
   }
 }
 
@@ -41533,6 +41759,11 @@ function rewardPassPayload() {
   const beneficiaryDocument = rewardPassBeneficiaryDocumentInput?.value.trim();
   const beneficiaryPhone = rewardPassBeneficiaryPhoneInput?.value.trim();
   const beneficiaryEmail = rewardPassBeneficiaryEmailInput?.value.trim();
+  const branchSelection = rewardPassBranchInput?.value || "";
+  if (rewardPassBranchInput?.disabled || !branchSelection) {
+    throw new Error("Selecciona Todas las Sedes o una sede activa antes de emitir el Reward Pass.");
+  }
+  const allBranches = branchSelection === REWARD_PASS_ALL_BRANCHES_VALUE;
   const payload = {
     campaign_id: rewardPassCampaignInput?.value || null,
     initial_value_cop: Number(rewardPassValueInput?.value || 0),
@@ -41542,12 +41773,14 @@ function rewardPassPayload() {
     buyer_email: rewardPassBuyerEmailInput?.value.trim() || null,
     issued_at: rewardPassIssuedAtInput?.value ? new Date(rewardPassIssuedAtInput.value).toISOString() : null,
     expires_at: rewardPassExpiresAtInput?.value ? new Date(rewardPassExpiresAtInput.value).toISOString() : null,
-    authorized_branch: rewardPassBranchInput?.value.trim() || null,
+    authorized_branch_id: allBranches ? null : branchSelection,
+    branch_authorization_scope: allBranches ? REWARD_PASS_ALL_BRANCHES_VALUE : "SPECIFIC_BRANCH",
     payment_method_received: rewardPassPaymentMethodInput?.value.trim() || null,
     partial_redemption_allowed: Boolean(rewardPassPartialInput?.checked),
     transferable: Boolean(rewardPassTransferableInput?.checked),
     terms: rewardPassTermsInput?.value.trim() || null,
     internal_notes: rewardPassNotesInput?.value.trim() || null,
+    idempotency_key: state.rewardPassIssuanceKey || (state.rewardPassIssuanceKey = createRewardPassOperationKey("reward-pass-issue")),
   };
   if (beneficiaryName) payload.beneficiary_name = beneficiaryName;
   if (beneficiaryDocument) payload.beneficiary_document = beneficiaryDocument;
@@ -41569,6 +41802,8 @@ async function submitRewardPass(event) {
     });
     state.selectedRewardPassId = data.reward_pass?.id;
     state.selectedRewardPass = data.reward_pass;
+    const createdId = data.reward_pass?.id;
+    state.rewardPassIssuanceKey = "";
     rewardPassCreateForm?.reset();
     setRewardPassDefaults();
     await loadRewardPassContext();
@@ -41576,6 +41811,7 @@ async function submitRewardPass(event) {
     closeRewardPassCreateModal();
     setInlineMessage(rewardPassCreateMessage, data.message || "Reward Pass emitido correctamente.", "success");
     showFeedback(data.message || "Reward Pass emitido correctamente.", "success", { title: "Reward Pass emitido" });
+    if (createdId) await selectRewardPass(createdId);
   } catch (error) {
     setInlineMessage(rewardPassCreateMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo emitir" });
@@ -41588,6 +41824,34 @@ async function copyRewardPassLink(link) {
   if (!link) return;
   await navigator.clipboard?.writeText(link);
   showFeedback("Link público del Reward Pass copiado.");
+}
+
+async function copyRewardPassActivation(pass = state.selectedRewardPass) {
+  if (!pass?.public_url) return;
+  const content = `Reward Pass ${pass.public_code}\nEnlace: ${pass.public_url}\nPIN de activación: ${pass.security_pin || "-"}`;
+  await navigator.clipboard?.writeText(content);
+  showFeedback("Enlace y PIN de activación copiados.", "success", { title: "Reward Pass" });
+}
+
+async function extendSelectedRewardPass(id) {
+  const pass = state.selectedRewardPass;
+  if (!id || !pass) return;
+  const current = new Date(pass.expires_at || Date.now());
+  current.setMonth(current.getMonth() + 3);
+  const value = window.prompt("Nueva fecha de vencimiento (AAAA-MM-DD)", current.toISOString().slice(0, 10));
+  if (!value) return;
+  try {
+    await api(`/api/business/reward-passes/${encodeURIComponent(id)}/extend`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ expires_at: new Date(`${value}T23:59:59`).toISOString(), notes: "Vigencia prorrogada desde Reward Pass." }),
+    });
+    await renderRewardPassesView();
+    await selectRewardPass(id);
+    showFeedback("Vigencia prorrogada correctamente.", "success");
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo prorrogar" });
+  }
 }
 
 function openRewardPassWhatsapp(id) {
@@ -45417,6 +45681,7 @@ async function loadBusinessBranches(options = {}) {
     state.businessBranchesLoaded = true;
     state.businessBranchesLoading = false;
     state.businessBranchesLoadPromise = null;
+    state.businessBranchesLoadError = "";
     return [];
   }
   if (state.businessBranchesLoaded && !options.force) return state.businessBranches;
@@ -45424,6 +45689,7 @@ async function loadBusinessBranches(options = {}) {
     return state.businessBranchesLoadPromise;
   }
   state.businessBranchesLoading = true;
+  state.businessBranchesLoadError = "";
   const scopeKey = businessScopeKey();
   const loadSeq = Number(state.businessBranchesLoadSeq || 0) + 1;
   state.businessBranchesLoadSeq = loadSeq;
@@ -45439,11 +45705,18 @@ async function loadBusinessBranches(options = {}) {
     }
     state.businessBranches = Array.isArray(data.branches) ? data.branches : [];
     state.businessBranchesLoaded = true;
+    state.businessBranchesLoadError = "";
     return state.businessBranches;
   });
   state.businessBranchesLoadPromise = loadPromise;
   try {
     return await loadPromise;
+  } catch (error) {
+    if (isCurrentBusinessScope(scopeKey) && state.businessBranchesLoadSeq === loadSeq) {
+      state.businessBranchesLoaded = false;
+      state.businessBranchesLoadError = error.message || "No fue posible cargar las sedes.";
+    }
+    throw error;
   } finally {
     if (isCurrentBusinessScope(scopeKey) && state.businessBranchesLoadSeq === loadSeq) {
       state.businessBranchesLoading = false;
@@ -45622,6 +45895,7 @@ async function submitBranchCreate(event) {
         ...(state.businessBranches || []).filter((branch) => String(branch.id) !== String(data.branch.id)),
       ];
       state.businessBranchesLoaded = true;
+      state.businessBranchesLoadError = "";
     } else {
       await loadBusinessBranches({ force: true });
     }
@@ -45631,6 +45905,7 @@ async function submitBranchCreate(event) {
     showFeedback(editingId ? "Sede actualizada correctamente." : "Sede agregada correctamente.", "success", { title: "Sedes" });
     renderBranchesView();
     renderCustomerAcquisitionBranchOptions();
+    renderRewardPassBranchOptions();
   } catch (error) {
     setInlineMessage(branchCreateMessage, error.message || "No se pudo guardar la sede.", "error");
     showFeedback(error.message || "No se pudo guardar la sede.", "error", { title: "Sedes" });
@@ -45651,6 +45926,8 @@ async function toggleBranchActive(branchId = "", nextActive = false) {
       state.businessBranches = (state.businessBranches || []).map((item) => (
         String(item.id) === String(data.branch.id) ? data.branch : item
       ));
+      state.businessBranchesLoaded = true;
+      state.businessBranchesLoadError = "";
     } else {
       await loadBusinessBranches({ force: true });
     }
@@ -45658,6 +45935,7 @@ async function toggleBranchActive(branchId = "", nextActive = false) {
     showFeedback(nextActive ? "Sede reactivada." : "Sede eliminada de la operación activa.", "success", { title: "Sedes" });
     renderBranchesView();
     renderCustomerAcquisitionBranchOptions();
+    renderRewardPassBranchOptions();
   } catch (error) {
     showFeedback(error.message || "No se pudo actualizar la sede.", "error", { title: "Sedes" });
   }
@@ -57202,6 +57480,9 @@ refreshRewardPassesButton?.addEventListener("click", renderRewardPassesView);
 rewardPassOpenCreateButton?.addEventListener("click", openRewardPassCreateModal);
 rewardPassCreateCloseButton?.addEventListener("click", closeRewardPassCreateModal);
 rewardPassCreateCancelButton?.addEventListener("click", closeRewardPassCreateModal);
+rewardPassBranchRetryButton?.addEventListener("click", retryRewardPassBranches);
+rewardPassOpenBranchesButton?.addEventListener("click", openBranchesFromRewardPass);
+rewardPassBranchInput?.addEventListener("change", () => renderRewardPassPreview(null));
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   closeRewardPassCreateModal();
@@ -57222,7 +57503,34 @@ refreshDigitalAssetsButton?.addEventListener("click", async () => {
   renderFlyerQrAssetOptions();
   renderLeadCaptureTable();
 });
-rewardPassStatusFilter?.addEventListener("change", renderRewardPassesView);
+let rewardPassSearchTimer = 0;
+function reloadRewardPassesFromFirstPage() {
+  state.rewardPassPagination = { ...(state.rewardPassPagination || {}), offset: 0, limit: state.rewardPassPagination?.limit || 50 };
+  renderRewardPassesView();
+}
+rewardPassStatusFilter?.addEventListener("change", reloadRewardPassesFromFirstPage);
+rewardPassBranchFilter?.addEventListener("change", reloadRewardPassesFromFirstPage);
+rewardPassSearchInput?.addEventListener("input", () => {
+  clearTimeout(rewardPassSearchTimer);
+  rewardPassSearchTimer = window.setTimeout(reloadRewardPassesFromFirstPage, 320);
+});
+rewardPassClearFiltersButton?.addEventListener("click", () => {
+  if (rewardPassSearchInput) rewardPassSearchInput.value = "";
+  if (rewardPassStatusFilter) rewardPassStatusFilter.value = "";
+  if (rewardPassBranchFilter) rewardPassBranchFilter.value = "";
+  reloadRewardPassesFromFirstPage();
+});
+rewardPassPrevPageButton?.addEventListener("click", () => {
+  const pagination = state.rewardPassPagination || { limit: 50, offset: 0 };
+  state.rewardPassPagination = { ...pagination, offset: Math.max(0, toNumber(pagination.offset) - toNumber(pagination.limit || 50)) };
+  renderRewardPassesView();
+});
+rewardPassNextPageButton?.addEventListener("click", () => {
+  const pagination = state.rewardPassPagination || { limit: 50, offset: 0 };
+  if (!pagination.has_more) return;
+  state.rewardPassPagination = { ...pagination, offset: toNumber(pagination.offset) + toNumber(pagination.limit || 50) };
+  renderRewardPassesView();
+});
 rewardPassCreateForm?.addEventListener("submit", submitRewardPass);
 leadCaptureForm?.addEventListener("submit", submitLeadCapture);
 digitalAssetForm?.addEventListener("submit", submitDigitalAsset);

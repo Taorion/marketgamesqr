@@ -50,6 +50,7 @@
 <link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-premium-v341-20260823">
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-pro-v11-20260820">
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822">
+<link rel="stylesheet" href="css/reward-pass-premium-v342.css?v=reward-pass-branches-v344-20260823">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -6513,7 +6514,7 @@
                   </div>
                   <label>
                     <span>Sede</span>
-                    <input id="validatorRewardPassBranchInput" type="text" placeholder="Sede o caja">
+                    <select id="validatorRewardPassBranchInput"><option value="">Selecciona la sede de redención</option></select>
                   </label>
                   <label>
                     <span>Documento presentado</span>
@@ -6851,18 +6852,27 @@
             </article>
           </section>
 
-          <section class="view-section" data-view="reward-passes">
-            <div class="view-head">
-              <div>
-                <span class="mono-label">Giftcards</span>
-                <h2>Giftcards emitidas</h2>
-                <p>Consulta el estado y saldo de cada giftcard. Abre el detalle solo cuando necesites revisar a quién pertenece o enviar un recordatorio.</p>
+          <section class="view-section reward-pass-premium-view" data-view="reward-passes">
+            <header class="reward-pass-premium-hero">
+              <div class="reward-pass-premium-hero-copy">
+                <span class="reward-pass-premium-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">verified</span> Valor digital con trazabilidad real</span>
+                <h2>Reward Pass</h2>
+                <p>Emite giftcards seguras, controla el saldo y convierte cada redención en una operación verificable por sede, beneficiario y factura.</p>
+                <div class="reward-pass-premium-signal" aria-label="Flujo Reward Pass">
+                  <span>Emisión segura</span><span>Activación con PIN</span><span>Redención controlada</span>
+                </div>
               </div>
-              <div class="view-head-actions">
-                <button class="solid-button" id="rewardPassOpenCreateButton" type="button">Crear giftcard</button>
-                <button class="ghost-button" id="refreshRewardPassesButton" type="button">Actualizar</button>
+              <div class="reward-pass-premium-actions">
+                <button class="solid-button" id="rewardPassOpenCreateButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">add_card</span> Emitir Reward Pass</button>
+                <button class="ghost-button" id="refreshRewardPassesButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">refresh</span> Actualizar</button>
               </div>
-            </div>
+            </header>
+
+            <section class="reward-pass-kpis" id="rewardPassKpiGrid" aria-label="Indicadores de Reward Pass"></section>
+            <section class="reward-pass-premium-insight" id="rewardPassInsight" aria-live="polite">
+              <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+              <div><strong>Preparando lectura operativa</strong><p>Estamos revisando saldos, activaciones pendientes y próximos vencimientos.</p></div>
+            </section>
 
             <section class="modal-shell hidden" id="rewardPassCreateModal" role="dialog" aria-modal="true" aria-labelledby="rewardPassCreateModalTitle">
               <article class="modal-card reward-pass-create-modal-card">
@@ -6870,7 +6880,7 @@
                   <div>
                     <span class="mono-label">Crear giftcard</span>
                     <h3 id="rewardPassCreateModalTitle">Emitir Reward Pass</h3>
-                    <p>Completa los datos de compra. Al terminar, la ventana se cierra y la tabla se actualiza.</p>
+                    <p>Registra la compra, define la sede y entrega al beneficiario un enlace protegido por PIN.</p>
                   </div>
                   <button class="icon-button" id="rewardPassCreateCloseButton" type="button" aria-label="Cerrar creación de Reward Pass">
                     <span class="material-symbols-outlined">close</span>
@@ -6932,9 +6942,16 @@
                     <span>Fecha vencimiento</span>
                     <input id="rewardPassExpiresAtInput" type="datetime-local" required>
                   </label>
-                  <label>
+                  <label class="reward-pass-branch-field">
                     <span>Sede autorizada</span>
-                    <input id="rewardPassBranchInput" type="text">
+                    <select id="rewardPassBranchInput" aria-describedby="rewardPassBranchStatus" disabled>
+                      <option value="">Cargando sedes...</option>
+                    </select>
+                    <small id="rewardPassBranchStatus" class="reward-pass-branch-status" aria-live="polite">Cargando sedes...</small>
+                    <span class="reward-pass-branch-actions">
+                      <button class="text-button compact hidden" id="rewardPassBranchRetryButton" type="button">Reintentar</button>
+                      <button class="text-button compact hidden" id="rewardPassOpenBranchesButton" type="button">Abrir Opera → Sedes</button>
+                    </span>
                   </label>
                   <label>
                     <span>Medio de pago recibido</span>
@@ -6943,10 +6960,6 @@
                   <label class="validator-checkline">
                     <input id="rewardPassPartialInput" type="checkbox" checked>
                     <span>Permitir redenciones parciales</span>
-                  </label>
-                  <label class="validator-checkline">
-                    <input id="rewardPassTransferableInput" type="checkbox">
-                    <span>Transferible</span>
                   </label>
                   <label class="span-2">
                     <span>Condiciones</span>
@@ -6974,9 +6987,9 @@
                 <div class="reward-pass-card-preview" id="rewardPassCardPreview">
                   <div class="reward-pass-card-inner">
                     <span>REWARD PASS</span>
-                    <strong id="rewardPassPreviewValue">ACTIVACION</strong>
-                    <p id="rewardPassPreviewBeneficiary">Escanea para reclamar el QR definitivo</p>
-                    <small>La gift card oficial redimible se genera después de completar datos</small>
+                    <strong id="rewardPassPreviewValue">ACTIVACIÓN</strong>
+                    <p id="rewardPassPreviewBeneficiary">Escanea, ingresa el PIN y reclama el QR definitivo</p>
+                    <small>El valor permanece protegido hasta completar la activación</small>
                   </div>
                 </div>
                 <div class="affiliate-card-actions">
@@ -6984,19 +6997,25 @@
                   <button class="ghost-button" id="rewardPassDownloadPdfButton" type="button" disabled>Descargar PDF</button>
                   <button class="ghost-button" id="rewardPassReceiptButton" type="button" disabled>Comprobante</button>
                 </div>
-                <p class="affiliate-card-note" id="rewardPassPreviewMeta">El QR y los datos completos apareceran después de emitir o seleccionar un Reward Pass.</p>
+                <p class="affiliate-card-note" id="rewardPassPreviewMeta">Después de emitir verás el enlace, el PIN y los archivos oficiales.</p>
               </article>
                 </div>
               </article>
             </section>
 
-            <article class="surface-card data-table-card reward-pass-list-card" data-quiet-zone-ignore>
+            <section class="reward-pass-chart-grid" id="rewardPassChartGrid" aria-label="Distribución de Reward Pass"></section>
+
+            <article class="surface-card reward-pass-command-card" data-quiet-zone-ignore>
               <div class="table-card-head">
                 <div>
-                  <span class="mono-label">Listado</span>
-                  <strong>Giftcards emitidas</strong>
+                  <span class="mono-label">Centro operativo</span>
+                  <strong>Busca, filtra y actúa</strong>
                 </div>
-                <div class="inline-selects">
+                <span class="reward-pass-result-count" id="rewardPassResultCount">Cargando…</span>
+              </div>
+              <div class="reward-pass-filter-grid">
+                <label class="reward-pass-search-field"><span class="material-symbols-outlined" aria-hidden="true">search</span><input id="rewardPassSearchInput" type="search" placeholder="Código, comprador o beneficiario" autocomplete="off"></label>
+                <label><span>Estado</span>
                   <select id="rewardPassStatusFilter">
                     <option value="">Todos</option>
                     <option value="active">Activos</option>
@@ -7009,8 +7028,18 @@
                     <option value="cancelled">Anulados</option>
                     <option value="extended">Prorrogados</option>
                   </select>
-                </div>
+                </label>
+                <label><span>Sede autorizada</span><select id="rewardPassBranchFilter"><option value="">Todas las sedes</option></select></label>
+                <button class="ghost-button" id="rewardPassClearFiltersButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">filter_alt_off</span> Limpiar</button>
               </div>
+            </article>
+
+            <article class="surface-card data-table-card reward-pass-list-card" data-quiet-zone-ignore>
+              <div class="table-card-head">
+                <div><span class="mono-label">Trazabilidad</span><strong>Giftcards emitidas</strong></div>
+                <small>Abre una ficha para compartir, descargar, prorrogar o anular.</small>
+              </div>
+              <div class="reward-pass-mobile-cards" id="rewardPassMobileCards"></div>
               <div class="table-wrap">
                 <table>
                   <thead>
@@ -7020,52 +7049,18 @@
                       <th>Beneficiario</th>
                       <th>Saldo</th>
                       <th>Estado</th>
+                      <th>Vigencia</th>
                       <th>Detalle</th>
                     </tr>
                   </thead>
                   <tbody id="rewardPassTable"></tbody>
                 </table>
               </div>
-            </article>
-
-            <article class="surface-card reward-pass-detail-card hidden" id="rewardPassDetailCard" aria-hidden="true">
-              <div class="table-card-head">
-                <span class="mono-label">Detalle</span>
-                <strong id="rewardPassDetailTitle">Sin Reward Pass seleccionado</strong>
-              </div>
-              <div class="reward-pass-detail-grid" id="rewardPassDetailGrid"></div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Factura</th>
-                      <th>Total factura</th>
-                      <th>Aplicado</th>
-                      <th>Diferencia cliente</th>
-                      <th>Saldo anterior</th>
-                      <th>Saldo nuevo</th>
-                      <th>Sede</th>
-                      <th>Vendedor</th>
-                      <th>Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody id="rewardPassRedemptionTable"></tbody>
-                </table>
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Tickets</th>
-                      <th>Antes</th>
-                      <th>Después</th>
-                      <th>Tipo</th>
-                      <th>Fecha</th>
-                    </tr>
-                  </thead>
-                  <tbody id="rewardPassTicketLedgerTable"></tbody>
-                </table>
-              </div>
+              <footer class="reward-pass-pagination" aria-label="Paginación Reward Pass">
+                <button class="ghost-button compact" id="rewardPassPrevPageButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Anterior</button>
+                <span id="rewardPassPageLabel">Página 1</span>
+                <button class="ghost-button compact" id="rewardPassNextPageButton" type="button">Siguiente <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
+              </footer>
             </article>
           </section>
 
@@ -8024,7 +8019,7 @@
     <footer class="customer-csv-modal-footer"><button class="ghost-button hidden" id="customerCsvErrorsButton" type="button">Descargar errores</button><button class="ghost-button" id="customerCsvCancelButton" type="button">Cancelar</button><button class="solid-button" id="customerCsvSubmitButton" type="button" disabled>Importar clientes</button></footer>
   </section>
 </div>
-<script src="js/app.js?v=contacts-client-import-v344-20260823" defer></script>
+<script src="js/app.js?v=reward-pass-branches-v345-20260823" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>

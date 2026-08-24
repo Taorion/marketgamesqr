@@ -112,7 +112,7 @@ async function render() {
           <div class="rp-detail"><span>${isClaim ? "Valor" : "Valor inicial"}</span><strong>${escapeHtml(isClaim ? "Lo veras al activar" : money(pass.initial_value_cop))}</strong></div>
           <div class="rp-detail"><span>QR final</span><strong>${escapeHtml(isClaim ? "Se genera despues de tus datos" : "Listo para redimir")}</strong></div>
           <div class="rp-detail"><span>Vigencia</span><strong>${escapeHtml(date(pass.expires_at))}</strong></div>
-          <div class="rp-detail"><span>Sede autorizada</span><strong>${escapeHtml(pass.authorized_branch || "Segun condiciones del emisor")}</strong></div>
+          <div class="rp-detail"><span>Sede autorizada</span><strong>${escapeHtml(pass.authorized_branch_label || pass.authorized_branch_name || pass.authorized_branch || "Todas las Sedes")}</strong></div>
         </section>
         <footer class="rp-footer">
           <p><strong>Como funciona:</strong> ${escapeHtml(pass.instructions)}</p>
@@ -123,6 +123,7 @@ async function render() {
             <label>Documento de identidad<input id="rpClaimDocument" type="text" required></label>
             <label>Celular<input id="rpClaimPhone" type="tel"></label>
             <label>Email<input id="rpClaimEmail" type="email"></label>
+            <label class="rp-claim-pin">PIN de activación<input id="rpClaimPin" type="text" inputmode="numeric" autocomplete="one-time-code" minlength="6" maxlength="6" pattern="[0-9]{6}" placeholder="6 dígitos" required><small>El negocio emisor comparte este PIN contigo.</small></label>
             <button type="submit">Activar y ver mi Gift Card</button>
             <p id="rpClaimMessage"></p>
           </form>` : `
@@ -152,7 +153,12 @@ async function render() {
     form?.addEventListener("submit", async (event) => {
       event.preventDefault();
       const message = document.getElementById("rpClaimMessage");
-        message.textContent = "Activando tu Gift Card oficial...";
+      const submitButton = form.querySelector('button[type="submit"]');
+      message.textContent = "Activando tu Gift Card oficial...";
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Activando de forma segura...";
+      }
       try {
         const claimResponse = await fetch(`/api/public/reward-passes/${encodeURIComponent(publicCode)}/claim`, {
           method: "POST",
@@ -162,6 +168,7 @@ async function render() {
             beneficiary_document: document.getElementById("rpClaimDocument").value.trim(),
             beneficiary_phone: document.getElementById("rpClaimPhone").value.trim() || null,
             beneficiary_email: document.getElementById("rpClaimEmail").value.trim() || null,
+            security_pin: document.getElementById("rpClaimPin").value.trim(),
           }),
         });
         const claimData = await claimResponse.json().catch(() => ({}));
@@ -172,6 +179,10 @@ async function render() {
         setTimeout(render, 600);
       } catch (claimError) {
         message.textContent = claimError.message;
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = "Activar y ver mi Gift Card";
+        }
       }
     });
     if (!isClaim) {

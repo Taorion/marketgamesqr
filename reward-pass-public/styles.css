@@ -381,3 +381,89 @@ body {
   background: #eaf4ff;
   color: #052a6b;
 }
+
+/* Reward Pass v342: secure activation and premium responsive finish. */
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+.rp-shell {
+  width: min(1160px, calc(100% - clamp(20px, 5vw, 64px)));
+  padding: clamp(14px, 4vh, 42px) 0;
+}
+
+.rp-card { min-height: calc(100dvh - clamp(28px, 8vh, 84px)); }
+
+.rp-pass {
+  border-radius: 26px;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, .36);
+}
+
+.rp-hero { position: relative; overflow: hidden; }
+.rp-hero::after {
+  content: "";
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  right: -180px;
+  bottom: -230px;
+  border: 46px solid rgba(255, 255, 255, .045);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.rp-value,
+.rp-qr,
+.rp-activation-panel,
+.rp-detail,
+.rp-claim-form,
+.rp-share-panel { border-radius: 16px; }
+
+.rp-claim-pin {
+  grid-column: 1 / -1;
+  padding: 16px;
+  border: 1px solid rgba(0, 191, 229, .34);
+  border-radius: 15px;
+  background: rgba(0, 191, 229, .07);
+}
+
+.rp-claim-pin input {
+  max-width: 260px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: .18em;
+}
+
+.rp-claim-pin small {
+  color: #a9c0d7;
+  font-size: .78rem;
+  font-weight: 500;
+}
+
+.rp-claim-form button[type="submit"] {
+  min-height: 52px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #00bfe5, #5ce5ff);
+  box-shadow: 0 14px 30px rgba(0, 191, 229, .2);
+}
+
+.rp-claim-form input:focus-visible,
+.rp-whatsapp-row input:focus-visible,
+.rp-action-button:focus-visible,
+.rp-claim-form button:focus-visible {
+  outline: 3px solid rgba(92, 229, 255, .46);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .rp-shell { width: min(100% - 20px, 1160px); }
+  .rp-card { min-height: calc(100dvh - 20px); }
+  .rp-pass { border-radius: 20px; }
+  .rp-hero { padding: 26px 20px; }
+  .rp-title { font-size: clamp(2.35rem, 14vw, 4rem); overflow-wrap: anywhere; }
+  .rp-footer { padding: 22px 18px; }
+  .rp-detail { padding: 18px; }
+  .rp-claim-pin input { max-width: 100%; }
+}

@@ -35,9 +35,17 @@ const {
 } = require("./controllers/rewardPassController");
 const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/errorHandler");
+const { rateLimit } = require("./middleware/rateLimit");
 const packageJson = require("../../package.json");
 
 const app = express();
+const rewardPassPublicReadLimit = rateLimit({ keyPrefix: "reward-pass-public-read", max: 180, windowMs: 15 * 60_000 });
+const rewardPassPublicClaimLimit = rateLimit({
+  keyPrefix: "reward-pass-public-claim",
+  max: 12,
+  windowMs: 15 * 60_000,
+  message: "Demasiados intentos de activación. Espera unos minutos y vuelve a intentarlo.",
+});
 const projectRoot = path.join(__dirname, "../..");
 const marketGamesWebRoot = path.join(projectRoot, "Pagina web MG");
 const staticOptions = { setHeaders: setUtf8StaticHeaders };
@@ -232,9 +240,9 @@ app.use("/api/public", publicAffiliateRoutes);
 app.use("/api/public", publicSmartCatalogRoutes);
 app.use("/api/public", packageSalesRoutes);
 app.get("/api/public/rms-attachments/:publicToken", publicAttachmentDownload);
-app.get("/api/public/reward-passes/:publicCode/pdf", publicRewardPassDownloadPdf);
-app.get("/api/public/reward-passes/:publicCode", publicRewardPassGet);
-app.post("/api/public/reward-passes/:publicCode/claim", publicRewardPassClaim);
+app.get("/api/public/reward-passes/:publicCode/pdf", rewardPassPublicReadLimit, publicRewardPassDownloadPdf);
+app.get("/api/public/reward-passes/:publicCode", rewardPassPublicReadLimit, publicRewardPassGet);
+app.post("/api/public/reward-passes/:publicCode/claim", rewardPassPublicClaimLimit, publicRewardPassClaim);
 app.use("/api/payments", paymentRoutes);
 
 app.use(blockRetiredPublicAssets);
