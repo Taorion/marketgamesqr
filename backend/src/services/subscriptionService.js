@@ -1126,6 +1126,39 @@ async function assertBusinessFeature(user, businessId, feature) {
   return subscription;
 }
 
+async function assertStandaloneBusinessFeature(user, businessId, feature) {
+  if (!canAccessBusiness(user, businessId)) {
+    throw forbidden("No puedes acceder a este negocio.");
+  }
+  const subscription = await getBusinessSubscription(businessId);
+  if (["ADMIN", "ADMIN_MARKET_GAMES", "ADMIN_Qori"].includes(user.role)) {
+    return subscription;
+  }
+  if (subscription.plan.raw_status !== "ACTIVE") {
+    throw forbidden(
+      "La suscripcion del negocio no esta activa.",
+      planGateDetails(subscription.plan, {
+        reason: "subscription_inactive",
+        feature,
+        label: feature,
+        suggested_plan_code: PLAN_CODES.STARTER,
+      })
+    );
+  }
+  if (!subscription.plan.features?.[feature]) {
+    throw forbidden(
+      `Tu plan no incluye: ${feature}.`,
+      planGateDetails(subscription.plan, {
+        reason: "feature_locked",
+        feature,
+        label: feature,
+        suggested_plan_code: suggestedPlanForFeature(subscription.plan, feature),
+      })
+    );
+  }
+  return subscription;
+}
+
 function currentMonthRange() {
   const now = new Date();
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -1378,6 +1411,7 @@ module.exports = {
   getBusinessSubscription,
   setBusinessSubscription,
   assertBusinessFeature,
+  assertStandaloneBusinessFeature,
   assertFeatureForRequest,
   assertInteractiveActivationTypeForBusiness,
   assertPortalAccess,

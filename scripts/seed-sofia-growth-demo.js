@@ -622,10 +622,10 @@ async function insertLeadsQrRedemptionsAndSales({
           await client.query(
             `insert into attributed_sales (
                business_id, campaign_id, qr_code_id, redemption_id, player_id,
-               sale_amount, currency, sale_confirmed_by_user_id, branch_id,
+               sale_amount, purchase_subtotal, currency, sale_confirmed_by_user_id, branch_id,
                payment_method, product_or_service, notes, created_at, sale_type
              )
-             values ($1, $2, $3, $4, $5, $6, 'COP', $7, $8, $9, $10, $11, $12, 'DIRECT_REDEMPTION')`,
+             values ($1, $2, $3, $4, $5, $6, $6, 'COP', $7, $8, $9, $10, $11, $12, 'DIRECT_REDEMPTION')`,
             [
               businessId,
               campaign.id,

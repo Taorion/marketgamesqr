@@ -6,6 +6,24 @@ const { badRequest, forbidden, notFound } = require("../utils/http");
 const { createSecureToken, normalizeToken } = require("../utils/token");
 const { logValidation, logQrEvent } = require("./auditService");
 const { consumeQrCredit } = require("./qrCreditService");
+const { assertStandaloneBusinessFeature } = require("./subscriptionService");
+const {
+  calculateBenefitCheckout,
+  describeBenefitApplication,
+} = require("./benefitCheckoutService");
+const {
+  affiliatePointRuleMetadata,
+  getAffiliatePointRules,
+  referralPointsForAmount,
+} = require("./affiliatePointRulesService");
+
+const QR_VALIDATOR_ROLES = new Set(["BUSINESS_OWNER", "BUSINESS_MANAGER", "VALIDATOR", "ADMIN", "ADMIN_MARKET_GAMES", "ADMIN_Qori"]);
+
+function assertQrValidator(user) {
+  if (!QR_VALIDATOR_ROLES.has(user?.role)) {
+    throw forbidden("Este rol no puede validar ni redimir tickets QR.");
+  }
+}
 
 function buildValidatorUrl(token) {
   const target = new URL("/empresa/", env.publicAppUrl || "http://localhost:3000");
@@ -167,6 +185,7 @@ async function generateQr(data, actor) {
 }
 
 async function getQrDetails(tokenInput, user) {
+  assertQrValidator(user);
   const token = normalizeToken(tokenInput);
   if (!token) {
     throw badRequest("Token is required.");
@@ -245,6 +264,8 @@ async function getQrDetails(tokenInput, user) {
     };
   }
 
+  await assertStandaloneBusinessFeature(user, qr.business_id, "qr_validator");
+
   const now = new Date();
   const isExpired = qr.expires_at && new Date(qr.expires_at) <= now;
   const effectiveStatus = qr.status === "ACTIVE" && isExpired ? "EXPIRED" : qr.status;
@@ -305,6 +326,11 @@ async function getQrDetails(tokenInput, user) {
       benefit_type: qr.benefit_type || null,
       benefit_value: qr.benefit_value || {},
     },
+    benefit_application: describeBenefitApplication(
+      qr.benefit_type,
+      qr.benefit_value || {},
+      qr.reward_name || qr.benefit_value?.label || "Beneficio estrategico"
+    ),
     player: qr.player_id
       ? {
           id: qr.player_id,
@@ -341,19 +367,136 @@ async function getQrDetails(tokenInput, user) {
   };
 }
 
-async function redeemQr(tokenInput, user) {
+async function recordAffiliateCheckout(client, qr, attributedSale, checkout, purchase, user) {
+  const rules = await getAffiliatePointRules(qr.business_id, client);
+  const points = referralPointsForAmount(checkout.final_total, rules);
+  const ruleMetadata = affiliatePointRuleMetadata(rules);
+  const existingResult = await client.query(
+    `select * from business_sales where business_id = $1 and qr_code_id = $2 for update`,
+    [qr.business_id, qr.id]
+  );
+  const existing = existingResult.rows[0] || null;
+  const previousPoints = Number(existing?.referral_points_awarded || 0);
+  const pointDelta = points - previousPoints;
+  const productSummary = purchase.product_or_service
+    || checkout.line_items.map((item) => `${item.name} x${item.quantity}`).join(", ").slice(0, 200)
+    || null;
+  const values = [
+    qr.business_id,
+    qr.campaign_id || null,
+    qr.id,
+    qr.player_name || null,
+    qr.player_phone || null,
+    qr.player_email || null,
+    qr.player_document_id || null,
+    productSummary,
+    checkout.final_total,
+    purchase.currency || "COP",
+    user.id,
+    purchase.branch_id || null,
+    user.branch_id || null,
+    qr.affiliate_id,
+    points,
+    purchase.notes || null,
+    {
+      source: "affiliate_referral_qr",
+      redemption_id: attributedSale.redemption_id,
+      attributed_sale_id: attributedSale.id,
+      checkout,
+      ...ruleMetadata,
+    },
+  ];
+  let businessSale;
+  if (existing) {
+    const updated = await client.query(
+      `update business_sales
+       set campaign_id = $2, customer_name = $4, customer_phone = $5, customer_email = $6,
+           customer_document_id = $7, product_name = $8, sale_amount = $9, currency = $10,
+           seller_user_id = $11, branch_id = coalesce($12::uuid, $13::uuid),
+           acquisition_source = 'FRIEND_REFERRAL', acquisition_channel = 'QR recomendacion afiliado',
+           referred_affiliate_id = $14, referral_points_awarded = $15, notes = $16,
+           metadata = metadata || $17::jsonb
+       where id = $18 and business_id = $1
+       returning *`,
+      [...values, existing.id]
+    );
+    businessSale = updated.rows[0];
+  } else {
+    const inserted = await client.query(
+      `insert into business_sales
+        (business_id, campaign_id, qr_code_id, customer_name, customer_phone, customer_email,
+         customer_document_id, product_name, sale_amount, currency, seller_user_id, branch_id,
+         acquisition_source, acquisition_channel, referred_affiliate_id, referral_points_awarded, notes, metadata)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, coalesce($12::uuid, $13::uuid),
+         'FRIEND_REFERRAL', 'QR recomendacion afiliado', $14, $15, $16, $17)
+       returning *`,
+      values
+    );
+    businessSale = inserted.rows[0];
+  }
+
+  if (pointDelta !== 0) {
+    await client.query(
+      `update affiliates set points_total = points_total + $3 where id = $1 and business_id = $2`,
+      [qr.affiliate_id, qr.business_id, pointDelta]
+    );
+    await client.query(
+      `insert into affiliate_point_ledger
+        (business_id, affiliate_id, created_by_user_id, amount, points_awarded, reason, metadata)
+       values ($1, $2, $3, $4, $5, 'REFERRAL_PURCHASE_QR', $6)`,
+      [
+        qr.business_id,
+        qr.affiliate_id,
+        user.id,
+        checkout.final_total,
+        pointDelta,
+        {
+          business_sale_id: businessSale.id,
+          attributed_sale_id: attributedSale.id,
+          qr_code_id: qr.id,
+          redemption_id: attributedSale.redemption_id,
+          previous_points: previousPoints,
+          referral_points: points,
+          ...ruleMetadata,
+        },
+      ]
+    );
+  }
+
+  return {
+    affiliate_id: qr.affiliate_id,
+    business_sale_id: businessSale.id,
+    points_awarded: points,
+    points_delta: pointDelta,
+  };
+}
+
+async function redeemQr(tokenInput, user, checkoutPayload = {}) {
+  assertQrValidator(user);
   const token = normalizeToken(tokenInput);
   if (!token) {
     throw badRequest("Token is required.");
   }
 
+  const accessResult = await query("select business_id from qr_codes where token = $1", [token]);
+  const accessRow = accessResult.rows[0];
+  if (accessRow) {
+    if (!canAccessBusiness(user, accessRow.business_id)) {
+      throw forbidden("Este QR pertenece a otro negocio.");
+    }
+    await assertStandaloneBusinessFeature(user, accessRow.business_id, "qr_validator");
+  }
+
   return withTransaction(async (client) => {
     const result = await client.query(
-      `select q.*, b.name as business_name, r.name as reward_name, a.full_name as affiliate_name
+      `select q.*, b.name as business_name, r.name as reward_name, a.full_name as affiliate_name,
+              p.name as player_name, p.email as player_email, p.phone as player_phone,
+              p.document_id as player_document_id
        from qr_codes q
        join businesses b on b.id = q.business_id
        left join rewards r on r.id = q.reward_id
        left join affiliates a on a.id = q.affiliate_id
+       left join players p on p.id = q.player_id
        where q.token = $1
        for update of q`,
       [token]
@@ -417,12 +560,86 @@ async function redeemQr(tokenInput, user) {
       throw badRequest("Este QR esta vencido.");
     }
 
+    const benefitLabel = qr.reward_name || qr.benefit_value?.label || "Beneficio estrategico";
+    const checkout = calculateBenefitCheckout({
+      benefitType: qr.benefit_type,
+      benefitValue: qr.benefit_value || {},
+      label: benefitLabel,
+      mode: checkoutPayload.mode,
+      purchase: checkoutPayload.purchase || {},
+    });
+    const redemptionMetadata = {
+      benefit_application: checkout,
+      origin_type: qr.origin_type,
+      affiliate_id: qr.affiliate_id || null,
+    };
     const redemption = await client.query(
-      `insert into redemptions (business_id, campaign_id, game_id, qr_code_id, reward_id, player_id, redeemed_by_user_id, branch_id)
-       values ($1, $2, $3, $4, $5, $6, $7, $8)
+      `insert into redemptions
+        (business_id, campaign_id, game_id, qr_code_id, reward_id, player_id, redeemed_by_user_id, branch_id, metadata)
+       values ($1, $2, $3, $4, $5, $6, $7, coalesce($8::uuid, $9::uuid), $10)
        returning *`,
-      [qr.business_id, qr.campaign_id || null, qr.game_id, qr.id, qr.reward_id, qr.player_id, user.id, user.branch_id || null]
+      [
+        qr.business_id,
+        qr.campaign_id || null,
+        qr.game_id,
+        qr.id,
+        qr.reward_id,
+        qr.player_id,
+        user.id,
+        checkoutPayload.purchase?.branch_id || null,
+        user.branch_id || null,
+        redemptionMetadata,
+      ]
     );
+
+    let attributedSale = null;
+    let referral = null;
+    if (checkout.mode === "PURCHASE") {
+      const purchase = checkoutPayload.purchase || {};
+      const productSummary = purchase.product_or_service
+        || checkout.line_items.map((item) => `${item.name} x${item.quantity}`).join(", ").slice(0, 200)
+        || null;
+      const saleResult = await client.query(
+        `insert into attributed_sales
+          (business_id, campaign_id, qr_code_id, redemption_id, player_id,
+           sale_amount, purchase_subtotal, benefit_discount_amount, benefit_type, benefit_label,
+           benefit_snapshot, line_items, application_summary, purchase_required, application_mode,
+           currency, sale_confirmed_by_user_id, branch_id, payment_method, product_or_service, notes)
+         values
+          ($1, $2, $3, $4, $5,
+           $6, $7, $8, $9, $10,
+           $11, $12, $13, $14, 'PURCHASE',
+           $15, $16, coalesce($17::uuid, $18::uuid), $19, $20, $21)
+         returning *`,
+        [
+          qr.business_id,
+          qr.campaign_id || null,
+          qr.id,
+          redemption.rows[0].id,
+          qr.player_id || null,
+          checkout.final_total,
+          checkout.subtotal,
+          checkout.discount_amount,
+          checkout.benefit.type,
+          checkout.benefit.label,
+          checkout.benefit,
+          checkout.line_items,
+          checkout,
+          checkout.purchase_required,
+          purchase.currency || "COP",
+          user.id,
+          purchase.branch_id || null,
+          user.branch_id || null,
+          purchase.payment_method || null,
+          productSummary,
+          purchase.notes || null,
+        ]
+      );
+      attributedSale = saleResult.rows[0];
+      if (qr.origin_type === "AFFILIATE_REFERRAL" && qr.affiliate_id) {
+        referral = await recordAffiliateCheckout(client, qr, attributedSale, checkout, checkoutPayload.purchase || {}, user);
+      }
+    }
 
     await client.query(
       `update qr_codes
@@ -453,6 +670,10 @@ async function redeemQr(tokenInput, user) {
       metadata: {
         origin_type: qr.origin_type,
         affiliate_id: qr.affiliate_id || null,
+        checkout_mode: checkout.mode,
+        purchase_subtotal: checkout.subtotal,
+        benefit_discount_amount: checkout.discount_amount,
+        final_total: checkout.final_total,
       },
     });
 
@@ -471,10 +692,15 @@ async function redeemQr(tokenInput, user) {
 
     return {
       status: "REDEEMED",
-      message: "Beneficio redimido correctamente.",
+      message: checkout.mode === "PURCHASE"
+        ? "Compra registrada y beneficio aplicado correctamente."
+        : "Beneficio redimido correctamente sin compra asociada.",
       redemption: redemption.rows[0],
+      sale: attributedSale,
+      checkout,
+      referral,
       business: { id: qr.business_id, name: qr.business_name },
-      reward: { id: qr.reward_id, name: qr.reward_name || qr.benefit_value?.label || "Beneficio estrategico" },
+      reward: { id: qr.reward_id, name: benefitLabel },
       affiliate: qr.affiliate_id ? { id: qr.affiliate_id, name: qr.affiliate_name } : null,
     };
   });

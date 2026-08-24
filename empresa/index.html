@@ -46,7 +46,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1">
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-<link rel="stylesheet" href="css/portal-clean-v39.css?v=activation-studio-premium-v331-20260822">
+<link rel="stylesheet" href="css/portal-clean-v39.css?v=validator-benefit-checkout-v343-20260824">
 <link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-premium-v341-20260823">
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-white-titles-v12-20260824">
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822">
@@ -6374,198 +6374,197 @@
             </div>
           </section>
 
-          <section class="view-section" data-view="validator">
-            <div class="view-head">
+          <section class="view-section validator-command-center" data-view="validator">
+            <div class="view-head validator-view-head">
               <div>
+                <span class="mono-label">Estación de redención</span>
                 <h2>Validador QR</h2>
-                <p>Escanea, confirma, redime y registra venta atribuida en una sola pantalla operativa.</p>
+                <p>Confirma autenticidad, protege el beneficio y conecta cada redención con su resultado comercial.</p>
               </div>
-              <div class="head-actions">
-                <button class="ghost-button" id="refreshValidatorHistoryButton" type="button">Actualizar historial</button>
+              <div class="validator-head-actions">
+                <span class="validator-live-pill"><span aria-hidden="true"></span> Operación segura</span>
+                <button class="ghost-button" id="refreshValidatorHistoryButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">sync</span>
+                  Actualizar
+                </button>
               </div>
             </div>
 
-            <section class="validator-grid">
-              <article class="surface-card validator-panel">
+            <section class="validator-operator-hero" aria-label="Flujo operativo del Validador QR">
+              <div class="validator-hero-copy">
+                <span class="mono-label">Punto de atención</span>
+                <h3>Una validación clara. Una sola redención. Revenue trazable.</h3>
+                <p>El Validador distingue tickets promocionales y Reward Pass para pedir únicamente la información necesaria en cada operación.</p>
+              </div>
+              <ol class="validator-operator-flow" aria-label="Progreso de la operación">
+                <li class="validator-operator-step is-current" id="validatorStepCapture" data-validator-step="capture"><span>1</span><strong>Capturar</strong><small>Escanea o pega el ticket.</small></li>
+                <li class="validator-operator-step" id="validatorStepVerify" data-validator-step="verify"><span>2</span><strong>Verificar</strong><small>Confirma identidad y vigencia.</small></li>
+                <li class="validator-operator-step" id="validatorStepRedeem" data-validator-step="redeem"><span>3</span><strong>Redimir</strong><small>Bloquea el doble uso.</small></li>
+                <li class="validator-operator-step" id="validatorStepClose" data-validator-step="close"><span>4</span><strong>Cerrar</strong><small>Registra venta o saldo.</small></li>
+              </ol>
+            </section>
+
+            <section class="validator-quick-actions" aria-label="Acciones rápidas del validador">
+              <button class="validator-quick-action" type="button" data-validator-quick="camera"><span class="material-symbols-outlined" aria-hidden="true">qr_code_scanner</span><span><strong>Escanear QR</strong><small>Usar cámara trasera.</small></span></button>
+              <button class="validator-quick-action" type="button" data-validator-quick="manual"><span class="material-symbols-outlined" aria-hidden="true">keyboard</span><span><strong>Pegar ticket</strong><small>Token o URL completa.</small></span></button>
+              <button class="validator-quick-action" type="button" data-validator-quick="result"><span class="material-symbols-outlined" aria-hidden="true">verified</span><span><strong>Ver resultado</strong><small>Estado y beneficiario.</small></span></button>
+              <button class="validator-quick-action" type="button" data-validator-quick="history"><span class="material-symbols-outlined" aria-hidden="true">history</span><span><strong>Ver historial</strong><small>QR y Reward Pass.</small></span></button>
+            </section>
+
+            <section class="validator-capture-grid">
+              <article class="surface-card validator-panel validator-camera-panel">
                 <div class="card-head">
-                  <div>
-                    <span class="mono-label">Camara</span>
-                    <h3 class="subhead">Escaneo de ticket</h3>
-                  </div>
+                  <div><span class="mono-label">Cámara</span><h3 class="subhead">Escaneo asistido</h3></div>
                   <span class="pill muted" id="validatorCameraStatus">Lista</span>
                 </div>
                 <div class="validator-scanner-shell">
-                  <video id="validatorScannerVideo" autoplay playsinline muted></video>
-                  <div class="validator-scanner-overlay">
-                    <div class="validator-scan-frame"></div>
-                  </div>
+                  <video id="validatorScannerVideo" autoplay playsinline muted aria-label="Vista de la cámara para escanear QR"></video>
+                  <div class="validator-scanner-overlay" aria-hidden="true"><div class="validator-scan-frame"><span>Centra el QR</span></div></div>
                 </div>
-                <p class="validator-hint" id="validatorScannerHint">Apunta al ticket o usa ingreso manual si el navegador no permite camara.</p>
-                <div class="head-actions">
-                  <button class="solid-button" id="startValidatorScannerButton" type="button">Activar camara</button>
-                  <button class="ghost-button" id="stopValidatorScannerButton" type="button">Detener</button>
+                <p class="validator-hint" id="validatorScannerHint">Apunta al ticket o usa ingreso manual si el navegador no permite cámara.</p>
+                <div class="validator-camera-actions">
+                  <button class="solid-button" id="startValidatorScannerButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">photo_camera</span> Activar cámara</button>
+                  <button class="ghost-button" id="stopValidatorScannerButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">stop_circle</span> Detener</button>
                 </div>
               </article>
 
-              <article class="surface-card validator-panel">
+              <article class="surface-card validator-panel validator-manual-panel">
                 <div class="card-head">
-                  <div>
-                    <span class="mono-label">Ingreso manual</span>
-                    <h3 class="subhead">Token o URL del ticket</h3>
+                  <div><span class="mono-label">Ingreso manual</span><h3 class="subhead">Token o URL del ticket</h3></div>
+                  <span class="validator-type-pill" id="validatorDetectedType">Detección automática</span>
+                </div>
+                <label class="validator-token-field" for="validatorQrTokenInput">
+                  <span>Ticket a validar</span>
+                  <div class="validator-manual-grid">
+                    <span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span>
+                    <input id="validatorQrTokenInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Pega el token o la URL completa">
+                    <button class="solid-button" id="validateValidatorManualButton" type="button">Validar</button>
                   </div>
+                </label>
+                <p class="validator-inline-message" id="validatorManualStatus" role="status" aria-live="polite">Acepta tickets QR de campaña y Reward Pass.</p>
+                <div class="validator-security-note">
+                  <span class="material-symbols-outlined" aria-hidden="true">shield_lock</span>
+                  <div><strong>Validación contra la base de datos</strong><small>El ticket se comprueba por negocio, vigencia y estado antes de permitir la redención.</small></div>
                 </div>
-                <div class="validator-manual-grid">
-                  <input id="validatorQrTokenInput" type="text" placeholder="Pega aquí el token o la URL del ticket">
-                  <button class="solid-button" id="validateValidatorManualButton" type="button">Validar</button>
-                </div>
-                <p class="validator-inline-message" id="validatorManualStatus"></p>
               </article>
             </section>
 
-            <section class="validator-result-grid">
-              <article class="surface-card validator-panel">
+            <section class="validator-operation-grid">
+              <article class="surface-card validator-panel validator-result-panel" id="validatorResultPanel">
                 <div class="card-head">
-                  <div>
-                    <span class="mono-label">Resultado</span>
-                    <h3 class="subhead" id="validatorResultTitle">Sin validación</h3>
-                  </div>
+                  <div><span class="mono-label">Diagnóstico del ticket</span><h3 class="subhead" id="validatorResultTitle">Esperando ticket</h3></div>
                   <span class="result-chip neutral" id="validatorResultChip">Pendiente</span>
                 </div>
                 <p class="validator-result-copy" id="validatorResultMessage">Escanea o pega un ticket para consultar la base de datos.</p>
-
-                <div class="validator-result-grid-inner">
-                  <div class="validator-result-item">
-                    <span class="mono-label">Negocio</span>
-                    <strong id="validatorBusinessValue">-</strong>
-                  </div>
-                  <div class="validator-result-item">
-                    <span class="mono-label">Campaña</span>
-                    <strong id="validatorCampaignValue">-</strong>
-                  </div>
-                  <div class="validator-result-item">
-                    <span class="mono-label">Juego</span>
-                    <strong id="validatorGameValue">-</strong>
-                  </div>
-                  <div class="validator-result-item">
-                    <span class="mono-label">Beneficio</span>
-                    <strong id="validatorRewardValue">-</strong>
-                  </div>
-                  <div class="validator-result-item">
-                    <span class="mono-label">Jugador</span>
-                    <strong id="validatorPlayerValue">-</strong>
-                  </div>
-                  <div class="validator-result-item">
-                    <span class="mono-label">Cédula</span>
-                    <strong id="validatorDocumentValue">-</strong>
-                  </div>
-                  <div class="validator-result-item">
-                    <span class="mono-label">Contacto</span>
-                    <strong id="validatorContactValue">-</strong>
-                  </div>
-                  <div class="validator-result-item">
-                    <span class="mono-label">Vence</span>
-                    <strong id="validatorExpiresValue">-</strong>
-                  </div>
+                <div class="validator-ticket-identity">
+                  <div><span>Tipo</span><strong id="validatorTicketTypeValue">Sin detectar</strong></div>
+                  <div><span>Referencia</span><strong id="validatorTicketCodeValue">-</strong></div>
                 </div>
-
-                <div class="head-actions">
-                  <button class="solid-button" id="validatorRedeemButton" type="button" disabled>Redimir beneficio</button>
-                </div>
+                <dl class="validator-result-grid-inner">
+                  <div class="validator-result-item"><dt>Negocio</dt><dd id="validatorBusinessValue">-</dd></div>
+                  <div class="validator-result-item"><dt>Campaña</dt><dd id="validatorCampaignValue">-</dd></div>
+                  <div class="validator-result-item"><dt>Origen</dt><dd id="validatorGameValue">-</dd></div>
+                  <div class="validator-result-item validator-result-benefit"><dt>Beneficio</dt><dd id="validatorRewardValue">-</dd></div>
+                  <div class="validator-result-item"><dt>Cliente</dt><dd id="validatorPlayerValue">-</dd></div>
+                  <div class="validator-result-item"><dt>Documento</dt><dd id="validatorDocumentValue">-</dd></div>
+                  <div class="validator-result-item"><dt>Contacto</dt><dd id="validatorContactValue">-</dd></div>
+                  <div class="validator-result-item"><dt>Vigencia</dt><dd id="validatorExpiresValue">-</dd></div>
+                </dl>
               </article>
 
-              <article class="surface-card validator-panel validator-sale-panel">
+              <article class="surface-card validator-panel validator-operation-panel" id="validatorOperationPanel" data-mode="idle">
                 <div class="card-head">
-                  <div>
-                    <span class="mono-label">Venta atribuida</span>
-                    <h3 class="subhead">Registrar resultado comercial</h3>
-                  </div>
+                  <div><span class="mono-label" id="validatorOperationEyebrow">Siguiente acción</span><h3 class="subhead" id="validatorOperationTitle">Valida un ticket para comenzar</h3></div>
+                  <span class="validator-mode-badge" id="validatorModeBadge">En espera</span>
                 </div>
-                <form class="validator-sale-form" id="validatorSaleForm">
-                  <label class="validator-checkline">
-                    <input id="validatorHadSaleInput" type="checkbox" checked>
-                    <span>Hubo venta</span>
-                  </label>
-                  <label>
-                    <span>Total factura</span>
-                    <input id="validatorSaleAmountInput" type="number" min="0" step="1000" placeholder="Valor total facturado">
-                  </label>
-                  <label>
-                    <span>Factura electronica</span>
-                    <input id="validatorRewardPassInvoiceInput" type="text" minlength="2" maxlength="120" placeholder="Ej: FE-12345" required>
-                  </label>
-                  <label>
-                    <span>Valor a redimir</span>
-                    <input id="validatorRewardPassRedeemInput" type="number" min="0" step="1000" placeholder="Calculado con el saldo" readonly>
-                  </label>
-                  <div class="reward-pass-balance-panel span-2" id="validatorRewardPassBalancePanel">
-                    <div>
-                      <span>Saldo disponible</span>
-                      <strong id="validatorRewardPassAvailableValue">$0</strong>
+                <p class="validator-operation-copy" id="validatorOperationCopy">La operación se adaptará automáticamente al tipo de ticket detectado.</p>
+
+                <form class="validator-sale-form" id="validatorSaleForm" novalidate>
+                  <section class="validator-flow-fields" id="validatorRewardPassFields" hidden>
+                    <div class="validator-form-section-head"><span class="material-symbols-outlined" aria-hidden="true">card_giftcard</span><div><strong>Aplicar Reward Pass</strong><small>Verifica factura, saldo y documento antes de confirmar.</small></div></div>
+                    <label><span>Número de factura electrónica <b>*</b></span><input id="validatorRewardPassInvoiceInput" type="text" minlength="2" maxlength="120" autocomplete="off" placeholder="Ej: FE-12345"></label>
+                    <label><span>Total de la factura <b>*</b></span><input id="validatorSaleAmountInput" type="number" min="0" step="1000" inputmode="decimal" placeholder="Valor total facturado"></label>
+                    <label><span>Sede o caja</span><input id="validatorRewardPassBranchInput" type="text" list="validatorBranchOptions" autocomplete="off" placeholder="Punto de redención"></label>
+                    <label><span>Documento presentado</span><input id="validatorRewardPassDocumentInput" type="text" autocomplete="off" placeholder="Número verificado"></label>
+                    <datalist id="validatorBranchOptions"></datalist>
+                    <input id="validatorRewardPassRedeemInput" type="hidden" readonly>
+                    <div class="reward-pass-balance-panel span-2" id="validatorRewardPassBalancePanel" data-state="idle">
+                      <div><span>Saldo disponible</span><strong id="validatorRewardPassAvailableValue">$0</strong></div>
+                      <div><span>Aplicará</span><strong id="validatorRewardPassCoverageValue">$0</strong></div>
+                      <div><span>Saldo posterior</span><strong id="validatorRewardPassRemainingValue">$0</strong></div>
+                      <div><span>Diferencia cliente</span><strong id="validatorRewardPassOverageValue">$0</strong></div>
+                      <p id="validatorRewardPassBalanceMessage">Ingresa el total de la factura para calcular la cobertura.</p>
                     </div>
-                    <div>
-                      <span>Cubre Reward Pass</span>
-                      <strong id="validatorRewardPassCoverageValue">$0</strong>
-                    </div>
-                    <div>
-                      <span>Saldo posterior</span>
-                      <strong id="validatorRewardPassRemainingValue">$0</strong>
-                    </div>
-                    <div>
-                      <span>Diferencia cliente</span>
-                      <strong id="validatorRewardPassOverageValue">$0</strong>
-                    </div>
-                    <p id="validatorRewardPassBalanceMessage">Escanea un Reward Pass y registra el total de la factura para calcular saldo o excedente.</p>
-                  </div>
-                  <label>
-                    <span>Sede</span>
-                    <select id="validatorRewardPassBranchInput"><option value="">Selecciona la sede de redención</option></select>
-                  </label>
-                  <label>
-                    <span>Documento presentado</span>
-                    <input id="validatorRewardPassDocumentInput" type="text" placeholder="Confirmar cédula">
-                  </label>
-                  <label>
-                    <span>Metodo de pago</span>
-                    <input id="validatorPaymentMethodInput" type="text" placeholder="Efectivo, tarjeta, transferencia">
-                  </label>
-                  <label>
-                    <span>Producto o servicio</span>
-                    <select id="validatorProductServiceInput" data-product-select data-open-product-input="validatorProductServiceOpenInput"></select>
-                    <input id="validatorProductServiceOpenInput" class="open-product-input hidden" type="text" placeholder="Producto abierto o servicio">
-                  </label>
-                  <label class="span-2">
-                    <span>Observacion</span>
-                    <input id="validatorSaleNotesInput" type="text" placeholder="Nota opcional">
-                  </label>
-                  <div class="modal-actions span-2">
-                    <p class="error-line" id="validatorSaleStatus"></p>
-                    <div class="modal-button-row">
-                      <button class="solid-button" id="saveValidatorSaleButton" type="submit">Guardar venta</button>
-                    </div>
+                  </section>
+
+                  <section class="validator-flow-fields validator-standard-sale-fields" id="validatorStandardSaleFields" hidden>
+                    <div class="validator-form-section-head"><span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span><div><strong>Aplicar beneficio</strong><small>Elige el flujo permitido por el ticket. Compra y redención se confirmarán juntas.</small></div></div>
+                    <fieldset class="validator-redemption-modes" id="validatorRedemptionModes">
+                      <legend>Condición de redención</legend>
+                      <label class="validator-mode-choice" id="validatorStandaloneModeChoice"><input id="validatorStandaloneModeInput" name="validatorRedemptionMode" type="radio" value="STANDALONE"><span class="material-symbols-outlined" aria-hidden="true">redeem</span><span><strong>Beneficio sin compra</strong><small>Entrega u otorga el beneficio directamente.</small></span></label>
+                      <label class="validator-mode-choice" id="validatorPurchaseModeChoice"><input id="validatorPurchaseModeInput" name="validatorRedemptionMode" type="radio" value="PURCHASE"><span class="material-symbols-outlined" aria-hidden="true">shopping_cart_checkout</span><span><strong>Aplicar a una compra</strong><small>Registra productos y recalcula el total.</small></span></label>
+                    </fieldset>
+
+                    <section class="validator-purchase-editor" id="validatorPurchaseEditor" hidden>
+                      <div class="validator-purchase-head"><div><strong>Productos de la compra</strong><small>El subtotal se calcula desde las líneas registradas.</small></div><button class="ghost-button compact" id="validatorAddPurchaseItemButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">add</span> Agregar producto</button></div>
+                      <div class="validator-purchase-items" id="validatorPurchaseItems"></div>
+                      <label><span>Método de pago</span><input id="validatorPaymentMethodInput" type="text" autocomplete="off" placeholder="Efectivo, tarjeta, transferencia"></label>
+                      <input id="validatorHadSaleInput" type="checkbox" checked hidden>
+                      <input id="validatorStandardSaleAmountInput" type="hidden" readonly>
+                      <select id="validatorProductServiceInput" class="hidden" data-product-select data-open-product-input="validatorProductServiceOpenInput" tabindex="-1" aria-hidden="true"></select>
+                      <input id="validatorProductServiceOpenInput" class="hidden open-product-input" type="text" tabindex="-1" aria-hidden="true">
+                    </section>
+
+                    <section class="validator-checkout-summary" id="validatorCheckoutSummary" aria-live="polite">
+                      <div class="validator-checkout-benefit"><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span><div><small>Beneficio detectado</small><strong id="validatorCheckoutBenefitLabel">Pendiente de validar</strong><p id="validatorCheckoutBenefitRule">El sistema elegirá la mejor aplicación según el ticket.</p></div></div>
+                      <dl>
+                        <div><dt>Subtotal compra</dt><dd id="validatorCheckoutSubtotalValue">$0</dd></div>
+                        <div><dt>Descuento aplicado</dt><dd id="validatorCheckoutDiscountValue">-$0</dd></div>
+                        <div class="validator-checkout-gift-row" id="validatorCheckoutGiftRow" hidden><dt>Obsequio / beneficio</dt><dd id="validatorCheckoutGiftValue">-</dd></div>
+                        <div class="validator-checkout-total"><dt>Total final</dt><dd id="validatorCheckoutTotalValue">$0</dd></div>
+                      </dl>
+                      <p id="validatorCheckoutSummaryMessage">Selecciona un modo de redención para continuar.</p>
+                    </section>
+                  </section>
+
+                  <label class="validator-observation-field" id="validatorObservationField" hidden><span>Observación operativa</span><textarea id="validatorSaleNotesInput" rows="3" maxlength="1000" placeholder="Contexto útil para auditoría o seguimiento"></textarea></label>
+
+                  <div class="validator-operation-actions">
+                    <p class="validator-inline-message" id="validatorSaleStatus" role="status" aria-live="polite"></p>
+                    <button class="solid-button validator-redeem-button" id="validatorRedeemButton" type="button" disabled><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><span>Redimir beneficio</span></button>
+                    <button class="solid-button" id="saveValidatorSaleButton" type="submit" hidden><span class="material-symbols-outlined" aria-hidden="true">price_check</span><span>Guardar resultado comercial</span></button>
+                    <button class="ghost-button" id="validatorNewOperationButton" type="button" hidden><span class="material-symbols-outlined" aria-hidden="true">add</span> Nueva validación</button>
                   </div>
                 </form>
               </article>
             </section>
 
-            <article class="surface-card data-table-card">
-              <div class="table-card-head">
-                <span class="mono-label">Historial reciente del validador</span>
+            <section class="validator-history-section" id="validatorHistorySection">
+              <div class="validator-history-head">
+                <div><span class="mono-label">Trazabilidad operativa</span><h3>Historial unificado</h3><p>Redenciones QR y Reward Pass en una sola lectura.</p></div>
+                <div class="validator-history-filters" role="group" aria-label="Filtrar historial del validador">
+                  <button class="is-active" type="button" data-validator-history-filter="all">Todo</button>
+                  <button type="button" data-validator-history-filter="qr">Tickets QR</button>
+                  <button type="button" data-validator-history-filter="reward_pass">Reward Pass</button>
+                </div>
               </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Beneficio</th>
-                      <th>Jugador</th>
-                      <th>Teléfono</th>
-                      <th>Fecha</th>
-                      <th>Usuario</th>
-                    </tr>
-                  </thead>
-                  <tbody id="validatorHistoryTable"></tbody>
-                </table>
+              <div class="validator-history-kpis">
+                <article><span>Total redenciones</span><strong id="validatorHistoryTotalValue">0</strong></article>
+                <article><span>Hoy</span><strong id="validatorHistoryTodayValue">0</strong></article>
+                <article><span>Reward Pass</span><strong id="validatorHistoryRewardPassValue">0</strong></article>
+                <article><span>Revenue conectado</span><strong id="validatorHistoryRevenueValue">$0</strong></article>
               </div>
-            </article>
+              <p class="validator-history-gate" id="validatorHistoryGate" hidden></p>
+              <div class="validator-history-cards" id="validatorHistoryCards" aria-live="polite"></div>
+              <article class="surface-card data-table-card validator-history-table-card">
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>Tipo</th><th>Beneficio / referencia</th><th>Cliente</th><th>Sede</th><th>Fecha</th><th>Usuario</th><th>Resultado</th></tr></thead>
+                    <tbody id="validatorHistoryTable"><tr><td colspan="7">Cargando historial...</td></tr></tbody>
+                  </table>
+                </div>
+              </article>
+            </section>
           </section>
 
           <section class="view-section branches-premium-view" id="branchesPremiumView" data-view="branches" data-quiet-zone-ignore>
@@ -8023,7 +8022,7 @@
     <footer class="customer-csv-modal-footer"><button class="ghost-button hidden" id="customerCsvErrorsButton" type="button">Descargar errores</button><button class="ghost-button" id="customerCsvCancelButton" type="button">Cancelar</button><button class="solid-button" id="customerCsvSubmitButton" type="button" disabled>Importar clientes</button></footer>
   </section>
 </div>
-<script src="js/app.js?v=acquisition-attribution-v2-20260824" defer></script>
+<script src="js/app.js?v=validator-benefit-acquisition-v344-20260824" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>

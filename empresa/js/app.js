@@ -844,6 +844,9 @@ const validatorManualStatus = document.getElementById("validatorManualStatus");
 const validatorResultTitle = document.getElementById("validatorResultTitle");
 const validatorResultChip = document.getElementById("validatorResultChip");
 const validatorResultMessage = document.getElementById("validatorResultMessage");
+const validatorDetectedType = document.getElementById("validatorDetectedType");
+const validatorTicketTypeValue = document.getElementById("validatorTicketTypeValue");
+const validatorTicketCodeValue = document.getElementById("validatorTicketCodeValue");
 const validatorBusinessValue = document.getElementById("validatorBusinessValue");
 const validatorCampaignValue = document.getElementById("validatorCampaignValue");
 const validatorGameValue = document.getElementById("validatorGameValue");
@@ -854,8 +857,34 @@ const validatorContactValue = document.getElementById("validatorContactValue");
 const validatorExpiresValue = document.getElementById("validatorExpiresValue");
 const validatorRedeemButton = document.getElementById("validatorRedeemButton");
 const validatorSaleForm = document.getElementById("validatorSaleForm");
+const validatorOperationPanel = document.getElementById("validatorOperationPanel");
+const validatorOperationEyebrow = document.getElementById("validatorOperationEyebrow");
+const validatorOperationTitle = document.getElementById("validatorOperationTitle");
+const validatorOperationCopy = document.getElementById("validatorOperationCopy");
+const validatorModeBadge = document.getElementById("validatorModeBadge");
+const validatorRewardPassFields = document.getElementById("validatorRewardPassFields");
+const validatorStandardSaleFields = document.getElementById("validatorStandardSaleFields");
+const validatorObservationField = document.getElementById("validatorObservationField");
 const validatorHadSaleInput = document.getElementById("validatorHadSaleInput");
 const validatorSaleAmountInput = document.getElementById("validatorSaleAmountInput");
+const validatorStandardSaleAmountInput = document.getElementById("validatorStandardSaleAmountInput");
+const validatorRedemptionModes = document.getElementById("validatorRedemptionModes");
+const validatorStandaloneModeChoice = document.getElementById("validatorStandaloneModeChoice");
+const validatorStandaloneModeInput = document.getElementById("validatorStandaloneModeInput");
+const validatorPurchaseModeChoice = document.getElementById("validatorPurchaseModeChoice");
+const validatorPurchaseModeInput = document.getElementById("validatorPurchaseModeInput");
+const validatorPurchaseEditor = document.getElementById("validatorPurchaseEditor");
+const validatorPurchaseItems = document.getElementById("validatorPurchaseItems");
+const validatorAddPurchaseItemButton = document.getElementById("validatorAddPurchaseItemButton");
+const validatorCheckoutSummary = document.getElementById("validatorCheckoutSummary");
+const validatorCheckoutBenefitLabel = document.getElementById("validatorCheckoutBenefitLabel");
+const validatorCheckoutBenefitRule = document.getElementById("validatorCheckoutBenefitRule");
+const validatorCheckoutSubtotalValue = document.getElementById("validatorCheckoutSubtotalValue");
+const validatorCheckoutDiscountValue = document.getElementById("validatorCheckoutDiscountValue");
+const validatorCheckoutGiftRow = document.getElementById("validatorCheckoutGiftRow");
+const validatorCheckoutGiftValue = document.getElementById("validatorCheckoutGiftValue");
+const validatorCheckoutTotalValue = document.getElementById("validatorCheckoutTotalValue");
+const validatorCheckoutSummaryMessage = document.getElementById("validatorCheckoutSummaryMessage");
 const validatorRewardPassInvoiceInput = document.getElementById("validatorRewardPassInvoiceInput");
 const validatorRewardPassRedeemInput = document.getElementById("validatorRewardPassRedeemInput");
 const validatorRewardPassBranchInput = document.getElementById("validatorRewardPassBranchInput");
@@ -870,7 +899,16 @@ const validatorPaymentMethodInput = document.getElementById("validatorPaymentMet
 const validatorProductServiceInput = document.getElementById("validatorProductServiceInput");
 const validatorSaleNotesInput = document.getElementById("validatorSaleNotesInput");
 const validatorSaleStatus = document.getElementById("validatorSaleStatus");
+const saveValidatorSaleButton = document.getElementById("saveValidatorSaleButton");
+const validatorNewOperationButton = document.getElementById("validatorNewOperationButton");
+const validatorBranchOptions = document.getElementById("validatorBranchOptions");
 const validatorHistoryTable = document.getElementById("validatorHistoryTable");
+const validatorHistoryCards = document.getElementById("validatorHistoryCards");
+const validatorHistoryTotalValue = document.getElementById("validatorHistoryTotalValue");
+const validatorHistoryTodayValue = document.getElementById("validatorHistoryTodayValue");
+const validatorHistoryRewardPassValue = document.getElementById("validatorHistoryRewardPassValue");
+const validatorHistoryRevenueValue = document.getElementById("validatorHistoryRevenueValue");
+const validatorHistoryGate = document.getElementById("validatorHistoryGate");
 const strategicQrKpiGrid = document.getElementById("strategicQrKpiGrid");
 const ticketCenterTabs = Array.from(document.querySelectorAll("[data-ticket-tab]"));
 const ticketCenterPanels = Array.from(document.querySelectorAll("[data-ticket-panel]"));
@@ -2843,6 +2881,13 @@ let state = {
   validatorLastRedemption: null,
   validatorLastScanValue: "",
   validatorLastScanAt: 0,
+  validatorHistory: [],
+  validatorHistorySummary: null,
+  validatorHistoryGate: null,
+  validatorHistoryFilter: "all",
+  validatorRedemptionMode: "STANDALONE",
+  validatorPurchaseItems: [],
+  validatorCheckoutPreview: null,
   snapshotEditingId: null,
   adminSelectedCampaignId: null,
   adminSelectedCampaign: null,
@@ -4058,6 +4103,13 @@ function resetBusinessScopedState(options = {}) {
   state.validatorLastRedemption = null;
   state.validatorLastScanValue = "";
   state.validatorLastScanAt = 0;
+  state.validatorHistory = [];
+  state.validatorHistorySummary = null;
+  state.validatorHistoryGate = null;
+  state.validatorHistoryFilter = "all";
+  state.validatorRedemptionMode = "STANDALONE";
+  state.validatorPurchaseItems = [];
+  state.validatorCheckoutPreview = null;
   state.snapshotEditingId = null;
   state.adminSelectedCampaignId = null;
   state.adminSelectedCampaign = null;
@@ -17601,15 +17653,224 @@ async function validatorCameraDiagnostic() {
   return parts.join(" | ");
 }
 
+function validatorKind(data = state.validatorLastValidation) {
+  return data?.kind === "reward_pass" ? "reward_pass" : data ? "qr" : "";
+}
+
+function validatorKindLabel(data = state.validatorLastValidation) {
+  return validatorKind(data) === "reward_pass" ? "Reward Pass" : validatorKind(data) === "qr" ? "Ticket QR" : "Sin detectar";
+}
+
+function validatorTokenPreview(data = state.validatorLastValidation) {
+  if (data?.reward_pass?.public_code) return data.reward_pass.public_code;
+  if (data?.qr_code?.id) return String(data.qr_code.id).slice(0, 8).toUpperCase();
+  const token = String(state.validatorLastToken || "");
+  if (!token) return "-";
+  return token.length > 14 ? `${token.slice(0, 8)}…${token.slice(-4)}` : token;
+}
+
+function syncValidatorSteps(stage = "capture") {
+  const order = ["capture", "verify", "redeem", "close"];
+  const activeIndex = Math.max(0, order.indexOf(stage));
+  document.querySelectorAll("[data-validator-step]").forEach((step) => {
+    const index = order.indexOf(step.dataset.validatorStep);
+    step.classList.toggle("is-complete", index < activeIndex);
+    step.classList.toggle("is-current", index === activeIndex);
+  });
+}
+
+function setValidatorFormEnabled(root, enabled) {
+  root?.querySelectorAll("input, select, textarea").forEach((field) => {
+    field.disabled = !enabled;
+  });
+}
+
+function validatorBenefitDescriptor(data = state.validatorLastValidation) {
+  return data?.benefit_application || {
+    type: data?.reward?.benefit_type || "CUSTOM",
+    label: data?.reward?.name || "Beneficio",
+    purchase_required: false,
+    standalone_allowed: true,
+    minimum_purchase: 0,
+    percent: 0,
+    fixed_amount: 0,
+    product_scope: null,
+    buy_quantity: 1,
+    get_quantity: 1,
+  };
+}
+
+function validatorPurchaseItem(seed = {}) {
+  return {
+    id: seed.id || `purchase-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    name: String(seed.name || ""),
+    quantity: Math.max(1, Number(seed.quantity || 1)),
+    unit_price: Math.max(0, Number(seed.unit_price || 0)),
+    inventory_product_id: seed.inventory_product_id || null,
+  };
+}
+
+function validatorLineItems() {
+  return (state.validatorPurchaseItems || []).map((item) => ({
+    name: String(item.name || "").trim(),
+    quantity: Math.max(0, Number(item.quantity || 0)),
+    unit_price: Math.max(0, Number(item.unit_price || 0)),
+    inventory_product_id: item.inventory_product_id || null,
+  })).filter((item) => item.name && item.quantity > 0);
+}
+
+function renderValidatorPurchaseItems() {
+  if (!validatorPurchaseItems) return;
+  if (!state.validatorPurchaseItems.length) {
+    state.validatorPurchaseItems = [validatorPurchaseItem()];
+  }
+  validatorPurchaseItems.innerHTML = state.validatorPurchaseItems.map((item, index) => `
+    <article class="validator-purchase-item" data-validator-purchase-item="${escapeHtml(item.id)}">
+      <span class="validator-purchase-index">${index + 1}</span>
+      <label><span>Producto o servicio</span><input data-validator-item-field="name" type="text" maxlength="200" autocomplete="off" value="${escapeHtml(item.name)}" placeholder="Ej: Camisa premium"></label>
+      <label><span>Cantidad</span><input data-validator-item-field="quantity" type="number" min="0.01" step="0.01" inputmode="decimal" value="${escapeHtml(item.quantity)}"></label>
+      <label><span>Precio unitario</span><input data-validator-item-field="unit_price" type="number" min="0" step="100" inputmode="decimal" value="${escapeHtml(item.unit_price || "")}" placeholder="$0"></label>
+      <div class="validator-purchase-line-total"><span>Total línea</span><strong>${money(Number(item.quantity || 0) * Number(item.unit_price || 0))}</strong></div>
+      <button class="icon-button" data-validator-remove-item="${escapeHtml(item.id)}" type="button" aria-label="Eliminar producto" ${state.validatorPurchaseItems.length === 1 ? "disabled" : ""}><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
+    </article>
+  `).join("");
+}
+
+function calculateValidatorCheckoutPreview() {
+  const benefit = validatorBenefitDescriptor();
+  const items = validatorLineItems();
+  const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+  const scopeName = String(benefit.product_scope?.product_name || "").trim().toLocaleLowerCase("es-CO");
+  const scoped = scopeName ? items.filter((item) => item.name.toLocaleLowerCase("es-CO") === scopeName) : items;
+  const eligibleSubtotal = (scoped.length ? scoped : items).reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+  let discount = 0;
+  const gifts = [];
+  let message = "El beneficio se confirmará junto con la redención.";
+
+  if (state.validatorRedemptionMode === "STANDALONE") {
+    if (["FREE_GIFT", "FREE_SAMPLE"].includes(benefit.type)) gifts.push(benefit.product_scope?.product_name || benefit.label);
+    message = benefit.purchase_required ? "Este ticket exige registrar una compra." : `${benefit.label} se entregará sin compra asociada.`;
+  } else if (benefit.minimum_purchase > subtotal) {
+    message = `Compra mínima requerida: ${money(benefit.minimum_purchase)}.`;
+  } else if (benefit.product_scope?.mode === "applies_to_product" && items.length && !scoped.length) {
+    message = `Agrega ${benefit.product_scope.product_name || "el producto elegible"} para aplicar el beneficio.`;
+  } else if (benefit.type === "PERCENT_DISCOUNT") {
+    discount = eligibleSubtotal * Number(benefit.percent || 0) / 100;
+    message = `${benefit.percent || 0}% descontado automáticamente${scopeName ? " sobre el producto elegible" : " sobre la compra"}.`;
+  } else if (benefit.type === "FIXED_AMOUNT_DISCOUNT") {
+    discount = Math.min(eligibleSubtotal, Number(benefit.fixed_amount || 0));
+    message = `${money(discount)} descontados automáticamente.`;
+  } else if (["FREE_GIFT", "FREE_SAMPLE"].includes(benefit.type)) {
+    gifts.push(benefit.product_scope?.product_name || benefit.label);
+    message = "El obsequio se añadirá al resumen sin alterar el total de la compra.";
+  } else if (benefit.type === "BUY_X_GET_Y") {
+    const target = scoped[0] || items[0];
+    const bundle = Number(benefit.buy_quantity || 1) + Number(benefit.get_quantity || 1);
+    const freeUnits = target ? Math.floor(target.quantity / bundle) * Number(benefit.get_quantity || 1) : 0;
+    discount = target ? freeUnits * target.unit_price : 0;
+    if (freeUnits) gifts.push(`${freeUnits} unidad${freeUnits === 1 ? "" : "es"} sin costo de ${target.name}`);
+    message = freeUnits ? "Las unidades gratuitas ya están descontadas del total." : `Registra al menos ${bundle} unidades para activar el beneficio.`;
+  } else {
+    message = `${benefit.label} se anexará a la compra sin alterar automáticamente su valor.`;
+  }
+  if (benefit.max_discount) discount = Math.min(discount, Number(benefit.max_discount));
+  discount = Math.max(0, Math.min(subtotal, Math.round(discount * 100) / 100));
+  const finalTotal = Math.max(0, Math.round((subtotal - discount) * 100) / 100);
+  state.validatorCheckoutPreview = { subtotal, discount_amount: discount, final_total: finalTotal, gifts, line_items: items, message };
+
+  validatorCheckoutBenefitLabel.textContent = benefit.label;
+  validatorCheckoutBenefitRule.textContent = benefit.purchase_required
+    ? "Compra obligatoria para redimir este ticket."
+    : "Puede entregarse solo o aplicarse a una compra.";
+  validatorCheckoutSubtotalValue.textContent = money(subtotal);
+  validatorCheckoutDiscountValue.textContent = `-${money(discount)}`;
+  validatorCheckoutTotalValue.textContent = money(finalTotal);
+  validatorCheckoutGiftRow.hidden = !gifts.length;
+  validatorCheckoutGiftValue.textContent = gifts.join(" · ") || "-";
+  validatorCheckoutSummaryMessage.textContent = message;
+  validatorStandardSaleAmountInput.value = finalTotal ? String(finalTotal) : "";
+  const canRedeemPurchase = state.validatorRedemptionMode !== "PURCHASE" || subtotal > 0;
+  validatorRedeemButton.disabled = !state.validatorLastValidation?.allowed || !canRedeemPurchase;
+  return state.validatorCheckoutPreview;
+}
+
+function syncValidatorRedemptionMode({ renderItems = true } = {}) {
+  const benefit = validatorBenefitDescriptor();
+  if (benefit.purchase_required) state.validatorRedemptionMode = "PURCHASE";
+  validatorStandaloneModeInput.checked = state.validatorRedemptionMode === "STANDALONE";
+  validatorPurchaseModeInput.checked = state.validatorRedemptionMode === "PURCHASE";
+  validatorStandaloneModeInput.disabled = Boolean(benefit.purchase_required);
+  validatorStandaloneModeChoice.classList.toggle("is-disabled", Boolean(benefit.purchase_required));
+  validatorStandaloneModeChoice.classList.toggle("is-active", validatorStandaloneModeInput.checked);
+  validatorPurchaseModeChoice.classList.toggle("is-active", validatorPurchaseModeInput.checked);
+  validatorPurchaseEditor.hidden = state.validatorRedemptionMode !== "PURCHASE";
+  if (renderItems && state.validatorRedemptionMode === "PURCHASE") renderValidatorPurchaseItems();
+  calculateValidatorCheckoutPreview();
+  const redeemLabel = validatorRedeemButton?.querySelector("span:last-child");
+  if (redeemLabel && validatorKind() !== "reward_pass") {
+    redeemLabel.textContent = state.validatorRedemptionMode === "PURCHASE"
+      ? "Aplicar beneficio y cerrar compra"
+      : "Redimir beneficio sin compra";
+  }
+}
+
+function renderValidatorCompletedCheckout(checkout = {}) {
+  state.validatorCheckoutPreview = checkout;
+  validatorCheckoutSubtotalValue.textContent = money(checkout.subtotal || 0);
+  validatorCheckoutDiscountValue.textContent = `-${money(checkout.discount_amount || 0)}`;
+  validatorCheckoutTotalValue.textContent = money(checkout.final_total || 0);
+  validatorCheckoutGiftRow.hidden = !checkout.gifts?.length;
+  validatorCheckoutGiftValue.textContent = (checkout.gifts || []).join(" · ") || "-";
+  validatorCheckoutSummaryMessage.textContent = checkout.summary || "Operación confirmada.";
+  validatorCheckoutSummary.dataset.state = "completed";
+}
+
+function setValidatorOperationState(mode = "idle", data = state.validatorLastValidation) {
+  const isRewardPass = validatorKind(data) === "reward_pass";
+  const redeemLabel = validatorRedeemButton?.querySelector("span:last-child");
+  if (validatorOperationPanel) validatorOperationPanel.dataset.mode = mode;
+  validatorRewardPassFields.hidden = mode !== "validated_reward" && mode !== "completed_reward";
+  validatorStandardSaleFields.hidden = !["validated_standard", "completed_standard"].includes(mode);
+  validatorObservationField.hidden = !["validated_reward", "completed_reward", "validated_standard", "completed_standard"].includes(mode);
+  validatorRedeemButton.hidden = !["validated_standard", "validated_reward"].includes(mode);
+  saveValidatorSaleButton.hidden = true;
+  validatorNewOperationButton.hidden = !["completed_reward", "completed_standard"].includes(mode);
+  validatorRedeemButton.disabled = !["validated_standard", "validated_reward"].includes(mode) || !data?.allowed;
+  setValidatorFormEnabled(validatorRewardPassFields, mode === "validated_reward");
+  setValidatorFormEnabled(validatorStandardSaleFields, mode === "validated_standard");
+  if (validatorSaleNotesInput) validatorSaleNotesInput.disabled = ["completed_reward", "completed_standard"].includes(mode);
+
+  const settings = {
+    idle: ["Siguiente acción", "Valida un ticket para comenzar", "La operación se adaptará automáticamente al tipo de ticket detectado.", "En espera", "capture"],
+    validating: ["Consulta segura", "Comprobando autenticidad", "Estamos verificando negocio, estado, vigencia y beneficio.", "Validando", "verify"],
+    rejected: ["Operación detenida", "Este ticket no puede redimirse", "Revisa el diagnóstico. No se ha modificado ningún beneficio.", "Protegido", "verify"],
+    validated_standard: ["Ticket QR aprobado", "Elige cómo aplicar el beneficio", "Si hay compra, registra sus productos: descuento, obsequio o condición se aplicarán antes de confirmar la redención.", "Listo para aplicar", "redeem"],
+    validated_reward: ["Reward Pass aprobado", "Verifica factura, documento y saldo", "Completa los datos de la compra. El sistema calculará automáticamente cuánto cubre el saldo.", "Saldo disponible", "redeem"],
+    redeemed_standard: ["Operación segura", "Beneficio redimido", "La operación quedó cerrada.", "Completado", "close"],
+    completed_standard: ["Operación completa", "Compra y beneficio confirmados", "El resumen final conserva subtotal, beneficio aplicado y total pagado.", "Completado", "close"],
+    completed_reward: ["Operación completa", "Reward Pass aplicado", "Factura, valor redimido y saldo posterior quedaron registrados en el historial.", "Completado", "close"],
+  };
+  const [eyebrow, title, copy, badge, step] = settings[mode] || settings.idle;
+  validatorOperationEyebrow.textContent = eyebrow;
+  validatorOperationTitle.textContent = title;
+  validatorOperationCopy.textContent = copy;
+  validatorModeBadge.textContent = badge;
+  if (redeemLabel) redeemLabel.textContent = isRewardPass ? "Aplicar Reward Pass" : "Redimir beneficio";
+  if (mode === "validated_standard") syncValidatorRedemptionMode();
+  syncValidatorSteps(step);
+}
+
 function setValidatorResult(mode, title, message, data = null) {
   validatorResultTitle.textContent = title;
   validatorResultMessage.textContent = message;
   validatorResultChip.className = `result-chip ${mode}`;
-  validatorResultChip.textContent = mode === "ok" ? "Válido" : mode === "danger" ? "Rechazado" : "Pendiente";
-
+  validatorResultChip.textContent = mode === "ok" ? "Aprobado" : mode === "danger" ? "Rechazado" : "Pendiente";
+  validatorDetectedType.textContent = validatorKindLabel(data);
+  validatorTicketTypeValue.textContent = validatorKindLabel(data);
+  validatorTicketCodeValue.textContent = validatorTokenPreview(data);
   validatorBusinessValue.textContent = data?.business?.name || "-";
-  validatorCampaignValue.textContent = data?.campaign?.name || data?.batch?.name || "-";
-  validatorGameValue.textContent = data?.game?.name || data?.qr_code?.origin_type || "-";
+  validatorCampaignValue.textContent = data?.campaign?.name || data?.batch?.name || "Sin campaña";
+  validatorGameValue.textContent = data?.game?.name || data?.qr_code?.origin_type || validatorKindLabel(data);
   const validatorBenefitValue = data?.reward?.value || data?.reward?.benefit_value || {};
   const validatorProductScope = benefitProductScopeLabel(validatorBenefitValue);
   const validatorFulfillment = benefitFulfillmentLabel(validatorBenefitValue, data?.qr_code?.metadata || {});
@@ -17624,7 +17885,6 @@ function setValidatorResult(mode, title, message, data = null) {
     data?.player?.email,
     data?.player?.phone,
     data?.reward_pass ? `Saldo: ${money(data.reward_pass.current_balance_cop)}` : "",
-    data?.reward_pass ? `Sede autorizada: ${rewardPassAuthorizedBranchLabel(data.reward_pass)}` : "",
     data?.sale?.product_name ? `Venta: ${data.sale.product_name}` : "",
     data?.affiliate?.name ? `Recomendado por: ${data.affiliate.name}` : "",
   ].filter(Boolean).join(" | ") || "-";
@@ -17635,11 +17895,7 @@ function setValidatorResult(mode, title, message, data = null) {
     if (validatorRewardPassDocumentInput) validatorRewardPassDocumentInput.value = data.reward_pass?.beneficiary_document || "";
     if (validatorSaleAmountInput) validatorSaleAmountInput.value = "";
     rewardPassBalancePreview(true);
-    renderValidatorRewardPassBranchOptions(data.reward_pass);
-    if (!state.businessBranchesLoaded) {
-      loadBusinessBranches({ quiet: true }).then(() => renderValidatorRewardPassBranchOptions(data.reward_pass)).catch(() => {});
-    }
-  } else {
+  } else if (data) {
     rewardPassBalancePreview(false);
   }
 }
@@ -17647,16 +17903,57 @@ function setValidatorResult(mode, title, message, data = null) {
 function resetValidatorSaleForm() {
   validatorHadSaleInput.checked = true;
   validatorSaleAmountInput.value = "";
+  if (validatorStandardSaleAmountInput) validatorStandardSaleAmountInput.value = "";
   if (validatorRewardPassInvoiceInput) validatorRewardPassInvoiceInput.value = "";
   if (validatorRewardPassRedeemInput) validatorRewardPassRedeemInput.value = "";
   if (validatorRewardPassBranchInput) validatorRewardPassBranchInput.value = "";
   if (validatorRewardPassDocumentInput) validatorRewardPassDocumentInput.value = "";
-  state.rewardPassRedemptionKey = "";
   validatorPaymentMethodInput.value = "";
   setProductInputValue(validatorProductServiceInput, "");
   validatorSaleNotesInput.value = "";
   validatorSaleStatus.textContent = "";
+  state.validatorRedemptionMode = "STANDALONE";
+  state.validatorPurchaseItems = [validatorPurchaseItem()];
+  state.validatorCheckoutPreview = null;
+  if (validatorStandaloneModeInput) validatorStandaloneModeInput.checked = true;
+  if (validatorPurchaseModeInput) validatorPurchaseModeInput.checked = false;
+  if (validatorPurchaseEditor) validatorPurchaseEditor.hidden = true;
+  if (validatorPurchaseItems) renderValidatorPurchaseItems();
+  if (validatorCheckoutBenefitLabel) validatorCheckoutBenefitLabel.textContent = "Pendiente de validar";
+  if (validatorCheckoutBenefitRule) validatorCheckoutBenefitRule.textContent = "El sistema elegirá la mejor aplicación según el ticket.";
+  if (validatorCheckoutSubtotalValue) validatorCheckoutSubtotalValue.textContent = money(0);
+  if (validatorCheckoutDiscountValue) validatorCheckoutDiscountValue.textContent = `-${money(0)}`;
+  if (validatorCheckoutTotalValue) validatorCheckoutTotalValue.textContent = money(0);
+  if (validatorCheckoutGiftRow) validatorCheckoutGiftRow.hidden = true;
+  if (validatorCheckoutSummaryMessage) validatorCheckoutSummaryMessage.textContent = "Selecciona un modo de redención para continuar.";
   rewardPassBalancePreview(false);
+  syncValidatorSaleDependencies();
+}
+
+function resetValidatorOperation({ focus = false } = {}) {
+  stopValidatorScanner();
+  state.validatorLastToken = "";
+  state.validatorLastValidation = null;
+  state.validatorLastRedemption = null;
+  state.validatorLastScanValue = "";
+  state.validatorLastScanAt = 0;
+  validatorQrTokenInput.value = "";
+  resetValidatorSaleForm();
+  setValidatorResult("neutral", "Esperando ticket", "Escanea o pega un ticket para consultar la base de datos.");
+  setInlineMessage(validatorManualStatus, "Acepta tickets QR de campaña y Reward Pass.", "info");
+  setValidatorOperationState("idle", null);
+  if (focus) validatorQrTokenInput.focus();
+}
+
+function syncValidatorSaleDependencies() {
+  const enabled = Boolean(validatorHadSaleInput?.checked);
+  document.querySelectorAll("[data-validator-sale-dependent]").forEach((label) => {
+    label.classList.toggle("is-disabled", !enabled);
+    label.querySelectorAll("input, select, textarea").forEach((field) => {
+      field.disabled = !enabled;
+    });
+  });
+  if (!enabled && validatorStandardSaleAmountInput) validatorStandardSaleAmountInput.value = "";
 }
 
 function extractValidatorToken(rawValue) {
@@ -17670,28 +17967,114 @@ function extractValidatorToken(rawValue) {
   }
 }
 
-function renderValidatorHistory(redemptions) {
-  if (!redemptions.length) {
-    validatorHistoryTable.innerHTML = '<tr><td colspan="5">No hay redenciones cargadas.</td></tr>';
+function validatorHistoryOutcome(item = {}) {
+  if (item.kind === "reward_pass") {
+    return {
+      title: `${money(item.redeemed_value || 0)} aplicados`,
+      detail: item.balance_after > 0 ? `Saldo ${money(item.balance_after)}` : "Saldo agotado",
+      tone: "reward",
+    };
+  }
+  if (item.sale_recorded) {
+    const discount = Number(item.benefit_discount_amount || 0);
+    const gifts = Array.isArray(item.application_summary?.gifts) ? item.application_summary.gifts : [];
+    return {
+      title: `Total ${money(item.sale_amount || 0)}`,
+      detail: discount > 0
+        ? `Descuento ${money(discount)} · Subtotal ${money(item.purchase_subtotal || 0)}`
+        : gifts.length ? `Incluye ${gifts.join(", ")}` : "Beneficio aplicado a la compra",
+      tone: "sale",
+    };
+  }
+  const standaloneGifts = Array.isArray(item.application_summary?.gifts) ? item.application_summary.gifts : [];
+  if (item.application_summary?.mode === "STANDALONE") {
+    return {
+      title: "Beneficio entregado",
+      detail: standaloneGifts.length ? standaloneGifts.join(", ") : "Sin compra asociada",
+      tone: "sale",
+    };
+  }
+  return { title: "Beneficio redimido", detail: "Sin compra registrada", tone: "pending" };
+}
+
+function filteredValidatorHistory() {
+  const source = Array.isArray(state.validatorHistory) ? state.validatorHistory : [];
+  const byKind = state.validatorHistoryFilter === "all"
+    ? source
+    : source.filter((item) => item.kind === state.validatorHistoryFilter);
+  return filterRows(filterByDate(byKind, ["redeemed_at"]), [
+    "reward_name",
+    "customer_name",
+    "customer_email",
+    "customer_phone",
+    "customer_document",
+    "redeemed_by",
+    "campaign_name",
+    "reference",
+    "invoice_number",
+    "location_name",
+  ]);
+}
+
+function renderValidatorHistorySummary(summary = state.validatorHistorySummary || {}) {
+  validatorHistoryTotalValue.textContent = toNumber(summary.total).toLocaleString("es-CO");
+  validatorHistoryTodayValue.textContent = toNumber(summary.today).toLocaleString("es-CO");
+  validatorHistoryRewardPassValue.textContent = toNumber(summary.reward_pass_redemptions).toLocaleString("es-CO");
+  validatorHistoryRevenueValue.textContent = money(summary.attributed_revenue_cop || 0);
+}
+
+function renderValidatorHistory() {
+  const rows = filteredValidatorHistory();
+  document.querySelectorAll("[data-validator-history-filter]").forEach((button) => {
+    const active = button.dataset.validatorHistoryFilter === state.validatorHistoryFilter;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+  renderValidatorHistorySummary();
+
+  if (state.validatorHistoryGate?.locked) {
+    validatorHistoryGate.hidden = false;
+    validatorHistoryGate.textContent = `Se muestran ${state.validatorHistoryGate.sample_limit} operaciones recientes. Hay ${state.validatorHistoryGate.hidden_count} adicionales disponibles al ampliar el portal.`;
+  } else {
+    validatorHistoryGate.hidden = true;
+    validatorHistoryGate.textContent = "";
+  }
+
+  if (!rows.length) {
+    const empty = state.validatorHistory.length
+      ? "No hay operaciones que coincidan con este filtro."
+      : "Todavía no hay redenciones registradas.";
+    validatorHistoryTable.innerHTML = `<tr><td colspan="7">${escapeHtml(empty)}</td></tr>`;
+    validatorHistoryCards.innerHTML = `<article class="validator-history-empty"><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><strong>${escapeHtml(empty)}</strong><small>Cuando redimas un ticket aparecerá aquí con su trazabilidad.</small></article>`;
     return;
   }
 
-  const rows = filterRows(filterByDate(redemptions, ["redeemed_at"]), [
-    "reward_name",
-    "player_name",
-    "player_email",
-    "player_phone",
-    "redeemed_by",
-  ]);
-  validatorHistoryTable.innerHTML = rows.map((item) => `
-    <tr>
-      <td>${escapeHtml(item.reward_name || "Beneficio")}</td>
-      <td>${escapeHtml(item.player_name || item.player_email || "-")}</td>
-      <td>${escapeHtml(item.player_phone || "-")}</td>
-      <td>${escapeHtml(formatDate(item.redeemed_at))}</td>
-      <td>${escapeHtml(item.redeemed_by || "-")}</td>
-    </tr>
-  `).join("") || '<tr><td colspan="5">No hay redenciones para este rango.</td></tr>';
+  validatorHistoryTable.innerHTML = rows.map((item) => {
+    const outcome = validatorHistoryOutcome(item);
+    const typeLabel = item.kind === "reward_pass" ? "Reward Pass" : "Ticket QR";
+    return `
+      <tr>
+        <td><span class="validator-history-type is-${escapeHtml(item.kind)}">${escapeHtml(typeLabel)}</span></td>
+        <td><strong>${escapeHtml(item.reward_name || "Beneficio")}</strong><span class="table-secondary">${escapeHtml(item.reference || item.invoice_number || "-")}</span></td>
+        <td><strong>${escapeHtml(item.customer_name || "Cliente")}</strong><span class="table-secondary">${escapeHtml(item.customer_phone || item.customer_email || item.customer_document || "Sin contacto")}</span></td>
+        <td>${escapeHtml(item.location_name || "Sin sede")}</td>
+        <td>${escapeHtml(formatDate(item.redeemed_at))}</td>
+        <td>${escapeHtml(item.redeemed_by || "-")}</td>
+        <td><span class="validator-history-outcome is-${outcome.tone}"><strong>${escapeHtml(outcome.title)}</strong><small>${escapeHtml(outcome.detail)}</small></span></td>
+      </tr>`;
+  }).join("");
+
+  validatorHistoryCards.innerHTML = rows.map((item) => {
+    const outcome = validatorHistoryOutcome(item);
+    const typeLabel = item.kind === "reward_pass" ? "Reward Pass" : "Ticket QR";
+    return `
+      <article class="validator-history-card">
+        <header><span class="validator-history-type is-${escapeHtml(item.kind)}">${escapeHtml(typeLabel)}</span><time>${escapeHtml(formatDate(item.redeemed_at))}</time></header>
+        <h4>${escapeHtml(item.reward_name || "Beneficio")}</h4>
+        <p>${escapeHtml(item.customer_name || "Cliente")} · ${escapeHtml(item.location_name || "Sin sede")}</p>
+        <footer><span>${escapeHtml(item.redeemed_by || "-")}</span><span class="validator-history-outcome is-${outcome.tone}"><strong>${escapeHtml(outcome.title)}</strong><small>${escapeHtml(outcome.detail)}</small></span></footer>
+      </article>`;
+  }).join("");
 }
 
 function ensureValidatorQrUxStyles() {
@@ -17775,7 +18158,6 @@ function validatorScrollTo(selector = "") {
 function ensureValidatorQrUx() {
   const view = document.querySelector('.view-section[data-view="validator"]');
   if (!view) return;
-  ensureValidatorQrUxStyles();
   if (!view.querySelector(".validator-operator-hero")) {
     view.querySelector(":scope > .view-head")?.insertAdjacentHTML("afterend", `
       <section class="validator-operator-hero" aria-label="Flujo operativo del Validador QR">
@@ -17817,8 +18199,8 @@ function ensureValidatorQrUx() {
         validatorScrollTo("#validatorResultTitle");
         return;
       }
-      if (action === "sale") {
-        validatorScrollTo("#validatorSaleForm");
+      if (action === "history") {
+        validatorScrollTo("#validatorHistorySection");
       }
     });
   }
@@ -17829,26 +18211,44 @@ async function loadValidatorHistory() {
 
   const businessId = session.user?.business_id;
   if (!businessId) {
-    validatorHistoryTable.innerHTML = '<tr><td colspan="5">El admin global puede validar cualquier ticket, pero este historial requiere un negocio asignado.</td></tr>';
+    validatorHistoryTable.innerHTML = '<tr><td colspan="7">Asigna un negocio al administrador para consultar su historial.</td></tr>';
+    validatorHistoryCards.innerHTML = '<article class="validator-history-empty">Selecciona un negocio para cargar operaciones.</article>';
     return;
   }
 
   const scopeKey = businessScopeKey();
   try {
-    const data = await api(`/api/businesses/${businessId}/redemptions`, {
+    const data = await api(`/api/businesses/${businessId}/validator-history?limit=160`, {
       method: "GET",
       headers: authHeaders(),
     });
     if (!isCurrentBusinessScope(scopeKey)) return;
-    renderValidatorHistory(data.redemptions || []);
+    state.validatorHistory = data.history || [];
+    state.validatorHistorySummary = data.summary || null;
+    state.validatorHistoryGate = data.gate || null;
+    renderValidatorHistory();
   } catch (error) {
     if (!isCurrentBusinessScope(scopeKey)) return;
-    validatorHistoryTable.innerHTML = `<tr><td colspan="5">${escapeHtml(error.message)}</td></tr>`;
+    validatorHistoryTable.innerHTML = `<tr><td colspan="7">${escapeHtml(error.message)}</td></tr>`;
+    validatorHistoryCards.innerHTML = `<article class="validator-history-empty">${escapeHtml(error.message)}</article>`;
   }
+}
+
+function renderValidatorBranchOptions() {
+  if (!validatorBranchOptions) return;
+  validatorBranchOptions.innerHTML = (state.businessBranches || [])
+    .filter((branch) => branch.is_active !== false)
+    .map((branch) => `<option value="${escapeHtml(branch.name || "")}"></option>`)
+    .join("");
 }
 
 async function renderValidatorView() {
   ensureValidatorQrUx();
+  if (!state.businessBranchesLoaded && !state.businessBranchesLoading && session?.user?.business_id && hasPlanFeature("multi_branch")) {
+    loadBusinessBranches({ quiet: true }).then(renderValidatorBranchOptions).catch(() => {});
+  } else {
+    renderValidatorBranchOptions();
+  }
   if (!window.isSecureContext) {
     validatorCameraStatus.textContent = "Origen inseguro";
     validatorScannerHint.textContent = `La camara solo funciona en HTTPS o localhost. ${await validatorCameraDiagnostic()}. Usa el ingreso manual.`;
@@ -17864,7 +18264,8 @@ async function renderValidatorView() {
   }
 
   if (!state.validatorLastValidation) {
-    setValidatorResult("neutral", "Sin validación", "Escanea o pega un ticket para consultar la base de datos.");
+    setValidatorResult("neutral", "Esperando ticket", "Escanea o pega un ticket para consultar la base de datos.");
+    setValidatorOperationState("idle", null);
   }
 
   loadValidatorHistory();
@@ -30148,7 +30549,12 @@ async function validateValidatorToken(rawValue) {
   }
 
   state.validatorLastToken = token;
+  state.validatorLastValidation = null;
+  state.validatorLastRedemption = null;
+  resetValidatorSaleForm();
+  validatorDetectedType.textContent = token.startsWith("rp_") ? "Reward Pass detectado" : "Ticket QR detectado";
   setValidatorResult("neutral", "Consultando", "Validando token contra la base de datos...");
+  setValidatorOperationState("validating", null);
   setButtonLoading(validateValidatorManualButton, true, "Validando...");
   setInlineMessage(validatorManualStatus, "Consultando estado, negocio y beneficio del ticket...", "info");
   showFeedback("Validando ticket contra la base de datos.", "loading", { title: "Validando ticket", timeout: 0 });
@@ -30166,11 +30572,22 @@ async function validateValidatorToken(rawValue) {
     state.validatorLastValidation = data;
     state.validatorLastRedemption = null;
     if (data.allowed) {
+      if (data.kind !== "reward_pass") {
+        state.validatorRedemptionMode = data.benefit_application?.purchase_required ? "PURCHASE" : "STANDALONE";
+        state.validatorPurchaseItems = [validatorPurchaseItem({
+          name: data.benefit_application?.product_scope?.mode === "applies_to_product"
+            ? data.benefit_application.product_scope.product_name || ""
+            : "",
+          inventory_product_id: data.benefit_application?.product_scope?.inventory_product_id || null,
+        })];
+      }
       setValidatorResult("ok", data.kind === "reward_pass" ? "Reward Pass válido" : "Ticket válido", data.message, data);
+      setValidatorOperationState(data.kind === "reward_pass" ? "validated_reward" : "validated_standard", data);
       setInlineMessage(validatorManualStatus, data.kind === "reward_pass" ? "Reward Pass válido. Confirma cédula, factura y valor a redimir." : "Ticket válido. Puedes redimir el beneficio.", "success");
       showFeedback(data.kind === "reward_pass" ? "Reward Pass válido. Confirma documento antes de registrar redención." : "Ticket válido. Revisa los datos y redime cuando el cliente confirme.", "success", { title: "Ticket aprobado" });
     } else {
       setValidatorResult("danger", data.status || "Ticket rechazado", data.message, data);
+      setValidatorOperationState("rejected", data);
       setInlineMessage(validatorManualStatus, data.message || "Este ticket no puede redimirse.", "error");
       showFeedback(data.message || "Este ticket no puede redimirse.", "error", { title: "Ticket rechazado" });
     }
@@ -30179,6 +30596,7 @@ async function validateValidatorToken(rawValue) {
     state.validatorLastValidation = null;
     state.validatorLastRedemption = null;
     setValidatorResult("danger", "Validación fallida", error.message);
+    setValidatorOperationState("rejected", null);
     setInlineMessage(validatorManualStatus, error.message, "error");
     showFeedback(error.message, "error", { title: "Validación fallida" });
   } finally {
@@ -30200,6 +30618,7 @@ async function redeemValidatorToken() {
   try {
     const isRewardPass = state.validatorLastValidation?.kind === "reward_pass";
     const rewardPassPreview = isRewardPass ? rewardPassBalancePreview(true) : null;
+    const checkoutPreview = !isRewardPass ? calculateValidatorCheckoutPreview() : null;
     if (isRewardPass) {
       const invoiceNumber = validatorRewardPassInvoiceInput?.value.trim() || "";
       if (invoiceNumber.length < 2) {
@@ -30212,10 +30631,6 @@ async function redeemValidatorToken() {
       if (!rewardPassPreview.coverage) {
         throw new Error("No hay saldo disponible para cubrir esta factura.");
       }
-      if (!validatorRewardPassBranchInput?.value) {
-        validatorRewardPassBranchInput?.focus();
-        throw new Error("Selecciona la sede donde se realizará la redención.");
-      }
       if (!rewardPassPreview.partialAllowed && rewardPassPreview.remaining > 0) {
         const acceptsSingleUse = window.confirm("Este Reward Pass es de un solo uso y la factura no consume todo el saldo. Confirma que el consumidor conoce y acepta las condiciones antes de registrar la redención.");
         if (!acceptsSingleUse) {
@@ -30223,36 +30638,61 @@ async function redeemValidatorToken() {
         }
       }
     }
+    if (!isRewardPass && state.validatorRedemptionMode === "PURCHASE" && !checkoutPreview?.subtotal) {
+      throw new Error("Registra al menos un producto con precio para aplicar el beneficio a la compra.");
+    }
     const data = await api(isRewardPass
       ? `/api/business/reward-passes/validator/${encodeURIComponent(state.validatorLastToken)}/redeem`
       : `/api/qr/redeem/${encodeURIComponent(state.validatorLastToken)}`, {
       method: "POST",
       headers: authHeaders(),
-      body: isRewardPass ? JSON.stringify({
+      body: JSON.stringify(isRewardPass ? {
         invoice_number: validatorRewardPassInvoiceInput?.value.trim(),
         purchase_value_cop: rewardPassPreview.invoiceValue,
         redeemed_value_cop: rewardPassPreview.coverage,
-        branch_id: validatorRewardPassBranchInput?.value || null,
+        branch: validatorRewardPassBranchInput?.value.trim() || null,
         observations: validatorSaleNotesInput?.value.trim() || null,
         document_checked: validatorRewardPassDocumentInput?.value.trim() || null,
         confirm_full_consumption: !rewardPassPreview.partialAllowed && rewardPassPreview.remaining > 0,
-        idempotency_key: state.rewardPassRedemptionKey || (state.rewardPassRedemptionKey = createRewardPassOperationKey("reward-pass-redeem")),
-      }) : undefined,
+      } : {
+        mode: state.validatorRedemptionMode,
+        purchase: {
+          subtotal: checkoutPreview?.subtotal || 0,
+          currency: "COP",
+          payment_method: validatorPaymentMethodInput?.value.trim() || null,
+          product_or_service: validatorLineItems().map((item) => `${item.name} x${item.quantity}`).join(", ").slice(0, 200) || null,
+          notes: validatorSaleNotesInput?.value.trim() || null,
+          line_items: validatorLineItems(),
+        },
+      }),
     });
     if (!isCurrentBusinessScope(scopeKey)) return;
     state.validatorLastRedemption = data.redemption;
-    state.rewardPassRedemptionKey = "";
     state.validatorLastValidation = {
       ...state.validatorLastValidation,
+      ...(data.reward_pass ? { reward_pass: data.reward_pass } : {}),
       allowed: false,
     };
     setValidatorResult("ok", "Redención completada", data.message, {
       ...state.validatorLastValidation,
       allowed: false,
     });
-    resetValidatorSaleForm();
+    if (isRewardPass) {
+      setValidatorOperationState("completed_reward", state.validatorLastValidation);
+    } else {
+      renderValidatorCompletedCheckout(data.checkout || checkoutPreview || {});
+      setValidatorOperationState("completed_standard", state.validatorLastValidation);
+    }
     await loadValidatorHistory();
-    showFeedback("Beneficio redimido. Si hubo venta, registra el valor para completar el seguimiento.", "success", { title: "Redención completada" });
+    showFeedback(
+      isRewardPass
+        ? "Reward Pass aplicado. Factura, saldo y redención quedaron registrados."
+        : data.checkout?.mode === "PURCHASE"
+          ? "Compra registrada. El beneficio se aplicó y el total final quedó trazado."
+          : "Beneficio redimido correctamente sin compra asociada.",
+      "success",
+      { title: "Redención completada" }
+    );
   } catch (error) {
     if (!isCurrentBusinessScope(scopeKey)) return;
     setValidatorResult("danger", "No se pudo redimir", error.message, state.validatorLastValidation);
@@ -30267,12 +30707,22 @@ async function redeemValidatorToken() {
 
 async function saveValidatorAttributedSale(event) {
   event.preventDefault();
+  if (validatorKind() === "reward_pass") {
+    setInlineMessage(validatorSaleStatus, "El Reward Pass ya registró factura, compra y saldo durante la redención.", "info");
+    return;
+  }
   if (!state.validatorLastRedemption?.id) {
     validatorSaleStatus.textContent = "Primero redime un ticket.";
     return;
   }
 
   const submitButton = validatorSaleForm.querySelector("button[type='submit']");
+  const saleAmount = Number(validatorStandardSaleAmountInput?.value || 0);
+  if (validatorHadSaleInput.checked && saleAmount <= 0) {
+    validatorStandardSaleAmountInput?.focus();
+    setInlineMessage(validatorSaleStatus, "Ingresa un valor vendido mayor a 0 o desmarca que hubo venta.", "error");
+    return;
+  }
   setButtonLoading(submitButton, true, "Guardando...");
   setInlineMessage(validatorSaleStatus, "Guardando resultado comercial de la redención...", "info");
   showFeedback("Registrando venta atribuida para actualizar métricas.", "loading", { title: "Guardando venta", timeout: 0 });
@@ -30282,7 +30732,7 @@ async function saveValidatorAttributedSale(event) {
       headers: authHeaders(),
       body: JSON.stringify({
         had_sale: validatorHadSaleInput.checked,
-        sale_amount: Number(validatorSaleAmountInput.value || 0),
+        sale_amount: saleAmount,
         currency: "COP",
         payment_method: validatorPaymentMethodInput.value.trim() || null,
         product_or_service: productInputRawValue(validatorProductServiceInput) || null,
@@ -30294,6 +30744,7 @@ async function saveValidatorAttributedSale(event) {
       ? ` ${referralDelta === 0 ? "Sin cambio de puntos" : `${toNumber(referralDelta)} puntos`} por recomendación.`
       : "";
     setInlineMessage(validatorSaleStatus, data.sale ? `Venta atribuida guardada.${referralMessage}` : "Redención registrada sin venta.", "success");
+    setValidatorOperationState("completed_standard", state.validatorLastValidation);
     await loadValidatorHistory();
     showFeedback(data.sale ? `Venta atribuida guardada y métricas actualizadas.${referralMessage}` : "Redención guardada sin venta atribuida.", "success", { title: "Registro actualizado" });
   } catch (error) {
@@ -57088,10 +57539,60 @@ refreshValidatorHistoryButton.addEventListener("click", loadValidatorHistory);
 startValidatorScannerButton.addEventListener("click", startValidatorScanner);
 stopValidatorScannerButton.addEventListener("click", stopValidatorScanner);
 validateValidatorManualButton.addEventListener("click", () => validateValidatorToken(validatorQrTokenInput.value));
+validatorQrTokenInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  validateValidatorToken(validatorQrTokenInput.value);
+});
+validatorQrTokenInput?.addEventListener("input", () => {
+  const token = extractValidatorToken(validatorQrTokenInput.value);
+  validatorDetectedType.textContent = !token
+    ? "Detección automática"
+    : token.startsWith("rp_") ? "Reward Pass detectado" : "Ticket QR detectado";
+});
 validatorRedeemButton.addEventListener("click", redeemValidatorToken);
-validatorSaleForm.addEventListener("submit", saveValidatorAttributedSale);
+validatorSaleForm.addEventListener("submit", (event) => event.preventDefault());
 validatorSaleAmountInput?.addEventListener("input", () => rewardPassBalancePreview(true));
 validatorRewardPassRedeemInput?.addEventListener("input", () => rewardPassBalancePreview(false));
+validatorHadSaleInput?.addEventListener("change", syncValidatorSaleDependencies);
+validatorRedemptionModes?.addEventListener("change", (event) => {
+  const input = event.target.closest("input[name='validatorRedemptionMode']");
+  if (!input || input.disabled) return;
+  state.validatorRedemptionMode = input.value === "PURCHASE" ? "PURCHASE" : "STANDALONE";
+  syncValidatorRedemptionMode();
+});
+validatorAddPurchaseItemButton?.addEventListener("click", () => {
+  state.validatorPurchaseItems.push(validatorPurchaseItem());
+  renderValidatorPurchaseItems();
+  calculateValidatorCheckoutPreview();
+  validatorPurchaseItems?.querySelector(".validator-purchase-item:last-child input")?.focus();
+});
+validatorPurchaseItems?.addEventListener("input", (event) => {
+  const field = event.target.closest("[data-validator-item-field]");
+  const row = event.target.closest("[data-validator-purchase-item]");
+  if (!field || !row) return;
+  const item = state.validatorPurchaseItems.find((candidate) => candidate.id === row.dataset.validatorPurchaseItem);
+  if (!item) return;
+  const key = field.dataset.validatorItemField;
+  item[key] = key === "name" ? field.value : Math.max(0, Number(field.value || 0));
+  const total = Number(item.quantity || 0) * Number(item.unit_price || 0);
+  row.querySelector(".validator-purchase-line-total strong").textContent = money(total);
+  calculateValidatorCheckoutPreview();
+});
+validatorPurchaseItems?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-validator-remove-item]");
+  if (!button || state.validatorPurchaseItems.length === 1) return;
+  state.validatorPurchaseItems = state.validatorPurchaseItems.filter((item) => item.id !== button.dataset.validatorRemoveItem);
+  renderValidatorPurchaseItems();
+  calculateValidatorCheckoutPreview();
+});
+validatorNewOperationButton?.addEventListener("click", () => resetValidatorOperation({ focus: true }));
+document.querySelectorAll("[data-validator-history-filter]").forEach((button) => {
+  button.addEventListener("click", () => {
+    state.validatorHistoryFilter = button.dataset.validatorHistoryFilter || "all";
+    renderValidatorHistory();
+  });
+});
 notificationsButton?.addEventListener("click", () => {
   const pending = (state.selectedRedemptions || []).filter((item) => !item.sale_amount).length;
   showFeedback(

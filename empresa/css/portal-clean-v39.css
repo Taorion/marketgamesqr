@@ -31106,3 +31106,871 @@ html body:not(#qoriAP1#qoriAP2#qoriAP3#qoriAP4#qoriAP5#qoriAP6#qoriAP7#qoriAP8#q
   html body:not(#qoriAP1#qoriAP2#qoriAP3#qoriAP4#qoriAP5#qoriAP6#qoriAP7#qoriAP8#qoriAP9#qoriAP10)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head-actions { grid-template-columns: 1fr !important; }
   html body:not(#qoriAP1#qoriAP2#qoriAP3#qoriAP4#qoriAP5#qoriAP6#qoriAP7#qoriAP8#qoriAP9#qoriAP10)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head { align-items: stretch !important; flex-direction: column !important; min-height: 0 !important; padding: 20px !important; }
 }
+
+
+/* Validator command center v1: ticket-safe checkout flow */
+html body[data-current-view="validator"] .portal-shell .validator-command-center {
+  width: min(100%, 1320px) !important;
+  max-width: 1320px !important;
+  min-width: 0 !important;
+  margin-inline: auto !important;
+  padding-bottom: 48px !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-command-center [hidden] {
+  display: none !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-view-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 20px !important;
+  padding: 22px 24px !important;
+  border: 1px solid rgba(5, 42, 107, .12) !important;
+  border-radius: 24px !important;
+  background: linear-gradient(145deg, #fff 0%, #f5f9ff 100%) !important;
+  box-shadow: 0 18px 45px rgba(9, 47, 87, .07) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-view-head h2 {
+  margin: 5px 0 4px !important;
+  color: #052a6b !important;
+  font-size: clamp(1.65rem, 2.6vw, 2.45rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -.05em !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-view-head p {
+  max-width: 760px !important;
+  margin: 0 !important;
+  color: #52667c !important;
+  line-height: 1.5 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-head-actions,
+html body[data-current-view="validator"] .portal-shell .validator-camera-actions {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 9px !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-live-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 36px !important;
+  padding: 8px 12px !important;
+  border: 1px solid rgba(13, 148, 136, .2) !important;
+  border-radius: 999px !important;
+  background: #ecfdf8 !important;
+  color: #087568 !important;
+  font-size: .74rem !important;
+  font-weight: 850 !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-live-pill > span {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: #10b981 !important;
+  box-shadow: 0 0 0 5px rgba(16, 185, 129, .12) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operator-hero {
+  position: relative !important;
+  isolation: isolate !important;
+  display: grid !important;
+  grid-template-columns: minmax(260px, .78fr) minmax(520px, 1.22fr) !important;
+  align-items: center !important;
+  gap: 22px !important;
+  margin: 16px 0 !important;
+  padding: 24px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, .14) !important;
+  border-radius: 26px !important;
+  background: linear-gradient(132deg, #021f51 0%, #0759d6 58%, #00a8ce 130%) !important;
+  color: #fff !important;
+  box-shadow: 0 22px 52px rgba(5, 42, 107, .2) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operator-hero::after {
+  content: "" !important;
+  position: absolute !important;
+  z-index: -1 !important;
+  right: -70px !important;
+  top: -155px !important;
+  width: 330px !important;
+  height: 330px !important;
+  border: 58px solid rgba(255, 255, 255, .07) !important;
+  border-radius: 50% !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-hero-copy {
+  min-width: 0 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-hero-copy .mono-label {
+  width: max-content !important;
+  border-color: rgba(255, 255, 255, .2) !important;
+  background: rgba(255, 255, 255, .12) !important;
+  color: #dff8ff !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-hero-copy h3 {
+  margin: 10px 0 7px !important;
+  color: #fff !important;
+  font-size: clamp(1.35rem, 2.2vw, 1.95rem) !important;
+  line-height: 1.06 !important;
+  letter-spacing: -.04em !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-hero-copy p {
+  margin: 0 !important;
+  color: #ddecff !important;
+  line-height: 1.5 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operator-flow {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operator-step {
+  min-width: 0 !important;
+  min-height: 126px !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 6px !important;
+  padding: 13px !important;
+  border: 1px solid rgba(255, 255, 255, .15) !important;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, .09) !important;
+  color: #ddecff !important;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operator-step > span {
+  display: grid !important;
+  place-items: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 11px !important;
+  background: rgba(255, 255, 255, .14) !important;
+  color: #fff !important;
+  font-weight: 900 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operator-step strong {
+  color: #fff !important;
+  font-size: .82rem !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operator-step small {
+  color: #ddecff !important;
+  font-size: .68rem !important;
+  line-height: 1.35 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operator-step.is-current {
+  transform: translateY(-2px) !important;
+  border-color: rgba(255, 255, 255, .52) !important;
+  background: rgba(255, 255, 255, .18) !important;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, .12) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operator-step.is-current > span,
+html body[data-current-view="validator"] .portal-shell .validator-operator-step.is-complete > span {
+  background: #fff !important;
+  color: #0759d6 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operator-step.is-complete {
+  border-color: rgba(74, 222, 128, .42) !important;
+  background: rgba(16, 185, 129, .15) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-quick-actions {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin-bottom: 16px !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-quick-action {
+  min-width: 0 !important;
+  min-height: 66px !important;
+  display: grid !important;
+  grid-template-columns: 36px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 11px 13px !important;
+  border: 1px solid rgba(5, 42, 107, .1) !important;
+  border-radius: 17px !important;
+  background: #fff !important;
+  color: #052a6b !important;
+  text-align: left !important;
+  box-shadow: 0 8px 22px rgba(9, 47, 87, .05) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-quick-action:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(7, 89, 214, .35) !important;
+  box-shadow: 0 14px 30px rgba(9, 47, 87, .1) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-quick-action > .material-symbols-outlined {
+  display: grid !important;
+  place-items: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 12px !important;
+  background: #edf5ff !important;
+  color: #0759d6 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-quick-action strong,
+html body[data-current-view="validator"] .portal-shell .validator-quick-action small {
+  display: block !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-quick-action strong { font-size: .8rem !important; }
+html body[data-current-view="validator"] .portal-shell .validator-quick-action small { margin-top: 3px !important; color: #61748a !important; font-size: .68rem !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-capture-grid,
+html body[data-current-view="validator"] .portal-shell .validator-operation-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, .95fr) !important;
+  gap: 15px !important;
+  align-items: stretch !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operation-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 1fr) !important;
+  align-items: start !important;
+  margin-top: 15px !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-panel {
+  min-width: 0 !important;
+  padding: 18px !important;
+  border: 1px solid rgba(5, 42, 107, .1) !important;
+  border-radius: 23px !important;
+  background: #fff !important;
+  box-shadow: 0 15px 36px rgba(9, 47, 87, .065) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-panel > .card-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin: 0 0 14px !important;
+  padding: 0 0 13px !important;
+  border-bottom: 1px solid rgba(5, 42, 107, .08) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-panel .subhead {
+  margin: 4px 0 0 !important;
+  color: #052a6b !important;
+  font-size: 1.08rem !important;
+  letter-spacing: -.025em !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-scanner-shell {
+  position: relative !important;
+  min-height: 330px !important;
+  overflow: hidden !important;
+  border-radius: 20px !important;
+  background: radial-gradient(circle at center, #123b5a, #07141e 72%) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-scanner-shell video,
+html body[data-current-view="validator"] .portal-shell .validator-scanner-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-scanner-shell video { object-fit: cover !important; }
+html body[data-current-view="validator"] .portal-shell .validator-scanner-overlay { display: grid !important; place-items: center !important; background: linear-gradient(rgba(0,0,0,.06), rgba(0,0,0,.18)) !important; pointer-events: none !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-scan-frame {
+  position: relative !important;
+  width: min(68%, 245px) !important;
+  aspect-ratio: 1 !important;
+  border: 3px solid #52e6ff !important;
+  border-radius: 24px !important;
+  box-shadow: 0 0 0 999px rgba(0, 8, 18, .28), 0 0 35px rgba(82, 230, 255, .34) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-scan-frame span {
+  position: absolute !important;
+  left: 50% !important;
+  bottom: -40px !important;
+  transform: translateX(-50%) !important;
+  width: max-content !important;
+  padding: 7px 11px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, .94) !important;
+  color: #052a6b !important;
+  font-size: .68rem !important;
+  font-weight: 900 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell :is(.validator-hint, .validator-inline-message, .validator-result-copy, .validator-operation-copy) {
+  margin: 11px 0 !important;
+  color: #596d83 !important;
+  line-height: 1.45 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-camera-actions { margin-top: 12px !important; }
+html body[data-current-view="validator"] .portal-shell .validator-camera-actions button { flex: 1 1 150px !important; justify-content: center !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-type-pill,
+html body[data-current-view="validator"] .portal-shell .validator-mode-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 31px !important;
+  padding: 6px 10px !important;
+  border: 1px solid rgba(7, 89, 214, .15) !important;
+  border-radius: 999px !important;
+  background: #edf5ff !important;
+  color: #0759d6 !important;
+  font-size: .68rem !important;
+  font-weight: 850 !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-token-field {
+  display: grid !important;
+  gap: 7px !important;
+  color: #173b58 !important;
+  font-size: .75rem !important;
+  font-weight: 850 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-manual-grid {
+  display: grid !important;
+  grid-template-columns: 30px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 9px !important;
+  border: 1px solid rgba(7, 89, 214, .16) !important;
+  border-radius: 16px !important;
+  background: #f5f9ff !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-manual-grid > .material-symbols-outlined { color: #0759d6 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-manual-grid input { min-width: 0 !important; min-height: 45px !important; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-security-note {
+  display: grid !important;
+  grid-template-columns: 38px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-top: 16px !important;
+  padding: 12px !important;
+  border: 1px solid rgba(13, 148, 136, .16) !important;
+  border-radius: 16px !important;
+  background: #effcf8 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-security-note > .material-symbols-outlined { color: #087568 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-security-note strong,
+html body[data-current-view="validator"] .portal-shell .validator-security-note small { display: block !important; }
+html body[data-current-view="validator"] .portal-shell .validator-security-note strong { color: #075f58 !important; font-size: .77rem !important; }
+html body[data-current-view="validator"] .portal-shell .validator-security-note small { margin-top: 3px !important; color: #4f766f !important; font-size: .68rem !important; line-height: 1.35 !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-result-panel { overflow: hidden !important; }
+html body[data-current-view="validator"] .portal-shell .validator-result-panel:has(.result-chip.ok) { border-color: rgba(13, 148, 136, .26) !important; }
+html body[data-current-view="validator"] .portal-shell .validator-result-panel:has(.result-chip.danger) { border-color: rgba(220, 38, 38, .24) !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-ticket-identity {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin: 14px 0 10px !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-ticket-identity > div {
+  min-width: 0 !important;
+  padding: 11px 12px !important;
+  border-radius: 15px !important;
+  background: linear-gradient(135deg, #052a6b, #0759d6) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-ticket-identity span,
+html body[data-current-view="validator"] .portal-shell .validator-ticket-identity strong { display: block !important; }
+html body[data-current-view="validator"] .portal-shell .validator-ticket-identity span { color: #cfe2ff !important; font-size: .64rem !important; font-weight: 800 !important; text-transform: uppercase !important; }
+html body[data-current-view="validator"] .portal-shell .validator-ticket-identity strong { margin-top: 4px !important; color: #fff !important; font-size: .86rem !important; overflow-wrap: anywhere !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-result-grid-inner {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-result-item {
+  min-width: 0 !important;
+  padding: 11px !important;
+  border: 1px solid rgba(5, 42, 107, .08) !important;
+  border-radius: 14px !important;
+  background: #f7faff !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-result-item dt {
+  color: #6a7e92 !important;
+  font-size: .64rem !important;
+  font-weight: 850 !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-result-item dd {
+  margin: 5px 0 0 !important;
+  color: #052a6b !important;
+  font-size: .82rem !important;
+  font-weight: 850 !important;
+  line-height: 1.3 !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-result-benefit { grid-column: 1 / -1 !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-operation-panel {
+  position: sticky !important;
+  top: 16px !important;
+  border-color: rgba(7, 89, 214, .16) !important;
+  background: linear-gradient(155deg, #fff 0%, #f8fbff 100%) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operation-panel[data-mode="rejected"] { border-color: rgba(220, 38, 38, .22) !important; }
+html body[data-current-view="validator"] .portal-shell .validator-operation-panel[data-mode^="completed"] { border-color: rgba(13, 148, 136, .25) !important; box-shadow: 0 18px 42px rgba(13, 148, 136, .08) !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-sale-form,
+html body[data-current-view="validator"] .portal-shell .validator-flow-fields {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-flow-fields { grid-column: 1 / -1 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-form-section-head { grid-column: 1 / -1 !important; display: grid !important; grid-template-columns: 40px minmax(0, 1fr) !important; align-items: center !important; gap: 10px !important; padding: 12px !important; border-radius: 16px !important; background: #eaf3ff !important; }
+html body[data-current-view="validator"] .portal-shell .validator-form-section-head > .material-symbols-outlined { display: grid !important; place-items: center !important; width: 40px !important; height: 40px !important; border-radius: 13px !important; background: #fff !important; color: #0759d6 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-form-section-head strong,
+html body[data-current-view="validator"] .portal-shell .validator-form-section-head small { display: block !important; }
+html body[data-current-view="validator"] .portal-shell .validator-form-section-head strong { color: #052a6b !important; font-size: .82rem !important; }
+html body[data-current-view="validator"] .portal-shell .validator-form-section-head small { margin-top: 3px !important; color: #5d7187 !important; font-size: .68rem !important; line-height: 1.35 !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-sale-form label {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 6px !important;
+  padding: 10px !important;
+  border: 1px solid rgba(5, 42, 107, .09) !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-sale-form label > span { color: #173b58 !important; font-size: .72rem !important; font-weight: 850 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-sale-form label > span b { color: #dc2626 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-sale-form :is(input, select, textarea) { width: 100% !important; min-width: 0 !important; min-height: 42px !important; border: 1px solid rgba(5, 42, 107, .13) !important; border-radius: 11px !important; background: #fff !important; box-shadow: none !important; }
+html body[data-current-view="validator"] .portal-shell .validator-sale-form textarea { min-height: 78px !important; resize: vertical !important; }
+html body[data-current-view="validator"] .portal-shell .validator-sale-form :is(input, select, textarea):focus,
+html body[data-current-view="validator"] .portal-shell .validator-manual-grid:focus-within { border-color: #0759d6 !important; box-shadow: 0 0 0 3px rgba(7, 89, 214, .12) !important; outline: 0 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-sale-form label.is-disabled { opacity: .52 !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-checkline { display: flex !important; align-items: center !important; gap: 9px !important; min-height: 64px !important; }
+html body[data-current-view="validator"] .portal-shell .validator-checkline input { flex: 0 0 auto !important; width: 20px !important; min-height: 20px !important; height: 20px !important; }
+html body[data-current-view="validator"] .portal-shell .validator-observation-field { grid-column: 1 / -1 !important; }
+
+html body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  grid-column: 1 / -1 !important;
+  padding: 11px !important;
+  border: 1px solid rgba(7, 89, 214, .14) !important;
+  border-radius: 17px !important;
+  background: #edf5ff !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel > div { min-width: 0 !important; padding: 9px !important; border-radius: 12px !important; background: #fff !important; }
+html body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel span,
+html body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel strong { display: block !important; }
+html body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel span { color: #687c91 !important; font-size: .61rem !important; font-weight: 850 !important; text-transform: uppercase !important; }
+html body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel strong { margin-top: 4px !important; color: #052a6b !important; font-size: .9rem !important; overflow-wrap: anywhere !important; }
+html body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel p { grid-column: 1 / -1 !important; margin: 1px 2px 0 !important; color: #536b82 !important; font-size: .7rem !important; line-height: 1.4 !important; }
+html body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel[data-state="overage"] { border-color: rgba(234, 88, 12, .25) !important; background: #fff7ed !important; }
+html body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel[data-state="remaining"] { border-color: rgba(13, 148, 136, .2) !important; background: #effcf8 !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-operation-actions {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 9px !important;
+  grid-column: 1 / -1 !important;
+  margin-top: 2px !important;
+  padding: 11px !important;
+  border: 1px solid rgba(5, 42, 107, .09) !important;
+  border-radius: 16px !important;
+  background: #f6f9fd !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-operation-actions .validator-inline-message { min-height: 20px !important; margin: 0 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-operation-actions button { justify-content: center !important; }
+html body[data-current-view="validator"] .portal-shell .validator-operation-actions #validatorNewOperationButton { grid-column: 1 / -1 !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-history-section {
+  margin-top: 18px !important;
+  padding: 20px !important;
+  border: 1px solid rgba(5, 42, 107, .1) !important;
+  border-radius: 25px !important;
+  background: linear-gradient(155deg, #fff, #f7faff) !important;
+  box-shadow: 0 16px 40px rgba(9, 47, 87, .06) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-history-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: end !important;
+  gap: 16px !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-history-head h3 { margin: 5px 0 3px !important; color: #052a6b !important; font-size: 1.25rem !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-head p { margin: 0 !important; color: #607489 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-filters { display: flex !important; flex-wrap: wrap !important; justify-content: flex-end !important; gap: 6px !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-filters button { min-height: 35px !important; padding: 7px 11px !important; border: 1px solid rgba(5, 42, 107, .12) !important; border-radius: 999px !important; background: #fff !important; color: #526a80 !important; font-size: .7rem !important; font-weight: 850 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-filters button.is-active { border-color: #0759d6 !important; background: #0759d6 !important; color: #fff !important; box-shadow: 0 8px 18px rgba(7, 89, 214, .2) !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-history-kpis {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+  margin: 15px 0 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-history-kpis article { min-width: 0 !important; padding: 13px !important; border: 1px solid rgba(5, 42, 107, .08) !important; border-radius: 16px !important; background: #fff !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-kpis span,
+html body[data-current-view="validator"] .portal-shell .validator-history-kpis strong { display: block !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-kpis span { color: #6a7e92 !important; font-size: .64rem !important; font-weight: 850 !important; text-transform: uppercase !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-kpis strong { margin-top: 5px !important; color: #052a6b !important; font-size: 1.12rem !important; letter-spacing: -.025em !important; overflow-wrap: anywhere !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-gate { margin: 0 0 12px !important; padding: 10px 12px !important; border-radius: 13px !important; background: #fff7ed !important; color: #9a4d0c !important; font-size: .72rem !important; font-weight: 750 !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-history-table-card { margin: 0 !important; padding: 0 !important; overflow: hidden !important; border-radius: 18px !important; box-shadow: none !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-table-card table { min-width: 960px !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-table-card td { vertical-align: middle !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-table-card td strong,
+html body[data-current-view="validator"] .portal-shell .validator-history-table-card .table-secondary { display: block !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-history-type {
+  display: inline-flex !important;
+  align-items: center !important;
+  width: max-content !important;
+  padding: 6px 9px !important;
+  border-radius: 999px !important;
+  background: #edf5ff !important;
+  color: #0759d6 !important;
+  font-size: .64rem !important;
+  font-weight: 900 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-history-type.is-reward_pass { background: #f4efff !important; color: #6d28d9 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-outcome { display: inline-grid !important; gap: 2px !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-outcome strong { color: #075f58 !important; font-size: .72rem !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-outcome small { color: #6b7f91 !important; font-size: .63rem !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-outcome.is-pending strong { color: #b45309 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-outcome.is-reward strong { color: #6d28d9 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-cards { display: none !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-empty { display: grid !important; place-items: center !important; gap: 6px !important; min-height: 150px !important; padding: 24px !important; border: 1px dashed rgba(5, 42, 107, .18) !important; border-radius: 18px !important; background: #fff !important; color: #607489 !important; text-align: center !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-empty .material-symbols-outlined { color: #0759d6 !important; font-size: 32px !important; }
+html body[data-current-view="validator"] .portal-shell .validator-history-empty strong { color: #173b58 !important; }
+
+:root[data-theme="dark"] body[data-current-view="validator"] .portal-shell :is(.validator-view-head, .validator-panel, .validator-quick-action, .validator-history-section, .validator-history-kpis article, .validator-history-table-card, .validator-history-empty) {
+  border-color: rgba(214, 229, 244, .16) !important;
+  background: #08243a !important;
+  color: #edf6ff !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="validator"] .portal-shell :is(.validator-view-head h2, .validator-panel .subhead, .validator-history-head h3, .validator-history-kpis strong, .validator-result-item dd) { color: #f2f8ff !important; }
+:root[data-theme="dark"] body[data-current-view="validator"] .portal-shell :is(.validator-view-head p, .validator-hint, .validator-inline-message, .validator-result-copy, .validator-operation-copy, .validator-history-head p) { color: #bed0df !important; }
+:root[data-theme="dark"] body[data-current-view="validator"] .portal-shell :is(.validator-manual-grid, .validator-result-item, .validator-sale-form label, .validator-operation-actions, .reward-pass-balance-panel, .reward-pass-balance-panel > div) { border-color: rgba(214, 229, 244, .15) !important; background: #0d2d46 !important; }
+:root[data-theme="dark"] body[data-current-view="validator"] .portal-shell .validator-sale-form :is(input, select, textarea) { border-color: rgba(214, 229, 244, .18) !important; background: #061d30 !important; color: #edf6ff !important; }
+
+@media (max-width: 1080px) {
+  html body[data-current-view="validator"] .portal-shell .validator-operator-hero,
+  html body[data-current-view="validator"] .portal-shell .validator-capture-grid,
+  html body[data-current-view="validator"] .portal-shell .validator-operation-grid { grid-template-columns: 1fr !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-operation-panel { position: relative !important; top: auto !important; }
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="validator"] .portal-shell .validator-command-center { width: 100% !important; max-width: 100% !important; overflow-x: clip !important; padding-bottom: calc(32px + env(safe-area-inset-bottom)) !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-view-head { grid-template-columns: 1fr !important; padding: 17px !important; border-radius: 20px !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-head-actions { justify-content: space-between !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-operator-hero { padding: 18px !important; border-radius: 22px !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-operator-flow,
+  html body[data-current-view="validator"] .portal-shell .validator-quick-actions,
+  html body[data-current-view="validator"] .portal-shell .validator-history-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-operator-step { min-height: 106px !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-panel,
+  html body[data-current-view="validator"] .portal-shell .validator-history-section { padding: 15px !important; border-radius: 20px !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-scanner-shell { min-height: 285px !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-sale-form,
+  html body[data-current-view="validator"] .portal-shell .validator-flow-fields,
+  html body[data-current-view="validator"] .portal-shell .reward-pass-balance-panel,
+  html body[data-current-view="validator"] .portal-shell .validator-result-grid-inner,
+  html body[data-current-view="validator"] .portal-shell .validator-ticket-identity { grid-template-columns: 1fr !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-result-benefit { grid-column: auto !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-history-head { grid-template-columns: 1fr !important; align-items: start !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-history-filters { justify-content: flex-start !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-history-table-card { display: none !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-history-cards { display: grid !important; gap: 9px !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-history-card { min-width: 0 !important; padding: 13px !important; border: 1px solid rgba(5, 42, 107, .09) !important; border-radius: 16px !important; background: #fff !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-history-card header,
+  html body[data-current-view="validator"] .portal-shell .validator-history-card footer { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 10px !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-history-card time { color: #6a7e92 !important; font-size: .65rem !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-history-card h4 { margin: 11px 0 4px !important; color: #052a6b !important; font-size: .9rem !important; overflow-wrap: anywhere !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-history-card p { margin: 0 0 12px !important; color: #62758a !important; font-size: .72rem !important; overflow-wrap: anywhere !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-history-card footer { padding-top: 10px !important; border-top: 1px solid rgba(5, 42, 107, .07) !important; color: #526a80 !important; font-size: .68rem !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-operation-actions { position: sticky !important; z-index: 4 !important; bottom: calc(8px + env(safe-area-inset-bottom)) !important; grid-template-columns: 1fr !important; box-shadow: 0 14px 34px rgba(5, 42, 107, .14) !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-operation-actions button { width: 100% !important; }
+  :root[data-theme="dark"] body[data-current-view="validator"] .portal-shell .validator-history-card { border-color: rgba(214, 229, 244, .14) !important; background: #0d2d46 !important; }
+  :root[data-theme="dark"] body[data-current-view="validator"] .portal-shell .validator-history-card h4 { color: #edf6ff !important; }
+}
+
+@media (max-width: 460px) {
+  html body[data-current-view="validator"] .portal-shell .validator-head-actions { align-items: stretch !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-live-pill,
+  html body[data-current-view="validator"] .portal-shell .validator-head-actions button { flex: 1 1 auto !important; justify-content: center !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-quick-actions { grid-template-columns: 1fr !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-manual-grid { grid-template-columns: 28px minmax(0, 1fr) !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-manual-grid button { grid-column: 1 / -1 !important; width: 100% !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-scanner-shell { min-height: 255px !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-history-kpis { grid-template-columns: 1fr 1fr !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-history-card footer { align-items: flex-start !important; flex-direction: column !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body[data-current-view="validator"] .portal-shell .validator-operator-step,
+  html body[data-current-view="validator"] .portal-shell .validator-quick-action { transition: none !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-quick-action:hover,
+  html body[data-current-view="validator"] .portal-shell .validator-operator-step.is-current { transform: none !important; }
+}
+
+/* Preserve hero contrast against legacy high-specificity typography rules. */
+html body:not(#validatorContrastA#validatorContrastB#validatorContrastC#validatorContrastD)[data-current-view="validator"] .portal-shell .validator-hero-copy h3,
+html body:not(#validatorContrastA#validatorContrastB#validatorContrastC#validatorContrastD)[data-current-view="validator"] .portal-shell .validator-operator-step strong {
+  color: #fff !important;
+}
+
+html body:not(#validatorContrastA#validatorContrastB#validatorContrastC#validatorContrastD)[data-current-view="validator"] .portal-shell .validator-hero-copy p,
+html body:not(#validatorContrastA#validatorContrastB#validatorContrastC#validatorContrastD)[data-current-view="validator"] .portal-shell .validator-operator-step small {
+  color: #ddecff !important;
+}
+
+html body:not(#validatorContrastA#validatorContrastB#validatorContrastC#validatorContrastD)[data-current-view="validator"] .portal-shell .validator-hero-copy .mono-label {
+  color: #dff8ff !important;
+}
+
+/* Validator benefit checkout: purchase and standalone redemption flows. */
+html body[data-current-view="validator"] .portal-shell .validator-purchase-editor[hidden],
+html body[data-current-view="validator"] .portal-shell .validator-checkout-gift-row[hidden] {
+  display: none !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-redemption-modes {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 11px !important;
+  border: 1px solid rgba(5, 42, 107, .11) !important;
+  border-radius: 18px !important;
+  background: #f8fbff !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-redemption-modes legend {
+  padding: 0 6px !important;
+  color: #526a80 !important;
+  font-size: .7rem !important;
+  font-weight: 850 !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-mode-choice {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 24px 38px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 9px !important;
+  min-height: 82px !important;
+  padding: 12px !important;
+  border: 1px solid rgba(5, 42, 107, .11) !important;
+  border-radius: 16px !important;
+  background: #fff !important;
+  cursor: pointer !important;
+  transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-mode-choice.is-active {
+  border-color: #0759d6 !important;
+  box-shadow: 0 0 0 3px rgba(7, 89, 214, .1), 0 10px 24px rgba(5, 42, 107, .08) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-mode-choice.is-disabled {
+  opacity: .5 !important;
+  cursor: not-allowed !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-mode-choice input {
+  width: 19px !important;
+  height: 19px !important;
+  min-height: auto !important;
+  margin: 0 !important;
+  accent-color: #0759d6 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-mode-choice > .material-symbols-outlined {
+  display: grid !important;
+  place-items: center !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 13px !important;
+  background: #eaf3ff !important;
+  color: #0759d6 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-mode-choice strong,
+html body[data-current-view="validator"] .portal-shell .validator-mode-choice small { display: block !important; }
+html body[data-current-view="validator"] .portal-shell .validator-mode-choice strong { color: #052a6b !important; font-size: .82rem !important; }
+html body[data-current-view="validator"] .portal-shell .validator-mode-choice small { margin-top: 3px !important; color: #64778b !important; font-size: .68rem !important; line-height: 1.35 !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-purchase-editor {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  gap: 10px !important;
+  padding: 12px !important;
+  border: 1px solid rgba(5, 42, 107, .11) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(145deg, #f8fbff, #fff) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-purchase-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-purchase-head strong,
+html body[data-current-view="validator"] .portal-shell .validator-purchase-head small { display: block !important; }
+html body[data-current-view="validator"] .portal-shell .validator-purchase-head strong { color: #052a6b !important; }
+html body[data-current-view="validator"] .portal-shell .validator-purchase-head small { margin-top: 2px !important; color: #65798e !important; font-size: .7rem !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-purchase-items { display: grid !important; gap: 8px !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-purchase-item {
+  display: grid !important;
+  grid-template-columns: 28px minmax(150px, 1.6fr) minmax(84px, .55fr) minmax(110px, .75fr) minmax(105px, .7fr) 38px !important;
+  align-items: end !important;
+  gap: 8px !important;
+  padding: 10px !important;
+  border: 1px solid rgba(5, 42, 107, .09) !important;
+  border-radius: 15px !important;
+  background: #fff !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-purchase-index {
+  align-self: center !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 27px !important;
+  height: 27px !important;
+  border-radius: 10px !important;
+  background: #eaf3ff !important;
+  color: #0759d6 !important;
+  font-size: .72rem !important;
+  font-weight: 900 !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-purchase-item label {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-purchase-line-total { padding: 0 4px 7px !important; }
+html body[data-current-view="validator"] .portal-shell .validator-purchase-line-total span,
+html body[data-current-view="validator"] .portal-shell .validator-purchase-line-total strong { display: block !important; }
+html body[data-current-view="validator"] .portal-shell .validator-purchase-line-total span { color: #64778b !important; font-size: .64rem !important; }
+html body[data-current-view="validator"] .portal-shell .validator-purchase-line-total strong { margin-top: 5px !important; color: #052a6b !important; font-size: .82rem !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-checkout-summary {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1fr) minmax(230px, .9fr) !important;
+  gap: 12px !important;
+  padding: 14px !important;
+  border: 1px solid rgba(7, 89, 214, .18) !important;
+  border-radius: 19px !important;
+  background: linear-gradient(135deg, #eef6ff, #f7fcff) !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-checkout-benefit {
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) !important;
+  gap: 10px !important;
+  align-items: start !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-checkout-benefit > .material-symbols-outlined {
+  display: grid !important;
+  place-items: center !important;
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, #0759d6, #00a8ce) !important;
+  color: #fff !important;
+}
+
+html body[data-current-view="validator"] .portal-shell .validator-checkout-benefit small,
+html body[data-current-view="validator"] .portal-shell .validator-checkout-benefit strong { display: block !important; }
+html body[data-current-view="validator"] .portal-shell .validator-checkout-benefit small { color: #60758b !important; font-size: .66rem !important; font-weight: 800 !important; text-transform: uppercase !important; }
+html body[data-current-view="validator"] .portal-shell .validator-checkout-benefit strong { margin-top: 3px !important; color: #052a6b !important; font-size: .92rem !important; }
+html body[data-current-view="validator"] .portal-shell .validator-checkout-benefit p { margin: 4px 0 0 !important; color: #5f7388 !important; font-size: .7rem !important; }
+
+html body[data-current-view="validator"] .portal-shell .validator-checkout-summary dl { display: grid !important; gap: 5px !important; margin: 0 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-checkout-summary dl > div { display: flex !important; justify-content: space-between !important; gap: 12px !important; padding: 6px 8px !important; border-radius: 10px !important; background: rgba(255, 255, 255, .72) !important; }
+html body[data-current-view="validator"] .portal-shell .validator-checkout-summary dt { color: #5f7388 !important; font-size: .7rem !important; }
+html body[data-current-view="validator"] .portal-shell .validator-checkout-summary dd { margin: 0 !important; color: #052a6b !important; font-size: .78rem !important; font-weight: 850 !important; text-align: right !important; }
+html body[data-current-view="validator"] .portal-shell .validator-checkout-total { border: 1px solid rgba(7, 89, 214, .14) !important; background: #fff !important; }
+html body[data-current-view="validator"] .portal-shell .validator-checkout-total dd { color: #0759d6 !important; font-size: 1.05rem !important; }
+html body[data-current-view="validator"] .portal-shell .validator-checkout-summary > p { grid-column: 1 / -1 !important; margin: 0 !important; padding-top: 9px !important; border-top: 1px solid rgba(5, 42, 107, .09) !important; color: #425d75 !important; font-size: .73rem !important; font-weight: 700 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-checkout-summary[data-state="completed"] { border-color: rgba(16, 185, 129, .34) !important; background: linear-gradient(135deg, #effcf8, #f8fffd) !important; }
+
+@media (max-width: 760px) {
+  html body[data-current-view="validator"] .portal-shell .validator-redemption-modes,
+  html body[data-current-view="validator"] .portal-shell .validator-checkout-summary { grid-template-columns: 1fr !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-purchase-item { grid-template-columns: 28px minmax(0, 1fr) 38px !important; align-items: center !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-purchase-item label { grid-column: 2 / 3 !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-purchase-line-total { grid-column: 2 / 3 !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-purchase-item > .icon-button { grid-column: 3 !important; grid-row: 1 !important; }
+}
+
+@media (max-width: 460px) {
+  html body[data-current-view="validator"] .portal-shell .validator-purchase-head { align-items: stretch !important; flex-direction: column !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-purchase-head button { width: 100% !important; }
+  html body[data-current-view="validator"] .portal-shell .validator-mode-choice { grid-template-columns: 20px 34px minmax(0, 1fr) !important; padding: 10px !important; }
+}

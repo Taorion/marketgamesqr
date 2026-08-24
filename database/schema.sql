@@ -724,8 +724,17 @@ create table if not exists attributed_sales (
   campaign_id uuid references campaigns(id) on delete set null,
   qr_code_id uuid not null references qr_codes(id) on delete restrict,
   redemption_id uuid not null references redemptions(id) on delete cascade,
-  player_id uuid not null references players(id) on delete restrict,
+  player_id uuid references players(id) on delete restrict,
   sale_amount numeric(14, 2) not null default 0,
+  purchase_subtotal numeric(14, 2) not null default 0,
+  benefit_discount_amount numeric(14, 2) not null default 0,
+  benefit_type text,
+  benefit_label text,
+  benefit_snapshot jsonb not null default '{}'::jsonb,
+  line_items jsonb not null default '[]'::jsonb,
+  application_summary jsonb not null default '{}'::jsonb,
+  purchase_required boolean not null default false,
+  application_mode text not null default 'PURCHASE' check (application_mode in ('PURCHASE', 'STANDALONE')),
   currency text not null default 'COP',
   sale_confirmed_by_user_id uuid references app_users(id) on delete set null,
   branch_id uuid references branches(id) on delete set null,
@@ -733,6 +742,8 @@ create table if not exists attributed_sales (
   product_or_service text,
   notes text,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (purchase_subtotal >= 0 and benefit_discount_amount >= 0 and sale_amount >= 0 and sale_amount <= purchase_subtotal),
   unique (redemption_id)
 );
 

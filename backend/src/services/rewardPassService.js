@@ -8,6 +8,7 @@ const { badRequest, forbidden, notFound } = require("../utils/http");
 const { createSecureToken, normalizeToken } = require("../utils/token");
 const { ensureCreditAccount, trafficLabel } = require("./qrCreditService");
 const { logQrEvent } = require("./auditService");
+const { assertStandaloneBusinessFeature } = require("./subscriptionService");
 
 const DEFAULT_TICKET_COST = 1;
 const DEFAULT_TERMS = `Esta Gift Card Digital / Reward Pass es emitida directamente por [Nombre de la Empresa] y administrada tecnologicamente por Qori GOS Portal. Es redimible unicamente en el negocio emisor o en las sedes autorizadas por este. No constituye dinero electronico, producto financiero, deposito, credito ni medio de pago universal. No genera intereses. Su uso esta sujeto a validacion por QR y documento de identidad. La factura electronica de venta sera expedida por el comercio emisor al momento de la redencion, cuando se entreguen los productos o servicios correspondientes.
@@ -860,6 +861,7 @@ async function validateRewardPassToken(user, rawToken) {
   if (!canAccessBusiness(user, pass.company_id)) {
     throw forbidden("Este Reward Pass pertenece a otro negocio.");
   }
+  await assertStandaloneBusinessFeature(user, pass.company_id, "qr_validator");
   pass = await syncEffectiveStatus(query, pass);
   const status = effectiveStatus(pass);
   const notStarted = pass.valid_from && new Date(pass.valid_from) > new Date();
@@ -908,6 +910,15 @@ async function redeemRewardPass(user, rawToken, payload) {
   }
   if (!payload.invoice_number) {
     throw badRequest("El numero de factura electronica es obligatorio.");
+  }
+
+  const accessResult = await query("select company_id from reward_passes where qr_token = $1", [token]);
+  const accessRow = accessResult.rows[0];
+  if (accessRow) {
+    if (!canAccessBusiness(user, accessRow.company_id)) {
+      throw forbidden("Este Reward Pass pertenece a otro negocio.");
+    }
+    await assertStandaloneBusinessFeature(user, accessRow.company_id, "qr_validator");
   }
 
   return withTransaction(async (client) => {

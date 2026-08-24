@@ -1,8 +1,27 @@
+const { z } = require("zod");
 const { generateQr, getQrDetails, redeemQr } = require("../services/qrService");
 const { query } = require("../config/db");
 const { forbidden } = require("../utils/http");
 const { mapPublicCreditAccount } = require("../services/qrCreditService");
 const { validate, generateQrSchema } = require("../utils/validators");
+
+const redeemCheckoutSchema = z.object({
+  mode: z.enum(["STANDALONE", "PURCHASE"]).default("STANDALONE"),
+  purchase: z.object({
+    subtotal: z.number().min(0).default(0),
+    currency: z.string().trim().min(3).max(3).default("COP"),
+    branch_id: z.string().uuid().optional().nullable(),
+    payment_method: z.string().trim().max(80).optional().nullable(),
+    product_or_service: z.string().trim().max(200).optional().nullable(),
+    notes: z.string().trim().max(1000).optional().nullable(),
+    line_items: z.array(z.object({
+      name: z.string().trim().min(1).max(200),
+      quantity: z.number().positive().max(100000),
+      unit_price: z.number().min(0).max(999999999999),
+      inventory_product_id: z.string().uuid().optional().nullable(),
+    })).max(50).default([]),
+  }).optional().default({ subtotal: 0, currency: "COP", line_items: [] }),
+});
 
 async function generate(req, res, next) {
   try {
@@ -28,7 +47,8 @@ async function validateQr(req, res, next) {
 
 async function redeem(req, res, next) {
   try {
-    res.json(await redeemQr(req.params.token, req.user));
+    const checkout = validate(redeemCheckoutSchema, req.body || {});
+    res.json(await redeemQr(req.params.token, req.user, checkout));
   } catch (error) {
     next(error);
   }
