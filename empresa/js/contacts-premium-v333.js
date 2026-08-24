@@ -280,7 +280,7 @@
     ui.cancel.disabled = true;
     ui.close.disabled = true;
     setButtonLoading(ui.submit, true, "Importando...");
-    progress(35, "Creando clientes y contactos por lotes de 50...");
+    progress(35, "Creando clientes por lotes de 50...");
     try {
       const result = await api("/api/business/contacts/customers/import-csv", { method: "POST", headers: authHeaders(), body: JSON.stringify({ file_name: csvState.file.name, file_size: csvState.file.size, mime_type: csvState.file.type || "text/csv", csv_text: csvState.text, idempotency_key: csvState.idempotencyKey }) });
       const batch = result.batch || {};

@@ -46,7 +46,7 @@ test("el responsable comercial aparece en importación, búsqueda y directorio",
   assert.match(script, /Responsable: \$\{owner\}/);
   assert.match(app, /metadata\.commercial_owner_email/);
   assert.match(html, /responsable_comercial/);
-  assert.match(html, /contacts-client-import-v343-20260823/);
+  assert.match(html, /contacts-client-import-v344-20260823/);
 });
 
 test("la importación CSV persiste clientes y los excluye de Leads aunque no tengan compras", () => {
@@ -61,6 +61,8 @@ test("la importación CSV persiste clientes y los excluye de Leads aunque no ten
   assert.match(crmService, /purchase_count > 0 or coalesce\(metadata->>'customer_import_declared', 'false'\) = 'true'/);
   assert.match(app, /metadata\.customer_import_declared/);
   assert.match(premium, /Cliente · historial pendiente/);
+  assert.match(premium, /Creando clientes por lotes de 50/);
+  assert.doesNotMatch(premium, /Creando clientes y contactos/);
   assert.doesNotMatch(premium, /Contacto pendiente/);
 });
 
