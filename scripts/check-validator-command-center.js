@@ -20,6 +20,7 @@ const benefitCheckoutService = read("backend/src/services/benefitCheckoutService
 const rewardPassService = read("backend/src/services/rewardPassService.js");
 const subscriptionService = read("backend/src/services/subscriptionService.js");
 const checkoutMigration = read("database/migrations/20260824135450_validator_benefit_checkout.sql");
+const scratchPercentMigration = read("database/migrations/20260824172102_fix_scratch_choice_percentages.sql");
 
 for (const [name, source] of Object.entries({
   "empresa/js/app.js": app,
@@ -111,11 +112,27 @@ assert.match(app, /function validatorInventoryProductSearchValue/);
 assert.match(css, /\[hidden\][^{]*\{[^}]*display:\s*none\s*!important/s);
 assert.match(css, /\.validator-product-search-control/);
 assert.match(html, /validator-product-search-v351-20260824/g);
-assert.match(html, /acquisition-insights-validator-search-v352-20260824/g);
+assert.match(html, /acquisition-lead-sales-validator-scratch-v354-20260824/g);
+assert.match(app, /function activationChoiceBenefitValue/);
+assert.match(app, /percentageFromBenefitLabel\(label\)/);
+assert.match(benefitCheckoutService, /const scratchPercent =/);
+assert.match(scratchPercentMigration, /q\.status = 'ACTIVE'/);
+assert.match(scratchPercentMigration, /a\.activation_type = 'SCRATCH_WIN'/);
+assert.doesNotMatch(scratchPercentMigration, /q\.status = 'REDEEMED'/);
 assert.match(checkoutMigration, /benefit_discount_amount/);
 assert.match(checkoutMigration, /application_mode/);
 
 const { calculateBenefitCheckout } = require(path.join(root, "backend/src/services/benefitCheckoutService.js"));
+
+const legacyScratchThirty = calculateBenefitCheckout({
+  benefitType: "PERCENT_DISCOUNT",
+  benefitValue: { value: { label: "30%", percent: 50, scratch_slot: "C" } },
+  label: "30%",
+  mode: "PURCHASE",
+  purchase: { line_items: [{ name: "Producto", quantity: 3, unit_price: 1000 }] },
+});
+assert.equal(legacyScratchThirty.discount_amount, 900);
+assert.equal(legacyScratchThirty.final_total, 2100);
 
 const percentCheckout = calculateBenefitCheckout(
   { benefitType: "PERCENT_DISCOUNT", label: "20%", benefitValue: { percent: 20 }, mode: "PURCHASE", purchase: { subtotal: 100000 } }

@@ -24,6 +24,13 @@ function benefitProductScope(value = {}) {
   return value.product_scope || nestedBenefitValue(value).product_scope || null;
 }
 
+function percentageFromLabel(value = "") {
+  const match = String(value || "").match(/(\d+(?:[.,]\d+)?)\s*%/);
+  if (!match) return 0;
+  const number = Number(match[1].replace(",", "."));
+  return Number.isFinite(number) && number > 0 && number <= 100 ? number : 0;
+}
+
 function normalizeBenefitDefinition(benefitType, benefitValue = {}, label = "Beneficio") {
   const configuredType = String(benefitType || "CUSTOM").toUpperCase();
   const nested = nestedBenefitValue(benefitValue);
@@ -38,14 +45,18 @@ function normalizeBenefitDefinition(benefitType, benefitValue = {}, label = "Ben
     nested.minimum_purchase_amount,
     nested.min_purchase
   ));
-  const percent = Math.min(100, Math.max(0, firstNumber(
+  const storedPercent = firstNumber(
     benefitValue.percent,
     benefitValue.discount_percent,
     benefitValue.selected_discount,
     nested.percent,
     nested.discount_percent,
     nested.selected_discount
-  )));
+  );
+  const scratchPercent = (benefitValue.scratch_slot || nested.scratch_slot)
+    ? percentageFromLabel(benefitValue.label || nested.label || label)
+    : 0;
+  const percent = Math.min(100, Math.max(0, scratchPercent || storedPercent));
   const fixedAmount = Math.max(0, firstNumber(
     benefitValue.amount,
     benefitValue.discount_amount,

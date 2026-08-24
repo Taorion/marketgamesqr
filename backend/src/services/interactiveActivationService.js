@@ -2014,10 +2014,18 @@ function rewardFromScratchChoice(items = [], selectedValue) {
   ));
   if (matchIndex < 0) return null;
   const match = items[matchIndex];
+  const rewardLabel = match.benefit_label || match.label || match.reward_label;
+  const storedRewardValue = match.reward_value || match.benefit_value || { label: match.label || `Casilla ${matchIndex + 1}` };
+  const percentageMatch = String(rewardLabel || "").match(/(\d+(?:[.,]\d+)?)\s*%/);
+  const labelPercent = percentageMatch ? Number(percentageMatch[1].replace(",", ".")) : 0;
+  const rewardValue = normalizeRewardType(match.reward_type || match.benefit_type) === "PERCENT_DISCOUNT"
+    && Number.isFinite(labelPercent) && labelPercent > 0 && labelPercent <= 100
+    ? { ...storedRewardValue, percent: labelPercent }
+    : storedRewardValue;
   return fixedRewardPayload({
     ...match,
-    reward_label: match.benefit_label || match.label || match.reward_label,
-    reward_value: match.reward_value || match.benefit_value || { label: match.label || `Casilla ${matchIndex + 1}` },
+    reward_label: rewardLabel,
+    reward_value: rewardValue,
   }, "choice", { selected: selectedValue, scratch_index: matchIndex, scratch: true });
 }
 

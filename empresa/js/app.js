@@ -14008,6 +14008,20 @@ function activationBenefitValueForPayload() {
   return next;
 }
 
+function percentageFromBenefitLabel(label = "") {
+  const match = String(label || "").match(/(\d+(?:[.,]\d+)?)\s*%/);
+  if (!match) return 0;
+  const value = Number(match[1].replace(",", "."));
+  return Number.isFinite(value) && value > 0 && value <= 100 ? value : 0;
+}
+
+function activationChoiceBenefitValue(label = "", benefitType = triviaBenefitTypeInput?.value || "CUSTOM") {
+  const value = activationBenefitValueForPayload();
+  if (String(benefitType).toUpperCase() !== "PERCENT_DISCOUNT") return value;
+  const choicePercent = percentageFromBenefitLabel(label);
+  return choicePercent ? { ...value, percent: choicePercent } : value;
+}
+
 function syncActivationBenefitValueInputs({ fromLegacy = false } = {}) {
   const benefitType = String(triviaBenefitTypeInput?.value || "CUSTOM");
   const isDiscount = isDiscountBenefitType(benefitType);
@@ -27843,7 +27857,7 @@ function collectRevealCards() {
       label: input.dataset.revealCard || "Card",
       benefit_label: input.value.trim(),
       benefit_type: triviaBenefitTypeInput?.value || "CUSTOM",
-      benefit_value: withBenefitFulfillment(withBenefitProductScope(activationBenefitValueForPayload(), productScope), fulfillment),
+      benefit_value: withBenefitFulfillment(withBenefitProductScope(activationChoiceBenefitValue(input.value.trim()), productScope), fulfillment),
     }))
     .filter((item) => item.benefit_label);
 }
@@ -27870,7 +27884,7 @@ function collectFlatChoiceOptions(type) {
         reward_type: triviaBenefitTypeInput.value,
         reward_label: type === "SCRATCH_DIGITAL" ? input.value.trim() : triviaBenefitLabelInput.value.trim(),
         reward_value: type === "SCRATCH_DIGITAL"
-          ? withBenefitFulfillment(withBenefitProductScope({ ...activationBenefitValueForPayload(), label: input.value.trim(), scratch_slot: key }, productScope), fulfillment)
+          ? withBenefitFulfillment(withBenefitProductScope({ ...activationChoiceBenefitValue(input.value.trim()), label: input.value.trim(), scratch_slot: key }, productScope), fulfillment)
           : withBenefitFulfillment(withBenefitProductScope(activationBenefitValueForPayload(), productScope), fulfillment),
       };
     })
@@ -27889,7 +27903,7 @@ function collectRouletteBenefits() {
         label,
         reward_type: triviaBenefitTypeInput.value,
         reward_label: label,
-        reward_value: withBenefitFulfillment(withBenefitProductScope(activationBenefitValueForPayload(), productScope), fulfillment),
+        reward_value: withBenefitFulfillment(withBenefitProductScope(activationChoiceBenefitValue(label), productScope), fulfillment),
       };
     })
     .filter((item) => item.label);
