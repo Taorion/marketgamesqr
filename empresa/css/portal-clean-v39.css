@@ -31783,6 +31783,13 @@ html body:not(#validatorContrastA#validatorContrastB#validatorContrastC#validato
   color: #dff8ff !important;
 }
 
+/* Preserve the premium hero surface against legacy composition reset selectors. */
+html body:not(#validatorSurfaceA#validatorSurfaceB#validatorSurfaceC#validatorSurfaceD#validatorSurfaceE#validatorSurfaceF#validatorSurfaceG#validatorSurfaceH#validatorSurfaceI#validatorSurfaceJ#validatorSurfaceK#validatorSurfaceL)[data-current-view="validator"] .portal-shell .view-section.validator-command-center.active > .validator-operator-hero {
+  border: 1px solid rgba(255, 255, 255, .14) !important;
+  background: linear-gradient(132deg, #021f51 0%, #0759d6 58%, #00a8ce 130%) !important;
+  box-shadow: 0 22px 52px rgba(5, 42, 107, .2) !important;
+}
+
 /* Validator benefit checkout: purchase and standalone redemption flows. */
 html body[data-current-view="validator"] .portal-shell .validator-purchase-editor[hidden],
 html body[data-current-view="validator"] .portal-shell .validator-checkout-gift-row[hidden] {

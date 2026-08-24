@@ -98,8 +98,9 @@ assert.match(css, /@media \(max-width: 760px\)/);
 assert.match(css, /\.validator-history-cards/);
 assert.match(css, /\.validator-redemption-modes/);
 assert.match(css, /\.validator-checkout-summary/);
+assert.match(css, /validatorSurfaceL/);
 assert.match(css, /\[hidden\][^{]*\{[^}]*display:\s*none\s*!important/s);
-assert.match(html, /validator-benefit-checkout-v343-20260824/g);
+assert.match(html, /validator-benefit-checkout-v345-20260824/g);
 assert.match(checkoutMigration, /benefit_discount_amount/);
 assert.match(checkoutMigration, /application_mode/);
 
