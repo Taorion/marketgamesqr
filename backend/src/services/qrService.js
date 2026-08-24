@@ -7,6 +7,7 @@ const { createSecureToken, normalizeToken } = require("../utils/token");
 const { logValidation, logQrEvent } = require("./auditService");
 const { consumeQrCredit } = require("./qrCreditService");
 const { assertStandaloneBusinessFeature } = require("./subscriptionService");
+const { resolveQrContact, registerRedemptionIntake } = require("./redemptionLeadIntakeService");
 const {
   calculateBenefitCheckout,
   describeBenefitApplication,
@@ -689,6 +690,18 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
         [qr.business_id, qr.id, qr.player_id || null, `REDEMPTION:${qr.id}`, JSON.stringify({ redemption_id: redemption.rows[0].id, validator_user_id: user.id }), acquisitionEffortId]
       );
     }
+
+    const redeemedContact = await resolveQrContact(client, qr);
+    await registerRedemptionIntake(client, {
+      businessId: qr.business_id,
+      contact: redeemedContact,
+      userId: user.id,
+      campaignId: qr.campaign_id || null,
+      origin: qr.origin_type || "QR",
+      dedupeKey: `QR_REDEMPTION:${redemption.rows[0].id}`,
+      description: `Beneficio ${benefitLabel} redimido por QR y enviado al Recolector.`,
+      metadata: { qr_code_id: qr.id, redemption_id: redemption.rows[0].id, acquisition_effort_id: acquisitionEffortId },
+    });
 
     return {
       status: "REDEEMED",

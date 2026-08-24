@@ -44130,6 +44130,20 @@ function renderChannelEffortOptions() {
       channelEffortCampaignInput.value = current;
     }
   }
+  if (channelEffortCreativeInput) {
+    const current = channelEffortCreativeInput.value;
+    const activations = (state.triviaLaunchers || []).filter((item) => {
+      const status = String(item.status || "").toUpperCase();
+      return ["ACTIVE", "PUBLISHED", "LIVE"].includes(status) && (item.public_url || item.share_url || item.claim_url);
+    });
+    channelEffortCreativeInput.innerHTML = '<option value="">Sin activación creativa</option>' + activations
+      .map((item) => `<option value="${escapeHtml(item.public_url || item.share_url || item.claim_url)}">${escapeHtml(item.title || item.name || "Activación activa")}</option>`)
+      .join("");
+    if (current && !activations.some((item) => [item.public_url, item.share_url, item.claim_url].includes(current))) {
+      channelEffortCreativeInput.insertAdjacentHTML("beforeend", `<option value="${escapeHtml(current)}">Creativa guardada anteriormente</option>`);
+    }
+    channelEffortCreativeInput.value = current || "";
+  }
 }
 
 function channelEffortById(effortId = "") {

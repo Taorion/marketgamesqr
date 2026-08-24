@@ -3171,7 +3171,7 @@ async function completeActivation(payload = {}) {
 
 async function renderResult(data) {
   const rewardQrDataUrl = data.rewarded ? await ticketImageDataUrlForBrowser(data.qr_image_data_url) : "";
-  const validatorUrl = data.validator_url || "";
+  const benefitUrl = data.benefit_url || "";
   const fulfillment = benefitFulfillmentFromResult(data);
   const isEcommerceReward = fulfillment.mode === "ECOMMERCE_CODE";
   const isDigitalAssetReward = fulfillment.mode === "DIGITAL_ASSET";
@@ -3188,7 +3188,7 @@ async function renderResult(data) {
     </div>
     <div class="ticket-actions">
       ${fulfillment.download_url ? `<a class="submit-button" href="${escapeHtml(fulfillment.download_url)}">Descargar activo</a>` : ""}
-      ${validatorUrl ? `<a class="submit-button secondary" href="${escapeHtml(validatorUrl)}" target="_blank" rel="noreferrer">Ver respaldo QR</a>` : ""}
+      ${benefitUrl ? '<button class="submit-button secondary" type="button" data-copy-benefit-link>Copiar link del beneficio</button>' : ""}
     </div>
   ` : data.rewarded && isEcommerceReward ? `
     <div class="result-copy">
@@ -3203,17 +3203,17 @@ async function renderResult(data) {
     </div>
     <div class="ticket-actions">
       <button class="submit-button" type="button" id="copyEcommerceCodeButton">Copiar codigo</button>
-      ${validatorUrl ? `<a class="submit-button secondary" href="${escapeHtml(validatorUrl)}" target="_blank" rel="noreferrer">Ver respaldo QR</a>` : ""}
+      ${benefitUrl ? '<button class="submit-button secondary" type="button" data-copy-benefit-link>Copiar link del beneficio</button>' : ""}
     </div>
   ` : data.rewarded ? `
     <div class="result-copy">
       <span>Beneficio generado</span>
       <strong>${escapeHtml(data.reward?.reward_label || "QR unico")}</strong>
-      <p>Guarda o comparte este QR. Tambien puedes abrir el ticket si la imagen no carga en tu navegador.</p>
+      <p>Guarda o comparte este QR. Copia el enlace público del beneficio para continuar la redención en línea.</p>
     </div>
     <img src="${escapeHtml(rewardQrDataUrl)}" alt="Beneficio QR" id="rewardQrImage">
     <div class="ticket-actions">
-      ${validatorUrl ? `<a class="submit-button" href="${escapeHtml(validatorUrl)}" target="_blank" rel="noreferrer">Abrir ticket</a>` : ""}
+      ${benefitUrl ? '<button class="submit-button" type="button" data-copy-benefit-link>Copiar link del beneficio</button>' : ""}
       <button class="submit-button" type="button" id="downloadRewardQrButton">Descargar QR</button>
       <button class="submit-button secondary" type="button" id="shareRewardQrButton">Compartir QR</button>
     </div>
@@ -3225,6 +3225,16 @@ async function renderResult(data) {
     </div>
   `;
   ticketResult.classList.remove("hidden");
+  ticketResult.querySelectorAll("[data-copy-benefit-link]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(benefitUrl);
+        setStatus("Link público del beneficio copiado. Ya puedes enviarlo para la redención en línea.", "success");
+      } catch (error) {
+        window.prompt("Copia el link del beneficio", benefitUrl);
+      }
+    });
+  });
   if (data.rewarded && isEcommerceReward) {
     document.getElementById("copyEcommerceCodeButton")?.addEventListener("click", async () => {
       try {

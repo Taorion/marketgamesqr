@@ -9,6 +9,7 @@ const { createSecureToken, normalizeToken } = require("../utils/token");
 const { ensureCreditAccount, trafficLabel } = require("./qrCreditService");
 const { logQrEvent } = require("./auditService");
 const { assertStandaloneBusinessFeature } = require("./subscriptionService");
+const { ensureRewardPassContact, registerRedemptionIntake } = require("./redemptionLeadIntakeService");
 
 const DEFAULT_TICKET_COST = 1;
 const DEFAULT_TERMS = `Esta Gift Card Digital / Reward Pass es emitida directamente por [Nombre de la Empresa] y administrada tecnologicamente por Qori GOS Portal. Es redimible unicamente en el negocio emisor o en las sedes autorizadas por este. No constituye dinero electronico, producto financiero, deposito, credito ni medio de pago universal. No genera intereses. Su uso esta sujeto a validacion por QR y documento de identidad. La factura electronica de venta sera expedida por el comercio emisor al momento de la redencion, cuando se entreguen los productos o servicios correspondientes.
@@ -950,6 +951,17 @@ async function redeemRewardPass(user, rawToken, payload) {
         [pass.company_id, idempotencyKey]
       );
       if (existingRedemption.rowCount) {
+        const beneficiaryContact = await ensureRewardPassContact(client, pass);
+        await registerRedemptionIntake(client, {
+          businessId: pass.company_id,
+          contact: beneficiaryContact,
+          userId: user.id,
+          campaignId: pass.campaign_id || null,
+          origin: "Reward Pass",
+          dedupeKey: `REWARD_PASS_REDEMPTION:${existingRedemption.rows[0].id}`,
+          description: `Reward Pass ${pass.public_code} redimido y enviado al Recolector.`,
+          metadata: { reward_pass_id: pass.id, reward_pass_redemption_id: existingRedemption.rows[0].id },
+        });
         return {
           message: "Esta redención ya había sido registrada. No se descontó saldo nuevamente.",
           redemption: existingRedemption.rows[0],
@@ -1072,6 +1084,17 @@ async function redeemRewardPass(user, rawToken, payload) {
         balance_after_cop: balanceAfter,
         invoice_number: payload.invoice_number,
       },
+    });
+    const beneficiaryContact = await ensureRewardPassContact(client, pass);
+    await registerRedemptionIntake(client, {
+      businessId: pass.company_id,
+      contact: beneficiaryContact,
+      userId: user.id,
+      campaignId: pass.campaign_id || null,
+      origin: "Reward Pass",
+      dedupeKey: `REWARD_PASS_REDEMPTION:${redemption.rows[0].id}`,
+      description: `Reward Pass ${pass.public_code} redimido ${redemptionType === "partial" ? "parcialmente" : "en su totalidad"}.`,
+      metadata: { reward_pass_id: pass.id, reward_pass_redemption_id: redemption.rows[0].id, redemption_type: redemptionType },
     });
     return {
       message: forceFullConsumption

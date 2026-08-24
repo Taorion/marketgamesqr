@@ -1095,6 +1095,10 @@ async function communicationAttribution(client, activation, token, source = "soc
   );
   return effort.rowCount ? { ...effort.rows[0], tracking_source: "acquisition" } : null;
 }
+
+function buildBenefitUrl(token) {
+  return new URL(`/claim/${encodeURIComponent(token)}`, publicAppBaseUrl()).toString();
+}
 function communicationAttributionMetadata(attribution) {
   if (!attribution?.id && !attribution?.effort_id) return {};
   return {
@@ -1304,6 +1308,7 @@ async function completeInteractiveParticipant(slug, body) {
       reward: reward.reward,
       qr_code: reward.qr_code,
       validator_url: reward.validator_url,
+      benefit_url: reward.benefit_url,
       qr_image_data_url: reward.qr_image_data_url,
       credit_account: reward.credit_account,
       digital_asset: digitalAsset,
@@ -1353,6 +1358,7 @@ async function existingRewardResponseForIdentity(client, activation, body) {
     reward,
     qr_code: { id: reward.qr_code_id, token: reward.qr_token_value || reward.qr_token, status: reward.qr_status },
     validator_url: validatorUrl,
+    benefit_url: buildBenefitUrl(reward.qr_token_value || reward.qr_token),
     qr_image_data_url: await buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, reward }),
     credit_account: null,
     digital_asset: digitalAsset,
@@ -2278,6 +2284,7 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
     qr_code: qr,
     credit_account: mapPublicCreditAccount(creditAccount),
     validator_url: validatorUrl,
+    benefit_url: buildBenefitUrl(token),
     qr_image_data_url: await buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, reward }),
   };
 }
