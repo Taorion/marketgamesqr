@@ -1127,10 +1127,12 @@ async function recordCommunicationEvent(client, activation, attribution, eventTy
     const mappedType = ({ ACTIVATION_VIEWED: "VIEW", ACTIVATION_STARTED: "START", LEAD_CAPTURED: "LEAD", ACTIVATION_COMPLETED: "COMPLETE", REWARD_ISSUED: "QR_GENERATED" })[eventType] || eventType;
     await client.query(
       `insert into business_acquisition_events
-        (business_id, effort_id, channel_id, event_type, source_type, source_id, participant_id, qr_code_id, dedupe_key, metadata)
-       values ($1,$2,$3,$4,'INTERACTIVE_ACTIVATION',$5,$6,$7,$8,$9::jsonb)
+        (business_id, effort_id, channel_id, event_type, source_type, source_id, participant_id, lead_id, qr_code_id, dedupe_key, metadata)
+       values ($1,$2,$3,$4,'INTERACTIVE_ACTIVATION',$5,$6,$7,$8,$9,$10::jsonb)
        on conflict (business_id, effort_id, dedupe_key) where dedupe_key is not null do nothing`,
-      [activation.company_id, attribution.effort_id, attribution.channel_id, mappedType, activation.id, extra.participant_id || null, extra.qr_code_id || null, extra.participant_id ? `${mappedType}:${extra.participant_id}` : null, JSON.stringify({ tracking_source: attribution.tracking_source || null, ...(extra.metadata || {}) })]
+      [activation.company_id, attribution.effort_id, attribution.channel_id, mappedType, activation.id, extra.participant_id || null,
+        extra.lead_id || null, extra.qr_code_id || null, extra.participant_id ? `${mappedType}:${extra.participant_id}` : null,
+        JSON.stringify({ tracking_source: attribution.tracking_source || null, ...(extra.metadata || {}) })]
     );
   }
 }
@@ -1198,9 +1200,9 @@ async function startInteractiveParticipant(slug, body) {
       rewarded: false,
       occurred_at: participant.game_session_started_at || new Date().toISOString(),
     });
-    await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_STARTED", { participant_id: participant.id });
+    await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_STARTED", { participant_id: participant.id, lead_id: participant.player_id || null });
     if (contact.created) {
-      await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participant.id });
+      await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participant.id, lead_id: participant.player_id || null });
     }
     return {
       participant,
@@ -1248,9 +1250,9 @@ async function completeInteractiveParticipant(slug, body) {
     if (attribution) Object.assign(metadata, communicationAttributionMetadata(attribution));
 
     if (!body.participant_id) {
-      await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_STARTED", { participant_id: participant.id });
+      await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_STARTED", { participant_id: participant.id, lead_id: participant.player_id || null });
       if (participant.metadata?.crm_contact?.created) {
-        await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participant.id });
+        await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participant.id, lead_id: participant.player_id || null });
       }
     }
 
@@ -1279,7 +1281,7 @@ async function completeInteractiveParticipant(slug, body) {
       rewarded: Boolean(rewardPayload && !pendingReview),
       occurred_at: new Date().toISOString(),
     });
-    await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_COMPLETED", { participant_id: participant.id });
+    await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_COMPLETED", { participant_id: participant.id, lead_id: participant.player_id || null });
 
     if (!rewardPayload || pendingReview) {
       return {
@@ -1295,7 +1297,7 @@ async function completeInteractiveParticipant(slug, body) {
       user_id: activation.user_id || null,
     });
     const digitalAsset = await issueInteractiveActivationAssetDownload(client, activation, participant, reward.reward);
-    await recordCommunicationEvent(client, activation, attribution, "REWARD_ISSUED", { participant_id: participant.id, qr_code_id: reward.qr_code?.id || null });
+    await recordCommunicationEvent(client, activation, attribution, "REWARD_ISSUED", { participant_id: participant.id, lead_id: participant.player_id || null, qr_code_id: reward.qr_code?.id || null });
     const fulfillment = normalizeBenefitFulfillment(rewardPayload.reward_value || {});
     return {
       participant: { id: participant.id, status: "rewarded", score, result_profile: resultProfile || null },

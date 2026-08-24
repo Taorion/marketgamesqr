@@ -23,6 +23,7 @@ test("an active source can belong to only one tenant-scoped acquisition effort",
 test("tracked links propagate attribution through interactive QR redemption", () => {
   assert.match(interactiveService, /e\.tracking_token=\$3::uuid/);
   assert.match(interactiveService, /acquisition_effort_id/);
+  assert.match(interactiveService, /participant_id, lead_id, qr_code_id/);
   assert.match(interactiveService, /REWARD_ISSUED: "QR_GENERATED"/);
   assert.match(qrService, /business_acquisition_events/);
   assert.match(qrService, /'REDEMPTION'/);

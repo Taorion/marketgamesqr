@@ -44257,6 +44257,10 @@ function ensureAcquisitionChannelInsightsModal() {
   document.body.appendChild(modal);
   modal.addEventListener("click", (event) => {
     if (event.target === modal || event.target.closest("[data-close-channel-insights]")) closeAcquisitionChannelInsights();
+    const effortButton = event.target.closest("[data-effort-insights]");
+    if (effortButton) openAcquisitionEffortInsights(effortButton.dataset.effortInsights, effortButton.dataset.parentChannel || "");
+    const channelButton = event.target.closest("[data-return-channel-insights]");
+    if (channelButton) openAcquisitionChannelInsights(channelButton.dataset.returnChannelInsights);
   });
   return modal;
 }
@@ -44275,6 +44279,22 @@ function acquisitionLeadReason(lead = {}) {
   return lead.downloaded ? "Descargó el activo digital" : "Completó el formulario de captura";
 }
 
+function acquisitionSaleReason(sale = {}) {
+  if (["QR_TRACKED", "TRACKED_SALE"].includes(sale.attribution_reason)) return "Venta desde el enlace medible";
+  if (sale.attribution_reason === "ACTIVATION_QR") return "Venta del beneficio QR de la activación";
+  return "Conversión posterior del lead capturado";
+}
+
+function acquisitionSalesForLead(lead = {}, sales = []) {
+  return sales.filter((sale) => (
+    (lead.lead_id && String(sale.lead_id || "") === String(lead.lead_id))
+    || (lead.contact_id && String(sale.lead_id || "") === String(lead.contact_id))
+    || (lead.email && sale.customer_email && String(sale.customer_email).toLowerCase() === String(lead.email).toLowerCase())
+    || (lead.phone && sale.customer_phone && String(sale.customer_phone) === String(lead.phone))
+    || (lead.document_id && sale.customer_document_id && String(sale.customer_document_id) === String(lead.document_id))
+  ));
+}
+
 function renderAcquisitionChannelInsights(channel, data = {}) {
   const modal = ensureAcquisitionChannelInsightsModal();
   const efforts = Array.isArray(data.efforts) ? data.efforts : channelEffortsForChannel(channel);
@@ -44291,8 +44311,8 @@ function renderAcquisitionChannelInsights(channel, data = {}) {
       <article><span>Inversión</span><strong>${escapeHtml(money(metrics.investment))}</strong><small>CAC ${metrics.cac === null ? "-" : escapeHtml(money(metrics.cac))}</small></article>
       <article><span>ROI del medio</span><strong>${escapeHtml(channelRoiLabel(metrics.roi))}</strong><small>${escapeHtml(roiDecisionLabel(metrics.roi, metrics.revenue, metrics.investment))}</small></article>
     </section>
-    <section class="acq-insights-section"><div class="acq-insights-heading"><div><span class="mono-label">Por qué atracción</span><h4>Contribución al medio</h4></div><span>${efforts.length} registradas</span></div><div class="acq-insights-efforts">${efforts.map((effort) => { const m = effort.metrics || {}; const source = effort.interactive_activation_name || effort.lead_capture_activation_name || effort.digital_asset_name || "Sin fuente exclusiva"; return `<article><div><strong>${escapeHtml(effort.title || "Atracción")}</strong><small>${escapeHtml(source)}</small></div><dl><div><dt>Leads</dt><dd>${Number(m.leads || 0)}</dd></div><div><dt>Descargas</dt><dd>${Number(m.downloads || 0)}</dd></div><div><dt>QR</dt><dd>${Number(m.qr_generated || 0)}</dd></div><div><dt>Redenciones</dt><dd>${Number(m.redemptions || 0)}</dd></div><div><dt>Ventas</dt><dd>${Number(m.sales || 0)}</dd></div><div><dt>Revenue</dt><dd>${escapeHtml(money(m.revenue || 0))}</dd></div></dl></article>`; }).join("") || '<div class="acq-insights-empty">Este medio todavía no tiene atracciones medibles enlazadas.</div>'}</div></section>
-    <section class="acq-insights-section"><div class="acq-insights-heading"><div><span class="mono-label">Leads atribuibles</span><h4>Personas que llegaron por este medio</h4></div><span>${leads.length} señales</span></div><div class="acq-insights-leads">${leads.map((lead) => `<article><div class="acq-lead-avatar">${escapeHtml(String(lead.name || "L").trim().charAt(0).toUpperCase() || "L")}</div><div><strong>${escapeHtml(lead.name || "Lead sin nombre")}</strong><small>${escapeHtml([lead.email, lead.phone, lead.document_id].filter(Boolean).join(" · ") || "Contacto capturado")}</small><p>${escapeHtml(acquisitionLeadReason(lead))} mediante <b>${escapeHtml(lead.effort_title || "atracción")}</b> · ${escapeHtml(lead.source_name || "fuente enlazada")}</p></div><time>${escapeHtml(formatDateShort(lead.captured_at))}</time></article>`).join("") || '<div class="acq-insights-empty">No hay leads identificables para este medio en el periodo seleccionado.</div>'}</div></section>`;
+    <section class="acq-insights-section"><div class="acq-insights-heading"><div><span class="mono-label">Por qué atracción</span><h4>Contribución al medio</h4></div><span>${efforts.length} registradas</span></div><div class="acq-insights-efforts">${efforts.map((effort) => { const m = effort.metrics || {}; const source = effort.interactive_activation_name || effort.lead_capture_activation_name || effort.digital_asset_name || "Sin fuente exclusiva"; return `<article><div><strong>${escapeHtml(effort.title || "Atracción")}</strong><small>${escapeHtml(source)} · asignada a ${escapeHtml(channel.name || "este medio")}</small></div><dl><div><dt>Leads</dt><dd>${Number(m.leads || 0)}</dd></div><div><dt>Descargas</dt><dd>${Number(m.downloads || 0)}</dd></div><div><dt>QR</dt><dd>${Number(m.qr_generated || 0)}</dd></div><div><dt>Redenciones</dt><dd>${Number(m.redemptions || 0)}</dd></div><div><dt>Ventas</dt><dd>${Number(m.sales || 0)}</dd></div><div><dt>Revenue</dt><dd>${escapeHtml(money(m.revenue || 0))}</dd></div></dl><button class="ghost-button compact" type="button" data-effort-insights="${escapeHtml(effort.id)}" data-parent-channel="${escapeHtml(channel.id)}">Ver leads y ventas</button></article>`; }).join("") || '<div class="acq-insights-empty">Este medio todavía no tiene atracciones medibles enlazadas.</div>'}</div></section>
+    <section class="acq-insights-section"><div class="acq-insights-heading"><div><span class="mono-label">Leads atribuibles</span><h4>Personas que llegaron por este medio</h4></div><span>${leads.length} personas</span></div><div class="acq-insights-leads">${leads.map((lead) => `<article><div class="acq-lead-avatar">${escapeHtml(String(lead.name || "L").trim().charAt(0).toUpperCase() || "L")}</div><div><strong>${escapeHtml(lead.name || "Lead sin nombre")}</strong><small>${escapeHtml([lead.email, lead.phone, lead.document_id].filter(Boolean).join(" · ") || "Contacto capturado")}</small><p>${escapeHtml(acquisitionLeadReason(lead))} mediante <b>${escapeHtml(lead.effort_title || "atracción")}</b> · ${escapeHtml(lead.source_name || "fuente enlazada")}${Number(lead.attributed_sales || 0) ? ` · <b>${Number(lead.attributed_sales)} venta${Number(lead.attributed_sales) === 1 ? "" : "s"} · ${escapeHtml(money(lead.attributed_revenue || 0))}</b>` : ""}</p></div><time>${escapeHtml(formatDateShort(lead.captured_at))}</time></article>`).join("") || '<div class="acq-insights-empty">No hay leads identificables para este medio en el periodo seleccionado.</div>'}</div></section>`;
 }
 
 async function openAcquisitionChannelInsights(channelId = "") {
@@ -44311,6 +44331,49 @@ async function openAcquisitionChannelInsights(channelId = "") {
     renderAcquisitionChannelInsights(channel, data);
   } catch (error) {
     modal.querySelector("#acqInsightsBody").innerHTML = `<div class="acq-insights-empty">No fue posible cargar el detalle: ${escapeHtml(error.message)}</div>`;
+  }
+}
+
+function renderAcquisitionEffortInsights(channel, data = {}) {
+  const modal = ensureAcquisitionChannelInsightsModal();
+  const effort = data.effort || {};
+  const metrics = effort.metrics || {};
+  const leads = Array.isArray(data.leads) ? data.leads : [];
+  const sales = Array.isArray(data.sales) ? data.sales : [];
+  const source = effort.interactive_activation_name || effort.lead_capture_activation_name || effort.digital_asset_name || "Sin fuente medible exclusiva";
+  modal.querySelector("#acqInsightsTitle").textContent = effort.title || "Atracción";
+  modal.querySelector("#acqInsightsSubtitle").textContent = `${channel?.name || effort.channel_name || "Medio"} · ${source}`;
+  modal.querySelector("#acqInsightsBody").innerHTML = `
+    <div class="acq-insights-nav"><button class="ghost-button compact" type="button" data-return-channel-insights="${escapeHtml(channel?.id || effort.channel_id || "")}"><span class="material-symbols-outlined">arrow_back</span> Volver a ${escapeHtml(channel?.name || effort.channel_name || "medio")}</button><span>Atracción asignada a <b>${escapeHtml(channel?.name || effort.channel_name || "medio")}</b></span></div>
+    <section class="acq-insights-kpis">
+      <article><span>Leads atribuibles</span><strong>${Number(metrics.leads || leads.length)}</strong><small>Personas identificadas</small></article>
+      <article><span>Ventas atribuidas</span><strong>${Number(metrics.sales || sales.length)}</strong><small>${escapeHtml(money(metrics.revenue || 0))} en revenue</small></article>
+      <article><span>QR emitidos</span><strong>${Number(metrics.qr_generated || 0)}</strong><small>${Number(metrics.redemptions || 0)} redenciones</small></article>
+      <article><span>Descargas</span><strong>${Number(metrics.downloads || 0)}</strong><small>${Number(metrics.completions || 0)} experiencias completadas</small></article>
+      <article><span>Fuente enlazada</span><strong class="acq-insights-source-value">${escapeHtml(source)}</strong><small>${effort.metrics?.attribution_quality === "EXACT_LINK" ? "Atribución exacta" : "Conecta una fuente para medir"}</small></article>
+      <article><span>ROI atracción</span><strong>${escapeHtml(channelRoiLabel(metrics.roi))}</strong><small>${escapeHtml(roiDecisionLabel(metrics.roi, metrics.revenue, metrics.investment))}</small></article>
+    </section>
+    <section class="acq-insights-section"><div class="acq-insights-heading"><div><span class="mono-label">Personas atribuibles</span><h4>Leads que llegaron por ${escapeHtml(effort.title || "esta atracción")}</h4></div><span>${leads.length} personas</span></div><div class="acq-insights-leads">${leads.map((lead) => { const leadSales = acquisitionSalesForLead(lead, sales); const leadRevenue = leadSales.reduce((sum, sale) => sum + Number(sale.sale_amount || 0), 0); return `<article><div class="acq-lead-avatar">${escapeHtml(String(lead.name || "L").trim().charAt(0).toUpperCase() || "L")}</div><div><strong>${escapeHtml(lead.name || "Lead sin nombre")}</strong><small>${escapeHtml([lead.email, lead.phone, lead.document_id].filter(Boolean).join(" · ") || "Contacto capturado")}</small><p>${escapeHtml(acquisitionLeadReason(lead))} · ${escapeHtml(source)}${leadSales.length ? ` · <b>${leadSales.length} venta${leadSales.length === 1 ? "" : "s"} por ${escapeHtml(money(leadRevenue))}</b>` : " · Aún sin venta atribuida"}</p></div><time>${escapeHtml(formatDateShort(lead.captured_at))}</time></article>`; }).join("") || '<div class="acq-insights-empty">Esta atracción no tiene personas identificables en el periodo seleccionado.</div>'}</div></section>
+    <section class="acq-insights-section"><div class="acq-insights-heading"><div><span class="mono-label">Conversiones</span><h4>Ventas atribuidas a esta atracción</h4></div><span>${sales.length} ventas</span></div><div class="acq-insights-sales">${sales.map((sale) => `<article><div><strong>${escapeHtml(sale.customer_name || "Comprador identificado")}</strong><small>${escapeHtml(sale.product_name || acquisitionSaleReason(sale))}</small><p>${escapeHtml(acquisitionSaleReason(sale))}</p></div><div><strong>${escapeHtml(money(sale.sale_amount || 0))}</strong><time>${escapeHtml(formatDateShort(sale.created_at))}</time></div></article>`).join("") || '<div class="acq-insights-empty">Todavía no hay ventas atribuibles a esta atracción en el periodo.</div>'}</div></section>`;
+}
+
+async function openAcquisitionEffortInsights(effortId = "", channelId = "") {
+  const effort = (state.acquisitionChannelEfforts || []).find((item) => String(item.id) === String(effortId));
+  const channel = acquisitionChannelById(channelId || effort?.channel_id);
+  if (!effortId) return;
+  const modal = ensureAcquisitionChannelInsightsModal();
+  document.body.classList.add("acq-insights-open");
+  modal.classList.remove("hidden");
+  modal.querySelector("#acqInsightsTitle").textContent = effort?.title || "Atracción";
+  modal.querySelector("#acqInsightsSubtitle").textContent = `Conciliando leads y ventas con ${channel?.name || "su medio"}...`;
+  modal.querySelector("#acqInsightsBody").innerHTML = '<div class="acq-insights-loading">Reconstruyendo el recorrido de cada persona hasta la venta...</div>';
+  try {
+    const period = acquisitionReportingPeriod();
+    const params = new URLSearchParams({ start_date: period.start, end_date: period.end });
+    const data = await api(`/api/business/channel-efforts/${encodeURIComponent(effortId)}/insights?${params.toString()}`, { headers: authHeaders() });
+    renderAcquisitionEffortInsights(channel, data);
+  } catch (error) {
+    modal.querySelector("#acqInsightsBody").innerHTML = `<div class="acq-insights-empty">No fue posible cargar la atracción: ${escapeHtml(error.message)}</div>`;
   }
 }
 
@@ -44350,13 +44413,32 @@ function renderChannelEffortAttributionOptions(effort = null) {
   const interactive = (state.triviaLaunchers || []).map((item) => `<option value="interactive:${escapeHtml(item.id)}">Activación · ${escapeHtml(item.title || item.name || item.public_code || "Sin nombre")}</option>`);
   const captures = (state.leadCaptureActivations || []).map((item) => `<option value="capture:${escapeHtml(item.id)}">Captura + activo · ${escapeHtml(item.name || item.asset?.title || "Sin nombre")}</option>`);
   const assets = (state.digitalAssets || []).filter((item) => !item.activation_id).map((item) => `<option value="asset:${escapeHtml(item.id)}">Activo digital · ${escapeHtml(item.title || item.file_name || "Sin nombre")}</option>`);
-  channelEffortAttributionSourceInput.innerHTML = `<option value="">Sin enlace (medición histórica)</option><optgroup label="Activaciones interactivas">${interactive.join("")}</optgroup><optgroup label="Capturas y activos">${captures.join("")}${assets.join("")}</optgroup>`;
+  channelEffortAttributionSourceInput.innerHTML = `<option value="">Sin fuente: no medirá personas ni ventas</option><optgroup label="Activaciones interactivas">${interactive.join("")}</optgroup><optgroup label="Capturas y activos">${captures.join("")}${assets.join("")}</optgroup>`;
   channelEffortAttributionSourceInput.value = effortAttributionValue(effort || {});
   if (channelEffortLinkPreview) channelEffortLinkPreview.querySelector("output").textContent = effort?.tracked_url || "Se genera al guardar la atracción.";
 }
 
+function channelEffortCreativeActivation() {
+  const creativeUrl = String(channelEffortCreativeInput?.value || "").trim();
+  if (!creativeUrl) return null;
+  return (state.triviaLaunchers || []).find((item) => [item.public_url, item.share_url, item.claim_url]
+    .filter(Boolean).some((url) => String(url) === creativeUrl)) || null;
+}
+
+function syncChannelEffortCreativeAttribution() {
+  const activation = channelEffortCreativeActivation();
+  if (!activation?.id || !channelEffortAttributionSourceInput) return;
+  const expected = `interactive:${activation.id}`;
+  if (Array.from(channelEffortAttributionSourceInput.options).some((option) => option.value === expected)) {
+    channelEffortAttributionSourceInput.value = expected;
+    if (channelEffortLinkPreview) channelEffortLinkPreview.querySelector("output").textContent = "Al guardar se generará el enlace exclusivo de esta atracción.";
+  }
+}
+
 function channelEffortPayload() {
-  const [attributionType, attributionId] = String(channelEffortAttributionSourceInput?.value || "").split(":");
+  const selectedAttribution = String(channelEffortAttributionSourceInput?.value || "");
+  const creativeActivation = channelEffortCreativeActivation();
+  const [attributionType, attributionId] = (selectedAttribution || (creativeActivation?.id ? `interactive:${creativeActivation.id}` : "")).split(":");
   return {
     channel_id: channelEffortChannelInput?.value || "",
     campaign_id: channelEffortCampaignInput?.value || null,
@@ -44639,7 +44721,7 @@ function renderAcquisitionAttributionBoard(rows = []) {
     const metrics = effort.metrics || {};
     const exact = metrics.attribution_quality === "EXACT_LINK";
     const sourceName = effort.interactive_activation_name || effort.lead_capture_activation_name || effort.digital_asset_name || "Sin fuente exclusiva";
-    return `<article class="acquisition-effort-card"><div class="acq-card-head"><div><span class="mono-label">${escapeHtml(effort.channel_name || "Medio")}</span><h4>${escapeHtml(effort.title || "Atracción")}</h4><small>${escapeHtml(sourceName)}</small></div><span class="acq-badge ${exact ? "" : "legacy"}">${exact ? "Exacta" : "Estimada"}</span></div><div class="acq-funnel"><div><strong>${Number(metrics.views || 0)}</strong><span>Vistas</span></div><div><strong>${Number(metrics.leads || 0)}</strong><span>Leads</span></div><div><strong>${Number(metrics.completions || 0)}</strong><span>Completadas</span></div><div><strong>${Number(metrics.downloads || 0)}</strong><span>Descargas</span></div><div><strong>${Number(metrics.qr_generated || 0)}</strong><span>QR emitidos</span></div><div><strong>${Number(metrics.redemptions || 0)}</strong><span>Redenciones</span></div></div><div class="acq-outcome"><div><small>Revenue atribuido</small><strong>${escapeHtml(money(metrics.revenue || 0))}</strong></div><div><small>Ventas</small><strong>${Number(metrics.sales || 0)}</strong></div><div><small>ROI</small><strong>${escapeHtml(channelRoiLabel(metrics.roi))}</strong></div></div><div class="acq-card-footer"><span>${escapeHtml(effortDateRangeLabel(effort))}</span><div>${effort.tracked_url ? `<button class="solid-button compact" type="button" data-copy-acquisition-url="${escapeHtml(effort.tracked_url)}">Copiar enlace</button>` : `<button class="solid-button compact" type="button" data-channel-effort-edit="${escapeHtml(effort.id)}">Conectar fuente</button>`}<button class="ghost-button compact" type="button" data-channel-effort-edit="${escapeHtml(effort.id)}">Editar</button></div></div></article>`;
+    return `<article class="acquisition-effort-card"><div class="acq-card-head"><div><span class="mono-label">${escapeHtml(effort.channel_name || "Medio")}</span><h4>${escapeHtml(effort.title || "Atracción")}</h4><small>${escapeHtml(sourceName)} · asignada a ${escapeHtml(effort.channel_name || "su medio")}</small></div><span class="acq-badge ${exact ? "" : "legacy"}">${exact ? "Exacta" : "Estimada"}</span></div><div class="acq-funnel"><div><strong>${Number(metrics.views || 0)}</strong><span>Vistas</span></div><div><strong>${Number(metrics.leads || 0)}</strong><span>Leads</span></div><div><strong>${Number(metrics.completions || 0)}</strong><span>Completadas</span></div><div><strong>${Number(metrics.downloads || 0)}</strong><span>Descargas</span></div><div><strong>${Number(metrics.qr_generated || 0)}</strong><span>QR emitidos</span></div><div><strong>${Number(metrics.redemptions || 0)}</strong><span>Redenciones</span></div></div><div class="acq-outcome"><div><small>Revenue atribuido</small><strong>${escapeHtml(money(metrics.revenue || 0))}</strong></div><div><small>Ventas</small><strong>${Number(metrics.sales || 0)}</strong></div><div><small>ROI</small><strong>${escapeHtml(channelRoiLabel(metrics.roi))}</strong></div></div><div class="acq-card-footer"><span>${escapeHtml(effortDateRangeLabel(effort))}</span><div><button class="ghost-button compact" type="button" data-effort-insights="${escapeHtml(effort.id)}" data-parent-channel="${escapeHtml(effort.channel_id)}">Ver personas</button>${effort.tracked_url ? `<button class="solid-button compact" type="button" data-copy-acquisition-url="${escapeHtml(effort.tracked_url)}">Copiar enlace</button>` : `<button class="solid-button compact" type="button" data-channel-effort-edit="${escapeHtml(effort.id)}">Conectar fuente</button>`}<button class="ghost-button compact" type="button" data-channel-effort-edit="${escapeHtml(effort.id)}">Editar</button></div></div></article>`;
   }).join("");
   const priority = rows.length === 0 ? "Crea una atracción y conecta una fuente exclusiva." : exactCount < rows.length ? `Conecta ${rows.length - exactCount} atracción${rows.length - exactCount === 1 ? "" : "es"} para cerrar la brecha.` : "La trazabilidad exacta está completa en el periodo.";
   acquisitionAttributionBoard.innerHTML = `<section class="acquisition-control-card"><div class="acq-control-copy"><span class="mono-label">Centro de atribución</span><h3>Convierte cada medio en evidencia de revenue.</h3><p>Una fuente exclusiva conserva el origen desde el clic o descarga hasta el lead, el beneficio QR, la redención y la venta.</p></div><div class="acq-period"><label>Desde<input type="date" data-acquisition-start value="${escapeHtml(period.start)}"></label><label>Hasta<input type="date" data-acquisition-end value="${escapeHtml(period.end)}"></label><button class="solid-button compact" type="button" data-acquisition-apply>Aplicar</button><button class="ghost-button compact" type="button" data-acquisition-export>Exportar CSV</button></div><div class="acq-period-shortcuts"><span>Ventana rápida</span><button type="button" data-acquisition-days="30">30 días</button><button type="button" data-acquisition-days="90">90 días</button></div></section>
@@ -44711,6 +44793,11 @@ async function submitChannelEffort(event) {
   if (!payload.title) {
     setInlineMessage(channelEffortMessage, "Escribe el título del esfuerzo.", "error");
     channelEffortTitleInput?.focus();
+    return;
+  }
+  if (payload.status === "ACTIVE" && !payload.interactive_activation_id && !payload.lead_capture_activation_id && !payload.digital_asset_id) {
+    setInlineMessage(channelEffortMessage, "Selecciona una fuente medible exclusiva. Sin una activación o activo enlazado no es posible atribuir personas ni ventas.", "error");
+    channelEffortAttributionSourceInput?.focus();
     return;
   }
   const editingId = state.channelEffortEditingId || channelEffortIdInput?.value || "";
@@ -57387,6 +57474,7 @@ acquisitionChannelCancelButton?.addEventListener("click", () => {
   closeAcquisitionChannelModal();
 });
 channelEffortForm?.addEventListener("submit", submitChannelEffort);
+channelEffortCreativeInput?.addEventListener("change", syncChannelEffortCreativeAttribution);
 newChannelEffortButton?.addEventListener("click", () => {
   const selected = selectedAcquisitionChannel();
   resetChannelEffortForm(selected?.id ? { channel_id: selected.id } : null);
@@ -57421,6 +57509,7 @@ acquisitionAttributionBoard?.addEventListener("click", async (event) => {
   const channelEditButton = event.target.closest("[data-channel-edit]");
   const channelEffortButton = event.target.closest("[data-channel-add-effort]");
   const insightsButton = event.target.closest("[data-channel-insights]");
+  const effortInsightsButton = event.target.closest("[data-effort-insights]");
   const applyButton = event.target.closest("[data-acquisition-apply]");
   const daysButton = event.target.closest("[data-acquisition-days]");
   const exportButton = event.target.closest("[data-acquisition-export]");
@@ -57443,6 +57532,7 @@ acquisitionAttributionBoard?.addEventListener("click", async (event) => {
     openChannelEffortModal();
   }
   if (insightsButton) openAcquisitionChannelInsights(insightsButton.dataset.channelInsights);
+  if (effortInsightsButton) openAcquisitionEffortInsights(effortInsightsButton.dataset.effortInsights, effortInsightsButton.dataset.parentChannel || "");
   if (newChannelButton) {
     resetAcquisitionChannelForm();
     openAcquisitionChannelModal();

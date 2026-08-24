@@ -19,6 +19,7 @@ test("el medio concilia sus métricas con las atracciones asociadas", () => {
 
 test("el detalle tenant-safe explica leads por atracción y fuente", () => {
   assert.match(routes, /\/channels\/:channelId\/insights/);
+  assert.match(routes, /\/channel-efforts\/:effortId\/insights/);
   assert.match(controller, /where id=\$1 and business_id=\$2/);
   assert.match(controller, /interactive_activation_participants/);
   assert.match(controller, /lead_capture_submissions/);
@@ -26,13 +27,32 @@ test("el detalle tenant-safe explica leads por atracción y fuente", () => {
   assert.match(controller, /source_name/);
 });
 
+test("la atraccion atribuye ventas QR y conversiones posteriores del lead sin duplicar", () => {
+  assert.match(controller, /async function acquisitionEffortSales/);
+  assert.match(controller, /from attributed_sales sale/);
+  assert.match(controller, /not exists \(select 1 from attributed_sales legacy/);
+  assert.match(controller, /sale\.metadata->>'crm_lead_id'/);
+  assert.match(controller, /LEAD_CONVERSION/);
+  assert.match(controller, /total_revenue/);
+});
+
+test("una atraccion activa exige fuente y conserva siempre su pertenencia al medio", () => {
+  assert.match(controller, /Una atraccion activa debe tener una fuente medible exclusiva/);
+  assert.match(app, /syncChannelEffortCreativeAttribution/);
+  assert.match(app, /Sin una activaci.n o activo enlazado no es posible atribuir personas ni ventas/);
+  assert.match(app, /asignada a/);
+});
+
 test("cada medio abre un overlay premium con atracciones y leads", () => {
   assert.match(app, /data-channel-insights/);
   assert.match(app, /openAcquisitionChannelInsights/);
   assert.match(app, /Por qué atracción/);
   assert.match(app, /Personas que llegaron por este medio/);
+  assert.match(app, /openAcquisitionEffortInsights/);
+  assert.match(app, /Ventas atribuidas a esta atracci.n/);
+  assert.match(app, /data-effort-insights/);
   assert.match(css, /\.acq-insights-overlay/);
   assert.match(css, /@media\(max-width:620px\)/);
   assert.match(css, /#acqInsightsTitle\{[^}]*color:#fff!important/);
-  assert.match(html, /acquisition-insights-validator-search-v352-20260824/);
+  assert.match(html, /acquisition-lead-sales-trace-v353-20260824/);
 });

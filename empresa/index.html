@@ -51,7 +51,7 @@
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-white-titles-v12-20260824">
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822">
 <link rel="stylesheet" href="css/reward-pass-premium-v342.css?v=reward-pass-branches-v344-20260823">
-<link rel="stylesheet" href="css/acquisition-command-center.css?v=acquisition-channel-insights-v9-20260824">
+<link rel="stylesheet" href="css/acquisition-command-center.css?v=acquisition-lead-sales-trace-v10-20260824">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -5581,7 +5581,7 @@
                   <input id="channelEffortIdInput" type="hidden">
                   <label><span>Medio</span><select id="channelEffortChannelInput" required></select></label>
                   <label><span>Campaña asociada</span><select id="channelEffortCampaignInput"><option value="">Sin campaña</option></select></label>
-                  <label class="span-2"><span>Fuente medible exclusiva</span><select id="channelEffortAttributionSourceInput"><option value="">Sin enlace (medición histórica)</option></select><small>La activación o activo elegido quedará atribuido únicamente a esta atracción mientras esté activa.</small></label>
+                  <label class="span-2"><span>Fuente medible exclusiva</span><select id="channelEffortAttributionSourceInput"><option value="">Sin fuente: no medirá personas ni ventas</option></select><small>Esta fuente conecta automáticamente sus leads, QR, redenciones y ventas con la atracción y con el medio seleccionado.</small></label>
                   <label class="span-2 acquisition-link-preview" id="channelEffortLinkPreview"><span>Enlace medible</span><output>Se genera al guardar la atracción.</output></label>
                   <label class="span-2"><span>Título del esfuerzo</span><input id="channelEffortTitleInput" type="text" maxlength="180" required placeholder="Post Instagram colección premium julio"></label>
                   <label><span>Tipo de pieza</span>
@@ -5603,7 +5603,7 @@
                   <label><span>Desde</span><input id="channelEffortStartsInput" type="date"></label>
                   <label><span>Hasta</span><input id="channelEffortEndsInput" type="date"></label>
                   <label><span>Inversión COP</span><input id="channelEffortBudgetInput" type="number" min="0" step="100" value="0"></label>
-                  <label><span>Activación creativa enlazada</span><select id="channelEffortCreativeInput"><option value="">Sin activación creativa</option></select></label>
+                  <label><span>Activación creativa enlazada</span><select id="channelEffortCreativeInput"><option value="">Sin activación creativa</option></select><small>Al elegirla también se selecciona como fuente medible exclusiva.</small></label>
                   <label><span>URL publicación</span><input id="channelEffortSourceInput" type="url" maxlength="800" placeholder="https://instagram.com/..."></label>
                   <label><span>Estado</span>
                     <select id="channelEffortStatusInput">
@@ -8022,7 +8022,7 @@
     <footer class="customer-csv-modal-footer"><button class="ghost-button hidden" id="customerCsvErrorsButton" type="button">Descargar errores</button><button class="ghost-button" id="customerCsvCancelButton" type="button">Cancelar</button><button class="solid-button" id="customerCsvSubmitButton" type="button" disabled>Importar clientes</button></footer>
   </section>
 </div>
-<script src="js/app.js?v=acquisition-insights-validator-search-v352-20260824" defer></script>
+<script src="js/app.js?v=acquisition-lead-sales-trace-v353-20260824" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
