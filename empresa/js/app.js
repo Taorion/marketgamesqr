@@ -2943,6 +2943,8 @@ let state = {
   acquisitionChannelEffortsLoaded: false,
   acquisitionChannelEffortsLoading: false,
   channelEffortEditingId: null,
+  acquisitionDateStart: "",
+  acquisitionDateEnd: "",
   inventoryProducts: [],
   inventoryCategories: [],
   inventorySubcategories: [],
@@ -4149,6 +4151,8 @@ function resetBusinessScopedState(options = {}) {
   state.acquisitionChannelEffortsLoaded = false;
   state.acquisitionChannelEffortsLoading = false;
   state.channelEffortEditingId = null;
+  state.acquisitionDateStart = "";
+  state.acquisitionDateEnd = "";
   state.inventoryProducts = [];
   state.inventoryLoaded = false;
   state.inventoryLoading = null;
@@ -43718,6 +43722,9 @@ function renderRedemptionsView() {
 }
 
 function ensureAcquisitionChannelsUxStyles() {
+  // Medios de adquisicion has a dedicated static final stylesheet.
+  return;
+  /* legacy runtime styles retained below for backwards-compatible diffs */
   if (document.getElementById("acquisitionChannelsUxStylesV75")) return;
   const style = document.createElement("style");
   style.id = "acquisitionChannelsUxStylesV75";
@@ -44387,7 +44394,9 @@ async function loadChannelEfforts(options = {}) {
   state.acquisitionChannelEffortsLoading = true;
   const scopeKey = businessScopeKey();
   try {
-    const data = await apiSafe("/api/business/channel-efforts", { headers: authHeaders() }, { efforts: [], totals: null });
+    const period = acquisitionReportingPeriod();
+    const params = new URLSearchParams({ start_date: period.start, end_date: period.end });
+    const data = await apiSafe(`/api/business/channel-efforts?${params.toString()}`, { headers: authHeaders() }, { efforts: [], totals: null });
     if (!isCurrentBusinessScope(scopeKey)) return state.acquisitionChannelEfforts;
     state.acquisitionChannelEfforts = Array.isArray(data.efforts) ? data.efforts : [];
     state.acquisitionChannelEffortTotals = data.totals || null;
@@ -44396,6 +44405,44 @@ async function loadChannelEfforts(options = {}) {
   } finally {
     if (isCurrentBusinessScope(scopeKey)) state.acquisitionChannelEffortsLoading = false;
   }
+}
+
+function acquisitionReportingPeriod() {
+  const toIsoDate = (date) => {
+    const local = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+    return local.toISOString().slice(0, 10);
+  };
+  const end = state.acquisitionDateEnd || toIsoDate(new Date());
+  const startDate = new Date(`${end}T12:00:00`);
+  startDate.setDate(startDate.getDate() - 29);
+  const start = state.acquisitionDateStart || toIsoDate(startDate);
+  state.acquisitionDateStart = start;
+  state.acquisitionDateEnd = end;
+  return { start, end };
+}
+
+function acquisitionPercent(value, total) {
+  return total > 0 ? Math.round((Number(value || 0) / Number(total)) * 100) : 0;
+}
+
+function acquisitionCsvCell(value) {
+  return `"${String(value ?? "").replace(/"/g, '""')}"`;
+}
+
+function exportAcquisitionReport() {
+  const period = acquisitionReportingPeriod();
+  const headers = ["Medio", "Atracción", "Atribución", "Fuente", "Vistas", "Leads", "Completadas", "Descargas", "QR", "Redenciones", "Ventas", "Revenue", "Inversión", "ROI", "Desde", "Hasta"];
+  const rows = (state.acquisitionChannelEfforts || []).map((effort) => {
+    const metrics = effort.metrics || {};
+    return [effort.channel_name, effort.title, metrics.attribution_quality === "EXACT_LINK" ? "Exacta" : "Estimada", effort.interactive_activation_name || effort.lead_capture_activation_name || effort.digital_asset_name || "Histórica", metrics.views || 0, metrics.leads || 0, metrics.completions || 0, metrics.downloads || 0, metrics.qr_generated || 0, metrics.redemptions || 0, metrics.sales || 0, metrics.revenue || 0, metrics.investment || effort.budget_amount || 0, metrics.roi ?? "", effort.starts_at || effort.published_at || "", effort.ends_at || ""];
+  });
+  const csv = `\uFEFF${[headers, ...rows].map((row) => row.map(acquisitionCsvCell).join(";")).join("\r\n")}`;
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `medios-adquisicion-${period.start}-${period.end}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function effortDateRangeLabel(effort = {}) {
@@ -44409,13 +44456,37 @@ function effortDateRangeLabel(effort = {}) {
 function renderAcquisitionAttributionBoard(rows = []) {
   if (!acquisitionAttributionBoard) return;
   const exactCount = rows.filter((item) => item.metrics?.attribution_quality === "EXACT_LINK").length;
-  const cards = rows.slice(0, 8).map((effort) => {
+  const exactRevenue = rows.reduce((sum, item) => sum + (item.metrics?.attribution_quality === "EXACT_LINK" ? Number(item.metrics?.revenue || 0) : 0), 0);
+  const exactLeads = rows.reduce((sum, item) => sum + (item.metrics?.attribution_quality === "EXACT_LINK" ? Number(item.metrics?.leads || 0) : 0), 0);
+  const totalRevenue = Number(state.acquisitionChannelTotals?.revenue || 0);
+  const revenueGap = Math.max(totalRevenue - exactRevenue, 0);
+  const coverage = acquisitionPercent(exactCount, rows.length);
+  const period = acquisitionReportingPeriod();
+  const channels = (state.acquisitionChannels || []).filter((channel) => channel.id && channel.status !== "ARCHIVED");
+  const channelCards = channels.map((channel) => {
+    const metrics = channel.metrics || {};
+    const channelEfforts = rows.filter((effort) => effort.channel_id === channel.id);
+    const linked = channelEfforts.filter((effort) => effort.metrics?.attribution_quality === "EXACT_LINK").length;
+    const investment = Number(metrics.investment || channel.period_budget || 0);
+    return `<article class="acq-channel-card">
+      <div class="acq-card-head"><div><span class="mono-label">${escapeHtml(channel.platform || acquisitionChannelTypeLabel(channel.channel_type))}</span><h4>${escapeHtml(channel.name || "Medio")}</h4></div><span class="status-chip ${channel.status === "ACTIVE" ? "ok" : "pending"}">${escapeHtml(acquisitionChannelStatusLabel(channel.status))}</span></div>
+      <div class="acq-channel-score"><strong>${escapeHtml(channelRoiLabel(metrics.roi))}</strong><span>ROI del medio</span></div>
+      <dl><div><dt>Revenue</dt><dd>${escapeHtml(money(metrics.revenue || 0))}</dd></div><div><dt>Inversión</dt><dd>${escapeHtml(money(investment))}</dd></div><div><dt>Ventas</dt><dd>${Number(metrics.sales || 0)}</dd></div><div><dt>Leads</dt><dd>${Number(metrics.leads || 0)}</dd></div></dl>
+      <div class="acq-progress"><span><b>${linked}</b> de ${channelEfforts.length} atracciones exactas</span><i><b style="width:${acquisitionPercent(linked, channelEfforts.length)}%"></b></i></div>
+      <div class="acq-card-actions"><button class="ghost-button compact" type="button" data-channel-edit="${escapeHtml(channel.id)}">Configurar</button><button class="solid-button compact" type="button" data-channel-add-effort="${escapeHtml(channel.id)}">Crear atracción</button></div>
+    </article>`;
+  }).join("");
+  const cards = rows.map((effort) => {
     const metrics = effort.metrics || {};
     const exact = metrics.attribution_quality === "EXACT_LINK";
-    const sourceName = effort.interactive_activation_name || effort.lead_capture_activation_name || effort.digital_asset_name || "Ventana histórica";
-    return `<article class="acquisition-effort-card"><div class="acq-card-head"><div><span class="mono-label">${escapeHtml(effort.channel_name || "Medio")}</span><h4>${escapeHtml(effort.title || "Atracción")}</h4><small>${escapeHtml(sourceName)}</small></div><span class="acq-badge ${exact ? "" : "legacy"}">${exact ? "Atribución exacta" : "Estimación"}</span></div><div class="acq-funnel"><div><strong>${Number(metrics.views || 0)}</strong><span>Vistas</span></div><div><strong>${Number(metrics.leads || 0)}</strong><span>Leads</span></div><div><strong>${Number(metrics.completions || 0)}</strong><span>Completadas</span></div><div><strong>${Number(metrics.downloads || 0)}</strong><span>Descargas</span></div><div><strong>${Number(metrics.qr_generated || 0)}</strong><span>Beneficios QR</span></div><div><strong>${Number(metrics.redemptions || 0)}</strong><span>Redenciones</span></div></div><div class="acq-card-footer"><div><small>Revenue atribuido</small><br><strong>${escapeHtml(money(metrics.revenue || 0))}</strong> · ${escapeHtml(channelRoiLabel(metrics.roi))}</div>${effort.tracked_url ? `<button class="ghost-button compact" type="button" data-copy-acquisition-url="${escapeHtml(effort.tracked_url)}">Copiar enlace medible</button>` : `<button class="ghost-button compact" type="button" data-channel-effort-edit="${escapeHtml(effort.id)}">Conectar fuente</button>`}</div></article>`;
+    const sourceName = effort.interactive_activation_name || effort.lead_capture_activation_name || effort.digital_asset_name || "Sin fuente exclusiva";
+    return `<article class="acquisition-effort-card"><div class="acq-card-head"><div><span class="mono-label">${escapeHtml(effort.channel_name || "Medio")}</span><h4>${escapeHtml(effort.title || "Atracción")}</h4><small>${escapeHtml(sourceName)}</small></div><span class="acq-badge ${exact ? "" : "legacy"}">${exact ? "Exacta" : "Estimada"}</span></div><div class="acq-funnel"><div><strong>${Number(metrics.views || 0)}</strong><span>Vistas</span></div><div><strong>${Number(metrics.leads || 0)}</strong><span>Leads</span></div><div><strong>${Number(metrics.completions || 0)}</strong><span>Completadas</span></div><div><strong>${Number(metrics.downloads || 0)}</strong><span>Descargas</span></div><div><strong>${Number(metrics.qr_generated || 0)}</strong><span>QR emitidos</span></div><div><strong>${Number(metrics.redemptions || 0)}</strong><span>Redenciones</span></div></div><div class="acq-outcome"><div><small>Revenue atribuido</small><strong>${escapeHtml(money(metrics.revenue || 0))}</strong></div><div><small>Ventas</small><strong>${Number(metrics.sales || 0)}</strong></div><div><small>ROI</small><strong>${escapeHtml(channelRoiLabel(metrics.roi))}</strong></div></div><div class="acq-card-footer"><span>${escapeHtml(effortDateRangeLabel(effort))}</span><div>${effort.tracked_url ? `<button class="solid-button compact" type="button" data-copy-acquisition-url="${escapeHtml(effort.tracked_url)}">Copiar enlace</button>` : `<button class="solid-button compact" type="button" data-channel-effort-edit="${escapeHtml(effort.id)}">Conectar fuente</button>`}<button class="ghost-button compact" type="button" data-channel-effort-edit="${escapeHtml(effort.id)}">Editar</button></div></div></article>`;
   }).join("");
-  acquisitionAttributionBoard.innerHTML = `<article class="acquisition-control-card"><header><div><span class="mono-label" style="color:#99f6e4!important">Motor de atribución</span><h3 style="color:#fff!important">${exactCount} de ${rows.length} atracciones con trazabilidad exacta</h3><p style="color:#cbd5e1!important">Una fuente enlazada pertenece a un solo medio activo. El enlace medible conserva el origen en participantes, leads, descargas y tickets QR; el validador devuelve la redención al mismo medio.</p></div><span class="acq-badge">Sin doble atribución</span></header></article>${cards || `<article class="acquisition-effort-card"><h4>Crea tu primera atracción medible</h4><p>Elige un medio y conecta una activación o activo digital para comenzar a ver el embudo completo.</p></article>`}`;
+  const priority = rows.length === 0 ? "Crea una atracción y conecta una fuente exclusiva." : exactCount < rows.length ? `Conecta ${rows.length - exactCount} atracción${rows.length - exactCount === 1 ? "" : "es"} para cerrar la brecha.` : "La trazabilidad exacta está completa en el periodo.";
+  acquisitionAttributionBoard.innerHTML = `<section class="acquisition-control-card"><div class="acq-control-copy"><span class="mono-label">Centro de atribución</span><h3>Convierte cada medio en evidencia de revenue.</h3><p>Una fuente exclusiva conserva el origen desde el clic o descarga hasta el lead, el beneficio QR, la redención y la venta.</p></div><div class="acq-period"><label>Desde<input type="date" data-acquisition-start value="${escapeHtml(period.start)}"></label><label>Hasta<input type="date" data-acquisition-end value="${escapeHtml(period.end)}"></label><button class="solid-button compact" type="button" data-acquisition-apply>Aplicar</button><button class="ghost-button compact" type="button" data-acquisition-export>Exportar CSV</button></div><div class="acq-period-shortcuts"><span>Ventana rápida</span><button type="button" data-acquisition-days="30">30 días</button><button type="button" data-acquisition-days="90">90 días</button></div></section>
+    <section class="acq-truth-grid"><article><span>Cobertura exacta</span><strong>${coverage}%</strong><small>${exactCount} de ${rows.length} atracciones</small><i><b style="width:${coverage}%"></b></i></article><article><span>Revenue con fuente exacta</span><strong>${escapeHtml(money(exactRevenue))}</strong><small>${exactLeads} leads trazados</small></article><article class="${revenueGap > 0 ? "attention" : ""}"><span>Revenue sin atracción exacta</span><strong>${escapeHtml(money(revenueGap))}</strong><small>${revenueGap > 0 ? "Brecha por cerrar" : "Cobertura conciliada"}</small></article><article class="acq-priority"><span>Próximo movimiento</span><strong>${escapeHtml(priority)}</strong></article></section>
+    <section class="acq-section-head"><div><span class="mono-label">Portafolio de medios</span><h3>Rendimiento por origen</h3></div><button class="ghost-button compact" type="button" data-acquisition-new-channel>+ Crear medio</button></section><section class="acq-channel-grid">${channelCards || `<article class="acq-empty"><strong>Aún no hay medios creados.</strong><p>Crea Instagram, Google, WhatsApp u otro origen para comenzar.</p><button class="solid-button compact" type="button" data-acquisition-new-channel>Crear primer medio</button></article>`}</section>
+    <section class="acq-section-head"><div><span class="mono-label">Atracciones medibles</span><h3>Del alcance al revenue</h3></div><span class="acq-legend"><i></i> Exacta <i class="legacy"></i> Estimada</span></section><section class="acq-effort-grid">${cards || `<article class="acq-empty"><strong>Crea tu primera atracción medible.</strong><p>Conecta una activación, captura de leads o activo digital y comparte únicamente su enlace medible.</p><button class="solid-button compact" type="button" data-acquisition-new-effort>Crear atracción</button></article>`}</section>`;
 }
 
 function renderChannelEffortsView() {
@@ -44540,7 +44611,9 @@ async function loadAcquisitionChannels(options = {}) {
   state.acquisitionChannelsLoading = true;
   const scopeKey = businessScopeKey();
   try {
-    const data = await apiSafe("/api/business/channels?include_archived=true", { headers: authHeaders() }, { channels: [], totals: null });
+    const period = acquisitionReportingPeriod();
+    const params = new URLSearchParams({ include_archived: "true", start_date: period.start, end_date: period.end });
+    const data = await apiSafe(`/api/business/channels?${params.toString()}`, { headers: authHeaders() }, { channels: [], totals: null });
     if (!isCurrentBusinessScope(scopeKey)) return state.acquisitionChannels;
     state.acquisitionChannels = Array.isArray(data.channels) ? data.channels : [];
     state.acquisitionChannelTotals = data.totals || null;
@@ -57183,6 +57256,13 @@ document.addEventListener("keydown", (event) => {
 acquisitionAttributionBoard?.addEventListener("click", async (event) => {
   const copyButton = event.target.closest("[data-copy-acquisition-url]");
   const editButton = event.target.closest("[data-channel-effort-edit]");
+  const channelEditButton = event.target.closest("[data-channel-edit]");
+  const channelEffortButton = event.target.closest("[data-channel-add-effort]");
+  const applyButton = event.target.closest("[data-acquisition-apply]");
+  const daysButton = event.target.closest("[data-acquisition-days]");
+  const exportButton = event.target.closest("[data-acquisition-export]");
+  const newChannelButton = event.target.closest("[data-acquisition-new-channel]");
+  const newEffortButton = event.target.closest("[data-acquisition-new-effort]");
   if (copyButton) {
     await navigator.clipboard?.writeText(copyButton.dataset.copyAcquisitionUrl || "");
     showFeedback("Enlace medible copiado. Comparte este enlace únicamente en el medio indicado.", "success", { title: "Atribución lista" });
@@ -57190,6 +57270,46 @@ acquisitionAttributionBoard?.addEventListener("click", async (event) => {
   if (editButton) {
     resetChannelEffortForm((state.acquisitionChannelEfforts || []).find((item) => item.id === editButton.dataset.channelEffortEdit));
     openChannelEffortModal();
+  }
+  if (channelEditButton) {
+    resetAcquisitionChannelForm(acquisitionChannelById(channelEditButton.dataset.channelEdit));
+    openAcquisitionChannelModal();
+  }
+  if (channelEffortButton) {
+    resetChannelEffortForm({ channel_id: channelEffortButton.dataset.channelAddEffort || "" });
+    openChannelEffortModal();
+  }
+  if (newChannelButton) {
+    resetAcquisitionChannelForm();
+    openAcquisitionChannelModal();
+  }
+  if (newEffortButton) {
+    resetChannelEffortForm();
+    openChannelEffortModal();
+  }
+  if (exportButton) exportAcquisitionReport();
+  if (daysButton) {
+    const days = Math.max(1, Number(daysButton.dataset.acquisitionDays || 30));
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - (days - 1));
+    const toIso = (date) => new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
+    state.acquisitionDateStart = toIso(start);
+    state.acquisitionDateEnd = toIso(end);
+  }
+  if (applyButton) {
+    state.acquisitionDateStart = acquisitionAttributionBoard.querySelector("[data-acquisition-start]")?.value || state.acquisitionDateStart;
+    state.acquisitionDateEnd = acquisitionAttributionBoard.querySelector("[data-acquisition-end]")?.value || state.acquisitionDateEnd;
+    if (state.acquisitionDateStart > state.acquisitionDateEnd) {
+      showFeedback("La fecha inicial no puede ser posterior a la fecha final.", "error", { title: "Periodo inválido" });
+      return;
+    }
+  }
+  if (daysButton || applyButton) {
+    state.acquisitionChannelsLoaded = false;
+    state.acquisitionChannelEffortsLoaded = false;
+    await Promise.all([loadAcquisitionChannels({ force: true }), loadChannelEfforts({ force: true })]);
+    renderAcquisitionChannelsView();
   }
 });
 acquisitionChannelTable?.addEventListener("click", (event) => {

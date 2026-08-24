@@ -9,6 +9,7 @@ const leadService = fs.readFileSync("backend/src/services/leadCaptureService.js"
 const qrService = fs.readFileSync("backend/src/services/qrService.js", "utf8");
 const portalHtml = fs.readFileSync("empresa/index.html", "utf8");
 const portalApp = fs.readFileSync("empresa/js/app.js", "utf8");
+const acquisitionCss = fs.readFileSync("empresa/css/acquisition-command-center.css", "utf8");
 
 test("an active source can belong to only one tenant-scoped acquisition effort", () => {
   assert.match(migration, /unique index[\s\S]*business_id, interactive_activation_id/i);
@@ -34,10 +35,15 @@ test("lead capture tracking covers views, leads and actual downloads", () => {
   assert.match(fs.readFileSync("captura/app.js", "utf8"), /acquisition_tracking_token/);
 });
 
-test("portal exposes exclusive source linking and a responsive attribution funnel", () => {
+test("portal exposes exclusive source linking and an executive attribution center", () => {
   assert.match(portalHtml, /channelEffortAttributionSourceInput/);
   assert.match(portalHtml, /acquisitionAttributionBoard/);
-  assert.match(portalApp, /Atribución exacta/);
-  assert.match(portalApp, /Copiar enlace medible/);
-  assert.match(portalApp, /Beneficios QR/);
+  assert.match(portalApp, /Cobertura exacta/);
+  assert.match(portalApp, /Revenue sin atracción exacta/);
+  assert.match(portalApp, /Copiar enlace/);
+  assert.match(portalApp, /QR emitidos/);
+  assert.match(portalApp, /data-acquisition-start/);
+  assert.match(portalApp, /exportAcquisitionReport/);
+  assert.match(acquisitionCss, /@media\(max-width:620px\)/);
+  assert.match(acquisitionCss, /channel-list-card,[^\n]+channel-matrix-card\{display:none!important\}/);
 });
