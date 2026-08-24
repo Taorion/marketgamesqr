@@ -11,6 +11,7 @@ const html = fs.readFileSync("empresa/index.html", "utf8");
 test("el medio concilia sus métricas con las atracciones asociadas", () => {
   assert.match(app, /acquisitionChannelPortfolioMetrics/);
   assert.match(app, /Math\.max\(Number\(base\.leads/);
+  assert.match(app, /\(revenue - investment\) \/ investment\)\.toFixed\(4\)/);
   assert.match(app, /rows\.filter\(\(effort\) => effort\.channel_id === channel\.id\)/);
   assert.match(controller, /exactMetricsByChannel/);
   assert.match(controller, /Math\.max\(Number\(historicalMetrics\.leads/);
@@ -32,5 +33,6 @@ test("cada medio abre un overlay premium con atracciones y leads", () => {
   assert.match(app, /Personas que llegaron por este medio/);
   assert.match(css, /\.acq-insights-overlay/);
   assert.match(css, /@media\(max-width:620px\)/);
-  assert.match(html, /acquisition-channel-insights-v350-20260824/);
+  assert.match(css, /#acqInsightsTitle\{[^}]*color:#fff!important/);
+  assert.match(html, /acquisition-insights-validator-search-v352-20260824/);
 });

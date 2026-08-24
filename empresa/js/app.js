@@ -44227,7 +44227,7 @@ function acquisitionChannelPortfolioMetrics(channel = {}, efforts = channelEffor
     revenue,
     investment,
     cac: leads > 0 ? Number((investment / leads).toFixed(2)) : null,
-    roi: investment > 0 ? Number((((revenue - investment) / investment) * 100).toFixed(2)) : null,
+    roi: investment > 0 ? Number(((revenue - investment) / investment).toFixed(4)) : null,
   };
 }
 
