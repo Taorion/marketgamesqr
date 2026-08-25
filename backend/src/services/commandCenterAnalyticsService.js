@@ -1,5 +1,5 @@
 const { query } = require("../config/db");
-const { safeDivide, safeRate, safeRoi } = require("./metricsService");
+const { safeDivide, safeRate, safeRoi, canonicalSalesUnionSql } = require("./metricsService");
 
 const ANALYTICS_CACHE_TTL_MS = 45 * 1000;
 const ANALYTICS_CACHE_MAX_ENTRIES = 80;
@@ -114,19 +114,73 @@ function normalizeFilters(raw = {}) {
 }
 
 function salesUnionSql() {
-  return `
-    select business_id, campaign_id, qr_code_id, branch_id, sale_amount, currency, created_at,
-           payment_method, product_or_service as product_name, null::text as acquisition_source,
-           null::text as acquisition_channel, null::uuid as referred_affiliate_id,
-           sale_confirmed_by_user_id as seller_user_id
-    from attributed_sales
-    union all
-    select business_id, campaign_id, qr_code_id, branch_id, sale_amount, currency, created_at,
-           null::text as payment_method, product_name, acquisition_source,
-           acquisition_channel, referred_affiliate_id, seller_user_id
-    from business_sales
-    where qr_code_id is null
-  `;
+  return canonicalSalesUnionSql();
+}
+
+async function getBusinessEconomics(businessId) {
+  const [salesResult, investmentsResult] = await Promise.all([
+    query(
+      `with sales as (${salesUnionSql()})
+       select
+         coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue,
+         count(*)::int as sales_count,
+         count(distinct customer_key)::int as customers
+       from sales
+       where business_id = $1`,
+      [businessId]
+    ),
+    query(
+      `select
+         coalesce((
+           select sum(c.budget_total)
+           from campaigns c
+           where c.business_id = $1
+             and c.status <> 'ARCHIVED'
+         ), 0)::numeric(14, 2) as campaign_investment,
+         coalesce((
+           select sum(ch.period_budget)
+           from business_acquisition_channels ch
+           where ch.business_id = $1
+             and ch.status <> 'ARCHIVED'
+             and not exists (
+               select 1
+               from business_acquisition_channel_efforts e
+               where e.business_id = ch.business_id
+                 and e.channel_id = ch.id
+                 and e.status <> 'ARCHIVED'
+             )
+         ), 0)::numeric(14, 2) as channel_investment,
+         coalesce((
+           select sum(e.budget_amount)
+           from business_acquisition_channel_efforts e
+           where e.business_id = $1
+             and e.status <> 'ARCHIVED'
+             and e.campaign_id is null
+         ), 0)::numeric(14, 2) as effort_investment`,
+      [businessId]
+    ),
+  ]);
+
+  const sales = salesResult.rows[0] || {};
+  const investments = investmentsResult.rows[0] || {};
+  const campaignInvestment = number(investments.campaign_investment);
+  const channelInvestment = number(investments.channel_investment);
+  const effortInvestment = number(investments.effort_investment);
+  const investment = campaignInvestment + channelInvestment + effortInvestment;
+  const revenue = number(sales.revenue);
+  const customers = number(sales.customers);
+
+  return {
+    revenue,
+    sales_count: number(sales.sales_count),
+    customers,
+    investment,
+    campaign_investment: campaignInvestment,
+    channel_investment: channelInvestment,
+    effort_investment: effortInvestment,
+    roi: safeRoi(revenue, investment),
+    cac: safeDivide(investment, customers),
+  };
 }
 
 function scopedWhere(params, businessId, filters, config = {}) {
@@ -219,6 +273,7 @@ async function getTotals(businessId, filters, period = "current") {
        select
          count(*)::int as sales_count,
          coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue,
+         count(distinct customer_key)::int as customers,
          count(*) filter (where referred_affiliate_id is not null)::int as referred_buyers
        from sales s
        left join qr_codes q on q.id = s.qr_code_id
@@ -245,7 +300,6 @@ async function getTotals(businessId, filters, period = "current") {
   };
   const revenue = number(row.revenue);
   const salesCount = number(row.sales_count);
-  const investment = 0;
   return {
     leads: number(row.leads),
     qr_generated: number(row.qr_generated),
@@ -256,13 +310,12 @@ async function getTotals(businessId, filters, period = "current") {
     cancelled_qr: number(row.cancelled_qr),
     redemptions: number(row.redemptions),
     sales_count: salesCount,
+    customers: number(row.customers),
     revenue,
     referred_buyers: number(row.referred_buyers),
     redemption_rate: safeRate(row.redemptions, row.qr_generated),
     conversion_rate: safeRate(salesCount, row.leads),
     avg_ticket: safeDivide(revenue, salesCount) || 0,
-    cac_estimated: safeDivide(investment, salesCount) || 0,
-    roi_estimated: safeRoi(revenue, investment),
   };
 }
 
@@ -274,7 +327,12 @@ function delta(current, previous) {
   return round(((c - p) / p) * 100, 1);
 }
 
-function kpiItems(current, previous, topBranch, topChannel, affiliateSummary) {
+function kpiItems(current, previous, topBranch, topChannel, affiliateSummary, businessEconomics = {}) {
+  const investment = number(businessEconomics.investment);
+  const customers = number(businessEconomics.customers);
+  const hasEconomics = investment > 0;
+  const hasCac = hasEconomics && customers > 0 && businessEconomics.cac !== null && businessEconomics.cac !== undefined;
+  const hasRoi = hasEconomics && businessEconomics.roi !== null && businessEconomics.roi !== undefined;
   const items = [
     ["revenue", "Revenue atribuido", current.revenue, "money", delta(current.revenue, previous.revenue), "payments", "Ventas reales registradas y atribuibles al RMS."],
     ["sales", "Ventas registradas", current.sales_count, "number", delta(current.sales_count, previous.sales_count), "point_of_sale", "Compras capturadas por redencion o sales tracker."],
@@ -286,8 +344,8 @@ function kpiItems(current, previous, topBranch, topChannel, affiliateSummary) {
     ["redemption_rate", "Tasa de redencion", current.redemption_rate, "percent", delta(current.redemption_rate, previous.redemption_rate), "conversion_path", "Porcentaje de QR emitidos que se redimieron."],
     ["conversion_rate", "Lead -> venta", current.conversion_rate, "percent", delta(current.conversion_rate, previous.conversion_rate), "shopping_cart_checkout", "Capacidad para convertir interes en compra."],
     ["avg_ticket", "Ticket promedio", current.avg_ticket, "money", delta(current.avg_ticket, previous.avg_ticket), "receipt_long", "Revenue promedio por venta registrada."],
-    ["cac", "CAC estimado", current.cac_estimated, "money", delta(current.cac_estimated, previous.cac_estimated), "target", "Costo estimado por venta segun inversion disponible."],
-    ["roi", "ROI estimado", current.roi_estimated ?? 0, "ratio", delta(current.roi_estimated, previous.roi_estimated), "trending_up", "Retorno calculado cuando hay presupuesto de campana."],
+    ["cac", "CAC acumulado", hasCac ? businessEconomics.cac : "—", hasCac ? "money" : "text", 0, "target", hasCac ? "Inversión comercial acumulada dividida entre clientes únicos con compra pagada." : "Registra inversión y ventas pagadas para calcularlo sin inventar un costo."],
+    ["roi", "ROI acumulado", hasRoi ? businessEconomics.roi : "—", hasRoi ? "ratio" : "text", 0, "trending_up", hasRoi ? "Revenue pagado menos inversión comercial acumulada, dividido entre la inversión." : "Registra inversión comercial para calcularlo sin inventar un retorno."],
     ["affiliates", "Afiliados activos", affiliateSummary.active_affiliates, "number", 0, "groups", "Afiliados disponibles para recomendacion y referidos."],
     ["referrals", "Referidos compradores", current.referred_buyers, "number", delta(current.referred_buyers, previous.referred_buyers), "diversity_3", "Ventas con afiliado o referido identificado."],
     ["branch", "Sucursal lider", topBranch?.branch_name || "Sin datos", "text", topBranch?.conversion_rate || 0, "storefront", "Punto de venta con mejor revenue o conversion."],
@@ -482,7 +540,7 @@ async function getSeriesAndCharts(businessId, filters) {
          affiliateColumn: "coalesce(s.referred_affiliate_id, q.affiliate_id)",
          channelExpression: "coalesce(nullif(s.acquisition_channel, ''), s.acquisition_source, 'QR_REDEMPTION')",
        })}
-       group by channel
+       group by 1
        order by revenue desc, sales desc
        limit 12`,
       salesParams
@@ -645,7 +703,7 @@ async function getSeriesAndCharts(businessId, filters) {
            and p.created_at >= $${matrixParams.push(filters.startDate)}::timestamptz
            and p.created_at < ($${matrixParams.push(filters.endDate)}::date + interval '1 day')
            and ($${matrixParams.push(filters.campaignId)}::uuid is null or coalesce(latest_capture.campaign_id, p.campaign_id) = $${matrixParams.length}::uuid)
-         group by coalesce(latest_capture.campaign_id, p.campaign_id), coalesce(latest_capture.campaign_name, c.name, 'Sin campana'), channel
+         group by 1, 2, 3
        ),
        manual_contact_events as (
          select cmc.campaign_id,
@@ -664,7 +722,7 @@ async function getSeriesAndCharts(businessId, filters) {
            and cmc.created_at >= $${matrixParams.push(filters.startDate)}::timestamptz
            and cmc.created_at < ($${matrixParams.push(filters.endDate)}::date + interval '1 day')
            and ($${matrixParams.push(filters.campaignId)}::uuid is null or cmc.campaign_id = $${matrixParams.length}::uuid)
-         group by cmc.campaign_id, c.name, channel
+         group by 1, 2, 3
        ),
        qr_events as (
          select q.campaign_id,
@@ -685,7 +743,7 @@ async function getSeriesAndCharts(businessId, filters) {
            and ($${matrixParams.push(filters.qrStatus)}::text is null or q.status::text = $${matrixParams.length}::text)
            and ($${matrixParams.push(filters.qrType)}::text is null or q.origin_type::text = $${matrixParams.length}::text)
            and ($${matrixParams.push(filters.affiliateId)}::uuid is null or q.affiliate_id = $${matrixParams.length}::uuid)
-         group by q.campaign_id, c.name, channel
+         group by 1, 2, 3
        ),
        redemption_events as (
          select rd.campaign_id,
@@ -709,7 +767,7 @@ async function getSeriesAndCharts(businessId, filters) {
            and ($${matrixParams.push(filters.qrType)}::text is null or q.origin_type::text = $${matrixParams.length}::text)
            and ($${matrixParams.push(filters.affiliateId)}::uuid is null or q.affiliate_id = $${matrixParams.length}::uuid)
            and ($${matrixParams.push(filters.sellerId)}::uuid is null or rd.redeemed_by_user_id = $${matrixParams.length}::uuid)
-         group by rd.campaign_id, c.name, channel
+         group by 1, 2, 3
        ),
        sale_events as (
          select s.campaign_id,
@@ -732,7 +790,7 @@ async function getSeriesAndCharts(businessId, filters) {
            and ($${matrixParams.push(filters.qrType)}::text is null or q.origin_type::text = $${matrixParams.length}::text)
            and ($${matrixParams.push(filters.affiliateId)}::uuid is null or coalesce(s.referred_affiliate_id, q.affiliate_id) = $${matrixParams.length}::uuid)
            and ($${matrixParams.push(filters.sellerId)}::uuid is null or s.seller_user_id = $${matrixParams.length}::uuid)
-         group by s.campaign_id, c.name, channel
+         group by 1, 2, 3
        ),
        events as (
          select * from lead_events
@@ -754,7 +812,7 @@ async function getSeriesAndCharts(businessId, filters) {
               round(case when sum(leads) > 0 then (sum(sales)::numeric / sum(leads)::numeric) * 100 else 0 end, 1) as conversion_rate
        from events
        where ($${matrixParams.push(filters.channel)}::text is null or channel = $${matrixParams.length}::text)
-       group by campaign_id, campaign_name, channel
+       group by 1, 2, 3
        order by revenue desc, sales desc, leads desc
        limit 240`,
       matrixParams
@@ -778,7 +836,9 @@ async function getSeriesAndCharts(businessId, filters) {
        select coalesce(br.name, 'Sin sucursal') as branch_name,
               count(distinct qrd.id)::int as redemptions,
               count(distinct s.created_at::text || s.sale_amount::text || coalesce(s.qr_code_id::text, ''))::int as sales,
-              coalesce(sum(s.sale_amount), 0)::numeric(14, 2) as revenue
+              coalesce(sum(s.sale_amount), 0)::numeric(14, 2) as revenue,
+              coalesce(max(lead_metrics.leads), 0)::int as leads,
+              coalesce(max(effort_metrics.investment), 0)::numeric(14, 2) as investment
        from branches br
        left join redemptions rd on rd.branch_id = br.id
         and rd.redeemed_at >= $${branchParams.push(filters.startDate)}::timestamptz
@@ -798,6 +858,36 @@ async function getSeriesAndCharts(businessId, filters) {
         and ($${branchParams.push(filters.qrStatus)}::text is null or qs.status::text = $${branchParams.length}::text)
         and ($${branchParams.push(filters.qrType)}::text is null or qs.origin_type::text = $${branchParams.length}::text)
         and ($${branchParams.push(filters.affiliateId)}::uuid is null or coalesce(s.referred_affiliate_id, qs.affiliate_id) = $${branchParams.length}::uuid)
+       left join lateral (
+         select count(*)::int as leads
+         from (
+           select p.id
+           from players p
+           where p.business_id = br.business_id
+             and p.branch_id = br.id
+             and p.created_at >= $${branchParams.push(filters.startDate)}::timestamptz
+             and p.created_at < ($${branchParams.push(filters.endDate)}::date + interval '1 day')
+             and ($${branchParams.push(filters.campaignId)}::uuid is null or p.campaign_id = $${branchParams.length}::uuid)
+           union
+           select ml.id
+           from business_manual_leads ml
+           where ml.business_id = br.business_id
+             and ml.branch_id = br.id
+             and ml.created_at >= $${branchParams.push(filters.startDate)}::timestamptz
+             and ml.created_at < ($${branchParams.push(filters.endDate)}::date + interval '1 day')
+             and $${branchParams.push(filters.campaignId)}::uuid is null
+         ) contacts
+       ) lead_metrics on true
+       left join lateral (
+         select coalesce(sum(e.budget_amount), 0)::numeric(14, 2) as investment
+         from business_acquisition_channel_efforts e
+         where e.business_id = br.business_id
+           and e.branch_id = br.id
+           and e.status <> 'ARCHIVED'
+           and coalesce(e.published_at, e.created_at) >= $${branchParams.push(filters.startDate)}::timestamptz
+           and coalesce(e.published_at, e.created_at) < ($${branchParams.push(filters.endDate)}::date + interval '1 day')
+           and ($${branchParams.push(filters.campaignId)}::uuid is null or e.campaign_id = $${branchParams.length}::uuid)
+       ) effort_metrics on true
        where br.business_id = $${branchParams.push(businessId)}
          and ($${branchParams.push(filters.branchId)}::uuid is null or br.id = $${branchParams.length}::uuid)
        group by br.id, br.name
@@ -837,6 +927,7 @@ async function getSeriesAndCharts(businessId, filters) {
          affiliateColumn: "bs.referred_affiliate_id",
          channelExpression: "coalesce(nullif(bs.acquisition_channel, ''), bs.acquisition_source, 'QR_REDEMPTION')",
        })}
+         and coalesce(bs.sale_status, 'PAID') = 'PAID'
        group by date_trunc('week', bs.created_at)
        order by cohort desc
        limit 8`,
@@ -888,7 +979,7 @@ async function getSeriesAndCharts(businessId, filters) {
               case when bool_or(investment_source = 'manual') then 'manual' else 'allocated' end as investment_source
        from investments
        where ($${channelInvestmentParams.push(filters.channel)}::text is null or channel = $${channelInvestmentParams.length}::text)
-       group by campaign_id, campaign_name, channel
+       group by 1, 2, 3
        order by investment desc, campaign_name asc`,
       channelInvestmentParams
     ),
@@ -947,7 +1038,7 @@ async function getSeriesAndCharts(businessId, filters) {
         conversion_rate: safeRate(sales, leads),
         redemption_rate: safeRate(redemptions, qr),
         roi: safeRoi(revenue, investment),
-        cac: safeDivide(investment, sales) || 0,
+        cost_per_sale: safeDivide(investment, sales),
       };
     }),
     matrix: matrixRows,
@@ -955,12 +1046,20 @@ async function getSeriesAndCharts(businessId, filters) {
     branches: branches.rows.map((row) => {
       const sales = number(row.sales);
       const redemptions = number(row.redemptions);
+      const leads = number(row.leads);
+      const investment = number(row.investment);
+      const revenue = number(row.revenue);
       return {
         branch_name: row.branch_name,
+        leads,
         redemptions,
         sales,
-        revenue: number(row.revenue),
+        revenue,
+        investment,
+        cost_per_lead: safeDivide(investment, leads),
+        roi: safeRoi(revenue, investment),
         conversion_rate: safeRate(sales, redemptions),
+        lead_conversion_rate: safeRate(sales, leads),
       };
     }),
     affiliates: affiliates.rows.map((row) => ({
@@ -1047,8 +1146,8 @@ function buildChannelPerformance(matrixRows = [], investmentRows = []) {
       redemption_rate: safeRate(channel.redemptions, channel.qr_generated),
       avg_ticket: safeDivide(channel.revenue, channel.sales) || 0,
       roi: safeRoi(channel.revenue, channel.investment),
-      cac: safeDivide(channel.investment, channel.sales) || 0,
-      cost_per_lead: safeDivide(channel.investment, channel.leads) || 0,
+      cost_per_sale: safeDivide(channel.investment, channel.sales),
+      cost_per_lead: safeDivide(channel.investment, channel.leads),
     }))
     .sort((a, b) => b.revenue - a.revenue || b.sales - a.sales || b.leads - a.leads);
 }
@@ -1213,11 +1312,12 @@ async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
     return { ...cached, cache: { hit: true, ttl_seconds: ANALYTICS_CACHE_TTL_MS / 1000 } };
   }
 
-  const [options, current, previousRaw, charts] = await Promise.all([
+  const [options, current, previousRaw, charts, businessEconomics] = await Promise.all([
     getOptions(businessId),
     getTotals(businessId, filters, "current"),
     getTotals(businessId, filters, "previous"),
     getSeriesAndCharts(businessId, filters),
+    getBusinessEconomics(businessId),
   ]);
   const previous = filters.comparePrevious ? previousRaw : current;
 
@@ -1235,9 +1335,10 @@ async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
   const analytics = {
     filters,
     options,
-    kpis: kpiItems(current, previous, topBranch, topChannel, affiliateSummary),
+    kpis: kpiItems(current, previous, topBranch, topChannel, affiliateSummary, businessEconomics),
     totals: current,
     previous_totals: previous,
+    business_economics: businessEconomics,
     funnel: buildFunnel(current),
     revenue_score: score,
     timeline: charts.timeline,

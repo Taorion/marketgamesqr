@@ -9,6 +9,7 @@ const {
   getBusinessCampaignMetrics,
   getCampaignMetrics,
   safeRoi,
+  canonicalSalesUnionSql,
 } = require("../services/metricsService");
 const { getCommandCenterAnalytics } = require("../services/commandCenterAnalyticsService");
 const {
@@ -29,24 +30,9 @@ const {
 const { syncSaleProductsWithCatalog } = require("../services/productCatalogService");
 const { getIndividualQrDownload } = require("../services/strategicQrService");
 const { getLeadCrmDetail } = require("../services/leadCrmService");
-
-const launchChannelOptions = [
-  "Instagram",
-  "Facebook",
-  "TikTok",
-  "Pagina web",
-  "Google",
-  "Google Ads",
-  "Google Maps",
-  "Landing",
-  "Email",
-  "Referido",
-  "QR",
-  "Evento fisico",
-  "WhatsApp",
-  "Punto de venta",
-  "Otro",
-];
+const { assertStorageQuotaForUpload } = require("../services/storageQuotaService");
+const { recordLifecycleEvent } = require("../services/lifecycleAuditService");
+const { resolveAcquisitionChannelReference } = require("../services/acquisitionChannelService");
 
 function slugify(value) {
   return String(value || "")
@@ -63,11 +49,91 @@ const slugSchema = z.preprocess(
   z.string().min(2).max(120).regex(/^[a-z0-9-]+$/)
 );
 
+const acquisitionChannelReferenceSchema = z.object({
+  acquisition_channel_id: z.string().uuid().optional().nullable(),
+  acquisition_channel: z.string().trim().min(2).max(180).optional().nullable(),
+}).superRefine((value, context) => {
+  if (!value.acquisition_channel_id && !value.acquisition_channel) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Selecciona un canal o escribe uno temporal." });
+  }
+});
+
+async function resolveCampaignChannelReferences(client, businessId, refs = [], legacyNames = []) {
+  const rawRefs = Array.isArray(refs) && refs.length
+    ? refs
+    : (Array.isArray(legacyNames) ? legacyNames.map((acquisition_channel) => ({ acquisition_channel })) : []);
+  const resolved = [];
+  for (const raw of rawRefs) {
+    const parsed = validate(acquisitionChannelReferenceSchema, raw || {});
+    const channel = await resolveAcquisitionChannelReference(client, businessId, parsed);
+    resolved.push({
+      id: channel.acquisition_channel_id,
+      name_snapshot: channel.acquisition_channel_name_snapshot,
+      slug_snapshot: channel.acquisition_channel_slug_snapshot,
+      source: channel.acquisition_channel_source,
+    });
+  }
+  return resolved;
+}
+
+function customerContactIdentity(customer = {}) {
+  const documentId = String(customer.customer_document_id || "").trim();
+  const email = String(customer.customer_email || "").trim().toLowerCase();
+  const phone = String(customer.customer_phone || "").replace(/\D/g, "");
+  return { documentId: documentId || null, email: email || null, phone: phone || null };
+}
+
+// The sales form may receive a buyer who has never been captured by a campaign.
+// Persist a canonical contact in the same transaction as the sale, so the
+// contacts list and post-sale flows never lose that new customer.
+async function ensureCustomerContactForAcquisitionSale(client, businessId, user, customer = {}) {
+  const identity = customerContactIdentity(customer);
+  const lockKey = [businessId, identity.documentId || identity.email || identity.phone || String(customer.customer_name || "cliente").trim().toLowerCase()].join(":");
+  await client.query("select pg_advisory_xact_lock(hashtext($1))", [`customer-acquisition:${lockKey}`]);
+  const existing = await client.query(
+    `select id, name, email, phone, document_id
+       from players
+      where business_id = $1
+        and (
+          ($2::text is not null and nullif(document_id, '') = $2)
+          or ($3::text is not null and lower(nullif(email, '')) = $3)
+          or ($4::text is not null and regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = $4)
+        )
+      order by created_at asc
+      limit 1
+      for update`,
+    [businessId, identity.documentId, identity.email, identity.phone]
+  );
+  if (existing.rowCount) return { customer: existing.rows[0], created: false };
+
+  const created = await client.query(
+    `insert into players (business_id, campaign_id, game_id, name, email, phone, document_id, metadata)
+     values ($1, $2, null, $3, $4, $5, $6, $7::jsonb)
+     returning id, name, email, phone, document_id`,
+    [
+      businessId,
+      customer.campaign_id || null,
+      String(customer.customer_name || "Cliente sin nombre").trim() || "Cliente sin nombre",
+      identity.email || null,
+      customer.customer_phone || null,
+      identity.documentId,
+      JSON.stringify({
+        source: "Venta registrada en Operar",
+        crm_created_from: "customer_acquisition_sale",
+        customer_created_at: new Date().toISOString(),
+        created_by_user_id: user?.id || null,
+      }),
+    ]
+  );
+  return { customer: created.rows[0], created: true };
+}
+
 const clientSetupSchema = z.object({
   budget_total: z.number().min(0),
   starts_at: z.string().datetime(),
   ends_at: z.string().datetime(),
-  launch_channels: z.array(z.enum(launchChannelOptions)).min(1),
+  launch_channels: z.array(z.string().trim().min(2).max(180)).min(1),
+  launch_channel_refs: z.array(acquisitionChannelReferenceSchema).min(1).optional(),
   expected_sales_goal: z.number().min(0).optional().nullable(),
   expected_leads_goal: z.number().min(0).optional().nullable(),
   expected_redemptions_goal: z.number().min(0).optional().nullable(),
@@ -89,6 +155,7 @@ const ownerCampaignSchema = z.object({
   expected_leads_goal: z.number().min(0).optional().nullable(),
   expected_redemptions_goal: z.number().min(0).optional().nullable(),
   launch_channels: z.array(z.string().trim().min(2).max(80)).optional(),
+  launch_channel_refs: z.array(acquisitionChannelReferenceSchema).optional(),
   starts_at: z.string().datetime().optional().nullable(),
   ends_at: z.string().datetime().optional().nullable(),
   client_notes: z.string().trim().max(2000).optional().nullable(),
@@ -97,6 +164,28 @@ const ownerCampaignSchema = z.object({
 });
 
 const ownerCampaignPatchSchema = ownerCampaignSchema.partial();
+
+function assertCampaignOperationalReadiness(campaign = {}) {
+  const status = String(campaign.status || "DRAFT").toUpperCase();
+  if (!["ACTIVE", "SCHEDULED"].includes(status)) return;
+  const startsAt = campaign.starts_at ? new Date(campaign.starts_at) : null;
+  const endsAt = campaign.ends_at ? new Date(campaign.ends_at) : null;
+  if (!String(campaign.objective || "").trim()) {
+    throw badRequest("Antes de activar o programar la campaña, define el objetivo comercial.");
+  }
+  if (!startsAt || Number.isNaN(startsAt.getTime()) || !endsAt || Number.isNaN(endsAt.getTime())) {
+    throw badRequest("Antes de activar o programar la campaña, define fecha de inicio y cierre.");
+  }
+  if (endsAt <= startsAt) {
+    throw badRequest("La fecha de cierre debe ser posterior a la fecha de inicio.");
+  }
+  if (Number(campaign.budget_total || 0) <= 0) {
+    throw badRequest("Antes de activar o programar la campaña, registra una inversión mayor que cero.");
+  }
+  if (!Array.isArray(campaign.launch_channels) || !campaign.launch_channels.length) {
+    throw badRequest("Antes de activar o programar la campaña, selecciona al menos un canal.");
+  }
+}
 
 const salesSnapshotSchema = z.object({
   period_type: z.enum(["BEFORE", "DURING", "AFTER"]),
@@ -107,11 +196,18 @@ const salesSnapshotSchema = z.object({
   notes: z.string().trim().max(2000).optional().nullable(),
 });
 
+const lifecycleReasonSchema = z.object({
+  reason: z.string().trim().min(3).max(1000),
+  idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
+});
+
 const businessProfileSchema = z.object({
   name: z.string().trim().min(2).max(160).optional(),
   slogan: z.string().trim().max(180).optional().nullable(),
   contact_name: z.string().trim().max(160).optional().nullable(),
   contact_email: z.string().trim().email().optional().nullable(),
+  communication_sender_name: z.string().trim().max(160).optional().nullable(),
+  communication_sender_email: z.string().trim().email().max(220).optional().nullable(),
   phone: z.string().trim().max(40).optional().nullable(),
   website: z.string().trim().max(220).optional().nullable(),
   city: z.string().trim().max(120).optional().nullable(),
@@ -119,6 +215,30 @@ const businessProfileSchema = z.object({
   affiliate_point_amount_cop: z.number().positive().optional().nullable(),
   affiliate_referral_points_rate: z.number().positive().optional().nullable(),
   affiliate_referral_points_rounding: z.enum(["floor", "ceil"]).optional().nullable(),
+  affiliate_referral_registration_points: z.number().int().min(0).max(1000000).optional().nullable(),
+  affiliate_referral_purchase_points: z.number().int().min(0).max(1000000).optional().nullable(),
+  rms_risk_recovery_authorizations: z.object({
+    discount: z.object({
+      enabled: z.boolean().optional().default(false),
+      max_percent: z.number().min(0).max(100).optional().default(0),
+    }).optional().default({}),
+    two_for_one: z.object({
+      enabled: z.boolean().optional().default(false),
+      label: z.string().trim().max(180).optional().nullable(),
+    }).optional().default({}),
+    gift: z.object({
+      enabled: z.boolean().optional().default(false),
+      label: z.string().trim().max(180).optional().nullable(),
+    }).optional().default({}),
+    benefits: z.array(z.object({
+      id: z.string().trim().min(1).max(120),
+      enabled: z.boolean().optional().default(true),
+      type: z.enum(["DISCOUNT", "GIFT", "BONUS", "OTHER"]).default("OTHER"),
+      label: z.string().trim().min(1).max(180),
+      value: z.number().min(0).max(100000000).optional().default(0),
+      detail: z.string().trim().max(500).optional().nullable(),
+    })).max(100).optional().default([]),
+  }).optional(),
   logo_data_url: z.string().trim().max(2_000_000).optional().nullable(),
   ticket_frame_data_url: z.string().trim().max(2_500_000).optional().nullable(),
 });
@@ -166,30 +286,66 @@ const customerAcquisitionSaleSchema = z.object({
   sale_amount: z.number().positive(),
   currency: z.string().trim().max(12).default("COP"),
   acquisition_source: z.enum(acquisitionSourceOptions),
+  acquisition_channel_id: z.string().uuid().optional().nullable(),
   acquisition_channel: z.string().trim().max(180).optional().nullable(),
   referred_affiliate_id: z.string().uuid().optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
 
+const inventoryTaxClassificationSchema = z.enum(["EXEMPT", "EXCLUDED", "VAT_0", "VAT_5", "VAT_8", "VAT_11", "VAT_19"]);
+
 const inventoryProductSchema = z.object({
+  internal_id: z.string().trim().min(2).max(100).optional().nullable(),
   sku: z.string().trim().max(80).optional().nullable(),
   barcode: z.string().trim().max(120).optional().nullable(),
   name: z.string().trim().min(2).max(180),
   description: z.string().trim().max(1200).optional().nullable(),
   category: z.string().trim().max(120).optional().nullable(),
+  category_id: z.string().uuid().optional().nullable(),
+  category_internal_id: z.string().trim().min(2).max(100).optional().nullable(),
+  subcategory: z.string().trim().max(120).optional().nullable(),
+  subcategory_id: z.string().uuid().optional().nullable(),
+  subcategory_internal_id: z.string().trim().min(2).max(100).optional().nullable(),
   brand: z.string().trim().max(120).optional().nullable(),
+  brand_id: z.string().uuid().optional().nullable(),
+  brand_internal_id: z.string().trim().min(2).max(100).optional().nullable(),
   unit_price: z.number().min(0).default(0),
+  price_before_tax: z.number().min(0).optional(),
+  tax_classification: inventoryTaxClassificationSchema.default("EXEMPT"),
+  tax_base_id: z.string().uuid().optional().nullable(),
+  tax_base: z.string().trim().max(120).optional().nullable(),
+  healthy_tax_id: z.string().uuid().optional().nullable(),
+  healthy_tax: z.string().trim().max(120).optional().nullable(),
   cost_price: z.number().min(0).optional().nullable(),
   currency: z.string().trim().max(12).default("COP"),
   stock_quantity: z.number().min(0).default(0),
   min_stock_quantity: z.number().min(0).default(0),
   unit_label: z.string().trim().max(40).default("unidad"),
+  unit_id: z.string().uuid().optional().nullable(),
+  unit_internal_id: z.string().trim().min(2).max(100).optional().nullable(),
   status: z.enum(["ACTIVE", "INACTIVE", "ARCHIVED"]).default("ACTIVE"),
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
 
 const inventoryProductPatchSchema = inventoryProductSchema.partial();
+
+const inventoryProductCsvImportSchema = z.object({
+  products: z.array(inventoryProductSchema).min(1).max(500),
+});
+
+const inventoryCategorySchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  internal_id: z.string().trim().min(2).max(100),
+});
+
+const inventorySubcategorySchema = inventoryCategorySchema.extend({
+  category_id: z.string().uuid(),
+});
+
+const inventoryReferenceSchema = inventoryCategorySchema.extend({
+  rate: z.number().min(0).max(1).optional(),
+});
 
 const acquisitionChannelSchema = z.object({
   name: z.string().trim().min(2).max(160),
@@ -239,6 +395,10 @@ const acquisitionChannelEffortSchema = z.object({
   currency: z.string().trim().max(12).default("COP"),
   creative_url: nullableText(800).optional(),
   source_url: nullableText(800).optional(),
+  attribution_model: z.enum(["DIRECT_LINK", "TRACKED_LINK", "LEGACY_WINDOW"]).default("LEGACY_WINDOW"),
+  interactive_activation_id: z.string().uuid().optional().nullable(),
+  lead_capture_activation_id: z.string().uuid().optional().nullable(),
+  digital_asset_id: z.string().uuid().optional().nullable(),
   notes: nullableText(1600).optional(),
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
@@ -271,6 +431,7 @@ const competitorProductSchema = z.object({
   competitor_id: z.string().uuid().optional().nullable(),
   competitor_name: z.string().trim().min(2).max(160),
   product_name: z.string().trim().min(2).max(180),
+  unit_of_measure: nullableText(40).optional().default("unidad"),
   category: nullableText(120),
   competitor_price: z.number().min(0),
   previous_price: z.number().min(0).optional().nullable(),
@@ -446,6 +607,8 @@ const competitorTaskSchema = z.object({
 
 const competitorTaskPatchSchema = competitorTaskSchema.partial();
 
+const normalizeManualLeadPriority = (value) => String(value || "MEDIUM").trim().toUpperCase() === "URGENT" ? "HIGH" : value;
+
 const manualLeadSchema = z.object({
   name: z.string().trim().min(2).max(160),
   email: z.preprocess(
@@ -456,16 +619,22 @@ const manualLeadSchema = z.object({
     z.string().email().max(180).nullable()
   ),
   phone: nullableText(40),
+  document_type: z.enum(["CC", "CE", "TI", "NIT", "PASSPORT", "PEP", "OTHER"]).optional().nullable(),
+  document_id: nullableText(80),
   company: nullableText(180),
   job_title: nullableText(160),
   source: z.string().trim().min(2).max(120).default("Manual"),
   source_detail: nullableText(220),
+  branch_id: z.string().uuid().optional().nullable(),
+  commercial_owner_user_id: z.string().uuid().optional().nullable(),
+  acquisition_channel_id: z.string().uuid().optional().nullable(),
+  acquisition_channel: nullableText(180),
   interest: nullableText(500),
   importance_reason: nullableText(1000),
   preferred_channel: nullableText(120),
   preferred_contact_time: nullableText(120),
   status: z.enum(["NEW", "CONTACTED", "FOLLOW_UP", "CONVERTED", "LOST"]).default("NEW"),
-  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+  priority: z.preprocess(normalizeManualLeadPriority, z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM")),
   notes: nullableText(2000),
 });
 
@@ -502,6 +671,21 @@ function businessIdFor(req) {
     throw forbidden("This user is not assigned to a business.");
   }
   return req.user.business_id;
+}
+
+async function commercialOwnerForBusiness(businessId, userId, db = query) {
+  if (!userId) return null;
+  const result = await db(
+    `select id, full_name, email, role
+       from app_users
+      where id = $1
+        and business_id = $2
+        and is_active = true
+        and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')`,
+    [userId, businessId]
+  );
+  if (!result.rowCount) throw badRequest("El responsable comercial no existe o no está activo en este negocio.");
+  return result.rows[0];
 }
 
 function requireBusinessOwner(req) {
@@ -770,6 +954,32 @@ function cleanSetting(value) {
   return value === null || value === undefined ? "" : String(value).trim();
 }
 
+function riskRecoveryAuthorizationsFromSettings(settings = {}) {
+  const configured = settings?.rms_risk_recovery_authorizations || {};
+  return {
+    discount: {
+      enabled: Boolean(configured.discount?.enabled),
+      max_percent: Math.min(100, Math.max(0, Number(configured.discount?.max_percent || 0))),
+    },
+    two_for_one: {
+      enabled: Boolean(configured.two_for_one?.enabled),
+      label: cleanSetting(configured.two_for_one?.label),
+    },
+    gift: {
+      enabled: Boolean(configured.gift?.enabled),
+      label: cleanSetting(configured.gift?.label),
+    },
+    benefits: Array.isArray(configured.benefits) ? configured.benefits.map((benefit, index) => ({
+      id: cleanSetting(benefit?.id) || `benefit-${index + 1}`,
+      enabled: benefit?.enabled !== false,
+      type: cleanSetting(benefit?.type).toUpperCase() || "OTHER",
+      label: cleanSetting(benefit?.label),
+      value: Math.max(0, Number(benefit?.value || 0)),
+      detail: cleanSetting(benefit?.detail),
+    })).filter((benefit) => benefit.label) : [],
+  };
+}
+
 function wantsLogoPayload(req) {
   return ["1", "true", "yes"].includes(String(req.query.includeLogo || "").toLowerCase());
 }
@@ -785,11 +995,14 @@ function businessProfileFromRow(row, user = null, options = {}) {
     slogan: settings.slogan || settings.tagline || "",
     contact_name: settings.contact_name || "",
     contact_email: settings.contact_email || settings.email || "",
+    communication_sender_name: settings.communication_sender_name || row.name || "",
+    communication_sender_email: settings.communication_sender_email || "",
     phone: settings.phone || "",
     website: settings.website || "",
     city: settings.city || "",
     address: settings.address || "",
     affiliate_points: rulesFromSettings(settings),
+    rms_risk_recovery_authorizations: riskRecoveryAuthorizationsFromSettings(settings),
     commercial_deal: settings.commercial_deal || null,
     logo_data_url: includeLogo ? (settings.logo_data_url || "") : "",
     has_logo_data_url: Boolean(row.has_logo_data_url ?? settings.logo_data_url),
@@ -892,7 +1105,7 @@ async function updateBusinessProfile(req, res, next) {
     const businessId = businessIdFor(req);
     const body = validate(businessProfileSchema, req.body);
     const existing = await query(
-      "select id, name from businesses where id = $1 and is_active = true",
+      "select id, name, settings from businesses where id = $1 and is_active = true",
       [businessId]
     );
     const current = existing.rows[0];
@@ -905,6 +1118,8 @@ async function updateBusinessProfile(req, res, next) {
       "contact_name",
       "slogan",
       "contact_email",
+      "communication_sender_name",
+      "communication_sender_email",
       "phone",
       "website",
       "city",
@@ -916,10 +1131,18 @@ async function updateBusinessProfile(req, res, next) {
         settingsPatch[key] = cleanSetting(body[key]);
       }
     });
+    if (Object.prototype.hasOwnProperty.call(body, "logo_data_url") || Object.prototype.hasOwnProperty.call(body, "ticket_frame_data_url")) {
+      const currentMediaBytes = Buffer.byteLength(current.settings?.logo_data_url || "") + Buffer.byteLength(current.settings?.ticket_frame_data_url || "");
+      const nextMediaBytes = Buffer.byteLength(Object.prototype.hasOwnProperty.call(body, "logo_data_url") ? (body.logo_data_url || "") : (current.settings?.logo_data_url || ""))
+        + Buffer.byteLength(Object.prototype.hasOwnProperty.call(body, "ticket_frame_data_url") ? (body.ticket_frame_data_url || "") : (current.settings?.ticket_frame_data_url || ""));
+      await assertStorageQuotaForUpload(businessId, Math.max(0, nextMediaBytes - currentMediaBytes));
+    }
     if (
       Object.prototype.hasOwnProperty.call(body, "affiliate_point_amount_cop")
       || Object.prototype.hasOwnProperty.call(body, "affiliate_referral_points_rate")
       || Object.prototype.hasOwnProperty.call(body, "affiliate_referral_points_rounding")
+      || Object.prototype.hasOwnProperty.call(body, "affiliate_referral_registration_points")
+      || Object.prototype.hasOwnProperty.call(body, "affiliate_referral_purchase_points")
     ) {
       const currentSettings = await query(
         "select settings from businesses where id = $1 and is_active = true",
@@ -931,7 +1154,18 @@ async function updateBusinessProfile(req, res, next) {
         point_amount_cop: Number(body.affiliate_point_amount_cop || currentAffiliatePoints.point_amount_cop || 1000),
         referral_rate: Number(body.affiliate_referral_points_rate || currentAffiliatePoints.referral_rate || 1),
         referral_rounding: body.affiliate_referral_points_rounding || currentAffiliatePoints.referral_rounding || "floor",
+        referral_registration_points: Object.prototype.hasOwnProperty.call(body, "affiliate_referral_registration_points")
+          ? Number(body.affiliate_referral_registration_points || 0)
+          : Number(currentAffiliatePoints.referral_registration_points || 0),
+        referral_purchase_points: Object.prototype.hasOwnProperty.call(body, "affiliate_referral_purchase_points")
+          ? Number(body.affiliate_referral_purchase_points || 0)
+          : Number(currentAffiliatePoints.referral_purchase_points || 0),
       };
+    }
+    if (Object.prototype.hasOwnProperty.call(body, "rms_risk_recovery_authorizations")) {
+      settingsPatch.rms_risk_recovery_authorizations = riskRecoveryAuthorizationsFromSettings({
+        rms_risk_recovery_authorizations: body.rms_risk_recovery_authorizations,
+      });
     }
 
     const includeLogo = Object.prototype.hasOwnProperty.call(body, "logo_data_url")
@@ -966,7 +1200,7 @@ async function listBusinessUsers(req, res, next) {
     requireBusinessOwner(req);
     const result = await query(
       `select id, business_id, email, full_name, role, branch_id,
-              can_redeem_cross_business, is_active, created_at, updated_at
+              can_redeem_cross_business, is_active, deactivated_at, created_at, updated_at
        from app_users
        where business_id = $1
          and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')
@@ -1047,12 +1281,13 @@ async function updateBusinessUser(req, res, next) {
     const result = await query(
       `update app_users
        set is_active = $3,
+           deactivated_at = case when $3 then null else coalesce(deactivated_at, now()) end,
            updated_at = now()
        where id = $1
          and business_id = $2
          and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')
        returning id, business_id, email, full_name, role, branch_id,
-                 can_redeem_cross_business, is_active, created_at, updated_at`,
+                 can_redeem_cross_business, is_active, deactivated_at, created_at, updated_at`,
       [req.params.userId, businessId, body.is_active]
     );
     if (!result.rowCount) {
@@ -1074,6 +1309,7 @@ async function listBranches(req, res, next) {
        order by is_active desc, name asc`,
       [businessId]
     );
+    res.set("Cache-Control", "private, no-store");
     res.json({ branches: result.rows });
   } catch (error) {
     next(error);
@@ -2052,6 +2288,7 @@ function competitorProductPayload(body, userId) {
     competitor_id: body.competitor_id || null,
     competitor_name: body.competitor_name,
     product_name: body.product_name,
+    unit_of_measure: body.unit_of_measure || "unidad",
     category: body.category || null,
     competitor_price: Number(body.competitor_price || 0),
     previous_price: body.previous_price === null || body.previous_price === undefined ? null : Number(body.previous_price || 0),
@@ -2108,11 +2345,11 @@ async function createCompetitorProduct(req, res, next) {
       const competitor = await resolveCompetitorForProduct(client, businessId, payload, req.user.id);
       return client.query(
         `insert into business_competitor_products
-          (business_id, competitor_id, competitor_name, product_name, category, competitor_price, previous_price, our_price,
+          (business_id, competitor_id, competitor_name, product_name, unit_of_measure, category, competitor_price, previous_price, our_price,
            currency, channel, source_url, evidence_image_url, observed_at, availability, promotion_label,
            own_product_name, competitiveness_level, notes, is_active, metadata, created_by_user_id)
-         values ($1, $2, coalesce($3, $4), $5, $6, $7, $8, $9, $10, $11, $12, $13,
-                 coalesce($14::timestamptz, now()), $15, $16, $17, $18, $19, $20, $21::jsonb, $22)
+         values ($1, $2, coalesce($3, $4), $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+                 coalesce($15::timestamptz, now()), $16, $17, $18, $19, $20, $21, $22::jsonb, $23)
          returning *`,
         [
           businessId,
@@ -2120,6 +2357,7 @@ async function createCompetitorProduct(req, res, next) {
           payload.competitor_name,
           competitor?.name || null,
           payload.product_name,
+          payload.unit_of_measure,
           payload.category,
           payload.competitor_price,
           payload.previous_price,
@@ -2164,22 +2402,23 @@ async function updateCompetitorProduct(req, res, next) {
          set competitor_id = $3,
              competitor_name = coalesce($4, $5),
              product_name = $6,
-             category = $7,
-             competitor_price = $8,
-             previous_price = $9,
-             our_price = $10,
-             currency = $11,
-             channel = $12,
-             source_url = $13,
-             evidence_image_url = $14,
-             observed_at = coalesce($15::timestamptz, observed_at),
-             availability = $16,
-             promotion_label = $17,
-             own_product_name = $18,
-             competitiveness_level = $19,
-             notes = $20,
-             is_active = $21,
-             metadata = $22::jsonb,
+             unit_of_measure = $7,
+             category = $8,
+             competitor_price = $9,
+             previous_price = $10,
+             our_price = $11,
+             currency = $12,
+             channel = $13,
+             source_url = $14,
+             evidence_image_url = $15,
+             observed_at = coalesce($16::timestamptz, observed_at),
+             availability = $17,
+             promotion_label = $18,
+             own_product_name = $19,
+             competitiveness_level = $20,
+             notes = $21,
+             is_active = $22,
+             metadata = $23::jsonb,
              updated_at = now()
          where id = $1 and business_id = $2
          returning *`,
@@ -2190,6 +2429,7 @@ async function updateCompetitorProduct(req, res, next) {
           payload.competitor_name,
           competitor?.name || null,
           payload.product_name,
+          payload.unit_of_measure,
           payload.category,
           payload.competitor_price,
           payload.previous_price,
@@ -2240,6 +2480,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
     const body = validate(customerAcquisitionSaleSchema, req.body);
 
     const result = await withTransaction(async (client) => {
+      const acquisitionChannel = await resolveAcquisitionChannelReference(client, businessId, body);
       if (body.campaign_id) {
         const campaign = await client.query(
           "select id from campaigns where id = $1 and business_id = $2",
@@ -2259,6 +2500,8 @@ async function createCustomerAcquisitionSale(req, res, next) {
           throw badRequest("La sede o punto de consignación seleccionado no pertenece a este negocio o no está activo.");
         }
       }
+      const customerLink = await ensureCustomerContactForAcquisitionSale(client, businessId, req.user, body);
+      const customerContact = customerLink.customer;
 
       let referredAffiliate = null;
       const affiliateResult = await client.query(
@@ -2309,6 +2552,12 @@ async function createCustomerAcquisitionSale(req, res, next) {
       });
       const saleMetadata = {
         ...body.metadata,
+        acquisition_channel: {
+          id: acquisitionChannel.acquisition_channel_id,
+          name_snapshot: acquisitionChannel.acquisition_channel_name_snapshot,
+          slug_snapshot: acquisitionChannel.acquisition_channel_slug_snapshot,
+          source: acquisitionChannel.acquisition_channel_source,
+        },
         products: catalogSync.products,
         auto_created_products: catalogSync.autoCreatedProducts,
         matched_products: catalogSync.matchedProducts,
@@ -2317,6 +2566,11 @@ async function createCustomerAcquisitionSale(req, res, next) {
         conversion_source: "contact_center_sale",
         affiliate_match_source: autoMatchedAffiliate ? "customer_identity" : body.referred_affiliate_id ? "manual_selection" : null,
         related_affiliate_id: referredAffiliate?.id || null,
+        crm_source_type: "PLAYER",
+        crm_source_id: customerContact.id,
+        crm_lead_id: customerContact.id,
+        customer_contact_id: customerContact.id,
+        customer_contact_created: customerLink.created,
         ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
       };
 
@@ -2324,23 +2578,29 @@ async function createCustomerAcquisitionSale(req, res, next) {
         `insert into business_sales
           (business_id, campaign_id, customer_name, customer_phone, customer_email, customer_document_id,
            product_name, sale_amount, currency, seller_user_id, branch_id, acquisition_source,
-           acquisition_channel, referred_affiliate_id, referral_points_awarded, notes, metadata)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+           acquisition_channel, acquisition_channel_id, acquisition_channel_name_snapshot,
+           acquisition_channel_slug_snapshot, acquisition_channel_source, referred_affiliate_id,
+           referral_points_awarded, notes, metadata)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
          returning *`,
         [
           businessId,
           body.campaign_id || null,
-          body.customer_name || null,
-          body.customer_phone || null,
-          body.customer_email || null,
-          body.customer_document_id || null,
+          customerContact.name || body.customer_name || null,
+          customerContact.phone || body.customer_phone || null,
+          customerContact.email || body.customer_email || null,
+          customerContact.document_id || body.customer_document_id || null,
           body.product_name || null,
           body.sale_amount,
           body.currency || "COP",
           req.user.id,
           saleBranchId,
           body.acquisition_source,
-          body.acquisition_channel || null,
+          acquisitionChannel.acquisition_channel,
+          acquisitionChannel.acquisition_channel_id,
+          acquisitionChannel.acquisition_channel_name_snapshot,
+          acquisitionChannel.acquisition_channel_slug_snapshot,
+          acquisitionChannel.acquisition_channel_source,
           referredAffiliate?.id || null,
           referralPoints,
           body.notes || null,
@@ -2348,26 +2608,15 @@ async function createCustomerAcquisitionSale(req, res, next) {
         ]
       );
 
-      const matchParams = [
-        businessId,
-        body.customer_document_id || null,
-        body.customer_phone || null,
-        body.customer_email || null,
-      ];
       const convertedPlayers = await client.query(
         `update players
          set metadata = jsonb_set(
            jsonb_set(coalesce(metadata, '{}'::jsonb), '{commercial_status}', to_jsonb('BUYER'::text), true),
-           '{converted_sale_id}', to_jsonb($5::text), true
+           '{converted_sale_id}', to_jsonb($3::text), true
          )
-         where business_id = $1
-           and (
-             ($2::text is not null and nullif(document_id, '') = $2)
-             or ($3::text is not null and nullif(phone, '') = $3)
-             or ($4::text is not null and lower(nullif(email, '')) = lower($4))
-           )
+         where business_id = $1 and id = $2
          returning id`,
-        [...matchParams, saleResult.rows[0].id]
+        [businessId, customerContact.id, saleResult.rows[0].id]
       );
       const convertedManual = await client.query(
         `update business_manual_leads
@@ -2401,7 +2650,8 @@ async function createCustomerAcquisitionSale(req, res, next) {
             {
               sale_id: saleResult.rows[0].id,
               acquisition_source: body.acquisition_source,
-              acquisition_channel: body.acquisition_channel || null,
+              acquisition_channel: acquisitionChannel.acquisition_channel,
+              acquisition_channel_id: acquisitionChannel.acquisition_channel_id,
               referred_customer: body.customer_name || null,
               affiliate_match_source: autoMatchedAffiliate ? "customer_identity" : "manual_selection",
               ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
@@ -2422,6 +2672,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
 
       return {
         sale: saleResult.rows[0],
+        customer: { id: customerContact.id, name: customerContact.name, created: customerLink.created },
         conversion: {
           players: convertedPlayers.rowCount,
           manual_leads: convertedManual.rowCount,
@@ -2479,6 +2730,7 @@ function emptyChannelMetrics() {
     qr_generated: 0,
     redemptions: 0,
     sales: 0,
+    unique_customers: 0,
     revenue: 0,
   };
 }
@@ -2496,6 +2748,7 @@ function decorateChannel(row = {}, metrics = emptyChannelMetrics(), breakdown = 
   const investment = Number(row.period_budget || 0);
   const revenue = Number(metrics.revenue || 0);
   const sales = Number(metrics.sales || 0);
+  const uniqueCustomers = Number(metrics.unique_customers || 0);
   const leads = Number(metrics.leads || 0);
   const redemptions = Number(metrics.redemptions || 0);
   const qrGenerated = Number(metrics.qr_generated || 0);
@@ -2509,7 +2762,8 @@ function decorateChannel(row = {}, metrics = emptyChannelMetrics(), breakdown = 
       revenue,
       investment,
       roi: safeRoi(revenue, investment),
-      cac: sales > 0 ? Number((investment / sales).toFixed(2)) : null,
+      unique_customers: uniqueCustomers,
+      cac: uniqueCustomers > 0 ? Number((investment / uniqueCustomers).toFixed(2)) : null,
       conversion_rate: leads > 0 ? Number(((sales / leads) * 100).toFixed(1)) : 0,
       redemption_rate: qrGenerated > 0 ? Number(((redemptions / qrGenerated) * 100).toFixed(1)) : 0,
       efficiency_label: channelEfficiencyLabel({ revenue, sales, leads, roi: safeRoi(revenue, investment) }),
@@ -2522,20 +2776,21 @@ async function channelCampaignBreakdownRows(businessId, filters = {}) {
   const { start, end } = filters;
   const campaignId = filters.campaign_id || null;
   const result = await query(
-    `with sales_by_campaign_channel as (
+    `with sales as (${canonicalSalesUnionSql()}),
+     sales_by_campaign_channel as (
        select
-         coalesce(nullif(bs.acquisition_channel, ''), bs.acquisition_source, 'Sin canal') as channel,
-         bs.campaign_id,
+         coalesce(nullif(s.acquisition_channel, ''), s.acquisition_source, 'QR_REDEMPTION') as channel,
+         s.campaign_id,
          coalesce(c.name, 'Sin campana') as campaign_name,
          count(*)::int as sales,
-         coalesce(sum(bs.sale_amount), 0)::numeric(14, 2) as revenue
-       from business_sales bs
-       left join campaigns c on c.id = bs.campaign_id and c.business_id = bs.business_id
-       where bs.business_id = $1
-         and bs.created_at >= $2::timestamptz
-         and bs.created_at <= $3::timestamptz
-         and ($4::uuid is null or bs.campaign_id = $4::uuid)
-       group by channel, bs.campaign_id, c.name
+         coalesce(sum(s.sale_amount), 0)::numeric(14, 2) as revenue
+       from sales s
+       left join campaigns c on c.id = s.campaign_id and c.business_id = s.business_id
+       where s.business_id = $1
+         and s.created_at >= $2::timestamptz
+         and s.created_at <= $3::timestamptz
+         and ($4::uuid is null or s.campaign_id = $4::uuid)
+       group by channel, s.campaign_id, c.name
      ),
      campaign_budget as (
        select id, coalesce(budget_total, 0)::numeric(14, 2) as campaign_investment
@@ -2573,6 +2828,7 @@ async function channelActivityRows(businessId, filters = {}) {
          0::int as qr_generated,
          0::int as redemptions,
          0::int as sales,
+         0::int as unique_customers,
          0::numeric(14, 2) as revenue
        from players p
        left join lateral (
@@ -2596,6 +2852,7 @@ async function channelActivityRows(businessId, filters = {}) {
          0::int as qr_generated,
          0::int as redemptions,
          0::int as sales,
+         0::int as unique_customers,
          0::numeric(14, 2) as revenue
        from business_manual_leads ml
        where ml.business_id = $1
@@ -2612,6 +2869,7 @@ async function channelActivityRows(businessId, filters = {}) {
          count(distinct q.id)::int as qr_generated,
          0::int as redemptions,
          0::int as sales,
+         0::int as unique_customers,
          0::numeric(14, 2) as revenue
        from qr_codes q
        left join qr_batches qb on qb.id = q.batch_id and qb.business_id = q.business_id
@@ -2629,6 +2887,7 @@ async function channelActivityRows(businessId, filters = {}) {
          0::int as qr_generated,
          count(distinct rd.id)::int as redemptions,
          0::int as sales,
+         0::int as unique_customers,
          0::numeric(14, 2) as revenue
        from redemptions rd
        left join qr_codes q on q.id = rd.qr_code_id
@@ -2642,17 +2901,18 @@ async function channelActivityRows(businessId, filters = {}) {
        union all
 
        select
-         coalesce(nullif(bs.acquisition_channel, ''), bs.acquisition_source, 'Sin canal') as channel,
+         coalesce(nullif(s.acquisition_channel, ''), s.acquisition_source, 'Sin canal') as channel,
          0::int as leads,
          0::int as qr_generated,
          0::int as redemptions,
          count(*)::int as sales,
-         coalesce(sum(bs.sale_amount), 0)::numeric(14, 2) as revenue
-       from business_sales bs
-       where bs.business_id = $1
-         and bs.created_at >= $2::timestamptz
-         and bs.created_at <= $3::timestamptz
-         and ($4::uuid is null or bs.campaign_id = $4::uuid)
+         count(distinct s.customer_key)::int as unique_customers,
+         coalesce(sum(s.sale_amount), 0)::numeric(14, 2) as revenue
+       from (${canonicalSalesUnionSql()}) s
+       where s.business_id = $1
+         and s.created_at >= $2::timestamptz
+         and s.created_at <= $3::timestamptz
+         and ($4::uuid is null or s.campaign_id = $4::uuid)
        group by channel
      )
      select channel,
@@ -2660,6 +2920,7 @@ async function channelActivityRows(businessId, filters = {}) {
             sum(qr_generated)::int as qr_generated,
             sum(redemptions)::int as redemptions,
             sum(sales)::int as sales,
+            sum(unique_customers)::int as unique_customers,
             coalesce(sum(revenue), 0)::numeric(14, 2) as revenue
      from activity
      where nullif(channel, '') is not null
@@ -2675,7 +2936,7 @@ async function listAcquisitionChannels(req, res, next) {
     const businessId = businessIdFor(req);
     const { start, end } = channelDateRange(req.query);
     const campaignId = req.query.campaign_id || null;
-    const [channelsResult, activityRows, campaignBreakdownRows] = await Promise.all([
+    const [channelsResult, activityRows, campaignBreakdownRows, linkedEffortsResult] = await Promise.all([
       query(
         `select *
          from business_acquisition_channels
@@ -2686,7 +2947,31 @@ async function listAcquisitionChannels(req, res, next) {
       ),
       channelActivityRows(businessId, { start, end, campaign_id: campaignId }),
       channelCampaignBreakdownRows(businessId, { start, end, campaign_id: campaignId }),
+      query(
+        `select e.*, ch.name channel_name, ch.slug channel_slug, ch.platform channel_platform
+           from business_acquisition_channel_efforts e
+           join business_acquisition_channels ch on ch.id=e.channel_id and ch.business_id=e.business_id
+          where e.business_id=$1 and e.status <> 'ARCHIVED'
+            and ($2::uuid is null or e.campaign_id=$2::uuid)`,
+        [businessId, campaignId]
+      ),
     ]);
+
+    const exactMetricsByChannel = new Map();
+    await Promise.all(linkedEffortsResult.rows.map(async (effort) => {
+      if (!effort.interactive_activation_id && !effort.lead_capture_activation_id && !effort.digital_asset_id) return;
+      const metrics = await metricsForChannelEffort(businessId, effort, { start, end });
+      const current = exactMetricsByChannel.get(String(effort.channel_id)) || emptyChannelMetrics();
+      exactMetricsByChannel.set(String(effort.channel_id), {
+        ...current,
+        leads: Number(current.leads || 0) + Number(metrics.leads || 0),
+        qr_generated: Number(current.qr_generated || 0) + Number(metrics.qr_generated || 0),
+        redemptions: Number(current.redemptions || 0) + Number(metrics.redemptions || 0),
+        sales: Number(current.sales || 0) + Number(metrics.sales || 0),
+        unique_customers: Number(current.unique_customers || 0) + Number(metrics.unique_customers || metrics.leads || 0),
+        revenue: Number(current.revenue || 0) + Number(metrics.revenue || 0),
+      });
+    }));
 
     const metricsBySlug = new Map();
     activityRows.forEach((row) => {
@@ -2698,6 +2983,7 @@ async function listAcquisitionChannels(req, res, next) {
         qr_generated: current.qr_generated + Number(row.qr_generated || 0),
         redemptions: current.redemptions + Number(row.redemptions || 0),
         sales: current.sales + Number(row.sales || 0),
+        unique_customers: current.unique_customers + Number(row.unique_customers || 0),
         revenue: current.revenue + Number(row.revenue || 0),
       });
     });
@@ -2749,7 +3035,17 @@ async function listAcquisitionChannels(req, res, next) {
       .sort((a, b) => Number(b.revenue || 0) - Number(a.revenue || 0));
 
     const directory = channelsResult.rows.map((row) => {
-      const { metrics, key } = readMetricsForChannel(row);
+      const { metrics: historicalMetrics, key } = readMetricsForChannel(row);
+      const exactMetrics = exactMetricsByChannel.get(String(row.id)) || emptyChannelMetrics();
+      const metrics = {
+        ...historicalMetrics,
+        leads: Math.max(Number(historicalMetrics.leads || 0), Number(exactMetrics.leads || 0)),
+        qr_generated: Math.max(Number(historicalMetrics.qr_generated || 0), Number(exactMetrics.qr_generated || 0)),
+        redemptions: Math.max(Number(historicalMetrics.redemptions || 0), Number(exactMetrics.redemptions || 0)),
+        sales: Math.max(Number(historicalMetrics.sales || 0), Number(exactMetrics.sales || 0)),
+        unique_customers: Math.max(Number(historicalMetrics.unique_customers || 0), Number(exactMetrics.unique_customers || 0)),
+        revenue: Math.max(Number(historicalMetrics.revenue || 0), Number(exactMetrics.revenue || 0)),
+      };
       const { rows: breakdownRows } = readBreakdownForChannel(row);
       channelMatchKeys(row).forEach((matchKey) => {
         metricsBySlug.delete(matchKey);
@@ -2802,10 +3098,11 @@ async function listAcquisitionChannels(req, res, next) {
       acc.qr_generated += Number(row.metrics?.qr_generated || 0);
       acc.redemptions += Number(row.metrics?.redemptions || 0);
       acc.sales += Number(row.metrics?.sales || 0);
+      acc.unique_customers += Number(row.metrics?.unique_customers || 0);
       acc.revenue += Number(row.metrics?.revenue || 0);
       acc.investment += Number(row.metrics?.investment || 0);
       return acc;
-    }, { leads: 0, qr_generated: 0, redemptions: 0, sales: 0, revenue: 0, investment: 0 });
+    }, { leads: 0, qr_generated: 0, redemptions: 0, sales: 0, unique_customers: 0, revenue: 0, investment: 0 });
 
     res.json({
       channels: allRows,
@@ -2814,7 +3111,7 @@ async function listAcquisitionChannels(req, res, next) {
       totals: {
         ...totals,
         roi: safeRoi(totals.revenue, totals.investment),
-        cac: totals.sales > 0 ? Number((totals.investment / totals.sales).toFixed(2)) : null,
+        cac: totals.unique_customers > 0 ? Number((totals.investment / totals.unique_customers).toFixed(2)) : null,
       },
       campaign_channel_matrix: allRows.flatMap((channel) => (
         channel.campaign_breakdown || []
@@ -2968,8 +3265,8 @@ function normalizeChannelEffortRow(row = {}) {
 function channelEffortDateRange(row = {}) {
   const start = new Date(row.starts_at || row.published_at || row.created_at || Date.now());
   const end = row.ends_at ? new Date(row.ends_at) : new Date();
-  if (Number.isNaN(start.getTime())) throw badRequest("Fecha inicial del esfuerzo invÃ¡lida.");
-  if (Number.isNaN(end.getTime())) throw badRequest("Fecha final del esfuerzo invÃ¡lida.");
+if (Number.isNaN(start.getTime())) throw badRequest("Fecha inicial del esfuerzo inválida.");
+if (Number.isNaN(end.getTime())) throw badRequest("Fecha final del esfuerzo inválida.");
   if (end < start) {
     const sameDayEnd = new Date(start);
     sameDayEnd.setHours(23, 59, 59, 999);
@@ -3007,6 +3304,45 @@ async function assertCampaignForBusinessOrNull(campaignId, businessId) {
   return campaignId;
 }
 
+async function assertEffortAttributionTargets(body, businessId, excludeEffortId = null) {
+  const targets = [body.interactive_activation_id, body.lead_capture_activation_id, body.digital_asset_id].filter(Boolean);
+  if (targets.length > 1) throw badRequest("Una atraccion solo puede tener una fuente medible principal.");
+  if (String(body.status || "ACTIVE").toUpperCase() === "ACTIVE" && targets.length === 0) {
+    throw badRequest("Una atraccion activa debe tener una fuente medible exclusiva para atribuir personas y ventas.");
+  }
+  if (body.interactive_activation_id) {
+    const found = await query("select id from interactive_activations where id = $1 and company_id = $2", [body.interactive_activation_id, businessId]);
+    if (!found.rowCount) throw notFound("Activacion interactiva no encontrada para este negocio.");
+  }
+  if (body.lead_capture_activation_id) {
+    const found = await query("select id, asset_id from lead_capture_activations where id = $1 and business_id = $2", [body.lead_capture_activation_id, businessId]);
+    if (!found.rowCount) throw notFound("Captura de activo no encontrada para este negocio.");
+    if (body.digital_asset_id && found.rows[0].asset_id !== body.digital_asset_id) throw badRequest("El activo no pertenece a la captura seleccionada.");
+  }
+  if (body.digital_asset_id) {
+    const found = await query("select id from digital_assets where id = $1 and business_id = $2 and is_active = true", [body.digital_asset_id, businessId]);
+    if (!found.rowCount) throw notFound("Activo digital no encontrado para este negocio.");
+  }
+  if (targets.length) {
+    const duplicate = await query(
+      `select id, title from business_acquisition_channel_efforts
+       where business_id = $1 and status <> 'ARCHIVED' and ($5::uuid is null or id <> $5::uuid)
+         and (($2::uuid is not null and interactive_activation_id = $2::uuid)
+           or ($3::uuid is not null and lead_capture_activation_id = $3::uuid)
+           or ($4::uuid is not null and digital_asset_id = $4::uuid)) limit 1`,
+      [businessId, body.interactive_activation_id || null, body.lead_capture_activation_id || null, body.digital_asset_id || null, excludeEffortId]
+    );
+    if (duplicate.rowCount) throw badRequest(`Esta fuente ya esta atribuida a "${duplicate.rows[0].title}". Archivala o edita su vinculo antes de reasignarla.`);
+  }
+}
+
+function effortTrackedUrl(row = {}) {
+  const base = String(env.publicAppUrl || "").replace(/\/$/, "");
+  if (row.interactive_activation_slug) return `${base}/activacion/${encodeURIComponent(row.interactive_activation_slug)}?qori_ref=${encodeURIComponent(row.tracking_token)}&qori_source=acquisition`;
+  if (row.lead_capture_public_token) return `${base}/captura/${encodeURIComponent(row.lead_capture_public_token)}?qori_ref=${encodeURIComponent(row.tracking_token)}&qori_source=acquisition`;
+  return row.source_url || null;
+}
+
 async function salesDetailForChannelEffort(businessId, effort, start, end) {
   const terms = channelEffortSearchTerms(effort);
   if (!terms.length) {
@@ -3037,6 +3373,7 @@ async function salesDetailForChannelEffort(businessId, effort, start, end) {
        )::int as rebuy_sales
      from business_sales bs
      where bs.business_id = $1
+       and coalesce(bs.sale_status, 'PAID') = 'PAID'
        and bs.created_at >= $2::timestamptz
        and bs.created_at <= $3::timestamptz
        and ($4::uuid is null or bs.campaign_id = $4::uuid)
@@ -3053,8 +3390,252 @@ async function salesDetailForChannelEffort(businessId, effort, start, end) {
   };
 }
 
-async function metricsForChannelEffort(businessId, effort = {}) {
+async function metricsForCommunicationChannelEffort(businessId, effort, communicationId) {
+  const result = await query(
+    `with communication_events as (
+       select
+         count(*) filter (where event_type = 'LEAD_CAPTURED')::int as leads,
+         count(*) filter (where event_type = 'ACTIVATION_STARTED')::int as starts,
+         count(*) filter (where event_type = 'ACTIVATION_COMPLETED')::int as completions
+       from business_communication_events
+       where business_id = $1 and communication_id::text = $2
+     ), attributed_sales as (
+       select bs.*
+       from business_sales bs
+       left join qr_codes q on q.id = bs.qr_code_id
+       where bs.business_id = $1
+         and coalesce(bs.sale_status, 'PAID') = 'PAID'
+         and (q.metadata->>'communication_id' = $2 or bs.metadata->>'communication_id' = $2)
+     )
+     select
+       coalesce((select leads from communication_events), 0)::int as leads,
+       coalesce((select starts from communication_events), 0)::int as qr_generated,
+       coalesce((select completions from communication_events), 0)::int as redemptions,
+       count(*)::int as sales,
+       coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue,
+       count(distinct coalesce(nullif(customer_document_id, ''), nullif(customer_phone, ''), nullif(customer_email, ''), id::text))::int as unique_customers,
+       count(*) filter (
+         where referred_affiliate_id is not null
+            or acquisition_source = 'FRIEND_REFERRAL'
+            or acquisition_channel ilike '%refer%'
+       )::int as referral_sales,
+       count(*) filter (
+         where exists (
+           select 1
+           from business_sales previous
+           where previous.business_id = attributed_sales.business_id
+             and coalesce(previous.sale_status, 'PAID') = 'PAID'
+             and previous.created_at < attributed_sales.created_at
+             and (
+               (nullif(attributed_sales.customer_document_id, '') is not null and previous.customer_document_id = attributed_sales.customer_document_id)
+               or (nullif(attributed_sales.customer_phone, '') is not null and previous.customer_phone = attributed_sales.customer_phone)
+               or (nullif(attributed_sales.customer_email, '') is not null and previous.customer_email = attributed_sales.customer_email)
+             )
+         )
+       )::int as rebuy_sales
+     from attributed_sales`,
+    [businessId, communicationId]
+  );
+  const row = result.rows[0] || {};
+  const investment = Number(effort.budget_amount || 0);
+  const sales = Number(row.sales || 0);
+  const revenue = Number(row.revenue || 0);
+  const leads = Number(row.leads || 0);
   const { start, end } = channelEffortDateRange(effort);
+  return {
+    leads,
+    qr_generated: Number(row.qr_generated || 0),
+    redemptions: Number(row.redemptions || 0),
+    sales,
+    revenue,
+    investment,
+    cac: Number(row.unique_customers || 0) > 0 ? Number((investment / Number(row.unique_customers)).toFixed(2)) : null,
+    net_revenue: Number((revenue - investment).toFixed(2)),
+    roi: safeRoi(revenue, investment),
+    conversion_rate: leads > 0 ? Number(((sales / leads) * 100).toFixed(1)) : 0,
+    rebuy_sales: Number(row.rebuy_sales || 0),
+    referral_sales: Number(row.referral_sales || 0),
+    unique_customers: Number(row.unique_customers || 0),
+    date_window: { start_date: start.toISOString(), end_date: end.toISOString() },
+  };
+}
+
+async function acquisitionEffortSales(businessId, effort = {}, range = {}, limit = 300) {
+  const fallbackRange = channelEffortDateRange(effort);
+  const start = range.start instanceof Date ? range.start : fallbackRange.start;
+  const end = range.end instanceof Date ? range.end : fallbackRange.end;
+  const result = await query(
+    `with effort_leads as (
+       select p.player_id lead_id, min(p.created_at) attributed_at
+         from interactive_activation_participants p
+        where $3::uuid is not null and p.company_id=$1 and p.activation_id=$3 and p.player_id is not null
+        group by p.player_id
+       union all
+       select s.lead_id, min(s.created_at)
+         from lead_capture_submissions s
+        where s.business_id=$1 and s.lead_id is not null
+          and (($4::uuid is not null and s.activation_id=$4) or ($5::uuid is not null and s.asset_id=$5))
+        group by s.lead_id
+       union all
+       select ae.lead_id, min(ae.occurred_at)
+         from business_acquisition_events ae
+        where ae.business_id=$1 and ae.effort_id=$2 and ae.lead_id is not null
+        group by ae.lead_id
+     ), normalized_effort_leads as (
+       select lead_id, min(attributed_at) attributed_at from effort_leads group by lead_id
+     ), attributed_qr_sales as (
+       select ('ATTRIBUTED:' || sale.id::text) sale_key, sale.id sale_id, sale.player_id lead_id,
+              coalesce(p.name, 'Comprador por QR') customer_name, p.email customer_email, p.phone customer_phone,
+              p.document_id customer_document_id, sale.product_or_service product_name,
+              sale.sale_amount, sale.currency, sale.created_at, sale.qr_code_id,
+              case when q.metadata->>'acquisition_effort_id'=$2::text then 'QR_TRACKED'
+                   when reward.qr_code_id is not null then 'ACTIVATION_QR'
+                   else 'LEAD_CONVERSION' end attribution_reason
+         from attributed_sales sale
+         left join qr_codes q on q.id=sale.qr_code_id and q.business_id=sale.business_id
+         left join players p on p.id=sale.player_id and p.business_id=sale.business_id
+         left join interactive_activation_rewards reward on reward.qr_code_id=sale.qr_code_id and reward.activation_id=$3
+         left join normalized_effort_leads lead_touch on lead_touch.lead_id=sale.player_id and sale.created_at >= lead_touch.attributed_at
+        where sale.business_id=$1 and sale.created_at between $6 and $7
+          and (q.metadata->>'acquisition_effort_id'=$2::text or reward.qr_code_id is not null or lead_touch.lead_id is not null)
+     ), business_sale_candidates as (
+       select ('BUSINESS:' || sale.id::text) sale_key, sale.id sale_id,
+              coalesce(matched_lead.lead_id, q.player_id) lead_id,
+              sale.customer_name, sale.customer_email, sale.customer_phone, sale.customer_document_id,
+              sale.product_name, sale.sale_amount, sale.currency, sale.created_at, sale.qr_code_id,
+              case when sale.metadata->>'acquisition_effort_id'=$2::text or q.metadata->>'acquisition_effort_id'=$2::text then 'TRACKED_SALE'
+                   when reward.qr_code_id is not null then 'ACTIVATION_QR'
+                   else 'LEAD_CONVERSION' end attribution_reason
+         from business_sales sale
+         left join qr_codes q on q.id=sale.qr_code_id and q.business_id=sale.business_id
+         left join interactive_activation_rewards reward on reward.qr_code_id=sale.qr_code_id and reward.activation_id=$3
+         left join lateral (
+           select lead_touch.lead_id
+             from normalized_effort_leads lead_touch
+             join players lead on lead.id=lead_touch.lead_id and lead.business_id=sale.business_id
+            where sale.created_at >= lead_touch.attributed_at and (
+              sale.metadata->>'crm_lead_id'=lead_touch.lead_id::text
+              or sale.metadata->>'crm_source_id'=lead_touch.lead_id::text
+              or (nullif(sale.customer_document_id,'') is not null and sale.customer_document_id=lead.document_id)
+              or (nullif(sale.customer_email,'') is not null and lower(sale.customer_email)=lower(lead.email))
+              or (nullif(sale.customer_phone,'') is not null and sale.customer_phone=lead.phone)
+            )
+            order by lead_touch.attributed_at desc limit 1
+         ) matched_lead on true
+        where sale.business_id=$1 and coalesce(sale.sale_status,'PAID')='PAID' and sale.created_at between $6 and $7
+          and not exists (select 1 from attributed_sales legacy where legacy.business_id=sale.business_id and legacy.qr_code_id=sale.qr_code_id)
+          and (sale.metadata->>'acquisition_effort_id'=$2::text or q.metadata->>'acquisition_effort_id'=$2::text
+               or reward.qr_code_id is not null or matched_lead.lead_id is not null)
+     ), effort_sales as (
+       select * from attributed_qr_sales
+       union all
+       select * from business_sale_candidates
+     )
+     select effort_sales.*, count(*) over()::int total_sales,
+            coalesce(sum(sale_amount) over(),0)::numeric(14,2) total_revenue
+       from effort_sales
+      order by created_at desc
+      limit $8`,
+    [businessId, effort.id, effort.interactive_activation_id || null, effort.lead_capture_activation_id || null,
+      effort.digital_asset_id || null, start.toISOString(), end.toISOString(), Math.max(1, Math.min(Number(limit) || 300, 1000))]
+  );
+  return {
+    rows: result.rows,
+    total_sales: Number(result.rows[0]?.total_sales || 0),
+    total_revenue: Number(result.rows[0]?.total_revenue || 0),
+  };
+}
+
+async function acquisitionEffortLeads(businessId, effort = {}, range = {}) {
+  const fallbackRange = channelEffortDateRange(effort);
+  const start = range.start instanceof Date ? range.start : fallbackRange.start;
+  const end = range.end instanceof Date ? range.end : fallbackRange.end;
+  const result = await query(
+    `with raw_leads as (
+       select p.id signal_id, p.player_id lead_id, p.name, p.email, p.phone, p.document document_id,
+              p.created_at captured_at, p.status lead_status, 'INTERACTIVE_ACTIVATION'::text source_kind,
+              ia.title source_name,
+              exists(select 1 from interactive_activation_rewards ar where ar.participant_id=p.id) qr_generated,
+              exists(select 1 from interactive_activation_rewards ar join redemptions rd on rd.qr_code_id=ar.qr_code_id where ar.participant_id=p.id) redeemed,
+              false downloaded
+         from interactive_activation_participants p
+         join interactive_activations ia on ia.id=p.activation_id and ia.company_id=p.company_id
+        where $2::uuid is not null and p.company_id=$1 and p.activation_id=$2 and p.created_at between $5 and $6
+       union all
+       select s.id, s.lead_id,
+              coalesce(nullif(p.name,''),nullif(s.form_data->>'name',''),nullif(concat_ws(' ',s.form_data->>'first_name',s.form_data->>'last_name'),''),'Lead capturado'),
+              coalesce(nullif(p.email,''),nullif(s.form_data->>'email','')),
+              coalesce(nullif(p.phone,''),nullif(s.form_data->>'phone','')),
+              coalesce(nullif(p.document_id,''),nullif(s.form_data->>'document_id','')),
+              s.created_at, case when s.lead_was_existing then 'existing' else 'new' end,
+              'LEAD_CAPTURE'::text, coalesce(lca.name,da.title,'Activo digital'), false, false,
+              exists(select 1 from digital_asset_downloads dl where dl.submission_id=s.id and dl.downloaded_at is not null)
+         from lead_capture_submissions s
+         left join players p on p.id=s.lead_id and p.business_id=s.business_id
+         left join lead_capture_activations lca on lca.id=s.activation_id and lca.business_id=s.business_id
+         left join digital_assets da on da.id=s.asset_id and da.business_id=s.business_id
+        where s.business_id=$1 and (($3::uuid is not null and s.activation_id=$3) or ($4::uuid is not null and s.asset_id=$4))
+          and s.created_at between $5 and $6
+     ) select distinct on (coalesce(lead_id::text, lower(nullif(email,'')), nullif(phone,''), signal_id::text)) *
+         from raw_leads
+        order by coalesce(lead_id::text, lower(nullif(email,'')), nullif(phone,''), signal_id::text), captured_at desc`,
+    [businessId, effort.interactive_activation_id || null, effort.lead_capture_activation_id || null,
+      effort.digital_asset_id || null, start.toISOString(), end.toISOString()]
+  );
+  return result.rows;
+}
+
+async function metricsForChannelEffort(businessId, effort = {}, reportingRange = null) {
+  if (effort.interactive_activation_id || effort.lead_capture_activation_id || effort.digital_asset_id) {
+    const range = reportingRange || channelEffortDateRange(effort);
+    const exact = await query(
+      `with event_metrics as (
+         select count(*) filter (where event_type='VIEW')::int as views,
+                count(*) filter (where event_type='START')::int as starts
+         from business_acquisition_events where business_id=$1 and effort_id=$2 and occurred_at between $6 and $7
+       ), interactive_metrics as (
+         select count(distinct p.id)::int as leads,
+                count(distinct p.id) filter (where p.status in ('completed','rewarded'))::int as completions,
+                count(distinct r.qr_code_id)::int as qr_generated,
+                count(distinct rd.id)::int as redemptions,
+                count(distinct d.id) filter (where d.downloaded_at is not null)::int as downloads,
+                count(distinct s.id) filter (where s.sale_status='PAID')::int as sales,
+                coalesce((select sum(bs.sale_amount) from business_sales bs join interactive_activation_rewards ar on ar.qr_code_id=bs.qr_code_id where ar.activation_id=$3 and bs.business_id=$1 and bs.sale_status='PAID'),0)::numeric as revenue
+         from interactive_activation_participants p
+         left join interactive_activation_rewards r on r.participant_id=p.id
+         left join redemptions rd on rd.qr_code_id=r.qr_code_id
+         left join interactive_activation_asset_downloads d on d.participant_id=p.id
+         left join business_sales s on s.qr_code_id=r.qr_code_id
+         where $3::uuid is not null and p.company_id=$1 and p.activation_id=$3 and p.created_at between $6 and $7
+       ), capture_metrics as (
+         select count(distinct s.id)::int as leads,
+                count(distinct d.id) filter (where d.downloaded_at is not null)::int as downloads
+         from lead_capture_submissions s
+         left join digital_asset_downloads d on d.submission_id=s.id
+         where s.business_id=$1 and (($4::uuid is not null and s.activation_id=$4) or ($5::uuid is not null and s.asset_id=$5)) and s.created_at between $6 and $7
+       )
+       select coalesce(e.views,0)::int as views, coalesce(e.starts,0)::int as starts,
+              (coalesce(i.leads,0)+coalesce(c.leads,0))::int as leads, coalesce(i.completions,0)::int as completions,
+              coalesce(i.qr_generated,0)::int as qr_generated, coalesce(i.redemptions,0)::int as redemptions,
+              (coalesce(i.downloads,0)+coalesce(c.downloads,0))::int as downloads,
+              coalesce(i.sales,0)::int as sales, coalesce(i.revenue,0)::numeric as revenue
+       from event_metrics e cross join interactive_metrics i cross join capture_metrics c`,
+      [businessId, effort.id, effort.interactive_activation_id || null, effort.lead_capture_activation_id || null,
+        effort.digital_asset_id || null, range.start.toISOString(), range.end.toISOString()]
+    );
+    const row = exact.rows[0] || {};
+    const attributedSales = await acquisitionEffortSales(businessId, effort, range, 1);
+    const investment = Number(effort.budget_amount || 0);
+    const revenue = Number(attributedSales.total_revenue || row.revenue || 0);
+    const leads = Number(row.leads || 0);
+    const sales = Number(attributedSales.total_sales || row.sales || 0);
+    return { ...row, sales, revenue, investment, net_revenue: revenue - investment, roi: safeRoi(revenue, investment), cac: leads ? Number((investment / leads).toFixed(2)) : null, conversion_rate: leads ? Number(((sales / leads) * 100).toFixed(1)) : 0, unique_customers: leads, rebuy_sales: 0, referral_sales: 0, attribution_quality: "EXACT_LINK" };
+  }
+  const communicationId = String(effort?.metadata?.communication_id || "").trim();
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(communicationId)) {
+    return metricsForCommunicationChannelEffort(businessId, effort, communicationId);
+  }
+  const { start, end } = reportingRange || channelEffortDateRange(effort);
   const effortKeys = new Set(channelMatchKeys({
     slug: effort.channel_slug,
     name: effort.channel_name,
@@ -3083,6 +3664,7 @@ async function metricsForChannelEffort(businessId, effort = {}) {
     sales,
     revenue,
     investment,
+    cac: salesDetail.unique_customers > 0 ? Number((investment / salesDetail.unique_customers).toFixed(2)) : null,
     net_revenue: Number((revenue - investment).toFixed(2)),
     roi: safeRoi(revenue, investment),
     conversion_rate: Number(activity.leads || 0) > 0 ? Number(((sales / Number(activity.leads || 0)) * 100).toFixed(1)) : 0,
@@ -3103,8 +3685,8 @@ async function listAcquisitionChannelEfforts(req, res, next) {
     const campaignId = req.query.campaign_id || null;
     const startDate = req.query.start_date ? new Date(req.query.start_date) : null;
     const endDate = req.query.end_date ? new Date(req.query.end_date) : null;
-    if (startDate && Number.isNaN(startDate.getTime())) throw badRequest("Fecha inicial invÃ¡lida.");
-    if (endDate && Number.isNaN(endDate.getTime())) throw badRequest("Fecha final invÃ¡lida.");
+if (startDate && Number.isNaN(startDate.getTime())) throw badRequest("Fecha inicial inválida.");
+if (endDate && Number.isNaN(endDate.getTime())) throw badRequest("Fecha final inválida.");
     if (endDate) endDate.setHours(23, 59, 59, 999);
     const result = await query(
       `select e.*,
@@ -3113,46 +3695,148 @@ async function listAcquisitionChannelEfforts(req, res, next) {
               ch.platform as channel_platform,
               ch.channel_type,
               c.name as campaign_name
+              , ia.title as interactive_activation_name, ia.public_slug as interactive_activation_slug
+              , lca.name as lead_capture_activation_name, lca.public_token as lead_capture_public_token
+              , da.title as digital_asset_name
        from business_acquisition_channel_efforts e
        join business_acquisition_channels ch on ch.id = e.channel_id and ch.business_id = e.business_id
        left join campaigns c on c.id = e.campaign_id and c.business_id = e.business_id
+       left join interactive_activations ia on ia.id=e.interactive_activation_id and ia.company_id=e.business_id
+       left join lead_capture_activations lca on lca.id=e.lead_capture_activation_id and lca.business_id=e.business_id
+       left join digital_assets da on da.id=e.digital_asset_id and da.business_id=e.business_id
        where e.business_id = $1
          and e.status <> 'ARCHIVED'
          and ($2::uuid is null or e.channel_id = $2::uuid)
          and ($3::uuid is null or e.campaign_id = $3::uuid)
-         and ($4::timestamptz is null or coalesce(e.ends_at, e.starts_at, e.published_at, e.created_at) >= $4::timestamptz)
-         and ($5::timestamptz is null or coalesce(e.starts_at, e.published_at, e.created_at) <= $5::timestamptz)
        order by coalesce(e.starts_at, e.published_at, e.created_at) desc, e.updated_at desc
        limit 200`,
       [
         businessId,
         channelId,
         campaignId,
-        startDate ? startDate.toISOString() : null,
-        endDate ? endDate.toISOString() : null,
       ]
     );
-    const efforts = await Promise.all(result.rows.map(async (row) => normalizeChannelEffortRow({
-      ...row,
-      metrics: await metricsForChannelEffort(businessId, row),
-    })));
+    const reportingRange = startDate || endDate ? {
+      start: startDate || new Date("2000-01-01T00:00:00.000Z"),
+      end: endDate || new Date(),
+    } : null;
+    const efforts = await Promise.all(result.rows.map(async (row) => normalizeChannelEffortRow({ ...row, tracked_url: effortTrackedUrl(row), metrics: await metricsForChannelEffort(businessId, row, reportingRange) })));
     const totals = efforts.reduce((acc, effort) => {
       acc.efforts += 1;
       acc.investment += Number(effort.metrics?.investment || 0);
       acc.leads += Number(effort.metrics?.leads || 0);
       acc.sales += Number(effort.metrics?.sales || 0);
+      acc.unique_customers += Number(effort.metrics?.unique_customers || 0);
       acc.revenue += Number(effort.metrics?.revenue || 0);
       acc.rebuy_sales += Number(effort.metrics?.rebuy_sales || 0);
       acc.referral_sales += Number(effort.metrics?.referral_sales || 0);
       return acc;
-    }, { efforts: 0, investment: 0, leads: 0, sales: 0, revenue: 0, rebuy_sales: 0, referral_sales: 0 });
+    }, { efforts: 0, investment: 0, leads: 0, sales: 0, unique_customers: 0, revenue: 0, rebuy_sales: 0, referral_sales: 0 });
     res.json({
       efforts,
       totals: {
         ...totals,
         roi: safeRoi(totals.revenue, totals.investment),
+        cac: totals.unique_customers > 0
+          ? Number((totals.investment / totals.unique_customers).toFixed(2))
+          : null,
         net_revenue: Number((totals.revenue - totals.investment).toFixed(2)),
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getAcquisitionChannelInsights(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const { start, end } = channelDateRange(req.query);
+    const channelResult = await query(
+      "select * from business_acquisition_channels where id=$1 and business_id=$2 limit 1",
+      [req.params.channelId, businessId]
+    );
+    if (!channelResult.rowCount) throw notFound("Medio de adquisicion no encontrado.");
+    const effortsResult = await query(
+      `select e.*, ch.name channel_name, ch.slug channel_slug, ch.platform channel_platform,
+              c.name campaign_name, ia.title interactive_activation_name, ia.public_slug interactive_activation_slug,
+              lca.name lead_capture_activation_name, lca.public_token lead_capture_public_token, da.title digital_asset_name
+         from business_acquisition_channel_efforts e
+         join business_acquisition_channels ch on ch.id=e.channel_id and ch.business_id=e.business_id
+         left join campaigns c on c.id=e.campaign_id and c.business_id=e.business_id
+         left join interactive_activations ia on ia.id=e.interactive_activation_id and ia.company_id=e.business_id
+         left join lead_capture_activations lca on lca.id=e.lead_capture_activation_id and lca.business_id=e.business_id
+         left join digital_assets da on da.id=e.digital_asset_id and da.business_id=e.business_id
+        where e.business_id=$1 and e.channel_id=$2 and e.status <> 'ARCHIVED'
+        order by coalesce(e.starts_at,e.published_at,e.created_at) desc`,
+      [businessId, req.params.channelId]
+    );
+    const insightRows = await Promise.all(effortsResult.rows.map(async (row) => {
+      const [metrics, leads, sales] = await Promise.all([
+        metricsForChannelEffort(businessId, row, { start, end }),
+        acquisitionEffortLeads(businessId, row, { start, end }),
+        acquisitionEffortSales(businessId, row, { start, end }, 300),
+      ]);
+      return { effort: normalizeChannelEffortRow({ ...row, tracked_url: effortTrackedUrl(row), metrics }), leads, sales };
+    }));
+    const efforts = insightRows.map((item) => item.effort);
+    const leads = insightRows.flatMap(({ effort, leads: effortLeads, sales }) => effortLeads.map((lead) => {
+      const leadSales = sales.rows.filter((sale) => (
+        (lead.lead_id && String(sale.lead_id || "") === String(lead.lead_id))
+        || (lead.email && sale.customer_email && String(sale.customer_email).toLowerCase() === String(lead.email).toLowerCase())
+        || (lead.phone && sale.customer_phone && String(sale.customer_phone) === String(lead.phone))
+        || (lead.document_id && sale.customer_document_id && String(sale.customer_document_id) === String(lead.document_id))
+      ));
+      return {
+        ...lead,
+        contact_id: lead.lead_id || null,
+        effort_id: effort.id,
+        effort_title: effort.title,
+        source_name: lead.source_name || effort.interactive_activation_name || effort.lead_capture_activation_name || effort.digital_asset_name,
+        attributed_sales: leadSales.length,
+        attributed_revenue: leadSales.reduce((sum, sale) => sum + Number(sale.sale_amount || 0), 0),
+      };
+    }));
+    res.json({
+      channel: channelResult.rows[0],
+      efforts,
+      leads,
+      filters: { start_date: start.toISOString(), end_date: end.toISOString() },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getAcquisitionChannelEffortInsights(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const { start, end } = channelDateRange(req.query);
+    const result = await query(
+      `select e.*, ch.name channel_name, ch.slug channel_slug, ch.platform channel_platform,
+              c.name campaign_name, ia.title interactive_activation_name, ia.public_slug interactive_activation_slug,
+              lca.name lead_capture_activation_name, lca.public_token lead_capture_public_token, da.title digital_asset_name
+         from business_acquisition_channel_efforts e
+         join business_acquisition_channels ch on ch.id=e.channel_id and ch.business_id=e.business_id
+         left join campaigns c on c.id=e.campaign_id and c.business_id=e.business_id
+         left join interactive_activations ia on ia.id=e.interactive_activation_id and ia.company_id=e.business_id
+         left join lead_capture_activations lca on lca.id=e.lead_capture_activation_id and lca.business_id=e.business_id
+         left join digital_assets da on da.id=e.digital_asset_id and da.business_id=e.business_id
+        where e.id=$1 and e.business_id=$2 and e.status <> 'ARCHIVED' limit 1`,
+      [req.params.effortId, businessId]
+    );
+    if (!result.rowCount) throw notFound("Atraccion no encontrada.");
+    const row = result.rows[0];
+    const [metrics, leads, sales] = await Promise.all([
+      metricsForChannelEffort(businessId, row, { start, end }),
+      acquisitionEffortLeads(businessId, row, { start, end }),
+      acquisitionEffortSales(businessId, row, { start, end }, 300),
+    ]);
+    res.json({
+      effort: normalizeChannelEffortRow({ ...row, tracked_url: effortTrackedUrl(row), metrics }),
+      leads: leads.map((lead) => ({ ...lead, contact_id: lead.lead_id || null })),
+      sales: sales.rows,
+      filters: { start_date: start.toISOString(), end_date: end.toISOString() },
     });
   } catch (error) {
     next(error);
@@ -3165,12 +3849,14 @@ async function createAcquisitionChannelEffort(req, res, next) {
     const body = validate(acquisitionChannelEffortSchema, req.body);
     await requireAcquisitionChannelForBusiness(body.channel_id, businessId);
     await assertCampaignForBusinessOrNull(body.campaign_id, businessId);
+    await assertEffortAttributionTargets(body, businessId);
     const result = await query(
       `insert into business_acquisition_channel_efforts
         (business_id, channel_id, campaign_id, title, description, objective, content_type, status,
-         published_at, starts_at, ends_at, budget_amount, currency, creative_url, source_url, notes, metadata, created_by_user_id)
+         published_at, starts_at, ends_at, budget_amount, currency, creative_url, source_url, notes, metadata, created_by_user_id,
+         attribution_model, interactive_activation_id, lead_capture_activation_id, digital_asset_id)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9::timestamptz, $10::timestamptz, $11::timestamptz,
-               $12, $13, $14, $15, $16, $17::jsonb, $18)
+               $12, $13, $14, $15, $16, $17::jsonb, $18, $19, $20, $21, $22)
        returning *`,
       [
         businessId,
@@ -3191,6 +3877,10 @@ async function createAcquisitionChannelEffort(req, res, next) {
         body.notes || null,
         JSON.stringify(body.metadata || {}),
         req.user.id,
+        body.attribution_model || (body.interactive_activation_id || body.lead_capture_activation_id || body.digital_asset_id ? "DIRECT_LINK" : "LEGACY_WINDOW"),
+        body.interactive_activation_id || null,
+        body.lead_capture_activation_id || null,
+        body.digital_asset_id || null,
       ]
     );
     res.status(201).json({ effort: normalizeChannelEffortRow(result.rows[0]) });
@@ -3211,6 +3901,7 @@ async function updateAcquisitionChannelEffort(req, res, next) {
     const merged = { ...existing.rows[0], ...body };
     await requireAcquisitionChannelForBusiness(merged.channel_id, businessId);
     await assertCampaignForBusinessOrNull(merged.campaign_id, businessId);
+    await assertEffortAttributionTargets(merged, businessId, req.params.effortId);
     const result = await query(
       `update business_acquisition_channel_efforts
        set channel_id = $3,
@@ -3229,6 +3920,10 @@ async function updateAcquisitionChannelEffort(req, res, next) {
            source_url = $16,
            notes = $17,
            metadata = $18::jsonb,
+           attribution_model = $19,
+           interactive_activation_id = $20,
+           lead_capture_activation_id = $21,
+           digital_asset_id = $22,
            updated_at = now()
        where id = $1 and business_id = $2
        returning *`,
@@ -3251,6 +3946,10 @@ async function updateAcquisitionChannelEffort(req, res, next) {
         merged.source_url || null,
         merged.notes || null,
         JSON.stringify(merged.metadata || {}),
+        merged.attribution_model || "LEGACY_WINDOW",
+        merged.interactive_activation_id || null,
+        merged.lead_capture_activation_id || null,
+        merged.digital_asset_id || null,
       ]
     );
     res.json({ effort: normalizeChannelEffortRow(result.rows[0]) });
@@ -3368,9 +4067,10 @@ async function updateInventoryProductFromSale(client, businessId, item, product)
 async function createInventoryProductFromSale(client, businessId, userId, item, options = {}) {
   const result = await client.query(
     `insert into business_inventory_products
-      (business_id, sku, barcode, name, category, brand, unit_price, currency,
-       stock_quantity, min_stock_quantity, unit_label, status, metadata, created_by_user_id)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, 0, 0, 'unidad', 'ACTIVE', $9::jsonb, $10)
+      (business_id, internal_id, sku, barcode, name, category, brand, unit_price, price_before_tax,
+       tax_classification, currency, stock_quantity, min_stock_quantity, unit_label, status, metadata, created_by_user_id)
+     values ($1, concat('AUTO-', replace(gen_random_uuid()::text, '-', '')), $2, $3, $4, $5, $6, $7, $7,
+             'EXEMPT', $8, 0, 0, 'unidad', 'ACTIVE', $9::jsonb, $10)
      returning *`,
     [
       businessId,
@@ -3441,47 +4141,101 @@ function inventorySearchWhere(search, params) {
   params.push(`%${text.toLowerCase()}%`);
   const index = params.length;
   return `and (
-    lower(name) like $${index}
-    or lower(coalesce(sku, '')) like $${index}
-    or lower(coalesce(barcode, '')) like $${index}
-    or lower(coalesce(category, '')) like $${index}
-    or lower(coalesce(brand, '')) like $${index}
+    lower(product.name) like $${index}
+    or lower(coalesce(product.internal_id, '')) like $${index}
+    or lower(coalesce(product.sku, '')) like $${index}
+    or lower(coalesce(product.barcode, '')) like $${index}
+    or lower(coalesce(product.category, '')) like $${index}
+    or lower(coalesce(product.brand, '')) like $${index}
   )`;
 }
 
+function inventoryTaxRate(classification = "EXEMPT") {
+  return {
+    EXEMPT: 0,
+    EXCLUDED: 0,
+    VAT_0: 0,
+    VAT_5: 0.05,
+    VAT_8: 0.08,
+    VAT_11: 0.11,
+    VAT_19: 0.19,
+  }[classification] ?? 0;
+}
+
+function inventorySellingPrice(priceBeforeTax, classification = "EXEMPT", healthyTaxRate = 0) {
+  const base = Math.max(0, Number(priceBeforeTax || 0));
+  const total = base + (base * inventoryTaxRate(classification)) + (base * Math.max(0, Number(healthyTaxRate || 0)));
+  return Math.round((total + Number.EPSILON) * 100) / 100;
+}
+
+function inventoryEconomics(payload) {
+  const base = Math.max(0, Number(payload.price_before_tax || 0));
+  const cost = Math.max(0, Number(payload.cost_price || 0));
+  const taxBaseAmount = Math.round((base * inventoryTaxRate(payload.tax_classification) + Number.EPSILON) * 100) / 100;
+  const healthyTaxAmount = Math.round((base * Math.max(0, Number(payload.healthy_tax_rate || 0)) + Number.EPSILON) * 100) / 100;
+  return {
+    tax_base_amount: taxBaseAmount,
+    healthy_tax_amount: healthyTaxAmount,
+    utility_amount: Math.round((base - cost + Number.EPSILON) * 100) / 100,
+    margin_percent: base > 0 ? Math.round((((base - cost) / base) * 100 + Number.EPSILON) * 100) / 100 : 0,
+  };
+}
+
 async function ensureInventoryProductUnique(client, businessId, payload, excludeId = null) {
-  if (!payload.sku && !payload.barcode) return;
+  if (!payload.internal_id && !payload.sku && !payload.barcode) return;
   const duplicate = await client.query(
-    `select id, sku, barcode
+    `select id, internal_id, sku, barcode
      from business_inventory_products
      where business_id = $1
        and ($2::uuid is null or id <> $2)
        and (
-         ($3::text is not null and nullif(sku, '') = $3)
-         or ($4::text is not null and nullif(barcode, '') = $4)
+         ($3::text is not null and lower(nullif(internal_id, '')) = lower($3))
+         or ($4::text is not null and nullif(sku, '') = $4)
+         or ($5::text is not null and nullif(barcode, '') = $5)
        )
      limit 1`,
-    [businessId, excludeId, payload.sku || null, payload.barcode || null]
+    [businessId, excludeId, payload.internal_id || null, payload.sku || null, payload.barcode || null]
   );
   if (duplicate.rowCount) {
-    throw badRequest("Ya existe un producto con ese SKU o codigo de barras en este negocio.");
+    throw badRequest("Ya existe un producto con ese ID interno, SKU o codigo de barras en este negocio.");
   }
 }
 
 function mapInventoryPayload(body, userId) {
+  const taxClassification = body.tax_classification || "EXEMPT";
+  const priceBeforeTax = body.price_before_tax === undefined || body.price_before_tax === null
+    ? Number(body.unit_price || 0)
+    : Number(body.price_before_tax || 0);
   return {
+    internal_id: body.internal_id || null,
     sku: body.sku || null,
     barcode: body.barcode || null,
     name: body.name,
     description: body.description || null,
     category: body.category || null,
+    category_id: body.category_id || null,
+    category_internal_id: body.category_internal_id || null,
+    subcategory: body.subcategory || null,
+    subcategory_id: body.subcategory_id || null,
+    subcategory_internal_id: body.subcategory_internal_id || null,
     brand: body.brand || null,
-    unit_price: Number(body.unit_price || 0),
+    brand_id: body.brand_id || null,
+    brand_internal_id: body.brand_internal_id || null,
+    price_before_tax: priceBeforeTax,
+    tax_classification: taxClassification,
+    tax_base_id: body.tax_base_id || null,
+    tax_base: body.tax_base || null,
+    healthy_tax_id: body.healthy_tax_id || null,
+    healthy_tax: body.healthy_tax || null,
+    healthy_tax_rate: 0,
+    unit_price: inventorySellingPrice(priceBeforeTax, taxClassification, 0),
     cost_price: body.cost_price === null || body.cost_price === undefined ? null : Number(body.cost_price || 0),
     currency: body.currency || "COP",
     stock_quantity: Number(body.stock_quantity || 0),
     min_stock_quantity: Number(body.min_stock_quantity || 0),
     unit_label: body.unit_label || "unidad",
+    unit_id: body.unit_id || null,
+    unit_internal_id: body.unit_internal_id || null,
     status: body.status || "ACTIVE",
     metadata: body.metadata || {},
     created_by_user_id: userId || null,
@@ -3498,17 +4252,141 @@ async function listInventoryProducts(req, res, next) {
     const includeArchived = String(req.query.include_archived || "") === "true";
     params.push(limit);
     const result = await query(
-      `select *,
-              (stock_quantity <= min_stock_quantity) as low_stock
-       from business_inventory_products
-       where business_id = $1
-         ${includeArchived ? "" : "and status <> 'ARCHIVED'"}
+      `select product.*,
+              category.name as category_name,
+              category.internal_id as category_internal_id,
+              subcategory.name as subcategory_name,
+              subcategory.internal_id as subcategory_internal_id,
+              brand_reference.name as brand_name,
+              unit_reference.name as unit_name,
+              tax_base.name as tax_base_name,
+              tax_base.rate as tax_base_rate,
+              healthy_tax.name as healthy_tax_name,
+              healthy_tax.rate as healthy_tax_rate,
+              round((coalesce(product.price_before_tax, 0) - coalesce(product.cost_price, 0))::numeric, 2) as utility_amount,
+              case when coalesce(product.price_before_tax, 0) > 0 then round((((product.price_before_tax - coalesce(product.cost_price, 0)) / product.price_before_tax) * 100)::numeric, 2) else 0 end as margin_percent,
+              (product.stock_quantity <= product.min_stock_quantity) as low_stock,
+              exists (
+                select 1
+                  from business_sales sale
+                 where sale.business_id = product.business_id
+                   and (
+                     sale.inventory_product_id = product.id
+                     or exists (
+                       select 1
+                         from jsonb_array_elements(coalesce(sale.metadata->'products', '[]'::jsonb)) line
+                        where line->>'inventory_product_id' = product.id::text
+                     )
+                   )
+              ) as has_sales
+       from business_inventory_products product
+       left join business_product_categories category on category.id = product.category_id
+       left join business_product_subcategories subcategory on subcategory.id = product.subcategory_id
+       left join business_product_brands brand_reference on brand_reference.id = product.brand_id
+       left join business_product_units unit_reference on unit_reference.id = product.unit_id
+       left join business_product_tax_bases tax_base on tax_base.id = product.tax_base_id
+       left join business_product_healthy_taxes healthy_tax on healthy_tax.id = product.healthy_tax_id
+       where product.business_id = $1
+         ${includeArchived ? "" : "and product.status <> 'ARCHIVED'"}
          ${searchWhere}
-       order by status asc, updated_at desc, name asc
+       order by product.status asc, product.updated_at desc, product.name asc
        limit $${params.length}`,
       params
     );
     res.json({ products: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getInventoryProductInsights(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const productResult = await query(
+      `select product.*,
+              tax_base.name as tax_base_name,
+              tax_base.rate as tax_base_rate,
+              healthy_tax.name as healthy_tax_name,
+              healthy_tax.rate as healthy_tax_rate
+         from business_inventory_products product
+         left join business_product_tax_bases tax_base on tax_base.id = product.tax_base_id
+         left join business_product_healthy_taxes healthy_tax on healthy_tax.id = product.healthy_tax_id
+        where product.id = $1 and product.business_id = $2
+        limit 1`,
+      [req.params.productId, businessId]
+    );
+    if (!productResult.rowCount) throw badRequest("Producto de inventario no encontrado.");
+    const product = productResult.rows[0];
+    const insightResult = await query(
+      `with matched_sales as (
+         select bs.created_at,
+                coalesce(nullif(bs.customer_name, ''), 'Cliente sin identificar') as customer_name,
+                bs.customer_phone,
+                bs.customer_email,
+                coalesce(nullif(bs.customer_document_id, ''), nullif(bs.customer_email, ''), nullif(bs.customer_phone, ''), nullif(bs.customer_name, '')) as customer_key,
+                greatest(1, coalesce(nullif(line->>'quantity', '')::numeric, 1)) as quantity,
+                coalesce(nullif(line->>'line_total', '')::numeric, nullif(line->>'unit_price', '')::numeric, bs.sale_amount, 0)::numeric as revenue
+           from business_sales bs
+           cross join lateral jsonb_array_elements(coalesce(bs.metadata->'products', '[]'::jsonb)) as line
+          where bs.business_id = $1
+            and line->>'inventory_product_id' = $2
+         union all
+         select bs.created_at,
+                coalesce(nullif(bs.customer_name, ''), 'Cliente sin identificar') as customer_name,
+                bs.customer_phone,
+                bs.customer_email,
+                coalesce(nullif(bs.customer_document_id, ''), nullif(bs.customer_email, ''), nullif(bs.customer_phone, ''), nullif(bs.customer_name, '')) as customer_key,
+                1::numeric as quantity,
+                coalesce(bs.sale_amount, 0)::numeric as revenue
+           from business_sales bs
+          where bs.business_id = $1
+            and lower(coalesce(bs.product_name, '')) = lower($3)
+            and not exists (
+              select 1
+                from jsonb_array_elements(coalesce(bs.metadata->'products', '[]'::jsonb)) as line
+               where line->>'inventory_product_id' = $2
+            )
+       ),
+       timeline as (
+         select created_at::date as day,
+                count(*)::int as sales,
+                coalesce(sum(quantity), 0)::numeric as units,
+                coalesce(sum(revenue), 0)::numeric as revenue
+           from matched_sales
+          group by created_at::date
+          order by created_at::date asc
+       ),
+       customers as (
+         select customer_name,
+                max(customer_phone) as customer_phone,
+                max(customer_email) as customer_email,
+                count(*)::int as purchases,
+                coalesce(sum(quantity), 0)::numeric as units,
+                coalesce(sum(revenue), 0)::numeric as revenue,
+                max(created_at) as last_purchase
+           from matched_sales
+          group by customer_name, customer_key
+          order by revenue desc, last_purchase desc
+          limit 60
+       )
+       select jsonb_build_object(
+                'sales_count', (select count(*)::int from matched_sales),
+                'units_sold', (select coalesce(sum(quantity), 0)::numeric from matched_sales),
+                'revenue', (select coalesce(sum(revenue), 0)::numeric from matched_sales),
+                'customers_count', (select count(distinct nullif(customer_key, ''))::int from matched_sales)
+              ) as summary,
+              coalesce((select jsonb_agg(to_jsonb(timeline) order by day) from timeline), '[]'::jsonb) as timeline,
+              coalesce((select jsonb_agg(to_jsonb(customers)) from customers), '[]'::jsonb) as customers`,
+      [businessId, req.params.productId, product.name]
+    );
+    const insights = insightResult.rows[0] || {};
+    res.json({
+      product,
+      summary: insights.summary || { sales_count: 0, units_sold: 0, revenue: 0, customers_count: 0 },
+      timeline: Array.isArray(insights.timeline) ? insights.timeline : [],
+      customers: Array.isArray(insights.customers) ? insights.customers : [],
+    });
   } catch (error) {
     next(error);
   }
@@ -3530,28 +4408,40 @@ async function createInventoryProduct(req, res, next) {
     );
     const body = validate(inventoryProductSchema, req.body);
     const payload = mapInventoryPayload(body, req.user.id);
+    if (!payload.internal_id) throw badRequest("El ID interno del producto es obligatorio.");
     const result = await withTransaction(async (client) => {
+      Object.assign(payload, await resolveInventoryTaxonomy(client, businessId, payload));
       await ensureInventoryProductUnique(client, businessId, payload);
       return client.query(
         `insert into business_inventory_products
-          (business_id, sku, barcode, name, description, category, brand, unit_price, cost_price,
-           currency, stock_quantity, min_stock_quantity, unit_label, status, metadata, created_by_user_id)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb, $16)
+          (business_id, internal_id, sku, barcode, name, description, category, category_id, subcategory_id, brand, brand_id,
+           unit_price, price_before_tax, tax_classification, tax_base_id, healthy_tax_id, cost_price, currency, stock_quantity,
+           min_stock_quantity, unit_label, unit_id, status, metadata, created_by_user_id)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25)
          returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
         [
           businessId,
+          payload.internal_id,
           payload.sku,
           payload.barcode,
           payload.name,
           payload.description,
           payload.category,
+          payload.category_id,
+          payload.subcategory_id,
           payload.brand,
+          payload.brand_id,
           payload.unit_price,
+          payload.price_before_tax,
+          payload.tax_classification,
+          payload.tax_base_id,
+          payload.healthy_tax_id,
           payload.cost_price,
           payload.currency,
           payload.stock_quantity,
           payload.min_stock_quantity,
           payload.unit_label,
+          payload.unit_id,
           payload.status,
           JSON.stringify(payload.metadata),
           payload.created_by_user_id,
@@ -3559,6 +4449,101 @@ async function createInventoryProduct(req, res, next) {
       );
     });
     res.status(201).json({ product: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function importInventoryProductsCsv(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const body = validate(inventoryProductCsvImportSchema, req.body);
+    const incoming = body.products.map((product) => mapInventoryPayload(product, req.user.id));
+    const missingIds = incoming.filter((product) => !product.internal_id).map((product) => product.name);
+    if (missingIds.length) {
+      throw badRequest(`Cada fila debe incluir ID de producto. Falta en: ${missingIds.slice(0, 6).join(", ")}${missingIds.length > 6 ? "…" : ""}.`);
+    }
+    const incomingIds = new Set();
+    const repeatedIds = [];
+    for (const product of incoming) {
+      const key = String(product.internal_id).trim().toLowerCase();
+      if (incomingIds.has(key)) repeatedIds.push(product.internal_id);
+      incomingIds.add(key);
+    }
+    if (repeatedIds.length) {
+      throw badRequest(`El archivo repite ID de producto: ${[...new Set(repeatedIds)].slice(0, 6).join(", ")}. Corrige el CSV antes de importarlo.`);
+    }
+    const productCount = await query(
+      "select count(*)::int as total from business_inventory_products where business_id = $1 and status <> 'ARCHIVED'",
+      [businessId]
+    );
+    await assertLimitForBusiness(
+      businessId,
+      "gift_inventory_products",
+      Number(productCount.rows[0]?.total || 0) + incoming.length - 1,
+      "productos de inventario"
+    );
+    const result = await withTransaction(async (client) => {
+      const existingIds = await client.query(
+        `select internal_id
+           from business_inventory_products
+          where business_id = $1
+            and lower(internal_id) = any($2::text[])`,
+        [businessId, [...incomingIds]]
+      );
+      if (existingIds.rowCount) {
+        throw badRequest(`No se importó el archivo: estos ID de producto ya existen en Qori: ${existingIds.rows.map((row) => row.internal_id).join(", ")}. Corrige el archivo sin reemplazar productos existentes.`);
+      }
+      const imported = [];
+      const skipped = [];
+      const seenCodes = new Set();
+      for (const payload of incoming) {
+        const codes = [payload.sku && `sku:${payload.sku}`, payload.barcode && `barcode:${payload.barcode}`].filter(Boolean);
+        const repeatedInFile = codes.some((code) => seenCodes.has(code));
+        if (repeatedInFile) {
+          if (body.skip_duplicates) {
+            skipped.push({ name: payload.name, reason: "Código repetido dentro del archivo" });
+            continue;
+          }
+          throw badRequest(`El CSV repite SKU o código de barras para ${payload.name}.`);
+        }
+        codes.forEach((code) => seenCodes.add(code));
+        try {
+          Object.assign(payload, await resolveInventoryTaxonomy(client, businessId, payload));
+          await ensureInventoryProductUnique(client, businessId, payload);
+        } catch (error) {
+          if (body.skip_duplicates) {
+            skipped.push({ name: payload.name, reason: "SKU o código de barras ya existe" });
+            continue;
+          }
+          throw error;
+        }
+        const inserted = await client.query(
+          `insert into business_inventory_products
+            (business_id, internal_id, sku, barcode, name, description, category, category_id, subcategory_id, brand, brand_id,
+             unit_price, price_before_tax, tax_classification, tax_base_id, healthy_tax_id, cost_price, currency, stock_quantity,
+             min_stock_quantity, unit_label, unit_id, status, metadata, created_by_user_id)
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25)
+           returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
+          [
+            businessId, payload.internal_id, payload.sku, payload.barcode, payload.name, payload.description,
+            payload.category, payload.category_id, payload.subcategory_id, payload.brand, payload.brand_id, payload.unit_price,
+            payload.price_before_tax, payload.tax_classification, payload.tax_base_id, payload.healthy_tax_id, payload.cost_price, payload.currency,
+            payload.stock_quantity, payload.min_stock_quantity, payload.unit_label, payload.unit_id, payload.status,
+            JSON.stringify(payload.metadata), payload.created_by_user_id,
+          ]
+        );
+        imported.push(inserted.rows[0]);
+      }
+      return { imported, skipped };
+    });
+    res.status(201).json({
+      imported: result.imported.length,
+      skipped: result.skipped.length,
+      skipped_rows: result.skipped,
+      products: result.imported,
+    });
   } catch (error) {
     next(error);
   }
@@ -3588,30 +4573,41 @@ async function updateInventoryProduct(req, res, next) {
     }
     const payload = mapInventoryPayload({ ...existing.rows[0], ...body }, req.user.id);
     const result = await withTransaction(async (client) => {
+      Object.assign(payload, await resolveInventoryTaxonomy(client, businessId, payload));
       await ensureInventoryProductUnique(client, businessId, payload, req.params.productId);
       return client.query(
         `update business_inventory_products
-         set sku = $3, barcode = $4, name = $5, description = $6, category = $7, brand = $8,
-             unit_price = $9, cost_price = $10, currency = $11, stock_quantity = $12,
-             min_stock_quantity = $13, unit_label = $14, status = $15,
-             metadata = $16::jsonb, updated_at = now()
+         set internal_id = $3, sku = $4, barcode = $5, name = $6, description = $7, category = $8,
+             category_id = $9, subcategory_id = $10, brand = $11, brand_id = $12, unit_price = $13,
+             price_before_tax = $14, tax_classification = $15, tax_base_id = $16, healthy_tax_id = $17,
+             cost_price = $18, currency = $19, stock_quantity = $20, min_stock_quantity = $21, unit_label = $22,
+             unit_id = $23, status = $24, metadata = $25::jsonb, updated_at = now()
          where id = $1 and business_id = $2
          returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
         [
           req.params.productId,
           businessId,
+          payload.internal_id,
           payload.sku,
           payload.barcode,
           payload.name,
           payload.description,
           payload.category,
+          payload.category_id,
+          payload.subcategory_id,
           payload.brand,
+          payload.brand_id,
           payload.unit_price,
+          payload.price_before_tax,
+          payload.tax_classification,
+          payload.tax_base_id,
+          payload.healthy_tax_id,
           payload.cost_price,
           payload.currency,
           payload.stock_quantity,
           payload.min_stock_quantity,
           payload.unit_label,
+          payload.unit_id,
           payload.status,
           JSON.stringify(payload.metadata),
         ]
@@ -3627,15 +4623,45 @@ async function archiveInventoryProduct(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     await assertFeatureForRequest(req, businessId, "gift_inventory");
-    const result = await query(
-      `update business_inventory_products
-       set status = 'ARCHIVED', updated_at = now()
-       where id = $1 and business_id = $2
-       returning id`,
-      [req.params.productId, businessId]
-    );
-    if (!result.rowCount) throw badRequest("Producto de inventario no encontrado.");
-    res.json({ ok: true, id: req.params.productId });
+    const body = validate(lifecycleReasonSchema, req.body || {});
+    const result = await withTransaction(async (client) => {
+      const existing = await client.query(
+        "select id, name, status from business_inventory_products where id = $1 and business_id = $2 for update",
+        [req.params.productId, businessId]
+      );
+      if (!existing.rowCount) throw badRequest("Producto de inventario no encontrado.");
+      const product = existing.rows[0];
+      const usage = await client.query(
+        `select count(*)::int as total
+           from business_sales sale
+          where sale.business_id = $1
+            and (
+              sale.inventory_product_id = $2
+              or exists (
+                select 1
+                  from jsonb_array_elements(coalesce(sale.metadata->'products', '[]'::jsonb)) line
+                 where line->>'inventory_product_id' = $2::text
+              )
+            )`,
+        [businessId, product.id]
+      );
+      const salesCount = Number(usage.rows[0]?.total || 0);
+      if (salesCount > 0) {
+        throw badRequest(`No puedes eliminar este producto porque tiene ${salesCount} venta(s) o movimiento(s) asociado(s). Se conserva para proteger el historial.`);
+      }
+      await client.query(
+        "delete from business_inventory_products where id = $1 and business_id = $2",
+        [product.id, businessId]
+      );
+      await recordLifecycleEvent({
+        business_id: businessId, entity_type: "INVENTORY_PRODUCT", entity_id: product.id,
+        action: "DELETED", previous_status: product.status, next_status: "DELETED", reason: body.reason,
+        idempotency_key: body.idempotency_key || `inventory-delete:${product.id}`,
+        actor_user_id: req.user.id, metadata: { product_name: product.name },
+      }, client);
+      return { product, duplicate: false };
+    });
+    res.json({ ok: true, product: result.product, deleted: true, duplicate: result.duplicate });
   } catch (error) {
     next(error);
   }
@@ -3681,17 +4707,25 @@ async function createCampaign(req, res, next) {
       Number(activeCount.rows[0]?.total || 0),
       "campanas activas"
     );
+    const launchChannelRefs = await withTransaction((client) => resolveCampaignChannelReferences(
+      client,
+      businessId,
+      body.launch_channel_refs,
+      body.launch_channels || []
+    ));
+    const launchChannelNames = launchChannelRefs.map((channel) => channel.name_snapshot).filter(Boolean);
+    assertCampaignOperationalReadiness({ ...body, launch_channels: launchChannelNames });
 
     const result = await query(
       `insert into campaigns
         (business_id, name, slug, public_slug, type, objective, strategy_summary, status,
          starts_at, ends_at, budget_total, expected_sales_goal, expected_leads_goal,
          expected_redemptions_goal, launch_channels, client_notes, delivered_assets,
-         client_setup_completed_at, activated_at, metadata)
+         client_setup_completed_at, activated_at, launch_channel_refs, metadata)
        values ($1, $2, $3, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15, $16::jsonb,
          case when $7 in ('SCHEDULED', 'ACTIVE') then now() else null end,
          case when $7 = 'ACTIVE' then now() else null end,
-         $17::jsonb)
+         $17::jsonb, $18::jsonb)
        returning id`,
       [
         businessId,
@@ -3707,9 +4741,10 @@ async function createCampaign(req, res, next) {
         body.expected_sales_goal ?? null,
         body.expected_leads_goal ?? null,
         body.expected_redemptions_goal ?? null,
-        JSON.stringify(body.launch_channels || []),
+        JSON.stringify(launchChannelNames),
         body.client_notes || null,
         JSON.stringify(body.delivered_assets || {}),
+        JSON.stringify(launchChannelRefs),
         JSON.stringify({
           owner_created: true,
           creation_source: "business_portal",
@@ -3729,8 +4764,23 @@ async function updateCampaign(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     await assertFeatureForRequest(req, businessId, "campaign_reports");
-    await requireCampaignForBusiness(req.params.id, businessId);
+    const current = await requireCampaignForBusiness(req.params.id, businessId);
     const body = validate(ownerCampaignPatchSchema, req.body);
+    const hasLaunchChannels = Object.prototype.hasOwnProperty.call(body, "launch_channels")
+      || Object.prototype.hasOwnProperty.call(body, "launch_channel_refs");
+    const launchChannelRefs = hasLaunchChannels
+      ? await withTransaction((client) => resolveCampaignChannelReferences(client, businessId, body.launch_channel_refs, body.launch_channels || []))
+      : null;
+    const launchChannelNames = launchChannelRefs ? launchChannelRefs.map((channel) => channel.name_snapshot).filter(Boolean) : null;
+    assertCampaignOperationalReadiness({
+      ...current,
+      ...body,
+      objective: body.objective ?? current.objective,
+      starts_at: body.starts_at ?? current.starts_at,
+      ends_at: body.ends_at ?? current.ends_at,
+      budget_total: body.budget_total ?? current.budget_total,
+      launch_channels: launchChannelNames ?? current.launch_channels,
+    });
     const deliveredAssets = Object.prototype.hasOwnProperty.call(body, "delivered_assets")
       ? JSON.stringify(body.delivered_assets || {})
       : null;
@@ -3781,12 +4831,19 @@ async function updateCampaign(req, res, next) {
         body.expected_sales_goal ?? null,
         body.expected_leads_goal ?? null,
         body.expected_redemptions_goal ?? null,
-        Object.prototype.hasOwnProperty.call(body, "launch_channels") ? JSON.stringify(body.launch_channels || []) : null,
+        hasLaunchChannels ? JSON.stringify(launchChannelNames || []) : null,
         body.client_notes ?? null,
         deliveredAssets,
         Object.prototype.hasOwnProperty.call(body, "campaign_cost_calculator") ? JSON.stringify(body.campaign_cost_calculator || {}) : null,
       ]
     );
+
+    if (launchChannelRefs) {
+      await query(
+        "update campaigns set launch_channel_refs = $3::jsonb where id = $1 and business_id = $2",
+        [req.params.id, businessId, JSON.stringify(launchChannelRefs)]
+      );
+    }
 
     res.json({ campaign: await getCampaignMetrics(result.rows[0].id, businessId) });
   } catch (error) {
@@ -3814,8 +4871,16 @@ async function patchClientSetup(req, res, next) {
     const current = await requireCampaignForBusiness(req.params.id, businessId);
     assertClientSetupEditable(current.status);
 
-    if (body.launch_channels.includes("Otro") && !body.client_notes) {
-      throw badRequest("client_notes is required when launch_channels includes 'Otro'.");
+    const launchChannelRefs = await withTransaction((client) => resolveCampaignChannelReferences(
+      client,
+      businessId,
+      body.launch_channel_refs,
+      body.launch_channels || []
+    ));
+    const launchChannelNames = launchChannelRefs.map((channel) => channel.name_snapshot).filter(Boolean);
+
+    if (launchChannelRefs.some((channel) => channel.source === "MANUAL_UNCONFIGURED") && !body.client_notes) {
+      throw badRequest("Describe el canal temporal en las observaciones de la campaña.");
     }
 
     const result = await query(
@@ -3824,15 +4889,16 @@ async function patchClientSetup(req, res, next) {
            starts_at = $4,
            ends_at = $5,
            launch_channels = $6::jsonb,
-           expected_sales_goal = $7,
-           expected_leads_goal = $8,
-           expected_redemptions_goal = $9,
-           client_notes = $10,
-           objective = coalesce($11, objective),
+           launch_channel_refs = $7::jsonb,
+           expected_sales_goal = $8,
+           expected_leads_goal = $9,
+           expected_redemptions_goal = $10,
+           client_notes = $11,
+           objective = coalesce($12, objective),
            metadata = jsonb_set(
-             jsonb_set(coalesce(metadata, '{}'::jsonb), '{additional_budget}', to_jsonb($12::numeric), true),
+             jsonb_set(coalesce(metadata, '{}'::jsonb), '{additional_budget}', to_jsonb($13::numeric), true),
              '{campaign_cost_calculator}',
-             $13::jsonb,
+             $14::jsonb,
              true
            ),
            client_setup_completed_at = now()
@@ -3844,7 +4910,8 @@ async function patchClientSetup(req, res, next) {
         body.budget_total,
         body.starts_at,
         body.ends_at,
-        JSON.stringify(body.launch_channels),
+        JSON.stringify(launchChannelNames),
+        JSON.stringify(launchChannelRefs),
         body.expected_sales_goal ?? null,
         body.expected_leads_goal ?? null,
         body.expected_redemptions_goal ?? null,
@@ -3866,12 +4933,9 @@ async function confirmLaunch(req, res, next) {
     const current = await requireCampaignForBusiness(req.params.id, businessId);
     assertClientSetupEditable(current.status);
 
-    if (!current.budget_total || !current.starts_at || !current.ends_at || !Array.isArray(current.launch_channels) || !current.launch_channels.length) {
-      throw badRequest("The campaign still needs budget, dates, and launch channels before launch confirmation.");
-    }
-
     const startsAt = new Date(current.starts_at);
     const nextStatus = startsAt <= new Date() ? "ACTIVE" : "SCHEDULED";
+    assertCampaignOperationalReadiness({ ...current, status: nextStatus });
     const activatedAt = nextStatus === "ACTIVE" ? new Date().toISOString() : null;
     const result = await query(
       `update campaigns
@@ -3972,10 +5036,15 @@ async function assertManualLeadWriteAccess(businessId) {
 }
 
 async function upsertManualLeadCollectorState(client, businessId, user, lead, options = {}) {
+  const sourceType = ["PLAYER", "MANUAL", "BUYER", "AFFILIATE"].includes(String(lead?.source_type || "").toUpperCase())
+    ? String(lead.source_type).toUpperCase()
+    : "MANUAL";
+  const sourceId = lead?.id;
+  if (!sourceId) throw badRequest("No se pudo identificar el contacto para ingresarlo al Recolector.");
   await client.query(
     `insert into rms_lead_state
        (business_id, source_type, source_id, lead_id, rms_phase, priority, recommended_action, last_operation, last_material_sent, revenue_potential, metadata, created_by, updated_by)
-     values ($1, 'MANUAL', $2, $2, 'recoleccion', $3, $4, $5, $6, 0, $7::jsonb, $8, $8)
+     values ($1, $2, $3, $4, 'recoleccion', $5, $6, $7, $8, 0, $9::jsonb, $10, $10)
      on conflict (business_id, source_type, source_id)
      do update set
        lead_id = excluded.lead_id,
@@ -3989,14 +5058,17 @@ async function upsertManualLeadCollectorState(client, businessId, user, lead, op
        updated_at = now()`,
     [
       businessId,
-      lead.id,
+      sourceType,
+      sourceId,
+      lead.lead_id || sourceId,
       lead.priority || options.priority || "MEDIUM",
       options.recommended_action || "Revisar lead ingresado al Recolector RMS",
       options.last_operation || null,
       options.last_material_sent || lead.source || "manual",
       JSON.stringify({
         source_module: "rms_machine",
-        source_flow: options.source_flow || "manual_lead_entry",
+        source_flow: options.source_flow || (sourceType === "MANUAL" ? "manual_lead_entry" : "collector_contact_reuse"),
+        source_type: sourceType,
         collector_type: options.collector_type || lead.source || "manual",
         customer_source: lead.source || "Manual",
         source_detail: lead.source_detail || null,
@@ -4004,6 +5076,398 @@ async function upsertManualLeadCollectorState(client, businessId, user, lead, op
       user.id,
     ]
   );
+}
+
+function manualContactIdentity(contact = {}) {
+  return {
+    email: String(contact.email || "").trim().toLowerCase() || null,
+    phone: String(contact.phone || "").replace(/\D/g, "") || null,
+    documentId: String(contact.document_id || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "") || null,
+  };
+}
+
+async function listInventoryCategories(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const result = await query(
+      `select category.*,
+              count(product.id)::int as products_count
+         from business_product_categories category
+         left join business_inventory_products product
+           on product.business_id = category.business_id
+          and product.category_id = category.id
+        where category.business_id = $1
+        group by category.id
+        order by category.name asc`,
+      [businessId]
+    );
+    res.json({ categories: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createInventoryCategory(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const body = validate(inventoryCategorySchema, req.body);
+    const result = await query(
+      `insert into business_product_categories (business_id, internal_id, name, created_by_user_id)
+       values ($1, $2, $3, $4)
+       returning *`,
+      [businessId, body.internal_id, body.name, req.user.id]
+    );
+    res.status(201).json({ category: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function listInventorySubcategories(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const categoryId = String(req.query.category_id || "").trim();
+    const params = [businessId];
+    const categoryWhere = categoryId ? "and subcategory.category_id = $2" : "";
+    if (categoryId) params.push(categoryId);
+    const result = await query(
+      `select subcategory.*, category.name as category_name, category.internal_id as category_internal_id,
+              count(product.id)::int as products_count
+         from business_product_subcategories subcategory
+         join business_product_categories category
+           on category.id = subcategory.category_id
+          and category.business_id = subcategory.business_id
+         left join business_inventory_products product
+           on product.business_id = subcategory.business_id
+          and product.subcategory_id = subcategory.id
+        where subcategory.business_id = $1
+          ${categoryWhere}
+        group by subcategory.id, category.name, category.internal_id
+        order by category.name asc, subcategory.name asc`,
+      params
+    );
+    res.json({ subcategories: result.rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createInventorySubcategory(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const body = validate(inventorySubcategorySchema, req.body);
+    const category = await query(
+      "select id from business_product_categories where id = $1 and business_id = $2 limit 1",
+      [body.category_id, businessId]
+    );
+    if (!category.rowCount) throw badRequest("Selecciona una categoría creada en este negocio.");
+    const result = await query(
+      `insert into business_product_subcategories (business_id, category_id, internal_id, name, created_by_user_id)
+       values ($1, $2, $3, $4, $5)
+       returning *`,
+      [businessId, body.category_id, body.internal_id, body.name, req.user.id]
+    );
+    res.status(201).json({ subcategory: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+const inventoryCatalogDefinitions = Object.freeze({
+  brands: { table: "business_product_brands", key: "brand", label: "marca", hasRate: false },
+  units: { table: "business_product_units", key: "unit", label: "unidad de medida", hasRate: false },
+  "tax-bases": { table: "business_product_tax_bases", key: "tax_base", label: "IVA base", hasRate: true },
+  "healthy-taxes": { table: "business_product_healthy_taxes", key: "healthy_tax", label: "impuesto saludable", hasRate: true },
+});
+
+async function ensureInventoryCatalogDefaults(client, businessId) {
+  await client.query(
+    `insert into business_product_units (business_id, internal_id, name)
+     select $1, source.internal_id, source.name from (values ('METRO','Metro'),('KG','Kg'),('LITRO','Litro'),('UNIDAD','Unidad')) source(internal_id, name)
+     on conflict do nothing`, [businessId]
+  );
+  await client.query(
+    `insert into business_product_tax_bases (business_id, internal_id, name, rate)
+     select $1, source.internal_id, source.name, source.rate from (values ('EXENTO_0','Exento/0%',0::numeric),('EXCLUIDO','Excluido',0::numeric),('IVA_5','5%',.05::numeric),('IVA_8','8%',.08::numeric),('IVA_19','19%',.19::numeric)) source(internal_id, name, rate)
+     on conflict do nothing`, [businessId]
+  );
+  await client.query(
+    `insert into business_product_healthy_taxes (business_id, internal_id, name, rate)
+     select $1, source.internal_id, source.name, source.rate from (values ('NO_APLICA','No Aplica',0::numeric),('IMPUESTO_20','20%',.20::numeric)) source(internal_id, name, rate)
+     on conflict do nothing`, [businessId]
+  );
+}
+
+async function listInventoryCatalog(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const definition = inventoryCatalogDefinitions[req.params.catalog];
+    if (!definition) throw badRequest("Catálogo de producto no reconocido.");
+    const result = await withTransaction(async (client) => {
+      await ensureInventoryCatalogDefaults(client, businessId);
+      return client.query(`select id, internal_id, name${definition.hasRate ? ", rate" : ""}, created_at, updated_at from ${definition.table} where business_id = $1 order by name asc`, [businessId]);
+    });
+    res.json({ [definition.key + "s"]: result.rows });
+  } catch (error) { next(error); }
+}
+
+async function createInventoryCatalog(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const definition = inventoryCatalogDefinitions[req.params.catalog];
+    if (!definition) throw badRequest("Catálogo de producto no reconocido.");
+    const body = validate(inventoryReferenceSchema, req.body);
+    if (definition.hasRate && (body.rate === undefined || body.rate === null)) throw badRequest(`Indica el porcentaje de ${definition.label}.`);
+    const existing = await query(
+      `select name from ${definition.table} where business_id = $1 and lower(internal_id) = lower($2) limit 1`,
+      [businessId, body.internal_id]
+    );
+    if (existing.rowCount) {
+      throw badRequest(`El ID interno “${body.internal_id}” ya pertenece a la ${definition.label} “${existing.rows[0].name}”. Usa esa referencia o escribe un ID diferente.`);
+    }
+    const result = await query(
+      `insert into ${definition.table} (business_id, internal_id, name${definition.hasRate ? ", rate" : ""}, created_by_user_id)
+       values ($1, $2, $3${definition.hasRate ? ", $4" : ""}, $${definition.hasRate ? 5 : 4}) returning *`,
+      definition.hasRate ? [businessId, body.internal_id, body.name, body.rate, req.user.id] : [businessId, body.internal_id, body.name, req.user.id]
+    );
+    res.status(201).json({ [definition.key]: result.rows[0] });
+  } catch (error) {
+    if (error?.code === "23505" && /internal_id/i.test(String(error.constraint || ""))) {
+      return next(badRequest(`Ese ID interno ya existe para esta ${inventoryCatalogDefinitions[req.params.catalog]?.label || "referencia"}. Escribe uno diferente.`));
+    }
+    next(error);
+  }
+}
+
+const inventoryReferenceTables = Object.freeze({
+  brand: { table: "business_product_brands", id: "brand_id", name: "brand", internal: "brand_internal_id", hasRate: false },
+  unit: { table: "business_product_units", id: "unit_id", name: "unit_label", internal: "unit_internal_id", hasRate: false },
+  taxBase: { table: "business_product_tax_bases", id: "tax_base_id", name: "tax_base", internal: "tax_base", hasRate: true },
+  healthyTax: { table: "business_product_healthy_taxes", id: "healthy_tax_id", name: "healthy_tax", internal: "healthy_tax", hasRate: true },
+});
+
+async function resolveInventoryReference(client, businessId, payload, kind) {
+  const config = inventoryReferenceTables[kind];
+  const id = payload[config.id] || null;
+  const lookup = id ? null : (payload[config.internal] || payload[config.name] || null);
+  if (!id && !lookup) return null;
+  const result = await client.query(
+    `select id, internal_id, name, ${config.hasRate ? "coalesce(rate, 0)::numeric" : "0::numeric"} as rate
+       from ${config.table}
+      where business_id = $1
+        and ($2::uuid is null or id = $2)
+        and ($3::text is null or lower(internal_id) = lower($3) or lower(name) = lower($3))
+      order by case when id = $2 then 0 when lower(internal_id) = lower($3) then 1 else 2 end
+      limit 1`,
+    [businessId, id, lookup]
+  );
+  if (!result.rowCount) throw badRequest(`La referencia de ${kind === "taxBase" ? "IVA base" : kind === "healthyTax" ? "impuesto saludable" : kind === "unit" ? "unidad de medida" : "marca"} no existe en este negocio.`);
+  return result.rows[0];
+}
+
+async function resolveInventoryTaxonomy(client, businessId, payload, options = {}) {
+  let categoryId = payload.category_id || null;
+  if (!categoryId && payload.category_internal_id) {
+    const categoryByInternalId = await client.query(
+      `select id, name, internal_id
+         from business_product_categories
+        where business_id = $1
+          and (
+            lower(internal_id) = lower($2)
+            or lower(name) = lower($2)
+            or id::text = $2
+          )
+        order by case
+          when lower(internal_id) = lower($2) then 0
+          when id::text = $2 then 1
+          else 2
+        end
+        limit 1`,
+      [businessId, payload.category_internal_id]
+    );
+    categoryId = categoryByInternalId.rows[0]?.id || null;
+  }
+  if (!categoryId && payload.category) {
+    const categoryByName = await client.query(
+      `select id, name, internal_id
+         from business_product_categories
+        where business_id = $1 and lower(name) = lower($2)
+        limit 1`,
+      [businessId, payload.category]
+    );
+    categoryId = categoryByName.rows[0]?.id || null;
+  }
+  if (!categoryId && options.categoryRequired !== false) {
+    throw badRequest("Selecciona una categoría creada para este producto.");
+  }
+
+  let category = null;
+  if (categoryId) {
+    const categoryResult = await client.query(
+      "select id, name, internal_id from business_product_categories where id = $1 and business_id = $2 limit 1",
+      [categoryId, businessId]
+    );
+    category = categoryResult.rows[0] || null;
+    if (!category) throw badRequest("La categoría seleccionada no pertenece a este negocio.");
+  }
+
+  let subcategoryId = payload.subcategory_id || null;
+  if (!subcategoryId && payload.subcategory_internal_id) {
+    const subcategoryByInternalId = await client.query(
+      `select id, category_id, name, internal_id
+         from business_product_subcategories
+        where business_id = $1
+          and (
+            lower(internal_id) = lower($2)
+            or lower(name) = lower($2)
+            or id::text = $2
+          )
+        order by case
+          when lower(internal_id) = lower($2) then 0
+          when id::text = $2 then 1
+          else 2
+        end
+        limit 1`,
+      [businessId, payload.subcategory_internal_id]
+    );
+    subcategoryId = subcategoryByInternalId.rows[0]?.id || null;
+  }
+  if (!subcategoryId && payload.subcategory) {
+    const subcategoryByName = await client.query(
+      `select id, category_id, name, internal_id
+         from business_product_subcategories
+        where business_id = $1
+          and lower(name) = lower($2)
+          ${category?.id ? "and category_id = $3" : ""}
+        limit 1`,
+      category?.id ? [businessId, payload.subcategory, category.id] : [businessId, payload.subcategory]
+    );
+    subcategoryId = subcategoryByName.rows[0]?.id || null;
+  }
+  let subcategory = null;
+  if (subcategoryId) {
+    const subcategoryResult = await client.query(
+      `select id, category_id, name, internal_id
+         from business_product_subcategories
+        where id = $1 and business_id = $2
+        limit 1`,
+      [subcategoryId, businessId]
+    );
+    subcategory = subcategoryResult.rows[0] || null;
+    if (!subcategory) throw badRequest("La subcategoría seleccionada no pertenece a este negocio.");
+    if (!category || String(subcategory.category_id) !== String(category.id)) {
+      throw badRequest("La subcategoría debe pertenecer a la categoría elegida.");
+    }
+  }
+  const [brand, unit, taxBase, healthyTax] = await Promise.all([
+    resolveInventoryReference(client, businessId, payload, "brand"),
+    resolveInventoryReference(client, businessId, payload, "unit"),
+    resolveInventoryReference(client, businessId, payload, "taxBase"),
+    resolveInventoryReference(client, businessId, payload, "healthyTax"),
+  ]);
+  const taxClassificationByRate = taxBase
+    ? (Number(taxBase.rate || 0) === 0 ? (String(taxBase.name).toLowerCase().includes("excl") ? "EXCLUDED" : "EXEMPT") : `VAT_${Math.round(Number(taxBase.rate) * 100)}`)
+    : payload.tax_classification;
+  const resolved = {
+    category_id: category?.id || null,
+    category: category?.name || payload.category || null,
+    subcategory_id: subcategory?.id || null,
+    brand_id: brand?.id || null,
+    brand: brand?.name || payload.brand || null,
+    unit_id: unit?.id || null,
+    unit_label: unit?.name || payload.unit_label || "Unidad",
+    tax_base_id: taxBase?.id || null,
+    tax_classification: taxClassificationByRate || "EXEMPT",
+    healthy_tax_id: healthyTax?.id || null,
+    healthy_tax_rate: Number(healthyTax?.rate || 0),
+  };
+  resolved.unit_price = inventorySellingPrice(payload.price_before_tax, resolved.tax_classification, resolved.healthy_tax_rate);
+  return resolved;
+}
+
+async function findExistingBusinessContact(client, businessId, contact = {}) {
+  const identity = manualContactIdentity(contact);
+  if (!identity.email && !identity.phone && !identity.documentId) return null;
+  const result = await client.query(
+    `select *
+       from (
+         select p.id, p.id as lead_id, 'PLAYER'::text as source_type, p.name, p.email, p.phone, p.document_id, null::text as document_type, p.created_at, 1 as source_rank
+           from players p
+          where p.business_id = $1
+            and (($2::text is not null and lower(nullif(p.email, '')) = $2)
+              or ($3::text is not null and regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g') = $3)
+              or ($4::text is not null and regexp_replace(lower(coalesce(p.document_id, '')), '[^a-z0-9]', '', 'g') = $4))
+         union all
+         select ml.id, null::uuid as lead_id, 'MANUAL'::text as source_type, ml.name, ml.email, ml.phone, ml.document_id, ml.document_type, ml.created_at, 2 as source_rank
+           from business_manual_leads ml
+          where ml.business_id = $1
+            and (($2::text is not null and lower(nullif(ml.email, '')) = $2)
+              or ($3::text is not null and regexp_replace(coalesce(ml.phone, ''), '\\D', '', 'g') = $3)
+              or ($4::text is not null and regexp_replace(lower(coalesce(ml.document_id, '')), '[^a-z0-9]', '', 'g') = $4))
+         union all
+         select af.id, null::uuid as lead_id, 'AFFILIATE'::text as source_type, af.full_name as name, af.email, af.phone, af.document_id, null::text as document_type, af.created_at, 3 as source_rank
+           from affiliates af
+          where af.business_id = $1 and af.status <> 'DELETED'
+            and (($2::text is not null and lower(nullif(af.email, '')) = $2)
+              or ($3::text is not null and regexp_replace(coalesce(af.phone, ''), '\\D', '', 'g') = $3)
+              or ($4::text is not null and regexp_replace(lower(coalesce(af.document_id, '')), '[^a-z0-9]', '', 'g') = $4))
+       ) contacts
+      order by source_rank asc, created_at asc
+      limit 1`,
+    [businessId, identity.email, identity.phone, identity.documentId]
+  );
+  return result.rows[0] || null;
+}
+
+async function recordExistingContactIntake(client, businessId, user, contact, metadata = {}) {
+  await client.query(
+    `insert into lead_events
+      (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
+     values ($1, $2, $3, $4, 'contact_intake_reused', 'Contacto ya existente', $5, $6, $7::jsonb)`,
+    [
+      businessId,
+      contact.source_type === "PLAYER" ? contact.id : null,
+      contact.source_type,
+      contact.id,
+      "Se registró un nuevo intento de ingreso sin crear una ficha duplicada.",
+      user?.id || null,
+      JSON.stringify(metadata),
+    ]
+  );
+}
+
+async function attachManualIdentityToExistingContact(client, businessId, contact, identity = {}) {
+  if (!identity.document_id || String(contact.document_id || "").trim()) return;
+  if (contact.source_type === "MANUAL") {
+    await client.query(
+      `update business_manual_leads
+          set document_type = $3, document_id = $4
+        where business_id = $1 and id = $2 and nullif(document_id, '') is null`,
+      [businessId, contact.id, identity.document_type || null, identity.document_id]
+    );
+    return;
+  }
+  if (contact.source_type === "PLAYER") {
+    await client.query(
+      `update players set document_id = $3
+        where business_id = $1 and id = $2 and nullif(document_id, '') is null`,
+      [businessId, contact.id, identity.document_id]
+    );
+    return;
+  }
+  if (contact.source_type === "AFFILIATE") {
+    await client.query(
+      `update affiliates set document_id = $3
+        where business_id = $1 and id = $2 and nullif(document_id, '') is null`,
+      [businessId, contact.id, identity.document_id]
+    );
+  }
 }
 
 async function createManualLead(req, res, next) {
@@ -4014,12 +5478,55 @@ async function createManualLead(req, res, next) {
     if (!body.email && !body.phone) {
       throw badRequest("Agrega al menos telefono o correo para poder contactar el prospecto.");
     }
+    if (body.source === "Maquina RMS" && (!body.document_type || !body.document_id)) {
+      throw badRequest("Selecciona el tipo y escribe el nÃºmero de documento antes de ingresar el lead al Recolector RMS.");
+    }
     const lead = await withTransaction(async (client) => {
+      const acquisitionChannel = await resolveAcquisitionChannelReference(client, businessId, body);
+      let branchId = body.branch_id || null;
+      if (branchId) {
+        const branch = await client.query(
+          "select id from branches where id = $1 and business_id = $2 and is_active = true",
+          [branchId, businessId]
+        );
+        if (!branch.rowCount) throw badRequest("La sede seleccionada no existe o no está activa para este negocio.");
+      }
+      const commercialOwner = await commercialOwnerForBusiness(
+        businessId,
+        body.commercial_owner_user_id,
+        (...args) => client.query(...args)
+      );
+      const existing = await findExistingBusinessContact(client, businessId, body);
+      if (existing) {
+        const incomingIdentity = manualContactIdentity(body);
+        const existingIdentity = manualContactIdentity(existing);
+        if (incomingIdentity.documentId && existingIdentity.documentId && incomingIdentity.documentId !== existingIdentity.documentId) {
+          throw badRequest("El correo o teléfono ya pertenece a un contacto con otro documento. Revisa los datos antes de crear el lead.");
+        }
+        await attachManualIdentityToExistingContact(client, businessId, existing, body);
+        await recordExistingContactIntake(client, businessId, req.user, existing, {
+          source: "manual_portal_entry",
+          attempted_name: body.name || null,
+          interest: body.interest || null,
+          source_detail: body.source_detail || null,
+          document_type: body.document_type || null,
+          document_id: body.document_id || null,
+        });
+        await upsertManualLeadCollectorState(client, businessId, req.user, existing, {
+          source_flow: "collector_existing_contact",
+          recommended_action: body.preferred_channel ? `Contactar por ${body.preferred_channel}` : "Revisar contacto ingresado al Recolector RMS",
+          last_material_sent: body.source || "Manual",
+          priority: body.priority || "MEDIUM",
+        });
+        return { lead: existing, existed: true };
+      }
       const result = await client.query(
         `insert into business_manual_leads
-           (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
-            interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb)
+           (business_id, created_by_user_id, name, email, phone, document_type, document_id, company, job_title, source, source_detail,
+            branch_id, acquisition_channel_id, acquisition_channel_name_snapshot, acquisition_channel_slug_snapshot,
+            acquisition_channel_source, interest, importance_reason, preferred_channel, preferred_contact_time,
+            status, priority, notes, metadata)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::jsonb)
          returning *`,
         [
           businessId,
@@ -4027,10 +5534,17 @@ async function createManualLead(req, res, next) {
           body.name,
           body.email,
           body.phone,
+          body.document_type || null,
+          body.document_id || null,
           body.company,
           body.job_title,
           body.source || "Manual",
           body.source_detail,
+          branchId,
+          acquisitionChannel.acquisition_channel_id,
+          acquisitionChannel.acquisition_channel_name_snapshot,
+          acquisitionChannel.acquisition_channel_slug_snapshot,
+          acquisitionChannel.acquisition_channel_source,
           body.interest,
           body.importance_reason,
           body.preferred_channel,
@@ -4040,9 +5554,23 @@ async function createManualLead(req, res, next) {
           body.notes,
           JSON.stringify({
             source: "manual_portal_entry",
+            branch_id: branchId,
+            acquisition_channel: {
+              id: acquisitionChannel.acquisition_channel_id,
+              name_snapshot: acquisitionChannel.acquisition_channel_name_snapshot,
+              slug_snapshot: acquisitionChannel.acquisition_channel_slug_snapshot,
+              source: acquisitionChannel.acquisition_channel_source,
+            },
             created_by_email: req.user.email || null,
+            commercial_owner_user_id: commercialOwner?.id || null,
+            commercial_owner_name: commercialOwner?.full_name || null,
+            commercial_owner_email: commercialOwner?.email || null,
             manual_job_title: body.job_title || null,
             manual_importance_reason: body.importance_reason || null,
+            identity_document: body.document_id ? {
+              type: body.document_type || null,
+              value: body.document_id,
+            } : null,
           }),
         ]
       );
@@ -4051,9 +5579,9 @@ async function createManualLead(req, res, next) {
         recommended_action: body.preferred_channel ? `Contactar por ${body.preferred_channel}` : "Revisar lead ingresado al Recolector RMS",
         last_material_sent: body.source || "Manual",
       });
-      return result.rows[0];
+      return { lead: result.rows[0], existed: false };
     });
-    res.status(201).json({ lead });
+    res.status(lead.existed ? 200 : 201).json({ lead: lead.lead, existed: lead.existed });
   } catch (error) {
     next(error);
   }
@@ -4073,27 +5601,49 @@ async function importManualLeadsCsv(req, res, next) {
       csv_row: index + 2,
     }));
     const invalidRows = rows
-      .filter((row) => !row.email && !row.phone)
+      .filter((row) => !row.email && !row.phone && !row.document_id)
       .map((row) => row.csv_row);
     if (invalidRows.length) {
-      throw badRequest(`Filas sin telefono ni correo: ${invalidRows.slice(0, 20).join(", ")}.`);
+      throw badRequest(`Filas sin teléfono, correo ni documento: ${invalidRows.slice(0, 20).join(", ")}.`);
     }
 
     const inserted = await withTransaction(async (client) => {
       const created = [];
+      const existing = [];
       for (const row of rows) {
+        const matchedContact = await findExistingBusinessContact(client, businessId, row);
+        if (matchedContact) {
+          const incomingIdentity = manualContactIdentity(row);
+          const existingIdentity = manualContactIdentity(matchedContact);
+          if (incomingIdentity.documentId && existingIdentity.documentId && incomingIdentity.documentId !== existingIdentity.documentId) {
+            throw badRequest(`Fila ${row.csv_row}: el correo o teléfono pertenece a un contacto con otro documento. Corrige la identidad antes de importar.`);
+          }
+          await attachManualIdentityToExistingContact(client, businessId, matchedContact, row);
+          await recordExistingContactIntake(client, businessId, req.user, matchedContact, {
+            source: "manual_csv_import",
+            csv_row: row.csv_row,
+            attempted_name: row.name || null,
+            interest: row.interest || null,
+            document_type: row.document_type || null,
+            document_id: row.document_id || null,
+          });
+          existing.push({ ...matchedContact, csv_row: row.csv_row });
+          continue;
+        }
         const result = await client.query(
           `insert into business_manual_leads
-             (business_id, created_by_user_id, name, email, phone, company, job_title, source, source_detail,
+             (business_id, created_by_user_id, name, email, phone, document_type, document_id, company, job_title, source, source_detail,
               interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
-           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17::jsonb)
-           returning id, name, email, phone, source, source_detail, status, priority, created_at`,
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19::jsonb)
+           returning id, name, email, phone, document_type, document_id, source, source_detail, status, priority, created_at`,
           [
             businessId,
             req.user.id,
             row.name,
             row.email || null,
             row.phone || null,
+            row.document_type || null,
+            row.document_id || null,
             row.company || null,
             row.job_title || null,
             row.source,
@@ -4113,6 +5663,10 @@ async function importManualLeadsCsv(req, res, next) {
               csv_source_detail: body.source_detail || null,
               manual_job_title: row.job_title || null,
               manual_importance_reason: row.importance_reason || null,
+              identity_document: row.document_id ? {
+                type: row.document_type || null,
+                value: row.document_id,
+              } : null,
             }),
           ]
         );
@@ -4124,10 +5678,15 @@ async function importManualLeadsCsv(req, res, next) {
         });
         created.push(result.rows[0]);
       }
-      return created;
+      return { created, existing };
     });
 
-    res.status(201).json({ imported: inserted.length, contacts: inserted });
+    res.status(201).json({
+      imported: inserted.created.length,
+      existing: inserted.existing.length,
+      contacts: inserted.created,
+      existing_contacts: inserted.existing,
+    });
   } catch (error) {
     next(error);
   }
@@ -4191,6 +5750,7 @@ async function updateManualLead(req, res, next) {
       throw badRequest("Agrega al menos telefono o correo para poder contactar el prospecto.");
     }
 
+    const commercialOwner = await commercialOwnerForBusiness(businessId, body.commercial_owner_user_id);
     const result = await query(
       `update business_manual_leads
           set name = $3,
@@ -4207,6 +5767,8 @@ async function updateManualLead(req, res, next) {
               status = $14,
               priority = $15,
               notes = $16,
+              document_type = $18,
+              document_id = $19,
               metadata = coalesce(metadata, '{}'::jsonb)
                 || jsonb_build_object(
                      'manual_job_title', $7::text,
@@ -4215,7 +5777,12 @@ async function updateManualLead(req, res, next) {
                      'manual_status', $14::text,
                      'manual_priority', $15::text,
                      'manual_notes', $16::text,
-                     'updated_by_email', $17::text
+                     'updated_by_email', $17::text,
+                     'document_type', $18::text,
+                     'document_id', $19::text,
+                     'commercial_owner_user_id', $20::text,
+                     'commercial_owner_name', $21::text,
+                     'commercial_owner_email', $22::text
                    ),
               updated_at = now()
         where id = $1
@@ -4239,6 +5806,11 @@ async function updateManualLead(req, res, next) {
         body.priority,
         body.notes,
         req.user.email || null,
+        body.document_type || null,
+        body.document_id || null,
+        commercialOwner?.id || null,
+        commercialOwner?.full_name || null,
+        commercialOwner?.email || null,
       ]
     );
 
@@ -5224,11 +6796,8 @@ async function campaignRedemptions(req, res, next) {
   }
 }
 
-async function campaignSales(req, res, next) {
-  try {
-    const businessId = businessIdFor(req);
-    const limit = boundedLimit(req.query.limit, 150, 500);
-    const result = await query(
+async function canonicalAttributedSalesForBusiness(businessId, campaignId, limit) {
+  const result = await query(
       `select *
        from (
          select
@@ -5245,6 +6814,7 @@ async function campaignSales(req, res, next) {
            s.payment_method,
            s.product_or_service,
            s.notes,
+           'PAID'::text as sale_status,
            null::jsonb as metadata,
            null::uuid as referred_affiliate_id,
            0::int as referral_points_awarded,
@@ -5261,7 +6831,7 @@ async function campaignSales(req, res, next) {
          left join players p on p.id = s.player_id
          left join branches br on br.id = s.branch_id
          left join app_users u on u.id = s.sale_confirmed_by_user_id
-         where s.business_id = $1 and s.campaign_id = $2
+         where s.business_id = $1 and ($2::uuid is null or s.campaign_id = $2)
 
          union all
 
@@ -5279,6 +6849,7 @@ async function campaignSales(req, res, next) {
            bs.acquisition_source as payment_method,
            bs.product_name as product_or_service,
            bs.notes,
+           coalesce(bs.sale_status, 'PAID') as sale_status,
            bs.metadata,
            bs.referred_affiliate_id,
            bs.referral_points_awarded,
@@ -5295,13 +6866,86 @@ async function campaignSales(req, res, next) {
          left join branches br on br.id = bs.branch_id
          left join app_users u on u.id = bs.seller_user_id
          left join affiliates a on a.id = bs.referred_affiliate_id
-         where bs.business_id = $1 and bs.campaign_id = $2
+         where bs.business_id = $1 and ($2::uuid is null or bs.campaign_id = $2)
        ) sales
        order by created_at desc
        limit $3`,
-      [businessId, req.params.id, limit]
-    );
-    res.json({ sales: result.rows });
+      [businessId, campaignId || null, limit]
+  );
+  return result.rows;
+}
+
+async function attributedSales(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const limit = boundedLimit(req.query.limit, 300, 500);
+    const sales = await canonicalAttributedSalesForBusiness(businessId, null, limit);
+    res.json({ sales });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function voidAttributedSale(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "sales_tracker");
+    const body = validate(lifecycleReasonSchema, req.body || {});
+    const result = await withTransaction(async (client) => {
+      const existing = await client.query(
+        `select id, sale_status, sale_amount, currency, product_name, metadata
+           from business_sales
+          where id = $1 and business_id = $2
+          for update`,
+        [req.params.saleId, businessId]
+      );
+      if (!existing.rowCount) throw notFound("Venta atribuida no encontrada.");
+      const sale = existing.rows[0];
+      if (sale.sale_status === "VOIDED") return { sale, duplicate: true };
+      const updated = await client.query(
+        `update business_sales
+            set sale_status = 'VOIDED',
+                metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+                  'voided_at', now(),
+                  'voided_by_user_id', $3::text,
+                  'void_reason', $4::text,
+                  'original_sale_amount', sale_amount,
+                  'original_currency', currency
+                )
+          where id = $1 and business_id = $2
+          returning *`,
+        [sale.id, businessId, req.user.id, body.reason]
+      );
+      await recordLifecycleEvent({
+        business_id: businessId,
+        entity_type: "ATTRIBUTED_SALE",
+        entity_id: sale.id,
+        action: "VOIDED",
+        previous_status: sale.sale_status || "PAID",
+        next_status: "VOIDED",
+        reason: body.reason,
+        idempotency_key: body.idempotency_key || `sale-void:${sale.id}:${sale.sale_status || "PAID"}`,
+        actor_user_id: req.user.id,
+        metadata: {
+          product_name: sale.product_name,
+          original_sale_amount: sale.sale_amount,
+          original_currency: sale.currency,
+        },
+      }, client);
+      return { sale: updated.rows[0], duplicate: false };
+    });
+    res.json({ ok: true, sale: result.sale, voided: true, duplicate: result.duplicate });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function campaignSales(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const limit = boundedLimit(req.query.limit, 150, 500);
+    const sales = await canonicalAttributedSalesForBusiness(businessId, req.params.id, limit);
+    res.json({ sales });
   } catch (error) {
     next(error);
   }
@@ -5445,6 +7089,8 @@ module.exports = {
   updateCompetitorProduct,
   archiveCompetitorProduct,
   listAcquisitionChannels,
+  getAcquisitionChannelInsights,
+  getAcquisitionChannelEffortInsights,
   createAcquisitionChannel,
   updateAcquisitionChannel,
   archiveAcquisitionChannel,
@@ -5454,7 +7100,15 @@ module.exports = {
   archiveAcquisitionChannelEffort,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
+  listInventoryCategories,
+  createInventoryCategory,
+  listInventorySubcategories,
+  createInventorySubcategory,
+  listInventoryCatalog,
+  createInventoryCatalog,
   createInventoryProduct,
+  importInventoryProductsCsv,
+  getInventoryProductInsights,
   listInventoryProducts,
   updateInventoryProduct,
   listCampaigns,
@@ -5478,6 +7132,8 @@ module.exports = {
   downloadActiveLeadQr,
   downloadLeadQrById,
   campaignRedemptions,
+  attributedSales,
+  voidAttributedSale,
   campaignSales,
   createSalesSnapshot,
   updateSalesSnapshot,

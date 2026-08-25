@@ -7,6 +7,7 @@ const { env } = require("../config/env");
 const { badRequest, unauthorized } = require("../utils/http");
 const { validate, loginSchema } = require("../utils/validators");
 const { getBusinessSubscription } = require("../services/subscriptionService");
+const { sendPasswordResetEmail } = require("../services/passwordResetMailService");
 
 const passwordSchema = z.string().min(8).max(120);
 
@@ -145,18 +146,36 @@ async function requestPasswordReset(req, res, next) {
     }
 
     const rawToken = crypto.randomBytes(32).toString("base64url");
-    await query(
-      `insert into password_reset_tokens (user_id, token_hash, expires_at, metadata)
-       values ($1, $2, now() + interval '30 minutes', $3::jsonb)`,
-      [
-        user.id,
-        hashResetToken(rawToken),
-        JSON.stringify({
-          requested_ip: req.ip || null,
-          user_agent: req.headers["user-agent"] || null,
-        }),
-      ]
-    );
+    await withTransaction(async (client) => {
+      await client.query(
+        `update password_reset_tokens
+         set used_at = coalesce(used_at, now())
+         where user_id = $1 and used_at is null`,
+        [user.id]
+      );
+      await client.query(
+        `insert into password_reset_tokens (user_id, token_hash, expires_at, metadata)
+         values ($1, $2, now() + interval '30 minutes', $3::jsonb)`,
+        [
+          user.id,
+          hashResetToken(rawToken),
+          JSON.stringify({
+            requested_ip: req.ip || null,
+            user_agent: req.headers["user-agent"] || null,
+          }),
+        ]
+      );
+    });
+
+    try {
+      await sendPasswordResetEmail({ to: user.email, resetUrl: passwordResetUrl(rawToken) });
+    } catch (error) {
+      await query(
+        "update password_reset_tokens set used_at = now() where user_id = $1 and token_hash = $2 and used_at is null",
+        [user.id, hashResetToken(rawToken)]
+      );
+      throw error;
+    }
 
     const response = { ...genericResponse };
     if (!env.isProduction) {

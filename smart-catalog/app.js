@@ -6,6 +6,15 @@ const state = {
   selectedProduct: null,
 };
 
+const QORI_PUBLIC_PRIMARY = "#0759d6";
+const LEGACY_GREEN_COLORS = new Set(["#0f7354", "#09725f", "#0d6b52", "#118568", "#16a34a", "#22c55e", "#059669", "#047857", "#065f46", "#064e3b", "#14b8a6", "#0f766e"]);
+
+function publicBrandColor(value) {
+  const color = String(value || "").trim().toLowerCase();
+  if (!/^#[0-9a-f]{6}$/.test(color)) return QORI_PUBLIC_PRIMARY;
+  return LEGACY_GREEN_COLORS.has(color) ? QORI_PUBLIC_PRIMARY : color;
+}
+
 const catalogLogo = document.getElementById("catalogLogo");
 const catalogBrand = document.getElementById("catalogBrand");
 const catalogTitle = document.getElementById("catalogTitle");
@@ -26,6 +35,8 @@ const intentProductSummary = document.getElementById("intentProductSummary");
 const intentNameInput = document.getElementById("intentNameInput");
 const intentPhoneInput = document.getElementById("intentPhoneInput");
 const intentEmailInput = document.getElementById("intentEmailInput");
+const intentDocumentTypeInput = document.getElementById("intentDocumentTypeInput");
+const intentDocumentInput = document.getElementById("intentDocumentInput");
 const intentMessage = document.getElementById("intentMessage");
 
 function escapeHtml(value) {
@@ -59,7 +70,7 @@ async function api(path, options = {}) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error?.message || data.message || "No se pudo cargar el catálogo.");
+    throw new Error(data.error?.message || data.message || "No se pudo cargar el catalogo.");
   }
   return data;
 }
@@ -86,6 +97,8 @@ function productInitials(product) {
 
 function productCard(product) {
   const tags = Array.isArray(product.tags) ? product.tags.slice(0, 3) : [];
+  const promotion = product.active_promotion || null;
+  const price = product.price ? `<strong class="product-price">${promotion && product.compare_at_price ? `<s>${escapeHtml(money(product.compare_at_price, product.currency))}</s> ` : ""}${escapeHtml(money(product.price, product.currency))}</strong>` : "";
   return `
     <article class="product-card" data-product-id="${escapeHtml(product.id)}">
       <div class="product-image">
@@ -93,13 +106,14 @@ function productCard(product) {
       </div>
       <div>
         <h3>${escapeHtml(product.name)}</h3>
-        <p>${escapeHtml(product.short_description || product.description || "Solicita información por WhatsApp.")}</p>
+        <p>${escapeHtml(product.short_description || product.description || "Solicita informacion por WhatsApp.")}</p>
       </div>
-      ${product.price ? `<strong class="product-price">${escapeHtml(money(product.price, product.currency))}</strong>` : ""}
+      ${price}
+      ${promotion ? `<span class="product-promotion-badge">${escapeHtml(promotion.label || "Promoción temporal")} · hasta ${escapeHtml(new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(new Date(promotion.ends_at)))}</span>` : ""}
       ${tags.length ? `<div class="tag-row">${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>` : ""}
       <div class="product-actions">
         <button class="primary-button" type="button" data-order-product="${escapeHtml(product.id)}">${escapeHtml(product.cta_label || state.catalog?.default_cta_label || "Ordenar por WhatsApp")}</button>
-        <button class="info-button" type="button" data-info-product="${escapeHtml(product.id)}">Saber más</button>
+        <button class="info-button" type="button" data-info-product="${escapeHtml(product.id)}">Saber mas</button>
       </div>
     </article>
   `;
@@ -131,12 +145,12 @@ function renderProducts() {
 
 function renderCatalog() {
   const catalog = state.catalog;
-  document.title = `${catalog.title} | Catálogo Sales Machine`;
+  document.title = `${catalog.title} | Catalogo Qori`;
   catalogTitle.textContent = catalog.title;
-  catalogDescription.textContent = catalog.description || "Ordena o solicita información directamente por WhatsApp.";
-  catalogBrand.textContent = catalog.brand_name || catalog.business_name || "Sales Machine";
+  catalogDescription.textContent = catalog.description || "Ordena o solicita informacion directamente por WhatsApp.";
+  catalogBrand.textContent = catalog.brand_name || catalog.business_name || "Qori";
   if (catalog.brand_logo_url) catalogLogo.src = catalog.brand_logo_url;
-  if (catalog.theme_color) document.documentElement.style.setProperty("--green", catalog.theme_color);
+  document.documentElement.style.setProperty("--green", publicBrandColor(catalog.theme_color));
   if (catalog.cover_image_url) {
     catalogHero.style.backgroundImage = `linear-gradient(90deg, rgba(255,254,250,0.96), rgba(255,254,250,0.72)), url("${catalog.cover_image_url}")`;
     catalogHero.style.backgroundSize = "cover";
@@ -153,7 +167,7 @@ function renderCatalog() {
 async function loadCatalog() {
   try {
     const slug = catalogSlug();
-    if (!slug) throw new Error("Catálogo no encontrado.");
+    if (!slug) throw new Error("Catalogo no encontrado.");
     const product = productSlug();
     const data = product
       ? await api(`/api/public/catalogs/${encodeURIComponent(slug)}/products/${encodeURIComponent(product)}${queryString()}`)
@@ -167,7 +181,7 @@ async function loadCatalog() {
       openIntent(data.product);
     }
   } catch (error) {
-    catalogTitle.textContent = "Catálogo no disponible";
+    catalogTitle.textContent = "Catalogo no disponible";
     catalogDescription.textContent = error.message;
     productGrid.innerHTML = "";
     emptyState.classList.remove("hidden");
@@ -209,10 +223,12 @@ async function submitIntent(event) {
     customer_name: intentNameInput.value.trim(),
     customer_phone: intentPhoneInput.value.trim(),
     customer_email: intentEmailInput.value.trim() || null,
+    customer_document_type: intentDocumentTypeInput.value,
+    customer_document: intentDocumentInput.value.trim(),
     ...trackingPayload(),
   };
   try {
-    intentMessage.textContent = "Registrando intención comercial...";
+    intentMessage.textContent = "Registrando intencion comercial...";
     const result = await api(`/api/public/catalogs/${encodeURIComponent(state.catalog.slug)}/products/${encodeURIComponent(product.id)}/whatsapp-intent`, {
       method: "POST",
       body: JSON.stringify(payload),

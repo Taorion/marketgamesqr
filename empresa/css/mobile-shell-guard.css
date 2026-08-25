@@ -1,0 +1,138 @@
+/*
+ * Last-resort shell guard for the mobile portal.
+ * The login experience and authenticated workspace are mutually exclusive.
+ * It intentionally loads last because the portal has legacy visual layers.
+ */
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: clip;
+}
+
+body[data-auth-state="guest"] #workspace,
+body[data-auth-state="authenticated"] #loginPanel,
+#loginPanel.hidden,
+#workspace.hidden {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body[data-auth-state="guest"] #loginPanel:not(.hidden) {
+  display: grid !important;
+}
+
+body[data-auth-state="authenticated"] #workspace:not(.hidden) {
+  display: block !important;
+  min-height: 100dvh;
+}
+
+body[data-auth-state="authenticated"] .app-main,
+body[data-auth-state="authenticated"] .content-shell,
+body[data-auth-state="authenticated"] .view-section,
+body[data-auth-state="authenticated"] .surface-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  body[data-auth-state="guest"] .portal-shell {
+    min-height: 100dvh;
+  }
+
+  /* The public/login composition becomes a focused access screen on phones. */
+  body[data-auth-state="guest"] #loginPanel:not(.hidden) {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    width: 100%;
+    min-height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    align-content: start;
+    padding: max(20px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  }
+
+  body[data-auth-state="guest"] #loginPanel .login-experience {
+    display: block !important;
+    width: min(100%, 440px);
+    min-height: calc(100dvh - 44px);
+    margin: 0 auto;
+  }
+
+  body[data-auth-state="guest"] #loginPanel .login-vision {
+    display: none !important;
+  }
+
+  body[data-auth-state="guest"] #loginPanel .login-access-panel,
+  body[data-auth-state="guest"] #loginPanel .login-card {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  /* Authenticated views must remain a single, contained mobile surface. */
+  body[data-auth-state="authenticated"] #workspace,
+  body[data-auth-state="authenticated"] .app-shell,
+  body[data-auth-state="authenticated"] .app-main,
+  body[data-auth-state="authenticated"] .content-shell {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow-x: clip;
+  }
+
+  body[data-auth-state="authenticated"] .content-shell {
+    padding: 16px 12px calc(28px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body[data-auth-state="authenticated"] .view-section,
+  body[data-auth-state="authenticated"] .view-section > *,
+  body[data-auth-state="authenticated"] .content-shell > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Tables can scroll in their own lane without widening the portal itself. */
+  body[data-auth-state="authenticated"] .table-wrap,
+  body[data-auth-state="authenticated"] .table-scroll,
+  body[data-auth-state="authenticated"] .data-table-card {
+    max-width: 100% !important;
+  }
+
+  body[data-auth-state="authenticated"] .table-wrap,
+  body[data-auth-state="authenticated"] .table-scroll {
+    overflow-x: auto !important;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Every overlay owns the viewport, rather than inheriting a narrow parent. */
+  body[data-auth-state="authenticated"] .modal-shell,
+  body[data-auth-state="authenticated"] .lead-detail-workspace,
+  body[data-auth-state="authenticated"] .chart-focus-overlay {
+    box-sizing: border-box;
+    max-width: 100vw !important;
+  }
+
+  body[data-auth-state="authenticated"] .modal-shell:not(.hidden),
+  body[data-auth-state="authenticated"] .chart-focus-overlay:not(.hidden) {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 1300 !important;
+    display: flex !important;
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  body[data-auth-state="authenticated"] .modal-card,
+  body[data-auth-state="authenticated"] .lead-detail-workspace {
+    width: 100% !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+    overflow: auto !important;
+    overscroll-behavior: contain;
+  }
+}

@@ -2,6 +2,7 @@ const { query } = require("../config/db");
 const { canAccessBusiness } = require("../middleware/auth");
 const { forbidden } = require("../utils/http");
 const { getBusinessSubscription } = require("../services/subscriptionService");
+const { canonicalSalesUnionSql } = require("../services/metricsService");
 
 function countBy(rows, field) {
   return rows.reduce((accumulator, row) => {
@@ -183,10 +184,11 @@ async function businessDashboard(req, res, next) {
         [businessId]
       ),
       query(
-        `select to_char(created_at::date, 'YYYY-MM-DD') as date,
+        `with sales as (${canonicalSalesUnionSql()})
+         select to_char(created_at::date, 'YYYY-MM-DD') as date,
                 count(*)::int as sales,
                 coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue
-         from attributed_sales
+         from sales
          where business_id = $1 and created_at >= now() - interval '14 days'
          group by created_at::date
          order by created_at::date`,
@@ -247,25 +249,44 @@ async function businessDashboard(req, res, next) {
         [businessId]
       ),
       query(
-        `select
-           coalesce(br.name, 'Sin sucursal') as branch_name,
-           coalesce(br.address, 'Sin direccion') as address,
-           count(distinct rd.id)::int as redemptions,
-           count(distinct s.id)::int as sales,
-           coalesce(sum(s.sale_amount), 0)::numeric(14, 2) as revenue
-         from redemptions rd
-         left join branches br on br.id = rd.branch_id
-         left join attributed_sales s on s.redemption_id = rd.id
-         where rd.business_id = $1
-         group by br.id, br.name, br.address
+        `with sales as (${canonicalSalesUnionSql()}),
+          branch_scope as (
+            select id, name, address from branches where business_id = $1
+            union all
+            select null::uuid as id, 'Sin sucursal'::text as name, 'Sin direccion'::text as address
+          ),
+          redemption_metrics as (
+            select branch_id, count(*)::int as redemptions
+            from redemptions
+            where business_id = $1
+            group by branch_id
+          ),
+          sale_metrics as (
+            select branch_id,
+                   count(*)::int as sales,
+                   coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue
+            from sales
+            where business_id = $1
+            group by branch_id
+          )
+         select bs.name as branch_name,
+                bs.address,
+                coalesce(rm.redemptions, 0)::int as redemptions,
+                coalesce(sm.sales, 0)::int as sales,
+                coalesce(sm.revenue, 0)::numeric(14, 2) as revenue
+         from branch_scope bs
+         left join redemption_metrics rm on rm.branch_id is not distinct from bs.id
+         left join sale_metrics sm on sm.branch_id is not distinct from bs.id
+         where coalesce(rm.redemptions, 0) > 0 or coalesce(sm.sales, 0) > 0
          order by revenue desc, redemptions desc, branch_name asc`,
         [businessId]
       ),
       query(
-        `select coalesce(payment_method, 'Sin especificar') as payment_method,
+        `with sales as (${canonicalSalesUnionSql()})
+         select coalesce(payment_method, 'Sin especificar') as payment_method,
                 count(*)::int as count,
                 coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue
-         from attributed_sales
+         from sales
          where business_id = $1
          group by payment_method
          order by revenue desc, count desc`,
@@ -279,7 +300,9 @@ async function businessDashboard(req, res, next) {
            coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue,
            coalesce(sum(referral_points_awarded), 0)::int as referral_points_awarded
          from business_sales
-         where business_id = $1 and acquisition_source is not null
+         where business_id = $1
+           and coalesce(sale_status, 'PAID') = 'PAID'
+           and acquisition_source is not null
          group by coalesce(acquisition_source, 'OTHER'), coalesce(nullif(acquisition_channel, ''), 'Sin canal especifico')
          order by revenue desc, count desc`,
         [businessId]
@@ -302,6 +325,7 @@ async function businessDashboard(req, res, next) {
          from business_sales bs
          left join affiliates a on a.id = bs.referred_affiliate_id
          where bs.business_id = $1
+           and coalesce(bs.sale_status, 'PAID') = 'PAID'
          order by bs.created_at desc
          limit 25`,
         [businessId]
@@ -311,7 +335,9 @@ async function businessDashboard(req, res, next) {
                 count(*)::int as sales,
                 coalesce(sum(sale_amount), 0)::numeric(14, 2) as revenue
          from business_sales
-         where business_id = $1 and created_at >= now() - interval '14 days'
+         where business_id = $1
+           and coalesce(sale_status, 'PAID') = 'PAID'
+           and created_at >= now() - interval '14 days'
          group by created_at::date
          order by created_at::date`,
         [businessId]

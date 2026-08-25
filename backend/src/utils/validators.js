@@ -290,6 +290,7 @@ const interactiveActivationCreateSchema = z.object({
   title: z.string().trim().min(4).max(180),
   description: z.string().trim().max(1200).optional().nullable(),
   campaign_id: z.string().uuid().optional().nullable(),
+  branch_id: z.string().uuid().optional().nullable(),
   status: z.enum(["draft", "active", "paused", "closed", "archived"]).default("active"),
   reward_ticket_cost: z.number().int().min(1).max(100).default(1),
   reward_mode: z.enum(interactiveRewardModes).default("fixed"),
@@ -310,6 +311,7 @@ const interactiveActivationCreateSchema = z.object({
   touch_zones: z.array(interactiveTouchRewardZoneSchema).max(30).optional().default([]),
   benefit: interactiveBenefitSchema.optional(),
 }).superRefine((body, ctx) => {
+  if (body.status === "draft") return;
   if (body.reward_mode === "by_score" && !body.score_rewards.some((rule) => rule.reward_label)) {
     ctx.addIssue({ code: "custom", path: ["score_rewards"], message: "Configura al menos un rango de score con beneficio." });
   }
@@ -322,9 +324,14 @@ const interactiveActivationCreateSchema = z.object({
 });
 
 const interactiveActivationUpdateSchema = z.object({
+  activation_type: z.enum(interactiveActivationTypes).optional(),
+  category: z.enum(interactiveActivationCategories).optional(),
   title: z.string().trim().min(4).max(160).optional(),
   description: z.string().trim().max(1000).optional().nullable(),
+  branch_id: z.string().uuid().optional().nullable(),
   status: z.enum(["draft", "active", "paused", "closed", "archived"]).optional(),
+  reward_ticket_cost: z.number().int().min(1).max(100).optional(),
+  reward_mode: z.enum(interactiveRewardModes).optional(),
   reward_config: z.record(z.string(), z.unknown()).optional(),
   game_config: z.record(z.string(), z.unknown()).optional(),
   interaction_config: z.record(z.string(), z.unknown()).optional(),
@@ -335,6 +342,9 @@ const interactiveActivationUpdateSchema = z.object({
   max_participants: z.number().int().min(1).max(1000000).optional().nullable(),
   max_rewards: z.number().int().min(1).max(1000000).optional().nullable(),
   terms: z.string().trim().max(4000).optional().nullable(),
+  questions: z.array(interactiveQuestionSchema).max(50).optional(),
+  score_rewards: z.array(interactiveScoreRewardRuleSchema).max(30).optional(),
+  touch_zones: z.array(interactiveTouchRewardZoneSchema).max(30).optional(),
 }).refine((body) => Object.keys(body).length > 0, {
   message: "No hay campos para actualizar.",
 });
@@ -452,6 +462,9 @@ const qrClaimSchema = z.object({
   document_id: z.string().trim().max(40).optional().nullable(),
   source: z.string().trim().max(80).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional(),
+}).refine((value) => Boolean(value.phone || value.email), {
+  message: "Ingresa WhatsApp o correo para recibir el ticket.",
+  path: ["phone"],
 });
 
 module.exports = {

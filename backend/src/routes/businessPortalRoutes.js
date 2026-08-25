@@ -1,5 +1,5 @@
 const express = require("express");
-const { authRequired } = require("../middleware/auth");
+const { authRequired, requireRoles } = require("../middleware/auth");
 const {
   cacheBusinessResponse,
   invalidateBusinessResponseCache,
@@ -45,6 +45,8 @@ const {
   updateCompetitorProduct,
   archiveCompetitorProduct,
   listAcquisitionChannels,
+  getAcquisitionChannelInsights,
+  getAcquisitionChannelEffortInsights,
   createAcquisitionChannel,
   updateAcquisitionChannel,
   archiveAcquisitionChannel,
@@ -54,7 +56,15 @@ const {
   archiveAcquisitionChannelEffort,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
+  listInventoryCategories,
+  createInventoryCategory,
+  listInventorySubcategories,
+  createInventorySubcategory,
+  listInventoryCatalog,
+  createInventoryCatalog,
   createInventoryProduct,
+  importInventoryProductsCsv,
+  getInventoryProductInsights,
   listInventoryProducts,
   updateInventoryProduct,
   listCampaigns,
@@ -78,6 +88,8 @@ const {
   downloadActiveLeadQr,
   downloadLeadQrById,
   campaignRedemptions,
+  attributedSales,
+  voidAttributedSale,
   campaignSales,
   createSalesSnapshot,
   updateSalesSnapshot,
@@ -90,24 +102,49 @@ const {
   createNote,
   deleteAgendaItem,
   deleteContact,
+  downloadCustomerCsvErrors,
+  downloadCustomerCsvTemplate,
+  importCustomersCsv,
   leadDetail,
   listLeadsCrm,
+  markActivationOpened,
+  registerLeadWhatsAppContact,
   removeInterest,
   sendActivation,
+  previewCustomerCsvImport,
   updateAgendaItem,
 } = require("../controllers/leadCrmController");
 const {
+  activationEmailSummary: rmsActivationEmailSummary,
   createAgendaTask: createRmsAgendaTask,
-  executeActivationOneAction: executeRmsActivationOne,
   dailyQueue: rmsDailyQueue,
   events: rmsEvents,
+  intelligenceCase: rmsIntelligenceCase,
+  intelligenceCases: rmsIntelligenceCases,
+  intelligenceInsights: rmsIntelligenceInsights,
+  intelligencePatternReport: rmsIntelligencePatternReport,
+  createInsightAgendaTask: rmsCreateInsightAgendaTask,
   executeAction: executeRmsAction,
   executeBulkAction: executeRmsBulkAction,
   journeys: rmsJourneys,
   machine: rmsMachine,
   metrics: rmsMetrics,
+  unconvertedCost: rmsUnconvertedCost,
   movePhase: moveRmsPhase,
+  recordActivationDeliveryAction,
+  sendActivationBulkEmail: sendRmsActivationBulkEmail,
+  recordAttributedSale: rmsRecordAttributedSale,
+  recordCommercialConfirmation,
   recordEvaluationResponse: rmsRecordEvaluationResponse,
+  recordNegotiationResult,
+  prepareRiskRecoveryResource,
+  recordRiskReview,
+  postSaleActions: rmsPostSaleActions,
+  recordPostSaleAction: rmsRecordPostSaleAction,
+  reactivateRecycledLead,
+  recyclingQueue,
+  saveInsight: rmsSaveInsight,
+  updateRecyclingCase,
 } = require("../controllers/rmsMachineController");
 const {
   activate: activateGamificationSeason,
@@ -125,6 +162,28 @@ const {
   rewardsPending: gamificationRewardsPending,
   seasons: gamificationSeasons,
 } = require("../controllers/gamificationMissionController");
+const {
+  audience: communicationAudience,
+  create: createCommunication,
+  detail: communicationDetail,
+  remove: deleteCommunication,
+  emailConnection: communicationEmailConnection,
+  list: listCommunications,
+  markWhatsAppOpened: markCommunicationWhatsAppOpened,
+  patch: patchCommunication,
+  prepareWhatsApp: prepareCommunicationWhatsApp,
+  publish: publishCommunication,
+  saveEmailConnection: saveCommunicationEmailConnection,
+  saveWhatsAppConnection: saveCommunicationWhatsAppConnection,
+  send: sendCommunication,
+  sendWhatsApp: sendCommunicationWhatsApp,
+  testEmailConnection: testCommunicationEmailConnection,
+  testWhatsAppConnection: testCommunicationWhatsAppConnection,
+  whatsAppConnection: communicationWhatsAppConnection,
+  whatsAppTemplates: communicationWhatsAppTemplates,
+  whatsappQueue: communicationWhatsAppQueue,
+} = require("../controllers/businessCommunicationController");
+const { storageSummary } = require("../controllers/storageQuotaController");
 
 const router = express.Router();
 
@@ -136,6 +195,7 @@ const standardBusinessCache = cacheBusinessResponse({ keyPrefix: "business-stand
 const heavyBusinessCache = cacheBusinessResponse({ keyPrefix: "business-heavy", ttlMs: 300_000, maxBytes: 1024 * 1024 });
 
 router.get("/access", businessAccess);
+router.get("/storage/summary", storageSummary);
 router.get("/tickets/balance", ticketBalance);
 router.get("/tickets/transactions", ticketTransactions);
 router.get("/profile", getBusinessProfile);
@@ -147,6 +207,10 @@ router.get("/contacts/feed", standardBusinessCache, contactFeed);
 router.get("/contacts/manual", standardBusinessCache, listManualLeads);
 router.post("/contacts/manual", createManualLead);
 router.post("/contacts/manual/import-csv", importManualLeadsCsv);
+router.get("/contacts/customers/import-template.csv", downloadCustomerCsvTemplate);
+router.post("/contacts/customers/import-csv/preview", previewCustomerCsvImport);
+router.post("/contacts/customers/import-csv", importCustomersCsv);
+router.get("/contacts/customers/imports/:batchId/errors.csv", downloadCustomerCsvErrors);
 router.post("/contacts/manual/from-lead/:leadId", createManualLeadFromExistingLead);
 router.post("/contacts/manual/:manualLeadId/campaigns", assignManualLeadToCampaign);
 router.delete("/contacts/manual/:manualLeadId/campaigns/:campaignId", removeManualLeadFromCampaign);
@@ -162,11 +226,30 @@ router.get("/rms-machine", standardBusinessCache, rmsMachine);
 router.get("/rms-machine/daily-queue", standardBusinessCache, rmsDailyQueue);
 router.get("/rms-machine/journeys", standardBusinessCache, rmsJourneys);
 router.get("/rms-machine/metrics", standardBusinessCache, rmsMetrics);
+router.get("/rms-machine/unconverted-cost", rmsUnconvertedCost);
 router.get("/rms-machine/events", shortBusinessCache, rmsEvents);
+router.get("/rms-machine/intelligence/case", shortBusinessCache, rmsIntelligenceCase);
+router.get("/rms-machine/intelligence/cases", shortBusinessCache, rmsIntelligenceCases);
+router.get("/rms-machine/intelligence/patterns", standardBusinessCache, rmsIntelligencePatternReport);
+router.get("/rms-machine/intelligence/insights", shortBusinessCache, rmsIntelligenceInsights);
+router.post("/rms-machine/intelligence/insights", rmsSaveInsight);
+router.post("/rms-machine/intelligence/agenda-task", rmsCreateInsightAgendaTask);
 router.post("/rms-machine/actions/create-task", createRmsAgendaTask);
-router.post("/rms-machine/activation-one", executeRmsActivationOne);
-router.post("/rms-machine/evaluation-response", rmsRecordEvaluationResponse);
 router.post("/rms-machine/action", executeRmsAction);
+router.post("/rms-machine/activation-delivery", recordActivationDeliveryAction);
+router.get("/rms-machine/activation-email/summary", rmsActivationEmailSummary);
+router.post("/rms-machine/activation-email/bulk-send", sendRmsActivationBulkEmail);
+router.post("/rms-machine/evaluation-response", rmsRecordEvaluationResponse);
+router.post("/rms-machine/commercial-confirmation", recordCommercialConfirmation);
+router.post("/rms-machine/negotiation-result", recordNegotiationResult);
+router.post("/rms-machine/risk-recovery-resource", prepareRiskRecoveryResource);
+router.post("/rms-machine/risk-review", recordRiskReview);
+router.get("/rms-machine/post-sale-actions", shortBusinessCache, rmsPostSaleActions);
+router.post("/rms-machine/post-sale-actions", rmsRecordPostSaleAction);
+router.get("/rms-machine/recycling", shortBusinessCache, recyclingQueue);
+router.post("/rms-machine/recycling/action", updateRecyclingCase);
+router.post("/rms-machine/recycling/reactivate", reactivateRecycledLead);
+router.post("/rms-machine/attributed-sales", rmsRecordAttributedSale);
 router.post("/rms-machine/bulk-action", executeRmsBulkAction);
 router.patch("/rms-machine/lead/phase", moveRmsPhase);
 router.get("/gamification/dashboard", standardBusinessCache, gamificationDashboard);
@@ -190,11 +273,33 @@ router.post("/leads/:leadId/interests", addInterest);
 router.delete("/leads/:leadId/interests/:interestId", removeInterest);
 router.post("/leads/:leadId/purchases", addPurchase);
 router.post("/leads/:leadId/activations", sendActivation);
+router.post("/leads/:leadId/activations/:activationId/opened", markActivationOpened);
+router.post("/leads/:leadId/whatsapp", registerLeadWhatsAppContact);
 
 router.use(requirePortalAccess);
+router.use("/communications", requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"));
+router.get("/communications/email-connection", communicationEmailConnection);
+router.patch("/communications/email-connection", saveCommunicationEmailConnection);
+router.post("/communications/email-connection/test", testCommunicationEmailConnection);
+router.get("/communications/whatsapp-connection", communicationWhatsAppConnection);
+router.patch("/communications/whatsapp-connection", saveCommunicationWhatsAppConnection);
+router.get("/communications/whatsapp-connection/templates", communicationWhatsAppTemplates);
+router.post("/communications/whatsapp-connection/test", testCommunicationWhatsAppConnection);
+router.get("/communications/audience", shortBusinessCache, communicationAudience);
+router.get("/communications", standardBusinessCache, listCommunications);
+router.get("/communications/:id", communicationDetail);
+router.post("/communications", createCommunication);
+router.patch("/communications/:id", patchCommunication);
+router.delete("/communications/:id", deleteCommunication);
+router.post("/communications/:id/publish", publishCommunication);
+router.post("/communications/:id/send", sendCommunication);
+router.post("/communications/:id/whatsapp/prepare", prepareCommunicationWhatsApp);
+router.post("/communications/:id/whatsapp/send", sendCommunicationWhatsApp);
+router.get("/communications/:id/whatsapp/queue", communicationWhatsAppQueue);
+router.post("/communications/:id/whatsapp/opened", markCommunicationWhatsAppOpened);
 router.get("/activity", businessActivity);
 router.get("/analytics/command-center", heavyBusinessCache, commandCenterAnalytics);
-router.get("/branches", standardBusinessCache, listBranches);
+router.get("/branches", listBranches);
 router.post("/branches", createBranch);
 router.patch("/branches/:branchId", updateBranch);
 router.delete("/branches/:branchId", deleteBranch);
@@ -224,15 +329,28 @@ router.patch("/competitor-products/:productId", updateCompetitorProduct);
 router.delete("/competitor-products/:productId", archiveCompetitorProduct);
 router.get("/channels", standardBusinessCache, listAcquisitionChannels);
 router.post("/channels", createAcquisitionChannel);
+router.get("/channels/:channelId/insights", standardBusinessCache, getAcquisitionChannelInsights);
 router.get("/channel-efforts", standardBusinessCache, listAcquisitionChannelEfforts);
 router.post("/channel-efforts", createAcquisitionChannelEffort);
+router.get("/channel-efforts/:effortId/insights", standardBusinessCache, getAcquisitionChannelEffortInsights);
 router.patch("/channel-efforts/:effortId", updateAcquisitionChannelEffort);
 router.delete("/channel-efforts/:effortId", archiveAcquisitionChannelEffort);
 router.patch("/channels/:channelId", updateAcquisitionChannel);
 router.delete("/channels/:channelId", archiveAcquisitionChannel);
 router.post("/customer-acquisition-sales", createCustomerAcquisitionSale);
+router.get("/inventory/categories", standardBusinessCache, listInventoryCategories);
+router.post("/inventory/categories", createInventoryCategory);
+router.get("/inventory/subcategories", standardBusinessCache, listInventorySubcategories);
+router.post("/inventory/subcategories", createInventorySubcategory);
+// Express 5 / path-to-regexp no longer accepts the legacy inline regexp in a
+// parameter. The controller keeps the allow-list, so this broad route remains
+// protected while letting the server start on the current runtime.
+router.get("/inventory/catalog/:catalog", standardBusinessCache, listInventoryCatalog);
+router.post("/inventory/catalog/:catalog", createInventoryCatalog);
 router.get("/inventory/products", standardBusinessCache, listInventoryProducts);
 router.post("/inventory/products", createInventoryProduct);
+router.post("/inventory/products/import-csv", importInventoryProductsCsv);
+router.get("/inventory/products/:productId/insights", shortBusinessCache, getInventoryProductInsights);
 router.patch("/inventory/products/:productId", updateInventoryProduct);
 router.delete("/inventory/products/:productId", archiveInventoryProduct);
 router.get("/campaigns", standardBusinessCache, listCampaigns);
@@ -246,6 +364,8 @@ router.get("/campaigns/:id/leads", standardBusinessCache, campaignLeads);
 router.get("/campaigns/:id/leads/export.csv", exportCampaignLeads);
 router.get("/campaigns/:id/leads/:qrId/active-qr", downloadActiveLeadQr);
 router.get("/campaigns/:id/redemptions", standardBusinessCache, campaignRedemptions);
+router.get("/sales/attributed", attributedSales);
+router.post("/sales/:saleId/void", voidAttributedSale);
 router.get("/campaigns/:id/sales", standardBusinessCache, campaignSales);
 router.post("/campaigns/:id/sales-snapshot", createSalesSnapshot);
 router.patch("/campaigns/:id/sales-snapshots/:snapshotId", updateSalesSnapshot);

@@ -18,6 +18,7 @@ const {
   getBusinessSubscription,
   listPlans,
 } = require("./subscriptionService");
+const { storageAddonOffer, approveStorageAddonOrder } = require("./storageQuotaService");
 
 const MP_API_BASE = "https://api.mercadopago.com";
 
@@ -378,6 +379,42 @@ async function createCreditCheckout(user, body) {
   );
 
   return mapPurchaseOrder(updated.rows[0]);
+}
+
+async function createStorageAddonCheckout(user, body) {
+  if (!user.business_id || !canAccessBusiness(user, user.business_id)) {
+    throw forbidden("No puedes comprar almacenamiento para este negocio.");
+  }
+  await assertActiveSubscriptionForTicketPurchase(user);
+  const offer = storageAddonOffer(body.addon_code);
+  if (!offer) throw badRequest("Ampliacion de almacenamiento no disponible.");
+  const orderResult = await query(
+    `insert into business_storage_addon_orders
+      (business_id, created_by_user_id, addon_code, addon_name, storage_bytes, price_cop, external_reference)
+     values ($1, $2, $3, $4, $5, $6, gen_random_uuid()::text)
+     returning *`,
+    [user.business_id, user.id, offer.code, offer.name, offer.storage_bytes, offer.price_cop]
+  );
+  const order = orderResult.rows[0];
+  const preference = await mpRequest("/checkout/preferences", {
+    method: "POST",
+    body: JSON.stringify({
+      items: [{ id: offer.code, title: `Qori - ${offer.name} de almacenamiento`, quantity: 1, unit_price: Number(offer.price_cop), currency_id: "COP" }],
+      payer: { email: user.email, name: user.full_name || undefined },
+      external_reference: order.external_reference,
+      notification_url: webhookUrl(),
+      back_urls: { success: appUrl("/empresa/?payment=success&storage=success"), failure: appUrl("/empresa/?payment=failure&storage=failure"), pending: appUrl("/empresa/?payment=pending&storage=pending") },
+      metadata: { storage_addon_order_id: order.id, business_id: user.business_id, addon_code: offer.code },
+      payment_methods: digitalOnlyPaymentMethods(),
+      ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
+    }),
+  });
+  const updated = await query(
+    `update business_storage_addon_orders set mercado_pago_preference_id = $2, checkout_url = $3,
+       sandbox_checkout_url = $4, payment_payload = $5::jsonb, updated_at = now() where id = $1 returning *`,
+    [order.id, preference.id || null, preference.init_point || null, preference.sandbox_init_point || null, JSON.stringify(preference)]
+  );
+  return updated.rows[0];
 }
 
 async function createSubscriptionRenewalCheckout(user, body) {
@@ -956,6 +993,23 @@ async function processMercadoPagoWebhook(req) {
   }
 
   return withTransaction(async (client) => {
+    const storageOrderResult = await client.query(
+      `select * from business_storage_addon_orders where external_reference = $1 for update`,
+      [externalReference]
+    );
+    if (storageOrderResult.rowCount) {
+      const storageOrder = storageOrderResult.rows[0];
+      const storageStatus = mapPaymentStatus(payment.status);
+      if (storageStatus !== "APPROVED") {
+        const updated = await client.query(
+          `update business_storage_addon_orders set status = $2, mercado_pago_payment_id = coalesce(mercado_pago_payment_id, $3),
+             payment_payload = $4::jsonb, updated_at = now() where id = $1 returning *`,
+          [storageOrder.id, storageStatus, String(payment.id), JSON.stringify(payment)]
+        );
+        return { storage_order: updated.rows[0], credited: false };
+      }
+      return { storage_order: await approveStorageAddonOrder(client, storageOrder, payment), credited: false, storage_added: true };
+    }
     const orderResult = await client.query(
       `select *
        from qr_credit_purchase_orders
@@ -1289,6 +1343,7 @@ function mapPurchaseOrder(row) {
 
 module.exports = {
   createCreditCheckout,
+  createStorageAddonCheckout,
   createDemoCreditPurchase,
   createPrepaidSignupCheckout,
   createPortalSignupCheckout,

@@ -87,7 +87,7 @@ async function render() {
           <div>
             <div class="rp-eyebrow">Gift Card Digital Propia</div>
             <h1 class="rp-title">${isClaim ? "DESCUBRE TU GIFT CARD" : "REWARD PASS"}</h1>
-            <p class="rp-subtitle">${isClaim ? "Buenas noticias: tienes una Gift Card esperandote." : "Esta es tu Gift Card Digital oficial."} Emitida por ${escapeHtml(pass.company?.name || "Empresa emisora")} y administrada por Sales Machine.</p>
+            <p class="rp-subtitle">${isClaim ? "Buenas noticias: tienes una Gift Card esperandote." : "Esta es tu Gift Card Digital oficial."} Emitida por ${escapeHtml(pass.company?.name || "Empresa emisora")} y administrada por Qori.</p>
             <div class="rp-value">
               <span>${isClaim ? "Solo falta este paso" : "Saldo disponible"}</span>
               <strong>${isClaim ? "ACTIVAR" : money(officialValue)}</strong>
@@ -112,7 +112,7 @@ async function render() {
           <div class="rp-detail"><span>${isClaim ? "Valor" : "Valor inicial"}</span><strong>${escapeHtml(isClaim ? "Lo veras al activar" : money(pass.initial_value_cop))}</strong></div>
           <div class="rp-detail"><span>QR final</span><strong>${escapeHtml(isClaim ? "Se genera despues de tus datos" : "Listo para redimir")}</strong></div>
           <div class="rp-detail"><span>Vigencia</span><strong>${escapeHtml(date(pass.expires_at))}</strong></div>
-          <div class="rp-detail"><span>Sede autorizada</span><strong>${escapeHtml(pass.authorized_branch || "Segun condiciones del emisor")}</strong></div>
+          <div class="rp-detail"><span>Sede autorizada</span><strong>${escapeHtml(pass.authorized_branch_label || pass.authorized_branch_name || pass.authorized_branch || "Todas las Sedes")}</strong></div>
         </section>
         <footer class="rp-footer">
           <p><strong>Como funciona:</strong> ${escapeHtml(pass.instructions)}</p>
@@ -123,6 +123,7 @@ async function render() {
             <label>Documento de identidad<input id="rpClaimDocument" type="text" required></label>
             <label>Celular<input id="rpClaimPhone" type="tel"></label>
             <label>Email<input id="rpClaimEmail" type="email"></label>
+            <label class="rp-claim-pin">PIN de activación<input id="rpClaimPin" type="text" inputmode="numeric" autocomplete="one-time-code" minlength="6" maxlength="6" pattern="[0-9]{6}" placeholder="6 dígitos" required><small>El negocio emisor comparte este PIN contigo.</small></label>
             <button type="submit">Activar y ver mi Gift Card</button>
             <p id="rpClaimMessage"></p>
           </form>` : `
@@ -152,7 +153,12 @@ async function render() {
     form?.addEventListener("submit", async (event) => {
       event.preventDefault();
       const message = document.getElementById("rpClaimMessage");
-        message.textContent = "Activando tu Gift Card oficial...";
+      const submitButton = form.querySelector('button[type="submit"]');
+      message.textContent = "Activando tu Gift Card oficial...";
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Activando de forma segura...";
+      }
       try {
         const claimResponse = await fetch(`/api/public/reward-passes/${encodeURIComponent(publicCode)}/claim`, {
           method: "POST",
@@ -162,6 +168,7 @@ async function render() {
             beneficiary_document: document.getElementById("rpClaimDocument").value.trim(),
             beneficiary_phone: document.getElementById("rpClaimPhone").value.trim() || null,
             beneficiary_email: document.getElementById("rpClaimEmail").value.trim() || null,
+            security_pin: document.getElementById("rpClaimPin").value.trim(),
           }),
         });
         const claimData = await claimResponse.json().catch(() => ({}));
@@ -172,6 +179,10 @@ async function render() {
         setTimeout(render, 600);
       } catch (claimError) {
         message.textContent = claimError.message;
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = "Activar y ver mi Gift Card";
+        }
       }
     });
     if (!isClaim) {
@@ -180,7 +191,7 @@ async function render() {
       document.getElementById("rpShareButton")?.addEventListener("click", async () => {
         const shareData = {
           title: "Mi Gift Card Digital",
-          text: `Mi Reward Pass de ${pass.company?.name || "Sales Machine"}: ${money(officialValue)} COP disponibles.`,
+          text: `Mi Reward Pass de ${pass.company?.name || "Qori"}: ${money(officialValue)} COP disponibles.`,
           url: shareUrl,
         };
         try {
@@ -201,7 +212,7 @@ async function render() {
           if (shareMessage) shareMessage.textContent = "Ingresa un numero de WhatsApp valido.";
           return;
         }
-        const text = encodeURIComponent(`Te comparto mi Gift Card Digital de ${pass.company?.name || "Sales Machine"} por ${money(officialValue)} COP. Link oficial: ${shareUrl}`);
+        const text = encodeURIComponent(`Te comparto mi Gift Card Digital de ${pass.company?.name || "Qori"} por ${money(officialValue)} COP. Link oficial: ${shareUrl}`);
         window.open(`https://wa.me/${phone}?text=${text}`, "_blank", "noopener");
       });
     }

@@ -5,6 +5,7 @@ const {
   list,
   patch,
   patchStatus,
+  remove,
 } = require("../controllers/digitalAssetController");
 
 const router = express.Router();
@@ -16,5 +17,6 @@ router.get("/", list);
 router.post("/", create);
 router.patch("/:id", patch);
 router.patch("/:id/status", patchStatus);
+router.delete("/:id", remove);
 
 module.exports = router;

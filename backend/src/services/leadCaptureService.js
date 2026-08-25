@@ -3,6 +3,7 @@ const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
 const { badRequest, forbidden, notFound } = require("../utils/http");
 const { createSecureToken } = require("../utils/token");
+const { assertStorageQuotaForUpload } = require("./storageQuotaService");
 
 const MAX_ASSET_BYTES = 5 * 1024 * 1024;
 const MAX_COVER_BYTES = 2 * 1024 * 1024;
@@ -180,6 +181,7 @@ async function createDigitalAsset(businessId, user, body) {
   if (body.cover_image_data_url) {
     cover = parseDataUrl(body.cover_image_data_url, ALLOWED_COVER_TYPES, MAX_COVER_BYTES);
   }
+  await assertStorageQuotaForUpload(businessId, Buffer.byteLength(assetFile.dataUrl) + Buffer.byteLength(cover?.dataUrl || ""));
   const token = createSecureToken(12);
   const result = await query(
     `insert into digital_assets
@@ -227,6 +229,28 @@ async function updateDigitalAssetStatus(businessId, assetId, isActive) {
   return mapDigitalAsset(result.rows[0]);
 }
 
+async function deleteDigitalAsset(businessId, assetId) {
+  const references = await query(
+    `select
+       (select count(*)::int from lead_capture_activations where business_id = $1 and asset_id = $2) as activations,
+       (select count(*)::int from lead_capture_submissions where business_id = $1 and asset_id = $2) as submissions,
+       (select count(*)::int from rms_activation_attachments where business_id = $1 and asset_id = $2) as deliveries`,
+    [businessId, assetId]
+  );
+  const usage = references.rows[0] || {};
+  if (Number(usage.activations) || Number(usage.submissions) || Number(usage.deliveries)) {
+    throw badRequest("Este archivo ya tiene entregas o capturas asociadas. Se conserva como evidencia y no se puede borrar.");
+  }
+  const result = await query(
+    `delete from digital_assets
+     where id = $1 and business_id = $2 and asset_scope = 'library'
+     returning id, title, file_name, file_size`,
+    [assetId, businessId]
+  );
+  if (!result.rowCount) throw notFound("Activo digital no encontrado.");
+  return result.rows[0];
+}
+
 async function updateDigitalAsset(businessId, assetId, body = {}) {
   const current = await query(
     `select *
@@ -246,6 +270,9 @@ async function updateDigitalAsset(businessId, assetId, body = {}) {
       ? parseDataUrl(body.cover_image_data_url, ALLOWED_COVER_TYPES, MAX_COVER_BYTES).dataUrl
       : null;
   }
+  const currentStoredBytes = Buffer.byteLength(current.rows[0].file_data_url || "") + Buffer.byteLength(current.rows[0].cover_image_data_url || "");
+  const nextStoredBytes = Buffer.byteLength(assetFile?.dataUrl || current.rows[0].file_data_url || "") + Buffer.byteLength(coverDataUrl === undefined ? (current.rows[0].cover_image_data_url || "") : (coverDataUrl || ""));
+  await assertStorageQuotaForUpload(businessId, Math.max(0, nextStoredBytes - currentStoredBytes));
   const nextValue = (key, fallback, max) => (
     Object.prototype.hasOwnProperty.call(body, key)
       ? cleanText(body[key], max)
@@ -331,6 +358,7 @@ async function createLeadCaptureActivation(businessId, user, body) {
       if (body.asset.cover_image_data_url) {
         cover = parseDataUrl(body.asset.cover_image_data_url, ALLOWED_COVER_TYPES, MAX_COVER_BYTES);
       }
+      await assertStorageQuotaForUpload(businessId, Buffer.byteLength(assetFile.dataUrl) + Buffer.byteLength(cover?.dataUrl || ""));
     }
     if (body.expires_at && new Date(body.expires_at) <= new Date()) {
       throw badRequest("La fecha de vencimiento debe ser futura.");
@@ -588,6 +616,29 @@ function activationAvailable(row) {
   if (row.expires_at && new Date(row.expires_at).getTime() <= now) throw forbidden("Este recurso ha vencido.");
 }
 
+async function acquisitionEffortForLeadCapture(client, activation, trackingToken) {
+  if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(String(trackingToken || ""))) return null;
+  const result = await client.query(
+    `select e.id as effort_id, e.channel_id, ch.name as channel_name
+     from business_acquisition_channel_efforts e
+     join business_acquisition_channels ch on ch.id=e.channel_id and ch.business_id=e.business_id
+     where e.business_id=$1 and e.lead_capture_activation_id=$2 and e.tracking_token=$3::uuid and e.status='ACTIVE' limit 1`,
+    [activation.business_id, activation.id, trackingToken]
+  );
+  return result.rows[0] || null;
+}
+
+async function recordLeadAcquisitionEvent(client, activation, effort, eventType, extra = {}) {
+  if (!effort?.effort_id) return;
+  await client.query(
+    `insert into business_acquisition_events
+      (business_id, effort_id, channel_id, event_type, source_type, source_id, lead_id, dedupe_key, metadata)
+     values ($1,$2,$3,$4,'LEAD_CAPTURE',$5,$6,$7,$8::jsonb)
+     on conflict (business_id, effort_id, dedupe_key) where dedupe_key is not null do nothing`,
+    [activation.business_id, effort.effort_id, effort.channel_id, eventType, activation.id, extra.lead_id || null, extra.dedupe_key || null, JSON.stringify(extra.metadata || {})]
+  );
+}
+
 async function getPublicLeadCapture(token, reqMeta = {}) {
   const result = await query(
     `select a.*, b.name as business_name, b.settings as business_settings,
@@ -609,6 +660,8 @@ async function getPublicLeadCapture(token, reqMeta = {}) {
   );
   const row = result.rows[0];
   activationAvailable(row);
+  const effort = await acquisitionEffortForLeadCapture({ query }, row, reqMeta.acquisitionTrackingToken);
+  await recordLeadAcquisitionEvent({ query }, row, effort, "VIEW", { metadata: { ip: reqMeta.ip || null, user_agent: reqMeta.userAgent || null } });
   await query(
     `insert into lead_events (business_id, event_type, event_title, event_description, campaign_id, metadata)
      values ($1, 'capture_link_viewed', 'Link de Captura Relámpago visto', $2, $3, $4::jsonb)`,
@@ -714,11 +767,12 @@ async function submitPublicLeadCapture(token, body, reqMeta = {}) {
          limit 1
        ) da on true
        where a.public_token = $1
-       for update`,
+       for update of a`,
       [token]
     );
     const activation = result.rows[0];
     activationAvailable(activation);
+    const effort = await acquisitionEffortForLeadCapture(client, activation, reqMeta.acquisitionTrackingToken);
     const formConfig = defaultFormConfig(activation.form_config || {});
     const formData = body.form_data || {};
     for (const field of requiredVisibleFields(formConfig)) {
@@ -744,7 +798,7 @@ async function submitPublicLeadCapture(token, body, reqMeta = {}) {
         activation.campaign_id || null,
         activation.branch_id || null,
         activation.channel,
-        JSON.stringify(formData),
+        JSON.stringify({ ...formData, acquisition_effort_id: effort?.effort_id || null }),
         Boolean(body.consent_accepted),
         formConfig.consent_text || null,
         existing,
@@ -774,10 +828,13 @@ async function submitPublicLeadCapture(token, body, reqMeta = {}) {
           campaign_name: activation.campaign_name || null,
           source_label: digitalAssetSourceLabel(),
           attribution_subject: digitalAssetSubjectLabel(activation),
+          acquisition_effort_id: effort?.effort_id || null,
+          acquisition_channel_id: effort?.channel_id || null,
         }),
       ]
     );
     const eventType = existing ? "lead_existing_updated" : "lead_captured";
+    await recordLeadAcquisitionEvent(client, activation, effort, "LEAD", { lead_id: lead.id, dedupe_key: `LEAD:${submission.rows[0].id}`, metadata: { submission_id: submission.rows[0].id, asset_id: activation.asset_id } });
     await client.query(
       `insert into lead_events
         (business_id, lead_id, event_type, event_title, event_description, campaign_id, metadata)
@@ -829,7 +886,7 @@ async function downloadDigitalAsset(token, reqMeta = {}) {
        join lead_capture_activations a on a.id = d.activation_id
        left join campaigns c on c.id = a.campaign_id
        where d.download_token = $1
-       for update`,
+       for update of d`,
       [token]
     );
     const row = result.rows[0];
@@ -841,6 +898,10 @@ async function downloadDigitalAsset(token, reqMeta = {}) {
        where id = $1`,
       [row.id, reqMeta.ip || null, reqMeta.userAgent || null]
     );
+    if (row.metadata?.acquisition_effort_id) {
+      const effort = await client.query("select id as effort_id, channel_id from business_acquisition_channel_efforts where id=$1 and business_id=$2", [row.metadata.acquisition_effort_id, row.business_id]);
+      await recordLeadAcquisitionEvent(client, row, effort.rows[0], "DOWNLOAD", { lead_id: row.lead_id || null, dedupe_key: `DOWNLOAD:${row.id}`, metadata: { download_id: row.id, asset_id: row.asset_id } });
+    }
     await client.query(
       `update lead_capture_submissions
        set download_count = download_count + 1, last_downloaded_at = now()
@@ -906,6 +967,7 @@ function submissionsToCsv(rows = [], activation = {}) {
 module.exports = {
   createLeadCaptureActivation,
   createDigitalAsset,
+  deleteDigitalAsset,
   downloadDigitalAsset,
   getLeadCaptureActivation,
   getPublicLeadCapture,

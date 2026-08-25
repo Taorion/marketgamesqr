@@ -236,8 +236,10 @@ create table if not exists questionnaires (
   id uuid primary key default gen_random_uuid(),
   business_id uuid not null references businesses(id) on delete cascade,
   game_id uuid not null references games(id) on delete cascade,
-  player_id uuid not null references players(id) on delete cascade,
+  player_id uuid references players(id) on delete cascade,
+  interactive_participant_id uuid,
   answers jsonb not null default '{}',
+  constraint questionnaires_subject_check check (player_id is not null or interactive_participant_id is not null),
   created_at timestamptz not null default now()
 );
 
@@ -435,6 +437,8 @@ create table if not exists business_manual_leads (
   name text not null,
   email text,
   phone text,
+  document_type text,
+  document_id text,
   company text,
   job_title text,
   source text not null default 'Manual',
@@ -577,19 +581,65 @@ create table if not exists business_sales (
   referral_points_awarded integer not null default 0,
   notes text,
   created_at timestamptz not null default now(),
-  metadata jsonb not null default '{}'::jsonb
+  metadata jsonb not null default '{}'::jsonb,
+  rms_source_type text,
+  rms_source_id uuid,
+  inventory_product_id uuid,
+  quantity numeric(12, 2) not null default 1,
+  unit_cost numeric(14, 2) not null default 0,
+  product_cost_total numeric(14, 2) not null default 0,
+  benefit_type text,
+  benefit_cost numeric(14, 2) not null default 0,
+  acquisition_cost numeric(14, 2) not null default 0,
+  gross_profit numeric(14, 2) not null default 0,
+  net_profit numeric(14, 2) not null default 0,
+  roi numeric(14, 6),
+  payment_method text,
+  paid_at timestamptz,
+  sale_status text not null default 'PAID',
+  idempotency_key text
+);
+
+create table if not exists business_product_categories (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references businesses(id) on delete cascade,
+  internal_id text not null,
+  name text not null,
+  created_by_user_id uuid references app_users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (business_id, internal_id),
+  unique (business_id, name)
+);
+
+create table if not exists business_product_subcategories (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references businesses(id) on delete cascade,
+  category_id uuid not null references business_product_categories(id) on delete restrict,
+  internal_id text not null,
+  name text not null,
+  created_by_user_id uuid references app_users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (business_id, internal_id),
+  unique (business_id, category_id, name)
 );
 
 create table if not exists business_inventory_products (
   id uuid primary key default gen_random_uuid(),
   business_id uuid not null references businesses(id) on delete cascade,
+  internal_id text not null,
   sku text,
   barcode text,
   name text not null,
   description text,
   category text,
+  category_id uuid references business_product_categories(id) on delete restrict,
+  subcategory_id uuid references business_product_subcategories(id) on delete restrict,
   brand text,
   unit_price numeric(14, 2) not null default 0,
+  price_before_tax numeric(14, 2) not null default 0,
+  tax_classification text not null default 'EXEMPT',
   cost_price numeric(14, 2),
   currency text not null default 'COP',
   stock_quantity numeric(14, 2) not null default 0,
@@ -600,9 +650,36 @@ create table if not exists business_inventory_products (
   created_by_user_id uuid references app_users(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  check (tax_classification in ('EXEMPT', 'VAT_0', 'VAT_5', 'VAT_11', 'VAT_19')),
+  unique (business_id, internal_id),
   unique (business_id, sku),
   unique (business_id, barcode)
 );
+
+alter table business_sales
+  add column if not exists rms_source_type text,
+  add column if not exists rms_source_id uuid,
+  add column if not exists inventory_product_id uuid,
+  add column if not exists quantity numeric(12, 2) not null default 1,
+  add column if not exists unit_cost numeric(14, 2) not null default 0,
+  add column if not exists product_cost_total numeric(14, 2) not null default 0,
+  add column if not exists benefit_type text,
+  add column if not exists benefit_cost numeric(14, 2) not null default 0,
+  add column if not exists acquisition_cost numeric(14, 2) not null default 0,
+  add column if not exists gross_profit numeric(14, 2) not null default 0,
+  add column if not exists net_profit numeric(14, 2) not null default 0,
+  add column if not exists roi numeric(14, 6),
+  add column if not exists payment_method text,
+  add column if not exists paid_at timestamptz,
+  add column if not exists sale_status text not null default 'PAID',
+  add column if not exists idempotency_key text;
+
+do $$ begin
+  alter table business_sales
+    add constraint business_sales_inventory_product_id_fkey
+    foreign key (inventory_product_id) references business_inventory_products(id) on delete set null;
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists qr_claims (
   id uuid primary key default gen_random_uuid(),
@@ -647,8 +724,17 @@ create table if not exists attributed_sales (
   campaign_id uuid references campaigns(id) on delete set null,
   qr_code_id uuid not null references qr_codes(id) on delete restrict,
   redemption_id uuid not null references redemptions(id) on delete cascade,
-  player_id uuid not null references players(id) on delete restrict,
+  player_id uuid references players(id) on delete restrict,
   sale_amount numeric(14, 2) not null default 0,
+  purchase_subtotal numeric(14, 2) not null default 0,
+  benefit_discount_amount numeric(14, 2) not null default 0,
+  benefit_type text,
+  benefit_label text,
+  benefit_snapshot jsonb not null default '{}'::jsonb,
+  line_items jsonb not null default '[]'::jsonb,
+  application_summary jsonb not null default '{}'::jsonb,
+  purchase_required boolean not null default false,
+  application_mode text not null default 'PURCHASE' check (application_mode in ('PURCHASE', 'STANDALONE')),
   currency text not null default 'COP',
   sale_confirmed_by_user_id uuid references app_users(id) on delete set null,
   branch_id uuid references branches(id) on delete set null,
@@ -656,6 +742,8 @@ create table if not exists attributed_sales (
   product_or_service text,
   notes text,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (purchase_subtotal >= 0 and benefit_discount_amount >= 0 and sale_amount >= 0 and sale_amount <= purchase_subtotal),
   unique (redemption_id)
 );
 
@@ -709,6 +797,10 @@ alter table business_sales add column if not exists metadata jsonb not null defa
 alter table business_sales add column if not exists customer_document_id text;
 alter table business_sales add column if not exists acquisition_source text;
 alter table business_sales add column if not exists acquisition_channel text;
+alter table business_sales add column if not exists acquisition_channel_id uuid;
+alter table business_sales add column if not exists acquisition_channel_name_snapshot text;
+alter table business_sales add column if not exists acquisition_channel_slug_snapshot text;
+alter table business_sales add column if not exists acquisition_channel_source text;
 alter table business_sales add column if not exists referred_affiliate_id uuid references affiliates(id) on delete set null;
 alter table business_sales add column if not exists referral_points_awarded integer not null default 0;
 
@@ -842,8 +934,20 @@ create index if not exists idx_qr_claims_business_claimed on qr_claims(business_
 create index if not exists idx_business_sales_business_created on business_sales(business_id, created_at desc);
 create index if not exists idx_business_sales_business_source_created on business_sales(business_id, acquisition_source, created_at desc);
 create index if not exists idx_business_sales_business_channel_created on business_sales(business_id, acquisition_channel, created_at desc);
+create index if not exists idx_business_sales_business_acquisition_channel_id_created on business_sales(business_id, acquisition_channel_id, created_at desc);
 create index if not exists idx_business_sales_referred_affiliate on business_sales(referred_affiliate_id, created_at desc);
+create index if not exists business_sales_rms_source_created_idx on business_sales(business_id, rms_source_type, rms_source_id, created_at desc) where rms_source_id is not null;
+create index if not exists business_sales_inventory_product_idx on business_sales(inventory_product_id) where inventory_product_id is not null;
+create unique index if not exists business_sales_idempotency_key_idx on business_sales(business_id, idempotency_key) where idempotency_key is not null;
 create index if not exists idx_business_inventory_products_business_status on business_inventory_products(business_id, status, updated_at desc);
+create index if not exists idx_business_product_categories_business_name
+  on business_product_categories(business_id, name);
+create index if not exists idx_business_product_subcategories_business_category
+  on business_product_subcategories(business_id, category_id, name);
+create unique index if not exists business_product_categories_business_internal_id_ci_uidx
+  on business_product_categories(business_id, lower(internal_id));
+create unique index if not exists business_product_subcategories_business_internal_id_ci_uidx
+  on business_product_subcategories(business_id, lower(internal_id));
 create index if not exists idx_business_inventory_products_search
   on business_inventory_products using gin (
     to_tsvector('simple', coalesce(name, '') || ' ' || coalesce(sku, '') || ' ' || coalesce(barcode, '') || ' ' || coalesce(category, '') || ' ' || coalesce(brand, ''))
@@ -925,6 +1029,16 @@ create trigger trg_business_inventory_products_updated_at
 before update on business_inventory_products
 for each row execute function set_updated_at();
 
+drop trigger if exists trg_business_product_categories_updated_at on business_product_categories;
+create trigger trg_business_product_categories_updated_at
+before update on business_product_categories
+for each row execute function set_updated_at();
+
+drop trigger if exists trg_business_product_subcategories_updated_at on business_product_subcategories;
+create trigger trg_business_product_subcategories_updated_at
+before update on business_product_subcategories
+for each row execute function set_updated_at();
+
 create table if not exists business_acquisition_channels (
   id uuid primary key default gen_random_uuid(),
   business_id uuid not null references businesses(id) on delete cascade,
@@ -947,6 +1061,24 @@ create table if not exists business_acquisition_channels (
 create index if not exists idx_business_acquisition_channels_business_status
   on business_acquisition_channels(business_id, status, updated_at desc);
 
+do $$ begin
+  alter table business_sales
+    add constraint business_sales_acquisition_channel_id_fkey
+    foreign key (acquisition_channel_id) references business_acquisition_channels(id) on delete set null;
+exception when duplicate_object then null;
+end $$;
+alter table business_manual_leads add column if not exists acquisition_channel_id uuid;
+alter table business_manual_leads add column if not exists acquisition_channel_name_snapshot text;
+alter table business_manual_leads add column if not exists acquisition_channel_slug_snapshot text;
+alter table business_manual_leads add column if not exists acquisition_channel_source text;
+do $$ begin
+  alter table business_manual_leads
+    add constraint business_manual_leads_acquisition_channel_id_fkey
+    foreign key (acquisition_channel_id) references business_acquisition_channels(id) on delete set null;
+exception when duplicate_object then null;
+end $$;
+alter table campaigns add column if not exists launch_channel_refs jsonb not null default '[]'::jsonb;
+
 create table if not exists business_acquisition_channel_efforts (
   id uuid primary key default gen_random_uuid(),
   business_id uuid not null references businesses(id) on delete cascade,
@@ -965,10 +1097,33 @@ create table if not exists business_acquisition_channel_efforts (
   creative_url text,
   source_url text,
   notes text,
+  tracking_token uuid not null default gen_random_uuid(),
+  attribution_model text not null default 'LEGACY_WINDOW' check (attribution_model in ('DIRECT_LINK', 'TRACKED_LINK', 'LEGACY_WINDOW')),
+  interactive_activation_id uuid references interactive_activations(id) on delete set null,
+  lead_capture_activation_id uuid references lead_capture_activations(id) on delete set null,
+  digital_asset_id uuid references digital_assets(id) on delete set null,
   metadata jsonb not null default '{}'::jsonb,
   created_by_user_id uuid references app_users(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+create table if not exists business_acquisition_events (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references businesses(id) on delete cascade,
+  effort_id uuid not null references business_acquisition_channel_efforts(id) on delete cascade,
+  channel_id uuid not null references business_acquisition_channels(id) on delete cascade,
+  event_type text not null,
+  source_type text not null,
+  source_id uuid,
+  lead_id uuid references players(id) on delete set null,
+  participant_id uuid references interactive_activation_participants(id) on delete set null,
+  qr_code_id uuid references qr_codes(id) on delete set null,
+  revenue_amount numeric(14, 2) not null default 0,
+  dedupe_key text,
+  occurred_at timestamptz not null default now(),
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
 );
 
 create index if not exists idx_business_acquisition_channel_efforts_channel_dates

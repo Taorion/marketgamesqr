@@ -32,6 +32,8 @@ router.delete("/:id", remove);
 router.post("/:id/recycle", recycle);
 router.get("/:id/participants", activationCache, participants);
 router.get("/:id/rewards", activationCache, rewards);
-router.get("/:id/report", activationCache, report);
+// The operator history must reflect public participation immediately; do not
+// serve a cached snapshot after a lead completes an activation.
+router.get("/:id/report", report);
 
 module.exports = router;

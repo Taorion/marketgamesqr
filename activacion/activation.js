@@ -5,13 +5,16 @@ const progressLabel = document.getElementById("progressLabel");
 const progressPercent = document.getElementById("progressPercent");
 const progressBar = document.getElementById("progressBar");
 const businessName = document.getElementById("businessName");
+const activationBusinessLogo = document.getElementById("activationBusinessLogo");
 const activationTitle = document.getElementById("activationTitle");
 const activationDescription = document.getElementById("activationDescription");
 const participantForm = document.getElementById("participantForm");
 const participantName = document.getElementById("participantName");
 const participantPhone = document.getElementById("participantPhone");
+const participantPhoneCountry = document.getElementById("participantPhoneCountry");
 const participantEmail = document.getElementById("participantEmail");
 const participantDocument = document.getElementById("participantDocument");
+const participantDocumentType = document.getElementById("participantDocumentType");
 const activationCustomForm = document.getElementById("activationCustomForm");
 const experienceStage = document.getElementById("experienceStage");
 const experienceTitle = document.getElementById("experienceTitle");
@@ -93,7 +96,15 @@ function benefitFulfillmentFromResult(data = {}) {
       mode: "ECOMMERCE_CODE",
       ecommerce_code: source.ecommerce_code || value.ecommerce_code || "",
       ecommerce_url: source.ecommerce_url || value.ecommerce_url || "",
-      instructions: source.instructions || value.instructions || "Copia este código y aplícalo en el checkout de la tienda online.",
+      instructions: source.instructions || value.instructions || "Copia este codigo y aplicalo en el checkout de la tienda online.",
+    };
+  }
+  if (mode === "DIGITAL_ASSET" || mode === "DIGITAL_DOWNLOAD") {
+    return {
+      mode: "DIGITAL_ASSET",
+      asset_title: data.digital_asset?.title || source.asset_title || value.digital_asset_title || "Activo digital",
+      download_url: data.digital_asset?.download_url || source.download_url || value.download_url || "",
+      instructions: source.instructions || value.instructions || "Completaste la dinámica. Descarga tu activo digital ahora.",
     };
   }
   return {
@@ -236,7 +247,7 @@ function renderCustomFormFields(activation) {
   activationCustomForm.innerHTML = `
     <div class="activation-custom-head">
       <span>Formulario del negocio</span>
-      <strong>Cuéntanos un poco más antes de jugar</strong>
+      <strong>Cuentanos un poco mas antes de jugar</strong>
       <p>Estas respuestas ayudan al negocio a entender tu interes y atenderte mejor.</p>
     </div>
     ${fields.map((field, index) => `
@@ -355,12 +366,15 @@ function participantPayload() {
   const enriched = applyFixedProductInterest(activationForm, rmsIntake);
   return {
     name: participantName.value.trim(),
-    phone: participantPhone.value.trim(),
+    phone: `+${participantPhoneCountry?.value || "57"}${participantPhone.value.replace(/\D/g, "")}`,
     email: participantEmail.value.trim() || null,
     document: participantDocument.value.trim() || null,
+    document_type: participantDocumentType?.value || "CC",
     metadata: {
       source_url: window.location.href,
       user_agent: navigator.userAgent,
+      communication_tracking_token: new URLSearchParams(window.location.search).get("qori_ref") || null,
+      communication_tracking_source: new URLSearchParams(window.location.search).get("qori_source") || null,
       activation_form: enriched.activationForm,
       rms_intake: enriched.rmsIntake,
     },
@@ -373,12 +387,24 @@ function isPremium(activation) {
 
 function renderActivation(activation) {
   currentActivation = activation;
-  businessName.textContent = activation.business?.name || "Sales Machine RMS";
+  const business = activation.business || {};
+  const businessLabel = business.name || "Qori RMS";
+  const logoUrl = String(business.logo_url || "").trim();
+  businessName.textContent = businessLabel;
+  if (activationBusinessLogo) {
+    activationBusinessLogo.src = logoUrl || "/img/Logotipo%20Qori%20VF.png";
+    activationBusinessLogo.alt = logoUrl ? `Logo de ${businessLabel}` : "Logo Qori";
+    activationBusinessLogo.onerror = () => {
+      activationBusinessLogo.onerror = null;
+      activationBusinessLogo.src = "/img/Logotipo%20Qori%20VF.png";
+      activationBusinessLogo.alt = "Logo Qori";
+    };
+  }
   activationTitle.textContent = activation.title;
   activationDescription.textContent = activation.activation_type === "SCRATCH_WIN"
     ? "Registra tus datos, responde el formulario y raspa la superficie para descubrir el premio."
     : activation.description || "Deja tus datos, responde el formulario y completa la experiencia para desbloquear tu QR.";
-  document.title = `${activation.title} | Activacion Sales Machine`;
+  document.title = `${activation.title} | Activacion Qori`;
   card.classList.toggle("is-premium", isPremium(activation));
   syncCaptureRequirements(activation);
   if (!activation.active) {
@@ -407,8 +433,7 @@ function syncCaptureRequirements(activation) {
   participantDocument.placeholder = requiresDocument ? "Obligatorio" : "Opcional";
   participantEmail.required = requiresEmail;
   participantEmail.placeholder = requiresEmail ? "Obligatorio" : "Opcional";
-  const documentLabel = participantDocument.closest("label")?.querySelector("span");
-  if (documentLabel) documentLabel.textContent = requiresDocument ? "Documento" : "Documento";
+  if (participantDocumentType) participantDocumentType.required = requiresDocument;
   participantPhone.required = requiredFields.has("phone");
   participantPhone.placeholder = "Obligatorio";
   renderCustomFormFields(activation);
@@ -1390,7 +1415,7 @@ function startBreakout(runtime) {
 
 function drawBreakoutObjects(ctx, bricks, paddle, ball) {
   bricks.forEach((brick, index) => {
-    ctx.fillStyle = ["#7cfbff", "#f2b84b", "#ff5c8a", "#57d27f"][index % 4];
+    ctx.fillStyle = ["#7cfbff", "#f2b84b", "#ff5c8a", "#00bfe5"][index % 4];
     ctx.fillRect(brick.x, brick.y, brick.w, brick.h);
   });
   ctx.fillStyle = "#f8fdff";
@@ -1495,7 +1520,7 @@ function drawSnakeBoard(ctx, snake, food, ox, oy, cols, rows, cell) {
   ctx.fillStyle = "#f2b84b";
   ctx.fillRect(ox + food.x * cell + 3, oy + food.y * cell + 3, cell - 6, cell - 6);
   snake.forEach((part, index) => {
-    ctx.fillStyle = index === 0 ? "#7cfbff" : "#57d27f";
+    ctx.fillStyle = index === 0 ? "#7cfbff" : "#00bfe5";
     ctx.fillRect(ox + part.x * cell + 2, oy + part.y * cell + 2, cell - 4, cell - 4);
   });
 }
@@ -1631,7 +1656,7 @@ function createCatchDrop(lanes, width, elapsed = 0, config = {}) {
   const presets = {
     coin: { good: true, label: "$", color: "#f2b84b", scoreScale: 1, r: 12 },
     gem: { good: true, label: "*", color: "#7cfbff", scoreScale: 1.6, r: 11 },
-    jackpot: { good: true, label: "VIP", color: "#57d27f", scoreScale: 2.4, r: 15, vy: base.vy * 1.08 },
+    jackpot: { good: true, label: "VIP", color: "#00bfe5", scoreScale: 2.4, r: 15, vy: base.vy * 1.08 },
     magnet: { good: true, special: true, label: "M", color: "#b894ff", scoreScale: 0.5, r: 13 },
     clock: { good: true, special: true, label: "+T", color: "#eafcff", scoreScale: 0.4, r: 13 },
     shield: { good: true, special: true, label: "S", color: "#5ad7ff", scoreScale: 0.4, r: 13 },
@@ -1878,7 +1903,7 @@ function drawMemoryCards(ctx, symbols, ox, oy, cardW, cardH, gap, cols) {
     const row = Math.floor(index / cols);
     const x = ox + col * (cardW + gap);
     const y = oy + row * (cardH + gap);
-    ctx.fillStyle = card.matched ? "#143f35" : (card.open ? "#f2b84b" : "#182d45");
+    ctx.fillStyle = card.matched ? "#052a6b" : (card.open ? "#f2b84b" : "#182d45");
     ctx.fillRect(x, y, cardW, cardH);
     ctx.strokeStyle = "#7cfbff";
     ctx.strokeRect(x, y, cardW, cardH);
@@ -2037,7 +2062,7 @@ function startMiniMaze(runtime) {
 function drawMazeObjects(ctx, walls, goal, player) {
   ctx.fillStyle = "#ff5c8a";
   walls.forEach((wall) => ctx.fillRect(wall.x, wall.y, wall.w, wall.h));
-  ctx.fillStyle = "#57d27f";
+  ctx.fillStyle = "#00bfe5";
   ctx.beginPath();
   ctx.arc(goal.x, goal.y, goal.r, 0, Math.PI * 2);
   ctx.fill();
@@ -2226,7 +2251,7 @@ function drawRunnerLanes(ctx, width, height, elapsed) {
 
 function drawRunnerObjects(ctx, player, items) {
   items.forEach((item) => {
-    ctx.fillStyle = item.good ? (item.scale > 1 ? "#57d27f" : "#f2b84b") : "#ff5c8a";
+    ctx.fillStyle = item.good ? (item.scale > 1 ? "#00bfe5" : "#f2b84b") : "#ff5c8a";
     ctx.beginPath();
     ctx.arc(item.x, item.y, item.r, 0, Math.PI * 2);
     ctx.fill();
@@ -2319,7 +2344,7 @@ function createBalloon(width, height, elapsed, config = {}) {
 
 function drawBalloons(ctx, balloons, streak) {
   balloons.forEach((balloon) => {
-    ctx.fillStyle = balloon.bad ? "#ff5c8a" : (balloon.scale > 1 ? "#57d27f" : "#7cfbff");
+    ctx.fillStyle = balloon.bad ? "#ff5c8a" : (balloon.scale > 1 ? "#00bfe5" : "#7cfbff");
     ctx.beginPath();
     ctx.ellipse(balloon.x, balloon.y, balloon.r * 0.9, balloon.r * 1.18, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -2342,7 +2367,7 @@ function startRouletteSpin(runtime) {
   const configuredSegments = currentActivation.reward_config?.choices
     || currentActivation.game_config?.segments
     || [];
-  const palette = ["#57d27f", "#7cfbff", "#f2b84b", "#b894ff", "#ff9a3d", "#ff5c8a", "#5ad7ff", "#eafcff"];
+  const palette = ["#00bfe5", "#7cfbff", "#f2b84b", "#b894ff", "#ff9a3d", "#ff5c8a", "#5ad7ff", "#eafcff"];
   const segments = (configuredSegments.length ? configuredSegments : [
     { value: "ROULETTE_1", label: "10% de descuento" },
     { value: "ROULETTE_2", label: "Regalo sorpresa" },
@@ -2521,7 +2546,7 @@ function rouletteLabelLines(value) {
       return;
     }
     if (current) lines.push(current);
-    current = word.length > 12 ? `${word.slice(0, 11)}…` : word;
+    current = word.length > 12 ? `${word.slice(0, 11)}...` : word;
   });
   if (current) lines.push(current);
   return lines.slice(0, 2);
@@ -2674,7 +2699,7 @@ function drawTrueFalse(ctx, width, height, prompt, age, streak, promptTime = 3.6
   wrapCanvasText(ctx, prompt.text, width / 2, 122, width - 90, 26, "center");
   ctx.fillStyle = "#ff5c8a";
   ctx.fillRect(70, 214, width / 2 - 95, 104);
-  ctx.fillStyle = "#57d27f";
+  ctx.fillStyle = "#00bfe5";
   ctx.fillRect(width / 2 + 25, 214, width / 2 - 95, 104);
   ctx.fillStyle = "#07111f";
   ctx.font = "900 26px monospace";
@@ -2753,12 +2778,12 @@ function drawOrderSequence(ctx, sequence, step) {
   ctx.font = "800 14px monospace";
   ctx.fillText(`SIGUIENTE: ${sequence.labels[step] || "COMPLETO"}`, 18, 54);
   sequence.items.forEach((item) => {
-    ctx.fillStyle = item.done ? "#143f35" : "#182d45";
+    ctx.fillStyle = item.done ? "#052a6b" : "#182d45";
     ctx.fillRect(item.x, item.y, item.w, item.h);
     ctx.strokeStyle = item.index === step ? "#f2b84b" : "#7cfbff";
     ctx.lineWidth = 3;
     ctx.strokeRect(item.x, item.y, item.w, item.h);
-    ctx.fillStyle = item.done ? "#57d27f" : "#eafcff";
+    ctx.fillStyle = item.done ? "#00bfe5" : "#eafcff";
     ctx.font = "900 17px monospace";
     ctx.fillText(item.label, item.x + 18, item.y + 36);
   });
@@ -2830,7 +2855,7 @@ function pointInConnector(pos, item) {
 
 function drawConnectorBoard(ctx, board, selected) {
   board.links.forEach((link) => {
-    ctx.strokeStyle = "#57d27f";
+    ctx.strokeStyle = "#00bfe5";
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(link.from.x + link.from.w, link.from.y + link.from.h / 2);
@@ -2838,7 +2863,7 @@ function drawConnectorBoard(ctx, board, selected) {
     ctx.stroke();
   });
   [...board.left, ...board.right].forEach((item) => {
-    ctx.fillStyle = item.done ? "#143f35" : (item === selected ? "#f2b84b" : "#182d45");
+    ctx.fillStyle = item.done ? "#052a6b" : (item === selected ? "#f2b84b" : "#182d45");
     ctx.fillRect(item.x, item.y, item.w, item.h);
     ctx.strokeStyle = item === selected ? "#fff" : "#7cfbff";
     ctx.strokeRect(item.x, item.y, item.w, item.h);
@@ -3024,7 +3049,7 @@ function drawBattleshipBoard(ctx, width, height, board) {
       const hit = shot && ship;
       const miss = shot && !ship;
       const revealShip = board.completed && ship;
-      ctx.fillStyle = hit ? (ship.sunk ? "#f2b84b" : "#57d27f") : (miss ? "#ff5c8a" : (revealShip ? "#244b58" : "#12314d"));
+      ctx.fillStyle = hit ? (ship.sunk ? "#f2b84b" : "#00bfe5") : (miss ? "#ff5c8a" : (revealShip ? "#244b58" : "#12314d"));
       ctx.fillRect(ox + x * cell, oy + y * cell, cell - 3, cell - 3);
       ctx.strokeStyle = hit ? "#ffffff" : "#7cfbff";
       ctx.lineWidth = hit ? 3 : 1.5;
@@ -3055,11 +3080,11 @@ function drawBattleshipStatus(ctx, x, y, width, board) {
   ctx.fillText("FLOTA", x + 18, y + 30);
   board.ships.forEach((ship, index) => {
     const rowY = y + 62 + index * 48;
-    ctx.fillStyle = ship.sunk ? "#57d27f" : "#eafcff";
+    ctx.fillStyle = ship.sunk ? "#00bfe5" : "#eafcff";
     ctx.font = "900 14px monospace";
     ctx.fillText(`${ship.label}: ${ship.hits.size}/${ship.length}`, x + 18, rowY);
     for (let dot = 0; dot < ship.length; dot += 1) {
-      ctx.fillStyle = dot < ship.hits.size ? (ship.sunk ? "#f2b84b" : "#57d27f") : "#12314d";
+      ctx.fillStyle = dot < ship.hits.size ? (ship.sunk ? "#f2b84b" : "#00bfe5") : "#12314d";
       ctx.fillRect(x + 18 + dot * 22, rowY + 12, 16, 16);
       ctx.strokeStyle = "#7cfbff";
       ctx.strokeRect(x + 18 + dot * 22, rowY + 12, 16, 16);
@@ -3068,7 +3093,7 @@ function drawBattleshipStatus(ctx, x, y, width, board) {
     ctx.font = "800 12px monospace";
     ctx.fillText(ship.sunk ? "HUNDIDO" : "BUSCANDO", x + panelWidth - 92, rowY);
   });
-  ctx.fillStyle = board.completed ? "#57d27f" : "#8eb2c7";
+  ctx.fillStyle = board.completed ? "#00bfe5" : "#8eb2c7";
   ctx.font = "800 12px monospace";
   ctx.fillText(board.completed ? "FLOTA HUNDIDA" : "Los barcos estan ocultos.", x + 18, y + 190);
 }
@@ -3146,34 +3171,49 @@ async function completeActivation(payload = {}) {
 
 async function renderResult(data) {
   const rewardQrDataUrl = data.rewarded ? await ticketImageDataUrlForBrowser(data.qr_image_data_url) : "";
-  const validatorUrl = data.validator_url || "";
+  const benefitUrl = data.benefit_url || "";
   const fulfillment = benefitFulfillmentFromResult(data);
   const isEcommerceReward = fulfillment.mode === "ECOMMERCE_CODE";
+  const isDigitalAssetReward = fulfillment.mode === "DIGITAL_ASSET";
   ticketResult.dataset.tone = data.rewarded ? "success" : "error";
-  ticketResult.innerHTML = data.rewarded && isEcommerceReward ? `
+  ticketResult.innerHTML = data.rewarded && isDigitalAssetReward ? `
     <div class="result-copy">
-      <span>Beneficio desbloqueado</span>
-      <strong>${escapeHtml(data.reward?.reward_label || "Código ecommerce")}</strong>
+      <span>Activo digital desbloqueado</span>
+      <strong>${escapeHtml(fulfillment.asset_title || data.reward?.reward_label || "Activo digital")}</strong>
       <p>${escapeHtml(fulfillment.instructions)}</p>
     </div>
     <div class="ecommerce-reward-card">
-      <span>Código para usar en la tienda online</span>
+      <span>Tu descarga segura está lista</span>
+      <strong>${escapeHtml(data.digital_asset?.file_name || fulfillment.asset_title || "Activo digital")}</strong>
+    </div>
+    <div class="ticket-actions">
+      ${fulfillment.download_url ? `<a class="submit-button" href="${escapeHtml(fulfillment.download_url)}">Descargar activo</a>` : ""}
+      ${benefitUrl ? '<button class="submit-button secondary" type="button" data-copy-benefit-link>Copiar link del beneficio</button>' : ""}
+    </div>
+  ` : data.rewarded && isEcommerceReward ? `
+    <div class="result-copy">
+      <span>Beneficio desbloqueado</span>
+      <strong>${escapeHtml(data.reward?.reward_label || "Codigo ecommerce")}</strong>
+      <p>${escapeHtml(fulfillment.instructions)}</p>
+    </div>
+    <div class="ecommerce-reward-card">
+      <span>Codigo para usar en la tienda online</span>
       <strong>${escapeHtml(fulfillment.ecommerce_code || data.reward?.public_code || "CODIGO")}</strong>
       ${fulfillment.ecommerce_url ? `<a class="submit-button" href="${escapeHtml(fulfillment.ecommerce_url)}" target="_blank" rel="noreferrer">Ir a la tienda</a>` : ""}
     </div>
     <div class="ticket-actions">
-      <button class="submit-button" type="button" id="copyEcommerceCodeButton">Copiar código</button>
-      ${validatorUrl ? `<a class="submit-button secondary" href="${escapeHtml(validatorUrl)}" target="_blank" rel="noreferrer">Ver respaldo QR</a>` : ""}
+      <button class="submit-button" type="button" id="copyEcommerceCodeButton">Copiar codigo</button>
+      ${benefitUrl ? '<button class="submit-button secondary" type="button" data-copy-benefit-link>Copiar link del beneficio</button>' : ""}
     </div>
   ` : data.rewarded ? `
     <div class="result-copy">
       <span>Beneficio generado</span>
       <strong>${escapeHtml(data.reward?.reward_label || "QR unico")}</strong>
-      <p>Guarda o comparte este QR. Tambien puedes abrir el ticket si la imagen no carga en tu navegador.</p>
+      <p>Guarda o comparte este QR. Copia el enlace público del beneficio para continuar la redención en línea.</p>
     </div>
     <img src="${escapeHtml(rewardQrDataUrl)}" alt="Beneficio QR" id="rewardQrImage">
     <div class="ticket-actions">
-      ${validatorUrl ? `<a class="submit-button" href="${escapeHtml(validatorUrl)}" target="_blank" rel="noreferrer">Abrir ticket</a>` : ""}
+      ${benefitUrl ? '<button class="submit-button" type="button" data-copy-benefit-link>Copiar link del beneficio</button>' : ""}
       <button class="submit-button" type="button" id="downloadRewardQrButton">Descargar QR</button>
       <button class="submit-button secondary" type="button" id="shareRewardQrButton">Compartir QR</button>
     </div>
@@ -3185,6 +3225,16 @@ async function renderResult(data) {
     </div>
   `;
   ticketResult.classList.remove("hidden");
+  ticketResult.querySelectorAll("[data-copy-benefit-link]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(benefitUrl);
+        setStatus("Link público del beneficio copiado. Ya puedes enviarlo para la redención en línea.", "success");
+      } catch (error) {
+        window.prompt("Copia el link del beneficio", benefitUrl);
+      }
+    });
+  });
   if (data.rewarded && isEcommerceReward) {
     document.getElementById("copyEcommerceCodeButton")?.addEventListener("click", async () => {
       try {
@@ -3192,7 +3242,7 @@ async function renderResult(data) {
       } catch (error) {
         console.warn("No fue posible copiar el codigo ecommerce", error);
       }
-      setStatus("Código copiado. Úsalo en el checkout de la tienda online.", "success");
+      setStatus("Codigo copiado. Usalo en el checkout de la tienda online.", "success");
     });
   } else if (data.rewarded) {
     const filename = rewardQrFilename();
@@ -3270,7 +3320,7 @@ function dataUrlToFile(dataUrl, filename) {
 }
 
 async function shareRewardQr(data) {
-  const title = data.reward?.reward_label || "Beneficio Sales Machine QR";
+  const title = data.reward?.reward_label || "Beneficio Qori QR";
   const text = `${title}. Presenta este QR en el punto fisico para redimir tu beneficio.`;
   const qrImageDataUrl = String(data.qr_image_data_url || "").startsWith("data:image/svg+xml")
     ? await convertSvgDataUrlToPngDataUrl(data.qr_image_data_url)

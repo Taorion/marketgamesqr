@@ -1,0 +1,2442 @@
+/*
+ * Fluid canvas
+ * A portal-wide visual system: hierarchy comes from rhythm, typography and
+ * subtle light instead of permanent boxes around every piece of information.
+ */
+
+:root {
+  --portal-fluid-ink: #082b67;
+  --portal-fluid-muted: #52739e;
+  --portal-fluid-line: rgba(93, 154, 202, .18);
+  --portal-fluid-wash: rgba(231, 247, 255, .72);
+  --portal-fluid-hover: rgba(0, 174, 239, .10);
+  --portal-fluid-shadow: 0 22px 56px rgba(19, 76, 128, .10);
+}
+
+/* Activations v171 -----------------------------------------------------------
+ * The initial surface is intentionally only a calm operational list.  Creation,
+ * editing, sharing and performance stay available, but live in focused
+ * interstitial flows instead of competing for attention in the first view. */
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card {
+  margin: 0 !important;
+  padding: clamp(24px, 3vw, 42px) 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head {
+  padding: 0 0 clamp(18px, 2.3vw, 30px) !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head h3 {
+  margin: 4px 0 6px !important;
+  font-size: clamp(1.35rem, 2vw, 1.8rem) !important;
+  letter-spacing: -.028em !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card .table-card-subtitle {
+  max-width: 68ch !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 0 0 clamp(20px, 2.5vw, 34px) !important;
+  padding: 0 0 clamp(18px, 2vw, 26px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar label {
+  flex: 1 1 min(360px, 100%) !important;
+  min-height: 44px !important;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(33, 103, 160, .28) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar select {
+  flex: 0 1 200px !important;
+  min-height: 44px !important;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(33, 103, 160, .28) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar strong {
+  flex: 0 0 auto !important;
+  margin-left: auto !important;
+  color: var(--portal-fluid-muted) !important;
+  font-size: .84rem !important;
+  font-weight: 700 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card .table-wrap {
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card table {
+  width: 100% !important;
+  min-width: 700px !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td {
+  padding: 18px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+  background: transparent !important;
+  vertical-align: middle !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th {
+  padding-top: 0 !important;
+  color: var(--portal-fluid-muted) !important;
+  font-size: .69rem !important;
+  letter-spacing: .04em !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:first-child,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:first-child {
+  width: 48% !important;
+  padding-left: 0 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(2),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(2) { width: 18% !important; }
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(3),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(3) { width: 24% !important; }
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:last-child,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:last-child {
+  width: 10% !important;
+  padding-right: 0 !important;
+  text-align: right !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row {
+  cursor: pointer !important;
+  transition: background-color .18s ease, transform .18s ease !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row:hover,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row:focus-visible {
+  background: linear-gradient(90deg, rgba(238, 250, 255, .9), rgba(255, 255, 255, 0)) !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-summary-cell,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-status-cell,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-cell {
+  display: grid !important;
+  gap: 5px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-summary-cell small,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-status-cell small,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-cell small {
+  color: var(--portal-fluid-muted) !important;
+  line-height: 1.35 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-cell strong {
+  color: var(--portal-fluid-ink) !important;
+  font-size: .92rem !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar {
+    align-items: stretch !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar label,
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar select,
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar strong {
+    flex-basis: 100% !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card .table-wrap {
+    overflow-x: auto !important;
+    overscroll-behavior-inline: contain !important;
+    scrollbar-gutter: stable !important;
+  }
+}
+
+/* Activations v168 -----------------------------------------------------------
+ * The list owns its header action; the creation workflow is a true portal
+ * interstitial, never a child of the scrolling activations area. */
+html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qoriActivationModalD#qoriActivationModalE#qoriActivationModalF) .portal-shell .gaming-activation-list-card > .table-card-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 28px !important;
+  padding: 0 0 28px !important;
+  background: transparent !important;
+}
+
+/* Portal canvas v169 ---------------------------------------------------------
+ * `content-shell` is structural only.  It gives the portal a calm reading
+ * lane, but it must never look like another nested panel behind the content. */
+html body:not(#qoriCanvasA#qoriCanvasB#qoriCanvasC#qoriCanvasD#qoriCanvasE#qoriCanvasF#qoriCanvasG#qoriCanvasH) .portal-shell .content-shell {
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  isolation: auto !important;
+}
+
+html body:not(#qoriCanvasA#qoriCanvasB#qoriCanvasC#qoriCanvasD#qoriCanvasE#qoriCanvasF#qoriCanvasG#qoriCanvasH) .portal-shell .content-shell::before,
+html body:not(#qoriCanvasA#qoriCanvasB#qoriCanvasC#qoriCanvasD#qoriCanvasE#qoriCanvasF#qoriCanvasG#qoriCanvasH) .portal-shell .content-shell::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body:not(#qoriCanvasA#qoriCanvasB#qoriCanvasC#qoriCanvasD#qoriCanvasE#qoriCanvasF#qoriCanvasG#qoriCanvasH) .portal-shell .content-shell > .view-section.active {
+  margin-inline: auto !important;
+}
+
+html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qoriActivationModalD#qoriActivationModalE#qoriActivationModalF) .portal-shell .gaming-activation-list-card > .table-card-head > div {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qoriActivationModalD#qoriActivationModalE#qoriActivationModalF) .portal-shell .gaming-activation-list-card > .table-card-head > [data-gaming-center-action="create-activation"] {
+  flex: 0 0 auto !important;
+  align-self: center !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+
+html body > #gamingActivationBuilderModal.modal-shell:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  /* Este flujo debe cubrir también la cabecera y el contenido de fondo. */
+  z-index: 12000 !important;
+  display: grid !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  place-items: center !important;
+  margin: 0 !important;
+  padding: clamp(18px, 3vw, 46px) !important;
+  overflow: hidden !important;
+  background: rgba(6, 25, 59, .62) !important;
+  backdrop-filter: blur(12px) saturate(.9) !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-interstitial {
+  width: min(1040px, calc(100vw - 48px)) !important;
+  max-height: min(92dvh, 960px) !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(205, 224, 244, .92) !important;
+  border-radius: 22px !important;
+  background: #ffffff !important;
+  box-shadow: 0 34px 90px rgba(1, 25, 67, .34) !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-modal-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  padding: clamp(20px, 2.8vw, 32px) clamp(22px, 3.5vw, 42px) !important;
+  border-bottom: 1px solid rgba(205, 224, 244, .86) !important;
+  background: linear-gradient(115deg, #f5fbff, #ffffff 72%) !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-modal-head h3 {
+  margin: 4px 0 6px !important;
+  color: #052a6b !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-modal-head p {
+  max-width: 68ch !important;
+  margin: 0 !important;
+  color: #526f90 !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-modal-body {
+  min-height: 0 !important;
+  overflow: auto !important;
+  padding: clamp(20px, 3vw, 40px) !important;
+  background: #ffffff !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-card {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body > #gamingActivationBuilderModal .gaming-activation-builder-card > :is(.table-card-head, .gaming-activation-command-strip, .interactive-activation-nav, .interactive-catalog-note, .gaming-activation-recipes) {
+  display: none !important;
+}
+
+@media (max-width: 700px) {
+  html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qoriActivationModalD#qoriActivationModalE#qoriActivationModalF) .portal-shell .gaming-activation-list-card > .table-card-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  html body:not(#qoriActivationModalA#qoriActivationModalB#qoriActivationModalC#qoriActivationModalD#qoriActivationModalE#qoriActivationModalF) .portal-shell .gaming-activation-list-card > .table-card-head > [data-gaming-center-action="create-activation"] {
+    width: 100% !important;
+  }
+
+  html body > #gamingActivationBuilderModal.modal-shell:not(.hidden) {
+    padding: 10px !important;
+  }
+
+  html body > #gamingActivationBuilderModal .gaming-activation-builder-interstitial {
+    width: 100% !important;
+    max-height: calc(100dvh - 20px) !important;
+    border-radius: 16px !important;
+  }
+
+  html body > #gamingActivationBuilderModal .gaming-activation-builder-modal-head,
+  html body > #gamingActivationBuilderModal .gaming-activation-builder-modal-body {
+    padding: 18px !important;
+  }
+}
+
+/* A wide, quiet reading lane.  Components are allowed to stack naturally. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .app-main,
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .content-shell {
+  min-width: 0 !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .content-shell {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding-inline: clamp(20px, 4vw, 76px) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active {
+  display: flex !important;
+  flex-direction: column !important;
+  width: min(1460px, 100%) !important;
+  max-width: 1460px !important;
+  min-width: 0 !important;
+  margin-inline: auto !important;
+  gap: clamp(42px, 6vw, 88px) !important;
+  padding: clamp(30px, 5vw, 76px) 0 120px !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :where(section, article, div) {
+  min-width: 0;
+}
+
+/* The page title is the single deliberate surface.  Everything below reads
+ * like a calm document, not a stack of independently bordered windows. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active > .view-head {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 24px 42px !important;
+  margin: 0 !important;
+  padding: clamp(28px, 4vw, 48px) !important;
+  border: 0 !important;
+  border-radius: 30px !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .96), rgba(235, 249, 255, .80)) !important;
+  box-shadow: var(--portal-fluid-shadow) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active > .view-head > * {
+  min-width: 0 !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active > .view-head :is(h1, h2) {
+  color: var(--portal-fluid-ink) !important;
+  letter-spacing: -.045em !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active > .view-head p {
+  max-width: 66ch !important;
+  color: var(--portal-fluid-muted) !important;
+}
+
+/* Remove permanent framing from content groups.  A controlled vertical rhythm
+ * now separates groups, including panels that used to be nested twice. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.surface-card, .data-table-card, .table-card, .chart-card, .lead-directory-card, .affiliate-list-panel, .dashboard-builder-shell, .dashboard-canvas, .agenda-panel, .lead-agenda-card, .rms-stage-slider-shell, .rms-station-workspace, .rms-station-clean-shell, .gaming-activation-list-card, .campaign-library-shell, .inventory-command-panel, .channel-analytics-layout, .ticket-module-card, .ticket-center-panel, .reward-pass-panel, .branch-panel, .season-panel, .catalog-panel):not(.modal-card) {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.charts-grid, .dashboard-charts, .campaign-grid, .channel-analytics-layout, .inventory-layout, .account-layout, .affiliate-layout, .sales-layout, .revenue-workspace-grid, .lead-directory-layout, .branch-layout, .dashboard-builder-layout, .validator-grid, .reward-pass-layout, .season-layout) {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: clamp(36px, 5vw, 72px) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Headings, filters and action strips share one unobtrusive baseline instead
+ * of each receiving their own rounded outline. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-card-head, .lead-directory-head, .campaign-library-head, .affiliate-list-head, .inventory-list-head, .channel-analytics-head, .rms-stage-slider-head, .quiet-zone-control-head) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 18px 28px !important;
+  margin: 0 !important;
+  padding: 0 0 22px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-fluid-line) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-toolbar, .table-filters, .directory-filters, .lead-directory-filters, .gaming-published-toolbar, .inventory-filter-card, .channel-filters, .filter-row, .rms-board-tools) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: end !important;
+  gap: 12px 16px !important;
+  margin: 0 !important;
+  padding: 0 0 24px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-fluid-line) !important;
+}
+
+/* Tables own a single horizontal lane.  They never widen the portal and no
+ * longer sit inside a second, visibly outlined card. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  overscroll-behavior-inline: contain !important;
+  scrollbar-gutter: stable both-edges !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 1px 0 var(--portal-fluid-line), inset 0 -1px 0 var(--portal-fluid-line) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table,
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) > table {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 760px !important;
+  table-layout: auto !important;
+  border: 0 !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table:has(th:nth-child(7)),
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) > table:has(th:nth-child(7)) {
+  min-width: 980px !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table:has(th:nth-child(9)),
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) > table:has(th:nth-child(9)) {
+  min-width: 1180px !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table :is(th, td) {
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 18px clamp(14px, 1.65vw, 28px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #16355f !important;
+  vertical-align: top !important;
+  line-height: 1.5 !important;
+  white-space: normal !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  box-shadow: inset 0 -1px 0 rgba(126, 168, 201, .16) !important;
+  transition: background-color .2s ease, color .2s ease !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table thead th {
+  padding-top: 15px !important;
+  padding-bottom: 15px !important;
+  background: linear-gradient(90deg, rgba(231, 247, 255, .88), rgba(255, 255, 255, .28)) !important;
+  color: #31506f !important;
+  font-size: .72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .055em !important;
+  text-transform: uppercase !important;
+  box-shadow: inset 0 -1px 0 rgba(82, 151, 196, .34) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table tbody tr {
+  transition: background-color .2s ease, transform .2s ease !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table tbody tr:hover td,
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table tbody tr.active td {
+  background: linear-gradient(90deg, rgba(0, 184, 255, .105), rgba(239, 251, 255, .44) 72%, transparent) !important;
+}
+
+/* Lists read as spacious rows.  The hover is feedback, not a permanent box. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.campaign-quick-list, .contact-directory-list, .lead-directory-list, .affiliate-top-list, .lead-agenda-list, .mission-active-list) {
+  display: grid !important;
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 1px 0 var(--portal-fluid-line) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.campaign-item, .contact-directory-card-row, .affiliate-top-row, .lead-agenda-item, .mission-active-card) {
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: clamp(20px, 3vw, 32px) clamp(4px, 1.5vw, 20px) !important;
+  border: 0 !important;
+  border-radius: 18px !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(126, 168, 201, .16) !important;
+  transform: translateY(0) !important;
+  transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.campaign-item:hover, .campaign-item.active, .contact-directory-card-row:hover, .contact-directory-card-row:focus-visible, .affiliate-top-row:hover, .affiliate-top-row.active, .lead-agenda-item:hover, .mission-active-card:hover) {
+  background: linear-gradient(100deg, rgba(0, 184, 255, .12), rgba(244, 253, 255, .78) 72%, transparent) !important;
+  box-shadow: 0 14px 30px rgba(26, 105, 156, .08), inset 3px 0 0 #00b8ff !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Metrics stay legible as a light rhythm, without becoming a wall of tiles. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.kpi-grid, .metrics-grid, .dashboard-kpi-grid, .campaign-item-metrics, .overview-kpis) {
+  gap: clamp(18px, 3vw, 32px) !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.kpi-card, .metric-card, .dashboard-kpi, .overview-kpi) {
+  min-width: 0 !important;
+  padding: 0 0 18px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-fluid-line) !important;
+}
+
+/* Controls keep their existing blue language but use a lighter, more tactile
+ * secondary state. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.ghost-button, .quiet-zone-toggle, .compact.ghost-button) {
+  border-color: transparent !important;
+  background: rgba(244, 251, 255, .68) !important;
+  box-shadow: inset 0 0 0 1px rgba(111, 167, 207, .24) !important;
+  transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.ghost-button, .quiet-zone-toggle, .compact.ghost-button):hover {
+  background: linear-gradient(135deg, rgba(230, 248, 255, .96), rgba(255, 255, 255, .92)) !important;
+  box-shadow: 0 10px 22px rgba(30, 111, 162, .12), inset 0 0 0 1px rgba(0, 184, 255, .42) !important;
+  transform: translateY(-1px) !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.solid-button, .primary-button) {
+  border-color: transparent !important;
+  background: linear-gradient(135deg, #0758d7, #0068e8 58%, #00a8ef) !important;
+  box-shadow: 0 12px 24px rgba(0, 89, 202, .20) !important;
+  transition: transform .2s ease, box-shadow .2s ease, filter .2s ease !important;
+}
+
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.solid-button, .primary-button):hover {
+  filter: saturate(1.06) brightness(1.03) !important;
+  box-shadow: 0 16px 30px rgba(0, 89, 202, .27) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Fix every nested panel that previously reserved a rigid half-column, such
+ * as the capture module shown in the report. */
+html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.ticket-center-panel, .ticket-module-card, .lead-capture-detail, .activation-share-panel, .dashboard-widget-library, .dashboard-canvas-head) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin-inline: 0 !important;
+}
+
+@media (max-width: 900px) {
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .content-shell {
+    padding-inline: 20px !important;
+  }
+
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active {
+    gap: 36px !important;
+    padding-top: 30px !important;
+  }
+
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active > .view-head {
+    align-items: flex-start !important;
+    padding: 26px !important;
+    border-radius: 24px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .content-shell {
+    padding-inline: 14px !important;
+  }
+
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active {
+    gap: 30px !important;
+    padding-bottom: 72px !important;
+  }
+
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active > .view-head {
+    padding: 22px !important;
+  }
+
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active table,
+  html body:not(#qoriFluidA#qoriFluidB#qoriFluidC#qoriFluidD#qoriFluidE) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) > table {
+    min-width: 700px !important;
+  }
+}
+
+/* Affiliate detail interstitial ------------------------------------------------
+ * The selected-affiliate view is a focused work surface, not a collection of
+ * nested cards.  Identity, account state and the sale action now have a clear
+ * order even when the form becomes long.
+ */
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperationBackdrop {
+  background: rgba(4, 30, 71, .48) !important;
+  backdrop-filter: blur(10px) saturate(1.08) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open {
+  display: grid !important;
+  grid-template-columns: minmax(240px, .62fr) minmax(0, 1.38fr) !important;
+  grid-template-areas:
+    "head head"
+    "card summary"
+    "meta summary"
+    "actions actions" !important;
+  column-gap: clamp(28px, 4vw, 58px) !important;
+  row-gap: 14px !important;
+  align-content: start !important;
+  width: min(1120px, calc(100vw - 48px)) !important;
+  max-width: calc(100vw - 48px) !important;
+  max-height: min(900px, calc(100dvh - 48px)) !important;
+  margin: 0 !important;
+  padding: clamp(26px, 4vw, 52px) !important;
+  overflow: auto !important;
+  border: 0 !important;
+  border-radius: 32px !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .99), rgba(242, 250, 255, .96)) !important;
+  box-shadow: 0 36px 100px rgba(2, 28, 72, .34) !important;
+  color: #082b67 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .table-card-head {
+  grid-area: head !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  margin: 0 0 12px !important;
+  padding: 0 0 22px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(99, 151, 194, .22) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .table-card-head .mono-label {
+  color: #0875d1 !important;
+  font-size: .7rem !important;
+  letter-spacing: .11em !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .table-card-head strong {
+  display: block !important;
+  margin-top: 5px !important;
+  color: #082b67 !important;
+  font-size: clamp(1.55rem, 2.8vw, 2.35rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -.045em !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open #affiliateOperationCloseButton {
+  flex: 0 0 auto !important;
+  width: 44px !important;
+  height: 44px !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: rgba(231, 247, 255, .88) !important;
+  color: #0a579f !important;
+  box-shadow: inset 0 0 0 1px rgba(91, 158, 209, .22) !important;
+  transition: transform .2s ease, background-color .2s ease, box-shadow .2s ease !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open #affiliateOperationCloseButton:hover {
+  transform: rotate(4deg) scale(1.04) !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 22px rgba(16, 90, 149, .14), inset 0 0 0 1px rgba(0, 184, 255, .4) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-preview-wrap {
+  grid-area: card !important;
+  display: grid !important;
+  place-items: center !important;
+  width: min(100%, 340px) !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 1.18 / 1 !important;
+  margin: 0 !important;
+  padding: 12px !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 24px !important;
+  background: radial-gradient(circle at 24% 16%, rgba(0, 184, 255, .18), transparent 48%), linear-gradient(145deg, #ecf8ff, #f8fcff) !important;
+  box-shadow: 0 18px 38px rgba(36, 117, 168, .12) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-preview-wrap img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 10px 16px rgba(3, 59, 130, .16)) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > #affiliateCardMeta {
+  grid-area: meta !important;
+  width: min(100%, 340px) !important;
+  margin: 4px 0 0 !important;
+  padding: 0 4px !important;
+  color: #5a7798 !important;
+  font-size: .78rem !important;
+  line-height: 1.45 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-selected-summary {
+  grid-area: summary !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 26px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: end !important;
+  gap: 22px !important;
+  margin: 0 !important;
+  padding: 0 0 22px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(99, 151, 194, .22) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-kicker,
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-balance :is(span, small) {
+  display: block !important;
+  color: #6080a2 !important;
+  font-size: .71rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .055em !important;
+  line-height: 1.35 !important;
+  text-transform: uppercase !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-head strong {
+  display: block !important;
+  margin-top: 6px !important;
+  color: #082b67 !important;
+  font-size: clamp(1.3rem, 2.2vw, 1.85rem) !important;
+  line-height: 1.12 !important;
+  letter-spacing: -.035em !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-balance {
+  min-width: 132px !important;
+  text-align: right !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-balance strong {
+  color: #0068df !important;
+  font-size: clamp(1.65rem, 3vw, 2.3rem) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 20px clamp(18px, 3vw, 34px) !important;
+  margin: 0 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid div {
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid dt {
+  margin: 0 !important;
+  color: #6884a1 !important;
+  font-size: .68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .055em !important;
+  text-transform: uppercase !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid dd {
+  margin: 5px 0 0 !important;
+  color: #123b6b !important;
+  font-size: .86rem !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* The lower area is intentionally an operation section, separated only by
+ * space and a soft divider rather than a second card. */
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions {
+  grid-area: actions !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 22px clamp(20px, 3vw, 36px) !important;
+  align-items: end !important;
+  min-width: 0 !important;
+  margin-top: clamp(18px, 3vw, 34px) !important;
+  padding: clamp(26px, 4vw, 38px) 0 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 1px 0 rgba(99, 151, 194, .22) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions :is(label, .affiliate-purchase-summary, .affiliate-purchase-builder) {
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions label {
+  display: grid !important;
+  gap: 8px !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions label > span,
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-points-calculator span {
+  color: #5f7d9d !important;
+  font-size: .72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .045em !important;
+  text-transform: uppercase !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions :is(input, select) {
+  min-height: 48px !important;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(100, 150, 190, .36) !important;
+  color: #082b67 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions :is(input, select):focus {
+  outline: 0 !important;
+  box-shadow: inset 0 -2px 0 #00b8ff !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions label small {
+  color: #6984a0 !important;
+  font-size: .76rem !important;
+  line-height: 1.42 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-points-calculator {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px 24px !important;
+  grid-column: 1 / -1 !important;
+  padding: 18px 0 !important;
+  box-shadow: inset 0 1px 0 rgba(99, 151, 194, .16), inset 0 -1px 0 rgba(99, 151, 194, .16) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-points-calculator strong {
+  display: block !important;
+  margin-top: 4px !important;
+  color: #0068df !important;
+  font-size: 1.55rem !important;
+  line-height: 1.1 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-points-calculator small,
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-card-actions :is(.span-2, .span-3) {
+  grid-column: 1 / -1 !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open #affiliateAddPointsButton {
+  grid-column: 1 / -1 !important;
+  justify-self: start !important;
+  min-width: min(100%, 290px) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-purchase-builder-head {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: end !important;
+  justify-content: space-between !important;
+  gap: 14px 24px !important;
+  padding-bottom: 16px !important;
+  box-shadow: inset 0 -1px 0 rgba(99, 151, 194, .16) !important;
+}
+
+@media (max-width: 760px) {
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "head"
+      "summary"
+      "card"
+      "meta"
+      "actions" !important;
+    width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 20px) !important;
+    max-height: calc(100dvh - 20px) !important;
+    padding: 24px 20px !important;
+    border-radius: 24px !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > :is(.affiliate-card-preview-wrap, #affiliateCardMeta) {
+    width: min(100%, 360px) !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid,
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-head {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open .affiliate-selected-balance {
+    text-align: left !important;
+  }
+}
+
+/* Smart Catalog v170: catalog administration stays focused in the page while
+ * creation and editing use a dedicated, global workspace. */
+html body > #smartCatalogProductModal.modal-shell:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10050 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  padding: clamp(12px, 3vw, 38px) !important;
+  overflow: hidden !important;
+  background: rgba(4, 27, 68, .62) !important;
+  backdrop-filter: blur(12px) saturate(.92) !important;
+}
+
+html body > #smartCatalogProductModal .smart-catalog-product-modal-card {
+  width: min(1080px, 100%) !important;
+  max-height: calc(100dvh - 24px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin: 0 !important;
+  border: 1px solid rgba(204, 224, 243, .92) !important;
+  border-radius: 22px !important;
+  background: #ffffff !important;
+  box-shadow: 0 34px 92px rgba(1, 25, 66, .38) !important;
+  overflow: hidden !important;
+}
+
+html body > #smartCatalogProductModal .modal-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  padding: clamp(22px, 3vw, 34px) clamp(22px, 4vw, 44px) 18px !important;
+  border-bottom: 1px solid rgba(210, 226, 240, .9) !important;
+  background: linear-gradient(112deg, #f4fbff, #ffffff 70%) !important;
+}
+
+html body > #smartCatalogProductModal .modal-head h3 {
+  margin: 4px 0 6px !important;
+  color: #052b6c !important;
+}
+
+html body > #smartCatalogProductModal .modal-head p {
+  max-width: 68ch !important;
+  margin: 0 !important;
+  color: #56728f !important;
+}
+
+html body > #smartCatalogProductModal .smart-catalog-form {
+  min-height: 0 !important;
+  padding: clamp(22px, 3.5vw, 40px) clamp(22px, 4vw, 44px) clamp(26px, 4vw, 46px) !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card tbody tr {
+  cursor: default !important;
+}
+
+html body[data-current-view="smart-catalogs"] .portal-shell .smart-catalog-table-card td:nth-child(5) {
+  white-space: normal !important;
+}
+
+@media (max-width: 760px) {
+  html body > #smartCatalogProductModal.modal-shell:not(.hidden) {
+    padding: 8px !important;
+  }
+
+  html body > #smartCatalogProductModal .smart-catalog-product-modal-card {
+    max-height: calc(100dvh - 16px) !important;
+    border-radius: 15px !important;
+  }
+
+  html body > #smartCatalogProductModal .modal-head,
+  html body > #smartCatalogProductModal .smart-catalog-form {
+    padding-right: 16px !important;
+    padding-left: 16px !important;
+  }
+}
+
+/* RMS tools v167 -------------------------------------------------------------
+ * Search and batch work are a top-level workflow, never a side tab. */
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-board-tools {
+  order: 1 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: clamp(18px, 2.6vw, 30px) !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: clamp(24px, 3.2vw, 42px) var(--portal-region-gutter) clamp(28px, 3.5vw, 46px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(105deg, rgba(244, 251, 255, .78), rgba(255, 255, 255, .20)) !important;
+  box-shadow: inset 0 1px 0 var(--portal-subtle-rule), inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-board-tools > .rms-board-tools-title {
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 14px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools-title > .material-symbols-outlined {
+  display: grid !important;
+  width: 42px !important;
+  height: 42px !important;
+  place-items: center !important;
+  border-radius: 13px !important;
+  background: linear-gradient(135deg, #0759d6, #00a9ec) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 22px rgba(7, 89, 214, .16) !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools-title > div {
+  display: grid !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools-title :is(.mono-label, strong) {
+  display: block !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools-title strong {
+  color: var(--portal-fluid-ink) !important;
+  font-size: clamp(1rem, 1.4vw, 1.16rem) !important;
+  line-height: 1.25 !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-board-quick-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 0 20px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1.25fr) minmax(180px, .95fr) minmax(160px, .78fr) auto !important;
+  gap: 16px !important;
+  align-items: end !important;
+  margin: 0 !important;
+  padding: 0 0 22px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(230px, 1.25fr) minmax(180px, .82fr) repeat(3, auto) !important;
+  gap: 12px !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-stage-slider-shell {
+  order: 2 !important;
+}
+
+@media (max-width: 980px) {
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar,
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-board-tools {
+    padding-inline: var(--portal-region-gutter-tight) !important;
+  }
+
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar,
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-board-quick-actions > :is(button, .pill),
+  html body:not(#qoriRmsToolsA#qoriRmsToolsB#qoriRmsToolsC#qoriRmsToolsD#qoriRmsToolsE#qoriRmsToolsF#qoriRmsToolsG#qoriRmsToolsH#qoriRmsToolsI)[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar > :is(button, select) {
+    width: 100% !important;
+  }
+}
+
+/* Portal rhythm v162 ---------------------------------------------------------
+ * A radius must never behave like a mask.  Earlier module-specific rules used
+ * `overflow: hidden` to create rounded cards, which clipped headings and the
+ * first/last columns.  This final layer keeps the reading gutter outside the
+ * content and leaves only table lanes responsible for horizontal scrolling.
+ */
+:root {
+  --portal-reading-gutter: clamp(22px, 3.2vw, 52px);
+  --portal-reading-gutter-compact: clamp(18px, 2.3vw, 34px);
+}
+
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active {
+  gap: clamp(50px, 6vw, 96px) !important;
+}
+
+/* Content starts inside a deliberate gutter instead of against a radius. */
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active :is(.data-table-card, .table-card, .inventory-table-card, .gaming-activation-list-card, .campaign-library-shell, .affiliate-list-panel, .ticket-module-card, .reward-pass-panel, .branch-panel, .channel-analytics-layout, .dashboard-builder-shell, .dashboard-canvas, .agenda-panel, .season-panel, .catalog-panel):not(.modal-card) {
+  padding-inline: var(--portal-reading-gutter) !important;
+  overflow: visible !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}
+
+/* The old inventory shell was the most visible offender: it clipped its own
+ * header to simulate a rounded card.  Keep its hierarchy, but let text breathe. */
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG)[data-current-view="inventory"] .portal-shell .inventory-table-card {
+  padding-inline: var(--portal-reading-gutter) !important;
+  overflow: visible !important;
+  border-radius: 0 !important;
+}
+
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG)[data-current-view="inventory"] .portal-shell .inventory-table-card > .table-card-head {
+  padding: 0 0 26px !important;
+  gap: 22px 34px !important;
+}
+
+/* Complex modules may retain a visual surface, but never a clipping surface. */
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active :is(.surface-card, .data-table-card, .table-card, .inventory-table-card, .campaign-library-shell, .affiliate-list-panel, .ticket-module-card, .reward-pass-panel, .branch-panel, .channel-analytics-layout, .dashboard-builder-shell, .dashboard-canvas, .agenda-panel, .season-panel, .catalog-panel):not(.modal-card) {
+  overflow: visible !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}
+
+/* Tables have their own, intentionally scrollable lane.  Extra first and last
+ * cell padding prevents the rounded viewport from visually biting the text. */
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active :is(.table-wrap, .table-scroll, .data-table-scroll, .table-responsive, .compact-table, .drilldown-table-wrap, .command-table-wrap, .dashboard-roi-table-wrap, .competition-detail-table-wrap, .branch-detail-table-wrap, .rms-station-lead-table-wrap, .rms-lean-station-table-wrap, .mission-leaderboard-table-wrap, .agenda-table-wrap) {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+  border-radius: 0 !important;
+  scroll-padding-inline: var(--portal-reading-gutter-compact) !important;
+}
+
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active table :is(th, td):first-child {
+  padding-left: var(--portal-reading-gutter-compact) !important;
+}
+
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active table :is(th, td):last-child {
+  padding-right: var(--portal-reading-gutter-compact) !important;
+}
+
+/* Small labels and headings must wrap rather than disappear under a radius. */
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active :is(.table-card-head, .lead-directory-head, .campaign-library-head, .affiliate-list-head, .inventory-list-head, .channel-analytics-head, .rms-stage-slider-head, .quiet-zone-control-head) :is(h1, h2, h3, strong, p, small, .mono-label) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* The affiliate operation uses a dialog radius only on the outer shell; its
+ * reading area is padded independently so no text can touch a curved edge. */
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) > #affiliateOperatePanel.is-modal-open {
+  width: min(1140px, calc(100vw - 56px)) !important;
+  max-height: calc(100dvh - 56px) !important;
+  padding: clamp(30px, 4.6vw, 58px) !important;
+  border-radius: 26px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable both-edges !important;
+}
+
+html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) > #affiliateOperatePanel.is-modal-open :is(.affiliate-selected-head, .affiliate-card-preview-wrap, #affiliateCardMeta, .affiliate-card-actions) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 760px) {
+  html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active {
+    gap: 42px !important;
+  }
+
+  html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) .portal-shell .view-section.active :is(.data-table-card, .table-card, .inventory-table-card, .gaming-activation-list-card, .campaign-library-shell, .affiliate-list-panel, .ticket-module-card, .reward-pass-panel, .branch-panel, .channel-analytics-layout, .dashboard-builder-shell, .dashboard-canvas, .agenda-panel, .season-panel, .catalog-panel):not(.modal-card) {
+    padding-inline: 18px !important;
+  }
+
+  html body:not(#qoriRhythmA#qoriRhythmB#qoriRhythmC#qoriRhythmD#qoriRhythmE#qoriRhythmF#qoriRhythmG) > #affiliateOperatePanel.is-modal-open {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: calc(100dvh - 24px) !important;
+    padding: 28px 22px !important;
+    border-radius: 20px !important;
+  }
+}
+
+/* Activation builder v163 ----------------------------------------------------
+ * This is a true creation interstitial.  The original builder had its own
+ * header, process strip, catalogue card and form cards inside a modal.  The
+ * hierarchy now has a single frame: context, progress, one step, and a stable
+ * publish action.  Nothing functional is removed; only competing containers.
+ */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal.gaming-activation-builder-modal:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 12000 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  padding: clamp(16px, 3vw, 48px) !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: rgba(3, 28, 68, .56) !important;
+  backdrop-filter: blur(13px) saturate(.9) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-interstitial {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  width: min(1040px, calc(100vw - 48px)) !important;
+  max-width: 1040px !important;
+  max-height: min(900px, calc(100dvh - clamp(32px, 6vw, 96px))) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 30px !important;
+  background: linear-gradient(150deg, #ffffff 0%, #fbfdff 66%, #f0faff 100%) !important;
+  box-shadow: 0 26px 76px rgba(0, 31, 80, .26), 0 2px 0 rgba(255, 255, 255, .8) inset !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  padding: clamp(26px, 3.4vw, 42px) clamp(26px, 4.6vw, 58px) 24px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(126deg, #052b72 0%, #075bc4 54%, #00a5de 112%) !important;
+  color: #ffffff !important;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .18), inset 0 -3px 0 rgba(105, 230, 255, .82) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head :is(h3, p, .mono-label) {
+  color: #ffffff !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head h3 {
+  max-width: 26ch !important;
+  margin: 6px 0 4px !important;
+  font-size: clamp(1.55rem, 3vw, 2.35rem) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -.045em !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head p {
+  max-width: 66ch !important;
+  margin: 0 !important;
+  color: rgba(235, 248, 255, .9) !important;
+  opacity: 1 !important;
+  line-height: 1.55 !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head .icon-button {
+  flex: 0 0 auto !important;
+  width: 42px !important;
+  height: 42px !important;
+  margin: 0 !important;
+  border: 1px solid rgba(255, 255, 255, .38) !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, .14) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 22px rgba(0, 24, 84, .18) !important;
+  transition: transform .18s ease, background .18s ease, box-shadow .18s ease !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-head .icon-button:hover {
+  transform: translateY(-1px) !important;
+  background: rgba(255, 255, 255, .24) !important;
+  box-shadow: 0 12px 26px rgba(0, 24, 84, .25) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-modal-body {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable both-edges !important;
+  background: transparent !important;
+}
+
+/* The card is now a transparent host for the actual creation flow. */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-card,
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-card > :is(.table-card-head, .gaming-activation-command-strip, .interactive-activation-nav, .interactive-catalog-note, .gaming-activation-recipes) {
+  display: none !important;
+}
+
+/* Progress and navigation are the only persistent orientation elements. */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-assistant {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+  display: grid !important;
+  grid-template-columns: minmax(180px, .7fr) minmax(0, 1.7fr) auto !important;
+  align-items: center !important;
+  gap: 26px !important;
+  margin: 0 !important;
+  padding: 17px clamp(26px, 4.6vw, 58px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: rgba(250, 253, 255, .94) !important;
+  box-shadow: inset 0 -1px 0 rgba(92, 143, 186, .2), 0 12px 26px rgba(25, 82, 132, .06) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-progress-copy {
+  min-width: 0 !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-progress-copy strong {
+  color: #073f9b !important;
+  letter-spacing: -.02em !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-section-nav {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-section-nav::-webkit-scrollbar {
+  display: none !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-section-nav button {
+  flex: 0 0 auto !important;
+  min-height: 36px !important;
+  padding: 0 13px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: #607b98 !important;
+  box-shadow: none !important;
+  font-size: .78rem !important;
+  font-weight: 800 !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-section-nav button.is-active,
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-section-nav button:hover {
+  background: linear-gradient(135deg, rgba(0, 169, 236, .15), rgba(14, 92, 214, .1)) !important;
+  color: #0758d7 !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 139, 221, .12) !important;
+}
+
+/* One generous work surface per step, separated by a line rather than cards. */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard > :is(.activation-builder-section, .activation-config-panel.activation-builder-form, .gaming-activation-review) {
+  width: min(100% - clamp(36px, 8vw, 112px), 980px) !important;
+  margin: 0 auto !important;
+  padding: clamp(34px, 5.5vw, 64px) 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard > :is(.activation-builder-section, .activation-config-panel.activation-builder-form, .gaming-activation-review) + :is(.activation-builder-section, .activation-config-panel.activation-builder-form, .gaming-activation-review) {
+  box-shadow: inset 0 1px 0 rgba(92, 143, 186, .18) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-builder-section-head {
+  grid-template-columns: 54px minmax(0, 1fr) !important;
+  align-items: start !important;
+  gap: 18px !important;
+  padding: 0 0 28px !important;
+  margin: 0 0 28px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 -1px 0 rgba(92, 143, 186, .20) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-builder-section-head > span {
+  width: 52px !important;
+  height: 52px !important;
+  min-width: 52px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #0758d7, #00a9ec) !important;
+  color: #fff !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  font-size: .76rem !important;
+  box-shadow: 0 12px 24px rgba(0, 89, 202, .20) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-builder-section-head strong {
+  font-size: clamp(1.16rem, 2vw, 1.42rem) !important;
+  letter-spacing: -.026em !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-builder-section-head > div {
+  display: grid !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-builder-section-head small {
+  max-width: 66ch !important;
+  display: block !important;
+  margin: 0 !important;
+  font-size: .9rem !important;
+  line-height: 1.5 !important;
+}
+
+/* Fields read as a quiet form, not a mosaic of raised boxes. */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard label {
+  padding: 8px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard :is(input, select, textarea) {
+  min-height: 46px !important;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(92, 143, 186, .40) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard :is(input, select, textarea):focus {
+  box-shadow: inset 0 -2px 0 #00a9ec !important;
+}
+
+/* Dynamic choices are a readable vertical catalog with only hover feedback. */
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-catalog-tools {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 14px 22px !important;
+  margin: 0 0 20px !important;
+  padding: 0 0 20px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(92, 143, 186, .18) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-category-list {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-category-list button {
+  min-height: 34px !important;
+  padding: 0 13px !important;
+  border: 1px solid rgba(26, 72, 153, .17) !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #ffffff, #f4f8ff) !important;
+  color: #1a4899 !important;
+  box-shadow: 0 5px 14px rgba(26, 72, 153, .06) !important;
+  font-size: .76rem !important;
+  font-weight: 800 !important;
+  transition: transform .16s ease, background .16s ease, box-shadow .16s ease, border-color .16s ease !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-category-list button:hover {
+  transform: translateY(-1px) !important;
+  border-color: rgba(26, 72, 153, .38) !important;
+  background: linear-gradient(135deg, #eef7ff, #ffffff) !important;
+  box-shadow: 0 10px 18px rgba(26, 72, 153, .12) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-category-list button.is-active {
+  border-color: #1a4899 !important;
+  background: linear-gradient(135deg, #1a4899, #0878cf) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 20px rgba(26, 72, 153, .24) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-type-picker {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+  max-height: 410px !important;
+  padding: 0 !important;
+  overflow: auto !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 1px 0 rgba(92, 143, 186, .18), inset 0 -1px 0 rgba(92, 143, 186, .18) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-type-option {
+  grid-template-columns: 44px minmax(0, 1fr) minmax(170px, .6fr) !important;
+  grid-template-rows: auto !important;
+  min-height: 68px !important;
+  padding: 12px 16px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 rgba(92, 143, 186, .14) !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-type-option .material-symbols-outlined {
+  grid-row: auto !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 12px !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-type-option strong,
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-type-option small {
+  grid-column: auto !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-type-option small {
+  text-align: right !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-type-option:hover,
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-type-option.active {
+  background: linear-gradient(90deg, rgba(0, 169, 236, .12), rgba(237, 250, 255, .55) 70%, transparent) !important;
+  box-shadow: inset 3px 0 0 #00a9ec, inset 0 -1px 0 rgba(92, 143, 186, .14) !important;
+  transform: none !important;
+}
+
+html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-wizard-footer {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 4 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 17px clamp(26px, 4.6vw, 58px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: rgba(251, 254, 255, .97) !important;
+  box-shadow: 0 -10px 28px rgba(25, 82, 132, .08), inset 0 1px 0 rgba(92, 143, 186, .20) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* El constructor vive fuera del portal para cubrir toda la aplicación: conserva
+ * aquí el estado de los pasos, sin depender de selectores del panel original. */
+html body > #gamingActivationBuilderModal .is-gaming-wizard-hidden {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal.gaming-activation-builder-modal:not(.hidden) {
+    padding: 0 !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-builder-interstitial {
+    width: 100% !important;
+    max-height: 100dvh !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-builder-assistant {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    padding: 15px 22px !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .trivia-launcher-form.is-gaming-activation-wizard > :is(.activation-builder-section, .activation-config-panel.activation-builder-form, .gaming-activation-review) {
+    width: calc(100% - 40px) !important;
+    padding-block: 30px !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .gaming-activation-catalog-tools {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-type-option {
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+    gap: 4px 10px !important;
+  }
+
+  html body:not(#qoriActivationA#qoriActivationB#qoriActivationC#qoriActivationD#qoriActivationE#qoriActivationF#qoriActivationG) #gamingActivationBuilderModal .activation-type-option small {
+    grid-column: 2 !important;
+    text-align: left !important;
+  }
+}
+
+/* Nested-region breathing room v164
+ * A panel may be visually quiet, but its content must still have a readable
+ * inset.  These are the portal's recurring operational regions: use a soft
+ * gutter and a divider rather than a border wrapped around every child. */
+:root {
+  --portal-region-gutter: clamp(22px, 3.1vw, 48px);
+  --portal-region-gutter-tight: clamp(18px, 2.35vw, 32px);
+}
+
+html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH) .portal-shell .view-section.active :is(
+  .rms-stage-slider-shell,
+  .rms-station-workspace,
+  .rms-station-clean-shell,
+  .ticket-center-panel,
+  .reward-pass-panel,
+  .campaign-library-shell,
+  .affiliate-list-panel,
+  .inventory-command-panel,
+  .channel-analytics-layout,
+  .dashboard-builder-shell,
+  .dashboard-canvas,
+  .branch-panel,
+  .season-panel,
+  .catalog-panel
+):not(.modal-card) {
+  box-sizing: border-box !important;
+  padding-inline: var(--portal-region-gutter) !important;
+}
+
+/* The RMS rail is the reference implementation: its title, guide and slides
+ * share one inset, so no text ever starts on the side limit of its parent. */
+html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell {
+  display: grid !important;
+  gap: 0 !important;
+  padding-block: clamp(20px, 3vw, 36px) clamp(24px, 3.2vw, 42px) !important;
+  overflow: visible !important;
+}
+
+html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head {
+  align-items: flex-start !important;
+  gap: clamp(18px, 3vw, 38px) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 0 clamp(22px, 2.7vw, 32px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-fluid-line) !important;
+}
+
+html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title {
+  display: grid !important;
+  grid-template-columns: 48px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: clamp(14px, 2vw, 22px) !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+}
+
+html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title > div {
+  display: grid !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+  padding: 2px 4px 3px 0 !important;
+}
+
+html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title :is(.mono-label, strong, small) {
+  display: block !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title strong {
+  line-height: 1.22 !important;
+}
+
+html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title small {
+  line-height: 1.5 !important;
+}
+
+html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions {
+  align-self: center !important;
+  flex: 0 0 auto !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 0 0 4px !important;
+}
+
+html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-guide {
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: clamp(16px, 2vw, 22px) 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-fluid-line) !important;
+}
+
+html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board {
+  gap: clamp(18px, 2.4vw, 30px) !important;
+  margin: 0 !important;
+  padding: clamp(26px, 3vw, 40px) 2px 14px !important;
+  scroll-padding-inline: 2px !important;
+}
+
+@media (max-width: 700px) {
+  html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH) .portal-shell .view-section.active :is(
+    .rms-stage-slider-shell,
+    .rms-station-workspace,
+    .rms-station-clean-shell,
+    .ticket-center-panel,
+    .reward-pass-panel,
+    .campaign-library-shell,
+    .affiliate-list-panel,
+    .inventory-command-panel,
+    .channel-analytics-layout,
+    .dashboard-builder-shell,
+    .dashboard-canvas,
+    .branch-panel,
+    .season-panel,
+    .catalog-panel
+  ):not(.modal-card) {
+    padding-inline: var(--portal-region-gutter-tight) !important;
+  }
+
+  html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  html body:not(#qoriNestedA#qoriNestedB#qoriNestedC#qoriNestedD#qoriNestedE#qoriNestedF#qoriNestedG#qoriNestedH)[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions {
+    width: 100% !important;
+    padding: 0 !important;
+  }
+}
+
+/* Portal composition v165 ----------------------------------------------------
+ * The portal is a continuous workspace.  Regions are separated through
+ * breathing room, a calm reading measure and short dividersâ€”not nested boxes.
+ * This intentionally targets only the application canvas, never the sidebar. */
+:root {
+  --portal-flow-gap: clamp(34px, 5vw, 74px);
+  --portal-section-gap: clamp(24px, 3.4vw, 48px);
+  --portal-content-inset: clamp(20px, 3vw, 46px);
+  --portal-subtle-rule: rgba(52, 115, 166, .16);
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .app-main,
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .content-shell {
+  overflow-x: clip !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active {
+  gap: var(--portal-flow-gap) !important;
+}
+
+/* Let primary regions read as chapters instead of enclosed cards. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active > :is(section, article):not(.modal-card) {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* This is the only recurring visual separator below the page heading. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active > :is(section, article):not(.view-head, .modal-card) + :is(section, article):not(.modal-card) {
+  padding-top: var(--portal-flow-gap) !important;
+  box-shadow: inset 0 1px 0 var(--portal-subtle-rule) !important;
+}
+
+/* Remove the second and third frames used by operational modules.  Their
+ * content keeps a generous inset, so the lack of a box never means crowding. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .surface-card,
+  .data-table-card,
+  .table-card,
+  .chart-card,
+  .lead-directory-card,
+  .contact-directory-card,
+  .affiliate-list-panel,
+  .campaign-library-shell,
+  .gaming-activation-list-card,
+  .inventory-table-card,
+  .ticket-module-card,
+  .ticket-center-panel,
+  .reward-pass-panel,
+  .branch-panel,
+  .season-panel,
+  .catalog-panel,
+  .channel-analytics-layout,
+  .dashboard-builder-shell,
+  .dashboard-canvas,
+  .agenda-panel,
+  .rms-station-workspace,
+  .rms-station-clean-shell
+):not(.modal-card) {
+  box-sizing: border-box !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .data-table-card,
+  .table-card,
+  .lead-directory-card,
+  .affiliate-list-panel,
+  .campaign-library-shell,
+  .gaming-activation-list-card,
+  .inventory-table-card,
+  .ticket-module-card,
+  .reward-pass-panel,
+  .branch-panel,
+  .season-panel,
+  .catalog-panel,
+  .channel-analytics-layout,
+  .dashboard-builder-shell,
+  .dashboard-canvas,
+  .agenda-panel
+):not(.modal-card) {
+  padding-block: clamp(18px, 2.4vw, 34px) !important;
+}
+
+/* Headings form a generous editorial band.  Their rule begins after the
+ * first line and never cuts the text itself. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .table-card-head,
+  .lead-directory-head,
+  .campaign-library-head,
+  .affiliate-list-head,
+  .inventory-list-head,
+  .channel-analytics-head,
+  .dashboard-canvas-head,
+  .quiet-zone-control-head,
+  .view-section-head,
+  .section-head
+) {
+  align-items: flex-end !important;
+  gap: 18px clamp(24px, 3vw, 48px) !important;
+  padding: 0 0 var(--portal-section-gap) !important;
+  margin: 0 0 var(--portal-section-gap) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .table-card-head,
+  .lead-directory-head,
+  .campaign-library-head,
+  .affiliate-list-head,
+  .inventory-list-head,
+  .channel-analytics-head,
+  .dashboard-canvas-head,
+  .quiet-zone-control-head,
+  .view-section-head,
+  .section-head
+) > :first-child {
+  min-width: min(100%, 38rem) !important;
+}
+
+/* Controls live in a compact command row, not inside another pale card. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .table-toolbar,
+  .table-filters,
+  .directory-filters,
+  .lead-directory-filters,
+  .gaming-published-toolbar,
+  .inventory-filter-card,
+  .channel-filters,
+  .filter-row,
+  .rms-board-tools,
+  .dashboard-profile-tabs,
+  .contact-audience-tabs
+) {
+  box-sizing: border-box !important;
+  gap: 12px 16px !important;
+  padding: 0 0 var(--portal-section-gap) !important;
+  margin: 0 0 var(--portal-section-gap) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+/* Metric collections get a calm baseline rather than a mosaic of tiles. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .kpi-grid,
+  .metrics-grid,
+  .dashboard-kpi-grid,
+  .overview-kpis,
+  .campaign-item-metrics
+) {
+  gap: 0 !important;
+  align-items: stretch !important;
+  border-block: 1px solid var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .kpi-card,
+  .metric-card,
+  .dashboard-kpi,
+  .overview-kpi
+) {
+  min-width: 0 !important;
+  padding: clamp(18px, 2.3vw, 30px) var(--portal-content-inset) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset -1px 0 0 var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .kpi-card,
+  .metric-card,
+  .dashboard-kpi,
+  .overview-kpi
+):last-child {
+  box-shadow: none !important;
+}
+
+/* Rows have breathing room and feedback without the rounded cages. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .campaign-item,
+  .contact-directory-card-row,
+  .affiliate-top-row,
+  .lead-agenda-item,
+  .mission-active-card,
+  .contact-directory-row
+) {
+  margin: 0 !important;
+  padding: clamp(20px, 2.5vw, 32px) var(--portal-content-inset) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .campaign-item,
+  .contact-directory-card-row,
+  .affiliate-top-row,
+  .lead-agenda-item,
+  .mission-active-card,
+  .contact-directory-row
+):hover {
+  transform: none !important;
+  background: linear-gradient(90deg, rgba(235, 249, 255, .82), rgba(255, 255, 255, 0)) !important;
+  box-shadow: inset 3px 0 0 #05b9e7, inset 0 -1px 0 var(--portal-subtle-rule) !important;
+}
+
+/* Tables keep one roomy, scrollable lane and never inherit a rounded mask. */
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+  .table-wrap,
+  .table-scroll,
+  .data-table-scroll,
+  .table-responsive,
+  .compact-table,
+  .drilldown-table-wrap,
+  .command-table-wrap,
+  .dashboard-roi-table-wrap,
+  .competition-detail-table-wrap,
+  .branch-detail-table-wrap,
+  .rms-station-lead-table-wrap,
+  .rms-lean-station-table-wrap,
+  .mission-leaderboard-table-wrap,
+  .agenda-table-wrap
+) {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: inset 0 1px 0 var(--portal-subtle-rule), inset 0 -1px 0 var(--portal-subtle-rule) !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
+
+html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active table :is(th, td) {
+  padding-block: clamp(16px, 2vw, 26px) !important;
+  border-radius: 0 !important;
+}
+
+/* Responsive composition: do not compress content to preserve a desktop row. */
+@media (max-width: 760px) {
+  html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active {
+    gap: clamp(30px, 10vw, 52px) !important;
+  }
+
+  html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active > :is(section, article):not(.view-head, .modal-card) + :is(section, article):not(.modal-card) {
+    padding-top: clamp(30px, 10vw, 52px) !important;
+  }
+
+  html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+    .kpi-grid,
+    .metrics-grid,
+    .dashboard-kpi-grid,
+    .overview-kpis,
+    .campaign-item-metrics
+  ) {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  html body:not(#qoriCompositionA#qoriCompositionB#qoriCompositionC#qoriCompositionD#qoriCompositionE#qoriCompositionF#qoriCompositionG#qoriCompositionH#qoriCompositionI) .portal-shell .view-section.active :is(
+    .kpi-card,
+    .metric-card,
+    .dashboard-kpi,
+    .overview-kpi
+  ) {
+    padding-inline: 0 !important;
+    box-shadow: inset 0 -1px 0 var(--portal-subtle-rule) !important;
+  }
+}
+
+/* Activations v171 finale: these rules are deliberately last because older
+ * portal layers still describe the former wide activation dashboard. */
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card {
+  margin: 0 !important;
+  padding: clamp(24px, 3vw, 42px) 0 0 !important;
+  border: 0 !important;
+  border-top: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 28px !important;
+  padding: 0 0 clamp(18px, 2.3vw, 30px) !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head h3 {
+  margin: 4px 0 6px !important;
+  font-size: clamp(1.35rem, 2vw, 1.8rem) !important;
+  letter-spacing: -.028em !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin: 0 0 clamp(20px, 2.5vw, 34px) !important;
+  padding: 0 0 clamp(18px, 2vw, 26px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar label {
+  display: grid !important;
+  flex: 1 1 min(360px, 100%) !important;
+  min-height: 44px !important;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(33, 103, 160, .28) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar select {
+  flex: 0 1 200px !important;
+  min-height: 44px !important;
+  padding-inline: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(33, 103, 160, .28) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar strong {
+  flex: 0 0 auto !important;
+  margin-left: auto !important;
+  color: var(--portal-fluid-muted) !important;
+  font-size: .84rem !important;
+  font-weight: 700 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card .table-wrap {
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card table {
+  width: 100% !important;
+  min-width: 700px !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td {
+  padding: 18px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  vertical-align: middle !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th {
+  padding-top: 0 !important;
+  color: var(--portal-fluid-muted) !important;
+  font-size: .69rem !important;
+  letter-spacing: .04em !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:first-child,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:first-child {
+  width: 48% !important;
+  padding-left: 0 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(2),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(2) { width: 18% !important; }
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:nth-child(3),
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:nth-child(3) { width: 24% !important; }
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card th:last-child,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td:last-child {
+  width: 10% !important;
+  padding-right: 0 !important;
+  text-align: right !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row {
+  cursor: pointer !important;
+  transition: background-color .18s ease !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row:hover,
+html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row:focus-visible {
+  background: linear-gradient(90deg, rgba(238, 250, 255, .9), rgba(255, 255, 255, 0)) !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-summary-cell,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-status-cell,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-cell {
+  display: grid !important;
+  gap: 5px !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-summary-cell small,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-status-cell small,
+html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-cell small {
+  color: var(--portal-fluid-muted) !important;
+  line-height: 1.35 !important;
+}
+
+html body[data-current-view="strategic-qr"] .portal-shell .activation-outcome-cell strong {
+  color: var(--portal-fluid-ink) !important;
+  font-size: .92rem !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar label,
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar select,
+  html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar strong {
+    flex-basis: 100% !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+}
+
+/* RMS v172 ------------------------------------------------------------------
+ * The factory console is a working surface, not a form squeezed into a card.
+ * Explicit gutters keep every control clear of its section edge. */
+html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: clamp(26px, 3.5vw, 52px) !important;
+  padding: clamp(26px, 4vw, 58px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-board-tools {
+  order: 1 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: clamp(24px, 3vw, 38px) !important;
+  border: 0 !important;
+  border-top: 1px solid var(--portal-fluid-line) !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: linear-gradient(105deg, rgba(245, 252, 255, .72), rgba(255, 255, 255, .18)) !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > .rms-stage-slider-shell {
+  order: 2 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: clamp(22px, 3vw, 38px) !important;
+  border: 0 !important;
+  border-top: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools > .rms-board-tools-title {
+  margin: 0 0 22px !important;
+  padding: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-board-quick-actions {
+  margin: 0 0 22px !important;
+  padding: 0 0 22px !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1.35fr) minmax(180px, 1fr) minmax(150px, .75fr) auto !important;
+  gap: clamp(14px, 1.8vw, 24px) !important;
+  align-items: end !important;
+  margin: 0 !important;
+  padding: 0 0 26px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--portal-fluid-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar > label {
+  min-width: 0 !important;
+  padding: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar :is(input, select) {
+  min-height: 46px !important;
+  margin-top: 8px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(220px, 1fr) minmax(175px, .78fr) auto auto auto !important;
+  gap: clamp(12px, 1.7vw, 22px) !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 24px 0 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar > div {
+  display: grid !important;
+  min-width: 0 !important;
+  gap: 4px !important;
+  padding: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar strong {
+  min-width: 0 !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head {
+  min-height: 0 !important;
+  padding: 0 0 20px !important;
+}
+
+@media (max-width: 1180px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 680px) {
+  html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console {
+    padding: 22px 18px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-factory-console > :is(.rms-board-tools, .rms-stage-slider-shell) {
+    padding: 22px 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-operator-toolbar,
+  html body[data-current-view="rms-machine"] .portal-shell .rms-board-tools .rms-bulk-toolbar {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}

@@ -6,6 +6,16 @@ const { createSecureToken } = require("../utils/token");
 const { logQrEvent } = require("./auditService");
 const { consumeQrCredits, ensureCreditAccount, mapPublicCreditAccount } = require("./qrCreditService");
 
+const DIGITAL_ASSET_MAX_BYTES = 5 * 1024 * 1024;
+const DIGITAL_ASSET_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+]);
+
 const ACTIVATION_CATALOG = [
   { type: "TRIVIA_QUIZ", label: "Trivia / Quiz comercial", category: "commercial", group: "Comerciales rapidas", reward_modes: ["by_score", "fixed"] },
   { type: "OPEN_QUESTION", label: "Pregunta abierta", category: "commercial", group: "Comerciales rapidas", reward_modes: ["fixed", "manual_approval"] },
@@ -117,10 +127,16 @@ function safeBrandColor(value, fallback) {
   return /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback;
 }
 
+function qoriBrandColor(value, fallback) {
+  const legacyGreen = new Set(["#0f7354", "#09725f", "#0d6b52", "#118568", "#16a34a", "#22c55e", "#059669", "#047857", "#065f46", "#064e3b", "#14b8a6", "#0f766e"]);
+  const color = safeBrandColor(value, fallback).toLowerCase();
+  return legacyGreen.has(color) ? fallback : color;
+}
+
 function brandStyle(settings = {}) {
   return {
-    primary: safeBrandColor(settings.brand_primary, "#13212c"),
-    secondary: safeBrandColor(settings.brand_secondary, "#945d20"),
+    primary: qoriBrandColor(settings.brand_primary, "#052a6b"),
+    secondary: qoriBrandColor(settings.brand_secondary, "#00bfe5"),
     logoUrl: typeof settings.logo_data_url === "string" && settings.logo_data_url
       ? settings.logo_data_url
       : typeof settings.logo_url === "string" ? settings.logo_url : "",
@@ -141,7 +157,7 @@ function wrapSvgText(value, maxChars = 40, maxLines = 1) {
       return;
     }
     if (current) lines.push(current);
-    current = word.length > maxChars ? `${word.slice(0, Math.max(1, maxChars - 1))}…` : word;
+    current = word.length > maxChars ? `${word.slice(0, Math.max(1, maxChars - 1))}...` : word;
   });
   if (current) lines.push(current);
   return lines.slice(0, maxLines);
@@ -168,6 +184,17 @@ function normalizeBenefitFulfillment(value = {}) {
       ecommerce_code: ecommerceCode,
       ecommerce_url: String(source.ecommerce_url || value.ecommerce_url || "").trim() || null,
       instructions: String(source.instructions || value.instructions || "Copia este codigo y aplicalo en el checkout de la tienda online.").trim(),
+    };
+  }
+  if (mode === "DIGITAL_ASSET" || mode === "DIGITAL_DOWNLOAD") {
+    return {
+      mode: "DIGITAL_ASSET",
+      channel: "digital_download",
+      label: "Activo digital al cumplir el juego",
+      asset_id: String(source.asset_id || value.digital_asset_id || "").trim() || null,
+      asset_title: String(source.asset_title || value.digital_asset_title || "").trim() || null,
+      asset_file_name: String(source.asset_file_name || value.digital_asset_file_name || "").trim() || null,
+      instructions: String(source.instructions || value.instructions || "Completaste la dinamica. Descarga tu activo digital ahora.").trim(),
     };
   }
   return {
@@ -251,6 +278,21 @@ function buildValidatorUrl(token) {
   return target.toString();
 }
 
+function interactiveAssetDownloadUrl(token) {
+  return `${publicAppBaseUrl()}/api/public/activations/download/${encodeURIComponent(token)}`;
+}
+
+function parseDigitalAssetDataUrl(value) {
+  const text = String(value || "");
+  const match = text.match(/^data:([^;,]+);base64,([a-z0-9+/=]+)$/i);
+  if (!match) throw badRequest("El activo digital no tiene un archivo valido.");
+  const mime = match[1].toLowerCase();
+  if (!DIGITAL_ASSET_TYPES.has(mime)) throw badRequest("El tipo del activo digital no esta permitido.");
+  const buffer = Buffer.from(match[2], "base64");
+  if (!buffer.length || buffer.length > DIGITAL_ASSET_MAX_BYTES) throw badRequest("El activo digital supera el tamano permitido.");
+  return { buffer, mime };
+}
+
 function slugify(value) {
   return String(value || "activacion")
     .normalize("NFD")
@@ -291,6 +333,8 @@ function mapActivation(row, extras = {}) {
     business_id: row.company_id,
     campaign_id: row.campaign_id,
     campaign_name: row.campaign_name || null,
+    branch_id: row.branch_id || null,
+    branch_name: row.branch_name || null,
     title: row.title,
     description: row.description,
     category: row.category,
@@ -315,6 +359,7 @@ function mapActivation(row, extras = {}) {
     updated_at: row.updated_at,
     attempts_count: Number(row.participants_count || row.attempts_count || 0),
     winners_count: Number(row.rewards_count || row.winners_count || 0),
+    digital_asset_downloads: Number(row.digital_asset_downloads || 0),
     max_winners: row.max_rewards,
     ...extras,
   };
@@ -454,6 +499,7 @@ function normalizeCaptureConfig(config = {}) {
 function publicActivation(row, questions = [], scoreRules = [], touchZones = []) {
   const mapped = mapActivation(row);
   const scratchWin = row.activation_type === "SCRATCH_WIN";
+  const brand = brandStyle(row.business_settings || {});
   return {
     ...mapped,
     ...(scratchWin ? {
@@ -464,6 +510,9 @@ function publicActivation(row, questions = [], scoreRules = [], touchZones = [])
       id: row.company_id,
       name: row.business_name,
       slug: row.business_slug,
+      logo_url: brand.logoUrl || null,
+      primary_color: brand.primary,
+      secondary_color: brand.secondary,
     },
     questions: questions.map((question) => ({
       id: question.id,
@@ -558,6 +607,19 @@ async function assertCampaign(client, businessId, campaignId) {
   return campaign;
 }
 
+async function assertBranch(client, businessId, branchId) {
+  if (!branchId) return null;
+  const result = await client.query(
+    "select id, name, is_active from branches where id = $1 and business_id = $2",
+    [branchId, businessId]
+  );
+  const branch = result.rows[0];
+  if (!branch || branch.is_active === false) {
+    throw badRequest("La sede seleccionada no existe o no está activa para este negocio.");
+  }
+  return branch;
+}
+
 async function defaultGameId(client, businessId, campaign = null) {
   if (campaign?.game_id) return campaign.game_id;
   const result = await client.query(
@@ -585,7 +647,10 @@ async function createInteractiveActivation(businessId, user, body) {
     if (!catalogItem) {
       throw badRequest("Tipo de activacion no soportado por el catalogo.");
     }
-    const campaign = await assertCampaign(client, businessId, body.campaign_id || null);
+    const [campaign, branch] = await Promise.all([
+      assertCampaign(client, businessId, body.campaign_id || null),
+      assertBranch(client, businessId, body.branch_id || null),
+    ]);
     const publicSlug = `${slugify(body.title)}-${createSecureToken().slice(0, 8).toLowerCase()}`;
     const rewardConfig = {
       reward_type: normalizeRewardType(body.reward_config?.reward_type || body.benefit?.benefit_type),
@@ -598,16 +663,17 @@ async function createInteractiveActivation(businessId, user, body) {
 
     const result = await client.query(
       `insert into interactive_activations
-        (company_id, user_id, campaign_id, title, description, category, activation_type, status,
+        (company_id, user_id, campaign_id, branch_id, title, description, category, activation_type, status,
          reward_ticket_cost, reward_mode, reward_config, game_config, interaction_config,
          capture_config, visual_config, starts_at, ends_at, max_participants, max_rewards,
          public_slug, access_qr_token, terms)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16, $17, $18, $19, $20, $21, $22)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16::jsonb, $17, $18, $19, $20, $21, $22, $23)
        returning *`,
       [
         businessId,
         user.id,
         body.campaign_id || null,
+        body.branch_id || null,
         body.title,
         body.description || null,
         body.category || catalogItem.category,
@@ -642,7 +708,7 @@ async function createInteractiveActivation(businessId, user, body) {
     }
 
     return {
-      activation: mapActivation({ ...activation, campaign_name: campaign?.name || null }),
+      activation: mapActivation({ ...activation, campaign_name: campaign?.name || null, branch_name: branch?.name || null }),
     };
   });
 }
@@ -712,11 +778,22 @@ async function insertTouchZones(client, activationId, zones) {
 
 async function listInteractiveActivations(businessId, options = {}) {
   const limit = Math.min(Math.max(Number(options.limit || 120), 1), 300);
+  const includeArchived = Boolean(options.includeArchived);
+  const availableOnly = Boolean(options.availableOnly);
+  const campaignId = options.campaignId || null;
   const result = await query(
     `with recent_activations as (
        select *
-       from interactive_activations
-       where company_id = $1 and status <> 'archived'
+        from interactive_activations
+        where company_id = $1
+          and ($5::uuid is null or campaign_id = $5::uuid)
+          and ($3::boolean or status <> 'archived')
+         and (
+           not $4::boolean
+           or (status = 'active'
+               and (starts_at is null or starts_at <= now())
+               and (ends_at is null or ends_at > now()))
+         )
        order by created_at desc
        limit $2
      ),
@@ -731,32 +808,70 @@ async function listInteractiveActivations(businessId, options = {}) {
        from interactive_activation_rewards
        where activation_id in (select id from recent_activations)
        group by activation_id
+     ),
+     asset_download_counts as (
+       select activation_id, count(*) filter (where downloaded_at is not null)::int as digital_asset_downloads
+       from interactive_activation_asset_downloads
+       where activation_id in (select id from recent_activations)
+       group by activation_id
      )
-     select a.id, a.company_id, a.user_id, a.campaign_id, a.title, a.description,
+     select a.id, a.company_id, a.user_id, a.campaign_id, a.branch_id, a.title, a.description,
             a.category, a.activation_type, a.status, a.reward_ticket_cost, a.reward_mode,
             a.reward_config, a.game_config, a.interaction_config, a.capture_config, a.visual_config,
             a.starts_at, a.ends_at, a.max_participants, a.max_rewards, a.public_slug,
             a.access_qr_token, a.terms, a.created_at, a.updated_at,
-            c.name as campaign_name,
+            c.name as campaign_name, br.name as branch_name,
             coalesce(p.participants_count, 0)::int as participants_count,
-            coalesce(r.rewards_count, 0)::int as rewards_count
+            coalesce(r.rewards_count, 0)::int as rewards_count,
+            coalesce(d.digital_asset_downloads, 0)::int as digital_asset_downloads
      from recent_activations a
-     left join campaigns c on c.id = a.campaign_id
+     left join campaigns c on c.id = a.campaign_id and c.business_id = a.company_id
+     left join branches br on br.id = a.branch_id and br.business_id = a.company_id
      left join participant_counts p on p.activation_id = a.id
      left join reward_counts r on r.activation_id = a.id
+     left join asset_download_counts d on d.activation_id = a.id
      order by a.created_at desc`,
-    [businessId, limit]
+    [businessId, limit, includeArchived, availableOnly, campaignId]
   );
   return result.rows.map(mapActivation);
 }
 
 async function updateInteractiveActivation(businessId, activationId, body) {
+  const currentResult = await query(
+    "select id, status from interactive_activations where id = $1 and company_id = $2",
+    [activationId, businessId]
+  );
+  if (!currentResult.rowCount) throw notFound("Activacion no encontrada.");
+  if (Object.prototype.hasOwnProperty.call(body, "branch_id")) {
+    await assertBranch({ query }, businessId, body.branch_id || null);
+  }
+  const currentStatus = currentResult.rows[0].status;
+  const nextStatus = body.status || currentStatus;
+  if (currentStatus === "archived") {
+    throw badRequest("Una activacion archivada se conserva solo para consulta; no puede reactivarse desde este contrato.");
+  }
+  if (body.status) {
+    const allowed = {
+      draft: new Set(["draft", "active", "archived"]),
+      active: new Set(["active", "paused", "closed", "archived"]),
+      paused: new Set(["paused", "active", "closed", "archived"]),
+      closed: new Set(["closed", "archived"]),
+    };
+    if (!allowed[currentStatus]?.has(nextStatus)) {
+      throw badRequest(`No se puede cambiar una activacion ${currentStatus} a ${nextStatus}.`);
+    }
+  }
   const fields = [];
   const values = [activationId, businessId];
   const allowed = [
+    "activation_type",
+    "category",
+    "branch_id",
     "title",
     "description",
     "status",
+    "reward_ticket_cost",
+    "reward_mode",
     "reward_config",
     "game_config",
     "interaction_config",
@@ -789,6 +904,20 @@ async function updateInteractiveActivation(businessId, activationId, body) {
     values
   );
   if (!result.rowCount) throw notFound("Activacion no encontrada.");
+  if (currentStatus === "draft") {
+    if (Array.isArray(body.questions)) {
+      await query("delete from interactive_activation_questions where activation_id = $1", [activationId]);
+      await insertQuestions({ query }, activationId, body.questions);
+    }
+    if (Array.isArray(body.score_rewards)) {
+      await query("delete from interactive_score_reward_rules where activation_id = $1", [activationId]);
+      await insertScoreRules({ query }, activationId, body.score_rewards);
+    }
+    if (Array.isArray(body.touch_zones)) {
+      await query("delete from interactive_touch_reward_zones where activation_id = $1", [activationId]);
+      await insertTouchZones({ query }, activationId, body.touch_zones);
+    }
+  }
   return { activation: mapActivation(result.rows[0]) };
 }
 
@@ -804,17 +933,18 @@ async function recycleInteractiveActivation(businessId, user, activationId) {
     const publicSlug = `${slugify(`${original.title}-reciclada`)}-${createSecureToken().slice(0, 8).toLowerCase()}`;
     const copyResult = await client.query(
       `insert into interactive_activations
-        (company_id, user_id, campaign_id, title, description, category, activation_type, status,
+        (company_id, user_id, campaign_id, branch_id, title, description, category, activation_type, status,
          reward_ticket_cost, reward_mode, reward_config, game_config, interaction_config,
          capture_config, visual_config, starts_at, ends_at, max_participants, max_rewards,
          public_slug, access_qr_token, terms)
-       values ($1, $2, $3, $4, $5, $6, $7, 'draft',
-         $8, $9, $10::jsonb, $11::jsonb, $12::jsonb, $13::jsonb, $14::jsonb, null, null, $15, $16, $17, $18, $19)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, 'draft',
+         $9, $10, $11::jsonb, $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, null, null, $16, $17, $18, $19, $20)
        returning *`,
       [
         original.company_id,
         user.id,
         original.campaign_id || null,
+        original.branch_id || null,
         `Copia de ${original.title}`.slice(0, 160),
         original.description || null,
         original.category,
@@ -888,7 +1018,7 @@ async function deleteInteractiveActivation(businessId, activationId) {
       || Number(usage.rewards || 0) > 0
       || Number(usage.transactions || 0) > 0;
 
-    if (hasCommercialHistory) {
+    if (hasCommercialHistory || activation.status !== "draft") {
       const archived = await client.query(
         `update interactive_activations
          set status = 'archived', updated_at = now()
@@ -900,7 +1030,9 @@ async function deleteInteractiveActivation(businessId, activationId) {
         deleted: false,
         archived: true,
         activation: mapActivation(archived.rows[0]),
-        message: "La activacion tenia historial comercial. Se archivo y se retiro de la lista visible para conservar trazabilidad.",
+        message: hasCommercialHistory
+          ? "La activacion tenia historial comercial. Se archivo para conservar trazabilidad."
+          : "Solo los borradores sin uso se eliminan. Esta activacion se archivo para conservar su historial.",
       };
     }
 
@@ -916,28 +1048,98 @@ async function deleteInteractiveActivation(businessId, activationId) {
 
 async function listDeletedInteractiveActivations(businessId) {
   const result = await query(
-    `select a.id, a.company_id, a.user_id, a.campaign_id, a.title, a.description,
+    `select a.id, a.company_id, a.user_id, a.campaign_id, a.branch_id, a.title, a.description,
             a.category, a.activation_type, a.status, a.reward_ticket_cost, a.reward_mode,
             a.starts_at, a.ends_at, a.max_participants, a.max_rewards, a.public_slug,
             a.access_qr_token, a.terms, a.created_at, a.updated_at,
-            c.name as campaign_name,
+            c.name as campaign_name, br.name as branch_name,
             count(distinct p.id)::int as participants_count,
             count(distinct r.id)::int as rewards_count
      from interactive_activations a
      left join campaigns c on c.id = a.campaign_id
+     left join branches br on br.id = a.branch_id
      left join interactive_activation_participants p on p.activation_id = a.id
      left join interactive_activation_rewards r on r.activation_id = a.id
      where a.company_id = $1 and a.status = 'archived'
-     group by a.id, c.name
+     group by a.id, c.name, br.name
      order by a.updated_at desc`,
     [businessId]
   );
   return result.rows.map(mapActivation);
 }
 
-async function getPublicInteractiveActivation(slug) {
+function communicationTrackingSource(value) {
+  return String(value || "").toLowerCase() === "email" ? "email" : "social";
+}
+async function communicationAttribution(client, activation, token, source = "social") {
+  if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(String(token || ""))) return null;
+  const trackingSource = communicationTrackingSource(source);
+  const result = await client.query(
+    `select bc.id, bc.campaign_id, bc.channel_id, c.name as campaign_name, ch.name as channel_name
+     from business_communications bc
+     left join campaigns c on c.id = bc.campaign_id and c.business_id = bc.business_id
+     left join business_acquisition_channels ch on ch.id = bc.channel_id and ch.business_id = bc.business_id
+     where bc.business_id=$1 and bc.activation_id=$2 and bc.tracking_token=$3
+       and (publication_status='PUBLISHED' or ($4 = 'email' and communication_type in ('EMAIL', 'MIXED')))`,
+    [activation.company_id, activation.id, token, trackingSource]
+  );
+  if (result.rowCount) return { ...result.rows[0], communication_id: result.rows[0].id, tracking_source: trackingSource };
+  const effort = await client.query(
+    `select e.id as effort_id, e.campaign_id, e.channel_id, c.name as campaign_name, ch.name as channel_name
+     from business_acquisition_channel_efforts e
+     left join campaigns c on c.id=e.campaign_id and c.business_id=e.business_id
+     join business_acquisition_channels ch on ch.id=e.channel_id and ch.business_id=e.business_id
+     where e.business_id=$1 and e.interactive_activation_id=$2 and e.tracking_token=$3::uuid and e.status='ACTIVE'
+     limit 1`,
+    [activation.company_id, activation.id, token]
+  );
+  return effort.rowCount ? { ...effort.rows[0], tracking_source: "acquisition" } : null;
+}
+
+function buildBenefitUrl(token) {
+  return new URL(`/claim/${encodeURIComponent(token)}`, publicAppBaseUrl()).toString();
+}
+function communicationAttributionMetadata(attribution) {
+  if (!attribution?.id && !attribution?.effort_id) return {};
+  return {
+    communication_attribution: {
+      communication_id: attribution.communication_id || attribution.id || null,
+      acquisition_effort_id: attribution.effort_id || null,
+      tracking_source: attribution.tracking_source,
+      campaign_id: attribution.campaign_id || null,
+      channel_id: attribution.channel_id || null,
+    },
+    communication_campaign_id: attribution.campaign_id || null,
+    communication_campaign_name: attribution.campaign_name || null,
+    acquisition_channel_id: attribution.channel_id || null,
+    acquisition_channel_name_snapshot: attribution.channel_name || null,
+    acquisition_channel_source: "COMMUNICATION",
+    acquisition_effort_id: attribution.effort_id || null,
+    channel: attribution.channel_name || null,
+  };
+}
+async function recordCommunicationEvent(client, activation, attribution, eventType, extra = {}) {
+  if (!attribution?.id && !attribution?.effort_id) return;
+  if (attribution.communication_id || attribution.id) {
+    await client.query("insert into business_communication_events (business_id, communication_id, activation_id, participant_id, qr_code_id, event_type, metadata) values ($1,$2,$3,$4,$5,$6,$7::jsonb)", [activation.company_id, attribution.communication_id || attribution.id, activation.id, extra.participant_id || null, extra.qr_code_id || null, eventType, JSON.stringify({ tracking_source: attribution.tracking_source || null, ...(extra.metadata || {}) })]);
+  }
+  if (attribution.effort_id) {
+    const mappedType = ({ ACTIVATION_VIEWED: "VIEW", ACTIVATION_STARTED: "START", LEAD_CAPTURED: "LEAD", ACTIVATION_COMPLETED: "COMPLETE", REWARD_ISSUED: "QR_GENERATED" })[eventType] || eventType;
+    await client.query(
+      `insert into business_acquisition_events
+        (business_id, effort_id, channel_id, event_type, source_type, source_id, participant_id, lead_id, qr_code_id, dedupe_key, metadata)
+       values ($1,$2,$3,$4,'INTERACTIVE_ACTIVATION',$5,$6,$7,$8,$9,$10::jsonb)
+       on conflict (business_id, effort_id, dedupe_key) where dedupe_key is not null do nothing`,
+      [activation.company_id, attribution.effort_id, attribution.channel_id, mappedType, activation.id, extra.participant_id || null,
+        extra.lead_id || null, extra.qr_code_id || null, extra.participant_id ? `${mappedType}:${extra.participant_id}` : null,
+        JSON.stringify({ tracking_source: attribution.tracking_source || null, ...(extra.metadata || {}) })]
+    );
+  }
+}
+
+async function getPublicInteractiveActivation(slug, trackingToken = null, trackingSource = null) {
   const activationResult = await query(
-    `select a.*, b.name as business_name, b.slug as business_slug
+    `select a.*, b.name as business_name, b.slug as business_slug, b.settings as business_settings
      from interactive_activations a
      join businesses b on b.id = a.company_id
      where a.public_slug = $1 and b.is_active = true`,
@@ -947,6 +1149,9 @@ async function getPublicInteractiveActivation(slug) {
   if (!activation) {
     throw notFound("Activacion no encontrada.");
   }
+  assertActivationOpen(activation);
+  const attribution = await communicationAttribution({ query }, activation, trackingToken, trackingSource);
+  await recordCommunicationEvent({ query }, activation, attribution, "ACTIVATION_VIEWED");
   const [questions, scoreRules, touchZones] = await Promise.all([
     query("select * from interactive_activation_questions where activation_id = $1 order by order_index asc", [activation.id]),
     query("select * from interactive_score_reward_rules where activation_id = $1 order by min_score asc", [activation.id]),
@@ -960,32 +1165,47 @@ async function startInteractiveParticipant(slug, body) {
     const activation = await lockActivationBySlug(client, slug);
     assertActivationOpen(activation);
     assertRequiredCaptureFields(activation, body);
+    await assertActivationIdentityConsistency(client, activation, body);
     const existingReward = await existingRewardResponseForIdentity(client, activation, body);
     if (existingReward) return existingReward;
     await assertDuplicateParticipant(client, activation, body);
+    const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token, body.metadata?.communication_tracking_source);
+    const attributionMetadata = communicationAttributionMetadata(attribution);
     const gameSessionToken = createSecureToken();
-    const player = await createPlayer(client, activation, body, { status: "started" });
-    const metadata = activationFormMetadata(activation, body, { status: "started" });
+    const contact = await resolveActivationContact(client, activation, body, { status: "started", ...attributionMetadata });
+    const metadata = activationFormMetadata(activation, body, { status: "started", ...attributionMetadata });
     const participantResult = await client.query(
       `insert into interactive_activation_participants
-        (activation_id, company_id, player_id, name, document, phone, email, metadata, status,
+        (activation_id, company_id, player_id, source_type, source_id, name, document, phone, email, metadata, status,
          game_session_token, game_session_started_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, 'started', $9, now())
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, 'started', $11, now())
        returning *`,
       [
         activation.id,
         activation.company_id,
-        player.id,
+        contact.player_id,
+        contact.source_type,
+        contact.source_id,
         body.name || null,
         body.document || body.document_id || null,
         body.phone || null,
         body.email || null,
-        jsonParam(metadata, {}),
+        jsonParam({ ...metadata, crm_contact: contact.reference }, {}),
         gameSessionToken,
       ]
     );
+    const participant = participantResult.rows[0];
+    await syncInteractiveParticipationToLead(client, activation, participant, {
+      status: "started",
+      rewarded: false,
+      occurred_at: participant.game_session_started_at || new Date().toISOString(),
+    });
+    await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_STARTED", { participant_id: participant.id, lead_id: participant.player_id || null });
+    if (contact.created) {
+      await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participant.id, lead_id: participant.player_id || null });
+    }
     return {
-      participant: participantResult.rows[0],
+      participant,
       game_session_token: gameSessionToken,
     };
   });
@@ -997,6 +1217,7 @@ async function completeInteractiveParticipant(slug, body) {
     assertActivationOpen(activation);
     if (!body.participant_id) assertRequiredCaptureFields(activation, body);
     if (!body.participant_id) {
+      await assertActivationIdentityConsistency(client, activation, body);
       const existingReward = await existingRewardResponseForIdentity(client, activation, body);
       if (existingReward) return existingReward;
     }
@@ -1025,6 +1246,15 @@ async function completeInteractiveParticipant(slug, body) {
     const metadata = activationFormMetadata(activation, body, {
       anti_abuse: antiAbuseSummary(activation, participant, body, score),
     });
+    const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token || participant.metadata?.communication_tracking_token, body.metadata?.communication_tracking_source || participant.metadata?.communication_tracking_source);
+    if (attribution) Object.assign(metadata, communicationAttributionMetadata(attribution));
+
+    if (!body.participant_id) {
+      await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_STARTED", { participant_id: participant.id, lead_id: participant.player_id || null });
+      if (participant.metadata?.crm_contact?.created) {
+        await recordCommunicationEvent(client, activation, attribution, "LEAD_CAPTURED", { participant_id: participant.id, lead_id: participant.player_id || null });
+      }
+    }
 
     await client.query(
       `update interactive_activation_participants
@@ -1044,6 +1274,14 @@ async function completeInteractiveParticipant(slug, body) {
         jsonParam(metadata, {}),
       ]
     );
+    await syncInteractiveParticipationToLead(client, activation, participant, {
+      status,
+      score,
+      result_profile: resultProfile || null,
+      rewarded: Boolean(rewardPayload && !pendingReview),
+      occurred_at: new Date().toISOString(),
+    });
+    await recordCommunicationEvent(client, activation, attribution, "ACTIVATION_COMPLETED", { participant_id: participant.id, lead_id: participant.player_id || null });
 
     if (!rewardPayload || pendingReview) {
       return {
@@ -1058,18 +1296,24 @@ async function completeInteractiveParticipant(slug, body) {
     const reward = await generateInteractiveRewardQr(client, activation, { ...participant, score, result_profile: resultProfile }, rewardPayload, {
       user_id: activation.user_id || null,
     });
+    const digitalAsset = await issueInteractiveActivationAssetDownload(client, activation, participant, reward.reward);
+    await recordCommunicationEvent(client, activation, attribution, "REWARD_ISSUED", { participant_id: participant.id, lead_id: participant.player_id || null, qr_code_id: reward.qr_code?.id || null });
     const fulfillment = normalizeBenefitFulfillment(rewardPayload.reward_value || {});
     return {
       participant: { id: participant.id, status: "rewarded", score, result_profile: resultProfile || null },
       rewarded: true,
       message: fulfillment.mode === "ECOMMERCE_CODE"
         ? "Beneficio generado. Tu codigo ecommerce esta listo para usar en la tienda online."
+        : fulfillment.mode === "DIGITAL_ASSET"
+          ? "Completaste la dinamica. Tu activo digital ya esta listo para descargar."
         : "Beneficio generado. El QR esta listo para redimir en tienda.",
       reward: reward.reward,
       qr_code: reward.qr_code,
       validator_url: reward.validator_url,
+      benefit_url: reward.benefit_url,
       qr_image_data_url: reward.qr_image_data_url,
       credit_account: reward.credit_account,
+      digital_asset: digitalAsset,
     };
   });
 }
@@ -1102,6 +1346,7 @@ async function existingRewardResponseForIdentity(client, activation, body) {
   const reward = result.rows[0];
   if (!reward) return null;
   const validatorUrl = buildValidatorUrl(reward.qr_token_value || reward.qr_token);
+  const digitalAsset = await interactiveActivationAssetDownloadForReward(client, reward.id);
   return {
     participant: {
       id: reward.participant_id,
@@ -1115,8 +1360,10 @@ async function existingRewardResponseForIdentity(client, activation, body) {
     reward,
     qr_code: { id: reward.qr_code_id, token: reward.qr_token_value || reward.qr_token, status: reward.qr_status },
     validator_url: validatorUrl,
+    benefit_url: buildBenefitUrl(reward.qr_token_value || reward.qr_token),
     qr_image_data_url: await buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, reward }),
     credit_account: null,
+    digital_asset: digitalAsset,
   };
 }
 
@@ -1265,6 +1512,12 @@ function activationFormMetadata(activation, body = {}, extra = {}) {
     ...metadata,
     source_url: metadata.source_url || null,
     user_agent: metadata.user_agent || null,
+    identity: {
+      document_type: normalizeIdentityDocumentType(body.document_type || metadata.identity?.document_type),
+      document: String(body.document || body.document_id || "").trim() || null,
+      phone: String(body.phone || "").trim() || null,
+      email: String(body.email || "").trim().toLowerCase() || null,
+    },
     activation_form: {
       schema_version: activation.capture_config?.form_schema_version || 1,
       ...existingActivationForm,
@@ -1292,6 +1545,12 @@ function activationFormMetadata(activation, body = {}, extra = {}) {
     },
     ...extra,
   };
+}
+
+function normalizeIdentityDocumentType(value) {
+  const allowed = new Set(["CC", "CE", "TI", "PASSPORT", "PEP", "NIT", "OTHER"]);
+  const type = String(value || "CC").trim().toUpperCase();
+  return allowed.has(type) ? type : "OTHER";
 }
 
 function assertRequiredCaptureFields(activation, body) {
@@ -1339,56 +1598,309 @@ async function lockParticipant(client, activation, participantId) {
 
 async function createParticipantInsideCompletion(client, activation, body) {
   await assertDuplicateParticipant(client, activation, body);
-  const player = await createPlayer(client, activation, body, { status: "completed" });
-  const metadata = activationFormMetadata(activation, body, { status: "completed" });
+  const attribution = await communicationAttribution(client, activation, body.metadata?.communication_tracking_token, body.metadata?.communication_tracking_source);
+  const attributionMetadata = communicationAttributionMetadata(attribution);
+  const contact = await resolveActivationContact(client, activation, body, { status: "completed", ...attributionMetadata });
+  const metadata = activationFormMetadata(activation, body, { status: "completed", ...attributionMetadata });
   const result = await client.query(
     `insert into interactive_activation_participants
-      (activation_id, company_id, player_id, name, document, phone, email, metadata, status)
-     values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, 'started')
+      (activation_id, company_id, player_id, source_type, source_id, name, document, phone, email, metadata, status)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, 'started')
      returning *`,
     [
       activation.id,
       activation.company_id,
-      player.id,
+      contact.player_id,
+      contact.source_type,
+      contact.source_id,
       body.name || null,
       body.document || body.document_id || null,
       body.phone || null,
       body.email || null,
-      jsonParam(metadata, {}),
+      jsonParam({ ...metadata, crm_contact: contact.reference }, {}),
     ]
   );
   return result.rows[0];
 }
 
+function activationContactIdentity(body = {}) {
+  const documentId = String(body.document || body.document_id || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  const email = String(body.email || "").trim().toLowerCase();
+  const phoneDigits = String(body.phone || "").replace(/\D/g, "");
+  // +57 300... and 300... are the same Colombian contact. Other country
+  // prefixes remain untouched, because they are already part of the identity.
+  const phone = /^57\d{10}$/.test(phoneDigits) ? phoneDigits.slice(2) : phoneDigits;
+  return { documentId: documentId || null, email: email || null, phone: phone || null };
+}
+
+// Documento is Qori's primary identity for public activations. A phone or email
+// may be added to that document over time, but it must never silently join two
+// different documents into the same commercial contact.
+async function assertActivationIdentityConsistency(client, activation, body) {
+  const identity = activationContactIdentity(body);
+  if (!identity.documentId || (!identity.email && !identity.phone)) return;
+
+  const conflict = await client.query(
+    `select email_match, phone_match
+       from (
+         select
+           regexp_replace(lower(coalesce(p.document_id, '')), '[^a-z0-9]', '', 'g') as document_identity,
+           ($3::text is not null and lower(nullif(p.email, '')) = $3) as email_match,
+           ($4::text is not null and regexp_replace(regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g'), '^57([0-9]{10})$', '\\1') = $4) as phone_match
+         from players p
+         where p.business_id = $1
+         union all
+         select
+           regexp_replace(lower(coalesce(a.document_id, '')), '[^a-z0-9]', '', 'g') as document_identity,
+           ($3::text is not null and lower(nullif(a.email, '')) = $3) as email_match,
+           ($4::text is not null and regexp_replace(regexp_replace(coalesce(a.phone, ''), '\\D', '', 'g'), '^57([0-9]{10})$', '\\1') = $4) as phone_match
+         from affiliates a
+         where a.business_id = $1 and a.status <> 'DELETED'
+         union all
+         select
+           regexp_replace(lower(coalesce(p.document, '')), '[^a-z0-9]', '', 'g') as document_identity,
+           ($3::text is not null and lower(nullif(p.email, '')) = $3) as email_match,
+           ($4::text is not null and regexp_replace(regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g'), '^57([0-9]{10})$', '\\1') = $4) as phone_match
+         from interactive_activation_participants p
+         where p.company_id = $1
+       ) identities
+      where document_identity <> ''
+        and document_identity <> $2
+        and (email_match or phone_match)
+      limit 1`,
+    [activation.company_id, identity.documentId, identity.email, identity.phone]
+  );
+  if (!conflict.rowCount) return;
+  const row = conflict.rows[0] || {};
+  const fields = [row.email_match ? "correo" : "", row.phone_match ? "WhatsApp" : ""].filter(Boolean);
+  const dataLabel = fields.length === 2 ? "El correo y el WhatsApp" : `El ${fields[0] || "dato de contacto"}`;
+  throw badRequest(`${dataLabel} ya están asociados a otro documento. Revísalos: para participar y redimir el beneficio, deben corresponder al mismo documento de identificación.`);
+}
+
+async function resolveActivationContact(client, activation, body, metadata = {}) {
+  const identity = activationContactIdentity(body);
+  if (identity.documentId || identity.email || identity.phone) {
+    const lockKey = [activation.company_id, identity.documentId || identity.email || identity.phone].join(":");
+    await client.query("select pg_advisory_xact_lock(hashtext($1))", [`interactive-contact:${lockKey}`]);
+    const existing = await client.query(
+      `select *
+         from (
+           select p.id, 'PLAYER'::text as source_type, p.created_at, 1 as source_rank
+             from players p
+            where p.business_id = $1
+              and (
+                ($2::text is not null and regexp_replace(lower(coalesce(p.document_id, '')), '[^a-z0-9]', '', 'g') = $2)
+                or ($3::text is not null and lower(nullif(p.email, '')) = $3)
+                or ($4::text is not null and regexp_replace(coalesce(p.phone, ''), '\\D', '', 'g') = $4)
+              )
+           union all
+           select p.source_id as id, p.source_type, min(p.created_at) as created_at, 0 as source_rank
+             from interactive_activation_participants p
+            where p.company_id = $1
+              and p.source_id is not null
+              and p.source_type in ('PLAYER', 'MANUAL', 'AFFILIATE')
+              and $2::text is not null
+              and regexp_replace(lower(coalesce(p.document, '')), '[^a-z0-9]', '', 'g') = $2
+            group by p.source_id, p.source_type
+           union all
+           select ml.id, 'MANUAL'::text as source_type, ml.created_at, 2 as source_rank
+             from business_manual_leads ml
+            where ml.business_id = $1
+              and (
+                ($3::text is not null and lower(nullif(ml.email, '')) = $3)
+                or ($4::text is not null and regexp_replace(coalesce(ml.phone, ''), '\\D', '', 'g') = $4)
+              )
+           union all
+           select af.id, 'AFFILIATE'::text as source_type, af.created_at, 3 as source_rank
+             from affiliates af
+            where af.business_id = $1
+              and af.status <> 'DELETED'
+              and (
+                ($2::text is not null and regexp_replace(lower(coalesce(af.document_id, '')), '[^a-z0-9]', '', 'g') = $2)
+                or ($3::text is not null and lower(nullif(af.email, '')) = $3)
+                or ($4::text is not null and regexp_replace(coalesce(af.phone, ''), '\\D', '', 'g') = $4)
+              )
+         ) contacts
+        order by source_rank asc, created_at asc
+        limit 1`,
+      [activation.company_id, identity.documentId, identity.email, identity.phone]
+    );
+    if (existing.rowCount) {
+      const row = existing.rows[0];
+      return {
+        player_id: row.source_type === "PLAYER" ? row.id : null,
+        source_type: row.source_type,
+        source_id: row.id,
+        created: false,
+        reference: { source_type: row.source_type, source_id: row.id, created: false },
+      };
+    }
+  }
+
+  const player = await createPlayer(client, activation, body, metadata);
+  return {
+    player_id: player.id,
+    source_type: "PLAYER",
+    source_id: player.id,
+    created: player._created !== false,
+    reference: { source_type: "PLAYER", source_id: player.id, created: player._created !== false },
+  };
+}
+
 async function createPlayer(client, activation, body, metadata = {}) {
   const formMetadata = activationFormMetadata(activation, body, metadata);
+  const playerMetadata = {
+    source: "interactive_activation",
+    activation_id: activation.id,
+    activation_type: activation.activation_type,
+    activation_title: activation.title || null,
+    lead_source: "Activacion interactiva",
+    lead_origin: "activation_form",
+    interest: formMetadata.rms_intake?.interest || null,
+    intent: formMetadata.rms_intake?.intent || null,
+    lead_priority_signal: formMetadata.rms_intake?.priority || formMetadata.rms_intake?.level || null,
+    ...formMetadata,
+  };
+  const identity = activationContactIdentity(body);
+
+  // The transaction-level identity lock in resolveActivationContact protects all
+  // Qori contact sources. This second PLAYER lookup only covers a concurrent
+  // player created by a legacy intake path while the activation is being saved.
+  if (identity.documentId || identity.email || identity.phone) {
+    const lockKey = [activation.company_id, identity.documentId || identity.email || identity.phone].join(":");
+    await client.query("select pg_advisory_xact_lock(hashtext($1))", [`interactive-contact:${lockKey}`]);
+    const existing = await client.query(
+      `select *
+         from players
+        where business_id = $1
+          and (
+            ($2::text is not null and regexp_replace(lower(coalesce(document_id, '')), '[^a-z0-9]', '', 'g') = $2)
+            or ($3::text is not null and lower(nullif(email, '')) = $3)
+            or ($4::text is not null and regexp_replace(coalesce(phone, ''), '\\D', '', 'g') = $4)
+          )
+        order by created_at asc
+        limit 1
+        for update`,
+      [activation.company_id, identity.documentId, identity.email, identity.phone]
+    );
+    if (existing.rowCount) {
+      return { ...existing.rows[0], _created: false };
+    }
+  }
+
   const result = await client.query(
-    `insert into players (business_id, campaign_id, game_id, name, email, phone, document_id, metadata)
-     values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+    `insert into players (business_id, campaign_id, branch_id, game_id, name, email, phone, document_id, metadata)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
      returning *`,
     [
       activation.company_id,
       activation.campaign_id || null,
+      activation.branch_id || null,
       await defaultGameId(client, activation.company_id),
       body.name || null,
       body.email || null,
       body.phone || null,
       body.document || body.document_id || null,
-      jsonParam({
-        source: "interactive_activation",
-        activation_id: activation.id,
-        activation_type: activation.activation_type,
-        activation_title: activation.title || null,
-        lead_source: "Activacion interactiva",
-        lead_origin: "activation_form",
-        interest: formMetadata.rms_intake?.interest || null,
-        intent: formMetadata.rms_intake?.intent || null,
-        lead_priority_signal: formMetadata.rms_intake?.priority || formMetadata.rms_intake?.level || null,
-        ...formMetadata,
-      }, {}),
+      jsonParam(playerMetadata, {}),
     ]
   );
-  return result.rows[0];
+  return { ...result.rows[0], _created: true };
+}
+
+// A participation is a commercial signal even if it does not unlock a benefit.
+// The participant table retains the complete history; this compact snapshot makes
+// the latest attempt immediately visible in the canonical Qori contact record.
+async function syncInteractiveParticipationToLead(client, activation, participant, outcome = {}) {
+  const sourceType = String(participant?.source_type || (participant?.player_id ? "PLAYER" : "")).toUpperCase();
+  const sourceId = participant?.source_id || participant?.player_id || null;
+  if (!sourceType || !sourceId) return;
+  const status = String(outcome.status || participant.status || "started").toLowerCase();
+  const rewarded = outcome.rewarded === true;
+  const snapshot = {
+    id: activation.id,
+    title: activation.title || null,
+    type: activation.activation_type || null,
+    participant_id: participant.id,
+    status,
+    outcome: rewarded ? "beneficio_generado" : status === "completed" ? "participacion_sin_beneficio" : status,
+    rewarded,
+    score: Number.isFinite(Number(outcome.score)) ? Number(outcome.score) : null,
+    result_profile: outcome.result_profile || null,
+    captured_at: outcome.occurred_at || new Date().toISOString(),
+  };
+  const snapshotJson = jsonParam(snapshot, {});
+  const additionalDataJson = jsonParam(additionalContactData(participant), {});
+  if (sourceType === "PLAYER") {
+    await client.query(
+      `update players
+          set metadata = coalesce(metadata, '{}'::jsonb)
+            || jsonb_build_object(
+              'latest_interactive_activation', $2::jsonb,
+              'latest_activation_participation', $2::jsonb,
+              'additional_contact_entries', case when $4::text = 'started'
+                then coalesce(metadata->'additional_contact_entries', '[]'::jsonb) || jsonb_build_array($3::jsonb)
+                else coalesce(metadata->'additional_contact_entries', '[]'::jsonb)
+              end
+            )
+        where id = $1 and business_id = $5`,
+      [sourceId, snapshotJson, additionalDataJson, status, activation.company_id]
+    );
+  } else if (sourceType === "MANUAL") {
+    await client.query(
+      `update business_manual_leads
+          set metadata = coalesce(metadata, '{}'::jsonb)
+            || jsonb_build_object(
+              'latest_interactive_activation', $2::jsonb,
+              'latest_activation_participation', $2::jsonb,
+              'additional_contact_entries', case when $4::text = 'started'
+                then coalesce(metadata->'additional_contact_entries', '[]'::jsonb) || jsonb_build_array($3::jsonb)
+                else coalesce(metadata->'additional_contact_entries', '[]'::jsonb)
+              end
+            ),
+              updated_at = now()
+        where id = $1 and business_id = $5`,
+      [sourceId, snapshotJson, additionalDataJson, status, activation.company_id]
+    );
+  } else if (sourceType === "AFFILIATE") {
+    await client.query(
+      `update affiliates
+          set card_metadata = coalesce(card_metadata, '{}'::jsonb)
+            || jsonb_build_object(
+              'latest_interactive_activation', $2::jsonb,
+              'latest_activation_participation', $2::jsonb,
+              'additional_contact_entries', case when $4::text = 'started'
+                then coalesce(card_metadata->'additional_contact_entries', '[]'::jsonb) || jsonb_build_array($3::jsonb)
+                else coalesce(card_metadata->'additional_contact_entries', '[]'::jsonb)
+              end
+            ),
+              updated_at = now()
+        where id = $1 and business_id = $5`,
+      [sourceId, snapshotJson, additionalDataJson, status, activation.company_id]
+    );
+  }
+  await client.query(
+    `insert into lead_events
+      (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, metadata)
+     values ($1, $2, $3, $4, 'interactive_activation_participation', 'Participación en activación', $5, $6::jsonb)`,
+    [
+      activation.company_id,
+      sourceType === "PLAYER" ? sourceId : null,
+      sourceType,
+      sourceId,
+      `${status === "started" ? "Inició" : "Registró"} la activación “${activation.title || "Activación"}”.`,
+      snapshotJson,
+    ]
+  );
+}
+
+function additionalContactData(participant = {}) {
+  return {
+    captured_at: new Date().toISOString(),
+    document_type: normalizeIdentityDocumentType(participant.metadata?.identity?.document_type),
+    document: String(participant.document || "").trim() || null,
+    phone: String(participant.phone || "").trim() || null,
+    email: String(participant.email || "").trim().toLowerCase() || null,
+  };
 }
 
 function validateGameSession(activation, participant, body) {
@@ -1502,10 +2014,18 @@ function rewardFromScratchChoice(items = [], selectedValue) {
   ));
   if (matchIndex < 0) return null;
   const match = items[matchIndex];
+  const rewardLabel = match.benefit_label || match.label || match.reward_label;
+  const storedRewardValue = match.reward_value || match.benefit_value || { label: match.label || `Casilla ${matchIndex + 1}` };
+  const percentageMatch = String(rewardLabel || "").match(/(\d+(?:[.,]\d+)?)\s*%/);
+  const labelPercent = percentageMatch ? Number(percentageMatch[1].replace(",", ".")) : 0;
+  const rewardValue = normalizeRewardType(match.reward_type || match.benefit_type) === "PERCENT_DISCOUNT"
+    && Number.isFinite(labelPercent) && labelPercent > 0 && labelPercent <= 100
+    ? { ...storedRewardValue, percent: labelPercent }
+    : storedRewardValue;
   return fixedRewardPayload({
     ...match,
-    reward_label: match.benefit_label || match.label || match.reward_label,
-    reward_value: match.reward_value || match.benefit_value || { label: match.label || `Casilla ${matchIndex + 1}` },
+    reward_label: rewardLabel,
+    reward_value: rewardValue,
   }, "choice", { selected: selectedValue, scratch_index: matchIndex, scratch: true });
 }
 
@@ -1624,14 +2144,16 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
   const validatorUrl = buildValidatorUrl(token);
 
   const questionnaireResult = await client.query(
-    `insert into questionnaires (business_id, campaign_id, game_id, player_id, answers)
-     values ($1, $2, $3, $4, $5::jsonb)
+    `insert into questionnaires
+      (business_id, campaign_id, game_id, player_id, interactive_participant_id, answers)
+     values ($1, $2, $3, $4, $5, $6::jsonb)
      returning id`,
     [
       activation.company_id,
       activation.campaign_id || null,
       await defaultGameId(client, activation.company_id),
       participant.player_id || null,
+      participant.id,
       jsonParam({
         activation_id: activation.id,
         participant_id: participant.id,
@@ -1668,6 +2190,8 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
         result_profile: participant.result_profile || null,
         activation_form: participant.metadata?.activation_form || null,
         rms_intake: participant.metadata?.rms_intake || null,
+        communication_id: participant.metadata?.communication_attribution?.communication_id || null,
+        acquisition_effort_id: participant.metadata?.acquisition_effort_id || participant.metadata?.communication_attribution?.acquisition_effort_id || null,
         reward_source: rewardPayload.reward_source,
         selected_benefit: rewardPayload,
       }, {}),
@@ -1770,8 +2294,125 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
     qr_code: qr,
     credit_account: mapPublicCreditAccount(creditAccount),
     validator_url: validatorUrl,
+    benefit_url: buildBenefitUrl(token),
     qr_image_data_url: await buildInteractiveBrandedQrDataUrl({ validatorUrl, activation, reward }),
   };
+}
+
+async function issueInteractiveActivationAssetDownload(client, activation, participant, reward) {
+  const fulfillment = normalizeBenefitFulfillment(reward.reward_value || {});
+  if (fulfillment.mode !== "DIGITAL_ASSET") return null;
+  if (!fulfillment.asset_id) throw badRequest("Selecciona el activo digital que recibira el ganador.");
+  const assetResult = await client.query(
+    `select id, title, file_name, file_type, file_size
+     from digital_assets
+     where id = $1 and business_id = $2 and is_active = true
+     for share`,
+    [fulfillment.asset_id, activation.company_id]
+  );
+  const asset = assetResult.rows[0];
+  if (!asset) throw badRequest("El activo digital seleccionado ya no esta disponible para esta empresa.");
+  const downloadToken = createSecureToken();
+  const inserted = await client.query(
+    `insert into interactive_activation_asset_downloads
+      (business_id, activation_id, asset_id, participant_id, reward_id, download_token, metadata)
+     values ($1, $2, $3, $4, $5, $6, $7::jsonb)
+     on conflict (activation_id, participant_id, asset_id)
+     do update set reward_id = excluded.reward_id
+     returning download_token`,
+    [
+      activation.company_id,
+      activation.id,
+      asset.id,
+      participant.id,
+      reward.id,
+      downloadToken,
+      jsonParam({
+        activation_title: activation.title,
+        campaign_id: activation.campaign_id || null,
+        asset_title: asset.title,
+        fulfillment: "digital_asset_reward",
+      }, {}),
+    ]
+  );
+  return {
+    id: asset.id,
+    title: asset.title,
+    file_name: asset.file_name,
+    file_type: asset.file_type,
+    file_size: Number(asset.file_size || 0),
+    download_url: interactiveAssetDownloadUrl(inserted.rows[0].download_token),
+  };
+}
+
+async function interactiveActivationAssetDownloadForReward(client, rewardId) {
+  if (!rewardId) return null;
+  const result = await client.query(
+    `select d.download_token, da.id, da.title, da.file_name, da.file_type, da.file_size
+     from interactive_activation_asset_downloads d
+     join digital_assets da on da.id = d.asset_id and da.is_active = true
+     where d.reward_id = $1
+     order by d.created_at desc
+     limit 1`,
+    [rewardId]
+  );
+  const asset = result.rows[0];
+  if (!asset) return null;
+  return {
+    id: asset.id,
+    title: asset.title,
+    file_name: asset.file_name,
+    file_type: asset.file_type,
+    file_size: Number(asset.file_size || 0),
+    download_url: interactiveAssetDownloadUrl(asset.download_token),
+  };
+}
+
+async function downloadInteractiveActivationAsset(token, reqMeta = {}) {
+  return withTransaction(async (client) => {
+    const result = await client.query(
+      `select d.*, da.file_name, da.file_type, da.file_data_url, da.file_size, da.title as asset_title,
+              a.status as activation_status, a.starts_at, a.ends_at, a.title as activation_title,
+              a.campaign_id, p.player_id
+       from interactive_activation_asset_downloads d
+       join digital_assets da on da.id = d.asset_id and da.is_active = true
+       join interactive_activations a on a.id = d.activation_id and a.company_id = d.business_id
+       join interactive_activation_participants p on p.id = d.participant_id and p.activation_id = a.id
+       where d.download_token = $1
+       for update`,
+      [token]
+    );
+    const row = result.rows[0];
+    if (!row) throw notFound("La descarga no esta disponible.");
+    assertActivationOpen({ status: row.activation_status, starts_at: row.starts_at, ends_at: row.ends_at });
+    const parsed = parseDigitalAssetDataUrl(row.file_data_url);
+    await client.query(
+      `update interactive_activation_asset_downloads
+       set downloaded_at = now(), ip_address = coalesce(ip_address, $2), user_agent = coalesce(user_agent, $3)
+       where id = $1`,
+      [row.id, reqMeta.ip || null, reqMeta.userAgent || null]
+    );
+    await client.query(
+      `insert into lead_events
+        (business_id, lead_id, event_type, event_title, event_description, campaign_id, metadata)
+       values ($1, $2, 'interactive_asset_downloaded', 'Activo digital descargado por activacion', $3, $4, $5::jsonb)`,
+      [
+        row.business_id,
+        row.player_id || null,
+        `El lead descargo "${row.asset_title || row.file_name}" despues de completar "${row.activation_title}".`,
+        row.campaign_id || null,
+        jsonParam({
+          activation_id: row.activation_id,
+          participant_id: row.participant_id,
+          reward_id: row.reward_id,
+          asset_id: row.asset_id,
+          asset_title: row.asset_title,
+          source_label: "recompensa_activo_digital",
+        }, {}),
+      ]
+    );
+    return { buffer: parsed.buffer, file_name: row.file_name, file_type: row.file_type, file_size: row.file_size };
+  });
 }
 
 async function getInteractiveActivationReport(businessId, activationId) {
@@ -1787,6 +2428,7 @@ async function getInteractiveActivationReport(businessId, activationId) {
        count(distinct p.id) filter (where p.status in ('completed', 'rewarded'))::int as completed,
        count(distinct p.id) filter (where p.status = 'abandoned')::int as abandoned,
        count(distinct r.id)::int as qr_generated,
+       count(distinct iad.id) filter (where iad.downloaded_at is not null)::int as digital_asset_downloads,
        coalesce(sum(tx.tickets_debited), 0)::int as tickets_consumed,
        count(distinct rd.id)::int as redemptions,
        count(distinct bs.id)::int as sales_count,
@@ -1794,6 +2436,7 @@ async function getInteractiveActivationReport(businessId, activationId) {
      from interactive_activations a
      left join interactive_activation_participants p on p.activation_id = a.id
      left join interactive_activation_rewards r on r.activation_id = a.id
+     left join interactive_activation_asset_downloads iad on iad.activation_id = a.id
      left join interactive_ticket_transactions tx on tx.reward_id = r.id
      left join qr_codes q on q.id = r.qr_code_id
      left join redemptions rd on rd.qr_code_id = q.id
@@ -1802,6 +2445,75 @@ async function getInteractiveActivationReport(businessId, activationId) {
     [activationId]
   );
   const row = metrics.rows[0] || {};
+  const [participantHistory, invitationHistory] = await Promise.all([
+    query(
+      `select p.id as participant_id, p.player_id, p.source_type, p.source_id, p.name, p.document, p.phone, p.email,
+              p.score, p.result_profile, p.status as participant_status, p.started_at,
+              p.completed_at, p.created_at, p.metadata,
+              r.id as reward_id, r.status as reward_status,
+              q.id as qr_code_id, q.status as qr_status, q.redeemed_at,
+              q.expires_at as qr_expires_at
+         from interactive_activation_participants p
+         left join interactive_activation_rewards r on r.participant_id = p.id and r.status <> 'cancelled'
+         left join qr_codes q on q.id = r.qr_code_id
+        where p.activation_id = $1 and p.company_id = $2
+        order by coalesce(p.completed_at, p.started_at, p.created_at) desc
+        limit 1000`,
+      [activationId, businessId]
+    ),
+    query(
+      `select la.id as invitation_id, la.source_type, la.source_id, la.lead_id, la.channel,
+              la.status as invitation_status, la.created_at,
+              coalesce(p.name, ml.name, af.full_name, 'Contacto sin nombre') as name,
+              coalesce(p.document_id, af.document_id) as document,
+              coalesce(p.phone, ml.phone, af.phone) as phone,
+              coalesce(p.email, ml.email, af.email) as email
+         from lead_activations la
+         left join players p on p.business_id = la.business_id
+           and (p.id = la.lead_id or (la.source_type = 'PLAYER' and p.id = la.source_id))
+         left join business_manual_leads ml on ml.business_id = la.business_id
+           and la.source_type = 'MANUAL' and ml.id = la.source_id
+         left join affiliates af on af.business_id = la.business_id
+           and la.source_type = 'AFFILIATE' and af.id = la.source_id
+        where la.business_id = $2
+          and la.metadata->>'interactive_activation_id' = $1::text
+          and not exists (
+            select 1
+              from interactive_activation_participants p2
+             where p2.activation_id = $1
+               and p2.company_id = $2
+               and (
+                 (p.id is not null and p2.player_id = p.id)
+                 or (p2.player_id = la.lead_id)
+                 or (nullif(coalesce(p.email, ml.email, af.email), '') is not null
+                   and lower(coalesce(p2.email, '')) = lower(coalesce(p.email, ml.email, af.email)))
+                 or (nullif(regexp_replace(coalesce(p.phone, ml.phone, af.phone, ''), '\\D', '', 'g'), '') is not null
+                   and regexp_replace(coalesce(p2.phone, ''), '\\D', '', 'g') = regexp_replace(coalesce(p.phone, ml.phone, af.phone, ''), '\\D', '', 'g'))
+               )
+          )
+        order by la.created_at desc
+        limit 1000`,
+      [activationId, businessId]
+    ),
+  ]);
+  const participantsHistory = participantHistory.rows.map((participant) => {
+    const qrStatus = String(participant.qr_status || '').toUpperCase();
+    const participantStatus = String(participant.participant_status || 'started').toLowerCase();
+    const state = participant.reward_id
+      ? (qrStatus === 'REDEEMED' || participant.redeemed_at ? 'qr_redeemed' : qrStatus === 'ACTIVE' ? 'qr_active' : 'qr_issued')
+      : participantStatus === 'completed' ? 'participated_without_benefit' : participantStatus;
+    return {
+      ...participant,
+      kind: 'participant',
+      state,
+      capture_summary: participant.metadata?.activation_form?.summary || null,
+    };
+  });
+  const invitationsHistory = invitationHistory.rows.map((invitation) => ({
+    ...invitation,
+    kind: 'invitation',
+    state: 'pending_participation',
+  }));
   const participants = Number(row.participants || 0);
   const qrGenerated = Number(row.qr_generated || 0);
   const redemptions = Number(row.redemptions || 0);
@@ -1812,12 +2524,24 @@ async function getInteractiveActivationReport(businessId, activationId) {
       completed: Number(row.completed || 0),
       abandoned: Number(row.abandoned || 0),
       qr_generated: qrGenerated,
+      digital_asset_downloads: Number(row.digital_asset_downloads || 0),
       tickets_consumed: Number(row.tickets_consumed || 0),
       redemptions,
       sales_count: Number(row.sales_count || 0),
       revenue: Number(row.revenue || 0),
       participation_to_qr_rate: participants ? Number(((qrGenerated / participants) * 100).toFixed(1)) : 0,
       qr_to_redemption_rate: qrGenerated ? Number(((redemptions / qrGenerated) * 100).toFixed(1)) : 0,
+    },
+    history: {
+      participants: participantsHistory,
+      invitations_pending: invitationsHistory,
+      totals: {
+        obtained_qr: participantsHistory.filter((item) => ['qr_active', 'qr_issued', 'qr_redeemed'].includes(item.state)).length,
+        qr_active: participantsHistory.filter((item) => item.state === 'qr_active').length,
+        qr_redeemed: participantsHistory.filter((item) => item.state === 'qr_redeemed').length,
+        participated_without_benefit: participantsHistory.filter((item) => item.state === 'participated_without_benefit').length,
+        pending_participation: invitationsHistory.length,
+      },
     },
   };
 }
@@ -1865,6 +2589,7 @@ module.exports = {
   completeInteractiveParticipant,
   createInteractiveActivation,
   deleteInteractiveActivation,
+  downloadInteractiveActivationAsset,
   generateInteractiveRewardQr,
   getInteractiveActivationReport,
   getPublicInteractiveActivation,

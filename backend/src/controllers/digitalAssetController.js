@@ -3,6 +3,7 @@ const { forbidden } = require("../utils/http");
 const { validate } = require("../utils/validators");
 const {
   createDigitalAsset,
+  deleteDigitalAsset,
   listDigitalAssets,
   updateDigitalAsset,
   updateDigitalAssetStatus,
@@ -76,9 +77,18 @@ async function patchStatus(req, res, next) {
   }
 }
 
+async function remove(req, res, next) {
+  try {
+    res.json({ deleted: await deleteDigitalAsset(businessIdFor(req), req.params.id) });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   create,
   list,
   patch,
   patchStatus,
+  remove,
 };

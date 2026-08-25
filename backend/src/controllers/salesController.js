@@ -57,17 +57,22 @@ async function createAttributedSale(req, res, next) {
     const result = await withTransaction(async (client) => {
       const saleResult = await client.query(
         `insert into attributed_sales
-          (business_id, campaign_id, qr_code_id, redemption_id, player_id, sale_amount, currency,
+          (business_id, campaign_id, qr_code_id, redemption_id, player_id, sale_amount, purchase_subtotal,
+           benefit_discount_amount, application_mode, currency,
            sale_confirmed_by_user_id, branch_id, payment_method, product_or_service, notes)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, coalesce($9::uuid, $10::uuid), $11, $12, $13)
+         values ($1, $2, $3, $4, $5, $6, $6, 0, 'PURCHASE', $7, $8, coalesce($9::uuid, $10::uuid), $11, $12, $13)
          on conflict (redemption_id) do update
          set sale_amount = excluded.sale_amount,
+             purchase_subtotal = excluded.purchase_subtotal,
+             benefit_discount_amount = 0,
+             application_mode = 'PURCHASE',
              currency = excluded.currency,
              sale_confirmed_by_user_id = excluded.sale_confirmed_by_user_id,
              branch_id = excluded.branch_id,
              payment_method = excluded.payment_method,
              product_or_service = excluded.product_or_service,
-             notes = excluded.notes
+             notes = excluded.notes,
+             updated_at = now()
          returning *`,
         [
           row.business_id,

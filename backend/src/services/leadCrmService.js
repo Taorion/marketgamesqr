@@ -9,6 +9,8 @@ const {
   referralPointsForAmount,
 } = require("./affiliatePointRulesService");
 const { syncSaleProductsWithCatalog } = require("./productCatalogService");
+const { resolveAcquisitionChannelReference } = require("./acquisitionChannelService");
+const { recordLifecycleEvent } = require("./lifecycleAuditService");
 
 const OPERATIONAL_AGENDA_SOURCE_TYPES = new Set(["GENERAL", "CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"]);
 
@@ -39,6 +41,13 @@ function boundedOffset(value) {
 function moneyNumber(value) {
   const parsed = Number(value || 0);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function salePurchaseContribution(sale = {}) {
+  const imported = Number.parseInt(sale.metadata?.imported_purchase_count, 10);
+  return sale.metadata?.source_module === "customer_csv_import" && Number.isInteger(imported) && imported > 0
+    ? imported
+    : 1;
 }
 
 function suggestedStatus(row = {}) {
@@ -228,6 +237,20 @@ function listWhere(filters, params) {
     params.push(String(filters.rms_phase || "").trim().toLowerCase());
     clauses.push(`coalesce(rms_phase, 'recoleccion') = $${params.length}`);
   }
+  if (filters.interest) {
+    params.push(`%${normalizeSearch(filters.interest)}%`);
+    clauses.push(`normalized_top_interest like $${params.length}`);
+  }
+  if (filters.purchased_product) {
+    params.push(`%${normalizeSearch(filters.purchased_product)}%`);
+    clauses.push(`normalized_purchased_products like $${params.length}`);
+  }
+  if (filters.city) {
+    params.push(`%${normalizeSearch(filters.city)}%`);
+    clauses.push(`normalized_city like $${params.length}`);
+  }
+  if (filters.audience_type === "LEAD") clauses.push("purchase_count = 0 and coalesce(metadata->>'customer_import_declared', 'false') <> 'true'");
+  if (filters.audience_type === "CLIENT") clauses.push("(purchase_count > 0 or coalesce(metadata->>'customer_import_declared', 'false') = 'true')");
   if (filters.has_purchases === "true") clauses.push("purchase_count > 0");
   if (filters.has_purchases === "false") clauses.push("purchase_count = 0");
   if (filters.is_affiliate === "true") clauses.push("is_affiliate = true");
@@ -290,6 +313,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          p.document_id,
          p.email,
          p.phone,
+         coalesce(p.metadata->>'company', '') as company,
          p.created_at,
          coalesce(latest_capture.campaign_id, p.campaign_id) as campaign_id,
          coalesce(latest_capture.campaign_name, c.name) as campaign_name,
@@ -325,6 +349,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          coalesce(s.avg_ticket, 0)::numeric as avg_ticket,
          s.last_purchase_at,
          s.top_product,
+         s.purchased_products,
          s.top_category,
          coalesce(q.active_tickets, 0)::int as active_tickets,
          coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
@@ -401,11 +426,18 @@ async function listLeadCrmRows(businessId, filters = {}) {
          limit 1
        ) latest_capture on true
        left join lateral (
-         select count(*)::int as purchase_count,
+         select coalesce(sum(case
+                  when bs.metadata->>'source_module' = 'customer_csv_import'
+                   and coalesce(bs.metadata->>'imported_purchase_count', '') ~ '^[1-9][0-9]*$'
+                  then (bs.metadata->>'imported_purchase_count')::int else 1 end), 0)::int as purchase_count,
                 coalesce(sum(bs.sale_amount), 0)::numeric as total_spent,
-                coalesce(avg(bs.sale_amount), 0)::numeric as avg_ticket,
+                coalesce(sum(bs.sale_amount) / nullif(sum(case
+                  when bs.metadata->>'source_module' = 'customer_csv_import'
+                   and coalesce(bs.metadata->>'imported_purchase_count', '') ~ '^[1-9][0-9]*$'
+                  then (bs.metadata->>'imported_purchase_count')::int else 1 end), 0), 0)::numeric as avg_ticket,
                 max(bs.created_at) as last_purchase_at,
                 (array_agg(bs.product_name order by bs.created_at desc))[1] as top_product,
+                string_agg(distinct nullif(btrim(bs.product_name), ''), ' ') as purchased_products,
                 (array_agg(coalesce(bs.metadata->>'category', bs.acquisition_channel) order by bs.created_at desc))[1] as top_category
          from business_sales bs
          where bs.business_id = p.business_id
@@ -477,6 +509,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          limit 1
        ) li on true
        where p.business_id = $1
+         and coalesce(p.metadata->>'lifecycle_status', 'ACTIVE') <> 'ARCHIVED'
      ),
      manual_rows as (
        select
@@ -486,9 +519,10 @@ async function listLeadCrmRows(businessId, filters = {}) {
          ml.name,
          split_part(coalesce(ml.name, ''), ' ', 1) as first_name,
          trim(substr(coalesce(ml.name, ''), length(split_part(coalesce(ml.name, ''), ' ', 1)) + 1)) as last_name,
-         null::text as document_id,
+         ml.document_id,
          ml.email,
          ml.phone,
+         ml.company,
          ml.created_at,
          ca.campaign_id,
          ca.campaign_name,
@@ -505,6 +539,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          coalesce(s.avg_ticket, 0)::numeric as avg_ticket,
          s.last_purchase_at,
          coalesce(s.top_product, ml.company) as top_product,
+         s.purchased_products,
          s.top_category,
          coalesce(q.active_tickets, 0)::int as active_tickets,
          coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
@@ -550,15 +585,23 @@ async function listLeadCrmRows(businessId, filters = {}) {
            and cmc.status = 'ACTIVE'
        ) ca on true
        left join lateral (
-         select count(*)::int as purchase_count,
+         select coalesce(sum(case
+                  when bs.metadata->>'source_module' = 'customer_csv_import'
+                   and coalesce(bs.metadata->>'imported_purchase_count', '') ~ '^[1-9][0-9]*$'
+                  then (bs.metadata->>'imported_purchase_count')::int else 1 end), 0)::int as purchase_count,
                 coalesce(sum(bs.sale_amount), 0)::numeric as total_spent,
-                coalesce(avg(bs.sale_amount), 0)::numeric as avg_ticket,
+                coalesce(sum(bs.sale_amount) / nullif(sum(case
+                  when bs.metadata->>'source_module' = 'customer_csv_import'
+                   and coalesce(bs.metadata->>'imported_purchase_count', '') ~ '^[1-9][0-9]*$'
+                  then (bs.metadata->>'imported_purchase_count')::int else 1 end), 0), 0)::numeric as avg_ticket,
                 max(bs.created_at) as last_purchase_at,
                 (array_agg(bs.product_name order by bs.created_at desc))[1] as top_product,
+                string_agg(distinct nullif(btrim(bs.product_name), ''), ' ') as purchased_products,
                 (array_agg(coalesce(bs.metadata->>'category', bs.acquisition_channel) order by bs.created_at desc))[1] as top_category
          from business_sales bs
          where bs.business_id = ml.business_id
-           and ((nullif(ml.phone, '') is not null and bs.customer_phone = ml.phone)
+           and ((nullif(ml.document_id, '') is not null and bs.customer_document_id = ml.document_id)
+             or (nullif(ml.phone, '') is not null and regexp_replace(coalesce(bs.customer_phone, ''), '\D', '', 'g') = regexp_replace(ml.phone, '\D', '', 'g'))
              or (nullif(ml.email, '') is not null and lower(bs.customer_email) = lower(ml.email))
              or (bs.metadata->>'crm_source_type' = 'MANUAL' and bs.metadata->>'crm_source_id' = ml.id::text))
        ) s on true
@@ -577,6 +620,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
            and la.source_id = ml.id
        ) q on true
        where ml.business_id = $1
+         and ml.status <> 'ARCHIVED'
      ),
      affiliate_rows as (
        select
@@ -589,6 +633,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          fa.document_id,
          fa.email,
          fa.phone,
+         coalesce(fa.card_metadata->>'company', '') as company,
          fa.created_at,
          ca.campaign_id,
          ca.campaign_name,
@@ -605,6 +650,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          coalesce(s.avg_ticket, 0)::numeric as avg_ticket,
          s.last_purchase_at,
          coalesce(s.top_product, fa.notes) as top_product,
+         s.purchased_products,
          s.top_category,
          coalesce(q.active_tickets, 0)::int as active_tickets,
          coalesce(q.redeemed_tickets, 0)::int as redeemed_tickets,
@@ -642,11 +688,18 @@ async function listLeadCrmRows(businessId, filters = {}) {
          limit 1
        ) ca on true
        left join lateral (
-         select count(*)::int as purchase_count,
+         select coalesce(sum(case
+                  when bs.metadata->>'source_module' = 'customer_csv_import'
+                   and coalesce(bs.metadata->>'imported_purchase_count', '') ~ '^[1-9][0-9]*$'
+                  then (bs.metadata->>'imported_purchase_count')::int else 1 end), 0)::int as purchase_count,
                 coalesce(sum(bs.sale_amount), 0)::numeric as total_spent,
-                coalesce(avg(bs.sale_amount), 0)::numeric as avg_ticket,
+                coalesce(sum(bs.sale_amount) / nullif(sum(case
+                  when bs.metadata->>'source_module' = 'customer_csv_import'
+                   and coalesce(bs.metadata->>'imported_purchase_count', '') ~ '^[1-9][0-9]*$'
+                  then (bs.metadata->>'imported_purchase_count')::int else 1 end), 0), 0)::numeric as avg_ticket,
                 max(bs.created_at) as last_purchase_at,
                 (array_agg(bs.product_name order by bs.created_at desc))[1] as top_product,
+                string_agg(distinct nullif(btrim(bs.product_name), ''), ' ') as purchased_products,
                 (array_agg(coalesce(bs.metadata->>'category', bs.acquisition_channel) order by bs.created_at desc))[1] as top_category
          from business_sales bs
          where bs.business_id = fa.business_id
@@ -708,12 +761,51 @@ async function listLeadCrmRows(businessId, filters = {}) {
        union all
        select * from affiliate_rows
      ),
+     deduplicated_rows as (
+       select candidate.*
+       from all_rows candidate
+       where not exists (
+         select 1
+         from all_rows preferred
+         where (preferred.source_type, preferred.id) <> (candidate.source_type, candidate.id)
+           and not (
+             nullif(regexp_replace(lower(coalesce(preferred.document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null
+             and nullif(regexp_replace(lower(coalesce(candidate.document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null
+             and regexp_replace(lower(preferred.document_id), '[^a-z0-9]', '', 'g')
+               <> regexp_replace(lower(candidate.document_id), '[^a-z0-9]', '', 'g')
+           )
+           and (
+             (
+               nullif(regexp_replace(lower(coalesce(preferred.document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null
+               and regexp_replace(lower(preferred.document_id), '[^a-z0-9]', '', 'g')
+                 = regexp_replace(lower(coalesce(candidate.document_id, '')), '[^a-z0-9]', '', 'g')
+             )
+             or (
+               nullif(lower(btrim(coalesce(preferred.email, ''))), '') is not null
+               and lower(btrim(preferred.email)) = lower(btrim(coalesce(candidate.email, '')))
+             )
+             or (
+               nullif(regexp_replace(coalesce(preferred.phone, ''), '[^0-9]', '', 'g'), '') is not null
+               and regexp_replace(preferred.phone, '[^0-9]', '', 'g')
+                 = regexp_replace(coalesce(candidate.phone, ''), '[^0-9]', '', 'g')
+             )
+           )
+           and (
+             case preferred.source_type when 'PLAYER' then 1 when 'AFFILIATE' then 2 else 3 end
+               < case candidate.source_type when 'PLAYER' then 1 when 'AFFILIATE' then 2 else 3 end
+             or (
+               preferred.source_type = candidate.source_type
+               and (preferred.created_at, preferred.id) < (candidate.created_at, candidate.id)
+             )
+           )
+       )
+     ),
      rms_rows as (
        select ar.*,
               rms.rms_phase,
               rms.updated_at as rms_phase_updated_at,
               rms.last_operation as rms_last_operation
-       from all_rows ar
+       from deduplicated_rows ar
        left join lateral (
          select rls.rms_phase, rls.updated_at, rls.last_operation
          from rms_lead_state rls
@@ -741,10 +833,13 @@ async function listLeadCrmRows(businessId, filters = {}) {
          regexp_replace(lower(coalesce(channel, '')), '[^a-z0-9]', '', 'g') as normalized_channel,
          regexp_replace(lower(coalesce(array_to_string(associated_channels, ' '), '')), '[^a-z0-9]', '', 'g') as normalized_associated_channels,
          regexp_replace(lower(coalesce(affiliate_code, '')), '[^a-z0-9]', '', 'g') as normalized_affiliate_code,
-         regexp_replace(lower(
-           coalesce(name, '') || ' ' || coalesce(email, '') || ' ' || coalesce(phone, '') || ' ' ||
+         regexp_replace(translate(lower(coalesce(city, '')), 'áéíóúüñ', 'aeiouun'), '[^a-z0-9]', '', 'g') as normalized_city,
+         regexp_replace(translate(lower(coalesce(top_interest, '')), 'áéíóúüñ', 'aeiouun'), '[^a-z0-9]', '', 'g') as normalized_top_interest,
+         regexp_replace(translate(lower(coalesce(purchased_products, '') || ' ' || coalesce(top_product, '')), 'áéíóúüñ', 'aeiouun'), '[^a-z0-9]', '', 'g') as normalized_purchased_products,
+         regexp_replace(translate(lower(
+           coalesce(name, '') || ' ' || coalesce(email, '') || ' ' || coalesce(phone, '') || ' ' || coalesce(company, '') || ' ' ||
            coalesce(document_id, '') || ' ' || coalesce(campaign_name, '') || ' ' ||
-           coalesce(channel, '') || ' ' || coalesce(top_interest, '') || ' ' || coalesce(affiliate_code, '')),
+           coalesce(channel, '') || ' ' || coalesce(top_interest, '') || ' ' || coalesce(top_product, '') || ' ' || coalesce(purchased_products, '') || ' ' || coalesce(affiliate_code, '')), 'áéíóúüñ', 'aeiouun'),
            '[^a-z0-9@.]+', '', 'g'
          ) as search_blob
        from rms_rows
@@ -1029,6 +1124,8 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     affiliates,
     rewardPasses,
     events,
+    rmsState,
+    rmsEvents,
   ] = await Promise.all([
     query(
       `select bs.*, c.name as campaign_name, br.name as branch_name, u.full_name as seller_name,
@@ -1156,6 +1253,8 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
               iap.activation_id,
               iap.company_id as business_id,
               iap.player_id,
+              iap.source_type as participant_source_type,
+              iap.source_id as participant_source_id,
               iap.name as participant_name,
               iap.document as document_value,
               iap.phone as phone_value,
@@ -1205,10 +1304,11 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
          or ($3::text is not null and nullif($3::text, '') is not null and iap.document = $3::text)
          or ($4::text is not null and nullif($4::text, '') is not null and iap.phone = $4::text)
          or ($5::text is not null and nullif($5::text, '') is not null and lower(iap.email) = lower($5::text))
+         or (iap.source_type = $6 and iap.source_id = $7)
        )
        order by iap.created_at desc
        limit 120`,
-      identityOnlyParams
+      params
     ),
     query(
       `select la.*, c.name as campaign_name, al.public_url, al.token, al.status as link_status
@@ -1285,6 +1385,25 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
        limit 160`,
       sourceParams
     ),
+    query(
+      `select rms_phase, priority, recommended_action, last_operation, last_material_sent,
+              revenue_potential, metadata, created_at, updated_at
+       from rms_lead_state
+       where business_id = $1 and source_type = $2 and source_id = $3
+       order by updated_at desc
+       limit 1`,
+      [lead.business_id, lead.source_type || "PLAYER", lead.id]
+    ),
+    query(
+      `select event_type, event_title, event_description, rms_phase, operation_key,
+              material_type, metadata, created_at
+       from rms_machine_events
+       where business_id = $1
+         and (($2::uuid is not null and lead_id = $2) or (source_type = $3 and source_id = $4))
+       order by created_at desc
+       limit 8`,
+      sourceParams
+    ),
   ]);
 
   const purchaseRows = purchases.rows;
@@ -1313,7 +1432,7 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     : inferInterests(purchaseRows, gameRows, ticketRows, lead);
 
   const totalSpent = purchaseRows.reduce((sum, item) => sum + moneyNumber(item.sale_amount), 0);
-  const purchaseCount = purchaseRows.length;
+  const purchaseCount = purchaseRows.reduce((sum, item) => sum + salePurchaseContribution(item), 0);
   const scoreTotal = gameRows.reduce((sum, item) => sum + Number(item.score || 0), 0);
   const scoreAverage = gameRows.length ? scoreTotal / gameRows.length : 0;
   const bestScore = gameRows.reduce((max, item) => Math.max(max, Number(item.score || 0)), 0);
@@ -1381,7 +1500,19 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
     reward_passes: rewardPasses.rows,
     affiliate: affiliates.rows[0] || null,
     communications: communicationRows,
+    whatsapp_history: events.rows
+      .filter((item) => String(item.event_type || "").startsWith("whatsapp_"))
+      .map((item) => ({
+        ...item,
+        phone: item.metadata?.phone || null,
+        message: item.metadata?.message || null,
+        delivery_status: item.metadata?.delivery_status || null,
+      })),
     notes: noteRows,
+    rms: {
+      ...(rmsState.rows[0] || {}),
+      events: rmsEvents.rows,
+    },
     timeline: buildTimeline({ lead: detailLead, purchases: purchaseRows, tickets: ticketRows, games: gameRows, activations: activationRows, communications: communicationRows, notes: noteRows, events: events.rows }),
   };
 }
@@ -1477,6 +1608,42 @@ async function createLeadNote(businessId, user, leadId, sourceType, payload) {
     `insert into lead_events (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
      values ($1, $2, $3, $4, 'note_created', 'Nota interna creada', $5, $6, $7::jsonb)`,
     [businessId, lead.lead_id || null, lead.source_type, lead.id, payload.note.slice(0, 500), user.id, JSON.stringify({ note_id: result.rows[0].id, note_type: payload.note_type || "commercial" })]
+  );
+  return result.rows[0];
+}
+
+/**
+ * Registra la entrega manual hacia WhatsApp sin suplantar una confirmación de
+ * entrega que solo el proveedor de mensajería podría reportar. El navegador
+ * abre wa.me y Qori conserva el contexto exacto que el operador preparó.
+ */
+async function createLeadWhatsAppContact(businessId, user, leadId, sourceType, payload) {
+  const lead = await resolveLead(businessId, leadId, sourceType);
+  const phone = normalizedDigits(payload.phone);
+  if (phone.length < 7) throw badRequest("El teléfono no tiene un formato válido para WhatsApp.");
+
+  const description = `Mensaje preparado para ${payload.phone}. Qori abrió WhatsApp para envío manual; la entrega no se confirma automáticamente.`;
+  const result = await query(
+    `insert into lead_events
+      (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
+     values ($1, $2, $3, $4, 'whatsapp_opened_for_manual_send', 'WhatsApp abierto para envío manual', $5, $6, $7::jsonb)
+     returning *`,
+    [
+      businessId,
+      lead.lead_id || null,
+      lead.source_type,
+      lead.id,
+      description,
+      user.id,
+      JSON.stringify({
+        channel: "WHATSAPP",
+        delivery_status: "OPENED_FOR_MANUAL_SEND",
+        phone,
+        message: payload.message,
+        consent_confirmed: true,
+        source: payload.source || "contact_detail",
+      }),
+    ]
   );
   return result.rows[0];
 }
@@ -1871,8 +2038,9 @@ async function updateLeadAgendaItem(businessId, user, noteId, payload = {}) {
   return getLeadAgendaItem(businessId, noteId);
 }
 
-async function deleteLeadAgendaItem(businessId, user, noteId) {
-  const existing = await query(
+async function deleteLeadAgendaItem(businessId, user, noteId, payload = {}) {
+  const result = await withTransaction(async (client) => {
+    const existing = await client.query(
     `select *
        from lead_notes
       where id = $1
@@ -1880,32 +2048,41 @@ async function deleteLeadAgendaItem(businessId, user, noteId) {
         and reminder_at is not null`,
     [noteId, businessId]
   );
-  if (!existing.rowCount) {
-    throw notFound("Tarea de agenda no encontrada.");
-  }
-  const item = existing.rows[0];
-  await query(
+    if (!existing.rowCount) throw notFound("Tarea de agenda no encontrada.");
+    const item = existing.rows[0];
+    if (item.agenda_status === "CANCELLED") return { item, duplicate: true };
+    await client.query(
     `insert into lead_events
       (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
-     values ($1, $2, $3, $4, 'agenda_deleted', 'Agenda eliminada', $5, $6, $7::jsonb)`,
-    [
+     values ($1, $2, $3, $4, 'agenda_cancelled', 'Agenda cancelada', $5, $6, $7::jsonb)`,
+      [
       businessId,
       item.lead_id || null,
       item.source_type,
       item.source_id,
       item.next_action || item.note,
       user.id,
-      JSON.stringify({ note_id: noteId, agenda_status: item.agenda_status, reminder_at: item.reminder_at }),
-    ]
-  );
-  await query(
-    `delete from lead_notes
-      where id = $1
-        and business_id = $2
-        and reminder_at is not null`,
-    [noteId, businessId]
-  );
-  return { deleted: true, id: noteId };
+        JSON.stringify({ note_id: noteId, agenda_status: item.agenda_status, reminder_at: item.reminder_at, cancellation_reason: payload.reason }),
+      ]
+    );
+    const updated = await client.query(
+      `update lead_notes
+          set agenda_status = 'CANCELLED', completed_at = now(),
+              metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object('cancellation_reason', $3, 'cancelled_at', now(), 'cancelled_by', $4::text),
+              updated_at = now()
+        where id = $1 and business_id = $2
+        returning *`,
+      [noteId, businessId, payload.reason, user.id]
+    );
+    await recordLifecycleEvent({
+      business_id: businessId, entity_type: "AGENDA_TASK", entity_id: item.id,
+      action: "CANCELLED", previous_status: item.agenda_status, next_status: "CANCELLED",
+      reason: payload.reason, idempotency_key: payload.idempotency_key || `agenda-cancel:${item.id}`,
+      actor_user_id: user.id, metadata: { source_type: item.source_type, source_id: item.source_id, reminder_at: item.reminder_at },
+    }, client);
+    return { item: updated.rows[0], duplicate: false };
+  });
+  return { cancelled: true, id: noteId, agenda_item: result.item, duplicate: result.duplicate };
 }
 
 async function addLeadInterest(businessId, user, leadId, sourceType, payload) {
@@ -1944,7 +2121,64 @@ async function deleteLeadInterest(businessId, leadId, interestId, sourceType = "
   return { id: interestId };
 }
 
-async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER") {
+async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER", payload = {}) {
+  // Compatibility endpoint: it is deliberately an archive command, never a physical lead delete.
+  return withTransaction(async (client) => {
+    const lead = await resolveLead(businessId, leadId, sourceType, client);
+    const source = String(lead.source_type || sourceType || "PLAYER").toUpperCase();
+    if (source === "AFFILIATE") {
+      throw badRequest("Los afiliados se desactivan desde Afiliados; no se archivan como contactos.");
+    }
+    const entityId = source === "MANUAL" ? lead.id : (lead.lead_id || lead.id);
+    const currentStatus = source === "MANUAL" ? lead.stored_status : lead.metadata?.lifecycle_status || "ACTIVE";
+    if (String(currentStatus).toUpperCase() === "ARCHIVED") {
+      return { archived: true, duplicate: true, lead_id: leadId, source_type: source };
+    }
+    if (source === "MANUAL") {
+      await client.query(
+        `update business_manual_leads
+            set status = 'ARCHIVED',
+                metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+                  'lifecycle_status', 'ARCHIVED', 'archived_at', now(),
+                  'archived_by_user_id', $3::text, 'archive_reason', $4::text
+                ),
+                updated_at = now()
+          where id = $1 and business_id = $2`,
+        [lead.id, businessId, user.id, payload.reason]
+      );
+    } else {
+      await client.query(
+        `update players
+            set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+              'lifecycle_status', 'ARCHIVED', 'archived_at', now(),
+              'archived_by_user_id', $3::text, 'archive_reason', $4::text
+            )
+          where id = $1 and business_id = $2`,
+        [entityId, businessId, user.id, payload.reason]
+      );
+    }
+    await client.query(
+      `insert into lead_events
+        (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, created_by, metadata)
+       values ($1, $2, $3, $4, 'contact_archived', 'Contacto archivado', $5, $6, $7::jsonb)`,
+      [
+        businessId, source === "PLAYER" ? entityId : lead.lead_id || null, source, lead.id,
+        `${lead.name || "Contacto"} fue archivado; su historial comercial permanece disponible.`, user.id,
+        JSON.stringify({ reason: payload.reason, previous_status: currentStatus }),
+      ]
+    );
+    await recordLifecycleEvent({
+      business_id: businessId, entity_type: "LEAD_CONTACT", entity_id: entityId,
+      action: "ARCHIVED", previous_status: currentStatus, next_status: "ARCHIVED", reason: payload.reason,
+      idempotency_key: payload.idempotency_key || `lead-archive:${source}:${entityId}:${currentStatus}`,
+      actor_user_id: user.id, metadata: { source_type: source, source_id: lead.id, lead_name: lead.name || null },
+    }, client);
+    return { archived: true, duplicate: false, lead_id: leadId, source_type: source };
+  });
+
+  /* Legacy physical-delete implementation kept below only to minimize the diff during
+     this compatible change. It is unreachable and will be removed after legacy callers
+     have migrated to the explicit privacy-erasure workflow. */
   return withTransaction(async (client) => {
     const lead = await resolveLead(businessId, leadId, sourceType, client);
     const source = String(lead.source_type || sourceType || "PLAYER").toUpperCase();
@@ -2158,6 +2392,7 @@ async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER"
 async function createLeadPurchase(businessId, user, leadId, sourceType, payload) {
   return withTransaction(async (client) => {
     const lead = await resolveLead(businessId, leadId, sourceType, client);
+    const acquisitionChannel = await resolveAcquisitionChannelReference(client, businessId, payload);
     if (payload.campaign_id) {
       const campaign = await client.query("select id from campaigns where id = $1 and business_id = $2", [payload.campaign_id, businessId]);
       if (!campaign.rowCount) throw badRequest("La campana seleccionada no pertenece a este negocio.");
@@ -2211,6 +2446,12 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
     });
     const metadata = {
       ...(payload.metadata || {}),
+      acquisition_channel: {
+        id: acquisitionChannel.acquisition_channel_id,
+        name_snapshot: acquisitionChannel.acquisition_channel_name_snapshot,
+        slug_snapshot: acquisitionChannel.acquisition_channel_slug_snapshot,
+        source: acquisitionChannel.acquisition_channel_source,
+      },
       category: payload.category || payload.metadata?.category || null,
       products: catalogSync.products,
       auto_created_products: catalogSync.autoCreatedProducts,
@@ -2229,10 +2470,11 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
       `insert into business_sales
         (business_id, campaign_id, qr_code_id, customer_name, customer_phone, customer_email,
          customer_document_id, product_name, sale_amount, currency, seller_user_id, branch_id,
-         acquisition_source, acquisition_channel, referred_affiliate_id, referral_points_awarded,
-         notes, created_at, metadata)
-       values ($1, $2, null, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-               coalesce($17::timestamptz, now()), $18::jsonb)
+         acquisition_source, acquisition_channel, acquisition_channel_id, acquisition_channel_name_snapshot,
+         acquisition_channel_slug_snapshot, acquisition_channel_source, referred_affiliate_id,
+         referral_points_awarded, notes, created_at, metadata)
+       values ($1, $2, null, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+               $18, $19, coalesce($20::timestamptz, now()), $21::jsonb)
        returning *`,
       [
         businessId,
@@ -2247,7 +2489,11 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
         user?.id || null,
         payload.branch_id || null,
         payload.acquisition_source || (relatedAffiliate ? "FRIEND_REFERRAL" : "CONTACT_LEAD"),
-        payload.acquisition_channel || (relatedAffiliate ? "Afiliados" : lead.channel || "Base de contactos"),
+        acquisitionChannel.acquisition_channel || (relatedAffiliate ? "Afiliados" : lead.channel || null),
+        acquisitionChannel.acquisition_channel_id,
+        acquisitionChannel.acquisition_channel_name_snapshot || (relatedAffiliate ? "Afiliados" : lead.channel || null),
+        acquisitionChannel.acquisition_channel_slug_snapshot,
+        acquisitionChannel.acquisition_channel_source || (relatedAffiliate ? "SYSTEM_SPECIAL" : null),
         relatedAffiliate?.id || null,
         referralPoints,
         payload.notes || null,
@@ -2343,6 +2589,23 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
 async function createLeadActivation(businessId, user, leadId, sourceType, payload) {
   return withTransaction(async (client) => {
     const lead = await ensurePlayerForAction(client, businessId, leadId, sourceType);
+    const implicitRmsKey = payload.metadata?.source === "rms_activation_1" && payload.interactive_activation_id
+      ? `rms-activation-1:${lead.source_type}:${lead.id}:${payload.interactive_activation_id}`
+      : "";
+    const idempotencyKey = String(payload.idempotency_key || implicitRmsKey || "").trim() || null;
+    if (idempotencyKey) {
+      await client.query("select pg_advisory_xact_lock(hashtext($1))", [`lead-activation:${businessId}:${lead.id}:${idempotencyKey}`]);
+      const existing = await client.query(
+        `select la.*, al.public_url
+           from lead_activations la
+           left join activation_links al on al.activation_id = la.id and al.business_id = la.business_id
+          where la.business_id = $1 and la.source_type = $2 and la.source_id = $3
+            and la.metadata->>'idempotency_key' = $4
+          order by la.created_at desc limit 1`,
+        [businessId, lead.source_type, lead.id, idempotencyKey]
+      );
+      if (existing.rowCount) return { activation: existing.rows[0], public_url: existing.rows[0].public_url, reused: true };
+    }
     if (payload.campaign_id) {
       const campaign = await client.query("select id from campaigns where id = $1 and business_id = $2", [payload.campaign_id, businessId]);
       if (!campaign.rowCount) throw badRequest("La campaña seleccionada no pertenece a este negocio.");
@@ -2354,10 +2617,49 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
       throw badRequest("No se puede enviar correo porque el lead no tiene email valido.");
     }
 
-    const needsTicket = LEAD_ACTIVATION_TYPES_WITH_TICKET.has(payload.activation_type);
+    let interactiveActivation = null;
+    if (payload.interactive_activation_id) {
+      const activationResult = await client.query(
+        `select ia.id, ia.title, ia.description, ia.activation_type, ia.campaign_id, ia.public_slug, c.status as campaign_status
+           from interactive_activations ia
+           left join campaigns c on c.id = ia.campaign_id and c.business_id = ia.company_id
+          where ia.id = $1 and ia.company_id = $2 and ia.status = 'active'
+            and (ia.starts_at is null or ia.starts_at <= now())
+            and (ia.ends_at is null or ia.ends_at > now())`,
+        [payload.interactive_activation_id, businessId]
+      );
+      if (!activationResult.rowCount) throw badRequest("La activacion seleccionada no esta activa, vigente o no pertenece a este negocio.");
+      interactiveActivation = activationResult.rows[0];
+      if (["FINISHED", "ARCHIVED", "CANCELLED"].includes(String(interactiveActivation.campaign_status || "").toUpperCase())) {
+        throw badRequest("La campana de esta activacion ya no permite nuevos envios.");
+      }
+      const rmsConsentAlreadyValidated = payload.metadata?.source === "rms_activation_1";
+      if (["whatsapp", "email", "sms"].includes(String(payload.channel || "manual").toLowerCase()) && !payload.contact_consent_confirmed && !rmsConsentAlreadyValidated) {
+        throw badRequest("Confirma el consentimiento comercial del lead antes de enviar esta activacion.");
+      }
+    }
+
+    const needsTicket = LEAD_ACTIVATION_TYPES_WITH_TICKET.has(payload.activation_type) && !interactiveActivation;
     let qr = null;
     let token = createSecureToken();
-    let publicUrl = buildActivationUrl(payload.activation_type, token);
+    let publicUrl = interactiveActivation
+      ? `${String(env.publicAppUrl || "http://localhost:3000").replace(/\/$/, "")}/activacion/${encodeURIComponent(interactiveActivation.public_slug)}`
+      : buildActivationUrl(payload.activation_type, token);
+    const activationName = interactiveActivation?.title || payload.name;
+    const activationDescription = interactiveActivation?.description || payload.description || null;
+    const campaignId = interactiveActivation?.campaign_id || payload.campaign_id || null;
+    const activationMetadata = {
+      ...(payload.metadata || {}),
+      source_module: payload.source_module || "contacts",
+      idempotency_key: idempotencyKey,
+      delivery_status: "ASSOCIATED",
+      ...(interactiveActivation ? {
+        interactive_activation_id: interactiveActivation.id,
+        interactive_activation_title: interactiveActivation.title,
+        interactive_activation_type: interactiveActivation.activation_type,
+        interactive_activation_public_slug: interactiveActivation.public_slug,
+      } : {}),
+    };
 
     const activation = await client.query(
       `insert into lead_activations
@@ -2370,16 +2672,16 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
         lead.lead_id,
         lead.source_type,
         lead.id,
-        payload.campaign_id || null,
+        campaignId,
         payload.activation_type,
-        payload.name,
-        payload.description || null,
+        activationName,
+        activationDescription,
         payload.benefit_type || "CUSTOM",
         JSON.stringify(payload.benefit_value || {}),
         payload.channel || "manual",
         payload.expires_at || null,
         payload.score_min || null,
-        JSON.stringify(payload.metadata || {}),
+        JSON.stringify(activationMetadata),
         user.id,
       ]
     );
@@ -2394,7 +2696,7 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
          returning *`,
         [
           businessId,
-          payload.campaign_id || null,
+          campaignId,
           lead.lead_id,
           token,
           JSON.stringify({
@@ -2428,7 +2730,7 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
         businessId,
         lead.lead_id,
         activation.rows[0].id,
-        payload.campaign_id || null,
+        campaignId,
         qr?.id || null,
         payload.activation_type,
         payload.channel || "manual",
@@ -2440,7 +2742,6 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
       ]
     );
 
-    const emailPending = String(payload.channel || "").toLowerCase() === "email";
     const communication = await client.query(
       `insert into lead_communications
         (business_id, lead_id, source_type, source_id, campaign_id, activation_id, ticket_id,
@@ -2453,15 +2754,15 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
         lead.lead_id,
         lead.source_type,
         lead.id,
-        payload.campaign_id || null,
+        campaignId,
         activation.rows[0].id,
         qr?.id || null,
         payload.activation_type,
         payload.channel || "manual",
-        payload.subject || payload.name,
+        payload.subject || activationName,
         payload.message || "",
-        emailPending ? "pending" : "sent",
-        JSON.stringify({ public_url: publicUrl, email_pending: emailPending, consent_warning: Boolean(payload.consent_warning) }),
+        "pending",
+        JSON.stringify({ public_url: publicUrl, delivery_status: "ASSOCIATED", consent_confirmed: Boolean(payload.contact_consent_confirmed), source_module: payload.source_module || "contacts" }),
         user.id,
       ]
     );
@@ -2470,18 +2771,18 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
       `insert into lead_events
         (business_id, lead_id, source_type, source_id, event_type, event_title, event_description,
          campaign_id, qr_code_id, communication_id, metadata, created_by)
-       values ($1, $2, $3, $4, 'activation_sent', $5, $6, $7, $8, $9, $10::jsonb, $11)`,
+       values ($1, $2, $3, $4, 'activation_associated', $5, $6, $7, $8, $9, $10::jsonb, $11)`,
       [
         businessId,
         lead.lead_id,
         lead.source_type,
         lead.id,
-        payload.name,
+        activationName,
         payload.description || `Activación ${payload.activation_type} creada desde seguimiento.`,
-        payload.campaign_id || null,
+        campaignId,
         qr?.id || null,
         communication.rows[0].id,
-        JSON.stringify({ activation_id: activation.rows[0].id, public_url: publicUrl, channel: payload.channel || "manual" }),
+        JSON.stringify({ activation_id: activation.rows[0].id, public_url: publicUrl, channel: payload.channel || "manual", delivery_status: "ASSOCIATED", source_module: payload.source_module || "contacts" }),
         user.id,
       ]
     );
@@ -2496,11 +2797,41 @@ async function createLeadActivation(businessId, user, leadId, sourceType, payloa
   });
 }
 
+async function markLeadActivationOpened(businessId, user, leadId, sourceType, activationId) {
+  return withTransaction(async (client) => {
+    const lead = await ensurePlayerForAction(client, businessId, leadId, sourceType);
+    const result = await client.query(
+      `update lead_activations
+          set status = case when status = 'CREATED' then 'OPENED' else status end,
+              metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object('delivery_status', 'WHATSAPP_OPENED_MANUALLY', 'opened_at', now()::text),
+              updated_at = now()
+        where id = $1 and business_id = $2 and source_type = $3 and source_id = $4
+        returning *`,
+      [activationId, businessId, lead.source_type, lead.id]
+    );
+    if (!result.rowCount) throw notFound("La asociacion de activacion no pertenece a este lead.");
+    await client.query(
+      `update lead_communications
+          set status = 'opened', opened_at = now(), metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object('delivery_status', 'WHATSAPP_OPENED_MANUALLY')
+        where business_id = $1 and activation_id = $2 and status = 'pending'`,
+      [businessId, activationId]
+    );
+    await client.query(
+      `insert into lead_events (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, metadata, created_by)
+       values ($1, $2, $3, $4, 'activation_whatsapp_opened', 'WhatsApp abierto para envio manual', 'La activacion quedo asociada; la entrega no se confirma automaticamente.', $5::jsonb, $6)`,
+      [businessId, lead.lead_id || null, lead.source_type, lead.id, JSON.stringify({ activation_id: activationId }), user.id]
+    );
+    return { activation: result.rows[0], delivery_status: "WHATSAPP_OPENED_MANUALLY" };
+  });
+}
+
 module.exports = {
   addLeadInterest,
   createLeadActivation,
+  markLeadActivationOpened,
   createLeadAgendaItem,
   createLeadNote,
+  createLeadWhatsAppContact,
   deleteLeadAgendaItem,
   deleteLeadContact,
   deleteLeadInterest,

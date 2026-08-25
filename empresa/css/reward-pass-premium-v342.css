@@ -1,0 +1,577 @@
+/* Reward Pass premium operations layer. Scoped to avoid changing other portal views. */
+html body[data-current-view="reward-passes"] {
+  overflow-x: clip;
+}
+
+html body .portal-shell .reward-pass-premium-view {
+  --rp-navy: #052a6b;
+  --rp-blue: #0759c7;
+  --rp-cyan: #00bfe5;
+  --rp-ink: #082451;
+  --rp-muted: #61718b;
+  --rp-line: rgba(8, 36, 81, .12);
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+  padding-bottom: 48px;
+}
+
+html body .portal-shell .reward-pass-premium-hero {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 28px;
+  align-items: end;
+  overflow: hidden;
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid rgba(0, 191, 229, .28);
+  border-radius: 30px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 85% 10%, rgba(0, 191, 229, .34), transparent 34%),
+    linear-gradient(135deg, #041d4d 0%, #063d91 58%, #0876c9 100%);
+  box-shadow: 0 28px 70px rgba(5, 42, 107, .22);
+}
+
+html body .portal-shell .reward-pass-premium-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 360px;
+  aspect-ratio: 1;
+  right: -110px;
+  bottom: -250px;
+  border: 46px solid rgba(255, 255, 255, .07);
+  border-radius: 50%;
+}
+
+html body .portal-shell .reward-pass-premium-hero-copy {
+  display: grid;
+  gap: 12px;
+  max-width: 760px;
+}
+
+html body .portal-shell .reward-pass-premium-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 999px;
+  color: #dffaff;
+  background: rgba(255, 255, 255, .08);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+html body .portal-shell .reward-pass-premium-eyebrow .material-symbols-outlined {
+  font-size: 17px;
+}
+
+html body:not(#rpHeroA#rpHeroB#rpHeroC#rpHeroD) .portal-shell .reward-pass-premium-hero h2 {
+  margin: 0;
+  color: #fff !important;
+  font-size: clamp(34px, 5vw, 58px);
+  line-height: .98;
+  letter-spacing: -.055em;
+}
+
+html body:not(#rpCopyA#rpCopyB#rpCopyC#rpCopyD) .portal-shell .reward-pass-premium-hero p {
+  max-width: 680px;
+  margin: 0;
+  color: rgba(239, 249, 255, .9) !important;
+  font-size: clamp(15px, 1.8vw, 18px);
+  line-height: 1.55;
+}
+
+html body .portal-shell .reward-pass-premium-signal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+html body .portal-shell .reward-pass-premium-signal span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #e9fbff;
+  background: rgba(2, 22, 63, .34);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+html body .portal-shell .reward-pass-premium-actions {
+  display: grid;
+  gap: 10px;
+  min-width: 220px;
+}
+
+html body .portal-shell .reward-pass-premium-actions :is(.solid-button, .ghost-button) {
+  justify-content: center;
+  min-height: 46px;
+  border-radius: 14px;
+}
+
+html body .portal-shell .reward-pass-premium-actions .solid-button {
+  color: #052a6b;
+  background: #fff;
+  box-shadow: 0 14px 30px rgba(2, 22, 63, .24);
+}
+
+html body .portal-shell .reward-pass-premium-actions .ghost-button {
+  border-color: rgba(255, 255, 255, .25);
+  color: #fff;
+  background: rgba(255, 255, 255, .09);
+}
+
+html body .portal-shell .reward-pass-kpis {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+html body .portal-shell .reward-pass-kpis .kpi-card {
+  position: relative;
+  min-width: 0;
+  min-height: 132px;
+  padding: 19px;
+  overflow: hidden;
+  border: 1px solid var(--rp-line);
+  border-radius: 20px;
+  background: linear-gradient(145deg, #fff, #f7fbff);
+  box-shadow: 0 14px 35px rgba(8, 36, 81, .07);
+}
+
+html body .portal-shell .reward-pass-kpis .kpi-card::after {
+  content: "";
+  position: absolute;
+  right: -28px;
+  bottom: -34px;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: rgba(0, 191, 229, .08);
+}
+
+html body .portal-shell .reward-pass-kpis .kpi-card strong {
+  display: block;
+  margin: 11px 0 5px;
+  color: var(--rp-ink);
+  font-size: clamp(20px, 1.7vw, 27px);
+  line-height: 1;
+  letter-spacing: -.04em;
+  white-space: nowrap;
+}
+
+html body:not(#rpKpiA#rpKpiB#rpKpiC#rpKpiD) .portal-shell .reward-pass-premium-view .reward-pass-kpis .kpi-card strong {
+  font-size: clamp(19px, 1.25vw, 23px) !important;
+  letter-spacing: -.035em !important;
+}
+
+html body:not(#rpMetaA#rpMetaB#rpMetaC#rpMetaD) .portal-shell .reward-pass-kpis .kpi-meta {
+  color: var(--rp-muted) !important;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+html body .portal-shell .reward-pass-premium-insight {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid rgba(0, 191, 229, .25);
+  border-radius: 18px;
+  background: linear-gradient(90deg, rgba(0, 191, 229, .1), rgba(7, 89, 199, .05));
+}
+
+html body .portal-shell .reward-pass-premium-insight > .material-symbols-outlined {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--rp-blue), var(--rp-cyan));
+}
+
+html body .portal-shell .reward-pass-premium-insight strong,
+html body .portal-shell .reward-pass-premium-insight p {
+  display: block;
+  margin: 0;
+}
+
+html body .portal-shell .reward-pass-premium-insight strong { color: var(--rp-ink); }
+html body .portal-shell .reward-pass-premium-insight p { margin-top: 3px; color: var(--rp-muted); font-size: 13px; }
+
+html body .portal-shell .reward-pass-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+
+html body .portal-shell .reward-pass-chart-card,
+html body .portal-shell .reward-pass-command-card,
+html body .portal-shell .reward-pass-list-card {
+  min-width: 0;
+  border: 1px solid var(--rp-line);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 16px 38px rgba(8, 36, 81, .065);
+}
+
+html body .portal-shell .reward-pass-chart-card {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+html body .portal-shell .reward-pass-chart-card h3 { margin: 5px 0 0; color: var(--rp-ink); }
+html body .portal-shell .reward-pass-bar-list { display: grid; gap: 12px; }
+html body .portal-shell .reward-pass-bar-row { display: grid; gap: 6px; }
+html body .portal-shell .reward-pass-bar-row > span { display: flex; justify-content: space-between; gap: 12px; color: var(--rp-muted); font-size: 13px; }
+html body .portal-shell .reward-pass-bar-row em { font-style: normal; white-space: nowrap; }
+html body .portal-shell .reward-pass-bar-track { height: 9px; overflow: hidden; border-radius: 999px; background: #e9f0f8; }
+html body .portal-shell .reward-pass-bar-track i { display: block; width: var(--bar-width, 0%); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--rp-blue), var(--rp-cyan)); }
+
+html body .portal-shell .reward-pass-command-card { padding: 20px; }
+
+html body .portal-shell .reward-pass-result-count {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: var(--rp-blue);
+  background: rgba(7, 89, 199, .08);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+html body .portal-shell .reward-pass-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.5fr) minmax(170px, .8fr) minmax(190px, .9fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin-top: 16px;
+}
+
+html body .portal-shell .reward-pass-filter-grid > label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: var(--rp-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+html body .portal-shell .reward-pass-filter-grid :is(input, select) {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid rgba(8, 36, 81, .16);
+  border-radius: 13px;
+  color: var(--rp-ink);
+  background: #f9fbfe;
+}
+
+html body .portal-shell .reward-pass-search-field {
+  position: relative;
+}
+
+html body .portal-shell .reward-pass-search-field .material-symbols-outlined {
+  position: absolute;
+  z-index: 1;
+  left: 13px;
+  bottom: 12px;
+  color: #718096;
+  font-size: 20px;
+}
+
+html body .portal-shell .reward-pass-search-field input { padding-left: 42px !important; }
+
+html body .portal-shell .reward-pass-list-card > .table-wrap {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+html body .portal-shell .reward-pass-list-card table { min-width: 960px; }
+html body .portal-shell .reward-pass-list-card th { white-space: nowrap; }
+html body .portal-shell .reward-pass-list-card td { vertical-align: middle; }
+
+html body .portal-shell .reward-pass-table-main strong { color: var(--rp-ink); }
+html body .portal-shell .reward-pass-table-contact { max-width: 240px; overflow-wrap: anywhere; }
+
+html body .portal-shell .reward-pass-mobile-cards { display: none; }
+
+html body .portal-shell .reward-pass-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px 20px;
+  color: var(--rp-muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+html body .reward-pass-create-modal,
+html body #rewardPassCreateModal,
+html body .reward-pass-detail-modal {
+  align-items: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(12px, 3vh, 30px);
+}
+
+html body .reward-pass-create-modal-card,
+html body .reward-pass-detail-modal-card {
+  width: min(100%, 1120px);
+  max-height: calc(100dvh - clamp(24px, 6vh, 60px));
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border-radius: 24px;
+  background: #fff;
+}
+
+/* The base portal sheet applies `overflow: hidden` to every `.modal-card` with
+   a more specific selector. Reward Pass owns its complete scroll container so
+   the final actions remain reachable at every viewport height. */
+html body > #rewardPassCreateModal.modal-shell .modal-card.reward-pass-create-modal-card,
+html body > #rewardPassDetailModal.modal-shell .modal-card.reward-pass-detail-modal-card {
+  width: min(100%, 1120px) !important;
+  height: auto !important;
+  max-height: calc(100dvh - clamp(24px, 6vh, 60px)) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+}
+
+html body:not(#rpScrollA#rpScrollB#rpScrollC#rpScrollD) > #rewardPassCreateModal.modal-shell .modal-card.reward-pass-create-modal-card,
+html body:not(#rpScrollE#rpScrollF#rpScrollG#rpScrollH) > #rewardPassDetailModal.modal-shell .modal-card.reward-pass-detail-modal-card {
+  height: auto !important;
+  max-height: calc(100dvh - clamp(24px, 6vh, 60px)) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+html body > #rewardPassDetailModal.modal-shell .modal-card.reward-pass-detail-modal-card {
+  width: min(100%, 980px) !important;
+}
+
+html body .reward-pass-create-modal-card > .modal-head,
+html body .reward-pass-detail-modal-card > .modal-head {
+  position: sticky;
+  z-index: 5;
+  top: 0;
+  border-bottom: 1px solid var(--rp-line);
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(12px);
+}
+
+html body:not(#rpModalTitleA#rpModalTitleB#rpModalTitleC) .reward-pass-create-modal-card .modal-head h3,
+html body:not(#rpModalTitleD#rpModalTitleE#rpModalTitleF) .reward-pass-detail-modal-card .modal-head h3 {
+  color: var(--rp-ink, #082451) !important;
+}
+
+html body:not(#rpModalCopyA#rpModalCopyB#rpModalCopyC) .reward-pass-create-modal-card .modal-head p,
+html body:not(#rpModalCopyD#rpModalCopyE#rpModalCopyF) .reward-pass-detail-modal-card .modal-head p {
+  color: var(--rp-muted, #61718b) !important;
+}
+
+html body .reward-pass-create-modal-card .reward-pass-layout {
+  grid-template-columns: minmax(0, 1.18fr) minmax(300px, .82fr);
+  align-items: start;
+}
+
+html body .reward-pass-create-modal-card .reward-pass-form {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+html body .reward-pass-create-modal-card .reward-pass-preview-card {
+  position: sticky;
+  top: 112px;
+}
+
+html body .reward-pass-card-preview .reward-pass-card-inner strong {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  font-size: clamp(28px, 3.3vw, 46px);
+}
+
+html body > #rewardPassCreateModal .reward-pass-card-preview .reward-pass-card-inner strong {
+  max-width: 100% !important;
+  font-size: clamp(27px, 2.6vw, 36px) !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+html body .reward-pass-preview-card .affiliate-card-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+html body .reward-pass-preview-card .affiliate-card-actions button {
+  min-width: 0;
+  white-space: normal;
+}
+
+html body > #rewardPassCreateModal .reward-pass-preview-card .affiliate-card-actions {
+  grid-template-columns: 1fr !important;
+}
+
+html body > #rewardPassCreateModal .reward-pass-preview-card .affiliate-card-actions button {
+  width: 100% !important;
+  min-height: 42px !important;
+  border-radius: 12px !important;
+}
+
+html body .reward-pass-detail-modal-card { width: min(100%, 980px); }
+
+html body .reward-pass-detail-security {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid rgba(0, 191, 229, .22);
+  border-radius: 16px;
+  background: #f4fbff;
+}
+
+html body .reward-pass-detail-security code {
+  display: inline-flex;
+  margin-top: 4px;
+  color: var(--rp-ink);
+  font-size: 22px;
+  font-weight: 850;
+  letter-spacing: .18em;
+}
+
+html body > #rewardPassCreateModal .reward-pass-branch-field {
+  align-content: start;
+}
+
+html body > #rewardPassCreateModal .reward-pass-branch-status {
+  display: block;
+  margin-top: 6px;
+  color: var(--rp-muted, #61718b);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+html body > #rewardPassCreateModal .reward-pass-branch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 7px;
+}
+
+html body > #rewardPassCreateModal .reward-pass-branch-actions .text-button {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid rgba(7, 89, 214, .2);
+  border-radius: 10px;
+  background: #f4f9ff;
+  color: #0759d6;
+  font-weight: 750;
+}
+
+@media (max-width: 1180px) {
+  html body .portal-shell .reward-pass-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 860px) {
+  html body .portal-shell .reward-pass-premium-hero { grid-template-columns: 1fr; align-items: start; }
+  html body .portal-shell .reward-pass-premium-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 0; }
+  html body .portal-shell .reward-pass-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html body .reward-pass-create-modal-card .reward-pass-layout { grid-template-columns: 1fr; }
+  html body .reward-pass-create-modal-card .reward-pass-preview-card { position: static; }
+}
+
+@media (max-height: 760px), (max-width: 720px) {
+  html body #rewardPassCreateModal,
+  html body .reward-pass-detail-modal { align-items: flex-start; padding: 12px; }
+  html body .reward-pass-create-modal-card,
+  html body .reward-pass-detail-modal-card { max-height: calc(100dvh - 24px); }
+  html body > #rewardPassCreateModal.modal-shell .modal-card.reward-pass-create-modal-card,
+  html body > #rewardPassDetailModal.modal-shell .modal-card.reward-pass-detail-modal-card {
+    max-height: calc(100dvh - 24px) !important;
+  }
+  html body:not(#rpScrollMobileA#rpScrollMobileB#rpScrollMobileC#rpScrollMobileD) > #rewardPassCreateModal.modal-shell .modal-card.reward-pass-create-modal-card,
+  html body:not(#rpScrollMobileE#rpScrollMobileF#rpScrollMobileG#rpScrollMobileH) > #rewardPassDetailModal.modal-shell .modal-card.reward-pass-detail-modal-card {
+    max-height: calc(100dvh - 24px) !important;
+    overflow-y: auto !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body .portal-shell .reward-pass-premium-view { gap: 16px; }
+  html body .portal-shell .reward-pass-premium-hero { padding: 24px 20px; border-radius: 23px; }
+  html body .portal-shell .reward-pass-premium-actions,
+  html body .portal-shell .reward-pass-kpis,
+  html body .portal-shell .reward-pass-chart-grid,
+  html body .portal-shell .reward-pass-filter-grid { grid-template-columns: 1fr; }
+  html body .portal-shell .reward-pass-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html body .portal-shell .reward-pass-kpis .kpi-card { min-height: 116px; padding: 16px; }
+  html body .portal-shell .reward-pass-list-card > .table-wrap { display: none; }
+  html body .portal-shell .reward-pass-list-card > .table-card-head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 5px !important;
+  }
+  html body:not(#rpListHeadA#rpListHeadB#rpListHeadC#rpListHeadD) .portal-shell .reward-pass-premium-view .reward-pass-list-card > .table-card-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  html body:not(#rpListChildA#rpListChildB#rpListChildC#rpListChildD) .portal-shell .reward-pass-premium-view .reward-pass-list-card > .table-card-head > * {
+    grid-column: 1 / -1 !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+  html body .portal-shell .reward-pass-list-card > .table-card-head > div { width: 100%; min-width: 0; }
+  html body:not(#rpListTitleA#rpListTitleB#rpListTitleC) .portal-shell .reward-pass-list-card > .table-card-head strong {
+    display: block !important;
+    width: 100% !important;
+    white-space: normal !important;
+    overflow-wrap: normal !important;
+  }
+  html body .portal-shell .reward-pass-list-card > .table-card-head small { display: block; width: 100%; }
+  html body .portal-shell .reward-pass-mobile-cards { display: grid; gap: 12px; padding: 14px; }
+  html body .portal-shell .reward-pass-mobile-card {
+    display: grid;
+    gap: 13px;
+    min-width: 0;
+    padding: 17px;
+    border: 1px solid var(--rp-line);
+    border-radius: 18px;
+    background: linear-gradient(145deg, #fff, #f8fbff);
+    width: 100%;
+  }
+  html body .portal-shell .reward-pass-mobile-card-head,
+  html body .portal-shell .reward-pass-mobile-card-states,
+  html body .portal-shell .reward-pass-mobile-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  html body .portal-shell .reward-pass-mobile-card-head > div { min-width: 0; }
+  html body .portal-shell .reward-pass-mobile-card-head strong,
+  html body .portal-shell .reward-pass-mobile-card-head small { display: block; overflow-wrap: anywhere; }
+  html body .portal-shell .reward-pass-mobile-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  html body .portal-shell .reward-pass-mobile-card-grid div { min-width: 0; padding: 10px; border-radius: 12px; background: #f2f7fd; }
+  html body .portal-shell .reward-pass-mobile-card-grid span,
+  html body .portal-shell .reward-pass-mobile-card-grid strong { display: block; overflow-wrap: anywhere; }
+  html body .portal-shell .reward-pass-mobile-card-grid span { margin-bottom: 3px; color: var(--rp-muted); font-size: 10px; text-transform: uppercase; }
+  html body .portal-shell .reward-pass-mobile-card-actions .solid-button { width: 100%; justify-content: center; }
+  html body .reward-pass-preview-card .affiliate-card-actions { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 420px) {
+  html body .portal-shell .reward-pass-kpis { grid-template-columns: 1fr; }
+  html body .portal-shell .reward-pass-premium-signal { display: grid; }
+  html body .portal-shell .reward-pass-mobile-card-grid { grid-template-columns: 1fr; }
+  html body .portal-shell .reward-pass-pagination { gap: 8px; }
+  html body .portal-shell .reward-pass-pagination .ghost-button { padding-inline: 10px; }
+  html body .reward-pass-detail-security { grid-template-columns: 1fr; }
+}

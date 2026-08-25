@@ -1,0 +1,709 @@
+/* Sedes premium: isolated final layer. */
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active {
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  max-width: none;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 220px;
+  padding: clamp(24px, 3vw, 42px);
+  overflow: hidden;
+  border: 1px solid rgba(125, 211, 252, .18);
+  border-radius: 28px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 82% 16%, rgba(34, 211, 238, .3), transparent 30%),
+    radial-gradient(circle at 12% 110%, rgba(59, 130, 246, .28), transparent 40%),
+    linear-gradient(135deg, #07172f 0%, #0a2850 54%, #074e68 100%);
+  box-shadow: 0 26px 70px rgba(7, 23, 47, .2);
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -84px;
+  bottom: -112px;
+  width: 300px;
+  height: 300px;
+  border: 1px solid rgba(186, 230, 253, .18);
+  border-radius: 50%;
+  box-shadow: 0 0 0 34px rgba(186, 230, 253, .055), 0 0 0 70px rgba(186, 230, 253, .035);
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-hero-copy {
+  display: grid;
+  gap: 10px;
+  max-width: 760px;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-eyebrow,
+html body[data-current-view="branches"] .portal-shell .branches-live-signal {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  gap: 8px;
+  color: #c8f7ff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-eyebrow .material-symbols-outlined {
+  font-size: 19px;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-hero h2 {
+  margin: 0;
+  color: #fff;
+  font: 800 clamp(40px, 5vw, 66px)/.94 "Plus Jakarta Sans", sans-serif;
+  letter-spacing: -.06em;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-hero p {
+  max-width: 690px;
+  margin: 0;
+  color: rgba(232, 249, 255, .82);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-hero-actions {
+  display: grid;
+  justify-items: end;
+  gap: 14px;
+  min-width: 180px;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-live-signal {
+  padding: 8px 12px;
+  border: 1px solid rgba(186, 230, 253, .2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .07);
+  backdrop-filter: blur(10px);
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-live-signal i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #5eead4;
+  box-shadow: 0 0 0 5px rgba(94, 234, 212, .12);
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-create-button {
+  min-height: 46px;
+  padding-inline: 18px;
+  border-color: #67e8f9;
+  color: #06233a;
+  background: linear-gradient(135deg, #e6fbff, #67e8f9);
+  box-shadow: 0 14px 30px rgba(6, 182, 212, .24);
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+html body[data-current-view="branches"] .portal-shell .branch-kpi-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 12px 34px rgba(15, 23, 42, .07);
+}
+
+html body[data-current-view="branches"] .portal-shell .branch-kpi-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  color: #0369a1;
+  background: linear-gradient(145deg, #e0f7ff, #bae6fd);
+}
+
+html body[data-current-view="branches"] .portal-shell .branch-kpi-icon .material-symbols-outlined {
+  font-size: 22px;
+}
+
+html body[data-current-view="branches"] .portal-shell .branch-kpi-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+html body[data-current-view="branches"] .portal-shell .branch-kpi-copy span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+html body[data-current-view="branches"] .portal-shell .branch-kpi-copy strong {
+  overflow: hidden;
+  color: #0f172a;
+  font: 800 clamp(22px, 2.3vw, 31px)/1.05 "Plus Jakarta Sans", sans-serif;
+  letter-spacing: -.045em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body[data-current-view="branches"] .portal-shell .branch-kpi-copy small {
+  overflow: hidden;
+  color: #64748b;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-unassigned-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 15px;
+  padding: 16px 18px;
+  border: 1px solid rgba(245, 158, 11, .25);
+  border-radius: 20px;
+  background: linear-gradient(120deg, rgba(255, 251, 235, .98), rgba(255, 247, 237, .92));
+  box-shadow: 0 12px 34px rgba(146, 64, 14, .06);
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-unassigned-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  color: #b45309;
+  background: #fef3c7;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-unassigned-copy {
+  display: grid;
+  gap: 3px;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-unassigned-copy .mono-label { color: #b45309; }
+html body[data-current-view="branches"] .portal-shell .branches-unassigned-copy strong { color: #451a03; font-size: 15px; }
+html body[data-current-view="branches"] .portal-shell .branches-unassigned-copy p { margin: 0; color: #92400e; font-size: 12px; }
+
+html body[data-current-view="branches"] .portal-shell .branches-directory {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .95);
+  box-shadow: 0 18px 52px rgba(15, 23, 42, .08);
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-directory-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 24px 16px;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-directory-head h3 {
+  margin: 4px 0 3px;
+  color: #0f172a;
+  font: 800 23px/1.15 "Plus Jakarta Sans", sans-serif;
+  letter-spacing: -.035em;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-directory-head p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-count {
+  padding: 7px 11px;
+  border-radius: 999px;
+  color: #075985;
+  background: #e0f2fe;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-toolbar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(145px, 190px) minmax(145px, 190px);
+  gap: 10px;
+  padding: 0 24px 18px;
+}
+
+html body[data-current-view="branches"] .portal-shell .branch-search-field,
+html body[data-current-view="branches"] .portal-shell .branches-filter-field {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 44px;
+  margin: 0;
+  border: 1px solid #dbe5ee;
+  border-radius: 13px;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+html body[data-current-view="branches"] .portal-shell .branch-search-field { gap: 8px; padding: 0 12px; }
+html body[data-current-view="branches"] .portal-shell .branch-search-field .material-symbols-outlined { font-size: 20px; }
+html body[data-current-view="branches"] .portal-shell .branch-search-field input,
+html body[data-current-view="branches"] .portal-shell .branches-filter-field select {
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  color: #0f172a;
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-filter-field { padding-left: 11px; }
+html body[data-current-view="branches"] .portal-shell .branches-filter-field > span { font-size: 10px; font-weight: 800; text-transform: uppercase; }
+html body[data-current-view="branches"] .portal-shell .branches-filter-field select { padding: 0 8px; font-size: 12px; font-weight: 700; }
+
+html body[data-current-view="branches"] .portal-shell .branches-table-wrap {
+  overflow-x: auto;
+  border-top: 1px solid #e8eef4;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-table {
+  width: 100%;
+  min-width: 800px;
+  margin: 0;
+  border-collapse: collapse;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-table th {
+  padding: 12px 18px;
+  border-bottom: 1px solid #e8eef4;
+  color: #64748b;
+  background: #f8fafc;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .07em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-table td {
+  padding: 15px 18px;
+  border-bottom: 1px solid #eef2f6;
+  color: #334155;
+  vertical-align: middle;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-table tbody tr {
+  cursor: pointer;
+  transition: background .18s ease;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-table tbody tr:hover { background: #f7fcff; }
+html body[data-current-view="branches"] .portal-shell .branches-table tbody tr:last-child td { border-bottom: 0; }
+
+html body[data-current-view="branches"] .portal-shell .branch-name-cell,
+html body[data-current-view="branches"] .portal-shell .branch-performance-cell,
+html body[data-current-view="branches"] .portal-shell .branch-contact-cell {
+  display: grid;
+  gap: 4px;
+}
+
+html body[data-current-view="branches"] .portal-shell .branch-name-cell strong,
+html body[data-current-view="branches"] .portal-shell .branch-performance-cell strong { color: #0f172a; font-size: 13px; }
+html body[data-current-view="branches"] .portal-shell .branch-name-cell small,
+html body[data-current-view="branches"] .portal-shell .branch-performance-cell small,
+html body[data-current-view="branches"] .portal-shell .branch-contact-cell small { color: #64748b; font-size: 11px; }
+
+html body[data-current-view="branches"] .portal-shell .branch-type-chip,
+html body[data-current-view="branches"] .portal-shell .branch-status-chip {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+html body[data-current-view="branches"] .portal-shell .branch-type-chip { color: #075985; background: #e0f2fe; }
+html body[data-current-view="branches"] .portal-shell .branch-status-chip.is-active { color: #047857; background: #d1fae5; }
+html body[data-current-view="branches"] .portal-shell .branch-status-chip.is-inactive { color: #64748b; background: #e2e8f0; }
+html body[data-current-view="branches"] .portal-shell .branch-status-chip i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+html body[data-current-view="branches"] .portal-shell .branch-open-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid #cfe7f2;
+  border-radius: 10px;
+  color: #0369a1;
+  background: #f0f9ff;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+html body[data-current-view="branches"] .portal-shell .branch-open-button .material-symbols-outlined { font-size: 16px; }
+html body[data-current-view="branches"] .portal-shell .branches-mobile-list { display: none; }
+
+body > .branch-modal-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow-y: auto;
+  background: rgba(5, 18, 36, .62);
+  backdrop-filter: blur(9px);
+}
+
+body > .branch-modal-shell.hidden { display: none !important; }
+
+/* The portal foundation hides these legacy panel ids with id-level selectors.
+   Once promoted to body-level dialogs, Sedes must explicitly own visibility. */
+html body[data-current-view="branches"] > #branchFormPanel#branchFormPanel#branchFormPanel#branchFormPanel#branchFormPanel,
+html body[data-current-view="branches"] > #branchDetailModal#branchDetailModal#branchDetailModal#branchDetailModal#branchDetailModal {
+  display: grid !important;
+}
+
+html body[data-current-view="branches"] > #branchFormPanel#branchFormPanel#branchFormPanel#branchFormPanel#branchFormPanel.hidden,
+html body[data-current-view="branches"] > #branchDetailModal#branchDetailModal#branchDetailModal#branchDetailModal#branchDetailModal.hidden {
+  display: none !important;
+}
+
+body > .branch-modal-shell .branch-modal-card {
+  width: min(920px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .4);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 34px 100px rgba(2, 12, 27, .42);
+}
+
+body > .branch-modal-shell .branch-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 21px 23px 17px;
+  border-bottom: 1px solid #e8eef4;
+  background: linear-gradient(135deg, #f8fcff, #eef9ff);
+}
+
+body > .branch-modal-shell .branch-modal-head h3 {
+  margin: 4px 0 3px;
+  color: #0f172a;
+  font: 800 24px/1.15 "Plus Jakarta Sans", sans-serif;
+  letter-spacing: -.035em;
+}
+
+body > .branch-modal-shell .branch-modal-head p { margin: 0; color: #64748b; font-size: 12px; line-height: 1.5; }
+body > .branch-modal-shell .branch-modal-head .icon-button { flex: 0 0 auto; color: #334155; background: #fff; }
+
+body > .branch-modal-shell .branch-premium-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+  max-height: calc(100vh - 145px);
+  padding: 20px 23px 23px;
+  overflow-y: auto;
+}
+
+body > .branch-modal-shell .branch-premium-form label { display: grid; gap: 7px; margin: 0; }
+body > .branch-modal-shell .branch-premium-form label > span { color: #334155; font-size: 11px; font-weight: 800; }
+body > .branch-modal-shell .branch-premium-form :is(input, select, textarea) {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #dbe5ee;
+  border-radius: 12px;
+  color: #0f172a;
+  background: #f8fafc;
+  box-shadow: none;
+}
+
+body > .branch-modal-shell .branch-premium-form :is(input, select) { min-height: 44px; }
+body > .branch-modal-shell .branch-premium-form :is(input, select, textarea):focus { border-color: #22b8d6; outline: 3px solid rgba(34, 184, 214, .13); }
+body > .branch-modal-shell .branch-premium-form .span-2 { grid-column: 1 / -1; }
+body > .branch-modal-shell .branch-form-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 3px; }
+body > .branch-modal-shell .branch-form-actions button { min-width: 130px; }
+body > .branch-modal-shell .branch-detail-card { width: min(1080px, 100%); display: grid; grid-template-rows: auto minmax(0, 1fr); }
+body > .branch-modal-shell .branch-detail-body { padding: 20px 23px 24px; overflow-y: auto; }
+body > .branch-modal-shell .branch-detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+body > .branch-modal-shell .branch-detail-box { display: grid; gap: 5px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 15px; background: #f8fafc; }
+body > .branch-modal-shell .branch-detail-box span { color: #64748b; font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+body > .branch-modal-shell .branch-detail-box strong { overflow-wrap: anywhere; color: #0f172a; font-size: 14px; }
+body > .branch-modal-shell .branch-detail-actions { display: flex; justify-content: flex-end; gap: 8px; margin: 14px 0 20px; }
+body > .branch-modal-shell .branch-detail-body h4 { margin: 24px 0 10px; color: #0f172a; font-size: 15px; }
+body > .branch-modal-shell .branch-detail-table-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 15px; }
+body > .branch-modal-shell .branch-detail-table-wrap table { width: 100%; min-width: 780px; margin: 0; border-collapse: collapse; }
+body > .branch-modal-shell .branch-detail-table-wrap th { padding: 10px 12px; color: #64748b; background: #f8fafc; font-size: 10px; text-align: left; text-transform: uppercase; }
+body > .branch-modal-shell .branch-detail-table-wrap td { padding: 11px 12px; border-top: 1px solid #eef2f6; color: #334155; font-size: 11px; }
+body > .branch-modal-shell .branch-detail-table-wrap td strong,
+body > .branch-modal-shell .branch-detail-table-wrap td span { display: block; }
+body.branch-overlay-open { overflow: hidden; }
+
+@media (max-width: 1100px) {
+  html body[data-current-view="branches"] .portal-shell .branches-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="branches"] .portal-shell .branches-premium-view.active { gap: 12px; }
+  html body[data-current-view="branches"] .portal-shell .branches-hero { min-height: 0; padding: 22px 18px; border-radius: 22px; flex-direction: column; align-items: stretch; }
+  html body[data-current-view="branches"] .portal-shell .branches-hero h2 { font-size: 42px; }
+  html body[data-current-view="branches"] .portal-shell .branches-hero-actions { justify-items: stretch; min-width: 0; }
+  html body[data-current-view="branches"] .portal-shell .branches-live-signal { display: none; }
+  html body[data-current-view="branches"] .portal-shell .branches-create-button { width: 100%; }
+  html body[data-current-view="branches"] .portal-shell .branches-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  html body[data-current-view="branches"] .portal-shell .branch-kpi-card { grid-template-columns: 34px minmax(0, 1fr); gap: 9px; padding: 13px; border-radius: 16px; }
+  html body[data-current-view="branches"] .portal-shell .branch-kpi-icon { width: 34px; height: 34px; border-radius: 11px; }
+  html body[data-current-view="branches"] .portal-shell .branch-kpi-copy strong { font-size: 20px; }
+  html body[data-current-view="branches"] .portal-shell .branch-kpi-copy small { white-space: normal; }
+  html body[data-current-view="branches"] .portal-shell .branches-unassigned-card { grid-template-columns: auto minmax(0, 1fr); padding: 14px; }
+  html body[data-current-view="branches"] .portal-shell .branches-unassigned-card button { grid-column: 1 / -1; width: 100%; }
+  html body[data-current-view="branches"] .portal-shell .branches-directory { border-radius: 20px; }
+  html body[data-current-view="branches"] .portal-shell .branches-directory-head { align-items: flex-start; padding: 18px 16px 14px; }
+  html body[data-current-view="branches"] .portal-shell .branches-directory-head p { display: none; }
+  html body[data-current-view="branches"] .portal-shell .branches-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 16px 14px; }
+  html body[data-current-view="branches"] .portal-shell .branch-search-field { grid-column: 1 / -1; }
+  html body[data-current-view="branches"] .portal-shell .branches-filter-field { padding-left: 8px; }
+  html body[data-current-view="branches"] .portal-shell .branches-table-wrap { display: none; }
+  html body[data-current-view="branches"] .portal-shell .branches-mobile-list { display: grid; gap: 10px; padding: 0 12px 12px; }
+  html body[data-current-view="branches"] .portal-shell .branch-mobile-card { display: grid; gap: 13px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 17px; background: #fff; }
+  html body[data-current-view="branches"] .portal-shell .branch-mobile-head { display: flex; justify-content: space-between; gap: 10px; }
+  html body[data-current-view="branches"] .portal-shell .branch-mobile-head strong { color: #0f172a; font-size: 14px; }
+  html body[data-current-view="branches"] .portal-shell .branch-mobile-head small { display: block; margin-top: 3px; color: #64748b; font-size: 11px; }
+  html body[data-current-view="branches"] .portal-shell .branch-mobile-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  html body[data-current-view="branches"] .portal-shell .branch-mobile-metrics div { display: grid; gap: 3px; padding: 9px; border-radius: 11px; background: #f8fafc; }
+  html body[data-current-view="branches"] .portal-shell .branch-mobile-metrics span { color: #64748b; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+  html body[data-current-view="branches"] .portal-shell .branch-mobile-metrics strong { overflow: hidden; color: #0f172a; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+  html body[data-current-view="branches"] .portal-shell .branch-mobile-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  html body[data-current-view="branches"] .portal-shell .branch-mobile-footer .branch-open-button { margin-left: auto; }
+  body > .branch-modal-shell { place-items: end center; padding: 0; }
+  body > .branch-modal-shell .branch-modal-card { width: 100%; max-height: 94vh; border-radius: 23px 23px 0 0; }
+  body > .branch-modal-shell .branch-modal-head { padding: 18px 16px 14px; }
+  body > .branch-modal-shell .branch-modal-head h3 { font-size: 21px; }
+  body > .branch-modal-shell .branch-premium-form { grid-template-columns: 1fr; max-height: calc(94vh - 125px); padding: 16px; }
+  body > .branch-modal-shell .branch-premium-form .span-2 { grid-column: auto; }
+  body > .branch-modal-shell .branch-form-actions { position: sticky; bottom: -16px; padding: 12px 0 16px; background: #fff; }
+  body > .branch-modal-shell .branch-form-actions button { flex: 1; min-width: 0; }
+  body > .branch-modal-shell .branch-detail-body { padding: 16px; }
+  body > .branch-modal-shell .branch-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body > .branch-modal-shell .branch-detail-actions { display: grid; grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 420px) {
+  html body[data-current-view="branches"] .portal-shell .branches-toolbar { grid-template-columns: 1fr; }
+  html body[data-current-view="branches"] .portal-shell .branch-search-field { grid-column: auto; }
+  html body[data-current-view="branches"] .portal-shell .branch-mobile-metrics { grid-template-columns: 1fr 1fr; }
+}
+
+/* Final isolation from the portal-wide rhythm and color layers. */
+html body[data-current-view="branches"] .portal-shell .content-shell > .view-section.branches-premium-view.active {
+  display: grid !important;
+  gap: 18px !important;
+  padding: 0 0 40px !important;
+  border-radius: 0 !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-hero {
+  gap: 24px !important;
+  padding: clamp(24px, 3vw, 42px) !important;
+  border-radius: 28px !important;
+  color: #fff !important;
+  background:
+    radial-gradient(circle at 82% 16%, rgba(34, 211, 238, .3), transparent 30%),
+    radial-gradient(circle at 12% 110%, rgba(59, 130, 246, .28), transparent 40%),
+    linear-gradient(135deg, #07172f 0%, #0a2850 54%, #074e68 100%) !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-hero :is(h2) {
+  color: #fff !important;
+  text-shadow: 0 8px 28px rgba(0, 10, 35, .2) !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-hero :is(p) {
+  color: rgba(232, 249, 255, .86) !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-hero :is(.branches-eyebrow, .branches-live-signal) {
+  color: #c8f7ff !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > #branchKpiGrid {
+  gap: 12px !important;
+  padding: 0 !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > #branchUnassignedCard {
+  gap: 15px !important;
+  padding: 16px 18px !important;
+  border: 1px solid rgba(245, 158, 11, .25) !important;
+  border-radius: 20px !important;
+  background: linear-gradient(120deg, rgba(255, 251, 235, .98), rgba(255, 247, 237, .92)) !important;
+}
+
+html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-directory {
+  gap: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(148, 163, 184, .18) !important;
+  border-radius: 24px !important;
+  background: rgba(255, 255, 255, .95) !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="branches"] .portal-shell .content-shell > .view-section.branches-premium-view.active {
+    gap: 12px !important;
+    padding: 0 0 24px !important;
+  }
+
+  html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-hero {
+    gap: 18px !important;
+    padding: 22px 18px !important;
+    border-radius: 22px !important;
+  }
+
+  html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > #branchKpiGrid {
+    gap: 8px !important;
+  }
+
+  html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > #branchUnassignedCard {
+    gap: 12px !important;
+    padding: 14px !important;
+  }
+
+  html body[data-current-view="branches"] .portal-shell .branches-premium-view.active > .branches-directory {
+    border-radius: 20px !important;
+  }
+}
+
+html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active .branches-toolbar .branch-search-field > .sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active .branches-filter-field > span {
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  writing-mode: horizontal-tb !important;
+}
+
+/* The portal foundation intentionally uses high-specificity guards. This view
+   owns its rhythm, so its stable id outranks those guards without touching
+   any other module. */
+html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active {
+  display: grid !important;
+  gap: 18px !important;
+  padding: 0 0 40px !important;
+  border-radius: 0 !important;
+}
+
+html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active > .branches-hero {
+  gap: 24px !important;
+  padding: clamp(24px, 3vw, 42px) !important;
+  border-radius: 28px !important;
+  color: #fff !important;
+  background:
+    radial-gradient(circle at 82% 16%, rgba(34, 211, 238, .3), transparent 30%),
+    radial-gradient(circle at 12% 110%, rgba(59, 130, 246, .28), transparent 40%),
+    linear-gradient(135deg, #07172f 0%, #0a2850 54%, #074e68 100%) !important;
+}
+
+html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active > .branches-hero :is(h2) {
+  color: #fff !important;
+  text-shadow: 0 8px 28px rgba(0, 10, 35, .2) !important;
+}
+
+html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active > .branches-hero :is(p) {
+  color: rgba(232, 249, 255, .86) !important;
+}
+
+html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active > .branches-hero :is(.branches-eyebrow, .branches-live-signal) {
+  color: #c8f7ff !important;
+}
+
+html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active > #branchKpiGrid {
+  gap: 12px !important;
+  padding: 0 !important;
+}
+
+html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active > #branchUnassignedCard {
+  gap: 15px !important;
+  padding: 16px 18px !important;
+  border: 1px solid rgba(245, 158, 11, .25) !important;
+  border-radius: 20px !important;
+  background: linear-gradient(120deg, rgba(255, 251, 235, .98), rgba(255, 247, 237, .92)) !important;
+}
+
+html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active > .branches-directory {
+  gap: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(148, 163, 184, .18) !important;
+  border-radius: 24px !important;
+  background: rgba(255, 255, 255, .95) !important;
+}
+
+@media (max-width: 760px) {
+  html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active {
+    gap: 12px !important;
+    padding: 0 0 24px !important;
+  }
+
+  html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active > .branches-hero {
+    gap: 18px !important;
+    padding: 22px 18px !important;
+    border-radius: 22px !important;
+  }
+
+  html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active > #branchKpiGrid {
+    gap: 8px !important;
+  }
+
+  html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active > #branchUnassignedCard {
+    gap: 12px !important;
+    padding: 14px !important;
+  }
+
+  html body #branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView#branchesPremiumView.active > .branches-directory {
+    border-radius: 20px !important;
+  }
+}

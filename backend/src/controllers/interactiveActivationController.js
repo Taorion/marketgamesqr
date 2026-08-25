@@ -1,3 +1,4 @@
+const { z } = require("zod");
 const { forbidden } = require("../utils/http");
 const {
   validate,
@@ -10,6 +11,7 @@ const {
   completeInteractiveParticipant,
   createInteractiveActivation,
   deleteInteractiveActivation,
+  downloadInteractiveActivationAsset,
   getInteractiveActivationReport,
   getPublicInteractiveActivation,
   listActivationCatalog,
@@ -32,6 +34,17 @@ function businessIdFor(req) {
     throw forbidden("This user is not assigned to a business.");
   }
   return req.user.business_id;
+}
+
+const interactiveActivationListQuerySchema = z.object({
+  campaign_id: z.string().uuid().optional(),
+});
+
+function reqMeta(req) {
+  return {
+    ip: req.ip || req.headers["x-forwarded-for"] || "",
+    userAgent: req.headers["user-agent"] || "",
+  };
 }
 
 async function catalog(req, res, next) {
@@ -71,7 +84,17 @@ async function create(req, res, next) {
 async function list(req, res, next) {
   try {
     const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 120, 1), 300);
-    const activations = await listInteractiveActivations(businessIdFor(req), { limit });
+    const includeArchived = ["1", "true", "yes"].includes(String(req.query.include_archived || "").toLowerCase());
+    const availableOnly = ["1", "true", "yes"].includes(String(req.query.available_only || "").toLowerCase());
+    const { campaign_id: campaignId } = validate(interactiveActivationListQuerySchema, {
+      campaign_id: req.query.campaign_id || undefined,
+    });
+    const activations = await listInteractiveActivations(businessIdFor(req), {
+      limit,
+      includeArchived,
+      availableOnly,
+      campaignId,
+    });
     res.json({ activations, trivias: activations });
   } catch (error) {
     next(error);
@@ -81,7 +104,9 @@ async function list(req, res, next) {
 async function update(req, res, next) {
   try {
     const body = validate(interactiveActivationUpdateSchema, req.body);
-    res.json(await updateInteractiveActivation(businessIdFor(req), req.params.id, body));
+    const businessId = businessIdFor(req);
+    if (body.activation_type) await assertInteractiveActivationTypeForBusiness(businessId, body.activation_type);
+    res.json(await updateInteractiveActivation(businessId, req.params.id, body));
   } catch (error) {
     next(error);
   }
@@ -129,7 +154,7 @@ async function rewards(req, res, next) {
 
 async function publicGet(req, res, next) {
   try {
-    res.json({ activation: await getPublicInteractiveActivation(req.params.slug) });
+    res.json({ activation: await getPublicInteractiveActivation(req.params.slug, req.query.qori_ref, req.query.qori_source) });
   } catch (error) {
     next(error);
   }
@@ -153,6 +178,18 @@ async function publicComplete(req, res, next) {
   }
 }
 
+async function publicDownload(req, res, next) {
+  try {
+    const file = await downloadInteractiveActivationAsset(req.params.downloadToken, reqMeta(req));
+    res.setHeader("Content-Type", file.file_type);
+    res.setHeader("Content-Length", file.buffer.length);
+    res.setHeader("Content-Disposition", `attachment; filename="${String(file.file_name || "activo-digital").replace(/"/g, "")}"`);
+    res.send(file.buffer);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   catalog,
   create,
@@ -160,6 +197,7 @@ module.exports = {
   remove,
   recycle,
   publicComplete,
+  publicDownload,
   publicGet,
   publicStart,
   report,

@@ -1,13 +1,13 @@
 :root {
   color-scheme: light;
-  --ink: #102c25;
-  --muted: #5e766f;
-  --green: #0f7354;
-  --blue: #27759f;
-  --line: rgba(15, 115, 84, 0.14);
-  --soft-green: #edf8f1;
-  --soft-blue: #eaf6fc;
-  --paper: #fffefa;
+  --ink: #071832;
+  --muted: #53677f;
+  --green: #0759d6;
+  --blue: #00bfe5;
+  --line: rgba(5, 42, 107, 0.14);
+  --soft-green: #eaf4ff;
+  --soft-blue: #e5fbff;
+  --paper: #ffffff;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -20,8 +20,8 @@ body {
   min-height: 100vh;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(237, 248, 241, 0.96), transparent 32vw),
-    linear-gradient(135deg, #fffefa 0%, #f3fbf7 45%, #eef8fd 100%);
+    radial-gradient(circle at top left, rgba(0, 191, 229, 0.16), transparent 32vw),
+    linear-gradient(135deg, #ffffff 0%, #f6fbff 45%, #eaf4ff 100%);
 }
 
 button,
@@ -191,7 +191,7 @@ input {
   border: 1px solid var(--line);
   border-radius: 22px;
   background: rgba(255, 254, 250, 0.86);
-  box-shadow: 0 18px 46px rgba(15, 44, 36, 0.06);
+  box-shadow: 0 18px 46px rgba(5, 42, 107, 0.08);
 }
 
 .product-image {
@@ -233,6 +233,25 @@ input {
   font-weight: 900;
 }
 
+.product-price s {
+  color: #78869a;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+.product-promotion-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 5px 9px;
+  border: 1px solid rgba(7, 89, 214, 0.16);
+  border-radius: 999px;
+  background: rgba(7, 89, 214, 0.08);
+  color: #0759d6;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .tag-row {
   display: flex;
   flex-wrap: wrap;
@@ -242,8 +261,8 @@ input {
 .tag-row span {
   padding: 5px 8px;
   border-radius: 999px;
-  color: #48665c;
-  background: rgba(237, 248, 241, 0.86);
+  color: #31506f;
+  background: rgba(234, 244, 255, 0.86);
   font-size: 0.74rem;
   font-weight: 760;
 }
@@ -315,6 +334,16 @@ input {
   padding: 10px 12px;
   color: var(--ink);
   background: #fff;
+}
+.intent-document-fields {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: 12px;
+}
+.intent-document-fields label { min-width: 0; }
+.intent-document-fields select { width: 100%; }
+@media (max-width: 560px) {
+  .intent-document-fields { grid-template-columns: 1fr; }
 }
 
 .modal-close {

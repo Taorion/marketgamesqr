@@ -1,7 +1,10 @@
 const captureCard = document.getElementById("captureCard");
 const token = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).pop() || "");
 let currentPayload = null;
-const SALES_MACHINE_LOGO = "/img/SaleMachineLogo.png";
+const SALES_MACHINE_LOGO = "/img/qori-favicon.png";
+const trackingParams = new URLSearchParams(window.location.search);
+const acquisitionTrackingToken = trackingParams.get("qori_ref") || null;
+const acquisitionTrackingSource = trackingParams.get("qori_source") || null;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -43,7 +46,7 @@ function logoSource(business = {}) {
 }
 
 function logoAlt(business = {}) {
-  return `Logo de ${business.name || "Sales Machine"}`;
+  return `Logo de ${business.name || "Qori"}`;
 }
 
 function assetLabel(asset = {}) {
@@ -73,13 +76,13 @@ function formatFileSize(bytes) {
   return `${Math.round((value / (1024 * 1024)) * 10) / 10} MB`;
 }
 
-function renderResourceDetails(asset = {}, activation = {}, publicMessage = {}, businessName = "Sales Machine") {
+function renderResourceDetails(asset = {}, activation = {}, publicMessage = {}, businessName = "Qori") {
   const title = publicMessage.title || activation.name || asset.title || "Recibe tu material digital";
   const subtitle = publicMessage.subtitle || "";
   const assetDescription = asset.description || activation.description || "";
   const generatedDescription = assetDescription && !sameText(assetDescription, title)
     ? assetDescription
-    : `${businessName} preparó este recurso para que puedas revisarlo de inmediato.`;
+    : `${businessName} preparo este recurso para que puedas revisarlo de inmediato.`;
   const fileInfo = [assetLabel(asset), formatFileSize(asset.file_size)].filter(Boolean).join(" - ");
   const description = publicMessage.details_description || generatedDescription;
   const badges = Array.isArray(publicMessage.detail_badges) && publicMessage.detail_badges.length
@@ -88,7 +91,7 @@ function renderResourceDetails(asset = {}, activation = {}, publicMessage = {}, 
   return `
     <section class="resource-panel">
       <div>
-        <p class="section-kicker">${escapeHtml(publicMessage.details_title || "Qué recibes")}</p>
+        <p class="section-kicker">${escapeHtml(publicMessage.details_title || "Que recibes")}</p>
         <p class="resource-description">${escapeHtml(sameText(description, subtitle) ? "Un recurso listo para descargar apenas completes el formulario." : description)}</p>
       </div>
       <div class="trust-strip" aria-label="Detalles del recurso">
@@ -104,13 +107,13 @@ function render(payload) {
   const asset = activation.asset || {};
   const formConfig = activation.form_config || {};
   const publicMessage = activation.public_message || {};
-  const businessName = business.name || "Sales Machine";
+  const businessName = business.name || "Qori";
   const pageTitle = publicMessage.title || asset.title || activation.name || "Recibe tu material digital";
   const rawSubtitle = publicMessage.subtitle || "";
   const rawAssetDescription = asset.description || activation.description || "";
   const heroSubtitle = isPrefixText(rawSubtitle, rawAssetDescription)
     ? rawAssetDescription
-    : (rawSubtitle || rawAssetDescription || `${businessName} preparó este material para ti. Completa tus datos y accede al contenido de inmediato.`);
+    : (rawSubtitle || rawAssetDescription || `${businessName} preparo este material para ti. Completa tus datos y accede al contenido de inmediato.`);
   document.title = `${pageTitle} | ${businessName}`;
   captureCard.innerHTML = `
     <div class="brand-row">
@@ -135,9 +138,9 @@ function render(payload) {
           <span>${escapeHtml(formConfig.consent_text || `Autorizo a ${businessName} a tratar mis datos para entregar este material y contactarme sobre esta solicitud.`)}</span>
         </label>
       ` : ""}
-      ${formConfig.privacy_url ? `<a class="field-help" href="${escapeHtml(formConfig.privacy_url)}" target="_blank" rel="noreferrer">Ver política de datos</a>` : ""}
+      ${formConfig.privacy_url ? `<a class="field-help" href="${escapeHtml(formConfig.privacy_url)}" target="_blank" rel="noreferrer">Ver politica de datos</a>` : ""}
       <button class="primary-button" type="submit">${escapeHtml(asset.download_button_text || "Acceder al contenido")}</button>
-      <p class="secure-note">Tus datos se envían directamente al equipo de ${escapeHtml(businessName)}.</p>
+      <p class="secure-note">Tus datos se envian directamente al equipo de ${escapeHtml(businessName)}.</p>
       <p class="message" id="captureMessage" role="status" aria-live="polite"></p>
     </form>
   `;
@@ -150,7 +153,7 @@ async function submitCapture(event) {
   const message = document.getElementById("captureMessage");
   const submitButton = form.querySelector("button[type='submit']");
   const formData = new FormData(form);
-  const payload = { form_data: {}, consent_accepted: formData.get("consent_accepted") === "on" };
+  const payload = { form_data: {}, consent_accepted: formData.get("consent_accepted") === "on", acquisition_tracking_token: acquisitionTrackingToken, acquisition_tracking_source: acquisitionTrackingSource };
   for (const [key, value] of formData.entries()) {
     if (key !== "consent_accepted") payload.form_data[key] = String(value || "").trim();
   }
@@ -181,7 +184,7 @@ async function boot() {
     return;
   }
   try {
-    render(await api(`/api/public/lead-captures/${encodeURIComponent(token)}`));
+    render(await api(`/api/public/lead-captures/${encodeURIComponent(token)}${window.location.search}`));
   } catch (error) {
     captureCard.innerHTML = `<div class="capture-error">${escapeHtml(error.message || "Este recurso ya no esta disponible.")}</div>`;
   }

@@ -438,8 +438,8 @@ async function insertCampaignData(client, { business, company, branches, owner, 
         );
         await client.query(
           `insert into attributed_sales
-            (business_id, campaign_id, qr_code_id, redemption_id, player_id, sale_amount, sale_confirmed_by_user_id, branch_id, payment_method, product_or_service, notes)
-           values ($1, $2, $3, $4, $5, $6, $7, $8, 'Tarjeta', 'Producto demo', 'Venta atribuida demo')`,
+            (business_id, campaign_id, qr_code_id, redemption_id, player_id, sale_amount, purchase_subtotal, sale_confirmed_by_user_id, branch_id, payment_method, product_or_service, notes)
+           values ($1, $2, $3, $4, $5, $6, $6, $7, $8, 'Tarjeta', 'Producto demo', 'Venta atribuida demo')`,
           [
             business.id,
             campaign.rows[0].id,

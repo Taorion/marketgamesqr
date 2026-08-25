@@ -234,7 +234,7 @@ function renderActivation(trivia) {
   currentTrivia = trivia;
   selectedReveal = null;
   selectedThermometer = null;
-  businessName.textContent = trivia.business?.name || "Sales Machine RMS";
+  businessName.textContent = trivia.business?.name || "Qori RMS";
   triviaTitle.textContent = trivia.title;
   triviaDescription.textContent = trivia.description || "Deja tus datos, completa la dinamica y recibe tu ticket QR.";
   document.title = `${trivia.title} | Activacion`;

@@ -1,0 +1,171 @@
+/*
+ * Portal text safety
+ * Rounded decoration belongs to media, never to the reading surface.  Several
+ * legacy modules used overflow/clip-path on their outer card, which can bite
+ * labels and the first or last table value at the curved edge.
+ */
+#workspace.app-shell .view-section.active :is(
+  section[class],
+  article[class],
+  aside[class]
+):not(.modal-shell):not(.modal-card):not(.rms-inspector-modal-card):not(.communication-composer-modal):not(.login-screen):not(.sidebar) {
+  overflow: visible !important;
+  clip-path: none !important;
+  -webkit-clip-path: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}
+
+/* Preserve intentional clipping only where the content is media, not copy. */
+#workspace.app-shell .view-section.active :is(
+  figure,
+  .media-frame,
+  .image-frame,
+  .card-media,
+  .rms-station-entry-media,
+  .communication-media-preview-item
+) {
+  overflow: hidden !important;
+}
+
+/* Every reading block may shrink and wrap inside its own safe area. */
+#workspace.app-shell .view-section.active :is(
+  h1, h2, h3, h4, h5, p, strong, small, span, label, button, a
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Data lanes retain horizontal scrolling, but never trim a first or last value. */
+#workspace.app-shell .view-section.active :is(
+  .table-wrap,
+  .table-scroll,
+  .data-table-scroll,
+  .table-responsive,
+  .compact-table,
+  .rms-station-lead-table-wrap,
+  .rms-lean-station-table-wrap,
+  .agenda-table-wrap
+) {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  clip-path: none !important;
+  border-radius: 0 !important;
+}
+
+#workspace.app-shell .view-section.active table :is(th, td):first-child {
+  padding-left: clamp(14px, 1.8vw, 26px) !important;
+}
+
+#workspace.app-shell .view-section.active table :is(th, td):last-child {
+  padding-right: clamp(14px, 1.8vw, 26px) !important;
+}
+
+/* The old station directory is replaced by the active, spotlight-based guide. */
+#workspace.app-shell #rmsMachineTutorial {
+  display: none !important;
+}
+
+/* Contact profile: navigation first, then the selected tab's complete view. */
+html body .portal-shell #leadDetailModal .lead-tabs {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+  margin: 0 !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid rgba(5, 42, 107, .1) !important;
+  background: #fff !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-profile-header {
+  margin-top: 12px !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 12px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-quick-actions {
+  margin-top: 0 !important;
+  padding: 0 0 10px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-tab-panel {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-tab-panel.is-general-tab {
+  display: none !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-tab-panel[hidden] {
+  display: none !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-notes-workspace {
+  display: grid !important;
+  gap: 16px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-affiliate-points-metric {
+  color: #0759d6 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-notes-workspace .lead-note-form {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 200px) auto !important;
+  gap: 10px !important;
+  align-items: end !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-notes-workspace textarea {
+  min-height: 108px !important;
+  resize: vertical !important;
+}
+
+@media (max-width: 700px) {
+  html body .portal-shell #leadDetailModal .lead-notes-workspace .lead-note-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+html body .portal-shell #leadDetailModal :is(.lead-profile-header, .lead-quick-actions)[hidden] {
+  display: none !important;
+}
+
+/* Directorio comercial: Clientes y Leads comparten todo el ancho disponible. */
+#workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs {
+  display: grid !important;
+  grid-column: 1 / -1 !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-self: stretch !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+#workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs > button {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 760px) {
+  #workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    padding: 12px !important;
+  }
+
+  #workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs > button {
+    grid-template-columns: 32px minmax(0, 1fr) !important;
+    gap: 7px !important;
+    min-height: 60px !important;
+    padding: 9px !important;
+  }
+
+  #workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs > button > .material-symbols-outlined {
+    width: 32px !important;
+    height: 32px !important;
+  }
+}

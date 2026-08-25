@@ -32,6 +32,7 @@ const createAffiliateSchema = z.object({
   phone: z.string().trim().max(40).optional().nullable(),
   email: z.string().trim().email().optional().nullable(),
   photo_data_url: z.string().trim().min(20).optional().nullable(),
+  clear_photo: z.boolean().optional(),
   notes: z.string().trim().max(500).optional().nullable(),
   card_metadata: z.record(z.any()).optional().nullable(),
 });

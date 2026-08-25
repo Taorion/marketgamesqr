@@ -56,10 +56,13 @@ const createRewardPassSchema = z.object({
   expires_at: optionalDateTime,
   transferable: z.boolean().default(false),
   partial_redemption_allowed: z.boolean().default(true),
+  authorized_branch_id: optionalUuid,
+  branch_authorization_scope: z.enum(["ALL_BRANCHES", "SPECIFIC_BRANCH"]).optional(),
   authorized_branch: optionalShortString,
   terms: optionalText(8000),
   internal_notes: optionalText(2000),
   payment_method_received: optionalText(120),
+  idempotency_key: optionalText(160),
 });
 
 const redeemRewardPassSchema = z.object({
@@ -68,9 +71,11 @@ const redeemRewardPassSchema = z.object({
   purchase_value_cop: nonNegativeMoneyValue.optional().default(0),
   redeemed_value_cop: moneyValue,
   branch: optionalShortString,
+  branch_id: optionalUuid,
   observations: optionalText(2000),
   document_checked: optionalText(80),
   confirm_full_consumption: z.boolean().optional().default(false),
+  idempotency_key: optionalText(160),
 });
 
 const cancelRewardPassSchema = z.object({
@@ -87,6 +92,7 @@ const claimRewardPassSchema = z.object({
   beneficiary_document: requiredText(3, 80, "El documento del beneficiario"),
   beneficiary_email: optionalEmail,
   beneficiary_phone: optionalPhone,
+  security_pin: z.string().trim().regex(/^\d{6}$/, "El PIN debe tener 6 dígitos."),
 });
 
 function parseBoolean(value) {
@@ -95,9 +101,10 @@ function parseBoolean(value) {
 
 async function rewardPassContext(req, res, next) {
   try {
+    const context = await getTicketContext(req.user);
     res.json({
-      context: await getTicketContext(req.user),
-      default_terms: DEFAULT_TERMS,
+      context,
+      default_terms: DEFAULT_TERMS.replace(/\[Nombre de la Empresa\]/g, context.business_name || "el negocio emisor"),
       default_expires_at: defaultExpiresAt(),
     });
   } catch (error) {
@@ -113,9 +120,14 @@ async function list(req, res, next) {
       pendingBalance: parseBoolean(req.query.pending_balance),
       expired: parseBoolean(req.query.expired),
       partiallyRedeemed: parseBoolean(req.query.partially_redeemed),
+      branchId: req.query.branch_id || "",
+      limit: req.query.limit,
+      offset: req.query.offset,
     };
+    const result = await listRewardPasses(req.user, filters);
     res.json({
-      reward_passes: await listRewardPasses(req.user, filters),
+      reward_passes: result.rows,
+      pagination: result.pagination,
       metrics: await rewardPassMetrics(req.user),
       context: await getTicketContext(req.user),
     });
@@ -143,7 +155,9 @@ async function create(req, res, next) {
     const body = validate(createRewardPassSchema, payload);
     const rewardPass = await createRewardPass(req.user, body);
     res.status(201).json({
-      message: "Reward Pass emitido correctamente. Se descontaron los tickets de tu saldo Qori.",
+      message: rewardPass.idempotent
+        ? "Esta emisión ya había sido procesada. No se descontaron tickets nuevamente."
+        : "Reward Pass emitido correctamente. Se descontaron los tickets de tu saldo Qori.",
       reward_pass: rewardPass,
     });
   } catch (error) {

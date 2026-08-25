@@ -1,6 +1,7 @@
 const token = decodeURIComponent(location.pathname.split("/").filter(Boolean).pop() || "");
 
 const claimMessage = document.getElementById("claimMessage");
+const claimTitle = document.getElementById("claimTitle");
 const claimForm = document.getElementById("claimForm");
 const resultBlock = document.getElementById("resultBlock");
 const businessName = document.getElementById("businessName");
@@ -11,6 +12,7 @@ const nameInput = document.getElementById("nameInput");
 const phoneInput = document.getElementById("phoneInput");
 const emailInput = document.getElementById("emailInput");
 const documentInput = document.getElementById("documentInput");
+const contactConsentInput = document.getElementById("contactConsentInput");
 const finalTicketBlock = document.getElementById("finalTicketBlock");
 const finalTicketQrImage = document.getElementById("finalTicketQrImage");
 const finalTicketLink = document.getElementById("finalTicketLink");
@@ -205,6 +207,10 @@ function renderStatus(data) {
   const fulfillment = benefitFulfillment(data);
   const isEcommerce = fulfillment.mode === "ECOMMERCE_CODE";
   claimMessage.textContent = data.message || "Estado actualizado.";
+  if (data.qr_code?.origin_type === "AFFILIATE_REFERRAL") {
+    claimTitle.textContent = "Recibe tu beneficio por invitación";
+    if (data.allowed) claimMessage.textContent = "Deja tus datos y activa tu ticket. Tu recomendador recibirá sus puntos configurados.";
+  }
   businessName.textContent = data.business?.name || "-";
   qrType.textContent = data.qr_code?.origin_type || "-";
   benefitSummary.textContent = data.benefit?.value?.label || data.benefit?.type || "Beneficio";
@@ -252,6 +258,11 @@ async function loadClaim() {
 
 claimForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (!phoneInput.value.trim() && !emailInput.value.trim()) {
+    resultBlock.classList.remove("hidden");
+    resultBlock.textContent = "Ingresa WhatsApp o correo para recibir el ticket.";
+    return;
+  }
   claimMessage.textContent = "Activando beneficio...";
   try {
     const data = await api(`/api/public/qr/claim/${encodeURIComponent(token)}`, {
@@ -262,6 +273,7 @@ claimForm.addEventListener("submit", async (event) => {
         email: emailInput.value.trim() || null,
         document_id: documentInput.value.trim() || null,
         source: "public-claim-page",
+        metadata: { contact_consent_confirmed: Boolean(contactConsentInput?.checked) },
       }),
     });
     renderStatus(data);

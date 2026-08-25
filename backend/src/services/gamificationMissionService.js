@@ -67,6 +67,23 @@ function dateOrNull(value) {
   return Number.isNaN(date.getTime()) ? null : value;
 }
 
+async function assertSeasonCampaign(businessId, campaignId) {
+  if (!campaignId) return null;
+  const result = await query(
+    "select id from campaigns where id = $1 and business_id = $2",
+    [campaignId, businessId]
+  );
+  if (!result.rowCount) throw badRequest("La campaña seleccionada no pertenece a este negocio.");
+  return result.rows[0];
+}
+
+function assertSeasonDates(startDate, endDate) {
+  if (!startDate || !endDate) return;
+  if (new Date(endDate).getTime() < new Date(startDate).getTime()) {
+    throw badRequest("La fecha final de la temporada debe ser posterior o igual a la fecha de inicio.");
+  }
+}
+
 async function listSeasons(businessId, filters = {}) {
   const params = [businessId];
   const clauses = ["s.business_id = $1"];
@@ -154,6 +171,8 @@ async function createSeason(businessId, user, payload = {}) {
   const template = MISSION_TEMPLATES.find((item) => item.key === payload.template_key) || null;
   const name = String(payload.name || template?.name || "").trim();
   if (!name) throw badRequest("Escribe el nombre de la dinamica.");
+  await assertSeasonCampaign(businessId, payload.campaign_id || null);
+  assertSeasonDates(payload.start_date, payload.end_date);
   const settings = {
     template_key: template?.key || payload.template_key || "custom",
     points_rules: payload.points_rules || template?.points_rules || [],
@@ -203,6 +222,10 @@ async function createSeason(businessId, user, payload = {}) {
 
 async function updateSeason(businessId, seasonId, payload = {}) {
   const existing = await getSeason(businessId, seasonId);
+  if (Object.prototype.hasOwnProperty.call(payload, "campaign_id")) {
+    await assertSeasonCampaign(businessId, payload.campaign_id || null);
+  }
+  assertSeasonDates(payload.start_date || existing.season.start_date, payload.end_date || existing.season.end_date);
   const currentSettings = existing.season.settings_json || {};
   const settings = {
     ...currentSettings,

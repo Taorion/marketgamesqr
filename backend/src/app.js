@@ -22,17 +22,20 @@ const publicQrRoutes = require("./routes/publicQrRoutes");
 const publicAffiliateRoutes = require("./routes/publicAffiliateRoutes");
 const publicSmartCatalogRoutes = require("./routes/publicSmartCatalogRoutes");
 const contactRoutes = require("./routes/contactRoutes");
+const publicCommunicationPreferenceRoutes = require("./routes/publicCommunicationPreferenceRoutes");
 const packageSalesRoutes = require("./routes/packageSalesRoutes");
+const { publicAttachmentDownload } = require("./controllers/rmsMachineController");
 const paymentRoutes = require("./routes/paymentRoutes");
 const rewardPassRoutes = require("./routes/rewardPassRoutes");
+const whatsAppWebhookRoutes = require("./routes/businessCommunicationWhatsAppWebhookRoutes");
 const {
   publicGet: publicRewardPassGet,
   publicClaim: publicRewardPassClaim,
   publicDownloadPdf: publicRewardPassDownloadPdf,
 } = require("./controllers/rewardPassController");
-const { publicAttachmentDownload } = require("./controllers/rmsMachineController");
 const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/errorHandler");
+const { rateLimit } = require("./middleware/rateLimit");
 const packageJson = require("../../package.json");
 
 const app = express();
@@ -47,6 +50,13 @@ app.use((req, res, next) => {
   }
 
   return res.redirect(308, `https://gosqori.com${req.originalUrl || "/"}`);
+});
+const rewardPassPublicReadLimit = rateLimit({ keyPrefix: "reward-pass-public-read", max: 180, windowMs: 15 * 60_000 });
+const rewardPassPublicClaimLimit = rateLimit({
+  keyPrefix: "reward-pass-public-claim",
+  max: 12,
+  windowMs: 15 * 60_000,
+  message: "Demasiados intentos de activación. Espera unos minutos y vuelve a intentarlo.",
 });
 const projectRoot = path.join(__dirname, "../..");
 const qoriWebRoot = path.join(projectRoot, "qori-web");
@@ -167,7 +177,10 @@ app.use(helmet({
   },
 }));
 app.use(cors({ origin: corsOrigin }));
-app.use(express.json({ limit: "10mb" }));
+// Email puede llevar hasta 8 MB de documentos y hasta 3 imágenes. Como ambos viajan
+// codificados en base64, el cuerpo JSON necesita margen suficiente sin relajar las
+// validaciones específicas de comunicaciones.
+app.use(express.json({ limit: "26mb", verify: (req, _res, buffer) => { req.rawBody = Buffer.from(buffer); } }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.get("/api/health", (_req, res) => {
@@ -194,6 +207,8 @@ app.use("/api", (_req, res, next) => {
 });
 
 app.use("/api/public", contactRoutes);
+app.use("/api/public", publicCommunicationPreferenceRoutes);
+app.use("/api/webhooks", whatsAppWebhookRoutes);
 
 app.use((req, res, next) => {
   if (env.databaseConfigured || !req.path.startsWith("/api/")) {
@@ -238,9 +253,9 @@ app.use("/api/public", publicAffiliateRoutes);
 app.use("/api/public", publicSmartCatalogRoutes);
 app.use("/api/public", packageSalesRoutes);
 app.get("/api/public/rms-attachments/:publicToken", publicAttachmentDownload);
-app.get("/api/public/reward-passes/:publicCode/pdf", publicRewardPassDownloadPdf);
-app.get("/api/public/reward-passes/:publicCode", publicRewardPassGet);
-app.post("/api/public/reward-passes/:publicCode/claim", publicRewardPassClaim);
+app.get("/api/public/reward-passes/:publicCode/pdf", rewardPassPublicReadLimit, publicRewardPassDownloadPdf);
+app.get("/api/public/reward-passes/:publicCode", rewardPassPublicReadLimit, publicRewardPassGet);
+app.post("/api/public/reward-passes/:publicCode/claim", rewardPassPublicClaimLimit, publicRewardPassClaim);
 app.use("/api/payments", paymentRoutes);
 
 app.use(blockRetiredPublicAssets);

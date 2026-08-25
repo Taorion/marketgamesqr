@@ -1,0 +1,316 @@
+/*
+ * Base visual transversal del portal.
+ *
+ * Este archivo queda al final de la cascada para que los contenedores de
+ * estructura no hereden tarjetas, bordes ni espacios de versiones anteriores.
+ * Las tarjetas siguen existiendo cuando comunican una acción o un dato, pero
+ * la navegación entre secciones vuelve a ser editorial: aire, ritmo y líneas
+ * de separación suaves.
+ */
+
+html body[data-auth-state="authenticated"] .portal-shell .content-shell,
+html body[data-auth-state="authenticated"] .portal-shell .view-section,
+html body[data-auth-state="authenticated"] .portal-shell .view-section > *,
+html body[data-auth-state="authenticated"] .portal-shell .view-section :is(section, article, div) {
+  min-width: 0;
+}
+
+/* Las secciones no deben convertirse en una pila de cajas. */
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active > :is(section, article):not(.modal):not(.modal-card) {
+  margin-inline: 0;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active > :is(section, article) + :is(section, article) {
+  margin-top: clamp(28px, 4vw, 56px);
+}
+
+html body[data-auth-state="authenticated"] .portal-shell :is(.section-heading, .table-card-head, .campaign-library-head, .communication-section-heading, .affiliate-list-head, .inventory-table-head) {
+  gap: clamp(14px, 2vw, 28px);
+}
+
+/* Lectura de datos: una tabla es una superficie continua, no una cuadrícula de píldoras. */
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-wrap,
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .data-table-wrap,
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-scroll-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable both-edges;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-wrap > table,
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .data-table-wrap > table,
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-scroll-wrap > table {
+  width: 100% !important;
+  min-width: 720px;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  background: transparent !important;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-wrap :is(th, td),
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .data-table-wrap :is(th, td),
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-scroll-wrap :is(th, td) {
+  min-width: 0 !important;
+  padding: 15px clamp(12px, 1.65vw, 22px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(93, 135, 175, .18) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  vertical-align: middle !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-wrap th,
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .data-table-wrap th,
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-scroll-wrap th {
+  color: #355a81 !important;
+  font-size: .71rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-wrap tr:last-child > td,
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .data-table-wrap tr:last-child > td,
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-scroll-wrap tr:last-child > td {
+  border-bottom-color: transparent !important;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-wrap :is(.link-button, .affiliate-table-main) {
+  display: inline-grid;
+  gap: 3px;
+  max-width: 100%;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #073c86 !important;
+  text-align: left;
+  white-space: normal;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-wrap :is(.link-button, .affiliate-table-main):hover {
+  color: #087fc2 !important;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transform: none !important;
+}
+
+/* Las herramientas RMS se leen como una franja operativa con aire interior. */
+html body[data-auth-state="authenticated"] .portal-shell .rms-journey-shell > .rms-board-tools {
+  padding: clamp(22px, 3vw, 36px) !important;
+  margin-block: clamp(20px, 3vw, 38px) !important;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .rms-stage-slider-shell {
+  padding: clamp(24px, 3.25vw, 42px) !important;
+  border: 0 !important;
+  border-top: 1px solid rgba(93, 135, 175, .2) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .rms-stage-slider-head {
+  gap: clamp(16px, 3vw, 32px) !important;
+  padding: 0 0 clamp(18px, 2.5vw, 30px) !important;
+  border-bottom: 1px solid rgba(93, 135, 175, .18) !important;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .rms-board-tools :is(.rms-operator-toolbar, .rms-bulk-toolbar) {
+  padding: clamp(18px, 2.5vw, 28px) !important;
+  gap: clamp(12px, 2vw, 20px) !important;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .rms-board-tools :is(.rms-operator-toolbar, .rms-bulk-toolbar) > * {
+  min-width: 0;
+}
+
+/* Comunicaciones mantiene cada decisión legible y sin contenido pegado al borde. */
+html body[data-auth-state="authenticated"] .portal-shell .communication-workspace,
+html body[data-auth-state="authenticated"] .portal-shell .communication-audience-section {
+  padding: clamp(24px, 3vw, 42px) !important;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .communication-audience-filters {
+  gap: clamp(14px, 2vw, 22px) !important;
+}
+
+/* Tableros auxiliares RMS: filas de datos con ritmo, no etiquetas pegadas. */
+html body[data-auth-state="authenticated"] .portal-shell .rms-quality-dashboard,
+html body[data-auth-state="authenticated"] .portal-shell .rms-station-workspace {
+  padding: clamp(24px, 3.25vw, 46px) !important;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell :is(.rms-quality-dashboard-table-wrap, .rms-lean-station-table-wrap, .rms-station-lead-table-wrap) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  border: 0 !important;
+  border-top: 1px solid rgba(93, 135, 175, .2) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .rms-quality-dashboard-table {
+  width: 100% !important;
+  min-width: 760px !important;
+  border-collapse: collapse !important;
+}
+
+html body[data-auth-state="authenticated"] .portal-shell .rms-quality-dashboard-table :is(th, td) {
+  padding: 16px clamp(12px, 1.6vw, 22px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(93, 135, 175, .16) !important;
+  background: transparent !important;
+}
+
+/* Centro de Revenue: lectura vertical y editorial en lugar de tarjetas encajonadas. */
+html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs {
+  display: flex !important;
+  width: 100% !important;
+  max-width: none !important;
+  flex-wrap: wrap !important;
+  gap: 0 clamp(18px, 3vw, 36px) !important;
+  margin: clamp(22px, 4vw, 42px) 0 0 !important;
+  padding: 0 0 14px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(93, 135, 175, .26) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button.active {
+  min-height: 0 !important;
+  padding: 10px 0 !important;
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #607b9b !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button.active,
+html body[data-current-view="dashboard"] .portal-shell .dashboard-workspace-tabs button:hover {
+  border-bottom-color: #12b7df !important;
+  color: #073b83 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-workspace {
+  gap: clamp(32px, 5vw, 64px) !important;
+  margin: clamp(34px, 5vw, 68px) 0 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: clamp(18px, 4vw, 54px) !important;
+  padding: 0 0 clamp(22px, 3vw, 34px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(93, 135, 175, .28) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head > div,
+html body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head > button {
+  margin: 0 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip {
+  gap: 0 !important;
+  border-top: 1px solid rgba(93, 135, 175, .2) !important;
+  border-bottom: 1px solid rgba(93, 135, 175, .2) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card {
+  min-height: 0 !important;
+  padding: clamp(18px, 2.5vw, 30px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-right: 1px solid rgba(93, 135, 175, .2) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card:last-child { border-right: 0 !important; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card::after { opacity: .42; }
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-main-grid {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: clamp(32px, 5vw, 60px) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell :is(.next-best-action-card, .revenue-objective-card, .revenue-path-step, .revenue-onboarding) {
+  padding: 0 0 clamp(22px, 3vw, 34px) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid rgba(93, 135, 175, .24) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .next-best-action-card { gap: 18px !important; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 0 !important; }
+html body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid button {
+  min-height: 0 !important;
+  padding: 17px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid rgba(93, 135, 175, .2) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-objective-grid button:hover {
+  padding-left: 12px !important;
+  background: linear-gradient(90deg, rgba(203, 244, 255, .72), rgba(255,255,255,0)) !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-wrap > table,
+  html body[data-auth-state="authenticated"] .portal-shell .view-section.active .data-table-wrap > table,
+  html body[data-auth-state="authenticated"] .portal-shell .view-section.active .table-scroll-wrap > table {
+    min-width: 620px;
+  }
+
+  html body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="dashboard"] .portal-shell .revenue-workspace-head .solid-button {
+    justify-self: start;
+  }
+
+  html body[data-current-view="dashboard"] .portal-shell .revenue-pulse-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body[data-current-view="dashboard"] .portal-shell .revenue-pulse-card:nth-child(2n) { border-right: 0 !important; }
+  html body[data-current-view="dashboard"] .portal-shell .rms-journey-shell > .rms-board-tools,
+  html body[data-auth-state="authenticated"] .portal-shell .communication-workspace,
+  html body[data-auth-state="authenticated"] .portal-shell .communication-audience-section { padding: 20px !important; }
+}

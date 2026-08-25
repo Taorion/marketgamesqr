@@ -1,0 +1,56 @@
+services:
+  - type: web
+    name: market-games-portal-staging
+    runtime: node
+    plan: free
+    repo: https://github.com/Taorion/marketgamesqr.git
+    branch: staging
+    autoDeployTrigger: commit
+    buildCommand: npm install
+    startCommand: npm run db:migrate && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DB_SSL
+        value: "true"
+      - key: JWT_EXPIRES_IN
+        value: 12h
+      - key: ENABLE_DEMO_TOOLS
+        value: "false"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PUBLIC_APP_URL
+        sync: false
+      - key: PUBLIC_VALIDATOR_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: MERCADO_PAGO_ACCESS_TOKEN
+        sync: false
+      - key: MERCADO_PAGO_WEBHOOK_SECRET
+        sync: false
+      - key: MERCADO_PAGO_WEBHOOK_URL
+        sync: false
+      - key: CONTACT_RECIPIENT_EMAIL
+        value: contacto@marketgamesqr.com
+      - key: CONTACT_MAIL_FROM
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "465"
+      - key: SMTP_SECURE
+        value: "true"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_REJECT_UNAUTHORIZED
+        value: "true"

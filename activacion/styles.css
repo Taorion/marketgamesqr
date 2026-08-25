@@ -7,7 +7,7 @@ body {
   min-height: 100vh;
   font-family: Inter, Arial, sans-serif;
   color: #18242b;
-  background: #eef3f1;
+  background: #f3f7fb;
 }
 
 .activation-shell {
@@ -17,7 +17,7 @@ body {
   padding: 22px;
   background:
     linear-gradient(135deg, rgba(249, 252, 251, .96), rgba(225, 237, 235, .86)),
-    url("/img/SaleMachineLogo.png") center 8% / 190px auto no-repeat;
+    url("/img/Logotipo%20Qori%20VF.png") center 8% / 190px auto no-repeat;
 }
 
 .activation-card {
@@ -93,8 +93,8 @@ body {
   padding: 16px;
   border: 1px solid #d7e2df;
   border-radius: 8px;
-  background: #f8fbfa;
-  color: #30423d;
+  background: #f6fbff;
+  color: #071832;
   font-weight: 800;
 }
 
@@ -115,9 +115,9 @@ body {
 
 .status-panel[data-tone="success"],
 .ticket-result[data-tone="success"] {
-  border-color: #96dfc5;
-  background: #effcf6;
-  color: #0d5a40;
+  border-color: #b8d2e9;
+  background: #e5fbff;
+  color: #052a6b;
 }
 
 .participant-form,
@@ -132,7 +132,7 @@ body {
 }
 
 .section-head span {
-  color: #0d6b52;
+  color: #0759d6;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: .06em;
@@ -152,7 +152,7 @@ body {
 
 .section-head p {
   margin: 0;
-  color: #60716c;
+  color: #53677f;
   font-size: 14px;
 }
 
@@ -177,6 +177,46 @@ label {
   color: inherit;
 }
 
+.participant-document-field {
+  grid-column: span 1;
+}
+
+.participant-document-field small {
+  color: #52697a;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.42;
+}
+
+.is-premium .participant-document-field small {
+  color: #cfc6b4;
+}
+
+.participant-identity-help {
+  margin: 2px 0 0;
+  padding: 11px 12px;
+  border: 1px solid rgba(7, 89, 214, .18);
+  border-radius: 10px;
+  background: #eef7ff;
+  color: #315978;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.participant-identity-help strong {
+  color: #052a6b;
+}
+
+.is-premium .participant-identity-help {
+  border-color: rgba(229, 251, 255, .22);
+  background: rgba(229, 251, 255, .08);
+  color: #d8e9f4;
+}
+
+.is-premium .participant-identity-help strong {
+  color: #ffffff;
+}
+
 input,
 textarea,
 select {
@@ -199,7 +239,7 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 button:focus-visible {
-  border-color: #118568;
+  border-color: #00bfe5;
   box-shadow: 0 0 0 3px rgba(17, 133, 104, .16);
   outline: none;
 }
@@ -227,7 +267,7 @@ button:focus-visible {
 
 .activation-custom-head span,
 .activation-form-title small {
-  color: #0d6b52;
+  color: #0759d6;
   font-size: 11px;
   font-weight: 900;
   letter-spacing: .06em;
@@ -241,7 +281,7 @@ button:focus-visible {
 
 .activation-custom-head p {
   margin: 0;
-  color: #60716c;
+  color: #53677f;
   font-size: 13px;
 }
 
@@ -272,7 +312,7 @@ button:focus-visible {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: #0d6b52;
+  background: #0759d6;
   color: #fff;
   font-size: 13px;
   font-weight: 900;
@@ -287,7 +327,7 @@ button:focus-visible {
 
 .activation-form-help {
   margin: -2px 0 0;
-  color: #60716c;
+  color: #53677f;
   font-size: 13px;
   font-weight: 700;
   line-height: 1.35;
@@ -359,7 +399,7 @@ button:focus-visible {
   width: 0;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #118568, #f2b84b);
+  background: linear-gradient(90deg, #00bfe5, #f2b84b);
   transition: width .2s ease;
 }
 
@@ -393,7 +433,7 @@ button:focus-visible {
   place-items: center;
   border-radius: 999px;
   color: #fff;
-  background: #0d6b52;
+  background: #0759d6;
   font-weight: 900;
 }
 
@@ -413,7 +453,7 @@ button:focus-visible {
   border-radius: 8px;
   padding: 12px;
   color: inherit;
-  background: #f8fbfa;
+  background: #f6fbff;
   font: inherit;
   font-weight: 800;
   text-align: left;
@@ -456,8 +496,8 @@ button:focus-visible {
 .answer-option.is-selected,
 .choice-card.is-selected,
 .reveal-card.is-selected {
-  border-color: #118568;
-  background: #eaf9f2;
+  border-color: #00bfe5;
+  background: #eaf4ff;
   transform: translateY(-1px);
 }
 
@@ -500,7 +540,7 @@ button:focus-visible {
 }
 
 .scratch-surface.is-selected {
-  border-color: #118568;
+  border-color: #00bfe5;
   box-shadow: 0 0 0 3px rgba(17, 133, 104, .15);
 }
 
@@ -524,7 +564,7 @@ button:focus-visible {
 }
 
 .scratch-prize span {
-  color: #0d6b52;
+  color: #0759d6;
   font-size: .76rem;
   font-weight: 900;
   letter-spacing: .08em;
@@ -541,11 +581,11 @@ button:focus-visible {
 .scratch-selected-result {
   display: grid;
   gap: 6px;
-  border: 1px solid #96dfc5;
+  border: 1px solid #b8d2e9;
   border-radius: 8px;
   padding: 14px 16px;
-  background: #effcf6;
-  color: #0d5a40;
+  background: #e5fbff;
+  color: #052a6b;
 }
 
 .scratch-selected-result span {
@@ -613,7 +653,7 @@ button:focus-visible {
   border-radius: 8px;
   padding: 12px 18px;
   color: #fff;
-  background: #0d6b52;
+  background: #0759d6;
   font: inherit;
   font-weight: 900;
   cursor: pointer;
@@ -622,9 +662,9 @@ button:focus-visible {
 }
 
 .submit-button.secondary {
-  color: #0d5a40;
-  border: 1px solid #96dfc5;
-  background: #effcf6;
+  color: #052a6b;
+  border: 1px solid #b8d2e9;
+  background: #e5fbff;
 }
 
 .is-premium .submit-button,
@@ -653,7 +693,7 @@ button:focus-visible {
   border: 1px solid #cbd9d5;
   border-radius: 8px;
   padding: 42px 12px 12px;
-  background: linear-gradient(90deg, #d8f1e8, #ffe19a 50%, #d8f1e8);
+  background: linear-gradient(90deg, #e5fbff, #ffe19a 50%, #e5fbff);
 }
 
 .thermometer-track::before {
@@ -664,7 +704,7 @@ button:focus-visible {
   left: 12px;
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #118568, #f2b84b 50%, #118568);
+  background: linear-gradient(90deg, #00bfe5, #f2b84b 50%, #00bfe5);
 }
 
 .thermometer-pointer {
@@ -675,7 +715,7 @@ button:focus-visible {
   width: 18px;
   height: 36px;
   border-radius: 999px;
-  background: #0a3d31;
+  background: #052a6b;
   transform: translateX(-50%);
 }
 
@@ -835,7 +875,7 @@ button:focus-visible {
 }
 
 .ecommerce-reward-card span {
-  color: #0d6b52;
+  color: #0759d6;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: .06em;
@@ -885,4 +925,130 @@ button:focus-visible {
   .experience-stage {
     margin: 16px;
   }
+}
+
+/* Qori public blue system: removes legacy green branding from activation links. */
+:root {
+  --qori-ink: #071832;
+  --qori-blue-deep: #052a6b;
+  --qori-blue: #0759d6;
+  --qori-cyan: #00bfe5;
+  --qori-paper: #f6fbff;
+  --qori-line: #d8e6f2;
+  --qori-muted: #53677f;
+}
+
+body {
+  color: var(--qori-ink);
+  background: #f3f7fb;
+}
+
+.activation-shell {
+  background:
+    radial-gradient(circle at 14% 10%, rgba(0, 191, 229, .18), transparent 28%),
+    radial-gradient(circle at 86% 18%, rgba(7, 89, 214, .14), transparent 30%),
+    linear-gradient(135deg, #ffffff 0%, #f6fbff 52%, #eaf4ff 100%),
+    url("/img/Logotipo%20Qori%20VF.png") center 8% / 190px auto no-repeat;
+}
+
+.activation-card {
+  border-color: rgba(5, 42, 107, .12);
+  background: rgba(255, 255, 255, .97);
+  box-shadow: 0 24px 70px rgba(5, 42, 107, .14);
+}
+
+.activation-head {
+  background: linear-gradient(135deg, #052a6b 0%, #0759d6 62%, #00bfe5 100%);
+}
+
+.activation-head span,
+.section-head span,
+.activation-custom-head span,
+.activation-form-title small,
+.progress-panel strong,
+.question-title > span,
+.activation-form-title > span,
+.result-copy span,
+.ecommerce-reward-card span,
+.ticket-result a.secondary {
+  color: var(--qori-blue);
+}
+
+.activation-head p {
+  color: #eaf4ff;
+}
+
+.status-panel,
+.ticket-result,
+.progress-panel,
+.answer-option,
+.choice-card,
+.reveal-card {
+  border-color: var(--qori-line);
+  background: var(--qori-paper);
+  color: var(--qori-ink);
+}
+
+.status-panel[data-tone="success"],
+.ticket-result[data-tone="success"],
+.ecommerce-reward-card {
+  border-color: rgba(0, 191, 229, .24);
+  background: #e5fbff;
+  color: var(--qori-blue-deep);
+}
+
+.section-head p,
+.activation-custom-head p,
+.activation-form-help,
+.thermometer-game p {
+  color: var(--qori-muted);
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible,
+.answer-option:hover,
+.answer-option:focus-within,
+.answer-option.is-selected,
+.reveal-card:hover,
+.reveal-card:focus-visible,
+.reveal-card.is-selected,
+.choice-card:hover,
+.choice-card:focus-visible {
+  border-color: var(--qori-cyan);
+  box-shadow: 0 0 0 3px rgba(0, 191, 229, .14);
+}
+
+.progress-track,
+.scratch-overlay,
+.thermometer-track {
+  background: #d8e6f2;
+}
+
+.progress-track span,
+.scratch-progress span,
+.submit-button,
+.ticket-result a,
+.question-title > span,
+.activation-form-title > span {
+  background: linear-gradient(135deg, var(--qori-blue), var(--qori-blue-deep));
+  color: #ffffff;
+}
+
+.submit-button:hover,
+.ticket-result a:hover {
+  background: linear-gradient(135deg, #086cff, var(--qori-blue-deep));
+}
+
+.ticket-result a.secondary,
+.submit-button.secondary {
+  border: 1px solid rgba(0, 191, 229, .24);
+  background: #e5fbff;
+  color: var(--qori-blue-deep);
+}
+
+.answer-key {
+  color: var(--qori-blue);
+  background: #eaf4ff;
 }

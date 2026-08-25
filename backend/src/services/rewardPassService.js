@@ -8,9 +8,11 @@ const { badRequest, forbidden, notFound } = require("../utils/http");
 const { createSecureToken, normalizeToken } = require("../utils/token");
 const { ensureCreditAccount, trafficLabel } = require("./qrCreditService");
 const { logQrEvent } = require("./auditService");
+const { assertStandaloneBusinessFeature } = require("./subscriptionService");
+const { ensureRewardPassContact, registerRedemptionIntake } = require("./redemptionLeadIntakeService");
 
 const DEFAULT_TICKET_COST = 1;
-const DEFAULT_TERMS = `Esta Gift Card Digital / Reward Pass es emitida directamente por [Nombre de la Empresa] y administrada tecnologicamente por Qori. Es redimible unicamente en el negocio emisor o en las sedes autorizadas por este. No constituye dinero electronico, producto financiero, deposito, credito ni medio de pago universal. No genera intereses. Su uso esta sujeto a validacion por QR y documento de identidad. La factura electronica de venta sera expedida por el comercio emisor al momento de la redencion, cuando se entreguen los productos o servicios correspondientes.
+const DEFAULT_TERMS = `Esta Gift Card Digital / Reward Pass es emitida directamente por [Nombre de la Empresa] y administrada tecnologicamente por Qori GOS Portal. Es redimible unicamente en el negocio emisor o en las sedes autorizadas por este. No constituye dinero electronico, producto financiero, deposito, credito ni medio de pago universal. No genera intereses. Su uso esta sujeto a validacion por QR y documento de identidad. La factura electronica de venta sera expedida por el comercio emisor al momento de la redencion, cuando se entreguen los productos o servicios correspondientes.
 
 Condiciones sugeridas:
 - Redimible unicamente en el negocio emisor.
@@ -23,6 +25,41 @@ Condiciones sugeridas:
 - Vencida la vigencia, el saldo no utilizado podra perderse segun condiciones aceptadas al momento de adquisicion.
 - El emisor es responsable de la redencion comercial.
 - Qori solo presta la tecnologia de administracion, QR, validacion y trazabilidad.`;
+
+const REWARD_PASS_EFFECTIVE_STATUS_SQL = `case
+  when rp.status = 'cancelled' then 'cancelled'
+  when rp.current_balance_cop <= 0 then 'fully_redeemed'
+  when rp.expires_at < now() then 'expired'
+  when nullif(btrim(rp.beneficiary_name), '') is null or nullif(btrim(rp.beneficiary_document), '') is null then 'pending_claim'
+  when rp.status = 'partially_redeemed' then 'partially_redeemed'
+  when rp.status = 'extended' then 'extended'
+  else 'active'
+end`;
+
+const REWARD_PASS_BRANCH_SCOPES = Object.freeze({
+  ALL: "ALL_BRANCHES",
+  SPECIFIC: "SPECIFIC_BRANCH",
+});
+
+function rewardPassBranchLabel(pass = {}) {
+  if (pass.branch_authorization_scope === REWARD_PASS_BRANCH_SCOPES.ALL) return "Todas las Sedes";
+  return cleanText(pass.authorized_branch_name || pass.authorized_branch, "Todas las Sedes");
+}
+
+function normalizeIdentity(value) {
+  return cleanText(value).replace(/[^a-z0-9]/gi, "").toLowerCase();
+}
+
+function secureTextMatches(left, right) {
+  const leftBuffer = Buffer.from(cleanText(left));
+  const rightBuffer = Buffer.from(cleanText(right));
+  if (!leftBuffer.length || leftBuffer.length !== rightBuffer.length) return false;
+  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function defaultTermsForBusiness(name) {
+  return DEFAULT_TERMS.replace(/\[Nombre de la Empresa\]/g, cleanText(name, "el negocio emisor"));
+}
 
 function userBusinessId(user) {
   if (!user?.business_id) {
@@ -163,7 +200,7 @@ async function loadBusiness(businessId) {
 
 async function uniquePublicCode(client) {
   for (let attempt = 0; attempt < 10; attempt += 1) {
-    const code = `SM-RP-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+    const code = `SM-RP-${crypto.randomBytes(12).toString("hex").toUpperCase()}`;
     const existing = await client.query("select id from reward_passes where public_code = $1", [code]);
     if (!existing.rowCount) return code;
   }
@@ -233,6 +270,10 @@ function mapRewardPass(row, options = {}) {
     transferable: Boolean(row.transferable),
     partial_redemption_allowed: Boolean(row.partial_redemption_allowed),
     authorized_branch: row.authorized_branch,
+    authorized_branch_id: row.authorized_branch_id || null,
+    authorized_branch_name: row.authorized_branch_name || row.authorized_branch || null,
+    branch_authorization_scope: row.branch_authorization_scope || null,
+    authorized_branch_label: rewardPassBranchLabel(row),
     terms: row.terms,
     internal_notes: options.includePrivate ? row.internal_notes : undefined,
     digital_card_image_path: row.digital_card_image_path,
@@ -269,8 +310,14 @@ async function listRewardPasses(user, filters = {}) {
   const params = [businessId];
   const clauses = ["rp.company_id = $1"];
   if (filters.status) {
-    params.push(filters.status);
-    clauses.push(`rp.status = $${params.length}`);
+    if (filters.status === "used") {
+      clauses.push("rp.current_balance_cop < rp.initial_value_cop");
+    } else if (filters.status === "with_balance") {
+      clauses.push(`rp.current_balance_cop > 0 and (${REWARD_PASS_EFFECTIVE_STATUS_SQL}) not in ('cancelled', 'expired', 'fully_redeemed')`);
+    } else {
+      params.push(filters.status);
+      clauses.push(`(${REWARD_PASS_EFFECTIVE_STATUS_SQL}) = $${params.length}`);
+    }
   }
   if (filters.search) {
     params.push(`%${String(filters.search).trim()}%`);
@@ -288,38 +335,68 @@ async function listRewardPasses(user, filters = {}) {
     clauses.push("rp.expires_at < now() and rp.current_balance_cop > 0");
   }
   if (filters.partiallyRedeemed === true) {
-    clauses.push("rp.status = 'partially_redeemed'");
+    clauses.push(`(${REWARD_PASS_EFFECTIVE_STATUS_SQL}) = 'partially_redeemed'`);
   }
+  if (filters.branchId) {
+    params.push(filters.branchId);
+    clauses.push(`(rp.authorized_branch_id = $${params.length} or rp.branch_authorization_scope = 'ALL_BRANCHES')`);
+  }
+
+  const limit = Math.min(Math.max(Number(filters.limit) || 50, 1), 100);
+  const offset = Math.max(Number(filters.offset) || 0, 0);
+  params.push(limit, offset);
+  const limitParam = `$${params.length - 1}`;
+  const offsetParam = `$${params.length}`;
 
   const result = await query(
     `select rp.*, b.name as company_name, b.slug as company_slug, b.settings as company_settings,
-            c.name as campaign_name
+            c.name as campaign_name, br.name as authorized_branch_name,
+            (${REWARD_PASS_EFFECTIVE_STATUS_SQL}) as effective_status,
+            count(*) over()::int as total_count
      from reward_passes rp
      join businesses b on b.id = rp.company_id
      left join campaigns c on c.id = rp.campaign_id
+     left join branches br on br.id = rp.authorized_branch_id and br.business_id = rp.company_id
      where ${clauses.join(" and ")}
      order by rp.created_at desc
-     limit 200`,
+     limit ${limitParam} offset ${offsetParam}`,
     params
   );
-  return result.rows.map((row) => mapRewardPass(row, { includeToken: true }));
+  const rows = result.rows.map((row) => mapRewardPass({ ...row, status: row.effective_status }, { includeToken: true }));
+  const total = Number(result.rows[0]?.total_count || 0);
+  return {
+    rows,
+    pagination: {
+      total,
+      limit,
+      offset,
+      has_more: offset + rows.length < total,
+    },
+  };
 }
 
 async function rewardPassMetrics(user) {
   const businessId = userBusinessId(user);
   const result = await query(
-    `select
+    `with scoped as (
+       select rp.*, (${REWARD_PASS_EFFECTIVE_STATUS_SQL}) as effective_status
+       from reward_passes rp
+       where rp.company_id = $1
+     )
+     select
        count(*)::int as issued_count,
        coalesce(sum(initial_value_cop), 0)::numeric as total_issued_cop,
        coalesce(sum(initial_value_cop - current_balance_cop), 0)::numeric as total_redeemed_cop,
-       coalesce(sum(current_balance_cop) filter (where status not in ('cancelled', 'fully_redeemed')), 0)::numeric as pending_balance_cop,
-       coalesce(sum(current_balance_cop) filter (where expires_at < now() and current_balance_cop > 0 and status <> 'cancelled'), 0)::numeric as expired_balance_cop,
-       count(*) filter (where status in ('active', 'extended'))::int as active_count,
-       count(*) filter (where status = 'partially_redeemed')::int as partially_redeemed_count,
-       count(*) filter (where status = 'expired' or (expires_at < now() and current_balance_cop > 0 and status <> 'cancelled'))::int as expired_count,
-       count(*) filter (where status = 'fully_redeemed')::int as fully_redeemed_count
-     from reward_passes
-     where company_id = $1`,
+       coalesce(sum(current_balance_cop) filter (where effective_status not in ('cancelled', 'expired', 'fully_redeemed')), 0)::numeric as pending_balance_cop,
+       coalesce(sum(current_balance_cop) filter (where effective_status = 'expired'), 0)::numeric as expired_balance_cop,
+       count(*) filter (where effective_status in ('active', 'extended'))::int as active_count,
+       count(*) filter (where effective_status = 'pending_claim')::int as pending_claim_count,
+       count(*) filter (where effective_status = 'partially_redeemed')::int as partially_redeemed_count,
+       count(*) filter (where effective_status = 'expired')::int as expired_count,
+       count(*) filter (where effective_status = 'cancelled')::int as cancelled_count,
+       count(*) filter (where effective_status = 'fully_redeemed')::int as fully_redeemed_count,
+       count(*) filter (where effective_status not in ('cancelled', 'expired', 'fully_redeemed') and expires_at between now() and now() + interval '30 days')::int as expiring_soon_count
+     from scoped`,
     [businessId]
   );
   const redemptionResult = await query(
@@ -369,9 +446,12 @@ async function rewardPassMetrics(user) {
     pending_balance_cop: moneyNumber(row.pending_balance_cop),
     expired_balance_cop: moneyNumber(row.expired_balance_cop),
     active_count: Number(row.active_count || 0),
+    pending_claim_count: Number(row.pending_claim_count || 0),
     partially_redeemed_count: Number(row.partially_redeemed_count || 0),
     expired_count: Number(row.expired_count || 0),
+    cancelled_count: Number(row.cancelled_count || 0),
     fully_redeemed_count: Number(row.fully_redeemed_count || 0),
+    expiring_soon_count: Number(row.expiring_soon_count || 0),
     redemption_count: Number(redemptions.redemption_count || 0),
     average_redemption_cop: moneyNumber(redemptions.average_redemption_cop),
     tickets_consumed: Number(ticketResult.rows[0]?.tickets_consumed || 0),
@@ -399,6 +479,7 @@ async function getTicketContext(user) {
     qr_used_total: 0,
   };
   return {
+    business_name: business.name,
     reward_pass_ticket_cost: getRewardPassTicketCostFromSettings(business.settings || {}),
     ticket_balance: Number(account.qr_balance || 0),
     qr_purchased_total: Number(account.qr_purchased_total || 0),
@@ -421,6 +502,14 @@ async function createRewardPass(user, payload) {
 
   const created = await withTransaction(async (client) => {
     const business = await loadBusinessForUpdate(client, businessId);
+    const issuanceKey = cleanText(payload.idempotency_key);
+    if (issuanceKey) {
+      const existing = await client.query(
+        "select id from reward_passes where company_id = $1 and issuance_key = $2",
+        [businessId, issuanceKey]
+      );
+      if (existing.rowCount) return { id: existing.rows[0].id, idempotent: true };
+    }
     const ticketCost = getRewardPassTicketCostFromSettings(business.settings || {});
     const account = await ensureCreditAccount(client, businessId);
     const balanceBefore = Number(account.qr_balance || 0);
@@ -438,9 +527,47 @@ async function createRewardPass(user, payload) {
       }
     }
 
+    let branchAuthorizationScope = cleanText(payload.branch_authorization_scope).toUpperCase();
+    if (!branchAuthorizationScope) {
+      branchAuthorizationScope = payload.authorized_branch_id
+        ? REWARD_PASS_BRANCH_SCOPES.SPECIFIC
+        : payload.authorized_branch
+          ? null
+          : REWARD_PASS_BRANCH_SCOPES.ALL;
+    }
+    if (branchAuthorizationScope === REWARD_PASS_BRANCH_SCOPES.ALL && payload.authorized_branch_id) {
+      throw badRequest("El alcance Todas las Sedes no admite una sede específica.");
+    }
+    if (branchAuthorizationScope === REWARD_PASS_BRANCH_SCOPES.SPECIFIC && !payload.authorized_branch_id) {
+      throw badRequest("Selecciona la sede específica autorizada.");
+    }
+    if (branchAuthorizationScope && !Object.values(REWARD_PASS_BRANCH_SCOPES).includes(branchAuthorizationScope)) {
+      throw badRequest("El alcance de sedes del Reward Pass no es válido.");
+    }
+    if (branchAuthorizationScope === REWARD_PASS_BRANCH_SCOPES.ALL) {
+      const activeBranches = await client.query(
+        "select 1 from branches where business_id = $1 and is_active = true limit 1",
+        [businessId]
+      );
+      if (!activeBranches.rowCount) {
+        throw badRequest("No tienes sedes activas. Crea una sede en Opera → Sedes antes de emitir el Reward Pass.");
+      }
+    }
+
+    let authorizedBranch = null;
+    if (payload.authorized_branch_id) {
+      const branchResult = await client.query(
+        "select id, name from branches where id = $1 and business_id = $2 and is_active = true",
+        [payload.authorized_branch_id, businessId]
+      );
+      authorizedBranch = branchResult.rows[0] || null;
+      if (!authorizedBranch) throw badRequest("La sede autorizada no pertenece a este negocio o está inactiva.");
+    }
+
     const qrToken = await uniqueQrToken(client);
     const publicCode = await uniquePublicCode(client);
-    const terms = cleanText(payload.terms, DEFAULT_TERMS.replace("[Nombre de la Empresa]", business.name));
+    const terms = cleanText(payload.terms, defaultTermsForBusiness(business.name))
+      .replace(/\[Nombre de la Empresa\]/g, business.name);
     const securityPin = payload.security_pin || crypto.randomInt(100000, 999999).toString();
     const beneficiaryName = cleanText(payload.beneficiary_name);
     const beneficiaryDocument = cleanText(payload.beneficiary_document);
@@ -451,14 +578,15 @@ async function createRewardPass(user, payload) {
          beneficiary_name, beneficiary_document, beneficiary_email, beneficiary_phone,
          initial_value_cop, current_balance_cop, issued_at, valid_from, expires_at, status,
          qr_token, public_code, security_pin, transferable, partial_redemption_allowed,
-         authorized_branch, terms, internal_notes, payment_method_received
+         authorized_branch, authorized_branch_id, branch_authorization_scope, terms, internal_notes, payment_method_received,
+         source_sale_id, rms_post_sale_action_id, issuance_key
        )
        values (
          $1, $2, $3, $4, $5, $6, $7,
          $8, $9, $10, $11,
          $12, $12, $13, $14, $15, $16,
          $17, $18, $19, $20, $21,
-         $22, $23, $24, $25
+         $22, $23, $24, $25, $26, $27, $28, $29, $30
        )
        returning *`,
       [
@@ -483,10 +611,17 @@ async function createRewardPass(user, payload) {
         securityPin,
         Boolean(payload.transferable),
         payload.partial_redemption_allowed !== false,
-        payload.authorized_branch || null,
+        branchAuthorizationScope === REWARD_PASS_BRANCH_SCOPES.ALL
+          ? "Todas las Sedes"
+          : authorizedBranch?.name || payload.authorized_branch || null,
+        authorizedBranch?.id || null,
+        branchAuthorizationScope,
         terms,
         payload.internal_notes || null,
         payload.payment_method_received || null,
+        payload.source_sale_id || null,
+        payload.rms_post_sale_action_id || null,
+        issuanceKey || null,
       ]
     );
     const pass = passResult.rows[0];
@@ -540,20 +675,23 @@ async function createRewardPass(user, payload) {
         initial_value_cop: initialValue,
       },
     });
-    return pass;
+    return { id: pass.id, idempotent: false };
   });
 
-  return getRewardPassById(user, created.id);
+  const rewardPass = await getRewardPassById(user, created.id);
+  rewardPass.idempotent = Boolean(created.idempotent);
+  return rewardPass;
 }
 
 async function getRewardPassById(user, id) {
   const businessId = userBusinessId(user);
   const result = await query(
     `select rp.*, b.name as company_name, b.slug as company_slug, b.settings as company_settings,
-            c.name as campaign_name
+            c.name as campaign_name, br.name as authorized_branch_name
      from reward_passes rp
      join businesses b on b.id = rp.company_id
      left join campaigns c on c.id = rp.campaign_id
+     left join branches br on br.id = rp.authorized_branch_id and br.business_id = rp.company_id
      where rp.id = $1 and rp.company_id = $2`,
     [id, businessId]
   );
@@ -592,10 +730,11 @@ async function getPublicRewardPass(publicCode) {
   const result = await query(
     `select rp.*, b.name as company_name, b.slug as company_slug,
             (b.settings - 'logo_data_url') as company_settings,
-            c.name as campaign_name
+            c.name as campaign_name, br.name as authorized_branch_name
      from reward_passes rp
      join businesses b on b.id = rp.company_id
      left join campaigns c on c.id = rp.campaign_id
+     left join branches br on br.id = rp.authorized_branch_id and br.business_id = rp.company_id
      where lower(rp.public_code) = lower($1)`,
     [publicCode]
   );
@@ -623,10 +762,11 @@ async function getPublicRewardPassPdf(publicCode) {
   const result = await query(
     `select rp.*, b.name as company_name, b.slug as company_slug,
             (b.settings - 'logo_data_url') as company_settings,
-            c.name as campaign_name
+            c.name as campaign_name, br.name as authorized_branch_name
      from reward_passes rp
      join businesses b on b.id = rp.company_id
      left join campaigns c on c.id = rp.campaign_id
+     left join branches br on br.id = rp.authorized_branch_id and br.business_id = rp.company_id
      where lower(rp.public_code) = lower($1)`,
     [publicCode]
   );
@@ -660,6 +800,9 @@ async function claimRewardPass(publicCode, payload) {
     );
     let pass = result.rows[0];
     if (!pass) throw notFound("Reward Pass no encontrado.");
+    if (!secureTextMatches(payload.security_pin, pass.security_pin)) {
+      throw badRequest("El PIN de activación no es válido. Solicítalo al negocio emisor.");
+    }
     pass = await syncEffectiveStatus(client, pass);
     const status = effectiveStatus(pass);
     if (status === "cancelled" || status === "expired" || status === "fully_redeemed") {
@@ -704,10 +847,11 @@ async function validateRewardPassToken(user, rawToken) {
   const token = normalizeToken(rawToken);
   const result = await query(
     `select rp.*, b.name as company_name, b.slug as company_slug, b.settings as company_settings,
-            c.name as campaign_name
+            c.name as campaign_name, br.name as authorized_branch_name
      from reward_passes rp
      join businesses b on b.id = rp.company_id
      left join campaigns c on c.id = rp.campaign_id
+     left join branches br on br.id = rp.authorized_branch_id and br.business_id = rp.company_id
      where rp.qr_token = $1`,
     [token]
   );
@@ -718,6 +862,7 @@ async function validateRewardPassToken(user, rawToken) {
   if (!canAccessBusiness(user, pass.company_id)) {
     throw forbidden("Este Reward Pass pertenece a otro negocio.");
   }
+  await assertStandaloneBusinessFeature(user, pass.company_id, "qr_validator");
   pass = await syncEffectiveStatus(query, pass);
   const status = effectiveStatus(pass);
   const notStarted = pass.valid_from && new Date(pass.valid_from) > new Date();
@@ -768,6 +913,15 @@ async function redeemRewardPass(user, rawToken, payload) {
     throw badRequest("El numero de factura electronica es obligatorio.");
   }
 
+  const accessResult = await query("select company_id from reward_passes where qr_token = $1", [token]);
+  const accessRow = accessResult.rows[0];
+  if (accessRow) {
+    if (!canAccessBusiness(user, accessRow.company_id)) {
+      throw forbidden("Este Reward Pass pertenece a otro negocio.");
+    }
+    await assertStandaloneBusinessFeature(user, accessRow.company_id, "qr_validator");
+  }
+
   return withTransaction(async (client) => {
     const result = await client.query(
       `select *
@@ -788,6 +942,41 @@ async function redeemRewardPass(user, rawToken, payload) {
     }
     if (!["active", "partially_redeemed", "extended"].includes(status)) {
       throw badRequest(statusMessage(status));
+    }
+    const idempotencyKey = cleanText(payload.idempotency_key);
+    if (idempotencyKey) {
+      const existingRedemption = await client.query(
+        `select * from reward_pass_redemptions
+         where company_id = $1 and idempotency_key = $2`,
+        [pass.company_id, idempotencyKey]
+      );
+      if (existingRedemption.rowCount) {
+        const beneficiaryContact = await ensureRewardPassContact(client, pass);
+        await registerRedemptionIntake(client, {
+          businessId: pass.company_id,
+          contact: beneficiaryContact,
+          userId: user.id,
+          campaignId: pass.campaign_id || null,
+          origin: "Reward Pass",
+          dedupeKey: `REWARD_PASS_REDEMPTION:${existingRedemption.rows[0].id}`,
+          description: `Reward Pass ${pass.public_code} redimido y enviado al Recolector.`,
+          metadata: { reward_pass_id: pass.id, reward_pass_redemption_id: existingRedemption.rows[0].id },
+        });
+        return {
+          message: "Esta redención ya había sido registrada. No se descontó saldo nuevamente.",
+          redemption: existingRedemption.rows[0],
+          reward_pass: mapRewardPass(pass, { includeToken: true, includePrivate: true }),
+          idempotent: true,
+        };
+      }
+    }
+    const duplicateInvoice = await client.query(
+      `select id from reward_pass_redemptions
+       where reward_pass_id = $1 and lower(btrim(invoice_number)) = lower(btrim($2))`,
+      [pass.id, payload.invoice_number]
+    );
+    if (duplicateInvoice.rowCount) {
+      throw badRequest("Esta factura ya fue registrada para este Reward Pass.");
     }
     const balanceBefore = moneyNumber(pass.current_balance_cop);
     if (balanceBefore <= 0) {
@@ -812,23 +1001,53 @@ async function redeemRewardPass(user, rawToken, payload) {
     const balanceAfter = forceFullConsumption ? 0 : moneyNumber(balanceBefore - redeemValue);
     const nextStatus = balanceAfter <= 0 ? "fully_redeemed" : "partially_redeemed";
     const documentChecked = cleanText(payload.document_checked || "");
-    const documentMatch = documentChecked
-      ? documentChecked.replace(/\s+/g, "") === cleanText(pass.beneficiary_document).replace(/\s+/g, "")
-      : null;
+    if (!documentChecked) throw badRequest("Confirma el documento del beneficiario antes de redimir.");
+    const documentMatch = normalizeIdentity(documentChecked) === normalizeIdentity(pass.beneficiary_document);
+    if (!documentMatch) throw badRequest("El documento presentado no coincide con el beneficiario del Reward Pass.");
+    const branchId = payload.branch_id || user.branch_id || null;
+    const branchScope = pass.branch_authorization_scope || null;
+    if ([REWARD_PASS_BRANCH_SCOPES.ALL, REWARD_PASS_BRANCH_SCOPES.SPECIFIC].includes(branchScope) && !branchId) {
+      throw badRequest("Selecciona una sede activa para registrar la redención.");
+    }
+    let branchName = cleanText(payload.branch || "") || null;
+    if (branchId) {
+      const branchResult = await client.query(
+        "select id, name from branches where id = $1 and business_id = $2 and is_active = true",
+        [branchId, pass.company_id]
+      );
+      const branch = branchResult.rows[0];
+      if (!branch) throw badRequest("La sede de redención no pertenece al negocio o está inactiva.");
+      branchName = branch.name;
+    }
+    if (pass.authorized_branch_id) {
+      const authorizedResult = await client.query(
+        "select id, name, is_active from branches where id = $1 and business_id = $2",
+        [pass.authorized_branch_id, pass.company_id]
+      );
+      const authorized = authorizedResult.rows[0];
+      const authorizedName = authorized?.name || pass.authorized_branch || "la sede autorizada";
+      if (!authorized || authorized.is_active === false) {
+        throw badRequest(`La sede autorizada ${authorizedName} ya no está activa. No se descontó saldo.`);
+      }
+      if (String(branchId || "") !== String(pass.authorized_branch_id)) {
+        throw badRequest(`Este Reward Pass solo puede redimirse en la sede: ${authorizedName}.`);
+      }
+    }
     const redemptionType = balanceAfter <= 0 ? "full" : "partial";
 
     const redemption = await client.query(
       `insert into reward_pass_redemptions (
-         reward_pass_id, company_id, branch, cashier_user_id, invoice_number, invoice_file_path,
+         reward_pass_id, company_id, branch, branch_id, cashier_user_id, invoice_number, invoice_file_path,
          redeemed_value_cop, balance_before_cop, balance_after_cop, redemption_type,
-         purchase_value_cop, document_checked, document_match, observations
+         purchase_value_cop, document_checked, document_match, observations, idempotency_key
        )
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
        returning *`,
       [
         pass.id,
         pass.company_id,
-        payload.branch || user.branch_id || null,
+        branchName,
+        branchId,
         user.id,
         payload.invoice_number,
         payload.invoice_file_path || null,
@@ -840,6 +1059,7 @@ async function redeemRewardPass(user, rawToken, payload) {
         documentChecked || null,
         documentMatch,
         payload.observations || null,
+        idempotencyKey || null,
       ]
     );
     const updated = await client.query(
@@ -865,12 +1085,24 @@ async function redeemRewardPass(user, rawToken, payload) {
         invoice_number: payload.invoice_number,
       },
     });
+    const beneficiaryContact = await ensureRewardPassContact(client, pass);
+    await registerRedemptionIntake(client, {
+      businessId: pass.company_id,
+      contact: beneficiaryContact,
+      userId: user.id,
+      campaignId: pass.campaign_id || null,
+      origin: "Reward Pass",
+      dedupeKey: `REWARD_PASS_REDEMPTION:${redemption.rows[0].id}`,
+      description: `Reward Pass ${pass.public_code} redimido ${redemptionType === "partial" ? "parcialmente" : "en su totalidad"}.`,
+      metadata: { reward_pass_id: pass.id, reward_pass_redemption_id: redemption.rows[0].id, redemption_type: redemptionType },
+    });
     return {
       message: forceFullConsumption
         ? `Redencion registrada correctamente. Se aplicaron $${redeemValue.toLocaleString("es-CO")} COP a la factura y el saldo restante quedo consumido por condicion de un solo uso.`
         : `Redencion registrada correctamente. Nuevo saldo disponible: $${balanceAfter.toLocaleString("es-CO")} COP.`,
       redemption: redemption.rows[0],
       reward_pass: mapRewardPass(updated.rows[0], { includeToken: true, includePrivate: true }),
+      idempotent: false,
     };
   });
 }
@@ -1103,7 +1335,7 @@ async function buildRewardPassPdf(pass, kind = "card") {
   const rightDetailsX = leftX + 292;
   drawCardField(page, "CODIGO", pass.public_code, { x: rightDetailsX, y: 244, maxWidth: 220, font: bold, bold, color: white, mutedColor: gold });
   drawCardField(page, "VIGENCIA", new Date(pass.expires_at).toLocaleDateString("es-CO"), { x: rightDetailsX, y: 190, maxWidth: 220, font, bold, color: soft, mutedColor: gold });
-  drawCardField(page, "SEDE AUTORIZADA", pass.authorized_branch || "Segun condiciones del emisor", { x: rightDetailsX, y: 136, maxWidth: 220, font, bold, color: soft, mutedColor: gold });
+  drawCardField(page, "SEDE AUTORIZADA", rewardPassBranchLabel(pass), { x: rightDetailsX, y: 136, maxWidth: 220, font, bold, color: soft, mutedColor: gold });
 
   page.drawRectangle({ x: rightX + 8, y: 196, width: 200, height: 200, color: white });
   page.drawImage(qrPng, { x: rightX + 18, y: 206, width: 180, height: 180 });
@@ -1133,7 +1365,7 @@ async function buildRewardPassPdf(pass, kind = "card") {
     ? "Permite redenciones parciales hasta agotar saldo o hasta la fecha de vencimiento."
     : "De un solo uso segun condiciones del emisor.";
   drawWrappedText(page, partialText, { x: leftX, y: 78, maxWidth: 520, size: 10, font, color: soft, lineHeight: 13, maxLines: 2 });
-  drawWrappedText(page, `Emitido por ${pass.company_name || pass.company?.name || "Empresa"}. Administrado tecnologicamente por Qori.`, {
+  drawWrappedText(page, `Emitido por ${pass.company_name || pass.company?.name || "Empresa"}. Administrado tecnologicamente por Qori GOS Portal.`, {
     x: leftX,
     y: 52,
     maxWidth: 760,
@@ -1154,6 +1386,7 @@ async function buildRewardPassPdf(pass, kind = "card") {
       `Codigo: ${pass.public_code}`,
       `Fecha emision: ${new Date(pass.issued_at).toLocaleDateString("es-CO")}`,
       `Fecha vencimiento: ${new Date(pass.expires_at).toLocaleDateString("es-CO")}`,
+      `Sede autorizada: ${rewardPassBranchLabel(pass)}`,
       `Medio de pago recibido por el comercio: ${pass.payment_method_received || "Registrado por el emisor"}`,
     ];
     let y = 690;

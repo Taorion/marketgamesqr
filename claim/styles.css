@@ -83,6 +83,10 @@ h1 {
   cursor: pointer;
 }
 
+.claim-contact-note { color:#4d5d69; font-size:12px; line-height:1.4; }
+.claim-consent { display:flex!important; align-items:flex-start; gap:9px; color:#4d5d69; font-size:12px!important; line-height:1.4; }
+.claim-consent input { width:16px!important; min-width:16px!important; min-height:16px!important; height:16px!important; margin:1px 0 0!important; padding:0!important; }
+
 .result-block {
   padding: 16px 18px;
   border-radius: 16px;
@@ -115,7 +119,7 @@ h1 {
 .ecommerce-ticket span {
   display: block;
   margin-bottom: 6px;
-  color: #0d6b52;
+  color: #0759d6;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -206,4 +210,41 @@ h1 {
 
 .hidden {
   display: none;
+}
+
+/* Qori public blue system. */
+body {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(0, 191, 229, 0.18), transparent 30%),
+    linear-gradient(160deg, #052a6b 0%, #0759d6 58%, #f6fbff 100%);
+  color: #071832;
+}
+
+.claim-card,
+.final-ticket {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(5, 42, 107, 0.12);
+  box-shadow: 0 24px 60px rgba(5, 42, 107, 0.22);
+}
+
+.eyebrow,
+.final-ticket span,
+.ecommerce-ticket span {
+  color: #0759d6;
+}
+
+.claim-form button,
+.result-block,
+.final-ticket a,
+.download-ticket-button {
+  background: linear-gradient(135deg, #052a6b, #0759d6);
+  color: #ffffff;
+}
+
+.status-panel,
+.download-ticket-button.secondary,
+.ecommerce-ticket {
+  background: #f6fbff;
+  border-color: rgba(0, 191, 229, 0.2);
+  color: #052a6b;
 }

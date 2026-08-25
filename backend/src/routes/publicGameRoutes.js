@@ -13,6 +13,7 @@ const {
 } = require("../controllers/triviaController");
 const {
   publicComplete: publicCompleteInteractiveActivation,
+  publicDownload: publicDownloadInteractiveActivationAsset,
   publicGet: publicGetInteractiveActivation,
   publicStart: publicStartInteractiveActivation,
 } = require("../controllers/interactiveActivationController");
@@ -43,6 +44,7 @@ router.post("/trivias/:slug/attempts", publicActionLimit, publicSubmitTrivia);
 router.get("/activations/:slug", publicReadLimit, publicReadCache, publicGetInteractiveActivation);
 router.post("/activations/:slug/participants", publicActionLimit, publicStartInteractiveActivation);
 router.post("/activations/:slug/complete", publicActionLimit, publicCompleteInteractiveActivation);
+router.get("/activations/download/:downloadToken", publicDownloadLimit, publicDownloadInteractiveActivationAsset);
 router.get("/lead-captures/:token", publicReadLimit, publicReadCache, publicGetLeadCapture);
 router.post("/lead-captures/:token/submissions", publicActionLimit, publicSubmitLeadCapture);
 router.get("/lead-captures/download/:downloadToken", publicDownloadLimit, publicDownloadLeadCapture);
