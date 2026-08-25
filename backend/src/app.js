@@ -116,6 +116,7 @@ function allowedCorsOrigins() {
   const origins = new Set(env.corsOrigins);
   addOriginVariant(origins, env.publicAppUrl);
   addOriginVariant(origins, env.publicValidatorUrl);
+  addOriginVariant(origins, "https://gosqori.com");
   addOriginVariant(origins, "https://marketgamesqr.com");
   addOriginVariant(origins, "https://market-games-portal.onrender.com");
   return origins;
