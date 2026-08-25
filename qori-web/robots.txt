@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /empresa/
-Disallow: /admin/
-Disallow: /api/
-
-Sitemap: https://gosqori.com/sitemap.xml

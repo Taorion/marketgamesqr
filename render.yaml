@@ -1,8 +1,11 @@
 services:
   - type: web
-    name: market-games-portal
+    name: market-games-portal-staging
     runtime: node
     plan: free
+    repo: https://github.com/Taorion/marketgamesqr.git
+    branch: staging
+    autoDeployTrigger: commit
     buildCommand: npm install
     startCommand: npm run db:migrate && npm start
     healthCheckPath: /api/health
@@ -34,8 +37,10 @@ services:
       - key: MERCADO_PAGO_WEBHOOK_URL
         sync: false
       - key: CONTACT_RECIPIENT_EMAIL
-        value: contacto@gosqori.com
+        value: contacto@marketgamesqr.com
       - key: CONTACT_MAIL_FROM
+        sync: false
+      - key: MARKETING_MAIL_FROM
         sync: false
       - key: RESEND_API_KEY
         sync: false

@@ -613,7 +613,7 @@ async function createAgendaTasks(businessId, user, payload = {}) {
     const item = await createLeadAgendaItem(businessId, user, {
       source_type: "MARKETING",
       source_id: season?.campaign_id || payload.campaign_id || null,
-      note: task.note || `Misiones Qori: ${task.title || "tarea operativa"}.`,
+      note: task.note || `Misiones Sales Machine: ${task.title || "tarea operativa"}.`,
       note_type: "follow_up",
       next_action: task.title || "Revisar dinamica gamificada",
       reminder_at: task.reminder_at || task.due_at || new Date(Date.now() + 86400000).toISOString(),

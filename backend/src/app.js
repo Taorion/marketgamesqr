@@ -39,18 +39,6 @@ const { rateLimit } = require("./middleware/rateLimit");
 const packageJson = require("../../package.json");
 
 const app = express();
-const legacyPublicHosts = new Set(["marketgamesqr.com", "www.marketgamesqr.com"]);
-
-app.use((req, res, next) => {
-  const host = String(req.hostname || "").trim().toLowerCase();
-  const isSafePublicRequest = req.method === "GET" || req.method === "HEAD";
-
-  if (!isSafePublicRequest || !legacyPublicHosts.has(host) || req.path.startsWith("/api/")) {
-    return next();
-  }
-
-  return res.redirect(308, `https://gosqori.com${req.originalUrl || "/"}`);
-});
 const rewardPassPublicReadLimit = rateLimit({ keyPrefix: "reward-pass-public-read", max: 180, windowMs: 15 * 60_000 });
 const rewardPassPublicClaimLimit = rateLimit({
   keyPrefix: "reward-pass-public-claim",
@@ -59,7 +47,7 @@ const rewardPassPublicClaimLimit = rateLimit({
   message: "Demasiados intentos de activación. Espera unos minutos y vuelve a intentarlo.",
 });
 const projectRoot = path.join(__dirname, "../..");
-const qoriWebRoot = path.join(projectRoot, "qori-web");
+const marketGamesWebRoot = path.join(projectRoot, "Pagina web MG");
 const staticOptions = { setHeaders: setUtf8StaticHeaders };
 const utf8StaticExtensions = new Set([".css", ".html", ".js", ".json", ".svg", ".txt"]);
 const longCacheStaticExtensions = new Set([
@@ -128,7 +116,6 @@ function allowedCorsOrigins() {
   const origins = new Set(env.corsOrigins);
   addOriginVariant(origins, env.publicAppUrl);
   addOriginVariant(origins, env.publicValidatorUrl);
-  addOriginVariant(origins, "https://gosqori.com");
   addOriginVariant(origins, "https://marketgamesqr.com");
   addOriginVariant(origins, "https://market-games-portal.onrender.com");
   return origins;
@@ -259,7 +246,7 @@ app.post("/api/public/reward-passes/:publicCode/claim", rewardPassPublicClaimLim
 app.use("/api/payments", paymentRoutes);
 
 app.use(blockRetiredPublicAssets);
-app.use(express.static(qoriWebRoot, staticOptions));
+app.use(express.static(marketGamesWebRoot, staticOptions));
 function redirectLegacyValidator(req, res) {
   const target = new URL("/empresa/", `${req.protocol}://${req.get("host")}`);
   if (req.query.token) {
@@ -307,7 +294,7 @@ app.get(["/c/:catalogSlug", "/c/:catalogSlug/:productSlug"], (_req, res) => {
 });
 app.get("/", (_req, res) => {
   res.set("Content-Type", "text/html; charset=utf-8");
-  res.sendFile(path.join(qoriWebRoot, "index.html"));
+  res.sendFile(path.join(marketGamesWebRoot, "index.html"));
 });
 
 app.use(errorHandler);
