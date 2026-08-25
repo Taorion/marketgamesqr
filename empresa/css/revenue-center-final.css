@@ -647,3 +647,30 @@ html body[data-current-view="dashboard"] .portal-shell .revenue-command-surface 
   color:rgba(255,255,255,.88) !important;
   opacity:1 !important;
 }
+
+/* Theme safeguards below use synthetic IDs; this scoped override must outrank
+   them without weakening the light-theme contract anywhere outside the hero. */
+html body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero :is(
+  .revenue-command-live,
+  .revenue-command-range,
+  .revenue-command-pro-top .ghost-button,
+  .revenue-command-pro-title .mono-label,
+  .revenue-command-pro-title h2,
+  .revenue-command-pro-title h2 em,
+  .revenue-command-pro-northstar small,
+  .revenue-command-pro-northstar strong,
+  .revenue-command-pro-northstar strong em,
+  .revenue-command-pro-northstar span,
+  .revenue-command-pro-metrics article > .material-symbols-outlined,
+  .revenue-command-pro-metrics small,
+  .revenue-command-pro-metrics strong,
+  .revenue-command-pro-metrics em
+) {
+  color:#ffffff !important;
+  opacity:1 !important;
+}
+
+html body:not(#qoriRevenueA#qoriRevenueB#qoriRevenueC#qoriRevenueD)[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero .revenue-command-pro-title p {
+  color:rgba(255,255,255,.88) !important;
+  opacity:1 !important;
+}
