@@ -634,3 +634,16 @@ html body[data-current-view="dashboard"] .portal-shell .revenue-command-pro-hero
   color:#ffffff !important;
   opacity:1 !important;
 }
+
+/* Revenue Command v13: keep the executive hero readable across cached themes. */
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-surface .revenue-command-pro-hero .revenue-command-pro-title h2,
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-surface .revenue-command-pro-hero .revenue-command-pro-title h2 em {
+  color:#ffffff !important;
+  opacity:1 !important;
+  text-shadow:0 8px 28px rgba(0,16,70,.22) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .revenue-command-surface .revenue-command-pro-hero .revenue-command-pro-title p {
+  color:rgba(255,255,255,.88) !important;
+  opacity:1 !important;
+}

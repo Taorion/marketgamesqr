@@ -50058,6 +50058,74 @@ function ensureRmsStationUxStyles() {
     @media (max-width: 580px) { html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-head { min-height: 0 !important; align-items: stretch !important; flex-direction: column !important; padding: 8px 0 10px !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-title > .material-symbols-outlined { width: 40px !important; height: 40px !important; flex-basis: 40px !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions { width: 100% !important; justify-content: flex-end !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-range { margin-right: auto !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-guide { gap: 10px !important; overflow-x: auto !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-hint { display: none !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card { flex-basis: 92% !important; width: 92% !important; min-width: 92% !important; grid-template-rows: auto 190px auto auto auto !important; min-height: 500px !important; padding: 18px !important; border-radius: 18px !important; } html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media { height: 190px !important; } }
   `);
   rules.push(`
+    @media (max-width: 580px) {
+      html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-actions {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) 40px 40px !important;
+        align-items: center !important;
+        gap: 8px !important;
+      }
+      html body[data-current-view="rms-machine"] .portal-shell .rms-stage-quick-select-wrap {
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+      }
+      html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-range {
+        grid-column: 1 !important;
+        margin: 0 !important;
+        justify-self: start !important;
+      }
+      html body[data-current-view="rms-machine"] .portal-shell #rmsStageSliderPrev {
+        grid-column: 2 !important;
+      }
+      html body[data-current-view="rms-machine"] .portal-shell #rmsStageSliderNext {
+        grid-column: 3 !important;
+      }
+      html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-guide {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px 12px !important;
+        min-height: 0 !important;
+        padding: 8px 2px !important;
+        overflow: visible !important;
+      }
+      html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-guide > span {
+        min-width: 0 !important;
+        white-space: normal !important;
+        line-height: 1.25 !important;
+      }
+      html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-hint {
+        display: none !important;
+      }
+      html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card {
+        flex-basis: calc(100% - 4px) !important;
+        width: calc(100% - 4px) !important;
+        min-width: calc(100% - 4px) !important;
+        grid-template-rows: auto 170px auto auto auto !important;
+        gap: 14px !important;
+        padding: 16px !important;
+      }
+      html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media {
+        height: 170px !important;
+      }
+      html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main {
+        grid-template-columns: 38px minmax(0, 1fr) !important;
+        gap: 10px !important;
+      }
+      html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main strong {
+        font-size: clamp(1.45rem, 7.5vw, 1.85rem) !important;
+        line-height: 1.05 !important;
+        overflow-wrap: normal !important;
+        word-break: normal !important;
+        hyphens: none !important;
+      }
+      html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main small {
+        margin-top: 7px !important;
+        font-size: .88rem !important;
+        line-height: 1.38 !important;
+      }
+    }
+  `);
+  rules.push(`
     body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions.is-collector-actions { grid-template-columns:repeat(2,minmax(180px,1fr)) !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-station-command-actions.is-collector-actions > button { min-height: 42px !important; justify-content: center !important; }
     body[data-current-view="rms-machine"] .portal-shell .rms-collector-station-shell { display: grid !important; gap: 14px !important; padding: 14px !important; background: linear-gradient(180deg,#f7fbff,#ffffff) !important; }
