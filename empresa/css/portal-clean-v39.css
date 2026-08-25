@@ -32014,3 +32014,54 @@ html body[data-current-view="validator"] .portal-shell .validator-checkout-summa
   html body[data-current-view="validator"] .portal-shell .validator-purchase-head button { width: 100% !important; }
   html body[data-current-view="validator"] .portal-shell .validator-mode-choice { grid-template-columns: 20px 34px minmax(0, 1fr) !important; padding: 10px !important; }
 }
+
+/* Portal tab icon system v356: one semantic icon language across every tab family. */
+html body .portal-shell .qori-tab-icon {
+  display: inline-grid !important;
+  flex: 0 0 auto !important;
+  place-items: center !important;
+  width: 1.2em !important;
+  min-width: 1.2em !important;
+  height: 1.2em !important;
+  color: currentColor !important;
+  font-size: 1.05rem !important;
+  line-height: 1 !important;
+}
+
+html body .portal-shell :where(
+  #dashboardProfileTabs,
+  .activation-share-mode,
+  .smart-catalog-tabs,
+  #leadDetailTabs,
+  #redemptionSalesTabs,
+  .contact-center-tabs,
+  .competition-product-view-tabs
+) > button {
+  align-items: center !important;
+  gap: 7px !important;
+}
+
+html body .portal-shell :where(
+  #dashboardProfileTabs,
+  .activation-share-mode,
+  .smart-catalog-tabs,
+  #redemptionSalesTabs,
+  .contact-center-tabs,
+  .competition-product-view-tabs
+) > button {
+  display: inline-flex !important;
+}
+
+html body .portal-shell .campaign-tab-mark .qori-tab-icon {
+  font-size: 1.1rem !important;
+}
+
+@media (max-width: 760px) {
+  html body .portal-shell .qori-tab-icon {
+    font-size: 1rem !important;
+  }
+
+  html body .portal-shell #leadDetailTabs .qori-tab-icon {
+    font-size: .95rem !important;
+  }
+}
