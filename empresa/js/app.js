@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260822-activation-calculator-branches-premium-v325";
+const APP_VERSION = "empresa-20260825-gosqori-staging-promotion-v358";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -9,6 +9,9 @@ const ACTIVITY_POLL_INTERVAL_MS = 900000;
 const ACTIVITY_POLLING_VIEWS = new Set(["dashboard", "campaigns", "leads", "redemptions", "sales", "branches", "strategic-qr", "communications"]);
 const RMS_STATION_RENDER_INITIAL_LIMIT = 10;
 const RMS_STATION_RENDER_INCREMENT = 10;
+document.querySelectorAll("link[data-deferred-portal-style]").forEach((link) => {
+  link.media = "all";
+});
 const workspace = document.getElementById("workspace");
 const sidebar = document.querySelector(".sidebar");
 const loginForm = document.getElementById("loginForm");
@@ -17591,6 +17594,29 @@ function validatorCanUseJsQr() {
   return typeof window.jsQR === "function";
 }
 
+let jsQrLoadPromise = null;
+
+function ensureJsQrLoaded() {
+  if (validatorCanUseJsQr()) return Promise.resolve(true);
+  if (jsQrLoadPromise) return jsQrLoadPromise;
+  jsQrLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "/vendor/jsqr/jsQR.js";
+    script.async = true;
+    script.dataset.jsQrLoader = "true";
+    script.addEventListener("load", () => {
+      if (validatorCanUseJsQr()) resolve(true);
+      else reject(new Error("El lector QR compatible no quedo disponible."));
+    }, { once: true });
+    script.addEventListener("error", () => {
+      jsQrLoadPromise = null;
+      reject(new Error("No se pudo cargar el lector QR compatible."));
+    }, { once: true });
+    document.head.appendChild(script);
+  });
+  return jsQrLoadPromise;
+}
+
 function validatorCanUseCameraScanner() {
   return window.isSecureContext && Boolean(navigator.mediaDevices?.getUserMedia) && (validatorCanUseBarcodeDetector() || validatorCanUseJsQr());
 }
@@ -19242,19 +19268,22 @@ function updateGamingPublishedFilters() {
   const rows = Array.from(triviaLauncherTable.querySelectorAll("[data-gaming-published-activation]"));
   const statusCounts = rows.reduce((counts, row) => {
     const key = row.dataset.gamingActivationStatus || "draft";
-    counts.all += 1;
+    if (key !== "archived") counts.all += 1;
     counts[key] = Number(counts[key] || 0) + 1;
     return counts;
   }, { all: 0 });
   rows.forEach((row) => {
     const matchesSearch = !query || String(row.dataset.gamingActivationSearch || row.textContent || "").toLowerCase().includes(query);
-    const matchesStatus = status === "all" || row.dataset.gamingActivationStatus === status;
+    const matchesStatus = activationMatchesPublishedStatus(row.dataset.gamingActivationStatus, status);
     const matches = matchesSearch && matchesStatus;
     row.classList.toggle("is-gaming-filtered", !matches);
     if (matches) visible += 1;
   });
   const count = document.querySelector("[data-gaming-published-count]");
-  if (count) count.textContent = `${visible} de ${rows.length} activaciones`;
+  const filteredPopulation = status === "all"
+    ? Number(statusCounts.all || 0)
+    : Number(statusCounts[status] || 0);
+  if (count) count.textContent = `${visible} de ${filteredPopulation} activaciones`;
   document.querySelectorAll("[data-activation-status-count]").forEach((element) => {
     element.textContent = Number(statusCounts[element.dataset.activationStatusCount] || 0).toLocaleString("es-CO");
   });
@@ -19272,6 +19301,14 @@ function updateGamingPublishedFilters() {
     selectVisible.indeterminate = visibleIds.some((id) => selectedIds.has(id)) && !selectVisible.checked;
   }
   renderActivationBulkToolbar();
+}
+
+function activationMatchesPublishedStatus(itemStatus = "", selectedStatus = "all") {
+  const normalizedItemStatus = String(itemStatus || "draft").toLowerCase();
+  const normalizedSelectedStatus = String(selectedStatus || "all").toLowerCase();
+  if (normalizedSelectedStatus === "archived") return normalizedItemStatus === "archived";
+  if (normalizedSelectedStatus === "all") return normalizedItemStatus !== "archived";
+  return normalizedItemStatus === normalizedSelectedStatus;
 }
 
 function updateGamingCenterCreationTools() {
@@ -19449,11 +19486,11 @@ function ensureGamingCenterUx() {
       <div class="gaming-published-toolbar">
         <div class="gaming-published-toolbar-main">
           <label><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" data-gaming-published-search placeholder="Buscar por nombre, campaña o tipo" aria-label="Buscar activaciones publicadas"></label>
-          <select data-gaming-published-status aria-label="Filtrar activaciones por estado"><option value="all">Todos los estados</option><option value="active">Activas</option><option value="paused">Pausadas</option><option value="draft">Borradores</option><option value="closed">Cerradas</option><option value="archived">Archivadas</option></select>
+          <select data-gaming-published-status aria-label="Filtrar activaciones por estado"><option value="all">Operativas</option><option value="active">Activas</option><option value="paused">Pausadas</option><option value="draft">Borradores</option><option value="closed">Cerradas</option><option value="archived">Archivadas</option></select>
           <strong data-gaming-published-count>0 activaciones</strong>
         </div>
         <div class="gaming-published-status-pills" role="group" aria-label="Vista rápida por estado">
-          <button class="is-active" type="button" data-gaming-published-status-pill="all">Todas <b data-activation-status-count="all">0</b></button>
+          <button class="is-active" type="button" data-gaming-published-status-pill="all">Operativas <b data-activation-status-count="all">0</b></button>
           <button type="button" data-gaming-published-status-pill="active">Activas <b data-activation-status-count="active">0</b></button>
           <button type="button" data-gaming-published-status-pill="draft">Borradores <b data-activation-status-count="draft">0</b></button>
           <button type="button" data-gaming-published-status-pill="paused">Pausadas <b data-activation-status-count="paused">0</b></button>
@@ -28916,7 +28953,7 @@ function activationBulkVisibleIds() {
   return (state.triviaLaunchers || [])
     .filter((item) => {
       const search = [item.title, activationTypeLabel(item.activation_type), item.campaign_name, item.public_slug].filter(Boolean).join(" ").toLowerCase();
-      return (!query || search.includes(query)) && (status === "all" || item.status === status);
+      return (!query || search.includes(query)) && activationMatchesPublishedStatus(item.status, status);
     })
     .map((item) => String(item.id));
 }
@@ -30885,6 +30922,16 @@ async function startValidatorScanner() {
     validatorCameraStatus.textContent = "Origen inseguro";
     validatorScannerHint.textContent = `La camara solo funciona en HTTPS o localhost. ${await validatorCameraDiagnostic()}. Usa el ingreso manual.`;
     return;
+  }
+
+  if (!validatorCanUseBarcodeDetector() && !validatorCanUseJsQr()) {
+    try {
+      await ensureJsQrLoaded();
+    } catch (error) {
+      validatorCameraStatus.textContent = "Sin soporte";
+      validatorScannerHint.textContent = `${error.message} Usa el ingreso manual.`;
+      return;
+    }
   }
 
   if (!validatorCanUseCameraScanner()) {
@@ -41323,8 +41370,14 @@ async function startAffiliateFinderScanner() {
     setAffiliateFinderMessage("La camara solo funciona en HTTPS o localhost. Puedes buscar manualmente por documento o nombre.", "error");
     return;
   }
-  if (!navigator.mediaDevices?.getUserMedia || !validatorCanUseJsQr()) {
+  if (!navigator.mediaDevices?.getUserMedia) {
     setAffiliateFinderMessage("Este navegador no permite escanear el carnet aquí. Usa la busqueda manual.", "error");
+    return;
+  }
+  try {
+    await ensureJsQrLoaded();
+  } catch (error) {
+    setAffiliateFinderMessage(`${error.message} Usa la busqueda manual.`, "error");
     return;
   }
   try {
