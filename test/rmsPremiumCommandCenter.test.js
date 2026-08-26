@@ -43,13 +43,21 @@ test("RMS premium styles are scoped, responsive and reduced-motion aware", () =>
   assert.match(css, /\.rms-station-handoff/);
 });
 
+test("GOS live status cards use clear light surfaces and dark readable type", () => {
+  assert.match(markup, /gos-status-contrast-v363-20260826/);
+  assert.match(css, /\.rms-machine-live-rail > div \{[\s\S]*?background: #f8fbff !important/);
+  assert.match(css, /\.rms-machine-live-rail span \{[\s\S]*?color: #40546d !important;[\s\S]*?font-size: \.66rem !important/);
+  assert.match(css, /\.rms-machine-live-rail strong \{[\s\S]*?color: #071f3f !important;[\s\S]*?font-size: \.84rem !important/);
+  assert.match(css, /@media \(max-width: 620px\)[\s\S]*?\.rms-machine-live-rail span \{[\s\S]*?font-size: \.6rem !important/);
+});
+
 test("the station slider is the first RMS workspace and remains above the fold", () => {
   const factoryStart = markup.indexOf('<section class="surface-card rms-journey-shell rms-factory-console">');
   const sliderStart = markup.indexOf('<section class="rms-stage-slider-shell"', factoryStart);
   const workspaceStart = markup.indexOf('<section class="rms-station-workspace"', factoryStart);
   assert.ok(factoryStart >= 0 && sliderStart > factoryStart);
   assert.ok(sliderStart < workspaceStart, "the station slider must precede the station workspace");
-  assert.match(markup, /rms-above-fold-v361-20260826/);
+  assert.match(markup, /rms-above-fold-v361-gos-status-contrast-v363-20260826/);
   assert.match(css, /RMS above-the-fold command screen v361/);
   assert.match(css, /height: clamp\(300px, 38vh, 370px\) !important/);
   assert.match(css, /order: -10 !important/);

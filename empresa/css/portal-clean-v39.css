@@ -1663,28 +1663,34 @@ html body:not(#rmsFoldA#rmsFoldB#rmsFoldC#rmsFoldD)[data-current-view="rms-machi
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 6px !important;
   padding: 6px !important;
-  border: 1px solid rgba(255, 255, 255, .14) !important;
+  border: 1px solid rgba(255, 255, 255, .34) !important;
   border-radius: 15px !important;
-  background: rgba(3, 22, 52, .34) !important;
+  background: rgba(255, 255, 255, .12) !important;
+  box-shadow: 0 12px 28px rgba(0, 8, 25, .18) !important;
   backdrop-filter: blur(10px) !important;
 }
 
 html body:not(#rmsFoldA#rmsFoldB#rmsFoldC#rmsFoldD)[data-current-view="rms-machine"] .portal-shell .rms-machine-live-rail > div {
   min-height: 48px !important;
   padding: 7px 9px !important;
-  border: 0 !important;
+  border: 1px solid rgba(215, 226, 239, .96) !important;
   border-radius: 10px !important;
-  background: rgba(255, 255, 255, .065) !important;
+  background: #f8fbff !important;
+  box-shadow: 0 4px 12px rgba(0, 20, 55, .12) !important;
 }
 
 html body:not(#rmsFoldA#rmsFoldB#rmsFoldC#rmsFoldD)[data-current-view="rms-machine"] .portal-shell .rms-machine-live-rail span {
-  color: #a9bed7 !important;
-  font-size: .58rem !important;
+  color: #40546d !important;
+  font-size: .66rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .035em !important;
 }
 
 html body:not(#rmsFoldA#rmsFoldB#rmsFoldC#rmsFoldD)[data-current-view="rms-machine"] .portal-shell .rms-machine-live-rail strong {
-  color: #fff !important;
-  font-size: .77rem !important;
+  color: #071f3f !important;
+  font-size: .84rem !important;
+  font-weight: 850 !important;
+  line-height: 1.25 !important;
 }
 
 html body:not(#rmsFoldA#rmsFoldB#rmsFoldC#rmsFoldD)[data-current-view="rms-machine"] .portal-shell .content-shell > .view-section.active[data-view="rms-machine"] > .rms-factory-console {
@@ -1887,11 +1893,11 @@ html body:not(#rmsFoldA#rmsFoldB#rmsFoldC#rmsFoldD)[data-current-view="rms-machi
   }
 
   html body:not(#rmsFoldA#rmsFoldB#rmsFoldC#rmsFoldD)[data-current-view="rms-machine"] .portal-shell .rms-machine-live-rail span {
-    font-size: .51rem !important;
+    font-size: .6rem !important;
   }
 
   html body:not(#rmsFoldA#rmsFoldB#rmsFoldC#rmsFoldD)[data-current-view="rms-machine"] .portal-shell .rms-machine-live-rail strong {
-    font-size: .66rem !important;
+    font-size: .74rem !important;
   }
 
   html body:not(#rmsFoldA#rmsFoldB#rmsFoldC#rmsFoldD)[data-current-view="rms-machine"] .portal-shell .content-shell > .view-section.active[data-view="rms-machine"] > .rms-factory-console {
