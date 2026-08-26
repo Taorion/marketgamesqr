@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/img/qori-favicon-32.png?v=qori-favicon-20260825-v120">
   <link rel="apple-touch-icon" sizes="180x180" href="/img/qori-apple-touch-icon.png?v=qori-favicon-20260825-v120">
   <link rel="manifest" href="/site.webmanifest?v=qori-favicon-20260825-v120">
-  <link rel="preload" as="script" href="js/app.js?v=rms-premium-v360-gos-brand-v362-20260826">
+  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-attributed-sales-command-v364">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -48,6 +48,7 @@
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825-unified-email-routing-v359-rms-above-fold-v361-gos-status-contrast-v363-20260826">
+  <link rel="stylesheet" href="css/attributed-sales-premium.css?v=attributed-sales-command-v364-20260826">
 <link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-premium-v341-20260823" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-white-titles-v14-20260825" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
@@ -5369,20 +5370,27 @@
             </section>
           </section>
 
-          <section class="view-section" data-view="sales">
-            <div class="view-head">
+          <section class="view-section sales-command-view" data-view="sales">
+            <div class="view-head sales-command-hero">
               <div>
+                <span class="mono-label">Revenue Command</span>
                 <h2>Ventas atribuidas</h2>
-                <p>Analiza ventas por cliente, producto, fecha, canal, campaña, sede o medio de llegada.</p>
+                <p>Una fuente confiable para saber qué se vendió, a quién, por cuánto y gracias a qué campaña, medio o ticket.</p>
               </div>
               <div class="head-actions">
                 <button class="solid-button" id="salesCreateHeadButton" type="button">
                   <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
                   Registrar venta
                 </button>
-                <button class="ghost-button" id="exportSalesButton" type="button">Exportar Datos</button>
+                <button class="ghost-button" id="exportSalesButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">download</span> Exportar vista</button>
               </div>
             </div>
+
+            <aside class="sales-trust-ribbon" aria-label="Integridad del reporte">
+              <span class="material-symbols-outlined" aria-hidden="true">verified</span>
+              <div><strong>Revenue conciliado</strong><small>Los registros espejo de un mismo QR se cuentan una sola vez. Las anulaciones permanecen visibles para auditoría, pero no suman al revenue.</small></div>
+              <span class="sales-sync-state" id="salesSyncState" role="status" aria-live="polite">Sincronizando</span>
+            </aside>
 
             <section class="kpi-grid sales-kpis" id="salesKpiGrid"></section>
 
@@ -5416,6 +5424,7 @@
                   <div class="sale-form-grid sale-form-grid-summary">
                     <label class="sale-field sale-field-total"><span>Total de venta</span><input id="customerAcquisitionAmountInput" type="number" min="0" step="0.01" readonly required></label>
                     <label class="sale-field sale-field-currency"><span>Moneda</span><input id="customerAcquisitionCurrencyInput" type="text" value="COP"></label>
+                    <label class="sale-field"><span>Medio de pago</span><select id="customerAcquisitionPaymentMethodInput"><option value="">No registrado</option><option value="Efectivo">Efectivo</option><option value="Tarjeta débito">Tarjeta débito</option><option value="Tarjeta crédito">Tarjeta crédito</option><option value="Transferencia">Transferencia</option><option value="Billetera digital">Billetera digital</option><option value="Crédito">Crédito</option><option value="Mixto">Mixto</option><option value="Otro">Otro</option></select></label>
                     <label class="sale-field sale-field-campaign"><span>Campaña atribuida</span><select id="customerAcquisitionCampaignInput"></select></label>
                     <label class="sale-field"><span>Sede / consignación</span><select id="customerAcquisitionBranchInput"><option value="">Sin sede asignada</option></select></label>
                   </div>
@@ -5499,11 +5508,11 @@
             <article class="surface-card data-table-card sales-table-panel">
               <div class="table-card-head">
                 <div>
-                  <span class="mono-label">Vista principal</span>
-                  <h3>Ventas cerradas</h3>
-                  <small>Tabla simple para leer, filtrar y abrir el detalle completo de cada venta.</small>
+                  <span class="mono-label">Libro de revenue</span>
+                  <h3>Ventas trazables</h3>
+                  <small id="salesResultsLabel">Cargando la fuente canónica de ventas…</small>
                 </div>
-                <span class="status-chip ok">Click en fila para detalle</span>
+                <span class="status-chip ok">Selecciona una fila para ver evidencia</span>
               </div>
               <section class="sales-analysis-toolbar" id="salesAnalysisToolbar" aria-label="Filtros de ventas atribuidas">
                 <label><span>Buscar venta</span><input id="salesAnalysisSearchInput" type="search" placeholder="Cliente, documento, producto, canal..."></label>
@@ -5514,6 +5523,8 @@
                 <label><span>Canal</span><select id="salesAnalysisChannelInput"><option value="">Todos</option></select></label>
                 <label><span>Campaña</span><select id="salesAnalysisCampaignInput"><option value="">Todas</option></select></label>
                 <label><span>Sede</span><select id="salesAnalysisBranchInput"><option value="">Todas</option></select></label>
+                <label><span>Estado</span><select id="salesAnalysisStatusInput"><option value="PAID">Pagadas</option><option value="ALL">Pagadas y anuladas</option><option value="VOIDED">Anuladas</option></select></label>
+                <label><span>Origen</span><select id="salesAnalysisSourceInput"><option value="ALL">Todos</option><option value="CONTACT_CENTER">Registro comercial</option><option value="REDEMPTION">Redención QR</option></select></label>
                 <label><span>Analizar por</span>
                   <select id="salesAnalysisGroupInput">
                     <option value="customer">Cliente</option>
@@ -5544,6 +5555,10 @@
                   <tbody id="campaignSalesTable"></tbody>
                 </table>
               </div>
+              <footer class="sales-ledger-footer">
+                <span id="salesPaginationLabel">—</span>
+                <button class="ghost-button" id="salesLoadMoreButton" type="button" hidden><span class="material-symbols-outlined" aria-hidden="true">expand_more</span> Cargar más ventas</button>
+              </footer>
             </article>
           </section>
 
@@ -8063,7 +8078,7 @@
       <footer class="modal-actions"><button class="ghost-button" type="button" data-portal-email-route="cancel">Cancelar</button></footer>
     </section>
   </div>
-  <script src="js/app.js?v=rms-premium-v360-gos-brand-v362-20260826" defer></script>
+    <script src="js/app.js?v=gos-brand-v362-20260826-attributed-sales-command-v364" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>

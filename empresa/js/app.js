@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260822-activation-calculator-branches-premium-v325-gosqori-promotion-v358-unified-email-routing-v359-rms-premium-v360-gos-brand-v362-20260826";
+const APP_VERSION = "empresa-20260822-activation-calculator-branches-premium-v325-gosqori-promotion-v358-unified-email-routing-v359-rms-premium-v360-gos-brand-v362-attributed-sales-command-v364-20260826";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -519,8 +519,14 @@ const salesAnalysisDateToInput = document.getElementById("salesAnalysisDateToInp
 const salesAnalysisChannelInput = document.getElementById("salesAnalysisChannelInput");
 const salesAnalysisCampaignInput = document.getElementById("salesAnalysisCampaignInput");
 const salesAnalysisBranchInput = document.getElementById("salesAnalysisBranchInput");
+const salesAnalysisStatusInput = document.getElementById("salesAnalysisStatusInput");
+const salesAnalysisSourceInput = document.getElementById("salesAnalysisSourceInput");
 const salesAnalysisGroupInput = document.getElementById("salesAnalysisGroupInput");
 const salesAnalysisResetButton = document.getElementById("salesAnalysisResetButton");
+const salesLoadMoreButton = document.getElementById("salesLoadMoreButton");
+const salesPaginationLabel = document.getElementById("salesPaginationLabel");
+const salesResultsLabel = document.getElementById("salesResultsLabel");
+const salesSyncState = document.getElementById("salesSyncState");
 const affiliateCreateForm = document.getElementById("affiliateCreateForm");
 const affiliateOpenCreateButton = document.getElementById("affiliateOpenCreateButton");
 const affiliateListCreateButton = document.getElementById("affiliateListCreateButton");
@@ -1125,6 +1131,7 @@ const salesCreateHeadButton = document.getElementById("salesCreateHeadButton");
 const customerAcquisitionForm = document.getElementById("customerAcquisitionForm");
 const customerAcquisitionAmountInput = document.getElementById("customerAcquisitionAmountInput");
 const customerAcquisitionCurrencyInput = document.getElementById("customerAcquisitionCurrencyInput");
+const customerAcquisitionPaymentMethodInput = document.getElementById("customerAcquisitionPaymentMethodInput");
 const customerAcquisitionCampaignInput = document.getElementById("customerAcquisitionCampaignInput");
 const customerAcquisitionBranchInput = document.getElementById("customerAcquisitionBranchInput");
 const customerAcquisitionProductInput = document.getElementById("customerAcquisitionProductInput");
@@ -2903,6 +2910,19 @@ let state = {
   selectedSales: [],
   attributedSalesView: [],
   attributedSalesViewLoaded: false,
+  attributedSalesSummary: {
+    total_records: 0,
+    paid_count: 0,
+    voided_count: 0,
+    unique_customers: 0,
+    attributed_revenue: 0,
+    average_ticket: 0,
+  },
+  attributedSalesPagination: { limit: 50, has_more: false, next_cursor: null },
+  attributedSalesLoading: false,
+  attributedSalesRequestSeq: 0,
+  customerSaleIdempotencyKey: "",
+  affiliatePurchaseIdempotencyKey: "",
   salesAnalysisFilters: {
     search: "",
     customer: "",
@@ -2912,6 +2932,8 @@ let state = {
     channel: "",
     campaign: "",
     branch: "",
+    status: "PAID",
+    source: "ALL",
     group_by: "customer",
   },
   selectedAffiliateId: null,
@@ -4153,6 +4175,12 @@ function resetBusinessScopedState(options = {}) {
   state.selectedSales = [];
   state.attributedSalesView = [];
   state.attributedSalesViewLoaded = false;
+  state.attributedSalesSummary = { total_records: 0, paid_count: 0, voided_count: 0, unique_customers: 0, attributed_revenue: 0, average_ticket: 0 };
+  state.attributedSalesPagination = { limit: 50, has_more: false, next_cursor: null };
+  state.attributedSalesLoading = false;
+  state.attributedSalesRequestSeq += 1;
+  state.customerSaleIdempotencyKey = "";
+  state.affiliatePurchaseIdempotencyKey = "";
   state.selectedAffiliateId = null;
   state.selectedAffiliate = null;
   state.selectedAffiliateLedger = [];
@@ -4824,6 +4852,17 @@ function acquisitionSourceLabel(value) {
 function money(value) {
   if (value === null || value === undefined) return "-";
   return `$${Number(value || 0).toLocaleString("es-CO")}`;
+}
+
+function salesMoney(value, currency = "COP") {
+  if (value === null || value === undefined) return "-";
+  const digits = String(currency || "COP").toUpperCase() === "COP" ? 0 : 2;
+  return new Intl.NumberFormat("es-CO", {
+    style: "currency",
+    currency: String(currency || "COP").toUpperCase(),
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(Number(value || 0));
 }
 
 function copMoney(value) {
@@ -7671,6 +7710,12 @@ async function loadWorkspace() {
         state.selectedSales = [];
         state.attributedSalesView = [];
         state.attributedSalesViewLoaded = false;
+        state.attributedSalesSummary = { total_records: 0, paid_count: 0, voided_count: 0, unique_customers: 0, attributed_revenue: 0, average_ticket: 0 };
+        state.attributedSalesPagination = { limit: 50, has_more: false, next_cursor: null };
+        state.attributedSalesLoading = false;
+        state.attributedSalesRequestSeq += 1;
+        state.customerSaleIdempotencyKey = "";
+        state.affiliatePurchaseIdempotencyKey = "";
         state.loadedBusinessId = null;
         renderNoCampaignState();
         setView("admin");
@@ -17675,61 +17720,42 @@ function salesRowsForAttributedSalesView() {
 
 async function loadAttributedSalesView(options = {}) {
   if (!session?.user?.business_id) return [];
+  if (state.attributedSalesLoading && options.append) return state.attributedSalesView || [];
   const scopeKey = businessScopeKey();
-  const fallback = { sales: state.attributedSalesViewLoaded ? state.attributedSalesView : state.selectedSales };
-  const data = await apiSafe("/api/business/sales/attributed?limit=500", { headers: authHeaders() }, fallback);
-  if (!isCurrentBusinessScope(scopeKey)) return [];
-  state.attributedSalesView = Array.isArray(data?.sales) ? data.sales : [];
-  state.attributedSalesViewLoaded = true;
-  if (state.currentView === "sales") renderSalesView();
-  return state.attributedSalesView;
-}
-
-function renderSalesView() {
-  ensureSalesAnalysisStyles();
-  const campaign = state.selectedCampaign || {};
-  const allSales = salesRowsForAttributedSalesView();
-  renderSalesAnalysisControls(allSales);
-  const sales = filteredSalesForAnalysis(allSales);
-  const totalRevenue = sales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
-  const avgTicket = sales.length ? totalRevenue / sales.length : 0;
-  const allRevenue = allSales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
-  const topGroup = groupedSalesAnalysis(reportingSales, state.salesAnalysisFilters?.group_by || "customer")[0];
-  const items = [
-    ["Ventas filtradas", sales.length, money(totalRevenue)],
-    ["Ticket promedio", money(avgTicket), "Promedio por venta"],
-    ["Meta comercial", money(campaign.expected_sales_goal), `${safeRate(totalRevenue, campaign.expected_sales_goal || 1)}% cumplido`],
-    ["Revenue visible", money(allRevenue), `${safeRate(totalRevenue, allRevenue || 1)}% en filtros`],
-    ["Grupo líder", topGroup?.label || "-", topGroup ? money(topGroup.revenue) : "Sin datos"],
-  ];
-
-  salesKpiGrid.innerHTML = items.map(([label, value, meta]) => `
-    <article class="kpi-card">
-      <span class="mono-label">${escapeHtml(label)}</span>
-      <strong>${escapeHtml(value)}</strong>
-      <div class="kpi-meta">${escapeHtml(meta)}</div>
-    </article>
-  `).join("");
-  renderCustomerAcquisitionCampaignOptions();
-  renderCustomerAcquisitionBranchOptions();
-  renderSalesCustomerOptions();
-  renderCustomerSaleItems();
-  renderAcquisitionChannelDatalist();
-  renderSalesAnalysisGrid(reportingSales, reportingAllSales);
-  state.salesDetailRows = sales;
-
-  campaignSalesTable.innerHTML = sales.map((item, index) => `
-    <tr class="sales-simple-row" data-sales-detail="${escapeHtml(saleDetailKey(item, index))}" tabindex="0" role="button" aria-label="Ver detalle de venta de ${escapeHtml(item.player_name || item.customer_name || "cliente")}">
-      <td><strong>${escapeHtml(item.player_name || item.customer_name || "Cliente sin nombre")}</strong><small>${escapeHtml([item.document_id || item.customer_document_id, item.phone || item.customer_phone, item.customer_email || item.email].filter(Boolean).join(" · ") || "Sin datos de contacto")}</small></td>
-      <td><strong>${escapeHtml(money(item.sale_amount))}</strong><small>${escapeHtml([item.currency || "COP", item.payment_method || ""].filter(Boolean).join(" · "))}</small></td>
-      <td>${saleProductSummary(item)}</td>
-      <td><strong>${escapeHtml(saleCampaignText(item))}</strong><small>${escapeHtml(saleChannelText(item))}</small></td>
-      <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
-      <td>${escapeHtml(saleBranchText(item))}</td>
-      <td><strong>${escapeHtml(formatDateShort(item.created_at))}</strong><small>${escapeHtml(formatDate(item.created_at))}</small></td>
-    </tr>
-  `).join("") || '<tr><td colspan="7">Sin ventas para los filtros actuales.</td></tr>';
-  bindSalesTableRows(sales);
+  const append = Boolean(options.append);
+  const requestSeq = ++state.attributedSalesRequestSeq;
+  const params = salesAnalysisQueryParams();
+  params.set("limit", "50");
+  if (append && state.attributedSalesPagination?.next_cursor) params.set("cursor", state.attributedSalesPagination.next_cursor);
+  state.attributedSalesLoading = true;
+  setSalesSyncState("Sincronizando", "loading");
+  if (append) setButtonLoading(salesLoadMoreButton, true, "Cargando...");
+  try {
+    const data = await api(`/api/business/sales/attributed?${params.toString()}`, {
+      headers: authHeaders(),
+      noClientCache: true,
+    });
+    if (!isCurrentBusinessScope(scopeKey) || requestSeq !== state.attributedSalesRequestSeq) return [];
+    const incoming = Array.isArray(data?.sales) ? data.sales : [];
+    const merged = append ? [...(state.attributedSalesView || []), ...incoming] : incoming;
+    state.attributedSalesView = Array.from(new Map(merged.map((sale) => [saleDetailKey(sale), sale])).values());
+    state.attributedSalesSummary = data?.summary || state.attributedSalesSummary;
+    state.attributedSalesPagination = data?.pagination || { limit: 50, has_more: false, next_cursor: null };
+    state.attributedSalesViewLoaded = true;
+    setSalesSyncState("Datos conciliados", "ready");
+    if (state.currentView === "sales") renderSalesView();
+    return state.attributedSalesView;
+  } catch (error) {
+    if (requestSeq === state.attributedSalesRequestSeq) {
+      setSalesSyncState("No se pudo sincronizar", "error");
+      if (!options.quiet) showFeedback(error.message, "error", { title: "Ventas atribuidas" });
+      if (state.currentView === "sales") renderSalesView();
+    }
+    return state.attributedSalesView || [];
+  } finally {
+    if (requestSeq === state.attributedSalesRequestSeq) state.attributedSalesLoading = false;
+    if (append) setButtonLoading(salesLoadMoreButton, false);
+  }
 }
 
 function renderAdminView() {
@@ -21144,8 +21170,8 @@ function renderCustomerSaleItems() {
 }
 
 function saleSourceLabel(source) {
-  if (source === "CONTACT_CENTER") return "Contacto convertido";
-  if (source === "REDEMPTION") return "Redención";
+  if (source === "CONTACT_CENTER") return "Registro comercial";
+  if (source === "REDEMPTION") return "Redención QR";
   return source || "-";
 }
 
@@ -21208,7 +21234,7 @@ function saleCustomerText(item = {}) {
 }
 
 function saleCampaignText(item = {}) {
-  return String(item.campaign_name || state.selectedCampaign?.name || "Sin campaña").trim() || "Sin campaña";
+  return String(item.campaign_name || "Sin campaña").trim() || "Sin campaña";
 }
 
 function saleBranchText(item = {}) {
@@ -21448,8 +21474,28 @@ function syncSalesAnalysisFiltersFromInputs() {
     channel: salesAnalysisChannelInput?.value || "",
     campaign: salesAnalysisCampaignInput?.value || "",
     branch: salesAnalysisBranchInput?.value || "",
+    status: salesAnalysisStatusInput?.value || "PAID",
+    source: salesAnalysisSourceInput?.value || "ALL",
     group_by: salesAnalysisGroupInput?.value || "customer",
   };
+}
+
+function salesAnalysisQueryParams() {
+  const filters = state.salesAnalysisFilters || {};
+  const params = new URLSearchParams();
+  ["search", "customer", "product", "date_from", "date_to", "channel", "campaign", "branch"].forEach((key) => {
+    if (filters[key]) params.set(key, filters[key]);
+  });
+  params.set("status", filters.status || "PAID");
+  params.set("source", filters.source || "ALL");
+  return params;
+}
+
+function setSalesSyncState(label, mode = "ready") {
+  if (!salesSyncState) return;
+  salesSyncState.textContent = label;
+  salesSyncState.classList.toggle("is-loading", mode === "loading");
+  salesSyncState.classList.toggle("is-error", mode === "error");
 }
 
 function saleMatchesAnalysisFilters(item = {}, filters = state.salesAnalysisFilters || {}) {
@@ -21474,12 +21520,13 @@ function saleMatchesAnalysisFilters(item = {}, filters = state.salesAnalysisFilt
   if (filters.channel && saleChannelText(item) !== filters.channel) return false;
   if (filters.campaign && saleCampaignText(item) !== filters.campaign) return false;
   if (filters.branch && saleBranchText(item) !== filters.branch) return false;
+  if (filters.status && filters.status !== "ALL" && String(item.sale_status || "PAID").toUpperCase() !== filters.status) return false;
+  if (filters.source && filters.source !== "ALL" && String(item.sale_source || "").toUpperCase() !== filters.source) return false;
   return true;
 }
 
 function filteredSalesForAnalysis(rows = state.selectedSales || []) {
-  const baseRows = filterRows(rows, ["player_name", "document_id", "phone", "payment_method", "product_or_service", "branch_name", "acquisition_channel", "campaign_name"]);
-  return baseRows.filter((item) => saleMatchesAnalysisFilters(item));
+  return rows.filter((item) => saleMatchesAnalysisFilters(item));
 }
 
 function salesOptionMarkup(values = [], selected = "", emptyLabel = "Todos") {
@@ -21499,9 +21546,22 @@ function renderSalesAnalysisControls(rows = state.selectedSales || []) {
   if (salesAnalysisDateFromInput && salesAnalysisDateFromInput.value !== filters.date_from) salesAnalysisDateFromInput.value = filters.date_from || "";
   if (salesAnalysisDateToInput && salesAnalysisDateToInput.value !== filters.date_to) salesAnalysisDateToInput.value = filters.date_to || "";
   if (salesAnalysisGroupInput) salesAnalysisGroupInput.value = filters.group_by || "customer";
-  if (salesAnalysisChannelInput) salesAnalysisChannelInput.innerHTML = salesOptionMarkup(rows.map(saleChannelText), filters.channel, "Todos");
-  if (salesAnalysisCampaignInput) salesAnalysisCampaignInput.innerHTML = salesOptionMarkup(rows.map(saleCampaignText), filters.campaign, "Todas");
-  if (salesAnalysisBranchInput) salesAnalysisBranchInput.innerHTML = salesOptionMarkup(rows.map(saleBranchText), filters.branch, "Todas");
+  if (salesAnalysisStatusInput) salesAnalysisStatusInput.value = filters.status || "PAID";
+  if (salesAnalysisSourceInput) salesAnalysisSourceInput.value = filters.source || "ALL";
+  if (salesAnalysisChannelInput) salesAnalysisChannelInput.innerHTML = salesOptionMarkup([
+    ...rows.map(saleChannelText),
+    ...(state.acquisitionChannels || []).map((channel) => channel.name),
+  ], filters.channel, "Todos");
+  if (salesAnalysisCampaignInput) salesAnalysisCampaignInput.innerHTML = salesOptionMarkup([
+    ...rows.map(saleCampaignText),
+    ...(state.campaigns || []).map((campaign) => campaign.name),
+    "Sin campaña",
+  ], filters.campaign, "Todas");
+  if (salesAnalysisBranchInput) salesAnalysisBranchInput.innerHTML = salesOptionMarkup([
+    ...rows.map(saleBranchText),
+    ...(state.businessBranches || []).map((branch) => branch.name),
+    "Sin sede",
+  ], filters.branch, "Todas");
 }
 
 function salesGroupLabel(item = {}, groupBy = "customer") {
@@ -21547,23 +21607,22 @@ function groupedSalesAnalysis(rows = [], groupBy = "customer") {
   return Array.from(groups.values()).sort((a, b) => b.revenue - a.revenue || b.sales - a.sales).slice(0, 8);
 }
 
-function renderSalesAnalysisGrid(rows = [], allRows = state.selectedSales || []) {
+function renderSalesAnalysisGrid(rows = []) {
   if (!salesAnalysisGrid) return;
   const filters = state.salesAnalysisFilters || {};
-  const totalRevenue = rows.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
-  const allRevenue = allRows.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
+  const summary = state.attributedSalesSummary || {};
+  const totalRevenue = toNumber(summary.attributed_revenue);
   const grouped = groupedSalesAnalysis(rows, filters.group_by || "customer");
-  const coverage = allRevenue ? Math.round((totalRevenue / allRevenue) * 1000) / 10 : 0;
   salesAnalysisGrid.innerHTML = `
     <article class="sales-analysis-summary-card">
       <span class="mono-label">Resultado filtrado</span>
-      <strong>${money(totalRevenue)}</strong>
-      <small>${rows.length.toLocaleString("es-CO")} venta(s) · ${coverage}% del revenue visible</small>
+      <strong>${salesMoney(totalRevenue)}</strong>
+      <small>${Number(summary.paid_count || 0).toLocaleString("es-CO")} venta(s) pagada(s) en el filtro</small>
     </article>
     <article class="sales-analysis-summary-card">
       <span class="mono-label">Ticket promedio</span>
-      <strong>${money(rows.length ? totalRevenue / rows.length : 0)}</strong>
-      <small>Promedio del filtro activo</small>
+      <strong>${salesMoney(summary.average_ticket || 0)}</strong>
+      <small>Promedio conciliado del filtro activo</small>
     </article>
     <article class="sales-analysis-summary-card">
       <span class="mono-label">Agrupación</span>
@@ -21576,7 +21635,7 @@ function renderSalesAnalysisGrid(rows = [], allRows = state.selectedSales || [])
         branch: "Sedes",
         source: "Medios",
       }[filters.group_by || "customer"] || "Clientes")}</strong>
-      <small>${grouped.length.toLocaleString("es-CO")} grupo(s) encontrados</small>
+      <small>Top ${grouped.length.toLocaleString("es-CO")} de los registros cargados</small>
     </article>
     <section class="sales-analysis-breakdown">
       ${grouped.length ? grouped.map((group, index) => `
@@ -21587,7 +21646,7 @@ function renderSalesAnalysisGrid(rows = [], allRows = state.selectedSales || [])
             <small>${escapeHtml(group.meta || "Sin detalle")} · última ${escapeHtml(formatDateShort(group.latest))}</small>
           </div>
           <em>${group.sales.toLocaleString("es-CO")} venta(s)</em>
-          <b>${escapeHtml(money(group.revenue))}</b>
+          <b>${escapeHtml(salesMoney(group.revenue))}</b>
         </article>
       `).join("") : '<div class="empty-state compact">No hay ventas para los filtros actuales.</div>'}
     </section>
@@ -24184,6 +24243,22 @@ async function submitSubscriptionAutoRenewal() {
   }
 }
 
+function customerSaleIdempotencyKey() {
+  if (!state.customerSaleIdempotencyKey) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    state.customerSaleIdempotencyKey = `sales-module:${session?.user?.business_id || "business"}:${randomPart}`;
+  }
+  return state.customerSaleIdempotencyKey;
+}
+
+function affiliatePurchaseIdempotencyKey() {
+  if (!state.affiliatePurchaseIdempotencyKey) {
+    const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    state.affiliatePurchaseIdempotencyKey = `affiliate-purchase:${session?.user?.business_id || "business"}:${randomPart}`;
+  }
+  return state.affiliatePurchaseIdempotencyKey;
+}
+
 async function submitCustomerAcquisitionSale(event) {
   event.preventDefault();
   const submitButton = customerAcquisitionForm.querySelector("button[type='submit']");
@@ -24214,10 +24289,12 @@ async function submitCustomerAcquisitionSale(event) {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
+        idempotency_key: customerSaleIdempotencyKey(),
         sale_amount: saleTotal,
         campaign_id: customerAcquisitionCampaignInput?.value || null,
         branch_id: customerAcquisitionBranchInput?.value || null,
         currency: customerAcquisitionCurrencyInput.value.trim() || "COP",
+        payment_method: customerAcquisitionPaymentMethodInput?.value || null,
         product_name: productSummary || null,
         customer_name: customerAcquisitionNameInput.value.trim() || null,
         customer_document_id: customerAcquisitionDocumentInput.value.trim() || null,
@@ -24238,8 +24315,11 @@ async function submitCustomerAcquisitionSale(event) {
     const customerCreatedMessage = data.customer?.created
       ? ` ${data.customer.name || "El comprador"} también quedó creado como contacto cliente.`
       : "";
-    const message = `Venta registrada con su medio de llegada.${customerCreatedMessage}${productSyncMessage}`;
+    const message = data.duplicate
+      ? "Esta venta ya estaba registrada. Conservamos el registro original sin duplicar cliente, productos ni puntos."
+      : `Venta registrada con su medio de llegada.${customerCreatedMessage}${productSyncMessage}`;
     setInlineMessage(customerAcquisitionMessage, message, "success");
+    state.customerSaleIdempotencyKey = "";
     customerAcquisitionForm.reset();
     if (customerAcquisitionAffiliateInput) customerAcquisitionAffiliateInput.dataset.autoSelectedAffiliateId = "";
     customerAcquisitionCurrencyInput.value = "COP";
@@ -35307,6 +35387,7 @@ async function awardSelectedAffiliatePoints() {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
+        idempotency_key: affiliatePurchaseIdempotencyKey(),
         campaign_id: campaignId || null,
         customer_name: selectedAffiliate.full_name || null,
         customer_phone: selectedAffiliate.phone || null,
@@ -35333,6 +35414,7 @@ async function awardSelectedAffiliatePoints() {
     });
 
     const awarded = Number(data.referral?.points_awarded || 0);
+    state.affiliatePurchaseIdempotencyKey = "";
     const selectedAffiliateId = state.selectedAffiliateId;
     state.affiliatePurchaseItems = [{ name: "", quantity: 1, unit_price: 0 }];
     if (affiliatePurchaseAmountInput) affiliatePurchaseAmountInput.value = "";
@@ -36063,21 +36145,40 @@ function exportRedemptions() {
   ]);
 }
 
-function exportSales() {
-  downloadCsv("campaign-sales", [
-    ["Cliente", "Cédula", "Teléfono", "Valor", "Pago", "Producto o servicio", "Productos detallados", "Sucursal", "Fecha"],
-    ...salesRowsForAttributedSalesView().map((item) => [
-      item.player_name,
-      item.document_id,
-      item.phone,
-      item.sale_amount,
-      item.payment_method,
-      item.product_or_service,
-      saleProductsForDisplay(item).map((product) => `${product.name} x${product.quantity || 1} = ${product.line_total || 0}`).join(" | "),
-      item.branch_name,
-      item.created_at,
-    ]),
-  ]);
+async function exportSales() {
+  const originalHtml = exportSalesButton.innerHTML;
+  exportSalesButton.disabled = true;
+  exportSalesButton.textContent = "Preparando exportación...";
+  try {
+    const params = salesAnalysisQueryParams();
+    const response = await fetch(`/api/business/sales/attributed/export.csv?${params.toString()}`, {
+      headers: authHeaders(),
+    });
+    if (!response.ok) {
+      let message = "No se pudo exportar la vista.";
+      try {
+        const payload = await response.json();
+        message = payload.message || payload.error || message;
+      } catch {}
+      throw new Error(message);
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ventas-atribuidas-${dateInputValue(new Date())}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    const truncated = response.headers.get("x-export-truncated") === "true";
+    showFeedback(truncated ? "Se exportaron las primeras 10.000 ventas del filtro." : "Vista completa exportada con los filtros activos.", truncated ? "info" : "success", { title: "Ventas atribuidas" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "Exportación bloqueada" });
+  } finally {
+    exportSalesButton.disabled = false;
+    exportSalesButton.innerHTML = originalHtml;
+  }
 }
 
 function selectedLaunchChannels() {
@@ -45384,26 +45485,21 @@ function renderAcquisitionChannelsView() {
 
 function renderSalesView() {
   ensureSalesAnalysisStyles();
-  const campaign = state.selectedCampaign || {};
   const allSales = salesRowsForAttributedSalesView();
   renderSalesAnalysisControls(allSales);
   const sales = filteredSalesForAnalysis(allSales);
   const reportingSales = sales.filter((item) => String(item.sale_status || "PAID").toUpperCase() !== "VOIDED");
-  const reportingAllSales = allSales.filter((item) => String(item.sale_status || "PAID").toUpperCase() !== "VOIDED");
-  const totalRevenue = reportingSales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
-  const avgTicket = reportingSales.length ? totalRevenue / reportingSales.length : 0;
-  const allRevenue = reportingAllSales.reduce((sum, item) => sum + toNumber(item.sale_amount), 0);
-  const topGroup = groupedSalesAnalysis(sales, state.salesAnalysisFilters?.group_by || "customer")[0];
+  const summary = state.attributedSalesSummary || {};
   const items = [
-    ["Ventas filtradas", reportingSales.length, money(totalRevenue)],
-    ["Ticket promedio", money(avgTicket), "Promedio por venta"],
-    ["Meta comercial", money(campaign.expected_sales_goal), `${safeRate(totalRevenue, campaign.expected_sales_goal || 1)}% cumplido`],
-    ["Revenue visible", money(allRevenue), `${safeRate(totalRevenue, allRevenue || 1)}% en filtros`],
-    ["Grupo líder", topGroup?.label || "-", topGroup ? money(topGroup.revenue) : "Sin datos"],
+    ["revenue", "Revenue atribuido", salesMoney(summary.attributed_revenue || 0), "Solo ventas pagadas y conciliadas"],
+    ["sales", "Ventas pagadas", Number(summary.paid_count || 0).toLocaleString("es-CO"), `${Number(summary.total_records || 0).toLocaleString("es-CO")} registros en el filtro`],
+    ["customers", "Clientes únicos", Number(summary.unique_customers || 0).toLocaleString("es-CO"), "Identidades únicas con compra"],
+    ["average", "Ticket promedio", salesMoney(summary.average_ticket || 0), "Promedio de ventas pagadas"],
+    ["quality", "Anuladas", Number(summary.voided_count || 0).toLocaleString("es-CO"), "Visibles para auditoría; no suman"],
   ];
 
-  salesKpiGrid.innerHTML = items.map(([label, value, meta]) => `
-    <article class="kpi-card">
+  salesKpiGrid.innerHTML = items.map(([key, label, value, meta]) => `
+    <article class="kpi-card" data-sales-kpi="${escapeHtml(key)}">
       <span class="mono-label">${escapeHtml(label)}</span>
       <strong>${escapeHtml(value)}</strong>
       <div class="kpi-meta">${escapeHtml(meta)}</div>
@@ -45414,20 +45510,29 @@ function renderSalesView() {
   renderSalesCustomerOptions();
   renderCustomerSaleItems();
   renderAcquisitionChannelDatalist();
-  renderSalesAnalysisGrid(sales, allSales);
+  renderSalesAnalysisGrid(reportingSales);
   state.salesDetailRows = sales;
 
+  const loadedCount = allSales.length;
+  const totalCount = Number(summary.total_records || loadedCount);
+  if (salesResultsLabel) salesResultsLabel.textContent = `${totalCount.toLocaleString("es-CO")} registro(s) coinciden con los filtros activos.`;
+  if (salesPaginationLabel) salesPaginationLabel.textContent = `Mostrando ${loadedCount.toLocaleString("es-CO")} de ${totalCount.toLocaleString("es-CO")} registros`;
+  if (salesLoadMoreButton) {
+    salesLoadMoreButton.hidden = !state.attributedSalesPagination?.has_more;
+    salesLoadMoreButton.disabled = state.attributedSalesLoading;
+  }
+
   campaignSalesTable.innerHTML = sales.map((item, index) => `
-    <tr class="sales-simple-row" data-sales-detail="${escapeHtml(saleDetailKey(item, index))}" tabindex="0" role="button" aria-label="Ver detalle de venta de ${escapeHtml(item.player_name || item.customer_name || "cliente")}">
-      <td><strong>${escapeHtml(item.player_name || item.customer_name || "Cliente sin nombre")}</strong><small>${escapeHtml([item.document_id || item.customer_document_id, item.phone || item.customer_phone, item.customer_email || item.email].filter(Boolean).join(" · ") || "Sin datos de contacto")}</small></td>
-      <td><strong>${escapeHtml(money(item.sale_amount))}</strong><small>${escapeHtml([item.currency || "COP", item.payment_method || ""].filter(Boolean).join(" · "))}</small></td>
+    <tr class="sales-simple-row ${String(item.sale_status || "PAID").toUpperCase() === "VOIDED" ? "is-voided" : ""}" data-sales-detail="${escapeHtml(saleDetailKey(item, index))}" tabindex="0" role="button" aria-label="Ver detalle de venta de ${escapeHtml(item.player_name || item.customer_name || "cliente")}">
+      <td><strong>${escapeHtml(item.player_name || item.customer_name || "Cliente sin nombre")}</strong><small>${escapeHtml([item.document_id || item.customer_document_id, item.phone || item.customer_phone, item.customer_email || item.email].filter(Boolean).join(" · ") || "Sin datos de contacto")}</small><span class="sales-sale-status ${String(item.sale_status || "PAID").toUpperCase() === "VOIDED" ? "is-voided" : "is-paid"}">${String(item.sale_status || "PAID").toUpperCase() === "VOIDED" ? "Anulada" : "Pagada"}</span></td>
+      <td><strong>${escapeHtml(salesMoney(item.sale_amount, item.currency))}</strong><small>${escapeHtml(item.payment_method || "Medio de pago no registrado")}</small></td>
       <td>${saleProductSummary(item)}</td>
       <td><strong>${escapeHtml(saleCampaignText(item))}</strong><small>${escapeHtml(saleChannelText(item))}</small></td>
       <td>${escapeHtml(saleSourceLabel(item.sale_source))}</td>
       <td>${escapeHtml(saleBranchText(item))}</td>
       <td><strong>${escapeHtml(formatDateShort(item.created_at))}</strong><small>${escapeHtml(formatDate(item.created_at))}</small></td>
     </tr>
-  `).join("") || '<tr><td colspan="7">Sin ventas para los filtros actuales.</td></tr>';
+  `).join("") || '<tr><td colspan="7"><div class="empty-state compact">No hay ventas para los filtros actuales. Ajusta la búsqueda o limpia los filtros.</div></td></tr>';
   bindSalesTableRows(sales);
 }
 
@@ -57999,17 +58104,23 @@ channelEffortTable?.addEventListener("click", (event) => {
 acquisitionChannelQuickCreate?.querySelectorAll("[data-channel-template]").forEach((button) => {
   button.addEventListener("click", () => applyAcquisitionChannelTemplate(button.dataset.channelTemplate || ""));
 });
+let salesAnalysisReloadTimer = 0;
 [salesAnalysisSearchInput, salesAnalysisCustomerInput, salesAnalysisProductInput, salesAnalysisDateFromInput, salesAnalysisDateToInput].forEach((input) => {
   input?.addEventListener("input", () => {
     syncSalesAnalysisFiltersFromInputs();
-    renderSalesView();
+    window.clearTimeout(salesAnalysisReloadTimer);
+    salesAnalysisReloadTimer = window.setTimeout(() => loadAttributedSalesView({ quiet: true }), 320);
   });
 });
-[salesAnalysisChannelInput, salesAnalysisCampaignInput, salesAnalysisBranchInput, salesAnalysisGroupInput].forEach((input) => {
+[salesAnalysisChannelInput, salesAnalysisCampaignInput, salesAnalysisBranchInput, salesAnalysisStatusInput, salesAnalysisSourceInput].forEach((input) => {
   input?.addEventListener("change", () => {
     syncSalesAnalysisFiltersFromInputs();
-    renderSalesView();
+    loadAttributedSalesView({ quiet: true });
   });
+});
+salesAnalysisGroupInput?.addEventListener("change", () => {
+  syncSalesAnalysisFiltersFromInputs();
+  renderSalesView();
 });
 salesAnalysisResetButton?.addEventListener("click", () => {
   state.salesAnalysisFilters = {
@@ -58021,10 +58132,13 @@ salesAnalysisResetButton?.addEventListener("click", () => {
     channel: "",
     campaign: "",
     branch: "",
+    status: "PAID",
+    source: "ALL",
     group_by: "customer",
   };
-  renderSalesView();
+  loadAttributedSalesView({ quiet: true });
 });
+salesLoadMoreButton?.addEventListener("click", () => loadAttributedSalesView({ append: true }));
 salesCreateTrigger?.addEventListener("click", () => {
   if (salesCreatePanel?.classList.contains("is-open")) {
     closeSalesCreatePanel();

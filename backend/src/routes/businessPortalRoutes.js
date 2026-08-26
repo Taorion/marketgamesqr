@@ -89,6 +89,7 @@ const {
   downloadLeadQrById,
   campaignRedemptions,
   attributedSales,
+  exportAttributedSales,
   voidAttributedSale,
   campaignSales,
   createSalesSnapshot,
@@ -365,6 +366,7 @@ router.get("/campaigns/:id/leads/export.csv", exportCampaignLeads);
 router.get("/campaigns/:id/leads/:qrId/active-qr", downloadActiveLeadQr);
 router.get("/campaigns/:id/redemptions", standardBusinessCache, campaignRedemptions);
 router.get("/sales/attributed", attributedSales);
+router.get("/sales/attributed/export.csv", exportAttributedSales);
 router.post("/sales/:saleId/void", voidAttributedSale);
 router.get("/campaigns/:id/sales", standardBusinessCache, campaignSales);
 router.post("/campaigns/:id/sales-snapshot", createSalesSnapshot);

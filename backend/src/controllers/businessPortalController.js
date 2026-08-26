@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const { randomUUID } = require("node:crypto");
 const { z } = require("zod");
 const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
@@ -33,6 +34,7 @@ const { getLeadCrmDetail } = require("../services/leadCrmService");
 const { assertStorageQuotaForUpload } = require("../services/storageQuotaService");
 const { recordLifecycleEvent } = require("../services/lifecycleAuditService");
 const { resolveAcquisitionChannelReference } = require("../services/acquisitionChannelService");
+const { listAttributedSales } = require("../services/attributedSalesService");
 
 function slugify(value) {
   return String(value || "")
@@ -285,11 +287,13 @@ const customerAcquisitionSaleSchema = z.object({
   product_name: z.string().trim().max(180).optional().nullable(),
   sale_amount: z.number().positive(),
   currency: z.string().trim().max(12).default("COP"),
+  payment_method: z.string().trim().max(80).optional().nullable(),
   acquisition_source: z.enum(acquisitionSourceOptions),
   acquisition_channel_id: z.string().uuid().optional().nullable(),
   acquisition_channel: z.string().trim().max(180).optional().nullable(),
   referred_affiliate_id: z.string().uuid().optional().nullable(),
   notes: z.string().trim().max(2000).optional().nullable(),
+  idempotency_key: z.string().trim().min(8).max(160).optional(),
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
 
@@ -2478,8 +2482,23 @@ async function createCustomerAcquisitionSale(req, res, next) {
     const businessId = businessIdFor(req);
     await assertFeatureForRequest(req, businessId, "sales_tracker");
     const body = validate(customerAcquisitionSaleSchema, req.body);
+    const idempotencyKey = body.idempotency_key || `server:${randomUUID()}`;
 
     const result = await withTransaction(async (client) => {
+      await client.query("select pg_advisory_xact_lock(hashtext($1))", [`customer-sale:${businessId}:${idempotencyKey}`]);
+      const duplicateSale = await client.query(
+        "select * from business_sales where business_id = $1 and idempotency_key = $2 limit 1",
+        [businessId, idempotencyKey]
+      );
+      if (duplicateSale.rowCount) {
+        return {
+          sale: duplicateSale.rows[0],
+          duplicate: true,
+          conversion: { players: 0, manual_leads: 0 },
+          referral: null,
+          customer: { created: false, id: duplicateSale.rows[0].metadata?.customer_contact_id || null },
+        };
+      }
       const acquisitionChannel = await resolveAcquisitionChannelReference(client, businessId, body);
       if (body.campaign_id) {
         const campaign = await client.query(
@@ -2577,11 +2596,11 @@ async function createCustomerAcquisitionSale(req, res, next) {
       const saleResult = await client.query(
         `insert into business_sales
           (business_id, campaign_id, customer_name, customer_phone, customer_email, customer_document_id,
-           product_name, sale_amount, currency, seller_user_id, branch_id, acquisition_source,
+           product_name, sale_amount, currency, payment_method, seller_user_id, branch_id, acquisition_source,
            acquisition_channel, acquisition_channel_id, acquisition_channel_name_snapshot,
            acquisition_channel_slug_snapshot, acquisition_channel_source, referred_affiliate_id,
-           referral_points_awarded, notes, metadata)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+           referral_points_awarded, notes, idempotency_key, metadata)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
          returning *`,
         [
           businessId,
@@ -2593,6 +2612,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
           body.product_name || null,
           body.sale_amount,
           body.currency || "COP",
+          body.payment_method || null,
           req.user.id,
           saleBranchId,
           body.acquisition_source,
@@ -2604,6 +2624,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
           referredAffiliate?.id || null,
           referralPoints,
           body.notes || null,
+          idempotencyKey,
           saleMetadata,
         ]
       );
@@ -2672,6 +2693,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
 
       return {
         sale: saleResult.rows[0],
+        duplicate: false,
         customer: { id: customerContact.id, name: customerContact.name, created: customerLink.created },
         conversion: {
           players: convertedPlayers.rowCount,
@@ -2688,7 +2710,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
       };
     });
 
-    res.status(201).json(result);
+    res.status(result.duplicate ? 200 : 201).json(result);
   } catch (error) {
     next(error);
   }
@@ -6796,91 +6818,62 @@ async function campaignRedemptions(req, res, next) {
   }
 }
 
-async function canonicalAttributedSalesForBusiness(businessId, campaignId, limit) {
-  const result = await query(
-      `select *
-       from (
-         select
-           s.id,
-           s.business_id,
-           s.campaign_id,
-           s.qr_code_id,
-           s.redemption_id,
-           s.player_id,
-           s.sale_amount,
-           s.currency,
-           s.sale_confirmed_by_user_id,
-           s.branch_id,
-           s.payment_method,
-           s.product_or_service,
-           s.notes,
-           'PAID'::text as sale_status,
-           null::jsonb as metadata,
-           null::uuid as referred_affiliate_id,
-           0::int as referral_points_awarded,
-           s.created_at,
-           'REDEMPTION'::text as sale_source,
-           p.name as player_name,
-           p.document_id,
-           p.phone,
-           p.email,
-           br.name as branch_name,
-           u.full_name as confirmed_by,
-           null::text as affiliate_name
-         from attributed_sales s
-         left join players p on p.id = s.player_id
-         left join branches br on br.id = s.branch_id
-         left join app_users u on u.id = s.sale_confirmed_by_user_id
-         where s.business_id = $1 and ($2::uuid is null or s.campaign_id = $2)
-
-         union all
-
-         select
-           bs.id,
-           bs.business_id,
-           bs.campaign_id,
-           bs.qr_code_id,
-           null::uuid as redemption_id,
-           null::uuid as player_id,
-           bs.sale_amount,
-           bs.currency,
-           bs.seller_user_id as sale_confirmed_by_user_id,
-           bs.branch_id,
-           bs.acquisition_source as payment_method,
-           bs.product_name as product_or_service,
-           bs.notes,
-           coalesce(bs.sale_status, 'PAID') as sale_status,
-           bs.metadata,
-           bs.referred_affiliate_id,
-           bs.referral_points_awarded,
-           bs.created_at,
-           'CONTACT_CENTER'::text as sale_source,
-           bs.customer_name as player_name,
-           bs.customer_document_id as document_id,
-           bs.customer_phone as phone,
-           bs.customer_email as email,
-           br.name as branch_name,
-           u.full_name as confirmed_by,
-           a.full_name as affiliate_name
-         from business_sales bs
-         left join branches br on br.id = bs.branch_id
-         left join app_users u on u.id = bs.seller_user_id
-         left join affiliates a on a.id = bs.referred_affiliate_id
-         where bs.business_id = $1 and ($2::uuid is null or bs.campaign_id = $2)
-       ) sales
-       order by created_at desc
-       limit $3`,
-      [businessId, campaignId || null, limit]
-  );
-  return result.rows;
-}
-
 async function attributedSales(req, res, next) {
   try {
     const businessId = businessIdFor(req);
-    const limit = boundedLimit(req.query.limit, 300, 500);
-    const sales = await canonicalAttributedSalesForBusiness(businessId, null, limit);
-    res.json({ sales });
+    const data = await listAttributedSales({
+      businessId,
+      campaignId: req.query.campaign_id || null,
+      limit: boundedLimit(req.query.limit, 50, 100),
+      cursor: req.query.cursor || null,
+      filters: req.query,
+    });
+    res.json(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function exportAttributedSales(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const data = await listAttributedSales({
+      businessId,
+      campaignId: req.query.campaign_id || null,
+      limit: 10000,
+      maxLimit: 10000,
+      filters: req.query,
+    });
+    const columns = [
+      "ID", "Estado", "Origen", "Cliente", "Documento", "Teléfono", "Correo",
+      "Valor", "Moneda", "Medio de pago", "Producto o servicio", "Campaña",
+      "Canal", "Fuente de adquisición", "Sede", "Responsable", "Fecha", "Notas",
+    ];
+    const rows = data.sales.map((sale) => [
+      sale.id,
+      sale.sale_status,
+      sale.sale_source,
+      sale.player_name,
+      sale.document_id,
+      sale.phone,
+      sale.email,
+      sale.sale_amount,
+      sale.currency,
+      sale.payment_method,
+      sale.product_or_service,
+      sale.campaign_name || "Sin campaña",
+      sale.acquisition_channel,
+      sale.acquisition_source,
+      sale.branch_name || "Sin sede",
+      sale.confirmed_by,
+      sale.created_at,
+      sale.notes,
+    ]);
+    const csv = [columns, ...rows].map((row) => row.map(csvValue).join(",")).join("\r\n");
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="ventas-atribuidas-${businessId}.csv"`);
+    res.setHeader("X-Export-Truncated", data.pagination.has_more ? "true" : "false");
+    res.send(`\uFEFF${csv}`);
   } catch (error) {
     next(error);
   }
@@ -6943,9 +6936,14 @@ async function voidAttributedSale(req, res, next) {
 async function campaignSales(req, res, next) {
   try {
     const businessId = businessIdFor(req);
-    const limit = boundedLimit(req.query.limit, 150, 500);
-    const sales = await canonicalAttributedSalesForBusiness(businessId, req.params.id, limit);
-    res.json({ sales });
+    const data = await listAttributedSales({
+      businessId,
+      campaignId: req.params.id,
+      limit: boundedLimit(req.query.limit, 50, 100),
+      cursor: req.query.cursor || null,
+      filters: req.query,
+    });
+    res.json(data);
   } catch (error) {
     next(error);
   }
@@ -7133,6 +7131,7 @@ module.exports = {
   downloadLeadQrById,
   campaignRedemptions,
   attributedSales,
+  exportAttributedSales,
   voidAttributedSale,
   campaignSales,
   createSalesSnapshot,
