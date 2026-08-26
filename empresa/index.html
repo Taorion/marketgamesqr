@@ -8047,13 +8047,13 @@
       <button class="icon-button" id="salesBulkImportClose" type="button" aria-label="Cerrar carga masiva"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
     </header>
     <div class="sales-import-body">
-      <section class="sales-import-guidance"><div><span class="material-symbols-outlined" aria-hidden="true">table_view</span><div><strong>Excel o CSV, listo para validar</strong><p>Una fila por venta. Son obligatorios fecha, valor y cliente; usa el correo exacto del vendedor para atribuirla.</p></div></div><button class="ghost-button" id="salesBulkTemplateButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar plantilla</button></section>
-      <div class="sales-import-principles" aria-label="Reglas de importación"><span><strong>1</strong>Previsualiza antes de guardar</span><span><strong>2</strong>Detecta reintentos y duplicados</span><span><strong>3</strong>Respeta vendedores y datos del negocio</span></div>
-      <label class="sales-import-dropzone" id="salesBulkDropzone" for="salesBulkFileInput" tabindex="0"><span class="material-symbols-outlined" aria-hidden="true">cloud_upload</span><strong>Arrastra tu Excel aquí</strong><small>También acepta CSV · máximo 5 MB y 2.000 ventas</small><input id="salesBulkFileInput" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label>
+      <section class="sales-import-guidance"><div><span class="material-symbols-outlined" aria-hidden="true">table_view</span><div><strong>Una fila por producto, una venta bien atribuida</strong><p>Para varios productos, repite el mismo <code>id_venta</code> en sus filas. Incluye el correo exacto del responsable comercial.</p></div></div><button class="ghost-button" id="salesBulkTemplateButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar plantilla</button></section>
+      <div class="sales-import-principles" aria-label="Reglas de importación"><span><strong>1</strong>Agrupa productos por ID de venta</span><span><strong>2</strong>Detecta reintentos y diferencias</span><span><strong>3</strong>Asocia al responsable comercial</span></div>
+      <label class="sales-import-dropzone" id="salesBulkDropzone" for="salesBulkFileInput" tabindex="0"><span class="material-symbols-outlined" aria-hidden="true">cloud_upload</span><strong>Arrastra tu Excel aquí</strong><small>También acepta CSV · máximo 5 MB y 2.000 filas de producto</small><input id="salesBulkFileInput" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label>
       <div class="sales-import-file hidden" id="salesBulkFileSummary"><span class="material-symbols-outlined" aria-hidden="true">description</span><span><strong id="salesBulkFileName">—</strong><small id="salesBulkFileSize">—</small></span><button class="icon-button" id="salesBulkFileRemove" type="button" aria-label="Quitar archivo"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button></div>
       <div class="sales-import-progress hidden" id="salesBulkProgress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span><small>Validando archivo…</small></div>
       <div class="sales-import-counters hidden" id="salesBulkCounters"></div>
-      <section class="sales-import-preview hidden" id="salesBulkPreview"><div class="sales-import-preview-head"><div><strong>Vista previa conciliada</strong><small>Primeras 10 filas</small></div><span class="status-chip ok">Sin cambios todavía</span></div><div class="sales-import-table-scroll"><table><thead><tr><th>Fila</th><th>Fecha / cliente</th><th>Valor</th><th>Vendedor</th><th>Estado</th></tr></thead><tbody id="salesBulkPreviewBody"></tbody></table></div></section>
+      <section class="sales-import-preview hidden" id="salesBulkPreview"><div class="sales-import-preview-head"><div><strong>Vista previa conciliada</strong><small>Primeras 10 ventas agrupadas</small></div><span class="status-chip ok">Sin cambios todavía</span></div><div class="sales-import-table-scroll"><table><thead><tr><th>Venta / filas</th><th>Fecha / cliente</th><th>Total / productos</th><th>Responsable comercial</th><th>Estado</th></tr></thead><tbody id="salesBulkPreviewBody"></tbody></table></div></section>
       <section class="sales-import-result hidden" id="salesBulkResult"></section>
       <p class="form-message sales-import-message" id="salesBulkMessage" role="status" aria-live="polite"></p>
     </div>
@@ -8119,7 +8119,7 @@
     </section>
   </div>
     <script src="js/app.js?v=gos-brand-v362-20260826-attributed-sales-command-v368-sales-entry-modal-v371-campaign-assistant-premium-v375" defer></script>
-<script src="js/sales-bulk-import.js?v=sales-bulk-import-v370-20260826" defer></script>
+<script src="js/sales-bulk-import.js?v=sales-bulk-import-v372-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
