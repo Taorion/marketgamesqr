@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260822-activation-calculator-branches-premium-v325-gosqori-promotion-v358-unified-email-routing-v359-rms-premium-v360-gos-brand-v362-attributed-sales-command-v367-20260826";
+const APP_VERSION = "empresa-20260826-campaign-assistant-premium-v375";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2953,6 +2953,8 @@ let state = {
   strategyWizardStep: 0,
   strategyWizardAnswers: {},
   strategyWizardDraft: null,
+  strategyWizardCreating: false,
+  strategyWizardReturnFocus: null,
   rangeDays: 30,
   validatorDetector: null,
   validatorStream: null,
@@ -15894,7 +15896,7 @@ function ensureCampaignPremiumWorkspace() {
       if (kind === "create") requestCampaignButton?.click();
       if (kind === "edit") editCampaignButton?.click();
       if (kind === "export") exportCampaignReportButton?.click();
-      if (kind === "assistant") openStrategyWizard({ fromScratch: true });
+      if (kind === "assistant") openStrategyWizard();
       if (kind === "calculator") {
         openCampaignModal(state.selectedCampaign ? "edit" : "create");
         document.getElementById("campaignCalculatorEntryButton")?.click();
@@ -31460,19 +31462,62 @@ const STRATEGY_WIZARD_STEPS = [
   ] },
 ];
 
+// El diseñador premium pregunta solo por las decisiones que cambian la campaña.
+// Qori completa mecánica, tickets, fechas, metas base y operación en segundo plano.
+const STRATEGY_WIZARD_PREMIUM_STEPS = [
+  { id: "direction", kicker: "Decisión 1", title: "¿Qué resultado quieres mover?", help: "Elige el resultado principal. Qori construirá la mecánica, los tickets y el plan inicial.", fields: [
+    { key: "objective", label: "Resultado principal", type: "single", options: ["Captar nuevos leads", "Aumentar ventas", "Aumentar recompra", "Conseguir referidos", "Fidelizar clientes", "Llevar personas a punto físico"] },
+  ] },
+  { id: "offer", kicker: "Decisión 2", title: "¿A quién atraerás y con qué valor?", help: "Dos decisiones bastan para adaptar el mensaje, la experiencia y el seguimiento.", fields: [
+    { key: "targetPublic", label: "Público prioritario", type: "single", options: ["Clientes nuevos", "Clientes actuales", "Clientes inactivos", "Ambos"] },
+    { key: "rewardType", label: "Valor que recibirá la persona", type: "single", options: ["Descuento porcentual", "Obsequio físico", "Ebook / catálogo / activo digital", "Diagnóstico gratuito", "Puntos acumulables", "Entrada a sorteo"] },
+  ] },
+  { id: "reach", kicker: "Decisión 3", title: "¿Cómo la pondrás en movimiento?", help: "Selecciona los canales principales y el ritmo. Las fechas y la estructura se calculan automáticamente.", fields: [
+    { key: "channels", label: "Canales de lanzamiento", type: "multi", optionsKey: "channels" },
+    { key: "cadence", label: "Ritmo de campaña", type: "single", options: ["Activación relámpago", "Mensual", "Permanente"] },
+  ] },
+  { id: "numbers", kicker: "Decisión 4", title: "Define el tamaño del primer piloto", help: "Puedes aceptar estos valores recomendados y afinarlos después sin bloquear la creación.", fields: [
+    { key: "productionCost", label: "Inversión disponible", type: "number", placeholder: "0" },
+    { key: "leadsGoal", label: "Personas que quieres captar", type: "number", placeholder: "100" },
+    { key: "avgTicket", label: "Compra promedio esperada", type: "number", placeholder: "100000" },
+  ] },
+  { id: "summary", kicker: "Plan listo", title: "Tu campaña está lista para crearse", help: "Qori la guardará como borrador operativo para que puedas conectar la experiencia o ajustar detalles avanzados después.", fields: [
+    { key: "finalSummary", type: "summary" },
+  ] },
+];
+
+function strategyWizardSuggestedChannels() {
+  const configured = typeof activeAcquisitionChannels === "function"
+    ? activeAcquisitionChannels().map((channel) => channel.name || channel.platform).filter(Boolean)
+    : [];
+  return configured.length ? configured.slice(0, 3) : ["WhatsApp", "Instagram"];
+}
+
 function defaultStrategyWizardAnswers() {
   const start = new Date();
   const end = new Date(start.getTime() + 30 * 86400000);
   return {
+    businessName: typeof activationBusinessName === "function" ? activationBusinessName() : "Mi negocio",
+    objective: "Captar nuevos leads",
+    targetPublic: "Clientes nuevos",
+    rewardType: "Diagnóstico gratuito",
+    leadMagnet: "Diagnóstico gratuito",
+    dynamic: "Captura relámpago de leads",
+    campaignType: "FORM",
     acquisitionMode: "Masiva",
     captureFields: ["Nombre", "WhatsApp", "Empresa", "Sector", "Necesidad principal"],
     qualificationFilters: ["Por sector", "Por urgencia", "Por interacción con el juego"],
     hotLeadActions: ["Pidió diagnóstico", "Agendó demo", "Solicitó cotización"],
     postCaptureAction: ["Enviar WhatsApp automático", "Clasificar en seguimiento", "Crear tarea comercial"],
-    channels: ["Instagram", "WhatsApp"],
+    channels: strategyWizardSuggestedChannels(),
     startDate: start.toISOString().slice(0, 10),
     endDate: end.toISOString().slice(0, 10),
     cadence: "Mensual",
+    productionCost: 0,
+    leadsGoal: 100,
+    avgTicket: 100000,
+    redemptionsGoal: 30,
+    rewardCapacity: 100,
     profitPercent: 30,
     conversionRate: 10,
     redemptionRate: 40,
@@ -31480,10 +31525,11 @@ function defaultStrategyWizardAnswers() {
     participationFrequency: "Una vez por persona",
     ticketLogic: ["Lead ticket", "Reward ticket", "Redemption ticket"],
     ticketExpires: "Sí",
-    requiresValidation: "Sí",
-    hasLanding: "Sí",
-    hasGame: "Sí",
-    hasValidator: "Sí",
+    requiresValidation: "No",
+    hasLanding: "No",
+    hasGame: "No",
+    hasValidator: "No",
+    hasDigitalAsset: "No",
   };
 }
 
@@ -31496,11 +31542,13 @@ function setStrategyWizardAnswer(key, value) {
 }
 
 function strategyWizardOptions(field) {
-  return field.options || STRATEGY_WIZARD_OPTIONS[field.optionsKey] || [];
+  const options = field.options || STRATEGY_WIZARD_OPTIONS[field.optionsKey] || [];
+  if (field.key === "channels") return Array.from(new Set([...strategyWizardSuggestedChannels(), ...options])).slice(0, 8);
+  return options;
 }
 
 function strategyWizardCurrentStep() {
-  return STRATEGY_WIZARD_STEPS[state.strategyWizardStep] || STRATEGY_WIZARD_STEPS[0];
+  return STRATEGY_WIZARD_PREMIUM_STEPS[state.strategyWizardStep] || STRATEGY_WIZARD_PREMIUM_STEPS[0];
 }
 
 function strategyWizardHasAnswer(value) {
@@ -31528,7 +31576,7 @@ function renderStrategyWizardFeedback() {
   const completion = strategyWizardStepCompletion();
   if (!completion.total) {
     strategyWizardProgressDetail.dataset.state = "review";
-    strategyWizardProgressDetail.textContent = "Revisa el plan propuesto antes de llevarlo al formulario real de la campa\u00f1a.";
+    strategyWizardProgressDetail.textContent = "Revisa el plan que Qori completó y crea la campaña en un solo paso.";
     return;
   }
   if (completion.complete === completion.total) {
@@ -31544,6 +31592,7 @@ function renderStrategyWizardFeedback() {
 function applyStrategyTemplate(templateId) {
   const template = STRATEGY_WIZARD_TEMPLATES.find((item) => item.id === templateId);
   if (!template) return;
+  applyStrategyObjectiveBlueprint(template.objective);
   state.strategyWizardAnswers = {
     ...state.strategyWizardAnswers,
     sector: template.sector,
@@ -31579,6 +31628,37 @@ function strategyRecommendedDynamic(answers = state.strategyWizardAnswers || {})
   if (objective.includes("lead") || objective.includes("base")) return answers.leadMagnet?.includes("Ebook") ? "Captura relámpago de leads" : "Batalla naval";
   if (sector.includes("restaurante") || sector.includes("retail")) return "Ruleta de premios";
   return "Trivia de marca";
+}
+
+function applyStrategyObjectiveBlueprint(objective = strategyWizardAnswer("objective")) {
+  const key = normalizeInventoryLookup(objective);
+  const blueprint = key.includes("refer")
+    ? { campaignType: "GAME", dynamic: "Reto de referidos", leadMagnet: "Reto de referidos", rewardType: "Descuento porcentual", ticketLogic: ["Lead ticket", "Referral ticket", "Reward ticket"] }
+    : key.includes("recompra")
+      ? { campaignType: "MIXED", dynamic: "Club de puntos", leadMagnet: "Beneficio limitado", rewardType: "Puntos acumulables", ticketLogic: ["Post-sale ticket", "Reward ticket", "Redemption ticket"] }
+      : key.includes("fidel")
+        ? { campaignType: "MIXED", dynamic: "Club de puntos", leadMagnet: "Club de puntos", rewardType: "Puntos acumulables", ticketLogic: ["Post-sale ticket", "Reward ticket"] }
+        : key.includes("venta") || key.includes("punto")
+          ? { campaignType: key.includes("punto") ? "EVENT" : "MIXED", dynamic: "Ruleta de premios", leadMagnet: "Beneficio limitado", rewardType: "Descuento porcentual", ticketLogic: ["Lead ticket", "Reward ticket", "Redemption ticket"] }
+          : { campaignType: "FORM", dynamic: "Captura relámpago de leads", leadMagnet: "Diagnóstico gratuito", rewardType: "Diagnóstico gratuito", ticketLogic: ["Lead ticket", "Reward ticket"] };
+  state.strategyWizardAnswers = { ...(state.strategyWizardAnswers || {}), objective, campaignName: "", ...blueprint };
+}
+
+function applyStrategyRewardBlueprint(rewardType = strategyWizardAnswer("rewardType")) {
+  const key = normalizeInventoryLookup(rewardType);
+  const updates = { rewardType, leadMagnet: rewardType };
+  if (key.includes("ebook") || key.includes("activo digital")) Object.assign(updates, { campaignType: "LANDING", dynamic: "Captura relámpago de leads" });
+  if (key.includes("punto")) Object.assign(updates, { campaignType: "MIXED", dynamic: "Club de puntos" });
+  if (key.includes("sorteo")) Object.assign(updates, { campaignType: "GAME", dynamic: "Ruleta de premios" });
+  state.strategyWizardAnswers = { ...(state.strategyWizardAnswers || {}), ...updates };
+}
+
+function syncStrategyWizardCadenceDates() {
+  const days = strategyWizardAnswer("cadence") === "Activación relámpago" ? 10 : strategyWizardAnswer("cadence") === "Permanente" ? 90 : 30;
+  const start = new Date();
+  const end = new Date(start.getTime() + days * 86400000);
+  setStrategyWizardAnswer("startDate", start.toISOString().slice(0, 10));
+  setStrategyWizardAnswer("endDate", end.toISOString().slice(0, 10));
 }
 
 function internalGrowthNudge(answers = state.strategyWizardAnswers || {}) {
@@ -31628,18 +31708,19 @@ function strategyBudgetTotals(answers = state.strategyWizardAnswers || {}) {
 
 function strategyScore(answers = state.strategyWizardAnswers || {}) {
   const totals = strategyBudgetTotals(answers);
-  let score = 45;
+  let score = 35;
+  if (answers.objective) score += 10;
+  if (answers.targetPublic) score += 10;
+  if ((answers.channels || []).length) score += 10;
+  if (answers.startDate && answers.endDate) score += 10;
+  if (Number(totals.leadsNeeded || 0) > 0) score += 10;
+  if (Number(answers.avgTicket || 0) > 0) score += 5;
   if (totals.total > 0) score += 10;
-  if (totals.salesGoal >= totals.total * 1.2) score += 15;
-  if (Number(answers.conversionRate || 0) >= 8) score += 10;
-  if (Number(answers.redemptionRate || 0) <= 70) score += 8;
-  if ((answers.channels || []).length >= 3) score += 8;
-  if ((answers.ticketLogic || []).length >= 2) score += 6;
   score = Math.max(0, Math.min(100, Math.round(score)));
   return {
     score,
-    label: score >= 75 ? "Verde" : score >= 50 ? "Amarillo" : "Rojo",
-    tone: score >= 75 ? "ok" : score >= 50 ? "warning" : "danger",
+    label: score >= 80 ? "Lista para borrador" : score >= 60 ? "Base suficiente" : "Requiere revisión",
+    tone: score >= 80 ? "ok" : score >= 60 ? "warning" : "danger",
   };
 }
 
@@ -31668,7 +31749,12 @@ function strategyCampaignName(answers = state.strategyWizardAnswers || {}) {
 }
 
 function strategySlug(answers = state.strategyWizardAnswers || {}) {
-  return slugify(strategyCampaignName(answers));
+  const base = slugify(strategyCampaignName(answers));
+  const used = new Set((state.campaigns || []).map((campaign) => String(campaign.slug || campaign.public_slug || "").toLowerCase()).filter(Boolean));
+  if (!used.has(base)) return base;
+  let suffix = 2;
+  while (used.has(`${base}-${suffix}`)) suffix += 1;
+  return `${base}-${suffix}`;
 }
 
 function strategyClientNotes(answers = state.strategyWizardAnswers || {}) {
@@ -31726,7 +31812,7 @@ function buildStrategyCampaignPayload(answers = state.strategyWizardAnswers || {
     type: answers.campaignType || strategyRecommendedType(answers.objective),
     status: "DRAFT",
     objective: strategyObjectiveText(answers),
-    strategy_summary: buildStrategyText(answers),
+    strategy_summary: buildStrategyText(answers).slice(0, 2000),
     budget_total: totals.total,
     expected_sales_goal: totals.salesGoal,
     expected_leads_goal: totals.leadsNeeded,
@@ -31734,13 +31820,14 @@ function buildStrategyCampaignPayload(answers = state.strategyWizardAnswers || {
     starts_at: answers.startDate ? `${answers.startDate}T09:00` : "",
     ends_at: answers.endDate ? `${answers.endDate}T18:00` : "",
     launch_channels: answers.channels?.length ? answers.channels : [],
-    client_notes: strategyClientNotes(answers),
+    client_notes: strategyClientNotes(answers).slice(0, 2000),
     delivered_assets: {
       landing_url: answers.hasLanding === "No" ? "" : urls.landing_url,
       validator_url: answers.hasValidator === "No" ? "" : urls.validator_url,
       game_url: answers.hasGame === "No" ? "" : urls.game_url,
       primary_link: urls.primary_link,
       qr_landing_url: urls.qr_landing_url,
+      digital_asset_url: String(answers.digitalAssetUrl || "").trim(),
       creative_notes: strategyAssetNotes(answers),
     },
     score: strategyScore(answers),
@@ -31751,11 +31838,11 @@ function renderStrategyWizardField(field) {
   const value = strategyWizardAnswer(field.key, field.type === "multi" ? [] : "");
   if (field.type === "note") return `<div class="strategy-wizard-note">${escapeHtml(field.text || "")}</div>`;
   if (field.type === "templates") {
-    return `<div class="strategy-wizard-field span-2"><span>${escapeHtml(field.label)}</span><div class="strategy-template-grid">${STRATEGY_WIZARD_TEMPLATES.map((template) => `<button class="strategy-option-card" data-strategy-template="${escapeHtml(template.id)}" type="button"><strong>${escapeHtml(template.title)}</strong><small>${escapeHtml(template.objective)} · ${escapeHtml(template.dynamic)}</small></button>`).join("")}</div></div>`;
+    return `<div class="strategy-wizard-field span-2"><span>${escapeHtml(field.label)}</span><div class="strategy-template-grid" role="group" aria-label="${escapeHtml(field.label)}">${STRATEGY_WIZARD_TEMPLATES.slice(0, 6).map((template) => `<button class="strategy-option-card" data-strategy-template="${escapeHtml(template.id)}" type="button"><strong>${escapeHtml(template.title)}</strong><small>${escapeHtml(template.objective)} · ${escapeHtml(template.dynamic)}</small></button>`).join("")}</div></div>`;
   }
   if (field.type === "single" || field.type === "multi") {
     const values = Array.isArray(value) ? value : [value].filter(Boolean);
-    return `<div class="strategy-wizard-field span-2"><span>${escapeHtml(field.label)}</span><div class="strategy-option-grid">${strategyWizardOptions(field).map((option) => `<button class="strategy-option-card ${values.includes(option) ? "selected" : ""}" data-strategy-field="${escapeHtml(field.key)}" data-strategy-mode="${field.type}" data-strategy-value="${escapeHtml(option)}" type="button">${escapeHtml(option)}</button>`).join("")}</div></div>`;
+    return `<div class="strategy-wizard-field span-2"><span>${escapeHtml(field.label)}</span><div class="strategy-option-grid" role="group" aria-label="${escapeHtml(field.label)}">${strategyWizardOptions(field).map((option) => `<button class="strategy-option-card ${values.includes(option) ? "selected" : ""}" data-strategy-field="${escapeHtml(field.key)}" data-strategy-mode="${field.type}" data-strategy-value="${escapeHtml(option)}" aria-pressed="${values.includes(option) ? "true" : "false"}" type="button">${escapeHtml(option)}</button>`).join("")}</div></div>`;
   }
   if (field.type === "summary") return `<div class="strategy-wizard-final">${renderStrategyWizardFinalSummary()}</div>`;
   if (field.type === "textarea") return `<label class="strategy-wizard-field span-2"><span>${escapeHtml(field.label)}</span><textarea data-strategy-input="${escapeHtml(field.key)}" rows="5" placeholder="${escapeHtml(field.placeholder || "")}">${escapeHtml(value || "")}</textarea></label>`;
@@ -31765,19 +31852,26 @@ function renderStrategyWizardField(field) {
 function renderStrategyWizard() {
   if (!campaignStrategyWizardModal || !strategyWizardStepBody) return;
   const step = strategyWizardCurrentStep();
-  const total = STRATEGY_WIZARD_STEPS.length;
-  strategyWizardProgressText.textContent = `Paso ${state.strategyWizardStep + 1} de ${total}`;
+  const total = STRATEGY_WIZARD_PREMIUM_STEPS.length;
+  strategyWizardProgressText.textContent = step.id === "summary" ? "Plan listo para crear" : `Decisión ${state.strategyWizardStep + 1} de ${total - 1}`;
   strategyWizardProgressBar.style.width = `${Math.round(((state.strategyWizardStep + 1) / total) * 100)}%`;
+  const progressTrack = strategyWizardProgressBar.parentElement;
+  progressTrack?.setAttribute("aria-valuemax", String(total));
+  progressTrack?.setAttribute("aria-valuenow", String(state.strategyWizardStep + 1));
   strategyWizardStepKicker.textContent = step.kicker;
   strategyWizardStepTitle.textContent = step.title;
   strategyWizardStepHelp.textContent = step.help;
   strategyWizardStepBody.innerHTML = step.fields.filter(strategyWizardFieldIsVisible).map(renderStrategyWizardField).join("");
   strategyWizardBackButton.disabled = state.strategyWizardStep === 0;
+  strategyWizardBackButton.hidden = state.strategyWizardStep === 0;
+  strategyWizardSkipButton.hidden = state.strategyWizardStep === total - 1;
   const completion = strategyWizardStepCompletion(step);
   const pendingCount = Math.max(0, completion.total - completion.complete);
   strategyWizardNextButton.textContent = state.strategyWizardStep === total - 1
-    ? "Aplicar al formulario"
+    ? "Crear campaña en borrador"
     : pendingCount ? `Continuar · ${pendingCount} pendiente${pendingCount === 1 ? "" : "s"}` : "Continuar";
+  strategyWizardApplyButton.textContent = state.strategyWizardStep === total - 1 ? "Crear campaña" : "Crear con recomendación";
+  strategyWizardOptimizeButton.textContent = "Mejorar recomendación";
   renderStrategyWizardSummary();
   renderStrategyWizardFeedback();
   bindStrategyWizardStepEvents();
@@ -31800,6 +31894,7 @@ function renderStrategyWizardSummary() {
       <div><dt>Redenciones</dt><dd>${Number(totals.redemptions || 0).toLocaleString("es-CO")}</dd></div>
       <div><dt>Semáforo</dt><dd><span class="status-chip ${payload.score.tone === "ok" ? "ok" : payload.score.tone === "danger" ? "danger" : "pending"}">${escapeHtml(payload.score.label)} · ${payload.score.score}/100</span></dd></div>
     </dl>
+    <div class="strategy-wizard-auto-note"><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span><p><strong>Qori completó por ti:</strong> ${escapeHtml(strategyWizardAnswer("dynamic", strategyRecommendedDynamic()))}, ${escapeHtml((strategyWizardAnswer("ticketLogic", []) || []).join(", "))}, vigencia y seguimiento comercial.</p></div>
     <div class="strategy-wizard-recommendations">
       <span class="mono-label">Mejoras sugeridas</span>
       ${nudges.map((item) => `<p>${escapeHtml(item.visible)}</p>`).join("") || "<p>La estructura tiene una base suficiente para crear borrador.</p>"}
@@ -31850,6 +31945,9 @@ function bindStrategyWizardStepEvents() {
       } else {
         setStrategyWizardAnswer(key, option);
       }
+      if (key === "objective") applyStrategyObjectiveBlueprint(option);
+      if (key === "rewardType") applyStrategyRewardBlueprint(option);
+      if (key === "cadence") syncStrategyWizardCadenceDates();
       autoCompleteStrategyWizard();
       saveStrategyWizardDraft({ silent: true });
       renderStrategyWizard();
@@ -31868,10 +31966,13 @@ function bindStrategyWizardStepEvents() {
 }
 
 function autoCompleteStrategyWizard() {
-  const answers = state.strategyWizardAnswers || {};
+  let answers = state.strategyWizardAnswers || {};
+  if (!answers.businessName) setStrategyWizardAnswer("businessName", typeof activationBusinessName === "function" ? activationBusinessName() : "Mi negocio");
+  if (!answers.objective) applyStrategyObjectiveBlueprint("Captar nuevos leads");
+  answers = state.strategyWizardAnswers || {};
+  if (!Array.isArray(answers.channels) || !answers.channels.length) setStrategyWizardAnswer("channels", strategyWizardSuggestedChannels());
   if (!answers.campaignType) setStrategyWizardAnswer("campaignType", strategyRecommendedType(answers.objective));
   if (!answers.dynamic) setStrategyWizardAnswer("dynamic", strategyRecommendedDynamic(answers));
-  if (!answers.campaignName && answers.businessName) setStrategyWizardAnswer("campaignName", strategyCampaignName({ ...answers, campaignName: "" }));
   if (!answers.leadsGoal && answers.avgTicket && answers.salesGoal && answers.conversionRate) {
     const salesNeeded = Math.ceil(Number(answers.salesGoal || 0) / Number(answers.avgTicket || 1));
     setStrategyWizardAnswer("leadsGoal", Math.ceil(salesNeeded / (Number(answers.conversionRate || 10) / 100)));
@@ -31882,7 +31983,7 @@ function saveStrategyWizardDraft({ silent = false } = {}) {
   try {
     window.localStorage?.removeItem(STRATEGY_WIZARD_DRAFT_KEY);
     window.localStorage?.setItem(strategyWizardDraftKey(), JSON.stringify(state.strategyWizardAnswers || {}));
-    if (!silent) setFormMessage(strategyWizardMessage, "Borrador guardado en este navegador. Podrás retomarlo al volver a abrir el ayudador.", "success");
+    if (!silent) setFormMessage(strategyWizardMessage, "Borrador guardado en este navegador. Podrás retomarlo al volver a abrir el asistente.", "success");
     return true;
   } catch (error) {
     if (!silent) setFormMessage(strategyWizardMessage, "No se pudo guardar el borrador local.", "error");
@@ -31901,18 +32002,22 @@ function loadStrategyWizardDraft() {
 }
 
 function openStrategyWizard({ fromScratch = false } = {}) {
+  state.strategyWizardReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   state.strategyWizardStep = 0;
   const savedDraft = fromScratch ? null : loadStrategyWizardDraft();
   state.strategyWizardAnswers = fromScratch ? defaultStrategyWizardAnswers() : { ...defaultStrategyWizardAnswers(), ...(savedDraft || {}) };
   autoCompleteStrategyWizard();
   campaignStrategyWizardModal?.classList.remove("hidden");
   renderStrategyWizard();
-  setFormMessage(strategyWizardMessage, savedDraft ? "Retomamos tu borrador local. Cada cambio se guarda mientras construyes la campaña." : "Define la estrategia paso a paso. Cada cambio se guarda localmente mientras trabajas.", "info");
+  setFormMessage(strategyWizardMessage, savedDraft ? "Retomamos tu plan. Revisa las decisiones y crea la campaña cuando esté lista." : "Qori ya preparó una base recomendada. Ajusta solo lo que realmente cambie tu campaña.", "info");
+  window.requestAnimationFrame(() => campaignStrategyWizardCloseButton?.focus());
 }
 
-function closeStrategyWizard() {
+function closeStrategyWizard(options = {}) {
+  const returnFocus = state.strategyWizardReturnFocus;
   campaignStrategyWizardModal?.classList.add("hidden");
   setFormMessage(strategyWizardMessage, "", "info");
+  if (options?.restoreFocus !== false && returnFocus?.isConnected) window.requestAnimationFrame(() => returnFocus.focus());
 }
 
 function strategyWizardHasValidUrl(value) {
@@ -31929,13 +32034,11 @@ function validateStrategyWizardPayload(payload = buildStrategyCampaignPayload())
   if (!payload.objective.trim()) return "El objetivo es requerido.";
   if (payload.budget_total < 0 || payload.expected_leads_goal < 0 || payload.expected_redemptions_goal < 0) return "Presupuesto y metas no pueden ser negativos.";
   if (payload.starts_at && payload.ends_at && new Date(payload.ends_at) <= new Date(payload.starts_at)) return "La fecha de cierre debe ser posterior a la fecha de inicio.";
+  if (!Array.isArray(payload.launch_channels) || !payload.launch_channels.length) return "Selecciona al menos un canal de lanzamiento.";
   const maxParticipants = Number(strategyWizardAnswer("maxParticipants") || 0);
   if (maxParticipants && Number(payload.expected_redemptions_goal || 0) > maxParticipants) return "Meta redenciones no puede superar las participaciones máximas.";
-  if (strategyWizardAnswer("hasLanding") === "Sí" && !strategyWizardHasValidUrl(payload.delivered_assets.landing_url)) return "Si la campaña tendrá landing, agrega una URL real y válida.";
-  if (strategyWizardAnswer("requiresValidation") === "Sí" && !payload.delivered_assets.validator_url && !strategyWizardAnswer("redemptionMethod")) return "Si hay beneficio redimible, define validación o método de validación.";
-  if (strategyWizardAnswer("hasValidator") === "Sí" && !strategyWizardHasValidUrl(payload.delivered_assets.validator_url)) return "Si usarás validación interna, agrega una URL real y válida.";
-  if (strategyWizardAnswer("hasDigitalAsset") === "Sí" && !strategyWizardHasValidUrl(strategyWizardAnswer("digitalAssetUrl"))) return "Si hay activo digital, agrega una URL real y válida de descarga.";
-  if (strategyWizardAnswer("hasGame") === "Sí" && !strategyWizardHasValidUrl(payload.delivered_assets.game_url)) return "Si hay juego o formulario, agrega una URL real y válida.";
+  const urls = [payload.delivered_assets.landing_url, payload.delivered_assets.validator_url, payload.delivered_assets.game_url, payload.delivered_assets.digital_asset_url].filter(Boolean);
+  if (urls.some((url) => !strategyWizardHasValidUrl(url))) return "Revisa las URLs agregadas; deben comenzar por http:// o https://.";
   if (normalizeInventoryLookup(strategyWizardAnswer("objective")).includes("refer") && !(strategyWizardAnswer("ticketLogic") || []).includes("Referral ticket")) return "Si es campaña de referidos, incluye lógica de referido.";
   if (normalizeInventoryLookup(strategyWizardAnswer("rewardType")).includes("giftcard") && (!strategyWizardAnswer("rewardValue") || !strategyWizardAnswer("rewardExpires"))) return "Si eliges giftcard, define valor nominal y vencimiento.";
   return "";
@@ -31949,8 +32052,13 @@ function applyStrategyWizardToCampaignForm() {
     setFormMessage(strategyWizardMessage, validationMessage, "error");
     return false;
   }
-  closeStrategyWizard();
+  if (!canManageCampaigns() || !session?.user?.business_id) {
+    showFeatureUpgradeInterstitial("portal_access", { requestedView: "campaigns" });
+    setFormMessage(strategyWizardMessage, "Tu plan o sesión actual no permite crear la campaña todavía.", "error");
+    return false;
+  }
   openCampaignModal("create");
+  if (campaignModal?.classList.contains("hidden")) return false;
   campaignFormName.value = payload.name;
   campaignFormSlug.value = payload.slug;
   campaignFormSlug.dataset.generatedFrom = payload.name;
@@ -31974,8 +32082,99 @@ function applyStrategyWizardToCampaignForm() {
   campaignFormQrLandingUrl.value = payload.delivered_assets.qr_landing_url;
   campaignFormAssetNotes.value = payload.delivered_assets.creative_notes;
   state.campaignModalInitialSnapshot = campaignModalSnapshot();
-  setInlineMessage(campaignModalMessage, "Campaña generada por el ayudador. Revisa y guarda como borrador cuando esté lista.", "success");
+  closeStrategyWizard({ restoreFocus: false });
+  setInlineMessage(campaignModalMessage, "Plan aplicado. Ajusta solo lo avanzado que necesites y guarda.", "success");
   return true;
+}
+
+function strategyWizardChannelRefs(channels = strategyWizardAnswer("channels", [])) {
+  const configured = typeof activeAcquisitionChannels === "function" ? activeAcquisitionChannels() : [];
+  return Array.from(new Set((channels || []).map((channel) => String(channel || "").trim()).filter(Boolean))).map((name) => {
+    const match = configured.find((item) => normalizeInventoryLookup(item.name || item.platform) === normalizeInventoryLookup(name));
+    return match?.id
+      ? { acquisition_channel_id: match.id, acquisition_channel: match.name || match.platform || name }
+      : { acquisition_channel_id: null, acquisition_channel: name };
+  });
+}
+
+async function createStrategyWizardCampaign() {
+  if (state.strategyWizardCreating) return null;
+  autoCompleteStrategyWizard();
+  const payload = buildStrategyCampaignPayload();
+  const validationMessage = validateStrategyWizardPayload(payload);
+  if (validationMessage) {
+    setFormMessage(strategyWizardMessage, validationMessage, "error");
+    return null;
+  }
+  if (!canManageCampaigns() || !session?.user?.business_id) {
+    showFeatureUpgradeInterstitial("portal_access", { requestedView: "campaigns" });
+    setFormMessage(strategyWizardMessage, "Tu plan o sesión actual no permite crear la campaña todavía.", "error");
+    return null;
+  }
+  const channelRefs = strategyWizardChannelRefs(payload.launch_channels);
+  if (!channelRefs.length) {
+    setFormMessage(strategyWizardMessage, "Selecciona al menos un canal para crear la campaña.", "error");
+    return null;
+  }
+  state.strategyWizardCreating = true;
+  saveStrategyWizardDraft({ silent: true });
+  setButtonLoading(strategyWizardApplyButton, true, "Creando campaña...");
+  setButtonLoading(strategyWizardNextButton, true, "Creando campaña...");
+  setFormMessage(strategyWizardMessage, "Creando el borrador y preparando su centro de control...", "info");
+  try {
+    const requestPayload = {
+      ...payload,
+      status: "DRAFT",
+      launch_channel_refs: channelRefs,
+      campaign_cost_calculator: {
+        source: "strategy_assistant",
+        production: Number(strategyWizardAnswer("productionCost") || 0),
+        benefits: Number(strategyWizardAnswer("benefitCost") || 0),
+        services: Number(strategyWizardAnswer("serviceCost") || 0),
+        other: Number(strategyWizardAnswer("otherCost") || 0),
+        channel_investments: [],
+      },
+      ...(isAdmin() ? { business_id: session.user.business_id } : {}),
+    };
+    const result = await api(isAdmin() ? "/api/admin/campaigns" : "/api/business/campaigns", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(requestPayload),
+    });
+    const campaign = result?.campaign;
+    if (!campaign?.id) throw new Error("La campaña se creó, pero Qori no devolvió su identificador.");
+    state.selectedCampaignId = campaign.id;
+    try { window.localStorage?.removeItem(strategyWizardDraftKey()); } catch (_error) { /* El servidor ya confirmó la creación. */ }
+    closeStrategyWizard({ restoreFocus: false });
+    setView("campaigns");
+    try {
+      await loadWorkspace();
+      await selectCampaign(campaign.id);
+    } catch (_refreshError) {
+      showFeedback("La campaña sí quedó creada. Actualiza la sección si todavía no aparece su centro de control.", "warning", { title: "Borrador confirmado", timeout: 8000 });
+      return campaign;
+    }
+    showFeedback("Campaña creada en borrador. Ya puedes conectar una experiencia o abrir los detalles avanzados.", "success", { title: "Campaña lista", timeout: 7000 });
+    return campaign;
+  } catch (error) {
+    setFormMessage(strategyWizardMessage, error.message || "No pudimos crear la campaña. Tu borrador sigue guardado.", "error");
+    return null;
+  } finally {
+    state.strategyWizardCreating = false;
+    setButtonLoading(strategyWizardApplyButton, false);
+    setButtonLoading(strategyWizardNextButton, false);
+  }
+}
+
+function refreshStrategyWizardRecommendation({ preserveAudience = false } = {}) {
+  const current = state.strategyWizardAnswers || {};
+  const audience = current.targetPublic;
+  const objective = current.objective || "Captar nuevos leads";
+  applyStrategyObjectiveBlueprint(objective);
+  if (preserveAudience && audience) setStrategyWizardAnswer("targetPublic", audience);
+  setStrategyWizardAnswer("channels", strategyWizardSuggestedChannels());
+  syncStrategyWizardCadenceDates();
+  autoCompleteStrategyWizard();
 }
 
 function ensureCampaignQuickCalculator() {
@@ -57519,7 +57718,7 @@ campaignWizardEntryButton?.addEventListener("click", () => {
   openStrategyWizard();
 });
 campaignManualEntryButton?.addEventListener("click", () => {
-  setInlineMessage(campaignModalMessage, "Completa el formulario manualmente o usa el ayudador para generar una estructura estratégica.", "info");
+  setInlineMessage(campaignModalMessage, "Completa el formulario manualmente o usa el asistente para generar una estructura estratégica.", "info");
 });
 campaignFormName?.addEventListener("input", () => syncCampaignSlugFromName());
 campaignFormSlug?.addEventListener("input", () => {
@@ -57852,21 +58051,38 @@ campaignStrategyWizardCloseButton?.addEventListener("click", closeStrategyWizard
 campaignStrategyWizardModal?.addEventListener("click", (event) => {
   if (event.target === campaignStrategyWizardModal) closeStrategyWizard();
 });
+campaignStrategyWizardModal?.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeStrategyWizard();
+    return;
+  }
+  if (event.key !== "Tab") return;
+  const focusable = Array.from(campaignStrategyWizardModal.querySelectorAll('button:not([disabled]):not([hidden]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href]'))
+    .filter((node) => node.offsetParent !== null);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+});
 strategyWizardBackButton?.addEventListener("click", () => {
   state.strategyWizardStep = Math.max(0, state.strategyWizardStep - 1);
   renderStrategyWizard();
   setFormMessage(strategyWizardMessage, "Volviste al paso anterior. Puedes ajustar la decisión sin perder el avance.", "info");
 });
 strategyWizardSkipButton?.addEventListener("click", () => {
-  const skippedStep = strategyWizardCurrentStep();
-  state.strategyWizardStep = Math.min(STRATEGY_WIZARD_STEPS.length - 1, state.strategyWizardStep + 1);
+  const acceptedStep = strategyWizardCurrentStep();
+  autoCompleteStrategyWizard();
+  state.strategyWizardStep = Math.min(STRATEGY_WIZARD_PREMIUM_STEPS.length - 1, state.strategyWizardStep + 1);
+  saveStrategyWizardDraft({ silent: true });
   renderStrategyWizard();
-  setFormMessage(strategyWizardMessage, `Omitiste “${skippedStep.title}”. Puedes volver cuando tengas ese dato; Qori mantendrá el contexto.`, "info");
+  setFormMessage(strategyWizardMessage, `Recomendación aceptada para “${acceptedStep.title}”. Puedes ajustarla cuando quieras.`, "success");
 });
 strategyWizardNextButton?.addEventListener("click", () => {
   autoCompleteStrategyWizard();
-  if (state.strategyWizardStep >= STRATEGY_WIZARD_STEPS.length - 1) {
-    applyStrategyWizardToCampaignForm();
+  if (state.strategyWizardStep >= STRATEGY_WIZARD_PREMIUM_STEPS.length - 1) {
+    createStrategyWizardCampaign();
     return;
   }
   const completedStep = strategyWizardCurrentStep();
@@ -57881,10 +58097,10 @@ strategyWizardNextButton?.addEventListener("click", () => {
 });
 strategyWizardDraftButton?.addEventListener("click", saveStrategyWizardDraft);
 strategyWizardSuggestButton?.addEventListener("click", () => {
-  autoCompleteStrategyWizard();
+  refreshStrategyWizardRecommendation();
   saveStrategyWizardDraft({ silent: true });
-  setFormMessage(strategyWizardMessage, "Estrategia sugerida con dinámica, embudo, tickets internos y seguimiento comercial.", "success");
   renderStrategyWizard();
+  setFormMessage(strategyWizardMessage, "Qori completó la recomendación con dinámica, canales, vigencia y seguimiento comercial.", "success");
 });
 strategyWizardOptimizeButton?.addEventListener("click", () => {
   const answers = state.strategyWizardAnswers || {};
@@ -57895,10 +58111,10 @@ strategyWizardOptimizeButton?.addEventListener("click", () => {
   if (!Array.isArray(answers.ticketLogic) || answers.ticketLogic.length < 3) setStrategyWizardAnswer("ticketLogic", ["Lead ticket", "Reward ticket", "Redemption ticket"]);
   autoCompleteStrategyWizard();
   saveStrategyWizardDraft({ silent: true });
-  setFormMessage(strategyWizardMessage, "Campaña optimizada para más alcance, mejor filtrado y mayor trazabilidad comercial.", "success");
   renderStrategyWizard();
+  setFormMessage(strategyWizardMessage, "Campaña optimizada para más alcance, mejor filtrado y mayor trazabilidad comercial.", "success");
 });
-strategyWizardApplyButton?.addEventListener("click", applyStrategyWizardToCampaignForm);
+strategyWizardApplyButton?.addEventListener("click", createStrategyWizardCampaign);
 campaignAffiliateForm?.addEventListener("submit", assignCampaignAffiliate);
 saveSnapshotButton.addEventListener("click", saveCampaignSnapshot);
 snapshotModalForm.addEventListener("submit", submitCampaignSnapshot);

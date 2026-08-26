@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/img/qori-favicon-32.png?v=qori-favicon-20260825-v120">
   <link rel="apple-touch-icon" sizes="180x180" href="/img/qori-apple-touch-icon.png?v=qori-favicon-20260825-v120">
   <link rel="manifest" href="/site.webmanifest?v=qori-favicon-20260825-v120">
-  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-attributed-sales-command-v368">
+  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-attributed-sales-command-v368-sales-entry-modal-v371-campaign-assistant-premium-v375">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -47,7 +47,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1" media="print" data-deferred-portal-style>
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825-unified-email-routing-v359-rms-above-fold-v361-gos-status-contrast-v363-20260826">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825-unified-email-routing-v359-rms-above-fold-v361-gos-status-contrast-v363-20260826-campaign-assistant-premium-v374">
   <link rel="stylesheet" href="css/attributed-sales-premium.css?v=sales-entry-modal-v371-20260826">
 <link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-premium-v341-20260823" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-white-titles-v14-20260825" media="print" data-deferred-portal-style>
@@ -7736,7 +7736,7 @@
           </button>
           <button class="solid-button" id="campaignWizardEntryButton" type="button">
             <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
-            Crear con ayudador estratégico
+            Crear con asistente estratégico
           </button>
         </div>
         <label>
@@ -7850,44 +7850,44 @@
     </div>
   </div>
 
-  <div class="modal-shell hidden" id="campaignStrategyWizardModal" role="dialog" aria-modal="true" aria-labelledby="campaignStrategyWizardTitle">
+  <div class="modal-shell hidden" id="campaignStrategyWizardModal" role="dialog" aria-modal="true" aria-labelledby="campaignStrategyWizardTitle" aria-describedby="strategyWizardProgressDetail">
     <div class="modal-card campaign-strategy-wizard-card">
       <div class="modal-head">
         <div>
-          <span class="mono-label">Reward Marketing System</span>
-          <h3 id="campaignStrategyWizardTitle">Asistente estratégico de campañas</h3>
+          <span class="mono-label">Qori Campaign Intelligence</span>
+          <h3 id="campaignStrategyWizardTitle">Diseñador inteligente de campañas</h3>
         </div>
-        <button class="icon-button" id="campaignStrategyWizardCloseButton" type="button" aria-label="Cerrar ayudador estratégico">
+        <button class="icon-button" id="campaignStrategyWizardCloseButton" type="button" aria-label="Cerrar asistente estratégico">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
       <div class="strategy-wizard-progress">
-        <span id="strategyWizardProgressText">Paso 1 de 14</span>
-        <div><span id="strategyWizardProgressBar"></span></div>
-        <p id="strategyWizardProgressDetail" class="strategy-wizard-progress-detail" aria-live="polite">Responde las decisiones clave; Qori guarda tu avance en este navegador.</p>
+        <span id="strategyWizardProgressText">Decisión 1 de 4</span>
+        <div role="progressbar" aria-label="Avance del diseño" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1"><span id="strategyWizardProgressBar"></span></div>
+        <p id="strategyWizardProgressDetail" class="strategy-wizard-progress-detail" aria-live="polite">Qori ya preparó una recomendación. Ajusta solo lo que cambie tu campaña.</p>
       </div>
       <div class="strategy-wizard-shell">
         <section class="strategy-wizard-main">
           <div class="strategy-wizard-step-head">
-            <span class="mono-label" id="strategyWizardStepKicker">Contexto</span>
-            <h4 id="strategyWizardStepTitle">Contexto del negocio</h4>
-            <p id="strategyWizardStepHelp">Responde lo mínimo para que el sistema estructure una campaña accionable.</p>
+            <span class="mono-label" id="strategyWizardStepKicker">Decisión 1</span>
+            <h4 id="strategyWizardStepTitle">¿Qué resultado quieres mover?</h4>
+            <p id="strategyWizardStepHelp">Una decisión clara es suficiente para que Qori construya el primer plan.</p>
           </div>
           <div class="strategy-wizard-step-body" id="strategyWizardStepBody"></div>
           <div class="strategy-wizard-actions">
             <button class="ghost-button" id="strategyWizardBackButton" type="button">Volver</button>
-            <button class="ghost-button" id="strategyWizardSkipButton" type="button">Saltar paso</button>
+            <button class="ghost-button" id="strategyWizardSkipButton" type="button">Aceptar recomendación</button>
             <button class="ghost-button" id="strategyWizardDraftButton" type="button">Guardar borrador</button>
-            <button class="ghost-button" id="strategyWizardSuggestButton" type="button">Sugerir estrategia</button>
+            <button class="ghost-button" id="strategyWizardSuggestButton" type="button">Recomendar por mí</button>
             <button class="solid-button" id="strategyWizardNextButton" type="button">Continuar</button>
           </div>
         </section>
         <aside class="strategy-wizard-summary">
-          <span class="mono-label">Campaña en construcción</span>
+          <span class="mono-label">Plan inteligente en vivo</span>
           <div id="strategyWizardSummary"></div>
           <div class="strategy-wizard-summary-actions">
-            <button class="ghost-button" id="strategyWizardOptimizeButton" type="button">Optimizar campaña</button>
-            <button class="solid-button" id="strategyWizardApplyButton" type="button">Generar campaña</button>
+            <button class="ghost-button" id="strategyWizardOptimizeButton" type="button">Mejorar recomendación</button>
+            <button class="solid-button" id="strategyWizardApplyButton" type="button">Crear con recomendación</button>
           </div>
           <p class="form-message" id="strategyWizardMessage"></p>
         </aside>
@@ -8118,7 +8118,7 @@
       <footer class="modal-actions"><button class="ghost-button" type="button" data-portal-email-route="cancel">Cancelar</button></footer>
     </section>
   </div>
-    <script src="js/app.js?v=gos-brand-v362-20260826-attributed-sales-command-v368-sales-entry-modal-v371" defer></script>
+    <script src="js/app.js?v=gos-brand-v362-20260826-attributed-sales-command-v368-sales-entry-modal-v371-campaign-assistant-premium-v375" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v370-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
