@@ -258,7 +258,7 @@ html body[data-current-view="sales"] .portal-shell .sales-command-view #salesKpi
   html body[data-current-view="sales"] .portal-shell .sales-command-view .sales-kpis .kpi-card[data-sales-kpi="revenue"] { grid-column: auto !important; }
 }
 
-/* Qori Design Studio · Revenue Command v368 */
+/* Qori Design Studio · Revenue Command v369 */
 body[data-current-view="sales"] {
   background:
     radial-gradient(circle at 82% 5%, rgba(0, 174, 234, .10), transparent 25rem),
@@ -682,7 +682,7 @@ body[data-current-view="sales"] :is(button, input, select, textarea):focus-visib
 }
 
 /* Firma final con especificidad suficiente frente a las capas históricas del portal. */
-html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="sales"] main.portal-shell section.view-section.sales-command-view.active > div.sales-command-hero {
+html body:not(#qoriSalesA#qoriSalesB#qoriSalesC#qoriSalesD#qoriSalesE#qoriSalesF)[data-current-view="sales"] main.portal-shell section.view-section.sales-command-view.active > div.sales-command-hero {
   min-height: 230px !important;
   padding: clamp(28px, 4vw, 52px) !important;
   background:
@@ -691,20 +691,20 @@ html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="s
     linear-gradient(128deg, #031b44 0%, #063b83 56%, #076dde 100%) !important;
 }
 
-html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="sales"] main.portal-shell .sales-command-hero::before,
-html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="sales"] main.portal-shell .sales-command-hero::after { display: block !important; }
+html body:not(#qoriSalesA#qoriSalesB#qoriSalesC#qoriSalesD#qoriSalesE#qoriSalesF)[data-current-view="sales"] main.portal-shell .sales-command-hero::before,
+html body:not(#qoriSalesA#qoriSalesB#qoriSalesC#qoriSalesD#qoriSalesE#qoriSalesF)[data-current-view="sales"] main.portal-shell .sales-command-hero::after { display: block !important; }
 
-html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="sales"] main.portal-shell .sales-command-hero :is(h2, .mono-label) { color: #fff !important; }
-html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="sales"] main.portal-shell .sales-command-hero p { color: #d6eaff !important; }
+html body:not(#qoriSalesA#qoriSalesB#qoriSalesC#qoriSalesD#qoriSalesE#qoriSalesF)[data-current-view="sales"] main.portal-shell .sales-command-hero :is(h2, .mono-label) { color: #fff !important; }
+html body:not(#qoriSalesA#qoriSalesB#qoriSalesC#qoriSalesD#qoriSalesE#qoriSalesF)[data-current-view="sales"] main.portal-shell .sales-command-hero p { color: #d6eaff !important; }
 
-html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="sales"] main.portal-shell .sales-command-view #salesKpiGrid > .kpi-card:nth-child(n) {
+html body:not(#qoriSalesA#qoriSalesB#qoriSalesC#qoriSalesD#qoriSalesE#qoriSalesF)[data-current-view="sales"] main.portal-shell .sales-command-view #salesKpiGrid > .kpi-card:nth-child(n) {
   min-height: 154px !important;
   padding: 19px !important;
   border-radius: 20px !important;
   background: linear-gradient(160deg, #fff 0%, #f9fcff 100%) !important;
 }
 
-html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="sales"] main.portal-shell .sales-command-view #salesKpiGrid > .kpi-card[data-sales-kpi="revenue"] {
+html body:not(#qoriSalesA#qoriSalesB#qoriSalesC#qoriSalesD#qoriSalesE#qoriSalesF)[data-current-view="sales"] main.portal-shell .sales-command-view #salesKpiGrid > .kpi-card[data-sales-kpi="revenue"] {
   background-color: #074aa7 !important;
   background-image:
     radial-gradient(circle at 100% 0, rgba(0, 218, 255, .30), transparent 42%),
@@ -712,7 +712,7 @@ html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="s
 }
 
 @media (max-width: 760px) {
-  html body:not(#qoriCleanA#qoriCleanB#qoriCleanC#qoriCleanD)[data-current-view="sales"] main.portal-shell section.view-section.sales-command-view.active > div.sales-command-hero {
+  html body:not(#qoriSalesA#qoriSalesB#qoriSalesC#qoriSalesD#qoriSalesE#qoriSalesF)[data-current-view="sales"] main.portal-shell section.view-section.sales-command-view.active > div.sales-command-hero {
     min-height: 0 !important;
     padding: 24px 20px !important;
   }

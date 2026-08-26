@@ -71,7 +71,7 @@ test("manual sale retries are idempotent before any customer, product or points 
 });
 
 test("premium sales command exposes server filters, pagination and canonical CSV", () => {
-  assert.match(portal, /attributed-sales-premium\.css\?v=attributed-sales-command-v368/);
+  assert.match(portal, /attributed-sales-premium\.css\?v=attributed-sales-command-v369/);
   assert.match(portal, /app\.js\?v=[^"']*attributed-sales-command-v368/);
   assert.match(portal, /id="salesAnalysisStatusInput"/);
   assert.match(portal, /id="salesAnalysisSourceInput"/);
@@ -90,6 +90,7 @@ test("premium sales command exposes server filters, pagination and canonical CSV
   assert.match(premiumCss, /@media \(max-width: 430px\)/);
   assert.match(premiumCss, /data-sales-kpi="revenue"/);
   assert.match(premiumCss, /neutraliza la composicion global tardia del portal/);
-  assert.match(premiumCss, /Qori Design Studio · Revenue Command v368/);
+  assert.match(premiumCss, /Qori Design Studio · Revenue Command v369/);
+  assert.match(premiumCss, /qoriSalesA#qoriSalesB#qoriSalesC#qoriSalesD#qoriSalesE#qoriSalesF/);
   assert.match(premiumCss, /--sales-share/);
 });
