@@ -1,4 +1,5 @@
 const express = require("express");
+const { downloadSalesImportTemplate, previewSalesImport, importSales } = require("../controllers/salesBulkImportController");
 const { authRequired, requireRoles } = require("../middleware/auth");
 const {
   cacheBusinessResponse,
@@ -367,6 +368,9 @@ router.get("/campaigns/:id/leads/:qrId/active-qr", downloadActiveLeadQr);
 router.get("/campaigns/:id/redemptions", standardBusinessCache, campaignRedemptions);
 router.get("/sales/attributed", attributedSales);
 router.get("/sales/attributed/export.csv", exportAttributedSales);
+router.get("/sales/import-template.csv", downloadSalesImportTemplate);
+router.post("/sales/import/preview", previewSalesImport);
+router.post("/sales/import", importSales);
 router.post("/sales/:saleId/void", voidAttributedSale);
 router.get("/campaigns/:id/sales", standardBusinessCache, campaignSales);
 router.post("/campaigns/:id/sales-snapshot", createSalesSnapshot);

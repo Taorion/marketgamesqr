@@ -48,7 +48,7 @@
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825-unified-email-routing-v359-rms-above-fold-v361-gos-status-contrast-v363-20260826">
-  <link rel="stylesheet" href="css/attributed-sales-premium.css?v=attributed-sales-command-v369-20260826">
+  <link rel="stylesheet" href="css/attributed-sales-premium.css?v=sales-bulk-import-v370-20260826">
 <link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-premium-v341-20260823" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-white-titles-v14-20260825" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
@@ -5378,6 +5378,10 @@
                 <p>Una fuente confiable para saber qué se vendió, a quién, por cuánto y gracias a qué campaña, medio o ticket.</p>
               </div>
               <div class="head-actions">
+                <button class="ghost-button sales-import-head-button" id="salesBulkImportButton" type="button">
+                  <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
+                  Importar Excel
+                </button>
                 <button class="solid-button" id="salesCreateHeadButton" type="button">
                   <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
                   Registrar venta
@@ -8020,6 +8024,26 @@
       </form>
     </article>
   </div>
+<div class="modal-shell hidden sales-import-modal" id="salesBulkImportModal" role="dialog" aria-modal="true" aria-labelledby="salesBulkImportTitle" aria-describedby="salesBulkImportHelp" aria-hidden="true">
+  <section class="modal-card sales-import-card" tabindex="-1">
+    <header class="modal-head sales-import-head">
+      <div><span class="mono-label">Revenue Command · ingreso seguro</span><h3 id="salesBulkImportTitle">Carga masiva de ventas</h3><p id="salesBulkImportHelp">Convierte el registro histórico de tus vendedores en ventas atribuidas, sin sobrescribir datos ni duplicar filas.</p></div>
+      <button class="icon-button" id="salesBulkImportClose" type="button" aria-label="Cerrar carga masiva"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+    </header>
+    <div class="sales-import-body">
+      <section class="sales-import-guidance"><div><span class="material-symbols-outlined" aria-hidden="true">table_view</span><div><strong>Excel o CSV, listo para validar</strong><p>Una fila por venta. Son obligatorios fecha, valor y cliente; usa el correo exacto del vendedor para atribuirla.</p></div></div><button class="ghost-button" id="salesBulkTemplateButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar plantilla</button></section>
+      <div class="sales-import-principles" aria-label="Reglas de importación"><span><strong>1</strong>Previsualiza antes de guardar</span><span><strong>2</strong>Detecta reintentos y duplicados</span><span><strong>3</strong>Respeta vendedores y datos del negocio</span></div>
+      <label class="sales-import-dropzone" id="salesBulkDropzone" for="salesBulkFileInput" tabindex="0"><span class="material-symbols-outlined" aria-hidden="true">cloud_upload</span><strong>Arrastra tu Excel aquí</strong><small>También acepta CSV · máximo 5 MB y 2.000 ventas</small><input id="salesBulkFileInput" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label>
+      <div class="sales-import-file hidden" id="salesBulkFileSummary"><span class="material-symbols-outlined" aria-hidden="true">description</span><span><strong id="salesBulkFileName">—</strong><small id="salesBulkFileSize">—</small></span><button class="icon-button" id="salesBulkFileRemove" type="button" aria-label="Quitar archivo"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button></div>
+      <div class="sales-import-progress hidden" id="salesBulkProgress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span><small>Validando archivo…</small></div>
+      <div class="sales-import-counters hidden" id="salesBulkCounters"></div>
+      <section class="sales-import-preview hidden" id="salesBulkPreview"><div class="sales-import-preview-head"><div><strong>Vista previa conciliada</strong><small>Primeras 10 filas</small></div><span class="status-chip ok">Sin cambios todavía</span></div><div class="sales-import-table-scroll"><table><thead><tr><th>Fila</th><th>Fecha / cliente</th><th>Valor</th><th>Vendedor</th><th>Estado</th></tr></thead><tbody id="salesBulkPreviewBody"></tbody></table></div></section>
+      <section class="sales-import-result hidden" id="salesBulkResult"></section>
+      <p class="form-message sales-import-message" id="salesBulkMessage" role="status" aria-live="polite"></p>
+    </div>
+    <footer class="sales-import-footer"><button class="ghost-button hidden" id="salesBulkErrorsButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar incidencias</button><span></span><button class="ghost-button" id="salesBulkCancelButton" type="button">Cancelar</button><button class="solid-button" id="salesBulkSubmitButton" type="button" disabled>Importar ventas válidas</button></footer>
+  </section>
+</div>
 <div class="modal-shell hidden customer-csv-modal" id="customerCsvImportModal" role="dialog" aria-modal="true" aria-labelledby="customerCsvImportTitle" aria-describedby="customerCsvImportHelp" aria-hidden="true">
   <section class="modal-card customer-csv-modal-card" tabindex="-1">
     <header class="modal-head customer-csv-modal-head">
@@ -8079,6 +8103,7 @@
     </section>
   </div>
     <script src="js/app.js?v=gos-brand-v362-20260826-attributed-sales-command-v368" defer></script>
+<script src="js/sales-bulk-import.js?v=sales-bulk-import-v370-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>

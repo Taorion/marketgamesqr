@@ -71,7 +71,7 @@ test("manual sale retries are idempotent before any customer, product or points 
 });
 
 test("premium sales command exposes server filters, pagination and canonical CSV", () => {
-  assert.match(portal, /attributed-sales-premium\.css\?v=attributed-sales-command-v369/);
+  assert.match(portal, /attributed-sales-premium\.css\?v=sales-bulk-import-v370/);
   assert.match(portal, /app\.js\?v=[^"']*attributed-sales-command-v368/);
   assert.match(portal, /id="salesAnalysisStatusInput"/);
   assert.match(portal, /id="salesAnalysisSourceInput"/);
