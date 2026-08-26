@@ -5,14 +5,27 @@ const fs = require("node:fs");
 const markup = fs.readFileSync("empresa/index.html", "utf8");
 const app = fs.readFileSync("empresa/js/app.js", "utf8");
 const css = fs.readFileSync("empresa/css/portal-clean-v39.css", "utf8");
+const legacyCss = fs.readFileSync("empresa/css/styles.css", "utf8");
 
-test("RMS premium command center exposes truthful live operational context", () => {
-  assert.match(markup, /<h2 id="rmsStationsTitle">Máquina RMS<\/h2>/);
+test("GOS premium command center exposes truthful live operational context", () => {
+  assert.match(markup, /<h2 id="rmsStationsTitle">Máquina GOS<\/h2>/);
   assert.match(markup, /id="rmsMachineLiveStatus"/);
   assert.match(markup, /id="rmsMachineActiveStations"/);
   assert.match(markup, /Diez estaciones operativas convierten señales en ventas; dos controles observan la calidad sin mover leads/);
   assert.match(app, /activeStationCount = stages\.filter/);
   assert.match(app, /priorityCount\.toLocaleString\("es-CO"\)/);
+});
+
+test("GOS is the only visible machine brand while RMS contracts remain internal", () => {
+  assert.doesNotMatch(markup, /\bRMS\b/);
+  assert.match(markup, /<strong>Máquina GOS<\/strong>/);
+  assert.match(markup, /Tutorial guiado GOS/);
+  assert.match(app, /const PORTAL_VISIBLE_SYSTEM_NAME = "GOS"/);
+  assert.match(app, /const PORTAL_VISIBLE_SYSTEM_PATTERN = \/\\bRMS\\b\/gi/);
+  assert.match(app, /function installPortalVisibleSystemBrand\(\)/);
+  assert.doesNotMatch(legacyCss, /content:\s*"[^"]*\bRMS\b/);
+  assert.match(app, /\/api\/business\/rms-machine/);
+  assert.match(app, /const RMS_STATION_HANDOFFS = Object\.freeze/);
 });
 
 test("every lean station shows its receive decide deliver contract", () => {

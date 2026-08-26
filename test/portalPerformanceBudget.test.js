@@ -12,7 +12,7 @@ test("portal starts downloading its core script from the document head", () => {
   const script = portalHtml.match(/<script src="(js\/app\.js\?v=[^"]+)" defer><\/script>/);
   assert.ok(preload && script, "the core script must be preloaded and deferred");
   assert.equal(preload[1], script[1], "preload and script must use the same cache-busted URL");
-  assert.match(preload[1], /rms-premium-v360-20260826/);
+  assert.match(preload[1], /gos-brand-v362-20260826/);
 });
 
 test("feature-specific styles do not block the login screen", () => {

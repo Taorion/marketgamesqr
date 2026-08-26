@@ -31653,7 +31653,7 @@ body[data-current-view="rms-machine"] .rms-station-workspace[data-station-theme=
 
 .activation-form-field-row.is-fixed-product-skipped::after {
   grid-column: 1 / -1;
-  content: "No se publicara en producto especifico: RMS usara el producto asociado arriba.";
+  content: "No se publicará en producto específico: GOS usará el producto asociado arriba.";
   display: block;
   padding: 8px 10px;
   border-radius: 8px;
@@ -42236,7 +42236,7 @@ body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .mono-labe
 }
 
 body[data-current-view="rms-machine"] .portal-shell .rms-machine-head .mono-label::before {
-  content: "M�quina RMS";
+  content: "Máquina GOS";
   display: inline-flex !important;
   margin-right: 10px !important;
   padding-right: 10px !important;
@@ -59449,7 +59449,7 @@ html body[data-current-view="dashboard"] .portal-shell .view-section[data-view="
 
 html body[data-current-view="dashboard"] .portal-shell #dashboardBuilderShell::before { content: "01 Vista configurable" !important; }
 html body[data-current-view="dashboard"] .portal-shell #revenueWorkspace::before { content: "02 Acciones de revenue" !important; }
-html body[data-current-view="dashboard"] .portal-shell #commandCenterRoot::before { content: "03 Lectura ejecutiva RMS" !important; }
+html body[data-current-view="dashboard"] .portal-shell #commandCenterRoot::before { content: "03 Lectura ejecutiva GOS" !important; }
 html body[data-current-view="dashboard"] .portal-shell #businessKpiGrid::before { content: "04 Indicadores principales" !important; grid-column: 1 / -1 !important; }
 html body[data-current-view="dashboard"] .portal-shell .explain-grid::before { content: "05 Interpretacion" !important; grid-column: 1 / -1 !important; }
 html body[data-current-view="dashboard"] .portal-shell .dashboard-charts:not(.dashboard-deep-grid)::before { content: "06 Graficas principales" !important; grid-column: 1 / -1 !important; }

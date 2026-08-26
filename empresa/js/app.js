@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260822-activation-calculator-branches-premium-v325-gosqori-promotion-v358-unified-email-routing-v359-rms-premium-v360-20260826";
+const APP_VERSION = "empresa-20260822-activation-calculator-branches-premium-v325-gosqori-promotion-v358-unified-email-routing-v359-rms-premium-v360-gos-brand-v362-20260826";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -9,6 +9,63 @@ const ACTIVITY_POLL_INTERVAL_MS = 900000;
 const ACTIVITY_POLLING_VIEWS = new Set(["dashboard", "campaigns", "leads", "redemptions", "sales", "branches", "strategic-qr", "communications"]);
 const RMS_STATION_RENDER_INITIAL_LIMIT = 10;
 const RMS_STATION_RENDER_INCREMENT = 10;
+
+const PORTAL_VISIBLE_SYSTEM_NAME = "GOS";
+const PORTAL_VISIBLE_SYSTEM_PATTERN = /\bRMS\b/gi;
+const PORTAL_BRAND_SKIP_SELECTOR = "script, style, noscript, template, code, pre, textarea, [contenteditable='true']";
+
+function portalVisibleSystemCopy(value = "") {
+  return String(value).replace(PORTAL_VISIBLE_SYSTEM_PATTERN, PORTAL_VISIBLE_SYSTEM_NAME);
+}
+
+function applyPortalVisibleSystemBrand(root = document) {
+  const translateTextNode = (node) => {
+    if (!node?.nodeValue || !PORTAL_VISIBLE_SYSTEM_PATTERN.test(node.nodeValue)) return;
+    PORTAL_VISIBLE_SYSTEM_PATTERN.lastIndex = 0;
+    if (node.parentElement?.closest(PORTAL_BRAND_SKIP_SELECTOR)) return;
+    node.nodeValue = portalVisibleSystemCopy(node.nodeValue);
+  };
+  const translateElement = (element) => {
+    if (!(element instanceof Element) || element.closest(PORTAL_BRAND_SKIP_SELECTOR)) return;
+    ["aria-label", "title", "placeholder", "alt"].forEach((attribute) => {
+      const current = element.getAttribute(attribute);
+      if (current && PORTAL_VISIBLE_SYSTEM_PATTERN.test(current)) {
+        PORTAL_VISIBLE_SYSTEM_PATTERN.lastIndex = 0;
+        element.setAttribute(attribute, portalVisibleSystemCopy(current));
+      }
+    });
+  };
+  if (root?.nodeType === Node.TEXT_NODE) {
+    translateTextNode(root);
+    return;
+  }
+  if (root?.nodeType === Node.ELEMENT_NODE) translateElement(root);
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+  let node = walker.nextNode();
+  while (node) {
+    if (node.nodeType === Node.TEXT_NODE) translateTextNode(node);
+    else translateElement(node);
+    node = walker.nextNode();
+  }
+}
+
+function installPortalVisibleSystemBrand() {
+  applyPortalVisibleSystemBrand(document.body);
+  const observer = new MutationObserver((records) => records.forEach((record) => {
+    if (record.type === "characterData") applyPortalVisibleSystemBrand(record.target);
+    if (record.type === "attributes") applyPortalVisibleSystemBrand(record.target);
+    record.addedNodes?.forEach((node) => applyPortalVisibleSystemBrand(node));
+  }));
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["aria-label", "title", "placeholder", "alt"],
+  });
+}
+
+installPortalVisibleSystemBrand();
 document.querySelectorAll("link[data-deferred-portal-style]").forEach((link) => {
   link.media = "all";
 });
