@@ -1,8 +1,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const path = require("node:path");
 
-const app = fs.readFileSync("empresa/js/app.js", "utf8");
+const app = fs.readFileSync(path.join(__dirname, "..", "empresa/js/app.js"), "utf8");
 
 test("Activación 1 dispatches every prepared lead from one operator action", () => {
   const start = app.indexOf("async function dispatchNextRmsBulkActivation()");
@@ -11,7 +12,8 @@ test("Activación 1 dispatches every prepared lead from one operator action", ()
   assert.match(app, /Abrir, enviar y registrar todos/);
   assert.doesNotMatch(app, /Abrir y registrar siguiente/);
   assert.match(dispatch, /const pending = Array\.isArray\(queue\?\.pending\) \? \[\.\.\.queue\.pending\] : \[\]/);
-  assert.match(dispatch, /const opened = pending\.filter/);
+  assert.match(dispatch, /const opened = \[\]/);
+  assert.match(dispatch, /await openRmsActivationMessage/);
   assert.match(dispatch, /runBulkRequests\(opened/);
   assert.match(dispatch, /skipRefresh: true/);
   assert.match(dispatch, /await refreshRmsOpenStation\("clasificacion"\)/);

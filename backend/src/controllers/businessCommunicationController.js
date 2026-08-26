@@ -95,7 +95,14 @@ const communicationPatchSchema = communicationFieldsSchema.partial().superRefine
   if (Object.keys(body).length === 0) ctx.addIssue({ code: "custom", message: "No hay cambios para guardar." });
   validateCommunicationMedia(body, ctx);
 });
-const recipientSchema = z.object({ source_id: z.string().uuid(), source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).optional() });
+const audienceRecipientSchema = z.object({ source_id: z.string().uuid(), source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).optional() });
+const manualRecipientSchema = z.object({
+  source_id: z.string().uuid(),
+  source_type: z.literal("DIRECT_EMAIL"),
+  recipient_email: z.string().trim().email().max(220),
+  recipient_name: z.string().trim().min(1).max(180).optional(),
+});
+const recipientSchema = z.union([audienceRecipientSchema, manualRecipientSchema]);
 const sendSchema = z.object({
   recipients: z.array(recipientSchema).min(1).max(120),
   consent_confirmed: z.literal(true),
@@ -140,7 +147,7 @@ async function remove(req, res, next) { try { requireCommunicationConfigurationA
 async function send(req, res, next) { try { const body = validate(sendSchema, req.body); res.json(await service.sendBusinessCommunication(businessIdFor(req), req.user.id, req.params.id, body.recipients, body.consent_confirmed, req.user.email, body.idempotency_key)); } catch (error) { next(error); } }
 async function prepareWhatsApp(req, res, next) { try { const body = validate(sendSchema, req.body); res.json(await service.prepareBusinessCommunicationWhatsApp(businessIdFor(req), req.user.id, req.params.id, body.recipients, body.consent_confirmed, body.idempotency_key)); } catch (error) { next(error); } }
 async function whatsappQueue(req, res, next) { try { res.json(await service.listBusinessCommunicationWhatsAppQueue(businessIdFor(req), req.params.id)); } catch (error) { next(error); } }
-async function markWhatsAppOpened(req, res, next) { try { const body = validate(recipientSchema, req.body); res.json(await service.markBusinessCommunicationWhatsAppOpened(businessIdFor(req), req.user.id, req.params.id, body)); } catch (error) { next(error); } }
+async function markWhatsAppOpened(req, res, next) { try { const body = validate(audienceRecipientSchema, req.body); res.json(await service.markBusinessCommunicationWhatsAppOpened(businessIdFor(req), req.user.id, req.params.id, body)); } catch (error) { next(error); } }
 async function publish(req, res, next) { try { const body = validate(publishSchema, req.body); res.json(await service.publishBusinessCommunication(businessIdFor(req), req.user.id, req.params.id, body)); } catch (error) { next(error); } }
 async function emailConnection(req, res, next) { try { res.json(await service.getEmailConnectionStatus(businessIdFor(req))); } catch (error) { next(error); } }
 async function saveEmailConnection(req, res, next) { try { requireCommunicationConfigurationAccess(req); const body = validate(emailConnectionSchema, req.body); res.json(await service.saveEmailConnection(businessIdFor(req), { ...body, resend_api_key: body.resend_api_key || "" })); } catch (error) { next(error); } }

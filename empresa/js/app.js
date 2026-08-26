@@ -6358,6 +6358,115 @@ async function loadCommunicationEmailConnection(options = {}) {
   return state.communicationEmailConnection;
 }
 
+let portalEmailRouteResolver = null;
+
+function closePortalEmailRouteModal(choice = "cancel") {
+  const modal = document.getElementById("portalEmailRouteModal");
+  modal?.classList.add("hidden");
+  modal?.setAttribute("aria-hidden", "true");
+  const resolve = portalEmailRouteResolver;
+  portalEmailRouteResolver = null;
+  resolve?.(choice);
+}
+
+function askPortalEmailRoute() {
+  const modal = document.getElementById("portalEmailRouteModal");
+  if (!modal) return Promise.resolve("external");
+  if (portalEmailRouteResolver) closePortalEmailRouteModal("cancel");
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
+  window.setTimeout(() => modal.querySelector('[data-portal-email-route="external"]')?.focus(), 0);
+  return new Promise((resolve) => { portalEmailRouteResolver = resolve; });
+}
+
+function openPortalEmailSettings() {
+  closePortalEmailRouteModal("configure");
+  document.querySelector('.nav-item[data-view="account"][data-account-screen="profile"]')?.click();
+  window.setTimeout(() => document.getElementById("accountSectionEmail")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+}
+
+async function portalEmailDeliveryRoute(options = {}) {
+  let connection = null;
+  try {
+    connection = await loadCommunicationEmailConnection({ force: options.force !== false });
+  } catch (_error) {
+    state.communicationEmailConnectionLoaded = false;
+  }
+  if (connection?.ready) return "qori";
+  const choice = await askPortalEmailRoute();
+  if (choice === "configure") openPortalEmailSettings();
+  return choice;
+}
+
+function openExternalEmailDraft({ to = [], bcc = [], subject = "", body = "" } = {}) {
+  const direct = (Array.isArray(to) ? to : [to]).map((email) => String(email || "").trim()).filter(Boolean);
+  const blind = (Array.isArray(bcc) ? bcc : [bcc]).map((email) => String(email || "").trim()).filter(Boolean);
+  const params = new URLSearchParams();
+  if (blind.length) params.set("bcc", blind.join(","));
+  if (subject) params.set("subject", subject);
+  if (body) params.set("body", body);
+  const url = `mailto:${direct.map(encodeURIComponent).join(",")}${params.toString() ? `?${params.toString()}` : ""}`;
+  window.location.href = url;
+  return true;
+}
+
+function portalEmailRecipient(item = {}) {
+  const email = String(item.email || item.recipient_email || "").trim();
+  const sourceId = item.source_id || item.id || crypto.randomUUID();
+  const registered = Boolean(item.source_id || item.id);
+  return {
+    source_id: sourceId,
+    source_type: registered ? String(item.source_type || "PLAYER").toUpperCase() : "DIRECT_EMAIL",
+    ...(registered ? {} : { recipient_email: email, recipient_name: String(item.name || "Contacto").trim() || "Contacto" }),
+  };
+}
+
+async function sendPortalEmailFromQori({ recipients = [], subject = "", body = "", actionUrl = null, title = "Correo desde Qori", metadata = {}, activationId = null } = {}) {
+  const validRecipients = recipients.filter((item) => String(item?.email || item?.recipient_email || "").trim());
+  if (!validRecipients.length) throw new Error("No hay destinatarios con correo válido para este envío.");
+  const created = await api("/api/business/communications", {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      title: String(title || subject || "Correo desde Qori").slice(0, 180),
+      communication_type: "EMAIL",
+      status: "READY",
+      activation_id: activationId || null,
+      subject,
+      email_body: body,
+      action_url: actionUrl || null,
+      metadata: { source: "portal_email_router", ...metadata },
+    }),
+  });
+  const communicationId = created.communication?.id;
+  if (!communicationId) throw new Error("Qori no pudo preparar el correo.");
+  const delivery = await api(`/api/business/communications/${encodeURIComponent(communicationId)}/send`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      recipients: validRecipients.map(portalEmailRecipient),
+      consent_confirmed: true,
+      idempotency_key: crypto.randomUUID(),
+    }),
+  });
+  if (!Number(delivery?.results?.sent || 0)) {
+    throw new Error(delivery?.results?.failure_reasons?.[0]?.message || "Qori no pudo enviar el correo. Revisa la conexión de Resend.");
+  }
+  return delivery;
+}
+
+document.getElementById("portalEmailRouteModal")?.addEventListener("click", (event) => {
+  const control = event.target.closest("[data-portal-email-route]");
+  if (!control) return;
+  const choice = control.dataset.portalEmailRoute || "cancel";
+  closePortalEmailRouteModal(choice);
+});
+
+window.portalEmailDeliveryRoute = portalEmailDeliveryRoute;
+window.openExternalEmailDraft = openExternalEmailDraft;
+window.sendPortalEmailFromQori = sendPortalEmailFromQori;
+window.loadCommunicationEmailConnection = loadCommunicationEmailConnection;
+
 function communicationWhatsAppTemplateParameters(value) {
   return String(value || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
 }
@@ -29549,21 +29658,25 @@ async function sendActivationShareEmail() {
     setFormMessage(activationShareMessage, "Confirma el consentimiento comercial antes de enviar el email.", "error");
     return;
   }
-  if (!recipient.id) {
-    const mailto = `mailto:${encodeURIComponent(recipient.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`${body}\n\n${activation.public_url || ""}`.trim())}`;
-    window.location.href = mailto;
-    showFeedback("Abrimos un borrador de email porque este destinatario aún no está registrado como lead.", "info", { title: "Email listo para revisar" });
+  const route = await portalEmailDeliveryRoute();
+  if (route === "external") {
+    openExternalEmailDraft({ to: [recipient.email], subject, body: `${body}\n\n${activation.public_url || ""}`.trim() });
+    showFeedback("Abrimos el borrador en tu proveedor de email.", "info", { title: "Email externo listo" });
     return;
   }
-  const sourceType = String(recipient.source_type || "PLAYER").toUpperCase();
+  if (route !== "qori") {
+    return;
+  }
+  const sourceType = recipient.id ? String(recipient.source_type || "PLAYER").toUpperCase() : "DIRECT_EMAIL";
+  const recipientSourceId = recipient.id || crypto.randomUUID();
   const idempotencyKey = activationShareSendEmailButton?.dataset.activationAssociationKey
-    || `activation-share-email:${activation.id}:${sourceType}:${recipient.id}:${Date.now()}`;
+    || `activation-share-email:${activation.id}:${sourceType}:${recipientSourceId}:${Date.now()}`;
   if (activationShareSendEmailButton) {
     activationShareSendEmailButton.dataset.activationAssociationKey = idempotencyKey;
     activationShareSendEmailButton.disabled = true;
   }
   try {
-    const association = await api(`/api/business/leads/${encodeURIComponent(recipient.id)}/activations`, {
+    const association = recipient.id ? await api(`/api/business/leads/${encodeURIComponent(recipient.id)}/activations`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
@@ -29579,7 +29692,7 @@ async function sendActivationShareEmail() {
         idempotency_key: idempotencyKey,
         metadata: { source: "contacts", interactive_activation_id: activation.id, delivery_channel: "email" },
       }),
-    });
+    }) : null;
     const created = await api("/api/business/communications", {
       method: "POST",
       headers: authHeaders(),
@@ -29604,7 +29717,11 @@ async function sendActivationShareEmail() {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
-        recipients: [{ source_id: recipient.id, source_type: sourceType }],
+        recipients: [{
+          source_id: recipientSourceId,
+          source_type: sourceType,
+          ...(sourceType === "DIRECT_EMAIL" ? { recipient_email: recipient.email, recipient_name: recipient.name || "Contacto" } : {}),
+        }],
         consent_confirmed: true,
         idempotency_key: crypto.randomUUID(),
       }),
@@ -52076,7 +52193,7 @@ function bindRmsMachineActions(root) {
       }
       // Se abre en el mismo clic del usuario para evitar que el navegador bloquee
       // WhatsApp; el registro continúa después sin congelar toda la estación.
-      const opened = openRmsActivationMessage(item, { channel: draft.channel, message: draft.message });
+      const opened = await openRmsActivationMessage(item, { channel: draft.channel, message: draft.message });
       if (!opened) {
         if (status) {
           status.dataset.state = "error";
@@ -53270,7 +53387,10 @@ async function dispatchNextRmsBulkActivation() {
   const button = rmsStationWorkspace?.querySelector("[data-rms-dispatch-next-bulk-activation]");
   if (button?.disabled) return;
   if (button) button.disabled = true;
-  const opened = pending.filter((entry) => entry?.item && openRmsActivationMessage(entry.item, { channel: queue.channel, message: entry.message }));
+  const opened = [];
+  for (const entry of pending) {
+    if (entry?.item && await openRmsActivationMessage(entry.item, { channel: queue.channel, message: entry.message })) opened.push(entry);
+  }
   if (!opened.length) {
     if (button) button.disabled = false;
     showFeedback("No se pudo abrir ningún canal para la selección.", "error", { title: "Activación 1" });
@@ -53402,7 +53522,7 @@ function rmsActivationPrepareLocalMessage(item = {}, draft = {}) {
   return prepared;
 }
 
-function openRmsActivationMessage(item = {}, options = {}) {
+async function openRmsActivationMessage(item = {}, options = {}) {
   const delivery = rmsActivationDelivery(item);
   const targetChannel = options.channel || delivery.channel || (item.phone ? "whatsapp" : "email");
   const message = options.message || rmsActivationPaymentMessage(rmsActivationMessage(item, delivery), options);
@@ -53417,7 +53537,20 @@ function openRmsActivationMessage(item = {}, options = {}) {
   if (targetChannel === "whatsapp") {
     window.open(`https://wa.me/${encodeURIComponent(whatsappPhoneFromInput(item.phone))}?text=${encodeURIComponent(message)}`, "_blank", "noopener");
   } else {
-    window.open(`mailto:${encodeURIComponent(item.email)}?subject=${encodeURIComponent("Una propuesta para ti")}&body=${encodeURIComponent(message)}`, "_blank", "noopener");
+    const subject = options.subject || "Una propuesta para ti";
+    const route = await portalEmailDeliveryRoute();
+    if (route === "external") openExternalEmailDraft({ to: [item.email], subject, body: message });
+    else if (route === "qori") {
+      await sendPortalEmailFromQori({
+        recipients: [item],
+        subject,
+        body: message,
+        actionUrl: options.actionUrl || null,
+        title: `Activación 1 · ${item.name || item.email}`,
+        metadata: { source_module: "rms_activation_1", rms_opportunity_id: item.id || null },
+      });
+      showFeedback("Correo enviado directamente desde Qori.", "success", { title: "Activación 1" });
+    } else return false;
   }
   return true;
 }
@@ -53544,7 +53677,10 @@ async function sendRmsActivationOffer(item = {}, options = {}) {
       if (!quiet) showFeedback("Mensaje y materiales listos para revisar antes del envío.", "success", { title: "Activación 1" });
       return { prepared: true, message: deliveryRecord.whatsapp_message || deliveredMessage, attachments: deliveryRecord.attachments || [] };
     }
-    if (!draft.skipOpen) openRmsActivationMessage(item, { channel: targetChannel, message: deliveredMessage });
+    if (!draft.skipOpen) {
+      const delivered = await openRmsActivationMessage(item, { channel: targetChannel, message: deliveredMessage });
+      if (!delivered) return { prepared: true, sent: false, cancelled: true };
+    }
     const phaseUpdate = api("/api/business/rms-machine/lead/phase", {
       method: "PATCH",
       headers: authHeaders(),
@@ -59104,7 +59240,7 @@ function rmsCommercialConfirmationStationCardMarkup(item = {}) {
           </section>
         </section>
         <aside class="rms-negotiation-health-compact" data-rms-negotiation-health="${escapeHtml(item.id)}"></aside>
-        <footer class="rms-negotiation-compact-actions"><small data-rms-negotiation-help="${escapeHtml(item.id)}"></small><div><button class="ghost-button compact" type="button" data-rms-save-negotiation-draft="${escapeHtml(item.id)}">Guardar borrador</button><a class="ghost-button compact" data-rms-negotiation-dispatch="${escapeHtml(item.id)}" href="${escapeHtml(dispatchUrl || "#")}" target="_blank" rel="noopener" ${current.key === "send" && dispatchUrl ? "" : "hidden"}><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span><span data-rms-negotiation-dispatch-label="${escapeHtml(item.id)}">Abrir ${channel === "EMAIL" ? "email" : "WhatsApp"}</span></a><button class="solid-button compact" type="button" data-rms-save-negotiation-decision="${escapeHtml(item.id)}" data-rms-negotiation-cta-button="${escapeHtml(item.id)}"><span data-rms-negotiation-cta="${escapeHtml(item.id)}"></span></button></div></footer>
+        <footer class="rms-negotiation-compact-actions"><small data-rms-negotiation-help="${escapeHtml(item.id)}"></small><div><button class="ghost-button compact" type="button" data-rms-save-negotiation-draft="${escapeHtml(item.id)}">Guardar borrador</button><a class="ghost-button compact" data-rms-negotiation-dispatch="${escapeHtml(item.id)}" href="#" target="_blank" rel="noopener" hidden><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span><span data-rms-negotiation-dispatch-label="${escapeHtml(item.id)}">Abrir ${channel === "EMAIL" ? "email" : "WhatsApp"}</span></a><button class="solid-button compact" type="button" data-rms-save-negotiation-decision="${escapeHtml(item.id)}" data-rms-negotiation-cta-button="${escapeHtml(item.id)}"><span data-rms-negotiation-cta="${escapeHtml(item.id)}"></span></button></div></footer>
       </section>
     </article>`;
   }
@@ -59286,7 +59422,12 @@ async function saveRmsNegotiationDecision(item, root) {
       }
     }
     if (button) button.disabled = true;
-    const deliveryWindow = active === "send" ? window.open("", "_blank") : null;
+    const emailRoute = active === "send" && draft.channel === "EMAIL" ? await portalEmailDeliveryRoute() : null;
+    if (active === "send" && draft.channel === "EMAIL" && !["qori", "external"].includes(emailRoute)) {
+      if (button) button.disabled = false;
+      return;
+    }
+    const deliveryWindow = active === "send" && (draft.channel !== "EMAIL" || emailRoute === "external") ? window.open("", "_blank") : null;
     if (deliveryWindow) deliveryWindow.opener = null;
     try {
       if (active === "send") {
@@ -59299,13 +59440,25 @@ async function saveRmsNegotiationDecision(item, root) {
       const savedResult = await api("/api/business/rms-machine/negotiation-result", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...requestDraft, idempotency_key: key }) });
       if (active === "send") {
         const deliveryMessage = savedResult?.round?.delivery?.message || [draft.delivery_message, draft.delivery_link].filter(Boolean).join("\n\n");
-        const dispatchUrl = rmsNegotiationDispatchUrl(item, draft.channel, deliveryMessage);
-        if (!dispatchUrl) {
-          deliveryWindow?.close();
-          throw new Error(draft.channel === "EMAIL" ? "Este lead no tiene correo para enviar el material." : "Este lead no tiene WhatsApp para enviar el material.");
+        if (draft.channel === "EMAIL" && emailRoute === "qori") {
+          if (!item.email) throw new Error("Este lead no tiene correo para enviar el material.");
+          await sendPortalEmailFromQori({
+            recipients: [item],
+            subject: "Información comercial",
+            body: deliveryMessage,
+            actionUrl: draft.delivery_link || null,
+            title: `Negociación · ${item.name || item.email}`,
+            metadata: { source_module: "rms_negotiation", rms_opportunity_id: item.id || null },
+          });
+        } else {
+          const dispatchUrl = rmsNegotiationDispatchUrl(item, draft.channel, deliveryMessage);
+          if (!dispatchUrl) {
+            deliveryWindow?.close();
+            throw new Error(draft.channel === "EMAIL" ? "Este lead no tiene correo para enviar el material." : "Este lead no tiene WhatsApp para enviar el material.");
+          }
+          if (deliveryWindow) deliveryWindow.location.href = dispatchUrl;
+          else window.open(dispatchUrl, "_blank", "noopener");
         }
-        if (deliveryWindow) deliveryWindow.location.href = dispatchUrl;
-        else window.open(dispatchUrl, "_blank", "noopener");
         rmsNegotiationUploadedAssets.delete(item.id);
       }
     } catch (error) {
@@ -59978,7 +60131,7 @@ function shareRmsPostSaleAsset(button) {
   showFeedback("WhatsApp preparado con el activo de esta compra.", "success", { title: "Valorización Clientes" });
 }
 
-function emailRmsPostSaleAsset(button) {
+async function emailRmsPostSaleAsset(button) {
   const action = rmsPostSaleActionFromButton(button);
   const card = button.closest("[data-rms-station-lead]");
   const customer = rmsOpportunityById(card?.dataset.rmsStationLead || "");
@@ -59996,8 +60149,18 @@ function emailRmsPostSaleAsset(button) {
   const name = String(customer?.name || "").trim();
   const subject = "Tu ticket de recompra Qori";
   const message = `Hola${name ? ` ${name}` : ""}, gracias por tu compra. Aquí tienes tu ticket de recompra. Ábrelo y presenta el QR antes de que venza: ${url}`;
-  window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
-  showFeedback("Correo preparado con el ticket de recompra.", "success", { title: "Valorización Clientes" });
+  try {
+    const route = await portalEmailDeliveryRoute();
+    if (route === "external") {
+      openExternalEmailDraft({ to: [email], subject, body: message });
+      showFeedback("Correo preparado en tu proveedor externo.", "info", { title: "Valorización Clientes" });
+    } else if (route === "qori") {
+      await sendPortalEmailFromQori({ recipients: [customer], subject, body: message, actionUrl: url, title: `Ticket de recompra · ${name || email}`, metadata: { source_module: "rms_post_sale", post_sale_action_id: action?.id || null } });
+      showFeedback("Ticket enviado por correo directamente desde Qori.", "success", { title: "Valorización Clientes" });
+    }
+  } catch (error) {
+    showFeedback(error.message || "No se pudo enviar el ticket por correo.", "error", { title: "Valorización Clientes" });
+  }
 }
 
 function rmsRiskSelectedOffer(root, item) {
@@ -60128,6 +60291,13 @@ async function emailRmsRiskRecoveryResource(item, root, button) {
   const message = rmsRiskShareMessage(item, resource);
   setButtonLoading(button, true, "Enviando...");
   try {
+    const route = await portalEmailDeliveryRoute();
+    if (route === "external") {
+      openExternalEmailDraft({ to: [item.email], subject: "Tu beneficio extraordinario está listo", body: message });
+      showFeedback("Beneficio preparado en tu proveedor externo. Qori no lo marcará como enviado.", "info", { title: "Riesgos de fuga" });
+      return;
+    }
+    if (route !== "qori") return;
     const created = await api("/api/business/communications", {
       method: "POST", headers: authHeaders(),
       body: JSON.stringify({ title: `Recuperación RMS - ${item.name || item.email}`.slice(0, 180), communication_type: "EMAIL", status: "READY", subject: "Tu beneficio extraordinario está listo", email_body: message, action_url: resource.public_ticket_url, metadata: { source: "rms_risk_recovery", qr_code_id: resource.qr_code_id, source_type: item.source_type, source_id: item.source_id } }),

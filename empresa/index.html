@@ -47,7 +47,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1" media="print" data-deferred-portal-style>
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825-unified-email-routing-v359-20260826">
 <link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-premium-v341-20260823" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-white-titles-v14-20260825" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
@@ -8022,11 +8022,34 @@
     <footer class="customer-csv-modal-footer"><button class="ghost-button hidden" id="customerCsvErrorsButton" type="button">Descargar errores</button><button class="ghost-button" id="customerCsvCancelButton" type="button">Cancelar</button><button class="solid-button" id="customerCsvSubmitButton" type="button" disabled>Importar clientes</button></footer>
   </section>
 </div>
-  <script src="js/app.js?v=gosqori-staging-promotion-v358-20260825" defer></script>
+  <div class="modal-shell hidden portal-email-route-modal" id="portalEmailRouteModal" role="dialog" aria-modal="true" aria-labelledby="portalEmailRouteTitle" aria-describedby="portalEmailRouteHelp" aria-hidden="true">
+    <section class="modal-card portal-email-route-card" tabindex="-1">
+      <header class="modal-head">
+        <div>
+          <span class="mono-label">ENVÍO DE CORREO</span>
+          <h3 id="portalEmailRouteTitle">¿Cómo deseas enviarlo?</h3>
+          <p id="portalEmailRouteHelp">Qori todavía no tiene una conexión de Resend lista para esta empresa. Puedes abrir tu proveedor habitual, como Outlook, o configurar Resend para enviar y guardar la trazabilidad desde Qori.</p>
+        </div>
+        <button class="icon-button" type="button" data-portal-email-route="cancel" aria-label="Cerrar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      </header>
+      <div class="portal-email-route-options">
+        <button class="portal-email-route-option" type="button" data-portal-email-route="external">
+          <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+          <span><strong>Abrir proveedor externo</strong><small>Prepara el correo en Outlook o en la aplicación de email predeterminada.</small></span>
+        </button>
+        <button class="portal-email-route-option is-primary" type="button" data-portal-email-route="configure">
+          <span class="material-symbols-outlined" aria-hidden="true">forward_to_inbox</span>
+          <span><strong>Enviar desde Qori</strong><small>Ve a Cuenta, conecta Resend y después Qori enviará directamente sin volver a preguntar.</small></span>
+        </button>
+      </div>
+      <footer class="modal-actions"><button class="ghost-button" type="button" data-portal-email-route="cancel">Cancelar</button></footer>
+    </section>
+  </div>
+  <script src="js/app.js?v=gosqori-staging-promotion-v358-20260825-unified-email-routing-v359-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
-<script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822" defer></script>
+<script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
-    <script src="js/communications.js?v=communications-history-v333-20260822" defer></script>
+    <script src="js/communications.js?v=communications-history-v333-20260822-unified-email-routing-v359-20260826" defer></script>
 </body>
 </html>
 

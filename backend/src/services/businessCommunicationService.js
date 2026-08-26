@@ -806,17 +806,29 @@ async function sendBusinessCommunicationCore(businessId, userId, id, recipientRe
     const key = `${sourceType}:${sourceId}`;
     if (requestedKeys.has(key)) continue;
     requestedKeys.add(key);
-    requestedRecipients.push({ source_id: sourceId, source_type: sourceType });
+    requestedRecipients.push({
+      source_id: sourceId,
+      source_type: sourceType,
+      ...(sourceType === "DIRECT_EMAIL" ? {
+        recipient_email: normalizedRecipientEmail(item?.recipient_email),
+        recipient_name: String(item?.recipient_name || "Contacto").trim() || "Contacto",
+      } : {}),
+    });
   }
-  const sourceIds = [...new Set(requestedRecipients.map((item) => item.source_id))];
-  if (!sourceIds.length) throw badRequest("Selecciona al menos un contacto con el que comunicarte.");
+  const audienceRecipients = requestedRecipients.filter((item) => item.source_type !== "DIRECT_EMAIL");
+  const manualRecipients = requestedRecipients.filter((item) => item.source_type === "DIRECT_EMAIL");
+  if (manualRecipients.some((item) => !item.recipient_email)) throw badRequest("Uno o más destinatarios manuales no tienen un correo válido.");
+  const sourceIds = [...new Set(audienceRecipients.map((item) => item.source_id))];
+  if (!requestedRecipients.length) throw badRequest("Selecciona al menos un contacto con el que comunicarte.");
   const maximumRecipients = options.rmsActivationBulk ? 2000 : 120;
-  if (sourceIds.length > maximumRecipients) throw badRequest(`Envía máximo ${maximumRecipients} contactos por operación.`);
-  const audience = await listAudienceForSourceIds(businessId, sourceIds);
+  if (requestedRecipients.length > maximumRecipients) throw badRequest(`Envía máximo ${maximumRecipients} contactos por operación.`);
+  const audience = sourceIds.length ? await listAudienceForSourceIds(businessId, sourceIds) : { contacts: [] };
   const byId = new Map(audience.contacts.map((contact) => [contact.source_id, contact]));
   const byTypedId = new Map(audience.contacts.map((contact) => [`${String(contact.source_type || "").toUpperCase()}:${contact.source_id}`, contact]));
   const selected = requestedRecipients.map((recipient) => (
-    recipient.source_type ? byTypedId.get(`${recipient.source_type}:${recipient.source_id}`) : byId.get(recipient.source_id)
+    recipient.source_type === "DIRECT_EMAIL"
+      ? { source_id: recipient.source_id, source_type: "DIRECT_EMAIL", lead_id: null, name: recipient.recipient_name, email: recipient.recipient_email }
+      : (recipient.source_type ? byTypedId.get(`${recipient.source_type}:${recipient.source_id}`) : byId.get(recipient.source_id))
   )).filter(Boolean);
   if (!selected.length) throw badRequest("No encontramos contactos válidos para este envío.");
   if (selected.length !== requestedRecipients.length) throw badRequest("Uno o más contactos ya no están disponibles para este envío.");

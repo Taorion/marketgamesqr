@@ -58,8 +58,9 @@
   rmsActivationBulkComposerMarkup = function rmsActivationBulkComposerMarkupResend(selectedRows = []) {
     const queue = state.rmsActivationBulkQueue?.phase === "clasificacion" ? state.rmsActivationBulkQueue : null;
     const result = queue?.results || {};
+    const qoriEmailReady = Boolean(state.communicationEmailConnection?.ready);
     return `<section class="rms-activation-bulk-composer" aria-label="Envío colectivo de Activación 1">
-      <header><div><span class="mono-label">ENVÍO COLECTIVO CON RESEND</span><h4>Una activación para ${selectedRows.length.toLocaleString("es-CO")} lead${selectedRows.length === 1 ? "" : "s"}</h4><p>Una pulsación envía un correo individual a cada destinatario, deduplica direcciones y conserva el resultado por lead.</p></div><span class="material-symbols-outlined" aria-hidden="true">mark_email_read</span></header>
+      <header><div><span class="mono-label">${qoriEmailReady ? "ENVÍO DIRECTO DESDE QORI" : "ENVÍO COLECTIVO POR EMAIL"}</span><h4>Una activación para ${selectedRows.length.toLocaleString("es-CO")} lead${selectedRows.length === 1 ? "" : "s"}</h4><p>${qoriEmailReady ? "Qori enviará directamente con la conexión Resend ya configurada, sin pasos adicionales." : "Al enviar podrás abrir tu proveedor externo o conectar Resend para operar desde Qori."}</p></div><span class="material-symbols-outlined" aria-hidden="true">mark_email_read</span></header>
       <div class="rms-activation-bulk-grid">
         <label class="span-2"><span>Activación publicada</span><select data-rms-resend-activation-catalog required><option value="">Cargando activaciones…</option></select></label>
         <label class="span-2"><span>Asunto</span><input type="text" maxlength="220" value="Tenemos una activación preparada para ti" data-rms-resend-subject></label>
@@ -67,7 +68,7 @@
         <label class="span-2"><span>Contenido del correo</span><textarea rows="5" data-rms-resend-message>Hola {{nombre}},\n\nTenemos una propuesta preparada para ti. ¿Te la comparto y resolvemos el siguiente paso?</textarea><small>Usa <code>{{nombre}}</code> para personalizar cada correo.</small></label>
       </div>
       <label class="rms-activation-bulk-consent"><input type="checkbox" data-rms-resend-consent> Confirmo que todos los leads seleccionados autorizaron contacto comercial.</label>
-      <div class="rms-activation-bulk-actions"><button class="solid-button" type="button" data-rms-prepare-bulk-activation ${selectedRows.length && !queue?.processing ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">send</span>${queue?.processing ? "Enviando…" : "Enviar activación a seleccionados"}</button><button class="ghost-button" type="button" data-rms-open-resend-settings>Configurar remitente</button><button class="ghost-button" type="button" data-rms-close-bulk-activation>Cerrar</button></div>
+      <div class="rms-activation-bulk-actions"><button class="solid-button" type="button" data-rms-prepare-bulk-activation ${selectedRows.length && !queue?.processing ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">send</span>${queue?.processing ? "Enviando…" : "Enviar activación a seleccionados"}</button>${qoriEmailReady ? "" : '<button class="ghost-button" type="button" data-rms-open-resend-settings>Configurar Resend</button>'}<button class="ghost-button" type="button" data-rms-close-bulk-activation>Cerrar</button></div>
       ${queue?.results ? `<aside class="rms-activation-bulk-queue" aria-live="polite"><div><strong>${result.accepted || 0} aceptados por Resend · ${result.pending_confirmation || 0} pendientes de confirmación · ${result.failed || 0} fallidos · ${result.skipped || 0} omitidos</strong><small>${result.rms_registration_failed ? `${result.rms_registration_failed} aceptados requieren actualizar su estado RMS. ` : ""}Aceptado no significa entregado. Sin webhook de email, permanece pendiente de confirmación.</small></div>${result.failed ? '<button class="solid-button compact" type="button" data-rms-dispatch-next-bulk-activation><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Reintentar solo fallidos</button>' : ""}</aside>` : ""}
     </section>`;
   };
@@ -84,6 +85,15 @@
     if (!subject || !message) return showFeedback("Completa el asunto y el contenido del correo.", "info", { title: "Activación 1" });
     if (!consent) return showFeedback("Confirma la autorización comercial de los seleccionados.", "info", { title: "Activación 1" });
     if (!rows.some((item) => validEmail(item.email))) return showFeedback("Ningún lead seleccionado tiene un correo válido.", "info", { title: "Activación 1" });
+    const route = await window.portalEmailDeliveryRoute();
+    if (route === "external") {
+      const emails = rows.filter((item) => validEmail(item.email)).map((item) => item.email);
+      const externalMessage = `${message.replace(/\{\{nombre\}\}/gi, "").replace(/Hola\s*,/i, "Hola,").trim()}${actionUrl ? `\n\n${actionUrl}` : ""}`;
+      window.openExternalEmailDraft({ bcc: emails, subject, body: externalMessage });
+      showFeedback("Abrimos el borrador colectivo en tu proveedor externo. Qori no lo marcará como enviado.", "info", { title: "Email externo listo" });
+      return;
+    }
+    if (route !== "qori") return;
     const payload = { activation_id: activationId, subject, message, action_url: actionUrl || null, recipients: rows.map((item) => ({ source_id: item.source_id, source_type: item.source_type || "PLAYER" })) };
     const idempotencyKey = dispatchKey(payload);
     const button = root?.querySelector("[data-rms-prepare-bulk-activation]");
@@ -110,6 +120,15 @@
   dispatchNextRmsBulkActivation = async function retryFailedRmsActivationEmails() {
     const queue = state.rmsActivationBulkQueue;
     if (!queue?.results?.failed || !queue.results.communication_id || queue.processing) return;
+    const route = await window.portalEmailDeliveryRoute();
+    if (route === "external") {
+      const rows = selectedActivationRows().filter((item) => validEmail(item.email));
+      const externalMessage = `${String(queue.payload?.message || "").replace(/\{\{nombre\}\}/gi, "").replace(/Hola\s*,/i, "Hola,").trim()}${queue.payload?.action_url ? `\n\n${queue.payload.action_url}` : ""}`;
+      window.openExternalEmailDraft({ bcc: rows.map((item) => item.email), subject: queue.payload?.subject || "Información", body: externalMessage });
+      showFeedback("Abrimos el borrador en tu proveedor externo. Este envío no se marcará como entregado por Qori.", "info", { title: "Email externo listo" });
+      return;
+    }
+    if (route !== "qori") return;
     const retryAttempt = Number(queue.retryAttempt || 0) + 1;
     const retryIdempotencyKey = queue.retryIdempotencyKey
       || `${queue.idempotencyKey}:retry:${retryAttempt}`.slice(0, 180);
@@ -161,6 +180,7 @@
     const workspace = document.getElementById("rmsStationWorkspace");
     if (!workspace || workspace.dataset.stationTheme !== "activation") return;
     refreshStationEmailSummary();
+    if (!state.communicationEmailConnectionLoaded) window.loadCommunicationEmailConnection?.().then(() => renderRmsStationOnly()).catch(() => {});
     loadActivationCatalog(workspace.querySelector("[data-rms-resend-activation-catalog]"));
     const actions = workspace.querySelector(".rms-lean-station-actions");
     if (actions && !actions.querySelector("[data-rms-select-visible-activation]")) actions.insertAdjacentHTML("afterbegin", '<button class="ghost-button compact" type="button" data-rms-select-visible-activation><span class="material-symbols-outlined" aria-hidden="true">select_all</span>Seleccionar todos</button>');
