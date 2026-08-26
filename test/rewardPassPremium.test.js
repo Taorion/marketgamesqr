@@ -71,7 +71,7 @@ test("el alcance de sede se conserva en vistas, PDF, comprobante y validador", (
   assert.match(service, /authorized_branch_label: rewardPassBranchLabel\(row\)/);
   assert.match(service, /drawCardField\(page, "SEDE AUTORIZADA", rewardPassBranchLabel\(pass\)/);
   assert.match(service, /`Sede autorizada: \$\{rewardPassBranchLabel\(pass\)\}`/);
-  assert.match(portalApp, /Sede autorizada: \$\{rewardPassAuthorizedBranchLabel\(data\.reward_pass\)\}/);
+  assert.match(portalApp, /\["Sede autorizada", rewardPassAuthorizedBranchLabel\(pass\)\]/);
   assert.match(portalApp, /rewardPassAuthorizedBranchLabel\(item\)/);
   assert.match(publicApp, /authorized_branch_label \|\| pass\.authorized_branch_name \|\| pass\.authorized_branch/);
 });

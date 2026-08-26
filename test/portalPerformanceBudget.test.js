@@ -8,8 +8,11 @@ const portalHtml = fs.readFileSync(path.join(projectRoot, "empresa", "index.html
 const app = fs.readFileSync(path.join(projectRoot, "empresa", "js", "app.js"), "utf8");
 
 test("portal starts downloading its core script from the document head", () => {
-  assert.match(portalHtml, /<link rel="preload" as="script" href="js\/app\.js\?v=gosqori-staging-promotion-v358-20260825">/);
-  assert.match(portalHtml, /<script src="js\/app\.js\?v=gosqori-staging-promotion-v358-20260825" defer><\/script>/);
+  const preload = portalHtml.match(/<link rel="preload" as="script" href="(js\/app\.js\?v=[^"]+)">/);
+  const script = portalHtml.match(/<script src="(js\/app\.js\?v=[^"]+)" defer><\/script>/);
+  assert.ok(preload && script, "the core script must be preloaded and deferred");
+  assert.equal(preload[1], script[1], "preload and script must use the same cache-busted URL");
+  assert.match(preload[1], /rms-premium-v360-20260826/);
 });
 
 test("feature-specific styles do not block the login screen", () => {

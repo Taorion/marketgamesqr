@@ -23,11 +23,11 @@ test("Ventas se abre sin una recarga RMS duplicada", () => {
   const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
   assert.doesNotMatch(activeSave, /await loadRmsMachineData/);
   assert.match(activeSave, /openRmsStation\("cierre"/);
-  assert.match(activeSave, /item\.stage = result === "RECYCLE" \? "reciclaje" : "cierre"/);
+  assert.match(activeSave, /item\.stage = result === "RECYCLE" \? "control_anti_fuga" : "cierre"/);
 });
 
 test("el backend conserva las dos salidas canónicas y tenant scoping", () => {
   assert.match(service, /findOpportunity\(businessId, sourceType, payload\.source_id\)/);
-  assert.match(service, /const toPhase = isCleared \? "cierre" : "reciclaje"/);
+  assert.match(service, /const toPhase = isCleared \? "cierre" : "control_anti_fuga"/);
   assert.match(service, /RMS_TRANSITION_AUTHORITY\.RISK_REVIEW/);
 });

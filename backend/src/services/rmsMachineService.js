@@ -63,7 +63,7 @@ const RMS_TRANSITION_CONTRACT = Object.freeze([
   { from: "procesamiento", decision: "INTEREST_OR_OBJECTION", to: "accion_correctiva" },
   { from: "procesamiento", decision: "ACTIVATION_OBJECTION_OR_SILENCE", to: "control_anti_fuga" },
   { from: "procesamiento", decision: "ACTIVATION_SALE_REPORTED", to: "cierre" },
-  { from: "procesamiento", decision: "RECYCLE", to: "reciclaje", creates_agenda_task: true },
+  { from: "procesamiento", decision: "RECYCLE", to: "procesamiento", creates_agenda_task: true, transversal_queue: true },
   { from: "procesamiento", decision: "WAITING", to: "procesamiento" },
   { from: "procesamiento", decision: "NEW_ACTIVATION", to: "clasificacion" },
   { from: "accion_correctiva", decision: "COMPLETE_AGREEMENT", to: "cierre" },
@@ -74,7 +74,7 @@ const RMS_TRANSITION_CONTRACT = Object.freeze([
   { from: "accion_correctiva", decision: "RECYCLE", to: "accion_correctiva", creates_agenda_task: true },
   { from: "accion_correctiva", decision: "LOST", to: "accion_correctiva", lifecycle_status: "LOST_ANALYZED" },
   { from: "control_anti_fuga", decision: "CLEARED", to: "cierre" },
-  { from: "control_anti_fuga", decision: "RECYCLE", to: "reciclaje", creates_agenda_task: true },
+  { from: "control_anti_fuga", decision: "RECYCLE", to: "control_anti_fuga", creates_agenda_task: true, transversal_queue: true },
   { from: "cierre", decision: "CANONICAL_SALE_RECORDED", to: "postventa" },
   { from: "postventa", decision: "RESULT_RECORDED", to: "postventa", lifecycle_status: "CYCLE_ANALYZED", analytical_only: true },
   { from: "reciclaje", decision: "RECYCLE_REACTIVATE_EVALUATION", to: "procesamiento" },
@@ -1577,7 +1577,7 @@ const RMS_EVALUATION_ROUTES = {
     action: "Programar nutrición y seguimiento sin presionar la compra",
   },
   RECYCLE: {
-    phase: "reciclaje",
+    phase: "procesamiento",
     label: "Reciclaje",
     action: "Conservar el motivo y revisar el lead cuando vuelva a ser viable",
   },
@@ -2558,7 +2558,9 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     `update rms_recycling_cases set agenda_note_id=$3, updated_at=now() where business_id=$1 and id=$2`,
     [businessId, recycling.recycling_case.id, agenda.item.id]
   );
-  const toPhase = isCleared ? "cierre" : "reciclaje";
+  // Reciclaje is a transversal work queue. The lead remains visible in the
+  // station that owns the decision until the scheduled reactivation moves it.
+  const toPhase = isCleared ? "cierre" : "control_anti_fuga";
   const movement = await moveRmsLeadPhase(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     to_phase: toPhase, priority: isCleared ? "HIGH" : "LOW",

@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/img/qori-favicon-32.png?v=qori-favicon-20260825-v120">
   <link rel="apple-touch-icon" sizes="180x180" href="/img/qori-apple-touch-icon.png?v=qori-favicon-20260825-v120">
   <link rel="manifest" href="/site.webmanifest?v=qori-favicon-20260825-v120">
-  <link rel="preload" as="script" href="js/app.js?v=gosqori-staging-promotion-v358-20260825">
+  <link rel="preload" as="script" href="js/app.js?v=rms-premium-v360-20260826">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -47,12 +47,12 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1" media="print" data-deferred-portal-style>
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-  <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825-unified-email-routing-v359-20260826">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825-unified-email-routing-v359-rms-premium-v360-20260826">
 <link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-premium-v341-20260823" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-white-titles-v14-20260825" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/reward-pass-premium-v342.css?v=reward-pass-branches-v344-20260823" media="print" data-deferred-portal-style>
-<link rel="stylesheet" href="css/acquisition-command-center.css?v=acquisition-lead-sales-trace-v10-20260824" media="print" data-deferred-portal-style>
+<link rel="stylesheet" href="css/acquisition-command-center.css?v=acquisition-lead-sales-trace-v353-20260824-v10" media="print" data-deferred-portal-style>
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -848,7 +848,26 @@
             <header class="view-head rms-machine-head rms-machine-launchbar rms-machine-commandbar" aria-labelledby="rmsStationsTitle">
               <div class="rms-machine-head-copy">
                 <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
-                <h2 id="rmsStationsTitle">Estaciones</h2>
+                <div>
+                  <span class="mono-label">Revenue Management System</span>
+                  <h2 id="rmsStationsTitle">Máquina RMS</h2>
+                  <p>Prioriza cada relación, protege cada oportunidad y convierte el trabajo comercial en resultados trazables.</p>
+                </div>
+              </div>
+              <div class="rms-machine-live-rail" aria-label="Estado de la Máquina RMS">
+                <div class="rms-machine-live-state">
+                  <i aria-hidden="true"></i>
+                  <span>Operación</span>
+                  <strong id="rmsMachineLiveStatus">Preparando</strong>
+                </div>
+                <div>
+                  <span>Estaciones activas</span>
+                  <strong id="rmsMachineActiveStations">0 de 10</strong>
+                </div>
+                <div>
+                  <span>Última sincronización</span>
+                  <strong id="rmsMachineGeneratedAt">Sin cargar</strong>
+                </div>
               </div>
             </header>
 
@@ -859,9 +878,9 @@
                   <div class="rms-stage-slider-title">
                     <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
                     <div>
-                      <span class="mono-label">Línea de producción comercial</span>
+                      <span class="mono-label">Ruta comercial completa</span>
                       <strong>Elige una estación para trabajar</strong>
-                      <small>Las estaciones con leads resaltan para que sepas dónde actuar primero.</small>
+                      <small>Diez estaciones operativas convierten señales en ventas; dos controles observan la calidad sin mover leads.</small>
                     </div>
                   </div>
                   <div class="rms-stage-slider-actions">
@@ -882,7 +901,7 @@
                         <div class="rms-stage-quick-list" id="rmsStageQuickList"></div>
                       </section>
                     </div>
-                    <span class="rms-stage-slider-range" id="rmsStageSliderRange" aria-live="polite">1 de 12</span>
+                    <span class="rms-stage-slider-range" id="rmsStageSliderRange" aria-live="polite">1 de 10</span>
                     <button class="ghost-button compact" id="rmsStageSliderPrev" type="button" aria-label="Ver estaciones anteriores" title="Estaciones anteriores"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span></button>
                     <button class="solid-button compact" id="rmsStageSliderNext" type="button" aria-label="Ver estaciones siguientes" title="Estaciones siguientes"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
                   </div>
@@ -954,8 +973,8 @@
             <section class="rms-machine-hero">
               <article class="rms-machine-principle">
                 <span class="mono-label">Concepto operativo</span>
-                <h3>El portal no empieza en reportes: empieza en la operación que fabrica ventas.</h3>
-                <p>La Máquina RMS es el espacio de trabajo principal. Las demás secciones capturan materia prima comercial, activan atención, organizan agenda, clasifican interés o miden el resultado para que la máquina opere mejor.</p>
+                <h3>Una sola operación para saber quién necesita atención, qué decisión sigue y qué produjo revenue.</h3>
+                <p>La Máquina RMS reúne captura, asignación, activación, negociación, protección, venta y valorización sin perder el contexto ni la historia de cada relación.</p>
               </article>
               <div class="rms-machine-kpis" id="rmsMachineKpis"></div>
             </section>
@@ -964,8 +983,8 @@
               <div class="rms-machine-tutorial-head">
                 <div>
                   <span class="mono-label">Tutorial guiado RMS</span>
-                  <h3>Recorre las 12 estaciones de la Máquina RMS</h3>
-                  <p>Selecciona una estación para entender qué recibe, cómo se opera y qué debe entregar al siguiente paso.</p>
+                  <h3>Domina las 10 estaciones y sus 2 controles de calidad</h3>
+                  <p>Selecciona una estación para entender qué recibe, qué decisión se toma y qué evidencia debe entregar.</p>
                 </div>
                 <div class="rms-machine-tutorial-progress" aria-live="polite">
                   <span id="rmsTutorialProgressLabel">Paso 1 de 7</span>
@@ -6485,9 +6504,8 @@
                     <div class="validator-form-section-head"><span class="material-symbols-outlined" aria-hidden="true">card_giftcard</span><div><strong>Aplicar Reward Pass</strong><small>Verifica factura, saldo y documento antes de confirmar.</small></div></div>
                     <label><span>Número de factura electrónica <b>*</b></span><input id="validatorRewardPassInvoiceInput" type="text" minlength="2" maxlength="120" autocomplete="off" placeholder="Ej: FE-12345"></label>
                     <label><span>Total de la factura <b>*</b></span><input id="validatorSaleAmountInput" type="number" min="0" step="1000" inputmode="decimal" placeholder="Valor total facturado"></label>
-                    <label><span>Sede o caja</span><input id="validatorRewardPassBranchInput" type="text" list="validatorBranchOptions" autocomplete="off" placeholder="Punto de redención"></label>
+                    <label><span>Sede o caja</span><select id="validatorRewardPassBranchInput"><option value="">Selecciona la sede de redención</option></select></label>
                     <label><span>Documento presentado</span><input id="validatorRewardPassDocumentInput" type="text" autocomplete="off" placeholder="Número verificado"></label>
-                    <datalist id="validatorBranchOptions"></datalist>
                     <input id="validatorRewardPassRedeemInput" type="hidden" readonly>
                     <div class="reward-pass-balance-panel span-2" id="validatorRewardPassBalancePanel" data-state="idle">
                       <div><span>Saldo disponible</span><strong id="validatorRewardPassAvailableValue">$0</strong></div>
@@ -8045,7 +8063,7 @@
       <footer class="modal-actions"><button class="ghost-button" type="button" data-portal-email-route="cancel">Cancelar</button></footer>
     </section>
   </div>
-  <script src="js/app.js?v=gosqori-staging-promotion-v358-20260825-unified-email-routing-v359-20260826" defer></script>
+  <script src="js/app.js?v=rms-premium-v360-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
