@@ -21654,6 +21654,10 @@ function renderSalesAnalysisGrid(rows = []) {
 }
 
 function ensureSalesAnalysisStyles() {
+  // Ventas atribuidas usa una hoja estatica versionada. No reinyectar el tema
+  // legado: se carga despues del CSS y rompe el orden, la densidad y el responsive.
+  return;
+  /* legacy runtime styles retained below for backwards-compatible diffs */
   if (document.getElementById("salesAnalysisUxStyles")) return;
   const style = document.createElement("style");
   style.id = "salesAnalysisUxStyles";
