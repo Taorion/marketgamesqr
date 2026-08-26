@@ -9,6 +9,10 @@ const portalHtml = fs.readFileSync(path.join(projectRoot, "empresa", "index.html
 test("portal declares the official Qori browser-tab icons", () => {
   assert.match(
     portalHtml,
+    /<link rel="canonical" href="https:\/\/gosqori\.com\/empresa\/">/,
+  );
+  assert.match(
+    portalHtml,
     /<link rel="icon" href="\/favicon\.ico\?v=qori-favicon-[^"]+" sizes="any">/,
   );
   assert.match(
