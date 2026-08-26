@@ -21613,6 +21613,7 @@ function renderSalesAnalysisGrid(rows = []) {
   const summary = state.attributedSalesSummary || {};
   const totalRevenue = toNumber(summary.attributed_revenue);
   const grouped = groupedSalesAnalysis(rows, filters.group_by || "customer");
+  const highestGroupedRevenue = Math.max(...grouped.map((group) => toNumber(group.revenue)), 0);
   salesAnalysisGrid.innerHTML = `
     <article class="sales-analysis-summary-card">
       <span class="mono-label">Resultado filtrado</span>
@@ -21639,11 +21640,12 @@ function renderSalesAnalysisGrid(rows = []) {
     </article>
     <section class="sales-analysis-breakdown">
       ${grouped.length ? grouped.map((group, index) => `
-        <article class="sales-analysis-breakdown-row">
-          <span>${String(index + 1).padStart(2, "0")}</span>
+        <article class="sales-analysis-breakdown-row" style="--sales-share:${highestGroupedRevenue > 0 ? Math.max(4, Math.round((toNumber(group.revenue) / highestGroupedRevenue) * 100)) : 0}%">
+          <span class="sales-analysis-rank">${String(index + 1).padStart(2, "0")}</span>
           <div>
             <strong>${escapeHtml(group.label)}</strong>
             <small>${escapeHtml(group.meta || "Sin detalle")} · última ${escapeHtml(formatDateShort(group.latest))}</small>
+            <span class="sales-analysis-progress" aria-hidden="true"><i></i></span>
           </div>
           <em>${group.sales.toLocaleString("es-CO")} venta(s)</em>
           <b>${escapeHtml(salesMoney(group.revenue))}</b>
@@ -45495,16 +45497,16 @@ function renderSalesView() {
   const reportingSales = sales.filter((item) => String(item.sale_status || "PAID").toUpperCase() !== "VOIDED");
   const summary = state.attributedSalesSummary || {};
   const items = [
-    ["revenue", "Revenue atribuido", salesMoney(summary.attributed_revenue || 0), "Solo ventas pagadas y conciliadas"],
-    ["sales", "Ventas pagadas", Number(summary.paid_count || 0).toLocaleString("es-CO"), `${Number(summary.total_records || 0).toLocaleString("es-CO")} registros en el filtro`],
-    ["customers", "Clientes únicos", Number(summary.unique_customers || 0).toLocaleString("es-CO"), "Identidades únicas con compra"],
-    ["average", "Ticket promedio", salesMoney(summary.average_ticket || 0), "Promedio de ventas pagadas"],
-    ["quality", "Anuladas", Number(summary.voided_count || 0).toLocaleString("es-CO"), "Visibles para auditoría; no suman"],
+    ["revenue", "payments", "Revenue atribuido", salesMoney(summary.attributed_revenue || 0), "Solo ventas pagadas y conciliadas"],
+    ["sales", "verified", "Ventas pagadas", Number(summary.paid_count || 0).toLocaleString("es-CO"), `${Number(summary.total_records || 0).toLocaleString("es-CO")} registros en el filtro`],
+    ["customers", "group", "Clientes únicos", Number(summary.unique_customers || 0).toLocaleString("es-CO"), "Identidades únicas con compra"],
+    ["average", "monitoring", "Ticket promedio", salesMoney(summary.average_ticket || 0), "Promedio de ventas pagadas"],
+    ["quality", "policy", "Anuladas", Number(summary.voided_count || 0).toLocaleString("es-CO"), "Visibles para auditoría; no suman"],
   ];
 
-  salesKpiGrid.innerHTML = items.map(([key, label, value, meta]) => `
-    <article class="kpi-card" data-sales-kpi="${escapeHtml(key)}" style="grid-column:auto !important;grid-row:auto !important;height:auto !important;min-height:138px !important;padding:18px !important;${key === "revenue" ? "background-color:#075dd8 !important;background-image:linear-gradient(145deg,#07376f,#075dd8) !important;" : ""}">
-      <span class="mono-label">${escapeHtml(label)}</span>
+  salesKpiGrid.innerHTML = items.map(([key, icon, label, value, meta]) => `
+    <article class="kpi-card" data-sales-kpi="${escapeHtml(key)}" style="grid-column:auto !important;grid-row:auto !important;height:auto !important;min-height:154px !important;padding:19px !important;${key === "revenue" ? "background-color:#074aa7 !important;background-image:radial-gradient(circle at 100% 0,rgba(0,218,255,.30),transparent 42%),linear-gradient(145deg,#032557,#075dd8) !important;" : ""}">
+      <div class="sales-kpi-head"><span class="mono-label">${escapeHtml(label)}</span><span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(icon)}</span></div>
       <strong>${escapeHtml(value)}</strong>
       <div class="kpi-meta">${escapeHtml(meta)}</div>
     </article>

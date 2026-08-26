@@ -71,15 +71,18 @@ test("manual sale retries are idempotent before any customer, product or points 
 });
 
 test("premium sales command exposes server filters, pagination and canonical CSV", () => {
-  assert.match(portal, /attributed-sales-premium\.css\?v=attributed-sales-command-v365/);
+  assert.match(portal, /attributed-sales-premium\.css\?v=attributed-sales-command-v368/);
+  assert.match(portal, /app\.js\?v=[^"']*attributed-sales-command-v368/);
   assert.match(portal, /id="salesAnalysisStatusInput"/);
   assert.match(portal, /id="salesAnalysisSourceInput"/);
   assert.match(portal, /id="salesLoadMoreButton"/);
   assert.match(app, /salesAnalysisQueryParams\(\)/);
   assert.match(app, /attributedSalesSummary/);
   assert.match(app, /salesMoney\(summary\.average_ticket/);
-  assert.match(app, /background-image:linear-gradient\(145deg,#07376f,#075dd8\) !important/);
-  assert.match(app, /grid-column:auto !important;grid-row:auto !important;height:auto !important;min-height:138px !important;padding:18px !important/);
+  assert.match(app, /background-image:radial-gradient\(circle at 100% 0/);
+  assert.match(app, /grid-column:auto !important;grid-row:auto !important;height:auto !important;min-height:154px !important;padding:19px !important/);
+  assert.match(app, /class="sales-kpi-head"/);
+  assert.match(app, /class="sales-analysis-progress"/);
   assert.match(portal, /sales-command-view" data-view="sales" style="display:grid !important/);
   assert.match(app, /function ensureSalesAnalysisStyles\(\) \{[\s\S]*?return;[\s\S]*?legacy runtime styles retained/);
   assert.match(routes, /sales\/attributed\/export\.csv/);
@@ -87,4 +90,6 @@ test("premium sales command exposes server filters, pagination and canonical CSV
   assert.match(premiumCss, /@media \(max-width: 430px\)/);
   assert.match(premiumCss, /data-sales-kpi="revenue"/);
   assert.match(premiumCss, /neutraliza la composicion global tardia del portal/);
+  assert.match(premiumCss, /Qori Design Studio · Revenue Command v368/);
+  assert.match(premiumCss, /--sales-share/);
 });
