@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260822-activation-calculator-branches-premium-v325-gosqori-promotion-v358-unified-email-routing-v359-rms-premium-v360-gos-brand-v362-attributed-sales-command-v365-20260826";
+const APP_VERSION = "empresa-20260822-activation-calculator-branches-premium-v325-gosqori-promotion-v358-unified-email-routing-v359-rms-premium-v360-gos-brand-v362-attributed-sales-command-v366-20260826";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -45503,7 +45503,7 @@ function renderSalesView() {
   ];
 
   salesKpiGrid.innerHTML = items.map(([key, label, value, meta]) => `
-    <article class="kpi-card" data-sales-kpi="${escapeHtml(key)}">
+    <article class="kpi-card" data-sales-kpi="${escapeHtml(key)}"${key === "revenue" ? ' style="background-color:#075dd8 !important;background-image:linear-gradient(145deg,#07376f,#075dd8) !important"' : ""}>
       <span class="mono-label">${escapeHtml(label)}</span>
       <strong>${escapeHtml(value)}</strong>
       <div class="kpi-meta">${escapeHtml(meta)}</div>
