@@ -79,6 +79,8 @@ test("premium sales command exposes server filters, pagination and canonical CSV
   assert.match(app, /attributedSalesSummary/);
   assert.match(app, /salesMoney\(summary\.average_ticket/);
   assert.match(app, /background-image:linear-gradient\(145deg,#07376f,#075dd8\) !important/);
+  assert.match(app, /grid-column:auto !important;grid-row:auto !important;height:auto !important;min-height:138px !important;padding:18px !important/);
+  assert.match(portal, /sales-command-view" data-view="sales" style="display:grid !important/);
   assert.match(app, /function ensureSalesAnalysisStyles\(\) \{[\s\S]*?return;[\s\S]*?legacy runtime styles retained/);
   assert.match(routes, /sales\/attributed\/export\.csv/);
   assert.match(controller, /X-Export-Truncated/);
