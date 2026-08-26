@@ -2,13 +2,19 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const JSZip = require("jszip");
-const { salesTemplateCsv, fileRows, resolveRows, parseMoney, parseDate } = require("../backend/src/services/salesBulkImportService");
+const { salesTemplateCsv, salesTemplateForBusiness, fileRows, resolveRows, parseMoney, parseDate } = require("../backend/src/services/salesBulkImportService");
 
 function csvPayload(csv, name = "ventas.csv") { return { file_name:name, file_size:Buffer.byteLength(csv), mime_type:"text/csv", csv_text:csv }; }
 
 test("la plantilla de ventas es UTF-8, Excel-compatible y procesable", async () => {
-  const csv=salesTemplateCsv(); assert.equal(csv.charCodeAt(0),0xFEFF);
+  const csv=salesTemplateCsv({responsibleEmail:"vendedor@empresa.com"}); assert.equal(csv.charCodeAt(0),0xFEFF);
   const parsed=await fileRows(csvPayload(csv)); assert.equal(parsed.rows.length,1); assert.deepEqual(parsed.rows[0].errors,[]); assert.equal(parsed.rows[0].external_id,"FAC-1042"); assert.equal(parsed.rows[0].amount,185000); assert.equal(parsed.rows[0].products.length,2); assert.deepEqual(parsed.rows[0].source_rows,[2,3]); assert.equal(parsed.rows[0].seller_reference,"vendedor@empresa.com");
+});
+
+test("la plantilla descargada usa un responsable activo del mismo negocio", async () => {
+  let params;
+  const csv=await salesTemplateForBusiness("business-1",{id:"manager-1",email:"manager@qori.co"},async (sql,values)=>{ assert.match(sql,/where business_id = \$1/); params=values; return {rows:[{email:"VENTAS@QORI.CO"}]}; });
+  assert.deepEqual(params,["business-1","manager-1"]); assert.match(csv,/ventas@qori\.co/); assert.doesNotMatch(csv,/vendedor@empresa\.com/);
 });
 
 test("acepta separadores locales y normaliza dinero, identidad y fecha", async () => {
@@ -54,7 +60,7 @@ test("lee la primera hoja de un XLSX real sin una dependencia de hoja de cálcul
 });
 
 test("expone contratos premium, tenant-scoped e idempotentes", () => {
-  const routes=fs.readFileSync("backend/src/routes/businessPortalRoutes.js","utf8"); const service=fs.readFileSync("backend/src/services/salesBulkImportService.js","utf8"); const portal=fs.readFileSync("empresa/index.html","utf8"); const client=fs.readFileSync("empresa/js/sales-bulk-import.js","utf8");
-  assert.match(routes,/sales\/import\/preview/); assert.match(routes,/sales\/import-template\.csv/); assert.match(service,/where business_id = \$1/); assert.match(service,/on conflict \(business_id, idempotency_key\)/); assert.match(service,/Tu rol solo puede importar ventas propias/); assert.match(service,/syncSaleProductsWithCatalog/); assert.match(service,/responsible_commercial/); assert.match(portal,/id="salesBulkImportModal"/); assert.match(portal,/Agrupa productos por ID de venta/); assert.match(portal,/accept="\.csv,\.xlsx/); assert.match(client,/Descargar incidencias|downloadIncidents/); assert.match(client,/product_count/);
+  const routes=fs.readFileSync("backend/src/routes/businessPortalRoutes.js","utf8"); const controller=fs.readFileSync("backend/src/controllers/salesBulkImportController.js","utf8"); const service=fs.readFileSync("backend/src/services/salesBulkImportService.js","utf8"); const portal=fs.readFileSync("empresa/index.html","utf8"); const client=fs.readFileSync("empresa/js/sales-bulk-import.js","utf8");
+  assert.match(routes,/sales\/import\/preview/); assert.match(routes,/sales\/import-template\.csv/); assert.match(controller,/salesTemplateForBusiness\(businessId, req\.user\)/); assert.match(service,/where business_id = \$1/); assert.match(service,/on conflict \(business_id, idempotency_key\)/); assert.match(service,/Tu rol solo puede importar ventas propias/); assert.match(service,/syncSaleProductsWithCatalog/); assert.match(service,/responsible_commercial/); assert.match(portal,/id="salesBulkImportModal"/); assert.match(portal,/Agrupa productos por ID de venta/); assert.match(portal,/sales-bulk-import-v373/); assert.match(portal,/accept="\.csv,\.xlsx/); assert.match(client,/Descargar incidencias|downloadIncidents/); assert.match(client,/product_count/); assert.match(client,/No hay ventas válidas para importar/);
   assert.equal(parseMoney("1.234.567,89"),1234567.89); assert.match(parseDate("2026-08-25"),/^2026-08-25/);
 });

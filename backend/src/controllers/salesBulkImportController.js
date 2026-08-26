@@ -2,7 +2,7 @@ const { z } = require("zod");
 const { forbidden } = require("../utils/http");
 const { validate } = require("../utils/validators");
 const { assertFeatureForRequest } = require("../services/subscriptionService");
-const { salesTemplateCsv, previewSalesFile, importSalesFile } = require("../services/salesBulkImportService");
+const { salesTemplateForBusiness, previewSalesFile, importSalesFile } = require("../services/salesBulkImportService");
 
 const fileSchema = z.object({
   file_name: z.string().trim().min(5).max(240).regex(/\.(csv|xlsx)$/i),
@@ -23,10 +23,10 @@ async function ensureAccess(req) { const businessId = businessIdFor(req); await 
 
 async function downloadSalesImportTemplate(req, res, next) {
   try {
-    await ensureAccess(req);
+    const businessId = await ensureAccess(req);
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", 'attachment; filename="plantilla-ventas-qori.csv"');
-    res.send(salesTemplateCsv());
+    res.send(await salesTemplateForBusiness(businessId, req.user));
   } catch (error) { next(error); }
 }
 async function previewSalesImport(req, res, next) {

@@ -30,12 +30,29 @@ function normalizeDocument(value) { return String(value || "").trim().toUpperCas
 function normalizePhone(value) { return String(value || "").replace(/\D/g, ""); }
 function csvEscape(value) { const raw = String(value ?? ""); return /[",\r\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw; }
 
-function salesTemplateCsv() {
+function salesTemplateCsv(options = {}) {
+  const responsibleEmail = normalizeEmail(options.responsibleEmail) || "responsable@tuempresa.com";
   const examples = [
-    ["FAC-1042", "2026-08-25", "185000", "Ana Gomez", "1020304050", "3001234567", "ana@ejemplo.com", "Plan premium", "1", "125000", "125000", "COP", "TRANSFERENCIA", "vendedor@empresa.com", "", "", "", "Instagram", "Una venta con dos productos"],
-    ["FAC-1042", "2026-08-25", "185000", "Ana Gomez", "1020304050", "3001234567", "ana@ejemplo.com", "Instalacion", "1", "60000", "60000", "COP", "TRANSFERENCIA", "vendedor@empresa.com", "", "", "", "Instagram", "Repite id_venta y responsable para agrupar"],
+    ["FAC-1042", "2026-08-25", "185000", "Ana Gomez", "1020304050", "3001234567", "ana@ejemplo.com", "Plan premium", "1", "125000", "125000", "COP", "TRANSFERENCIA", responsibleEmail, "", "", "", "Instagram", "Una venta con dos productos"],
+    ["FAC-1042", "2026-08-25", "185000", "Ana Gomez", "1020304050", "3001234567", "ana@ejemplo.com", "Instalacion", "1", "60000", "60000", "COP", "TRANSFERENCIA", responsibleEmail, "", "", "", "Instagram", "Repite id_venta y responsable para agrupar"],
   ];
   return `\uFEFF${HEADERS.join(",")}\r\n${examples.map((row) => row.map(csvEscape).join(",")).join("\r\n")}\r\n`;
+}
+
+async function salesTemplateForBusiness(businessId, user, db = query) {
+  const result = await db(
+    `select lower(email) as email
+       from app_users
+      where business_id = $1
+        and is_active = true
+        and role in ('BUSINESS_OWNER','BUSINESS_MANAGER','VALIDATOR')
+      order by case when id = $2 then 0 else 1 end,
+               case role when 'BUSINESS_OWNER' then 0 when 'BUSINESS_MANAGER' then 1 else 2 end,
+               created_at asc
+      limit 1`,
+    [businessId, user?.id || null]
+  );
+  return salesTemplateCsv({ responsibleEmail: result.rows[0]?.email || user?.email });
 }
 
 function detectDelimiter(text) {
@@ -248,4 +265,4 @@ async function importSalesFile(businessId, user, payload) {
   return { batch_id: batchId, file_name: parsed.fileName, total_rows: results.length, imported_rows: results.filter((row) => row.outcome === "IMPORTED").length, duplicate_rows: results.filter((row) => row.outcome === "DUPLICATE").length, invalid_rows: results.filter((row) => row.outcome === "ERROR").length, rows: results };
 }
 
-module.exports = { MAX_FILE_BYTES, MAX_ROWS, salesTemplateCsv, previewSalesFile, importSalesFile, fileRows, resolveRows, parseCsv, parseMoney, parseDate };
+module.exports = { MAX_FILE_BYTES, MAX_ROWS, salesTemplateCsv, salesTemplateForBusiness, previewSalesFile, importSalesFile, fileRows, resolveRows, parseCsv, parseMoney, parseDate };
