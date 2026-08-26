@@ -1152,6 +1152,7 @@ const customerSaleAddItemButton = document.getElementById("customerSaleAddItemBu
 const customerSaleTotalPreview = document.getElementById("customerSaleTotalPreview");
 const salesCreateTotalPill = document.getElementById("salesCreateTotalPill");
 const salesCreateCloseButton = document.getElementById("salesCreateCloseButton");
+let salesCreateLastFocus = null;
 const customerSaleOperationFeed = document.getElementById("customerSaleOperationFeed");
 const acquisitionChannelKpiGrid = document.getElementById("acquisitionChannelKpiGrid");
 const acquisitionChannelDetailPanel = document.getElementById("acquisitionChannelDetailPanel");
@@ -20948,98 +20949,71 @@ function syncCustomerSaleTotal() {
 
 function openSalesCreatePanel(options = {}) {
   if (!salesCreatePanel) return;
-  salesCreatePanel.classList.add("is-open");
+  salesCreateLastFocus = document.activeElement;
   document.body.classList.add("has-sales-entry-modal");
   mountSalesCreateModal();
   salesCreateTrigger?.setAttribute("aria-expanded", "true");
   if (options.focus !== false) {
-    window.requestAnimationFrame(() => customerAcquisitionCustomerLookupInput?.focus());
+    window.requestAnimationFrame(() => customerAcquisitionCustomerLookupInput?.focus({ preventScroll: true }));
   }
 }
 
 function closeSalesCreatePanel(options = {}) {
   if (!salesCreatePanel) return;
-  salesCreatePanel.classList.remove("is-open");
   document.body.classList.remove("has-sales-entry-modal");
   unmountSalesCreateModal();
   salesCreateTrigger?.setAttribute("aria-expanded", "false");
-  if (options.scroll) {
-    salesCreatePanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-}
-
-function ensureSalesCreateAnchor(element, id) {
-  if (!element?.parentElement) return null;
-  let anchor = document.getElementById(id);
-  if (!anchor) {
-    anchor = document.createElement("span");
-    anchor.id = id;
-    anchor.hidden = true;
-    element.parentElement.insertBefore(anchor, element);
-  }
-  return anchor;
+  const returnFocus = options.returnFocus === false ? null : salesCreateLastFocus;
+  salesCreateLastFocus = null;
+  window.requestAnimationFrame(() => returnFocus?.focus?.({ preventScroll: true }));
 }
 
 function salesCreateModalOverlay() {
-  let overlay = document.getElementById("salesEntryModalOverlay");
-  if (overlay) return overlay;
-  overlay = document.createElement("section");
-  overlay.id = "salesEntryModalOverlay";
-  overlay.className = "sales-entry-modal-overlay hidden";
-  overlay.setAttribute("role", "dialog");
-  overlay.setAttribute("aria-modal", "true");
-  overlay.setAttribute("aria-labelledby", "salesEntryModalTitle");
-  overlay.innerHTML = `
-    <div class="sales-entry-modal-backdrop" data-sales-modal-close></div>
-    <article class="sales-entry-modal-card" role="document">
-      <header class="sales-entry-modal-head">
-        <div>
-          <span class="mono-label">Registro de venta</span>
-          <h3 id="salesEntryModalTitle">Registrar venta completa</h3>
-          <p>Ingresa cliente, productos, campaña, canal, sede y notas en una sola ventana.</p>
-        </div>
-        <button class="ghost-button compact" type="button" data-sales-modal-close>Cerrar</button>
-      </header>
-      <div class="sales-entry-modal-body" data-sales-entry-modal-body></div>
-    </article>
-  `;
-  overlay.addEventListener("click", (event) => {
-    if (event.target?.closest?.("[data-sales-modal-close]")) closeSalesCreatePanel();
-  });
-  document.body.appendChild(overlay);
+  const overlay = document.getElementById("salesEntryModalOverlay");
+  if (overlay && overlay.parentElement !== document.body) document.body.appendChild(overlay);
+  if (overlay && overlay.dataset.bound !== "true") {
+    overlay.dataset.bound = "true";
+    overlay.addEventListener("click", (event) => {
+      if (event.target?.closest?.("[data-sales-modal-close]")) closeSalesCreatePanel();
+    });
+  }
   return overlay;
 }
 
 function mountSalesCreateModal() {
-  if (!salesCreatePanel || !customerAcquisitionForm) return;
+  if (!customerAcquisitionForm) return;
   const overlay = salesCreateModalOverlay();
-  const modalBody = overlay.querySelector("[data-sales-entry-modal-body]");
-  const explainer = salesCreatePanel.querySelector(".chart-explainer");
-  ensureSalesCreateAnchor(explainer, "salesCreateExplainerAnchor");
-  ensureSalesCreateAnchor(customerAcquisitionForm, "salesCreateFormAnchor");
-  if (explainer && modalBody && explainer.parentElement !== modalBody) modalBody.appendChild(explainer);
-  if (modalBody && customerAcquisitionForm.parentElement !== modalBody) modalBody.appendChild(customerAcquisitionForm);
+  if (!overlay) return;
   overlay.classList.remove("hidden");
   overlay.hidden = false;
-  salesCreatePanel.style.visibility = "hidden";
-}
-
-function restoreSalesCreateElement(element, anchorId) {
-  const anchor = document.getElementById(anchorId);
-  if (!element || !anchor?.parentElement || element.parentElement === anchor.parentElement) return;
-  anchor.parentElement.insertBefore(element, anchor.nextSibling);
+  overlay.setAttribute("aria-hidden", "false");
+  overlay.querySelector(".sales-entry-modal-body")?.scrollTo({ top: 0 });
 }
 
 function unmountSalesCreateModal() {
   const overlay = document.getElementById("salesEntryModalOverlay");
-  const explainer = overlay?.querySelector(".chart-explainer") || salesCreatePanel?.querySelector(".chart-explainer");
-  restoreSalesCreateElement(explainer, "salesCreateExplainerAnchor");
-  restoreSalesCreateElement(customerAcquisitionForm, "salesCreateFormAnchor");
   if (overlay) {
     overlay.classList.add("hidden");
     overlay.hidden = true;
+    overlay.setAttribute("aria-hidden", "true");
   }
-  if (salesCreatePanel) salesCreatePanel.style.visibility = "";
+}
+
+function salesCreateModalIsOpen() {
+  const overlay = document.getElementById("salesEntryModalOverlay");
+  return Boolean(overlay && !overlay.hidden && !overlay.classList.contains("hidden"));
+}
+
+function trapSalesCreateModalFocus(event) {
+  if (event.key !== "Tab" || !salesCreateModalIsOpen()) return;
+  const overlay = document.getElementById("salesEntryModalOverlay");
+  const focusable = Array.from(overlay.querySelectorAll('button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'))
+    .filter((element) => element.offsetParent !== null);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 }
 
 function customerSaleProductsPayload() {
@@ -58146,7 +58120,7 @@ salesAnalysisResetButton?.addEventListener("click", () => {
 });
 salesLoadMoreButton?.addEventListener("click", () => loadAttributedSalesView({ append: true }));
 salesCreateTrigger?.addEventListener("click", () => {
-  if (salesCreatePanel?.classList.contains("is-open")) {
+  if (salesCreateModalIsOpen()) {
     closeSalesCreatePanel();
   } else {
     syncCustomerSaleTotal();
@@ -58157,18 +58131,16 @@ salesCreateHeadButton?.addEventListener("click", () => {
   syncCustomerSaleTotal();
   openSalesCreatePanel();
 });
-salesCreatePanel?.addEventListener("click", (event) => {
-  if (salesCreatePanel.classList.contains("is-open") && event.target === salesCreatePanel) {
-    closeSalesCreatePanel();
-  }
-});
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && salesCreatePanel?.classList.contains("is-open")) {
+  if (event.key === "Escape" && salesCreateModalIsOpen()) {
+    event.preventDefault();
     closeSalesCreatePanel();
+    return;
   }
+  trapSalesCreateModalFocus(event);
 });
 salesCreateCloseButton?.addEventListener("click", () => {
-  closeSalesCreatePanel({ scroll: true });
+  closeSalesCreatePanel();
 });
 customerSaleAddItemButton?.addEventListener("click", () => {
   ensureCustomerSaleItems();

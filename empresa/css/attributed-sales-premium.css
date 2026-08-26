@@ -214,6 +214,91 @@ body[data-current-view="sales"] .sales-ledger-footer {
 .sales-import-footer { display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:10px; padding:17px 30px; border-top:1px solid #dce8f5; background:#fff; }
 @media (max-width:700px) { .sales-import-modal { padding:0; align-items:flex-end; }.sales-import-card { width:100%; max-height:96dvh; border-radius:24px 24px 0 0; }.sales-import-head { padding:22px 20px 19px; }.sales-import-head p { font-size:.88rem; }.sales-import-body { padding:18px 16px; gap:14px; }.sales-import-guidance { align-items:flex-start; flex-direction:column; }.sales-import-guidance .ghost-button { width:100%; }.sales-import-principles { grid-template-columns:1fr; }.sales-import-dropzone { min-height:145px; }.sales-import-counters { grid-template-columns:repeat(2,1fr); }.sales-import-footer { grid-template-columns:1fr 1fr; padding:14px 16px calc(14px + env(safe-area-inset-bottom)); }.sales-import-footer>span { display:none; }.sales-import-footer .solid-button { grid-column:1/-1; grid-row:1; width:100%; }.sales-import-footer #salesBulkErrorsButton { grid-column:1/-1; }.sales-import-footer #salesBulkCancelButton { grid-column:1/-1; }.sales-command-hero .head-actions { width:100%; }.sales-command-hero .head-actions>button { flex:1 1 auto; } }
 
+/* Qori Design Studio · stable sale-entry dialog v371. */
+html body.has-sales-entry-modal { overflow:hidden !important; overscroll-behavior:none; }
+html body[data-current-view="sales"] #salesEntryModalOverlay.sales-entry-modal-overlay {
+  position:fixed !important; inset:0 !important; z-index:15000 !important;
+  display:grid !important; place-items:center !important; padding:16px !important;
+  overflow:hidden !important; background:rgba(2,18,43,.76) !important;
+  backdrop-filter:blur(12px) saturate(110%) !important;
+}
+html body[data-current-view="sales"] #salesEntryModalOverlay.hidden,
+html body[data-current-view="sales"] #salesEntryModalOverlay[hidden] { display:none !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-backdrop { position:absolute !important; inset:0 !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-card {
+  position:relative !important; z-index:1 !important; display:grid !important;
+  grid-template-rows:auto minmax(0,1fr) !important; width:min(1120px,100%) !important;
+  height:min(900px,calc(100dvh - 32px)) !important; max-width:none !important; max-height:none !important;
+  overflow:hidden !important; border:1px solid rgba(151,195,232,.42) !important;
+  border-radius:26px !important; background:#f7fbff !important; color:#123653 !important;
+  box-shadow:0 38px 110px rgba(0,16,45,.46) !important;
+}
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-head {
+  position:relative !important; display:flex !important; flex-wrap:nowrap !important;
+  align-items:center !important; justify-content:space-between !important; gap:20px !important;
+  padding:24px 26px !important; border-bottom:1px solid rgba(168,209,239,.3) !important;
+  background:radial-gradient(circle at 82% 0,rgba(0,218,255,.25),transparent 35%),linear-gradient(128deg,#031b44,#075dd8) !important;
+}
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-head::before { display:none !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-head .mono-label { color:#9defff !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-head h3 { margin:4px 0 3px !important; color:#fff !important; font-size:clamp(1.5rem,2.6vw,2rem) !important; letter-spacing:-.04em !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-head p { margin:0 !important; color:#d8ecff !important; line-height:1.45 !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-head .icon-button { flex:0 0 44px; width:44px; height:44px; border:1px solid rgba(255,255,255,.3) !important; border-radius:14px !important; background:rgba(255,255,255,.12) !important; color:#fff !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-head .icon-button:hover { background:rgba(255,255,255,.22) !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-body {
+  display:grid !important; grid-template-columns:minmax(0,1fr) !important; align-content:start !important; gap:14px !important; min-width:0 !important;
+  max-height:none !important; overflow:auto !important; overscroll-behavior:contain;
+  padding:20px 24px 26px !important; background:linear-gradient(180deg,#f4f9fd,#fbfdff 18%) !important;
+  scrollbar-gutter:stable; scrollbar-color:#85b5d7 transparent;
+}
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-body > .table-card-head { display:none !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-body > .chart-explainer { margin:0 !important; padding:12px 15px !important; border:1px solid #c9e0f2 !important; border-left:4px solid #0b74d5 !important; border-radius:13px !important; background:#edf7ff !important; color:#496980 !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .customer-sale-form {
+  display:grid !important; grid-template-columns:minmax(0,1fr) minmax(360px,.9fr) !important;
+  gap:14px !important; min-width:0 !important; margin:0 !important; padding:0 0 4px !important;
+  overflow:visible !important; border:0 !important; background:transparent !important; box-shadow:none !important;
+}
+html body[data-current-view="sales"] #salesEntryModalOverlay :is(.sale-form-block,.sales-item-builder) { min-width:0; padding:18px !important; border:1px solid #d5e4ef !important; border-radius:18px !important; background:#fff !important; box-shadow:0 8px 22px rgba(15,61,99,.055) !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-block-summary { grid-column:1/-1 !important; border-top:3px solid #1478d4 !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-block-customer { grid-column:1 !important; border-top:3px solid #1aa6a8 !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-item-builder { grid-column:2 !important; grid-row:2/span 2 !important; align-self:start !important; border-top:3px solid #0964bb !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-block-attribution { grid-column:1 !important; border-top:3px solid #7899b3 !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-actions { grid-column:1/-1 !important; position:sticky !important; bottom:-26px !important; z-index:5 !important; display:flex !important; align-items:center !important; justify-content:flex-end !important; gap:10px !important; margin-top:2px !important; padding:15px 16px calc(15px + env(safe-area-inset-bottom)) !important; border:1px solid #cee0ec !important; border-radius:17px 17px 0 0 !important; background:rgba(255,255,255,.96) !important; box-shadow:0 -12px 34px rgba(16,57,91,.12) !important; backdrop-filter:blur(14px); }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-actions .error-line { flex:1 1 auto; margin:0; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-actions .error-line:empty { display:none !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-grid { min-width:0; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-grid-summary { grid-template-columns:repeat(12,minmax(0,1fr)) !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-grid-summary > .sale-field-total { grid-column:span 3 !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-grid-summary > .sale-field-currency { grid-column:span 1 !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-grid-summary > :nth-child(3) { grid-column:span 2 !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-grid-summary > .sale-field-campaign { grid-column:span 3 !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-grid-summary > :nth-child(5) { grid-column:span 3 !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay .sales-item-row { grid-template-columns:minmax(150px,1fr) 74px 108px 92px 38px !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay :is(input,select,textarea) { min-width:0 !important; border-color:#c5d8e5 !important; border-radius:11px !important; background:#fbfdff !important; color:#173d59 !important; }
+html body[data-current-view="sales"] #salesEntryModalOverlay :is(input,select,textarea):focus-visible { border-color:#0b70d0 !important; background:#fff !important; box-shadow:0 0 0 3px rgba(11,112,208,.15) !important; }
+@media (max-width:900px) {
+  html body[data-current-view="sales"] #salesEntryModalOverlay .customer-sale-form { grid-template-columns:minmax(0,1fr) !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay :is(.sale-form-block-summary,.sale-form-block-customer,.sale-form-block-attribution,.sales-item-builder,.sale-form-actions) { grid-column:1 !important; grid-row:auto !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-grid-summary { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-grid-summary > * { grid-column:span 1 !important; }
+}
+@media (max-width:560px) {
+  html body[data-current-view="sales"] #salesEntryModalOverlay.sales-entry-modal-overlay { place-items:end center !important; padding:0 !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-card { width:100% !important; height:min(96dvh,900px) !important; border-width:1px 0 0 !important; border-radius:24px 24px 0 0 !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-head { align-items:flex-start !important; padding:20px 18px 17px !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-head p { font-size:.84rem !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-body { padding:14px 14px 18px !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay .sales-entry-modal-body > .chart-explainer { font-size:.82rem; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay :is(.sale-form-block,.sales-item-builder) { padding:14px !important; border-radius:15px !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay :is(.sale-form-grid,.sale-form-grid-summary,.sales-item-row) { grid-template-columns:minmax(0,1fr) !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-grid-summary > * { grid-column:1 !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay .sales-item-row [data-sale-item-remove] { justify-self:end; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-actions { bottom:-18px !important; display:grid !important; grid-template-columns:minmax(0,1fr) !important; margin-inline:-1px; padding:10px !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-actions #salesCreateCloseButton { display:none !important; }
+  html body[data-current-view="sales"] #salesEntryModalOverlay .sale-form-actions .error-line { grid-column:1/-1; }
+}
+@media (prefers-reduced-motion:reduce) { html body[data-current-view="sales"] #salesEntryModalOverlay * { scroll-behavior:auto !important; transition:none !important; } }
+
 @media (max-width: 430px) {
   body[data-current-view="sales"] .sales-command-hero .head-actions { grid-template-columns: 1fr; }
   body[data-current-view="sales"] .sales-command-hero h2 { font-size: 2.15rem !important; }

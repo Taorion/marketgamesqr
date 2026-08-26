@@ -71,7 +71,7 @@ test("manual sale retries are idempotent before any customer, product or points 
 });
 
 test("premium sales command exposes server filters, pagination and canonical CSV", () => {
-  assert.match(portal, /attributed-sales-premium\.css\?v=sales-bulk-import-v370/);
+  assert.match(portal, /attributed-sales-premium\.css\?v=sales-entry-modal-v371/);
   assert.match(portal, /app\.js\?v=[^"']*attributed-sales-command-v368/);
   assert.match(portal, /id="salesAnalysisStatusInput"/);
   assert.match(portal, /id="salesAnalysisSourceInput"/);
@@ -93,4 +93,18 @@ test("premium sales command exposes server filters, pagination and canonical CSV
   assert.match(premiumCss, /Qori Design Studio · Revenue Command v369/);
   assert.match(premiumCss, /qoriSalesA#qoriSalesB#qoriSalesC#qoriSalesD#qoriSalesE#qoriSalesF/);
   assert.match(premiumCss, /--sales-share/);
+});
+
+test("sale registration uses one stable accessible dialog without moving the live form", () => {
+  assert.match(portal, /id="salesCreatePanel" aria-labelledby="salesCreatePanelTitle"/);
+  assert.match(portal, /id="salesEntryModalOverlay" role="dialog" aria-modal="true"/);
+  assert.match(portal, /id="customerAcquisitionForm"/);
+  assert.match(app, /function salesCreateModalIsOpen\(\)/);
+  assert.match(app, /function trapSalesCreateModalFocus\(event\)/);
+  assert.match(app, /focus\(\{ preventScroll: true \}\)/);
+  assert.doesNotMatch(app, /ensureSalesCreateAnchor/);
+  assert.doesNotMatch(app, /modalBody\.appendChild\(customerAcquisitionForm\)/);
+  assert.match(premiumCss, /stable sale-entry dialog v371/);
+  assert.match(premiumCss, /height:min\(900px,calc\(100dvh - 32px\)\)/);
+  assert.match(premiumCss, /@media \(max-width:560px\)/);
 });

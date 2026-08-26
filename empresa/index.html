@@ -48,7 +48,7 @@
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825-unified-email-routing-v359-rms-above-fold-v361-gos-status-contrast-v363-20260826">
-  <link rel="stylesheet" href="css/attributed-sales-premium.css?v=sales-bulk-import-v370-20260826">
+  <link rel="stylesheet" href="css/attributed-sales-premium.css?v=sales-entry-modal-v371-20260826">
 <link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-premium-v341-20260823" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-command-white-titles-v14-20260825" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
@@ -5398,16 +5398,30 @@
 
             <section class="kpi-grid sales-kpis" id="salesKpiGrid"></section>
 
-            <article class="surface-card data-table-card sales-create-panel" id="salesCreatePanel" role="dialog" aria-modal="true" aria-label="Registro completo de venta">
+            <article class="surface-card data-table-card sales-create-panel" id="salesCreatePanel" aria-labelledby="salesCreatePanelTitle">
               <button class="sales-create-summary" id="salesCreateTrigger" type="button" aria-expanded="false">
                 <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
                 <span>
-                  <strong>Registro completo de venta</strong>
+                  <strong id="salesCreatePanelTitle">Registro completo de venta</strong>
                   <small>Ventana intersticial para cargar campaña, canal, cliente, productos y notas.</small>
                 </span>
                 <span class="sales-create-total-pill" id="salesCreateTotalPill">$0</span>
                 <span class="material-symbols-outlined sales-summary-chevron" aria-hidden="true">open_in_full</span>
               </button>
+            </article>
+
+            <section class="sales-entry-modal-overlay hidden" id="salesEntryModalOverlay" role="dialog" aria-modal="true" aria-labelledby="salesEntryModalTitle" aria-describedby="salesEntryModalDescription" aria-hidden="true" hidden>
+              <div class="sales-entry-modal-backdrop" data-sales-modal-close aria-hidden="true"></div>
+              <article class="sales-entry-modal-card" role="document" tabindex="-1">
+                <header class="sales-entry-modal-head">
+                  <div>
+                    <span class="mono-label">Revenue Command · registro real</span>
+                    <h3 id="salesEntryModalTitle">Registrar venta</h3>
+                    <p id="salesEntryModalDescription">Cliente, productos y atribución comercial en una sola operación.</p>
+                  </div>
+                  <button class="icon-button" type="button" data-sales-modal-close aria-label="Cerrar registro de venta"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+                </header>
+                <div class="sales-entry-modal-body" data-sales-entry-modal-body>
               <div class="table-card-head">
                 <div>
                   <span class="mono-label">Medición comercial</span>
@@ -5507,7 +5521,9 @@
                 </div>
                 <datalist id="acquisitionChannelDatalist"></datalist>
               </form>
-            </article>
+                </div>
+              </article>
+            </section>
 
             <article class="surface-card data-table-card sales-table-panel">
               <div class="table-card-head">
@@ -8102,7 +8118,7 @@
       <footer class="modal-actions"><button class="ghost-button" type="button" data-portal-email-route="cancel">Cancelar</button></footer>
     </section>
   </div>
-    <script src="js/app.js?v=gos-brand-v362-20260826-attributed-sales-command-v368" defer></script>
+    <script src="js/app.js?v=gos-brand-v362-20260826-attributed-sales-command-v368-sales-entry-modal-v371" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v370-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
