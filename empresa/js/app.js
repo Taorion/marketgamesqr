@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260827-campaign-designer-feedback-v383";
+const APP_VERSION = "empresa-20260827-campaign-designer-feedback-v384";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -32268,7 +32268,7 @@ function strategyWizardRequestPayload(payload, channelRefs) {
 }
 
 function strategyWizardCreationErrorMessage(error) {
-  if (error?.message !== "Invalid request payload.") {
+  if (!String(error?.message || "").startsWith("Invalid request payload.")) {
     return error?.message || "No pudimos crear la campaña. Tu borrador sigue guardado.";
   }
   const fieldLabels = {

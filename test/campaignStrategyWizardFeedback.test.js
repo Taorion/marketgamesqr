@@ -35,7 +35,7 @@ test("el Diseñador bloquea duplicados y comunica espera, exito y error", () => 
 
 test("el error generico del API se traduce a un campo accionable", () => {
   const app = read("empresa/js/app.js");
-  assert.match(app, /error\?\.message !== "Invalid request payload\."/);
+  assert.match(app, /startsWith\("Invalid request payload\."\)/);
   assert.match(app, /starts_at: "la fecha de inicio"/);
   assert.match(app, /ends_at: "la fecha de cierre"/);
   assert.match(app, /tu borrador sigue guardado/);
