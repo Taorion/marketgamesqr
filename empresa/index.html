@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/img/qori-favicon-32.png?v=qori-favicon-20260825-v120">
   <link rel="apple-touch-icon" sizes="180x180" href="/img/qori-apple-touch-icon.png?v=qori-favicon-20260825-v120">
   <link rel="manifest" href="/site.webmanifest?v=qori-favicon-20260825-v120">
-  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-account-command-center-v377-20260827">
+  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-account-recharge-center-v378-20260827">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -54,7 +54,7 @@
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/reward-pass-premium-v342.css?v=reward-pass-branches-v344-20260823" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/acquisition-command-center.css?v=acquisition-lead-sales-trace-v353-20260824-v10" media="print" data-deferred-portal-style>
-<link rel="stylesheet" href="css/account-premium.css?v=account-command-center-v7-20260827">
+<link rel="stylesheet" href="css/account-premium.css?v=account-recharge-center-v8-20260827">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -1606,7 +1606,7 @@
                 <p>Recarga tickets, revisa pagos recientes o cambia de plan cuando lo necesites.</p>
               </div>
 
-              <article class="surface-card account-settings-card account-billing-card account-span-full" id="accountSectionBilling" data-account-screen="billing">
+              <article class="surface-card account-settings-card account-billing-card account-recharge-hero account-span-full" id="accountSectionBilling" data-account-screen="billing">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Pagos y renovaciones</span>
@@ -1615,6 +1615,12 @@
                   <span class="status-chip pending" id="accountBillingStatus">Mercado Pago</span>
                 </div>
                 <p class="table-secondary">Compra tickets cuando necesites más saldo. Mercado Pago mostrará medios digitales como tarjetas, saldo y PSE; no se habilita pago en efectivo ni Efecty.</p>
+                <div class="account-recharge-metrics" aria-label="Resumen de recargas">
+                  <div><span>Saldo disponible</span><strong id="accountRechargeBalance">0</strong><small>tickets</small></div>
+                  <div><span>Cortesía recibida</span><strong id="accountRechargeCourtesy">0</strong><small>tickets</small></div>
+                  <div><span>Último pago</span><strong id="accountRechargeLastPayment">Sin movimientos</strong><small id="accountRechargeLastPaymentDate">Historial protegido</small></div>
+                  <div><span>Plan actual</span><strong id="accountRechargePlan">—</strong><small>acceso del portal</small></div>
+                </div>
                 <div class="account-billing-grid">
                   <div class="account-billing-panel">
                     <strong>Recarga de tickets</strong>
@@ -1653,27 +1659,35 @@
                 <p class="error-line" id="subscriptionRenewalMessage"></p>
               </article>
 
-              <article class="surface-card data-table-card qr-credit-shop-card account-only-commerce-card account-span-5" id="accountQrCreditShopCard" data-account-screen="billing">
+              <article class="surface-card data-table-card qr-credit-shop-card account-only-commerce-card account-span-full" id="accountQrCreditShopCard" data-account-screen="billing">
                 <div class="table-card-head">
                   <div>
-                    <span class="mono-label">Recarga automatica</span>
-                    <h3>Saldo y tickets</h3>
+                    <span class="mono-label">Recarga segura</span>
+                    <h3>Elige tickets para tu operación</h3>
                   </div>
                   <span class="status-chip pending" id="qrCreditCheckoutStatus">Checkout Mercado Pago</span>
                 </div>
                 <p class="table-secondary">Pago digital: tarjetas, saldo Mercado Pago y PSE cuando esté disponible en tu cuenta. Efectivo y Efecty quedan excluidos.</p>
                 <form class="qr-credit-shop-form" id="qrCreditCheckoutForm">
+                  <div class="qr-credit-package-grid" id="qrCreditPackageGrid" role="radiogroup" aria-label="Paquetes de tickets"></div>
                   <label>
                     <span>Paquete</span>
                     <select id="qrCreditPackageSelect" required></select>
                   </label>
-                  <div class="qr-credit-shop-actions">
-                    <button class="solid-button" id="qrCreditCheckoutButton" type="submit">Ir a pagar</button>
+                  <div class="qr-credit-shop-actions qr-credit-checkout-bar">
+                    <div><span>Tu selección</span><strong id="qrCreditSelectionSummary">Selecciona un paquete</strong><small>Pago único · sin recarga automática</small></div>
+                    <button class="solid-button" id="qrCreditCheckoutButton" type="submit"><span class="material-symbols-outlined" aria-hidden="true">lock</span> Pagar con Mercado Pago</button>
                   </div>
                 </form>
                 <p class="error-line" id="qrCreditCheckoutMessage"></p>
-                <div class="table-wrap">
-                  <table>
+                <div class="account-payment-trust" aria-label="Condiciones del pago">
+                  <span><span class="material-symbols-outlined" aria-hidden="true">credit_card</span> Tarjetas, saldo y PSE si está disponible</span>
+                  <span><span class="material-symbols-outlined" aria-hidden="true">notifications_active</span> Acreditación automática al confirmarse</span>
+                  <span><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span> Historial por negocio</span>
+                </div>
+                <div class="account-orders-head"><div><span class="mono-label">Seguimiento</span><h4>Movimientos recientes</h4></div><span>Los pagos pendientes pueden retomarse.</span></div>
+                <div class="table-wrap account-orders-wrap">
+                  <table class="account-orders-table">
                     <thead>
                       <tr>
                         <th>Fecha</th>
@@ -1687,7 +1701,7 @@
                 </div>
               </article>
 
-              <article class="surface-card portal-pricing-card account-only-commerce-card account-span-7" id="accountPortalPlansCard" data-account-screen="billing">
+              <article class="surface-card portal-pricing-card account-only-commerce-card account-span-full" id="accountPortalPlansCard" data-account-screen="billing">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Planes del portal</span>
@@ -8155,7 +8169,7 @@
       <footer class="modal-actions"><button class="ghost-button" type="button" data-portal-email-route="cancel">Cancelar</button></footer>
     </section>
   </div>
-    <script src="js/app.js?v=gos-brand-v362-20260826-account-command-center-v377-20260827" defer></script>
+    <script src="js/app.js?v=gos-brand-v362-20260826-account-recharge-center-v378-20260827" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>

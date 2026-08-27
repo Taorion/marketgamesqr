@@ -14,10 +14,12 @@ const { getBusinessSubscription } = require("../services/subscriptionService");
 
 const creditCheckoutSchema = z.object({
   package_code: z.string().trim().min(2).max(40),
+  idempotency_key: z.string().uuid().optional(),
 });
 
 const subscriptionRenewalSchema = z.object({
   plan_code: z.string().trim().min(2).max(40),
+  idempotency_key: z.string().uuid().optional(),
 });
 const storageAddonSchema = z.object({ addon_code: z.string().trim().min(2).max(40) });
 

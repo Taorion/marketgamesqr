@@ -14,8 +14,8 @@ const router = express.Router();
 const requireBillingAdmin = requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES");
 
 router.post("/mercadopago/webhook", mercadoPagoWebhook);
-router.get("/qr-credits/offers", authRequired, listQrCreditOffers);
-router.get("/qr-credits/orders", authRequired, listQrCreditOrders);
+router.get("/qr-credits/offers", authRequired, requireBillingAdmin, listQrCreditOffers);
+router.get("/qr-credits/orders", authRequired, requireBillingAdmin, listQrCreditOrders);
 router.post("/qr-credits/checkout", authRequired, requireBillingAdmin, createQrCreditCheckout);
 router.post("/tickets/checkout", authRequired, requireBillingAdmin, createQrCreditCheckout);
 router.post("/subscriptions/checkout", authRequired, requireBillingAdmin, createSubscriptionCheckout);

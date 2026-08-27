@@ -20,9 +20,9 @@ test("Account exposes six synchronized administration areas", () => {
   });
   assert.match(app, /accountSectionChannels:\s*"channels"/);
   assert.match(app, /supportedScreens\.includes\(screen\)/);
-  assert.match(app, /APP_VERSION = "empresa-20260827-account-command-center-v377"/);
-  assert.match(html, /account-premium\.css\?v=account-command-center-v7-20260827/);
-  assert.equal((html.match(/app\.js\?v=gos-brand-v362-20260826-account-command-center-v377-20260827/g) || []).length, 2);
+  assert.match(app, /APP_VERSION = "empresa-20260827-account-recharge-center-v378"/);
+  assert.match(html, /account-premium\.css\?v=account-recharge-center-v8-20260827/);
+  assert.equal((html.match(/app\.js\?v=gos-brand-v362-20260826-account-recharge-center-v378-20260827/g) || []).length, 2);
   assert.match(html, /qori-favicon\.png\?v=qori-account-brand-v2-20260827/);
 });
 

@@ -379,6 +379,9 @@ create table if not exists qr_credit_purchase_orders (
   mercado_pago_payment_id text unique,
   checkout_url text,
   sandbox_checkout_url text,
+  checkout_key text,
+  checkout_error text,
+  checkout_expires_at timestamptz,
   external_reference text not null unique,
   credited_at timestamptz,
   metadata jsonb not null default '{}'::jsonb,
@@ -892,6 +895,8 @@ create index if not exists idx_business_qr_credit_ledger_business_created on bus
 create index if not exists idx_qr_credit_purchase_orders_business_created on qr_credit_purchase_orders(business_id, created_at desc);
 create index if not exists idx_qr_credit_purchase_orders_status on qr_credit_purchase_orders(status, created_at desc);
 create index if not exists idx_qr_credit_purchase_orders_preference on qr_credit_purchase_orders(mercado_pago_preference_id);
+create unique index if not exists ux_qr_credit_purchase_orders_business_checkout_key on qr_credit_purchase_orders(business_id, checkout_key) where checkout_key is not null;
+create index if not exists idx_qr_credit_purchase_orders_unfinished on qr_credit_purchase_orders(business_id, updated_at desc) where status in ('PENDING', 'ERROR');
 create index if not exists idx_package_sales_requests_created on package_sales_requests(created_at desc);
 create index if not exists idx_package_sales_requests_assignment on package_sales_requests(payment_confirmed, service_assigned);
 create index if not exists idx_public_contact_messages_created on public_contact_messages(created_at desc);

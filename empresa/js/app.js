@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260827-account-command-center-v377";
+const APP_VERSION = "empresa-20260827-account-recharge-center-v378";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -1490,6 +1490,8 @@ const strategicQrHistoryTable = document.getElementById("strategicQrHistoryTable
 const ticketStatusBoard = document.getElementById("ticketStatusBoard");
 const qrCreditCheckoutForm = document.getElementById("qrCreditCheckoutForm");
 const qrCreditPackageSelect = document.getElementById("qrCreditPackageSelect");
+const qrCreditPackageGrid = document.getElementById("qrCreditPackageGrid");
+const qrCreditSelectionSummary = document.getElementById("qrCreditSelectionSummary");
 const qrCreditCheckoutButton = document.getElementById("qrCreditCheckoutButton");
 const qrCreditCheckoutStatus = document.getElementById("qrCreditCheckoutStatus");
 const qrCreditCheckoutMessage = document.getElementById("qrCreditCheckoutMessage");
@@ -1498,6 +1500,11 @@ const subscriptionPricingNote = document.getElementById("subscriptionPricingNote
 const subscriptionPlansGrid = document.getElementById("subscriptionPlansGrid");
 const accountBillingStatus = document.getElementById("accountBillingStatus");
 const accountOpenQrShopButton = document.getElementById("accountOpenQrShopButton");
+const accountRechargeBalance = document.getElementById("accountRechargeBalance");
+const accountRechargeCourtesy = document.getElementById("accountRechargeCourtesy");
+const accountRechargeLastPayment = document.getElementById("accountRechargeLastPayment");
+const accountRechargeLastPaymentDate = document.getElementById("accountRechargeLastPaymentDate");
+const accountRechargePlan = document.getElementById("accountRechargePlan");
 const subscriptionRenewalForm = document.getElementById("subscriptionRenewalForm");
 const subscriptionRenewalPlanSelect = document.getElementById("subscriptionRenewalPlanSelect");
 const subscriptionRenewalButton = document.getElementById("subscriptionRenewalButton");
@@ -6098,6 +6105,10 @@ function syncAccountPermissionControls() {
     link.classList.toggle("account-nav-restricted", !canManage);
     link.setAttribute("aria-disabled", String(!canManage));
   });
+  document.querySelectorAll('.account-admin-nav a[href="#accountSectionData"]').forEach((link) => {
+    link.classList.toggle("account-nav-restricted", !canBill);
+    link.setAttribute("aria-disabled", String(!canBill));
+  });
   const ownerOption = accountUserRoleInput?.querySelector('option[value="BUSINESS_OWNER"]');
   if (ownerOption) {
     const canCreateOwner = canCreateBusinessOwnerUser();
@@ -7416,6 +7427,7 @@ function applyInitialRouteParams() {
   const urlParams = new URLSearchParams(window.location.search);
   const requestedView = urlParams.get("view");
   const urlToken = urlParams.get("token");
+  const paymentResult = urlParams.get("payment");
   if (urlToken) {
     setView("validator");
     validatorQrTokenInput.value = urlToken;
@@ -24129,6 +24141,7 @@ function renderStrategicQrView() {
 
 function renderQrCreditShop() {
   const offers = (state.qrPackageOffers || []).filter((offer) => offer.subscriber_allowed || offer.base_access_allowed);
+  const previousSelection = qrCreditPackageSelect?.value;
   qrCreditPackageSelect.innerHTML = offers.length
     ? offers.map((offer) => `
       <option value="${escapeHtml(offer.code)}">
@@ -24136,6 +24149,49 @@ function renderQrCreditShop() {
       </option>
     `).join("")
     : '<option value="">No hay paquetes disponibles</option>';
+  if (previousSelection && offers.some((offer) => offer.code === previousSelection)) {
+    qrCreditPackageSelect.value = previousSelection;
+  }
+
+  if (paymentResult && canManageBusinessBilling()) {
+    state.paymentReturnStatus = paymentResult;
+    openAccountSection("billing");
+    const feedback = {
+      success: ["Mercado Pago recibió el pago. Estamos confirmando la acreditación de tus tickets.", "success", "Pago recibido"],
+      pending: ["El pago sigue pendiente. Tu saldo se actualizará cuando Mercado Pago lo confirme.", "info", "Pago en revisión"],
+      failure: ["El pago no fue aprobado. Puedes retomar la recarga y elegir otro medio de pago.", "error", "Pago no completado"],
+    }[paymentResult];
+    if (feedback) showFeedback(feedback[0], feedback[1], { title: feedback[2], timeout: 9000 });
+    ["payment", "renewal", "collection_id", "collection_status", "payment_id", "status", "external_reference", "preference_id", "site_id", "processing_mode", "merchant_account_id"].forEach((key) => urlParams.delete(key));
+    const nextSearch = urlParams.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}#accountSectionData`);
+    refreshAccountPaymentReturn();
+    return;
+  }
+  const selectedCode = qrCreditPackageSelect?.value || offers[0]?.code || "";
+  const unitPrices = offers.map((offer) => Number(offer.price_cop || 0) / Math.max(Number(offer.package_size || 0), 1));
+  const bestUnitPrice = unitPrices.length ? Math.min(...unitPrices) : 0;
+  if (qrCreditPackageGrid) {
+    qrCreditPackageGrid.innerHTML = offers.length ? offers.map((offer) => {
+      const packageSize = Number(offer.package_size || 0);
+      const unitPrice = Number(offer.price_cop || 0) / Math.max(packageSize, 1);
+      const isSelected = offer.code === selectedCode;
+      const isBestValue = unitPrice === bestUnitPrice && offers.length > 1;
+      return `
+        <button class="qr-credit-package-option${isSelected ? " is-selected" : ""}" type="button" role="radio" aria-checked="${isSelected}" data-qr-package="${escapeHtml(offer.code)}">
+          <span class="qr-credit-package-top"><span>${escapeHtml(offer.title)}</span>${isBestValue ? '<em>Mejor valor</em>' : ""}</span>
+          <strong>${packageSize.toLocaleString("es-CO")} <small>tickets</small></strong>
+          <span class="qr-credit-package-price">${escapeHtml(packagePriceLabel(offer))}</span>
+          <small>${escapeHtml(copMoney(Math.round(unitPrice)))} por ticket</small>
+        </button>`;
+    }).join("") : '<p class="table-secondary">No hay paquetes disponibles para este plan.</p>';
+  }
+  const selectedOffer = offers.find((offer) => offer.code === selectedCode);
+  if (qrCreditSelectionSummary) {
+    qrCreditSelectionSummary.textContent = selectedOffer
+      ? `${Number(selectedOffer.package_size || 0).toLocaleString("es-CO")} tickets · ${packagePriceLabel(selectedOffer)}`
+      : "Selecciona un paquete";
+  }
   qrCreditCheckoutButton.disabled = !offers.length;
 
   const latest = (state.qrCreditOrders || [])[0];
@@ -24148,14 +24204,20 @@ function renderQrCreditShop() {
     const rechargeCopy = `Cortesia recibida: ${courtesy} tickets. Las recargas estan disponibles solo para cuentas con suscripcion activa.`;
     setInlineMessage(qrCreditCheckoutMessage, `Saldo actual: ${balance} tickets. ${rechargeCopy}`, "info");
   }
+  const account = state.qrCreditAccount || {};
+  if (accountRechargeBalance) accountRechargeBalance.textContent = Number(account.qr_balance || 0).toLocaleString("es-CO");
+  if (accountRechargeCourtesy) accountRechargeCourtesy.textContent = Number(account.qr_courtesy_total || 0).toLocaleString("es-CO");
+  if (accountRechargeLastPayment) accountRechargeLastPayment.textContent = latest ? paymentStatusLabel(latest.status) : "Sin movimientos";
+  if (accountRechargeLastPaymentDate) accountRechargeLastPaymentDate.textContent = latest ? formatDate(latest.created_at) : "Historial protegido";
+  if (accountRechargePlan) accountRechargePlan.textContent = currentPlan().name || currentPlan().code || "Sin plan";
 
   qrCreditOrdersTable.innerHTML = (state.qrCreditOrders || []).length
     ? state.qrCreditOrders.map((order) => `
       <tr>
-        <td>${escapeHtml(formatDate(order.created_at))}</td>
-        <td>${escapeHtml(order.package_title)}<br><small>${Number(order.package_size || 0).toLocaleString("es-CO")} tickets</small></td>
-        <td>${escapeHtml(packagePriceLabel((state.qrPackageOffers || []).find((offer) => offer.code === order.package_code)))}</td>
-        <td><span class="status-chip ${order.status === "APPROVED" ? "ok" : order.status === "PENDING" ? "pending" : "danger"}">${escapeHtml(paymentStatusLabel(order.status))}</span></td>
+        <td data-label="Fecha">${escapeHtml(formatDate(order.created_at))}</td>
+        <td data-label="Concepto">${escapeHtml(order.package_title)}<br><small>${Number(order.package_size || 0).toLocaleString("es-CO")} tickets</small></td>
+        <td data-label="Valor">${escapeHtml(copMoney(order.price_cop))}</td>
+        <td data-label="Estado y acción"><span class="status-chip ${order.status === "APPROVED" ? "ok" : order.status === "PENDING" ? "pending" : "danger"}">${escapeHtml(paymentStatusLabel(order.status))}</span>${order.status === "PENDING" && (order.checkout_url || order.sandbox_checkout_url) ? `<button class="account-order-resume" type="button" data-resume-checkout="${escapeHtml(order.checkout_url || order.sandbox_checkout_url)}">Continuar pago</button>` : ""}</td>
       </tr>
     `).join("")
     : '<tr><td colspan="4">Aún no hay compras de recarga.</td></tr>';
@@ -24170,6 +24232,32 @@ function paymentStatusLabel(status) {
     EXPIRED: "Expirado",
     ERROR: "Error",
   }[status] || "Pendiente";
+}
+
+async function refreshAccountPaymentReturn(attempt = 0) {
+  try {
+    await loadStrategicQrData({ groups: ["core"], force: true, quiet: true });
+    renderQrCreditShop();
+    const latest = (state.qrCreditOrders || [])[0];
+    if (state.paymentReturnStatus === "success" && latest?.status === "PENDING" && attempt < 2) {
+      window.setTimeout(() => refreshAccountPaymentReturn(attempt + 1), 2500);
+    }
+  } catch (error) {
+    console.warn("No se pudo refrescar el estado del pago", error);
+  }
+}
+
+function paymentCheckoutIdempotencyKey(scope, reference) {
+  state.paymentCheckoutKeys ||= {};
+  const storageKey = `${scope}:${reference}`;
+  if (!state.paymentCheckoutKeys[storageKey]) {
+    state.paymentCheckoutKeys[storageKey] = globalThis.crypto?.randomUUID?.()
+      || "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (character) => {
+        const random = Math.floor(Math.random() * 16);
+        return (character === "x" ? random : ((random & 0x3) | 0x8)).toString(16);
+      });
+  }
+  return state.paymentCheckoutKeys[storageKey];
 }
 
 async function submitQrCreditCheckout(event) {
@@ -24187,7 +24275,10 @@ async function submitQrCreditCheckout(event) {
     const data = await api("/api/payments/qr-credits/checkout", {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({ package_code: packageCode }),
+      body: JSON.stringify({
+        package_code: packageCode,
+        idempotency_key: paymentCheckoutIdempotencyKey("tickets", packageCode),
+      }),
     });
     const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;
     if (!checkoutUrl) {
@@ -24225,7 +24316,10 @@ async function submitSubscriptionRenewal(event) {
     const data = await api("/api/payments/subscriptions/checkout", {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({ plan_code: planCode }),
+      body: JSON.stringify({
+        plan_code: planCode,
+        idempotency_key: paymentCheckoutIdempotencyKey("renewal", planCode),
+      }),
     });
     const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;
     if (!checkoutUrl) {
@@ -24255,7 +24349,10 @@ async function submitSubscriptionAutoRenewal() {
     const data = await api("/api/payments/subscriptions/auto-renewal", {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({ plan_code: planCode }),
+      body: JSON.stringify({
+        plan_code: planCode,
+        idempotency_key: paymentCheckoutIdempotencyKey("auto-renewal", planCode),
+      }),
     });
     const checkoutUrl = data.auto_renewal?.checkout_url
       || data.auto_renewal?.sandbox_checkout_url
@@ -57811,6 +57908,11 @@ navButtons.forEach((button) => {
 document.querySelector(".account-admin-nav")?.addEventListener("click", (event) => {
   const link = event.target.closest("a[href^='#accountSection']");
   if (!link) return;
+  if (link.getAttribute("aria-disabled") === "true") {
+    event.preventDefault();
+    showFeedback("Solo el propietario o un administrador puede consultar recargas y pagos.", "info", { title: "Acceso de facturación" });
+    return;
+  }
   const sectionId = String(link.getAttribute("href") || "").replace(/^#/, "");
   const screen = ACCOUNT_SECTION_SCREEN[sectionId];
   if (!screen) return;
@@ -58591,6 +58693,18 @@ document.querySelectorAll("[data-question-count-for]").forEach((field) => {
 });
 qrBatchForm?.addEventListener("submit", submitQrBatch);
 qrCreditCheckoutForm?.addEventListener("submit", submitQrCreditCheckout);
+qrCreditPackageGrid?.addEventListener("click", (event) => {
+  const option = event.target.closest("[data-qr-package]");
+  if (!option || !qrCreditPackageSelect) return;
+  qrCreditPackageSelect.value = option.dataset.qrPackage;
+  renderQrCreditShop();
+});
+qrCreditPackageSelect?.addEventListener("change", renderQrCreditShop);
+qrCreditOrdersTable?.addEventListener("click", (event) => {
+  const resumeButton = event.target.closest("[data-resume-checkout]");
+  if (!resumeButton) return;
+  window.location.href = resumeButton.dataset.resumeCheckout;
+});
 accountOpenQrShopButton?.addEventListener("click", openQrCreditShopFromAccount);
 subscriptionRenewalForm?.addEventListener("submit", submitSubscriptionRenewal);
 subscriptionRenewalPlanSelect?.addEventListener("change", renderSubscriptionRenewal);
@@ -59550,15 +59664,6 @@ forceSidebarMenuLeftAlignment();
 queueMicrotask(forceSidebarMenuLeftAlignment);
 startQuietCanvasObserver();
 scheduleQuietCanvasEnhancement();
-const paymentResult = new URLSearchParams(window.location.search).get("payment");
-if (paymentResult === "success") {
-  showFeedback("Pago aprobado. Si Mercado Pago ya notificó el webhook, los tickets apareceran en unos segundos.", "success", { title: "Pago recibido", timeout: 8000 });
-} else if (paymentResult === "pending") {
-  showFeedback("Pago pendiente. Actualizaremos el saldo cuando Mercado Pago confirme la transacción.", "info", { title: "Pago en revision", timeout: 8000 });
-} else if (paymentResult === "failure") {
-  showFeedback("El pago no fue aprobado. Puedes intentar nuevamente con otro medio de pago.", "error", { title: "Pago no completado", timeout: 8000 });
-}
-
 /* Negociación compacta: conserva los contratos RMS y reduce la operación a una ruta activa. */
 function rmsNegotiationCompactPaths() {
   return [

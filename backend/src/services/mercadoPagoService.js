@@ -178,6 +178,94 @@ async function assertActiveSubscriptionForTicketPurchase(user) {
   return subscription;
 }
 
+const CHECKOUT_CREATION_STALE_MS = 2 * 60 * 1000;
+
+function checkoutKey(body = {}) {
+  return body.idempotency_key || randomUUID();
+}
+
+async function createPortalCheckoutIntent(user, details, body = {}) {
+  const key = checkoutKey(body);
+  const inserted = await query(
+    `insert into qr_credit_purchase_orders
+      (business_id, created_by_user_id, package_code, package_size, package_title, price_cop,
+       external_reference, metadata, checkout_key, checkout_expires_at)
+     values ($1, $2, $3, $4, $5, $6, gen_random_uuid()::text, $7, $8, now() + interval '24 hours')
+     on conflict (business_id, checkout_key) where checkout_key is not null do nothing
+     returning *`,
+    [
+      user.business_id,
+      user.id,
+      details.package_code,
+      details.package_size,
+      details.package_title,
+      details.price_cop,
+      details.metadata,
+      key,
+    ]
+  );
+  if (inserted.rows[0]) return { order: inserted.rows[0], reused: false };
+
+  const existingResult = await query(
+    `select * from qr_credit_purchase_orders where business_id = $1 and checkout_key = $2 limit 1`,
+    [user.business_id, key]
+  );
+  const existing = existingResult.rows[0];
+  if (!existing) throw badRequest("No se pudo recuperar el intento de pago. Intenta nuevamente.");
+  if (existing.checkout_url || existing.sandbox_checkout_url) return { order: existing, reused: true };
+
+  const ageMs = Date.now() - new Date(existing.updated_at || existing.created_at).getTime();
+  if (existing.status === "PENDING" && ageMs < CHECKOUT_CREATION_STALE_MS) {
+    throw badRequest("Tu pago ya se esta preparando. Espera unos segundos y vuelve a intentarlo.");
+  }
+
+  const reclaimed = await query(
+    `update qr_credit_purchase_orders
+     set status = 'PENDING', checkout_error = null, updated_at = now()
+     where id = $1 and (status = 'ERROR' or updated_at < now() - interval '2 minutes')
+     returning *`,
+    [existing.id]
+  );
+  if (!reclaimed.rows[0]) {
+    throw badRequest("Tu pago ya se esta preparando. Espera unos segundos y vuelve a intentarlo.");
+  }
+  return { order: reclaimed.rows[0], reused: false };
+}
+
+async function saveCheckoutReady(orderId, providerPayload) {
+  const updated = await query(
+    `update qr_credit_purchase_orders
+     set mercado_pago_preference_id = $2,
+         checkout_url = $3,
+         sandbox_checkout_url = $4,
+         payment_payload = $5,
+         checkout_error = null,
+         checkout_expires_at = coalesce($6::timestamptz, checkout_expires_at),
+         updated_at = now()
+     where id = $1
+     returning *`,
+    [
+      orderId,
+      providerPayload.id || null,
+      providerPayload.init_point || null,
+      providerPayload.sandbox_init_point || null,
+      providerPayload,
+      providerPayload.expiration_date_to || null,
+    ]
+  );
+  return updated.rows[0];
+}
+
+async function saveCheckoutError(orderId, error) {
+  const safeMessage = String(error?.message || "Mercado Pago no pudo crear el checkout").slice(0, 500);
+  await query(
+    `update qr_credit_purchase_orders
+     set status = 'ERROR', checkout_error = $2, updated_at = now()
+     where id = $1 and credited_at is null`,
+    [orderId, safeMessage]
+  );
+}
+
 async function activateTicketBaseAccess(client, businessId, userId = null, extraSettings = {}) {
   await client.query(
     `update businesses
@@ -307,29 +395,24 @@ async function createCreditCheckout(user, body) {
     throw badRequest("Paquete QR no disponible para suscriptores.");
   }
 
-  const order = await query(
-    `insert into qr_credit_purchase_orders
-      (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
-     values ($1, $2, $3, $4, $5, $6, gen_random_uuid()::text, $7)
-     returning *`,
-    [
-      user.business_id,
-      user.id,
-      offer.code,
-      offer.package_size,
-      offer.title,
-      offer.price_cop,
-      {
+  const intent = await createPortalCheckoutIntent(user, {
+    package_code: offer.code,
+    package_size: offer.package_size,
+    package_title: offer.title,
+    price_cop: offer.price_cop,
+    metadata: {
         source: "business_portal",
         requested_by_email: user.email,
       },
-    ]
-  );
-  const purchaseOrder = order.rows[0];
+  }, body);
+  const purchaseOrder = intent.order;
+  if (intent.reused) return mapPurchaseOrder(purchaseOrder);
 
-  const preference = await mpRequest("/checkout/preferences", {
-    method: "POST",
-    body: JSON.stringify({
+  let preference;
+  try {
+    preference = await mpRequest("/checkout/preferences", {
+      method: "POST",
+      body: JSON.stringify({
       items: [
         {
           id: offer.code,
@@ -357,28 +440,14 @@ async function createCreditCheckout(user, body) {
       },
       payment_methods: digitalOnlyPaymentMethods(),
       ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
-    }),
-  });
+      }),
+    });
+  } catch (error) {
+    await saveCheckoutError(purchaseOrder.id, error);
+    throw error;
+  }
 
-  const updated = await query(
-    `update qr_credit_purchase_orders
-     set mercado_pago_preference_id = $2,
-         checkout_url = $3,
-         sandbox_checkout_url = $4,
-         payment_payload = $5,
-         updated_at = now()
-     where id = $1
-     returning *`,
-    [
-      purchaseOrder.id,
-      preference.id || null,
-      preference.init_point || null,
-      preference.sandbox_init_point || null,
-      preference,
-    ]
-  );
-
-  return mapPurchaseOrder(updated.rows[0]);
+  return mapPurchaseOrder(await saveCheckoutReady(purchaseOrder.id, preference));
 }
 
 async function createStorageAddonCheckout(user, body) {
@@ -450,19 +519,12 @@ async function createSubscriptionRenewalCheckout(user, body) {
   const chargeStartDate = nextSubscriptionChargeDate(currentBusiness.rows[0]?.subscription_current_period_ends_at);
   const charge = monthlyChargeForBusiness(plan, currentBusiness.rows[0], chargeStartDate);
   const periodLabel = billingPeriodLabel(plan);
-  const order = await query(
-    `insert into qr_credit_purchase_orders
-      (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
-     values ($1, $2, $3, $4, $5, $6, gen_random_uuid()::text, $7)
-     returning *`,
-    [
-      user.business_id,
-      user.id,
-      plan.code,
-      monthlyQrIncluded,
-      `${plan.name} - renovacion ${periodLabel}`,
-      charge.price_cop,
-      {
+  const intent = await createPortalCheckoutIntent(user, {
+    package_code: plan.code,
+    package_size: monthlyQrIncluded,
+    package_title: `${plan.name} - renovacion ${periodLabel}`,
+    price_cop: charge.price_cop,
+    metadata: {
         source: "business_portal_subscription_renewal",
         requested_by_email: user.email,
         special_pricing: charge.special_pricing_applied ? {
@@ -485,13 +547,15 @@ async function createSubscriptionRenewalCheckout(user, body) {
           renewal: true,
         },
       },
-    ]
-  );
-  const purchaseOrder = order.rows[0];
+  }, body);
+  const purchaseOrder = intent.order;
+  if (intent.reused) return mapPurchaseOrder(purchaseOrder);
 
-  const preference = await mpRequest("/checkout/preferences", {
-    method: "POST",
-    body: JSON.stringify({
+  let preference;
+  try {
+    preference = await mpRequest("/checkout/preferences", {
+      method: "POST",
+      body: JSON.stringify({
       items: [
         {
           id: plan.code,
@@ -524,28 +588,14 @@ async function createSubscriptionRenewalCheckout(user, body) {
       },
       payment_methods: digitalOnlyPaymentMethods(),
       ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
-    }),
-  });
+      }),
+    });
+  } catch (error) {
+    await saveCheckoutError(purchaseOrder.id, error);
+    throw error;
+  }
 
-  const updated = await query(
-    `update qr_credit_purchase_orders
-     set mercado_pago_preference_id = $2,
-         checkout_url = $3,
-         sandbox_checkout_url = $4,
-         payment_payload = $5,
-         updated_at = now()
-     where id = $1
-     returning *`,
-    [
-      purchaseOrder.id,
-      preference.id || null,
-      preference.init_point || null,
-      preference.sandbox_init_point || null,
-      preference,
-    ]
-  );
-
-  return mapPurchaseOrder(updated.rows[0]);
+  return mapPurchaseOrder(await saveCheckoutReady(purchaseOrder.id, preference));
 }
 
 async function createSubscriptionAutoRenewal(user, body) {
@@ -582,19 +632,12 @@ async function createSubscriptionAutoRenewal(user, body) {
   const charge = monthlyChargeForBusiness(plan, currentBusiness.rows[0], chargeStartDate);
   const { frequency, frequency_type: frequencyType } = planBillingFrequency(plan);
   const periodLabel = billingPeriodLabel(plan);
-  const order = await query(
-    `insert into qr_credit_purchase_orders
-      (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
-     values ($1, $2, $3, $4, $5, $6, gen_random_uuid()::text, $7)
-     returning *`,
-    [
-      user.business_id,
-      user.id,
-      plan.code,
-      monthlyQrIncluded,
-      `${plan.name} - cobro automatico ${periodLabel}`,
-      charge.price_cop,
-      {
+  const intent = await createPortalCheckoutIntent(user, {
+    package_code: plan.code,
+    package_size: monthlyQrIncluded,
+    package_title: `${plan.name} - cobro automatico ${periodLabel}`,
+    price_cop: charge.price_cop,
+    metadata: {
         source: "business_portal_subscription_auto_renewal",
         requested_by_email: user.email,
         special_pricing: charge.special_pricing_applied ? {
@@ -617,13 +660,26 @@ async function createSubscriptionAutoRenewal(user, body) {
           auto_renew: true,
         },
       },
-    ]
-  );
-  const purchaseOrder = order.rows[0];
+  }, body);
+  const purchaseOrder = intent.order;
+  if (intent.reused) {
+    return {
+      order: mapPurchaseOrder(purchaseOrder),
+      auto_renewal: {
+        status: purchaseOrder.status,
+        mercado_pago_preapproval_id: purchaseOrder.mercado_pago_preference_id,
+        checkout_url: purchaseOrder.checkout_url,
+        sandbox_checkout_url: purchaseOrder.sandbox_checkout_url,
+        first_charge_at: chargeStartDate.toISOString(),
+      },
+    };
+  }
 
-  const preapproval = await mpRequest("/preapproval", {
-    method: "POST",
-    body: JSON.stringify({
+  let preapproval;
+  try {
+    preapproval = await mpRequest("/preapproval", {
+      method: "POST",
+      body: JSON.stringify({
       reason: `${plan.name} - portal Sales Machine (${periodLabel})`,
       external_reference: purchaseOrder.external_reference,
       payer_email: user.email,
@@ -637,26 +693,14 @@ async function createSubscriptionAutoRenewal(user, body) {
         start_date: chargeStartDate.toISOString(),
         ...(charge.special_pricing_applied && charge.special_pricing_ends_at ? { end_date: charge.special_pricing_ends_at } : {}),
       },
-    }),
-  });
+      }),
+    });
+  } catch (error) {
+    await saveCheckoutError(purchaseOrder.id, error);
+    throw error;
+  }
 
-  const updated = await query(
-    `update qr_credit_purchase_orders
-     set mercado_pago_preference_id = $2,
-         checkout_url = $3,
-         sandbox_checkout_url = $4,
-         payment_payload = $5,
-         updated_at = now()
-     where id = $1
-     returning *`,
-    [
-      purchaseOrder.id,
-      preapproval.id || null,
-      preapproval.init_point || null,
-      preapproval.sandbox_init_point || null,
-      preapproval,
-    ]
-  );
+  const updatedOrder = await saveCheckoutReady(purchaseOrder.id, preapproval);
 
   await query(
     `update businesses
@@ -681,7 +725,7 @@ async function createSubscriptionAutoRenewal(user, body) {
   );
 
   return {
-    order: mapPurchaseOrder(updated.rows[0]),
+    order: mapPurchaseOrder(updatedOrder),
     auto_renewal: {
       status: String(preapproval.status || "pending").toUpperCase(),
       mercado_pago_preapproval_id: preapproval.id || null,
@@ -1333,6 +1377,9 @@ function mapPurchaseOrder(row) {
     status: row.status,
     checkout_url: row.checkout_url,
     sandbox_checkout_url: row.sandbox_checkout_url,
+    checkout_expires_at: row.checkout_expires_at,
+    checkout_error: row.checkout_error,
+    order_type: row.metadata?.source || "unknown",
     mercado_pago_preference_id: row.mercado_pago_preference_id,
     mercado_pago_payment_id: row.mercado_pago_payment_id,
     credited_at: row.credited_at,
