@@ -20,9 +20,9 @@ test("Account exposes six synchronized administration areas", () => {
   });
   assert.match(app, /accountSectionChannels:\s*"channels"/);
   assert.match(app, /supportedScreens\.includes\(screen\)/);
-  assert.match(app, /APP_VERSION = "empresa-20260827-semantic-feedback-v380"/);
-  assert.match(html, /account-premium\.css\?v=account-navigation-v11-20260827/);
-  assert.equal((html.match(/app\.js\?v=gos-brand-v362-20260826-semantic-feedback-v380-20260827/g) || []).length, 2);
+  assert.match(app, /APP_VERSION = "empresa-20260827-plan-change-v381"/);
+  assert.match(html, /account-premium\.css\?v=account-plan-change-v12-20260827/);
+  assert.equal((html.match(/app\.js\?v=gos-brand-v362-20260826-plan-change-v381-20260827/g) || []).length, 2);
   assert.match(html, /qori-favicon\.png\?v=qori-account-brand-v2-20260827/);
 });
 
@@ -54,6 +54,23 @@ test("Account follows the Qori premium visual system and a real mobile breakpoin
   assert.match(css, /account-admin-nav[\s\S]+grid-template-columns:\s*repeat\(6, minmax\(0, 1fr\)\)\s*!important/);
   assert.match(css, /account-company-card #accountProfileForm \{ grid-template-columns: 1fr !important; \}/);
   assert.match(css, /#accountProfileOverview, \.account-settings-grid\) \{ padding-inline: 0 !important; \}/);
+  assert.match(css, /Account v12 · plan change command/);
+  assert.match(css, /#accountPortalPlansCard[\s\S]+grid-column: 1 \/ -1 !important/);
+  assert.match(css, /#subscriptionPlansGrid[\s\S]+grid-template-columns: repeat\(3, minmax\(0, 1fr\)\) !important/);
+});
+
+test("Account exposes a real plan change action through the existing checkout", () => {
+  const html = read("empresa/index.html");
+  const app = read("empresa/js/app.js");
+  const css = read("empresa/css/account-premium.css");
+  assert.match(html, /Renovar o cambiar plan/);
+  assert.match(html, /Plan seleccionado/);
+  assert.match(app, /data-choose-subscription-plan=/);
+  assert.match(app, /subscriptionPlansGrid\?\.addEventListener\("click"/);
+  assert.match(app, /subscriptionRenewalPlanSelect\.value = selectedPlanCode/);
+  assert.match(app, /Cambiar a \$\{selectedRenewalPlan\.name\}/);
+  assert.match(app, /\/api\/payments\/subscriptions\/checkout/);
+  assert.match(css, /\.portal-plan-select-button[\s\S]+width: 100% !important/);
 });
 
 test("official Account copy does not instruct customers to edit staging", () => {

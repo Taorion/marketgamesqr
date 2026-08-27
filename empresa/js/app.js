@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260827-semantic-feedback-v380";
+const APP_VERSION = "empresa-20260827-plan-change-v381";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -5913,6 +5913,7 @@ function renderSubscriptionPricing() {
     const portalValue = plan.monthly_price_cop ? planMonthlyLabel(plan) : plan.price_label || "Incluido";
     const monthlyPrice = plan.monthly_price_cop ? planMonthlyLabel(plan) : (plan.price_label || "Cotización");
     const isCurrent = plan.code === currentCode;
+    const canChooseOnline = !isCurrent && plan.category === "subscription" && Boolean(plan.monthly_price_cop);
     return `
       <article class="portal-plan-card ${isCurrent ? "is-current" : ""}">
         <div class="portal-plan-head">
@@ -5935,6 +5936,17 @@ function renderSubscriptionPricing() {
           `).join("")}
         </ul>
         <p class="portal-plan-note">${escapeHtml(plan.pricing_note || "")}</p>
+        <div class="portal-plan-actions">
+          <button
+            class="${isCurrent || !canChooseOnline ? "ghost-button" : "solid-button"} ${isCurrent ? "is-current" : ""} portal-plan-select-button"
+            type="button"
+            ${canChooseOnline ? `data-choose-subscription-plan="${escapeHtml(plan.code)}"` : ""}
+            ${canChooseOnline ? "" : 'disabled aria-disabled="true"'}
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">${isCurrent ? "check_circle" : canChooseOnline ? "swap_horiz" : "lock"}</span>
+            <span>${isCurrent ? "Plan actual" : canChooseOnline ? `Cambiar a ${escapeHtml(plan.name)}` : "No disponible en línea"}</span>
+          </button>
+        </div>
       </article>
     `;
   }).join("");
@@ -5967,8 +5979,14 @@ function renderSubscriptionRenewal() {
     : null;
   const firstChargeLabel = firstChargeDate ? formatDateOnly(firstChargeDate) : "próxima renovación";
   const selectedPlanChargeLabel = selectedRenewalPlan?.monthly_price_cop ? copMoney(selectedRenewalPlan.monthly_price_cop) : "el valor del plan";
+  const isPlanChange = Boolean(selectedRenewalPlan?.code && selectedRenewalPlan.code !== plan.code);
 
   subscriptionRenewalButton.disabled = !hasMonthlyPlan || !plans.length;
+  if (!subscriptionRenewalButton.classList.contains("button-loading")) {
+    subscriptionRenewalButton.textContent = isPlanChange
+      ? `Cambiar a ${selectedRenewalPlan.name}`
+      : "Renovar mensualidad";
+  }
   if (subscriptionAutoRenewButton) {
     subscriptionAutoRenewButton.disabled = !plans.length || autoRenew.enabled || (!isTestingRenewalPlan && (plan.category !== "subscription" || !hasFutureRenewalDate));
     subscriptionAutoRenewButton.textContent = autoRenew.enabled ? "Cobro automatico activo" : "Inscribir tarjeta para cobro automatico";
@@ -6021,7 +6039,10 @@ function renderSubscriptionRenewal() {
         : plan.category === "subscription" && !hasFutureRenewalDate
         ? "Para inscribir tarjeta sin cobro inmediato, primero debe existir una fecha futura de renovación."
         : "Inscribir tarjeta solo crea la autorización; el primer cobro queda programado para la siguiente fecha de renovación.";
-      setInlineMessage(subscriptionRenewalMessage, `${subscriptionTimingText(plan)} Renovar manualmente abre un pago nuevo. ${autoRenewGuidance}`, "info");
+      const actionGuidance = isPlanChange
+        ? `Cambiarás de ${plan.name || plan.code || "tu plan actual"} a ${selectedRenewalPlan.name}. El cambio se aplicará cuando Mercado Pago apruebe el pago.`
+        : `${subscriptionTimingText(plan)} Renovar manualmente abre un pago nuevo.`;
+      setInlineMessage(subscriptionRenewalMessage, `${actionGuidance} ${autoRenewGuidance}`, "info");
     } else {
       setInlineMessage(subscriptionRenewalMessage, "Activa un plan mensual para usar el portal. Los tickets adicionales se compran dentro de la cuenta cuando la suscripcion este activa.", "info");
     }
@@ -24308,13 +24329,18 @@ async function submitSubscriptionRenewal(event) {
   event.preventDefault();
   const planCode = subscriptionRenewalPlanSelect?.value;
   if (!planCode) {
-    setInlineMessage(subscriptionRenewalMessage, "Selecciona un plan mensual para renovar.", "error");
+    setInlineMessage(subscriptionRenewalMessage, "Selecciona el plan mensual que quieres contratar.", "error");
     return;
   }
 
+  const currentPlan = state.subscription?.plan || {};
+  const selectedPlan = (state.subscriptionPlans || []).find((plan) => plan.code === planCode);
+  const isPlanChange = Boolean(currentPlan.code && selectedPlan?.code && currentPlan.code !== selectedPlan.code);
+  const actionLabel = isPlanChange ? `cambio a ${selectedPlan.name}` : "renovación mensual";
+
   setButtonLoading(subscriptionRenewalButton, true, "Abriendo pago...");
-  setInlineMessage(subscriptionRenewalMessage, "Creando checkout digital de mensualidad: tarjetas, saldo y PSE cuando este disponible. Sin efectivo ni Efecty.", "info");
-  showFeedback("Preparando pago digital de renovación mensual en Mercado Pago.", "loading", { title: "Renovando plan", timeout: 0 });
+  setInlineMessage(subscriptionRenewalMessage, `Creando checkout digital para el ${actionLabel}: tarjetas, saldo y PSE cuando esté disponible. Sin efectivo ni Efecty.`, "info");
+  showFeedback(`Preparando el ${actionLabel} en Mercado Pago.`, "loading", { title: isPlanChange ? "Cambiando plan" : "Renovando plan", timeout: 0 });
   try {
     const data = await api("/api/payments/subscriptions/checkout", {
       method: "POST",
@@ -24329,11 +24355,13 @@ async function submitSubscriptionRenewal(event) {
       throw new Error("Mercado Pago no devolvió un link de checkout.");
     }
     setInlineMessage(subscriptionRenewalMessage, "Checkout creado. Redirigiendo a Mercado Pago...", "success");
-    showFeedback("Al aprobarse el pago, la mensualidad se renovara automáticamente.", "success", { title: "Pago listo" });
+    showFeedback(isPlanChange
+      ? `Al aprobarse el pago, tu cuenta cambiará al plan ${selectedPlan.name}.`
+      : "Al aprobarse el pago, la mensualidad se renovará automáticamente.", "success", { title: "Pago listo" });
     window.location.href = checkoutUrl;
   } catch (error) {
     setInlineMessage(subscriptionRenewalMessage, error.message, "error");
-    showFeedback(error.message, "error", { title: "No se pudo renovar" });
+    showFeedback(error.message, "error", { title: isPlanChange ? "No se pudo cambiar el plan" : "No se pudo renovar" });
     setButtonLoading(subscriptionRenewalButton, false);
   }
 }
@@ -58709,6 +58737,17 @@ qrCreditOrdersTable?.addEventListener("click", (event) => {
   window.location.href = resumeButton.dataset.resumeCheckout;
 });
 accountOpenQrShopButton?.addEventListener("click", openQrCreditShopFromAccount);
+subscriptionPlansGrid?.addEventListener("click", (event) => {
+  const option = event.target.closest("[data-choose-subscription-plan]");
+  if (!option || option.disabled || !subscriptionRenewalPlanSelect) return;
+  const selectedPlanCode = option.dataset.chooseSubscriptionPlan;
+  const selectedPlan = (state.subscriptionPlans || []).find((plan) => plan.code === selectedPlanCode);
+  if (!selectedPlan) return;
+  subscriptionRenewalPlanSelect.value = selectedPlanCode;
+  renderSubscriptionRenewal();
+  subscriptionRenewalForm?.scrollIntoView({ behavior: "smooth", block: "center" });
+  subscriptionRenewalPlanSelect.focus({ preventScroll: true });
+});
 subscriptionRenewalForm?.addEventListener("submit", submitSubscriptionRenewal);
 subscriptionRenewalPlanSelect?.addEventListener("change", renderSubscriptionRenewal);
 subscriptionAutoRenewButton?.addEventListener("click", submitSubscriptionAutoRenewal);
