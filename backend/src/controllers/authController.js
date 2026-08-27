@@ -76,7 +76,7 @@ async function login(req, res, next) {
   try {
     const body = validate(loginSchema, req.body);
     const result = await query(
-      `select id, business_id, email, full_name, password_hash, role, is_active, can_redeem_cross_business, branch_id
+      `select id, business_id, email, full_name, password_hash, password_version, role, is_active, can_redeem_cross_business, branch_id
        from app_users
        where lower(email) = lower($1)`,
       [body.email]
@@ -102,6 +102,7 @@ async function login(req, res, next) {
         role: user.role,
         business_id: user.business_id,
         session_version: env.appSessionVersion,
+        password_version: Number(user.password_version || 0),
       },
       env.jwtSecret,
       { expiresIn: env.jwtExpiresIn }
@@ -262,7 +263,7 @@ async function changePassword(req, res, next) {
        where id = $1`,
       [req.user.id, passwordHash]
     );
-    res.json({ ok: true, message: "Password actualizado correctamente." });
+    res.json({ ok: true, message: "Contraseña actualizada. Inicia sesión de nuevo; las sesiones anteriores fueron cerradas." });
   } catch (error) {
     next(error);
   }

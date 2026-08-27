@@ -591,6 +591,7 @@ const accountCommercialDealStatus = document.getElementById("accountCommercialDe
 const accountCommercialDealSummary = document.getElementById("accountCommercialDealSummary");
 const accountCommercialDealGrid = document.getElementById("accountCommercialDealGrid");
 const accountProfileForm = document.getElementById("accountProfileForm");
+const accountPermissionNotice = document.getElementById("accountPermissionNotice");
 const accountNameInput = document.getElementById("accountNameInput");
 const accountSloganInput = document.getElementById("accountSloganInput");
 const accountNitInput = document.getElementById("accountNitInput");
@@ -1593,8 +1594,12 @@ function syncSidebarAccordionWithActiveNav(view = state.currentView) {
 
 const ACCOUNT_SCREEN_COPY = Object.freeze({
   profile: {
-    title: "Cuenta",
-    subtitle: "Consulta y actualiza tu perfil, empresa y seguridad de acceso.",
+    title: "Tu empresa",
+    subtitle: "Mantén clara la identidad con la que Qori opera y representa tu negocio.",
+  },
+  channels: {
+    title: "Canales oficiales",
+    subtitle: "Conecta correo y WhatsApp, valida cada envío y protege la confianza de tu audiencia.",
   },
   billing: {
     title: "Recargas",
@@ -1616,6 +1621,7 @@ const ACCOUNT_SCREEN_COPY = Object.freeze({
 
 const ACCOUNT_SECTION_SCREEN = Object.freeze({
   accountSectionCompany: "profile",
+  accountSectionChannels: "channels",
   accountSectionSecurity: "security",
   accountSectionData: "billing",
   accountSectionBilling: "billing",
@@ -1625,6 +1631,7 @@ const ACCOUNT_SECTION_SCREEN = Object.freeze({
 
 const ACCOUNT_SCREEN_SECTION = Object.freeze({
   profile: "accountSectionCompany",
+  channels: "accountSectionChannels",
   assets: "accountSectionAssets",
   admin: "accountSectionUsers",
   billing: "accountSectionData",
@@ -1642,7 +1649,7 @@ function accountScreenFromHash() {
 
 function accountSidebarScreen(screen = "") {
   const normalized = normalizeAccountScreen(screen);
-  return normalized === "admin" || normalized === "security" ? "profile" : normalized;
+  return ["admin", "channels", "security"].includes(normalized) ? "profile" : normalized;
 }
 
 function syncAccountNavigationState(screen = "") {
@@ -1677,9 +1684,11 @@ function applyAccountScreen() {
   state.accountScreen = screen;
   const copy = ACCOUNT_SCREEN_COPY[screen];
   document.querySelectorAll('[data-view="account"] [data-account-screen]').forEach((node) => {
-    node.classList.toggle("account-screen-hidden", node.dataset.accountScreen !== screen);
+    const supportedScreens = String(node.dataset.accountScreen || "").split(/\s+/).filter(Boolean);
+    node.classList.toggle("account-screen-hidden", !supportedScreens.includes(screen));
   });
   document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-profile", screen === "profile");
+  document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-channels", screen === "channels");
   document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-billing", screen === "billing");
   document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-assets", screen === "assets");
   document.querySelector('[data-view="account"]')?.classList.toggle("account-screen-security", screen === "security");
@@ -3596,8 +3605,8 @@ function syncPasswordRevealButton(button, input) {
   const isVisible = input.type === "text";
   const icon = button.querySelector(".material-symbols-outlined");
   button.setAttribute("aria-pressed", String(isVisible));
-  button.setAttribute("aria-label", isVisible ? "Ocultar password" : "Mostrar password");
-  button.title = isVisible ? "Ocultar password" : "Mostrar password";
+  button.setAttribute("aria-label", isVisible ? "Ocultar contraseña" : "Mostrar contraseña");
+  button.title = isVisible ? "Ocultar contraseña" : "Mostrar contraseña";
   if (icon) icon.textContent = isVisible ? "visibility_off" : "visibility";
 }
 
@@ -6055,8 +6064,43 @@ function isBusinessOwnerUser() {
   return ["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
 }
 
+function canCreateBusinessOwnerUser() {
+  return ["BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
+}
+
+function canManageBusinessBilling() {
+  return ["BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
+}
+
 function canDeactivateBusinessUsers() {
   return ["BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
+}
+
+function syncAccountPermissionControls() {
+  const canManage = isBusinessOwnerUser();
+  const canBill = canManageBusinessBilling();
+  accountPermissionNotice?.classList.toggle("hidden", canManage);
+  accountProfileForm?.classList.toggle("is-readonly", !canManage);
+  accountProfileForm?.querySelectorAll("input, select, textarea, button").forEach((control) => {
+    control.disabled = !canManage;
+  });
+  [accountLogoUploadButton, accountLogoRemoveButton, accountTicketFrameUploadButton, accountTicketFrameRemoveButton, digitalAssetSubmitButton, refreshDigitalAssetsButton].forEach((control) => {
+    if (control) control.disabled = !canManage;
+  });
+  [accountOpenQrShopButton, subscriptionRenewalButton, subscriptionAutoRenewButton, qrCreditCheckoutButton].forEach((control) => {
+    if (control) control.disabled = !canBill;
+  });
+  document.querySelectorAll('.account-admin-nav a[href="#accountSectionChannels"], .account-admin-nav a[href="#accountSectionAssets"], .account-admin-nav a[href="#accountSectionUsers"]').forEach((link) => {
+    link.classList.toggle("account-nav-restricted", !canManage);
+    link.setAttribute("aria-disabled", String(!canManage));
+  });
+  const ownerOption = accountUserRoleInput?.querySelector('option[value="BUSINESS_OWNER"]');
+  if (ownerOption) {
+    const canCreateOwner = canCreateBusinessOwnerUser();
+    ownerOption.hidden = !canCreateOwner;
+    ownerOption.disabled = !canCreateOwner;
+    if (!canCreateOwner && accountUserRoleInput.value === "BUSINESS_OWNER") accountUserRoleInput.value = "BUSINESS_MANAGER";
+  }
 }
 
 function canManageCampaigns() {
@@ -6064,8 +6108,8 @@ function canManageCampaigns() {
 }
 
 function accountRoleLabel(role) {
-  if (role === "BUSINESS_OWNER") return "Owner";
-  if (role === "BUSINESS_MANAGER") return "Manager operativo";
+  if (role === "BUSINESS_OWNER") return "Propietario";
+  if (role === "BUSINESS_MANAGER") return "Gestor operativo";
   if (role === "VALIDATOR") return "Validador";
   return role || "-";
 }
@@ -6090,6 +6134,7 @@ function renderBusinessUsers() {
   if (refreshAccountUsersButton) {
     refreshAccountUsersButton.disabled = !session?.user?.business_id;
   }
+  syncAccountPermissionControls();
   accountUsersTable.innerHTML = users.map((user) => {
     const isSelf = user.id === session?.user?.id;
     const active = Boolean(user.is_active);
@@ -6356,7 +6401,7 @@ function renderAccountView() {
   setAccountText(accountBusinessPhone, business.phone);
   setAccountText(accountUserName, user.full_name);
   setAccountText(accountUserEmail, user.email);
-  setAccountText(accountUserRole, user.role);
+  setAccountText(accountUserRole, accountRoleLabel(user.role));
   setAccountText(accountUserBusiness, business.name || user.business_id);
   setAccountText(accountUserId, user.id);
   setAccountText(accountPlanName, plan.name || plan.code);
@@ -6427,6 +6472,7 @@ function renderAccountView() {
     accountTicketFrameRemoveButton.disabled = !ticketFrame;
   }
   applyAccountScreen();
+  syncAccountPermissionControls();
 }
 
 function renderCommunicationEmailConnection() {
@@ -34579,6 +34625,10 @@ function collectAccountRiskCustomBenefits() {
 async function submitAccountProfile(event) {
   event.preventDefault();
   if (!session?.user?.business_id) return;
+  if (state.accountScreen === "channels") {
+    await saveCommunicationEmailConnection();
+    return;
+  }
   setInlineMessage(accountProfileMessage, "Guardando datos...", "info");
   setButtonLoading(accountProfileSaveButton, true, "Guardando...");
   try {
@@ -34659,11 +34709,11 @@ async function submitAccountPassword(event) {
       }),
     });
     accountPasswordForm.reset();
-    setInlineMessage(accountPasswordMessage, data.message || "Password actualizado.", "success");
-    showFeedback("Password actualizado correctamente.", "success", { title: "Seguridad actualizada" });
+    clearSession({ message: data.message || "Contraseña actualizada. Inicia sesión de nuevo; las sesiones anteriores fueron cerradas." });
+    return;
   } catch (error) {
-    setInlineMessage(accountPasswordMessage, error.message || "No se pudo cambiar el password.", "error");
-    showFeedback(error.message || "No se pudo cambiar el password.", "error");
+    setInlineMessage(accountPasswordMessage, error.message || "No se pudo cambiar la contraseña.", "error");
+    showFeedback(error.message || "No se pudo cambiar la contraseña.", "error");
   } finally {
     setButtonLoading(accountPasswordSaveButton, false);
   }

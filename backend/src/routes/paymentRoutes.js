@@ -1,5 +1,5 @@
 const express = require("express");
-const { authRequired } = require("../middleware/auth");
+const { authRequired, requireRoles } = require("../middleware/auth");
 const {
   createQrCreditCheckout,
   createSubscriptionAutoRenewalCheckout,
@@ -11,14 +11,15 @@ const {
 } = require("../controllers/paymentController");
 
 const router = express.Router();
+const requireBillingAdmin = requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES");
 
 router.post("/mercadopago/webhook", mercadoPagoWebhook);
 router.get("/qr-credits/offers", authRequired, listQrCreditOffers);
 router.get("/qr-credits/orders", authRequired, listQrCreditOrders);
-router.post("/qr-credits/checkout", authRequired, createQrCreditCheckout);
-router.post("/tickets/checkout", authRequired, createQrCreditCheckout);
-router.post("/subscriptions/checkout", authRequired, createSubscriptionCheckout);
-router.post("/storage/checkout", authRequired, createStorageCheckout);
-router.post("/subscriptions/auto-renewal", authRequired, createSubscriptionAutoRenewalCheckout);
+router.post("/qr-credits/checkout", authRequired, requireBillingAdmin, createQrCreditCheckout);
+router.post("/tickets/checkout", authRequired, requireBillingAdmin, createQrCreditCheckout);
+router.post("/subscriptions/checkout", authRequired, requireBillingAdmin, createSubscriptionCheckout);
+router.post("/storage/checkout", authRequired, requireBillingAdmin, createStorageCheckout);
+router.post("/subscriptions/auto-renewal", authRequired, requireBillingAdmin, createSubscriptionAutoRenewalCheckout);
 
 module.exports = router;

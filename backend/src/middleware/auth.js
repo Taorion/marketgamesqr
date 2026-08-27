@@ -17,7 +17,7 @@ async function authRequired(req, _res, next) {
     }
 
     const result = await query(
-      `select u.id, u.business_id, u.email, u.full_name, u.role, u.is_active,
+      `select u.id, u.business_id, u.email, u.full_name, u.role, u.is_active, u.password_version,
               u.can_redeem_cross_business, u.branch_id,
               b.is_active as business_is_active
        from app_users u
@@ -29,6 +29,9 @@ async function authRequired(req, _res, next) {
     const user = result.rows[0];
     if (!user || !user.is_active) {
       throw unauthorized("User is inactive or does not exist.");
+    }
+    if (Number(payload.password_version || 0) !== Number(user.password_version || 0)) {
+      throw unauthorized("Tu contraseña cambió. Inicia sesión de nuevo en este dispositivo.");
     }
     if (!["ADMIN", "ADMIN_MARKET_GAMES"].includes(user.role) && user.business_id && !user.business_is_active) {
       throw forbidden("El negocio asignado a este usuario no esta activo.");

@@ -138,6 +138,7 @@ create table if not exists app_users (
   business_id uuid references businesses(id) on delete set null,
   email text not null unique,
   password_hash text not null,
+  password_version integer not null default 0,
   full_name text not null,
   role user_role not null,
   can_redeem_cross_business boolean not null default false,
@@ -1013,6 +1014,23 @@ drop trigger if exists trg_app_users_updated_at on app_users;
 create trigger trg_app_users_updated_at
 before update on app_users
 for each row execute function set_updated_at();
+
+create or replace function bump_app_user_password_version()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.password_hash is distinct from old.password_hash then
+    new.password_version = coalesce(old.password_version, 0) + 1;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_app_users_password_version on app_users;
+create trigger trg_app_users_password_version
+before update of password_hash on app_users
+for each row execute function bump_app_user_password_version();
 
 drop trigger if exists trg_affiliates_updated_at on affiliates;
 create trigger trg_affiliates_updated_at

@@ -201,7 +201,7 @@ router.get("/storage/summary", storageSummary);
 router.get("/tickets/balance", ticketBalance);
 router.get("/tickets/transactions", ticketTransactions);
 router.get("/profile", getBusinessProfile);
-router.patch("/profile", updateBusinessProfile);
+router.patch("/profile", requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"), updateBusinessProfile);
 router.get("/users", listBusinessUsers);
 router.post("/users", createBusinessUser);
 router.patch("/users/:userId", updateBusinessUser);

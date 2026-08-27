@@ -1224,6 +1224,9 @@ async function createBusinessUser(req, res, next) {
     const businessId = businessIdFor(req);
     requireBusinessOwner(req);
     const body = validate(businessUserSchema, req.body);
+    if (req.user?.role === "BUSINESS_MANAGER" && body.role === "BUSINESS_OWNER") {
+      throw forbidden("Un Gestor operativo no puede crear usuarios Propietario.");
+    }
 
     const counts = await activeUserCountsForBusiness(businessId);
     await assertLimitForBusiness(businessId, "users", Number(counts.users || 0), "usuarios");

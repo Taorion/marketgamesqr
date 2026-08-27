@@ -54,6 +54,7 @@
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/reward-pass-premium-v342.css?v=reward-pass-branches-v344-20260823" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/acquisition-command-center.css?v=acquisition-lead-sales-trace-v353-20260824-v10" media="print" data-deferred-portal-style>
+<link rel="stylesheet" href="css/account-premium.css?v=account-command-center-v1-20260827">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -1482,10 +1483,19 @@
           </section>
 
           <section class="view-section" data-view="account">
-            <div class="view-head">
-              <div>
+            <div class="view-head account-command-hero">
+              <div class="account-command-hero-copy">
+                <span class="account-command-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">hub</span> Centro de administración</span>
                 <h2 id="accountViewTitle">Cuenta</h2>
                 <p id="accountViewSubtitle">Tu perfil, empresa y plan actual.</p>
+                <div class="account-command-promise" aria-label="Propósito de esta sección">
+                  <span><span class="material-symbols-outlined" aria-hidden="true">verified_user</span> Acceso protegido</span>
+                  <span><span class="material-symbols-outlined" aria-hidden="true">sync</span> Cambios persistentes</span>
+                  <span><span class="material-symbols-outlined" aria-hidden="true">domain</span> Configuración por empresa</span>
+                </div>
+              </div>
+              <div class="account-command-mark" aria-hidden="true">
+                <span></span><span></span><span></span>
               </div>
             </div>
 
@@ -1565,11 +1575,12 @@
             </section>
 
             <section class="account-admin-nav" aria-label="Secciones de administración">
-              <a href="#accountSectionCompany"><span class="material-symbols-outlined" aria-hidden="true">domain</span><strong>General</strong><small>Identidad, contacto y operación comercial</small></a>
-              <a href="#accountSectionAssets"><span class="material-symbols-outlined" aria-hidden="true">palette</span><strong>Marca y activos</strong><small>Logo, tickets y biblioteca digital</small></a>
-              <a href="#accountSectionUsers"><span class="material-symbols-outlined" aria-hidden="true">group</span><strong>Equipo y permisos</strong><small>Usuarios con acceso al portal</small></a>
-              <a href="#accountSectionData"><span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span><strong>Plan y créditos</strong><small>Acceso, recargas y consumo QR</small></a>
-              <a href="#accountSectionSecurity"><span class="material-symbols-outlined" aria-hidden="true">shield_lock</span><strong>Seguridad</strong><small>Protege el acceso a tu cuenta</small></a>
+              <a href="#accountSectionCompany"><span class="material-symbols-outlined" aria-hidden="true">domain</span><strong>Empresa</strong><small>Identidad y operación comercial</small></a>
+              <a href="#accountSectionChannels"><span class="material-symbols-outlined" aria-hidden="true">send</span><strong>Canales</strong><small>Correo y WhatsApp oficiales</small></a>
+              <a href="#accountSectionData"><span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span><strong>Plan</strong><small>Acceso, recargas y consumo QR</small></a>
+              <a href="#accountSectionAssets"><span class="material-symbols-outlined" aria-hidden="true">palette</span><strong>Marca</strong><small>Logo, tickets y activos digitales</small></a>
+              <a href="#accountSectionUsers"><span class="material-symbols-outlined" aria-hidden="true">group</span><strong>Equipo</strong><small>Usuarios y permisos</small></a>
+              <a href="#accountSectionSecurity"><span class="material-symbols-outlined" aria-hidden="true">shield_lock</span><strong>Seguridad</strong><small>Contraseña y sesiones</small></a>
             </section>
 
             <article class="surface-card account-deal-card hidden" id="accountCommercialDealCard" data-account-screen="billing">
@@ -1692,23 +1703,36 @@
                 <p>Actualiza la información comercial, el contacto y los datos visibles de tu negocio.</p>
               </div>
 
-              <article class="surface-card account-settings-card account-company-card account-span-8" data-account-screen="profile">
-                <div class="table-card-head">
+              <article class="surface-card account-settings-card account-company-card account-span-8" data-account-screen="profile channels">
+                <div class="table-card-head" data-account-screen="profile">
                   <div>
-                    <span class="mono-label">Datos básicos</span>
-                    <h3>Editar información de empresa</h3>
+                    <span class="mono-label">Identidad operativa</span>
+                    <h3>Información de la empresa</h3>
+                    <p>Los datos que identifican tu negocio dentro de Qori y en sus experiencias públicas.</p>
                   </div>
-                  <span class="status-chip pending">NIT bloqueado</span>
+                  <span class="status-chip pending"><span class="material-symbols-outlined" aria-hidden="true">lock</span> NIT protegido</span>
+                </div>
+                <div class="table-card-head" id="accountSectionChannels" data-account-screen="channels">
+                  <div>
+                    <span class="mono-label">Canales oficiales</span>
+                    <h3>Conexiones de comunicación</h3>
+                    <p>Configura remitentes verificados y prueba cada canal antes de hablar con tu audiencia.</p>
+                  </div>
+                  <span class="status-chip pending"><span class="material-symbols-outlined" aria-hidden="true">encrypted</span> Credenciales cifradas</span>
+                </div>
+                <div class="account-permission-notice hidden" id="accountPermissionNotice" role="status">
+                  <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                  <div><strong>Acceso de consulta</strong><p>Puedes revisar estos datos. Un Propietario o Gestor debe realizar cambios administrativos.</p></div>
                 </div>
                 <form class="modal-form account-profile-form" id="accountProfileForm">
-                  <label><span>Nombre empresa</span><input id="accountNameInput" type="text" maxlength="160" required></label>
-                  <label><span>Slogan</span><input id="accountSloganInput" type="text" maxlength="180" placeholder="Ej: Experiencias que vuelven clientes"></label>
-                  <label><span>NIT</span><input id="accountNitInput" type="text" disabled></label>
-                  <label><span>Contacto principal</span><input id="accountContactInput" type="text" maxlength="160"></label>
-                  <label><span>Email contacto</span><input id="accountEmailInput" type="email" maxlength="220"></label>
-                  <label><span>Nombre del remitente</span><input id="accountCommunicationSenderNameInput" type="text" maxlength="160" placeholder="Ej: Lancelot"></label>
-                  <label><span>Email para envios masivos</span><input id="accountCommunicationSenderEmailInput" type="email" maxlength="220" placeholder="Ej: comunicaciones@lancelot.com"></label>
-                  <section class="account-email-connection-panel span-2" aria-labelledby="accountEmailConnectionTitle">
+                  <label data-account-screen="profile"><span>Nombre de la empresa</span><input id="accountNameInput" type="text" maxlength="160" required></label>
+                  <label data-account-screen="profile"><span>Promesa comercial</span><input id="accountSloganInput" type="text" maxlength="180" placeholder="Ej: Experiencias que vuelven clientes"></label>
+                  <label data-account-screen="profile"><span>NIT</span><input id="accountNitInput" type="text" disabled><small>Dato fiscal protegido. Solicita soporte si necesitas corregirlo.</small></label>
+                  <label data-account-screen="profile"><span>Contacto principal</span><input id="accountContactInput" type="text" maxlength="160"></label>
+                  <label data-account-screen="profile"><span>Email de contacto</span><input id="accountEmailInput" type="email" maxlength="220"></label>
+                  <label data-account-screen="channels"><span>Nombre visible del remitente</span><input id="accountCommunicationSenderNameInput" type="text" maxlength="160" placeholder="Ej: Equipo de tu empresa"></label>
+                  <label data-account-screen="channels"><span>Email para envíos masivos</span><input id="accountCommunicationSenderEmailInput" type="email" maxlength="220" placeholder="Ej: comunicaciones@tuempresa.com"></label>
+                  <section class="account-email-connection-panel span-2" data-account-screen="channels" aria-labelledby="accountEmailConnectionTitle">
                     <div class="account-email-connection-head">
                       <div>
                         <span class="mono-label">Conexión de envío</span>
@@ -1733,7 +1757,7 @@
                     </div>
                     <p class="error-line" id="accountCommunicationConnectionMessage"></p>
                   </section>
-                  <section class="account-email-connection-panel account-whatsapp-connection-panel span-2" aria-labelledby="accountWhatsAppConnectionTitle">
+                  <section class="account-email-connection-panel account-whatsapp-connection-panel span-2" data-account-screen="channels" aria-labelledby="accountWhatsAppConnectionTitle">
                     <div class="account-email-connection-head">
                       <div>
                         <span class="mono-label">Envío oficial por WhatsApp</span>
@@ -1746,7 +1770,7 @@
                       <div><span class="mono-label">Paso 2 · Webhooks de Meta</span><strong>Recibe entregas, lecturas, fallos y respuestas</strong><small>Copia estos dos valores en Meta for Developers → WhatsApp → Configuración → Webhooks → Editar.</small></div>
                       <label><span>URL de devolución de llamada</span><input id="accountWhatsAppWebhookUrlInput" type="url" readonly><button class="ghost-button compact" id="accountWhatsAppCopyWebhookUrlButton" type="button">Copiar URL</button></label>
                       <label><span>Token de verificación</span><input id="accountWhatsAppWebhookVerifyTokenInput" type="text" readonly><button class="ghost-button compact" id="accountWhatsAppCopyWebhookTokenButton" type="button">Copiar token</button></label>
-                      <p class="table-secondary">Antes de verificar, agrega <strong>WHATSAPP_APP_SECRET</strong> en las variables de entorno de Render staging con el App Secret de Meta. Luego suscríbete a <strong>messages</strong>.</p>
+                      <p class="table-secondary">Qori valida automáticamente la firma de los webhooks cuando la integración oficial está habilitada. Si el estado continúa pendiente, contacta al administrador de la plataforma.</p>
                     </div>
                     <ol class="account-email-connection-steps">
                       <li>En <a href="https://business.facebook.com/wa/manage/" target="_blank" rel="noopener noreferrer">WhatsApp Manager</a>, registra y verifica el número que representará a tu negocio.</li>
@@ -1773,17 +1797,17 @@
                     <div class="inline-actions"><button class="ghost-button compact" id="accountWhatsAppTestButton" type="button">Enviar prueba por WhatsApp</button></div>
                     <p class="error-line" id="accountWhatsAppConnectionMessage"></p>
                   </section>
-                  <label><span>Teléfono</span><input id="accountPhoneInput" type="text" maxlength="40"></label>
-                  <label><span>Sitio web</span><input id="accountWebsiteInput" type="url" maxlength="220"></label>
-                  <label><span>Ciudad</span><input id="accountCityInput" type="text" maxlength="120"></label>
-                  <label><span>Dirección</span><input id="accountAddressInput" type="text" maxlength="220"></label>
-                  <label class="affiliate-only-config hidden"><span>Monto base afiliados</span><input id="accountAffiliatePointAmountInput" type="number" min="1" step="100" value="1000"></label>
-                  <label class="affiliate-only-config hidden"><span>Puntos por monto base</span><input id="accountAffiliatePointRateInput" type="number" min="0.01" step="0.01" value="1"></label>
-                  <label class="affiliate-only-config hidden"><span>Redondeo de puntos</span><select id="accountAffiliatePointRoundingInput"><option value="floor">Hacia abajo</option><option value="ceil">Hacia arriba</option></select></label>
-                  <label class="affiliate-only-config hidden"><span>Puntos por referido registrado</span><input id="accountAffiliateReferralRegistrationPointsInput" type="number" min="0" step="1" value="0"><small>Se acreditan cuando el referido deja nombre y un contacto en el enlace.</small></label>
-                  <label class="affiliate-only-config hidden"><span>Puntos por referido comprador</span><input id="accountAffiliateReferralPurchasePointsInput" type="number" min="0" step="1" value="0"><small>Si es mayor a 0, reemplaza la regla variable por monto para esa compra.</small></label>
-                  <p class="table-secondary span-2 affiliate-only-config hidden">El cliente comparte un enlace de referido; el contacto recibe su ticket solo después de completar sus datos. Configura los beneficios canjeables en Afiliados · Premios por puntos.</p>
-                  <section class="account-risk-recovery-settings span-2" id="accountRiskRecoveryAuthorizations" aria-labelledby="accountRiskRecoveryTitle">
+                  <label data-account-screen="profile"><span>Teléfono</span><input id="accountPhoneInput" type="text" maxlength="40"></label>
+                  <label data-account-screen="profile"><span>Sitio web</span><input id="accountWebsiteInput" type="url" maxlength="220"></label>
+                  <label data-account-screen="profile"><span>Ciudad</span><input id="accountCityInput" type="text" maxlength="120"></label>
+                  <label data-account-screen="profile"><span>Dirección</span><input id="accountAddressInput" type="text" maxlength="220"></label>
+                  <label class="affiliate-only-config hidden" data-account-screen="profile"><span>Monto base afiliados</span><input id="accountAffiliatePointAmountInput" type="number" min="1" step="100" value="1000"></label>
+                  <label class="affiliate-only-config hidden" data-account-screen="profile"><span>Puntos por monto base</span><input id="accountAffiliatePointRateInput" type="number" min="0.01" step="0.01" value="1"></label>
+                  <label class="affiliate-only-config hidden" data-account-screen="profile"><span>Redondeo de puntos</span><select id="accountAffiliatePointRoundingInput"><option value="floor">Hacia abajo</option><option value="ceil">Hacia arriba</option></select></label>
+                  <label class="affiliate-only-config hidden" data-account-screen="profile"><span>Puntos por referido registrado</span><input id="accountAffiliateReferralRegistrationPointsInput" type="number" min="0" step="1" value="0"><small>Se acreditan cuando el referido deja nombre y un contacto en el enlace.</small></label>
+                  <label class="affiliate-only-config hidden" data-account-screen="profile"><span>Puntos por referido comprador</span><input id="accountAffiliateReferralPurchasePointsInput" type="number" min="0" step="1" value="0"><small>Si es mayor a 0, reemplaza la regla variable por monto para esa compra.</small></label>
+                  <p class="table-secondary span-2 affiliate-only-config hidden" data-account-screen="profile">El cliente comparte un enlace de referido; el contacto recibe su ticket solo después de completar sus datos. Configura los beneficios canjeables en Afiliados · Premios por puntos.</p>
+                  <section class="account-risk-recovery-settings span-2" id="accountRiskRecoveryAuthorizations" data-account-screen="profile" aria-labelledby="accountRiskRecoveryTitle">
                     <header>
                       <div>
                         <span class="mono-label">Riesgos de fuga</span>
@@ -1800,9 +1824,9 @@
                     </div>
                     <small>Estas autorizaciones no se muestran en Negociación ni en otras estaciones. Cada uso queda guardado en el historial comercial.</small>
                   </section>
-                  <div class="modal-actions span-2">
+                  <div class="modal-actions span-2" data-account-screen="profile">
                     <p class="error-line" id="accountProfileMessage"></p>
-                    <button class="solid-button" id="accountProfileSaveButton" type="submit">Guardar cambios</button>
+                    <button class="solid-button" id="accountProfileSaveButton" type="submit"><span class="material-symbols-outlined" aria-hidden="true">save</span> Guardar empresa</button>
                   </div>
                 </form>
               </article>
@@ -1914,43 +1938,50 @@
               <article class="surface-card account-settings-card account-security-card account-span-4" id="accountSectionSecurity" data-account-screen="security">
                 <div class="table-card-head">
                   <div>
-                    <span class="mono-label">Seguridad</span>
-                    <h3>Cambiar password</h3>
+                    <span class="mono-label">Acceso protegido</span>
+                    <h3>Actualiza tu contraseña</h3>
+                    <p>La contraseña actual confirma tu identidad. Al guardar, las demás sesiones abiertas dejarán de ser válidas.</p>
                   </div>
+                  <span class="status-chip ok"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span> Protección activa</span>
                 </div>
                 <form class="modal-form account-profile-form" id="accountPasswordForm">
                   <label>
-                    <span>Password actual</span>
+                    <span>Contraseña actual</span>
                     <div class="password-field">
                       <input id="accountCurrentPasswordInput" type="password" autocomplete="current-password" required>
-                      <button class="password-reveal-button" type="button" data-password-toggle="accountCurrentPasswordInput" aria-label="Mostrar password" aria-pressed="false">
+                      <button class="password-reveal-button" type="button" data-password-toggle="accountCurrentPasswordInput" aria-label="Mostrar contraseña" aria-pressed="false">
                         <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
                       </button>
                     </div>
                   </label>
                   <label>
-                    <span>Nuevo password</span>
+                    <span>Nueva contraseña</span>
                     <div class="password-field">
                       <input id="accountNewPasswordInput" type="password" minlength="8" autocomplete="new-password" required>
-                      <button class="password-reveal-button" type="button" data-password-toggle="accountNewPasswordInput" aria-label="Mostrar password" aria-pressed="false">
+                      <button class="password-reveal-button" type="button" data-password-toggle="accountNewPasswordInput" aria-label="Mostrar contraseña" aria-pressed="false">
                         <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
                       </button>
                     </div>
                   </label>
                   <label>
-                    <span>Confirmar nuevo password</span>
+                    <span>Confirma la nueva contraseña</span>
                     <div class="password-field">
                       <input id="accountNewPasswordConfirmInput" type="password" minlength="8" autocomplete="new-password" required>
-                      <button class="password-reveal-button" type="button" data-password-toggle="accountNewPasswordConfirmInput" aria-label="Mostrar password" aria-pressed="false">
+                      <button class="password-reveal-button" type="button" data-password-toggle="accountNewPasswordConfirmInput" aria-label="Mostrar contraseña" aria-pressed="false">
                         <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
                       </button>
                     </div>
                   </label>
                   <div class="modal-actions span-2">
                     <p class="error-line" id="accountPasswordMessage"></p>
-                    <button class="solid-button" id="accountPasswordSaveButton" type="submit">Cambiar password</button>
+                    <button class="solid-button" id="accountPasswordSaveButton" type="submit"><span class="material-symbols-outlined" aria-hidden="true">lock_reset</span> Actualizar contraseña</button>
                   </div>
                 </form>
+                <div class="account-security-assurance" aria-label="Protecciones de acceso">
+                  <div><span class="material-symbols-outlined" aria-hidden="true">password</span><span><strong>Mínimo 8 caracteres</strong><small>Usa una frase única que no reutilices.</small></span></div>
+                  <div><span class="material-symbols-outlined" aria-hidden="true">logout</span><span><strong>Cierre de otras sesiones</strong><small>El cambio invalida accesos anteriores.</small></span></div>
+                  <div><span class="material-symbols-outlined" aria-hidden="true">encrypted</span><span><strong>Hash protegido</strong><small>Qori nunca conserva la contraseña visible.</small></span></div>
+                </div>
               </article>
 
               <div class="account-section-divider account-section-users" id="accountSectionUsers" data-account-screen="admin">
@@ -1962,8 +1993,9 @@
               <article class="surface-card account-settings-card account-users-card account-span-8" data-account-screen="admin">
                 <div class="table-card-head">
                   <div>
-                    <span class="mono-label">Usuarios del negocio</span>
-                    <h3>Equipo con acceso al portal</h3>
+                    <span class="mono-label">Gobierno de acceso</span>
+                    <h3>Equipo y permisos</h3>
+                    <p>Cada persona debe tener solo el alcance necesario para operar su responsabilidad.</p>
                   </div>
                   <button class="ghost-button" id="refreshAccountUsersButton" type="button">Actualizar</button>
                 </div>
@@ -1971,18 +2003,19 @@
                   <label><span>Nombre usuario</span><input id="accountUserFullNameInput" type="text" maxlength="160" required></label>
                   <label><span>Email</span><input id="accountUserEmailInput" type="email" maxlength="180" required></label>
                   <label>
-                    <span>Rol</span>
+                    <span>Rol y alcance</span>
                     <select id="accountUserRoleInput" required>
                       <option value="VALIDATOR">Validador</option>
-                      <option value="BUSINESS_MANAGER">Manager operativo</option>
-                      <option value="BUSINESS_OWNER">Owner</option>
+                      <option value="BUSINESS_MANAGER">Gestor operativo</option>
+                      <option value="BUSINESS_OWNER">Propietario</option>
                     </select>
+                    <small>Validador opera tickets; Gestor administra la operación; Propietario controla cuenta, equipo y pagos.</small>
                   </label>
                   <label>
-                    <span>Password inicial</span>
+                    <span>Contraseña inicial</span>
                     <div class="password-field">
                       <input id="accountUserPasswordInput" type="password" minlength="8" autocomplete="new-password" required>
-                      <button class="password-reveal-button" type="button" data-password-toggle="accountUserPasswordInput" aria-label="Mostrar password" aria-pressed="false">
+                      <button class="password-reveal-button" type="button" data-password-toggle="accountUserPasswordInput" aria-label="Mostrar contraseña" aria-pressed="false">
                         <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
                       </button>
                     </div>

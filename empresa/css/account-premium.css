@@ -1,0 +1,794 @@
+/* Qori Account Command Center
+   Final isolated layer: clear SaaS surfaces, measurable context and operable hierarchy. */
+
+body[data-current-view="account"] .portal-shell {
+  --account-navy: #012268;
+  --account-blue: #0341b3;
+  --account-digital: #0152d7;
+  --account-bright: #0480fa;
+  --account-cyan: #07cefb;
+  --account-ice: #e8f3fb;
+  --account-ink: #0b1e3d;
+  --account-muted: #54708f;
+  --account-line: #cde0f4;
+  --account-panel: #ffffff;
+  --account-success: #17b26a;
+  --account-shadow: 0 18px 48px rgba(1, 34, 104, .08), 0 2px 8px rgba(1, 34, 104, .04);
+  background:
+    radial-gradient(circle at 92% 2%, rgba(7, 206, 251, .1), transparent 22rem),
+    linear-gradient(180deg, #f7fbff 0, #ffffff 42rem) !important;
+}
+
+body[data-current-view="account"] .portal-shell .view-section[data-view="account"].active {
+  display: block !important;
+  min-width: 0;
+  padding: 0 0 64px !important;
+  overflow: clip;
+}
+
+body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > :is(.account-command-hero, #accountProfileOverview, .account-admin-nav, #accountCommercialDealCard, .account-settings-grid) {
+  box-sizing: border-box;
+  width: auto !important;
+  max-width: none !important;
+  margin-inline: clamp(22px, 3vw, 46px) !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-command-hero {
+  position: relative;
+  isolation: isolate;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 270px);
+  align-items: center;
+  min-height: 238px;
+  margin-top: 22px !important;
+  margin-bottom: 22px !important;
+  padding: clamp(30px, 4vw, 54px) !important;
+  overflow: hidden;
+  border: 1px solid rgba(205, 224, 244, .96) !important;
+  border-radius: 28px !important;
+  color: var(--account-ink) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .98), rgba(232, 243, 251, .94)),
+    #fff !important;
+  box-shadow: var(--account-shadow) !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-command-hero::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(3, 65, 179, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(3, 65, 179, .045) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(90deg, transparent 0, #000 45%, #000 100%);
+}
+
+body[data-current-view="account"] .portal-shell .account-command-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 360px;
+  height: 360px;
+  top: -215px;
+  right: -80px;
+  border: 1px solid rgba(7, 206, 251, .35);
+  border-radius: 50%;
+  box-shadow: 0 0 0 52px rgba(4, 128, 250, .035), 0 0 0 104px rgba(3, 65, 179, .025);
+}
+
+body[data-current-view="account"] .portal-shell .account-command-hero-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 760px;
+}
+
+body[data-current-view="account"] .portal-shell .account-command-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--account-digital);
+  font-size: .72rem;
+  font-weight: 850;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+body[data-current-view="account"] .portal-shell .account-command-eyebrow .material-symbols-outlined { font-size: 18px; }
+
+body[data-current-view="account"] .portal-shell .account-command-hero h2 {
+  margin: 0 !important;
+  color: var(--account-navy) !important;
+  font-size: clamp(2.25rem, 5vw, 4.25rem) !important;
+  font-weight: 820 !important;
+  letter-spacing: -.055em !important;
+  line-height: .98 !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-command-hero p {
+  max-width: 660px;
+  margin: 16px 0 0 !important;
+  color: var(--account-muted) !important;
+  font-size: clamp(.98rem, 1.4vw, 1.12rem) !important;
+  line-height: 1.65 !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-command-promise {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 24px;
+}
+
+body[data-current-view="account"] .portal-shell .account-command-promise > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 11px;
+  border: 1px solid rgba(205, 224, 244, .95);
+  border-radius: 999px;
+  color: #244a73;
+  background: rgba(255, 255, 255, .78);
+  font-size: .74rem;
+  font-weight: 750;
+}
+
+body[data-current-view="account"] .portal-shell .account-command-promise .material-symbols-outlined {
+  color: var(--account-bright);
+  font-size: 17px;
+}
+
+body[data-current-view="account"] .portal-shell .account-command-mark {
+  position: relative;
+  justify-self: end;
+  width: clamp(150px, 18vw, 220px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(4, 128, 250, .16);
+  border-radius: 44px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .85), rgba(232, 243, 251, .45));
+  transform: rotate(8deg);
+}
+
+body[data-current-view="account"] .portal-shell .account-command-mark::before,
+body[data-current-view="account"] .portal-shell .account-command-mark::after,
+body[data-current-view="account"] .portal-shell .account-command-mark span {
+  content: "";
+  position: absolute;
+  border: 2px solid transparent;
+  border-top-color: var(--account-bright);
+  border-right-color: var(--account-cyan);
+  border-radius: 32%;
+}
+
+body[data-current-view="account"] .portal-shell .account-command-mark::before { inset: 16%; }
+body[data-current-view="account"] .portal-shell .account-command-mark::after { inset: 30%; transform: rotate(90deg); }
+body[data-current-view="account"] .portal-shell .account-command-mark span:nth-child(1) { inset: 43%; transform: rotate(180deg); }
+body[data-current-view="account"] .portal-shell .account-command-mark span:nth-child(2) { inset: 49%; border-width: 5px; border-color: var(--account-navy); border-radius: 50%; }
+body[data-current-view="account"] .portal-shell .account-command-mark span:nth-child(3) { inset: 8%; border-color: rgba(3, 65, 179, .08); transform: rotate(45deg); }
+
+body[data-current-view="account"] .portal-shell #accountProfileOverview.account-summary-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  padding: 0 !important;
+  margin-bottom: 22px !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-profile-card {
+  position: relative;
+  min-width: 0;
+  min-height: 188px;
+  padding: 26px !important;
+  overflow: hidden;
+  border: 1px solid var(--account-line) !important;
+  border-radius: 22px !important;
+  background: rgba(255, 255, 255, .96) !important;
+  box-shadow: 0 12px 32px rgba(1, 34, 104, .055) !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-profile-card::after {
+  content: "";
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  right: -68px;
+  bottom: -68px;
+  border: 18px solid rgba(7, 206, 251, .06);
+  border-radius: 50%;
+}
+
+body[data-current-view="account"] .portal-shell .account-profile-card:first-child { border-top: 3px solid var(--account-bright) !important; }
+body[data-current-view="account"] .portal-shell .account-profile-card:nth-child(2) { border-top: 3px solid var(--account-cyan) !important; }
+body[data-current-view="account"] .portal-shell .account-profile-card[data-account-screen~="billing"] { grid-column: 1 / -1 !important; border-top: 3px solid var(--account-blue) !important; }
+
+body[data-current-view="account"] .portal-shell .account-profile-card .mono-label,
+body[data-current-view="account"] .portal-shell .account-section-divider .mono-label,
+body[data-current-view="account"] .portal-shell .account-settings-card .mono-label {
+  color: var(--account-digital) !important;
+  font-size: .66rem !important;
+  font-weight: 850 !important;
+  letter-spacing: .14em !important;
+  text-transform: uppercase;
+}
+
+body[data-current-view="account"] .portal-shell .account-profile-card h3 {
+  margin: 8px 0 18px !important;
+  color: var(--account-navy) !important;
+  font-size: clamp(1.25rem, 2vw, 1.65rem) !important;
+  letter-spacing: -.03em;
+}
+
+body[data-current-view="account"] .portal-shell .account-meta-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-profile-card[data-account-screen~="billing"] .account-meta-grid { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+
+body[data-current-view="account"] .portal-shell .account-meta-grid > div {
+  min-width: 0;
+  padding: 12px 13px !important;
+  border: 1px solid rgba(205, 224, 244, .82) !important;
+  border-radius: 13px !important;
+  background: #f8fbff !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-meta-grid span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--account-muted) !important;
+  font-size: .67rem !important;
+  font-weight: 700;
+}
+
+body[data-current-view="account"] .portal-shell .account-meta-grid strong {
+  display: block;
+  overflow: hidden;
+  color: var(--account-ink) !important;
+  font-size: .86rem !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-current-view="account"] .portal-shell .account-admin-nav {
+  position: sticky;
+  z-index: 20;
+  top: 10px;
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin-bottom: 28px !important;
+  padding: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(205, 224, 244, .96);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .92) !important;
+  box-shadow: 0 12px 30px rgba(1, 34, 104, .08);
+  backdrop-filter: blur(18px);
+}
+
+body[data-current-view="account"] .portal-shell .account-admin-nav::before { display: none !important; }
+
+body[data-current-view="account"] .portal-shell .account-admin-nav a {
+  display: grid !important;
+  grid-template-columns: 38px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto;
+  align-content: center;
+  gap: 2px 9px !important;
+  min-width: 0;
+  min-height: 70px !important;
+  padding: 10px !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  color: #23496f !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-decoration: none;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+body[data-current-view="account"] .portal-shell .account-admin-nav a:hover,
+body[data-current-view="account"] .portal-shell .account-admin-nav a:focus-visible {
+  border-color: rgba(4, 128, 250, .18) !important;
+  background: #f4f9ff !important;
+  transform: translateY(-1px);
+}
+
+body[data-current-view="account"] .portal-shell .account-admin-nav a:focus-visible {
+  outline: 3px solid rgba(7, 206, 251, .3) !important;
+  outline-offset: 2px;
+}
+
+body[data-current-view="account"] .portal-shell .account-admin-nav .material-symbols-outlined {
+  grid-row: 1 / span 2;
+  display: grid !important;
+  width: 38px !important;
+  height: 38px !important;
+  place-items: center;
+  border-radius: 11px !important;
+  color: var(--account-digital) !important;
+  background: var(--account-ice) !important;
+  font-size: 20px !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-admin-nav strong {
+  align-self: end;
+  min-width: 0;
+  overflow: hidden;
+  color: inherit !important;
+  font-size: .76rem !important;
+  font-weight: 820 !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-current-view="account"] .portal-shell .account-admin-nav small {
+  align-self: start;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--account-muted) !important;
+  font-size: .62rem !important;
+  line-height: 1.2 !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-current-view="account"] .portal-shell .account-admin-nav a.is-active,
+body[data-current-view="account"] .portal-shell .account-admin-nav a[aria-current="page"] {
+  border-color: rgba(4, 128, 250, .24) !important;
+  color: var(--account-navy) !important;
+  background: linear-gradient(145deg, #f0f7ff, #ffffff) !important;
+  box-shadow: inset 0 -3px 0 var(--account-bright) !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-admin-nav a.is-active .material-symbols-outlined,
+body[data-current-view="account"] .portal-shell .account-admin-nav a[aria-current="page"] .material-symbols-outlined {
+  color: #fff !important;
+  background: linear-gradient(135deg, var(--account-navy), var(--account-digital) 66%, var(--account-cyan)) !important;
+  box-shadow: 0 8px 18px rgba(3, 65, 179, .22);
+}
+
+body[data-current-view="account"] .portal-shell .account-admin-nav a.account-nav-restricted { display: none !important; }
+
+body[data-current-view="account"] .portal-shell .account-settings-grid {
+  display: grid !important;
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+  grid-auto-rows: min-content !important;
+  gap: 18px !important;
+  align-items: start !important;
+  padding: 0 !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-settings-grid > .account-screen-hidden,
+body[data-current-view="account"] .portal-shell #accountProfileOverview > .account-screen-hidden,
+body[data-current-view="account"] .portal-shell .account-company-card .account-screen-hidden {
+  display: none !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-section-divider {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  gap: 6px;
+  margin: 0 !important;
+  padding: 18px 2px 8px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  scroll-margin-top: 112px;
+}
+
+body[data-current-view="account"] .portal-shell .account-section-divider h3 {
+  margin: 0 !important;
+  color: var(--account-navy) !important;
+  font-size: clamp(1.35rem, 2.1vw, 1.85rem) !important;
+  letter-spacing: -.035em;
+}
+
+body[data-current-view="account"] .portal-shell .account-section-divider p {
+  max-width: 760px;
+  margin: 0 !important;
+  color: var(--account-muted) !important;
+  line-height: 1.55;
+}
+
+body[data-current-view="account"] .portal-shell :is(.account-settings-card, .account-billing-card, .portal-pricing-card, .qr-credit-shop-card, .account-deal-card) {
+  min-width: 0;
+  padding: clamp(22px, 2.5vw, 32px) !important;
+  border: 1px solid var(--account-line) !important;
+  border-radius: 22px !important;
+  background: rgba(255, 255, 255, .97) !important;
+  box-shadow: var(--account-shadow) !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-company-card { grid-column: 1 / -1 !important; }
+body[data-current-view="account"] .portal-shell .account-billing-card,
+body[data-current-view="account"] .portal-shell .portal-pricing-card { grid-column: 1 / -1 !important; }
+body[data-current-view="account"] .portal-shell .qr-credit-shop-card { grid-column: span 7 !important; }
+body[data-current-view="account"] .portal-shell .account-logo-card,
+body[data-current-view="account"] .portal-shell .account-ticket-frame-card,
+body[data-current-view="account"] .portal-shell .account-security-card { grid-column: span 4 !important; }
+body[data-current-view="account"] .portal-shell .digital-asset-library-card,
+body[data-current-view="account"] .portal-shell .account-users-card { grid-column: span 8 !important; }
+
+body[data-current-view="account"] .portal-shell .table-card-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  margin: 0 0 24px !important;
+  padding: 0 0 20px !important;
+  border-bottom: 1px solid rgba(205, 224, 244, .86) !important;
+}
+
+body[data-current-view="account"] .portal-shell .table-card-head h3 {
+  margin: 6px 0 0 !important;
+  color: var(--account-navy) !important;
+  font-size: clamp(1.18rem, 1.7vw, 1.48rem) !important;
+  letter-spacing: -.025em;
+}
+
+body[data-current-view="account"] .portal-shell .table-card-head p {
+  max-width: 720px;
+  margin: 8px 0 0 !important;
+  color: var(--account-muted) !important;
+  font-size: .86rem;
+  line-height: 1.55;
+}
+
+body[data-current-view="account"] .portal-shell .status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 6px 10px !important;
+  border: 1px solid rgba(245, 158, 11, .22);
+  border-radius: 999px !important;
+  font-size: .67rem !important;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+body[data-current-view="account"] .portal-shell .status-chip .material-symbols-outlined { font-size: 15px; }
+
+body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 15px !important;
+}
+
+body[data-current-view="account"] .portal-shell .view-section[data-view="account"] .account-company-card #accountProfileForm {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) > label {
+  display: grid;
+  align-content: start;
+  gap: 7px !important;
+  min-width: 0;
+  margin: 0 !important;
+  padding: 13px 14px !important;
+  border: 1px solid rgba(205, 224, 244, .92) !important;
+  border-radius: 14px !important;
+  background: #f9fcff !important;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) > label:focus-within {
+  border-color: rgba(4, 128, 250, .65) !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 4px rgba(7, 206, 251, .11) !important;
+}
+
+body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) label > span {
+  color: #173d68 !important;
+  font-size: .73rem !important;
+  font-weight: 800 !important;
+  line-height: 1.3;
+}
+
+body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) label > small {
+  color: var(--account-muted) !important;
+  font-size: .68rem !important;
+  line-height: 1.4;
+}
+
+body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) :is(input, select, textarea) {
+  width: 100%;
+  min-height: 44px;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  border: 1px solid #bdd4ea !important;
+  border-radius: 10px !important;
+  color: var(--account-ink) !important;
+  background: #fff !important;
+  box-shadow: inset 0 1px 2px rgba(1, 34, 104, .025) !important;
+}
+
+body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) :is(input, select, textarea):focus-visible {
+  outline: 3px solid rgba(7, 206, 251, .23) !important;
+  outline-offset: 1px;
+  border-color: var(--account-bright) !important;
+}
+
+body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm) input:disabled {
+  color: #607998 !important;
+  background: #eef5fa !important;
+  cursor: not-allowed;
+}
+
+body[data-current-view="account"] .portal-shell .modal-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  margin-top: 5px !important;
+  padding-top: 20px !important;
+  border-top: 1px solid rgba(205, 224, 244, .86) !important;
+}
+
+body[data-current-view="account"] .portal-shell .solid-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 0 !important;
+  border-radius: 12px !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, var(--account-navy) 0%, var(--account-blue) 48%, var(--account-bright) 82%, var(--account-cyan) 120%) !important;
+  box-shadow: 0 10px 22px rgba(3, 65, 179, .22) !important;
+}
+
+body[data-current-view="account"] .portal-shell .solid-button .material-symbols-outlined { font-size: 18px; }
+
+body[data-current-view="account"] .portal-shell .ghost-button {
+  min-height: 40px;
+  border: 1px solid var(--account-line) !important;
+  border-radius: 11px !important;
+  color: var(--account-digital) !important;
+  background: #fff !important;
+}
+
+body[data-current-view="account"] .portal-shell :is(.solid-button, .ghost-button):disabled {
+  filter: grayscale(.35);
+  opacity: .52;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-permission-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border: 1px solid #c8def2;
+  border-radius: 14px;
+  color: #23496f;
+  background: #f3f9ff;
+}
+
+body[data-current-view="account"] .portal-shell .account-permission-notice.hidden { display: none !important; }
+body[data-current-view="account"] .portal-shell .account-permission-notice .material-symbols-outlined { color: var(--account-bright); }
+body[data-current-view="account"] .portal-shell .account-permission-notice strong { color: var(--account-navy); }
+body[data-current-view="account"] .portal-shell .account-permission-notice p { margin: 3px 0 0; color: var(--account-muted); font-size: .78rem; }
+body[data-current-view="account"] .portal-shell #accountProfileForm.is-readonly { opacity: .88; }
+
+body[data-current-view="account"] .portal-shell .account-email-connection-panel,
+body[data-current-view="account"] .portal-shell .account-risk-recovery-settings {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin: 4px 0 0;
+  padding: clamp(18px, 2.2vw, 25px) !important;
+  border: 1px solid rgba(205, 224, 244, .95) !important;
+  border-left: 4px solid var(--account-bright) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(145deg, #f8fbff, #fff) !important;
+}
+
+body[data-current-view="account"] .portal-shell .account-whatsapp-connection-panel { border-left-color: var(--account-success) !important; }
+
+body[data-current-view="account"] .portal-shell .account-email-connection-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+body[data-current-view="account"] .portal-shell .account-email-connection-head h4 {
+  margin: 5px 0 0;
+  color: var(--account-navy);
+  font-size: 1.08rem;
+}
+
+body[data-current-view="account"] .portal-shell .account-email-connection-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: account-step;
+}
+
+body[data-current-view="account"] .portal-shell .account-email-connection-steps li {
+  position: relative;
+  min-width: 0;
+  padding: 15px 13px 13px 45px;
+  border: 1px solid rgba(205, 224, 244, .9);
+  border-radius: 13px;
+  color: var(--account-muted);
+  background: #fff;
+  font-size: .74rem;
+  line-height: 1.45;
+  counter-increment: account-step;
+}
+
+body[data-current-view="account"] .portal-shell .account-email-connection-steps li::before {
+  content: counter(account-step);
+  position: absolute;
+  top: 13px;
+  left: 12px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 8px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--account-blue), var(--account-bright));
+  font-size: .69rem;
+  font-weight: 850;
+}
+
+body[data-current-view="account"] .portal-shell .account-whatsapp-webhook-card {
+  display: grid;
+  grid-template-columns: minmax(190px, .75fr) repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px;
+  border: 1px dashed rgba(3, 65, 179, .28);
+  border-radius: 14px;
+  background: rgba(232, 243, 251, .48);
+}
+
+body[data-current-view="account"] .portal-shell .account-whatsapp-webhook-card > p { grid-column: 1 / -1; }
+
+body[data-current-view="account"] .portal-shell #accountSectionSecurity.account-security-card {
+  grid-column: 1 / -1 !important;
+  max-width: 1050px;
+  position: relative;
+  overflow: hidden;
+  border-top: 3px solid var(--account-blue) !important;
+}
+
+body[data-current-view="account"] .portal-shell #accountSectionSecurity.account-security-card::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  top: -110px;
+  right: -80px;
+  border: 20px solid rgba(7, 206, 251, .07);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+body[data-current-view="account"] .portal-shell #accountPasswordForm { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+body[data-current-view="account"] .portal-shell #accountPasswordForm > label:first-child { grid-column: 1 / -1; }
+body[data-current-view="account"] .portal-shell #accountPasswordForm .password-field { display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: center; }
+body[data-current-view="account"] .portal-shell #accountPasswordForm .password-field input { min-width: 0; border-radius: 10px 0 0 10px !important; }
+body[data-current-view="account"] .portal-shell #accountPasswordForm .password-reveal-button { display: grid; width: 44px; height: 44px; place-items: center; border: 1px solid #bdd4ea; border-left: 0; border-radius: 0 10px 10px 0; color: var(--account-digital); background: #f3f8fd; cursor: pointer; }
+
+body[data-current-view="account"] .portal-shell .account-security-assurance {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(205, 224, 244, .86);
+}
+
+body[data-current-view="account"] .portal-shell .account-security-assurance > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(205, 224, 244, .84);
+  border-radius: 13px;
+  background: #f8fbff;
+}
+
+body[data-current-view="account"] .portal-shell .account-security-assurance .material-symbols-outlined { color: var(--account-bright); font-size: 20px; }
+body[data-current-view="account"] .portal-shell .account-security-assurance span { min-width: 0; }
+body[data-current-view="account"] .portal-shell .account-security-assurance strong { display: block; color: var(--account-navy); font-size: .73rem; }
+body[data-current-view="account"] .portal-shell .account-security-assurance small { display: block; margin-top: 4px; color: var(--account-muted); font-size: .65rem; line-height: 1.35; }
+
+body[data-current-view="account"] .portal-shell .table-wrap {
+  overflow: auto;
+  border: 1px solid rgba(205, 224, 244, .92) !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+}
+
+body[data-current-view="account"] .portal-shell .table-wrap thead { background: var(--account-navy) !important; }
+body[data-current-view="account"] .portal-shell .table-wrap th { color: #fff !important; }
+body[data-current-view="account"] .portal-shell .table-wrap tbody tr:nth-child(even) { background: rgba(232, 243, 251, .42); }
+
+@media (max-width: 1180px) {
+  body[data-current-view="account"] .portal-shell .account-admin-nav { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  body[data-current-view="account"] .portal-shell .account-profile-card[data-account-screen~="billing"] .account-meta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  body[data-current-view="account"] .portal-shell .account-whatsapp-webhook-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body[data-current-view="account"] .portal-shell .account-whatsapp-webhook-card > div { grid-column: 1 / -1; }
+}
+
+@media (max-width: 900px) {
+  body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > :is(.account-command-hero, #accountProfileOverview, .account-admin-nav, #accountCommercialDealCard, .account-settings-grid) { margin-inline: 22px !important; }
+  body[data-current-view="account"] .portal-shell .account-command-hero { grid-template-columns: 1fr; min-height: 0; }
+  body[data-current-view="account"] .portal-shell .account-command-mark { position: absolute; right: -42px; bottom: -70px; opacity: .42; }
+  body[data-current-view="account"] .portal-shell #accountProfileOverview.account-summary-grid { grid-template-columns: 1fr !important; }
+  body[data-current-view="account"] .portal-shell .account-profile-card[data-account-screen~="billing"] .account-meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  body[data-current-view="account"] .portal-shell .account-settings-grid { grid-template-columns: 1fr !important; }
+  body[data-current-view="account"] .portal-shell .account-settings-grid > * { grid-column: 1 !important; }
+  body[data-current-view="account"] .portal-shell #accountSectionSecurity.account-security-card { grid-column: 1 !important; }
+}
+
+@media (max-width: 620px) {
+  body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > :is(.account-command-hero, #accountProfileOverview, .account-admin-nav, #accountCommercialDealCard, .account-settings-grid) { margin-inline: 14px !important; }
+  html body[data-current-view="account"] .portal-shell :is(#accountProfileOverview, .account-settings-grid) { padding-inline: 0 !important; }
+  body[data-current-view="account"] .portal-shell .account-command-hero { margin-top: 14px !important; padding: 26px 20px 24px !important; border-radius: 21px !important; }
+  body[data-current-view="account"] .portal-shell .account-command-hero h2 { font-size: clamp(2rem, 12vw, 3rem) !important; }
+  body[data-current-view="account"] .portal-shell .account-command-promise { display: grid; grid-template-columns: 1fr; gap: 7px; }
+  body[data-current-view="account"] .portal-shell .account-command-promise > span { width: fit-content; }
+  body[data-current-view="account"] .portal-shell .account-profile-card { min-height: 0; padding: 20px !important; border-radius: 18px !important; }
+  body[data-current-view="account"] .portal-shell .account-meta-grid,
+  body[data-current-view="account"] .portal-shell .account-profile-card[data-account-screen~="billing"] .account-meta-grid { grid-template-columns: 1fr !important; }
+  body[data-current-view="account"] .portal-shell .account-admin-nav {
+    position: static;
+    display: flex !important;
+    gap: 7px !important;
+    padding: 7px !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+  body[data-current-view="account"] .portal-shell .account-admin-nav a { flex: 0 0 auto; min-height: 48px !important; padding: 8px 11px !important; scroll-snap-align: start; }
+  body[data-current-view="account"] .portal-shell .account-admin-nav a small { display: none !important; }
+  body[data-current-view="account"] .portal-shell .account-admin-nav .material-symbols-outlined { width: 30px !important; height: 30px !important; font-size: 18px !important; }
+  body[data-current-view="account"] .portal-shell :is(.account-settings-card, .account-billing-card, .portal-pricing-card, .qr-credit-shop-card, .account-deal-card) { padding: 20px 17px !important; border-radius: 18px !important; }
+  body[data-current-view="account"] .portal-shell .table-card-head { display: grid !important; }
+  body[data-current-view="account"] .portal-shell .table-card-head > :is(.status-chip, button) { justify-self: start; }
+  body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) { grid-template-columns: 1fr !important; }
+  body[data-current-view="account"] .portal-shell .view-section[data-view="account"] .account-company-card #accountProfileForm { grid-template-columns: 1fr !important; }
+  body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) > * { grid-column: 1 !important; }
+  body[data-current-view="account"] .portal-shell .account-email-connection-steps,
+  body[data-current-view="account"] .portal-shell .account-whatsapp-webhook-card,
+  body[data-current-view="account"] .portal-shell .account-security-assurance { grid-template-columns: 1fr; }
+  body[data-current-view="account"] .portal-shell .account-whatsapp-webhook-card > * { grid-column: 1 !important; }
+  body[data-current-view="account"] .portal-shell .account-email-connection-head { display: grid; }
+  body[data-current-view="account"] .portal-shell .modal-actions { align-items: stretch !important; flex-direction: column; }
+  body[data-current-view="account"] .portal-shell .modal-actions :is(.solid-button, .ghost-button) { width: 100%; }
+}
+
+html[data-theme="dark"] body[data-current-view="account"] .portal-shell {
+  --account-panel: #071a33;
+  --account-ink: #eaf5ff;
+  --account-muted: #9db7d1;
+  --account-line: #274d72;
+  background: radial-gradient(circle at 90% 2%, rgba(7, 206, 251, .08), transparent 24rem), #041326 !important;
+}
+
+html[data-theme="dark"] body[data-current-view="account"] .portal-shell :is(.account-command-hero, .account-profile-card, .account-admin-nav, .account-settings-card, .account-billing-card, .portal-pricing-card, .qr-credit-shop-card, .account-deal-card) { background: rgba(7, 26, 51, .96) !important; border-color: #274d72 !important; }
+html[data-theme="dark"] body[data-current-view="account"] .portal-shell :is(.account-command-hero h2, .account-profile-card h3, .account-section-divider h3, .table-card-head h3) { color: #eaf5ff !important; }
+html[data-theme="dark"] body[data-current-view="account"] .portal-shell :is(.account-meta-grid > div, #accountProfileForm > label, #accountPasswordForm > label, #digitalAssetForm > label, #accountUserForm > label, .account-email-connection-panel, .account-risk-recovery-settings, .account-email-connection-steps li, .table-wrap) { background: #0a2342 !important; border-color: #2b5278 !important; }
+html[data-theme="dark"] body[data-current-view="account"] .portal-shell :is(input, select, textarea) { color: #eaf5ff !important; background: #06172d !important; border-color: #365f87 !important; }
+html[data-theme="dark"] body[data-current-view="account"] .portal-shell .account-admin-nav a.is-active { background: #0d2b50 !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-current-view="account"] .portal-shell .account-admin-nav a,
+  body[data-current-view="account"] .portal-shell :is(input, select, textarea, button) { transition: none !important; }
+}
