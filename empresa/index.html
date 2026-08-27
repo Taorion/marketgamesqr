@@ -54,7 +54,7 @@
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/reward-pass-premium-v342.css?v=reward-pass-branches-v344-20260823" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/acquisition-command-center.css?v=acquisition-lead-sales-trace-v353-20260824-v10" media="print" data-deferred-portal-style>
-<link rel="stylesheet" href="css/account-premium.css?v=account-workspace-v10-20260827">
+<link rel="stylesheet" href="css/account-premium.css?v=account-navigation-v11-20260827">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -1488,7 +1488,7 @@
           <section class="view-section" data-view="account">
             <div class="view-head account-command-hero">
               <div class="account-command-hero-copy">
-                <span class="account-command-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">hub</span> Centro de administración</span>
+                <span class="account-command-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span> Espacio de cuenta</span>
                 <h2 id="accountViewTitle">Cuenta</h2>
                 <p id="accountViewSubtitle">Tu perfil, empresa y plan actual.</p>
                 <div class="account-command-promise" aria-label="Propósito de esta sección">
@@ -1578,14 +1578,21 @@
               </article>
             </section>
 
-            <section class="account-admin-nav" aria-label="Secciones de administración">
+            <nav class="account-admin-nav" aria-label="Navegación interna de Cuenta">
+              <div class="account-admin-nav-head">
+                <div>
+                  <span class="mono-label">Dentro de Cuenta</span>
+                  <strong>Configura tu empresa</strong>
+                </div>
+                <small>Estas opciones pertenecen a Cuenta; el menú principal permanece a la izquierda.</small>
+              </div>
               <a href="#accountSectionCompany"><span class="material-symbols-outlined" aria-hidden="true">domain</span><strong>Empresa</strong><small>Identidad y operación comercial</small></a>
               <a href="#accountSectionChannels"><span class="material-symbols-outlined" aria-hidden="true">send</span><strong>Canales</strong><small>Correo y WhatsApp oficiales</small></a>
               <a href="#accountSectionData"><span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span><strong>Plan</strong><small>Acceso, recargas y consumo QR</small></a>
               <a href="#accountSectionAssets"><span class="material-symbols-outlined" aria-hidden="true">palette</span><strong>Marca</strong><small>Logo, tickets y activos digitales</small></a>
               <a href="#accountSectionUsers"><span class="material-symbols-outlined" aria-hidden="true">group</span><strong>Equipo</strong><small>Usuarios y permisos</small></a>
               <a href="#accountSectionSecurity"><span class="material-symbols-outlined" aria-hidden="true">shield_lock</span><strong>Seguridad</strong><small>Contraseña y sesiones</small></a>
-            </section>
+            </nav>
 
             <article class="surface-card account-deal-card hidden" id="accountCommercialDealCard" data-account-screen="billing">
               <div class="table-card-head">

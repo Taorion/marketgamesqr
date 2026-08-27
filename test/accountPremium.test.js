@@ -21,12 +21,13 @@ test("Account exposes six synchronized administration areas", () => {
   assert.match(app, /accountSectionChannels:\s*"channels"/);
   assert.match(app, /supportedScreens\.includes\(screen\)/);
   assert.match(app, /APP_VERSION = "empresa-20260827-account-recharge-center-v378"/);
-  assert.match(html, /account-premium\.css\?v=account-workspace-v10-20260827/);
+  assert.match(html, /account-premium\.css\?v=account-navigation-v11-20260827/);
   assert.equal((html.match(/app\.js\?v=gos-brand-v362-20260826-account-recharge-center-v378-20260827/g) || []).length, 2);
   assert.match(html, /qori-favicon\.png\?v=qori-account-brand-v2-20260827/);
 });
 
 test("Account follows the Qori premium visual system and a real mobile breakpoint", () => {
+  const html = read("empresa/index.html");
   const css = read("empresa/css/account-premium.css");
   assert.match(css, /--account-navy:\s*#012268/);
   assert.match(css, /--account-cyan:\s*#07cefb/);
@@ -47,7 +48,10 @@ test("Account follows the Qori premium visual system and a real mobile breakpoin
   assert.match(css, /@media \(max-width:\s*760px\)[\s\S]+\.account-users-card tbody tr[\s\S]+border-radius:\s*18px/);
   assert.match(css, /td:nth-child\(6\)::before\s*\{\s*content:\s*"Acciones"/);
   assert.match(css, /@media \(max-width:\s*620px\)/);
-  assert.match(css, /account-admin-nav[\s\S]+overflow-x:\s*auto\s*!important/);
+  assert.match(html, /account-admin-nav-head[\s\S]+Dentro de Cuenta[\s\S]+Configura tu empresa/);
+  assert.match(html, /aria-label="Navegación interna de Cuenta"/);
+  assert.match(css, /Account v11[\s\S]+account-admin-nav[\s\S]+position:\s*static\s*!important/);
+  assert.match(css, /account-admin-nav[\s\S]+grid-template-columns:\s*repeat\(6, minmax\(0, 1fr\)\)\s*!important/);
   assert.match(css, /account-company-card #accountProfileForm \{ grid-template-columns: 1fr !important; \}/);
   assert.match(css, /#accountProfileOverview, \.account-settings-grid\) \{ padding-inline: 0 !important; \}/);
 });
