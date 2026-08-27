@@ -20,9 +20,10 @@ test("Account exposes six synchronized administration areas", () => {
   });
   assert.match(app, /accountSectionChannels:\s*"channels"/);
   assert.match(app, /supportedScreens\.includes\(screen\)/);
-  assert.match(app, /APP_VERSION = "empresa-20260827-account-command-center-v376"/);
-  assert.match(html, /account-premium\.css\?v=account-command-center-v1-20260827/);
-  assert.equal((html.match(/app\.js\?v=gos-brand-v362-20260826-account-command-center-v376-20260827/g) || []).length, 2);
+  assert.match(app, /APP_VERSION = "empresa-20260827-account-command-center-v377"/);
+  assert.match(html, /account-premium\.css\?v=account-command-center-v3-20260827/);
+  assert.equal((html.match(/app\.js\?v=gos-brand-v362-20260826-account-command-center-v377-20260827/g) || []).length, 2);
+  assert.match(html, /qori-favicon\.png\?v=qori-account-brand-v2-20260827/);
 });
 
 test("Account follows the Qori premium visual system and a real mobile breakpoint", () => {
@@ -30,6 +31,9 @@ test("Account follows the Qori premium visual system and a real mobile breakpoin
   assert.match(css, /--account-navy:\s*#012268/);
   assert.match(css, /--account-cyan:\s*#07cefb/);
   assert.match(css, /account-command-hero/);
+  assert.match(css, /#subscriptionBanner[\s\S]+linear-gradient\(112deg, #012268/);
+  assert.match(css, /account-command-mark img/);
+  assert.match(css, /account-profile-kicker/);
   assert.match(css, /@media \(max-width:\s*620px\)/);
   assert.match(css, /account-admin-nav[\s\S]+overflow-x:\s*auto\s*!important/);
   assert.match(css, /account-company-card #accountProfileForm \{ grid-template-columns: 1fr !important; \}/);
@@ -42,6 +46,12 @@ test("official Account copy does not instruct customers to edit staging", () => 
   assert.doesNotMatch(account, /Render staging|WHATSAPP_APP_SECRET/);
   assert.doesNotMatch(account, />Cambiar password</);
   assert.match(account, /Contraseña actual/);
+});
+
+test("Account preserves human plan states instead of rendering NaN", () => {
+  const app = read("empresa/js/app.js");
+  assert.match(app, /if \(typeof value === "number" && Number\.isFinite\(value\)\)/);
+  assert.match(app, /return normalized \|\| "-"/);
 });
 
 test("business profile mutation excludes validator accounts", () => {

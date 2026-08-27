@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/img/qori-favicon-32.png?v=qori-favicon-20260825-v120">
   <link rel="apple-touch-icon" sizes="180x180" href="/img/qori-apple-touch-icon.png?v=qori-favicon-20260825-v120">
   <link rel="manifest" href="/site.webmanifest?v=qori-favicon-20260825-v120">
-  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-account-command-center-v376-20260827">
+  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-account-command-center-v377-20260827">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -54,7 +54,7 @@
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/reward-pass-premium-v342.css?v=reward-pass-branches-v344-20260823" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/acquisition-command-center.css?v=acquisition-lead-sales-trace-v353-20260824-v10" media="print" data-deferred-portal-style>
-<link rel="stylesheet" href="css/account-premium.css?v=account-command-center-v1-20260827">
+<link rel="stylesheet" href="css/account-premium.css?v=account-command-center-v3-20260827">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -384,11 +384,14 @@
         <div class="content-shell">
           <div class="action-feedback hidden" id="actionFeedback" role="status" aria-live="polite" aria-hidden="true" hidden></div>
           <section class="subscription-banner" id="subscriptionBanner">
-            <div>
+            <div class="subscription-plan-copy">
+              <span class="subscription-plan-seal material-symbols-outlined" aria-hidden="true">workspace_premium</span>
+              <div>
               <span class="mono-label">Plan actual</span>
               <h3 id="subscriptionPlanName">Sin plan cargado</h3>
               <p id="subscriptionPlanSummary">Los permisos del portal se cargan al iniciar sesión.</p>
               <p class="subscription-timing" id="subscriptionTiming">Sin fecha de renovación cargada.</p>
+              </div>
             </div>
             <div class="subscription-limits" id="subscriptionLimits"></div>
           </section>
@@ -1495,13 +1498,14 @@
                 </div>
               </div>
               <div class="account-command-mark" aria-hidden="true">
+                <img src="../img/qori-favicon.png?v=qori-account-brand-v2-20260827" alt="">
                 <span></span><span></span><span></span>
               </div>
             </div>
 
             <section class="account-summary-grid" id="accountProfileOverview">
               <article class="surface-card account-profile-card" data-account-screen="profile">
-                <span class="mono-label">Empresa en sesión</span>
+                <div class="account-profile-kicker"><span class="material-symbols-outlined" aria-hidden="true">domain</span><span class="mono-label">Empresa en sesión</span></div>
                 <h3 id="accountBusinessName">Empresa</h3>
                 <div class="account-meta-grid">
                   <div>
@@ -1524,7 +1528,7 @@
               </article>
 
               <article class="surface-card account-profile-card" data-account-screen="profile">
-                <span class="mono-label">Usuario activo</span>
+                <div class="account-profile-kicker"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><span class="mono-label">Usuario activo</span></div>
                 <h3 id="accountUserName">Usuario</h3>
                 <div class="account-meta-grid">
                   <div>
@@ -1547,7 +1551,7 @@
               </article>
 
               <article class="surface-card account-profile-card" data-account-screen="billing">
-                <span class="mono-label">Cuenta y tickets</span>
+                <div class="account-profile-kicker"><span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span><span class="mono-label">Cuenta y tickets</span></div>
                 <h3 id="accountPlanName">Plan</h3>
                 <div class="account-meta-grid">
                   <div>
@@ -8151,7 +8155,7 @@
       <footer class="modal-actions"><button class="ghost-button" type="button" data-portal-email-route="cancel">Cancelar</button></footer>
     </section>
   </div>
-    <script src="js/app.js?v=gos-brand-v362-20260826-account-command-center-v376-20260827" defer></script>
+    <script src="js/app.js?v=gos-brand-v362-20260826-account-command-center-v377-20260827" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>

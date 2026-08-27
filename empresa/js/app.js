@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260827-account-command-center-v376";
+const APP_VERSION = "empresa-20260827-account-command-center-v377";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -5650,7 +5650,11 @@ function loginRedirectForSession(value) {
 }
 
 function formatLimitValue(value) {
-  return value === null || value === undefined ? "Ilimitado" : Number(value).toLocaleString("es-CO");
+  if (value === null || value === undefined) return "Ilimitado";
+  if (typeof value === "number" && Number.isFinite(value)) return value.toLocaleString("es-CO");
+  const normalized = String(value).trim();
+  if (/^-?\d+(?:\.\d+)?$/.test(normalized)) return Number(normalized).toLocaleString("es-CO");
+  return normalized || "-";
 }
 
 function renderSubscriptionBanner() {
