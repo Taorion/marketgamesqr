@@ -983,28 +983,6 @@ async function processPreapprovalWebhook(preapprovalId) {
       ]
     );
 
-    const signup = order.metadata?.signup || {};
-    if (status === "AUTHORIZED" && signup.requires_card_enrollment) {
-      const activation = await finalizeApprovedPortalSubscription(client, order, {
-        id: preapproval.id || preapprovalId,
-        status: "authorized",
-        transaction_amount: Number(order.price_cop || 0),
-        external_reference: order.external_reference,
-        payment_type_id: "preapproval",
-        date_approved: new Date().toISOString(),
-        preapproval,
-      }, signup);
-      return {
-        ...activation,
-        auto_renewal: {
-          business_id: order.business_id,
-          status,
-          enabled: true,
-          mercado_pago_preapproval_id: preapproval.id || preapprovalId,
-        },
-      };
-    }
-
     return {
       auto_renewal: {
         business_id: order.business_id,
@@ -1016,30 +994,74 @@ async function processPreapprovalWebhook(preapprovalId) {
   });
 }
 
+function normalizeMercadoPagoWebhookTopic(value) {
+  const topic = String(value || "").trim().toLowerCase();
+  if (["preapproval", "subscription_preapproval"].includes(topic)) {
+    return "subscription_preapproval";
+  }
+  if (topic === "subscription_authorized_payment") {
+    return "subscription_authorized_payment";
+  }
+  if (["payment", "payments"].includes(topic)) {
+    return "payment";
+  }
+  return topic;
+}
+
+function approvedPaymentIdFromAuthorizedInvoice(invoice) {
+  const payment = invoice?.payment || {};
+  if (String(payment.status || "").toLowerCase() !== "approved" || !payment.id) {
+    return null;
+  }
+  return String(payment.id);
+}
+
 async function processMercadoPagoWebhook(req) {
   verifyWebhookSignature(req);
-  const topic = req.query.type || req.query.topic || req.body?.type || req.body?.topic;
-  const paymentId = req.query["data.id"] || req.body?.data?.id || req.body?.id;
-  if (topic === "preapproval") {
-    return processPreapprovalWebhook(paymentId);
+  const rawTopic = req.query.type || req.query.topic || req.body?.type || req.body?.topic;
+  const topic = normalizeMercadoPagoWebhookTopic(rawTopic);
+  const resourceId = req.query["data.id"] || req.body?.data?.id || req.body?.id;
+  if (topic === "subscription_preapproval") {
+    return processPreapprovalWebhook(resourceId);
   }
-  if (topic && topic !== "payment") {
-    return { ignored: true, topic };
+  if (topic && !["payment", "subscription_authorized_payment"].includes(topic)) {
+    return { ignored: true, topic: rawTopic };
   }
+
+  let paymentId = resourceId;
+  let authorizedInvoice = null;
+  if (topic === "subscription_authorized_payment") {
+    if (!resourceId) {
+      return { ignored: true, reason: "missing_authorized_payment_id" };
+    }
+    authorizedInvoice = await mpRequest(`/authorized_payments/${encodeURIComponent(resourceId)}`, { method: "GET" });
+    paymentId = approvedPaymentIdFromAuthorizedInvoice(authorizedInvoice);
+    if (!paymentId) {
+      return {
+        authorized_payment: {
+          id: authorizedInvoice?.id || resourceId,
+          status: authorizedInvoice?.payment?.status || authorizedInvoice?.summarized || authorizedInvoice?.status || "pending",
+          credited: false,
+        },
+      };
+    }
+  }
+
   if (!paymentId) {
     return { ignored: true, reason: "missing_payment_id" };
   }
 
   const payment = await mpRequest(`/v1/payments/${encodeURIComponent(paymentId)}`, { method: "GET" });
-  const externalReference = payment.external_reference;
-  if (!externalReference) {
+  const externalReference = payment.external_reference || authorizedInvoice?.external_reference;
+  const preapprovalId = authorizedInvoice?.preapproval_id || "";
+  if (!externalReference && !preapprovalId) {
     return { ignored: true, reason: "missing_external_reference" };
   }
 
   return withTransaction(async (client) => {
     const storageOrderResult = await client.query(
       `select * from business_storage_addon_orders where external_reference = $1 for update`,
-      [externalReference]
+      [externalReference || ""]
     );
     if (storageOrderResult.rowCount) {
       const storageOrder = storageOrderResult.rows[0];
@@ -1058,8 +1080,11 @@ async function processMercadoPagoWebhook(req) {
       `select *
        from qr_credit_purchase_orders
        where external_reference = $1
+          or ($2 <> '' and mercado_pago_preference_id = $2)
+       order by created_at desc
+       limit 1
        for update`,
-      [externalReference]
+      [externalReference || "", String(preapprovalId)]
     );
     const order = orderResult.rows[0];
     if (!order) {
@@ -1068,7 +1093,12 @@ async function processMercadoPagoWebhook(req) {
 
     let payableOrder = order;
     const signup = order.metadata?.signup;
-    if (signup?.type === "portal_monthly_subscription_auto_renewal" && order.credited_at) {
+    const isRecurringSubscription = [
+      "portal_monthly_subscription",
+      "portal_annual_subscription",
+      "portal_monthly_subscription_auto_renewal",
+    ].includes(signup?.type);
+    if (isRecurringSubscription && order.credited_at) {
       const existingPayment = await client.query(
         `select id
          from qr_credit_purchase_orders
@@ -1389,6 +1419,10 @@ function mapPurchaseOrder(row) {
 }
 
 module.exports = {
+  __testing: {
+    approvedPaymentIdFromAuthorizedInvoice,
+    normalizeMercadoPagoWebhookTopic,
+  },
   createCreditCheckout,
   createStorageAddonCheckout,
   createDemoCreditPurchase,
