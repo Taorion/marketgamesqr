@@ -13,10 +13,34 @@ test("Riesgos permite registrar una respuesta sin ticket", () => {
   assert.match(app, /step\("result", "3", "Responder", "Venta o Reciclaje"\)/);
 });
 
-test("el guardado usa los campos de resultado montados en la fase Responder", () => {
-  assert.match(app, /data-rms-risk-outcome-offer/);
-  assert.match(app, /data-rms-risk-outcome-discount-percent/);
-  assert.match(app, /data-rms-risk-outcome-detail/);
+test("la concesión se elige una vez y Responder la presenta como dato fijo", () => {
+  const activeSync = app.slice(app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"), app.indexOf("activateRmsRiskTab = function activateRmsRiskTabUnified"));
+  const fixedOffer = app.slice(app.indexOf("const rmsRiskValidationStationCardMarkupFixedOfferBase"), app.indexOf("// La imagen ya está visible en el ticket"));
+  assert.doesNotMatch(activeSync, /data-rms-risk-outcome-offer|data-rms-risk-outcome-discount-percent|data-rms-risk-outcome-detail/);
+  assert.match(activeSync, /data-rms-risk-recovery-offer/);
+  assert.match(fixedOffer, /data-rms-risk-selected-offer/);
+  assert.match(fixedOffer, /data-rms-risk-fixed-offer-label/);
+  assert.match(fixedOffer, /Sin concesión extraordinaria/);
+});
+
+test("Sin concesión deshabilita ticket y dirige a Responder con Venta lograda", () => {
+  const ui = app.slice(app.indexOf("function rmsRiskOutcomeOfferUi"), app.indexOf("function setRmsRiskRecoveryPhase"));
+  const phasedMarkup = app.slice(app.indexOf("rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupUnified"), app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"));
+  assert.match(ui, /expiration\.disabled = isNone/);
+  assert.match(ui, /detailWrap\.hidden = !needsDetail && !isNone/);
+  assert.match(ui, /detailInput\.disabled = !needsDetail/);
+  assert.match(ui, /generate\.disabled = isNone/);
+  assert.match(ui, /activateRmsRiskTab\(card\.parentElement \|\| document, id, "sale"\)/);
+  assert.match(ui, /setRmsRiskRecoveryPhase\(card, id, "result"\)/);
+  assert.doesNotMatch(phasedMarkup, /Descuento aplicado|data-rms-risk-discount-percent/);
+});
+
+test("el descuento del beneficio se deriva de la autorización y no de un campo manual", () => {
+  const selection = app.slice(app.indexOf("function rmsRiskSelectedOffer"), app.indexOf("async function generateRmsRiskRecoveryResource"));
+  const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
+  assert.match(selection, /value === "DISCOUNT" \? permissions\.discount\.max_percent/);
+  assert.doesNotMatch(selection, /data-rms-risk-discount-percent/);
+  assert.match(activeSave, /selectedBenefit\?\.type === "DISCOUNT" \? selectedBenefit\.value : 0/);
 });
 
 test("Ventas se abre sin una recarga RMS duplicada", () => {
