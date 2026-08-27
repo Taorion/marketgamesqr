@@ -44,6 +44,21 @@ test("historial muestra el valor persistido y permite retomar pendientes", () =>
   assert.match(app, /urlParams\.delete\(key\)/);
 });
 
+test("la tienda renderiza paquetes sin depender de variables de la ruta de pago", () => {
+  const app = read("empresa/js/app.js");
+  const shopStart = app.indexOf("function renderQrCreditShop()");
+  const shopEnd = app.indexOf("function paymentStatusLabel", shopStart);
+  const shop = app.slice(shopStart, shopEnd);
+  const routeStart = app.indexOf("function applyInitialRouteParams()");
+  const routeEnd = app.indexOf("function openGamingCenterEntry", routeStart);
+  const route = app.slice(routeStart, routeEnd);
+
+  assert.match(shop, /qrCreditPackageGrid\.innerHTML = offers\.length/);
+  assert.doesNotMatch(shop, /paymentResult|urlParams/);
+  assert.match(route, /const paymentResult = urlParams\.get\("payment"\)/);
+  assert.match(route, /if \(paymentResult && canManageBusinessBilling\(\)\)/);
+});
+
 test("interfaz premium incluye selector visual, resumen y móvil sin tabla horizontal", () => {
   const html = read("empresa/index.html");
   const css = read("empresa/css/account-premium.css");
@@ -52,7 +67,7 @@ test("interfaz premium incluye selector visual, resumen y móvil sin tabla horiz
   assert.match(html, /Pago único · sin recarga automática/);
   assert.match(css, /\.qr-credit-package-option\.is-selected/);
   assert.match(css, /\.account-orders-table\s*\{[^}]*display: block/is);
-  assert.match(html, /account-recharge-center-v378-20260827/);
+  assert.match(html, /account-ticket-shop-v379-20260827/);
   assert.match(html, /account-navigation-v11-20260827/);
   assert.match(css, /Account v9 · Recharge alignment system/);
   assert.match(css, /Account v10 · definitive Qori workspace composition/);

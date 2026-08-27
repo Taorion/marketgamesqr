@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260827-account-recharge-center-v378";
+const APP_VERSION = "empresa-20260827-account-ticket-shop-v379";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -7432,6 +7432,22 @@ function applyInitialRouteParams() {
     setView("validator");
     validatorQrTokenInput.value = urlToken;
     validateValidatorToken(urlToken);
+    return;
+  }
+
+  if (paymentResult && canManageBusinessBilling()) {
+    state.paymentReturnStatus = paymentResult;
+    openAccountSection("billing");
+    const feedback = {
+      success: ["Mercado Pago recibió el pago. Estamos confirmando la acreditación de tus tickets.", "success", "Pago recibido"],
+      pending: ["El pago sigue pendiente. Tu saldo se actualizará cuando Mercado Pago lo confirme.", "info", "Pago en revisión"],
+      failure: ["El pago no fue aprobado. Puedes retomar la recarga y elegir otro medio de pago.", "error", "Pago no completado"],
+    }[paymentResult];
+    if (feedback) showFeedback(feedback[0], feedback[1], { title: feedback[2], timeout: 9000 });
+    ["payment", "renewal", "collection_id", "collection_status", "payment_id", "status", "external_reference", "preference_id", "site_id", "processing_mode", "merchant_account_id"].forEach((key) => urlParams.delete(key));
+    const nextSearch = urlParams.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}#accountSectionData`);
+    refreshAccountPaymentReturn();
     return;
   }
 
@@ -24153,21 +24169,6 @@ function renderQrCreditShop() {
     qrCreditPackageSelect.value = previousSelection;
   }
 
-  if (paymentResult && canManageBusinessBilling()) {
-    state.paymentReturnStatus = paymentResult;
-    openAccountSection("billing");
-    const feedback = {
-      success: ["Mercado Pago recibió el pago. Estamos confirmando la acreditación de tus tickets.", "success", "Pago recibido"],
-      pending: ["El pago sigue pendiente. Tu saldo se actualizará cuando Mercado Pago lo confirme.", "info", "Pago en revisión"],
-      failure: ["El pago no fue aprobado. Puedes retomar la recarga y elegir otro medio de pago.", "error", "Pago no completado"],
-    }[paymentResult];
-    if (feedback) showFeedback(feedback[0], feedback[1], { title: feedback[2], timeout: 9000 });
-    ["payment", "renewal", "collection_id", "collection_status", "payment_id", "status", "external_reference", "preference_id", "site_id", "processing_mode", "merchant_account_id"].forEach((key) => urlParams.delete(key));
-    const nextSearch = urlParams.toString();
-    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}#accountSectionData`);
-    refreshAccountPaymentReturn();
-    return;
-  }
   const selectedCode = qrCreditPackageSelect?.value || offers[0]?.code || "";
   const unitPrices = offers.map((offer) => Number(offer.price_cop || 0) / Math.max(Number(offer.package_size || 0), 1));
   const bestUnitPrice = unitPrices.length ? Math.min(...unitPrices) : 0;
