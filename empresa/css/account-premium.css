@@ -984,3 +984,302 @@ html[data-theme="dark"] body[data-current-view="account"] .portal-shell .account
   body[data-current-view="account"] .portal-shell .account-admin-nav a,
   body[data-current-view="account"] .portal-shell :is(input, select, textarea, button) { transition: none !important; }
 }
+
+/* Account Atelier v4
+   Editorial Qori workspace: remove the inherited generic stage, bring settings
+   above the fold and give administration a focused internal navigation rail. */
+@media (min-width: 1101px) {
+  html body:not(#accountAtelierA#accountAtelierB#accountAtelierC#accountAtelierD)[data-current-view="account"] main.portal-shell #workspace .app-main .content-shell > .view-section[data-view="account"].active {
+    display: grid !important;
+    grid-template-columns: 248px minmax(0, 1fr) !important;
+    column-gap: 24px !important;
+    row-gap: 24px !important;
+    width: min(calc(100% - 64px), 1440px) !important;
+    max-width: 1440px !important;
+    margin: 0 auto !important;
+    padding: 0 0 80px !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > :is(.account-command-hero, #accountProfileOverview) {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    margin-inline: 0 !important;
+  }
+
+  html body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .account-admin-nav {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+    align-self: start !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  html body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > .account-settings-grid {
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  html body[data-current-view="account"] .portal-shell .view-section[data-view="account"] > #accountCommercialDealCard {
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+    width: 100% !important;
+    margin-inline: 0 !important;
+  }
+
+  html body[data-current-view="account"] .portal-shell .view-section[data-view="account"]:has(> #accountCommercialDealCard:not(.hidden):not(.account-screen-hidden)) > .account-settings-grid {
+    grid-row: 4 !important;
+  }
+}
+
+html body[data-current-view="account"] .portal-shell #subscriptionBanner {
+  width: min(calc(100% - 64px), 1440px) !important;
+  margin: 24px auto 20px !important;
+  padding: 26px 30px !important;
+  border-radius: 28px !important;
+  box-shadow: 0 26px 62px rgba(1, 34, 104, .16), inset 0 1px 0 rgba(255, 255, 255, .34) !important;
+}
+
+html body[data-current-view="account"] .portal-shell #subscriptionBanner::after {
+  content: "" !important;
+  position: absolute !important;
+  display: block !important;
+  z-index: 3;
+  inset: 0 auto auto 0;
+  width: 42%;
+  height: 4px;
+  background: linear-gradient(90deg, #07cefb, #67e9ff 62%, transparent);
+}
+
+html body[data-current-view="account"] .portal-shell #subscriptionBanner .subscription-limit-chip {
+  min-height: 46px !important;
+  border-color: rgba(167, 197, 226, .66) !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, .9) !important;
+  box-shadow: 0 7px 18px rgba(1, 34, 104, .045), inset 0 1px 0 #fff !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-command-hero {
+  min-height: 238px !important;
+  height: auto !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding: clamp(34px, 4vw, 56px) !important;
+  border-radius: 30px !important;
+  background:
+    radial-gradient(circle at 82% 42%, rgba(7, 206, 251, .14), transparent 18rem),
+    linear-gradient(125deg, #ffffff 0%, #f8fcff 58%, #eaf7ff 100%) !important;
+  box-shadow: 0 24px 70px rgba(1, 34, 104, .09), inset 5px 0 0 #0341b3 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-command-hero h2 {
+  max-width: 760px;
+  font-size: clamp(2.65rem, 5.1vw, 4.8rem) !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-command-eyebrow {
+  margin-bottom: 16px;
+  padding: 7px 11px;
+  border: 1px solid rgba(3, 65, 179, .13);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .74);
+  box-shadow: 0 6px 18px rgba(1, 34, 104, .04);
+}
+
+html body[data-current-view="account"] .portal-shell .account-command-mark {
+  width: clamp(160px, 16vw, 218px);
+  border-radius: 38% 28% 42% 32%;
+  box-shadow: 0 28px 64px rgba(3, 65, 179, .14), 0 0 0 12px rgba(255, 255, 255, .54), inset 0 1px 0 #fff;
+}
+
+html body[data-current-view="account"] .portal-shell #accountProfileOverview.account-summary-grid {
+  gap: 18px !important;
+  margin: 0 !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-profile-card {
+  min-height: 184px;
+  padding: 27px !important;
+  border-radius: 26px !important;
+  box-shadow: 0 16px 42px rgba(1, 34, 104, .07) !important;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+@media (hover: hover) {
+  html body[data-current-view="account"] .portal-shell .account-profile-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(4, 128, 250, .3) !important;
+    box-shadow: 0 24px 54px rgba(1, 34, 104, .11) !important;
+  }
+}
+
+@media (min-width: 1101px) {
+  html body[data-current-view="account"] .portal-shell .account-admin-nav {
+    position: sticky !important;
+    top: 76px !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 7px !important;
+    padding: 12px !important;
+    overflow: hidden !important;
+    border-radius: 24px !important;
+    background: linear-gradient(165deg, rgba(255, 255, 255, .98), rgba(239, 248, 255, .95)) !important;
+    box-shadow: 0 22px 52px rgba(1, 34, 104, .09), inset 0 1px 0 #fff !important;
+  }
+
+  html body[data-current-view="account"] .portal-shell .account-admin-nav::before {
+    content: "ADMINISTRACIÓN";
+    display: block !important;
+    padding: 9px 11px 11px;
+    color: #52718f;
+    font-size: .61rem;
+    font-weight: 900;
+    letter-spacing: .18em;
+  }
+
+  html body[data-current-view="account"] .portal-shell .account-admin-nav a {
+    grid-template-columns: 42px minmax(0, 1fr) !important;
+    min-height: 62px !important;
+    padding: 9px 10px !important;
+    border-radius: 15px !important;
+  }
+
+  html body[data-current-view="account"] .portal-shell .account-admin-nav a.is-active,
+  html body[data-current-view="account"] .portal-shell .account-admin-nav a[aria-current="page"],
+  html[data-theme="light"] body[data-current-view="account"] .portal-shell .view-section[data-view="account"] .account-admin-nav > a.is-active,
+  html[data-theme="light"] body[data-current-view="account"] .portal-shell .view-section[data-view="account"] .account-admin-nav > a[aria-current="page"] {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+    border-color: rgba(7, 206, 251, .34) !important;
+    background: linear-gradient(135deg, #012268 0%, #0341b3 58%, #057fe9 100%) !important;
+    box-shadow: 0 14px 26px rgba(1, 34, 104, .2), inset 3px 0 0 #65e6ff !important;
+  }
+
+  html body[data-current-view="account"] .portal-shell .account-admin-nav a.is-active small,
+  html body[data-current-view="account"] .portal-shell .account-admin-nav a[aria-current="page"] small {
+    color: #d9f6ff !important;
+  }
+
+  html body[data-current-view="account"] .portal-shell .account-admin-nav a.is-active .material-symbols-outlined,
+  html body[data-current-view="account"] .portal-shell .account-admin-nav a[aria-current="page"] .material-symbols-outlined {
+    color: #012268 !important;
+    background: linear-gradient(145deg, #ffffff, #c9f5ff) !important;
+    box-shadow: 0 8px 18px rgba(0, 12, 52, .2) !important;
+  }
+}
+
+html body[data-current-view="account"] .portal-shell .account-settings-grid {
+  gap: 22px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-section-divider {
+  padding: 10px 8px 12px 58px !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-section-divider::before {
+  width: 42px;
+  height: 42px;
+  margin-left: -56px;
+  margin-top: 0;
+  border-radius: 15px;
+}
+
+html body[data-current-view="account"] .portal-shell :is(.account-settings-card, .account-billing-card, .portal-pricing-card, .qr-credit-shop-card, .account-deal-card) {
+  padding: clamp(26px, 3vw, 38px) !important;
+  border-radius: 28px !important;
+  box-shadow: 0 20px 54px rgba(1, 34, 104, .085), 0 2px 8px rgba(1, 34, 104, .035) !important;
+}
+
+html body[data-current-view="account"] .portal-shell :is(.account-settings-card, .account-billing-card, .portal-pricing-card, .qr-credit-shop-card, .account-deal-card)::before {
+  left: 30px;
+  right: 30px;
+  height: 4px;
+}
+
+html body[data-current-view="account"] .portal-shell .table-card-head {
+  margin-bottom: 28px !important;
+  padding-bottom: 24px !important;
+}
+
+html body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) {
+  gap: 18px !important;
+}
+
+html body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) > label {
+  padding: 15px 16px !important;
+  border-color: #d5e5f4 !important;
+  border-radius: 16px !important;
+  background: linear-gradient(145deg, #fbfdff, #f6faff) !important;
+}
+
+html body[data-current-view="account"] .portal-shell :is(#accountProfileForm, #accountPasswordForm, #digitalAssetForm, #accountUserForm) :is(input, select, textarea) {
+  min-height: 48px;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, .96) !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-email-connection-panel,
+html body[data-current-view="account"] .portal-shell .account-risk-recovery-settings {
+  padding: clamp(22px, 2.6vw, 32px) !important;
+  border-radius: 21px !important;
+  box-shadow: inset 4px 0 0 var(--account-bright), 0 12px 32px rgba(1, 34, 104, .05) !important;
+}
+
+html body[data-current-view="account"] .portal-shell .account-email-connection-steps li {
+  min-height: 108px;
+  padding: 18px !important;
+  border-radius: 17px !important;
+  background: linear-gradient(145deg, #ffffff, #f5faff) !important;
+}
+
+html body[data-current-view="account"] .portal-shell .solid-button {
+  min-height: 47px;
+  padding-inline: 18px !important;
+  border-radius: 14px !important;
+}
+
+@media (max-width: 1100px) {
+  html body:not(#accountAtelierA#accountAtelierB#accountAtelierC#accountAtelierD)[data-current-view="account"] main.portal-shell #workspace .app-main .content-shell > .view-section[data-view="account"].active {
+    width: auto !important;
+    margin: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
+@media (max-width: 900px) {
+  html body[data-current-view="account"] .portal-shell #subscriptionBanner { width: auto !important; margin-inline: 22px !important; }
+  html body[data-current-view="account"] .portal-shell #subscriptionBanner .subscription-limit-chip {
+    color: #173d68 !important;
+    -webkit-text-fill-color: #173d68 !important;
+    border-color: rgba(255, 255, 255, .72) !important;
+    background: rgba(255, 255, 255, .92) !important;
+  }
+  html body[data-current-view="account"] .portal-shell .account-command-hero { min-height: 224px !important; margin-top: 0 !important; }
+  html body[data-current-view="account"] .portal-shell .account-admin-nav { position: sticky !important; top: 8px !important; }
+}
+
+@media (max-width: 620px) {
+  html body[data-current-view="account"] .portal-shell #subscriptionBanner { margin: 14px !important; padding: 22px 18px !important; border-radius: 22px !important; }
+  html body[data-current-view="account"] .portal-shell #subscriptionBanner::after { width: 72%; }
+  html body[data-current-view="account"] .portal-shell .account-command-hero { padding: 30px 22px 26px !important; border-radius: 24px !important; box-shadow: 0 18px 46px rgba(1, 34, 104, .08), inset 4px 0 0 #0341b3 !important; }
+  html body[data-current-view="account"] .portal-shell .account-command-eyebrow { font-size: .64rem; }
+  html body[data-current-view="account"] .portal-shell .account-profile-card { padding: 22px !important; border-radius: 21px !important; }
+  html body[data-current-view="account"] .portal-shell .account-admin-nav { position: sticky !important; top: 6px !important; border-radius: 16px !important; }
+  html body[data-current-view="account"] .portal-shell :is(.account-settings-card, .account-billing-card, .portal-pricing-card, .qr-credit-shop-card, .account-deal-card) { padding: 23px 18px !important; border-radius: 21px !important; }
+  html body[data-current-view="account"] .portal-shell .account-section-divider { padding-left: 50px !important; }
+  html body[data-current-view="account"] .portal-shell .account-section-divider::before { width: 35px; height: 35px; margin-left: -47px; }
+  html body[data-current-view="account"] .portal-shell .account-email-connection-panel,
+  html body[data-current-view="account"] .portal-shell .account-risk-recovery-settings { padding: 20px 16px !important; border-radius: 18px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body[data-current-view="account"] .portal-shell .account-profile-card { transition: none !important; }
+}
