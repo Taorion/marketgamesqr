@@ -21007,6 +21007,33 @@ html body #campaignStrategyWizardModal .strategy-wizard-progress-detail[data-sta
   background: #f0fbff !important;
 }
 
+html body #campaignStrategyWizardModal .strategy-wizard-progress-detail[data-state="processing"] {
+  color: #063b6f !important;
+  border-color: #8edff1 !important;
+  background: linear-gradient(110deg, #eefbff, #f5f9ff) !important;
+  box-shadow: inset 3px 0 0 #08bfe8 !important;
+}
+
+html body #campaignStrategyWizardModal .strategy-wizard-progress-detail[data-state="error"] {
+  color: #8b2432 !important;
+  border-color: #f1bdc5 !important;
+  background: #fff5f6 !important;
+  box-shadow: inset 3px 0 0 #d93f55 !important;
+}
+
+html body #campaignStrategyWizardModal[aria-busy="true"] .campaign-strategy-wizard-card {
+  cursor: progress;
+}
+
+html body #campaignStrategyWizardModal[aria-busy="true"] .strategy-wizard-progress > div > span {
+  animation: strategy-wizard-working 1.25s ease-in-out infinite alternate;
+}
+
+@keyframes strategy-wizard-working {
+  from { filter: saturate(.85); opacity: .72; }
+  to { filter: saturate(1.2); opacity: 1; }
+}
+
 @media (max-width: 680px) {
   html body[data-current-view="competition"] .portal-shell .competition-product-view-tabs {
     padding: 9px 14px !important;

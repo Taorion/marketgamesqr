@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260827-plan-entitlements-v382";
+const APP_VERSION = "empresa-20260827-campaign-designer-feedback-v383";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -31856,18 +31856,22 @@ function internalGrowthNudge(answers = state.strategyWizardAnswers || {}) {
 }
 
 function strategyBudgetTotals(answers = state.strategyWizardAnswers || {}) {
-  const production = Number(answers.productionCost || 0);
-  const benefit = Number(answers.benefitCost || 0);
-  const services = Number(answers.serviceCost || 0);
-  const other = Number(answers.otherCost || 0);
+  const safeNumber = (value, fallback = 0) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+  const production = safeNumber(answers.productionCost);
+  const benefit = safeNumber(answers.benefitCost);
+  const services = safeNumber(answers.serviceCost);
+  const other = safeNumber(answers.otherCost);
   const total = Math.max(0, production + benefit + services + other);
-  const profit = total * Number(answers.profitPercent || 30) / 100;
-  const salesGoal = Number(answers.salesGoal || 0) || total + profit;
-  const avgTicket = Number(answers.avgTicket || 0);
-  const conversion = Number(answers.conversionRate || 10);
-  const redemptions = Number(answers.redemptionsGoal || 0) || Math.ceil(Number(answers.maxParticipants || 100) * Number(answers.redemptionRate || 40) / 100);
+  const profit = total * safeNumber(answers.profitPercent, 30) / 100;
+  const salesGoal = safeNumber(answers.salesGoal) || total + profit;
+  const avgTicket = safeNumber(answers.avgTicket);
+  const conversion = safeNumber(answers.conversionRate, 10);
+  const redemptions = safeNumber(answers.redemptionsGoal) || Math.ceil(safeNumber(answers.maxParticipants, 100) * safeNumber(answers.redemptionRate, 40) / 100);
   const salesNeeded = avgTicket ? Math.ceil(salesGoal / avgTicket) : 0;
-  const leadsNeeded = conversion ? Math.ceil(salesNeeded / (conversion / 100)) : Number(answers.leadsGoal || 0);
+  const leadsNeeded = conversion ? Math.ceil(salesNeeded / (conversion / 100)) : safeNumber(answers.leadsGoal);
   return {
     production,
     benefit,
@@ -31877,7 +31881,7 @@ function strategyBudgetTotals(answers = state.strategyWizardAnswers || {}) {
     salesGoal,
     redemptions,
     salesNeeded,
-    leadsNeeded: Number(answers.leadsGoal || 0) || leadsNeeded,
+    leadsNeeded: safeNumber(answers.leadsGoal) || leadsNeeded,
     costPerLead: leadsNeeded ? total / leadsNeeded : 0,
     costPerSale: salesNeeded ? total / salesNeeded : 0,
     roi: total ? ((salesGoal - total) / total) * 100 : 0,
@@ -31980,6 +31984,13 @@ function strategyUrls(answers = state.strategyWizardAnswers || {}) {
   };
 }
 
+function strategyWizardIsoDate(dateValue, hour = 9) {
+  const normalized = String(dateValue || "").trim();
+  if (!normalized) return null;
+  const parsed = new Date(`${normalized}T${String(hour).padStart(2, "0")}:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
 function buildStrategyCampaignPayload(answers = state.strategyWizardAnswers || {}) {
   const totals = strategyBudgetTotals(answers);
   const slug = strategySlug(answers);
@@ -31995,8 +32006,8 @@ function buildStrategyCampaignPayload(answers = state.strategyWizardAnswers || {
     expected_sales_goal: totals.salesGoal,
     expected_leads_goal: totals.leadsNeeded,
     expected_redemptions_goal: totals.redemptions,
-    starts_at: answers.startDate ? `${answers.startDate}T09:00` : "",
-    ends_at: answers.endDate ? `${answers.endDate}T18:00` : "",
+    starts_at: strategyWizardIsoDate(answers.startDate, 9),
+    ends_at: strategyWizardIsoDate(answers.endDate, 18),
     launch_channels: answers.channels?.length ? answers.channels : [],
     client_notes: strategyClientNotes(answers).slice(0, 2000),
     delivered_assets: {
@@ -32184,6 +32195,7 @@ function openStrategyWizard({ fromScratch = false } = {}) {
   state.strategyWizardStep = 0;
   const savedDraft = fromScratch ? null : loadStrategyWizardDraft();
   state.strategyWizardAnswers = fromScratch ? defaultStrategyWizardAnswers() : { ...defaultStrategyWizardAnswers(), ...(savedDraft || {}) };
+  state.strategyWizardCreating = false;
   autoCompleteStrategyWizard();
   campaignStrategyWizardModal?.classList.remove("hidden");
   renderStrategyWizard();
@@ -32192,10 +32204,89 @@ function openStrategyWizard({ fromScratch = false } = {}) {
 }
 
 function closeStrategyWizard(options = {}) {
+  if (state.strategyWizardCreating && options?.force !== true) {
+    setFormMessage(strategyWizardMessage, "La campaña se está creando. Espera la confirmación antes de cerrar esta ventana.", "info");
+    return false;
+  }
   const returnFocus = state.strategyWizardReturnFocus;
   campaignStrategyWizardModal?.classList.add("hidden");
   setFormMessage(strategyWizardMessage, "", "info");
   if (options?.restoreFocus !== false && returnFocus?.isConnected) window.requestAnimationFrame(() => returnFocus.focus());
+  return true;
+}
+
+function setStrategyWizardBusy(isBusy) {
+  campaignStrategyWizardModal?.setAttribute("aria-busy", isBusy ? "true" : "false");
+  const controls = [
+    campaignStrategyWizardCloseButton,
+    strategyWizardBackButton,
+    strategyWizardSkipButton,
+    strategyWizardDraftButton,
+    strategyWizardSuggestButton,
+    strategyWizardOptimizeButton,
+    ...Array.from(strategyWizardStepBody?.querySelectorAll("button, input, textarea, select") || []),
+  ].filter(Boolean);
+  controls.forEach((control) => {
+    if (isBusy) {
+      control.dataset.strategyWizardWasDisabled = control.disabled ? "true" : "false";
+      control.disabled = true;
+    } else {
+      control.disabled = control.dataset.strategyWizardWasDisabled === "true";
+      delete control.dataset.strategyWizardWasDisabled;
+    }
+  });
+}
+
+function strategyWizardRequestPayload(payload, channelRefs) {
+  return {
+    name: payload.name,
+    slug: payload.slug,
+    type: payload.type,
+    status: "DRAFT",
+    objective: payload.objective,
+    strategy_summary: payload.strategy_summary,
+    budget_total: payload.budget_total,
+    expected_sales_goal: payload.expected_sales_goal,
+    expected_leads_goal: payload.expected_leads_goal,
+    expected_redemptions_goal: payload.expected_redemptions_goal,
+    starts_at: payload.starts_at,
+    ends_at: payload.ends_at,
+    launch_channels: payload.launch_channels,
+    launch_channel_refs: channelRefs,
+    client_notes: payload.client_notes,
+    delivered_assets: payload.delivered_assets,
+    campaign_cost_calculator: {
+      source: "strategy_assistant",
+      production: Number(strategyWizardAnswer("productionCost") || 0),
+      benefits: Number(strategyWizardAnswer("benefitCost") || 0),
+      services: Number(strategyWizardAnswer("serviceCost") || 0),
+      other: Number(strategyWizardAnswer("otherCost") || 0),
+      channel_investments: [],
+    },
+    ...(isAdmin() ? { business_id: session.user.business_id } : {}),
+  };
+}
+
+function strategyWizardCreationErrorMessage(error) {
+  if (error?.message !== "Invalid request payload.") {
+    return error?.message || "No pudimos crear la campaña. Tu borrador sigue guardado.";
+  }
+  const fieldLabels = {
+    starts_at: "la fecha de inicio",
+    ends_at: "la fecha de cierre",
+    launch_channels: "los canales de lanzamiento",
+    launch_channel_refs: "los canales de lanzamiento",
+    name: "el nombre de la campaña",
+    slug: "el identificador de la campaña",
+    type: "el tipo de campaña",
+    budget_total: "el presupuesto",
+    expected_sales_goal: "la meta de ventas",
+    expected_leads_goal: "la meta de leads",
+    expected_redemptions_goal: "la meta de redenciones",
+  };
+  const invalidField = Object.keys(error?.details?.fieldErrors || {})[0];
+  const label = fieldLabels[invalidField] || "los datos del plan";
+  return `Qori no pudo validar ${label}. Revisa ese dato e intenta nuevamente; tu borrador sigue guardado.`;
 }
 
 function strategyWizardHasValidUrl(value) {
@@ -32296,24 +32387,21 @@ async function createStrategyWizardCampaign() {
   }
   state.strategyWizardCreating = true;
   saveStrategyWizardDraft({ silent: true });
+  setStrategyWizardBusy(true);
+  strategyWizardProgressText.textContent = "Creando campaña";
+  strategyWizardProgressDetail.dataset.state = "processing";
+  strategyWizardProgressDetail.textContent = "Enviando el plan y reservando su centro de control. Mantén esta ventana abierta.";
+  const waitFeedbackTimer = window.setTimeout(() => {
+    if (!state.strategyWizardCreating) return;
+    strategyWizardProgressDetail.dataset.state = "processing";
+    strategyWizardProgressDetail.textContent = "Qori sigue trabajando. Estamos confirmando la campaña con el servidor; no repitas la operación.";
+    setFormMessage(strategyWizardMessage, "La solicitud continúa en proceso. Te avisaremos apenas quede confirmada.", "info");
+  }, 4500);
   setButtonLoading(strategyWizardApplyButton, true, "Creando campaña...");
   setButtonLoading(strategyWizardNextButton, true, "Creando campaña...");
   setFormMessage(strategyWizardMessage, "Creando el borrador y preparando su centro de control...", "info");
   try {
-    const requestPayload = {
-      ...payload,
-      status: "DRAFT",
-      launch_channel_refs: channelRefs,
-      campaign_cost_calculator: {
-        source: "strategy_assistant",
-        production: Number(strategyWizardAnswer("productionCost") || 0),
-        benefits: Number(strategyWizardAnswer("benefitCost") || 0),
-        services: Number(strategyWizardAnswer("serviceCost") || 0),
-        other: Number(strategyWizardAnswer("otherCost") || 0),
-        channel_investments: [],
-      },
-      ...(isAdmin() ? { business_id: session.user.business_id } : {}),
-    };
+    const requestPayload = strategyWizardRequestPayload(payload, channelRefs);
     const result = await api(isAdmin() ? "/api/admin/campaigns" : "/api/business/campaigns", {
       method: "POST",
       headers: authHeaders(),
@@ -32323,8 +32411,9 @@ async function createStrategyWizardCampaign() {
     if (!campaign?.id) throw new Error("La campaña se creó, pero Qori no devolvió su identificador.");
     state.selectedCampaignId = campaign.id;
     try { window.localStorage?.removeItem(strategyWizardDraftKey()); } catch (_error) { /* El servidor ya confirmó la creación. */ }
-    closeStrategyWizard({ restoreFocus: false });
+    closeStrategyWizard({ restoreFocus: false, force: true });
     setView("campaigns");
+    showFeedback("El borrador quedó guardado. Estamos abriendo su centro de control.", "success", { title: "Campaña creada", timeout: 5000 });
     try {
       await loadWorkspace();
       await selectCampaign(campaign.id);
@@ -32335,12 +32424,19 @@ async function createStrategyWizardCampaign() {
     showFeedback("Campaña creada en borrador. Ya puedes conectar una experiencia o abrir los detalles avanzados.", "success", { title: "Campaña lista", timeout: 7000 });
     return campaign;
   } catch (error) {
-    setFormMessage(strategyWizardMessage, error.message || "No pudimos crear la campaña. Tu borrador sigue guardado.", "error");
+    const message = strategyWizardCreationErrorMessage(error);
+    strategyWizardProgressText.textContent = "No se creó la campaña";
+    strategyWizardProgressDetail.dataset.state = "error";
+    strategyWizardProgressDetail.textContent = "La operación no fue confirmada. Corrige el dato indicado y vuelve a intentarlo una sola vez.";
+    setFormMessage(strategyWizardMessage, message, "error");
+    showFeedback(message, "error", { title: "No se creó la campaña", timeout: 9000 });
     return null;
   } finally {
+    window.clearTimeout(waitFeedbackTimer);
     state.strategyWizardCreating = false;
     setButtonLoading(strategyWizardApplyButton, false);
     setButtonLoading(strategyWizardNextButton, false);
+    setStrategyWizardBusy(false);
   }
 }
 
