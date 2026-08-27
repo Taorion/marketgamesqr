@@ -24,6 +24,17 @@ test("contratos de pago aceptan UUID y protegen lectura financiera", () => {
   assert.match(routes, /get\("\/qr-credits\/orders", authRequired, requireBillingAdmin/);
 });
 
+test("schema existente agrega columnas de checkout antes de crear sus índices", () => {
+  const schema = read("database/schema.sql");
+  const addColumnsAt = schema.indexOf("alter table qr_credit_purchase_orders\n  add column if not exists checkout_key text");
+  const checkoutIndexAt = schema.indexOf("create unique index if not exists ux_qr_credit_purchase_orders_business_checkout_key");
+
+  assert.ok(addColumnsAt >= 0, "el bootstrap debe actualizar tablas existentes");
+  assert.ok(checkoutIndexAt > addColumnsAt, "checkout_key debe existir antes de crear el índice");
+  assert.match(schema, /add column if not exists checkout_error text/);
+  assert.match(schema, /add column if not exists checkout_expires_at timestamptz/);
+});
+
 test("historial muestra el valor persistido y permite retomar pendientes", () => {
   const app = read("empresa/js/app.js");
   assert.match(app, /copMoney\(order\.price_cop\)/);

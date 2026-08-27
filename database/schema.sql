@@ -390,6 +390,14 @@ create table if not exists qr_credit_purchase_orders (
   updated_at timestamptz not null default now()
 );
 
+-- Existing production databases may already have the table from before the
+-- recoverable checkout flow. Keep the bootstrap schema forward-compatible:
+-- these columns must exist before the indexes near the end of this file run.
+alter table qr_credit_purchase_orders
+  add column if not exists checkout_key text,
+  add column if not exists checkout_error text,
+  add column if not exists checkout_expires_at timestamptz;
+
 create table if not exists package_sales_requests (
   id uuid primary key default gen_random_uuid(),
   package_code text not null,
