@@ -1038,6 +1038,367 @@ html[data-theme="dark"] body[data-current-view="account"] .portal-shell .account
   }
 }
 
+/* Account v7 team command center: spacious desktop governance and mobile user cards. */
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card > .table-card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 18px !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card > .table-card-head > div {
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) !important;
+  gap: 3px 13px !important;
+  align-items: center !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card > .table-card-head > div::before {
+  grid-column: 1 !important;
+  grid-row: 1 / span 3 !important;
+  width: 42px !important;
+  height: 42px !important;
+  margin: 0 !important;
+  border: 1px solid #b9ddf6 !important;
+  border-radius: 14px !important;
+  background: linear-gradient(145deg, #effaff, #dff4ff) !important;
+  box-shadow: 0 8px 18px rgba(3, 65, 179, .09) !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card > .table-card-head > div > * {
+  grid-column: 2 !important;
+  min-width: 0 !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #refreshAccountUsersButton {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-width: 116px !important;
+  min-height: 43px !important;
+  padding: 10px 15px !important;
+  border-color: #bdd9ee !important;
+  border-radius: 13px !important;
+  color: #0756aa !important;
+  background: #f4faff !important;
+  box-shadow: 0 7px 18px rgba(1, 34, 104, .06) !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #refreshAccountUsersButton::before {
+  content: "refresh";
+  font-family: "Material Symbols Outlined";
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card #accountUserForm {
+  position: relative !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 20px !important;
+  border: 1px solid #d3e6f5 !important;
+  border-radius: 20px !important;
+  background: linear-gradient(145deg, #f8fcff 0%, #eef7ff 100%) !important;
+  box-shadow: inset 4px 0 0 #0798e8, 0 12px 30px rgba(1, 34, 104, .055) !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card #accountUserForm > label {
+  height: 100% !important;
+  padding: 14px 15px !important;
+  border-color: #cddfee !important;
+  background: rgba(255, 255, 255, .92) !important;
+  box-shadow: 0 5px 14px rgba(1, 34, 104, .035) !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card #accountUserForm .password-field {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 44px !important;
+  align-items: stretch !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card #accountUserForm .password-reveal-button {
+  position: static !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  height: auto !important;
+  margin-left: -1px !important;
+  border: 1px solid #bdd4ea !important;
+  border-radius: 0 11px 11px 0 !important;
+  color: #315c86 !important;
+  background: #f1f7fc !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card #accountUserForm .password-field > input {
+  border-radius: 11px 0 0 11px !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card #accountUserForm .modal-actions {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  margin-top: 2px !important;
+  padding-top: 16px !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountUserCreateMessage {
+  margin: 0 !important;
+  text-align: left !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountUserCreateButton {
+  min-width: 150px !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card .table-wrap {
+  margin-top: 22px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  border-radius: 18px !important;
+  box-shadow: 0 10px 28px rgba(1, 34, 104, .055) !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card table {
+  width: 100% !important;
+  min-width: 760px !important;
+  table-layout: fixed !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card :is(th, td) {
+  padding: 15px 14px !important;
+  border-bottom: 1px solid #e2edf6 !important;
+  line-height: 1.42 !important;
+  vertical-align: middle !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card th {
+  color: #dff6ff !important;
+  font-size: .66rem !important;
+  font-weight: 900 !important;
+  letter-spacing: .09em !important;
+  text-transform: uppercase !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card :is(th, td):first-child { width: 18%; }
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card :is(th, td):nth-child(2) { width: 23%; }
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card :is(th, td):nth-child(3) { width: 16%; }
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card :is(th, td):nth-child(4) { width: 13%; }
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card :is(th, td):nth-child(5) { width: 17%; }
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card :is(th, td):nth-child(6) { width: 13%; text-align: right !important; }
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card tbody td:first-child {
+  color: #082f64 !important;
+  font-weight: 800 !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card tbody tr:last-child td { border-bottom: 0 !important; }
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card tbody td[colspan] {
+  width: 100% !important;
+  padding: 24px 16px !important;
+  color: #52708d !important;
+  text-align: center !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card td .status-chip {
+  justify-content: center !important;
+  min-width: 72px !important;
+  margin: 0 !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card td:last-child .ghost-button {
+  min-width: 96px !important;
+  min-height: 38px !important;
+  margin: 0 !important;
+  border-radius: 11px !important;
+}
+
+html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card td:last-child .ghost-button[data-active="1"] {
+  border-color: #a8d8c6 !important;
+  color: #087657 !important;
+  background: #edfbf5 !important;
+}
+
+@media (max-width: 760px) {
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card > .table-card-head {
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] #refreshAccountUsersButton {
+    width: 100% !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card #accountUserForm {
+    grid-template-columns: 1fr !important;
+    padding: 16px !important;
+    border-radius: 17px !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card #accountUserForm > * {
+    grid-column: 1 !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card #accountUserForm .modal-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] #accountUserCreateButton {
+    width: 100% !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card .table-wrap {
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card table,
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card tbody {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card thead {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card tbody tr {
+    display: grid !important;
+    gap: 0 !important;
+    margin-bottom: 12px !important;
+    overflow: hidden !important;
+    border: 1px solid #d6e6f2 !important;
+    border-radius: 18px !important;
+    background: #fff !important;
+    box-shadow: 0 10px 26px rgba(1, 34, 104, .065) !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card tbody td {
+    display: grid !important;
+    grid-template-columns: minmax(82px, 34%) minmax(0, 1fr) !important;
+    gap: 12px !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 12px 14px !important;
+    text-align: left !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card tbody td::before {
+    color: #52708d !important;
+    font-size: .62rem !important;
+    font-weight: 900 !important;
+    letter-spacing: .07em !important;
+    text-transform: uppercase !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card td:nth-child(1)::before { content: "Usuario"; }
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card td:nth-child(2)::before { content: "Email"; }
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card td:nth-child(3)::before { content: "Rol"; }
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card td:nth-child(4)::before { content: "Estado"; }
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card td:nth-child(5)::before { content: "Creado"; }
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card td:nth-child(6)::before { content: "Acciones"; }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card tbody td:only-child {
+    display: block !important;
+    padding: 22px 16px !important;
+    color: #52708d !important;
+    text-align: center !important;
+  }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card tbody td:only-child::before { content: none !important; }
+
+  html body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-users-card td:last-child .ghost-button {
+    width: 100% !important;
+  }
+}
+
+html[data-theme="dark"] body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card #accountUserForm,
+html[data-theme="dark"] body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card tbody tr {
+  border-color: #2b5278 !important;
+  background: #071d38 !important;
+}
+
+html[data-theme="dark"] body:not(#accountTeamA#accountTeamB#accountTeamC#accountTeamD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-users-card #accountUserForm > label {
+  border-color: #2b5278 !important;
+  background: #0a2342 !important;
+}
+
 html body[data-current-view="account"] .portal-shell #subscriptionBanner {
   width: min(calc(100% - 64px), 1440px) !important;
   margin: 24px auto 20px !important;

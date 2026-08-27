@@ -21,7 +21,7 @@ test("Account exposes six synchronized administration areas", () => {
   assert.match(app, /accountSectionChannels:\s*"channels"/);
   assert.match(app, /supportedScreens\.includes\(screen\)/);
   assert.match(app, /APP_VERSION = "empresa-20260827-account-command-center-v377"/);
-  assert.match(html, /account-premium\.css\?v=account-command-center-v6-20260827/);
+  assert.match(html, /account-premium\.css\?v=account-command-center-v7-20260827/);
   assert.equal((html.match(/app\.js\?v=gos-brand-v362-20260826-account-command-center-v377-20260827/g) || []).length, 2);
   assert.match(html, /qori-favicon\.png\?v=qori-account-brand-v2-20260827/);
 });
@@ -41,6 +41,11 @@ test("Account follows the Qori premium visual system and a real mobile breakpoin
   assert.match(css, /Account v6 alignment lock/);
   assert.match(css, /accountPolishA#accountPolishB[\s\S]+grid-template-rows:\s*1fr/);
   assert.match(css, /account-email-connection-steps li[\s\S]+padding:\s*18px 16px 18px 54px !important/);
+  assert.match(css, /Account v7 team command center/);
+  assert.match(css, /accountTeamA#accountTeamB[\s\S]+\.account-users-card\s*\{[\s\S]+grid-column:\s*1 \/ -1 !important/);
+  assert.match(css, /\.account-users-card #accountUserForm[\s\S]+border-radius:\s*20px/);
+  assert.match(css, /@media \(max-width:\s*760px\)[\s\S]+\.account-users-card tbody tr[\s\S]+border-radius:\s*18px/);
+  assert.match(css, /td:nth-child\(6\)::before\s*\{\s*content:\s*"Acciones"/);
   assert.match(css, /@media \(max-width:\s*620px\)/);
   assert.match(css, /account-admin-nav[\s\S]+overflow-x:\s*auto\s*!important/);
   assert.match(css, /account-company-card #accountProfileForm \{ grid-template-columns: 1fr !important; \}/);
