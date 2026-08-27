@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260827-account-ticket-shop-v379";
+const APP_VERSION = "empresa-20260827-semantic-feedback-v380";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -3764,6 +3764,8 @@ function setInlineMessage(element, message, kind = "info") {
   if (!element) return;
   element.textContent = message || "";
   element.dataset.kind = kind;
+  element.setAttribute("role", kind === "error" || kind === "danger" ? "alert" : "status");
+  element.setAttribute("aria-live", kind === "error" || kind === "danger" ? "assertive" : "polite");
   if (message && element.id === "triviaLauncherMessage" && kind === "error") {
     element.scrollIntoView({ behavior: "smooth", block: "center" });
   }

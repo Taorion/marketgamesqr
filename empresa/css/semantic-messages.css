@@ -1,0 +1,88 @@
+/* Qori semantic messages v1.
+   The legacy .error-line name is structural; data-kind owns its meaning. */
+:root {
+  --qori-message-info-ink: #075985;
+  --qori-message-info-line: #7cc8ec;
+  --qori-message-info-surface: #eaf7ff;
+  --qori-message-success-ink: #166534;
+  --qori-message-success-line: #78c894;
+  --qori-message-success-surface: #ecfdf3;
+  --qori-message-warning-ink: #744500;
+  --qori-message-warning-line: #e5b94f;
+  --qori-message-warning-surface: #fff8df;
+  --qori-message-error-ink: #991b1b;
+  --qori-message-error-line: #e79b9b;
+  --qori-message-error-surface: #fff1f1;
+}
+
+html body:not(#qoriSemanticA#qoriSemanticB#qoriSemanticC#qoriSemanticD#qoriSemanticE) .portal-shell :is(.error-line, .validator-inline-message)[data-kind]:not(:empty) {
+  box-sizing: border-box !important;
+  display: block !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  margin: 12px 0 0 !important;
+  padding: 11px 13px !important;
+  border: 1px solid currentColor !important;
+  border-left-width: 4px !important;
+  border-radius: 12px !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  font-size: .88rem !important;
+  font-weight: 650 !important;
+  line-height: 1.45 !important;
+  text-shadow: none !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body:not(#qoriSemanticA#qoriSemanticB#qoriSemanticC#qoriSemanticD#qoriSemanticE) .portal-shell :is(.error-line, .validator-inline-message):is([data-kind="info"], [data-kind="loading"]):not(:empty) {
+  border-color: var(--qori-message-info-line) !important;
+  background-color: var(--qori-message-info-surface) !important;
+  color: var(--qori-message-info-ink) !important;
+  -webkit-text-fill-color: var(--qori-message-info-ink) !important;
+}
+
+html body:not(#qoriSemanticA#qoriSemanticB#qoriSemanticC#qoriSemanticD#qoriSemanticE) .portal-shell :is(.error-line, .validator-inline-message)[data-kind="success"]:not(:empty) {
+  border-color: var(--qori-message-success-line) !important;
+  background-color: var(--qori-message-success-surface) !important;
+  color: var(--qori-message-success-ink) !important;
+  -webkit-text-fill-color: var(--qori-message-success-ink) !important;
+}
+
+html body:not(#qoriSemanticA#qoriSemanticB#qoriSemanticC#qoriSemanticD#qoriSemanticE) .portal-shell :is(.error-line, .validator-inline-message):is([data-kind="warning"], [data-kind="pending"]):not(:empty) {
+  border-color: var(--qori-message-warning-line) !important;
+  background-color: var(--qori-message-warning-surface) !important;
+  color: var(--qori-message-warning-ink) !important;
+  -webkit-text-fill-color: var(--qori-message-warning-ink) !important;
+}
+
+html body:not(#qoriSemanticA#qoriSemanticB#qoriSemanticC#qoriSemanticD#qoriSemanticE) .portal-shell :is(.error-line, .validator-inline-message):is([data-kind="error"], [data-kind="danger"]):not(:empty),
+html body:not(#qoriSemanticA#qoriSemanticB#qoriSemanticC#qoriSemanticD#qoriSemanticE) .portal-shell .error-line:not([data-kind]):not(:empty) {
+  border-color: var(--qori-message-error-line) !important;
+  background-color: var(--qori-message-error-surface) !important;
+  color: var(--qori-message-error-ink) !important;
+  -webkit-text-fill-color: var(--qori-message-error-ink) !important;
+}
+
+html body:not(#qoriSemanticA#qoriSemanticB#qoriSemanticC#qoriSemanticD#qoriSemanticE) .portal-shell :is(.error-line, .validator-inline-message):empty {
+  display: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+html body:not(#qoriSemanticA#qoriSemanticB#qoriSemanticC#qoriSemanticD#qoriSemanticE) .portal-shell .login-card .error-line[data-kind]:not(:empty) {
+  margin-top: 2px !important;
+}
+
+html body:not(#qoriSemanticA#qoriSemanticB#qoriSemanticC#qoriSemanticD#qoriSemanticE)[data-current-view="account"] .portal-shell #qrCreditCheckoutMessage[data-kind]:not(:empty) {
+  margin-top: 16px !important;
+}
+
+@media (max-width: 620px) {
+  html body:not(#qoriSemanticA#qoriSemanticB#qoriSemanticC#qoriSemanticD#qoriSemanticE) .portal-shell :is(.error-line, .validator-inline-message)[data-kind]:not(:empty) {
+    padding: 10px 11px !important;
+    border-radius: 10px !important;
+    font-size: .84rem !important;
+  }
+}
