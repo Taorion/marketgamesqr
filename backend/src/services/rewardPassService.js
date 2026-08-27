@@ -8,7 +8,7 @@ const { badRequest, forbidden, notFound } = require("../utils/http");
 const { createSecureToken, normalizeToken } = require("../utils/token");
 const { ensureCreditAccount, trafficLabel } = require("./qrCreditService");
 const { logQrEvent } = require("./auditService");
-const { assertStandaloneBusinessFeature } = require("./subscriptionService");
+const { assertStandaloneBusinessFeature, getBusinessSubscription } = require("./subscriptionService");
 const { ensureRewardPassContact, registerRedemptionIntake } = require("./redemptionLeadIntakeService");
 
 const DEFAULT_TICKET_COST = 1;
@@ -490,6 +490,7 @@ async function getTicketContext(user) {
 async function createRewardPass(user, payload) {
   assertManager(user);
   const businessId = userBusinessId(user);
+  const subscription = await getBusinessSubscription(businessId);
   const issuedAt = payload.issued_at ? new Date(payload.issued_at) : new Date();
   const expiresAt = payload.expires_at ? new Date(payload.expires_at) : new Date(defaultExpiresAt(issuedAt));
   if (expiresAt <= issuedAt) {
@@ -509,6 +510,20 @@ async function createRewardPass(user, payload) {
         [businessId, issuanceKey]
       );
       if (existing.rowCount) return { id: existing.rows[0].id, idempotent: true };
+    }
+    const monthlyGiftCardLimit = subscription.plan.limits?.gift_cards_month;
+    if (monthlyGiftCardLimit !== null && monthlyGiftCardLimit !== undefined) {
+      const monthlyCount = await client.query(
+        `select count(*)::int as total
+         from reward_passes
+         where company_id = $1
+           and created_at >= date_trunc('month', now())
+           and created_at < date_trunc('month', now()) + interval '1 month'`,
+        [businessId]
+      );
+      if (Number(monthlyCount.rows[0]?.total || 0) >= Number(monthlyGiftCardLimit)) {
+        throw forbidden("Limite mensual alcanzado para Gift Cards.");
+      }
     }
     const ticketCost = getRewardPassTicketCostFromSettings(business.settings || {});
     const account = await ensureCreditAccount(client, businessId);

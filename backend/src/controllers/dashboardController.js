@@ -48,6 +48,8 @@ async function businessDashboard(req, res, next) {
     if (!canAccessBusiness(req.user, businessId)) {
       throw forbidden("You cannot view this business dashboard.");
     }
+    const subscription = await getBusinessSubscription(businessId);
+    const hasFullDashboard = Boolean(subscription.plan.features?.dashboard_full);
 
     const [
       summary,
@@ -467,7 +469,8 @@ async function businessDashboard(req, res, next) {
       : 0;
 
     res.json({
-      subscription: await getBusinessSubscription(businessId),
+      subscription,
+      dashboard_level: hasFullDashboard ? "full" : "basic",
       summary: summary.rows[0],
       derived: {
         redemption_rate: redemptionRate,
@@ -492,13 +495,13 @@ async function businessDashboard(req, res, next) {
         claims_by_hour: claimHourBuckets,
       },
       qr_status: qrStatus.rows,
-      campaign_performance: campaignPerformance.rows,
-      origin_performance: originPerformance.rows,
-      branch_performance: branchPerformance.rows,
-      payment_methods: paymentMethods.rows,
-      acquisition_sources: acquisitionSourcePerformance.rows,
-      recent_acquisition_sales: recentAcquisitionSales.rows,
-      answer_stats: {
+      campaign_performance: hasFullDashboard ? campaignPerformance.rows : [],
+      origin_performance: hasFullDashboard ? originPerformance.rows : [],
+      branch_performance: hasFullDashboard ? branchPerformance.rows : [],
+      payment_methods: hasFullDashboard ? paymentMethods.rows : [],
+      acquisition_sources: hasFullDashboard ? acquisitionSourcePerformance.rows : [],
+      recent_acquisition_sales: hasFullDashboard ? recentAcquisitionSales.rows : [],
+      answer_stats: hasFullDashboard ? {
         favorite_product: countBy(answerRows, "favorite_product"),
         purchase_frequency: countBy(answerRows, "purchase_frequency"),
         preferred_channel: countBy(answerRows, "preferred_channel"),
@@ -506,8 +509,8 @@ async function businessDashboard(req, res, next) {
         wants_samples: countBy(answerRows, "wants_samples"),
         campaign_label: countBy(answerRows, "campaign_label"),
         source: countBy(answerRows, "source"),
-      },
-      answers: answerRows.slice(0, 100),
+      } : {},
+      answers: hasFullDashboard ? answerRows.slice(0, 100) : [],
     });
   } catch (error) {
     next(error);

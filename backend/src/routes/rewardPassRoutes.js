@@ -20,23 +20,23 @@ const {
 } = require("../controllers/rewardPassController");
 
 const router = express.Router();
-const requirePrizeProgram = requireBusinessFeature("prize_program");
+const requireGiftCards = requireBusinessFeature("gift_cards");
 
 router.use(authRequired);
 router.use(invalidateBusinessResponseCache());
 
 const rewardPassCache = cacheBusinessResponse({ keyPrefix: "reward-passes", ttlMs: 180_000 });
 
-router.get("/context", requirePrizeProgram, rewardPassCache, rewardPassContext);
-router.get("/", requirePortalAccess, requirePrizeProgram, rewardPassCache, list);
-router.get("/metrics", requirePortalAccess, requirePrizeProgram, rewardPassCache, metrics);
-router.post("/", requirePortalAccess, requirePrizeProgram, create);
+router.get("/context", requirePortalAccess, requireGiftCards, rewardPassCache, rewardPassContext);
+router.get("/", requirePortalAccess, requireGiftCards, rewardPassCache, list);
+router.get("/metrics", requirePortalAccess, requireGiftCards, rewardPassCache, metrics);
+router.post("/", requirePortalAccess, requireGiftCards, create);
 router.get("/validator/:token", validateToken);
 router.post("/validator/:token/redeem", redeemToken);
-router.get("/:id", requirePortalAccess, requirePrizeProgram, rewardPassCache, get);
-router.get("/:id/pdf", requirePortalAccess, requirePrizeProgram, downloadPdf);
-router.get("/:id/acquisition-receipt.pdf", requirePortalAccess, requirePrizeProgram, acquisitionReceipt);
-router.post("/:id/cancel", requirePortalAccess, requirePrizeProgram, cancel);
-router.post("/:id/extend", requirePortalAccess, requirePrizeProgram, extend);
+router.get("/:id", requirePortalAccess, requireGiftCards, rewardPassCache, get);
+router.get("/:id/pdf", requirePortalAccess, requireGiftCards, downloadPdf);
+router.get("/:id/acquisition-receipt.pdf", requirePortalAccess, requireGiftCards, acquisitionReceipt);
+router.post("/:id/cancel", requirePortalAccess, requireGiftCards, cancel);
+router.post("/:id/extend", requirePortalAccess, requireGiftCards, extend);
 
 module.exports = router;

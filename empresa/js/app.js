@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260827-plan-change-v381";
+const APP_VERSION = "empresa-20260827-plan-entitlements-v382";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -5497,7 +5497,7 @@ const viewFeatureMap = {
   leads: "leads_view",
   affiliates: "affiliates",
   inventory: "gift_inventory",
-  "reward-passes": "prize_program",
+  "reward-passes": "gift_cards",
   redemptions: "portal_access",
   sales: "sales_tracker",
   "strategic-qr": "qr_batch_generator",
@@ -36328,6 +36328,10 @@ function manualLeadRowsFromCsv(text = "", defaults = {}) {
 
 async function importManualLeadsCsv(event) {
   event?.preventDefault();
+  if (!hasPlanFeature("contact_directory")) {
+    showFeatureUpgradeInterstitial("contact_directory", { requestedView: "leads" });
+    return;
+  }
   const file = manualLeadCsvFileInput?.files?.[0];
   if (!file) {
     setFormMessage(manualLeadCsvMessage, "Selecciona un archivo CSV.", "error");
@@ -36389,6 +36393,10 @@ async function importManualLeadsCsv(event) {
 
 async function createManualLead(event) {
   event?.preventDefault();
+  if (!hasPlanFeature("contact_directory")) {
+    showFeatureUpgradeInterstitial("contact_directory", { requestedView: "leads" });
+    return;
+  }
   if (!manualLeadForm) return;
   const acquisitionChannel = acquisitionChannelSelection("manual-lead");
   const payload = {
@@ -56355,6 +56363,15 @@ async function applyRmsPostSaleLoyalty(item, result, draft) {
 
 async function saveRmsPostSaleAction(item, root) {
   const draft = rmsPostSaleDraftFromDom(root, item.id);
+  const requiredFeature = draft.refinery_path === "REFERRAL"
+    ? "referrals"
+    : draft.refinery_path === "LOYALTY"
+      ? "affiliates"
+      : null;
+  if (requiredFeature && !hasPlanFeature(requiredFeature)) {
+    showFeatureUpgradeInterstitial(requiredFeature, { requestedView: "rms-machine" });
+    return;
+  }
   if (draft.execution_mode === "NEW_TICKET" && !draft.ticket.benefit.benefit_label) {
     throw new Error(draft.refinery_path === "REFERRAL" ? "Indica el beneficio antes de crear el QR de referidos." : "Indica el beneficio antes de crear el ticket de recompra.");
   }

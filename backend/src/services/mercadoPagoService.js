@@ -1283,7 +1283,15 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
   }
 
   const planCode = signup.plan_code || order.package_code;
-  const plan = listPlans().find((item) => item.code === planCode) || {};
+  const plan = listPlans().find((item) => (
+    item.code === planCode
+    && item.category === "subscription"
+    && item.public_signup_available !== false
+    && !item.testing_plan
+  ));
+  if (!plan || order.package_code !== planCode) {
+    throw badRequest("La orden aprobada no coincide con un plan canonico activable.");
+  }
   const currentPeriod = await client.query(
     `select subscription_current_period_ends_at
      from businesses

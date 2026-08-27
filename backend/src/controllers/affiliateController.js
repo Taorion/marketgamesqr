@@ -110,12 +110,26 @@ async function listBusinessAffiliates(req, res, next) {
 async function createBusinessAffiliate(req, res, next) {
   try {
     await assertFeatureForRequest(req, req.params.id, "affiliates");
-    const count = await query(
-      "select count(*)::int as total from affiliates where business_id = $1 and status <> 'DELETED'",
-      [req.params.id]
-    );
-    await assertLimitForBusiness(req.params.id, "affiliates", Number(count.rows[0]?.total || 0), "afiliados");
     const body = validate(createAffiliateSchema, req.body);
+    const isLoyaltyContact = body.card_metadata?.source === "rms_activation_2";
+    const count = await query(
+      `select count(*)::int as total
+       from affiliates
+       where business_id = $1
+         and status <> 'DELETED'
+         and (
+           ($2::boolean and coalesce(card_metadata->>'source', '') = 'rms_activation_2')
+           or
+           (not $2::boolean and coalesce(card_metadata->>'source', '') <> 'rms_activation_2')
+         )`,
+      [req.params.id, isLoyaltyContact]
+    );
+    await assertLimitForBusiness(
+      req.params.id,
+      isLoyaltyContact ? "loyalty_contacts" : "affiliates",
+      Number(count.rows[0]?.total || 0),
+      isLoyaltyContact ? "contactos de fidelizacion" : "afiliados"
+    );
     const affiliate = await createAffiliate(req.params.id, req.user, body);
     res.status(201).json({ affiliate });
   } catch (error) {

@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const { query } = require("../config/db");
 const { forbidden } = require("../utils/http");
 const {
   validate,
@@ -25,6 +26,8 @@ const {
 const {
   assertFeatureForRequest,
   assertInteractiveActivationTypeForBusiness,
+  assertLimitForBusiness,
+  assertMonthlyUsageLimit,
   getBusinessSubscription,
   recordUsage,
 } = require("../services/subscriptionService");
@@ -34,6 +37,23 @@ function businessIdFor(req) {
     throw forbidden("This user is not assigned to a business.");
   }
   return req.user.business_id;
+}
+
+async function assertActiveInteractiveActivationCapacity(businessId, excludeId = null) {
+  const count = await query(
+    `select count(*)::int as total
+     from interactive_activations
+     where company_id = $1
+       and status = 'active'
+       and ($2::uuid is null or id <> $2::uuid)`,
+    [businessId, excludeId]
+  );
+  return assertLimitForBusiness(
+    businessId,
+    "active_interactive_activations",
+    Number(count.rows[0]?.total || 0),
+    "activaciones interactivas activas"
+  );
 }
 
 const interactiveActivationListQuerySchema = z.object({
@@ -61,9 +81,20 @@ async function catalog(req, res, next) {
 async function create(req, res, next) {
   try {
     const businessId = businessIdFor(req);
-    await assertFeatureForRequest(req, businessId, "qr_batch_generator");
+    const subscription = await assertFeatureForRequest(req, businessId, "qr_batch_generator");
     const body = validate(interactiveActivationCreateSchema, req.body);
     await assertInteractiveActivationTypeForBusiness(businessId, body.activation_type);
+    await assertMonthlyUsageLimit(
+      businessId,
+      "interactive_activation_created",
+      subscription.plan.limits?.activation_types_month,
+      1,
+      "activaciones interactivas creadas",
+      { plan: subscription.plan, limit_key: "activation_types_month" }
+    );
+    if ((body.status || "active") === "active") {
+      await assertActiveInteractiveActivationCapacity(businessId);
+    }
     const result = await createInteractiveActivation(businessId, req.user, body);
     await recordUsage({
       business_id: businessId,
@@ -106,6 +137,7 @@ async function update(req, res, next) {
     const body = validate(interactiveActivationUpdateSchema, req.body);
     const businessId = businessIdFor(req);
     if (body.activation_type) await assertInteractiveActivationTypeForBusiness(businessId, body.activation_type);
+    if (body.status === "active") await assertActiveInteractiveActivationCapacity(businessId, req.params.id);
     res.json(await updateInteractiveActivation(businessId, req.params.id, body));
   } catch (error) {
     next(error);

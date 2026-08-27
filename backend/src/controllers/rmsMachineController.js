@@ -26,6 +26,7 @@ const {
   rmsMetrics,
 } = require("../services/rmsMachineService");
 const { getRmsActivationEmailSummary, sendRmsActivationBulkEmail } = require("../services/businessCommunicationService");
+const { assertFeatureForRequest } = require("../services/subscriptionService");
 const {
   createIntelligenceAgendaTask,
   intelligencePatterns,
@@ -496,7 +497,16 @@ async function postSaleActions(req, res, next) {
 async function recordPostSaleAction(req, res, next) {
   try {
     const body = validate(postSaleActionSchema, req.body);
-    res.status(201).json(await recordRmsPostSaleAction(businessIdFor(req), req.user, body));
+    const businessId = businessIdFor(req);
+    const refineryPath = String(body.metadata?.refinery_path || "").toUpperCase();
+    if (refineryPath === "REFERRAL" || body.action_type === "REFERRAL") {
+      await assertFeatureForRequest(req, businessId, "referrals");
+    } else if (refineryPath === "LOYALTY") {
+      await assertFeatureForRequest(req, businessId, "affiliates");
+    } else if (body.action_type === "REWARD_PASS" || body.execution_mode === "NEW_REWARD_PASS") {
+      await assertFeatureForRequest(req, businessId, "gift_cards");
+    }
+    res.status(201).json(await recordRmsPostSaleAction(businessId, req.user, body));
   } catch (error) {
     next(error);
   }

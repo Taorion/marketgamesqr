@@ -67,7 +67,7 @@ test("interfaz premium incluye selector visual, resumen y móvil sin tabla horiz
   assert.match(html, /Pago único · sin recarga automática/);
   assert.match(css, /\.qr-credit-package-option\.is-selected/);
   assert.match(css, /\.account-orders-table\s*\{[^}]*display: block/is);
-  assert.match(html, /plan-change-v381-20260827/);
+  assert.match(html, /plan-entitlements-v382-20260827/);
   assert.match(html, /account-plan-change-v12-20260827/);
   assert.match(css, /Account v9 · Recharge alignment system/);
   assert.match(css, /Account v10 · definitive Qori workspace composition/);

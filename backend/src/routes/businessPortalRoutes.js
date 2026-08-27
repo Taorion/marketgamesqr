@@ -5,7 +5,7 @@ const {
   cacheBusinessResponse,
   invalidateBusinessResponseCache,
 } = require("../middleware/businessResponseCache");
-const { requirePortalAccess } = require("../middleware/subscription");
+const { requirePortalAccess, requireBusinessFeature } = require("../middleware/subscription");
 const {
   businessAccess,
   ticketBalance,
@@ -195,6 +195,10 @@ router.use(invalidateBusinessResponseCache());
 const shortBusinessCache = cacheBusinessResponse({ keyPrefix: "business-short", ttlMs: 90_000 });
 const standardBusinessCache = cacheBusinessResponse({ keyPrefix: "business-standard", ttlMs: 180_000 });
 const heavyBusinessCache = cacheBusinessResponse({ keyPrefix: "business-heavy", ttlMs: 300_000, maxBytes: 1024 * 1024 });
+const requireContactDirectory = requireBusinessFeature("contact_directory");
+const requireJourney = requireBusinessFeature("journey");
+const requirePredictiveAnalytics = requireBusinessFeature("predictive_analytics");
+const requireLeadExport = requireBusinessFeature("leads_export");
 
 router.get("/access", businessAccess);
 router.get("/storage/summary", storageSummary);
@@ -205,19 +209,20 @@ router.patch("/profile", requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADM
 router.get("/users", listBusinessUsers);
 router.post("/users", createBusinessUser);
 router.patch("/users/:userId", updateBusinessUser);
+router.use(requirePortalAccess);
 router.get("/contacts/feed", standardBusinessCache, contactFeed);
-router.get("/contacts/manual", standardBusinessCache, listManualLeads);
-router.post("/contacts/manual", createManualLead);
-router.post("/contacts/manual/import-csv", importManualLeadsCsv);
-router.get("/contacts/customers/import-template.csv", downloadCustomerCsvTemplate);
-router.post("/contacts/customers/import-csv/preview", previewCustomerCsvImport);
-router.post("/contacts/customers/import-csv", importCustomersCsv);
-router.get("/contacts/customers/imports/:batchId/errors.csv", downloadCustomerCsvErrors);
-router.post("/contacts/manual/from-lead/:leadId", createManualLeadFromExistingLead);
-router.post("/contacts/manual/:manualLeadId/campaigns", assignManualLeadToCampaign);
-router.delete("/contacts/manual/:manualLeadId/campaigns/:campaignId", removeManualLeadFromCampaign);
-router.patch("/contacts/manual/:manualLeadId", updateManualLead);
-router.get("/contacts/feed/export.csv", exportContactFeed);
+router.get("/contacts/manual", requireContactDirectory, standardBusinessCache, listManualLeads);
+router.post("/contacts/manual", requireContactDirectory, createManualLead);
+router.post("/contacts/manual/import-csv", requireContactDirectory, importManualLeadsCsv);
+router.get("/contacts/customers/import-template.csv", requireContactDirectory, downloadCustomerCsvTemplate);
+router.post("/contacts/customers/import-csv/preview", requireContactDirectory, previewCustomerCsvImport);
+router.post("/contacts/customers/import-csv", requireContactDirectory, importCustomersCsv);
+router.get("/contacts/customers/imports/:batchId/errors.csv", requireContactDirectory, downloadCustomerCsvErrors);
+router.post("/contacts/manual/from-lead/:leadId", requireContactDirectory, createManualLeadFromExistingLead);
+router.post("/contacts/manual/:manualLeadId/campaigns", requireContactDirectory, assignManualLeadToCampaign);
+router.delete("/contacts/manual/:manualLeadId/campaigns/:campaignId", requireContactDirectory, removeManualLeadFromCampaign);
+router.patch("/contacts/manual/:manualLeadId", requireContactDirectory, updateManualLead);
+router.get("/contacts/feed/export.csv", requireLeadExport, exportContactFeed);
 router.get("/contacts/feed/:qrId/active-qr", downloadLeadQrById);
 router.get("/leads/crm", standardBusinessCache, listLeadsCrm);
 router.get("/leads/agenda", shortBusinessCache, agenda);
@@ -226,16 +231,16 @@ router.patch("/leads/agenda/:noteId", updateAgendaItem);
 router.delete("/leads/agenda/:noteId", deleteAgendaItem);
 router.get("/rms-machine", standardBusinessCache, rmsMachine);
 router.get("/rms-machine/daily-queue", standardBusinessCache, rmsDailyQueue);
-router.get("/rms-machine/journeys", standardBusinessCache, rmsJourneys);
+router.get("/rms-machine/journeys", requireJourney, standardBusinessCache, rmsJourneys);
 router.get("/rms-machine/metrics", standardBusinessCache, rmsMetrics);
 router.get("/rms-machine/unconverted-cost", rmsUnconvertedCost);
 router.get("/rms-machine/events", shortBusinessCache, rmsEvents);
-router.get("/rms-machine/intelligence/case", shortBusinessCache, rmsIntelligenceCase);
-router.get("/rms-machine/intelligence/cases", shortBusinessCache, rmsIntelligenceCases);
-router.get("/rms-machine/intelligence/patterns", standardBusinessCache, rmsIntelligencePatternReport);
-router.get("/rms-machine/intelligence/insights", shortBusinessCache, rmsIntelligenceInsights);
-router.post("/rms-machine/intelligence/insights", rmsSaveInsight);
-router.post("/rms-machine/intelligence/agenda-task", rmsCreateInsightAgendaTask);
+router.get("/rms-machine/intelligence/case", requirePredictiveAnalytics, shortBusinessCache, rmsIntelligenceCase);
+router.get("/rms-machine/intelligence/cases", requirePredictiveAnalytics, shortBusinessCache, rmsIntelligenceCases);
+router.get("/rms-machine/intelligence/patterns", requirePredictiveAnalytics, standardBusinessCache, rmsIntelligencePatternReport);
+router.get("/rms-machine/intelligence/insights", requirePredictiveAnalytics, shortBusinessCache, rmsIntelligenceInsights);
+router.post("/rms-machine/intelligence/insights", requirePredictiveAnalytics, rmsSaveInsight);
+router.post("/rms-machine/intelligence/agenda-task", requirePredictiveAnalytics, rmsCreateInsightAgendaTask);
 router.post("/rms-machine/actions/create-task", createRmsAgendaTask);
 router.post("/rms-machine/action", executeRmsAction);
 router.post("/rms-machine/activation-delivery", recordActivationDeliveryAction);
@@ -278,7 +283,6 @@ router.post("/leads/:leadId/activations", sendActivation);
 router.post("/leads/:leadId/activations/:activationId/opened", markActivationOpened);
 router.post("/leads/:leadId/whatsapp", registerLeadWhatsAppContact);
 
-router.use(requirePortalAccess);
 router.use("/communications", requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"));
 router.get("/communications/email-connection", communicationEmailConnection);
 router.patch("/communications/email-connection", saveCommunicationEmailConnection);

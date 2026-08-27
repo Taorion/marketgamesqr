@@ -1,5 +1,6 @@
 const express = require("express");
 const { authRequired, requireRoles } = require("../middleware/auth");
+const { requirePortalAccess, requireBusinessFeature } = require("../middleware/subscription");
 const {
   cacheBusinessResponse,
   invalidateBusinessResponseCache,
@@ -20,6 +21,8 @@ const router = express.Router();
 
 router.use(authRequired);
 router.use(requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"));
+router.use(requirePortalAccess);
+router.use(requireBusinessFeature("qr_batch_generator"));
 router.use(invalidateBusinessResponseCache());
 
 const activationCache = cacheBusinessResponse({ keyPrefix: "interactive-activations", ttlMs: 180_000 });
