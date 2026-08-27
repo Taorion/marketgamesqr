@@ -5,6 +5,7 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 const app = fs.readFileSync(path.join(root, "empresa/js/app.js"), "utf8");
+const html = fs.readFileSync(path.join(root, "empresa/index.html"), "utf8");
 const service = fs.readFileSync(path.join(root, "backend/src/services/rmsMachineService.js"), "utf8");
 
 test("Riesgos permite registrar una respuesta sin ticket", () => {
@@ -21,6 +22,7 @@ test("la concesión se elige una vez y Responder la presenta como dato fijo", ()
   assert.match(fixedOffer, /data-rms-risk-selected-offer/);
   assert.match(fixedOffer, /data-rms-risk-fixed-offer-label/);
   assert.match(fixedOffer, /Sin concesión extraordinaria/);
+  assert.match(html, /portal-clean-v39\.css\?v=[^"]*risk-fixed-concession-v385/);
 });
 
 test("Sin concesión deshabilita ticket y dirige a Responder con Venta lograda", () => {
