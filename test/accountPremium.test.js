@@ -20,7 +20,9 @@ test("Account exposes six synchronized administration areas", () => {
   });
   assert.match(app, /accountSectionChannels:\s*"channels"/);
   assert.match(app, /supportedScreens\.includes\(screen\)/);
+  assert.match(app, /APP_VERSION = "empresa-20260827-account-command-center-v376"/);
   assert.match(html, /account-premium\.css\?v=account-command-center-v1-20260827/);
+  assert.equal((html.match(/app\.js\?v=gos-brand-v362-20260826-account-command-center-v376-20260827/g) || []).length, 2);
 });
 
 test("Account follows the Qori premium visual system and a real mobile breakpoint", () => {
