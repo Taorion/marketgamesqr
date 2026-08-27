@@ -1283,3 +1283,9 @@ html body[data-current-view="account"] .portal-shell .solid-button {
 @media (prefers-reduced-motion: reduce) {
   html body[data-current-view="account"] .portal-shell .account-profile-card { transition: none !important; }
 }
+
+/* Account v5 visibility lock: screen state always wins over component display. */
+html body:not(#accountAtelierHiddenA#accountAtelierHiddenB#accountAtelierHiddenC#accountAtelierHiddenD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-screen-hidden {
+  display: none !important;
+}
