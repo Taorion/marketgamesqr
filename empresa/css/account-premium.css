@@ -299,6 +299,386 @@ html body:not(#accountRechargeA#accountRechargeB#accountRechargeC#accountRecharg
   }
 }
 
+/* Account v9 · Recharge alignment system
+   One grid, readable actions and consistent justification across every billing surface. */
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] :is(#accountSectionBilling, #accountQrCreditShopCard) {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] :is(#accountSectionBilling, #accountQrCreditShopCard) > .table-card-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 18px !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] :is(#accountSectionBilling, #accountQrCreditShopCard) > .table-card-head > div {
+  display: grid !important;
+  min-width: 0 !important;
+  gap: 5px !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] :is(#accountSectionBilling, #accountQrCreditShopCard) > .table-card-head h3 {
+  max-width: 760px !important;
+  margin: 0 !important;
+  line-height: 1.16 !important;
+  text-wrap: balance !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] :is(#accountSectionBilling, #accountQrCreditShopCard) > .table-card-head > .status-chip {
+  align-self: start !important;
+  justify-self: end !important;
+  min-width: max-content !important;
+  max-width: 100% !important;
+  min-height: 32px !important;
+  padding: 7px 11px !important;
+  line-height: 1.15 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling > .table-secondary,
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountQrCreditShopCard > .table-secondary {
+  max-width: 76ch !important;
+  margin: 16px 0 0 !important;
+  line-height: 1.6 !important;
+  text-align: left !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-recharge-metrics {
+  align-items: stretch !important;
+  gap: 12px !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-recharge-metrics > div {
+  align-items: flex-start !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  text-align: left !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-recharge-metrics strong {
+  max-width: 100% !important;
+  overflow: visible !important;
+  overflow-wrap: break-word !important;
+  text-overflow: clip !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-grid {
+  display: grid !important;
+  grid-template-columns: minmax(260px, .78fr) minmax(0, 1.22fr) !important;
+  align-items: start !important;
+  gap: 16px !important;
+  width: 100% !important;
+  margin: 22px 0 0 !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel {
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-content: start !important;
+  align-items: stretch !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 20px !important;
+  text-align: left !important;
+  border: 1px solid rgba(188, 231, 255, .24) !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, .09) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08) !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel > strong {
+  margin: 0 !important;
+  font-size: 17px !important;
+  line-height: 1.3 !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel > p {
+  margin: 0 !important;
+  line-height: 1.55 !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel > label {
+  display: grid !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel select {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel > :is(.solid-button, .ghost-button),
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #qrCreditCheckoutButton {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  min-height: 50px !important;
+  height: auto !important;
+  padding: 12px 18px !important;
+  line-height: 1.28 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .auto-renew-clarity {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+  gap: 9px !important;
+  width: 100% !important;
+  margin: 2px 0 !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .auto-renew-clarity > div {
+  box-sizing: border-box !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+  min-height: 82px !important;
+  padding: 12px !important;
+  text-align: left !important;
+  border-radius: 13px !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .auto-renew-clarity :is(span, strong),
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #subscriptionAutoRenewStatus {
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+  line-height: 1.4 !important;
+  text-align: left !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountQrCreditShopCard .qr-credit-shop-form {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  width: 100% !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .qr-credit-package-grid {
+  align-items: stretch !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .qr-credit-package-option {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .qr-credit-package-option :is(span, strong, small, em) {
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .qr-credit-checkout-bar {
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 320px) !important;
+  align-items: center !important;
+  gap: 18px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .qr-credit-checkout-bar > div {
+  min-width: 0 !important;
+  text-align: left !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .qr-credit-checkout-bar #qrCreditSelectionSummary {
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+  line-height: 1.35 !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-payment-trust {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-payment-trust > span {
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  min-height: 48px !important;
+  padding: 10px 12px !important;
+  line-height: 1.35 !important;
+  text-align: left !important;
+  white-space: normal !important;
+  border: 1px solid #dceafb !important;
+  border-radius: 14px !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-orders-head {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, auto) !important;
+  align-items: end !important;
+  gap: 18px !important;
+  width: 100% !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-orders-head > div {
+  min-width: 0 !important;
+  text-align: left !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-orders-head > span {
+  max-width: 34ch !important;
+  justify-self: end !important;
+  line-height: 1.45 !important;
+  text-align: right !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-orders-table {
+  table-layout: fixed !important;
+  width: 100% !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-orders-table :is(th, td) {
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+  overflow-wrap: anywhere !important;
+  text-align: left !important;
+}
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-orders-table :is(th, td):nth-child(1) { width: 18% !important; }
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-orders-table :is(th, td):nth-child(2) { width: 42% !important; }
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-orders-table :is(th, td):nth-child(3) { width: 18% !important; }
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-orders-table :is(th, td):nth-child(4) { width: 22% !important; }
+
+html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-order-resume {
+  min-width: max-content !important;
+  max-width: 100% !important;
+  padding: 5px 0 !important;
+  line-height: 1.25 !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+@media (max-width: 900px) {
+  html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-grid,
+  html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .qr-credit-checkout-bar {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-payment-trust {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 620px) {
+  html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] :is(#accountSectionBilling, #accountQrCreditShopCard) > .table-card-head,
+  html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-orders-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: start !important;
+  }
+
+  html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] :is(#accountSectionBilling, #accountQrCreditShopCard) > .table-card-head > .status-chip,
+  html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-orders-head > span {
+    justify-self: start !important;
+    text-align: left !important;
+  }
+
+  html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel {
+    padding: 16px !important;
+  }
+
+  html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .auto-renew-clarity {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .auto-renew-clarity > div {
+    min-height: 0 !important;
+  }
+
+  html body:not(#accountRechargePolishA#accountRechargePolishB#accountRechargePolishC#accountRechargePolishD)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .account-orders-table :is(th, td):nth-child(n) {
+    width: 100% !important;
+  }
+}
+
 @media (max-width: 620px) {
   html body:not(#accountRechargeA#accountRechargeB#accountRechargeC#accountRechargeD)[data-current-view="account"] .account-recharge-hero .table-card-head,
   html body:not(#accountRechargeA#accountRechargeB#accountRechargeC#accountRechargeD)[data-current-view="account"] .qr-credit-checkout-bar,
@@ -2131,5 +2511,106 @@ html body:not(#accountPolishA#accountPolishB#accountPolishC#accountPolishD)[data
     main.portal-shell #workspace .view-section[data-view="account"] .account-email-connection-head > :is(.status-chip, small) {
     justify-self: start !important;
     width: fit-content !important;
+  }
+}
+
+/* Account v9 final cascade lock: billing cards size to content and every action remains readable. */
+html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-grid {
+  align-items: start !important;
+}
+
+html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel {
+  align-self: start !important;
+  height: auto !important;
+  min-height: 0 !important;
+  color: #102a57 !important;
+  border-color: rgba(191, 220, 245, .9) !important;
+  background: linear-gradient(155deg, rgba(255, 255, 255, .98), rgba(241, 248, 255, .96)) !important;
+  box-shadow: 0 15px 34px rgba(0, 23, 76, .14), inset 0 1px 0 #fff !important;
+}
+
+html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel > :is(strong, p, label, label > span, .table-secondary),
+html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #subscriptionAutoRenewStatus {
+  color: #23476f !important;
+  -webkit-text-fill-color: #23476f !important;
+}
+
+html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel > strong {
+  color: #082b61 !important;
+  -webkit-text-fill-color: #082b61 !important;
+}
+
+html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel > :is(.solid-button, .ghost-button),
+html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #qrCreditCheckoutButton {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 50px !important;
+  height: auto !important;
+  padding: 12px 18px !important;
+  line-height: 1.28 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+  text-overflow: clip !important;
+}
+
+html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel > .solid-button {
+  margin-top: 2px !important;
+}
+
+html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-panel > .ghost-button {
+  color: #0b4da3 !important;
+  -webkit-text-fill-color: #0b4da3 !important;
+  border-color: #b8d2ed !important;
+  background: #fff !important;
+}
+
+html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .auto-renew-clarity > div :is(span, strong) {
+  color: #163a68 !important;
+  -webkit-text-fill-color: #163a68 !important;
+}
+
+html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .qr-credit-checkout-bar {
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 320px) !important;
+}
+
+html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+  main.portal-shell #workspace .view-section[data-view="account"] .account-payment-trust > span {
+  border-radius: 14px !important;
+}
+
+@media (min-width: 901px) {
+  html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] #accountSectionBilling .account-billing-grid > .account-billing-panel:first-child {
+    align-self: stretch !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    height: 100% !important;
+    padding-inline: clamp(20px, 2.4vw, 30px) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  html body:not(#accountRechargeFinalA#accountRechargeFinalB#accountRechargeFinalC#accountRechargeFinalD#accountRechargeFinalE)[data-current-view="account"]
+    main.portal-shell #workspace .view-section[data-view="account"] .qr-credit-checkout-bar {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }

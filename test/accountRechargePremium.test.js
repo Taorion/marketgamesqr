@@ -42,4 +42,8 @@ test("interfaz premium incluye selector visual, resumen y móvil sin tabla horiz
   assert.match(css, /\.qr-credit-package-option\.is-selected/);
   assert.match(css, /\.account-orders-table\s*\{[^}]*display: block/is);
   assert.match(html, /account-recharge-center-v378-20260827/);
+  assert.match(html, /account-recharge-alignment-v9-20260827/);
+  assert.match(css, /Account v9 · Recharge alignment system/);
+  assert.match(css, /#accountSectionBilling \.account-billing-panel > :is\(\.solid-button, \.ghost-button\)[\s\S]+width: 100% !important/);
+  assert.match(css, /\.qr-credit-checkout-bar[\s\S]+grid-template-columns: minmax\(0, 1fr\) minmax\(250px, 320px\)/);
 });
