@@ -125,7 +125,12 @@ test("el portal separa Vendedores de Cuenta y Admin y ofrece estados accesibles"
   assert.match(app, /loadSellerAttributions/);
   assert.match(app, /handleSellerModalKeys/);
   assert.match(app, /data-add-sale-product/);
-  assert.match(html, /qori-sellers-modal-fit-v5-20260828/);
+  assert.match(html, /qori-sellers-clarity-v6-20260828/);
+  assert.match(html, /id="sellersResetFilters"/);
+  assert.match(app, /applySellerPeriodPreset\("month"\)/);
+  assert.match(app, /data-retry-seller/);
+  assert.match(css, /Qori Sellers clarity v6/);
+  assert.match(css, /@media\(max-width:480px\)/);
   assert.match(css, /qoriSellerHeroA#qoriSellerHeroB#qoriSellerHeroC#qoriSellerHeroD#qoriSellerHeroE/);
   assert.match(css, /sellers-hero-actions[\s\S]+color:#fff!important/);
   assert.match(css, /sellers-hero[\s\S]+\.sellers-eyebrow,h2,p,\.sellers-data-state\)\{color:#fff!important/);

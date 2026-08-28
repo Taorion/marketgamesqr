@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/img/qori-favicon-32.png?v=qori-favicon-20260825-v120">
   <link rel="apple-touch-icon" sizes="180x180" href="/img/qori-apple-touch-icon.png?v=qori-favicon-20260825-v120">
   <link rel="manifest" href="/site.webmanifest?v=qori-favicon-20260825-v120">
-  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v387-20260828">
+  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v388-20260828">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -56,7 +56,7 @@
 <link rel="stylesheet" href="css/acquisition-command-center.css?v=acquisition-lead-sales-trace-v353-20260824-v10" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/account-premium.css?v=account-plan-change-v12-20260827">
 <link rel="stylesheet" href="css/semantic-messages.css?v=semantic-messages-v1-20260827">
-<link rel="stylesheet" href="css/sellers-premium.css?v=qori-sellers-modal-fit-v5-20260828">
+<link rel="stylesheet" href="css/sellers-premium.css?v=qori-sellers-clarity-v6-20260828">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -1496,7 +1496,7 @@
               <div>
                 <span class="sellers-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">groups_3</span> Inteligencia comercial GOS</span>
                 <h2 id="sellersTitle">Vendedores</h2>
-                <p id="sellersSubtitle">Convierte ventas reales en decisiones: meta, resultado, evidencia y siguiente acción.</p>
+                <p id="sellersSubtitle">Mide el aporte real de cada vendedor, acompaña sus metas y decide la siguiente acción con evidencia.</p>
                 <div class="sellers-data-state" id="sellersDataState" role="status" aria-live="polite"><span></span> Esperando actualización</div>
               </div>
               <div class="sellers-hero-actions" id="sellersAdminActions">
@@ -1506,6 +1506,10 @@
             </header>
 
             <form class="sellers-filters" id="sellersFilters" aria-label="Filtros de vendedores">
+              <div class="sellers-filter-intro">
+                <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+                <div><strong>Enfoca el análisis</strong><small>Combina periodo, equipo, sede, producto o canal.</small></div>
+              </div>
               <label><span>Periodo</span><select id="sellersPeriodPreset"><option value="month">Este mes</option><option value="30d">Últimos 30 días</option><option value="quarter">Este trimestre</option><option value="year">Este año</option><option value="custom">Personalizado</option></select></label>
               <label><span>Desde</span><input id="sellersStartDate" type="date"></label>
               <label><span>Hasta</span><input id="sellersEndDate" type="date"></label>
@@ -1515,7 +1519,7 @@
               <label><span>Producto o plan</span><input id="sellersProductFilter" type="search" placeholder="Nombre o código"></label>
               <label><span>Canal</span><input id="sellersChannelFilter" type="search" placeholder="Ej. WhatsApp"></label>
               <label class="sellers-search"><span>Nombre o código</span><input id="sellersSearchInput" type="search" placeholder="Ej. Ana o QORI-ANA-001"></label>
-              <button class="ghost-button" type="submit"><span class="material-symbols-outlined" aria-hidden="true">filter_alt</span>Aplicar</button>
+              <div class="sellers-filter-actions"><button class="ghost-button" id="sellersResetFilters" type="button"><span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>Limpiar</button><button class="solid-button" type="submit"><span class="material-symbols-outlined" aria-hidden="true">filter_alt</span>Actualizar resultados</button></div>
             </form>
 
             <section class="sellers-kpis" id="sellersKpiGrid" aria-label="Indicadores comerciales">
@@ -1526,8 +1530,8 @@
               <header class="seller-attribution-head">
                 <div>
                   <span class="mono-label">Control de atribución Qori</span>
-                  <h3 id="sellerAttributionTitle">Planes vendidos y llegadas por cuenta propia</h3>
-                  <p>Asigna responsables sin alterar el pago ni la activación confirmada por Mercado Pago.</p>
+                  <h3 id="sellerAttributionTitle">Ventas de planes y clientes que llegaron por su cuenta</h3>
+                  <p>Consulta el origen y asigna responsables sin alterar pagos ni activaciones confirmadas por Mercado Pago.</p>
                 </div>
                 <button class="ghost-button" id="sellerAttributionRefreshButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">sync</span>Actualizar</button>
               </header>
@@ -1536,7 +1540,7 @@
                 <label><span>Estado del pago</span><select id="sellerAttributionStatus"><option value="">Todos</option><option value="PENDING">Pago en espera</option><option value="APPROVED">Aprobado</option><option value="FAILED">Fallido</option><option value="CANCELLED">Cancelado</option><option value="REFUNDED">Reembolsado</option></select></label>
                 <label><span>Origen</span><select id="sellerAttributionSource"><option value="">Todos</option><option value="SELF">Llegó por su cuenta</option><option value="SELLER">Asesor seleccionado</option><option value="ADMIN_ASSIGNED">Asignación administrativa</option></select></label>
                 <label class="seller-attribution-search"><span>Cliente, asesor o código</span><input id="sellerAttributionSearch" type="search" maxlength="120" placeholder="Buscar atribución"></label>
-                <button class="solid-button" type="submit"><span class="material-symbols-outlined" aria-hidden="true">filter_alt</span>Aplicar</button>
+                <button class="solid-button" type="submit"><span class="material-symbols-outlined" aria-hidden="true">filter_alt</span>Actualizar resultados</button>
               </form>
               <div class="seller-attribution-table-wrap">
                 <table class="seller-attribution-table">
@@ -1551,7 +1555,7 @@
               <header><div><span class="mono-label">Directorio y desempeño</span><h3 id="sellersDirectoryTitle">Equipo comercial</h3></div><p id="sellersDirectorySummary">Abre una ficha para revisar metas, ventas, clientes y actividad.</p></header>
               <div class="sellers-table-wrap">
                 <table class="sellers-table">
-                  <thead><tr><th>Vendedor</th><th>Zona / sede</th><th>Estado</th><th>Revenue</th><th>Ventas</th><th>Clientes</th><th>Meta</th><th>Última actividad</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+                  <thead><tr><th>Vendedor</th><th>Zona / sede</th><th>Estado</th><th>Ingresos atribuidos</th><th>Ventas</th><th>Clientes</th><th>Meta</th><th>Última actividad</th><th><span class="sr-only">Acciones</span></th></tr></thead>
                   <tbody id="sellersTableBody"><tr><td colspan="9"><div class="sellers-empty"><span class="busy-spinner" aria-hidden="true"></span>Cargando vendedores…</div></td></tr></tbody>
                 </table>
               </div>
@@ -8288,7 +8292,7 @@
     </section>
   </div>
 
-  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v387-20260828" defer></script>
+  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v388-20260828" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
