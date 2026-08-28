@@ -18,7 +18,7 @@ test("todas las familias principales de pestañas incluyen iconos semánticos", 
     ["data-campaign-section-tab", 3],
     ["data-lead-tab", 9],
     ["data-redemption-sales-tab", 2],
-    ["data-competition-tab", 8],
+    ["data-competition-tab", 9],
     ["data-competition-product-view", 2],
   ];
 
@@ -35,7 +35,7 @@ test("todas las familias principales de pestañas incluyen iconos semánticos", 
     assert.match(html, new RegExp(`<button[^>]*id="${id}"[\\s\\S]*?qori-tab-icon[\\s\\S]*?<\\/button>`));
   });
 
-  assert.equal((html.match(/qori-tab-icon/g) || []).length, 35);
+  assert.equal((html.match(/qori-tab-icon/g) || []).length, 36);
 });
 
 test("el sistema de iconos conserva alineación, tamaño y cache busting responsive", () => {

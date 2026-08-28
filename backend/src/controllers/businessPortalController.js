@@ -434,7 +434,7 @@ const branchPatchSchema = z.object({
 });
 
 const competitorProductSchema = z.object({
-  competitor_id: z.string().uuid().optional().nullable(),
+  competitor_id: z.string().uuid(),
   competitor_name: z.string().trim().min(2).max(160),
   product_name: z.string().trim().min(2).max(180),
   unit_of_measure: nullableText(40).optional().default("unidad"),
@@ -524,7 +524,7 @@ const competitorSchema = z.object({
 const competitorPatchSchema = competitorSchema.partial();
 
 const competitorFindingSchema = z.object({
-  competitor_id: z.string().uuid().optional().nullable(),
+  competitor_id: z.string().uuid(),
   finding_type: z.enum(["PRICE", "PRODUCT", "PROMOTION", "CAMPAIGN", "EVENT", "BENEFIT", "CHANNEL", "SOCIAL", "PARTNERSHIP", "LAUNCH", "MESSAGE", "OTHER"]).default("OTHER"),
   title: z.string().trim().min(2).max(180),
   description: nullableText(2000),
@@ -550,7 +550,7 @@ const competitorFindingSchema = z.object({
 const competitorFindingPatchSchema = competitorFindingSchema.partial();
 
 const competitorCampaignSchema = z.object({
-  competitor_id: z.string().uuid().optional().nullable(),
+  competitor_id: z.string().uuid(),
   name: z.string().trim().min(2).max(180),
   campaign_type: z.enum(["DISCOUNT", "TWO_FOR_ONE", "EVENT", "RAFFLE", "REFERRALS", "LAUNCH", "SEASONAL", "PARTNERSHIP", "INFLUENCER", "GIFT_CARD", "POST_SALE_BENEFIT", "PROMO_BUNDLE", "PHYSICAL_ACTIVATION", "OTHER"]).default("OTHER"),
   starts_at: nullableDateTime.optional().nullable(),
@@ -574,7 +574,7 @@ const competitorCampaignSchema = z.object({
 const competitorCampaignPatchSchema = competitorCampaignSchema.partial();
 
 const competitorEventSchema = z.object({
-  competitor_id: z.string().uuid().optional().nullable(),
+  competitor_id: z.string().uuid(),
   name: z.string().trim().min(2).max(180),
   event_date: nullableDateTime.optional().nullable(),
   place: nullableText(220),
@@ -599,7 +599,7 @@ const competitorEventSchema = z.object({
 const competitorEventPatchSchema = competitorEventSchema.partial();
 
 const competitorTaskSchema = z.object({
-  competitor_id: z.string().uuid().optional().nullable(),
+  competitor_id: z.string().uuid(),
   finding_id: z.string().uuid().optional().nullable(),
   title: z.string().trim().min(2).max(180),
   responsible_name: nullableText(160),
@@ -1571,7 +1571,7 @@ function radarSearchWhere(search, params, alias = "") {
 }
 
 async function assertCompetitorBelongsToBusiness(client, businessId, competitorId) {
-  if (!competitorId) return null;
+  if (!competitorId) throw badRequest("Selecciona un competidor registrado.");
   const result = await client.query(
     "select id, name from business_competitors where id = $1 and business_id = $2 and is_active = true",
     [competitorId, businessId]
@@ -1582,25 +1582,26 @@ async function assertCompetitorBelongsToBusiness(client, businessId, competitorI
   return result.rows[0];
 }
 
-async function resolveCompetitorForProduct(client, businessId, payload, userId) {
-  if (payload.competitor_id) {
-    return assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+async function assertTaskReferencesBelongToBusiness(client, businessId, payload) {
+  if (payload.finding_id) {
+    const finding = await client.query(
+      `select id, competitor_id
+       from business_competitor_findings
+       where id = $1 and business_id = $2 and status <> 'ARCHIVED'`,
+      [payload.finding_id, businessId]
+    );
+    if (!finding.rowCount) throw badRequest("El hallazgo relacionado no pertenece a este negocio o está archivado.");
+    if (String(finding.rows[0].competitor_id) !== String(payload.competitor_id)) {
+      throw badRequest("El hallazgo relacionado pertenece a otro competidor.");
+    }
   }
-  const name = String(payload.competitor_name || "").trim();
-  if (!name) return null;
-  const existing = await client.query(
-    "select id, name from business_competitors where business_id = $1 and lower(name) = lower($2) limit 1",
-    [businessId, name]
-  );
-  if (existing.rowCount) return existing.rows[0];
-  const created = await client.query(
-    `insert into business_competitors
-      (business_id, name, category, status, threat_level, created_by_user_id, metadata)
-     values ($1, $2, $3, 'ACTIVE', 'MEDIUM', $4, $5::jsonb)
-     returning id, name`,
-    [businessId, name, payload.category || null, userId || null, JSON.stringify({ source: "product_price_capture" })]
-  );
-  return created.rows[0];
+  if (payload.related_campaign_id) {
+    const campaign = await client.query(
+      "select id from campaigns where id = $1 and business_id = $2",
+      [payload.related_campaign_id, businessId]
+    );
+    if (!campaign.rowCount) throw badRequest("La campaña relacionada no pertenece a este negocio.");
+  }
 }
 
 function competitorPayload(body, userId) {
@@ -1653,6 +1654,34 @@ async function listCompetitors(req, res, next) {
   }
 }
 
+async function competitiveRadarSummary(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "campaign_comparison");
+    const result = await query(
+      `select
+         (select count(*)::int from business_competitors c where c.business_id = $1 and c.is_active = true) as active_competitors,
+         (select count(*)::int from business_competitors c where c.business_id = $1 and c.is_active = true and c.threat_level in ('HIGH', 'CRITICAL')) as high_threat_competitors,
+         (select count(*)::int from business_competitor_findings f where f.business_id = $1 and f.status <> 'ARCHIVED' and f.detected_at >= date_trunc('month', now())) as findings_this_month,
+         (select count(*)::int from business_competitor_findings f where f.business_id = $1 and f.status in ('OPEN', 'IN_PROGRESS') and (f.is_threat = true or f.impact_level in ('HIGH', 'CRITICAL'))) as open_threats,
+         (select count(*)::int from business_competitor_findings f where f.business_id = $1 and f.status in ('OPEN', 'IN_PROGRESS') and f.is_opportunity = true) as open_opportunities,
+         (select count(*)::int from business_competitor_findings f where f.business_id = $1 and f.status <> 'ARCHIVED' and f.source_reliability = 'HIGH') as verified_findings,
+         (select count(*)::int from business_competitor_products p where p.business_id = $1 and p.is_active = true) as price_observations,
+         (select round(avg(p.competitor_price)::numeric, 2) from business_competitor_products p where p.business_id = $1 and p.is_active = true and upper(coalesce(p.currency, 'COP')) = 'COP') as average_competitor_price_cop,
+         (select round(avg(p.our_price - p.competitor_price)::numeric, 2) from business_competitor_products p where p.business_id = $1 and p.is_active = true and p.our_price is not null and upper(coalesce(p.currency, 'COP')) = 'COP') as average_price_gap_cop,
+         (select count(*)::int from business_competitor_campaigns cc where cc.business_id = $1 and cc.status = 'ACTIVE' and (cc.starts_at is null or cc.starts_at <= now()) and (cc.ends_at is null or cc.ends_at >= now())) as active_campaigns,
+         (select count(*)::int from business_competitor_campaigns cc where cc.business_id = $1 and cc.status = 'ACTIVE' and cc.aggressiveness_level in ('HIGH', 'CRITICAL') and (cc.ends_at is null or cc.ends_at >= now())) as aggressive_campaigns,
+         (select count(*)::int from business_competitor_events ce where ce.business_id = $1 and ce.status = 'ACTIVE' and ce.event_date >= current_date) as upcoming_events,
+         (select count(*)::int from business_competitor_tasks ct where ct.business_id = $1 and ct.status in ('OPEN', 'IN_PROGRESS')) as open_tasks,
+         (select count(*)::int from business_competitor_tasks ct where ct.business_id = $1 and ct.status in ('OPEN', 'IN_PROGRESS') and ct.due_at < now()) as overdue_tasks`,
+      [businessId]
+    );
+    res.json({ summary: result.rows[0] || {} });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function createCompetitor(req, res, next) {
   try {
     const businessId = businessIdFor(req);
@@ -1670,6 +1699,10 @@ async function createCompetitor(req, res, next) {
     );
     res.status(201).json({ competitor: result.rows[0] });
   } catch (error) {
+    if (error?.code === "23505" && String(error.constraint || "").includes("business_competitors_business_name")) {
+      next(badRequest("Ya existe un competidor con ese nombre en este negocio."));
+      return;
+    }
     next(error);
   }
 }
@@ -1703,6 +1736,10 @@ async function updateCompetitor(req, res, next) {
     );
     res.json({ competitor: result.rows[0] });
   } catch (error) {
+    if (error?.code === "23505" && String(error.constraint || "").includes("business_competitors_business_name")) {
+      next(badRequest("Ya existe un competidor con ese nombre en este negocio."));
+      return;
+    }
     next(error);
   }
 }
@@ -1996,6 +2033,7 @@ async function createCompetitorTask(req, res, next) {
     const payload = buildRadarPayload(competitorTaskColumns, body, req.user.id);
     const result = await withTransaction(async (client) => {
       await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      await assertTaskReferencesBelongToBusiness(client, businessId, payload);
       const columns = ["business_id", ...Object.keys(payload)];
       const params = [businessId, ...Object.keys(payload).map((column) => column === "metadata" ? JSON.stringify(payload[column] || {}) : payload[column])];
       const placeholders = columns.map((column, index) => `$${index + 1}${column === "metadata" ? "::jsonb" : ""}`);
@@ -2028,6 +2066,7 @@ async function updateCompetitorTask(req, res, next) {
     ];
     const result = await withTransaction(async (client) => {
       await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      await assertTaskReferencesBelongToBusiness(client, businessId, payload);
       return client.query(
         `update business_competitor_tasks
          set ${setClauses.join(", ")}, updated_at = now()
@@ -2351,7 +2390,7 @@ async function createCompetitorProduct(req, res, next) {
     const body = validate(competitorProductSchema, req.body);
     const payload = competitorProductPayload(body, req.user.id);
     const result = await withTransaction(async (client) => {
-      const competitor = await resolveCompetitorForProduct(client, businessId, payload, req.user.id);
+      const competitor = await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
       return client.query(
         `insert into business_competitor_products
           (business_id, competitor_id, competitor_name, product_name, unit_of_measure, category, competitor_price, previous_price, our_price,
@@ -2405,7 +2444,7 @@ async function updateCompetitorProduct(req, res, next) {
     if (!existing.rowCount) throw notFound("Producto de competencia no encontrado.");
     const payload = competitorProductPayload({ ...existing.rows[0], ...body }, req.user.id);
     const result = await withTransaction(async (client) => {
-      const competitor = await resolveCompetitorForProduct(client, businessId, payload, req.user.id);
+      const competitor = await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
       return client.query(
         `update business_competitor_products
          set competitor_id = $3,
@@ -7102,6 +7141,7 @@ module.exports = {
   updateBranch,
   deleteBranch,
   listCompetitors,
+  competitiveRadarSummary,
   createCompetitor,
   updateCompetitor,
   archiveCompetitor,

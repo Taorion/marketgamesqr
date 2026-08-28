@@ -1,0 +1,130 @@
+/* Qori Competitive Command Center · competition-command-v1-20260828 */
+body[data-current-view="competition"] {
+  --radar-navy: #071a3d;
+  --radar-cyan: #21d4ed;
+  --radar-mint: #70f0d2;
+  --radar-ink: #12233f;
+  --radar-muted: #60718c;
+  --radar-line: rgba(24, 72, 126, .14);
+  background: #eef6fb;
+}
+body[data-current-view="competition"] .view-section[data-view="competition"] { position: relative; isolation: isolate; gap: 18px; }
+body[data-current-view="competition"] .view-section[data-view="competition"]::before {
+  position: absolute; inset: -28px -24px auto; height: 330px; z-index: -1; content: "";
+  background: radial-gradient(circle at 85% 10%, rgba(33, 212, 237, .24), transparent 38%), linear-gradient(135deg, #061837 0%, #0c3268 58%, #07566e 100%);
+  border-radius: 0 0 36px 36px;
+}
+html body:not(#qoriRadarPremiumA#qoriRadarPremiumB#qoriRadarPremiumC#qoriRadarPremiumD#qoriRadarPremiumE)[data-current-view="competition"] .portal-shell .view-section.active[data-view="competition"] > .view-head {
+  min-height: 168px; padding: 28px 30px; align-items: flex-start; overflow: hidden;
+  border: 1px solid rgba(145, 228, 244, .22); border-radius: 26px;
+  background: linear-gradient(110deg, rgba(4, 20, 51, .98), rgba(11, 63, 105, .96)) !important;
+  box-shadow: 0 24px 60px rgba(2, 23, 56, .2) !important;
+}
+html body:not(#qoriRadarPremiumA#qoriRadarPremiumB#qoriRadarPremiumC#qoriRadarPremiumD#qoriRadarPremiumE)[data-current-view="competition"] .portal-shell .view-section.active[data-view="competition"] > .view-head :is(h2, p) { color: #fff !important; }
+body[data-current-view="competition"] .view-section[data-view="competition"] > .view-head h2 { margin-bottom: 8px; font-size: clamp(1.75rem, 3vw, 2.6rem); letter-spacing: -.045em; }
+body[data-current-view="competition"] .view-section[data-view="competition"] > .view-head p { max-width: 720px; opacity: .82; line-height: 1.6; }
+body[data-current-view="competition"] .view-section[data-view="competition"] > .view-head .head-actions { display: grid; grid-template-columns: repeat(2, minmax(160px, auto)); gap: 9px; }
+body[data-current-view="competition"] .view-section[data-view="competition"] > .view-head .head-actions button { min-height: 44px; border-color: rgba(255, 255, 255, .26); }
+body[data-current-view="competition"] .view-section[data-view="competition"] > .view-head .ghost-button { color: #fff !important; background: rgba(255, 255, 255, .09); backdrop-filter: blur(12px); }
+body[data-current-view="competition"] .view-section[data-view="competition"] > .view-head .solid-button { color: #041b37 !important; background: linear-gradient(135deg, #fff, #b9f5ff); }
+body[data-current-view="competition"] #refreshCompetitionButton { grid-column: 2; }
+
+html body[data-current-view="competition"] .portal-shell .competition-radar-workflow {
+  display: grid; grid-template-columns: minmax(240px, .8fr) minmax(520px, 1.45fr); gap: 24px; padding: 22px 24px;
+  border: 1px solid rgba(109, 216, 228, .3); border-radius: 22px; color: #fff;
+  background: linear-gradient(130deg, rgba(7, 32, 72, .98), rgba(10, 80, 104, .95)) !important; box-shadow: 0 18px 42px rgba(10, 38, 75, .15) !important;
+}
+html body:not(#qoriRadarWorkflowA#qoriRadarWorkflowB)[data-current-view="competition"] .portal-shell .competition-radar-workflow :is(.mono-label, strong, small) { color: #fff !important; }
+body[data-current-view="competition"] .competition-radar-workflow .mono-label { color: #79edee !important; }
+body[data-current-view="competition"] .competition-radar-workflow-copy strong { display: block; margin-top: 8px; color: #fff !important; line-height: 1.45; }
+body[data-current-view="competition"] .competition-radar-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0; padding: 0; list-style: none; }
+body[data-current-view="competition"] .competition-radar-steps li { display: flex; gap: 10px; min-width: 0; padding: 13px; border: 1px solid rgba(255, 255, 255, .13); border-radius: 15px; background: rgba(255, 255, 255, .07); }
+body[data-current-view="competition"] .competition-radar-steps li > span { color: var(--radar-mint); font-weight: 800; font-size: .72rem; }
+body[data-current-view="competition"] .competition-radar-steps :is(strong, small) { display: block; color: #fff !important; }
+body[data-current-view="competition"] .competition-radar-steps small { margin-top: 4px; opacity: .7; line-height: 1.35; }
+
+body[data-current-view="competition"] .competition-data-status { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 15px; border: 1px solid #b9ddec; color: #153553; background: #eefaff; }
+body[data-current-view="competition"] .competition-data-status[hidden] { display: none !important; }
+body[data-current-view="competition"] .competition-data-status span:last-child,
+body[data-current-view="competition"] .competition-data-status small { display: block; }
+body[data-current-view="competition"] .competition-data-status small { margin-top: 2px; color: #57718c; }
+body[data-current-view="competition"] .competition-data-status.is-warning { border-color: #f4c76c; background: #fff8e8; }
+body[data-current-view="competition"] .competition-data-status.is-loading .material-symbols-outlined { animation: radar-spin 1s linear infinite; }
+@keyframes radar-spin { to { transform: rotate(360deg); } }
+
+body[data-current-view="competition"] #competitionKpiGrid { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 12px; }
+body[data-current-view="competition"] #competitionKpiGrid .kpi-card { position: relative; min-height: 126px; padding: 18px; overflow: hidden; border: 1px solid rgba(26, 78, 132, .13); border-radius: 19px; background: rgba(255,255,255,.96); box-shadow: 0 13px 32px rgba(16, 56, 98, .08); }
+body[data-current-view="competition"] #competitionKpiGrid .kpi-card::after { position: absolute; right: -25px; bottom: -35px; width: 90px; height: 90px; content: ""; border-radius: 50%; background: rgba(33, 212, 237, .11); }
+body[data-current-view="competition"] #competitionKpiGrid strong { color: var(--radar-navy); font-size: clamp(1.45rem, 2.5vw, 2rem); }
+body[data-current-view="competition"] #competitionKpiGrid :is(span, small) { color: var(--radar-muted); }
+
+body[data-current-view="competition"] .competition-navigation { position: sticky; top: 8px; z-index: 12; display: flex; gap: 7px; padding: 8px; overflow-x: auto; scrollbar-width: thin; scroll-snap-type: x proximity; border: 1px solid rgba(22, 67, 119, .13); border-radius: 18px; background: rgba(255, 255, 255, .92); box-shadow: 0 14px 35px rgba(13, 43, 80, .1); backdrop-filter: blur(18px); }
+body[data-current-view="competition"] .competition-navigation .segment-tab { flex: 0 0 auto; min-height: 43px; padding: 0 14px; scroll-snap-align: start; border-radius: 12px; color: #425875; white-space: nowrap; }
+html body:not(#qoriRadarTabsA#qoriRadarTabsB#qoriRadarTabsC#qoriRadarTabsD#qoriRadarTabsE)[data-current-view="competition"] .portal-shell .competition-navigation .segment-tab.active { color: #fff !important; background: linear-gradient(135deg, #0b2e63, #087c96) !important; border-color: transparent !important; box-shadow: 0 8px 18px rgba(7, 73, 112, .24) !important; }
+body[data-current-view="competition"] .competition-navigation .qori-tab-icon { font-size: 19px; }
+
+body[data-current-view="competition"] .competition-panel { animation: radar-panel-in .2s ease-out; }
+@keyframes radar-panel-in { from { opacity: 0; transform: translateY(5px); } }
+body[data-current-view="competition"] .competition-panel .surface-card { border-color: var(--radar-line); border-radius: 20px; box-shadow: 0 15px 38px rgba(18, 53, 92, .08); }
+body[data-current-view="competition"] .competition-panel .table-card-head { gap: 14px; padding-bottom: 16px; }
+body[data-current-view="competition"] .competition-panel .table-card-head strong { color: var(--radar-ink); }
+body[data-current-view="competition"] .competition-panel .table-card-head small { color: var(--radar-muted); line-height: 1.45; }
+body[data-current-view="competition"] :is(.competition-panel, #competitorFormPanel, #competitionProductFormPanel) :is(input, select, textarea) { border-color: rgba(23, 71, 123, .18); background: #fbfdff; }
+body[data-current-view="competition"] :is(.competition-panel, #competitorFormPanel, #competitionProductFormPanel) :is(input, select, textarea):focus { outline: 3px solid rgba(33, 212, 237, .19); border-color: #149ebc; }
+body[data-current-view="competition"] .competition-task-layout { align-items: start; }
+body[data-current-view="competition"] #competitionPanelTasks .inventory-form-card { position: sticky; top: 78px; }
+body[data-current-view="competition"] tr.competition-task-overdue { background: rgba(255, 236, 232, .65); }
+body[data-current-view="competition"] tr.competition-task-overdue td:first-child { box-shadow: inset 3px 0 #d94b42; }
+body[data-current-view="competition"] .table-wrap { border: 1px solid rgba(25, 77, 130, .1); border-radius: 14px; }
+body[data-current-view="competition"] .table-wrap thead th { color: #536983; background: #f1f7fb; }
+body[data-current-view="competition"] .table-wrap tbody tr:hover { background: #f2fbfd; }
+
+body.competition-dialog-open { overflow: hidden; }
+body #competitorFormPanel.is-competition-modal-open,
+body #competitionProductFormPanel.is-competition-modal-open { border: 1px solid rgba(103, 218, 234, .36) !important; border-radius: 24px !important; background: #fff !important; box-shadow: 0 35px 90px rgba(3, 20, 50, .34) !important; }
+body #competitorFormPanel.is-competition-modal-open::before,
+body #competitionProductFormPanel.is-competition-modal-open::before { position: fixed; inset: 0; z-index: -1; content: ""; background: rgba(3, 15, 37, .68); backdrop-filter: blur(5px); }
+body .competition-detail-modal { padding: 18px; background: rgba(3, 15, 37, .7); backdrop-filter: blur(6px); }
+body .competition-detail-card { width: min(1180px, 100%); max-height: calc(100vh - 36px); overflow: auto; border: 1px solid rgba(119, 226, 238, .35) !important; border-radius: 25px !important; box-shadow: 0 35px 100px rgba(0, 13, 38, .4) !important; }
+body .competition-detail-head { position: sticky; top: 0; z-index: 4; padding: 20px 22px; color: #fff; background: linear-gradient(125deg, #071a3d, #0b6680); }
+body .competition-detail-head :is(h3, p, .mono-label) { color: #fff !important; }
+body .competition-detail-head p { opacity: .78; }
+body .competition-detail-head .ghost-button { color: #fff !important; border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.08); }
+body .competition-detail-head .icon-button { color: #fff !important; }
+body .competition-detail-tabs button[aria-selected="true"] { color: #fff; background: linear-gradient(135deg, #0b3268, #0c859c); }
+
+@media (max-width: 1080px) {
+  body[data-current-view="competition"] .competition-radar-workflow { grid-template-columns: 1fr; }
+  body[data-current-view="competition"] #competitionKpiGrid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 760px) {
+  body[data-current-view="competition"] .view-section[data-view="competition"]::before { inset: -16px -12px auto; }
+  html body:not(#qoriRadarPremiumA#qoriRadarPremiumB#qoriRadarPremiumC#qoriRadarPremiumD#qoriRadarPremiumE)[data-current-view="competition"] .portal-shell .view-section.active[data-view="competition"] > .view-head { min-height: 0; padding: 20px 16px; border-radius: 22px !important; }
+  html body:not(#qoriRadarActionsA#qoriRadarActionsB#qoriRadarActionsC#qoriRadarActionsD#qoriRadarActionsE)[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head .head-actions { display: grid !important; grid-template-columns: 1fr 1fr !important; flex-direction: initial !important; width: 100% !important; }
+  html body:not(#qoriRadarActionsA#qoriRadarActionsB#qoriRadarActionsC#qoriRadarActionsD#qoriRadarActionsE)[data-current-view="competition"] .portal-shell .view-section[data-view="competition"] > .view-head .head-actions button { width: auto !important; min-width: 0 !important; min-height: 42px !important; padding-inline: 9px !important; font-size: .72rem !important; }
+  html body:not(#qoriRadarActionsA#qoriRadarActionsB#qoriRadarActionsC#qoriRadarActionsD#qoriRadarActionsE)[data-current-view="competition"] .portal-shell #refreshCompetitionButton { grid-column: 1 / -1 !important; }
+  body[data-current-view="competition"] .competition-radar-workflow { padding: 18px; border-radius: 19px; }
+  body[data-current-view="competition"] .competition-radar-steps { grid-template-columns: 1fr 1fr; }
+  body[data-current-view="competition"] #competitionKpiGrid { grid-template-columns: 1fr 1fr; gap: 9px; }
+  body[data-current-view="competition"] #competitionKpiGrid .kpi-card { min-height: 112px; padding: 14px; }
+  body[data-current-view="competition"] .competition-navigation { top: 4px; margin-inline: -3px; border-radius: 15px; }
+  body[data-current-view="competition"] .competition-navigation .segment-tab { min-height: 42px; padding-inline: 12px; font-size: .78rem; }
+  body[data-current-view="competition"] .competition-panel .inventory-layout { grid-template-columns: 1fr; }
+  body[data-current-view="competition"] #competitionPanelTasks .inventory-form-card { position: static; }
+  body[data-current-view="competition"] .competition-panel .surface-card { border-radius: 17px; }
+  body .competition-detail-modal { padding: 6px; }
+  body .competition-detail-card { max-height: calc(100dvh - 12px); border-radius: 18px !important; }
+  body .competition-detail-head { padding: 17px 15px; }
+  body .competition-detail-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  body .competition-detail-actions .icon-button { position: absolute; top: 12px; right: 12px; }
+  body #competitorFormPanel.is-competition-modal-open,
+  body #competitionProductFormPanel.is-competition-modal-open { top: 6px !important; width: calc(100vw - 12px) !important; max-height: calc(100dvh - 12px) !important; border-radius: 18px !important; }
+}
+@media (max-width: 430px) {
+  body[data-current-view="competition"] .competition-radar-steps { grid-template-columns: 1fr; }
+  body[data-current-view="competition"] #competitionKpiGrid .kpi-card { min-height: 105px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-current-view="competition"] .competition-panel,
+  body[data-current-view="competition"] .competition-data-status.is-loading .material-symbols-outlined { animation: none; }
+}

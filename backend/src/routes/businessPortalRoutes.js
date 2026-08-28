@@ -22,6 +22,7 @@ const {
   updateBranch,
   deleteBranch,
   listCompetitors,
+  competitiveRadarSummary,
   createCompetitor,
   updateCompetitor,
   archiveCompetitor,
@@ -340,6 +341,7 @@ router.post("/branches", createBranch);
 router.patch("/branches/:branchId", updateBranch);
 router.delete("/branches/:branchId", deleteBranch);
 router.get("/competitors", standardBusinessCache, listCompetitors);
+router.get("/competitive-radar/summary", standardBusinessCache, competitiveRadarSummary);
 router.post("/competitors", createCompetitor);
 router.patch("/competitors/:competitorId", updateCompetitor);
 router.delete("/competitors/:competitorId", archiveCompetitor);

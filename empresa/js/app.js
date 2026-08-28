@@ -1286,6 +1286,7 @@ const competitionProductIdInput = document.getElementById("competitionProductIdI
 const competitionTabs = Array.from(document.querySelectorAll("[data-competition-tab]"));
 const competitionPanels = Array.from(document.querySelectorAll("[data-competition-panel]"));
 const competitionLatestFindingsTable = document.getElementById("competitionLatestFindingsTable");
+const competitionDataStatus = document.getElementById("competitionDataStatus");
 const newCompetitorButton = document.getElementById("newCompetitorButton");
 const newCompetitionProductButton = document.getElementById("newCompetitionProductButton");
 const competitorForm = document.getElementById("competitorForm");
@@ -1299,6 +1300,8 @@ const competitorAddressInput = document.getElementById("competitorAddressInput")
 const competitorZoneInput = document.getElementById("competitorZoneInput");
 const competitorWebsiteInput = document.getElementById("competitorWebsiteInput");
 const competitorInstagramInput = document.getElementById("competitorInstagramInput");
+const competitorFacebookInput = document.getElementById("competitorFacebookInput");
+const competitorTiktokInput = document.getElementById("competitorTiktokInput");
 const competitorWhatsappInput = document.getElementById("competitorWhatsappInput");
 const competitorPhoneInput = document.getElementById("competitorPhoneInput");
 const competitorEmailInput = document.getElementById("competitorEmailInput");
@@ -1309,14 +1312,26 @@ const competitorPriceRangeInput = document.getElementById("competitorPriceRangeI
 const competitorProductsInput = document.getElementById("competitorProductsInput");
 const competitorServicesInput = document.getElementById("competitorServicesInput");
 const competitorDifferentialInput = document.getElementById("competitorDifferentialInput");
+const competitorValuePropositionInput = document.getElementById("competitorValuePropositionInput");
+const competitorSalesChannelsInput = document.getElementById("competitorSalesChannelsInput");
+const competitorAcquisitionChannelsInput = document.getElementById("competitorAcquisitionChannelsInput");
 const competitorStrengthsInput = document.getElementById("competitorStrengthsInput");
 const competitorWeaknessesInput = document.getElementById("competitorWeaknessesInput");
 const competitorDigitalPresenceInput = document.getElementById("competitorDigitalPresenceInput");
+const competitorPhysicalPresenceInput = document.getElementById("competitorPhysicalPresenceInput");
+const competitorPerceivedQualityInput = document.getElementById("competitorPerceivedQualityInput");
+const competitorResponseSpeedInput = document.getElementById("competitorResponseSpeedInput");
 const competitorAggressivenessInput = document.getElementById("competitorAggressivenessInput");
 const competitorCompetesPriceInput = document.getElementById("competitorCompetesPriceInput");
+const competitorCompetesQualityInput = document.getElementById("competitorCompetesQualityInput");
+const competitorCompetesLocationInput = document.getElementById("competitorCompetesLocationInput");
+const competitorCompetesBrandInput = document.getElementById("competitorCompetesBrandInput");
+const competitorCompetesExperienceInput = document.getElementById("competitorCompetesExperienceInput");
 const competitorCompetesPromotionsInput = document.getElementById("competitorCompetesPromotionsInput");
 const competitorCompetesSocialInput = document.getElementById("competitorCompetesSocialInput");
 const competitorCompetesEventsInput = document.getElementById("competitorCompetesEventsInput");
+const competitorCompetesPartnershipsInput = document.getElementById("competitorCompetesPartnershipsInput");
+const competitorCompetesFinancingInput = document.getElementById("competitorCompetesFinancingInput");
 const competitorNotesInput = document.getElementById("competitorNotesInput");
 const competitorMessage = document.getElementById("competitorMessage");
 const competitorSaveButton = document.getElementById("competitorSaveButton");
@@ -1364,6 +1379,7 @@ const competitorCampaignEndInput = document.getElementById("competitorCampaignEn
 const competitorCampaignChannelInput = document.getElementById("competitorCampaignChannelInput");
 const competitorCampaignAggressivenessInput = document.getElementById("competitorCampaignAggressivenessInput");
 const competitorCampaignImpactInput = document.getElementById("competitorCampaignImpactInput");
+const competitorCampaignStatusInput = document.getElementById("competitorCampaignStatusInput");
 const competitorCampaignSourceTypeInput = document.getElementById("competitorCampaignSourceTypeInput");
 const competitorCampaignReliabilityInput = document.getElementById("competitorCampaignReliabilityInput");
 const competitorCampaignOfferInput = document.getElementById("competitorCampaignOfferInput");
@@ -1388,6 +1404,9 @@ const competitorEventDateInput = document.getElementById("competitorEventDateInp
 const competitorEventCityInput = document.getElementById("competitorEventCityInput");
 const competitorEventPlaceInput = document.getElementById("competitorEventPlaceInput");
 const competitorEventOrganizerInput = document.getElementById("competitorEventOrganizerInput");
+const competitorEventStatusInput = document.getElementById("competitorEventStatusInput");
+const competitorEventSourceTypeInput = document.getElementById("competitorEventSourceTypeInput");
+const competitorEventReliabilityInput = document.getElementById("competitorEventReliabilityInput");
 const competitorEventParticipationInput = document.getElementById("competitorEventParticipationInput");
 const competitorEventOfferInput = document.getElementById("competitorEventOfferInput");
 const competitorEventProductsInput = document.getElementById("competitorEventProductsInput");
@@ -1403,6 +1422,22 @@ const competitorEventResetButton = document.getElementById("competitorEventReset
 const competitorEventFormTitle = document.getElementById("competitorEventFormTitle");
 const competitorEventSearchInput = document.getElementById("competitorEventSearchInput");
 const competitorEventTable = document.getElementById("competitorEventTable");
+const competitorTaskForm = document.getElementById("competitorTaskForm");
+const competitorTaskIdInput = document.getElementById("competitorTaskIdInput");
+const competitorTaskCompetitorInput = document.getElementById("competitorTaskCompetitorInput");
+const competitorTaskFindingInput = document.getElementById("competitorTaskFindingInput");
+const competitorTaskTitleInput = document.getElementById("competitorTaskTitleInput");
+const competitorTaskResponsibleInput = document.getElementById("competitorTaskResponsibleInput");
+const competitorTaskDueInput = document.getElementById("competitorTaskDueInput");
+const competitorTaskPriorityInput = document.getElementById("competitorTaskPriorityInput");
+const competitorTaskStatusInput = document.getElementById("competitorTaskStatusInput");
+const competitorTaskNotesInput = document.getElementById("competitorTaskNotesInput");
+const competitorTaskMessage = document.getElementById("competitorTaskMessage");
+const competitorTaskSaveButton = document.getElementById("competitorTaskSaveButton");
+const competitorTaskResetButton = document.getElementById("competitorTaskResetButton");
+const competitorTaskFormTitle = document.getElementById("competitorTaskFormTitle");
+const competitorTaskSearchInput = document.getElementById("competitorTaskSearchInput");
+const competitorTaskTable = document.getElementById("competitorTaskTable");
 const findingIdInput = document.getElementById("findingIdInput");
 const findingCompetitorInput = document.getElementById("findingCompetitorInput");
 const findingTypeInput = document.getElementById("findingTypeInput");
@@ -3074,13 +3109,17 @@ let state = {
   competitionCampaigns: [],
   competitionEvents: [],
   competitionTasks: [],
+  competitionSummary: null,
   competitionLoaded: false,
   competitionLoading: false,
+  competitionLoadError: "",
+  competitionLoadFailures: [],
   competitionSearch: "",
   competitorSearch: "",
   findingSearch: "",
   competitorCampaignSearch: "",
   competitorEventSearch: "",
+  competitorTaskSearch: "",
   competitionTab: "competitors",
   competitionProductView: "competitor",
   competitionEditingId: null,
@@ -3088,6 +3127,7 @@ let state = {
   findingEditingId: null,
   competitorCampaignEditingId: null,
   competitorEventEditingId: null,
+  competitorTaskEditingId: null,
   businessBranches: [],
   businessBranchesLoaded: false,
   businessBranchesLoading: false,
@@ -25996,31 +26036,48 @@ async function loadCompetitionProducts(options = {}) {
     state.competitionCampaigns = [];
     state.competitionEvents = [];
     state.competitionTasks = [];
+    state.competitionSummary = null;
+    state.competitionLoadError = "";
+    state.competitionLoadFailures = [];
     state.competitionLoaded = true;
     state.competitionLoading = false;
     return [];
   }
   if (state.competitionLoaded && !options.force) return state.competitionProducts;
   if (state.competitionLoading) return state.competitionProducts;
-  if (!options.quiet && competitionTable) competitionTable.innerHTML = '<tr><td colspan="9">Cargando radar competitivo...</td></tr>';
+  if (!options.quiet && competitionTable) competitionTable.innerHTML = '<tr><td colspan="10">Cargando radar competitivo...</td></tr>';
   state.competitionLoading = true;
+  state.competitionLoadError = "";
+  state.competitionLoadFailures = [];
   const scopeKey = businessScopeKey();
   try {
-    const [competitorsData, productsData, findingsData, campaignsData, eventsData, tasksData] = await Promise.all([
-      apiSafe("/api/business/competitors?limit=500", { headers: authHeaders() }, { competitors: [] }),
-      apiSafe("/api/business/competitor-products?limit=500", { headers: authHeaders() }, { products: [] }),
-      apiSafe("/api/business/competitor-findings?limit=500", { headers: authHeaders() }, { findings: [] }),
-      apiSafe("/api/business/competitor-campaigns?limit=500", { headers: authHeaders() }, { campaigns: [] }),
-      apiSafe("/api/business/competitor-events?limit=500", { headers: authHeaders() }, { events: [] }),
-      apiSafe("/api/business/competitor-tasks?limit=500", { headers: authHeaders() }, { tasks: [] }),
-    ]);
+    const resources = [
+      { key: "competitionCompetitors", responseKey: "competitors", label: "competidores", path: "/api/business/competitors?limit=800" },
+      { key: "competitionProducts", responseKey: "products", label: "precios y ofertas", path: "/api/business/competitor-products?limit=800" },
+      { key: "competitionFindings", responseKey: "findings", label: "señales", path: "/api/business/competitor-findings?limit=800" },
+      { key: "competitionCampaigns", responseKey: "campaigns", label: "promociones", path: "/api/business/competitor-campaigns?limit=800" },
+      { key: "competitionEvents", responseKey: "events", label: "activaciones", path: "/api/business/competitor-events?limit=800" },
+      { key: "competitionTasks", responseKey: "tasks", label: "acciones", path: "/api/business/competitor-tasks?limit=800" },
+      { key: "competitionSummary", responseKey: "summary", label: "métricas", path: "/api/business/competitive-radar/summary" },
+    ];
+    const results = await Promise.allSettled(resources.map((resource) => api(resource.path, { headers: authHeaders(), planGate: false })));
     if (!isCurrentBusinessScope(scopeKey)) return state.competitionProducts;
-    state.competitionCompetitors = Array.isArray(competitorsData.competitors) ? competitorsData.competitors : [];
-    state.competitionProducts = Array.isArray(productsData.products) ? productsData.products : [];
-    state.competitionFindings = Array.isArray(findingsData.findings) ? findingsData.findings : [];
-    state.competitionCampaigns = Array.isArray(campaignsData.campaigns) ? campaignsData.campaigns : [];
-    state.competitionEvents = Array.isArray(eventsData.events) ? eventsData.events : [];
-    state.competitionTasks = Array.isArray(tasksData.tasks) ? tasksData.tasks : [];
+    const failures = [];
+    results.forEach((result, index) => {
+      const resource = resources[index];
+      if (result.status === "fulfilled") {
+        const value = result.value?.[resource.responseKey];
+        state[resource.key] = resource.key === "competitionSummary"
+          ? (value && typeof value === "object" ? value : null)
+          : (Array.isArray(value) ? value : []);
+      } else {
+        failures.push(resource.label);
+      }
+    });
+    state.competitionLoadFailures = failures;
+    state.competitionLoadError = failures.length
+      ? `No fue posible actualizar ${failures.join(", ")}. Los demás datos siguen disponibles y no se reemplazaron por ceros.`
+      : "";
     state.competitionLoaded = true;
     renderCompetitionSelectOptions();
     return state.competitionProducts;
@@ -26029,10 +26086,38 @@ async function loadCompetitionProducts(options = {}) {
   }
 }
 
+function renderCompetitionDataStatus() {
+  if (!competitionDataStatus) return;
+  if (state.competitionLoading && !state.competitionLoaded) {
+    competitionDataStatus.hidden = false;
+    competitionDataStatus.className = "competition-data-status is-loading";
+    competitionDataStatus.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">sync</span><span><strong>Sincronizando inteligencia competitiva</strong><small>Estamos consultando directorio, señales y acciones.</small></span>';
+    return;
+  }
+  if (state.competitionLoadError) {
+    competitionDataStatus.hidden = false;
+    competitionDataStatus.className = "competition-data-status is-warning";
+    competitionDataStatus.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">warning</span><span><strong>Actualización parcial</strong><small>${escapeHtml(state.competitionLoadError)}</small></span>`;
+    return;
+  }
+  competitionDataStatus.hidden = true;
+  competitionDataStatus.textContent = "";
+}
+
 function setCompetitionTab(tab = "competitors") {
-  state.competitionTab = tab || "competitors";
-  competitionTabs.forEach((button) => button.classList.toggle("active", button.dataset.competitionTab === state.competitionTab));
-  competitionPanels.forEach((panel) => panel.classList.toggle("hidden", panel.dataset.competitionPanel !== state.competitionTab));
+  const availableTabs = new Set(competitionTabs.map((button) => button.dataset.competitionTab));
+  state.competitionTab = availableTabs.has(tab) ? tab : "competitors";
+  competitionTabs.forEach((button) => {
+    const active = button.dataset.competitionTab === state.competitionTab;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+  competitionPanels.forEach((panel) => {
+    const active = panel.dataset.competitionPanel === state.competitionTab;
+    panel.classList.toggle("hidden", !active);
+    panel.setAttribute("aria-hidden", String(!active));
+  });
 }
 
 function setCompetitionProductView(view = "competitor") {
@@ -26081,6 +26166,20 @@ function competitorEventById(eventId = "") {
   return (state.competitionEvents || []).find((item) => String(item.id) === String(eventId)) || null;
 }
 
+function competitorTaskById(taskId = "") {
+  return (state.competitionTasks || []).find((item) => String(item.id) === String(taskId)) || null;
+}
+
+function renderCompetitorTaskFindingOptions(selectedValue = "") {
+  if (!competitorTaskFindingInput) return;
+  const selectedCompetitorId = competitorTaskCompetitorInput?.value || "";
+  const findingOptions = (state.competitionFindings || [])
+    .filter((item) => item.status !== "ARCHIVED" && (!selectedCompetitorId || String(item.competitor_id) === String(selectedCompetitorId)))
+    .map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.title)}</option>`);
+  competitorTaskFindingInput.innerHTML = ['<option value="">Sin señal relacionada</option>', ...findingOptions].join("");
+  competitorTaskFindingInput.value = selectedValue || "";
+}
+
 function renderCompetitionSelectOptions() {
   const options = [
     '<option value="">Elige competidor registrado</option>',
@@ -26090,7 +26189,9 @@ function renderCompetitionSelectOptions() {
   if (findingCompetitorInput) findingCompetitorInput.innerHTML = options;
   if (competitorCampaignCompetitorInput) competitorCampaignCompetitorInput.innerHTML = options;
   if (competitorEventCompetitorInput) competitorEventCompetitorInput.innerHTML = options;
+  if (competitorTaskCompetitorInput) competitorTaskCompetitorInput.innerHTML = options;
   if (competitorSwotSelect) competitorSwotSelect.innerHTML = options;
+  renderCompetitorTaskFindingOptions();
 }
 
 function hasRegisteredCompetitors() {
@@ -26165,27 +26266,56 @@ function competitionKpis() {
   const campaigns = (state.competitionCampaigns || []).filter((item) => item.status !== "ARCHIVED");
   const events = (state.competitionEvents || []).filter((item) => item.status !== "ARCHIVED");
   const tasks = (state.competitionTasks || []).filter((item) => item.status !== "ARCHIVED");
+  const now = Date.now();
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
   const monthFindings = findings.filter((item) => new Date(item.detected_at || item.created_at).getTime() >= monthStart.getTime());
-  const promotions = campaigns.length ? campaigns : findings.filter((item) => ["PROMOTION", "CAMPAIGN"].includes(item.finding_type));
-  const threats = findings.filter((item) => item.is_threat || ["HIGH", "CRITICAL"].includes(String(item.impact_level || "").toUpperCase()));
-  const opportunities = findings.filter((item) => item.is_opportunity);
-  const avgCompetitorPrice = products.length ? products.reduce((sum, item) => sum + toNumber(item.competitor_price), 0) / products.length : 0;
-  const comparable = products.filter((item) => item.our_price !== null && item.our_price !== undefined);
-  const favorable = comparable.filter((item) => toNumber(item.our_price) < toNumber(item.competitor_price)).length;
-  const avgGap = comparable.length ? comparable.reduce((sum, item) => sum + (toNumber(item.our_price) - toNumber(item.competitor_price)), 0) / comparable.length : 0;
+  const activeCampaigns = campaigns.filter((item) => item.status === "ACTIVE"
+    && (!item.starts_at || new Date(item.starts_at).getTime() <= now)
+    && (!item.ends_at || new Date(item.ends_at).getTime() >= now));
+  const upcomingEvents = events.filter((item) => item.status === "ACTIVE" && item.event_date && new Date(item.event_date).getTime() >= now);
+  const openThreats = findings.filter((item) => ["OPEN", "IN_PROGRESS"].includes(item.status) && (item.is_threat || ["HIGH", "CRITICAL"].includes(String(item.impact_level || "").toUpperCase())));
+  const openOpportunities = findings.filter((item) => ["OPEN", "IN_PROGRESS"].includes(item.status) && item.is_opportunity);
+  const openTasks = tasks.filter((item) => ["OPEN", "IN_PROGRESS"].includes(item.status));
+  const overdueTasks = openTasks.filter((item) => item.due_at && new Date(item.due_at).getTime() < now);
+  const copProducts = products.filter((item) => String(item.currency || "COP").toUpperCase() === "COP");
+  const comparableCop = copProducts.filter((item) => item.our_price !== null && item.our_price !== undefined);
+  const localSummary = {
+    active_competitors: competitors.length,
+    high_threat_competitors: competitors.filter((item) => ["HIGH", "CRITICAL"].includes(item.threat_level)).length,
+    findings_this_month: monthFindings.length,
+    verified_findings: findings.filter((item) => item.source_reliability === "HIGH").length,
+    price_observations: products.length,
+    average_competitor_price_cop: copProducts.length ? copProducts.reduce((sum, item) => sum + toNumber(item.competitor_price), 0) / copProducts.length : 0,
+    average_price_gap_cop: comparableCop.length ? comparableCop.reduce((sum, item) => sum + (toNumber(item.our_price) - toNumber(item.competitor_price)), 0) / comparableCop.length : 0,
+    active_campaigns: activeCampaigns.length,
+    aggressive_campaigns: activeCampaigns.filter((item) => ["HIGH", "CRITICAL"].includes(item.aggressiveness_level)).length,
+    upcoming_events: upcomingEvents.length,
+    open_threats: openThreats.length,
+    open_opportunities: openOpportunities.length,
+    open_tasks: openTasks.length,
+    overdue_tasks: overdueTasks.length,
+  };
+  const summary = state.competitionSummary || localSummary;
   return [
-    { label: "Competidores registrados", value: competitors.length.toLocaleString("es-CO"), meta: `${competitors.filter((item) => ["HIGH", "CRITICAL"].includes(item.threat_level)).length} alta amenaza` },
-    { label: "Nuevos hallazgos", value: monthFindings.length.toLocaleString("es-CO"), meta: "Detectados este mes" },
-    { label: "Productos monitoreados", value: products.length.toLocaleString("es-CO"), meta: "Productos y servicios" },
-    { label: "Precios registrados", value: money(avgCompetitorPrice), meta: `${favorable} ventajas propias · brecha ${money(avgGap)}` },
-    { label: "Promociones activas", value: promotions.length.toLocaleString("es-CO"), meta: `${campaigns.filter((item) => ["HIGH", "CRITICAL"].includes(item.aggressiveness_level)).length} agresivas` },
-    { label: "Eventos detectados", value: events.length.toLocaleString("es-CO"), meta: "Activaciones próximas" },
-    { label: "Amenazas", value: threats.length.toLocaleString("es-CO"), meta: "Priorizar respuesta" },
-    { label: "Oportunidades", value: opportunities.length.toLocaleString("es-CO"), meta: `${tasks.length} tareas abiertas/sugeridas` },
+    { label: "Competidores activos", value: toNumber(summary.active_competitors).toLocaleString("es-CO"), meta: `${toNumber(summary.high_threat_competitors)} de amenaza alta o crítica` },
+    { label: "Señales del mes", value: toNumber(summary.findings_this_month).toLocaleString("es-CO"), meta: `${toNumber(summary.verified_findings)} con fuente de alta confianza` },
+    { label: "Precios observados", value: toNumber(summary.price_observations).toLocaleString("es-CO"), meta: `Promedio COP ${money(toNumber(summary.average_competitor_price_cop))}` },
+    { label: "Brecha promedio COP", value: money(toNumber(summary.average_price_gap_cop)), meta: "Precio propio menos precio competidor" },
+    { label: "Promociones vigentes", value: toNumber(summary.active_campaigns).toLocaleString("es-CO"), meta: `${toNumber(summary.aggressive_campaigns)} de agresividad alta o crítica` },
+    { label: "Próximas activaciones", value: toNumber(summary.upcoming_events).toLocaleString("es-CO"), meta: "Eventos activos con fecha futura" },
+    { label: "Amenazas abiertas", value: toNumber(summary.open_threats).toLocaleString("es-CO"), meta: `${toNumber(summary.open_opportunities)} oportunidades abiertas` },
+    { label: "Acciones pendientes", value: toNumber(summary.open_tasks).toLocaleString("es-CO"), meta: `${toNumber(summary.overdue_tasks)} vencidas` },
   ];
+}
+
+function filteredCompetitorTasks() {
+  const needle = String(state.competitorTaskSearch || "").trim().toLowerCase();
+  const tasks = (state.competitionTasks || []).filter((item) => item.status !== "ARCHIVED");
+  if (!needle) return tasks;
+  return tasks.filter((item) => [item.title, item.competitor_name, item.responsible_name, item.finding_title, item.notes, item.status, item.priority]
+    .some((value) => String(value || "").toLowerCase().includes(needle)));
 }
 
 function competitionGapLabel(product) {
@@ -26457,10 +26587,30 @@ function competitionViewSection() {
   return document.querySelector('.view-section[data-view="competition"]');
 }
 
+function openCompetitionDialog(dialog, focusTarget = null) {
+  if (!dialog) return;
+  state.competitionDialogReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  dialog.setAttribute("aria-hidden", "false");
+  document.body.classList.add("competition-dialog-open");
+  window.setTimeout(() => (focusTarget || dialog).focus?.(), 0);
+}
+
+function closeCompetitionDialog(dialog) {
+  dialog?.setAttribute("aria-hidden", "true");
+  const anotherOpen = competitorFormPanel?.classList.contains("is-competition-modal-open")
+    || competitionProductFormPanel?.classList.contains("is-competition-modal-open")
+    || (competitorDetailModal && !competitorDetailModal.classList.contains("hidden"));
+  if (!anotherOpen) document.body.classList.remove("competition-dialog-open");
+  const returnFocus = state.competitionDialogReturnFocus;
+  state.competitionDialogReturnFocus = null;
+  window.setTimeout(() => returnFocus?.focus?.(), 0);
+}
+
 function openCompetitorFormModal() {
   if (competitorFormPanel?.parentElement !== document.body) document.body.appendChild(competitorFormPanel);
   competitionViewSection()?.classList.add("competition-modal-open");
   competitorFormPanel?.classList.add("is-competition-modal-open");
+  openCompetitionDialog(competitorFormPanel, competitorNameInput);
 }
 
 function closeCompetitorFormModal() {
@@ -26468,6 +26618,7 @@ function closeCompetitorFormModal() {
   if (!competitionProductFormPanel?.classList.contains("is-competition-modal-open")) {
     competitionViewSection()?.classList.remove("competition-modal-open");
   }
+  closeCompetitionDialog(competitorFormPanel);
 }
 
 function openCompetitionProductModal() {
@@ -26475,6 +26626,7 @@ function openCompetitionProductModal() {
   if (competitionProductFormPanel?.parentElement !== document.body) document.body.appendChild(competitionProductFormPanel);
   competitionViewSection()?.classList.add("competition-modal-open");
   competitionProductFormPanel?.classList.add("is-competition-modal-open");
+  openCompetitionDialog(competitionProductFormPanel, competitionProductNameInput);
 }
 
 function competitionUnitLabel(value = "") {
@@ -26499,6 +26651,7 @@ function closeCompetitionProductModal() {
   if (!competitorFormPanel?.classList.contains("is-competition-modal-open")) {
     competitionViewSection()?.classList.remove("competition-modal-open");
   }
+  closeCompetitionDialog(competitionProductFormPanel);
 }
 
 function addCompetitionDataForCompetitor(competitorId = "", type = "product") {
@@ -26535,6 +26688,14 @@ function addCompetitionDataForCompetitor(competitorId = "", type = "product") {
       focus: findingTitleInput,
       copy: `Registrarás una señal competitiva vinculada a ${competitor.name}.`,
     },
+  };
+  actions.task = {
+    tab: "tasks",
+    reset: resetCompetitorTaskForm,
+    select: competitorTaskCompetitorInput,
+    message: competitorTaskMessage,
+    focus: competitorTaskTitleInput,
+    copy: `CrearÃ¡s una acciÃ³n medible para responder a ${competitor.name}.`,
   };
   const action = actions[type];
   if (!action) return;
@@ -26600,6 +26761,12 @@ function competitorFindingsFor(competitor = {}) {
   ));
 }
 
+function competitorTasksFor(competitor = {}) {
+  return (state.competitionTasks || []).filter((task) => (
+    task.status !== "ARCHIVED" && String(task.competitor_id || "") === String(competitor.id || "")
+  ));
+}
+
 function competitorPrimaryProduct(competitor = {}) {
   return competitorProductsFor(competitor)
     .slice()
@@ -26614,12 +26781,14 @@ function openCompetitorDetailModal(competitorId = "", tab = "prices") {
   renderCompetitorDetailModal();
   competitorDetailModal.classList.remove("hidden");
   competitorDetailModal.removeAttribute("aria-hidden");
+  openCompetitionDialog(competitorDetailModal, competitorDetailModal.querySelector(".competition-detail-card"));
 }
 
 function closeCompetitorDetailModal() {
   if (!competitorDetailModal) return;
   competitorDetailModal.classList.add("hidden");
   competitorDetailModal.setAttribute("aria-hidden", "true");
+  closeCompetitionDialog(competitorDetailModal);
 }
 
 function competitorDetailEmpty(message = "Sin datos registrados.") {
@@ -26645,12 +26814,14 @@ function renderCompetitorDetailModal() {
   const campaigns = competitorCampaignsFor(competitor);
   const events = competitorEventsFor(competitor);
   const findings = competitorFindingsFor(competitor);
+  const tasks = competitorTasksFor(competitor);
   const tabs = [
     ["prices", "Precios"],
     ["products", "Productos"],
     ["campaigns", "Campañas"],
     ["events", "Eventos"],
     ["findings", "Hallazgos"],
+    ["tasks", "Acciones"],
     ["swot", "DOFA"],
     ["comparison", "Comparativo"],
   ];
@@ -26682,7 +26853,7 @@ function renderCompetitorDetailModal() {
   }
   if (competitorDetailTabs) {
     competitorDetailTabs.innerHTML = tabs.map(([key, label]) => `
-      <button class="${key === activeTab ? "active" : ""}" type="button" data-competitor-detail-tab="${escapeHtml(key)}">${escapeHtml(label)}</button>
+      <button class="${key === activeTab ? "active" : ""}" role="tab" aria-selected="${key === activeTab}" tabindex="${key === activeTab ? "0" : "-1"}" type="button" data-competitor-detail-tab="${escapeHtml(key)}">${escapeHtml(label)}</button>
     `).join("");
   }
   if (activeTab === "prices") {
@@ -26746,6 +26917,16 @@ function renderCompetitorDetailModal() {
     );
     return;
   }
+  if (activeTab === "tasks") {
+    competitorDetailBody.innerHTML = competitorDetailTable(
+      ["AcciÃ³n", "Responsable", "Fecha lÃ­mite", "Prioridad", "Estado"],
+      tasks.map((task) => `
+        <tr><td><strong>${escapeHtml(task.title || "-")}</strong><span class="table-secondary">${escapeHtml(task.notes || "-")}</span></td><td>${escapeHtml(task.responsible_name || "Sin asignar")}</td><td>${escapeHtml(task.due_at ? formatDate(task.due_at) : "Sin fecha")}</td><td>${escapeHtml(threatLabel(task.priority))}</td><td>${escapeHtml(radarStatusLabel(task.status))}</td></tr>
+      `),
+      "Sin acciones abiertas para este competidor."
+    );
+    return;
+  }
   if (activeTab === "swot") {
     competitorDetailBody.innerHTML = `
       <div class="competition-detail-grid">
@@ -26766,6 +26947,7 @@ function renderCompetitorDetailModal() {
       <div class="competition-detail-metric"><span>Campañas</span><strong>${escapeHtml(String(campaigns.length))}</strong></div>
       <div class="competition-detail-metric"><span>Eventos</span><strong>${escapeHtml(String(events.length))}</strong></div>
       <div class="competition-detail-metric"><span>Hallazgos</span><strong>${escapeHtml(String(findings.length))}</strong></div>
+      <div class="competition-detail-metric"><span>Acciones</span><strong>${escapeHtml(String(tasks.length))}</strong></div>
       <div class="competition-detail-note"><span>Diferencial percibido</span><strong>${escapeHtml(competitor.perceived_differential || "-")}</strong></div>
       <div class="competition-detail-note"><span>Segmento objetivo</span><strong>${escapeHtml(competitor.target_segment || "-")}</strong></div>
       <div class="competition-detail-note span-2"><span>Análisis comparativo</span><strong>${escapeHtml(competitor.response_plan || recommendedActionForCompetitor(competitor))}</strong></div>
@@ -26775,11 +26957,14 @@ function renderCompetitorDetailModal() {
 
 function renderCompetitionView() {
   ensureCompetitiveRadarUxStyles();
-  setCompetitionTab("competitors");
+  setCompetitionTab(state.competitionTab || "competitors");
   setCompetitionProductView(state.competitionProductView || "competitor");
   renderCompetitionSelectOptions();
+  renderCompetitionDataStatus();
   if (competitionKpiGrid) {
-    competitionKpiGrid.innerHTML = competitionKpis().map((item) => `
+    competitionKpiGrid.innerHTML = state.competitionLoading && !state.competitionLoaded
+      ? Array.from({ length: 4 }, () => '<article class="surface-card kpi-card competition-kpi-skeleton" aria-hidden="true"><span></span><strong></strong><p></p></article>').join("")
+      : competitionKpis().map((item) => `
       <article class="surface-card kpi-card">
         <span class="mono-label">${escapeHtml(item.label)}</span>
         <strong class="kpi-value">${escapeHtml(item.value)}</strong>
@@ -26793,6 +26978,7 @@ function renderCompetitionView() {
   renderCompetitorCampaignsTable();
   renderCompetitorEventsTable();
   renderCompetitionFindingsTable();
+  renderCompetitorTasksTable();
   renderCompetitionComparisons();
   populateSwotForm();
 }
@@ -26988,6 +27174,33 @@ function renderCompetitorEventsTable() {
   competitorEventTable.querySelectorAll("[data-competitor-event-delete]").forEach((button) => button.addEventListener("click", () => archiveCompetitorEvent(button.dataset.competitorEventDelete)));
 }
 
+function renderCompetitorTasksTable() {
+  if (!competitorTaskTable) return;
+  if (!state.competitionLoaded) {
+    competitorTaskTable.innerHTML = '<tr><td colspan="7">Cargando acciones competitivas...</td></tr>';
+    return;
+  }
+  const now = Date.now();
+  const rows = filteredCompetitorTasks();
+  competitorTaskTable.innerHTML = rows.map((task) => {
+    const overdue = task.due_at && ["OPEN", "IN_PROGRESS"].includes(task.status) && new Date(task.due_at).getTime() < now;
+    return `
+      <tr class="${overdue ? "competition-task-overdue" : ""}">
+        <td><strong>${escapeHtml(task.title)}</strong><span class="table-secondary">${escapeHtml(task.finding_title || task.notes || "Acción independiente")}</span></td>
+        <td>${escapeHtml(task.competitor_name || competitorById(task.competitor_id)?.name || "-")}</td>
+        <td>${escapeHtml(task.responsible_name || "Sin asignar")}</td>
+        <td><strong>${escapeHtml(task.due_at ? formatDate(task.due_at) : "Sin fecha")}</strong>${overdue ? '<span class="table-secondary competition-overdue-label">Vencida</span>' : ""}</td>
+        <td><span class="status-chip ${["HIGH", "CRITICAL"].includes(task.priority) ? "warning" : "ok"}">${escapeHtml(threatLabel(task.priority))}</span></td>
+        <td><span class="status-chip ${task.status === "DONE" ? "ok" : task.status === "IN_PROGRESS" ? "warning" : ""}">${escapeHtml(radarStatusLabel(task.status))}</span></td>
+        <td><div class="table-actions"><button class="ghost-button" type="button" data-competitor-task-edit="${escapeHtml(task.id)}">Editar</button>${task.status !== "DONE" ? `<button class="ghost-button" type="button" data-competitor-task-done="${escapeHtml(task.id)}">Terminar</button>` : ""}<button class="ghost-button danger-button" type="button" data-competitor-task-delete="${escapeHtml(task.id)}">Archivar</button></div></td>
+      </tr>
+    `;
+  }).join("") || '<tr><td colspan="7">Sin acciones pendientes. Convierte una señal en una tarea con responsable y fecha.</td></tr>';
+  competitorTaskTable.querySelectorAll("[data-competitor-task-edit]").forEach((button) => button.addEventListener("click", () => editCompetitorTask(button.dataset.competitorTaskEdit)));
+  competitorTaskTable.querySelectorAll("[data-competitor-task-done]").forEach((button) => button.addEventListener("click", () => completeCompetitorTask(button.dataset.competitorTaskDone)));
+  competitorTaskTable.querySelectorAll("[data-competitor-task-delete]").forEach((button) => button.addEventListener("click", () => archiveCompetitorTask(button.dataset.competitorTaskDelete)));
+}
+
 function renderCompetitionComparisons() {
   const competitors = (state.competitionCompetitors || []).filter((item) => item.is_active !== false);
   if (competitionBasicComparisonTable) {
@@ -27151,9 +27364,7 @@ async function submitCompetitionProduct(event) {
     const saved = data.product;
     state.competitionProducts = [saved, ...(state.competitionProducts || []).filter((item) => String(item.id) !== String(saved.id))];
     state.competitionLoaded = true;
-    if (!payload.competitor_id && saved?.competitor_id) {
-      await loadCompetitionProducts({ force: true, quiet: true });
-    }
+    state.competitionSummary = null;
     resetCompetitionForm();
     renderCompetitionView();
     closeCompetitionProductModal();
@@ -27174,6 +27385,7 @@ async function archiveCompetitionProduct(productId = "") {
   try {
     await api(`/api/business/competitor-products/${encodeURIComponent(productId)}`, { method: "DELETE", headers: authHeaders() });
     state.competitionProducts = (state.competitionProducts || []).filter((item) => String(item.id) !== String(productId));
+    state.competitionSummary = null;
     if (String(state.competitionEditingId || "") === String(productId)) resetCompetitionForm();
     renderCompetitionView();
     showFeedback("Dato eliminado del directorio activo.", "success", { title: "Radar competitivo" });
@@ -27202,6 +27414,8 @@ function competitorFormPayload() {
     operation_zone: competitorZoneInput?.value.trim() || null,
     website: competitorWebsiteInput?.value.trim() || null,
     instagram: competitorInstagramInput?.value.trim() || null,
+    facebook: competitorFacebookInput?.value.trim() || null,
+    tiktok: competitorTiktokInput?.value.trim() || null,
     whatsapp_public: competitorWhatsappInput?.value.trim() || null,
     phone: competitorPhoneInput?.value.trim() || null,
     email: competitorEmailInput?.value.trim() || null,
@@ -27212,14 +27426,26 @@ function competitorFormPayload() {
     main_products: competitorProductsInput?.value.trim() || null,
     main_services: competitorServicesInput?.value.trim() || null,
     perceived_differential: competitorDifferentialInput?.value.trim() || null,
+    value_proposition: competitorValuePropositionInput?.value.trim() || null,
+    sales_channels: competitorSalesChannelsInput?.value.trim() || null,
+    acquisition_channels: competitorAcquisitionChannelsInput?.value.trim() || null,
     strengths: competitorStrengthsInput?.value.trim() || null,
     weaknesses: competitorWeaknessesInput?.value.trim() || null,
     digital_presence_level: competitorDigitalPresenceInput?.value || null,
+    physical_presence_level: competitorPhysicalPresenceInput?.value || null,
+    perceived_quality: competitorPerceivedQualityInput?.value || null,
+    response_speed: competitorResponseSpeedInput?.value || null,
     commercial_aggressiveness: competitorAggressivenessInput?.value || null,
     competes_price: competitorCompetesPriceInput?.checked === true,
+    competes_quality: competitorCompetesQualityInput?.checked === true,
+    competes_location: competitorCompetesLocationInput?.checked === true,
+    competes_brand: competitorCompetesBrandInput?.checked === true,
+    competes_experience: competitorCompetesExperienceInput?.checked === true,
     competes_promotions: competitorCompetesPromotionsInput?.checked === true,
     competes_social_media: competitorCompetesSocialInput?.checked === true,
     competes_events: competitorCompetesEventsInput?.checked === true,
+    competes_partnerships: competitorCompetesPartnershipsInput?.checked === true,
+    competes_financing: competitorCompetesFinancingInput?.checked === true,
     notes: competitorNotesInput?.value.trim() || null,
   };
 }
@@ -27237,6 +27463,8 @@ function editCompetitor(competitorId = "") {
   if (competitorZoneInput) competitorZoneInput.value = competitor.operation_zone || "";
   if (competitorWebsiteInput) competitorWebsiteInput.value = competitor.website || "";
   if (competitorInstagramInput) competitorInstagramInput.value = competitor.instagram || "";
+  if (competitorFacebookInput) competitorFacebookInput.value = competitor.facebook || "";
+  if (competitorTiktokInput) competitorTiktokInput.value = competitor.tiktok || "";
   if (competitorWhatsappInput) competitorWhatsappInput.value = competitor.whatsapp_public || "";
   if (competitorPhoneInput) competitorPhoneInput.value = competitor.phone || "";
   if (competitorEmailInput) competitorEmailInput.value = competitor.email || "";
@@ -27247,14 +27475,26 @@ function editCompetitor(competitorId = "") {
   if (competitorProductsInput) competitorProductsInput.value = competitor.main_products || "";
   if (competitorServicesInput) competitorServicesInput.value = competitor.main_services || "";
   if (competitorDifferentialInput) competitorDifferentialInput.value = competitor.perceived_differential || "";
+  if (competitorValuePropositionInput) competitorValuePropositionInput.value = competitor.value_proposition || "";
+  if (competitorSalesChannelsInput) competitorSalesChannelsInput.value = competitor.sales_channels || "";
+  if (competitorAcquisitionChannelsInput) competitorAcquisitionChannelsInput.value = competitor.acquisition_channels || "";
   if (competitorStrengthsInput) competitorStrengthsInput.value = competitor.strengths || "";
   if (competitorWeaknessesInput) competitorWeaknessesInput.value = competitor.weaknesses || "";
   if (competitorDigitalPresenceInput) competitorDigitalPresenceInput.value = competitor.digital_presence_level || "";
+  if (competitorPhysicalPresenceInput) competitorPhysicalPresenceInput.value = competitor.physical_presence_level || "";
+  if (competitorPerceivedQualityInput) competitorPerceivedQualityInput.value = competitor.perceived_quality || "";
+  if (competitorResponseSpeedInput) competitorResponseSpeedInput.value = competitor.response_speed || "";
   if (competitorAggressivenessInput) competitorAggressivenessInput.value = competitor.commercial_aggressiveness || "";
   if (competitorCompetesPriceInput) competitorCompetesPriceInput.checked = competitor.competes_price === true;
+  if (competitorCompetesQualityInput) competitorCompetesQualityInput.checked = competitor.competes_quality === true;
+  if (competitorCompetesLocationInput) competitorCompetesLocationInput.checked = competitor.competes_location === true;
+  if (competitorCompetesBrandInput) competitorCompetesBrandInput.checked = competitor.competes_brand === true;
+  if (competitorCompetesExperienceInput) competitorCompetesExperienceInput.checked = competitor.competes_experience === true;
   if (competitorCompetesPromotionsInput) competitorCompetesPromotionsInput.checked = competitor.competes_promotions === true;
   if (competitorCompetesSocialInput) competitorCompetesSocialInput.checked = competitor.competes_social_media === true;
   if (competitorCompetesEventsInput) competitorCompetesEventsInput.checked = competitor.competes_events === true;
+  if (competitorCompetesPartnershipsInput) competitorCompetesPartnershipsInput.checked = competitor.competes_partnerships === true;
+  if (competitorCompetesFinancingInput) competitorCompetesFinancingInput.checked = competitor.competes_financing === true;
   if (competitorNotesInput) competitorNotesInput.value = competitor.notes || "";
   if (competitorFormTitle) competitorFormTitle.textContent = "Editar competidor";
   setInlineMessage(competitorMessage, "Editando ficha de competidor.", "info");
@@ -27281,6 +27521,7 @@ async function submitCompetitor(event) {
     const saved = data.competitor;
     state.competitionCompetitors = [saved, ...(state.competitionCompetitors || []).filter((item) => String(item.id) !== String(saved.id))];
     state.competitionLoaded = true;
+    state.competitionSummary = null;
     resetCompetitorForm();
     renderCompetitionView();
     closeCompetitorFormModal();
@@ -27301,6 +27542,7 @@ async function archiveCompetitor(competitorId = "") {
   try {
     await api(`/api/business/competitors/${encodeURIComponent(competitorId)}`, { method: "DELETE", headers: authHeaders() });
     state.competitionCompetitors = (state.competitionCompetitors || []).filter((item) => String(item.id) !== String(competitorId));
+    state.competitionSummary = null;
     if (String(state.competitorEditingId || "") === String(competitorId)) resetCompetitorForm();
     renderCompetitionView();
     showFeedback("Competidor desactivado.", "success", { title: "Radar competitivo" });
@@ -27394,6 +27636,7 @@ async function submitCompetitorSwot(event) {
     });
     const saved = data.competitor;
     state.competitionCompetitors = [saved, ...(state.competitionCompetitors || []).filter((item) => String(item.id) !== String(saved.id))];
+    state.competitionSummary = null;
     renderCompetitionView();
     setInlineMessage(competitorSwotMessage, "DOFA actualizado.", "success");
     showFeedback("DOFA competitivo guardado.", "success", { title: "Radar competitivo" });
@@ -27418,6 +27661,7 @@ function resetCompetitorCampaignForm() {
   if (competitorCampaignImpactInput) competitorCampaignImpactInput.value = "MEDIUM";
   if (competitorCampaignSourceTypeInput) competitorCampaignSourceTypeInput.value = "MANUAL";
   if (competitorCampaignReliabilityInput) competitorCampaignReliabilityInput.value = "MEDIUM";
+  if (competitorCampaignStatusInput) competitorCampaignStatusInput.value = "ACTIVE";
   if (competitorCampaignFormTitle) competitorCampaignFormTitle.textContent = "Nueva campaña observada";
   setInlineMessage(competitorCampaignMessage, "", "info");
 }
@@ -27440,6 +27684,7 @@ function competitorCampaignPayload() {
     source_reliability: competitorCampaignReliabilityInput?.value || "MEDIUM",
     aggressiveness_level: competitorCampaignAggressivenessInput?.value || "MEDIUM",
     estimated_impact: competitorCampaignImpactInput?.value || "MEDIUM",
+    status: competitorCampaignStatusInput?.value || "ACTIVE",
     suggested_action: competitorCampaignActionInput?.value.trim() || null,
   };
 }
@@ -27457,6 +27702,7 @@ function editCompetitorCampaign(campaignId = "") {
   if (competitorCampaignChannelInput) competitorCampaignChannelInput.value = campaign.channel || "";
   if (competitorCampaignAggressivenessInput) competitorCampaignAggressivenessInput.value = campaign.aggressiveness_level || "MEDIUM";
   if (competitorCampaignImpactInput) competitorCampaignImpactInput.value = campaign.estimated_impact || "MEDIUM";
+  if (competitorCampaignStatusInput) competitorCampaignStatusInput.value = campaign.status || "ACTIVE";
   if (competitorCampaignSourceTypeInput) competitorCampaignSourceTypeInput.value = campaign.source_type || "MANUAL";
   if (competitorCampaignReliabilityInput) competitorCampaignReliabilityInput.value = campaign.source_reliability || "MEDIUM";
   if (competitorCampaignOfferInput) competitorCampaignOfferInput.value = campaign.offer || "";
@@ -27488,6 +27734,7 @@ async function submitCompetitorCampaign(event) {
     });
     const saved = data.campaign;
     state.competitionCampaigns = [saved, ...(state.competitionCampaigns || []).filter((item) => String(item.id) !== String(saved.id))];
+    state.competitionSummary = null;
     resetCompetitorCampaignForm();
     renderCompetitionView();
     showFeedback("Campaña competitiva guardada.", "success", { title: "Radar competitivo" });
@@ -27506,6 +27753,7 @@ async function archiveCompetitorCampaign(campaignId = "") {
   try {
     await api(`/api/business/competitor-campaigns/${encodeURIComponent(campaignId)}`, { method: "DELETE", headers: authHeaders() });
     state.competitionCampaigns = (state.competitionCampaigns || []).filter((item) => String(item.id) !== String(campaignId));
+    state.competitionSummary = null;
     renderCompetitionView();
     showFeedback("Campaña competitiva eliminada.", "success", { title: "Radar competitivo" });
   } catch (error) {
@@ -27518,6 +27766,9 @@ function resetCompetitorEventForm() {
   competitorEventForm?.reset();
   if (competitorEventIdInput) competitorEventIdInput.value = "";
   if (competitorEventTypeInput) competitorEventTypeInput.value = "FAIR";
+  if (competitorEventStatusInput) competitorEventStatusInput.value = "ACTIVE";
+  if (competitorEventSourceTypeInput) competitorEventSourceTypeInput.value = "MANUAL";
+  if (competitorEventReliabilityInput) competitorEventReliabilityInput.value = "MEDIUM";
   if (competitorEventFormTitle) competitorEventFormTitle.textContent = "Nuevo evento observado";
   setInlineMessage(competitorEventMessage, "", "info");
 }
@@ -27531,6 +27782,9 @@ function competitorEventPayload() {
     city: competitorEventCityInput?.value.trim() || null,
     event_type: competitorEventTypeInput?.value || "OTHER",
     organizer: competitorEventOrganizerInput?.value.trim() || null,
+    status: competitorEventStatusInput?.value || "ACTIVE",
+    source_type: competitorEventSourceTypeInput?.value || "MANUAL",
+    source_reliability: competitorEventReliabilityInput?.value || "MEDIUM",
     competitor_participation: competitorEventParticipationInput?.value.trim() || null,
     presented_offer: competitorEventOfferInput?.value.trim() || null,
     highlighted_products: competitorEventProductsInput?.value.trim() || null,
@@ -27555,6 +27809,9 @@ function editCompetitorEvent(eventId = "") {
   if (competitorEventCityInput) competitorEventCityInput.value = eventItem.city || "";
   if (competitorEventPlaceInput) competitorEventPlaceInput.value = eventItem.place || "";
   if (competitorEventOrganizerInput) competitorEventOrganizerInput.value = eventItem.organizer || "";
+  if (competitorEventStatusInput) competitorEventStatusInput.value = eventItem.status || "ACTIVE";
+  if (competitorEventSourceTypeInput) competitorEventSourceTypeInput.value = eventItem.source_type || "MANUAL";
+  if (competitorEventReliabilityInput) competitorEventReliabilityInput.value = eventItem.source_reliability || "MEDIUM";
   if (competitorEventParticipationInput) competitorEventParticipationInput.value = eventItem.competitor_participation || "";
   if (competitorEventOfferInput) competitorEventOfferInput.value = eventItem.presented_offer || "";
   if (competitorEventProductsInput) competitorEventProductsInput.value = eventItem.highlighted_products || "";
@@ -27586,6 +27843,7 @@ async function submitCompetitorEvent(event) {
     });
     const saved = data.event;
     state.competitionEvents = [saved, ...(state.competitionEvents || []).filter((item) => String(item.id) !== String(saved.id))];
+    state.competitionSummary = null;
     resetCompetitorEventForm();
     renderCompetitionView();
     showFeedback("Evento competitivo guardado.", "success", { title: "Radar competitivo" });
@@ -27604,10 +27862,117 @@ async function archiveCompetitorEvent(eventId = "") {
   try {
     await api(`/api/business/competitor-events/${encodeURIComponent(eventId)}`, { method: "DELETE", headers: authHeaders() });
     state.competitionEvents = (state.competitionEvents || []).filter((item) => String(item.id) !== String(eventId));
+    state.competitionSummary = null;
     renderCompetitionView();
     showFeedback("Evento competitivo eliminado.", "success", { title: "Radar competitivo" });
   } catch (error) {
     showFeedback(error.message || "No se pudo eliminar el evento.", "error", { title: "Radar competitivo" });
+  }
+}
+
+function resetCompetitorTaskForm() {
+  state.competitorTaskEditingId = null;
+  competitorTaskForm?.reset();
+  if (competitorTaskIdInput) competitorTaskIdInput.value = "";
+  if (competitorTaskPriorityInput) competitorTaskPriorityInput.value = "MEDIUM";
+  if (competitorTaskStatusInput) competitorTaskStatusInput.value = "OPEN";
+  if (competitorTaskFormTitle) competitorTaskFormTitle.textContent = "Nueva acción competitiva";
+  renderCompetitionSelectOptions();
+  setInlineMessage(competitorTaskMessage, "Selecciona un competidor y define una acción medible.", "info");
+}
+
+function competitorTaskPayload() {
+  return {
+    competitor_id: competitorTaskCompetitorInput?.value || null,
+    finding_id: competitorTaskFindingInput?.value || null,
+    title: competitorTaskTitleInput?.value.trim() || "",
+    responsible_name: competitorTaskResponsibleInput?.value.trim() || null,
+    due_at: dateValueToIso(competitorTaskDueInput?.value || ""),
+    priority: competitorTaskPriorityInput?.value || "MEDIUM",
+    status: competitorTaskStatusInput?.value || "OPEN",
+    notes: competitorTaskNotesInput?.value.trim() || null,
+  };
+}
+
+function editCompetitorTask(taskId = "") {
+  const task = competitorTaskById(taskId);
+  if (!task) return;
+  state.competitorTaskEditingId = task.id;
+  if (competitorTaskIdInput) competitorTaskIdInput.value = task.id;
+  renderCompetitionSelectOptions();
+  if (competitorTaskCompetitorInput) competitorTaskCompetitorInput.value = task.competitor_id || "";
+  renderCompetitorTaskFindingOptions(task.finding_id || "");
+  if (competitorTaskTitleInput) competitorTaskTitleInput.value = task.title || "";
+  if (competitorTaskResponsibleInput) competitorTaskResponsibleInput.value = task.responsible_name || "";
+  if (competitorTaskDueInput) competitorTaskDueInput.value = task.due_at ? dateInputValue(new Date(task.due_at)) : "";
+  if (competitorTaskPriorityInput) competitorTaskPriorityInput.value = task.priority || "MEDIUM";
+  if (competitorTaskStatusInput) competitorTaskStatusInput.value = task.status || "OPEN";
+  if (competitorTaskNotesInput) competitorTaskNotesInput.value = task.notes || "";
+  if (competitorTaskFormTitle) competitorTaskFormTitle.textContent = "Editar acción competitiva";
+  setInlineMessage(competitorTaskMessage, "Editando acción competitiva.", "info");
+  competitorTaskTitleInput?.focus();
+}
+
+async function submitCompetitorTask(event) {
+  event.preventDefault();
+  const taskId = competitorTaskIdInput?.value || state.competitorTaskEditingId || "";
+  const payload = competitorTaskPayload();
+  if (!requireSelectedCompetitor(competitorTaskCompetitorInput, competitorTaskMessage, "guardar acciones competitivas")) return;
+  if (!payload.title) {
+    setInlineMessage(competitorTaskMessage, "Escribe la acción que debe ejecutarse.", "error");
+    return;
+  }
+  setButtonLoading(competitorTaskSaveButton, true, taskId ? "Actualizando..." : "Guardando...");
+  try {
+    const data = await api(taskId ? `/api/business/competitor-tasks/${encodeURIComponent(taskId)}` : "/api/business/competitor-tasks", {
+      method: taskId ? "PATCH" : "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const saved = data.task;
+    state.competitionTasks = [saved, ...(state.competitionTasks || []).filter((item) => String(item.id) !== String(saved.id))];
+    state.competitionSummary = null;
+    resetCompetitorTaskForm();
+    renderCompetitionView();
+    showFeedback("Acción competitiva guardada.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    setInlineMessage(competitorTaskMessage, error.message || "No se pudo guardar la acción.", "error");
+    showFeedback(error.message || "No se pudo guardar la acción.", "error", { title: "Radar competitivo" });
+  } finally {
+    setButtonLoading(competitorTaskSaveButton, false);
+  }
+}
+
+async function completeCompetitorTask(taskId = "") {
+  const task = competitorTaskById(taskId);
+  if (!task) return;
+  try {
+    const data = await api(`/api/business/competitor-tasks/${encodeURIComponent(taskId)}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ status: "DONE" }),
+    });
+    state.competitionTasks = [data.task, ...(state.competitionTasks || []).filter((item) => String(item.id) !== String(taskId))];
+    state.competitionSummary = null;
+    renderCompetitionView();
+    showFeedback("Acción marcada como terminada.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo terminar la acción.", "error", { title: "Radar competitivo" });
+  }
+}
+
+async function archiveCompetitorTask(taskId = "") {
+  const task = competitorTaskById(taskId);
+  if (!task) return;
+  if (!window.confirm(`Archivar acción "${task.title}"?`)) return;
+  try {
+    await api(`/api/business/competitor-tasks/${encodeURIComponent(taskId)}`, { method: "DELETE", headers: authHeaders() });
+    state.competitionTasks = (state.competitionTasks || []).filter((item) => String(item.id) !== String(taskId));
+    state.competitionSummary = null;
+    renderCompetitionView();
+    showFeedback("Acción competitiva archivada.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo archivar la acción.", "error", { title: "Radar competitivo" });
   }
 }
 
@@ -27700,6 +28065,7 @@ async function submitFinding(event) {
     const saved = data.finding;
     state.competitionFindings = [saved, ...(state.competitionFindings || []).filter((item) => String(item.id) !== String(saved.id))];
     state.competitionLoaded = true;
+    state.competitionSummary = null;
     resetFindingForm();
     renderCompetitionView();
     setInlineMessage(findingMessage, findingId ? "Hallazgo actualizado." : "Hallazgo agregado.", "success");
@@ -27719,6 +28085,7 @@ async function archiveFinding(findingId = "") {
   try {
     await api(`/api/business/competitor-findings/${encodeURIComponent(findingId)}`, { method: "DELETE", headers: authHeaders() });
     state.competitionFindings = (state.competitionFindings || []).filter((item) => String(item.id) !== String(findingId));
+    state.competitionSummary = null;
     if (String(state.findingEditingId || "") === String(findingId)) resetFindingForm();
     renderCompetitionView();
     showFeedback("Hallazgo eliminado de la bitácora activa.", "success", { title: "Radar competitivo" });
@@ -59945,17 +60312,39 @@ competitorCampaignForm?.addEventListener("submit", submitCompetitorCampaign);
 competitorCampaignResetButton?.addEventListener("click", resetCompetitorCampaignForm);
 competitorEventForm?.addEventListener("submit", submitCompetitorEvent);
 competitorEventResetButton?.addEventListener("click", resetCompetitorEventForm);
+competitorTaskForm?.addEventListener("submit", submitCompetitorTask);
+competitorTaskResetButton?.addEventListener("click", resetCompetitorTaskForm);
+competitorTaskCompetitorInput?.addEventListener("change", () => renderCompetitorTaskFindingOptions());
 competitionFindingForm?.addEventListener("submit", submitFinding);
 findingResetButton?.addEventListener("click", resetFindingForm);
 competitorSwotForm?.addEventListener("submit", submitCompetitorSwot);
 competitorSwotSelect?.addEventListener("change", populateSwotForm);
 refreshCompetitionButton?.addEventListener("click", async () => {
-  await loadCompetitionProducts({ force: true });
-  renderCompetitionView();
+  setButtonLoading(refreshCompetitionButton, true, "Actualizando...");
+  try {
+    await loadCompetitionProducts({ force: true });
+    renderCompetitionView();
+    if (!state.competitionLoadError) showFeedback("Radar competitivo actualizado.", "success", { title: "Radar competitivo" });
+  } finally {
+    setButtonLoading(refreshCompetitionButton, false);
+  }
 });
 competitionTabs.forEach((button) => {
   button.addEventListener("click", () => {
     setCompetitionTab(button.dataset.competitionTab || "competitors");
+  });
+  button.addEventListener("keydown", (event) => {
+    const currentIndex = competitionTabs.indexOf(button);
+    let nextIndex = null;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % competitionTabs.length;
+    if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + competitionTabs.length) % competitionTabs.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = competitionTabs.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const nextButton = competitionTabs[nextIndex];
+    setCompetitionTab(nextButton.dataset.competitionTab || "competitors");
+    nextButton.focus();
   });
 });
 competitorSearchInput?.addEventListener("input", () => {
@@ -59982,11 +60371,16 @@ competitorEventSearchInput?.addEventListener("input", () => {
   state.competitorEventSearch = competitorEventSearchInput.value;
   renderCompetitorEventsTable();
 });
+competitorTaskSearchInput?.addEventListener("input", () => {
+  state.competitorTaskSearch = competitorTaskSearchInput.value;
+  renderCompetitorTasksTable();
+});
 competitorDetailCloseButton?.addEventListener("click", closeCompetitorDetailModal);
 competitorDetailAddProductButton?.addEventListener("click", () => addCompetitionDataForCompetitor(state.competitorDetailId || "", "product"));
 document.getElementById("competitorDetailAddCampaignButton")?.addEventListener("click", () => addCompetitionDataForCompetitor(state.competitorDetailId || "", "campaign"));
 document.getElementById("competitorDetailAddEventButton")?.addEventListener("click", () => addCompetitionDataForCompetitor(state.competitorDetailId || "", "event"));
 document.getElementById("competitorDetailAddFindingButton")?.addEventListener("click", () => addCompetitionDataForCompetitor(state.competitorDetailId || "", "finding"));
+document.getElementById("competitorDetailAddTaskButton")?.addEventListener("click", () => addCompetitionDataForCompetitor(state.competitorDetailId || "", "task"));
 competitorDetailModal?.addEventListener("click", (event) => {
   if (event.target === competitorDetailModal) closeCompetitorDetailModal();
 });
@@ -59995,6 +60389,45 @@ competitorDetailTabs?.addEventListener("click", (event) => {
   if (!button) return;
   state.competitorDetailTab = button.dataset.competitorDetailTab || "prices";
   renderCompetitorDetailModal();
+});
+competitorDetailTabs?.addEventListener("keydown", (event) => {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  const tabs = [...competitorDetailTabs.querySelectorAll("[data-competitor-detail-tab]")];
+  const currentIndex = tabs.indexOf(document.activeElement);
+  if (currentIndex < 0) return;
+  event.preventDefault();
+  const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+  state.competitorDetailTab = tabs[nextIndex].dataset.competitorDetailTab || "prices";
+  renderCompetitorDetailModal();
+  competitorDetailTabs.querySelector('[aria-selected="true"]')?.focus();
+});
+document.addEventListener("keydown", (event) => {
+  const openDialog = competitorFormPanel?.classList.contains("is-competition-modal-open")
+    ? competitorFormPanel
+    : competitionProductFormPanel?.classList.contains("is-competition-modal-open")
+      ? competitionProductFormPanel
+      : (competitorDetailModal && !competitorDetailModal.classList.contains("hidden") ? competitorDetailModal : null);
+  if (!openDialog) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    if (openDialog === competitorFormPanel) closeCompetitorFormModal();
+    else if (openDialog === competitionProductFormPanel) closeCompetitionProductModal();
+    else closeCompetitorDetailModal();
+    return;
+  }
+  if (event.key !== "Tab") return;
+  const focusable = [...openDialog.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])')]
+    .filter((element) => element.offsetParent !== null);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 });
 competitionProductViewTabs.forEach((button) => {
   button.addEventListener("click", () => setCompetitionProductView(button.dataset.competitionProductView || "competitor"));

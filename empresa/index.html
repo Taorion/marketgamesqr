@@ -58,6 +58,7 @@
 <link rel="stylesheet" href="css/semantic-messages.css?v=semantic-messages-v1-20260827">
 <link rel="stylesheet" href="css/sellers-premium.css?v=qori-sellers-refresh-white-v7-20260828">
 <link rel="stylesheet" href="css/guided-tutorials.css?v=guided-tutorials-v4-theme-white-20260828" media="print" data-deferred-portal-style>
+<link rel="stylesheet" href="css/competition-premium.css?v=competition-command-v1-20260828">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -6127,20 +6128,23 @@
               </ol>
             </section>
 
+            <div class="competition-data-status" id="competitionDataStatus" role="status" aria-live="polite" hidden></div>
+
             <section class="kpi-grid sales-kpis" id="competitionKpiGrid"></section>
 
-            <div class="segment-tabs contact-center-tabs">
-              <button class="segment-tab active" type="button" data-competition-tab="competitors"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">storefront</span>Directorio</button>
-              <button class="segment-tab" type="button" data-competition-tab="dashboard"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">dashboard</span>Resumen</button>
-              <button class="segment-tab" type="button" data-competition-tab="products"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">sell</span>Precios y oferta</button>
-              <button class="segment-tab" type="button" data-competition-tab="campaigns"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">campaign</span>Promociones</button>
-              <button class="segment-tab" type="button" data-competition-tab="events"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">event</span>Activaciones</button>
-              <button class="segment-tab" type="button" data-competition-tab="findings"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">radar</span>Señales</button>
-              <button class="segment-tab" type="button" data-competition-tab="swot"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">lightbulb</span>Estrategia</button>
-              <button class="segment-tab" type="button" data-competition-tab="comparison"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">compare_arrows</span>Comparar</button>
+            <div class="segment-tabs contact-center-tabs competition-navigation" role="tablist" aria-label="Secciones de Radar Competitivo">
+              <button class="segment-tab active" id="competitionTabCompetitors" role="tab" aria-selected="true" aria-controls="competitionPanelCompetitors" type="button" data-competition-tab="competitors"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">storefront</span>Directorio</button>
+              <button class="segment-tab" id="competitionTabDashboard" role="tab" aria-selected="false" aria-controls="competitionPanelDashboard" tabindex="-1" type="button" data-competition-tab="dashboard"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">dashboard</span>Resumen</button>
+              <button class="segment-tab" id="competitionTabProducts" role="tab" aria-selected="false" aria-controls="competitionPanelProducts" tabindex="-1" type="button" data-competition-tab="products"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">sell</span>Precios y oferta</button>
+              <button class="segment-tab" id="competitionTabCampaigns" role="tab" aria-selected="false" aria-controls="competitionPanelCampaigns" tabindex="-1" type="button" data-competition-tab="campaigns"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">campaign</span>Promociones</button>
+              <button class="segment-tab" id="competitionTabEvents" role="tab" aria-selected="false" aria-controls="competitionPanelEvents" tabindex="-1" type="button" data-competition-tab="events"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">event</span>Activaciones</button>
+              <button class="segment-tab" id="competitionTabFindings" role="tab" aria-selected="false" aria-controls="competitionPanelFindings" tabindex="-1" type="button" data-competition-tab="findings"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">radar</span>Señales</button>
+              <button class="segment-tab" id="competitionTabTasks" role="tab" aria-selected="false" aria-controls="competitionPanelTasks" tabindex="-1" type="button" data-competition-tab="tasks"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">task_alt</span>Acciones</button>
+              <button class="segment-tab" id="competitionTabSwot" role="tab" aria-selected="false" aria-controls="competitionPanelSwot" tabindex="-1" type="button" data-competition-tab="swot"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">lightbulb</span>Estrategia</button>
+              <button class="segment-tab" id="competitionTabComparison" role="tab" aria-selected="false" aria-controls="competitionPanelComparison" tabindex="-1" type="button" data-competition-tab="comparison"><span class="material-symbols-outlined qori-tab-icon" aria-hidden="true">compare_arrows</span>Comparar</button>
             </div>
 
-            <section class="competition-panel hidden" data-competition-panel="dashboard">
+            <section class="competition-panel hidden" id="competitionPanelDashboard" role="tabpanel" aria-labelledby="competitionTabDashboard" data-competition-panel="dashboard">
               <article class="surface-card data-table-card">
                 <div class="table-card-head">
                   <div>
@@ -6166,9 +6170,9 @@
               </article>
             </section>
 
-            <section class="competition-panel" data-competition-panel="competitors">
+            <section class="competition-panel" id="competitionPanelCompetitors" role="tabpanel" aria-labelledby="competitionTabCompetitors" data-competition-panel="competitors">
               <section class="inventory-layout">
-                <article class="surface-card inventory-form-card" id="competitorFormPanel">
+                <article class="surface-card inventory-form-card" id="competitorFormPanel" role="dialog" aria-modal="true" aria-labelledby="competitorFormTitle" aria-hidden="true" tabindex="-1">
                   <div class="table-card-head">
                     <div>
                       <span class="mono-label">Competidor</span>
@@ -6186,6 +6190,8 @@
                     <label><span>Zona de operación</span><input id="competitorZoneInput" type="text" maxlength="160"></label>
                     <label><span>Sitio web</span><input id="competitorWebsiteInput" type="url" maxlength="500"></label>
                     <label><span>Instagram</span><input id="competitorInstagramInput" type="text" maxlength="180"></label>
+                    <label><span>Facebook</span><input id="competitorFacebookInput" type="text" maxlength="180"></label>
+                    <label><span>TikTok</span><input id="competitorTiktokInput" type="text" maxlength="180"></label>
                     <label><span>WhatsApp público</span><input id="competitorWhatsappInput" type="text" maxlength="80"></label>
                     <label><span>Teléfono</span><input id="competitorPhoneInput" type="text" maxlength="80"></label>
                     <label><span>Email</span><input id="competitorEmailInput" type="email" maxlength="180"></label>
@@ -6196,14 +6202,26 @@
                     <label class="span-2"><span>Productos principales</span><textarea id="competitorProductsInput" rows="2" maxlength="800"></textarea></label>
                     <label class="span-2"><span>Servicios principales</span><textarea id="competitorServicesInput" rows="2" maxlength="800"></textarea></label>
                     <label class="span-2"><span>Diferencial percibido</span><textarea id="competitorDifferentialInput" rows="2" maxlength="1200"></textarea></label>
+                    <label class="span-2"><span>Propuesta de valor</span><textarea id="competitorValuePropositionInput" rows="2" maxlength="1200" placeholder="Qué promete y por qué lo eligen"></textarea></label>
+                    <label class="span-2"><span>Canales de venta</span><textarea id="competitorSalesChannelsInput" rows="2" maxlength="800" placeholder="Tienda, web, WhatsApp, distribuidores"></textarea></label>
+                    <label class="span-2"><span>Canales de adquisición</span><textarea id="competitorAcquisitionChannelsInput" rows="2" maxlength="800" placeholder="Redes, pauta, referidos, eventos, alianzas"></textarea></label>
                     <label class="span-2"><span>Fortalezas</span><textarea id="competitorStrengthsInput" rows="2" maxlength="1500"></textarea></label>
                     <label class="span-2"><span>Debilidades</span><textarea id="competitorWeaknessesInput" rows="2" maxlength="1500"></textarea></label>
                     <label><span>Presencia digital</span><select id="competitorDigitalPresenceInput"><option value="">Sin calificar</option><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></label>
+                    <label><span>Presencia física</span><select id="competitorPhysicalPresenceInput"><option value="">Sin calificar</option><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></label>
+                    <label><span>Calidad percibida</span><select id="competitorPerceivedQualityInput"><option value="">Sin calificar</option><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></label>
+                    <label><span>Velocidad de respuesta</span><select id="competitorResponseSpeedInput"><option value="">Sin calificar</option><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></label>
                     <label><span>Agresividad comercial</span><select id="competitorAggressivenessInput"><option value="">Sin calificar</option><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></label>
                     <label class="checkbox-line"><input id="competitorCompetesPriceInput" type="checkbox"><span>Compite por precio</span></label>
+                    <label class="checkbox-line"><input id="competitorCompetesQualityInput" type="checkbox"><span>Compite por calidad</span></label>
+                    <label class="checkbox-line"><input id="competitorCompetesLocationInput" type="checkbox"><span>Compite por ubicación</span></label>
+                    <label class="checkbox-line"><input id="competitorCompetesBrandInput" type="checkbox"><span>Compite por marca</span></label>
+                    <label class="checkbox-line"><input id="competitorCompetesExperienceInput" type="checkbox"><span>Compite por experiencia</span></label>
                     <label class="checkbox-line"><input id="competitorCompetesPromotionsInput" type="checkbox"><span>Compite por promociones</span></label>
                     <label class="checkbox-line"><input id="competitorCompetesSocialInput" type="checkbox"><span>Compite por redes sociales</span></label>
                     <label class="checkbox-line"><input id="competitorCompetesEventsInput" type="checkbox"><span>Compite por eventos</span></label>
+                    <label class="checkbox-line"><input id="competitorCompetesPartnershipsInput" type="checkbox"><span>Compite por alianzas</span></label>
+                    <label class="checkbox-line"><input id="competitorCompetesFinancingInput" type="checkbox"><span>Compite por financiación</span></label>
                     <label class="span-2"><span>Notas internas</span><textarea id="competitorNotesInput" rows="3" maxlength="2000"></textarea></label>
                     <div class="modal-actions span-2">
                       <p class="form-message" id="competitorMessage"></p>
@@ -6245,9 +6263,9 @@
               </section>
             </section>
 
-            <section class="competition-panel hidden" data-competition-panel="products">
+            <section class="competition-panel hidden" id="competitionPanelProducts" role="tabpanel" aria-labelledby="competitionTabProducts" data-competition-panel="products">
             <section class="inventory-layout">
-              <article class="surface-card inventory-form-card" id="competitionProductFormPanel">
+              <article class="surface-card inventory-form-card" id="competitionProductFormPanel" role="dialog" aria-modal="true" aria-labelledby="competitionFormTitle" aria-hidden="true" tabindex="-1">
                 <div class="table-card-head">
                   <div>
                     <span class="mono-label">Observación</span>
@@ -6337,7 +6355,7 @@
             </section>
             </section>
 
-            <section class="competition-panel hidden" data-competition-panel="campaigns">
+            <section class="competition-panel hidden" id="competitionPanelCampaigns" role="tabpanel" aria-labelledby="competitionTabCampaigns" data-competition-panel="campaigns">
               <section class="inventory-layout">
                 <article class="surface-card inventory-form-card">
                   <div class="table-card-head">
@@ -6349,7 +6367,7 @@
                   </div>
                   <form class="modal-form inventory-form" id="competitorCampaignForm">
                     <input id="competitorCampaignIdInput" type="hidden">
-                    <label><span>Competidor</span><select id="competitorCampaignCompetitorInput"></select></label>
+                    <label><span>Competidor</span><select id="competitorCampaignCompetitorInput" required></select></label>
                     <label><span>Tipo de campaña</span><select id="competitorCampaignTypeInput"><option value="DISCOUNT">Descuento</option><option value="TWO_FOR_ONE">2x1</option><option value="EVENT">Evento</option><option value="RAFFLE">Sorteo</option><option value="REFERRALS">Referidos</option><option value="LAUNCH">Lanzamiento</option><option value="SEASONAL">Temporada</option><option value="PARTNERSHIP">Alianza</option><option value="INFLUENCER">Influencer</option><option value="GIFT_CARD">Gift card</option><option value="POST_SALE_BENEFIT">Beneficio postventa</option><option value="PROMO_BUNDLE">Paquete promocional</option><option value="PHYSICAL_ACTIVATION">Activación física</option><option value="OTHER">Otro</option></select></label>
                     <label class="span-2"><span>Nombre de la campaña</span><input id="competitorCampaignNameInput" type="text" maxlength="180" required></label>
                     <label><span>Fecha de inicio</span><input id="competitorCampaignStartInput" type="date"></label>
@@ -6357,6 +6375,7 @@
                     <label><span>Canal</span><input id="competitorCampaignChannelInput" type="text" maxlength="160" placeholder="Instagram, punto físico, WhatsApp"></label>
                     <label><span>Agresividad</span><select id="competitorCampaignAggressivenessInput"><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option><option value="CRITICAL">Crítica</option></select></label>
                     <label><span>Impacto estimado</span><select id="competitorCampaignImpactInput"><option value="LOW">Bajo</option><option value="MEDIUM">Medio</option><option value="HIGH">Alto</option><option value="CRITICAL">Crítico</option></select></label>
+                    <label><span>Estado</span><select id="competitorCampaignStatusInput"><option value="ACTIVE">Activa</option><option value="PAUSED">Pausada</option><option value="FINISHED">Finalizada</option></select></label>
                     <label><span>Fuente</span><select id="competitorCampaignSourceTypeInput"><option value="MANUAL">Manual</option><option value="WEBSITE">Sitio web</option><option value="SOCIAL">Red social</option><option value="SCREENSHOT">Captura</option><option value="PHOTO">Foto</option><option value="CUSTOMER">Cliente</option><option value="SELLER">Vendedor</option><option value="EVENT">Evento</option><option value="PHYSICAL_VISIT">Visita física</option><option value="WHATSAPP">WhatsApp</option><option value="CATALOG">Catálogo</option><option value="AD">Anuncio</option><option value="EMAIL">Email</option><option value="POST">Publicación</option><option value="OTHER">Otro</option></select></label>
                     <label><span>Confiabilidad</span><select id="competitorCampaignReliabilityInput"><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></label>
                     <label class="span-2"><span>Oferta</span><textarea id="competitorCampaignOfferInput" rows="2" maxlength="1000"></textarea></label>
@@ -6387,7 +6406,7 @@
               </section>
             </section>
 
-            <section class="competition-panel hidden" data-competition-panel="events">
+            <section class="competition-panel hidden" id="competitionPanelEvents" role="tabpanel" aria-labelledby="competitionTabEvents" data-competition-panel="events">
               <section class="inventory-layout">
                 <article class="surface-card inventory-form-card">
                   <div class="table-card-head">
@@ -6396,13 +6415,16 @@
                   </div>
                   <form class="modal-form inventory-form" id="competitorEventForm">
                     <input id="competitorEventIdInput" type="hidden">
-                    <label><span>Competidor</span><select id="competitorEventCompetitorInput"></select></label>
+                    <label><span>Competidor</span><select id="competitorEventCompetitorInput" required></select></label>
                     <label><span>Tipo de evento</span><select id="competitorEventTypeInput"><option value="FAIR">Feria</option><option value="LAUNCH">Lanzamiento</option><option value="STORE_ACTIVATION">Activación en tienda</option><option value="PRIVATE_EVENT">Evento privado</option><option value="PARTNERSHIP">Alianza comercial</option><option value="MALL">Centro comercial</option><option value="CORPORATE">Corporativo</option><option value="EDUCATIONAL">Educativo</option><option value="SEASONAL">Temporada especial</option><option value="INFLUENCER_MEETUP">Influencer meet-up</option><option value="POP_UP">Pop-up store</option><option value="OTHER">Otro</option></select></label>
                     <label class="span-2"><span>Nombre del evento</span><input id="competitorEventNameInput" type="text" maxlength="180" required></label>
                     <label><span>Fecha</span><input id="competitorEventDateInput" type="date"></label>
                     <label><span>Ciudad</span><input id="competitorEventCityInput" type="text" maxlength="120"></label>
                     <label><span>Lugar</span><input id="competitorEventPlaceInput" type="text" maxlength="220"></label>
                     <label><span>Organizador</span><input id="competitorEventOrganizerInput" type="text" maxlength="180"></label>
+                    <label><span>Estado</span><select id="competitorEventStatusInput"><option value="ACTIVE">Próxima o activa</option><option value="DONE">Terminada</option></select></label>
+                    <label><span>Fuente</span><select id="competitorEventSourceTypeInput"><option value="MANUAL">Manual</option><option value="WEBSITE">Sitio web</option><option value="SOCIAL">Red social</option><option value="SCREENSHOT">Captura</option><option value="PHOTO">Foto</option><option value="CUSTOMER">Cliente</option><option value="SELLER">Vendedor</option><option value="EVENT">Evento</option><option value="PHYSICAL_VISIT">Visita física</option><option value="WHATSAPP">WhatsApp</option><option value="CATALOG">Catálogo</option><option value="AD">Anuncio</option><option value="EMAIL">Email</option><option value="POST">Publicación</option><option value="OTHER">Otro</option></select></label>
+                    <label><span>Confiabilidad</span><select id="competitorEventReliabilityInput"><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option></select></label>
                     <label class="span-2"><span>Participación del competidor</span><textarea id="competitorEventParticipationInput" rows="2" maxlength="1000"></textarea></label>
                     <label class="span-2"><span>Oferta presentada</span><textarea id="competitorEventOfferInput" rows="2" maxlength="1000"></textarea></label>
                     <label class="span-2"><span>Productos destacados</span><textarea id="competitorEventProductsInput" rows="2" maxlength="1000"></textarea></label>
@@ -6433,7 +6455,53 @@
               </section>
             </section>
 
-            <section class="competition-panel hidden" data-competition-panel="findings">
+            <section class="competition-panel hidden" id="competitionPanelTasks" role="tabpanel" aria-labelledby="competitionTabTasks" data-competition-panel="tasks">
+              <section class="inventory-layout competition-task-layout">
+                <article class="surface-card inventory-form-card">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">Respuesta comercial</span>
+                      <strong id="competitorTaskFormTitle">Nueva acción competitiva</strong>
+                      <small>Convierte una señal en una responsabilidad concreta, con prioridad y fecha.</small>
+                    </div>
+                    <button class="ghost-button" id="competitorTaskResetButton" type="button">Limpiar</button>
+                  </div>
+                  <form class="modal-form inventory-form" id="competitorTaskForm">
+                    <input id="competitorTaskIdInput" type="hidden">
+                    <label><span>Competidor</span><select id="competitorTaskCompetitorInput" required></select></label>
+                    <label><span>Señal relacionada</span><select id="competitorTaskFindingInput"><option value="">Sin señal relacionada</option></select></label>
+                    <label class="span-2"><span>Acción que debe ejecutarse</span><input id="competitorTaskTitleInput" type="text" maxlength="180" required placeholder="Ej: Revisar oferta propia antes del viernes"></label>
+                    <label><span>Responsable</span><input id="competitorTaskResponsibleInput" type="text" maxlength="160" placeholder="Persona o equipo"></label>
+                    <label><span>Fecha límite</span><input id="competitorTaskDueInput" type="date"></label>
+                    <label><span>Prioridad</span><select id="competitorTaskPriorityInput"><option value="LOW">Baja</option><option value="MEDIUM">Media</option><option value="HIGH">Alta</option><option value="CRITICAL">Crítica</option></select></label>
+                    <label><span>Estado</span><select id="competitorTaskStatusInput"><option value="OPEN">Abierta</option><option value="IN_PROGRESS">En gestión</option><option value="DONE">Terminada</option></select></label>
+                    <label class="span-2"><span>Notas de ejecución</span><textarea id="competitorTaskNotesInput" rows="3" maxlength="1500" placeholder="Resultado esperado, recursos y criterio de cierre"></textarea></label>
+                    <div class="modal-actions span-2">
+                      <p class="form-message" id="competitorTaskMessage">Selecciona un competidor y define una acción medible.</p>
+                      <button class="solid-button" id="competitorTaskSaveButton" type="submit">Guardar acción</button>
+                    </div>
+                  </form>
+                </article>
+                <article class="surface-card data-table-card inventory-table-card">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">Plan de respuesta</span>
+                      <strong>Acciones competitivas</strong>
+                      <small>Prioriza lo vencido, termina lo ejecutado y conserva el aprendizaje.</small>
+                    </div>
+                    <input id="competitorTaskSearchInput" type="search" placeholder="Buscar acción, competidor o responsable">
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead><tr><th>Acción</th><th>Competidor</th><th>Responsable</th><th>Fecha límite</th><th>Prioridad</th><th>Estado</th><th>Gestión</th></tr></thead>
+                      <tbody id="competitorTaskTable"></tbody>
+                    </table>
+                  </div>
+                </article>
+              </section>
+            </section>
+
+            <section class="competition-panel hidden" id="competitionPanelFindings" role="tabpanel" aria-labelledby="competitionTabFindings" data-competition-panel="findings">
               <section class="inventory-layout">
                 <article class="surface-card inventory-form-card">
                   <div class="table-card-head">
@@ -6445,7 +6513,7 @@
                   </div>
                   <form class="modal-form inventory-form" id="competitionFindingForm">
                     <input id="findingIdInput" type="hidden">
-                    <label><span>Competidor</span><select id="findingCompetitorInput"></select></label>
+                    <label><span>Competidor</span><select id="findingCompetitorInput" required></select></label>
                     <label><span>Tipo</span><select id="findingTypeInput"><option value="PRICE">Precio</option><option value="PRODUCT">Producto</option><option value="PROMOTION">Promoción</option><option value="CAMPAIGN">Campaña</option><option value="EVENT">Evento</option><option value="BENEFIT">Beneficio</option><option value="CHANNEL">Canal</option><option value="SOCIAL">Redes sociales</option><option value="PARTNERSHIP">Alianza</option><option value="LAUNCH">Lanzamiento</option><option value="MESSAGE">Mensaje de venta</option><option value="OTHER">Otro</option></select></label>
                     <label class="span-2"><span>Título</span><input id="findingTitleInput" type="text" maxlength="180" required></label>
                     <label><span>Impacto</span><select id="findingImpactInput"><option value="LOW">Bajo</option><option value="MEDIUM">Medio</option><option value="HIGH">Alto</option><option value="CRITICAL">Crítico</option></select></label>
@@ -6499,13 +6567,13 @@
               </section>
             </section>
 
-            <section class="competition-panel hidden" data-competition-panel="swot">
+            <section class="competition-panel hidden" id="competitionPanelSwot" role="tabpanel" aria-labelledby="competitionTabSwot" data-competition-panel="swot">
               <article class="surface-card inventory-form-card">
                 <div class="table-card-head">
                   <div><span class="mono-label">DOFA</span><strong>Análisis estratégico del competidor</strong></div>
                 </div>
                 <form class="modal-form inventory-form" id="competitorSwotForm">
-                  <label class="span-2"><span>Competidor</span><select id="competitorSwotSelect"></select></label>
+                  <label class="span-2"><span>Competidor</span><select id="competitorSwotSelect" required></select></label>
                   <label class="span-2"><span>Fortalezas del competidor</span><textarea id="competitorSwotStrengthsInput" rows="2" maxlength="1500"></textarea></label>
                   <label class="span-2"><span>Debilidades del competidor</span><textarea id="competitorSwotWeaknessesInput" rows="2" maxlength="1500"></textarea></label>
                   <label class="span-2"><span>Oportunidades para nuestro negocio</span><textarea id="competitorSwotOpportunitiesInput" rows="2" maxlength="2000"></textarea></label>
@@ -6525,7 +6593,7 @@
               </article>
             </section>
 
-            <section class="competition-panel hidden" data-competition-panel="comparison">
+            <section class="competition-panel hidden" id="competitionPanelComparison" role="tabpanel" aria-labelledby="competitionTabComparison" data-competition-panel="comparison">
               <section class="insight-grid">
                 <article class="surface-card data-table-card">
                   <div class="table-card-head"><div><span class="mono-label">Básica</span><strong>Comparativa de competidores</strong></div></div>
@@ -6547,7 +6615,7 @@
             </section>
 
             <div class="competition-detail-modal hidden" id="competitorDetailModal" aria-hidden="true">
-              <article class="surface-card competition-detail-card" role="dialog" aria-modal="true" aria-labelledby="competitorDetailTitle">
+              <article class="surface-card competition-detail-card" role="dialog" aria-modal="true" aria-labelledby="competitorDetailTitle" tabindex="-1">
                 <div class="competition-detail-head">
                   <div>
                     <span class="mono-label">Detalle competitivo</span>
@@ -6559,13 +6627,14 @@
                     <button class="ghost-button" id="competitorDetailAddCampaignButton" type="button">Promoción</button>
                     <button class="ghost-button" id="competitorDetailAddEventButton" type="button">Activación</button>
                     <button class="ghost-button" id="competitorDetailAddFindingButton" type="button">Señal</button>
+                    <button class="solid-button" id="competitorDetailAddTaskButton" type="button">Crear acciÃ³n</button>
                     <button class="icon-button" id="competitorDetailCloseButton" type="button" aria-label="Cerrar detalle competitivo">
                       <span class="material-symbols-outlined" aria-hidden="true">close</span>
                     </button>
                   </div>
                 </div>
                 <div class="competition-detail-snapshot" id="competitorDetailSnapshot" aria-label="Resumen del competidor"></div>
-                <div class="competition-detail-tabs" id="competitorDetailTabs" aria-label="Secciones del detalle competitivo"></div>
+                <div class="competition-detail-tabs" id="competitorDetailTabs" role="tablist" aria-label="Secciones del detalle competitivo"></div>
                 <div class="competition-detail-body" id="competitorDetailBody"></div>
               </article>
             </div>
