@@ -111,6 +111,10 @@ test("el portal separa Vendedores de Cuenta y Admin y ofrece estados accesibles"
   assert.match(app, /loadSellerAttributions/);
   assert.match(app, /handleSellerModalKeys/);
   assert.match(app, /data-add-sale-product/);
+  assert.match(html, /qori-sellers-hero-contrast-v4-20260828/);
+  assert.match(css, /qoriSellerHeroA#qoriSellerHeroB#qoriSellerHeroC#qoriSellerHeroD#qoriSellerHeroE/);
+  assert.match(css, /sellers-hero-actions[\s\S]+color:#fff!important/);
+  assert.match(css, /sellers-hero[\s\S]+\.sellers-eyebrow,h2,p,\.sellers-data-state\)\{color:#fff!important/);
   assert.match(packages, /¿Quién te dio a conocer Qori\?/);
   assert.match(packages, /role="combobox"[\s\S]+aria-controls="salesAdvisorResults"/);
 });
