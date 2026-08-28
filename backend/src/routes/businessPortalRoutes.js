@@ -1,6 +1,6 @@
 const express = require("express");
 const { downloadSalesImportTemplate, previewSalesImport, importSales } = require("../controllers/salesBulkImportController");
-const { authRequired, requireRoles } = require("../middleware/auth");
+const { authRequired, requireRoles, blockBusinessSeller } = require("../middleware/auth");
 const {
   cacheBusinessResponse,
   invalidateBusinessResponseCache,
@@ -186,6 +186,18 @@ const {
   whatsappQueue: communicationWhatsAppQueue,
 } = require("../controllers/businessCommunicationController");
 const { storageSummary } = require("../controllers/storageQuotaController");
+const {
+  listSellers,
+  getSeller,
+  getSellerSelf,
+  createSellerHandler,
+  patchSeller,
+  patchSellerSelf,
+  putSellerGoal,
+  postSellerSale,
+  patchSignupAttribution,
+  sellerModuleAccess,
+} = require("../controllers/sellerController");
 
 const router = express.Router();
 
@@ -199,6 +211,20 @@ const requireContactDirectory = requireBusinessFeature("contact_directory");
 const requireJourney = requireBusinessFeature("journey");
 const requirePredictiveAnalytics = requireBusinessFeature("predictive_analytics");
 const requireLeadExport = requireBusinessFeature("leads_export");
+
+router.get("/sellers/me", sellerModuleAccess, requireRoles("BUSINESS_SELLER"), getSellerSelf);
+router.patch("/sellers/me/profile", sellerModuleAccess, requireRoles("BUSINESS_SELLER"), patchSellerSelf);
+router.get("/sellers", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), listSellers);
+router.post("/sellers", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), createSellerHandler);
+router.get("/sellers/:sellerId", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), getSeller);
+router.patch("/sellers/:sellerId", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), patchSeller);
+router.put("/sellers/:sellerId/goals", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), putSellerGoal);
+router.post("/sellers/:sellerId/sales", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), postSellerSale);
+router.patch("/sellers/attributions/:attributionId", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), patchSignupAttribution);
+
+// BUSINESS_SELLER is a deliberately narrow role. Every existing business route
+// remains unreachable even if a caller bypasses the frontend navigation.
+router.use(blockBusinessSeller);
 
 router.get("/access", businessAccess);
 router.get("/storage/summary", storageSummary);

@@ -527,7 +527,7 @@ async function createUser(req, res, next) {
       }
       const usersCount = await query(
         `select
-           count(*) filter (where role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR'))::int as users,
+           count(*) filter (where role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR'))::int as users,
            count(*) filter (where role = 'VALIDATOR')::int as validators
          from app_users
          where business_id = $1 and is_active = true`,
@@ -846,7 +846,7 @@ async function listBusinesses(req, res, next) {
          qa.internal_unit_price_cop,
          qa.public_label,
          qa.last_purchase_at,
-         count(distinct u.id) filter (where u.role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR'))::int as users_count,
+         count(distinct u.id) filter (where u.role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR'))::int as users_count,
          count(distinct u.id) filter (where u.role = 'VALIDATOR')::int as validators_count,
          count(distinct c.id)::int as campaigns_count,
          count(distinct c.id) filter (where c.status = 'READY_FOR_CLIENT_SETUP')::int as ready_campaigns_count,
@@ -894,7 +894,7 @@ async function updateBusinessSubscription(req, res, next) {
          set is_active = true,
              updated_at = now()
          where business_id = $1
-           and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')`,
+           and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR')`,
         [req.params.id]
       );
     }

@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/img/qori-favicon-32.png?v=qori-favicon-20260825-v120">
   <link rel="apple-touch-icon" sizes="180x180" href="/img/qori-apple-touch-icon.png?v=qori-favicon-20260825-v120">
   <link rel="manifest" href="/site.webmanifest?v=qori-favicon-20260825-v120">
-  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385">
+  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v386-20260828">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -56,6 +56,7 @@
 <link rel="stylesheet" href="css/acquisition-command-center.css?v=acquisition-lead-sales-trace-v353-20260824-v10" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/account-premium.css?v=account-plan-change-v12-20260827">
 <link rel="stylesheet" href="css/semantic-messages.css?v=semantic-messages-v1-20260827">
+<link rel="stylesheet" href="css/sellers-premium.css?v=qori-sellers-attribution-v1-20260828">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -327,6 +328,10 @@
             <button class="nav-item" data-view="campaigns" type="button">
               <span class="material-symbols-outlined">campaign</span>
               <span><strong>Campañas</strong><small>Planear estrategia y oferta</small></span>
+            </button>
+            <button class="nav-item" data-view="sellers" type="button">
+              <span class="material-symbols-outlined">groups_3</span>
+              <span><strong>Vendedores</strong><small>Metas, clientes y resultados</small></span>
             </button>
             </div>
           </section>
@@ -1484,6 +1489,47 @@
                 </form>
               </div>
             </div>
+          </section>
+
+          <section class="view-section sellers-command-view" data-view="sellers" aria-labelledby="sellersTitle">
+            <header class="sellers-hero">
+              <div>
+                <span class="sellers-eyebrow"><span class="material-symbols-outlined" aria-hidden="true">groups_3</span> Inteligencia comercial GOS</span>
+                <h2 id="sellersTitle">Vendedores</h2>
+                <p id="sellersSubtitle">Convierte ventas reales en decisiones: meta, resultado, evidencia y siguiente acción.</p>
+                <div class="sellers-data-state" id="sellersDataState" role="status" aria-live="polite"><span></span> Esperando actualización</div>
+              </div>
+              <div class="sellers-hero-actions" id="sellersAdminActions">
+                <button class="ghost-button" id="sellerNewButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">person_add</span>Nuevo vendedor</button>
+                <button class="solid-button" id="sellerRegisterSaleButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span>Registrar venta</button>
+              </div>
+            </header>
+
+            <form class="sellers-filters" id="sellersFilters" aria-label="Filtros de vendedores">
+              <label><span>Desde</span><input id="sellersStartDate" type="date"></label>
+              <label><span>Hasta</span><input id="sellersEndDate" type="date"></label>
+              <label><span>Estado</span><select id="sellersStatusFilter"><option value="">Todos</option><option value="ACTIVE">Activos</option><option value="INACTIVE">Inactivos</option></select></label>
+              <label data-seller-admin-filter><span>Vendedor</span><select id="sellersSellerFilter"><option value="">Todo el equipo</option></select></label>
+              <label><span>Sede</span><select id="sellersBranchFilter"><option value="">Todas las sedes</option></select></label>
+              <label><span>Producto o plan</span><input id="sellersProductFilter" type="search" placeholder="Nombre o código"></label>
+              <label><span>Canal</span><input id="sellersChannelFilter" type="search" placeholder="Ej. WhatsApp"></label>
+              <label class="sellers-search"><span>Nombre o código</span><input id="sellersSearchInput" type="search" placeholder="Ej. Ana o QORI-ANA-001"></label>
+              <button class="ghost-button" type="submit"><span class="material-symbols-outlined" aria-hidden="true">filter_alt</span>Aplicar</button>
+            </form>
+
+            <section class="sellers-kpis" id="sellersKpiGrid" aria-label="Indicadores comerciales">
+              <article class="seller-kpi is-loading"><span>Actualizando</span><strong>—</strong><small>Consultando el ledger real</small></article>
+            </section>
+
+            <section class="sellers-directory-card">
+              <header><div><span class="mono-label">Directorio y desempeño</span><h3 id="sellersDirectoryTitle">Equipo comercial</h3></div><p id="sellersDirectorySummary">Abre una ficha para revisar metas, ventas, clientes y actividad.</p></header>
+              <div class="sellers-table-wrap">
+                <table class="sellers-table">
+                  <thead><tr><th>Vendedor</th><th>Zona / sede</th><th>Estado</th><th>Revenue</th><th>Ventas</th><th>Clientes</th><th>Meta</th><th>Última actividad</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+                  <tbody id="sellersTableBody"><tr><td colspan="9"><div class="sellers-empty"><span class="busy-spinner" aria-hidden="true"></span>Cargando vendedores…</div></td></tr></tbody>
+                </table>
+              </div>
+            </section>
           </section>
 
           <section class="view-section" data-view="account">
@@ -8177,7 +8223,40 @@
       <footer class="modal-actions"><button class="ghost-button" type="button" data-portal-email-route="cancel">Cancelar</button></footer>
     </section>
   </div>
-  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385" defer></script>
+  <div class="modal-shell hidden seller-detail-modal" id="sellerDetailModal" role="dialog" aria-modal="true" aria-labelledby="sellerDetailTitle" aria-hidden="true">
+    <section class="modal-card seller-detail-card" tabindex="-1">
+      <header class="seller-detail-head">
+        <div><span class="mono-label" id="sellerDetailCode">VENDEDOR</span><h3 id="sellerDetailTitle">Ficha del vendedor</h3><p id="sellerDetailMeta">Desempeño basado en ventas reales.</p></div>
+        <button class="icon-button" id="sellerDetailClose" type="button" aria-label="Cerrar ficha"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+      </header>
+      <nav class="seller-tabs" id="sellerDetailTabs" aria-label="Secciones de la ficha" role="tablist">
+        <button class="is-active" type="button" role="tab" aria-selected="true" data-seller-tab="summary">Resumen</button>
+        <button type="button" role="tab" aria-selected="false" data-seller-tab="goals">Metas</button>
+        <button type="button" role="tab" aria-selected="false" data-seller-tab="sales">Ventas</button>
+        <button type="button" role="tab" aria-selected="false" data-seller-tab="clients">Clientes</button>
+        <button type="button" role="tab" aria-selected="false" data-seller-tab="products">Productos o planes</button>
+        <button type="button" role="tab" aria-selected="false" data-seller-tab="activity">Actividad</button>
+        <button type="button" role="tab" aria-selected="false" data-seller-tab="access" data-seller-admin-only>Datos y acceso</button>
+      </nav>
+      <div class="seller-detail-body" id="sellerDetailBody"><div class="sellers-empty"><span class="busy-spinner" aria-hidden="true"></span>Cargando ficha…</div></div>
+      <footer class="seller-detail-footer"><p id="sellerDetailMessage" class="error-line" role="status" aria-live="polite"></p><button class="ghost-button" id="sellerDetailDone" type="button">Cerrar</button></footer>
+    </section>
+  </div>
+
+  <div class="modal-shell hidden seller-editor-modal" id="sellerEditorModal" role="dialog" aria-modal="true" aria-labelledby="sellerEditorTitle" aria-hidden="true">
+    <section class="modal-card seller-editor-card" tabindex="-1">
+      <header class="modal-head"><div><span class="mono-label" id="sellerEditorEyebrow">EQUIPO COMERCIAL</span><h3 id="sellerEditorTitle">Nuevo vendedor</h3><p id="sellerEditorHelp">Crea un acceso real y un perfil comercial dentro de este negocio.</p></div><button class="icon-button" id="sellerEditorClose" type="button" aria-label="Cerrar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></header>
+      <form class="seller-editor-form" id="sellerEditorForm">
+        <input id="sellerEditorMode" type="hidden" value="seller">
+        <input id="sellerEditorSellerId" type="hidden">
+        <div id="sellerEditorFields"></div>
+        <p class="error-line" id="sellerEditorMessage" role="status" aria-live="polite"></p>
+        <footer class="modal-actions"><button class="ghost-button" id="sellerEditorCancel" type="button">Cancelar</button><button class="solid-button" id="sellerEditorSubmit" type="submit">Guardar vendedor</button></footer>
+      </form>
+    </section>
+  </div>
+
+  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v386-20260828" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v344-20260823" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>

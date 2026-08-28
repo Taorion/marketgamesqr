@@ -8,6 +8,7 @@ const { PLAN_CODES, listPlans, normalizePlanCode } = require("../services/subscr
 const {
   createPortalSignupCheckout,
 } = require("../services/mercadoPagoService");
+const { createSignupAttribution } = require("../services/sellerService");
 
 const packageRequestPatchSchema = z.object({
   payment_confirmed: z.boolean().optional(),
@@ -30,6 +31,7 @@ const publicSignupBaseSchema = z.object({
   terms_accepted: z.boolean().refine((value) => value === true, "Debes aceptar los terminos y condiciones."),
   privacy_accepted: z.boolean().refine((value) => value === true, "Debes aceptar la politica de privacidad."),
   legal_version: z.string().trim().max(40).default("2026-06-16"),
+  sales_advisor_code: z.string().trim().max(40).optional().nullable(),
 }).refine((body) => body.password === body.password_confirm, {
   message: "La confirmacion de clave no coincide.",
   path: ["password_confirm"],
@@ -250,6 +252,16 @@ async function createPortalSignup(req, res, next) {
         full_name: user.full_name,
         plan_code: plan.code,
         billing_cycle: body.billing_cycle,
+        sales_advisor_code: body.sales_advisor_code || null,
+      });
+
+      await createSignupAttribution(client, {
+        purchase_order_id: order.id,
+        client_business_id: business.id,
+        sales_advisor_code: body.sales_advisor_code || null,
+        plan_code: plan.code,
+        billing_cycle: body.billing_cycle,
+        expected_revenue_cop: order.price_cop,
       });
 
       return { business, user, plan, order };

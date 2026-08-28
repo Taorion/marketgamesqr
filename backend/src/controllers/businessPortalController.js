@@ -685,7 +685,7 @@ async function commercialOwnerForBusiness(businessId, userId, db = query) {
       where id = $1
         and business_id = $2
         and is_active = true
-        and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')`,
+        and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR')`,
     [userId, businessId]
   );
   if (!result.rowCount) throw badRequest("El responsable comercial no existe o no está activo en este negocio.");
@@ -701,7 +701,7 @@ function requireBusinessOwner(req) {
 async function activeUserCountsForBusiness(businessId) {
   const result = await query(
     `select
-       count(*) filter (where role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR'))::int as users,
+       count(*) filter (where role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR'))::int as users,
        count(*) filter (where role = 'VALIDATOR')::int as validators
      from app_users
      where business_id = $1 and is_active = true`,
@@ -1207,9 +1207,9 @@ async function listBusinessUsers(req, res, next) {
               can_redeem_cross_business, is_active, deactivated_at, created_at, updated_at
        from app_users
        where business_id = $1
-         and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')
+         and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR')
        order by
-         case role when 'BUSINESS_OWNER' then 0 when 'BUSINESS_MANAGER' then 1 else 2 end,
+         case role when 'BUSINESS_OWNER' then 0 when 'BUSINESS_MANAGER' then 1 when 'BUSINESS_SELLER' then 2 else 3 end,
          created_at asc`,
       [businessId]
     );
@@ -1292,7 +1292,7 @@ async function updateBusinessUser(req, res, next) {
            updated_at = now()
        where id = $1
          and business_id = $2
-         and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')
+         and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR')
        returning id, business_id, email, full_name, role, branch_id,
                  can_redeem_cross_business, is_active, deactivated_at, created_at, updated_at`,
       [req.params.userId, businessId, body.is_active]

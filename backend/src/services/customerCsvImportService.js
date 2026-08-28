@@ -249,7 +249,7 @@ async function resolveCommercialOwners(businessId, rows, db = query) {
        from app_users
       where business_id = $1
         and is_active = true
-        and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'VALIDATOR')
+        and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR')
       order by full_name asc, email asc`,
     [businessId]
   );

@@ -18,6 +18,7 @@ const {
   getBusinessSubscription,
   listPlans,
 } = require("./subscriptionService");
+const { approveSignupAttribution, syncSignupAttributionStatus } = require("./sellerService");
 const { storageAddonOffer, approveStorageAddonOrder } = require("./storageQuotaService");
 
 const MP_API_BASE = "https://api.mercadopago.com";
@@ -870,6 +871,7 @@ async function createPortalSignupCheckout(client, payload) {
           billing_cycle: billingCycle,
           courtesy_tickets_quantity: 10,
           plan_price_cop: planPriceCop,
+          sales_advisor_code: payload.sales_advisor_code || null,
         },
       }),
     ]
@@ -982,6 +984,10 @@ async function processPreapprovalWebhook(preapprovalId) {
         preapproval.init_point || preapproval.sandbox_init_point || null,
       ]
     );
+
+    if (order.metadata?.signup?.type === "portal_monthly_subscription" && ["CANCELLED", "PAUSED"].includes(status)) {
+      await syncSignupAttributionStatus(client, order.id, "CANCELLED");
+    }
 
     return {
       auto_renewal: {
@@ -1146,6 +1152,7 @@ async function processMercadoPagoWebhook(req) {
          returning *`,
         [payableOrder.id, status, String(payment.id), payment]
       );
+      await syncSignupAttributionStatus(client, payableOrder.id, status, payment.id);
       return { order: mapPurchaseOrder(updated.rows[0]), credited: false };
     }
 
@@ -1386,6 +1393,12 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
       [order.created_by_user_id, order.business_id]
     );
   }
+
+  await approveSignupAttribution(client, {
+    purchase_order_id: order.id,
+    approved_revenue_cop: Number(order.price_cop || 0),
+    payment_id: payment.id,
+  });
 
   return {
     order: mapPurchaseOrder(updated.rows[0]),

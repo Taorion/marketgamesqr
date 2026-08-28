@@ -45,7 +45,7 @@ async function salesTemplateForBusiness(businessId, user, db = query) {
        from app_users
       where business_id = $1
         and is_active = true
-        and role in ('BUSINESS_OWNER','BUSINESS_MANAGER','VALIDATOR')
+        and role in ('BUSINESS_OWNER','BUSINESS_MANAGER','BUSINESS_SELLER','VALIDATOR')
       order by case when id = $2 then 0 else 1 end,
                case role when 'BUSINESS_OWNER' then 0 when 'BUSINESS_MANAGER' then 1 else 2 end,
                created_at asc
@@ -205,7 +205,7 @@ async function fileRows(payload = {}) {
 
 async function resolveRows(businessId, user, parsed, db = query) {
   const [users, campaigns, channels, branches] = await Promise.all([
-    db(`select id, full_name, lower(email) as email from app_users where business_id = $1 and is_active = true and role in ('BUSINESS_OWNER','BUSINESS_MANAGER','VALIDATOR')`, [businessId]),
+    db(`select id, full_name, lower(email) as email from app_users where business_id = $1 and is_active = true and role in ('BUSINESS_OWNER','BUSINESS_MANAGER','BUSINESS_SELLER','VALIDATOR')`, [businessId]),
     db(`select id, name from campaigns where business_id = $1`, [businessId]),
     db(`select id, name, slug from business_acquisition_channels where business_id = $1 and status <> 'ARCHIVED'`, [businessId]),
     db(`select id, name from branches where business_id = $1 and is_active = true`, [businessId]),

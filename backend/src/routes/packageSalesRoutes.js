@@ -7,11 +7,13 @@ const {
   createPortalSignup,
 } = require("../controllers/packageSalesController");
 const { rateLimit } = require("../middleware/rateLimit");
+const { listPublicSalesAdvisors } = require("../controllers/sellerController");
 
 const router = express.Router();
 
 router.get("/packages", listPackageOffers);
 router.get("/subscription-plans", listPublicSubscriptionPlans);
+router.get("/sales-advisors", rateLimit({ keyPrefix: "public-sales-advisors", max: 30, windowMs: 15 * 60_000 }), listPublicSalesAdvisors);
 router.post("/packages/requests", rateLimit({ keyPrefix: "package-request", max: 10, windowMs: 15 * 60_000 }), createPackageRequest);
 router.post("/signup/ticket-base", rateLimit({ keyPrefix: "signup-ticket-base", max: 6, windowMs: 15 * 60_000 }), createPrepaidSignup);
 router.post("/signup/prepaid", rateLimit({ keyPrefix: "signup-prepaid", max: 6, windowMs: 15 * 60_000 }), createPrepaidSignup);

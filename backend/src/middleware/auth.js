@@ -3,6 +3,14 @@ const { query } = require("../config/db");
 const { env } = require("../config/env");
 const { unauthorized, forbidden } = require("../utils/http");
 
+function businessSellerSelfServiceAllowed(req) {
+  const path = String(req.originalUrl || req.url || "").split("?")[0];
+  if (req.method === "GET" && ["/api/auth/me", "/api/business/sellers/me"].includes(path)) return true;
+  if (req.method === "PATCH" && path === "/api/business/sellers/me/profile") return true;
+  if (req.method === "POST" && path === "/api/auth/password/change") return true;
+  return false;
+}
+
 async function authRequired(req, _res, next) {
   try {
     const header = req.headers.authorization || "";
@@ -39,6 +47,9 @@ async function authRequired(req, _res, next) {
 
     delete user.business_is_active;
     req.user = user;
+    if (user.role === "BUSINESS_SELLER" && !businessSellerSelfServiceAllowed(req)) {
+      throw forbidden("Tu cuenta de vendedor solo puede acceder a Mi desempeno y a tu perfil personal.");
+    }
     next();
   } catch (error) {
     next(error.status ? error : unauthorized("Invalid or expired token."));
@@ -54,6 +65,13 @@ function requireRoles(...roles) {
   };
 }
 
+function blockBusinessSeller(req, _res, next) {
+  if (req.user?.role === "BUSINESS_SELLER") {
+    return next(forbidden("Tu cuenta de vendedor solo puede acceder a Mi desempeno y a tu perfil personal."));
+  }
+  next();
+}
+
 function canAccessBusiness(user, businessId) {
   if (!user) {
     return false;
@@ -67,4 +85,4 @@ function canAccessBusiness(user, businessId) {
   return user.business_id === businessId;
 }
 
-module.exports = { authRequired, requireRoles, canAccessBusiness };
+module.exports = { authRequired, requireRoles, blockBusinessSeller, canAccessBusiness, businessSellerSelfServiceAllowed };

@@ -937,3 +937,41 @@ input:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.sales-advisor-field {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid rgba(8, 82, 109, .18);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f6fbfc, #eef8f5);
+}
+
+.sales-advisor-field legend { padding: 0 8px; color: #073b55; font-weight: 800; }
+.sales-advisor-field > label { display: flex; align-items: flex-start; gap: 10px; min-height: 70px; padding: 13px; border: 1px solid #d5e5e8; border-radius: 14px; background: #fff; cursor: pointer; }
+.sales-advisor-field > label:has(input:checked) { border-color: #16879a; box-shadow: 0 0 0 3px rgba(22, 135, 154, .1); }
+.sales-advisor-field > label input { margin-top: 3px; accent-color: #0d7b8f; }
+.sales-advisor-field > label span { display: grid; gap: 4px; }
+.sales-advisor-field > label strong { color: #083b57; font-size: .88rem; }
+.sales-advisor-field > label small { color: #647985; line-height: 1.4; }
+.sales-advisor-combobox { position: relative; grid-column: 1 / -1; display: grid; gap: 7px; }
+.sales-advisor-combobox.hidden { display: none; }
+.sales-advisor-combobox > label { color: #274f60; font-size: .78rem; font-weight: 800; }
+.sales-advisor-input-shell { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 8px; min-height: 48px; padding: 0 12px; border: 1px solid #b9d3da; border-radius: 13px; background: #fff; }
+.sales-advisor-input-shell:focus-within { border-color: #087d96; box-shadow: 0 0 0 3px rgba(8,125,150,.12); }
+.sales-advisor-input-shell .material-symbols-outlined { color: #087d96; }
+.sales-advisor-input-shell input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; }
+.sales-advisor-results { position: absolute; z-index: 8; top: 80px; left: 0; right: 0; display: grid; max-height: 240px; overflow: auto; padding: 6px; border: 1px solid #c8dce2; border-radius: 13px; background: #fff; box-shadow: 0 16px 34px rgba(7,59,85,.16); }
+.sales-advisor-results.hidden { display: none; }
+.sales-advisor-results button { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 9px; min-height: 48px; padding: 9px 10px; border: 0; border-radius: 9px; background: transparent; color: #073b55; text-align: left; cursor: pointer; }
+.sales-advisor-results button:hover,.sales-advisor-results button[aria-selected="true"] { background: #edf8f8; }
+.sales-advisor-results button > span:last-child { display: grid; gap: 2px; min-width: 0; }
+.sales-advisor-results small { color: #687e88; }
+.sales-advisor-status { min-height: 19px; margin: 0; color: #5d747f; font-size: .72rem; }
+
+@media (max-width: 640px) {
+  .sales-advisor-field { grid-template-columns: 1fr; padding: 14px; }
+  .sales-advisor-combobox { grid-column: 1; }
+}

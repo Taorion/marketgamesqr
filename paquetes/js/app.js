@@ -7,6 +7,18 @@ const submitButton = document.getElementById("submitButton");
 const formEyebrow = document.getElementById("formEyebrow");
 const formTitle = document.getElementById("formTitle");
 const formCopy = document.getElementById("formCopy");
+const salesAdvisorSelf = document.getElementById("salesAdvisorSelf");
+const salesAdvisorSeller = document.getElementById("salesAdvisorSeller");
+const salesAdvisorCombobox = document.getElementById("salesAdvisorCombobox");
+const salesAdvisorSearch = document.getElementById("salesAdvisorSearch");
+const salesAdvisorResults = document.getElementById("salesAdvisorResults");
+const salesAdvisorStatus = document.getElementById("salesAdvisorStatus");
+
+let selectedSalesAdvisor = null;
+let salesAdvisorMatches = [];
+let salesAdvisorActiveIndex = -1;
+let salesAdvisorTimer = 0;
+let salesAdvisorRequest = 0;
 
 const urlParams = new URLSearchParams(window.location.search);
 const initialPlanCode = String(urlParams.get("plan") || "").toUpperCase();
@@ -260,7 +272,76 @@ function signupPayload() {
     terms_accepted: Boolean(document.getElementById("termsAccepted")?.checked),
     privacy_accepted: Boolean(document.getElementById("privacyAccepted")?.checked),
     legal_version: "2026-07-23",
+    sales_advisor_code: salesAdvisorSeller?.checked ? selectedSalesAdvisor?.code || null : null,
   };
+}
+
+function syncSalesAdvisorChoice() {
+  const sellerSelected = Boolean(salesAdvisorSeller?.checked);
+  salesAdvisorCombobox?.classList.toggle("hidden", !sellerSelected);
+  salesAdvisorSearch?.setAttribute("aria-expanded", "false");
+  if (!sellerSelected) {
+    selectedSalesAdvisor = null;
+    if (salesAdvisorSearch) salesAdvisorSearch.value = "";
+    salesAdvisorResults?.classList.add("hidden");
+    if (salesAdvisorStatus) salesAdvisorStatus.textContent = "La inscripción quedará registrada como llegada por cuenta propia.";
+  } else {
+    if (salesAdvisorStatus) salesAdvisorStatus.textContent = "Escribe al menos 2 caracteres.";
+    window.setTimeout(() => salesAdvisorSearch?.focus(), 0);
+  }
+}
+
+function renderSalesAdvisorMatches(message = "") {
+  if (!salesAdvisorResults) return;
+  salesAdvisorResults.innerHTML = salesAdvisorMatches.map((advisor, index) => `
+    <button id="sales-advisor-option-${index}" type="button" role="option" aria-selected="${index === salesAdvisorActiveIndex ? "true" : "false"}" data-sales-advisor-code="${escapeHtml(advisor.code)}">
+      <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+      <span><strong>${escapeHtml(advisor.name)}</strong><small>${escapeHtml(advisor.code)}</small></span>
+    </button>
+  `).join("");
+  salesAdvisorResults.classList.toggle("hidden", !salesAdvisorMatches.length);
+  salesAdvisorSearch?.setAttribute("aria-expanded", String(Boolean(salesAdvisorMatches.length)));
+  if (salesAdvisorActiveIndex >= 0) salesAdvisorSearch?.setAttribute("aria-activedescendant", `sales-advisor-option-${salesAdvisorActiveIndex}`);
+  else salesAdvisorSearch?.removeAttribute("aria-activedescendant");
+  if (salesAdvisorStatus) salesAdvisorStatus.textContent = message || (salesAdvisorMatches.length ? `${salesAdvisorMatches.length} coincidencia${salesAdvisorMatches.length === 1 ? "" : "s"}.` : "No encontramos un asesor activo con ese nombre o código.");
+}
+
+async function searchSalesAdvisors() {
+  const term = String(salesAdvisorSearch?.value || "").trim();
+  selectedSalesAdvisor = null;
+  salesAdvisorMatches = [];
+  salesAdvisorActiveIndex = -1;
+  if (term.length < 2) {
+    renderSalesAdvisorMatches("Escribe al menos 2 caracteres.");
+    return;
+  }
+  const request = ++salesAdvisorRequest;
+  if (salesAdvisorStatus) salesAdvisorStatus.textContent = "Buscando asesores…";
+  try {
+    const data = await fetchJson(`/api/public/sales-advisors?q=${encodeURIComponent(term)}`);
+    if (request !== salesAdvisorRequest) return;
+    salesAdvisorMatches = Array.isArray(data.advisors) ? data.advisors : [];
+    renderSalesAdvisorMatches();
+  } catch (error) {
+    if (request !== salesAdvisorRequest) return;
+    renderSalesAdvisorMatches(error.message || "No fue posible buscar asesores. Puedes elegir Llegué por mi cuenta.");
+  }
+}
+
+function chooseSalesAdvisor(code) {
+  const advisor = salesAdvisorMatches.find((item) => item.code === code);
+  if (!advisor) return;
+  selectedSalesAdvisor = advisor;
+  if (salesAdvisorSearch) salesAdvisorSearch.value = `${advisor.name} · ${advisor.code}`;
+  salesAdvisorMatches = [];
+  salesAdvisorActiveIndex = -1;
+  renderSalesAdvisorMatches(`Asesor seleccionado: ${advisor.name} · ${advisor.code}.`);
+}
+
+function scheduleSalesAdvisorSearch() {
+  window.clearTimeout(salesAdvisorTimer);
+  selectedSalesAdvisor = null;
+  salesAdvisorTimer = window.setTimeout(searchSalesAdvisors, 280);
 }
 
 async function submitEntryRequest(payload) {
@@ -283,6 +364,11 @@ async function submitSignup(event) {
   }
 
   const payload = signupPayload();
+  if (salesAdvisorSeller?.checked && !payload.sales_advisor_code) {
+    setMessage("Selecciona una coincidencia válida de asesor o elige Llegué por mi cuenta.", "error");
+    salesAdvisorSearch?.focus();
+    return;
+  }
   if (selectedPlan.notSubscription) {
     await submitEntryRequest(payload);
     return;
@@ -331,5 +417,24 @@ async function loadPlans() {
 
 document.addEventListener("DOMContentLoaded", () => {
   signupForm?.addEventListener("submit", submitSignup);
+  salesAdvisorSelf?.addEventListener("change", syncSalesAdvisorChoice);
+  salesAdvisorSeller?.addEventListener("change", syncSalesAdvisorChoice);
+  salesAdvisorSearch?.addEventListener("input", scheduleSalesAdvisorSearch);
+  salesAdvisorResults?.addEventListener("click", (event) => {
+    const option = event.target.closest("[data-sales-advisor-code]");
+    if (option) chooseSalesAdvisor(option.dataset.salesAdvisorCode);
+  });
+  salesAdvisorSearch?.addEventListener("keydown", (event) => {
+    if (!salesAdvisorMatches.length) return;
+    if (event.key === "ArrowDown") salesAdvisorActiveIndex = (salesAdvisorActiveIndex + 1) % salesAdvisorMatches.length;
+    else if (event.key === "ArrowUp") salesAdvisorActiveIndex = (salesAdvisorActiveIndex - 1 + salesAdvisorMatches.length) % salesAdvisorMatches.length;
+    else if (event.key === "Enter" && salesAdvisorActiveIndex >= 0) { event.preventDefault(); chooseSalesAdvisor(salesAdvisorMatches[salesAdvisorActiveIndex].code); return; }
+    else if (event.key === "Escape") { salesAdvisorMatches = []; salesAdvisorActiveIndex = -1; renderSalesAdvisorMatches("Búsqueda cerrada."); return; }
+    else return;
+    event.preventDefault();
+    renderSalesAdvisorMatches();
+    salesAdvisorResults?.querySelectorAll('[role="option"]')[salesAdvisorActiveIndex]?.scrollIntoView({ block: "nearest" });
+  });
+  syncSalesAdvisorChoice();
   loadPlans();
 });

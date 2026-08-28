@@ -16,6 +16,11 @@ exception when duplicate_object then null;
 end $$;
 
 do $$ begin
+  alter type user_role add value if not exists 'BUSINESS_SELLER';
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
   create type qr_status as enum ('ACTIVE', 'REDEEMED', 'EXPIRED', 'INVALID');
 exception when duplicate_object then null;
 end $$;
@@ -903,6 +908,11 @@ create index if not exists idx_business_qr_credit_ledger_business_created on bus
 create index if not exists idx_qr_credit_purchase_orders_business_created on qr_credit_purchase_orders(business_id, created_at desc);
 create index if not exists idx_qr_credit_purchase_orders_status on qr_credit_purchase_orders(status, created_at desc);
 create index if not exists idx_qr_credit_purchase_orders_preference on qr_credit_purchase_orders(mercado_pago_preference_id);
+alter table qr_credit_purchase_orders
+  add column if not exists checkout_key text,
+  add column if not exists checkout_error text,
+  add column if not exists checkout_expires_at timestamptz;
+
 create unique index if not exists ux_qr_credit_purchase_orders_business_checkout_key on qr_credit_purchase_orders(business_id, checkout_key) where checkout_key is not null;
 create index if not exists idx_qr_credit_purchase_orders_unfinished on qr_credit_purchase_orders(business_id, updated_at desc) where status in ('PENDING', 'ERROR');
 create index if not exists idx_package_sales_requests_created on package_sales_requests(created_at desc);

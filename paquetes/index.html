@@ -43,7 +43,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=qori-plans-20260723-v2">
+  <link rel="stylesheet" href="css/styles.css?v=qori-sales-advisor-v1-20260828">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -180,6 +180,20 @@
         <label><span>Web o Instagram</span><input id="website" type="text" placeholder="Opcional"></label>
         <label><span>Ciudad</span><input id="city" type="text" placeholder="Opcional"></label>
         <label><span>Dirección</span><input id="address" type="text" autocomplete="street-address" placeholder="Opcional"></label>
+        <fieldset class="sales-advisor-field full">
+          <legend>¿Quién te dio a conocer Qori?</legend>
+          <label class="sales-advisor-self"><input id="salesAdvisorSelf" type="radio" name="salesAdvisorSource" value="SELF" checked><span><strong>Llegué por mi cuenta</strong><small>Continúa sin asociar un asesor comercial.</small></span></label>
+          <label class="sales-advisor-search-option"><input id="salesAdvisorSeller" type="radio" name="salesAdvisorSource" value="SELLER"><span><strong>Me acompañó un asesor Qori</strong><small>Búscalo por nombre o código.</small></span></label>
+          <div class="sales-advisor-combobox hidden" id="salesAdvisorCombobox">
+            <label for="salesAdvisorSearch">Asesor comercial</label>
+            <div class="sales-advisor-input-shell">
+              <span class="material-symbols-outlined" aria-hidden="true">person_search</span>
+              <input id="salesAdvisorSearch" type="search" autocomplete="off" placeholder="Nombre o código QORI-…" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="salesAdvisorResults">
+            </div>
+            <div class="sales-advisor-results hidden" id="salesAdvisorResults" role="listbox" aria-label="Coincidencias de asesores Qori"></div>
+            <p class="sales-advisor-status" id="salesAdvisorStatus" role="status" aria-live="polite">Escribe al menos 2 caracteres.</p>
+          </div>
+        </fieldset>
         <label class="consent-field full">
           <input id="termsAccepted" type="checkbox" required>
           <span>Acepto los <a href="/terminos/" target="_blank" rel="noopener">Términos y Condiciones</a> de Qori.</span>
@@ -269,6 +283,6 @@
     </section>
   </main>
 
-  <script src="js/app.js?v=qori-plans-canonical-v3-20260827" defer></script>
+  <script src="js/app.js?v=qori-sales-advisor-v1-20260828" defer></script>
 </body>
 </html>
