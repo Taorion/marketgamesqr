@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/img/qori-favicon-32.png?v=qori-favicon-20260825-v120">
   <link rel="apple-touch-icon" sizes="180x180" href="/img/qori-apple-touch-icon.png?v=qori-favicon-20260825-v120">
   <link rel="manifest" href="/site.webmanifest?v=qori-favicon-20260825-v120">
-  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility&amp;competition=product-modal-v393-20260828">
+  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility&amp;competition=product-modal-v393-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -1920,7 +1920,11 @@
                       </div>
                     </header>
                     <div class="account-risk-custom-benefits" id="accountRiskCustomBenefits" aria-label="Beneficios extraordinarios adicionales"></div>
-                    <button class="ghost-button compact" id="accountRiskAddBenefitButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">add</span>Agregar beneficio extraordinario</button>
+                    <div class="inline-actions account-risk-benefit-actions">
+                      <button class="ghost-button compact" id="accountRiskAddBenefitButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">add</span>Agregar beneficio extraordinario</button>
+                      <button class="solid-button compact" id="accountRiskSaveBenefitsButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">save</span>Guardar autorizaciones</button>
+                    </div>
+                    <p class="error-line" id="accountRiskBenefitsMessage" role="status" aria-live="polite"></p>
                     <div class="account-risk-recovery-options">
                       <label class="account-risk-recovery-option"><input id="accountRiskDiscountEnabledInput" type="checkbox"><span><strong>Descuento mayor</strong><small>Permite una concesión adicional limitada.</small></span><em>Máximo</em><input id="accountRiskDiscountMaxInput" type="number" min="1" max="100" step="0.01" inputmode="decimal" placeholder="Ej. 20"><b>%</b></label>
                       <label class="account-risk-recovery-option"><input id="accountRiskTwoForOneEnabledInput" type="checkbox"><span><strong>2x1 autorizado</strong><small>Habilita una promoción de dos por uno solo en recuperación.</small></span><input id="accountRiskTwoForOneLabelInput" type="text" maxlength="180" placeholder="Ej. 2x1 en servicios seleccionados"></label>
@@ -8407,7 +8411,7 @@
     </section>
   </div>
 
-  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility&amp;competition=product-modal-v393-20260828" defer></script>
+  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility&amp;competition=product-modal-v393-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v345-20260828-default-seller" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>

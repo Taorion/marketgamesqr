@@ -57,3 +57,23 @@ test("el backend conserva las dos salidas canónicas y tenant scoping", () => {
   assert.match(service, /const toPhase = isCleared \? "cierre" : "control_anti_fuga"/);
   assert.match(service, /RMS_TRANSITION_AUTHORITY\.RISK_REVIEW/);
 });
+
+test("los beneficios personalizados se guardan, activan y eliminan de forma persistente", () => {
+  const account = app.slice(app.indexOf("function accountRiskRecoveryPayload"), app.indexOf("async function submitAccountProfile"));
+  const listeners = app.slice(app.indexOf("accountRiskAddBenefitButton?.addEventListener"), app.indexOf("accountCommunicationConnectButton?.addEventListener"));
+  assert.match(html, /id="accountRiskSaveBenefitsButton"/);
+  assert.match(account, /rms_risk_recovery_authorizations: accountRiskRecoveryPayload\(\)/);
+  assert.match(listeners, /saveAccountRiskRecoveryAuthorizations/);
+  assert.match(listeners, /data-risk-benefit-enabled/);
+  assert.match(listeners, /row\.remove\(\)/);
+  assert.match(listeners, /eliminado y ya no aparecerá en Riesgos de fuga/);
+});
+
+test("el beneficio personalizado conserva snapshot y porcentaje hasta Ventas atribuidas", () => {
+  assert.match(service, /custom_benefit: offer\.customBenefit \|\| null/);
+  assert.match(service, /discount_percent: offer\.discountPercent/);
+  assert.match(service, /preparedRiskRecoveryOffer\(payload, metadata\.risk_recovery_resource\)/);
+  assert.match(service, /snapshotBenefitId !== requestedBenefitId/);
+  assert.match(service, /riskRecoveryOffer\?\.type === "CUSTOM" && riskCustomBenefit\.type === "DISCOUNT" \? riskCustomBenefit\.value : 0/);
+  assert.match(app, /riskContext\.offer\?\.type === "CUSTOM" && customBenefit\.type === "DISCOUNT" \? customBenefit\.value : 0/);
+});

@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260828-radar-product-modal-v393";
+const APP_VERSION = "empresa-20260828-risk-benefit-snapshot-pricing-v394";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -643,6 +643,8 @@ const accountRiskGiftEnabledInput = document.getElementById("accountRiskGiftEnab
 const accountRiskGiftLabelInput = document.getElementById("accountRiskGiftLabelInput");
 const accountRiskCustomBenefits = document.getElementById("accountRiskCustomBenefits");
 const accountRiskAddBenefitButton = document.getElementById("accountRiskAddBenefitButton");
+const accountRiskSaveBenefitsButton = document.getElementById("accountRiskSaveBenefitsButton");
+const accountRiskBenefitsMessage = document.getElementById("accountRiskBenefitsMessage");
 const accountProfileMessage = document.getElementById("accountProfileMessage");
 const accountProfileSaveButton = document.getElementById("accountProfileSaveButton");
 const accountLogoPreview = document.getElementById("accountLogoPreview");
@@ -35533,6 +35535,47 @@ function collectAccountRiskCustomBenefits() {
   })).filter((benefit) => benefit.label);
 }
 
+function accountRiskRecoveryPayload() {
+  return {
+    discount: {
+      enabled: Boolean(accountRiskDiscountEnabledInput?.checked),
+      max_percent: Number(accountRiskDiscountMaxInput?.value || 0),
+    },
+    two_for_one: {
+      enabled: Boolean(accountRiskTwoForOneEnabledInput?.checked),
+      label: optionalInputValue(accountRiskTwoForOneLabelInput),
+    },
+    gift: {
+      enabled: Boolean(accountRiskGiftEnabledInput?.checked),
+      label: optionalInputValue(accountRiskGiftLabelInput),
+    },
+    benefits: collectAccountRiskCustomBenefits(),
+  };
+}
+
+async function saveAccountRiskRecoveryAuthorizations({ successMessage = "Autorizaciones guardadas.", renderBenefits = true } = {}) {
+  if (!session?.user?.business_id) return null;
+  setInlineMessage(accountRiskBenefitsMessage, "Guardando autorizaciones...", "info");
+  setButtonLoading(accountRiskSaveBenefitsButton, true, "Guardando...");
+  try {
+    const data = await api("/api/business/profile", {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ rms_risk_recovery_authorizations: accountRiskRecoveryPayload() }),
+    });
+    mergeBusinessProfile(data.business || null);
+    const saved = rmsRiskRecoveryAuthorizations(data.business?.rms_risk_recovery_authorizations);
+    if (renderBenefits) renderAccountRiskCustomBenefits(saved.benefits);
+    setInlineMessage(accountRiskBenefitsMessage, successMessage, "success");
+    return saved;
+  } catch (error) {
+    setInlineMessage(accountRiskBenefitsMessage, error.message || "No se pudieron guardar las autorizaciones.", "error");
+    throw error;
+  } finally {
+    setButtonLoading(accountRiskSaveBenefitsButton, false);
+  }
+}
+
 async function submitAccountProfile(event) {
   event.preventDefault();
   if (!session?.user?.business_id) return;
@@ -35564,21 +35607,7 @@ async function submitAccountProfile(event) {
       profilePayload.affiliate_referral_registration_points = Number(accountAffiliateReferralRegistrationPointsInput?.value || 0);
       profilePayload.affiliate_referral_purchase_points = Number(accountAffiliateReferralPurchasePointsInput?.value || 0);
     }
-    profilePayload.rms_risk_recovery_authorizations = {
-      discount: {
-        enabled: Boolean(accountRiskDiscountEnabledInput?.checked),
-        max_percent: Number(accountRiskDiscountMaxInput?.value || 0),
-      },
-      two_for_one: {
-        enabled: Boolean(accountRiskTwoForOneEnabledInput?.checked),
-        label: optionalInputValue(accountRiskTwoForOneLabelInput),
-      },
-      gift: {
-        enabled: Boolean(accountRiskGiftEnabledInput?.checked),
-        label: optionalInputValue(accountRiskGiftLabelInput),
-      },
-      benefits: collectAccountRiskCustomBenefits(),
-    };
+    profilePayload.rms_risk_recovery_authorizations = accountRiskRecoveryPayload();
     const data = await api("/api/business/profile", {
       method: "PATCH",
       headers: authHeaders(),
@@ -49397,7 +49426,12 @@ function rmsAttributedSalePricing({ inventoryProduct = {}, quantity = 1, confirm
     ? confirmedAmount / confirmedQuantity
     : originalUnitPrice;
   const negotiatedAmount = Math.round(negotiatedUnitPrice * saleQuantity * 100) / 100;
-  const riskDiscountPercent = Math.min(100, Math.max(0, Number(riskContext.offer?.discount_percent || 0)));
+  const customBenefit = riskContext.offer?.custom_benefit || {};
+  const riskDiscountPercent = Math.min(100, Math.max(0, Number(
+    riskContext.offer?.discount_percent
+      || (riskContext.offer?.type === "CUSTOM" && customBenefit.type === "DISCOUNT" ? customBenefit.value : 0)
+      || 0
+  )));
   const riskDiscountAmount = riskDiscountPercent > 0 ? Math.round(negotiatedAmount * riskDiscountPercent) / 100 : 0;
   const finalAmount = Math.max(0, Math.round((riskDiscountAmount > 0 ? negotiatedAmount - riskDiscountAmount : negotiatedAmount) * 100) / 100);
   const discountAmount = Math.max(0, Math.round((originalAmount - finalAmount) * 100) / 100);
@@ -60919,11 +60953,38 @@ accountRiskAddBenefitButton?.addEventListener("click", () => {
   benefits.push({ id: `benefit-${Date.now()}`, enabled: true, type: "DISCOUNT", label: "", value: 0, detail: "" });
   renderAccountRiskCustomBenefits(benefits);
   accountRiskCustomBenefits?.querySelector("[data-risk-benefit-label]:last-of-type")?.focus();
+  setInlineMessage(accountRiskBenefitsMessage, "Completa el beneficio y guarda las autorizaciones.", "info");
 });
 accountRiskCustomBenefits?.addEventListener("click", (event) => {
   const remove = event.target.closest("[data-risk-benefit-remove]");
   if (!remove) return;
-  remove.closest("[data-risk-benefit-row]")?.remove();
+  const row = remove.closest("[data-risk-benefit-row]");
+  if (!row) return;
+  const label = row.querySelector("[data-risk-benefit-label]")?.value.trim() || "este beneficio";
+  if (!window.confirm(`¿Eliminar ${label}? Dejará de aparecer en nuevas recuperaciones; el historial ya registrado se conserva.`)) return;
+  row.remove();
+  saveAccountRiskRecoveryAuthorizations({ successMessage: `“${label}” fue eliminado y ya no aparecerá en Riesgos de fuga.` })
+    .catch(() => renderAccountRiskCustomBenefits(rmsRiskRecoveryAuthorizations().benefits));
+});
+accountRiskCustomBenefits?.addEventListener("change", (event) => {
+  if (!event.target.matches("[data-risk-benefit-enabled]")) {
+    setInlineMessage(accountRiskBenefitsMessage, "Hay cambios pendientes por guardar.", "info");
+    return;
+  }
+  const row = event.target.closest("[data-risk-benefit-row]");
+  const label = row?.querySelector("[data-risk-benefit-label]")?.value.trim() || "Beneficio";
+  const enabled = event.target.checked;
+  saveAccountRiskRecoveryAuthorizations({
+    successMessage: `${label} quedó ${enabled ? "activo" : "inactivo"}.`,
+    renderBenefits: false,
+  }).catch(() => renderAccountRiskCustomBenefits(rmsRiskRecoveryAuthorizations().benefits));
+});
+accountRiskCustomBenefits?.addEventListener("input", (event) => {
+  if (event.target.matches("[data-risk-benefit-enabled]")) return;
+  setInlineMessage(accountRiskBenefitsMessage, "Hay cambios pendientes por guardar.", "info");
+});
+accountRiskSaveBenefitsButton?.addEventListener("click", () => {
+  saveAccountRiskRecoveryAuthorizations().catch(() => {});
 });
 accountCommunicationConnectButton?.addEventListener("click", () => saveCommunicationEmailConnection());
 accountCommunicationDisconnectButton?.addEventListener("click", () => saveCommunicationEmailConnection({ removeApiKey: true }));

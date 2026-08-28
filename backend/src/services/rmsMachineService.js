@@ -2362,6 +2362,12 @@ function validateRiskRecoveryOffer(payload, authorizations) {
     ? authorizations.benefits.find((benefit) => benefit.enabled && benefit.id === recoveryBenefitId)
     : null;
   if (recoveryOffer === "CUSTOM" && !customBenefit) throw badRequest("Selecciona un beneficio extraordinario autorizado en Cuenta.");
+  const customDiscountPercent = customBenefit?.type === "DISCOUNT"
+    ? Math.min(100, Math.max(0, Number(customBenefit.value || 0)))
+    : 0;
+  if (customBenefit?.type === "DISCOUNT" && (customDiscountPercent <= 0 || Number(customBenefit.value) > 100)) {
+    throw badRequest("El beneficio de descuento debe tener un valor entre 0% y 100% en Cuenta.");
+  }
   if (recoveryOffer === "DISCOUNT") {
     if (!authorizations.discount.enabled) throw badRequest("Los descuentos extraordinarios no están autorizados en Cuenta.");
     if (discountPercent <= 0 || discountPercent > authorizations.discount.max_percent) throw badRequest(`El descuento debe estar entre 0% y ${authorizations.discount.max_percent}% según la autorización de Cuenta.`);
@@ -2380,7 +2386,41 @@ function validateRiskRecoveryOffer(payload, authorizations) {
       : recoveryOffer === "TWO_FOR_ONE" ? (authorizations.two_for_one.label || "Beneficio 2x1")
         : recoveryOffer === "GIFT" ? (authorizations.gift.label || "Obsequio extraordinario")
           : "Beneficio extraordinario");
-  return { recoveryOffer, discountPercent, recoveryBenefitId, customBenefit, detail, benefitType, benefitLabel };
+  return {
+    recoveryOffer,
+    discountPercent: recoveryOffer === "DISCOUNT" ? discountPercent : customDiscountPercent,
+    recoveryBenefitId,
+    customBenefit,
+    detail,
+    benefitType,
+    benefitLabel,
+  };
+}
+
+function preparedRiskRecoveryOffer(payload, resource = null) {
+  const snapshot = resource?.recovery_offer;
+  if (!snapshot?.type) return null;
+  const requestedType = String(payload.recovery_offer || "NONE").toUpperCase();
+  const requestedBenefitId = String(payload.recovery_benefit_id || "").trim() || null;
+  const snapshotBenefitId = String(snapshot.benefit_id || "").trim() || null;
+  if (String(snapshot.type).toUpperCase() !== requestedType || snapshotBenefitId !== requestedBenefitId) return null;
+  const customBenefit = snapshot.custom_benefit && typeof snapshot.custom_benefit === "object"
+    ? { ...snapshot.custom_benefit }
+    : null;
+  const benefitType = requestedType === "DISCOUNT" || customBenefit?.type === "DISCOUNT"
+    ? "DISCOUNT"
+    : requestedType === "GIFT" || customBenefit?.type === "GIFT"
+      ? "GIFT"
+      : "BONUS";
+  return {
+    recoveryOffer: requestedType,
+    discountPercent: Math.min(100, Math.max(0, Number(snapshot.discount_percent || 0))),
+    recoveryBenefitId: snapshotBenefitId,
+    customBenefit,
+    detail: String(snapshot.detail || customBenefit?.detail || "").trim(),
+    benefitType,
+    benefitLabel: String(snapshot.label || customBenefit?.label || "Beneficio extraordinario").trim(),
+  };
 }
 
 async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
@@ -2434,6 +2474,7 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
     recovery_offer: {
       type: offer.recoveryOffer,
       benefit_id: offer.recoveryBenefitId,
+      custom_benefit: offer.customBenefit || null,
       discount_percent: offer.discountPercent,
       detail: offer.detail || offer.customBenefit?.detail || null,
       label: offer.benefitLabel,
@@ -2478,20 +2519,11 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
   const reason = String(payload.reason || "").trim() || "Revisión registrada sin detalle adicional.";
   if (!["CLEARED", "RECYCLE"].includes(result)) throw badRequest("Riesgos de fuga solo puede enviar a Ventas atribuidas o a Reciclaje.");
   if (result === "RECYCLE" && !payload.recycle_reason) throw badRequest("Para Reciclaje indica el motivo principal.");
-  const recoveryOffer = String(payload.recovery_offer || "NONE").toUpperCase();
-  if (!["NONE", "DISCOUNT", "TWO_FOR_ONE", "GIFT", "CUSTOM"].includes(recoveryOffer)) throw badRequest("Selecciona una alternativa de recuperación válida.");
-  const discountPercent = Math.min(100, Math.max(0, Number(payload.discount_percent || 0)));
   const authorizations = await riskRecoveryAuthorizationsForBusiness(businessId);
-  const recoveryBenefitId = String(payload.recovery_benefit_id || "").trim() || null;
-  const customBenefit = recoveryOffer === "CUSTOM" ? authorizations.benefits.find((benefit) => benefit.enabled && benefit.id === recoveryBenefitId) : null;
-  if (recoveryOffer === "CUSTOM" && !customBenefit) throw badRequest("Selecciona un beneficio extraordinario autorizado en Cuenta.");
-  if (recoveryOffer === "DISCOUNT") {
-    if (!authorizations.discount.enabled) throw badRequest("Los descuentos extraordinarios no están autorizados en Cuenta.");
-    if (discountPercent <= 0 || discountPercent > authorizations.discount.max_percent) throw badRequest(`El descuento debe estar entre 0% y ${authorizations.discount.max_percent}% según la autorización de Cuenta.`);
-  }
-  if (recoveryOffer === "TWO_FOR_ONE" && !authorizations.two_for_one.enabled) throw badRequest("La alternativa 2x1 no está autorizada en Cuenta.");
-  if (recoveryOffer === "GIFT" && !authorizations.gift.enabled) throw badRequest("El obsequio extraordinario no está autorizado en Cuenta.");
-  if (["TWO_FOR_ONE", "GIFT"].includes(recoveryOffer) && !String(payload.recovery_detail || "").trim()) throw badRequest("Describe brevemente la alternativa autorizada que se ofreció.");
+  // Un ticket ya emitido conserva la autorización exacta con la que nació.
+  // Las selecciones nuevas siempre se validan contra la configuración activa.
+  const offer = preparedRiskRecoveryOffer(payload, metadata.risk_recovery_resource)
+    || validateRiskRecoveryOffer(payload, authorizations);
   const nonConversionCost = result === "RECYCLE"
     ? await getRmsUnconvertedLeadCost(businessId, { source_type: sourceType, source_id: payload.source_id }, item)
     : null;
@@ -2500,11 +2532,12 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     responsible: String(payload.responsible || confirmation?.responsible || user.id || "").trim() || null,
     signals: payload.signals || {}, ticket_action: payload.ticket_action || null,
     recovery_offer: {
-      type: recoveryOffer,
-      benefit_id: recoveryBenefitId,
-      custom_benefit: customBenefit || null,
-      discount_percent: recoveryOffer === "DISCOUNT" ? discountPercent : 0,
-      detail: String(payload.recovery_detail || "").trim() || null,
+      type: offer.recoveryOffer,
+      benefit_id: offer.recoveryBenefitId,
+      custom_benefit: offer.customBenefit || null,
+      discount_percent: offer.discountPercent,
+      detail: offer.detail || offer.customBenefit?.detail || null,
+      label: offer.benefitLabel,
       authorization_snapshot: authorizations,
     },
     recovery_resource: metadata.risk_recovery_resource || null,
@@ -2731,7 +2764,11 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     ? roundedMoney(confirmedAmount / confirmedQuantity)
     : originalUnitPrice;
   const negotiatedAmount = roundedMoney(negotiatedUnitPrice * quantity);
-  const riskDiscountPercent = Math.min(100, Math.max(0, Number(riskRecoveryOffer?.discount_percent || 0)));
+  const riskDiscountPercent = Math.min(100, Math.max(0, Number(
+    riskRecoveryOffer?.discount_percent
+      || (riskRecoveryOffer?.type === "CUSTOM" && riskCustomBenefit.type === "DISCOUNT" ? riskCustomBenefit.value : 0)
+      || 0
+  )));
   const riskDiscountAmount = riskDiscountPercent > 0
     ? roundedMoney(negotiatedAmount * riskDiscountPercent / 100)
     : 0;
