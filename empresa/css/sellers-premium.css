@@ -183,3 +183,11 @@ html body .seller-editor-modal .seller-editor-card{background:#fff!important}.se
   html body .portal-shell .view-section.sellers-command-view .sellers-kpis{grid-template-columns:1fr}.seller-kpi{min-height:0!important}.seller-attribution-summary{grid-template-columns:1fr!important}
   html body .seller-summary-grid{grid-template-columns:1fr}.seller-summary-grid article{min-height:0}.seller-summary-grid .seller-next-action{grid-column:auto}
 }
+
+/* Attribution refresh contrast lock v7 · text and sync icon stay white over the dark header. */
+html body .portal-shell .view-section.sellers-command-view .seller-attribution-head #sellerAttributionRefreshButton,
+html body .portal-shell .view-section.sellers-command-view .seller-attribution-head #sellerAttributionRefreshButton .material-symbols-outlined{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  opacity:1!important;
+}
