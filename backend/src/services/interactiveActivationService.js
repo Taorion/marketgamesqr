@@ -335,6 +335,8 @@ function mapActivation(row, extras = {}) {
     campaign_name: row.campaign_name || null,
     branch_id: row.branch_id || null,
     branch_name: row.branch_name || null,
+    seller_user_id: row.seller_user_id || null,
+    seller_name: row.seller_name || null,
     title: row.title,
     description: row.description,
     category: row.category,
@@ -620,6 +622,23 @@ async function assertBranch(client, businessId, branchId) {
   return branch;
 }
 
+async function assertSeller(client, businessId, sellerUserId) {
+  if (!sellerUserId) return null;
+  const result = await client.query(
+    `select id, full_name, email
+       from app_users
+      where id = $1
+        and business_id = $2
+        and is_active = true
+        and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR')`,
+    [sellerUserId, businessId]
+  );
+  if (!result.rowCount) {
+    throw badRequest("El vendedor responsable no existe o no esta activo en este negocio.");
+  }
+  return result.rows[0];
+}
+
 async function defaultGameId(client, businessId, campaign = null) {
   if (campaign?.game_id) return campaign.game_id;
   const result = await client.query(
@@ -647,9 +666,10 @@ async function createInteractiveActivation(businessId, user, body) {
     if (!catalogItem) {
       throw badRequest("Tipo de activacion no soportado por el catalogo.");
     }
-    const [campaign, branch] = await Promise.all([
+    const [campaign, branch, seller] = await Promise.all([
       assertCampaign(client, businessId, body.campaign_id || null),
       assertBranch(client, businessId, body.branch_id || null),
+      assertSeller(client, businessId, body.seller_user_id || null),
     ]);
     const publicSlug = `${slugify(body.title)}-${createSecureToken().slice(0, 8).toLowerCase()}`;
     const rewardConfig = {
@@ -663,17 +683,18 @@ async function createInteractiveActivation(businessId, user, body) {
 
     const result = await client.query(
       `insert into interactive_activations
-        (company_id, user_id, campaign_id, branch_id, title, description, category, activation_type, status,
+        (company_id, user_id, campaign_id, branch_id, seller_user_id, title, description, category, activation_type, status,
          reward_ticket_cost, reward_mode, reward_config, game_config, interaction_config,
          capture_config, visual_config, starts_at, ends_at, max_participants, max_rewards,
          public_slug, access_qr_token, terms)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16::jsonb, $17, $18, $19, $20, $21, $22, $23)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb, $15::jsonb, $16::jsonb, $17::jsonb, $18, $19, $20, $21, $22, $23, $24)
        returning *`,
       [
         businessId,
         user.id,
         body.campaign_id || null,
         body.branch_id || null,
+        seller?.id || null,
         body.title,
         body.description || null,
         body.category || catalogItem.category,
@@ -708,7 +729,7 @@ async function createInteractiveActivation(businessId, user, body) {
     }
 
     return {
-      activation: mapActivation({ ...activation, campaign_name: campaign?.name || null, branch_name: branch?.name || null }),
+      activation: mapActivation({ ...activation, campaign_name: campaign?.name || null, branch_name: branch?.name || null, seller_name: seller?.full_name || null }),
     };
   });
 }
@@ -819,14 +840,15 @@ async function listInteractiveActivations(businessId, options = {}) {
             a.category, a.activation_type, a.status, a.reward_ticket_cost, a.reward_mode,
             a.reward_config, a.game_config, a.interaction_config, a.capture_config, a.visual_config,
             a.starts_at, a.ends_at, a.max_participants, a.max_rewards, a.public_slug,
-            a.access_qr_token, a.terms, a.created_at, a.updated_at,
-            c.name as campaign_name, br.name as branch_name,
+            a.access_qr_token, a.terms, a.created_at, a.updated_at, a.seller_user_id,
+            c.name as campaign_name, br.name as branch_name, su.full_name as seller_name,
             coalesce(p.participants_count, 0)::int as participants_count,
             coalesce(r.rewards_count, 0)::int as rewards_count,
             coalesce(d.digital_asset_downloads, 0)::int as digital_asset_downloads
      from recent_activations a
      left join campaigns c on c.id = a.campaign_id and c.business_id = a.company_id
      left join branches br on br.id = a.branch_id and br.business_id = a.company_id
+     left join app_users su on su.id = a.seller_user_id and su.business_id = a.company_id
      left join participant_counts p on p.activation_id = a.id
      left join reward_counts r on r.activation_id = a.id
      left join asset_download_counts d on d.activation_id = a.id
@@ -844,6 +866,9 @@ async function updateInteractiveActivation(businessId, activationId, body) {
   if (!currentResult.rowCount) throw notFound("Activacion no encontrada.");
   if (Object.prototype.hasOwnProperty.call(body, "branch_id")) {
     await assertBranch({ query }, businessId, body.branch_id || null);
+  }
+  if (Object.prototype.hasOwnProperty.call(body, "seller_user_id")) {
+    await assertSeller({ query }, businessId, body.seller_user_id || null);
   }
   const currentStatus = currentResult.rows[0].status;
   const nextStatus = body.status || currentStatus;
@@ -867,6 +892,7 @@ async function updateInteractiveActivation(businessId, activationId, body) {
     "activation_type",
     "category",
     "branch_id",
+    "seller_user_id",
     "title",
     "description",
     "status",
@@ -918,7 +944,10 @@ async function updateInteractiveActivation(businessId, activationId, body) {
       await insertTouchZones({ query }, activationId, body.touch_zones);
     }
   }
-  return { activation: mapActivation(result.rows[0]) };
+  const sellerResult = result.rows[0].seller_user_id
+    ? await query("select full_name from app_users where id = $1 and business_id = $2", [result.rows[0].seller_user_id, businessId])
+    : { rows: [] };
+  return { activation: mapActivation({ ...result.rows[0], seller_name: sellerResult.rows[0]?.full_name || null }) };
 }
 
 async function recycleInteractiveActivation(businessId, user, activationId) {
@@ -1176,9 +1205,9 @@ async function startInteractiveParticipant(slug, body) {
     const metadata = activationFormMetadata(activation, body, { status: "started", ...attributionMetadata });
     const participantResult = await client.query(
       `insert into interactive_activation_participants
-        (activation_id, company_id, player_id, source_type, source_id, name, document, phone, email, metadata, status,
+        (activation_id, company_id, player_id, source_type, source_id, seller_user_id, name, document, phone, email, metadata, status,
          game_session_token, game_session_started_at)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, 'started', $11, now())
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, 'started', $12, now())
        returning *`,
       [
         activation.id,
@@ -1186,6 +1215,7 @@ async function startInteractiveParticipant(slug, body) {
         contact.player_id,
         contact.source_type,
         contact.source_id,
+        activation.seller_user_id || null,
         body.name || null,
         body.document || body.document_id || null,
         body.phone || null,
@@ -1603,9 +1633,9 @@ async function createParticipantInsideCompletion(client, activation, body) {
   const contact = await resolveActivationContact(client, activation, body, { status: "completed", ...attributionMetadata });
   const metadata = activationFormMetadata(activation, body, { status: "completed", ...attributionMetadata });
   const result = await client.query(
-    `insert into interactive_activation_participants
-      (activation_id, company_id, player_id, source_type, source_id, name, document, phone, email, metadata, status)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, 'started')
+      `insert into interactive_activation_participants
+      (activation_id, company_id, player_id, source_type, source_id, seller_user_id, name, document, phone, email, metadata, status)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, 'started')
      returning *`,
     [
       activation.id,
@@ -1613,6 +1643,7 @@ async function createParticipantInsideCompletion(client, activation, body) {
       contact.player_id,
       contact.source_type,
       contact.source_id,
+      activation.seller_user_id || null,
       body.name || null,
       body.document || body.document_id || null,
       body.phone || null,
@@ -1727,6 +1758,15 @@ async function resolveActivationContact(client, activation, body, metadata = {})
     );
     if (existing.rowCount) {
       const row = existing.rows[0];
+      if (activation.seller_user_id) {
+        const target = row.source_type === "PLAYER" ? "players" : row.source_type === "MANUAL" ? "business_manual_leads" : null;
+        if (target) {
+          await client.query(
+            `update ${target} set seller_user_id = coalesce(seller_user_id, $3) where id = $1 and business_id = $2`,
+            [row.id, activation.company_id, activation.seller_user_id]
+          );
+        }
+      }
       return {
         player_id: row.source_type === "PLAYER" ? row.id : null,
         source_type: row.source_type,
@@ -1784,18 +1824,27 @@ async function createPlayer(client, activation, body, metadata = {}) {
       [activation.company_id, identity.documentId, identity.email, identity.phone]
     );
     if (existing.rowCount) {
-      return { ...existing.rows[0], _created: false };
+      const current = existing.rows[0];
+      if (activation.seller_user_id && !current.seller_user_id) {
+        const assigned = await client.query(
+          `update players set seller_user_id = $3 where id = $1 and business_id = $2 and seller_user_id is null returning *`,
+          [current.id, activation.company_id, activation.seller_user_id]
+        );
+        return { ...(assigned.rows[0] || current), _created: false };
+      }
+      return { ...current, _created: false };
     }
   }
 
   const result = await client.query(
-    `insert into players (business_id, campaign_id, branch_id, game_id, name, email, phone, document_id, metadata)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+    `insert into players (business_id, campaign_id, branch_id, seller_user_id, game_id, name, email, phone, document_id, metadata)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
      returning *`,
     [
       activation.company_id,
       activation.campaign_id || null,
       activation.branch_id || null,
+      activation.seller_user_id || null,
       await defaultGameId(client, activation.company_id),
       body.name || null,
       body.email || null,
@@ -1833,7 +1882,8 @@ async function syncInteractiveParticipationToLead(client, activation, participan
   if (sourceType === "PLAYER") {
     await client.query(
       `update players
-          set metadata = coalesce(metadata, '{}'::jsonb)
+          set seller_user_id = coalesce(seller_user_id, $6),
+              metadata = coalesce(metadata, '{}'::jsonb)
             || jsonb_build_object(
               'latest_interactive_activation', $2::jsonb,
               'latest_activation_participation', $2::jsonb,
@@ -1843,12 +1893,13 @@ async function syncInteractiveParticipationToLead(client, activation, participan
               end
             )
         where id = $1 and business_id = $5`,
-      [sourceId, snapshotJson, additionalDataJson, status, activation.company_id]
+      [sourceId, snapshotJson, additionalDataJson, status, activation.company_id, participant.seller_user_id || activation.seller_user_id || null]
     );
   } else if (sourceType === "MANUAL") {
     await client.query(
       `update business_manual_leads
-          set metadata = coalesce(metadata, '{}'::jsonb)
+          set seller_user_id = coalesce(seller_user_id, $6),
+              metadata = coalesce(metadata, '{}'::jsonb)
             || jsonb_build_object(
               'latest_interactive_activation', $2::jsonb,
               'latest_activation_participation', $2::jsonb,
@@ -1859,7 +1910,7 @@ async function syncInteractiveParticipationToLead(client, activation, participan
             ),
               updated_at = now()
         where id = $1 and business_id = $5`,
-      [sourceId, snapshotJson, additionalDataJson, status, activation.company_id]
+      [sourceId, snapshotJson, additionalDataJson, status, activation.company_id, participant.seller_user_id || activation.seller_user_id || null]
     );
   } else if (sourceType === "AFFILIATE") {
     await client.query(

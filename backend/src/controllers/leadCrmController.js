@@ -16,6 +16,7 @@ const {
   listLeadCrmRows,
   markLeadActivationOpened,
   updateLeadAgendaItem,
+  updateLeadSellerResponsibility,
 } = require("../services/leadCrmService");
 const {
   customerImportErrorsCsv,
@@ -81,6 +82,11 @@ const agendaCancelSchema = z.object({
 const contactArchiveSchema = z.object({
   reason: z.string().trim().min(3).max(1000),
   idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
+});
+
+const sellerResponsibilitySchema = z.object({
+  seller_user_id: z.string().uuid().nullable(),
+  source_type: sourceTypeSchema.optional(),
 });
 
 const interestSchema = z.object({
@@ -352,6 +358,21 @@ async function deleteContact(req, res, next) {
   }
 }
 
+async function assignSellerResponsibility(req, res, next) {
+  try {
+    const body = validate(sellerResponsibilitySchema, req.body);
+    res.json(await updateLeadSellerResponsibility(
+      businessIdFor(req),
+      req.user,
+      req.params.leadId,
+      body.source_type || String(req.query.source_type || "PLAYER").toUpperCase(),
+      body.seller_user_id
+    ));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function sendActivation(req, res, next) {
   try {
     const body = validate(activationSchema, req.body);
@@ -396,6 +417,7 @@ async function registerLeadWhatsAppContact(req, res, next) {
 module.exports = {
   addInterest,
   addPurchase,
+  assignSellerResponsibility,
   downloadCustomerCsvErrors,
   downloadCustomerCsvTemplate,
   importCustomersCsv,

@@ -316,6 +316,9 @@ async function listLeadCrmRows(businessId, filters = {}) {
          p.phone,
          coalesce(p.metadata->>'company', '') as company,
          p.created_at,
+         p.seller_user_id,
+         seller.full_name as seller_name,
+         seller.email as seller_email,
          coalesce(latest_capture.campaign_id, p.campaign_id) as campaign_id,
          coalesce(latest_capture.campaign_name, c.name) as campaign_name,
          array_remove(array[p.campaign_id, latest_capture.campaign_id], null)::uuid[] as associated_campaign_ids,
@@ -397,6 +400,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          ) else '{}'::jsonb end as metadata
        from players p
        left join campaigns c on c.id = p.campaign_id
+       left join app_users seller on seller.id = p.seller_user_id and seller.business_id = p.business_id
        left join interactive_activations ia on ia.company_id = p.business_id and ia.id = coalesce(
          case
            when p.metadata->>'activation_id' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
@@ -525,6 +529,9 @@ async function listLeadCrmRows(businessId, filters = {}) {
          ml.phone,
          ml.company,
          ml.created_at,
+         ml.seller_user_id,
+         seller.full_name as seller_name,
+         seller.email as seller_email,
          ca.campaign_id,
          ca.campaign_name,
          coalesce(ca.campaign_ids, '{}'::uuid[]) as associated_campaign_ids,
@@ -569,6 +576,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
                 'manual_importance_reason', ml.importance_reason
               ) as metadata
       from business_manual_leads ml
+       left join app_users seller on seller.id = ml.seller_user_id and seller.business_id = ml.business_id
        left join lateral (
          select
            (array_agg(c.id order by cmc.updated_at desc, cmc.created_at desc))[1] as campaign_id,
@@ -636,6 +644,9 @@ async function listLeadCrmRows(businessId, filters = {}) {
          fa.phone,
          coalesce(fa.card_metadata->>'company', '') as company,
          fa.created_at,
+         null::uuid as seller_user_id,
+         null::text as seller_name,
+         null::text as seller_email,
          ca.campaign_id,
          ca.campaign_name,
          case when ca.campaign_id is null then '{}'::uuid[] else array[ca.campaign_id]::uuid[] end as associated_campaign_ids,
@@ -976,8 +987,10 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
               ca.campaign_id,
               ca.campaign_name,
               ml.created_at, ml.updated_at,
+              ml.seller_user_id, seller.full_name as seller_name, seller.email as seller_email,
               rms.rms_phase, rms.rms_phase_updated_at, rms.rms_last_operation
        from business_manual_leads ml
+       left join app_users seller on seller.id = ml.seller_user_id and seller.business_id = ml.business_id
        left join lateral (
          select
            (array_agg(c.id order by cmc.updated_at desc, cmc.created_at desc))[1] as campaign_id,
@@ -1045,10 +1058,12 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
               'campaign_name', latest_capture.campaign_name
             ) else '{}'::jsonb end as metadata,
             p.created_at, p.created_at as updated_at,
+            p.seller_user_id, seller.full_name as seller_name, seller.email as seller_email,
             coalesce(p.metadata->>'commercial_status', '') as stored_status,
             rms.rms_phase, rms.rms_phase_updated_at, rms.rms_last_operation
      from players p
      left join campaigns c on c.id = p.campaign_id
+     left join app_users seller on seller.id = p.seller_user_id and seller.business_id = p.business_id
      left join lateral (
        select
          s.id,
@@ -2445,7 +2460,7 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
       category: payload.category || payload.metadata?.category || null,
       sourceModule: "lead_purchase",
     });
-    const attributedSeller = await resolveBusinessSaleSeller(client, businessId, user, payload.seller_user_id);
+    const attributedSeller = await resolveBusinessSaleSeller(client, businessId, user, payload.seller_user_id || lead.seller_user_id || null);
     const metadata = {
       ...(payload.metadata || {}),
       acquisition_channel: {
@@ -2835,6 +2850,59 @@ async function markLeadActivationOpened(businessId, user, leadId, sourceType, ac
   });
 }
 
+async function updateLeadSellerResponsibility(businessId, user, leadId, sourceType, sellerUserId) {
+  return withTransaction(async (client) => {
+    const lead = await resolveLead(businessId, leadId, sourceType, client);
+    if (!["PLAYER", "MANUAL"].includes(lead.source_type)) {
+      throw badRequest("Este tipo de contacto no admite responsable comercial directo.");
+    }
+    let seller = null;
+    if (sellerUserId) {
+      const sellerResult = await client.query(
+        `select id, full_name, email
+           from app_users
+          where id = $1
+            and business_id = $2
+            and is_active = true
+            and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR')`,
+        [sellerUserId, businessId]
+      );
+      if (!sellerResult.rowCount) throw badRequest("El vendedor no existe o no esta activo en este negocio.");
+      seller = sellerResult.rows[0];
+    }
+    const table = lead.source_type === "PLAYER" ? "players" : "business_manual_leads";
+    const result = await client.query(
+      `update ${table}
+          set seller_user_id = $3,
+              metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+                'commercial_owner_user_id', $3::text,
+                'commercial_owner_name', $4::text,
+                'commercial_owner_email', $5::text,
+                'commercial_owner_updated_at', now()::text
+              )
+              ${lead.source_type === "MANUAL" ? ", updated_at = now()" : ""}
+        where business_id = $1 and id = $2
+        returning *`,
+      [businessId, lead.id, seller?.id || null, seller?.full_name || null, seller?.email || null]
+    );
+    await client.query(
+      `insert into lead_events
+        (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, metadata, created_by)
+       values ($1, $2, $3, $4, 'seller_responsibility_changed', 'Responsable comercial actualizado', $5, $6::jsonb, $7)`,
+      [
+        businessId,
+        lead.source_type === "PLAYER" ? lead.id : null,
+        lead.source_type,
+        lead.id,
+        seller ? `${seller.full_name} quedo como responsable comercial.` : "El contacto quedo sin responsable comercial asignado.",
+        JSON.stringify({ previous_seller_user_id: lead.seller_user_id || null, seller_user_id: seller?.id || null }),
+        user.id,
+      ]
+    );
+    return { contact: { ...result.rows[0], seller_name: seller?.full_name || null, seller_email: seller?.email || null } };
+  });
+}
+
 module.exports = {
   addLeadInterest,
   createLeadActivation,
@@ -2849,4 +2917,5 @@ module.exports = {
   listLeadAgenda,
   listLeadCrmRows,
   updateLeadAgendaItem,
+  updateLeadSellerResponsibility,
 };

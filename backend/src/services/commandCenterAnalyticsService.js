@@ -231,6 +231,8 @@ async function getTotals(businessId, filters, period = "current") {
        where ${scopedWhere(leadParams, businessId, scoped, {
          dateColumn: "created_at",
          campaignColumn: "campaign_id",
+         branchColumn: "branch_id",
+         sellerColumn: "seller_user_id",
        })}`,
       leadParams
     ),
@@ -381,6 +383,9 @@ async function getOptions(businessId) {
            or exists (select 1 from redemptions rd where rd.redeemed_by_user_id = u.id)
            or exists (select 1 from attributed_sales s where s.sale_confirmed_by_user_id = u.id)
            or exists (select 1 from business_sales bs where bs.seller_user_id = u.id)
+           or exists (select 1 from players p where p.seller_user_id = u.id)
+           or exists (select 1 from business_manual_leads ml where ml.seller_user_id = u.id)
+           or exists (select 1 from interactive_activations ia where ia.seller_user_id = u.id)
          )
        order by u.full_name asc`,
       [businessId]
@@ -460,7 +465,7 @@ async function getSeriesAndCharts(businessId, filters) {
        leads as (
          select players.created_at::date as day, count(*)::int as leads
          from players
-         where ${scopedWhere(params, businessId, filters, { dateColumn: "created_at", campaignColumn: "campaign_id" })}
+         where ${scopedWhere(params, businessId, filters, { dateColumn: "created_at", campaignColumn: "campaign_id", branchColumn: "branch_id", sellerColumn: "seller_user_id" })}
          group by players.created_at::date
        ),
        qr as (
@@ -539,6 +544,7 @@ async function getSeriesAndCharts(businessId, filters) {
          qrTypeColumn: "q.origin_type",
          affiliateColumn: "coalesce(s.referred_affiliate_id, q.affiliate_id)",
          channelExpression: "coalesce(nullif(s.acquisition_channel, ''), s.acquisition_source, 'QR_REDEMPTION')",
+         sellerColumn: "s.seller_user_id",
        })}
        group by 1
        order by revenue desc, sales desc
@@ -585,6 +591,7 @@ async function getSeriesAndCharts(businessId, filters) {
              and p.created_at < ($${campaignParams.push(filters.endDate)}::date + interval '1 day')
              and ($${campaignParams.push(filters.campaignId)}::uuid is null or p.campaign_id = $${campaignParams.length}::uuid)
              and ($${campaignParams.push(filters.channel)}::text is null or coalesce(nullif(p.metadata->>'preferred_channel', ''), nullif(p.metadata->>'source', ''), pc.type, 'QR / Activacion') = $${campaignParams.length}::text)
+             and ($${campaignParams.push(filters.sellerId)}::uuid is null or p.seller_user_id = $${campaignParams.length}::uuid)
            group by p.campaign_id
            union all
            select cmc.campaign_id, count(distinct cmc.manual_lead_id)::int as leads
@@ -596,6 +603,7 @@ async function getSeriesAndCharts(businessId, filters) {
              and cmc.created_at < ($${campaignParams.push(filters.endDate)}::date + interval '1 day')
              and ($${campaignParams.push(filters.campaignId)}::uuid is null or cmc.campaign_id = $${campaignParams.length}::uuid)
              and ($${campaignParams.push(filters.channel)}::text is null or coalesce(nullif(cmc.channel, ''), nullif(ml.preferred_channel, ''), nullif(ml.source, ''), 'Directorio de contactos') = $${campaignParams.length}::text)
+             and ($${campaignParams.push(filters.sellerId)}::uuid is null or ml.seller_user_id = $${campaignParams.length}::uuid)
            group by cmc.campaign_id
          ) source
          group by source.campaign_id
@@ -703,6 +711,7 @@ async function getSeriesAndCharts(businessId, filters) {
            and p.created_at >= $${matrixParams.push(filters.startDate)}::timestamptz
            and p.created_at < ($${matrixParams.push(filters.endDate)}::date + interval '1 day')
            and ($${matrixParams.push(filters.campaignId)}::uuid is null or coalesce(latest_capture.campaign_id, p.campaign_id) = $${matrixParams.length}::uuid)
+           and ($${matrixParams.push(filters.sellerId)}::uuid is null or p.seller_user_id = $${matrixParams.length}::uuid)
          group by 1, 2, 3
        ),
        manual_contact_events as (
@@ -722,6 +731,7 @@ async function getSeriesAndCharts(businessId, filters) {
            and cmc.created_at >= $${matrixParams.push(filters.startDate)}::timestamptz
            and cmc.created_at < ($${matrixParams.push(filters.endDate)}::date + interval '1 day')
            and ($${matrixParams.push(filters.campaignId)}::uuid is null or cmc.campaign_id = $${matrixParams.length}::uuid)
+           and ($${matrixParams.push(filters.sellerId)}::uuid is null or ml.seller_user_id = $${matrixParams.length}::uuid)
          group by 1, 2, 3
        ),
        qr_events as (
@@ -1304,6 +1314,111 @@ function buildSankey(charts) {
   return { nodes, links };
 }
 
+async function getSellerPerformance(businessId, filters) {
+  const result = await query(
+    `with sales as (${salesUnionSql()}),
+     seller_contacts as (
+       select seller_user_id, count(distinct contact_key)::int as leads
+       from (
+         select p.seller_user_id, 'PLAYER:' || p.id::text as contact_key
+         from players p
+         where p.business_id = $1
+           and p.seller_user_id is not null
+           and p.created_at >= $2::timestamptz
+           and p.created_at < ($3::date + interval '1 day')
+           and ($4::uuid is null or p.seller_user_id = $4)
+           and ($5::uuid is null or p.campaign_id = $5)
+           and ($6::uuid is null or p.branch_id = $6)
+         union all
+         select ml.seller_user_id, 'MANUAL:' || ml.id::text as contact_key
+         from business_manual_leads ml
+         where ml.business_id = $1
+           and ml.seller_user_id is not null
+           and ml.created_at >= $2::timestamptz
+           and ml.created_at < ($3::date + interval '1 day')
+           and ($4::uuid is null or ml.seller_user_id = $4)
+           and ($5::uuid is null or exists (
+             select 1 from campaign_manual_contacts cmc
+             where cmc.business_id = ml.business_id and cmc.manual_lead_id = ml.id
+               and cmc.campaign_id = $5 and cmc.status = 'ACTIVE'
+           ))
+           and ($6::uuid is null or ml.branch_id = $6)
+       ) contacts
+       group by seller_user_id
+     ),
+     seller_activations as (
+       select iap.seller_user_id,
+              count(*)::int as activation_starts,
+              count(*) filter (where iap.status in ('completed', 'rewarded'))::int as activation_completions,
+              count(distinct iap.activation_id)::int as activations_operated
+       from interactive_activation_participants iap
+       join interactive_activations ia on ia.id = iap.activation_id and ia.company_id = iap.company_id
+       where iap.company_id = $1
+         and iap.seller_user_id is not null
+         and iap.created_at >= $2::timestamptz
+         and iap.created_at < ($3::date + interval '1 day')
+         and ($4::uuid is null or iap.seller_user_id = $4)
+         and ($5::uuid is null or ia.campaign_id = $5)
+         and ($6::uuid is null or ia.branch_id = $6)
+       group by iap.seller_user_id
+     ),
+     seller_sales as (
+       select s.seller_user_id,
+              count(*)::int as sales,
+              count(distinct s.customer_key)::int as customers,
+              coalesce(sum(s.sale_amount), 0)::numeric(14, 2) as revenue
+       from sales s
+       where s.business_id = $1
+         and s.seller_user_id is not null
+         and s.created_at >= $2::timestamptz
+         and s.created_at < ($3::date + interval '1 day')
+         and ($4::uuid is null or s.seller_user_id = $4)
+         and ($5::uuid is null or s.campaign_id = $5)
+         and ($6::uuid is null or s.branch_id = $6)
+       group by s.seller_user_id
+     )
+     select u.id, u.full_name as name, u.email,
+            coalesce(c.leads, 0)::int as leads,
+            coalesce(a.activation_starts, 0)::int as activation_starts,
+            coalesce(a.activation_completions, 0)::int as activation_completions,
+            coalesce(a.activations_operated, 0)::int as activations_operated,
+            coalesce(s.sales, 0)::int as sales,
+            coalesce(s.customers, 0)::int as customers,
+            coalesce(s.revenue, 0)::numeric(14, 2) as revenue
+     from app_users u
+     left join seller_contacts c on c.seller_user_id = u.id
+     left join seller_activations a on a.seller_user_id = u.id
+     left join seller_sales s on s.seller_user_id = u.id
+     where u.business_id = $1
+       and u.is_active = true
+       and u.role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR')
+       and ($4::uuid is null or u.id = $4)
+     order by revenue desc, sales desc, leads desc, u.full_name asc`,
+    [businessId, filters.startDate, filters.endDate, filters.sellerId, filters.campaignId, filters.branchId]
+  );
+  return result.rows.map((row, index) => {
+    const leads = number(row.leads);
+    const sales = number(row.sales);
+    const revenue = number(row.revenue);
+    const starts = number(row.activation_starts);
+    return {
+      ...row,
+      rank: index + 1,
+      leads,
+      activation_starts: starts,
+      activation_completions: number(row.activation_completions),
+      activations_operated: number(row.activations_operated),
+      sales,
+      customers: number(row.customers),
+      revenue,
+      lead_to_sale_rate: safeRate(sales, leads),
+      activation_completion_rate: safeRate(row.activation_completions, starts),
+      avg_ticket: safeDivide(revenue, sales) || 0,
+      revenue_per_lead: safeDivide(revenue, leads) || 0,
+    };
+  });
+}
+
 async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
   const filters = normalizeFilters(rawFilters);
   const cacheKey = cacheKeyFor(businessId, filters);
@@ -1312,12 +1427,13 @@ async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
     return { ...cached, cache: { hit: true, ttl_seconds: ANALYTICS_CACHE_TTL_MS / 1000 } };
   }
 
-  const [options, current, previousRaw, charts, businessEconomics] = await Promise.all([
+  const [options, current, previousRaw, charts, businessEconomics, sellerPerformance] = await Promise.all([
     getOptions(businessId),
     getTotals(businessId, filters, "current"),
     getTotals(businessId, filters, "previous"),
     getSeriesAndCharts(businessId, filters),
     getBusinessEconomics(businessId),
+    getSellerPerformance(businessId, filters),
   ]);
   const previous = filters.comparePrevious ? previousRaw : current;
 
@@ -1335,6 +1451,8 @@ async function getCommandCenterAnalytics(businessId, rawFilters = {}) {
   const analytics = {
     filters,
     options,
+    seller_performance: sellerPerformance,
+    selected_seller: filters.sellerId ? sellerPerformance[0] || null : null,
     kpis: kpiItems(current, previous, topBranch, topChannel, affiliateSummary, businessEconomics),
     totals: current,
     previous_totals: previous,

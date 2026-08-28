@@ -99,6 +99,7 @@ const {
 const {
   addInterest,
   addPurchase,
+  assignSellerResponsibility,
   agenda,
   createAgendaItem,
   createNote,
@@ -253,6 +254,7 @@ router.patch("/contacts/manual/:manualLeadId", requireContactDirectory, updateMa
 router.get("/contacts/feed/export.csv", requireLeadExport, exportContactFeed);
 router.get("/contacts/feed/:qrId/active-qr", downloadLeadQrById);
 router.get("/leads/crm", standardBusinessCache, listLeadsCrm);
+router.patch("/leads/:leadId/seller-responsibility", requireContactDirectory, assignSellerResponsibility);
 router.get("/leads/agenda", shortBusinessCache, agenda);
 router.post("/leads/agenda", createAgendaItem);
 router.patch("/leads/agenda/:noteId", updateAgendaItem);

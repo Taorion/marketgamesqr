@@ -361,12 +361,12 @@ async function createCustomerFromRow(client, businessId, user, row, batchId, ide
     const created = await client.query(
       `insert into business_manual_leads
         (business_id, created_by_user_id, name, email, phone, document_type, document_id, company, source,
-         preferred_channel, status, priority, notes, metadata)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, 'Importación CSV', $9, $10, 'MEDIUM', $11, $12::jsonb)
-       returning id, name, email, phone, document_id`,
+         preferred_channel, status, priority, notes, seller_user_id, metadata)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, 'Importación CSV', $9, $10, 'MEDIUM', $11, $12, $13::jsonb)
+       returning id, name, email, phone, document_id, seller_user_id`,
       [businessId, user?.id || null, row.name, row.email || null, row.phone || null, row.document_type || null,
         row.document_id || null, row.company || null, row.preferred_channel || null,
-        "CONVERTED", row.notes || null,
+        "CONVERTED", row.notes || null, row.commercial_owner?.id || null,
         JSON.stringify({
           source: "customer_csv_import", import_batch_id: batchId, csv_row: row.row_number,
           created_by_email: user?.email || null,
@@ -385,14 +385,15 @@ async function createCustomerFromRow(client, businessId, user, row, batchId, ide
   }
   if (contact) {
     const target = {
-      PLAYER: { table: "players", metadata: "metadata" },
-      MANUAL: { table: "business_manual_leads", metadata: "metadata" },
-      AFFILIATE: { table: "affiliates", metadata: "card_metadata" },
+      PLAYER: { table: "players", metadata: "metadata", supportsSeller: true },
+      MANUAL: { table: "business_manual_leads", metadata: "metadata", supportsSeller: true },
+      AFFILIATE: { table: "affiliates", metadata: "card_metadata", supportsSeller: false },
     }[contact.source_type];
     if (!target) return { outcome: "ERROR", reason: "Tipo de contacto no compatible con la importación.", contact: null };
     await client.query(
       `update ${target.table}
-          set ${target.metadata} = coalesce(${target.metadata}, '{}'::jsonb) || jsonb_strip_nulls(jsonb_build_object(
+          set ${target.supportsSeller ? "seller_user_id = coalesce($4::uuid, seller_user_id)," : ""}
+              ${target.metadata} = coalesce(${target.metadata}, '{}'::jsonb) || jsonb_strip_nulls(jsonb_build_object(
                 'customer_import_declared', true,
                 'customer_import_evidence', 'CSV_DECLARATION',
                 'customer_import_batch_id', $3::text,

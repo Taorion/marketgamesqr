@@ -1043,6 +1043,7 @@ const activationTypePicker = document.getElementById("activationTypePicker");
 const triviaCampaignInput = document.getElementById("triviaCampaignInput");
 const triviaCampaignHelp = document.getElementById("triviaCampaignHelp");
 const triviaBranchInput = document.getElementById("triviaBranchInput");
+const triviaSellerInput = document.getElementById("triviaSellerInput");
 const triviaTitleInput = document.getElementById("triviaTitleInput");
 const triviaDescriptionInput = document.getElementById("triviaDescriptionInput");
 const triviaInviteMessageInput = document.getElementById("triviaInviteMessageInput");
@@ -6175,6 +6176,7 @@ function renderBusinessUsers() {
   const canDeactivate = canDeactivateBusinessUsers();
   const users = state.businessUsers || [];
   renderManualLeadCommercialOwnerOptions();
+  renderInteractiveActivationSellerOptions();
   if (accountUserForm) {
     accountUserForm.classList.toggle("hidden", !canManage);
   }
@@ -13967,6 +13969,25 @@ function drawRevenueCommandInlineCharts(data = {}) {
   if (ticketStatusCanvas) drawDonutChart(ticketStatusCanvas, data.qr_status || [], ["#0759d6", "#10c6df", "#11b98d", "#f0ae43", "#c084fc"]);
 }
 
+function revenueCommandSellerLensMarkup(data = {}) {
+  const rows = Array.isArray(data.seller_performance) ? data.seller_performance : [];
+  const selected = data.selected_seller || null;
+  const timeline = Array.isArray(data.timeline) ? data.timeline : [];
+  const maxSignal = Math.max(1, ...timeline.map((row) => Math.max(toNumber(row.leads), toNumber(row.sales))));
+  if (selected) {
+    const journey = [
+      { label: "Leads bajo responsabilidad", value: toNumber(selected.leads), icon: "person_add" },
+      { label: "Inicios de activación", value: toNumber(selected.activation_starts), icon: "play_circle" },
+      { label: "Activaciones completadas", value: toNumber(selected.activation_completions), icon: "task_alt" },
+      { label: "Ventas confirmadas", value: toNumber(selected.sales), icon: "payments" },
+    ];
+    const journeyMax = Math.max(1, ...journey.map((item) => item.value));
+    return `<section class="revenue-seller-lens is-selected"><header><div><span class="mono-label">Lente individual activo</span><h3>${escapeHtml(selected.name || "Vendedor")}</h3><p>La atribución conecta responsable, activación, lead y venta sin mezclar resultados del equipo.</p></div><span class="revenue-seller-rank">${toNumber(selected.activations_operated)} activaciones operadas</span></header><div class="revenue-seller-kpis"><article><small>Leads propios</small><strong>${toNumber(selected.leads)}</strong><span>${toNumber(selected.activation_starts)} iniciaron activación</span></article><article><small>Conversión lead → venta</small><strong>${toNumber(selected.lead_to_sale_rate)}%</strong><span>${toNumber(selected.sales)} ventas confirmadas</span></article><article><small>Revenue atribuido</small><strong>${money(selected.revenue)}</strong><span>${money(selected.revenue_per_lead)} por lead</span></article><article><small>Ticket promedio</small><strong>${money(selected.avg_ticket)}</strong><span>${toNumber(selected.customers)} clientes compradores</span></article></div><div class="revenue-seller-visuals"><article class="revenue-seller-journey"><div><span class="mono-label">Huella de atribución</span><h4>Del contacto al ingreso</h4></div>${journey.map((item) => `<div class="revenue-seller-stage"><span class="material-symbols-outlined" aria-hidden="true">${item.icon}</span><div><small>${escapeHtml(item.label)}</small><i><b style="--seller-stage:${Math.max(item.value ? 7 : 0, Math.round((item.value / journeyMax) * 100))}%"></b></i></div><strong>${item.value}</strong></div>`).join("")}</article><article class="revenue-seller-pulse"><div><span class="mono-label">Pulso del corte</span><h4>Leads y cierres por día</h4></div><div class="revenue-seller-pulse-chart" aria-label="Actividad diaria de ${escapeHtml(selected.name || "vendedor")}">${timeline.map((row) => `<span title="${escapeHtml(row.date)}: ${toNumber(row.leads)} leads, ${toNumber(row.sales)} ventas"><i style="--pulse-leads:${Math.round((toNumber(row.leads) / maxSignal) * 100)}%"></i><b style="--pulse-sales:${Math.round((toNumber(row.sales) / maxSignal) * 100)}%"></b></span>`).join("")}</div><footer><span><i></i>Leads</span><span><b></b>Ventas</span><strong>${toNumber(selected.activation_completion_rate)}% completó activaciones</strong></footer></article></div></section>`;
+  }
+  const maxRevenue = Math.max(1, ...rows.map((row) => toNumber(row.revenue)));
+  return `<section class="revenue-seller-lens"><header><div><span class="mono-label">Constelación comercial</span><h3>Rendimiento por vendedor</h3><p>Compara captación, conversión y revenue con datos realmente atribuidos.</p></div><span class="revenue-seller-rank">${rows.length} responsables activos</span></header><div class="revenue-seller-team">${rows.map((row, index) => `<article><span class="revenue-seller-position">${String(index + 1).padStart(2, "0")}</span><div><strong>${escapeHtml(row.name || "Vendedor")}</strong><small>${toNumber(row.leads)} leads · ${toNumber(row.sales)} ventas · ${toNumber(row.lead_to_sale_rate)}% conversión</small><i><b style="--seller-share:${Math.max(toNumber(row.revenue) ? 5 : 0, Math.round((toNumber(row.revenue) / maxRevenue) * 100))}%"></b></i></div><em>${money(row.revenue)}</em></article>`).join("") || `<div class="revenue-command-empty"><strong>Aún no hay responsables con datos atribuidos</strong><p>Asigna vendedores a contactos o activaciones para construir esta comparación.</p></div>`}</div></section>`;
+}
+
 function renderRevenueCommandCenter() {
   if (!revenueCommandSurface) return false;
   const legacyHeader = document.querySelector('.view-section[data-view="dashboard"] > .dashboard-revenue-head');
@@ -14006,12 +14027,15 @@ function renderRevenueCommandCenter() {
   const range = data.filters?.startDate && data.filters?.endDate ? `${data.filters.startDate} — ${data.filters.endDate}` : "Corte actual";
   const priority = revenueCommandPriority(insights, totals, economics);
   const topChannel = [...channels].sort((left, right) => toNumber(right.revenue) - toNumber(left.revenue))[0];
+  const sellerOptions = Array.isArray(data.options?.sellers) ? data.options.sellers : [];
+  const roiLabel = data.filters?.sellerId ? "ROI del negocio" : "ROI comercial";
   revenueCommandSurface.innerHTML = `
     <header class="revenue-command-pro-hero">
-      <div class="revenue-command-pro-top"><span class="revenue-command-live"><i></i>Qori Revenue Command</span><span class="revenue-command-range">${escapeHtml(range)}</span><button type="button" class="ghost-button compact" data-revenue-command-refresh><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar datos</button></div>
+      <div class="revenue-command-pro-top"><span class="revenue-command-live"><i></i>Qori Revenue Command</span><label class="revenue-command-seller-filter"><span class="material-symbols-outlined" aria-hidden="true">badge</span><span>Analizar vendedor</span><select data-revenue-command-seller><option value="">Todo el equipo</option>${sellerOptions.map((seller) => `<option value="${escapeHtml(seller.id || seller.value)}"${String(data.filters?.sellerId || "") === String(seller.id || seller.value) ? " selected" : ""}>${escapeHtml(seller.name || seller.label || "Vendedor")}</option>`).join("")}</select></label><span class="revenue-command-range">${escapeHtml(range)}</span><button type="button" class="ghost-button compact" data-revenue-command-refresh><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar datos</button></div>
       <div class="revenue-command-pro-title"><div><span class="mono-label">Sala de mando comercial</span><h2>Decide el próximo<br><em>movimiento de revenue.</em></h2><p>Una lectura ejecutiva que conecta el dinero, el flujo comercial y las acciones que el equipo puede tomar ahora.</p></div><div class="revenue-command-pro-northstar"><small>Índice de comando</small><strong>${toNumber(score.score)}<em>/100</em></strong><span>${escapeHtml(score.status || "Lectura disponible")}</span></div></div>
-      <div class="revenue-command-pro-metrics"><article><span class="material-symbols-outlined" aria-hidden="true">payments</span><small>Revenue confirmado</small><strong>${money(totals.revenue)}</strong><em>${toNumber(totals.sales_count)} ventas registradas</em></article><article><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><small>Ticket promedio</small><strong>${money(totals.avg_ticket)}</strong><em>valor por venta confirmada</em></article><article><span class="material-symbols-outlined" aria-hidden="true">trending_up</span><small>ROI comercial</small><strong>${economics.roi === null ? "—" : ratioLabel(economics.roi)}</strong><em>${economics.investment ? `${money(economics.investment)} invertidos` : "sin inversión registrada"}</em></article><article><span class="material-symbols-outlined" aria-hidden="true">hub</span><small>Canal líder</small><strong>${escapeHtml(topChannel?.label || "—")}</strong><em>${topChannel ? money(topChannel.revenue) : "sin atribución suficiente"}</em></article></div>
+      <div class="revenue-command-pro-metrics"><article><span class="material-symbols-outlined" aria-hidden="true">payments</span><small>Revenue confirmado</small><strong>${money(totals.revenue)}</strong><em>${toNumber(totals.sales_count)} ventas registradas</em></article><article><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span><small>Ticket promedio</small><strong>${money(totals.avg_ticket)}</strong><em>valor por venta confirmada</em></article><article><span class="material-symbols-outlined" aria-hidden="true">trending_up</span><small>${roiLabel}</small><strong>${economics.roi === null ? "—" : ratioLabel(economics.roi)}</strong><em>${economics.investment ? `${money(economics.investment)} invertidos` : "sin inversión registrada"}</em></article><article><span class="material-symbols-outlined" aria-hidden="true">hub</span><small>Canal líder</small><strong>${escapeHtml(topChannel?.label || "—")}</strong><em>${topChannel ? money(topChannel.revenue) : "sin atribución suficiente"}</em></article></div>
     </header>
+    ${revenueCommandSellerLensMarkup(data)}
     <section class="revenue-command-pro-priority is-${escapeHtml(priority.tone)}">
       <div class="revenue-command-pro-priority-icon"><span class="material-symbols-outlined" aria-hidden="true">${priority.icon}</span></div><div><span class="mono-label">${escapeHtml(priority.eyebrow)}</span><h3>${escapeHtml(priority.title)}</h3><p>${escapeHtml(priority.description)}</p></div><button type="button" class="primary-button" data-revenue-command-route="${escapeHtml(priority.route)}">${escapeHtml(priority.action)}<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
     </section>
@@ -19031,6 +19055,7 @@ function openGamingActivationBuilderModal(options = {}) {
   if (!modal) return;
   const branchLoad = loadBusinessBranches({ force: true });
   renderInteractiveActivationBranchOptions();
+  renderInteractiveActivationSellerOptions();
   branchLoad.then(() => {
     renderInteractiveActivationBranchOptions();
   }).catch((error) => {
@@ -28889,6 +28914,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
   const base = {
     campaign_id: triviaCampaignInput.value || null,
     branch_id: interactiveActivationBranchId(),
+    seller_user_id: triviaSellerInput?.value || null,
     title: triviaTitleInput.value.trim(),
     description: triviaDescriptionInput.value.trim() || null,
     max_rewards: triviaMaxWinnersInput.value ? Number(triviaMaxWinnersInput.value) : null,
@@ -29531,7 +29557,7 @@ function renderTriviaLaunchers() {
             <span class="activation-type-emblem is-${visual.tone}"><span class="material-symbols-outlined" aria-hidden="true">${visual.icon}</span></span>
             <div class="activation-summary-copy">
               <strong class="activation-title">${escapeHtml(item.title || "Activación sin título")}</strong>
-              <div class="activation-meta-line"><span>${escapeHtml(activationTypeLabel(item.activation_type))}</span><span>${escapeHtml(item.campaign_name || "Sin campaña")}</span></div>
+              <div class="activation-meta-line"><span>${escapeHtml(activationTypeLabel(item.activation_type))}</span><span>${escapeHtml(item.campaign_name || "Sin campaña")}</span><span>${escapeHtml(item.seller_name || "Sin vendedor")}</span></div>
               <small>Creada ${escapeHtml(formatDate(item.created_at))} · ${escapeHtml(activationParticipantPolicyLabel(item))}</small>
             </div>
           </div>
@@ -30265,6 +30291,7 @@ function ensureActivationEditModal(view = document.querySelector('.view-section[
           <option value="archived">Anulada</option>
         </select></label>
         <label><span>Fecha de cierre</span><input id="activationEditEndsAtInput" type="datetime-local"></label>
+        <label class="span-2"><span>Vendedor responsable</span><select id="activationEditSellerInput"></select><small>Los nuevos leads conservarán esta atribución. El historial anterior no se reescribe.</small></label>
         <label><span>Cupo de beneficios</span><input id="activationEditMaxRewardsInput" type="number" min="1" max="1000000" placeholder="Sin limite"></label>
         <label><span>Dias entre intentos</span><input id="activationEditCooldownInput" type="number" min="0" max="365"></label>
         <label class="span-2"><span>Regla para ganadores</span><select id="activationEditWinnerPolicyInput">
@@ -30310,6 +30337,7 @@ function editInteractiveActivation(id) {
   modal.querySelector("#activationEditDescriptionInput").value = activation.description || "";
   modal.querySelector("#activationEditStatusInput").value = activation.status || "draft";
   modal.querySelector("#activationEditEndsAtInput").value = formatInputDateTime(activation.ends_at);
+  modal.querySelector("#activationEditSellerInput").innerHTML = businessCommercialOwnerOptions(activation.seller_user_id || "").replace("Sin responsable asignado", "Sin vendedor asignado");
   modal.querySelector("#activationEditMaxRewardsInput").value = activation.max_rewards || "";
   modal.querySelector("#activationEditCooldownInput").value = currentLock.cooldown_days ?? 7;
   modal.querySelector("#activationEditWinnerPolicyInput").value = currentLock.winner_policy || "block_previous_winners";
@@ -30372,6 +30400,7 @@ async function submitActivationEditModal(event) {
       description: description || null,
       status,
       ends_at: endsAt,
+      seller_user_id: modal.querySelector("#activationEditSellerInput")?.value || null,
       max_rewards: maxRewards,
       visual_config: {
         ...(activation.visual_config || {}),
@@ -30486,6 +30515,7 @@ async function saveGamingActivationDraft() {
     title: draftTitle.length >= 4 ? draftTitle : "Borrador de activacion",
     description: triviaDescriptionInput?.value.trim() || null,
     branch_id: interactiveActivationBranchId(),
+    seller_user_id: triviaSellerInput?.value || null,
     reward_ticket_cost: 1,
     reward_mode: "fixed",
     reward_config: {
@@ -37977,6 +38007,7 @@ function renderLeadCrmTable() {
             <strong>${escapeHtml(item.commercial_status_label || item.commercial_status || "Nuevo")}</strong>
             <span>${escapeHtml(leadDirectoryRowCampaignLine(item))}</span>
             <span>${escapeHtml(station.short || "Sin estación")}</span>
+            ${["PLAYER", "MANUAL"].includes(item.source_type || "PLAYER") ? `<label class="lead-directory-seller"><small>Responsable</small><select data-lead-seller-id="${escapeHtml(item.id)}" data-lead-seller-source="${escapeHtml(item.source_type || "PLAYER")}" aria-label="Vendedor responsable de ${escapeHtml(item.name || kindLabel)}">${businessCommercialOwnerOptions(item.seller_user_id || leadDirectoryMetadata(item).commercial_owner_user_id || "")}</select></label>` : `<span>${escapeHtml(item.seller_name || "Sin vendedor")}</span>`}
           </div>
           <div class="lead-directory-kpis">
             <article><span>Compras</span><strong>${Number(item.purchase_count || 0).toLocaleString("es-CO")} · ${money(item.total_spent || 0)}</strong></article>
@@ -38002,6 +38033,29 @@ function renderLeadCrmTable() {
   `;
   }).join("") || `<tr><td colspan="9"><div class="lead-directory-empty">Sin ${leadDirectoryAudienceLabel(audience).toLowerCase()} para los filtros actuales.</div></td></tr>`;
   renderLeadBulkToolbar(visibleRows);
+  leadCrmTable.querySelectorAll("[data-lead-seller-id]").forEach((select) => {
+    select.addEventListener("click", (event) => event.stopPropagation());
+    select.addEventListener("change", async (event) => {
+      event.stopPropagation();
+      const previous = (state.leadCrmRows || []).find((lead) => String(lead.id) === String(select.dataset.leadSellerId) && String(lead.source_type || "PLAYER") === String(select.dataset.leadSellerSource || "PLAYER"))?.seller_user_id || "";
+      select.disabled = true;
+      try {
+        const data = await api(`/api/business/leads/${encodeURIComponent(select.dataset.leadSellerId)}/seller-responsibility`, {
+          method: "PATCH",
+          headers: authHeaders(),
+          body: JSON.stringify({ seller_user_id: select.value || null, source_type: select.dataset.leadSellerSource || "PLAYER" }),
+        });
+        const seller = (state.businessUsers || []).find((user) => String(user.id) === String(select.value));
+        state.leadCrmRows = (state.leadCrmRows || []).map((lead) => String(lead.id) === String(select.dataset.leadSellerId) && String(lead.source_type || "PLAYER") === String(select.dataset.leadSellerSource || "PLAYER") ? { ...lead, ...data.contact, seller_user_id: select.value || null, seller_name: seller?.full_name || null } : lead);
+        showFeedback(select.value ? `Responsable asignado: ${seller?.full_name || "vendedor"}.` : "El contacto quedó sin responsable asignado.", "success", { title: "Responsabilidad comercial" });
+      } catch (error) {
+        select.value = previous;
+        showFeedback(error.message, "error", { title: "No se pudo asignar" });
+      } finally {
+        select.disabled = false;
+      }
+    });
+  });
   leadCrmTable.querySelectorAll("[data-lead-bulk-select]").forEach((input) => {
     input.addEventListener("click", (event) => event.stopPropagation());
     input.closest(".bulk-row-check")?.addEventListener("click", (event) => event.stopPropagation());
@@ -40609,7 +40663,7 @@ function renderLeadDetailHeader(detail) {
   const pendingAgendaRows = leadDetailAgendaRows(detail).filter((item) => String(item.agenda_status || "OPEN").toUpperCase() === "OPEN");
   if (leadDetailTitle) leadDetailTitle.textContent = lead.name || "Lead sin nombre";
   if (leadDetailSubtitle) {
-    leadDetailSubtitle.textContent = `${lead.document_id || "Sin documento"} · ${lead.email || "Sin email"} · ${lead.phone || "Sin telefono"}`;
+    leadDetailSubtitle.textContent = `${lead.document_id || "Sin documento"} · ${lead.email || "Sin email"} · ${lead.phone || "Sin telefono"} · Responsable: ${lead.seller_name || "Sin asignar"}`;
   }
   if (leadDetailEyebrow) {
     leadDetailEyebrow.textContent = `Ficha comercial · ${lead.source_type || "PLAYER"} · ${lead.level || "Lead"}`;
@@ -40869,7 +40923,7 @@ function renderManualLeadEditForm(lead = {}) {
       </label>
       <label><span>Canal preferido</span><input id="manualLeadEditPreferredChannelInput" type="text" maxlength="120" value="${escapeHtml(manualLeadEditValue(lead, "preferred_channel"))}"></label>
       <label><span>Hora o momento</span><input id="manualLeadEditPreferredTimeInput" type="text" maxlength="120" value="${escapeHtml(manualLeadEditValue(lead, "preferred_contact_time"))}"></label>
-      <label><span>Responsable comercial</span><select id="manualLeadEditCommercialOwnerInput">${businessCommercialOwnerOptions(leadDirectoryMetadata(lead).commercial_owner_user_id || "")}</select><small class="field-help">Opcional. La asignación queda vinculada al usuario activo del negocio.</small></label>
+      <label><span>Responsable comercial</span><select id="manualLeadEditCommercialOwnerInput">${businessCommercialOwnerOptions(lead.seller_user_id || leadDirectoryMetadata(lead).commercial_owner_user_id || "")}</select><small class="field-help">Opcional. La asignación queda vinculada al usuario activo del negocio.</small></label>
       <label class="span-2"><span>Interés</span><input id="manualLeadEditInterestInput" type="text" maxlength="500" value="${escapeHtml(manualLeadEditValue(lead, "interest"))}"></label>
       <label class="span-2"><span>Por qué es importante</span><textarea id="manualLeadEditImportanceInput" rows="2" maxlength="1000">${escapeHtml(manualLeadEditValue(lead, "importance_reason"))}</textarea></label>
       <label class="span-2"><span>Nota de seguimiento</span><textarea id="manualLeadEditNotesInput" rows="3" maxlength="2000">${escapeHtml(manualLeadEditValue(lead, "notes"))}</textarea></label>
@@ -58081,9 +58135,23 @@ adminCampaignNameInput?.addEventListener("input", () => {
 adminCampaignSlugInput?.addEventListener("input", () => {
   adminCampaignSlugInput.value = slugify(adminCampaignSlugInput.value);
 });
+revenueCommandSurface?.addEventListener("change", (event) => {
+  const sellerSelect = event.target.closest("[data-revenue-command-seller]");
+  if (!sellerSelect) return;
+  state.commandCenterFilters.sellerId = sellerSelect.value || "";
+  state.commandCenter = null;
+  state.commandCenterError = "";
+  loadCommandCenterData({ quiet: true });
+});
 
 function sellerInitials(name = "") {
   return String(name).trim().split(/\s+/).slice(0, 2).map((part) => part[0] || "").join("").toUpperCase() || "V";
+}
+
+function renderInteractiveActivationSellerOptions(selectedId = triviaSellerInput?.value || "") {
+  if (!triviaSellerInput) return;
+  triviaSellerInput.innerHTML = businessCommercialOwnerOptions(selectedId).replace("Sin responsable asignado", "Sin vendedor asignado");
+  triviaSellerInput.value = selectedId || "";
 }
 
 function sellerPercent(value) {

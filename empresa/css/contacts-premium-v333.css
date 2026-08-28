@@ -8,6 +8,8 @@ body[data-current-view="leads"] .view-section[data-view="leads"] {
   gap: 16px;
 }
 
+.lead-directory-seller{display:grid!important;gap:4px!important;margin-top:7px!important}.lead-directory-seller small{color:#536780!important;font-size:10px!important;font-weight:800!important;letter-spacing:.06em!important;text-transform:uppercase!important}.lead-directory-seller select{width:100%!important;min-width:150px!important;max-width:250px!important;min-height:34px!important;padding:6px 28px 6px 9px!important;border:1px solid #cddbea!important;border-radius:10px!important;background:#fff!important;color:#10274c!important;font-size:11px!important;font-weight:700!important;box-shadow:0 5px 14px rgba(23,55,96,.06)!important}.lead-directory-seller select:focus{outline:3px solid rgba(24,158,199,.18)!important;border-color:#159bb7!important}.lead-directory-seller select:disabled{opacity:.6;cursor:wait}
+
 body[data-current-view="leads"] .view-section[data-view="leads"] > .view-head {
   display: flex;
   align-items: center;

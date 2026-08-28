@@ -5540,6 +5540,13 @@ async function createManualLead(req, res, next) {
           throw badRequest("El correo o teléfono ya pertenece a un contacto con otro documento. Revisa los datos antes de crear el lead.");
         }
         await attachManualIdentityToExistingContact(client, businessId, existing, body);
+        if (commercialOwner?.id && ["PLAYER", "MANUAL"].includes(existing.source_type)) {
+          const table = existing.source_type === "PLAYER" ? "players" : "business_manual_leads";
+          await client.query(
+            `update ${table} set seller_user_id = $3 where business_id = $1 and id = $2`,
+            [businessId, existing.id, commercialOwner.id]
+          );
+        }
         await recordExistingContactIntake(client, businessId, req.user, existing, {
           source: "manual_portal_entry",
           attempted_name: body.name || null,
@@ -5559,10 +5566,10 @@ async function createManualLead(req, res, next) {
       const result = await client.query(
         `insert into business_manual_leads
            (business_id, created_by_user_id, name, email, phone, document_type, document_id, company, job_title, source, source_detail,
-            branch_id, acquisition_channel_id, acquisition_channel_name_snapshot, acquisition_channel_slug_snapshot,
+            branch_id, seller_user_id, acquisition_channel_id, acquisition_channel_name_snapshot, acquisition_channel_slug_snapshot,
             acquisition_channel_source, interest, importance_reason, preferred_channel, preferred_contact_time,
             status, priority, notes, metadata)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::jsonb)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25::jsonb)
          returning *`,
         [
           businessId,
@@ -5577,6 +5584,7 @@ async function createManualLead(req, res, next) {
           body.source || "Manual",
           body.source_detail,
           branchId,
+          commercialOwner?.id || null,
           acquisitionChannel.acquisition_channel_id,
           acquisitionChannel.acquisition_channel_name_snapshot,
           acquisitionChannel.acquisition_channel_slug_snapshot,
@@ -5647,6 +5655,11 @@ async function importManualLeadsCsv(req, res, next) {
       const created = [];
       const existing = [];
       for (const row of rows) {
+        const rowOwner = await commercialOwnerForBusiness(
+          businessId,
+          row.commercial_owner_user_id || null,
+          (...args) => client.query(...args)
+        );
         const matchedContact = await findExistingBusinessContact(client, businessId, row);
         if (matchedContact) {
           const incomingIdentity = manualContactIdentity(row);
@@ -5655,6 +5668,10 @@ async function importManualLeadsCsv(req, res, next) {
             throw badRequest(`Fila ${row.csv_row}: el correo o teléfono pertenece a un contacto con otro documento. Corrige la identidad antes de importar.`);
           }
           await attachManualIdentityToExistingContact(client, businessId, matchedContact, row);
+          if (rowOwner?.id && ["PLAYER", "MANUAL"].includes(matchedContact.source_type)) {
+            const table = matchedContact.source_type === "PLAYER" ? "players" : "business_manual_leads";
+            await client.query(`update ${table} set seller_user_id = $3 where business_id = $1 and id = $2`, [businessId, matchedContact.id, rowOwner.id]);
+          }
           await recordExistingContactIntake(client, businessId, req.user, matchedContact, {
             source: "manual_csv_import",
             csv_row: row.csv_row,
@@ -5669,8 +5686,8 @@ async function importManualLeadsCsv(req, res, next) {
         const result = await client.query(
           `insert into business_manual_leads
              (business_id, created_by_user_id, name, email, phone, document_type, document_id, company, job_title, source, source_detail,
-              interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, metadata)
-           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19::jsonb)
+              interest, importance_reason, preferred_channel, preferred_contact_time, status, priority, notes, seller_user_id, metadata)
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20::jsonb)
            returning id, name, email, phone, document_type, document_id, source, source_detail, status, priority, created_at`,
           [
             businessId,
@@ -5691,6 +5708,7 @@ async function importManualLeadsCsv(req, res, next) {
             row.status,
             row.priority,
             row.notes || null,
+            rowOwner?.id || null,
             JSON.stringify({
               source: "manual_csv_import",
               created_by_email: req.user.email || null,
@@ -5699,6 +5717,9 @@ async function importManualLeadsCsv(req, res, next) {
               csv_source_detail: body.source_detail || null,
               manual_job_title: row.job_title || null,
               manual_importance_reason: row.importance_reason || null,
+              commercial_owner_user_id: rowOwner?.id || null,
+              commercial_owner_name: rowOwner?.full_name || null,
+              commercial_owner_email: rowOwner?.email || null,
               identity_document: row.document_id ? {
                 type: row.document_type || null,
                 value: row.document_id,
@@ -5738,9 +5759,12 @@ async function listManualLeads(req, res, next) {
     const limit = boundedLimit(req.query.limit, 500, 1000);
     const result = await query(
       `select ml.*,
+              seller.full_name as seller_name,
+              seller.email as seller_email,
               coalesce(ca.campaigns, '[]'::json) as campaigns
          from business_manual_leads
          ml
+         left join app_users seller on seller.id = ml.seller_user_id and seller.business_id = ml.business_id
          left join lateral (
            select json_agg(
              json_build_object(
@@ -5805,6 +5829,7 @@ async function updateManualLead(req, res, next) {
               notes = $16,
               document_type = $18,
               document_id = $19,
+              seller_user_id = $20,
               metadata = coalesce(metadata, '{}'::jsonb)
                 || jsonb_build_object(
                      'manual_job_title', $7::text,
