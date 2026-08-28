@@ -147,7 +147,7 @@
     if (!grid) return;
     grid.innerHTML = tutorials.map((tutorial) => {
       const done = completed.includes(tutorial.id);
-      return `<article class="portal-guide-card${done ? " is-complete" : ""}"><span class="portal-guide-card-icon"><span class="material-symbols-outlined" aria-hidden="true">${tutorial.icon}</span></span><span class="portal-guide-card-copy"><strong>${tutorial.title}</strong><small>${tutorial.summary}</small><em>${done ? "Completado · repetir" : `${tutorial.steps.length} pasos`}</em></span><button class="portal-guide-start" type="button" data-guide-start="${tutorial.id}">${done ? "Repetir" : "Empezar"}</button></article>`;
+      return `<article class="portal-guide-card${done ? " is-complete" : ""}"><figure class="portal-guide-card-media"><img src="img/tutorials/qori-guide-${tutorial.id}.gif?v=guided-tutorials-v2-20260828" width="640" height="360" loading="lazy" alt="Vista animada: ${tutorial.title}"><span class="portal-guide-card-icon"><span class="material-symbols-outlined" aria-hidden="true">${tutorial.icon}</span></span></figure><span class="portal-guide-card-copy"><strong>${tutorial.title}</strong><small>${tutorial.summary}</small><em>${done ? "Completado · repetir" : `${tutorial.steps.length} pasos`}</em></span><button class="portal-guide-start" type="button" data-guide-start="${tutorial.id}">${done ? "Repetir" : "Empezar"}</button></article>`;
     }).join("");
   }
 
