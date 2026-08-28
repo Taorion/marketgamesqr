@@ -33366,9 +33366,15 @@ html body .portal-shell .campaign-tab-mark .qori-tab-icon {
   font-size: 1.1rem !important;
 }
 
-/* Radar competitivo v392: modal de producto central estable, legible y accesible. */
+/* Radar competitivo v393: modal de producto central estable, legible y accesible. */
 html body.competition-dialog-open {
   overflow: hidden !important;
+}
+
+html body.competition-dialog-open > #portalGuideLauncher {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 html body > #competitionDialogBackdrop.competition-dialog-backdrop {
