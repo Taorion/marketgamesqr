@@ -33366,6 +33366,275 @@ html body .portal-shell .campaign-tab-mark .qori-tab-icon {
   font-size: 1.1rem !important;
 }
 
+/* Radar competitivo v392: modal de producto central estable, legible y accesible. */
+html body.competition-dialog-open {
+  overflow: hidden !important;
+}
+
+html body > #competitionDialogBackdrop.competition-dialog-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1088 !important;
+  display: block !important;
+  background: rgba(2, 21, 58, .66) !important;
+  backdrop-filter: blur(8px) saturate(.9) !important;
+  -webkit-backdrop-filter: blur(8px) saturate(.9) !important;
+}
+
+html body > #competitionDialogBackdrop.competition-dialog-backdrop[hidden] {
+  display: none !important;
+}
+
+html body[data-current-view="competition"] .portal-shell .view-section[data-view="competition"].competition-modal-open::after {
+  display: none !important;
+}
+
+html body > #radarProductFormPanel:not(.is-competition-modal-open) {
+  display: none !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open,
+html body > #radarProductFormPanel.is-competition-modal-open:hover,
+html body > #radarProductFormPanel.is-competition-modal-open:focus-within {
+  position: fixed !important;
+  inset: 50% auto auto 50% !important;
+  z-index: 1100 !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  width: min(860px, calc(100vw - 32px)) !important;
+  max-width: none !important;
+  max-height: min(760px, calc(100dvh - 32px)) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: contain !important;
+  contain: layout paint !important;
+  border: 1px solid rgba(181, 215, 239, .92) !important;
+  border-radius: 26px !important;
+  background: #fff !important;
+  color: #0b2447 !important;
+  box-shadow: 0 38px 110px rgba(1, 23, 65, .44), 0 0 0 1px rgba(255, 255, 255, .5) inset !important;
+  transform: translate(-50%, -50%) !important;
+  transition: none !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open > .table-card-head {
+  position: relative !important;
+  z-index: 3 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  min-height: 92px !important;
+  margin: 0 !important;
+  padding: 22px 26px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(153, 204, 236, .2) !important;
+  background: linear-gradient(135deg, #052a6b 0%, #0759d6 62%, #0a92cf 100%) !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open > .table-card-head > div {
+  display: grid !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open > .table-card-head .mono-label {
+  color: #bdeeff !important;
+  font-size: .68rem !important;
+  font-weight: 900 !important;
+  letter-spacing: .12em !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open > .table-card-head strong {
+  color: #fff !important;
+  font-size: clamp(1.28rem, 2.2vw, 1.65rem) !important;
+  line-height: 1.12 !important;
+  letter-spacing: -.025em !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open > .table-card-head .icon-button {
+  flex: 0 0 auto !important;
+  width: 42px !important;
+  height: 42px !important;
+  border: 1px solid rgba(255, 255, 255, .35) !important;
+  background: rgba(255, 255, 255, .14) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open > .table-card-head .icon-button:hover,
+html body > #radarProductFormPanel.is-competition-modal-open > .table-card-head .icon-button:focus-visible {
+  border-color: rgba(255, 255, 255, .7) !important;
+  background: rgba(255, 255, 255, .24) !important;
+  outline: 3px solid rgba(189, 238, 255, .34) !important;
+  outline-offset: 2px !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open #radarProductForm {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-content: start !important;
+  gap: 16px 18px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 22px 26px 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  background: linear-gradient(180deg, #f8fcff 0%, #fff 34%) !important;
+  scrollbar-gutter: stable !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open #radarProductForm > label {
+  display: grid !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  color: #183c67 !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open #radarProductForm > label > span {
+  color: #244d79 !important;
+  font-size: .75rem !important;
+  font-weight: 850 !important;
+  letter-spacing: .01em !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open #radarProductForm :is(input, select, textarea) {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 46px !important;
+  box-sizing: border-box !important;
+  border: 1px solid #bdd4e6 !important;
+  border-radius: 13px !important;
+  background: #fff !important;
+  color: #0c2b50 !important;
+  font: inherit !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 0 rgba(4, 54, 112, .03) inset !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open #radarProductForm :is(input, select, textarea):focus {
+  border-color: #087bc1 !important;
+  outline: 3px solid rgba(7, 145, 205, .16) !important;
+  outline-offset: 1px !important;
+  box-shadow: none !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open #radarProductForm textarea {
+  min-height: 108px !important;
+  resize: vertical !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open #radarProductForm .span-2 {
+  grid-column: 1 / -1 !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open #radarProductForm .modal-actions {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 2 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  min-width: 0 !important;
+  margin: 2px -26px 0 !important;
+  padding: 17px 26px 20px !important;
+  border: 0 !important;
+  border-top: 1px solid #dce9f3 !important;
+  border-radius: 0 !important;
+  background: rgba(255, 255, 255, .97) !important;
+  box-shadow: 0 -12px 30px rgba(8, 57, 108, .06) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open #radarProductMessage {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #4f6881 !important;
+  font-size: .78rem !important;
+  line-height: 1.4 !important;
+  box-shadow: none !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open #radarProductMessage.error-line,
+html body > #radarProductFormPanel.is-competition-modal-open #radarProductMessage[data-state="error"] {
+  color: #b42318 !important;
+}
+
+html body > #radarProductFormPanel.is-competition-modal-open #radarProductSaveButton {
+  flex: 0 0 auto !important;
+  min-width: 190px !important;
+  min-height: 46px !important;
+  border-radius: 13px !important;
+  background: linear-gradient(135deg, #0759d6, #087fc3) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 26px rgba(7, 89, 214, .23) !important;
+}
+
+@media (max-width: 720px) {
+  html body > #radarProductFormPanel.is-competition-modal-open,
+  html body > #radarProductFormPanel.is-competition-modal-open:hover,
+  html body > #radarProductFormPanel.is-competition-modal-open:focus-within {
+    inset: 8px 8px auto 8px !important;
+    width: auto !important;
+    max-height: calc(100dvh - 16px) !important;
+    border-radius: 22px !important;
+    transform: none !important;
+  }
+
+  html body > #radarProductFormPanel.is-competition-modal-open > .table-card-head {
+    min-height: 78px !important;
+    padding: 17px 18px !important;
+  }
+
+  html body > #radarProductFormPanel.is-competition-modal-open #radarProductForm {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 13px !important;
+    padding: 17px 16px 0 !important;
+    scrollbar-gutter: auto !important;
+  }
+
+  html body > #radarProductFormPanel.is-competition-modal-open #radarProductForm > *,
+  html body > #radarProductFormPanel.is-competition-modal-open #radarProductForm .span-2 {
+    grid-column: 1 !important;
+  }
+
+  html body > #radarProductFormPanel.is-competition-modal-open #radarProductForm .modal-actions {
+    align-items: stretch !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    margin: 2px -16px 0 !important;
+    padding: 14px 16px 16px !important;
+  }
+
+  html body > #radarProductFormPanel.is-competition-modal-open #radarProductMessage {
+    flex: 0 0 auto !important;
+  }
+
+  html body > #radarProductFormPanel.is-competition-modal-open #radarProductSaveButton {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body > #radarProductFormPanel.is-competition-modal-open {
+    animation: none !important;
+  }
+}
+
 @media (max-width: 760px) {
   html body .portal-shell .qori-tab-icon {
     font-size: 1rem !important;

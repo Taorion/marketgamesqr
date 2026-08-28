@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260828-competitive-product-center-v391";
+const APP_VERSION = "empresa-20260828-radar-product-modal-v392";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -26631,21 +26631,55 @@ function competitionViewSection() {
   return document.querySelector('.view-section[data-view="competition"]');
 }
 
+function activeCompetitionDialog() {
+  if (competitorFormPanel?.classList.contains("is-competition-modal-open")) return competitorFormPanel;
+  if (competitionProductFormPanel?.classList.contains("is-competition-modal-open")) return competitionProductFormPanel;
+  if (radarProductFormPanel?.classList.contains("is-competition-modal-open")) return radarProductFormPanel;
+  if (competitorDetailModal && !competitorDetailModal.classList.contains("hidden")) return competitorDetailModal;
+  return null;
+}
+
+function closeActiveCompetitionDialog() {
+  const dialog = activeCompetitionDialog();
+  if (dialog === competitorFormPanel) closeCompetitorFormModal();
+  else if (dialog === competitionProductFormPanel) closeCompetitionProductModal();
+  else if (dialog === radarProductFormPanel) closeRadarProductModal();
+  else if (dialog === competitorDetailModal) closeCompetitorDetailModal();
+}
+
+function ensureCompetitionDialogBackdrop() {
+  let backdrop = document.getElementById("competitionDialogBackdrop");
+  if (backdrop) return backdrop;
+  backdrop = document.createElement("div");
+  backdrop.id = "competitionDialogBackdrop";
+  backdrop.className = "competition-dialog-backdrop";
+  backdrop.setAttribute("aria-hidden", "true");
+  backdrop.hidden = true;
+  backdrop.addEventListener("click", closeActiveCompetitionDialog);
+  document.body.appendChild(backdrop);
+  return backdrop;
+}
+
 function openCompetitionDialog(dialog, focusTarget = null) {
   if (!dialog) return;
   state.competitionDialogReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   dialog.setAttribute("aria-hidden", "false");
   document.body.classList.add("competition-dialog-open");
+  const backdrop = ensureCompetitionDialogBackdrop();
+  backdrop.hidden = false;
+  backdrop.setAttribute("aria-hidden", "false");
   window.setTimeout(() => (focusTarget || dialog).focus?.(), 0);
 }
 
 function closeCompetitionDialog(dialog) {
   dialog?.setAttribute("aria-hidden", "true");
-  const anotherOpen = competitorFormPanel?.classList.contains("is-competition-modal-open")
-    || competitionProductFormPanel?.classList.contains("is-competition-modal-open")
-    || radarProductFormPanel?.classList.contains("is-competition-modal-open")
-    || (competitorDetailModal && !competitorDetailModal.classList.contains("hidden"));
+  const anotherOpen = Boolean(activeCompetitionDialog());
   if (!anotherOpen) document.body.classList.remove("competition-dialog-open");
+  const backdrop = document.getElementById("competitionDialogBackdrop");
+  if (backdrop && !anotherOpen) {
+    backdrop.hidden = true;
+    backdrop.setAttribute("aria-hidden", "true");
+  }
   const returnFocus = state.competitionDialogReturnFocus;
   state.competitionDialogReturnFocus = null;
   window.setTimeout(() => returnFocus?.focus?.(), 0);
@@ -27058,11 +27092,38 @@ function radarProductPayload() {
   };
 }
 
+function radarProductErrorMessage(error) {
+  const rawMessage = String(error?.message || "");
+  if (!rawMessage.startsWith("Invalid request payload.")) {
+    return rawMessage || "No se pudo guardar el producto. Revisa los datos e intenta nuevamente.";
+  }
+  const invalidField = Object.keys(error?.details?.fieldErrors || {})[0]
+    || (rawMessage.includes("name:") ? "name" : "");
+  const fieldLabels = {
+    name: "el nombre del producto",
+    sku: "el SKU o referencia",
+    brand: "la marca",
+    category: "la categoría",
+    description: "la descripción",
+    own_price: "el precio propio",
+    currency: "la moneda",
+    unit_of_measure: "la unidad de comparación",
+  };
+  return `Revisa ${fieldLabels[invalidField] || "los datos del producto"} e intenta nuevamente.`;
+}
+
 async function submitRadarProduct(event) {
   event.preventDefault();
   const productId = radarProductIdInput?.value || state.competitionCatalogEditingId || "";
   const payload = radarProductPayload();
-  if (!payload.name) return setInlineMessage(radarProductMessage, "Escribe el nombre del producto.", "error");
+  if (payload.name.length < 2) {
+    radarProductNameInput?.focus();
+    return setInlineMessage(radarProductMessage, "Escribe un nombre de al menos 2 caracteres.", "error");
+  }
+  if (payload.own_price !== null && (!Number.isFinite(payload.own_price) || payload.own_price < 0)) {
+    radarProductPriceInput?.focus();
+    return setInlineMessage(radarProductMessage, "Ingresa un precio propio válido o deja el campo vacío.", "error");
+  }
   setButtonLoading(radarProductSaveButton, true, productId ? "Actualizando..." : "Guardando...");
   try {
     const data = await api(productId ? `/api/business/competitive-products/${encodeURIComponent(productId)}` : "/api/business/competitive-products", {
@@ -27076,7 +27137,7 @@ async function submitRadarProduct(event) {
     renderCompetitionView();
     showFeedback(productId ? "Producto actualizado." : "Producto creado. Ahora puedes asignarle proveedores.", "success", { title: "Radar competitivo" });
   } catch (error) {
-    setInlineMessage(radarProductMessage, error.message || "No se pudo guardar el producto.", "error");
+    setInlineMessage(radarProductMessage, radarProductErrorMessage(error), "error");
   } finally {
     setButtonLoading(radarProductSaveButton, false);
   }
@@ -60612,13 +60673,7 @@ competitorDetailTabs?.addEventListener("keydown", (event) => {
   competitorDetailTabs.querySelector('[aria-selected="true"]')?.focus();
 });
 document.addEventListener("keydown", (event) => {
-  const openDialog = competitorFormPanel?.classList.contains("is-competition-modal-open")
-    ? competitorFormPanel
-    : competitionProductFormPanel?.classList.contains("is-competition-modal-open")
-      ? competitionProductFormPanel
-      : radarProductFormPanel?.classList.contains("is-competition-modal-open")
-        ? radarProductFormPanel
-        : (competitorDetailModal && !competitorDetailModal.classList.contains("hidden") ? competitorDetailModal : null);
+  const openDialog = activeCompetitionDialog();
   if (!openDialog) return;
   if (event.key === "Escape") {
     event.preventDefault();
