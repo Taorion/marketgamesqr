@@ -46,7 +46,32 @@ test("el responsable comercial aparece en importación, búsqueda y directorio",
   assert.match(script, /Responsable: \$\{owner\}/);
   assert.match(app, /metadata\.commercial_owner_email/);
   assert.match(html, /responsable_comercial/);
-  assert.match(html, /contacts-client-import-v344-20260823/);
+  assert.match(html, /contacts-client-import-v345-20260828-default-seller/);
+});
+
+test("cada contacto, incluidos afiliados, admite un vendedor responsable", () => {
+  const migration = read("database/migrations/20260828140622_add_affiliate_seller_responsibility.sql");
+  const service = read("backend/src/services/leadCrmService.js");
+  const app = read("empresa/js/app.js");
+  assert.match(migration, /alter table if exists affiliates[\s\S]*seller_user_id uuid references app_users\(id\)/);
+  assert.match(migration, /idx_affiliates_business_seller_created/);
+  assert.match(service, /PLAYER", "MANUAL", "AFFILIATE/);
+  assert.match(service, /AFFILIATE: \{ table: "affiliates", metadata: "card_metadata"/);
+  assert.match(app, /\["PLAYER", "MANUAL", "AFFILIATE"\]\.includes/);
+});
+
+test("la carga masiva permite un vendedor predeterminado sin pisar el responsable de cada fila", () => {
+  const controller = read("backend/src/controllers/leadCrmController.js");
+  const service = read("backend/src/services/customerCsvImportService.js");
+  const script = read("empresa/js/contacts-premium-v333.js");
+  const html = read("empresa/index.html");
+  assert.match(controller, /default_seller_user_id: z\.string\(\)\.uuid\(\)\.optional\(\)\.nullable\(\)/);
+  assert.match(service, /if \(!row\.commercial_owner_reference\) row\.commercial_owner_reference = fallback/);
+  assert.match(service, /AFFILIATE: \{ table: "affiliates", metadata: "card_metadata", supportsSeller: true \}/);
+  assert.match(script, /default_seller_user_id:ui\.defaultSeller\?\.value\|\|null/);
+  assert.match(script, /defaultSeller\?\.addEventListener\("change",\(\)=>previewCurrentFile\(\)\)/);
+  assert.match(html, /Vendedor predeterminado del lote/);
+  assert.match(html, /los responsables definidos dentro del CSV conservan prioridad/);
 });
 
 test("la importación CSV persiste clientes y los excluye de Leads aunque no tengan compras", () => {

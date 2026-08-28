@@ -38007,7 +38007,7 @@ function renderLeadCrmTable() {
             <strong>${escapeHtml(item.commercial_status_label || item.commercial_status || "Nuevo")}</strong>
             <span>${escapeHtml(leadDirectoryRowCampaignLine(item))}</span>
             <span>${escapeHtml(station.short || "Sin estación")}</span>
-            ${["PLAYER", "MANUAL"].includes(item.source_type || "PLAYER") ? `<label class="lead-directory-seller"><small>Responsable</small><select data-lead-seller-id="${escapeHtml(item.id)}" data-lead-seller-source="${escapeHtml(item.source_type || "PLAYER")}" aria-label="Vendedor responsable de ${escapeHtml(item.name || kindLabel)}">${businessCommercialOwnerOptions(item.seller_user_id || leadDirectoryMetadata(item).commercial_owner_user_id || "")}</select></label>` : `<span>${escapeHtml(item.seller_name || "Sin vendedor")}</span>`}
+            ${["PLAYER", "MANUAL", "AFFILIATE"].includes(item.source_type || "PLAYER") ? `<label class="lead-directory-seller"><small>Responsable</small><select data-lead-seller-id="${escapeHtml(item.id)}" data-lead-seller-source="${escapeHtml(item.source_type || "PLAYER")}" aria-label="Vendedor responsable de ${escapeHtml(item.name || kindLabel)}">${businessCommercialOwnerOptions(item.seller_user_id || leadDirectoryMetadata(item).commercial_owner_user_id || "")}</select></label>` : `<span>${escapeHtml(item.seller_name || "Sin vendedor")}</span>`}
           </div>
           <div class="lead-directory-kpis">
             <article><span>Compras</span><strong>${Number(item.purchase_count || 0).toLocaleString("es-CO")} · ${money(item.total_spent || 0)}</strong></article>

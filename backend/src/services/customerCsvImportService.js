@@ -261,6 +261,15 @@ async function resolveCommercialOwners(businessId, rows, db = query) {
   return rows;
 }
 
+function applyDefaultCommercialOwner(rows, sellerUserId) {
+  const fallback = String(sellerUserId || "").trim();
+  if (!fallback) return rows;
+  rows.forEach((row) => {
+    if (!row.commercial_owner_reference) row.commercial_owner_reference = fallback;
+  });
+  return rows;
+}
+
 function identityKey(row) {
   if (row.document_id) return `document:${row.document_id}`;
   if (row.email) return `email:${row.email}`;
@@ -317,6 +326,7 @@ function matchExisting(row, contacts) {
 
 async function previewCustomerCsv(businessId, payload) {
   const parsed = parseCustomerCsv(payload);
+  applyDefaultCommercialOwner(parsed.rows, payload.default_seller_user_id);
   await resolveCommercialOwners(businessId, parsed.rows);
   const contacts = await existingContactsForRows(businessId, parsed.rows.filter((row) => !row.errors.length));
   const previewRows = parsed.rows.map((row) => {
@@ -387,7 +397,7 @@ async function createCustomerFromRow(client, businessId, user, row, batchId, ide
     const target = {
       PLAYER: { table: "players", metadata: "metadata", supportsSeller: true },
       MANUAL: { table: "business_manual_leads", metadata: "metadata", supportsSeller: true },
-      AFFILIATE: { table: "affiliates", metadata: "card_metadata", supportsSeller: false },
+      AFFILIATE: { table: "affiliates", metadata: "card_metadata", supportsSeller: true },
     }[contact.source_type];
     if (!target) return { outcome: "ERROR", reason: "Tipo de contacto no compatible con la importación.", contact: null };
     await client.query(
@@ -452,13 +462,14 @@ async function importCustomerCsv(businessId, user, payload) {
       `insert into business_customer_import_batches
         (business_id, created_by_user_id, idempotency_key, original_filename, total_rows, metadata)
        values ($1, $2, $3, $4, $5, $6::jsonb) returning *`,
-      [businessId, user?.id || null, idempotencyKey, preview.file_name, preview.total_rows, JSON.stringify({ source: "customer_csv_import", encoding: "UTF-8", separator: preview.separator, flexible_headers: true })]
+      [businessId, user?.id || null, idempotencyKey, preview.file_name, preview.total_rows, JSON.stringify({ source: "customer_csv_import", encoding: "UTF-8", separator: preview.separator, flexible_headers: true, default_seller_user_id: payload.default_seller_user_id || null })]
     );
     return { batch: batch.rows[0], reused: false };
   });
   if (batchStart.reused) return importBatchResult(businessId, batchStart.batch.id, true);
   const batchId = batchStart.batch.id;
   const parsed = parseCustomerCsv(payload);
+  applyDefaultCommercialOwner(parsed.rows, payload.default_seller_user_id);
   await resolveCommercialOwners(businessId, parsed.rows);
   for (let start = 0; start < parsed.rows.length; start += IMPORT_CHUNK_SIZE) {
     const chunk = parsed.rows.slice(start, start + IMPORT_CHUNK_SIZE);

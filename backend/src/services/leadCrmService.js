@@ -644,9 +644,9 @@ async function listLeadCrmRows(businessId, filters = {}) {
          fa.phone,
          coalesce(fa.card_metadata->>'company', '') as company,
          fa.created_at,
-         null::uuid as seller_user_id,
-         null::text as seller_name,
-         null::text as seller_email,
+         fa.seller_user_id,
+         seller.full_name as seller_name,
+         seller.email as seller_email,
          ca.campaign_id,
          ca.campaign_name,
          case when ca.campaign_id is null then '{}'::uuid[] else array[ca.campaign_id]::uuid[] end as associated_campaign_ids,
@@ -689,6 +689,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          fa.notes as top_interest,
          fa.card_metadata as metadata
        from affiliates fa
+       left join app_users seller on seller.id = fa.seller_user_id and seller.business_id = fa.business_id
        left join lateral (
          select c.id as campaign_id, c.name as campaign_name
          from campaign_affiliates caf
@@ -938,11 +939,13 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
               'Afiliados'::text as channel, null::text as source_detail, fa.notes as interest,
               'WhatsApp'::text as preferred_channel, ''::text as stored_status, null::text as priority,
               fa.notes, fa.card_metadata as metadata, fa.created_at, fa.updated_at,
+              fa.seller_user_id, seller.full_name as seller_name, seller.email as seller_email,
               ca.campaign_id, ca.campaign_name,
               fa.id as affiliate_id, fa.qr_token as affiliate_code, fa.status as affiliate_status,
               fa.points_total as affiliate_points_total,
               rms.rms_phase, rms.rms_phase_updated_at, rms.rms_last_operation
        from affiliates fa
+       left join app_users seller on seller.id = fa.seller_user_id and seller.business_id = fa.business_id
        left join lateral (
          select c.id as campaign_id, c.name as campaign_name
          from campaign_affiliates caf
@@ -2853,7 +2856,7 @@ async function markLeadActivationOpened(businessId, user, leadId, sourceType, ac
 async function updateLeadSellerResponsibility(businessId, user, leadId, sourceType, sellerUserId) {
   return withTransaction(async (client) => {
     const lead = await resolveLead(businessId, leadId, sourceType, client);
-    if (!["PLAYER", "MANUAL"].includes(lead.source_type)) {
+    if (!["PLAYER", "MANUAL", "AFFILIATE"].includes(lead.source_type)) {
       throw badRequest("Este tipo de contacto no admite responsable comercial directo.");
     }
     let seller = null;
@@ -2870,17 +2873,21 @@ async function updateLeadSellerResponsibility(businessId, user, leadId, sourceTy
       if (!sellerResult.rowCount) throw badRequest("El vendedor no existe o no esta activo en este negocio.");
       seller = sellerResult.rows[0];
     }
-    const table = lead.source_type === "PLAYER" ? "players" : "business_manual_leads";
+    const target = {
+      PLAYER: { table: "players", metadata: "metadata", touchUpdatedAt: false },
+      MANUAL: { table: "business_manual_leads", metadata: "metadata", touchUpdatedAt: true },
+      AFFILIATE: { table: "affiliates", metadata: "card_metadata", touchUpdatedAt: true },
+    }[lead.source_type];
     const result = await client.query(
-      `update ${table}
+      `update ${target.table}
           set seller_user_id = $3,
-              metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+              ${target.metadata} = coalesce(${target.metadata}, '{}'::jsonb) || jsonb_build_object(
                 'commercial_owner_user_id', $3::text,
                 'commercial_owner_name', $4::text,
                 'commercial_owner_email', $5::text,
                 'commercial_owner_updated_at', now()::text
               )
-              ${lead.source_type === "MANUAL" ? ", updated_at = now()" : ""}
+              ${target.touchUpdatedAt ? ", updated_at = now()" : ""}
         where business_id = $1 and id = $2
         returning *`,
       [businessId, lead.id, seller?.id || null, seller?.full_name || null, seller?.email || null]

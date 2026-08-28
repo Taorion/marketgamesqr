@@ -122,6 +122,7 @@ const customerCsvSchema = z.object({
   file_size: z.number().int().min(1).max(2 * 1024 * 1024),
   mime_type: z.string().trim().max(120).optional().nullable(),
   csv_text: z.string().min(1).max(2 * 1024 * 1024),
+  default_seller_user_id: z.string().uuid().optional().nullable(),
   idempotency_key: z.string().trim().min(8).max(160).optional(),
 });
 

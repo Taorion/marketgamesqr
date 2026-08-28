@@ -385,6 +385,7 @@ async function getOptions(businessId) {
            or exists (select 1 from business_sales bs where bs.seller_user_id = u.id)
            or exists (select 1 from players p where p.seller_user_id = u.id)
            or exists (select 1 from business_manual_leads ml where ml.seller_user_id = u.id)
+           or exists (select 1 from affiliates fa where fa.seller_user_id = u.id)
            or exists (select 1 from interactive_activations ia where ia.seller_user_id = u.id)
          )
        order by u.full_name asc`,
@@ -1343,6 +1344,20 @@ async function getSellerPerformance(businessId, filters) {
                and cmc.campaign_id = $5 and cmc.status = 'ACTIVE'
            ))
            and ($6::uuid is null or ml.branch_id = $6)
+         union all
+         select fa.seller_user_id, 'AFFILIATE:' || fa.id::text as contact_key
+         from affiliates fa
+         where fa.business_id = $1
+           and fa.seller_user_id is not null
+           and fa.created_at >= $2::timestamptz
+           and fa.created_at < ($3::date + interval '1 day')
+           and ($4::uuid is null or fa.seller_user_id = $4)
+           and ($5::uuid is null or exists (
+             select 1 from campaign_affiliates caf
+             where caf.business_id = fa.business_id and caf.affiliate_id = fa.id
+               and caf.campaign_id = $5 and caf.status = 'ACTIVE'
+           ))
+           and $6::uuid is null
        ) contacts
        group by seller_user_id
      ),
