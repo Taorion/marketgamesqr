@@ -58396,6 +58396,7 @@ function renderSellerDetailTab(tab = "summary") {
   if (tab === "activity") body.innerHTML = sellerRowsMarkup(detail.activity, "actividad");
   if (tab === "goals") body.innerHTML = `${detail.permissions?.can_manage ? `<button class="solid-button" type="button" data-new-goal="${escapeHtml(detail.seller.id)}">Nueva meta</button>` : ""}${sellerGoalsMarkup(detail)}`;
   if (tab === "access") body.innerHTML = sellerAccessMarkup(detail);
+  body.scrollTop = 0;
 }
 
 async function openSellerDetail(sellerId, options = {}) {
@@ -58449,6 +58450,7 @@ function syncSellerSaleTotal() {
 
 function openSellerEditor(mode, seller = {}) {
   const fields = document.getElementById("sellerEditorFields");
+  const modal = document.getElementById("sellerEditorModal");
   const title = document.getElementById("sellerEditorTitle"), help = document.getElementById("sellerEditorHelp"), submit = document.getElementById("sellerEditorSubmit");
   document.getElementById("sellerEditorMode").value = mode; document.getElementById("sellerEditorSellerId").value = seller.id || "";
   document.getElementById("sellerEditorForm").dataset.idempotencyKey = mode === "sale" ? `seller-ui-${crypto.randomUUID()}` : "";
@@ -58473,7 +58475,10 @@ function openSellerEditor(mode, seller = {}) {
     const options = (state.sellersWorkspace?.sellers || []).filter((row) => row.status === "ACTIVE" && row.is_active).map((row) => `<option value="${escapeHtml(row.id)}">${escapeHtml(row.full_name)} · ${escapeHtml(row.seller_code)}</option>`).join("");
     fields.innerHTML = `<div class="seller-editor-fields"><label class="span-2">Nuevo responsable<select name="seller_user_id"><option value="">Llegó por su cuenta</option>${options}</select></label><label class="span-2">Motivo de corrección<textarea name="reason" minlength="5" required placeholder="Explica por qué se corrige esta atribución"></textarea></label></div>`;
   }
-  document.getElementById("sellerEditorMessage").textContent = ""; openSellerModal(document.getElementById("sellerEditorModal"));
+  document.getElementById("sellerEditorMessage").textContent = "";
+  modal.dataset.sellerEditorMode = mode;
+  fields.scrollTop = 0;
+  openSellerModal(modal);
 }
 
 async function submitSellerEditor(event) {

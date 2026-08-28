@@ -111,10 +111,17 @@ test("el portal separa Vendedores de Cuenta y Admin y ofrece estados accesibles"
   assert.match(app, /loadSellerAttributions/);
   assert.match(app, /handleSellerModalKeys/);
   assert.match(app, /data-add-sale-product/);
-  assert.match(html, /qori-sellers-hero-contrast-v4-20260828/);
+  assert.match(html, /qori-sellers-modal-fit-v5-20260828/);
   assert.match(css, /qoriSellerHeroA#qoriSellerHeroB#qoriSellerHeroC#qoriSellerHeroD#qoriSellerHeroE/);
   assert.match(css, /sellers-hero-actions[\s\S]+color:#fff!important/);
   assert.match(css, /sellers-hero[\s\S]+\.sellers-eyebrow,h2,p,\.sellers-data-state\)\{color:#fff!important/);
+  assert.match(css, /qoriSellerModalA#qoriSellerModalB#qoriSellerModalC#qoriSellerModalD#qoriSellerModalE/);
+  assert.match(css, /grid-template-rows:auto auto minmax\(0,1fr\) auto!important/);
+  assert.match(css, /seller-editor-form\{display:grid!important;grid-template-rows:minmax\(0,1fr\) auto auto!important/);
+  assert.match(css, /#sellerEditorFields\{min-width:0;min-height:0;[\s\S]+overflow:auto/);
+  assert.match(css, /height:100dvh/);
+  assert.match(app, /modal\.dataset\.sellerEditorMode = mode/);
+  assert.match(app, /body\.scrollTop = 0/);
   assert.match(packages, /¿Quién te dio a conocer Qori\?/);
   assert.match(packages, /role="combobox"[\s\S]+aria-controls="salesAdvisorResults"/);
 });
