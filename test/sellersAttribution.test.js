@@ -36,6 +36,8 @@ test("el buscador publico no enumera todo ni expone PII", () => {
   const publicFlow = service.slice(publicStart, publicEnd);
   const routes = read("backend/src/routes/packageSalesRoutes.js");
   assert.match(publicFlow, /term\.length < 2/);
+  assert.match(publicFlow, /searchableCharacters\(term\) < 2/);
+  assert.match(publicFlow, /escapeLikePattern\(term\)/);
   assert.match(service, /settings->>'internal_account' = 'true'/);
   assert.match(publicFlow, /p\.status = 'ACTIVE'/);
   assert.match(publicFlow, /u\.is_active = true/);
@@ -104,6 +106,11 @@ test("el portal separa Vendedores de Cuenta y Admin y ofrece estados accesibles"
   assert.match(css, /min-height:48px/);
   assert.match(css, /@media\(max-width:390px\)/);
   assert.match(css, /prefers-reduced-motion/);
+  assert.match(html, /id="sellerAttributionCommand"/);
+  assert.match(html, /id="sellerTabSummary"[\s\S]+aria-controls="sellerDetailBody"/);
+  assert.match(app, /loadSellerAttributions/);
+  assert.match(app, /handleSellerModalKeys/);
+  assert.match(app, /data-add-sale-product/);
   assert.match(packages, /¿Quién te dio a conocer Qori\?/);
   assert.match(packages, /role="combobox"[\s\S]+aria-controls="salesAdvisorResults"/);
 });

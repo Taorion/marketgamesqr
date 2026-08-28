@@ -11,6 +11,7 @@ const {
   sellerDirectory,
   sellerDetail,
   recordSellerSale,
+  listSignupAttributions,
   reassignSignupAttribution,
 } = require("../services/sellerService");
 
@@ -28,12 +29,16 @@ const sellerCreateSchema = z.object({
   branch_id: z.string().uuid().optional().nullable(),
   hired_at: z.string().date().optional().nullable(),
   administrative_notes: optionalText(2000),
-  commercial_settings: z.record(z.string(), z.any()).optional().default({}),
+  commercial_settings: z.record(z.string(), z.any()).optional(),
 });
 
 const sellerPatchSchema = sellerCreateSchema.omit({ password: true }).partial().extend({
   is_active: z.boolean().optional(),
   status: z.enum(["ACTIVE", "INACTIVE", "ARCHIVED"]).optional(),
+}).superRefine((body, ctx) => {
+  if (body.status && body.is_active !== undefined && (body.status === "ACTIVE") !== body.is_active) {
+    ctx.addIssue({ code: "custom", path: ["is_active"], message: "El estado comercial y el acceso del vendedor deben coincidir." });
+  }
 });
 
 const sellerSelfPatchSchema = z.object({
@@ -86,11 +91,29 @@ const sellerSaleSchema = z.object({
   products: z.array(saleProductSchema).min(1).max(100).optional(),
   idempotency_key: z.string().trim().min(8).max(160),
   metadata: z.record(z.string(), z.any()).optional().default({}),
-}).refine((body) => body.products?.length || body.product_name, { message: "Registra al menos un producto o plan vendido.", path: ["products"] });
+})
+  .refine((body) => body.products?.length || body.product_name, { message: "Registra al menos un producto o plan vendido.", path: ["products"] })
+  .refine((body) => [body.customer_name, body.customer_email, body.customer_phone, body.customer_document_id].some((value) => String(value || "").trim()), { message: "Registra al menos un dato que identifique al cliente.", path: ["customer_name"] });
 
 const attributionPatchSchema = z.object({
   seller_user_id: z.string().uuid().optional().nullable(),
   reason: z.string().trim().min(5).max(1000),
+});
+
+const sellerFiltersSchema = z.object({
+  start_date: z.string().date().optional(),
+  end_date: z.string().date().optional(),
+  seller_id: z.string().uuid().optional(),
+  branch_id: z.string().uuid().optional(),
+  status: z.enum(["ACTIVE", "INACTIVE", "ARCHIVED"]).optional(),
+  product: z.string().trim().max(160).optional(),
+  channel: z.string().trim().max(160).optional(),
+  search: z.string().trim().max(120).optional(),
+  attribution_status: z.enum(["PENDING", "APPROVED", "FAILED", "CANCELLED", "REFUNDED"]).optional(),
+  attribution_source: z.enum(["SELLER", "SELF", "ADMIN_ASSIGNED"]).optional(),
+  attribution_search: z.string().trim().max(120).optional(),
+  page: z.coerce.number().int().min(1).max(100000).optional(),
+  limit: z.coerce.number().int().min(10).max(100).optional(),
 });
 
 function businessId(req) {
@@ -113,16 +136,7 @@ async function sellerModuleAccess(req, _res, next) {
 }
 
 function filters(req) {
-  return {
-    start_date: req.query.start_date,
-    end_date: req.query.end_date,
-    seller_id: req.query.seller_id,
-    branch_id: req.query.branch_id,
-    status: req.query.status,
-    product: String(req.query.product || "").trim().slice(0, 160),
-    channel: String(req.query.channel || "").trim().slice(0, 160),
-    search: String(req.query.search || "").trim().slice(0, 120),
-  };
+  return validate(sellerFiltersSchema, req.query);
 }
 
 async function listPublicSalesAdvisors(req, res, next) {
@@ -144,6 +158,11 @@ async function getSeller(req, res, next) {
 
 async function getSellerSelf(req, res, next) {
   try { res.set("Cache-Control", "private, no-store"); res.json(await sellerDetail(businessId(req), req.user.id, req.user, filters(req))); }
+  catch (error) { next(error); }
+}
+
+async function listSignupAttributionsHandler(req, res, next) {
+  try { res.set("Cache-Control", "private, no-store"); res.json(await listSignupAttributions(businessId(req), req.user, filters(req))); }
   catch (error) { next(error); }
 }
 
@@ -183,10 +202,12 @@ module.exports = {
   listSellers,
   getSeller,
   getSellerSelf,
+  listSignupAttributionsHandler,
   createSellerHandler,
   patchSeller,
   patchSellerSelf,
   putSellerGoal,
   postSellerSale,
   patchSignupAttribution,
+  __testing: { sellerPatchSchema, sellerSaleSchema, sellerFiltersSchema },
 };

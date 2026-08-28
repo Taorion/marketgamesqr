@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
 const APP_VERSION = "empresa-20260827-risk-fixed-concession-v385";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -58067,7 +58067,30 @@ function sellerDate(value) {
   return value ? formatDate(value) : "Sin actividad";
 }
 
+function sellerDateOnly(value) {
+  return value ? String(value).slice(0, 10) : "";
+}
+
+function applySellerPeriodPreset(value = "month") {
+  if (value === "custom") return;
+  const today = new Date();
+  let start = new Date(today.getFullYear(), today.getMonth(), 1);
+  let end = today;
+  if (value === "30d") start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
+  if (value === "quarter") start = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
+  if (value === "year") start = new Date(today.getFullYear(), 0, 1);
+  const startInput = document.getElementById("sellersStartDate"), endInput = document.getElementById("sellersEndDate");
+  if (startInput) startInput.value = dateInputValue(start);
+  if (endInput) endInput.value = dateInputValue(end);
+}
+
+function ensureSellerPeriodDefaults() {
+  const startInput = document.getElementById("sellersStartDate"), endInput = document.getElementById("sellersEndDate");
+  if (!startInput?.value || !endInput?.value) applySellerPeriodPreset(document.getElementById("sellersPeriodPreset")?.value || "month");
+}
+
 function sellerQueryString() {
+  ensureSellerPeriodDefaults();
   const params = new URLSearchParams();
   const start = document.getElementById("sellersStartDate")?.value;
   const end = document.getElementById("sellersEndDate")?.value;
@@ -58085,6 +58108,23 @@ function sellerQueryString() {
   if (product) params.set("product", product);
   if (channel) params.set("channel", channel);
   if (search) params.set("search", search);
+  return params.toString();
+}
+
+function sellerAttributionQueryString(page = 1) {
+  const params = new URLSearchParams(sellerQueryString());
+  params.delete("status");
+  params.delete("channel");
+  params.delete("branch_id");
+  params.delete("search");
+  const status = document.getElementById("sellerAttributionStatus")?.value;
+  const source = document.getElementById("sellerAttributionSource")?.value;
+  const search = document.getElementById("sellerAttributionSearch")?.value?.trim();
+  if (status) params.set("attribution_status", status);
+  if (source) params.set("attribution_source", source);
+  if (search) params.set("attribution_search", search);
+  params.set("page", String(page));
+  params.set("limit", "40");
   return params.toString();
 }
 
@@ -58129,7 +58169,7 @@ function renderSellerKpis(data = {}) {
     ["Ticket promedio", money(totals.average_ticket || 0), "Revenue dividido por ventas"],
     ["Cumplimiento de meta", sellerPercent(isBusinessSeller() ? data.seller?.metrics?.goal_attainment_percent : totals.goal_attainment_percent), "Revenue real / suma de metas vigentes"],
     ["Productos o planes", Number(totals.products || 0).toLocaleString("es-CO"), "Unidades registradas en el ledger"],
-    ["Pendientes de atribución", Number(totals.pending_attributions || 0).toLocaleString("es-CO"), totals.self_arrivals !== undefined ? `${Number(totals.self_arrivals || 0).toLocaleString("es-CO")} llegaron por cuenta propia` : "No cuentan como venta hasta aprobarse"],
+    [isBusinessSeller() ? "Pagos en espera" : "Por atribuir", Number(totals.pending_attributions || 0).toLocaleString("es-CO"), isBusinessSeller() ? "Órdenes asignadas que todavía no cuentan como venta" : totals.payment_pending !== undefined ? `${Number(totals.payment_pending || 0).toLocaleString("es-CO")} pagos todavía en espera` : "Ventas aprobadas sin responsable comercial"],
   ];
   root.innerHTML = kpis.map(([label, value, help]) => `<article class="seller-kpi"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(help)}</small></article>`).join("");
 }
@@ -58139,7 +58179,8 @@ function renderSellersDirectory(data = {}) {
   if (!table) return;
   const rows = data.sellers || (data.seller ? [data.seller] : []);
   if (!rows.length) {
-    table.innerHTML = '<tr><td colspan="9"><div class="sellers-empty">No hay vendedores que coincidan con estos filtros.</div></td></tr>';
+    const canCreate = data.permissions?.can_manage;
+    table.innerHTML = `<tr><td colspan="9"><div class="sellers-empty sellers-empty-action"><span class="material-symbols-outlined" aria-hidden="true">group_add</span><strong>No hay vendedores que coincidan con estos filtros.</strong><small>Ajusta el periodo o crea el primer acceso comercial real.</small>${canCreate ? '<button class="solid-button" type="button" data-empty-new-seller>Nuevo vendedor</button>' : ""}</div></td></tr>`;
     return;
   }
   table.innerHTML = rows.map((seller) => {
@@ -58157,6 +58198,65 @@ function renderSellersDirectory(data = {}) {
       <td><button class="ghost-button" type="button" data-open-seller="${escapeHtml(seller.id)}">${isBusinessSeller() ? "Abrir mi ficha" : "Abrir ficha"}</button></td>
     </tr>`;
   }).join("");
+}
+
+const SELLER_ATTRIBUTION_STATUS_LABELS = {
+  PENDING: "Pago en espera",
+  APPROVED: "Aprobado",
+  FAILED: "Fallido",
+  CANCELLED: "Cancelado",
+  REFUNDED: "Reembolsado",
+};
+
+function sellerAttributionStatusClass(status = "") {
+  return status === "APPROVED" ? "is-approved" : status === "PENDING" ? "is-pending" : "is-exception";
+}
+
+function renderSellerAttributions(data = {}, { append = false } = {}) {
+  const root = document.getElementById("sellerAttributionCommand");
+  const body = document.getElementById("sellerAttributionTableBody");
+  const summary = document.getElementById("sellerAttributionSummary");
+  const pagination = document.getElementById("sellerAttributionPagination");
+  const loadMore = document.getElementById("sellerAttributionLoadMore");
+  if (!root || !body) return;
+  root.hidden = false;
+  const totals = data.summary || {};
+  if (summary) summary.innerHTML = [
+    ["Total del periodo", totals.total || 0, "receipt_long"],
+    ["Pagos en espera", totals.payment_pending || 0, "hourglass_top"],
+    ["Aprobadas", totals.approved || 0, "verified"],
+    ["Necesitan responsable", totals.needs_assignment || 0, "person_search"],
+    ["Excepciones", totals.exceptions || 0, "report"],
+  ].map(([label, value, icon]) => `<article><span class="material-symbols-outlined" aria-hidden="true">${icon}</span><div><strong>${Number(value).toLocaleString("es-CO")}</strong><small>${escapeHtml(label)}</small></div></article>`).join("");
+  const rows = data.attributions || [];
+  const markup = rows.map((row) => {
+    const responsible = row.current_seller_name ? `${row.current_seller_name} · ${row.current_seller_code || "Sin código"}` : "Llegó por su cuenta";
+    const amount = row.status === "APPROVED" ? row.approved_revenue_cop : row.expected_revenue_cop;
+    const evidence = row.payment_reference ? `Pago …${row.payment_reference}` : `Orden …${row.order_reference}`;
+    return `<tr>
+      <td data-label="Cliente y plan"><strong>${escapeHtml(row.client_business_name || "Cliente Qori")}</strong><small>${escapeHtml(row.plan_name || row.plan_code)} · ${row.billing_cycle === "annual" ? "Anual" : "Mensual"}</small></td>
+      <td data-label="Estado"><span class="seller-attribution-status ${sellerAttributionStatusClass(row.status)}">${escapeHtml(SELLER_ATTRIBUTION_STATUS_LABELS[row.status] || row.status)}</span><small>${escapeHtml(sellerDate(row.approved_at || row.created_at))}</small></td>
+      <td data-label="Responsable"><strong>${escapeHtml(responsible)}</strong><small>${row.attribution_source === "SELF" ? "Origen directo" : row.attribution_source === "ADMIN_ASSIGNED" ? "Asignación administrativa" : "Asesor elegido"}</small></td>
+      <td data-label="Valor"><strong>${escapeHtml(money(amount || 0))}</strong><small>${row.status === "APPROVED" ? "Importe aprobado" : "Importe esperado"}</small></td>
+      <td data-label="Evidencia"><strong>${escapeHtml(evidence)}</strong><small>Sin alterar el ledger de pago</small></td>
+      <td><button class="ghost-button" type="button" data-reassign-attribution="${escapeHtml(row.id)}">${row.seller_user_id ? "Corregir" : "Asignar responsable"}</button></td>
+    </tr>`;
+  }).join("");
+  if (append && markup) body.insertAdjacentHTML("beforeend", markup);
+  else body.innerHTML = markup || '<tr><td colspan="6"><div class="sellers-empty sellers-empty-action"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span><strong>No hay atribuciones para estos filtros.</strong><small>Los pagos y ventas aparecerán aquí conservando su fuente canónica.</small></div></td></tr>';
+  if (pagination) pagination.textContent = `${Number(data.pagination?.total || 0).toLocaleString("es-CO")} registros conciliados · página ${Number(data.pagination?.page || 1).toLocaleString("es-CO")}`;
+  if (loadMore) { loadMore.hidden = !data.pagination?.has_more; loadMore.dataset.nextPage = String(Number(data.pagination?.page || 1) + 1); }
+}
+
+async function loadSellerAttributions({ page = 1, append = false } = {}) {
+  const root = document.getElementById("sellerAttributionCommand"), body = document.getElementById("sellerAttributionTableBody");
+  if (!root || isBusinessSeller() || state.sellersWorkspace?.mode !== "QORI_PLANS_AND_BUSINESS_SALES") { if (root) root.hidden = true; return null; }
+  root.hidden = false;
+  if (!append && body) body.innerHTML = '<tr><td colspan="6"><div class="sellers-empty"><span class="busy-spinner" aria-hidden="true"></span>Conciliando órdenes y pagos…</div></td></tr>';
+  const data = await api(`/api/business/sellers/attributions?${sellerAttributionQueryString(page)}`, { headers: authHeaders(), noClientCache: true });
+  state.sellerAttributions = append ? { ...data, attributions: [...(state.sellerAttributions?.attributions || []), ...(data.attributions || [])] } : data;
+  renderSellerAttributions(data, { append });
+  return data;
 }
 
 async function loadSellersWorkspace(options = {}) {
@@ -58183,6 +58283,11 @@ async function loadSellersWorkspace(options = {}) {
     state.sellersLoaded = true;
     renderSellerKpis(state.sellersWorkspace);
     renderSellersDirectory(state.sellersWorkspace);
+    if (!isBusinessSeller() && data.mode === "QORI_PLANS_AND_BUSINESS_SALES") await loadSellerAttributions().catch((error) => {
+      const attributionBody = document.getElementById("sellerAttributionTableBody");
+      if (attributionBody) attributionBody.innerHTML = `<tr><td colspan="6"><div class="sellers-empty sellers-empty-action"><span class="material-symbols-outlined" aria-hidden="true">cloud_off</span><strong>No fue posible conciliar atribuciones.</strong><small>${escapeHtml(error.message || "Intenta actualizar nuevamente.")}</small></div></td></tr>`;
+    });
+    else if (document.getElementById("sellerAttributionCommand")) document.getElementById("sellerAttributionCommand").hidden = true;
     if (stateLine) { stateLine.className = "sellers-data-state is-ready"; stateLine.innerHTML = `<span></span>Datos conciliados · ${escapeHtml(data.range?.start_date || "")} a ${escapeHtml(data.range?.end_date || "hoy")}`; }
     if (isBusinessSeller() && !document.getElementById("sellerDetailModal")?.classList.contains("is-open")) {
       openSellerDetail(session.user.id, { data });
@@ -58197,6 +58302,7 @@ async function loadSellersWorkspace(options = {}) {
 
 function openSellerModal(modal) {
   if (!modal) return;
+  modal._sellerReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   modal.classList.remove("hidden"); modal.classList.add("is-open"); modal.setAttribute("aria-hidden", "false");
   window.requestAnimationFrame(() => modal.querySelector(".modal-card")?.focus());
 }
@@ -58204,12 +58310,25 @@ function openSellerModal(modal) {
 function closeSellerModal(modal) {
   if (!modal) return;
   modal.classList.add("hidden"); modal.classList.remove("is-open"); modal.setAttribute("aria-hidden", "true");
+  if (modal._sellerReturnFocus?.isConnected) modal._sellerReturnFocus.focus();
+}
+
+function handleSellerModalKeys(event) {
+  const modal = event.currentTarget;
+  if (!modal.classList.contains("is-open")) return;
+  if (event.key === "Escape") { event.preventDefault(); closeSellerModal(modal); return; }
+  if (event.key !== "Tab") return;
+  const focusable = Array.from(modal.querySelectorAll('button:not([disabled]):not([hidden]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter((element) => !element.closest("[hidden]") && element.offsetParent !== null);
+  if (!focusable.length) return;
+  const first = focusable[0], last = focusable.at(-1);
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 }
 
 function sellerNextAction(detail) {
   const seller = detail.seller || {};
   const metrics = seller.metrics || {};
-  if (!seller.current_goal) return "Definir una meta vigente para que el progreso tenga un objetivo verificable.";
+  if (!Number(seller.period_goal?.target_revenue || 0)) return "Definir una meta vigente para que el progreso tenga un objetivo verificable.";
   if (!Number(metrics.sales || 0)) return "Revisar la cartera atribuida y acordar la próxima gestión comercial del periodo.";
   if (Number(metrics.goal_attainment_percent || 0) < 70) return "Priorizar los clientes con actividad reciente y revisar la brecha de revenue frente a la meta.";
   return "Sostener el ritmo y revisar las oportunidades con mayor ticket antes de cerrar el periodo.";
@@ -58217,13 +58336,14 @@ function sellerNextAction(detail) {
 
 function sellerSummaryMarkup(detail) {
   const seller = detail.seller || {}, metrics = seller.metrics || {};
+  const periodGoal = seller.period_goal || {};
   const trend = Number(detail.comparison?.revenue_change_percent || 0);
   return `<section class="seller-summary-grid">
     <article><span>Revenue</span><strong>${escapeHtml(money(metrics.revenue || 0))}</strong><small>Periodo seleccionado</small></article>
     <article><span>Ventas</span><strong>${Number(metrics.sales || 0).toLocaleString("es-CO")}</strong><small>Pagadas o aprobadas</small></article>
     <article><span>Clientes nuevos</span><strong>${Number(metrics.new_customers || 0).toLocaleString("es-CO")}</strong><small>Primera compra atribuida</small></article>
     <article><span>Ticket promedio</span><strong>${escapeHtml(money(metrics.average_ticket || 0))}</strong><small>Revenue / ventas</small></article>
-    <article><span>Meta vigente</span><strong>${escapeHtml(money(seller.current_goal?.target_revenue || 0))}</strong><small>${seller.current_goal ? `${escapeHtml(seller.current_goal.period_start)} a ${escapeHtml(seller.current_goal.period_end)}` : "Aún no definida"}</small></article>
+    <article><span>Meta del periodo</span><strong>${escapeHtml(money(periodGoal.target_revenue || 0))}</strong><small>${Number(periodGoal.contributing_goals || 0) ? `${Number(periodGoal.contributing_goals).toLocaleString("es-CO")} meta(s) ajustadas a los días seleccionados` : "Aún no definida"}</small></article>
     <article><span>Cumplimiento</span><strong>${escapeHtml(sellerPercent(metrics.goal_attainment_percent))}</strong><small>Resultado real frente a meta</small></article>
     <article><span>Productos / planes</span><strong>${Number(metrics.products || 0).toLocaleString("es-CO")}</strong><small>Unidades registradas</small></article>
     <article><span>Última actividad</span><strong>${escapeHtml(sellerDate(metrics.last_activity_at))}</strong><small>Venta o aprobación más reciente</small></article>
@@ -58256,7 +58376,8 @@ function sellerGoalsMarkup(detail) {
     const revenueProgress = current && Number(goal.target_revenue) > 0 ? Number(metrics.revenue || 0) / Number(goal.target_revenue) * 100 : null;
     const salesProgress = current && Number(goal.target_sales) > 0 ? Number(metrics.sales || 0) / Number(goal.target_sales) * 100 : null;
     const customerProgress = current && Number(goal.target_new_customers) > 0 ? Number(metrics.new_customers || 0) / Number(goal.target_new_customers) * 100 : null;
-    return `<article class="seller-detail-row"><div><strong>${escapeHtml(goal.period_start)} a ${escapeHtml(goal.period_end)}</strong><small>${escapeHtml(goal.status)}${goal.notes ? ` · ${escapeHtml(goal.notes)}` : ""}</small></div><div><strong>${escapeHtml(money(goal.target_revenue || 0))}</strong><small>${revenueProgress === null ? "Meta de revenue" : `${sellerPercent(revenueProgress)} logrado`}</small></div><div><strong>${Number(goal.target_sales || 0).toLocaleString("es-CO")} ventas</strong><small>${salesProgress === null ? "Objetivo" : `${sellerPercent(salesProgress)} logrado`}</small></div><div><strong>${Number(goal.target_new_customers || 0).toLocaleString("es-CO")} clientes</strong><small>${customerProgress === null ? "Objetivo" : `${sellerPercent(customerProgress)} logrado`}</small></div></article>`;
+    const productTargets = Array.isArray(goal.product_targets) ? goal.product_targets : [];
+    return `<article class="seller-detail-row"><div><strong>${escapeHtml(goal.period_start)} a ${escapeHtml(goal.period_end)}</strong><small>${escapeHtml(goal.status)}${goal.notes ? ` · ${escapeHtml(goal.notes)}` : ""}${productTargets.length ? ` · ${productTargets.length} meta(s) de producto` : ""}</small></div><div><strong>${escapeHtml(money(goal.target_revenue || 0))}</strong><small>${revenueProgress === null ? "Meta de revenue" : `${sellerPercent(revenueProgress)} logrado`}</small></div><div><strong>${Number(goal.target_sales || 0).toLocaleString("es-CO")} ventas</strong><small>${salesProgress === null ? "Objetivo" : `${sellerPercent(salesProgress)} logrado`}</small></div><div><strong>${Number(goal.target_new_customers || 0).toLocaleString("es-CO")} clientes</strong><small>${customerProgress === null ? "Objetivo" : `${sellerPercent(customerProgress)} logrado`}</small>${detail.permissions?.can_manage ? `<button class="ghost-button" type="button" data-edit-goal="${escapeHtml(goal.id)}">Editar meta</button>` : ""}</div></article>`;
   }).join("")}</div>`;
 }
 
@@ -58264,8 +58385,10 @@ function renderSellerDetailTab(tab = "summary") {
   const detail = state.selectedSellerDetail;
   const body = document.getElementById("sellerDetailBody");
   if (!detail || !body) return;
-  document.querySelectorAll("[data-seller-tab]").forEach((button) => { const active = button.dataset.sellerTab === tab; button.classList.toggle("is-active", active); button.setAttribute("aria-selected", String(active)); });
+  let activeTab = null;
+  document.querySelectorAll("[data-seller-tab]").forEach((button) => { const active = button.dataset.sellerTab === tab; button.classList.toggle("is-active", active); button.setAttribute("aria-selected", String(active)); button.tabIndex = active ? 0 : -1; if (active) activeTab = button; });
   state.sellerDetailTab = tab;
+  body.setAttribute("aria-labelledby", activeTab?.id || "sellerTabSummary");
   if (tab === "summary") body.innerHTML = sellerSummaryMarkup(detail);
   if (tab === "sales") body.innerHTML = sellerRowsMarkup(detail.sales, "ventas");
   if (tab === "clients") body.innerHTML = sellerRowsMarkup(detail.clients, "clientes");
@@ -58296,10 +58419,39 @@ function sellerBranchOptions(selected = "") {
   return [`<option value="">Sin sede asignada</option>`, ...(state.businessBranches || []).filter((branch) => branch.is_active !== false).map((branch) => `<option value="${escapeHtml(branch.id)}"${String(branch.id) === String(selected) ? " selected" : ""}>${escapeHtml(branch.name)}</option>`)].join("");
 }
 
+function sellerSaleProductRow(item = {}) {
+  return `<article class="seller-line-editor" data-seller-sale-product>
+    <label><span>Producto o servicio</span><input data-sale-product-name value="${escapeHtml(item.name || "")}" maxlength="180" required></label>
+    <label><span>Cantidad</span><input data-sale-product-quantity type="number" min="0.01" step="0.01" value="${escapeHtml(item.quantity || 1)}" required></label>
+    <label><span>Valor unitario</span><input data-sale-product-price type="number" min="0" step="0.01" value="${escapeHtml(item.unit_price ?? "")}" required></label>
+    <button class="icon-button" type="button" data-remove-seller-line aria-label="Eliminar producto"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
+  </article>`;
+}
+
+function sellerGoalProductRow(item = {}) {
+  return `<article class="seller-line-editor seller-goal-line" data-seller-goal-product>
+    <label><span>Producto o plan</span><input data-goal-product-label value="${escapeHtml(item.label || "")}" maxlength="180" required></label>
+    <label><span>Unidades meta</span><input data-goal-product-units type="number" min="0" step="0.01" value="${escapeHtml(item.target_units || 0)}" required></label>
+    <label><span>Revenue meta</span><input data-goal-product-revenue type="number" min="0" step="0.01" value="${escapeHtml(item.target_revenue || 0)}" required></label>
+    <button class="icon-button" type="button" data-remove-seller-line aria-label="Eliminar meta de producto"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
+  </article>`;
+}
+
+function syncSellerSaleTotal() {
+  const total = Array.from(document.querySelectorAll("[data-seller-sale-product]")).reduce((sum, row) => {
+    const quantity = Number(row.querySelector("[data-sale-product-quantity]")?.value || 0);
+    const price = Number(row.querySelector("[data-sale-product-price]")?.value || 0);
+    return sum + Math.max(0, quantity) * Math.max(0, price);
+  }, 0);
+  const amount = document.querySelector('#sellerEditorFields [name="sale_amount"]');
+  if (amount) amount.value = total ? total.toFixed(2) : "";
+}
+
 function openSellerEditor(mode, seller = {}) {
   const fields = document.getElementById("sellerEditorFields");
   const title = document.getElementById("sellerEditorTitle"), help = document.getElementById("sellerEditorHelp"), submit = document.getElementById("sellerEditorSubmit");
   document.getElementById("sellerEditorMode").value = mode; document.getElementById("sellerEditorSellerId").value = seller.id || "";
+  document.getElementById("sellerEditorForm").dataset.idempotencyKey = mode === "sale" ? `seller-ui-${crypto.randomUUID()}` : "";
   if (mode === "seller") {
     title.textContent = seller.id ? "Editar vendedor" : "Nuevo vendedor"; help.textContent = "El acceso cuenta dentro del límite de usuarios activos del plan."; submit.textContent = seller.id ? "Guardar cambios" : "Crear vendedor";
     fields.innerHTML = `<div class="seller-editor-fields"><label>Nombre completo<input name="full_name" value="${escapeHtml(seller.full_name || "")}" required maxlength="160"></label><label>Correo<input name="email" type="email" value="${escapeHtml(seller.email || "")}" required></label>${seller.id ? "" : '<label>Contraseña inicial<input name="password" type="password" minlength="8" required></label>'}<label>Código estable<input name="seller_code" value="${escapeHtml(seller.seller_code || "")}" placeholder="VEN-001" required></label><label>Cargo<input name="job_title" value="${escapeHtml(seller.job_title || "")}"></label><label>Teléfono<input name="phone" value="${escapeHtml(seller.phone || "")}"></label><label>Territorio o zona<input name="territory" value="${escapeHtml(seller.territory || "")}"></label><label>Sede<select name="branch_id">${sellerBranchOptions(seller.branch_id)}</select></label><label>Fecha de ingreso<input name="hired_at" type="date" value="${escapeHtml(String(seller.hired_at || "").slice(0, 10))}"></label>${seller.id ? `<label>Estado<select name="status"><option value="ACTIVE"${seller.status === "ACTIVE" ? " selected" : ""}>Activo</option><option value="INACTIVE"${seller.status === "INACTIVE" ? " selected" : ""}>Inactivo</option><option value="ARCHIVED"${seller.status === "ARCHIVED" ? " selected" : ""}>Archivado</option></select></label>` : ""}<label class="span-2">Observaciones administrativas<textarea name="administrative_notes">${escapeHtml(seller.administrative_notes || "")}</textarea></label></div>`;
@@ -58307,12 +58459,14 @@ function openSellerEditor(mode, seller = {}) {
   if (mode === "sale") {
     title.textContent = "Registrar venta"; help.textContent = "La venta se guarda en business_sales con este vendedor como responsable."; submit.textContent = "Registrar venta";
     const options = (state.sellersWorkspace?.sellers || []).filter((row) => row.status === "ACTIVE" && row.is_active).map((row) => `<option value="${escapeHtml(row.id)}"${String(row.id) === String(seller.id) ? " selected" : ""}>${escapeHtml(row.full_name)} · ${escapeHtml(row.seller_code)}</option>`).join("");
-    fields.innerHTML = `<div class="seller-editor-fields"><label>Vendedor<select name="seller_id" required><option value="">Selecciona</option>${options}</select></label><label>Fecha de pago<input name="paid_at" type="datetime-local"></label><label>Cliente<input name="customer_name" required></label><label>Correo del cliente<input name="customer_email" type="email"></label><label>Teléfono<input name="customer_phone"></label><label>Producto o plan<input name="product_name" required></label><label>Valor pagado<input name="sale_amount" type="number" min="0.01" step="0.01" required></label><label>Canal<input name="acquisition_channel"></label><label>Sede<select name="branch_id">${sellerBranchOptions("")}</select></label><label class="span-2">Notas<textarea name="notes"></textarea></label></div>`;
+    fields.innerHTML = `<div class="seller-editor-fields"><label>Vendedor<select name="seller_id" required><option value="">Selecciona</option>${options}</select></label><label>Fecha de pago<input name="paid_at" type="datetime-local"></label><label>Cliente<input name="customer_name" required></label><label>Correo del cliente<input name="customer_email" type="email"></label><label>Teléfono<input name="customer_phone"></label><label>Documento<input name="customer_document_id"></label><section class="seller-line-editor-group span-2"><header><div><strong>Productos vendidos</strong><small>Cada línea se sincroniza con el catálogo real.</small></div><button class="ghost-button" type="button" data-add-sale-product>Agregar producto</button></header><div data-sale-products>${sellerSaleProductRow()}</div></section><label>Valor total<input name="sale_amount" type="number" min="0.01" step="0.01" readonly required></label><label>Canal<input name="acquisition_channel"></label><label>Sede<select name="branch_id">${sellerBranchOptions("")}</select></label><label class="span-2">Notas<textarea name="notes"></textarea></label></div>`;
   }
   if (mode === "goal") {
-    title.textContent = "Nueva meta"; help.textContent = `Meta para ${seller.full_name || "el vendedor"}. No puede cruzarse con otra meta activa.`; submit.textContent = "Guardar meta";
+    const goal = seller.goal || null;
+    title.textContent = goal ? "Editar meta" : "Nueva meta"; help.textContent = `Meta para ${seller.full_name || "el vendedor"}. No puede cruzarse con otra meta activa.`; submit.textContent = goal ? "Actualizar meta" : "Guardar meta";
     const today = new Date(), start = new Date(today.getFullYear(), today.getMonth(), 1), end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    fields.innerHTML = `<div class="seller-editor-fields"><label>Inicio<input name="period_start" type="date" value="${dateInputValue(start)}" required></label><label>Fin<input name="period_end" type="date" value="${dateInputValue(end)}" required></label><label>Meta de revenue<input name="target_revenue" type="number" min="0" step="0.01" value="0" required></label><label>Meta de ventas<input name="target_sales" type="number" min="0" step="1" value="0" required></label><label>Meta de clientes nuevos<input name="target_new_customers" type="number" min="0" step="1" value="0" required></label><label class="span-2">Notas<textarea name="notes"></textarea></label></div>`;
+    const productTargets = Array.isArray(goal?.product_targets) ? goal.product_targets : [];
+    fields.innerHTML = `<div class="seller-editor-fields">${goal ? `<input name="id" type="hidden" value="${escapeHtml(goal.id)}">` : ""}<label>Inicio<input name="period_start" type="date" value="${escapeHtml(sellerDateOnly(goal?.period_start) || dateInputValue(start))}" required></label><label>Fin<input name="period_end" type="date" value="${escapeHtml(sellerDateOnly(goal?.period_end) || dateInputValue(end))}" required></label><label>Meta de revenue<input name="target_revenue" type="number" min="0" step="0.01" value="${escapeHtml(goal?.target_revenue || 0)}" required></label><label>Meta de ventas<input name="target_sales" type="number" min="0" step="1" value="${escapeHtml(goal?.target_sales || 0)}" required></label><label>Meta de clientes nuevos<input name="target_new_customers" type="number" min="0" step="1" value="${escapeHtml(goal?.target_new_customers || 0)}" required></label><label>Estado<select name="status"><option value="ACTIVE"${goal?.status !== "CLOSED" && goal?.status !== "CANCELLED" ? " selected" : ""}>Activa</option><option value="CLOSED"${goal?.status === "CLOSED" ? " selected" : ""}>Cerrada</option><option value="CANCELLED"${goal?.status === "CANCELLED" ? " selected" : ""}>Cancelada</option></select></label><section class="seller-line-editor-group span-2"><header><div><strong>Metas por producto o plan</strong><small>Opcional. Añade solo objetivos que realmente quieras medir.</small></div><button class="ghost-button" type="button" data-add-goal-product>Agregar objetivo</button></header><div data-goal-products>${productTargets.map(sellerGoalProductRow).join("")}</div></section><label class="span-2">Notas<textarea name="notes">${escapeHtml(goal?.notes || "")}</textarea></label></div>`;
   }
   if (mode === "attribution") {
     title.textContent = "Corregir atribución"; help.textContent = "La aprobación y el pago no cambian. Se conservarán vendedor anterior, actor, fecha y motivo."; submit.textContent = "Guardar reasignación";
@@ -58328,8 +58482,25 @@ async function submitSellerEditor(event) {
   const values = Object.fromEntries(new FormData(form));
   let endpoint = "/api/business/sellers", method = "POST", payload = values;
   if (mode === "seller" && sellerId) { endpoint += `/${encodeURIComponent(sellerId)}`; method = "PATCH"; payload.is_active = values.status === "ACTIVE"; }
-  if (mode === "sale") { endpoint += `/${encodeURIComponent(values.seller_id)}/sales`; payload = { ...values, sale_amount: Number(values.sale_amount), paid_at: values.paid_at ? new Date(values.paid_at).toISOString() : null, idempotency_key: `seller-ui-${crypto.randomUUID()}` }; delete payload.seller_id; }
-  if (mode === "goal") { endpoint += `/${encodeURIComponent(sellerId)}/goals`; method = "PUT"; payload = { ...values, target_revenue: Number(values.target_revenue), target_sales: Number(values.target_sales), target_new_customers: Number(values.target_new_customers), product_targets: [] }; }
+  if (mode === "sale") {
+    const products = Array.from(form.querySelectorAll("[data-seller-sale-product]")).map((row) => {
+      const name = row.querySelector("[data-sale-product-name]")?.value?.trim();
+      const quantity = Number(row.querySelector("[data-sale-product-quantity]")?.value || 0);
+      const unitPrice = Number(row.querySelector("[data-sale-product-price]")?.value || 0);
+      return { name, quantity, unit_price: unitPrice, line_total: quantity * unitPrice };
+    }).filter((item) => item.name);
+    endpoint += `/${encodeURIComponent(values.seller_id)}/sales`;
+    payload = { ...values, product_name: products[0]?.name || null, products, sale_amount: Number(values.sale_amount), paid_at: values.paid_at ? new Date(values.paid_at).toISOString() : null, idempotency_key: form.dataset.idempotencyKey || `seller-ui-${crypto.randomUUID()}` };
+    delete payload.seller_id;
+  }
+  if (mode === "goal") {
+    const productTargets = Array.from(form.querySelectorAll("[data-seller-goal-product]")).map((row) => ({
+      label: row.querySelector("[data-goal-product-label]")?.value?.trim(),
+      target_units: Number(row.querySelector("[data-goal-product-units]")?.value || 0),
+      target_revenue: Number(row.querySelector("[data-goal-product-revenue]")?.value || 0),
+    })).filter((item) => item.label);
+    endpoint += `/${encodeURIComponent(sellerId)}/goals`; method = "PUT"; payload = { ...values, target_revenue: Number(values.target_revenue), target_sales: Number(values.target_sales), target_new_customers: Number(values.target_new_customers), product_targets: productTargets };
+  }
   if (mode === "attribution") { endpoint += `/attributions/${encodeURIComponent(sellerId)}`; method = "PATCH"; payload = values; }
   Object.keys(payload).forEach((key) => { if (payload[key] === "") payload[key] = null; });
   const submit = document.getElementById("sellerEditorSubmit"), message = document.getElementById("sellerEditorMessage");
@@ -58338,25 +58509,41 @@ async function submitSellerEditor(event) {
     await api(endpoint, { method, headers: authHeaders(), body: JSON.stringify(payload), noClientCache: true });
     closeSellerModal(document.getElementById("sellerEditorModal")); await loadSellersWorkspace({ quiet: true, force: true });
     if (mode === "goal" && sellerId) await openSellerDetail(sellerId);
-    showFeedback(mode === "sale" ? "Venta registrada y atribuida al vendedor." : mode === "goal" ? "Meta guardada con historial." : "Vendedor guardado correctamente.", "success", { title: "Vendedores" });
+    showFeedback(mode === "sale" ? "Venta registrada y atribuida al vendedor." : mode === "goal" ? "Meta guardada con historial." : mode === "attribution" ? "Responsable corregido con trazabilidad completa." : "Vendedor guardado correctamente.", "success", { title: "Vendedores" });
   } catch (error) { setInlineMessage(message, error.message || "No se pudo guardar.", "error"); }
   finally { setButtonLoading(submit, false); }
 }
 
 document.getElementById("sellersFilters")?.addEventListener("submit", (event) => { event.preventDefault(); loadSellersWorkspace({ force: true }).catch(() => {}); });
+document.getElementById("sellersPeriodPreset")?.addEventListener("change", (event) => { applySellerPeriodPreset(event.target.value); if (event.target.value !== "custom") loadSellersWorkspace({ force: true }).catch(() => {}); });
+["sellersStartDate", "sellersEndDate"].forEach((id) => document.getElementById(id)?.addEventListener("change", () => { const preset = document.getElementById("sellersPeriodPreset"); if (preset) preset.value = "custom"; }));
 document.getElementById("sellerNewButton")?.addEventListener("click", () => openSellerEditor("seller"));
 document.getElementById("sellerRegisterSaleButton")?.addEventListener("click", () => openSellerEditor("sale"));
 document.getElementById("sellerEditorForm")?.addEventListener("submit", submitSellerEditor);
+document.getElementById("sellerEditorFields")?.addEventListener("click", (event) => {
+  if (event.target.closest("[data-add-sale-product]")) { document.querySelector("[data-sale-products]")?.insertAdjacentHTML("beforeend", sellerSaleProductRow()); syncSellerSaleTotal(); }
+  if (event.target.closest("[data-add-goal-product]")) document.querySelector("[data-goal-products]")?.insertAdjacentHTML("beforeend", sellerGoalProductRow());
+  const remove = event.target.closest("[data-remove-seller-line]");
+  if (remove) { const row = remove.closest("[data-seller-sale-product],[data-seller-goal-product]"); const isSale = row?.matches("[data-seller-sale-product]"); if (isSale && document.querySelectorAll("[data-seller-sale-product]").length <= 1) { showFeedback("La venta necesita al menos un producto.", "info", { title: "Productos vendidos" }); return; } row?.remove(); if (isSale) syncSellerSaleTotal(); }
+});
+document.getElementById("sellerEditorFields")?.addEventListener("input", (event) => { if (event.target.matches("[data-sale-product-quantity],[data-sale-product-price]")) syncSellerSaleTotal(); });
 document.getElementById("sellerEditorClose")?.addEventListener("click", () => closeSellerModal(document.getElementById("sellerEditorModal")));
 document.getElementById("sellerEditorCancel")?.addEventListener("click", () => closeSellerModal(document.getElementById("sellerEditorModal")));
 document.getElementById("sellerDetailClose")?.addEventListener("click", () => closeSellerModal(document.getElementById("sellerDetailModal")));
 document.getElementById("sellerDetailDone")?.addEventListener("click", () => closeSellerModal(document.getElementById("sellerDetailModal")));
-document.getElementById("sellersTableBody")?.addEventListener("click", (event) => { const button = event.target.closest("[data-open-seller]"); if (button) openSellerDetail(button.dataset.openSeller); });
+document.getElementById("sellerDetailModal")?.addEventListener("keydown", handleSellerModalKeys);
+document.getElementById("sellerEditorModal")?.addEventListener("keydown", handleSellerModalKeys);
+document.getElementById("sellersTableBody")?.addEventListener("click", (event) => { const button = event.target.closest("[data-open-seller]"); if (button) openSellerDetail(button.dataset.openSeller); if (event.target.closest("[data-empty-new-seller]")) openSellerEditor("seller"); });
 document.getElementById("sellerDetailTabs")?.addEventListener("click", (event) => { const tab = event.target.closest("[data-seller-tab]"); if (tab) renderSellerDetailTab(tab.dataset.sellerTab); });
-document.getElementById("sellerDetailBody")?.addEventListener("click", (event) => { const goal = event.target.closest("[data-new-goal]"); if (goal) openSellerEditor("goal", state.selectedSellerDetail?.seller || { id: goal.dataset.newGoal }); const edit = event.target.closest("[data-edit-seller]"); if (edit) openSellerEditor("seller", state.selectedSellerDetail?.seller || {}); const attribution = event.target.closest("[data-reassign-attribution]"); if (attribution) openSellerEditor("attribution", { id: attribution.dataset.reassignAttribution }); });
+document.getElementById("sellerDetailTabs")?.addEventListener("keydown", (event) => { if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return; const tabs = Array.from(event.currentTarget.querySelectorAll('[role="tab"]:not([hidden])')); const current = tabs.indexOf(document.activeElement); let next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : event.key === "ArrowRight" ? (current + 1) % tabs.length : (current - 1 + tabs.length) % tabs.length; event.preventDefault(); tabs[next]?.focus(); tabs[next]?.click(); });
+document.getElementById("sellerDetailBody")?.addEventListener("click", (event) => { const goal = event.target.closest("[data-new-goal]"); if (goal) openSellerEditor("goal", state.selectedSellerDetail?.seller || { id: goal.dataset.newGoal }); const editGoal = event.target.closest("[data-edit-goal]"); if (editGoal) { const selected = state.selectedSellerDetail?.goals?.find((item) => String(item.id) === String(editGoal.dataset.editGoal)); openSellerEditor("goal", { ...(state.selectedSellerDetail?.seller || {}), goal: selected }); } const edit = event.target.closest("[data-edit-seller]"); if (edit) openSellerEditor("seller", state.selectedSellerDetail?.seller || {}); const attribution = event.target.closest("[data-reassign-attribution]"); if (attribution) openSellerEditor("attribution", { id: attribution.dataset.reassignAttribution }); });
+document.getElementById("sellerAttributionTableBody")?.addEventListener("click", (event) => { const attribution = event.target.closest("[data-reassign-attribution]"); if (attribution) openSellerEditor("attribution", { id: attribution.dataset.reassignAttribution }); });
+document.getElementById("sellerAttributionFilters")?.addEventListener("submit", (event) => { event.preventDefault(); loadSellerAttributions().catch((error) => showFeedback(error.message, "error", { title: "Atribuciones Qori" })); });
+document.getElementById("sellerAttributionRefreshButton")?.addEventListener("click", () => loadSellerAttributions().catch((error) => showFeedback(error.message, "error", { title: "Atribuciones Qori" })));
+document.getElementById("sellerAttributionLoadMore")?.addEventListener("click", (event) => loadSellerAttributions({ page: Number(event.currentTarget.dataset.nextPage || 2), append: true }).catch((error) => showFeedback(error.message, "error", { title: "Atribuciones Qori" })));
 document.getElementById("sellerDetailBody")?.addEventListener("submit", async (event) => {
-  if (event.target.id === "sellerSelfProfileForm") { event.preventDefault(); const payload = Object.fromEntries(new FormData(event.target)); await api("/api/business/sellers/me/profile", { method: "PATCH", headers: authHeaders(), body: JSON.stringify(payload), noClientCache: true }); await openSellerDetail(session.user.id); showFeedback("Perfil personal actualizado.", "success", { title: "Mi perfil" }); }
-  if (event.target.id === "sellerSelfPasswordForm") { event.preventDefault(); const payload = Object.fromEntries(new FormData(event.target)); if (payload.password !== payload.password_confirm) { showFeedback("La confirmación de contraseña no coincide.", "error"); return; } const data = await api("/api/auth/password/change", { method: "POST", headers: authHeaders(), body: JSON.stringify(payload), noClientCache: true }); clearSession({ message: data.message }); }
+  if (event.target.id === "sellerSelfProfileForm") { event.preventDefault(); const button = event.target.querySelector('button[type="submit"]'); setButtonLoading(button, true, "Guardando…"); try { const payload = Object.fromEntries(new FormData(event.target)); await api("/api/business/sellers/me/profile", { method: "PATCH", headers: authHeaders(), body: JSON.stringify(payload), noClientCache: true }); await openSellerDetail(session.user.id); showFeedback("Perfil personal actualizado.", "success", { title: "Mi perfil" }); } catch (error) { showFeedback(error.message || "No se pudo actualizar el perfil.", "error", { title: "Mi perfil" }); } finally { setButtonLoading(button, false); } }
+  if (event.target.id === "sellerSelfPasswordForm") { event.preventDefault(); const button = event.target.querySelector('button[type="submit"]'); const payload = Object.fromEntries(new FormData(event.target)); if (payload.password !== payload.password_confirm) { showFeedback("La confirmación de contraseña no coincide.", "error"); return; } setButtonLoading(button, true, "Actualizando…"); try { const data = await api("/api/auth/password/change", { method: "POST", headers: authHeaders(), body: JSON.stringify(payload), noClientCache: true }); clearSession({ message: data.message }); } catch (error) { showFeedback(error.message || "No se pudo cambiar la contraseña.", "error", { title: "Acceso" }); } finally { setButtonLoading(button, false); } }
 });
 navButtons.forEach((button) => {
   button.addEventListener("click", () => {

@@ -13,6 +13,41 @@ function cleanText(value, max = 180) {
   return text ? text.slice(0, max) : null;
 }
 
+function hasOwn(object, key) {
+  return Object.prototype.hasOwnProperty.call(object || {}, key);
+}
+
+function escapeLikePattern(value = "") {
+  return String(value).replace(/[\\%_]/g, "\\$&");
+}
+
+function searchableCharacters(value = "") {
+  return (String(value).normalize("NFKC").match(/[\p{L}\p{N}]/gu) || []).length;
+}
+
+function inclusiveDays(start, end) {
+  const startMs = new Date(`${start}T00:00:00.000Z`).getTime();
+  const endMs = new Date(`${end}T00:00:00.000Z`).getTime();
+  return Math.max(0, Math.floor((endMs - startMs) / 86_400_000) + 1);
+}
+
+function proratedGoalForRange(goal, range) {
+  const goalStart = String(goal.period_start || "").slice(0, 10);
+  const goalEnd = String(goal.period_end || "").slice(0, 10);
+  const overlapStart = goalStart > range.startDate ? goalStart : range.startDate;
+  const overlapEnd = goalEnd < range.endDate ? goalEnd : range.endDate;
+  const totalDays = inclusiveDays(goalStart, goalEnd);
+  const overlapDays = inclusiveDays(overlapStart, overlapEnd);
+  const factor = totalDays > 0 ? Math.min(1, overlapDays / totalDays) : 0;
+  return {
+    target_revenue: Number(goal.target_revenue || 0) * factor,
+    target_sales: Number(goal.target_sales || 0) * factor,
+    target_new_customers: Number(goal.target_new_customers || 0) * factor,
+    overlap_days: overlapDays,
+    total_days: totalDays,
+  };
+}
+
 function normalizeSellerCode(value = "") {
   return String(value || "")
     .normalize("NFD")
@@ -66,10 +101,11 @@ async function qoriInternalBusiness(client = { query }) {
 
 async function publicSalesAdvisors(search = "") {
   const term = cleanText(search, 80) || "";
-  if (term.length < 2) return [];
+  if (term.length < 2 || searchableCharacters(term) < 2) return [];
   const internal = await qoriInternalBusiness();
   if (!internal) return [];
   const exactCode = normalizeSellerCode(term);
+  const likeTerm = `%${escapeLikePattern(term)}%`;
   const result = await query(
     `select u.full_name, p.seller_code
        from business_seller_profiles p
@@ -78,10 +114,10 @@ async function publicSalesAdvisors(search = "") {
         and p.status = 'ACTIVE'
         and u.role = 'BUSINESS_SELLER'
         and u.is_active = true
-        and (lower(u.full_name) like lower($2) or lower(p.seller_code) like lower($2) or p.seller_code = $3)
+        and (lower(u.full_name) like lower($2) escape '\\' or lower(p.seller_code) like lower($2) escape '\\' or p.seller_code = $3)
       order by case when p.seller_code = $3 then 0 else 1 end, u.full_name asc
       limit 8`,
-    [internal.id, `%${term}%`, exactCode]
+    [internal.id, likeTerm, exactCode]
   );
   return result.rows.map((row) => ({ name: row.full_name, code: row.seller_code, label: `${row.full_name} · ${row.seller_code}` }));
 }
@@ -285,12 +321,28 @@ async function updateSeller(businessId, sellerId, actor, body) {
       [sellerId, businessId, body.full_name || null, body.email || null, nextIsActive]
     );
     await client.query(
-      `update business_seller_profiles set seller_code=$3, job_title=coalesce($4,job_title), phone=coalesce($5,phone),
-          territory=coalesce($6,territory), branch_id=case when $7::boolean then $8::uuid else branch_id end,
-          hired_at=coalesce($9::date,hired_at), status=coalesce($10,status), administrative_notes=coalesce($11,administrative_notes),
-          commercial_settings=coalesce($12::jsonb,commercial_settings), updated_at=now()
+      `update business_seller_profiles set seller_code=$3,
+          job_title=case when $4::boolean then $5::text else job_title end,
+          phone=case when $6::boolean then $7::text else phone end,
+          territory=case when $8::boolean then $9::text else territory end,
+          branch_id=case when $10::boolean then $11::uuid else branch_id end,
+          hired_at=case when $12::boolean then $13::date else hired_at end,
+          status=coalesce($14,status),
+          administrative_notes=case when $15::boolean then $16::text else administrative_notes end,
+          commercial_settings=case when $17::boolean then $18::jsonb else commercial_settings end,
+          updated_at=now()
         where user_id=$1 and business_id=$2`,
-      [sellerId, businessId, nextCode, body.job_title || null, body.phone || null, body.territory || null, Object.prototype.hasOwnProperty.call(body, "branch_id"), body.branch_id || null, body.hired_at || null, nextStatus, body.administrative_notes || null, body.commercial_settings ? JSON.stringify(body.commercial_settings) : null]
+      [
+        sellerId, businessId, nextCode,
+        hasOwn(body, "job_title"), body.job_title || null,
+        hasOwn(body, "phone"), body.phone || null,
+        hasOwn(body, "territory"), body.territory || null,
+        hasOwn(body, "branch_id"), body.branch_id || null,
+        hasOwn(body, "hired_at"), body.hired_at || null,
+        nextStatus,
+        hasOwn(body, "administrative_notes"), body.administrative_notes || null,
+        hasOwn(body, "commercial_settings"), JSON.stringify(body.commercial_settings || {}),
+      ]
     );
     await logSellerActivity(client,{business_id:businessId,seller_user_id:sellerId,actor_user_id:actor.id,event_type:"SELLER_UPDATED",entity_type:"SELLER",entity_id:sellerId,metadata:{changed_fields:Object.keys(body),seller_code_snapshot:nextCode}});
     return sellerForBusiness(client, businessId, sellerId);
@@ -299,10 +351,13 @@ async function updateSeller(businessId, sellerId, actor, body) {
 
 async function updateSellerSelf(businessId, sellerId, body) {
   const result = await query(
-    `update business_seller_profiles p set phone=coalesce($3,p.phone), metadata=p.metadata || $4::jsonb, updated_at=now()
+    `update business_seller_profiles p set
+        phone=case when $3::boolean then $4::text else p.phone end,
+        metadata=case when $5::boolean then p.metadata || jsonb_build_object('self_profile_note',$6::text) else p.metadata end,
+        updated_at=now()
       from app_users u where p.user_id=$1 and p.business_id=$2 and u.id=p.user_id and u.role='BUSINESS_SELLER'
       returning p.user_id`,
-    [sellerId, businessId, body.phone || null, JSON.stringify({ self_profile_note: body.profile_note || null })]
+    [sellerId, businessId, hasOwn(body, "phone"), body.phone || null, hasOwn(body, "profile_note"), body.profile_note || null]
   );
   if (!result.rowCount) throw notFound("Perfil de vendedor no encontrado.");
   return sellerForBusiness({ query }, businessId, sellerId);
@@ -314,12 +369,14 @@ async function saveSellerGoal(businessId, sellerId, actor, body) {
     const seller = await sellerForBusiness(client, businessId, sellerId, { activeOnly: true });
     if (!seller) throw notFound("Vendedor activo no encontrado.");
     await client.query("select pg_advisory_xact_lock(hashtext($1))", [`seller-goal:${businessId}:${sellerId}`]);
-    const overlap = await client.query(
-      `select id from business_seller_goals where business_id=$1 and seller_user_id=$2 and status='ACTIVE'
-        and daterange(period_start,period_end,'[]') && daterange($3::date,$4::date,'[]') and id <> coalesce($5::uuid,'00000000-0000-0000-0000-000000000000'::uuid) limit 1`,
-      [businessId, sellerId, body.period_start, body.period_end, body.id || null]
-    );
-    if (overlap.rowCount) throw badRequest("El vendedor ya tiene una meta activa que se cruza con este periodo.");
+    if ((body.status || "ACTIVE") === "ACTIVE") {
+      const overlap = await client.query(
+        `select id from business_seller_goals where business_id=$1 and seller_user_id=$2 and status='ACTIVE'
+          and daterange(period_start,period_end,'[]') && daterange($3::date,$4::date,'[]') and id <> coalesce($5::uuid,'00000000-0000-0000-0000-000000000000'::uuid) limit 1`,
+        [businessId, sellerId, body.period_start, body.period_end, body.id || null]
+      );
+      if (overlap.rowCount) throw badRequest("El vendedor ya tiene una meta activa que se cruza con este periodo.");
+    }
     const result = body.id
       ? await client.query(
           `update business_seller_goals set period_start=$4,period_end=$5,target_revenue=$6,target_sales=$7,target_new_customers=$8,
@@ -350,7 +407,7 @@ async function analyticsForSellers(businessId, sellerIds, range, internalQori, f
     `with period_sales as (
        select s.* from business_sales s where s.business_id=$1 and s.seller_user_id=any($2::uuid[])
          and s.sale_status='PAID' and coalesce(s.paid_at,s.created_at) between $3 and $4
-         and ($5::text = '' or lower(coalesce(s.product_name,'')) like lower($5) or exists (select 1 from jsonb_array_elements(coalesce(s.metadata->'products','[]'::jsonb)) i where lower(coalesce(i->>'name','')) like lower($5)))
+         and ($5::text = '' or lower(coalesce(s.product_name,'')) like lower($5) or exists (select 1 from jsonb_array_elements(case when jsonb_typeof(s.metadata->'products')='array' then s.metadata->'products' else '[]'::jsonb end) i where lower(coalesce(i->>'name','')) like lower($5)))
          and ($6::text = '' or lower(coalesce(s.acquisition_channel,s.acquisition_source,'')) like lower($6))
          and ($7::uuid is null or s.branch_id=$7)
      ), first_sales as (
@@ -361,7 +418,7 @@ async function analyticsForSellers(businessId, sellerIds, range, internalQori, f
      select p.seller_user_id, count(*)::int as sales, coalesce(sum(p.sale_amount),0)::numeric as revenue,
        count(distinct ${identitySql("p")}) filter (where ${identitySql("p")} is not null)::int as customers,
        count(distinct ${identitySql("p")}) filter (where f.first_at between $3 and $4)::int as new_customers,
-       coalesce(sum((select coalesce(sum(greatest(coalesce((item->>'quantity')::numeric,1),0)),0) from jsonb_array_elements(coalesce(p.metadata->'products','[]'::jsonb)) item)),0)::numeric as products,
+       coalesce(sum((select coalesce(sum(greatest(case when coalesce(item->>'quantity','') ~ '^[0-9]+([.][0-9]+)?$' then (item->>'quantity')::numeric else 1 end,0)),0) from jsonb_array_elements(case when jsonb_typeof(p.metadata->'products')='array' then p.metadata->'products' else '[]'::jsonb end) item)),0)::numeric as products,
        max(coalesce(p.paid_at,p.created_at)) as last_activity_at
      from period_sales p left join first_sales f on f.seller_user_id=p.seller_user_id and f.customer_key=${identitySql("p")}
      group by p.seller_user_id`,
@@ -418,31 +475,56 @@ async function sellerDirectory(businessId, actor, filters = {}) {
   const ids = result.rows.map((row) => row.id);
   const analytics = await analyticsForSellers(businessId, ids, range, internalQori, filters);
   const goals = ids.length ? await query(
-    `select distinct on (seller_user_id) * from business_seller_goals
+    `select * from business_seller_goals
       where business_id=$1 and seller_user_id=any($2::uuid[]) and status='ACTIVE' and period_start <= $3::date and period_end >= $4::date
-      order by seller_user_id,period_end asc`, [businessId,ids,range.endDate,range.startDate]
+      order by seller_user_id,period_start asc,period_end asc`, [businessId,ids,range.endDate,range.startDate]
   ) : { rows: [] };
-  const goalMap = new Map(goals.rows.map((goal) => [goal.seller_user_id, goal]));
+  const goalMap = new Map();
+  goals.rows.forEach((goal) => {
+    const current = goalMap.get(goal.seller_user_id) || [];
+    current.push(goal);
+    goalMap.set(goal.seller_user_id, current);
+  });
   const sellers = result.rows.map((row) => {
     const metric = analytics.metrics.get(row.id) || {};
-    const goal = goalMap.get(row.id) || null;
-    const target = Number(goal?.target_revenue || 0);
-    return { ...row, administrative_notes: selfOnly ? undefined : row.administrative_notes, commercial_settings: selfOnly ? undefined : row.commercial_settings, metrics: { ...metric, average_ticket: Number(metric.sales) ? Number(metric.revenue)/Number(metric.sales) : 0, goal_attainment_percent: target > 0 ? Math.min(999, Number(metric.revenue)/target*100) : null }, current_goal: goal };
+    const sellerGoals = goalMap.get(row.id) || [];
+    const periodGoal = sellerGoals.reduce((acc, goal) => {
+      const contribution = proratedGoalForRange(goal, range);
+      acc.target_revenue += contribution.target_revenue;
+      acc.target_sales += contribution.target_sales;
+      acc.target_new_customers += contribution.target_new_customers;
+      acc.contributing_goals += 1;
+      return acc;
+    }, { target_revenue: 0, target_sales: 0, target_new_customers: 0, contributing_goals: 0 });
+    const target = Number(periodGoal.target_revenue || 0);
+    const currentGoal = sellerGoals.length === 1 ? sellerGoals[0] : null;
+    return {
+      ...row,
+      administrative_notes: selfOnly ? undefined : row.administrative_notes,
+      commercial_settings: selfOnly ? undefined : row.commercial_settings,
+      metrics: { ...metric, average_ticket: Number(metric.sales) ? Number(metric.revenue)/Number(metric.sales) : 0, goal_attainment_percent: target > 0 ? Math.min(999, Number(metric.revenue)/target*100) : null },
+      current_goal: currentGoal,
+      period_goal: periodGoal,
+    };
   });
   const totals = sellers.reduce((acc,row) => ({ active_sellers: acc.active_sellers + (row.is_active && row.status === "ACTIVE" ? 1 : 0), revenue: acc.revenue + Number(row.metrics.revenue || 0), sales: acc.sales + Number(row.metrics.sales || 0), customers: acc.customers + Number(row.metrics.customers || 0), new_customers: acc.new_customers + Number(row.metrics.new_customers || 0), products: acc.products + Number(row.metrics.products || 0), pending_attributions: acc.pending_attributions + Number(row.metrics.pending_attributions || 0) }), { active_sellers:0,revenue:0,sales:0,customers:0,new_customers:0,products:0,pending_attributions:0 });
   totals.average_ticket = totals.sales ? totals.revenue/totals.sales : 0;
-  totals.target_revenue = sellers.reduce((sum,row) => sum + Number(row.current_goal?.target_revenue || 0), 0);
+  totals.target_revenue = sellers.reduce((sum,row) => sum + Number(row.period_goal?.target_revenue || 0), 0);
+  totals.target_sales = sellers.reduce((sum,row) => sum + Number(row.period_goal?.target_sales || 0), 0);
+  totals.target_new_customers = sellers.reduce((sum,row) => sum + Number(row.period_goal?.target_new_customers || 0), 0);
   totals.goal_attainment_percent = totals.target_revenue > 0 ? totals.revenue / totals.target_revenue * 100 : null;
   if (internalQori) {
     const attributionSummary = await query(
-      `select count(*) filter (where status='PENDING')::int as pending,
+      `select count(*) filter (where status='PENDING' and created_at between $2 and $3)::int as payment_pending,
+              count(*) filter (where status='APPROVED' and seller_user_id is null and approved_at between $2 and $3)::int as pending_attribution,
               count(*) filter (where status='APPROVED' and attribution_source='SELF' and approved_at between $2 and $3)::int as self_arrivals
          from portal_signup_sales_attributions
         where qori_business_id=$1
           and ($4::text = '' or lower(plan_code) like lower($4))`,
       [businessId, range.start, range.end, filters.product ? `%${filters.product}%` : ""]
     );
-    totals.pending_attributions = Number(attributionSummary.rows[0]?.pending || 0);
+    totals.pending_attributions = Number(attributionSummary.rows[0]?.pending_attribution || 0);
+    totals.payment_pending = Number(attributionSummary.rows[0]?.payment_pending || 0);
     totals.self_arrivals = Number(attributionSummary.rows[0]?.self_arrivals || 0);
   }
   return { sellers, totals, range: { start_date: range.startDate, end_date: range.endDate }, mode: internalQori ? "QORI_PLANS_AND_BUSINESS_SALES" : "BUSINESS_SALES", permissions: { can_manage: !selfOnly, self_only: selfOnly } };
@@ -464,7 +546,7 @@ async function sellerDetail(businessId, sellerId, actor, filters = {}) {
        from business_sales s left join branches b on b.id=s.branch_id and b.business_id=s.business_id
        left join app_users creator on creator.id=s.created_by_user_id
       where s.business_id=$1 and s.seller_user_id=$2 and s.sale_status='PAID' and coalesce(s.paid_at,s.created_at) between $3 and $4
-        and ($5::text = '' or lower(coalesce(s.product_name,'')) like lower($5) or exists (select 1 from jsonb_array_elements(coalesce(s.metadata->'products','[]'::jsonb)) i where lower(coalesce(i->>'name','')) like lower($5)))
+        and ($5::text = '' or lower(coalesce(s.product_name,'')) like lower($5) or exists (select 1 from jsonb_array_elements(case when jsonb_typeof(s.metadata->'products')='array' then s.metadata->'products' else '[]'::jsonb end) i where lower(coalesce(i->>'name','')) like lower($5)))
         and ($6::text = '' or lower(coalesce(s.acquisition_channel,s.acquisition_source,'')) like lower($6))
         and ($7::uuid is null or s.branch_id=$7)
       order by sold_at desc limit 250`,
@@ -521,9 +603,9 @@ async function sellerDetail(businessId, sellerId, actor, filters = {}) {
   const trendPercent = (currentValue, previousValue) => Number(previousValue) > 0 ? (Number(currentValue)-Number(previousValue))/Number(previousValue)*100 : (Number(currentValue) > 0 ? 100 : 0);
   const previousProducts = await query(
     `select lower(coalesce(nullif(i->>'name',''),s.product_name,'Venta')) as product_key,
-            coalesce(sum(coalesce(nullif(i->>'line_total','')::numeric,s.sale_amount)),0)::numeric as revenue
+            coalesce(sum(case when coalesce(i->>'line_total','') ~ '^-?[0-9]+([.][0-9]+)?$' then (i->>'line_total')::numeric else s.sale_amount end),0)::numeric as revenue
        from business_sales s
-       left join lateral jsonb_array_elements(case when jsonb_array_length(coalesce(s.metadata->'products','[]'::jsonb)) > 0 then s.metadata->'products' else jsonb_build_array(jsonb_build_object('name',s.product_name,'line_total',s.sale_amount)) end) i on true
+       left join lateral jsonb_array_elements(case when jsonb_typeof(s.metadata->'products')='array' and jsonb_array_length(s.metadata->'products') > 0 then s.metadata->'products' else jsonb_build_array(jsonb_build_object('name',s.product_name,'line_total',s.sale_amount)) end) i on true
       where s.business_id=$1 and s.seller_user_id=$2 and s.sale_status='PAID' and coalesce(s.paid_at,s.created_at) between $3 and $4
       group by lower(coalesce(nullif(i->>'name',''),s.product_name,'Venta'))`,
     [businessId,sellerId,previousRange.start,previousRange.end]
@@ -578,6 +660,65 @@ async function recordSellerSale(businessId, sellerId, actor, body) {
   });
 }
 
+async function listSignupAttributions(businessId, actor, filters = {}) {
+  assertSellerAdmin(actor);
+  const internal = await qoriInternalBusiness();
+  if (!internal || internal.id !== businessId) throw forbidden("Las atribuciones de planes solo estan disponibles en la cuenta interna oficial de Qori.");
+  const range = dateRange(filters);
+  const status = cleanText(filters.attribution_status, 20) || "";
+  const source = cleanText(filters.attribution_source, 20) || "";
+  const sellerId = cleanText(filters.seller_id, 40);
+  const product = cleanText(filters.product, 160) || "";
+  const search = cleanText(filters.attribution_search, 120) || "";
+  const searchLike = search ? `%${escapeLikePattern(search)}%` : "";
+  const limit = Math.min(100, Math.max(10, Number(filters.limit || 50)));
+  const page = Math.max(1, Number(filters.page || 1));
+  const offset = (page - 1) * limit;
+  const baseWhere = `a.qori_business_id=$1
+    and coalesce(a.approved_at,a.created_at) between $2 and $3
+    and ($4::text='' or lower(a.plan_code) like lower($4))
+    and ($5::text='' or lower(cb.name) like lower($5) escape '\\' or lower(coalesce(a.seller_name_snapshot,'')) like lower($5) escape '\\' or lower(coalesce(a.seller_code_snapshot,'')) like lower($5) escape '\\')`;
+  const rows = await query(
+    `select a.id,a.status,a.attribution_source,a.plan_code,a.billing_cycle,a.expected_revenue_cop,a.approved_revenue_cop,
+            a.approved_at,a.created_at,a.updated_at,a.seller_user_id,a.seller_name_snapshot,a.seller_code_snapshot,
+            cb.name as client_business_name,coalesce(su.full_name,a.seller_name_snapshot) as current_seller_name,
+            coalesce(sp.seller_code,a.seller_code_snapshot) as current_seller_code,
+            right(a.purchase_order_id::text,8) as order_reference,
+            case when a.mercado_pago_payment_id is null then null else right(a.mercado_pago_payment_id,8) end as payment_reference,
+            count(*) over()::int as filtered_total
+       from portal_signup_sales_attributions a
+       join businesses cb on cb.id=a.client_business_id
+       left join app_users su on su.id=a.seller_user_id and su.business_id=a.qori_business_id
+       left join business_seller_profiles sp on sp.user_id=su.id and sp.business_id=su.business_id
+      where ${baseWhere}
+        and ($6::text='' or a.status=$6)
+        and ($7::text='' or a.attribution_source=$7)
+        and ($8::uuid is null or a.seller_user_id=$8)
+      order by case a.status when 'PENDING' then 0 when 'APPROVED' then 1 else 2 end,
+               coalesce(a.approved_at,a.created_at) desc
+      limit $9 offset $10`,
+    [businessId,range.start,range.end,product ? `%${product}%` : "",searchLike,status,source,sellerId || null,limit,offset]
+  );
+  const summary = await query(
+    `select count(*)::int as total,
+            count(*) filter (where a.status='PENDING')::int as payment_pending,
+            count(*) filter (where a.status='APPROVED')::int as approved,
+            count(*) filter (where a.status='APPROVED' and a.seller_user_id is null)::int as needs_assignment,
+            count(*) filter (where a.status in ('FAILED','CANCELLED','REFUNDED'))::int as exceptions
+       from portal_signup_sales_attributions a
+       join businesses cb on cb.id=a.client_business_id
+      where ${baseWhere}`,
+    [businessId,range.start,range.end,product ? `%${product}%` : "",searchLike]
+  );
+  const plans = new Map(listPlans().map((plan) => [plan.code, plan.name]));
+  return {
+    attributions: rows.rows.map((row) => ({ ...row, plan_name: plans.get(row.plan_code) || row.plan_code, filtered_total: undefined })),
+    summary: summary.rows[0] || { total: 0, payment_pending: 0, approved: 0, needs_assignment: 0, exceptions: 0 },
+    pagination: { page, limit, total: Number(rows.rows[0]?.filtered_total || 0), has_more: offset + rows.rows.length < Number(rows.rows[0]?.filtered_total || 0) },
+    range: { start_date: range.startDate, end_date: range.endDate },
+  };
+}
+
 async function reassignSignupAttribution(businessId, attributionId, actor, body) {
   assertSellerAdmin(actor);
   const internal = await qoriInternalBusiness();
@@ -630,6 +771,7 @@ module.exports = {
   sellerDirectory,
   sellerDetail,
   recordSellerSale,
+  listSignupAttributions,
   reassignSignupAttribution,
-  __testing: { normalizeSellerCode, signupAttributionStatus, dateRange },
+  __testing: { normalizeSellerCode, signupAttributionStatus, dateRange, escapeLikePattern, searchableCharacters, proratedGoalForRange },
 };

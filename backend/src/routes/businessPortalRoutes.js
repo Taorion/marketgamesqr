@@ -190,6 +190,7 @@ const {
   listSellers,
   getSeller,
   getSellerSelf,
+  listSignupAttributionsHandler,
   createSellerHandler,
   patchSeller,
   patchSellerSelf,
@@ -216,6 +217,7 @@ router.get("/sellers/me", sellerModuleAccess, requireRoles("BUSINESS_SELLER"), g
 router.patch("/sellers/me/profile", sellerModuleAccess, requireRoles("BUSINESS_SELLER"), patchSellerSelf);
 router.get("/sellers", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), listSellers);
 router.post("/sellers", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), createSellerHandler);
+router.get("/sellers/attributions", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), listSignupAttributionsHandler);
 router.get("/sellers/:sellerId", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), getSeller);
 router.patch("/sellers/:sellerId", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), patchSeller);
 router.put("/sellers/:sellerId/goals", sellerModuleAccess, requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"), putSellerGoal);
