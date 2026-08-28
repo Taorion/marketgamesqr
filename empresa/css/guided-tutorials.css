@@ -41,8 +41,8 @@ body[data-auth-state="guest"] .portal-guide-launcher { display:none; }
   background:linear-gradient(155deg,#071b45 0%,#0a2d67 56%,#07193c 100%);
   box-shadow:0 32px 100px rgba(0,8,30,.55);
 }
-.portal-guide-library-card,
-.portal-guide-library-card :where(h2,p,span,strong,small,em,button) {
+:root[data-theme] .portal-guide-library-card,
+:root[data-theme] .portal-guide-library-card :where(h2,p,span,strong,small,em,button) {
   color:#fff !important;
 }
 .portal-guide-library-head { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; padding:30px 32px 22px; border-bottom:1px solid rgba(170,218,255,.16); }
