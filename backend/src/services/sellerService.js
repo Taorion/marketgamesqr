@@ -70,6 +70,28 @@ function assertSellerSelf(user = {}) {
   if (user.role !== SELLER_ROLE || !user.business_id) throw forbidden("Esta ruta pertenece al autoservicio del vendedor.");
 }
 
+async function resolveBusinessSaleSeller(client, businessId, actor, requestedSellerId = null) {
+  const sellerId = requestedSellerId || actor?.id || null;
+  if (!sellerId) return null;
+  const assigningAnotherUser = actor?.id && String(actor.id) !== String(sellerId);
+  if (assigningAnotherUser && !["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(actor?.role)) {
+    throw forbidden("Tu rol no puede atribuir una venta a otro integrante del equipo.");
+  }
+  const result = await client.query(
+    `select u.id, u.full_name, u.email, u.role, u.branch_id, p.seller_code
+       from app_users u
+       left join business_seller_profiles p on p.business_id = u.business_id and p.user_id = u.id
+      where u.id = $1
+        and u.business_id = $2
+        and u.is_active = true
+        and u.role in ('BUSINESS_OWNER','BUSINESS_MANAGER','BUSINESS_SELLER','VALIDATOR')
+      limit 1`,
+    [sellerId, businessId]
+  );
+  if (!result.rowCount) throw badRequest("El vendedor seleccionado no pertenece a este negocio o no está activo.");
+  return result.rows[0];
+}
+
 function dateRange(input = {}) {
   const end = input.end_date ? new Date(`${input.end_date}T23:59:59.999Z`) : new Date();
   const start = input.start_date ? new Date(`${input.start_date}T00:00:00.000Z`) : new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
@@ -757,6 +779,7 @@ module.exports = {
   sellerAdmin,
   assertSellerAdmin,
   assertSellerSelf,
+  resolveBusinessSaleSeller,
   normalizeSellerCode,
   qoriInternalBusiness,
   publicSalesAdvisors,

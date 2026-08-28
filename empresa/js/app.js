@@ -696,6 +696,7 @@ const affiliateCardPreview = document.getElementById("affiliateCardPreview");
 const affiliateCardMeta = document.getElementById("affiliateCardMeta");
 const affiliateSelectedSummary = document.getElementById("affiliateSelectedSummary");
 const affiliatePurchaseCampaignInput = document.getElementById("affiliatePurchaseCampaignInput");
+const affiliatePurchaseSellerInput = document.getElementById("affiliatePurchaseSellerInput");
 const affiliatePurchaseProductInput = document.getElementById("affiliatePurchaseProductInput");
 const affiliatePurchaseAmountInput = document.getElementById("affiliatePurchaseAmountInput");
 const affiliatePurchaseNotesInput = document.getElementById("affiliatePurchaseNotesInput");
@@ -1136,6 +1137,7 @@ const customerAcquisitionCurrencyInput = document.getElementById("customerAcquis
 const customerAcquisitionPaymentMethodInput = document.getElementById("customerAcquisitionPaymentMethodInput");
 const customerAcquisitionCampaignInput = document.getElementById("customerAcquisitionCampaignInput");
 const customerAcquisitionBranchInput = document.getElementById("customerAcquisitionBranchInput");
+const customerAcquisitionSellerInput = document.getElementById("customerAcquisitionSellerInput");
 const customerAcquisitionProductInput = document.getElementById("customerAcquisitionProductInput");
 const customerAcquisitionCustomerLookupInput = document.getElementById("customerAcquisitionCustomerLookupInput");
 const customerAcquisitionCustomerSelect = document.getElementById("customerAcquisitionCustomerSelect");
@@ -6214,6 +6216,25 @@ function businessCommercialOwnerOptions(selectedId = "") {
   ].join("");
 }
 
+function businessSaleSellerOptions(selectedId = "") {
+  const currentName = session?.user?.full_name || session?.user?.email || "usuario actual";
+  const canAssignAnother = ["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(session?.user?.role);
+  const sellers = (canAssignAnother ? state.businessUsers || [] : [])
+    .filter((user) => user?.id && user.is_active !== false && user.role === "BUSINESS_SELLER")
+    .sort((left, right) => String(left.full_name || left.email || "").localeCompare(String(right.full_name || right.email || ""), "es"));
+  return [
+    `<option value=""${selectedId ? "" : " selected"}>Yo · ${escapeHtml(currentName)}</option>`,
+    ...sellers.map((user) => `<option value="${escapeHtml(user.id)}"${String(user.id) === String(selectedId || "") ? " selected" : ""}>${escapeHtml(user.full_name || user.email || "Vendedor")} · ${escapeHtml(user.email || "Vendedor activo")}</option>`),
+  ].join("");
+}
+
+function renderBusinessSaleSellerOptions(root = document) {
+  root.querySelectorAll?.("[data-business-sale-seller]").forEach((select) => {
+    const selected = select.value || "";
+    select.innerHTML = businessSaleSellerOptions(selected);
+  });
+}
+
 function renderManualLeadCommercialOwnerOptions() {
   if (!manualLeadCommercialOwnerInput) return;
   const selected = manualLeadCommercialOwnerInput.value || "";
@@ -7888,7 +7909,7 @@ async function loadWorkspace() {
     shouldLoadAccountData ? apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: state.qrCreditAccount || null }) : Promise.resolve({ credit_account: state.qrCreditAccount || null }),
     shouldLoadAccountData ? apiSafe("/api/public/subscription-plans", {}, { plans: state.subscriptionPlans || [], prepaid_reference: state.prepaidReference || [] }) : Promise.resolve({ plans: state.subscriptionPlans || [], prepaid_reference: state.prepaidReference || [], pricing: state.pricing }),
     Promise.resolve({ contacts: state.contactFeed || [], retention: state.contactFeedRetention || null, lead_gate: state.contactFeedGate || null }),
-    shouldLoadAccountData ? apiSafe("/api/business/users", { headers: authHeaders() }, { users: state.businessUsers || [] }) : Promise.resolve({ users: state.businessUsers || [] }),
+    apiSafe("/api/business/users", { headers: authHeaders() }, { users: state.businessUsers || [] }),
     Promise.resolve({ activity: null }),
   ];
 
@@ -7928,6 +7949,7 @@ async function loadWorkspace() {
     state.leadAgendaRange = null;
     state.editingAgendaId = null;
     state.businessUsers = businessUsersData.users || [];
+    renderBusinessSaleSellerOptions();
     state.accountWorkspaceLoaded = shouldLoadAccountData;
     state.businessBranches = [];
     state.businessBranchesLoaded = false;
@@ -24478,6 +24500,7 @@ async function submitCustomerAcquisitionSale(event) {
         sale_amount: saleTotal,
         campaign_id: customerAcquisitionCampaignInput?.value || null,
         branch_id: customerAcquisitionBranchInput?.value || null,
+        seller_user_id: customerAcquisitionSellerInput?.value || null,
         currency: customerAcquisitionCurrencyInput.value.trim() || "COP",
         payment_method: customerAcquisitionPaymentMethodInput?.value || null,
         product_name: productSummary || null,
@@ -35871,6 +35894,7 @@ async function awardSelectedAffiliatePoints() {
       body: JSON.stringify({
         idempotency_key: affiliatePurchaseIdempotencyKey(),
         campaign_id: campaignId || null,
+        seller_user_id: affiliatePurchaseSellerInput?.value || null,
         customer_name: selectedAffiliate.full_name || null,
         customer_phone: selectedAffiliate.phone || null,
         customer_email: selectedAffiliate.email || null,
@@ -41136,6 +41160,7 @@ function renderLeadTab(detail) {
         <label><span>Valor</span><input id="leadPurchaseAmountInput" type="number" min="1" step="100" required placeholder="0"></label>
         <label><span>Categoria</span><input id="leadPurchaseCategoryInput" type="text" maxlength="160" placeholder="Categoria o linea"></label>
         <label><span>Fecha</span><input id="leadPurchaseDateInput" type="datetime-local"></label>
+        <label><span>Vendedor responsable</span><select id="leadPurchaseSellerInput" data-business-sale-seller>${businessSaleSellerOptions()}</select><small class="field-help">Selecciona a quien cerró realmente la venta.</small></label>
         ${acquisitionChannelPickerMarkup({ selectAttribute: 'data-lead-purchase-acquisition-channel', manualAttribute: 'data-lead-purchase-acquisition-channel-manual', helpAttribute: 'data-lead-purchase-acquisition-channel-help' })}
         <label><span>Moneda</span><input id="leadPurchaseCurrencyInput" type="text" maxlength="8" value="COP"></label>
         <label class="span-2"><span>Notas</span><textarea id="leadPurchaseNotesInput" rows="2" maxlength="1200" placeholder="Detalle de la compra, referencia, vendedor o contexto"></textarea></label>
@@ -41145,7 +41170,7 @@ function renderLeadTab(detail) {
       ${(detail.purchases || []).length ? detailList((detail.purchases || []).map((item) => `
         <strong>${escapeHtml(item.product_name || "Compra")}</strong>
         <span>${money(item.sale_amount || 0)} · ${formatDate(item.created_at)}</span>
-        <small>${escapeHtml(item.campaign_name || item.acquisition_source || "-")} · ${escapeHtml(item.branch_name || "Sin sucursal")} ${item.notes ? `· ${escapeHtml(item.notes)}` : ""}</small>
+        <small>${escapeHtml(item.campaign_name || item.acquisition_source || "-")} · ${escapeHtml(item.branch_name || "Sin sucursal")} · ${escapeHtml(item.seller_name || "Sin vendedor")} ${item.notes ? `· ${escapeHtml(item.notes)}` : ""}</small>
       `)) : `
         <div class="empty-state compact">
           Este lead aun no registra compras. Puedes registrar una venta manual o enviarle una activacion para convertirlo.
@@ -41610,6 +41635,7 @@ async function createLeadPurchaseFromForm(event) {
     sale_amount: amount,
     currency: String(document.getElementById("leadPurchaseCurrencyInput")?.value || "COP").trim() || "COP",
     category: String(document.getElementById("leadPurchaseCategoryInput")?.value || "").trim() || null,
+    seller_user_id: document.getElementById("leadPurchaseSellerInput")?.value || null,
     ...acquisitionChannelSelectionFromElements(
       document.querySelector("[data-lead-purchase-acquisition-channel]"),
       document.querySelector("[data-lead-purchase-acquisition-channel-manual]")
@@ -48820,6 +48846,7 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
           <label><span>Moneda</span><select data-rms-sale-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${currency === inheritedCurrency ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
           <label><span>Costo unitario</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(unitCost))}" data-rms-sale-unit-cost="${escapeHtml(item.id)}"></label>
           <label><span>Medio de pago</span><select data-rms-sale-payment="${escapeHtml(item.id)}"><option value="TRANSFER">Transferencia</option><option value="CASH">Efectivo</option><option value="CARD">Tarjeta</option><option value="PAYMENT_LINK">Link de pago</option><option value="OTHER">Otro</option></select></label>
+          <label><span>Vendedor responsable</span><select data-rms-sale-seller="${escapeHtml(item.id)}" data-business-sale-seller>${businessSaleSellerOptions()}</select><small>Debe ser quien cerró realmente esta venta.</small></label>
           <label><span>Beneficio usado</span><select data-rms-sale-benefit-type="${escapeHtml(item.id)}"><option value="NONE" ${benefitType === "NONE" ? "selected" : ""}>No se usó beneficio</option><option value="DISCOUNT" ${benefitType === "DISCOUNT" ? "selected" : ""}>Descuento</option><option value="GIFT" ${benefitType === "GIFT" ? "selected" : ""}>Obsequio</option><option value="BONUS" ${benefitType === "BONUS" ? "selected" : ""}>Bono / incentivo</option><option value="OTHER" ${benefitType === "OTHER" ? "selected" : ""}>Otro</option></select></label>
           <label><span>Costo del beneficio</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(benefitCost))}" data-rms-sale-benefit-cost="${escapeHtml(item.id)}"></label>
           <label><span>Costo de adquisición</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(acquisitionCost))}" data-rms-sale-acquisition-cost="${escapeHtml(item.id)}"></label>
@@ -56118,6 +56145,7 @@ function rmsSaleDraftFromDom(root, id) {
     benefit_cost: Math.max(0, rmsCommercialNumber(root, "[data-rms-sale-benefit-cost]", id)),
     acquisition_cost: Math.max(0, rmsCommercialNumber(root, "[data-rms-sale-acquisition-cost]", id)),
     payment_method: rmsCommercialNode(root, "[data-rms-sale-payment]", id)?.value || "OTHER",
+    seller_user_id: rmsCommercialNode(root, "[data-rms-sale-seller]", id)?.value || null,
     paid_at: rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-sale-paid-at]", id)?.value || ""),
     notes: String(rmsCommercialNode(root, "[data-rms-sale-notes]", id)?.value || "").trim(),
   };

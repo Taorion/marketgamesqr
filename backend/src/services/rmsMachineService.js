@@ -17,6 +17,7 @@ const {
   requiresResultForIntelligence,
 } = require("./rmsPostSalePolicy");
 const { normalizeIntelligenceLifecycleStatus } = require("./rmsIntelligenceLifecyclePolicy");
+const { resolveBusinessSaleSeller } = require("./sellerService");
 const { randomBytes } = require("crypto");
 
 // Fuente única de verdad: conserva los IDs y ordena las transiciones comerciales.
@@ -2791,6 +2792,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     },
   };
   const result = await withTransaction(async (client) => {
+    const attributedSeller = await resolveBusinessSaleSeller(client, businessId, user, payload.seller_user_id);
     const customerLink = await ensureRmsCustomerContact(client, businessId, user, item, sourceType, payload.source_id);
     const customer = customerLink.customer;
     let relatedAffiliate = await resolveRmsRelatedAffiliate(client, businessId, item, sourceType, payload.source_id, customer);
@@ -2807,6 +2809,14 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
       customer_contact_created: customerLink.created,
       related_affiliate_id: relatedAffiliate?.id || null,
       ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
+      responsible_commercial: attributedSeller ? {
+        user_id: attributedSeller.id,
+        name_snapshot: attributedSeller.full_name,
+        email_snapshot: attributedSeller.email,
+        role_snapshot: attributedSeller.role,
+        seller_code_snapshot: attributedSeller.seller_code || null,
+      } : null,
+      recorded_by_user_id: user?.id || null,
     };
     const sale = await client.query(
       `insert into business_sales
@@ -2823,7 +2833,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
        on conflict (business_id, idempotency_key) where idempotency_key is not null do nothing
        returning *`,
       [businessId, item.campaign_id || null, customer.name || item.name || null, customer.phone || item.phone || null, customer.email || item.email || null,
-        customer.document_id || item.document_id || null, productName, saleAmount, currency, user.id,
+        customer.document_id || item.document_id || null, productName, saleAmount, currency, attributedSeller?.id || user.id,
         item.acquisition_channel_name_snapshot || item.channel || "RMS / Ventas atribuidas",
         item.acquisition_channel_id || null,
         item.acquisition_channel_name_snapshot || item.channel || null,

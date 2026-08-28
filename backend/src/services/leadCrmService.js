@@ -11,6 +11,7 @@ const {
 const { syncSaleProductsWithCatalog } = require("./productCatalogService");
 const { resolveAcquisitionChannelReference } = require("./acquisitionChannelService");
 const { recordLifecycleEvent } = require("./lifecycleAuditService");
+const { resolveBusinessSaleSeller } = require("./sellerService");
 
 const OPERATIONAL_AGENDA_SOURCE_TYPES = new Set(["GENERAL", "CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"]);
 
@@ -2444,6 +2445,7 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
       category: payload.category || payload.metadata?.category || null,
       sourceModule: "lead_purchase",
     });
+    const attributedSeller = await resolveBusinessSaleSeller(client, businessId, user, payload.seller_user_id);
     const metadata = {
       ...(payload.metadata || {}),
       acquisition_channel: {
@@ -2463,6 +2465,14 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
       crm_lead_id: lead.lead_id || null,
       related_affiliate_id: relatedAffiliate?.id || null,
       registered_from: "lead_detail",
+      responsible_commercial: attributedSeller ? {
+        user_id: attributedSeller.id,
+        name_snapshot: attributedSeller.full_name,
+        email_snapshot: attributedSeller.email,
+        role_snapshot: attributedSeller.role,
+        seller_code_snapshot: attributedSeller.seller_code || null,
+      } : null,
+      recorded_by_user_id: user?.id || null,
       ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
     };
 
@@ -2486,7 +2496,7 @@ async function createLeadPurchase(businessId, user, leadId, sourceType, payload)
         payload.product_name || "Compra registrada",
         amount,
         payload.currency || "COP",
-        user?.id || null,
+        attributedSeller?.id || user?.id || null,
         payload.branch_id || null,
         payload.acquisition_source || (relatedAffiliate ? "FRIEND_REFERRAL" : "CONTACT_LEAD"),
         acquisitionChannel.acquisition_channel || (relatedAffiliate ? "Afiliados" : lead.channel || null),

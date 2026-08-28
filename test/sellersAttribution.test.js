@@ -93,6 +93,20 @@ test("las ventas normales conservan business_sales, vendedor, idempotencia y cat
   assert.match(service, /responsible_commercial/);
 });
 
+test("ventas, leads, afiliados y RMS permiten escoger el vendedor real", () => {
+  const html = read("empresa/index.html");
+  const app = read("empresa/js/app.js");
+  const portal = read("backend/src/controllers/businessPortalController.js");
+  const leadController = read("backend/src/controllers/leadCrmController.js");
+  const rmsController = read("backend/src/controllers/rmsMachineController.js");
+  assert.match(html, /id="customerAcquisitionSellerInput"[\s\S]+id="affiliatePurchaseSellerInput"/);
+  assert.match(app, /leadPurchaseSellerInput[\s\S]+data-rms-sale-seller/);
+  assert.match(app, /seller_user_id: customerAcquisitionSellerInput[\s\S]+seller_user_id: affiliatePurchaseSellerInput/);
+  assert.match(portal, /seller_user_id: z\.string\(\)\.uuid/);
+  assert.match(leadController, /purchaseSchema[\s\S]+seller_user_id: z\.string\(\)\.uuid/);
+  assert.match(rmsController, /attributedSaleSchema[\s\S]+seller_user_id: z\.string\(\)\.uuid/);
+});
+
 test("el portal separa Vendedores de Cuenta y Admin y ofrece estados accesibles", () => {
   const html = read("empresa/index.html");
   const app = read("empresa/js/app.js");

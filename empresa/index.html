@@ -5576,6 +5576,7 @@
                     <label class="sale-field"><span>Medio de pago</span><select id="customerAcquisitionPaymentMethodInput"><option value="">No registrado</option><option value="Efectivo">Efectivo</option><option value="Tarjeta débito">Tarjeta débito</option><option value="Tarjeta crédito">Tarjeta crédito</option><option value="Transferencia">Transferencia</option><option value="Billetera digital">Billetera digital</option><option value="Crédito">Crédito</option><option value="Mixto">Mixto</option><option value="Otro">Otro</option></select></label>
                     <label class="sale-field sale-field-campaign"><span>Campaña atribuida</span><select id="customerAcquisitionCampaignInput"></select></label>
                     <label class="sale-field"><span>Sede / consignación</span><select id="customerAcquisitionBranchInput"><option value="">Sin sede asignada</option></select></label>
+                    <label class="sale-field"><span>Vendedor responsable</span><select id="customerAcquisitionSellerInput" data-business-sale-seller></select><small class="field-help">Si registras la venta por otra persona, atribúyela al vendedor real.</small></label>
                   </div>
                 </section>
                 <section class="sale-form-block sale-form-block-customer">
@@ -7496,6 +7497,11 @@
                     <span>Campaña de la compra</span>
                     <select id="affiliatePurchaseCampaignInput"></select>
                     <small>Opcional. Úsala si quieres atribuir esta venta a una campaña.</small>
+                  </label>
+                  <label>
+                    <span>Vendedor responsable</span>
+                    <select id="affiliatePurchaseSellerInput" data-business-sale-seller></select>
+                    <small>La venta y sus puntos conservarán el responsable comercial real.</small>
                   </label>
                   <label>
                     <span>Monto total de la compra COP</span>

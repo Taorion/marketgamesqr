@@ -98,6 +98,7 @@ const purchaseSchema = z.object({
   category: z.string().trim().max(160).optional().nullable(),
   campaign_id: z.string().uuid().optional().nullable(),
   branch_id: z.string().uuid().optional().nullable(),
+  seller_user_id: z.string().uuid().optional().nullable(),
   acquisition_source: z.string().trim().max(120).optional().nullable(),
   acquisition_channel_id: z.string().uuid().optional().nullable(),
   acquisition_channel: z.string().trim().max(120).optional().nullable(),

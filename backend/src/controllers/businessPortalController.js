@@ -35,6 +35,7 @@ const { assertStorageQuotaForUpload } = require("../services/storageQuotaService
 const { recordLifecycleEvent } = require("../services/lifecycleAuditService");
 const { resolveAcquisitionChannelReference } = require("../services/acquisitionChannelService");
 const { listAttributedSales } = require("../services/attributedSalesService");
+const { resolveBusinessSaleSeller } = require("../services/sellerService");
 
 function slugify(value) {
   return String(value || "")
@@ -280,6 +281,7 @@ const acquisitionSourceOptions = [
 const customerAcquisitionSaleSchema = z.object({
   campaign_id: z.string().uuid().optional().nullable(),
   branch_id: z.string().uuid().optional().nullable(),
+  seller_user_id: z.string().uuid().optional().nullable(),
   customer_name: z.string().trim().max(160).optional().nullable(),
   customer_phone: z.string().trim().max(40).optional().nullable(),
   customer_email: z.string().trim().email().optional().nullable(),
@@ -2503,6 +2505,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
         };
       }
       const acquisitionChannel = await resolveAcquisitionChannelReference(client, businessId, body);
+      const attributedSeller = await resolveBusinessSaleSeller(client, businessId, req.user, body.seller_user_id);
       if (body.campaign_id) {
         const campaign = await client.query(
           "select id from campaigns where id = $1 and business_id = $2",
@@ -2593,6 +2596,14 @@ async function createCustomerAcquisitionSale(req, res, next) {
         crm_lead_id: customerContact.id,
         customer_contact_id: customerContact.id,
         customer_contact_created: customerLink.created,
+        responsible_commercial: attributedSeller ? {
+          user_id: attributedSeller.id,
+          name_snapshot: attributedSeller.full_name,
+          email_snapshot: attributedSeller.email,
+          role_snapshot: attributedSeller.role,
+          seller_code_snapshot: attributedSeller.seller_code || null,
+        } : null,
+        recorded_by_user_id: req.user.id,
         ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
       };
 
@@ -2616,7 +2627,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
           body.sale_amount,
           body.currency || "COP",
           body.payment_method || null,
-          req.user.id,
+          attributedSeller?.id || req.user.id,
           saleBranchId,
           body.acquisition_source,
           acquisitionChannel.acquisition_channel,

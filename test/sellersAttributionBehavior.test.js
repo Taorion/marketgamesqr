@@ -88,3 +88,21 @@ test("los filtros rechazan UUID manipulados antes de llegar a PostgreSQL", () =>
   assert.equal(controllerSchemas.sellerFiltersSchema.safeParse({ seller_id: "otro-tenant" }).success, false);
   assert.equal(controllerSchemas.sellerFiltersSchema.safeParse({ branch_id: "../../../admin" }).success, false);
 });
+
+test("la atribucion manual valida vendedor activo, tenant y permiso del actor", async () => {
+  responses = [{ rows: [{ id: "seller-1", full_name: "Ana", role: "BUSINESS_SELLER", seller_code: "ANA-01" }], rowCount: 1 }];
+  const seller = await sellerService.resolveBusinessSaleSeller(
+    { query },
+    "business-1",
+    { id: "owner-1", role: "BUSINESS_OWNER" },
+    "seller-1"
+  );
+  assert.equal(seller.id, "seller-1");
+  assert.deepEqual(calls[0].params, ["seller-1", "business-1"]);
+  assert.match(calls[0].sql, /u\.business_id = \$2[\s\S]+u\.is_active = true/);
+  await assert.rejects(
+    sellerService.resolveBusinessSaleSeller({ query }, "business-1", { id: "validator-1", role: "VALIDATOR" }, "seller-2"),
+    /no puede atribuir una venta a otro integrante/i
+  );
+  assert.equal(calls.length, 1);
+});

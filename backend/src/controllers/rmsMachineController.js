@@ -153,6 +153,7 @@ const attributedSaleSchema = z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
   lead_id: z.string().uuid().optional().nullable(),
+  seller_user_id: z.string().uuid().optional().nullable(),
   // A stale browser may submit null. Let the service return the actionable domain
   // requirement instead of exposing a raw Zod type error to the operator.
   inventory_product_id: z.string().uuid().optional().nullable(),
