@@ -42,6 +42,10 @@ const {
   createCompetitorTask,
   updateCompetitorTask,
   archiveCompetitorTask,
+  listCompetitiveProducts,
+  createCompetitiveProduct,
+  updateCompetitiveProduct,
+  archiveCompetitiveProduct,
   listCompetitorProducts,
   createCompetitorProduct,
   updateCompetitorProduct,
@@ -361,6 +365,10 @@ router.get("/competitor-tasks", standardBusinessCache, listCompetitorTasks);
 router.post("/competitor-tasks", createCompetitorTask);
 router.patch("/competitor-tasks/:taskId", updateCompetitorTask);
 router.delete("/competitor-tasks/:taskId", archiveCompetitorTask);
+router.get("/competitive-products", standardBusinessCache, listCompetitiveProducts);
+router.post("/competitive-products", createCompetitiveProduct);
+router.patch("/competitive-products/:productId", updateCompetitiveProduct);
+router.delete("/competitive-products/:productId", archiveCompetitiveProduct);
 router.get("/competitor-products", standardBusinessCache, listCompetitorProducts);
 router.post("/competitor-products", createCompetitorProduct);
 router.patch("/competitor-products/:productId", updateCompetitorProduct);

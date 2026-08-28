@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260827-risk-fixed-concession-v385";
+const APP_VERSION = "empresa-20260828-competitive-product-center-v391";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -1287,6 +1287,7 @@ const competitionTabs = Array.from(document.querySelectorAll("[data-competition-
 const competitionPanels = Array.from(document.querySelectorAll("[data-competition-panel]"));
 const competitionLatestFindingsTable = document.getElementById("competitionLatestFindingsTable");
 const competitionDataStatus = document.getElementById("competitionDataStatus");
+const newRadarProductButton = document.getElementById("newRadarProductButton");
 const newCompetitorButton = document.getElementById("newCompetitorButton");
 const newCompetitionProductButton = document.getElementById("newCompetitionProductButton");
 const competitorForm = document.getElementById("competitorForm");
@@ -1341,6 +1342,24 @@ const competitorSearchInput = document.getElementById("competitorSearchInput");
 const competitorProductFilterInput = document.getElementById("competitorProductFilterInput");
 const competitorTable = document.getElementById("competitorTable");
 const competitionCompetitorSelect = document.getElementById("competitionCompetitorSelect");
+const competitionCompetitiveProductSelect = document.getElementById("competitionCompetitiveProductSelect");
+const radarProductForm = document.getElementById("radarProductForm");
+const radarProductFormPanel = document.getElementById("radarProductFormPanel");
+const radarProductIdInput = document.getElementById("radarProductIdInput");
+const radarProductNameInput = document.getElementById("radarProductNameInput");
+const radarProductSkuInput = document.getElementById("radarProductSkuInput");
+const radarProductBrandInput = document.getElementById("radarProductBrandInput");
+const radarProductCategoryInput = document.getElementById("radarProductCategoryInput");
+const radarProductPriceInput = document.getElementById("radarProductPriceInput");
+const radarProductCurrencyInput = document.getElementById("radarProductCurrencyInput");
+const radarProductUnitInput = document.getElementById("radarProductUnitInput");
+const radarProductDescriptionInput = document.getElementById("radarProductDescriptionInput");
+const radarProductMessage = document.getElementById("radarProductMessage");
+const radarProductSaveButton = document.getElementById("radarProductSaveButton");
+const radarProductResetButton = document.getElementById("radarProductResetButton");
+const radarProductFormTitle = document.getElementById("radarProductFormTitle");
+const radarProductSearchInput = document.getElementById("radarProductSearchInput");
+const radarProductGrid = document.getElementById("radarProductGrid");
 const competitionProductNameInput = document.getElementById("competitionProductNameInput");
 const competitionUnitInput = document.getElementById("competitionUnitInput");
 const competitionCategoryInput = document.getElementById("competitionCategoryInput");
@@ -1481,6 +1500,7 @@ const competitorSwotMessage = document.getElementById("competitorSwotMessage");
 const competitorSwotSaveButton = document.getElementById("competitorSwotSaveButton");
 const competitionBasicComparisonTable = document.getElementById("competitionBasicComparisonTable");
 const competitionPriceComparisonTable = document.getElementById("competitionPriceComparisonTable");
+const competitionComparisonProductSelect = document.getElementById("competitionComparisonProductSelect");
 const competitionCampaignComparisonTable = document.getElementById("competitionCampaignComparisonTable");
 const competitionStrategicComparisonTable = document.getElementById("competitionStrategicComparisonTable");
 const competitorDetailModal = document.getElementById("competitorDetailModal");
@@ -3103,6 +3123,7 @@ let state = {
   inventorySearch: "",
   inventoryQuickFilter: "all",
   inventoryCategoryFilter: "",
+  competitionCatalogProducts: [],
   competitionProducts: [],
   competitionCompetitors: [],
   competitionFindings: [],
@@ -3115,13 +3136,16 @@ let state = {
   competitionLoadError: "",
   competitionLoadFailures: [],
   competitionSearch: "",
+  competitionCatalogSearch: "",
+  competitionSelectedProductId: "",
   competitorSearch: "",
   findingSearch: "",
   competitorCampaignSearch: "",
   competitorEventSearch: "",
   competitorTaskSearch: "",
-  competitionTab: "competitors",
-  competitionProductView: "competitor",
+  competitionTab: "products",
+  competitionProductView: "product",
+  competitionCatalogEditingId: null,
   competitionEditingId: null,
   competitorEditingId: null,
   findingEditingId: null,
@@ -4320,15 +4344,20 @@ function resetBusinessScopedState(options = {}) {
   state.inventorySearch = "";
   state.inventoryQuickFilter = "all";
   state.inventoryCategoryFilter = "";
+  state.competitionCatalogProducts = [];
   state.competitionProducts = [];
   state.competitionCompetitors = [];
   state.competitionFindings = [];
   state.competitionLoaded = false;
   state.competitionLoading = false;
   state.competitionSearch = "";
+  state.competitionCatalogSearch = "";
+  state.competitionSelectedProductId = "";
   state.competitorSearch = "";
   state.findingSearch = "";
-  state.competitionTab = "competitors";
+  state.competitionTab = "products";
+  state.competitionProductView = "product";
+  state.competitionCatalogEditingId = null;
   state.competitionEditingId = null;
   state.competitorEditingId = null;
   state.findingEditingId = null;
@@ -26030,6 +26059,7 @@ async function archiveInventoryProduct(productId) {
 
 async function loadCompetitionProducts(options = {}) {
   if (!session?.user?.business_id) {
+    state.competitionCatalogProducts = [];
     state.competitionProducts = [];
     state.competitionCompetitors = [];
     state.competitionFindings = [];
@@ -26052,6 +26082,7 @@ async function loadCompetitionProducts(options = {}) {
   const scopeKey = businessScopeKey();
   try {
     const resources = [
+      { key: "competitionCatalogProducts", responseKey: "products", label: "catálogo de productos", path: "/api/business/competitive-products?limit=800" },
       { key: "competitionCompetitors", responseKey: "competitors", label: "competidores", path: "/api/business/competitors?limit=800" },
       { key: "competitionProducts", responseKey: "products", label: "precios y ofertas", path: "/api/business/competitor-products?limit=800" },
       { key: "competitionFindings", responseKey: "findings", label: "señales", path: "/api/business/competitor-findings?limit=800" },
@@ -26104,9 +26135,9 @@ function renderCompetitionDataStatus() {
   competitionDataStatus.textContent = "";
 }
 
-function setCompetitionTab(tab = "competitors") {
+function setCompetitionTab(tab = "products") {
   const availableTabs = new Set(competitionTabs.map((button) => button.dataset.competitionTab));
-  state.competitionTab = availableTabs.has(tab) ? tab : "competitors";
+  state.competitionTab = availableTabs.has(tab) ? tab : "products";
   competitionTabs.forEach((button) => {
     const active = button.dataset.competitionTab === state.competitionTab;
     button.classList.toggle("active", active);
@@ -26120,7 +26151,7 @@ function setCompetitionTab(tab = "competitors") {
   });
 }
 
-function setCompetitionProductView(view = "competitor") {
+function setCompetitionProductView(view = "product") {
   state.competitionProductView = view === "product" ? "product" : "competitor";
   competitionProductViewTabs.forEach((button) => button.classList.toggle("active", button.dataset.competitionProductView === state.competitionProductView));
   competitionProductViewPanels.forEach((panel) => panel.classList.toggle("hidden", panel.dataset.competitionProductViewPanel !== state.competitionProductView));
@@ -26191,6 +26222,19 @@ function renderCompetitionSelectOptions() {
   if (competitorEventCompetitorInput) competitorEventCompetitorInput.innerHTML = options;
   if (competitorTaskCompetitorInput) competitorTaskCompetitorInput.innerHTML = options;
   if (competitorSwotSelect) competitorSwotSelect.innerHTML = options;
+  const productOptions = [
+    '<option value="">Elige un producto de tu catálogo</option>',
+    ...(state.competitionCatalogProducts || []).filter((item) => item.is_active !== false).map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}${item.sku ? ` · ${escapeHtml(item.sku)}` : ""}</option>`),
+  ].join("");
+  if (competitionCompetitiveProductSelect) competitionCompetitiveProductSelect.innerHTML = productOptions;
+  if (competitionComparisonProductSelect) {
+    competitionComparisonProductSelect.innerHTML = productOptions;
+    const activeProducts = (state.competitionCatalogProducts || []).filter((item) => item.is_active !== false);
+    if (!activeProducts.some((item) => String(item.id) === String(state.competitionSelectedProductId))) {
+      state.competitionSelectedProductId = activeProducts[0]?.id || "";
+    }
+    competitionComparisonProductSelect.value = state.competitionSelectedProductId || "";
+  }
   renderCompetitorTaskFindingOptions();
 }
 
@@ -26299,7 +26343,7 @@ function competitionKpis() {
   };
   const summary = state.competitionSummary || localSummary;
   return [
-    { label: "Competidores activos", value: toNumber(summary.active_competitors).toLocaleString("es-CO"), meta: `${toNumber(summary.high_threat_competitors)} de amenaza alta o crítica` },
+    { label: "Productos monitoreados", value: (state.competitionCatalogProducts || []).filter((item) => item.is_active !== false).length.toLocaleString("es-CO"), meta: `${toNumber(summary.active_competitors)} proveedores activos` },
     { label: "Señales del mes", value: toNumber(summary.findings_this_month).toLocaleString("es-CO"), meta: `${toNumber(summary.verified_findings)} con fuente de alta confianza` },
     { label: "Precios observados", value: toNumber(summary.price_observations).toLocaleString("es-CO"), meta: `Promedio COP ${money(toNumber(summary.average_competitor_price_cop))}` },
     { label: "Brecha promedio COP", value: money(toNumber(summary.average_price_gap_cop)), meta: "Precio propio menos precio competidor" },
@@ -26599,6 +26643,7 @@ function closeCompetitionDialog(dialog) {
   dialog?.setAttribute("aria-hidden", "true");
   const anotherOpen = competitorFormPanel?.classList.contains("is-competition-modal-open")
     || competitionProductFormPanel?.classList.contains("is-competition-modal-open")
+    || radarProductFormPanel?.classList.contains("is-competition-modal-open")
     || (competitorDetailModal && !competitorDetailModal.classList.contains("hidden"));
   if (!anotherOpen) document.body.classList.remove("competition-dialog-open");
   const returnFocus = state.competitionDialogReturnFocus;
@@ -26615,7 +26660,7 @@ function openCompetitorFormModal() {
 
 function closeCompetitorFormModal() {
   competitorFormPanel?.classList.remove("is-competition-modal-open");
-  if (!competitionProductFormPanel?.classList.contains("is-competition-modal-open")) {
+  if (!competitionProductFormPanel?.classList.contains("is-competition-modal-open") && !radarProductFormPanel?.classList.contains("is-competition-modal-open")) {
     competitionViewSection()?.classList.remove("competition-modal-open");
   }
   closeCompetitionDialog(competitorFormPanel);
@@ -26626,7 +26671,7 @@ function openCompetitionProductModal() {
   if (competitionProductFormPanel?.parentElement !== document.body) document.body.appendChild(competitionProductFormPanel);
   competitionViewSection()?.classList.add("competition-modal-open");
   competitionProductFormPanel?.classList.add("is-competition-modal-open");
-  openCompetitionDialog(competitionProductFormPanel, competitionProductNameInput);
+  openCompetitionDialog(competitionProductFormPanel, competitionCompetitiveProductSelect);
 }
 
 function competitionUnitLabel(value = "") {
@@ -26648,7 +26693,7 @@ function competitionUnitLabel(value = "") {
 
 function closeCompetitionProductModal() {
   competitionProductFormPanel?.classList.remove("is-competition-modal-open");
-  if (!competitorFormPanel?.classList.contains("is-competition-modal-open")) {
+  if (!competitorFormPanel?.classList.contains("is-competition-modal-open") && !radarProductFormPanel?.classList.contains("is-competition-modal-open")) {
     competitionViewSection()?.classList.remove("competition-modal-open");
   }
   closeCompetitionDialog(competitionProductFormPanel);
@@ -26955,10 +27000,137 @@ function renderCompetitorDetailModal() {
   `;
 }
 
+function competitiveProductById(productId = "") {
+  return (state.competitionCatalogProducts || []).find((item) => String(item.id) === String(productId)) || null;
+}
+
+function resetRadarProductForm() {
+  state.competitionCatalogEditingId = null;
+  radarProductForm?.reset();
+  if (radarProductIdInput) radarProductIdInput.value = "";
+  if (radarProductCurrencyInput) radarProductCurrencyInput.value = "COP";
+  if (radarProductUnitInput) radarProductUnitInput.value = "unidad";
+  if (radarProductFormTitle) radarProductFormTitle.textContent = "Crear producto";
+  setInlineMessage(radarProductMessage, "", "info");
+}
+
+function openRadarProductModal(productId = "") {
+  if (productId) editRadarProduct(productId, { open: false });
+  if (radarProductFormPanel?.parentElement !== document.body) document.body.appendChild(radarProductFormPanel);
+  document.querySelector('[data-view="competition"]')?.classList.add("competition-modal-open");
+  radarProductFormPanel?.classList.add("is-competition-modal-open");
+  openCompetitionDialog(radarProductFormPanel, radarProductNameInput);
+}
+
+function closeRadarProductModal() {
+  radarProductFormPanel?.classList.remove("is-competition-modal-open");
+  document.querySelector('[data-view="competition"]')?.classList.remove("competition-modal-open");
+  closeCompetitionDialog(radarProductFormPanel);
+}
+
+function editRadarProduct(productId = "", options = {}) {
+  const product = competitiveProductById(productId);
+  if (!product) return;
+  state.competitionCatalogEditingId = product.id;
+  if (radarProductIdInput) radarProductIdInput.value = product.id;
+  if (radarProductNameInput) radarProductNameInput.value = product.name || "";
+  if (radarProductSkuInput) radarProductSkuInput.value = product.sku || "";
+  if (radarProductBrandInput) radarProductBrandInput.value = product.brand || "";
+  if (radarProductCategoryInput) radarProductCategoryInput.value = product.category || "";
+  if (radarProductPriceInput) radarProductPriceInput.value = product.own_price === null || product.own_price === undefined ? "" : String(product.own_price);
+  if (radarProductCurrencyInput) radarProductCurrencyInput.value = product.currency || "COP";
+  if (radarProductUnitInput) radarProductUnitInput.value = product.unit_of_measure || "unidad";
+  if (radarProductDescriptionInput) radarProductDescriptionInput.value = product.description || "";
+  if (radarProductFormTitle) radarProductFormTitle.textContent = "Editar producto";
+  if (options.open !== false) openRadarProductModal();
+}
+
+function radarProductPayload() {
+  return {
+    name: radarProductNameInput?.value.trim() || "",
+    sku: radarProductSkuInput?.value.trim() || null,
+    brand: radarProductBrandInput?.value.trim() || null,
+    category: radarProductCategoryInput?.value.trim() || null,
+    description: radarProductDescriptionInput?.value.trim() || null,
+    own_price: radarProductPriceInput?.value === "" ? null : Number(radarProductPriceInput?.value || 0),
+    currency: radarProductCurrencyInput?.value.trim() || "COP",
+    unit_of_measure: radarProductUnitInput?.value || "unidad",
+  };
+}
+
+async function submitRadarProduct(event) {
+  event.preventDefault();
+  const productId = radarProductIdInput?.value || state.competitionCatalogEditingId || "";
+  const payload = radarProductPayload();
+  if (!payload.name) return setInlineMessage(radarProductMessage, "Escribe el nombre del producto.", "error");
+  setButtonLoading(radarProductSaveButton, true, productId ? "Actualizando..." : "Guardando...");
+  try {
+    const data = await api(productId ? `/api/business/competitive-products/${encodeURIComponent(productId)}` : "/api/business/competitive-products", {
+      method: productId ? "PATCH" : "POST", headers: authHeaders(), body: JSON.stringify(payload),
+    });
+    const saved = data.product;
+    state.competitionCatalogProducts = [saved, ...(state.competitionCatalogProducts || []).filter((item) => String(item.id) !== String(saved.id))];
+    state.competitionSelectedProductId = saved.id;
+    resetRadarProductForm();
+    closeRadarProductModal();
+    renderCompetitionView();
+    showFeedback(productId ? "Producto actualizado." : "Producto creado. Ahora puedes asignarle proveedores.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    setInlineMessage(radarProductMessage, error.message || "No se pudo guardar el producto.", "error");
+  } finally {
+    setButtonLoading(radarProductSaveButton, false);
+  }
+}
+
+async function archiveRadarProduct(productId = "") {
+  const product = competitiveProductById(productId);
+  if (!product || !window.confirm(`Archivar "${product.name}" del Radar?`)) return;
+  try {
+    await api(`/api/business/competitive-products/${encodeURIComponent(productId)}`, { method: "DELETE", headers: authHeaders() });
+    state.competitionCatalogProducts = (state.competitionCatalogProducts || []).filter((item) => String(item.id) !== String(productId));
+    if (String(state.competitionSelectedProductId) === String(productId)) state.competitionSelectedProductId = "";
+    renderCompetitionView();
+    showFeedback("Producto archivado.", "success", { title: "Radar competitivo" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo archivar el producto.", "error", { title: "Radar competitivo" });
+  }
+}
+
+function openOfferForProduct(productId = "") {
+  resetCompetitionForm();
+  state.competitionSelectedProductId = productId;
+  if (competitionCompetitiveProductSelect) competitionCompetitiveProductSelect.value = productId;
+  openCompetitionProductModal();
+  competitionCompetitorSelect?.focus();
+}
+
+function renderRadarProductCatalog() {
+  if (!radarProductGrid) return;
+  const needle = String(state.competitionCatalogSearch || "").trim().toLowerCase();
+  const products = (state.competitionCatalogProducts || []).filter((item) => item.is_active !== false && (!needle || [item.name, item.sku, item.brand, item.category].some((value) => String(value || "").toLowerCase().includes(needle))));
+  radarProductGrid.innerHTML = products.map((product) => {
+    const offers = (state.competitionProducts || []).filter((item) => item.is_active !== false && String(item.competitive_product_id) === String(product.id));
+    const providerCount = new Set(offers.map((item) => item.competitor_id).filter(Boolean)).size;
+    const prices = offers.map((item) => toNumber(item.competitor_price)).filter((value) => Number.isFinite(value));
+    const minPrice = prices.length ? Math.min(...prices) : null;
+    const ownPrice = product.own_price === null || product.own_price === undefined ? null : toNumber(product.own_price);
+    return `<article class="radar-product-card" data-radar-product-id="${escapeHtml(product.id)}">
+      <div class="radar-product-card-head"><span class="material-symbols-outlined" aria-hidden="true">inventory_2</span><div><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml([product.brand, product.sku, product.category].filter(Boolean).join(" · ") || "Producto sin clasificación")}</small></div></div>
+      <div class="radar-product-metrics"><div><span>Precio propio</span><strong>${ownPrice === null ? "Sin definir" : escapeHtml(money(ownPrice))}</strong></div><div><span>Mejor precio observado</span><strong>${minPrice === null ? "Sin ofertas" : escapeHtml(money(minPrice))}</strong></div><div><span>Proveedores</span><strong>${escapeHtml(String(providerCount))}</strong></div></div>
+      <div class="radar-product-card-actions"><button class="solid-button" type="button" data-radar-product-offer="${escapeHtml(product.id)}">Asignar proveedor</button><button class="ghost-button" type="button" data-radar-product-compare="${escapeHtml(product.id)}">Comparar</button><button class="icon-button" type="button" data-radar-product-edit="${escapeHtml(product.id)}" aria-label="Editar producto"><span class="material-symbols-outlined" aria-hidden="true">edit</span></button><button class="icon-button" type="button" data-radar-product-archive="${escapeHtml(product.id)}" aria-label="Archivar producto"><span class="material-symbols-outlined" aria-hidden="true">archive</span></button></div>
+    </article>`;
+  }).join("") || '<div class="radar-product-empty"><span class="material-symbols-outlined" aria-hidden="true">inventory_2</span><strong>Crea tu primer producto</strong><p>Después podrás vincular todos los proveedores que lo venden y comparar sus ofertas.</p><button class="solid-button" id="radarProductEmptyCreateButton" type="button">Crear producto</button></div>';
+  radarProductGrid.querySelectorAll("[data-radar-product-offer]").forEach((button) => button.addEventListener("click", () => openOfferForProduct(button.dataset.radarProductOffer)));
+  radarProductGrid.querySelectorAll("[data-radar-product-compare]").forEach((button) => button.addEventListener("click", () => { state.competitionSelectedProductId = button.dataset.radarProductCompare; setCompetitionTab("comparison"); renderCompetitionView(); }));
+  radarProductGrid.querySelectorAll("[data-radar-product-edit]").forEach((button) => button.addEventListener("click", () => editRadarProduct(button.dataset.radarProductEdit)));
+  radarProductGrid.querySelectorAll("[data-radar-product-archive]").forEach((button) => button.addEventListener("click", () => archiveRadarProduct(button.dataset.radarProductArchive)));
+  document.getElementById("radarProductEmptyCreateButton")?.addEventListener("click", () => { resetRadarProductForm(); openRadarProductModal(); });
+}
+
 function renderCompetitionView() {
   ensureCompetitiveRadarUxStyles();
-  setCompetitionTab(state.competitionTab || "competitors");
-  setCompetitionProductView(state.competitionProductView || "competitor");
+  setCompetitionTab(state.competitionTab || "products");
+  setCompetitionProductView(state.competitionProductView || "product");
   renderCompetitionSelectOptions();
   renderCompetitionDataStatus();
   if (competitionKpiGrid) {
@@ -26973,6 +27145,7 @@ function renderCompetitionView() {
     `).join("");
   }
   renderCompetitionDashboard();
+  renderRadarProductCatalog();
   renderCompetitorDirectory();
   renderCompetitionProductsTable();
   renderCompetitorCampaignsTable();
@@ -27087,10 +27260,10 @@ function renderCompetitionProductServiceTable(products = []) {
   const groups = new Map();
   products.forEach((product) => {
     const unit = String(product.unit_of_measure || "unidad").trim().toLowerCase();
-    const normalizedName = normalizedCompetitionProductName(product.product_name);
+    const normalizedName = String(product.competitive_product_id || normalizedCompetitionProductName(product.competitive_product_name || product.own_product_name || product.product_name));
     if (!normalizedName) return;
     const key = `${normalizedName}::${unit}`;
-    if (!groups.has(key)) groups.set(key, { label: product.product_name, unit, products: [] });
+    if (!groups.has(key)) groups.set(key, { label: product.competitive_product_name || product.own_product_name || product.product_name, unit, products: [] });
     groups.get(key).products.push(product);
   });
 
@@ -27217,10 +27390,11 @@ function renderCompetitionComparisons() {
     `).join("") || '<tr><td colspan="7">Sin competidores para comparar.</td></tr>';
   }
   if (competitionPriceComparisonTable) {
-    const rows = (state.competitionProducts || []).filter((item) => item.is_active !== false);
+    const rows = (state.competitionProducts || []).filter((item) => item.is_active !== false
+      && (!state.competitionSelectedProductId || String(item.competitive_product_id) === String(state.competitionSelectedProductId)));
     competitionPriceComparisonTable.innerHTML = rows.map((product) => `
       <tr>
-        <td><strong>${escapeHtml(product.product_name)}</strong><span class="table-secondary">${escapeHtml(product.own_product_name || "-")}</span></td>
+        <td><strong>${escapeHtml(product.competitive_product_name || product.own_product_name || product.product_name)}</strong><span class="table-secondary">${escapeHtml(product.product_name || "-")}</span></td>
         <td>${escapeHtml(product.linked_competitor_name || product.competitor_name || "-")}</td>
         <td>${escapeHtml(money(product.competitor_price))}</td>
         <td>${escapeHtml(product.our_price === null || product.our_price === undefined ? "-" : money(product.our_price))}</td>
@@ -27288,7 +27462,8 @@ function resetCompetitionForm() {
   if (competitionUnitInput) competitionUnitInput.value = "unidad";
   if (competitionObservedAtInput) competitionObservedAtInput.value = dateInputValue(new Date());
   if (competitionCompetitorSelect) competitionCompetitorSelect.value = "";
-  if (competitionFormTitle) competitionFormTitle.textContent = "Nuevo producto competidor";
+  if (competitionCompetitiveProductSelect) competitionCompetitiveProductSelect.value = state.competitionSelectedProductId || "";
+  if (competitionFormTitle) competitionFormTitle.textContent = "Nueva oferta de proveedor";
   setInlineMessage(competitionMessage, "", "info");
 }
 
@@ -27297,14 +27472,13 @@ function editCompetitionProduct(productId = "") {
   if (!product) return;
   state.competitionEditingId = product.id;
   if (competitionProductIdInput) competitionProductIdInput.value = product.id;
+  if (competitionCompetitiveProductSelect) competitionCompetitiveProductSelect.value = product.competitive_product_id || "";
   if (competitionCompetitorSelect) competitionCompetitorSelect.value = product.competitor_id || "";
   if (competitionProductNameInput) competitionProductNameInput.value = product.product_name || "";
   if (competitionUnitInput) competitionUnitInput.value = product.unit_of_measure || "unidad";
   if (competitionCategoryInput) competitionCategoryInput.value = product.category || "";
   if (competitionPriceInput) competitionPriceInput.value = String(product.competitor_price || 0);
   if (competitionPreviousPriceInput) competitionPreviousPriceInput.value = product.previous_price === null || product.previous_price === undefined ? "" : String(product.previous_price || 0);
-  if (competitionOurPriceInput) competitionOurPriceInput.value = product.our_price === null || product.our_price === undefined ? "" : String(product.our_price || 0);
-  if (competitionOwnProductInput) competitionOwnProductInput.value = product.own_product_name || "";
   if (competitionCurrencyInput) competitionCurrencyInput.value = product.currency || "COP";
   if (competitionChannelInput) competitionChannelInput.value = product.channel || "";
   if (competitionObservedAtInput) competitionObservedAtInput.value = product.observed_at ? dateInputValue(new Date(product.observed_at)) : dateInputValue(new Date());
@@ -27314,7 +27488,7 @@ function editCompetitionProduct(productId = "") {
   if (competitionSourceUrlInput) competitionSourceUrlInput.value = product.source_url || "";
   if (competitionEvidenceImageInput) competitionEvidenceImageInput.value = product.evidence_image_url || "";
   if (competitionNotesInput) competitionNotesInput.value = product.notes || "";
-  if (competitionFormTitle) competitionFormTitle.textContent = "Editar producto competidor";
+  if (competitionFormTitle) competitionFormTitle.textContent = "Editar oferta de proveedor";
   setInlineMessage(competitionMessage, "Editando dato de competidor existente.", "info");
   openCompetitionProductModal();
   competitionProductNameInput?.focus();
@@ -27323,6 +27497,7 @@ function editCompetitionProduct(productId = "") {
 function competitionFormPayload() {
   const selectedCompetitor = competitorById(competitionCompetitorSelect?.value || "");
   return {
+    competitive_product_id: competitionCompetitiveProductSelect?.value || null,
     competitor_id: competitionCompetitorSelect?.value || null,
     competitor_name: selectedCompetitor?.name || "",
     product_name: competitionProductNameInput?.value.trim() || "",
@@ -27330,8 +27505,6 @@ function competitionFormPayload() {
     category: competitionCategoryInput?.value.trim() || null,
     competitor_price: Number(competitionPriceInput?.value || 0),
     previous_price: competitionPreviousPriceInput?.value === "" ? null : Number(competitionPreviousPriceInput?.value || 0),
-    our_price: competitionOurPriceInput?.value === "" ? null : Number(competitionOurPriceInput?.value || 0),
-    own_product_name: competitionOwnProductInput?.value.trim() || null,
     currency: competitionCurrencyInput?.value.trim() || "COP",
     channel: competitionChannelInput?.value.trim() || null,
     source_url: competitionSourceUrlInput?.value.trim() || null,
@@ -27348,6 +27521,10 @@ async function submitCompetitionProduct(event) {
   event.preventDefault();
   const productId = competitionProductIdInput?.value || state.competitionEditingId || "";
   const payload = competitionFormPayload();
+  if (!payload.competitive_product_id) {
+    setInlineMessage(competitionMessage, "Selecciona primero el producto que quieres comparar.", "error");
+    return;
+  }
   if (!requireSelectedCompetitor(competitionCompetitorSelect, competitionMessage, "guardar productos y precios")) return;
   if (!payload.product_name || payload.competitor_price < 0) {
     setInlineMessage(competitionMessage, "Completa producto y precio competidor.", "error");
@@ -60290,9 +60467,25 @@ inventoryCategoryFilter?.addEventListener("change", () => {
 });
 competitionProductForm?.addEventListener("submit", submitCompetitionProduct);
 newCompetitionProductButton?.addEventListener("click", () => {
+  if (!(state.competitionCatalogProducts || []).some((item) => item.is_active !== false)) {
+    setCompetitionTab("products");
+    resetRadarProductForm();
+    openRadarProductModal();
+    return;
+  }
   resetCompetitionForm();
   openCompetitionProductModal();
   competitionProductNameInput?.focus();
+});
+radarProductForm?.addEventListener("submit", submitRadarProduct);
+newRadarProductButton?.addEventListener("click", () => {
+  setCompetitionTab("products");
+  resetRadarProductForm();
+  openRadarProductModal();
+});
+radarProductResetButton?.addEventListener("click", () => {
+  resetRadarProductForm();
+  closeRadarProductModal();
 });
 competitionResetButton?.addEventListener("click", () => {
   resetCompetitionForm();
@@ -60331,7 +60524,7 @@ refreshCompetitionButton?.addEventListener("click", async () => {
 });
 competitionTabs.forEach((button) => {
   button.addEventListener("click", () => {
-    setCompetitionTab(button.dataset.competitionTab || "competitors");
+    setCompetitionTab(button.dataset.competitionTab || "products");
   });
   button.addEventListener("keydown", (event) => {
     const currentIndex = competitionTabs.indexOf(button);
@@ -60343,7 +60536,7 @@ competitionTabs.forEach((button) => {
     if (nextIndex === null) return;
     event.preventDefault();
     const nextButton = competitionTabs[nextIndex];
-    setCompetitionTab(nextButton.dataset.competitionTab || "competitors");
+    setCompetitionTab(nextButton.dataset.competitionTab || "products");
     nextButton.focus();
   });
 });
@@ -60358,6 +60551,23 @@ competitorProductFilterInput?.addEventListener("input", () => {
 competitionSearchInput?.addEventListener("input", () => {
   state.competitionSearch = competitionSearchInput.value;
   renderCompetitionProductsTable();
+});
+radarProductSearchInput?.addEventListener("input", () => {
+  state.competitionCatalogSearch = radarProductSearchInput.value;
+  renderRadarProductCatalog();
+});
+competitionComparisonProductSelect?.addEventListener("change", () => {
+  state.competitionSelectedProductId = competitionComparisonProductSelect.value || "";
+  renderCompetitionComparisons();
+});
+competitionCompetitiveProductSelect?.addEventListener("change", () => {
+  const product = competitiveProductById(competitionCompetitiveProductSelect.value);
+  if (!product) return;
+  state.competitionSelectedProductId = product.id;
+  if (competitionProductNameInput && !competitionProductNameInput.value.trim()) competitionProductNameInput.value = product.name || "";
+  if (competitionUnitInput) competitionUnitInput.value = product.unit_of_measure || "unidad";
+  if (competitionCategoryInput) competitionCategoryInput.value = product.category || "";
+  if (competitionCurrencyInput) competitionCurrencyInput.value = product.currency || "COP";
 });
 findingSearchInput?.addEventListener("input", () => {
   state.findingSearch = findingSearchInput.value;
@@ -60406,12 +60616,15 @@ document.addEventListener("keydown", (event) => {
     ? competitorFormPanel
     : competitionProductFormPanel?.classList.contains("is-competition-modal-open")
       ? competitionProductFormPanel
-      : (competitorDetailModal && !competitorDetailModal.classList.contains("hidden") ? competitorDetailModal : null);
+      : radarProductFormPanel?.classList.contains("is-competition-modal-open")
+        ? radarProductFormPanel
+        : (competitorDetailModal && !competitorDetailModal.classList.contains("hidden") ? competitorDetailModal : null);
   if (!openDialog) return;
   if (event.key === "Escape") {
     event.preventDefault();
     if (openDialog === competitorFormPanel) closeCompetitorFormModal();
     else if (openDialog === competitionProductFormPanel) closeCompetitionProductModal();
+    else if (openDialog === radarProductFormPanel) closeRadarProductModal();
     else closeCompetitorDetailModal();
     return;
   }
