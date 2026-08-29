@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260829-risk-none-explicit-selection-v398";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829";
+const APP_VERSION = "empresa-20260829-risk-destination-handoff-v399";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -62611,7 +62611,13 @@ saveRmsRiskDecision = async function saveRmsRiskDecisionUnified(item, root) {
   }
   const recoveryBenefitId = recoveryOfferValue.startsWith("BENEFIT:") ? recoveryOfferValue.slice(8) : null;
   const selectedBenefit = recoveryBenefitId ? rmsRiskRecoveryAuthorizations().benefits.find((benefit) => benefit.id === recoveryBenefitId) : null;
-  const reason = typedReason || (result === "RECYCLE" && recycleReason ? `Motivo de reciclaje: ${recycleReasonLabel}` : result === "CLEARED" && selectedBenefit ? `Beneficio extraordinario aplicado: ${selectedBenefit.label}` : "");
+  const reason = typedReason || (result === "RECYCLE" && recycleReason
+    ? `Motivo de reciclaje: ${recycleReasonLabel}`
+    : result === "CLEARED" && recoveryOfferValue === "NONE"
+      ? "Venta confirmada sin concesión extraordinaria."
+      : result === "CLEARED" && selectedBenefit
+        ? `Beneficio extraordinario aplicado: ${selectedBenefit.label}`
+        : "");
   if (!reason) { showFeedback(result === "RECYCLE" ? "Explica por qué este caso debe ir a Reciclaje." : "Explica por qué la recuperación logró la venta.", "info", { title: "Riesgos de fuga" }); return; }
   const recoveryOffer = recoveryBenefitId ? "CUSTOM" : recoveryOfferValue;
   const permissions = rmsRiskRecoveryAuthorizations();
@@ -62626,11 +62632,16 @@ saveRmsRiskDecision = async function saveRmsRiskDecisionUnified(item, root) {
   setButtonLoading(button, true, result === "RECYCLE" ? "Enviando..." : "Confirmando...");
   try {
     const review = await api("/api/business/rms-machine/risk-review", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, result, reason, recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE", recovery_benefit_id: result === "CLEARED" ? recoveryBenefitId : null, discount_percent: result === "CLEARED" ? discountPercent : 0, recovery_detail: result === "CLEARED" ? recoveryDetail || null : null, recycle_reason: result === "RECYCLE" ? recycleReason : null, recycle_strategy: result === "RECYCLE" ? (rmsCommercialNode(root, "[data-rms-risk-recycle-strategy]", item.id)?.value || "NURTURE") : null, recycle_note: result === "RECYCLE" ? reason : null, next_action_at: result === "RECYCLE" ? rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-risk-next-at]", item.id)?.value || "") : null, responsible: rmsCommercialWorkflow(item).confirmation?.responsible || null }) });
-    item.stage = result === "RECYCLE" ? "control_anti_fuga" : "cierre";
-    item.rms_phase = item.stage;
+    const expectedDestination = result === "RECYCLE" ? "reciclaje" : "cierre";
+    const confirmedDestination = review?.state?.rms_phase || review?.movement?.to_phase || "";
+    if (confirmedDestination !== expectedDestination) {
+      throw new Error(`El servidor no confirmó el traslado a ${expectedDestination === "reciclaje" ? "Reciclaje" : "Ventas atribuidas"}. Actualiza el portal e inténtalo nuevamente.`);
+    }
+    item.stage = confirmedDestination;
+    item.rms_phase = confirmedDestination;
     item.risk_review = review?.review || review?.risk_review || { ...(item.risk_review || {}), result, reason, recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE", recovery_benefit_id: result === "CLEARED" ? recoveryBenefitId : null, discount_percent: result === "CLEARED" ? discountPercent : 0, recovery_detail: result === "CLEARED" ? recoveryDetail || null : null };
     rebuildRmsOpportunityIndex(state.rmsMachine?.opportunities || []);
-    state.rmsMachineLoaded = true;
+    state.rmsMachineLoaded = false;
     if (result === "RECYCLE") { setView("recycling"); showFeedback("Lead enviado a Reciclaje con el motivo y contexto conservados.", "success", { title: "Riesgos de fuga" }); }
     else { showFeedback("Venta lograda. Continúa el pago y productos en Ventas atribuidas.", "success", { title: "Riesgos de fuga" }); openRmsStation("cierre", { source: "risk-recovery" }); }
   } finally { setButtonLoading(button, false); }

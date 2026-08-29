@@ -116,17 +116,29 @@ test("el descuento del beneficio se deriva de la autorización y no de un campo 
   assert.match(activeSave, /selectedBenefit\?\.type === "DISCOUNT" \? selectedBenefit\.value : 0/);
 });
 
-test("Ventas se abre sin una recarga RMS duplicada", () => {
+test("Ventas y Reciclaje solo se abren después de confirmar el destino del servidor", () => {
   const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
   assert.doesNotMatch(activeSave, /await loadRmsMachineData/);
   assert.match(activeSave, /openRmsStation\("cierre"/);
-  assert.match(activeSave, /item\.stage = result === "RECYCLE" \? "control_anti_fuga" : "cierre"/);
+  assert.match(activeSave, /const expectedDestination = result === "RECYCLE" \? "reciclaje" : "cierre"/);
+  assert.match(activeSave, /confirmedDestination !== expectedDestination/);
+  assert.match(activeSave, /item\.stage = confirmedDestination/);
+  assert.match(activeSave, /state\.rmsMachineLoaded = false/);
 });
 
 test("el backend conserva las dos salidas canónicas y tenant scoping", () => {
   assert.match(service, /findOpportunity\(businessId, sourceType, payload\.source_id\)/);
-  assert.match(service, /const toPhase = isCleared \? "cierre" : "control_anti_fuga"/);
+  assert.match(service, /const toPhase = isCleared \? "cierre" : "reciclaje"/);
+  assert.match(service, /from: "control_anti_fuga", decision: "RECYCLE", to: "reciclaje"/);
   assert.match(service, /RMS_TRANSITION_AUTHORITY\.RISK_REVIEW/);
+});
+
+test("Sin concesión puede salir a Ventas sin exigir un beneficio ni una nota manual", () => {
+  const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
+  assert.match(activeSave, /recoveryOfferValue === "NONE"/);
+  assert.match(activeSave, /Venta confirmada sin concesión extraordinaria\./);
+  assert.match(app, /risk-destination-handoff-v399-20260829/);
+  assert.match(html, /risk-destination-handoff-v399/);
 });
 
 test("los beneficios personalizados se guardan, activan y eliminan de forma persistente", () => {

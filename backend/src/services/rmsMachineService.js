@@ -42,8 +42,8 @@ const RMS_PHASES = RMS_OPERATIONAL_STAGES;
 const STAGES = RMS_OPERATIONAL_STAGES;
 const PHASE_KEYS = new Set(RMS_OPERATIONAL_STAGES.filter((stage) => !stage.analytical_only).map((phase) => phase.key));
 const RMS_LEGACY_QUALITY_PHASES = new Set(RMS_QUALITY_CONTROLS.map((control) => control.key));
-// `reciclaje` is accepted only to read and migrate historical state. New
-// decisions stay in their commercial phase and live in rms_recycling_cases.
+// Reciclaje is an auxiliary destination backed by rms_recycling_cases. Risk
+// decisions move there explicitly so the lead leaves Riesgos de fuga.
 const RMS_AUXILIARY_PHASES = new Set(["reciclaje"]);
 const RMS_FLOW_NEXT_PHASE = Object.freeze({
   recoleccion: "alimentacion", alimentacion: "curaduria", curaduria: "clasificacion",
@@ -75,7 +75,7 @@ const RMS_TRANSITION_CONTRACT = Object.freeze([
   { from: "accion_correctiva", decision: "RECYCLE", to: "accion_correctiva", creates_agenda_task: true },
   { from: "accion_correctiva", decision: "LOST", to: "accion_correctiva", lifecycle_status: "LOST_ANALYZED" },
   { from: "control_anti_fuga", decision: "CLEARED", to: "cierre" },
-  { from: "control_anti_fuga", decision: "RECYCLE", to: "control_anti_fuga", creates_agenda_task: true, transversal_queue: true },
+  { from: "control_anti_fuga", decision: "RECYCLE", to: "reciclaje", creates_agenda_task: true, transversal_queue: true },
   { from: "cierre", decision: "CANONICAL_SALE_RECORDED", to: "postventa" },
   { from: "postventa", decision: "RESULT_RECORDED", to: "postventa", lifecycle_status: "CYCLE_ANALYZED", analytical_only: true },
   { from: "reciclaje", decision: "RECYCLE_REACTIVATE_EVALUATION", to: "procesamiento" },
@@ -2641,9 +2641,9 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     `update rms_recycling_cases set agenda_note_id=$3, updated_at=now() where business_id=$1 and id=$2`,
     [businessId, recycling.recycling_case.id, agenda.item.id]
   );
-  // Reciclaje is a transversal work queue. The lead remains visible in the
-  // station that owns the decision until the scheduled reactivation moves it.
-  const toPhase = isCleared ? "cierre" : "control_anti_fuga";
+  // The decision is a real handoff: the lead must leave Riesgos de fuga and
+  // become visible only in the destination confirmed by this operation.
+  const toPhase = isCleared ? "cierre" : "reciclaje";
   const movement = await moveRmsLeadPhase(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
     to_phase: toPhase, priority: isCleared ? "HIGH" : "LOW",
