@@ -60,7 +60,7 @@ test("la experiencia conserva pestaÃ±a, informa fallos y es accesible", () => 
   const html = read("empresa/index.html");
   const app = read("empresa/js/app.js");
   const styles = read("empresa/css/competition-premium.css");
-  assert.match(html, /competition-premium\.css\?v=competition-intelligence-studio-v3-20260828/);
+  assert.match(html, /competition-premium\.css\?v=competition-polish-v4-20260828/);
   assert.match(html, /class="[^"]*competition-navigation[^"]*" role="tablist"/);
   assert.match(html, /role="dialog" aria-modal="true"/);
   assert.match(html, /id="newRadarProductButton"/);
@@ -71,7 +71,7 @@ test("la experiencia conserva pestaÃ±a, informa fallos y es accesible", () => 
   assert.match(app, /competitive_product_id: competitionCompetitiveProductSelect/);
   assert.match(app, /event\.key === "Escape"/);
   assert.match(app, /aria-selected/);
-  assert.match(styles, /competition-intelligence-v2-20260828/);
+  assert.match(styles, /competition-polish-v4-20260828/);
   assert.match(styles, /@media \(max-width: 760px\)/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
 });
@@ -134,4 +134,16 @@ test("el estudio premium incluye taxonomia reutilizable y tres visualizaciones a
   assert.match(styles, /\.radar-product-intelligence/);
   assert.match(styles, /\.radar-line-chart/);
   assert.match(styles, /@media \(max-width: 430px\)/);
+});
+
+test("el pulido final evita iconos colapsados, textos cortados y métricas interminables en móvil", () => {
+  const html = read("empresa/index.html");
+  const styles = read("empresa/css/competition-premium.css");
+  assert.match(html, /Compara cada producto contra quienes venden la misma alternativa/);
+  assert.match(styles, /qoriRadarPolishA/);
+  assert.match(styles, /flex:\s*0 0 19px\s*!important/);
+  assert.match(styles, /\.competition-navigation \.segment-tab::before/);
+  assert.match(styles, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)\s*!important/);
+  assert.match(styles, /\.radar-product-card-actions > :first-child/);
+  assert.match(styles, /word-break:\s*normal\s*!important/);
 });

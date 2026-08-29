@@ -1,4 +1,4 @@
-/* Qori Competitive Intelligence Studio · competition-intelligence-v2-20260828 */
+/* Qori Competitive Intelligence Studio · competition-polish-v4-20260828 */
 body[data-current-view="competition"] {
   --radar-navy: #071a3d;
   --radar-cyan: #21d4ed;
@@ -260,3 +260,426 @@ html body[data-current-view="competition"] .portal-shell .radar-product-intellig
 html body[data-current-view="competition"] .portal-shell .radar-product-intelligence .radar-product-kpis span { color: #b9d5e4 !important; }
 html body[data-current-view="competition"] .portal-shell .radar-product-intelligence :is(.radar-bar-row > span, .radar-activity-row > span) { color: #d9eaf2 !important; }
 html body[data-current-view="competition"] .portal-shell .radar-product-intelligence :is(.radar-chart-legend, .radar-activity-legend, .radar-chart-axis, .radar-chart-range) { color: #bcd4e1 !important; }
+
+/* Final polish guard: keep Radar coherent above legacy portal overrides. */
+html body:not(#qoriRadarPolishA#qoriRadarPolishB#qoriRadarPolishC#qoriRadarPolishD#qoriRadarPolishE)[data-current-view="competition"] main.portal-shell .view-section.active[data-view="competition"] {
+  gap: 16px !important;
+}
+
+html body:not(#qoriRadarPolishA#qoriRadarPolishB#qoriRadarPolishC#qoriRadarPolishD#qoriRadarPolishE)[data-current-view="competition"] main.portal-shell .view-section.active[data-view="competition"] > .view-head {
+  min-height: 190px !important;
+  padding: 28px 30px !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .view-section[data-view="competition"] > .view-head .head-actions {
+  align-self: center !important;
+  gap: 9px !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .view-section[data-view="competition"] > .view-head .head-actions button,
+html body[data-current-view="competition"] main.portal-shell .radar-product-tools button,
+html body[data-current-view="competition"] main.portal-shell .radar-product-card-actions button,
+html body[data-current-view="competition"] main.portal-shell .competition-product-view-tabs button {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell :is(
+  .view-section[data-view="competition"] > .view-head .head-actions,
+  .radar-product-tools,
+  .radar-product-card-actions,
+  .competition-product-view-tabs,
+  .competition-navigation
+) .material-symbols-outlined {
+  position: static !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 19px !important;
+  width: 19px !important;
+  min-width: 19px !important;
+  height: 19px !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+  font-size: 19px !important;
+  line-height: 1 !important;
+}
+
+html body:not(#qoriRadarFlowA#qoriRadarFlowB#qoriRadarFlowC#qoriRadarFlowD)[data-current-view="competition"] main.portal-shell .competition-radar-workflow {
+  grid-template-columns: minmax(250px, .78fr) minmax(0, 1.55fr) !important;
+  align-items: stretch !important;
+  gap: 18px !important;
+  min-height: 0 !important;
+  padding: 18px !important;
+  border: 1px solid rgba(104, 225, 237, .24) !important;
+  border-radius: 20px !important;
+  color: #fff !important;
+  background: radial-gradient(circle at 92% 0%, rgba(63, 217, 230, .18), transparent 30%), linear-gradient(128deg, #071a3d, #0a385d 62%, #086878) !important;
+  box-shadow: 0 16px 34px rgba(5, 38, 75, .13) !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-radar-workflow-copy {
+  align-content: center !important;
+  gap: 6px !important;
+  min-height: 0 !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-radar-workflow-copy .mono-label {
+  color: #79eef0 !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-radar-workflow-copy strong {
+  margin: 0 !important;
+  color: #fff !important;
+  font-size: .9rem !important;
+  line-height: 1.45 !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-radar-steps {
+  align-items: stretch !important;
+  gap: 8px !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-radar-steps li {
+  align-items: flex-start !important;
+  min-height: 82px !important;
+  padding: 11px !important;
+  border: 1px solid rgba(255, 255, 255, .12) !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, .07) !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-radar-steps li:first-child {
+  border-left: 1px solid rgba(255, 255, 255, .12) !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-radar-steps li > span {
+  color: #06294b !important;
+  background: #70f0d2 !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-radar-steps :is(strong, small) {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-radar-steps strong {
+  font-size: .76rem !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-radar-steps small {
+  color: #c9dfea !important;
+  -webkit-text-fill-color: #c9dfea !important;
+  font-size: .69rem !important;
+  line-height: 1.38 !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+html body:not(#qoriRadarKpiA#qoriRadarKpiB#qoriRadarKpiC#qoriRadarKpiD#qoriRadarKpiE)[data-current-view="competition"] main.portal-shell #competitionKpiGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+html body:not(#qoriRadarKpiA#qoriRadarKpiB#qoriRadarKpiC#qoriRadarKpiD#qoriRadarKpiE)[data-current-view="competition"] main.portal-shell #competitionKpiGrid > .kpi-card:nth-child(n) {
+  position: relative !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  min-height: 116px !important;
+  padding: 16px !important;
+  overflow: hidden !important;
+  border: 1px solid #d8e7ef !important;
+  border-radius: 17px !important;
+  background: linear-gradient(145deg, #fff, #f5fafc) !important;
+  box-shadow: 0 10px 24px rgba(8, 52, 95, .065) !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell #competitionKpiGrid > .kpi-card:nth-child(n)::before {
+  position: absolute !important;
+  inset: 0 auto 0 0 !important;
+  width: 4px !important;
+  height: auto !important;
+  content: "" !important;
+  border-radius: 0 !important;
+  background: linear-gradient(180deg, #15bfd8, #0874a6) !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell #competitionKpiGrid > .kpi-card:nth-child(n + 5) {
+  min-height: 102px !important;
+  background: #fbfdff !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell #competitionKpiGrid .mono-label {
+  color: #587189 !important;
+  font-size: .66rem !important;
+  line-height: 1.3 !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell #competitionKpiGrid strong {
+  margin: 2px 0 0 !important;
+  color: #092d56 !important;
+  font-size: clamp(1.35rem, 2vw, 1.82rem) !important;
+  line-height: 1.05 !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell #competitionKpiGrid .kpi-meta {
+  margin: auto 0 0 !important;
+  color: #688097 !important;
+  font-size: .72rem !important;
+  line-height: 1.35 !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-navigation {
+  gap: 6px !important;
+  padding: 7px !important;
+  border: 1px solid #d7e6ee !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, .96) !important;
+  box-shadow: 0 10px 28px rgba(6, 45, 86, .08) !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-navigation .segment-tab {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  min-height: 39px !important;
+  padding: 8px 12px !important;
+  line-height: 1.15 !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-navigation .segment-tab::before,
+html body[data-current-view="competition"] main.portal-shell .competition-navigation .segment-tab::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body:not(#qoriRadarCardA#qoriRadarCardB#qoriRadarCardC#qoriRadarCardD)[data-current-view="competition"] main.portal-shell .radar-product-catalog-card {
+  display: grid !important;
+  gap: 18px !important;
+  margin-bottom: 14px !important;
+  padding: 22px !important;
+  border: 1px solid #d6e7ef !important;
+  border-radius: 20px !important;
+  background: linear-gradient(145deg, #fff, #f5fafc) !important;
+  box-shadow: 0 12px 30px rgba(8, 53, 96, .065) !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .radar-product-catalog-card > .table-card-head {
+  align-items: center !important;
+  gap: 16px !important;
+  min-height: 0 !important;
+  padding: 0 0 17px !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .radar-product-tools {
+  display: grid !important;
+  grid-template-columns: auto minmax(250px, 360px) !important;
+  align-items: center !important;
+  justify-content: end !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .radar-product-tools button {
+  min-height: 42px !important;
+  padding: 10px 14px !important;
+  overflow: visible !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .radar-product-tools input {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 42px !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .radar-product-grid {
+  gap: 12px !important;
+  margin-top: 0 !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .radar-product-card {
+  gap: 14px !important;
+  padding: 17px !important;
+  border-color: #d2e4ed !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 20px rgba(10, 49, 87, .055) !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .radar-product-card-head > .material-symbols-outlined {
+  position: static !important;
+  flex: 0 0 42px !important;
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 42px !important;
+  margin: 0 !important;
+  transform: none !important;
+  color: #075985 !important;
+  border: 1px solid #b8edf4 !important;
+  border-radius: 13px !important;
+  background: linear-gradient(135deg, #cffafe, #e0f2fe) !important;
+  font-size: 22px !important;
+  -webkit-text-fill-color: #075985 !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .radar-product-card-actions {
+  gap: 8px !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .radar-product-card-actions .icon-button {
+  flex: 0 0 40px !important;
+  width: 40px !important;
+  min-width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell [data-competition-panel] :is(.surface-card, .data-table-card) {
+  background-color: #fff !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell [data-competition-panel] .table-card-head > div > strong,
+html body[data-current-view="competition"] main.portal-shell :is(#radarProductFormTitle, #competitionFormTitle, #competitorFormTitle) {
+  font-family: "Plus Jakarta Sans", "Manrope", sans-serif !important;
+  letter-spacing: -.025em !important;
+}
+
+html body[data-current-view="competition"] main.portal-shell .competition-product-view-tabs button .qori-tab-icon {
+  flex-basis: 18px !important;
+  width: 18px !important;
+  min-width: 18px !important;
+  height: 18px !important;
+  font-size: 18px !important;
+}
+
+@media (max-width: 1040px) {
+  html body:not(#qoriRadarFlowA#qoriRadarFlowB#qoriRadarFlowC#qoriRadarFlowD)[data-current-view="competition"] main.portal-shell .competition-radar-workflow {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body:not(#qoriRadarKpiA#qoriRadarKpiB#qoriRadarKpiC#qoriRadarKpiD#qoriRadarKpiE)[data-current-view="competition"] main.portal-shell #competitionKpiGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body:not(#qoriRadarPolishA#qoriRadarPolishB#qoriRadarPolishC#qoriRadarPolishD#qoriRadarPolishE)[data-current-view="competition"] main.portal-shell .view-section.active[data-view="competition"] > .view-head {
+    padding: 20px 16px !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .view-section[data-view="competition"] > .view-head .head-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .view-section[data-view="competition"] > .view-head .head-actions button {
+    width: 100% !important;
+    padding: 9px 8px !important;
+    white-space: normal !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .view-section[data-view="competition"] > .view-head #refreshCompetitionButton {
+    grid-column: 1 / -1 !important;
+  }
+
+  html body:not(#qoriRadarFlowA#qoriRadarFlowB#qoriRadarFlowC#qoriRadarFlowD)[data-current-view="competition"] main.portal-shell .competition-radar-workflow {
+    gap: 12px !important;
+    padding: 15px !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .competition-radar-workflow-copy {
+    min-height: 0 !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .competition-radar-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .competition-radar-steps li:nth-child(n) {
+    gap: 7px !important;
+    min-height: 72px !important;
+    padding: 9px !important;
+    border: 1px solid rgba(255, 255, 255, .12) !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .competition-radar-steps strong {
+    font-size: .7rem !important;
+    letter-spacing: -.015em !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .competition-radar-steps small {
+    font-size: .65rem !important;
+  }
+
+  html body:not(#qoriRadarKpiA#qoriRadarKpiB#qoriRadarKpiC#qoriRadarKpiD#qoriRadarKpiE)[data-current-view="competition"] main.portal-shell #competitionKpiGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  html body:not(#qoriRadarKpiA#qoriRadarKpiB#qoriRadarKpiC#qoriRadarKpiD#qoriRadarKpiE)[data-current-view="competition"] main.portal-shell #competitionKpiGrid > .kpi-card:nth-child(n) {
+    min-height: 112px !important;
+    padding: 13px 12px 13px 14px !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell #competitionKpiGrid strong {
+    font-size: clamp(1.18rem, 6vw, 1.52rem) !important;
+  }
+
+  html body:not(#qoriRadarCardA#qoriRadarCardB#qoriRadarCardC#qoriRadarCardD)[data-current-view="competition"] main.portal-shell .radar-product-catalog-card {
+    padding: 16px 13px !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .radar-product-catalog-card > .table-card-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .radar-product-tools {
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .radar-product-tools button,
+  html body[data-current-view="competition"] main.portal-shell .radar-product-tools input {
+    width: 100% !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .radar-product-card-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 40px 40px !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .radar-product-card-actions > :first-child {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .radar-product-card-actions > .ghost-button:not(.icon-button) {
+    width: 100% !important;
+  }
+
+  html body[data-current-view="competition"] main.portal-shell .radar-product-card-actions .icon-button {
+    width: 40px !important;
+    min-width: 40px !important;
+  }
+}
+
+@media (max-width: 370px) {
+  html body:not(#qoriRadarKpiA#qoriRadarKpiB#qoriRadarKpiC#qoriRadarKpiD#qoriRadarKpiE)[data-current-view="competition"] main.portal-shell #competitionKpiGrid,
+  html body[data-current-view="competition"] main.portal-shell .competition-radar-steps {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
