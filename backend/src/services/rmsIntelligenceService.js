@@ -1,7 +1,7 @@
 const { query, withTransaction } = require("../config/db");
 const { badRequest, notFound } = require("../utils/http");
 const { createLeadAgendaItem } = require("./leadCrmService");
-const { listRmsOpportunities } = require("./rmsMachineService");
+const { listRmsPersistedCases } = require("./rmsMachineService");
 const {
   insightCanCreateAgendaTask,
   normalizeInsightPriority,
@@ -217,8 +217,8 @@ async function learningCase(businessId, params = {}) {
   ]);
   const state = stateResult.rows[0] || null;
   if (!state && !salesResult.rowCount && !eventsResult.rowCount) throw notFound("No encontramos hechos RMS de ese caso para este negocio.");
-  const opportunityData = await listRmsOpportunities(businessId, { limit: 180 });
-  const opportunity = (opportunityData.opportunities || []).find((item) => item.source_type === type && String(item.source_id) === sourceId) || {};
+  const persistedCases = await listRmsPersistedCases(businessId, { limit: 500 });
+  const opportunity = persistedCases.find((item) => item.source_type === type && String(item.source_id) === sourceId) || {};
   const stateMetadata = metadata(state?.metadata);
   const sales = salesResult.rows;
   const saleIds = sales.map((sale) => sale.id);
@@ -272,24 +272,10 @@ async function learningCase(businessId, params = {}) {
 }
 
 async function listIntelligenceCases(businessId, filters = {}) {
-  const data = await listRmsOpportunities(businessId, { limit: Math.min(Math.max(Number(filters.limit || 240), 1), 500) });
-  const states = await query(
-    `select source_type, source_id, rms_phase, lifecycle_status, intelligence_updated_at, updated_at
-       from rms_lead_state where business_id = $1`,
-    [businessId]
-  );
-  const byCase = new Map(states.rows.map((row) => [`${row.source_type}:${row.source_id}`, row]));
+  const persistedCases = await listRmsPersistedCases(businessId, { limit: Math.min(Math.max(Number(filters.limit || 240), 1), 500) });
   const lifecycle = String(filters.lifecycle_status || "").toUpperCase();
   const operationalPhase = String(filters.phase || "").trim();
-  const cases = (data.opportunities || []).map((item) => {
-    const state = byCase.get(`${item.source_type}:${item.source_id}`) || {};
-    return {
-      ...item,
-      operational_phase: state.rms_phase || item.stage || "sin_estado",
-      lifecycle_status: state.lifecycle_status || "ACTIVE",
-      intelligence_updated_at: state.intelligence_updated_at || null,
-    };
-  }).filter((item) => (!lifecycle || item.lifecycle_status === lifecycle)
+  const cases = persistedCases.filter((item) => (!lifecycle || item.lifecycle_status === lifecycle)
     && (!operationalPhase || item.operational_phase === operationalPhase));
   return { cases, total: cases.length, analytical_only: true };
 }
@@ -310,9 +296,9 @@ async function intelligencePatterns(businessId, filters = {}) {
     source_type: String(filters.source_type || "").trim().toUpperCase(),
   };
   const hasFilters = Object.values(filterValues).some(Boolean);
-  const opportunityData = hasFilters ? await listRmsOpportunities(businessId, { limit: 180 }) : null;
-  const scopedSourceIds = hasFilters
-    ? (opportunityData?.opportunities || []).filter((item) => {
+  const opportunityData = hasFilters ? await listRmsPersistedCases(businessId, { limit: 500 }) : null;
+  let scopedSourceIds = hasFilters
+    ? (opportunityData || []).filter((item) => {
       const text = (value) => String(value || "").toLowerCase();
       return (!filterValues.campaign || text(item.campaign_name).includes(filterValues.campaign))
         && (!filterValues.channel || text(item.channel).includes(filterValues.channel))
@@ -322,6 +308,21 @@ async function intelligencePatterns(businessId, filters = {}) {
         && (!filterValues.source_type || String(item.source_type || "").toUpperCase() === filterValues.source_type);
     }).map((item) => item.source_id).filter(Boolean)
     : null;
+  if (hasFilters && (filterValues.seller || filterValues.branch)) {
+    const saleScope = await query(
+      `select distinct bs.rms_source_id
+         from business_sales bs
+         left join app_users seller on seller.id = bs.seller_user_id and seller.business_id = bs.business_id
+         left join branches branch on branch.id = bs.branch_id and branch.business_id = bs.business_id
+        where bs.business_id = $1
+          and bs.rms_source_id is not null
+          and ($2::text = '' or lower(concat_ws(' ', seller.full_name, seller.email, seller.id::text)) like '%' || $2 || '%')
+          and ($3::text = '' or lower(concat_ws(' ', branch.name, branch.id::text)) like '%' || $3 || '%')`,
+      [businessId, filterValues.seller, filterValues.branch]
+    );
+    const saleScopedIds = new Set(saleScope.rows.map((row) => String(row.rms_source_id)));
+    scopedSourceIds = scopedSourceIds.filter((sourceId) => saleScopedIds.has(String(sourceId)));
+  }
   const sourceFilter = hasFilters ? " and source_id = any($3::uuid[])" : "";
   const salesSourceFilter = hasFilters ? " and bs.rms_source_id = any($3::uuid[])" : "";
   const params = hasFilters ? [businessId, since, scopedSourceIds] : [businessId, since];

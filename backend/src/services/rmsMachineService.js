@@ -849,6 +849,12 @@ function opportunityFromRow(row = {}, stateRow = null, inventoryProducts = []) {
     phone: row.phone || "",
     email: row.email || "",
     document_id: row.document_id || "",
+    seller_user_id: row.seller_user_id || null,
+    seller_name: row.seller_name || "",
+    owner_user_id: row.seller_user_id || null,
+    owner_name: row.seller_name || "",
+    branch_id: row.branch_id || null,
+    branch_name: row.branch_name || "",
     affiliate_id: row.affiliate_id || null,
     is_affiliate: Boolean(row.is_affiliate),
     campaign_id: metadataObject(row).communication_campaign_id || metadataObject(row).communication_attribution?.campaign_id || row.campaign_id || null,
@@ -916,6 +922,8 @@ function opportunityFromRow(row = {}, stateRow = null, inventoryProducts = []) {
       : whyNow(row, stage, riskScore),
     raw_recommended_action: row.recommended_action || "",
     persisted_state_id: stateRow?.id || null,
+    lifecycle_status: stateRow?.lifecycle_status || "ACTIVE",
+    intelligence_updated_at: stateRow?.intelligence_updated_at || null,
     last_operation: stateRow?.last_operation || "",
     last_material_sent: stateRow?.last_material_sent || "",
     state_metadata: stateRow?.metadata || {},
@@ -2398,6 +2406,46 @@ function validateRiskRecoveryOffer(payload, authorizations) {
   };
 }
 
+function rmsPersistedCaseFallbackRow(stateRow = {}) {
+  const stateMetadata = metadataObject({ metadata: stateRow.metadata });
+  const confirmation = stateMetadata.commercial_confirmation || {};
+  return {
+    id: stateRow.source_id,
+    source_id: stateRow.source_id,
+    source_type: stateRow.source_type || "PLAYER",
+    lead_id: stateRow.lead_id || null,
+    name: firstPresent(stateMetadata.customer_name, stateMetadata.lead_name, confirmation.customer_name, "Caso histórico"),
+    phone: firstPresent(stateMetadata.customer_phone, confirmation.customer_phone),
+    email: firstPresent(stateMetadata.customer_email, confirmation.customer_email),
+    document_id: firstPresent(stateMetadata.customer_document_id, confirmation.customer_document_id),
+    product_interest: firstPresent(stateMetadata.rms_sale_product, confirmation.product_name, stateMetadata.product_interest),
+    campaign_name: firstPresent(stateMetadata.campaign_name, stateMetadata.communication_campaign_name),
+    channel: firstPresent(stateMetadata.channel, stateMetadata.activation_delivery_channel),
+    commercial_status: stateRow.lifecycle_status || "ACTIVE",
+    created_at: stateRow.created_at || stateRow.updated_at || null,
+    last_interaction_at: stateRow.updated_at || stateRow.created_at || null,
+    metadata: stateMetadata,
+  };
+}
+
+async function listRmsPersistedCases(businessId, filters = {}) {
+  const limit = Math.min(Math.max(Number(filters.limit || 240), 1), 500);
+  const stateRows = await recentStateRowsForBusiness(businessId, limit);
+  const sourceRows = await leadRowsForStateRefs(businessId, stateRows);
+  const sourceMap = new Map(sourceRows.map((row) => [`${crmSourceType(row)}:${row.id}`, row]));
+  return stateRows.map((stateRow) => {
+    const key = `${crmSourceType(stateRow)}:${stateRow.source_id}`;
+    const sourceRow = sourceMap.get(key) || rmsPersistedCaseFallbackRow(stateRow);
+    const opportunity = opportunityFromRow(sourceRow, stateRow, []);
+    return {
+      ...opportunity,
+      operational_phase: stateRow.rms_phase || opportunity.stage || "sin_estado",
+      lifecycle_status: stateRow.lifecycle_status || opportunity.lifecycle_status || "ACTIVE",
+      intelligence_updated_at: stateRow.intelligence_updated_at || null,
+    };
+  });
+}
+
 function preparedRiskRecoveryOffer(payload, resource = null) {
   const snapshot = resource?.recovery_offer;
   if (!snapshot?.type) return null;
@@ -3764,6 +3812,7 @@ module.exports = {
   getPhaseRecommendedOperation,
   listRmsEvents,
   listRmsPostSaleActions,
+  listRmsPersistedCases,
   listRmsRecyclingCases,
   listRmsOpportunities,
   moveRmsLeadPhase,

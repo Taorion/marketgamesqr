@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
 const APP_VERSION = "empresa-20260828-risk-benefit-snapshot-pricing-v394";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2921,10 +2921,16 @@ let state = {
   rmsPostSaleActions: [],
   rmsIntelligencePatterns: null,
   rmsIntelligenceInsights: [],
+  rmsIntelligenceCases: [],
   rmsIntelligenceCase: null,
   rmsIntelligenceCaseKey: "",
   rmsIntelligenceView: "case",
   rmsIntelligenceSaving: false,
+  rmsIntelligenceLoaded: false,
+  rmsIntelligenceLoading: false,
+  rmsIntelligenceLoadPromise: null,
+  rmsIntelligenceError: "",
+  rmsIntelligenceRequestSeq: 0,
   rmsIntelligenceFilters: { days: "30", campaign: "", channel: "", product: "", seller: "", branch: "", source_type: "" },
   rmsMachineSelectedIds: [],
   rmsActivationBulkOpen: false,
@@ -50429,7 +50435,9 @@ function rmsIntelligenceStationMarkup(rows = []) {
   const patterns = state.rmsIntelligencePatterns || {};
   const insights = state.rmsIntelligenceInsights || [];
   const intelligenceFilters = state.rmsIntelligenceFilters || {};
-  const view = ["case", "patterns", "decisions"].includes(state.rmsIntelligenceView) ? state.rmsIntelligenceView : "case";
+  const view = ["case", "patterns", "decisions", "recycling"].includes(state.rmsIntelligenceView) ? state.rmsIntelligenceView : "case";
+  const loadError = String(state.rmsIntelligenceError || "").trim();
+  const isLoading = Boolean(state.rmsIntelligenceLoading);
   const caseOptions = rows.map((item) => `<option value="${escapeHtml(rmsIntelligenceCaseKey(item))}" ${rmsIntelligenceCaseKey(item) === selectedKey ? "selected" : ""}>${escapeHtml(item.name || item.source_label || "Caso RMS")} · ${escapeHtml(item.campaign_name || item.product_interest || "Sin detalle")}</option>`).join("");
   const timeline = (learning.timeline || []).map((event) => `<li class="is-${escapeHtml(event.kind || "event")}"><span class="rms-intelligence-timeline-kind">${escapeHtml({ phase: "Cambio", update: "Actualización", event: "Hecho", intelligence: "Análisis", sale: "Venta", post_sale: "Valorización" }[event.kind] || "Hecho")}</span><strong>${escapeHtml(event.title || "Hecho RMS")}</strong><span>${escapeHtml(event.detail || "Sin detalle adicional")}</span><small>${escapeHtml(event.phase || "origen")} · ${escapeHtml(event.at ? formatDate(event.at) : "Fecha no registrada")}</small></li>`).join("");
   const durations = (learning.phase_durations || []).filter((entry) => entry.is_open || Number(entry.milliseconds || 0) >= 60000).map((entry) => `<li class="${entry.is_open ? "is-open" : ""}"><strong>${escapeHtml(entry.phase_label || entry.phase || "Fase")}</strong><span>${escapeHtml(entry.label || "Sin duración")}${entry.is_open ? " · en curso" : ""}</span></li>`).join("");
@@ -50456,7 +50464,13 @@ function rmsIntelligenceStationMarkup(rows = []) {
     </section>` : `<div class="empty-state compact"><strong>No hay casos listos para aprender</strong><p>Inteligencia recibe resultados reales de Activación 2; no reinicia clientes ni inventa oportunidades.</p></div>`;
   const patternsView = `<section class="rms-intelligence-patterns"><header><div><span class="mono-label">PATRONES DE LA FÁBRICA</span><h4>${escapeHtml(patterns.period?.label || "Últimos 30 días")}</h4><p>${escapeHtml(patterns.caveat || "Las agrupaciones muestran hechos, no causalidad automática.")}</p></div><button class="ghost-button compact" type="button" data-rms-refresh-intelligence-patterns>Actualizar</button></header><div class="rms-intelligence-filter-grid"><label><span>Período</span><select data-rms-intelligence-filter="days"><option value="7" ${intelligenceFilters.days === "7" ? "selected" : ""}>7 días</option><option value="30" ${intelligenceFilters.days === "30" ? "selected" : ""}>30 días</option><option value="90" ${intelligenceFilters.days === "90" ? "selected" : ""}>90 días</option><option value="365" ${intelligenceFilters.days === "365" ? "selected" : ""}>365 días</option></select></label><label><span>Campaña</span><input data-rms-intelligence-filter="campaign" value="${escapeHtml(intelligenceFilters.campaign || "")}" placeholder="Nombre o parte"></label><label><span>Canal</span><input data-rms-intelligence-filter="channel" value="${escapeHtml(intelligenceFilters.channel || "")}" placeholder="WhatsApp, QR..."></label><label><span>Producto</span><input data-rms-intelligence-filter="product" value="${escapeHtml(intelligenceFilters.product || "")}" placeholder="Producto o servicio"></label><label><span>Vendedor</span><input data-rms-intelligence-filter="seller" value="${escapeHtml(intelligenceFilters.seller || "")}" placeholder="Nombre o ID"></label><label><span>Sede</span><input data-rms-intelligence-filter="branch" value="${escapeHtml(intelligenceFilters.branch || "")}" placeholder="Sede o ID"></label><label><span>Tipo de lead</span><select data-rms-intelligence-filter="source_type"><option value="">Todos</option><option value="PLAYER" ${intelligenceFilters.source_type === "PLAYER" ? "selected" : ""}>Jugador</option><option value="MANUAL" ${intelligenceFilters.source_type === "MANUAL" ? "selected" : ""}>Manual</option><option value="BUYER" ${intelligenceFilters.source_type === "BUYER" ? "selected" : ""}>Comprador</option><option value="AFFILIATE" ${intelligenceFilters.source_type === "AFFILIATE" ? "selected" : ""}>Afiliado</option></select></label></div><div class="rms-intelligence-pattern-grid"><section><h5>Cuellos de botella</h5><ol>${(patterns.bottlenecks || []).map((row) => `<li><strong>${escapeHtml(row.key || "Sin fase")}</strong><span>${escapeHtml(row.sample_label || `Muestra: ${row.sample_size || 0}`)}</span>${rmsIntelligenceCaseRefMarkup(row.case_refs?.[0])}</li>`).join("") || "<li><strong>Sin datos suficientes</strong><span>Se requiere historial RMS para agrupar.</span></li>"}</ol></section><section><h5>Objeciones registradas</h5><ol>${(patterns.objections || []).map((row) => `<li><strong>${escapeHtml(row.key || "No registrada")}</strong><span>${escapeHtml(row.sample_label || `Muestra: ${row.sample_size || 0}`)}</span>${rmsIntelligenceCaseRefMarkup(row.case_refs?.[0])}</li>`).join("") || "<li><strong>Sin datos suficientes</strong><span>Registra la objeción al evaluar o negociar.</span></li>"}</ol></section><section><h5>Ventas atribuidas</h5><ol>${(patterns.attributed_sales || []).map((row) => `<li><strong>${escapeHtml(`${row.campaign || "Sin campaña"} · ${row.product || "Sin producto"}`)}</strong><span>${escapeHtml(`${money(row.attributed_value || 0)} · ${row.sample_label || `Muestra: ${row.sample_size || 0}`}`)}</span>${rmsIntelligenceCaseRefMarkup(row.case_refs?.[0])}</li>`).join("") || "<li><strong>Sin datos suficientes</strong><span>No hay ventas RMS en este período.</span></li>"}</ol></section><section><h5>Resultados de Activación 2</h5><ol>${(patterns.activation_2 || []).map((row) => `<li><strong>${escapeHtml(`${row.key || "Acción"} · ${rmsPostSaleActionStatusLabel(row.status)}`)}</strong><span>${escapeHtml(row.sample_label || `Muestra: ${row.sample_size || 0}`)}</span>${rmsIntelligenceCaseRefMarkup(row.case_refs?.[0])}</li>`).join("") || "<li><strong>Sin datos suficientes</strong><span>Los resultados llegarán desde Postventa.</span></li>"}</ol></section></div></section>`;
   const decisionsView = `<section class="rms-intelligence-decisions"><header><div><span class="mono-label">EXPERIMENTOS Y DECISIONES</span><h4>Aprendizajes que esperan una acción explícita</h4><p>Guardar un insight no crea campañas, mensajes, descuentos ni leads. Una tarea se crea solo al confirmarla.</p></div></header><ol>${insights.map((insight) => `<li><div><strong>${escapeHtml(insight.recommendation || insight.observation || "Aprendizaje")}</strong><span>${escapeHtml(`${insight.status || "PENDING"} · ${insight.priority || "MEDIUM"}${insight.expected_metric ? ` · ${insight.expected_metric}` : ""}`)}</span><small>${escapeHtml(insight.evidence_note || "Sin evidencia narrativa adicional")}</small></div>${insight.source_id ? `<button class="ghost-button compact" type="button" data-rms-intelligence-create-task="${escapeHtml(insight.id)}">Crear tarea explícita</button>` : ""}</li>`).join("") || "<li><div><strong>Aún no hay recomendaciones guardadas</strong><span>Selecciona un caso y documenta una observación respaldada.</span></div></li>"}</ol></section>`;
-  return `<section class="rms-intelligence-console" aria-label="Inteligencia GOS"><header class="rms-intelligence-console-head"><div><span class="mono-label">ESTACIÓN 10 · MEMORIA OPERATIVA</span><h3>Inteligencia GOS convierte hechos en decisiones verificables</h3><p>Conecta la historia del lead, la venta y Activación 2; no reinicia clientes ni ejecuta cambios automáticos.</p></div><label><span>Caso</span><select data-rms-intelligence-case-select>${caseOptions || "<option>Sin casos</option>"}</select></label></header><nav class="rms-intelligence-tabs" aria-label="Vistas de Inteligencia GOS"><button type="button" data-rms-intelligence-view="case" class="${view === "case" ? "is-active" : ""}">Caso individual</button><button type="button" data-rms-intelligence-view="patterns" class="${view === "patterns" ? "is-active" : ""}">Patrones de la fábrica</button><button type="button" data-rms-intelligence-view="decisions" class="${view === "decisions" ? "is-active" : ""}">Experimentos y decisiones</button></nav>${view === "case" ? card : view === "patterns" ? patternsView : decisionsView}</section>`;
+  const recyclingView = rmsIntelligenceRecyclingMarkup(rows);
+  const loadingView = `<section class="rms-intelligence-load-state" role="status" aria-live="polite"><span class="busy-spinner" aria-hidden="true"></span><div><strong>Consolidando evidencia real</strong><small>Estamos reuniendo recorridos, ventas, valorización y decisiones guardadas.</small></div></section>`;
+  const errorView = `<section class="rms-intelligence-load-state is-error" role="alert"><span class="material-symbols-outlined" aria-hidden="true">error</span><div><strong>No pudimos cargar Inteligencia GOS</strong><small>${escapeHtml(loadError || "La lectura analítica no respondió.")}</small></div><button class="solid-button compact" type="button" data-rms-intelligence-retry><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Reintentar</button></section>`;
+  const activeView = view === "case" ? card : view === "patterns" ? patternsView : view === "decisions" ? decisionsView : recyclingView;
+  const content = loadError ? errorView : isLoading && !state.rmsIntelligenceLoaded ? loadingView : activeView;
+  const casePlaceholder = isLoading ? "<option>Cargando casos…</option>" : "<option>Sin casos disponibles</option>";
+  return `<section class="rms-intelligence-console" aria-label="Inteligencia GOS"><header class="rms-intelligence-console-head"><div><span class="mono-label">ESTACIÓN 10 · MEMORIA OPERATIVA</span><h3>Inteligencia GOS convierte hechos en decisiones verificables</h3><p>Conecta la historia del lead, la venta y Valorización; no reinicia clientes ni ejecuta cambios automáticos.</p></div><label><span>Caso</span><select data-rms-intelligence-case-select ${caseOptions ? "" : "disabled"}>${caseOptions || casePlaceholder}</select></label></header><nav class="rms-intelligence-tabs" aria-label="Vistas de Inteligencia GOS"><button type="button" data-rms-intelligence-view="case" class="${view === "case" ? "is-active" : ""}">Caso individual</button><button type="button" data-rms-intelligence-view="patterns" class="${view === "patterns" ? "is-active" : ""}">Patrones</button><button type="button" data-rms-intelligence-view="decisions" class="${view === "decisions" ? "is-active" : ""}">Decisiones</button><button type="button" data-rms-intelligence-view="recycling" data-rms-intelligence-recycling-view class="${view === "recycling" ? "is-active" : ""}">Pérdidas y reciclaje</button></nav>${content}</section>`;
 }
 
 function rmsIntelligenceJourneyMarkup(facts = {}) {
@@ -50538,7 +50552,9 @@ function renderRmsStationLeanOnly() {
     rmsMachineGeneratedAt.textContent = data.generated_at ? `Actualizado ${formatDate(data.generated_at)}` : "Sin cargar";
   }
   if (rmsMachineOpportunityCount) {
-    rmsMachineOpportunityCount.textContent = phase
+    rmsMachineOpportunityCount.textContent = phase === "inteligencia"
+      ? `${Number((state.rmsIntelligenceCases || []).length).toLocaleString("es-CO")} casos en memoria analítica`
+      : phase
       ? `${rows.length.toLocaleString("es-CO")} en estación / ${totalOpportunities.toLocaleString("es-CO")} total`
       : `${totalOpportunities.toLocaleString("es-CO")} oportunidades`;
   }
@@ -50617,15 +50633,22 @@ function renderRmsStationLeanOnly() {
           <div><strong>Actualizando esta estación</strong><small>Puedes revisar la pantalla mientras traemos los datos más recientes.</small></div>
         </section>
       ` : ""}
-      <div class="rms-lean-station-tools">
+      <div class="rms-lean-station-tools ${phase === "inteligencia" ? "is-intelligence" : ""}">
+        ${phase === "inteligencia" ? `
+          <div class="rms-intelligence-station-summary" role="status">
+            <span class="material-symbols-outlined" aria-hidden="true">psychology</span>
+            <span><strong>${Number((state.rmsIntelligenceCases || []).length).toLocaleString("es-CO")} casos con historia</strong><small>${Number((state.rmsIntelligenceInsights || []).filter((item) => !["APPLIED", "DISCARDED"].includes(String(item.status || "").toUpperCase())).length).toLocaleString("es-CO")} decisiones abiertas · lectura analítica, no una cola operativa</small></span>
+          </div>
+        ` : `
         <label>
           <span class="material-symbols-outlined" aria-hidden="true">search</span>
           <input type="search" data-rms-station-search value="${escapeHtml(state.rmsStationSearch || "")}" placeholder="Buscar en esta estación">
         </label>
+        `}
         <select data-rms-station-picker aria-label="Cambiar estación">
           ${stages.map((item, index) => `<option value="${escapeHtml(item.key)}" ${index === stageIndex ? "selected" : ""}>${String(index + 1).padStart(2, "0")} · ${escapeHtml(item.short_label || item.label || "Estación")}</option>`).join("")}
         </select>
-        <span>${selectedRows.length.toLocaleString("es-CO")} seleccionados · ${eligibleRows.length.toLocaleString("es-CO")} listos · ${rows.length.toLocaleString("es-CO")} total</span>
+        ${phase === "inteligencia" ? "" : `<span>${selectedRows.length.toLocaleString("es-CO")} seleccionados · ${eligibleRows.length.toLocaleString("es-CO")} listos · ${rows.length.toLocaleString("es-CO")} total</span>`}
       </div>
       ${isClassifierStation ? `
         <section class="rms-classifier-station-list" aria-label="Leads por clasificar">
@@ -53226,13 +53249,26 @@ function bindRmsStageQuickNavigation() {
 }
 
 function rmsStationEntityLabel(stageKey = "", count = 0) {
+  if (String(stageKey || "").toLowerCase() === "inteligencia") {
+    return `${Number(count || 0).toLocaleString("es-CO")} caso${Number(count || 0) === 1 ? "" : "s"}`;
+  }
   const customerStation = ["cierre", "revenue_generado", "postventa", "inteligencia"].includes(String(stageKey || "").toLowerCase());
   const noun = customerStation ? "cliente" : "lead";
   return `${Number(count || 0).toLocaleString("es-CO")} ${noun}${Number(count || 0) === 1 ? "" : "s"}`;
 }
 
 function rmsStationWorkCountLabel(stageKey = "", count = 0) {
+  if (String(stageKey || "").toLowerCase() === "inteligencia") {
+    if (Number(count || 0)) return `${rmsStationEntityLabel(stageKey, count)} disponibles`;
+    return state.rmsIntelligenceLoaded ? "Sin casos registrados" : "Memoria analítica";
+  }
   return Number(count || 0) ? `${rmsStationEntityLabel(stageKey, count)} para trabajar` : "Sin pendientes";
+}
+
+function rmsStationVisibleCount(stageKey = "", opportunities = []) {
+  return String(stageKey || "").toLowerCase() === "inteligencia"
+    ? Number((state.rmsIntelligenceCases || []).length)
+    : opportunities.filter((item) => item.stage === stageKey).length;
 }
 
 function renderRmsStageQuickNavigation(stages = [], opportunities = []) {
@@ -53240,13 +53276,13 @@ function renderRmsStageQuickNavigation(stages = [], opportunities = []) {
   if (quickNav) {
     quickNav.classList.add("rms-stage-quick-select-wrap");
     quickNav.innerHTML = `<span>Ir a estación</span><select id="rmsStageQuickSelect" aria-label="Abrir estación directamente"><option value="">Selecciona una estación…</option>${stages.map((stage, index) => {
-      const leadCount = opportunities.filter((item) => item.stage === stage.key).length;
+      const leadCount = rmsStationVisibleCount(stage.key, opportunities);
       return `<option value="${escapeHtml(stage.key)}">${String(index + 1).padStart(2, "0")} · ${escapeHtml(stage.label || `Estación ${index + 1}`)} — ${leadCount ? `${leadCount.toLocaleString("es-CO")} lead${leadCount === 1 ? "" : "s"} para trabajar` : "Sin pendientes"}</option>`;
     }).join("")}</select>`;
     quickNav.querySelectorAll("option[value]").forEach((option) => {
       const stage = stages.find((entry) => entry.key === option.value);
       if (!stage) return;
-      const count = opportunities.filter((item) => item.stage === stage.key).length;
+      const count = rmsStationVisibleCount(stage.key, opportunities);
       const index = stages.indexOf(stage) + 1;
       option.textContent = `${String(index).padStart(2, "0")} · ${stage.label || `Estación ${index}`} — ${rmsStationWorkCountLabel(stage.key, count)}`;
     });
@@ -53263,7 +53299,7 @@ function renderRmsStageQuickNavigation(stages = [], opportunities = []) {
   }
   if (!rmsStageQuickList) return;
   rmsStageQuickList.innerHTML = stages.map((stage, index) => {
-    const leadCount = opportunities.filter((item) => item.stage === stage.key).length;
+    const leadCount = rmsStationVisibleCount(stage.key, opportunities);
     const visual = rmsStationVisualMeta(stage.key);
     return `
       <button type="button" class="rms-stage-quick-item ${leadCount ? "has-work" : ""}" data-rms-quick-station="${escapeHtml(stage.key)}">
@@ -53276,7 +53312,7 @@ function renderRmsStageQuickNavigation(stages = [], opportunities = []) {
   }).join("");
   rmsStageQuickList.querySelectorAll("[data-rms-quick-station]").forEach((item) => {
     const stage = stages.find((entry) => entry.key === item.dataset.rmsQuickStation);
-    const count = opportunities.filter((entry) => entry.stage === stage?.key).length;
+    const count = rmsStationVisibleCount(stage?.key, opportunities);
     const label = item.querySelector(".rms-stage-quick-copy small");
     if (stage && label) label.textContent = rmsStationWorkCountLabel(stage.key, count);
   });
@@ -53377,6 +53413,7 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
   if (!rmsStageBoard) return;
   rmsStageBoard.innerHTML = stages.map((stage, index) => {
     const rowsAll = opportunities.filter((item) => item.stage === stage.key);
+    const visibleCount = rmsStationVisibleCount(stage.key, opportunities);
     const operation = stage.operation || (state.rmsMachine?.operations || {})[stage.key] || {};
     const operationName = operation.name || operation.primaryAction || "Operacion";
     const stationCopy = {
@@ -53396,6 +53433,10 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
         action: "Envía una oferta por WhatsApp o email",
         detail: "Registra la oferta, la estrategia y el canal de entrega antes de pasar el lead a Evaluación.",
       },
+      inteligencia: {
+        action: "Convierte la historia comercial en decisiones",
+        detail: "Analiza recorridos, ventas, valorización, pérdidas y aprendizajes sin mover clientes de su etapa operativa.",
+      },
     }[stage.key] || { action: operation.primaryAction || operationName, detail: "Organiza los leads y define el siguiente movimiento comercial." };
     const stationAction = stationCopy.action;
     const riskCount = rowsAll.filter((item) => Number(item.risk_score || 0) >= 50).length;
@@ -53404,10 +53445,10 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
     const showNextStation = !["procesamiento", "accion_correctiva", "control_anti_fuga", "cierre", "revenue_generado", "postventa", "inteligencia"].includes(stage.key);
     const visual = rmsStationVisualMeta(stage.key);
     return `
-      <article class="rms-stage-column rms-station-entry-card ${rowsAll.length ? "has-stage-material" : "is-empty-stage"} ${riskCount ? "has-risk" : ""} ${nextPhase ? "has-next-stage" : "is-final-stage"}" data-rms-phase="${escapeHtml(stage.key)}" data-station-tone="${escapeHtml(visual.tone || "default")}" tabindex="0" role="button" aria-label="Abrir estación ${escapeHtml(stage.label || `Estación ${index + 1}`)}">
+      <article class="rms-stage-column rms-station-entry-card ${visibleCount ? "has-stage-material" : "is-empty-stage"} ${riskCount ? "has-risk" : ""} ${nextPhase ? "has-next-stage" : "is-final-stage"}" data-rms-phase="${escapeHtml(stage.key)}" data-station-tone="${escapeHtml(visual.tone || "default")}" tabindex="0" role="button" aria-label="Abrir estación ${escapeHtml(stage.label || `Estación ${index + 1}`)}">
         <div class="rms-station-entry-topline">
           <span class="rms-station-entry-number">Estación ${String(index + 1).padStart(2, "0")}</span>
-          <span class="rms-station-entry-count">${Number(rowsAll.length).toLocaleString("es-CO")} lead${rowsAll.length === 1 ? "" : "s"}</span>
+          <span class="rms-station-entry-count">${escapeHtml(rmsStationEntityLabel(stage.key, visibleCount))}</span>
         </div>
         <figure class="rms-station-entry-media">
           <img src="${escapeHtml(visual.image || "")}" alt="${escapeHtml(visual.imageAlt || stage.label || `Estacion ${index + 1}`)}" loading="lazy" decoding="async">
@@ -53421,16 +53462,16 @@ function renderRmsStageBoard(stages = [], opportunities = [], isEmpty = false) {
           </div>
         </div>
         <div class="rms-station-entry-flow">
-          <span class="rms-station-entry-alert ${riskCount ? "is-risk" : rowsAll.length ? "is-ready" : "is-clear"}"><span class="material-symbols-outlined" aria-hidden="true">${riskCount ? "warning" : rowsAll.length ? "play_circle" : "check_circle"}</span>${riskCount ? `${riskCount.toLocaleString("es-CO")} en riesgo` : rowsAll.length ? "Lista para operar" : "Sin pendientes"}</span>
+          <span class="rms-station-entry-alert ${riskCount ? "is-risk" : visibleCount ? "is-ready" : "is-clear"}"><span class="material-symbols-outlined" aria-hidden="true">${riskCount ? "warning" : visibleCount ? (stage.key === "inteligencia" ? "insights" : "play_circle") : "check_circle"}</span>${riskCount ? `${riskCount.toLocaleString("es-CO")} en riesgo` : stage.key === "inteligencia" ? escapeHtml(rmsStationWorkCountLabel(stage.key, visibleCount)) : visibleCount ? "Lista para operar" : "Sin pendientes"}</span>
           ${showNextStation ? `<span class="rms-station-entry-next"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>${escapeHtml(nextLabel)}</span>` : ""}
         </div>
-        <button class="solid-button" type="button" data-rms-open-station="${escapeHtml(stage.key)}"><span>Entrar y trabajar</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
+        <button class="solid-button" type="button" data-rms-open-station="${escapeHtml(stage.key)}"><span>${stage.key === "inteligencia" ? "Abrir análisis" : "Entrar y trabajar"}</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></button>
       </article>
     `;
   }).join("");
   rmsStageBoard.querySelectorAll(".rms-station-entry-card[data-rms-phase]").forEach((card) => {
     const stageKey = card.dataset.rmsPhase || "";
-    const count = opportunities.filter((item) => item.stage === stageKey).length;
+    const count = rmsStationVisibleCount(stageKey, opportunities);
     const label = card.querySelector(".rms-station-entry-count");
     if (label) label.textContent = rmsStationEntityLabel(stageKey, count);
   });
@@ -54243,6 +54284,19 @@ function bindRmsMachineActions(root) {
       renderRmsStationOnly();
     });
   });
+  root.querySelectorAll("[data-rms-intelligence-retry]").forEach((button) => {
+    button.addEventListener("click", () => {
+      button.disabled = true;
+      loadRmsIntelligenceData({ force: true })
+        .then(async () => {
+          const selected = (state.rmsIntelligenceCases || [])[0];
+          if (selected) await loadRmsIntelligenceCase(selected);
+          renderRmsStationOnly();
+        })
+        .catch(() => renderRmsStationOnly())
+        .finally(() => { button.disabled = false; });
+    });
+  });
   root.querySelectorAll("[data-rms-intelligence-case-select]").forEach((select) => {
     select.addEventListener("change", () => {
       loadRmsIntelligenceCase(select.value)
@@ -54529,9 +54583,14 @@ function openRmsStation(phase = "", options = {}) {
         if (selected && state.rmsIntelligenceCaseKey !== rmsIntelligenceCaseKey(selected)) await loadRmsIntelligenceCase(selected);
       })
       .then(() => {
+        state.rmsStationSyncing = false;
         if (state.rmsStationScreenOpen && state.rmsStationPhase === phase && state.rmsStationOpenSeq === openSeq) renderRmsStationOnly();
       })
-      .catch((error) => console.warn("RMS intelligence preload failed", error));
+      .catch((error) => {
+        state.rmsStationSyncing = false;
+        if (state.rmsStationScreenOpen && state.rmsStationPhase === phase && state.rmsStationOpenSeq === openSeq) renderRmsStationOnly();
+        console.warn("RMS intelligence preload failed", error);
+      });
   }
   try {
     renderRmsStationOnly();
@@ -54539,18 +54598,11 @@ function openRmsStation(phase = "", options = {}) {
     if (phase === "clasificacion") {
       showFeedback("Actualizando la cola de Activación 1… Puedes empezar a revisar mientras terminamos.", "loading", { title: "Activación 1", timeout: 0 });
     }
+    if (phase === "inteligencia") return;
     loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: phase })
       .then(() => {
         if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
         state.rmsStationSyncing = false;
-        if (phase === "inteligencia" && !state.rmsIntelligenceCaseKey) {
-          const selected = (state.rmsIntelligenceCases || [])[0];
-          if (selected) {
-            loadRmsIntelligenceCase(selected)
-              .then(() => renderRmsStationOnly())
-              .catch((error) => console.warn("RMS intelligence case preload failed", error));
-          }
-        }
         renderRmsStationOnly();
         if (phase === "clasificacion") {
           showFeedback("Activación 1 está lista con los datos más recientes.", "success", { title: "Activación 1" });
@@ -57365,16 +57417,35 @@ function rmsIntelligenceInsightKey(source = {}) {
 }
 
 async function loadRmsIntelligenceData(options = {}) {
+  if (state.rmsIntelligenceLoading && !options.force) return state.rmsIntelligenceLoadPromise;
+  const requestSeq = ++state.rmsIntelligenceRequestSeq;
   const patternParams = new URLSearchParams(Object.entries(state.rmsIntelligenceFilters || {}).filter(([, value]) => String(value || "").trim()));
-  const [patterns, insightData, caseData] = await Promise.all([
-    apiSafe(`/api/business/rms-machine/intelligence/patterns${patternParams.size ? `?${patternParams.toString()}` : ""}`, { headers: authHeaders() }, null),
-    apiSafe("/api/business/rms-machine/intelligence/insights", { headers: authHeaders() }, { insights: [] }),
-    apiSafe("/api/business/rms-machine/intelligence/cases", { headers: authHeaders() }, { cases: [] }),
-  ]);
-  state.rmsIntelligencePatterns = patterns;
-  state.rmsIntelligenceInsights = Array.isArray(insightData?.insights) ? insightData.insights : [];
-  state.rmsIntelligenceCases = Array.isArray(caseData?.cases) ? caseData.cases : [];
-  return { patterns, insights: state.rmsIntelligenceInsights, cases: state.rmsIntelligenceCases };
+  state.rmsIntelligenceLoading = true;
+  state.rmsIntelligenceError = "";
+  const request = Promise.all([
+    api(`/api/business/rms-machine/intelligence/patterns${patternParams.size ? `?${patternParams.toString()}` : ""}`, { headers: authHeaders() }),
+    api("/api/business/rms-machine/intelligence/insights", { headers: authHeaders() }),
+    api("/api/business/rms-machine/intelligence/cases?limit=500", { headers: authHeaders() }),
+  ]).then(([patterns, insightData, caseData]) => {
+    if (requestSeq !== state.rmsIntelligenceRequestSeq) return null;
+    state.rmsIntelligencePatterns = patterns || {};
+    state.rmsIntelligenceInsights = Array.isArray(insightData?.insights) ? insightData.insights : [];
+    state.rmsIntelligenceCases = Array.isArray(caseData?.cases) ? caseData.cases : [];
+    state.rmsIntelligenceLoaded = true;
+    return { patterns: state.rmsIntelligencePatterns, insights: state.rmsIntelligenceInsights, cases: state.rmsIntelligenceCases };
+  }).catch((error) => {
+    if (requestSeq === state.rmsIntelligenceRequestSeq) {
+      state.rmsIntelligenceError = error.message || "No pudimos consultar la memoria analítica.";
+    }
+    throw error;
+  }).finally(() => {
+    if (requestSeq === state.rmsIntelligenceRequestSeq) {
+      state.rmsIntelligenceLoading = false;
+      state.rmsIntelligenceLoadPromise = null;
+    }
+  });
+  state.rmsIntelligenceLoadPromise = request;
+  return request;
 }
 
 async function loadRmsIntelligenceCase(itemOrKey) {

@@ -15593,6 +15593,59 @@ html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] .rms
 }
 
 /* Station 10 is a read-first memory of the factory: evidence, patterns, then explicit decisions. */
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-lean-station-tools.is-intelligence {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  align-items: stretch;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-station-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 11px 14px;
+  border: 1px solid #cadce9;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #edf7fc 0%, #f7fbfd 100%);
+  color: #173d58;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-station-summary > .material-symbols-outlined {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border-radius: 11px;
+  background: #173d58;
+  color: #fff;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-station-summary > span:last-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-station-summary strong { color: #173d58; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-station-summary small { color: #567086; line-height: 1.35; }
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-load-state {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 112px;
+  margin-top: 18px;
+  padding: 22px;
+  border: 1px solid #cadce9;
+  border-radius: 16px;
+  background: #f6fafc;
+  color: #173d58;
+}
+
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-load-state > div { display: grid; gap: 4px; flex: 1; }
+#rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-load-state.is-error { border-color: #dfb9b9; background: #fff6f6; color: #7f2929; }
+
 #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console {
   max-width: 1240px;
   margin: 18px auto 8px;
@@ -15602,6 +15655,21 @@ html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="recovery"] .rms
   background: linear-gradient(165deg, #fbfdff 0%, #f5f9fc 100%);
   color: #17324a;
   box-shadow: 0 14px 36px rgba(20, 54, 88, .08);
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] :is(.rms-intelligence-station-summary, .rms-intelligence-load-state) {
+  border-color: #31556b;
+  background: #102a3b;
+  color: #eff8fb;
+}
+
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-station-summary :is(strong, small),
+html[data-theme="dark"] #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-load-state :is(strong, small) { color: #eff8fb; }
+
+@media (max-width: 720px) {
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-lean-station-tools.is-intelligence { grid-template-columns: minmax(0, 1fr); }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-load-state { align-items: flex-start; flex-wrap: wrap; }
+  #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-load-state button { width: 100%; }
 }
 
 #rmsStationWorkspace[data-station-theme="intelligence"] .rms-intelligence-console-head,
