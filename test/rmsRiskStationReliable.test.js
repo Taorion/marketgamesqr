@@ -307,3 +307,18 @@ test("Riesgos enlaza únicamente sus controles antes de quedar interactivo", () 
   assert.match(app, /risk-isolated-binding-v410-20260829/);
   assert.match(html, /risk-binding=isolated-v410-20260829/);
 });
+
+test("Preparar busca productos con resultados acotados y feedback inmediato", () => {
+  assert.match(app, /const RMS_RISK_PRODUCT_RESULT_LIMIT = 40/);
+  assert.match(app, /function currentRmsRiskProductSearchIndex/);
+  assert.match(app, /matching\.slice\(0, RMS_RISK_PRODUCT_RESULT_LIMIT\)/);
+  assert.match(app, /data-rms-risk-line-product-search/);
+  assert.match(app, /data-rms-risk-product-search-feedback/);
+  assert.match(app, /window\.setTimeout\(searchProducts, 90\)/);
+  const hydrateBlock = app.slice(app.indexOf("function hydrateRmsRiskProductPicker"), app.indexOf("function persistRmsRiskProductDraft"));
+  assert.match(hydrateBlock, /rmsRiskProductPickerSearchOptions/);
+  assert.doesNotMatch(hydrateBlock, /rmsInventoryProductPickerOptions/);
+  assert.match(portalCss, /risk-prepare-search-v411/);
+  assert.match(app, /risk-prepare-search-v411-20260829/);
+  assert.match(html, /risk-prepare=search-v411-20260829/);
+});

@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260829-risk-isolated-binding-v410";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829";
+const APP_VERSION = "empresa-20260829-risk-prepare-search-v411";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -62912,23 +62912,78 @@ function rmsRiskProductPickerInitialOptions(selectedId = "", historicName = "") 
   ].join("");
 }
 
+const RMS_RISK_PRODUCT_RESULT_LIMIT = 40;
+let rmsRiskProductSearchIndexSource = null;
+let rmsRiskProductSearchIndex = [];
+
+function currentRmsRiskProductSearchIndex() {
+  if (rmsRiskProductSearchIndexSource === state.inventoryProducts) return rmsRiskProductSearchIndex;
+  rmsRiskProductSearchIndexSource = state.inventoryProducts;
+  rmsRiskProductSearchIndex = activeInventoryProducts()
+    .filter((product) => product.status === "ACTIVE")
+    .map((product) => ({
+      product,
+      searchable: normalizeInventoryLookup([
+        product.name,
+        product.sku,
+        product.barcode,
+        product.category,
+        product.brand,
+      ].filter(Boolean).join(" ")),
+    }));
+  return rmsRiskProductSearchIndex;
+}
+
+function rmsRiskProductPickerSearchOptions(selectedId = "", historicName = "", query = "") {
+  const selected = String(selectedId || "");
+  const needle = normalizeInventoryLookup(query);
+  const index = currentRmsRiskProductSearchIndex();
+  const matching = needle ? index.filter((entry) => entry.searchable.includes(needle)) : index;
+  const visible = matching.slice(0, RMS_RISK_PRODUCT_RESULT_LIMIT).map((entry) => entry.product);
+  const selectedProduct = findInventoryProductById(selected);
+  if (selectedProduct && !visible.some((product) => String(product.id) === selected)) visible.unshift(selectedProduct);
+  const option = (value, label, extra = "") => `<option value="${escapeHtml(value)}" ${selected === String(value) ? "selected" : ""} ${extra}>${escapeHtml(label)}</option>`;
+  const historic = String(historicName || "").trim();
+  return {
+    html: [
+      option("", matching.length ? "Selecciona uno de los resultados" : "No hay coincidencias; prueba otra búsqueda", `disabled ${selected ? "" : "selected"}`),
+      ...visible.map((product) => {
+        const refs = [product.sku, product.category].filter(Boolean).join(" · ");
+        return option(product.id, `${product.name}${refs ? ` · ${refs}` : ""} · ${money(product.unit_price || 0)} ${product.currency || "COP"}`);
+      }),
+      ...(!selected && historic ? [option("", `Producto histórico sin vincular: ${historic}`, "disabled")] : []),
+    ].join(""),
+    total: matching.length,
+    shown: Math.min(matching.length, RMS_RISK_PRODUCT_RESULT_LIMIT),
+  };
+}
+
 function rmsRiskProductLineMarkup(id, line = {}, options = {}) {
   const quantity = Math.max(0.01, Number(line.quantity || 1));
   return `<article class="rms-risk-product-line" data-rms-risk-product-line>
-    <label><span>Producto</span><select data-rms-risk-line-product data-rms-risk-product-options-ready="false" data-rms-risk-historic-name="${escapeHtml(line.name || line.product_name_snapshot || "")}">${rmsRiskProductPickerInitialOptions(line.inventory_product_id || "", line.name || line.product_name_snapshot || "")}</select></label>
+    <div class="rms-risk-product-identity"><label><span>Buscar producto</span><input type="search" autocomplete="off" placeholder="Nombre, código o categoría" data-rms-risk-line-product-search></label><label><span>Producto</span><select data-rms-risk-line-product data-rms-risk-product-options-ready="false" data-rms-risk-historic-name="${escapeHtml(line.name || line.product_name_snapshot || "")}">${rmsRiskProductPickerInitialOptions(line.inventory_product_id || "", line.name || line.product_name_snapshot || "")}</select></label><small class="rms-risk-product-search-feedback" data-rms-risk-product-search-feedback>Escribe para buscar sin cargar todo el inventario.</small></div>
     <label><span>Cantidad</span><input type="number" min="0.01" step="0.01" value="${escapeHtml(String(quantity))}" data-rms-risk-line-quantity></label>
     <label class="rms-risk-product-benefit"><input type="checkbox" data-rms-risk-line-benefit ${line.benefit_applied ? "checked" : ""}><span>Aplicar el beneficio a este producto</span></label>
     <button class="ghost-button danger-button compact" type="button" data-rms-risk-remove-product aria-label="Quitar producto">Quitar</button>
   </article>`;
 }
 
-function hydrateRmsRiskProductPicker(select) {
-  if (!select || select.dataset.rmsRiskProductOptionsReady === "true") return;
+function hydrateRmsRiskProductPicker(select, query = "", feedback = null) {
+  if (!select) return;
   const selectedId = String(select.value || "");
   const historicName = String(select.dataset.rmsRiskHistoricName || "");
-  select.innerHTML = rmsInventoryProductPickerOptions(selectedId, historicName);
+  const startedAt = performance.now();
+  const result = rmsRiskProductPickerSearchOptions(selectedId, historicName, query);
+  select.innerHTML = result.html;
   if (selectedId) select.value = selectedId;
   select.dataset.rmsRiskProductOptionsReady = "true";
+  select.dataset.rmsRiskProductQuery = String(query || "");
+  if (feedback) {
+    const elapsed = Math.max(1, Math.round(performance.now() - startedAt));
+    feedback.textContent = result.total > result.shown
+      ? `${result.shown} de ${result.total} resultados · ${elapsed} ms. Escribe más para afinar.`
+      : `${result.total} resultado${result.total === 1 ? "" : "s"} · ${elapsed} ms.`;
+  }
 }
 
 function persistRmsRiskProductDraft(card, item) {
@@ -63020,13 +63075,31 @@ function bindRmsRiskProductLines(card, item) {
     if (!line || line.dataset.rmsRiskProductBound === "true") return;
     line.dataset.rmsRiskProductBound = "true";
     const picker = line.querySelector("[data-rms-risk-line-product]");
-    picker?.addEventListener("pointerdown", () => hydrateRmsRiskProductPicker(picker));
-    picker?.addEventListener("focus", () => hydrateRmsRiskProductPicker(picker));
+    const search = line.querySelector("[data-rms-risk-line-product-search]");
+    const searchFeedback = line.querySelector("[data-rms-risk-product-search-feedback]");
+    let searchTimer = null;
+    const searchProducts = () => hydrateRmsRiskProductPicker(picker, search?.value || "", searchFeedback);
+    search?.addEventListener("focus", searchProducts, { once: true });
+    search?.addEventListener("input", () => {
+      window.clearTimeout(searchTimer);
+      if (searchFeedback) searchFeedback.textContent = "Buscando…";
+      searchTimer = window.setTimeout(searchProducts, 90);
+    });
+    picker?.addEventListener("pointerdown", () => {
+      if (picker.dataset.rmsRiskProductOptionsReady !== "true") searchProducts();
+    });
+    picker?.addEventListener("focus", () => {
+      if (picker.dataset.rmsRiskProductOptionsReady !== "true") searchProducts();
+    });
     const markPending = () => {
       persistRmsRiskProductDraft(card, item);
       setRmsRiskActionStatus(card, item, "pending", "Cambios de productos pendientes", "Revisa cantidades y marca a cuáles productos aplica el beneficio antes de generar o guardar.");
     };
-    picker?.addEventListener("change", markPending);
+    picker?.addEventListener("change", () => {
+      markPending();
+      const product = findInventoryProductById(picker.value);
+      if (searchFeedback && product) searchFeedback.textContent = `${product.name} seleccionado.`;
+    });
     line.querySelector("[data-rms-risk-line-quantity]")?.addEventListener("input", markPending);
     line.querySelector("[data-rms-risk-line-benefit]")?.addEventListener("change", markPending);
     line.querySelector("[data-rms-risk-remove-product]")?.addEventListener("click", () => {
@@ -63047,7 +63120,7 @@ function bindRmsRiskProductLines(card, item) {
       persistRmsRiskProductDraft(card, item);
       refresh();
       setRmsRiskActionStatus(card, item, "pending", "Producto agregado", "Selecciona el producto, ajusta la cantidad y decide si recibe el beneficio.");
-      list.lastElementChild?.querySelector("[data-rms-risk-line-product]")?.focus();
+      list.lastElementChild?.querySelector("[data-rms-risk-line-product-search]")?.focus();
     });
   }
   refresh();

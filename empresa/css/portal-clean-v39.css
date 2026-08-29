@@ -33897,7 +33897,7 @@ body[data-current-view="rms-machine"] .rms-risk-products-builder > header small 
 body[data-current-view="rms-machine"] .rms-risk-products-list { display: grid; gap: 10px; }
 body[data-current-view="rms-machine"] .rms-risk-product-line {
   display: grid;
-  grid-template-columns: minmax(210px, 1.5fr) minmax(90px, .45fr) minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(280px, 1.65fr) minmax(90px, .45fr) minmax(220px, 1fr) auto;
   align-items: end;
   gap: 10px;
   padding: 12px;
@@ -33905,6 +33905,11 @@ body[data-current-view="rms-machine"] .rms-risk-product-line {
   border-radius: 13px;
   background: #f8fafc;
 }
+body[data-current-view="rms-machine"] .rms-risk-product-identity { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 8px; min-width: 0; }
+body[data-current-view="rms-machine"] .rms-risk-product-identity label { min-width: 0; }
+body[data-current-view="rms-machine"] .rms-risk-product-identity label > span { display: block; margin-bottom: 5px; font-size: .75rem; font-weight: 800; color: #334155; }
+body[data-current-view="rms-machine"] .rms-risk-product-identity :is(input, select) { width: 100%; min-width: 0; }
+body[data-current-view="rms-machine"] .rms-risk-product-search-feedback { grid-column: 1 / -1; display: block; min-height: 1rem; color: #526277; font-size: .7rem; line-height: 1.35; }
 body[data-current-view="rms-machine"] .rms-risk-product-line > label > span { display: block; margin-bottom: 5px; font-size: .75rem; font-weight: 800; color: #334155; }
 body[data-current-view="rms-machine"] .rms-risk-product-line :is(select, input[type="number"]) { width: 100%; min-width: 0; }
 body[data-current-view="rms-machine"] .rms-risk-product-benefit {
@@ -33929,7 +33934,7 @@ body[data-current-view="rms-machine"] .rms-risk-product-benefit span { margin: 0
   body[data-current-view="rms-machine"] .rms-risk-products-builder > header { flex-direction: column; }
   body[data-current-view="rms-machine"] .rms-risk-products-builder > header button { width: 100%; }
   body[data-current-view="rms-machine"] .rms-risk-product-line { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  body[data-current-view="rms-machine"] .rms-risk-product-line > label:first-child,
+  body[data-current-view="rms-machine"] .rms-risk-product-identity,
   body[data-current-view="rms-machine"] .rms-risk-product-benefit { grid-column: 1 / -1; }
 }
 @media (max-width: 520px) {
@@ -33940,8 +33945,12 @@ body[data-current-view="rms-machine"] .rms-risk-product-benefit span { margin: 0
   body[data-current-view="rms-machine"] .rms-risk-products-builder { padding: 11px; }
   body[data-current-view="rms-machine"] .rms-risk-product-line { grid-template-columns: minmax(0, 1fr); }
   body[data-current-view="rms-machine"] .rms-risk-product-line > * { grid-column: 1; }
+  body[data-current-view="rms-machine"] .rms-risk-product-identity { grid-template-columns: minmax(0, 1fr); }
+  body[data-current-view="rms-machine"] .rms-risk-product-search-feedback { grid-column: 1; }
   body[data-current-view="rms-machine"] .rms-risk-product-line [data-rms-risk-remove-product] { width: 100%; }
 }
+
+/* risk-prepare-search-v411: bounded catalog results keep product and benefit work responsive. */
 
 /* recycling-premium-command-v402 contrast lock: keep Qori hierarchy after legacy portal overrides. */
 html body[data-current-view="recycling"] .portal-shell .recycling-view-head {
