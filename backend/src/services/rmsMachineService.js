@@ -753,6 +753,7 @@ async function leadRowsForStateRefs(businessId, refs = [], filters = {}) {
         ...filters,
         source_type: sourceType,
         source_ids: sourceIds,
+        preserve_requested_source_refs: true,
         limit: sourceIds.length,
         offset: 0,
       });

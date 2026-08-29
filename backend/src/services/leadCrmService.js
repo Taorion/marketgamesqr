@@ -295,6 +295,71 @@ function listWhere(filters, params) {
 async function listLeadCrmRows(businessId, filters = {}) {
   const limit = boundedLimit(filters.limit, 40, 120);
   const offset = boundedOffset(filters.offset);
+  // Internal RMS lookups sometimes need the exact persisted source row even
+  // when a newer PLAYER contact has the same document, email or phone. The
+  // public CRM remains deduplicated by default; only explicit source-reference
+  // recovery bypasses that preference so a station handoff cannot disappear.
+  const preserveRequestedSourceRefs = filters.preserve_requested_source_refs === true;
+  const deduplicatedRowsSql = preserveRequestedSourceRefs
+    ? "select * from all_rows"
+    : `select candidate.*
+       from all_rows candidate
+       where not exists (
+         select 1
+         from all_rows preferred
+         where (preferred.source_type, preferred.id) <> (candidate.source_type, candidate.id)
+           and not (
+             nullif(regexp_replace(lower(coalesce(preferred.document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null
+             and nullif(regexp_replace(lower(coalesce(candidate.document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null
+             and regexp_replace(lower(preferred.document_id), '[^a-z0-9]', '', 'g')
+               <> regexp_replace(lower(candidate.document_id), '[^a-z0-9]', '', 'g')
+           )
+           and (
+             (
+               nullif(regexp_replace(lower(coalesce(preferred.document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null
+               and regexp_replace(lower(preferred.document_id), '[^a-z0-9]', '', 'g')
+                 = regexp_replace(lower(coalesce(candidate.document_id, '')), '[^a-z0-9]', '', 'g')
+             )
+             or (
+               nullif(lower(btrim(coalesce(preferred.email, ''))), '') is not null
+               and lower(btrim(preferred.email)) = lower(btrim(coalesce(candidate.email, '')))
+             )
+             or (
+               nullif(regexp_replace(coalesce(preferred.phone, ''), '[^0-9]', '', 'g'), '') is not null
+               and regexp_replace(preferred.phone, '[^0-9]', '', 'g')
+                 = regexp_replace(coalesce(candidate.phone, ''), '[^0-9]', '', 'g')
+             )
+           )
+           and (
+             case preferred.source_type when 'PLAYER' then 1 when 'AFFILIATE' then 2 else 3 end
+               < case candidate.source_type when 'PLAYER' then 1 when 'AFFILIATE' then 2 else 3 end
+             or (
+               preferred.source_type = candidate.source_type
+               and (preferred.created_at, preferred.id) < (candidate.created_at, candidate.id)
+             )
+           )
+       )`;
+  const affiliateShadowExclusionSql = preserveRequestedSourceRefs
+    ? ""
+    : `and not exists (
+           select 1
+           from players p
+           where p.business_id = fa.business_id
+             and (
+               (nullif(fa.document_id, '') is not null and p.document_id = fa.document_id)
+               or (nullif(fa.phone, '') is not null and p.phone = fa.phone)
+               or (nullif(fa.email, '') is not null and lower(p.email) = lower(fa.email))
+             )
+         )
+         and not exists (
+           select 1
+           from business_manual_leads ml
+           where ml.business_id = fa.business_id
+             and (
+               (nullif(fa.phone, '') is not null and ml.phone = fa.phone)
+               or (nullif(fa.email, '') is not null and lower(ml.email) = lower(fa.email))
+             )
+         )`;
   const params = [businessId];
   const where = listWhere(filters, params);
   params.push(limit);
@@ -747,25 +812,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
        ) l on true
        where fa.business_id = $1
          and fa.status <> 'DELETED'
-         and not exists (
-           select 1
-           from players p
-           where p.business_id = fa.business_id
-             and (
-               (nullif(fa.document_id, '') is not null and p.document_id = fa.document_id)
-               or (nullif(fa.phone, '') is not null and p.phone = fa.phone)
-               or (nullif(fa.email, '') is not null and lower(p.email) = lower(fa.email))
-             )
-         )
-         and not exists (
-           select 1
-           from business_manual_leads ml
-           where ml.business_id = fa.business_id
-             and (
-               (nullif(fa.phone, '') is not null and ml.phone = fa.phone)
-               or (nullif(fa.email, '') is not null and lower(ml.email) = lower(fa.email))
-             )
-         )
+         ${affiliateShadowExclusionSql}
      ),
      all_rows as (
        select * from player_rows
@@ -775,43 +822,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
        select * from affiliate_rows
      ),
      deduplicated_rows as (
-       select candidate.*
-       from all_rows candidate
-       where not exists (
-         select 1
-         from all_rows preferred
-         where (preferred.source_type, preferred.id) <> (candidate.source_type, candidate.id)
-           and not (
-             nullif(regexp_replace(lower(coalesce(preferred.document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null
-             and nullif(regexp_replace(lower(coalesce(candidate.document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null
-             and regexp_replace(lower(preferred.document_id), '[^a-z0-9]', '', 'g')
-               <> regexp_replace(lower(candidate.document_id), '[^a-z0-9]', '', 'g')
-           )
-           and (
-             (
-               nullif(regexp_replace(lower(coalesce(preferred.document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null
-               and regexp_replace(lower(preferred.document_id), '[^a-z0-9]', '', 'g')
-                 = regexp_replace(lower(coalesce(candidate.document_id, '')), '[^a-z0-9]', '', 'g')
-             )
-             or (
-               nullif(lower(btrim(coalesce(preferred.email, ''))), '') is not null
-               and lower(btrim(preferred.email)) = lower(btrim(coalesce(candidate.email, '')))
-             )
-             or (
-               nullif(regexp_replace(coalesce(preferred.phone, ''), '[^0-9]', '', 'g'), '') is not null
-               and regexp_replace(preferred.phone, '[^0-9]', '', 'g')
-                 = regexp_replace(coalesce(candidate.phone, ''), '[^0-9]', '', 'g')
-             )
-           )
-           and (
-             case preferred.source_type when 'PLAYER' then 1 when 'AFFILIATE' then 2 else 3 end
-               < case candidate.source_type when 'PLAYER' then 1 when 'AFFILIATE' then 2 else 3 end
-             or (
-               preferred.source_type = candidate.source_type
-               and (preferred.created_at, preferred.id) < (candidate.created_at, candidate.id)
-             )
-           )
-       )
+       ${deduplicatedRowsSql}
      ),
      rms_rows as (
        select ar.*,
