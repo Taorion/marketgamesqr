@@ -1425,13 +1425,14 @@ async function getLeadCrmDetail(businessId, leadId, sourceType = "PLAYER") {
       [lead.business_id, lead.source_type || "PLAYER", lead.id]
     ),
     query(
-      `select event_type, event_title, event_description, rms_phase, operation_key,
-              material_type, metadata, created_at
-       from rms_machine_events
-       where business_id = $1
-         and (($2::uuid is not null and lead_id = $2) or (source_type = $3 and source_id = $4))
-       order by created_at desc
-       limit 8`,
+      `select rme.event_type, rme.event_title, rme.event_description, rme.rms_phase, rme.operation_key,
+              rme.material_type, rme.metadata, rme.created_at, rme.created_by, actor.full_name as actor_name
+       from rms_machine_events rme
+       left join app_users actor on actor.id = rme.created_by and actor.business_id = rme.business_id
+       where rme.business_id = $1
+         and (($2::uuid is not null and rme.lead_id = $2) or (rme.source_type = $3 and rme.source_id = $4))
+       order by rme.created_at desc
+       limit 80`,
       sourceParams
     ),
   ]);

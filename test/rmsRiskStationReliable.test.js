@@ -42,7 +42,7 @@ test("Sin concesión deshabilita ticket y dirige a Responder con Venta lograda",
   assert.equal(shouldOpenResult("NONE", true), false);
   assert.match(activeSync, /const initialNoConcession = rmsRiskShouldOpenResultOnInit\(prepareOffer\?\.value, hasResource\)/);
   assert.match(activeSync, /rmsRiskOutcomeOfferUi\(card, id, \{ navigateNone: initialNoConcession \}\)/);
-  assert.match(app, /APP_VERSION = "empresa-20260829-risk-none-initial-result-v396"/);
+  assert.match(app, /risk-none-initial-result-v396-20260829/);
   assert.match(html, /risk-none=initial-result-v396-20260829/);
   assert.doesNotMatch(phasedMarkup, /Descuento aplicado|data-rms-risk-discount-percent/);
 });

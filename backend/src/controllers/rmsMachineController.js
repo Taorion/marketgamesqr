@@ -149,6 +149,13 @@ const evaluationResponseSchema = z.preprocess((value) => {
   recycle_at: z.string().datetime().optional().nullable(),
 }));
 
+const attributedSaleProductSchema = z.object({
+  inventory_product_id: z.string().uuid(),
+  quantity: z.number().positive().max(100000).optional().default(1),
+  unit_price: z.number().positive().max(100000000000).optional().nullable(),
+  unit_cost: z.number().min(0).max(100000000000).optional().nullable(),
+});
+
 const attributedSaleSchema = z.object({
   source_id: z.string().uuid(),
   source_type: z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER"),
@@ -159,6 +166,7 @@ const attributedSaleSchema = z.object({
   inventory_product_id: z.string().uuid().optional().nullable(),
   product_name: z.string().trim().max(240).optional().nullable(),
   quantity: z.number().positive().max(100000).optional().default(1),
+  products: z.array(attributedSaleProductSchema).min(1).max(50).optional(),
   unit_cost: z.number().min(0).max(100000000000).optional().nullable(),
   sale_amount: z.number().positive().max(100000000000),
   currency: z.string().trim().min(3).max(8).optional().default("COP"),

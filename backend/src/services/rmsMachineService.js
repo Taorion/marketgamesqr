@@ -2720,8 +2720,13 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const item = await findOpportunity(businessId, sourceType, payload.source_id);
   if (item.stage !== "cierre") throw badRequest("La venta solo puede atribuirse desde una compra directa confirmada en Evaluación, una venta limpia o una revisión anti-fuga liberada.");
-  if (!payload.inventory_product_id) {
-    throw badRequest("Selecciona el producto o servicio real del inventario antes de registrar la venta atribuida.");
+  const requestedProductLines = Array.isArray(payload.products) && payload.products.length
+    ? payload.products
+    : payload.inventory_product_id
+      ? [{ inventory_product_id: payload.inventory_product_id, quantity: payload.quantity || 1, unit_price: null, unit_cost: payload.unit_cost }]
+      : [];
+  if (!requestedProductLines.length || requestedProductLines.some((line) => !line.inventory_product_id)) {
+    throw badRequest("Agrega al menos un producto real del inventario antes de registrar la venta atribuida.");
   }
   const currentState = await query(
     `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
@@ -2786,7 +2791,6 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   if (false && !validSaleOrigin) {
     throw badRequest("Registra una compra directa en Evaluación, confirma un acuerdo en Negociación o libera una revisión anti-fuga antes de atribuir la venta.");
   }
-  const quantity = Math.max(0.01, Number(payload.quantity || 1));
   const benefitCost = Math.max(0, roundedMoney(payload.benefit_cost));
   const acquisitionCost = Math.max(0, roundedMoney(payload.acquisition_cost));
   const idempotencyKey = String(payload.idempotency_key || "").trim() || null;
@@ -2797,50 +2801,89 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     product_price_snapshot: confirmation.product_price_snapshot ?? null,
     product_currency_snapshot: confirmation.product_currency_snapshot || null,
   } : null;
-  const productSnapshot = await rmsInventoryProductSnapshot(businessId, payload.inventory_product_id);
+  const requestedMultipleProducts = Array.isArray(payload.products) && payload.products.length > 0;
+  const productLines = await Promise.all(requestedProductLines.map(async (line, index) => {
+    const snapshot = await rmsInventoryProductSnapshot(businessId, line.inventory_product_id);
+    const quantity = Math.max(0.01, Number(line.quantity || 1));
+    const originalUnitPrice = Math.max(0, roundedMoney(snapshot.product_price_snapshot));
+    const unitCost = Math.max(0, roundedMoney(line.unit_cost ?? snapshot.inventory_product?.cost_price ?? 0));
+    return { index, requested: line, snapshot, quantity, originalUnitPrice, unitCost };
+  }));
+  const productSnapshot = productLines[0].snapshot;
   const productRow = productSnapshot.inventory_product;
-  const productName = productSnapshot.product_name;
-  const productCorrectedAtSale = Boolean(confirmation?.inventory_product_id) && String(payload.inventory_product_id) !== String(confirmation.inventory_product_id);
-  const originalUnitPrice = Math.max(0, roundedMoney(productSnapshot.product_price_snapshot));
-  const originalAmount = roundedMoney(originalUnitPrice * quantity);
+  const quantity = roundedMoney(productLines.reduce((sum, line) => sum + line.quantity, 0));
+  const productCorrectedAtSale = Boolean(confirmation?.inventory_product_id)
+    && !productLines.some((line) => String(line.snapshot.inventory_product_id) === String(confirmation.inventory_product_id));
   const confirmedAmount = Math.max(0, roundedMoney(confirmation?.amount));
   const confirmedQuantity = Math.max(0.01, Number(confirmation?.sale_context?.quantity || 1));
   // El acuerdo heredado tiene una cantidad propia. Al cambiar la cantidad en
   // Ventas atribuidas, se conserva la condición por unidad y se recalcula el
   // total; si el producto fue corregido al cierre, manda el precio real de la
   // nueva referencia en lugar del valor pactado para otro producto.
-  const negotiatedUnitPrice = confirmedAmount > 0 && !productCorrectedAtSale
-    ? roundedMoney(confirmedAmount / confirmedQuantity)
-    : originalUnitPrice;
-  const negotiatedAmount = roundedMoney(negotiatedUnitPrice * quantity);
   const riskDiscountPercent = Math.min(100, Math.max(0, Number(
     riskRecoveryOffer?.discount_percent
       || (riskRecoveryOffer?.type === "CUSTOM" && riskCustomBenefit.type === "DISCOUNT" ? riskCustomBenefit.value : 0)
       || 0
   )));
-  const riskDiscountAmount = riskDiscountPercent > 0
-    ? roundedMoney(negotiatedAmount * riskDiscountPercent / 100)
-    : 0;
+  const normalizedProducts = productLines.map((line) => {
+    const matchesConfirmedProduct = Boolean(confirmation?.inventory_product_id)
+      && String(line.snapshot.inventory_product_id) === String(confirmation.inventory_product_id);
+    const negotiatedBeforeBenefit = confirmedAmount > 0 && matchesConfirmedProduct
+      ? roundedMoney(confirmedAmount / confirmedQuantity)
+      : line.originalUnitPrice;
+    const explicitUnitPrice = Math.max(0, roundedMoney(line.requested.unit_price));
+    const finalUnitPrice = requestedMultipleProducts && explicitUnitPrice > 0
+      ? explicitUnitPrice
+      : riskDiscountPercent > 0
+        ? roundedMoney(negotiatedBeforeBenefit * (1 - (riskDiscountPercent / 100)))
+        : negotiatedBeforeBenefit;
+    const originalLineTotal = roundedMoney(line.originalUnitPrice * line.quantity);
+    const negotiatedLineTotal = roundedMoney(negotiatedBeforeBenefit * line.quantity);
+    const lineTotal = roundedMoney(finalUnitPrice * line.quantity);
+    const lineProductCostTotal = roundedMoney(line.unitCost * line.quantity);
+    return {
+      inventory_product_id: line.snapshot.inventory_product_id,
+      name: line.snapshot.product_name_snapshot,
+      product_name_snapshot: line.snapshot.product_name_snapshot,
+      sku: line.snapshot.inventory_product?.sku || null,
+      barcode: line.snapshot.inventory_product?.barcode || null,
+      quantity: line.quantity,
+      unit_price: finalUnitPrice,
+      line_total: lineTotal,
+      original_unit_price: line.originalUnitPrice,
+      original_line_total: originalLineTotal,
+      negotiated_unit_price: negotiatedBeforeBenefit,
+      negotiated_line_total: negotiatedLineTotal,
+      unit_cost: line.unitCost,
+      product_cost_total: lineProductCostTotal,
+      product_currency_snapshot: line.snapshot.product_currency_snapshot,
+      product_source: line.snapshot.product_source,
+    };
+  });
+  const originalAmount = roundedMoney(normalizedProducts.reduce((sum, line) => sum + line.original_line_total, 0));
+  const negotiatedAmount = roundedMoney(normalizedProducts.reduce((sum, line) => sum + line.negotiated_line_total, 0));
+  const calculatedSaleAmount = roundedMoney(normalizedProducts.reduce((sum, line) => sum + line.line_total, 0));
   const requestedFinalAmount = Math.max(0, roundedMoney(payload.sale_amount));
-  const saleAmount = riskDiscountAmount > 0
-    ? roundedMoney(negotiatedAmount - riskDiscountAmount)
-    : requestedFinalAmount > 0 && !confirmation?.amount
-      ? requestedFinalAmount
-      : negotiatedAmount;
+  const saleAmount = calculatedSaleAmount > 0 ? calculatedSaleAmount : requestedFinalAmount;
+  const originalUnitPrice = Math.max(0, roundedMoney(productSnapshot.product_price_snapshot));
+  const negotiatedUnitPrice = quantity > 0 ? roundedMoney(saleAmount / quantity) : 0;
   const discountAmount = roundedMoney(Math.max(0, originalAmount - saleAmount));
   const discountPercent = originalAmount > 0 ? roundedMoney((discountAmount / originalAmount) * 100) : 0;
   if (originalUnitPrice <= 0 || saleAmount <= 0) {
     throw badRequest("El producto confirmado debe tener un precio de venta mayor a cero para calcular el valor pagado.");
   }
-  const unitCost = Math.max(0, roundedMoney(payload.unit_cost ?? productRow?.cost_price ?? 0));
-  const productCostTotal = roundedMoney(unitCost * quantity);
+  const productCostTotal = roundedMoney(normalizedProducts.reduce((sum, line) => sum + line.product_cost_total, 0));
+  const unitCost = quantity > 0 ? roundedMoney(productCostTotal / quantity) : 0;
   const grossProfit = roundedMoney(saleAmount - productCostTotal - benefitCost);
   const netProfit = roundedMoney(grossProfit - acquisitionCost);
   const invested = roundedMoney(productCostTotal + benefitCost + acquisitionCost);
   const roi = invested > 0 ? Math.round((netProfit / invested) * 1000000) / 1000000 : null;
   const paidAt = payload.paid_at || new Date().toISOString();
   const currency = String(payload.currency || "COP").trim().toUpperCase().slice(0, 8) || "COP";
-  const economics = { quantity, unit_price: negotiatedUnitPrice, original_unit_price: originalUnitPrice, original_amount: originalAmount, negotiated_amount: negotiatedAmount, discount_amount: discountAmount, discount_percent: discountPercent, final_amount: saleAmount, sale_amount: saleAmount, unit_cost: unitCost, product_cost_total: productCostTotal, benefit_cost: benefitCost, acquisition_cost: acquisitionCost, gross_profit: grossProfit, net_profit: netProfit, roi, currency };
+  const productName = normalizedProducts.length === 1
+    ? normalizedProducts[0].name
+    : `${normalizedProducts.length} productos: ${normalizedProducts.map((line) => `${line.name} x${line.quantity}`).join(" · ")}`.slice(0, 500);
+  const economics = { product_count: normalizedProducts.length, quantity, unit_price: negotiatedUnitPrice, original_unit_price: originalUnitPrice, original_amount: originalAmount, negotiated_amount: negotiatedAmount, discount_amount: discountAmount, discount_percent: discountPercent, final_amount: saleAmount, sale_amount: saleAmount, unit_cost: unitCost, product_cost_total: productCostTotal, benefit_cost: benefitCost, acquisition_cost: acquisitionCost, gross_profit: grossProfit, net_profit: netProfit, roi, currency, products: normalizedProducts };
   const metadata = {
     source_module: "rms_machine",
     rms_source_type: sourceType,
@@ -2861,6 +2904,8 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     risk_review_snapshot: riskReview.result ? riskReview : null,
     risk_sale_handoff: riskSaleHandoff,
     risk_recovery_resource: workflowMetadata.risk_recovery_resource || riskReview.recovery_resource || null,
+    products: normalizedProducts,
+    product_count: normalizedProducts.length,
     economics,
     pricing_breakdown: {
       original_amount: originalAmount,
@@ -3015,7 +3060,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
           customerLink.created
             ? "La venta quedó vinculada a un nuevo contacto cliente en Qori."
             : "La venta quedó vinculada al contacto cliente existente en Qori.",
-          JSON.stringify({ sale_id: recordedSale.id, original_source_type: sourceType, original_source_id: payload.source_id, related_affiliate_id: relatedAffiliate?.id || null, referral_points_awarded: referralPoints }),
+          JSON.stringify({ sale_id: recordedSale.id, original_source_type: sourceType, original_source_id: payload.source_id, related_affiliate_id: relatedAffiliate?.id || null, referral_points_awarded: referralPoints, product_count: normalizedProducts.length, products: normalizedProducts, economics, payment_method: String(payload.payment_method || "OTHER").toUpperCase(), paid_at: paidAt, seller_user_id: attributedSeller?.id || user.id }),
           user.id,
         ]
       );
@@ -3050,7 +3095,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
       to_phase: "postventa", priority: "HIGH", recommended_action: "Elegir una acción de Valorización Clientes",
       last_operation: "attributed_sale_recovered_from_idempotency", last_material_sent: productName,
       revenue_potential: saleAmount, reason: "Reintento idempotente: la venta canónica ya existía.",
-      metadata: { rms_attributed_sale_id: result.sale?.id || null, rms_sale_recorded_at: new Date().toISOString(), risk_review_snapshot: riskReview.result ? riskReview : null, risk_sale_handoff: riskSaleHandoff },
+      metadata: { rms_attributed_sale_id: result.sale?.id || null, rms_sale_recorded_at: new Date().toISOString(), rms_sale_product: productName, rms_sale_products: normalizedProducts, rms_sale_amount: saleAmount, rms_sale_economics: economics, risk_review_snapshot: riskReview.result ? riskReview : null, risk_sale_handoff: riskSaleHandoff },
     }, RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE) : null;
     return { sale: result.sale, economics: result.sale?.metadata?.economics || economics, movement: duplicateMovement, customer: result.customer, affiliate: result.affiliate || null, duplicate: true };
   }
@@ -3065,7 +3110,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     last_material_sent: productName,
     revenue_potential: saleAmount,
     reason: "Venta cobrada y atribuida desde la estación de Ventas atribuidas.",
-    metadata: { rms_attributed_sale_id: result.sale.id, rms_sale_recorded_at: new Date().toISOString(), rms_sale_product: productName, rms_sale_amount: saleAmount, rms_sale_economics: economics, risk_review_snapshot: riskReview.result ? riskReview : null, risk_sale_handoff: riskSaleHandoff },
+    metadata: { rms_attributed_sale_id: result.sale.id, rms_sale_recorded_at: new Date().toISOString(), rms_sale_product: productName, rms_sale_products: normalizedProducts, rms_sale_amount: saleAmount, rms_sale_economics: economics, risk_review_snapshot: riskReview.result ? riskReview : null, risk_sale_handoff: riskSaleHandoff },
   }, RMS_TRANSITION_AUTHORITY.ATTRIBUTED_SALE);
   let riskRecoveryTicket = null;
   const riskRecovery = riskReview.result === "CLEARED" ? riskRecoveryOffer : null;
@@ -3140,11 +3185,18 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
   }
   await recordRmsWorkflowEvent(businessId, user, {
     source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
-    event_type: "sale_attributed", event_title: "Venta atribuida enviada a Valorización Clientes",
-    event_description: "La venta pasa a Valorización Clientes para trabajar la relación. Su recorrido comercial y economía también se envían a Inteligencia GOS para análisis.",
+    event_type: "sale_attributed", event_title: `Venta atribuida con ${normalizedProducts.length} producto(s)`,
+    event_description: `${normalizedProducts.map((line) => `${line.name} x${line.quantity} por ${line.line_total} ${currency}`).join(" · ")}. Total pagado: ${saleAmount} ${currency}. La venta pasó a Valorización Clientes y quedó disponible para Inteligencia GOS.`,
     rms_phase: "postventa", metadata: {
       sale_id: result.sale.id,
       movement_id: movement.movement?.id || null,
+      product_count: normalizedProducts.length,
+      products: normalizedProducts,
+      economics,
+      payment_method: String(payload.payment_method || "OTHER").toUpperCase(),
+      paid_at: paidAt,
+      seller_user_id: payload.seller_user_id || user.id,
+      recorded_by_user_id: user.id,
       next_operational_station: "postventa",
       quality_control: "revenue_generado_visual",
       intelligence_handoff: {
@@ -3175,6 +3227,8 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
         } : null,
         sale: {
           product_name: productName,
+          product_count: normalizedProducts.length,
+          products: normalizedProducts,
           quantity,
           sale_amount: saleAmount,
           currency,

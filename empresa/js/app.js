@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260829-risk-none-initial-result-v396";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829";
+const APP_VERSION = "empresa-20260829-rms-sale-multiproduct-history-v397";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -49717,6 +49717,51 @@ function rmsAttributedSalePricing({ inventoryProduct = {}, quantity = 1, confirm
   };
 }
 
+function rmsAttributedSaleCartTotals(products = []) {
+  const lines = (Array.isArray(products) ? products : []).filter((line) => line?.inventory_product_id);
+  const quantity = lines.reduce((sum, line) => sum + Math.max(0.01, Number(line.quantity || 1)), 0);
+  const saleAmount = lines.reduce((sum, line) => sum + (Math.max(0.01, Number(line.quantity || 1)) * Math.max(0, Number(line.unit_price || 0))), 0);
+  const productCostTotal = lines.reduce((sum, line) => sum + (Math.max(0.01, Number(line.quantity || 1)) * Math.max(0, Number(line.unit_cost || 0))), 0);
+  return {
+    product_count: lines.length,
+    quantity: Math.round(quantity * 100) / 100,
+    sale_amount: Math.round(saleAmount * 100) / 100,
+    product_cost_total: Math.round(productCostTotal * 100) / 100,
+  };
+}
+
+function rmsSaleProductLineMarkup(id, line = {}, options = {}) {
+  const inventoryProduct = findInventoryProductById(line.inventory_product_id || "");
+  const quantity = Math.max(0.01, Number(line.quantity || 1));
+  const unitPrice = Math.max(0, Number(line.unit_price ?? inventoryProduct?.unit_price ?? 0));
+  const unitCost = Math.max(0, Number(line.unit_cost ?? inventoryProduct?.cost_price ?? 0));
+  const primaryAttribute = options.primary ? ` data-rms-sale-product="${escapeHtml(id)}"` : "";
+  return `
+    <article class="rms-sale-product-line" data-rms-sale-product-line>
+      <label><span>Producto</span><select data-rms-sale-line-product${primaryAttribute}>${rmsInventoryProductPickerOptions(line.inventory_product_id || "", line.name || "")}</select></label>
+      <label><span>Cantidad</span><input type="number" min="0.01" step="0.01" value="${escapeHtml(String(quantity))}" data-rms-sale-line-quantity></label>
+      <label><span>Precio unitario cobrado</span><input type="number" min="0.01" step="0.01" value="${escapeHtml(String(unitPrice || ""))}" data-rms-sale-line-price></label>
+      <label class="rms-sale-line-cost"><span>Costo unitario</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(unitCost))}" data-rms-sale-line-cost></label>
+      <div class="rms-sale-line-total"><span>Subtotal</span><strong data-rms-sale-line-total>${escapeHtml(rmsCommercialMoney(quantity * unitPrice, options.currency || "COP"))}</strong></div>
+      <button class="ghost-button danger-button compact" type="button" data-rms-sale-remove-product aria-label="Quitar producto">Quitar</button>
+    </article>`;
+}
+
+function rmsSaleProductsFromDom(root, id) {
+  const card = rmsCommercialNode(root, "[data-rms-sale-products]", id)?.closest("[data-rms-station-lead]")
+    || rmsCommercialNode(root, "[data-rms-sale-product]", id)?.closest("[data-rms-station-lead]");
+  return Array.from(card?.querySelectorAll("[data-rms-sale-product-line]") || []).map((line) => {
+    const inventoryProduct = findInventoryProductById(line.querySelector("[data-rms-sale-line-product]")?.value || "");
+    return {
+      inventory_product_id: inventoryProduct?.id || null,
+      name: inventoryProduct?.name || "",
+      quantity: Math.max(0.01, Number(line.querySelector("[data-rms-sale-line-quantity]")?.value || 1)),
+      unit_price: Math.max(0, Number(line.querySelector("[data-rms-sale-line-price]")?.value || 0)),
+      unit_cost: Math.max(0, Number(line.querySelector("[data-rms-sale-line-cost]")?.value || inventoryProduct?.cost_price || 0)),
+    };
+  }).filter((line) => line.inventory_product_id);
+}
+
 function rmsAttributedSaleStationCardMarkup(item = {}) {
   const workflow = rmsCommercialWorkflow(item);
   const stateMetadata = item.state_metadata || item.metadata || item.rms_metadata || {};
@@ -49760,6 +49805,13 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
   const inheritedAmount = confirmation.amount ?? evaluation.budget_amount ?? negotiationResponse.amount ?? "";
   const inheritedCurrency = confirmation.currency || evaluation.currency || negotiationResponse.currency || "COP";
   const pricing = rmsAttributedSalePricing({ inventoryProduct, quantity, confirmation, saleContext, riskContext, currency: inheritedCurrency });
+  const initialSaleProduct = {
+    inventory_product_id: inheritedInventoryProductId,
+    name: defaultProduct,
+    quantity,
+    unit_price: quantity > 0 ? Math.round(((pricing.finalAmount || inheritedAmount || 0) / quantity) * 100) / 100 : 0,
+    unit_cost: unitCost,
+  };
   const inheritedChannel = confirmation.negotiation?.channel || negotiationResponse.channel || activation.channel || "";
   const inheritedResponsible = riskContext.responsible || confirmation.responsible || negotiationResponse.responsible || "";
   const evaluationResponse = RMS_EVALUATION_RESPONSES.find((entry) => entry.value === evaluation.response)?.short || evaluation.response || "Sin respuesta registrada";
@@ -49800,13 +49852,14 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
         <section class="rms-sale-price-journey" data-rms-sale-pricing="${escapeHtml(item.id)}" aria-label="Trazabilidad del precio"><header><div><span class="mono-label">TRAZABILIDAD DEL PRECIO</span><strong>Así se calculó lo que pagó el cliente</strong></div><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span></header><div class="rms-sale-price-journey-track"><article><small>Precio original</small><strong data-rms-sale-original-price="${escapeHtml(item.id)}">${escapeHtml(rmsCommercialMoney(pricing.originalAmount, inheritedCurrency))}</strong><span>${escapeHtml(`${quantity} unidad(es) · ${rmsCommercialMoney(pricing.originalUnitPrice, inheritedCurrency)} c/u`)}</span></article><span class="material-symbols-outlined rms-sale-price-arrow" aria-hidden="true">arrow_forward</span><article class="is-benefit"><small>Beneficio negociado</small><strong data-rms-sale-discount="${escapeHtml(item.id)}">-${escapeHtml(rmsCommercialMoney(pricing.discountAmount, inheritedCurrency))}</strong><span data-rms-sale-discount-detail="${escapeHtml(item.id)}">${escapeHtml(pricing.detail)}</span></article><span class="material-symbols-outlined rms-sale-price-arrow" aria-hidden="true">arrow_forward</span><article class="is-final"><small>Precio final cobrado</small><strong data-rms-sale-final-price="${escapeHtml(item.id)}">${escapeHtml(rmsCommercialMoney(pricing.finalAmount, inheritedCurrency))}</strong><span data-rms-sale-final-detail="${escapeHtml(item.id)}">${pricing.discountPercent > 0 ? `${pricing.discountPercent}% menos` : "Valor confirmado"}</span></article></div><small class="rms-sale-price-journey-note">El descuento se arrastra desde la negociación o la liberación anti-fuga; el valor final es el que se registra como dinero recibido.</small></section>
         <header class="rms-commercial-console-head"><div><span class="mono-label">Compra confirmada</span><h4>Registra el pago y su rentabilidad</h4><p>La venta se atribuye a este contacto y a la ruta de Activación 1. Los costos son los que declare tu equipo.</p></div><span class="rms-commercial-state is-sale">Pago por registrar</span></header>
         <details class="rms-sale-handoff"><summary><span class="material-symbols-outlined" aria-hidden="true">route</span><span><strong>Ver información heredada</strong><small>Activación, Evaluación, Negociación y Riesgos de fuga quedan guardados. Ábrelo solo si necesitas revisar el contexto.</small></span></summary><div class="rms-sale-handoff-grid"><article><span>Activación</span><strong>${escapeHtml(activationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(activation.firstContactAt ? `Contacto ${formatDate(activation.firstContactAt)}` : "Sin fecha de contacto")}</small></article><article><span>Evaluación</span><strong>${escapeHtml(evaluationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(evaluation.next_action || "Sin próximo paso pendiente")}</small></article><article><span>Negociación</span><strong>${escapeHtml(negotiationDetail || "Venta confirmada")}</strong><small>${escapeHtml(confirmation.evidence ? "Evidencia registrada" : "Sin evidencia adicional")}</small></article><article class="rms-sale-handoff-risk"><span>Riesgos de fuga</span><strong>${escapeHtml(riskDetail || "No fue necesario intervenir")}</strong><small>${escapeHtml([riskContext.reviewedAt ? `Revisado ${formatDate(riskContext.reviewedAt)}` : "", riskContext.signalCount ? `${riskContext.signalCount} señal(es) revisada(s)` : ""].filter(Boolean).join(" · ") || "Sin revisión anti-fuga")}</small></article></div></details>
+        <section class="rms-sale-products-builder" data-rms-sale-products="${escapeHtml(item.id)}">
+          <header><div><span class="mono-label">Detalle completo de compra</span><strong>Productos comprados</strong><small id="rms-sale-product-hint-${escapeHtml(item.id)}">Agrega cada referencia que compró este cliente. Cada línea conserva cantidad, precio, costo y subtotal en el historial.</small></div><button class="ghost-button compact" type="button" data-rms-sale-add-product="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">add</span>Agregar otro producto</button></header>
+          <div class="rms-sale-products-list" data-rms-sale-products-list>${rmsSaleProductLineMarkup(item.id, initialSaleProduct, { primary: true, currency: inheritedCurrency })}</div>
+        </section>
+        <input type="hidden" value="${escapeHtml(defaultProduct)}" data-rms-sale-product-name="${escapeHtml(item.id)}">
         <div class="rms-sale-form-grid">
-          <label><span>Producto comprado</span><select data-rms-sale-product="${escapeHtml(item.id)}" aria-describedby="rms-sale-product-hint-${escapeHtml(item.id)}">${rmsInventoryProductPickerOptions(inheritedInventoryProductId, defaultProduct)}</select><small id="rms-sale-product-hint-${escapeHtml(item.id)}">Producto precargado desde ${escapeHtml(confirmation.inventory_product_id ? "Negociación" : evaluation.recommended_inventory_product_id ? "Evaluación" : "la asignación del lead")}. Cámbialo solo si el cliente compró otra referencia; Qori conservará ambas referencias en el historial.</small></label>
-          <input type="hidden" value="${escapeHtml(defaultProduct)}" data-rms-sale-product-name="${escapeHtml(item.id)}">
-          <label><span>Cantidad comprada</span><input type="number" min="0.01" step="0.01" value="${escapeHtml(String(quantity))}" data-rms-sale-quantity="${escapeHtml(item.id)}"></label>
-          <label><span>Dinero recibido</span><input type="number" min="1" step="0.01" value="${escapeHtml(String(pricing.finalAmount || inheritedAmount || ""))}" data-rms-sale-amount="${escapeHtml(item.id)}" placeholder="0"></label>
+          <label><span>Total pagado (calculado)</span><input type="number" min="1" step="0.01" value="${escapeHtml(String(pricing.finalAmount || inheritedAmount || ""))}" data-rms-sale-amount="${escapeHtml(item.id)}" placeholder="0" readonly></label>
           <label><span>Moneda</span><select data-rms-sale-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${currency === inheritedCurrency ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
-          <label><span>Costo unitario</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(unitCost))}" data-rms-sale-unit-cost="${escapeHtml(item.id)}"></label>
           <label><span>Medio de pago</span><select data-rms-sale-payment="${escapeHtml(item.id)}"><option value="TRANSFER">Transferencia</option><option value="CASH">Efectivo</option><option value="CARD">Tarjeta</option><option value="PAYMENT_LINK">Link de pago</option><option value="OTHER">Otro</option></select></label>
           <label><span>Vendedor responsable</span><select data-rms-sale-seller="${escapeHtml(item.id)}" data-business-sale-seller>${businessSaleSellerOptions()}</select><small>Debe ser quien cerró realmente esta venta.</small></label>
           <label><span>Beneficio usado</span><select data-rms-sale-benefit-type="${escapeHtml(item.id)}"><option value="NONE" ${benefitType === "NONE" ? "selected" : ""}>No se usó beneficio</option><option value="DISCOUNT" ${benefitType === "DISCOUNT" ? "selected" : ""}>Descuento</option><option value="GIFT" ${benefitType === "GIFT" ? "selected" : ""}>Obsequio</option><option value="BONUS" ${benefitType === "BONUS" ? "selected" : ""}>Bono / incentivo</option><option value="OTHER" ${benefitType === "OTHER" ? "selected" : ""}>Otro</option></select></label>
@@ -54206,22 +54259,9 @@ function bindRmsMachineActions(root) {
       });
     });
   });
-  root.querySelectorAll("[data-rms-sale-product]").forEach((select) => {
-    const id = select.dataset.rmsSaleProduct || "";
-    select.addEventListener("change", () => {
-      select.setCustomValidity("");
-      const product = findInventoryProductById(select.value || "");
-      const nameInput = rmsCommercialNode(root, "[data-rms-sale-product-name]", id);
-      const costInput = rmsCommercialNode(root, "[data-rms-sale-unit-cost]", id);
-      if (product) {
-        if (nameInput) nameInput.value = product.name || "";
-        if (costInput) costInput.value = Number(product.cost_price || 0);
-      }
-      updateRmsSaleEconomicsPreview(root, id);
-    });
-  });
-  root.querySelectorAll("[data-rms-sale-quantity], [data-rms-sale-amount], [data-rms-sale-unit-cost], [data-rms-sale-benefit-cost], [data-rms-sale-acquisition-cost], [data-rms-sale-currency]").forEach((input) => {
-    const id = input.dataset.rmsSaleQuantity || input.dataset.rmsSaleAmount || input.dataset.rmsSaleUnitCost || input.dataset.rmsSaleBenefitCost || input.dataset.rmsSaleAcquisitionCost || input.dataset.rmsSaleCurrency || "";
+  root.querySelectorAll("[data-rms-sale-products]").forEach((builder) => bindRmsSaleProductLines(root, builder.dataset.rmsSaleProducts || ""));
+  root.querySelectorAll("[data-rms-sale-amount], [data-rms-sale-benefit-cost], [data-rms-sale-acquisition-cost], [data-rms-sale-currency]").forEach((input) => {
+    const id = input.dataset.rmsSaleAmount || input.dataset.rmsSaleBenefitCost || input.dataset.rmsSaleAcquisitionCost || input.dataset.rmsSaleCurrency || "";
     updateRmsSaleEconomicsPreview(root, id);
     input.addEventListener("input", () => updateRmsSaleEconomicsPreview(root, id));
     input.addEventListener("change", () => updateRmsSaleEconomicsPreview(root, id));
@@ -55894,10 +55934,20 @@ function ensureRmsCaptureReviewStyles() {
     .rms-capture-response-card { min-width: 0; padding: 15px; border: 1px solid var(--sm-line, rgba(23,65,91,.14)); background: var(--sm-surface-solid, #fff); }
     .rms-capture-response-card strong { display: block; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-wrap; }
     .rms-capture-review-empty { padding: 24px; border: 1px dashed var(--sm-line-strong, rgba(5, 42, 107, .26)); background: var(--sm-surface-green, #f6fbff); text-align: center; }
+    .rms-capture-history { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--sm-line, rgba(23,65,91,.14)); }
+    .rms-capture-history > header { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+    .rms-capture-history-list { display: grid; gap: 10px; }
+    .rms-capture-history-event { display: grid; grid-template-columns: 36px minmax(0,1fr) auto; gap: 11px; padding: 14px; border: 1px solid var(--sm-line, rgba(23,65,91,.14)); border-radius: 14px; background: #fff; }
+    .rms-capture-history-event > .material-symbols-outlined { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; color: #0759d6; background: #eaf3ff; }
+    .rms-capture-history-event strong, .rms-capture-history-event small { display: block; }
+    .rms-capture-history-event p { margin: 5px 0; line-height: 1.45; }
+    .rms-capture-history-products { display: grid; gap: 5px; margin-top: 9px; }
+    .rms-capture-history-product { display: flex; justify-content: space-between; gap: 12px; padding: 8px 10px; border-radius: 10px; background: #f3f8ff; }
+    .rms-capture-history-product span { overflow-wrap: anywhere; }
     .rms-capture-review-actions { position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: 10px; padding: 16px 26px; border-top: 1px solid var(--sm-line, rgba(23,65,91,.14)); background: var(--sm-surface-solid, #fff); }
     @media (max-width: 760px) {
       .rms-capture-review-head, .rms-capture-group-head, .rms-capture-review-actions { flex-direction: column; }
-      .rms-capture-origin, .rms-capture-response-grid { grid-template-columns: 1fr; }
+      .rms-capture-origin, .rms-capture-response-grid, .rms-capture-history-event { grid-template-columns: 1fr; }
       .rms-capture-review-head, .rms-capture-review-body, .rms-capture-review-actions { padding-left: 17px; padding-right: 17px; }
       .rms-capture-review-actions button { width: 100%; }
     }
@@ -56017,6 +56067,33 @@ function rmsCaptureReviewGroups(detail = {}, item = {}) {
   return groups;
 }
 
+function rmsCaptureHistoryProductsMarkup(event = {}) {
+  const metadata = event.metadata && typeof event.metadata === "object" ? event.metadata : {};
+  const products = Array.isArray(metadata.products)
+    ? metadata.products
+    : Array.isArray(metadata.economics?.products)
+      ? metadata.economics.products
+      : [];
+  if (!products.length) return "";
+  const currency = metadata.economics?.currency || "COP";
+  return `<div class="rms-capture-history-products">${products.map((product) => {
+    const quantity = Number(product.quantity || 1);
+    const lineTotal = Number(product.line_total || (Number(product.unit_price || 0) * quantity));
+    return `<div class="rms-capture-history-product"><span><strong>${escapeHtml(product.name || product.product_name_snapshot || "Producto")}</strong><small>${escapeHtml(`Cantidad ${quantity} · Unitario ${rmsCommercialMoney(product.unit_price || 0, currency)}`)}</small></span><b>${escapeHtml(rmsCommercialMoney(lineTotal, currency))}</b></div>`;
+  }).join("")}</div>`;
+}
+
+function rmsCaptureHistoryMarkup(detail = {}) {
+  const events = Array.isArray(detail.rms?.events) ? detail.rms.events : [];
+  if (!events.length) return `<section class="rms-capture-history"><header><div><span class="mono-label">Historial operativo</span><strong>Sin movimientos RMS registrados</strong></div></header></section>`;
+  return `<section class="rms-capture-history"><header><div><span class="mono-label">Historial operativo detallado</span><strong>${events.length.toLocaleString("es-CO")} movimiento(s) de este lead</strong><small>Quién, cuándo, estación, decisión y detalle económico cuando corresponda.</small></div></header><div class="rms-capture-history-list">${events.map((event) => `
+    <article class="rms-capture-history-event">
+      <span class="material-symbols-outlined" aria-hidden="true">${event.event_type === "sale_attributed" ? "receipt_long" : event.event_type === "phase_moved" ? "sync_alt" : "history"}</span>
+      <div><strong>${escapeHtml(event.event_title || event.event_type || "Movimiento RMS")}</strong><p>${escapeHtml(event.event_description || "Sin descripción adicional.")}</p><small>${escapeHtml([event.rms_phase, event.operation_key, event.actor_name || "Sistema Qori"].filter(Boolean).join(" · "))}</small>${rmsCaptureHistoryProductsMarkup(event)}</div>
+      <time>${escapeHtml(event.created_at ? formatDate(event.created_at) : "Sin fecha")}</time>
+    </article>`).join("")}</div></section>`;
+}
+
 function renderRmsCaptureReview(detail = {}, item = {}) {
   const body = document.getElementById("rmsCaptureReviewBody");
   const title = document.getElementById("rmsCaptureReviewTitle");
@@ -56053,6 +56130,7 @@ function renderRmsCaptureReview(detail = {}, item = {}) {
         <p>La identidad y el origen sí están registrados. Puedes abrir la ficha completa para revisar su historial.</p>
       </div>
     `}
+    ${rmsCaptureHistoryMarkup(detail)}
   `;
 }
 
@@ -57136,19 +57214,18 @@ async function reactivateRmsRecycled(item, note, destination = "procesamiento") 
 }
 
 function rmsSaleDraftFromDom(root, id) {
-  const productSelect = rmsCommercialNode(root, "[data-rms-sale-product]", id);
-  const inventoryProduct = findInventoryProductById(productSelect?.value || "");
-  const quantity = Math.max(0.01, rmsCommercialNumber(root, "[data-rms-sale-quantity]", id) || 1);
-  const unitPrice = Math.max(0, Number(inventoryProduct?.unit_price || 0));
-  const saleAmount = Math.max(0, rmsCommercialNumber(root, "[data-rms-sale-amount]", id));
+  const products = rmsSaleProductsFromDom(root, id);
+  const totals = rmsAttributedSaleCartTotals(products);
+  const primaryProduct = products[0] || {};
   return {
-    inventory_product_id: inventoryProduct?.id || null,
-    product_name: inventoryProduct?.name || "",
-    quantity,
-    unit_price: unitPrice,
-    sale_amount: Math.round(saleAmount * 100) / 100,
+    products,
+    inventory_product_id: primaryProduct.inventory_product_id || null,
+    product_name: products.length === 1 ? primaryProduct.name : `${products.length} productos`,
+    quantity: totals.quantity,
+    unit_price: totals.quantity > 0 ? Math.round((totals.sale_amount / totals.quantity) * 100) / 100 : 0,
+    sale_amount: totals.sale_amount,
     currency: rmsCommercialNode(root, "[data-rms-sale-currency]", id)?.value || "COP",
-    unit_cost: Math.max(0, rmsCommercialNumber(root, "[data-rms-sale-unit-cost]", id)),
+    unit_cost: totals.quantity > 0 ? Math.round((totals.product_cost_total / totals.quantity) * 100) / 100 : 0,
     benefit_type: rmsCommercialNode(root, "[data-rms-sale-benefit-type]", id)?.value || "NONE",
     benefit_cost: Math.max(0, rmsCommercialNumber(root, "[data-rms-sale-benefit-cost]", id)),
     acquisition_cost: Math.max(0, rmsCommercialNumber(root, "[data-rms-sale-acquisition-cost]", id)),
@@ -57166,41 +57243,27 @@ function updateRmsSaleEconomicsPreview(root, id) {
   const amountInput = rmsCommercialNode(root, "[data-rms-sale-amount]", id);
   const item = rmsOpportunityById(id) || {};
   const workflow = rmsCommercialWorkflow(item);
-  const confirmation = workflow.confirmation || {};
-  const saleContext = confirmation.sale_context || {};
   const riskContext = rmsRiskRecoveryPresentation(workflow.risk || {}, item.state_metadata || item.metadata || {});
-  const pricing = rmsAttributedSalePricing({ inventoryProduct: findInventoryProductById(draft.inventory_product_id), quantity: draft.quantity, confirmation, saleContext, riskContext, currency: draft.currency });
-  if (amountInput?.readOnly) amountInput.value = String(pricing.finalAmount || 0);
-  else if (amountInput) amountInput.value = String(draft.sale_amount || pricing.finalAmount || "");
-  draft.sale_amount = amountInput?.readOnly ? pricing.finalAmount : (draft.sale_amount || pricing.finalAmount);
+  const originalAmount = draft.products.reduce((sum, line) => {
+    const product = findInventoryProductById(line.inventory_product_id);
+    return sum + (Math.max(0.01, Number(line.quantity || 1)) * Math.max(0, Number(product?.unit_price || line.unit_price || 0)));
+  }, 0);
+  const discountAmount = Math.max(0, Math.round((originalAmount - draft.sale_amount) * 100) / 100);
+  const discountPercent = originalAmount > 0 ? Math.round((discountAmount / originalAmount) * 10000) / 100 : 0;
+  if (amountInput) amountInput.value = String(draft.sale_amount || "");
   const unitPrice = rmsCommercialNode(root, "[data-rms-sale-unit-price]", id);
-  if (unitPrice) unitPrice.textContent = rmsCommercialMoney(pricing.negotiatedUnitPrice || draft.unit_price, draft.currency);
+  if (unitPrice) unitPrice.textContent = `${draft.products.length} producto(s)`;
   const total = rmsCommercialNode(root, "[data-rms-sale-calculated-total]", id);
   if (total) total.textContent = rmsCommercialMoney(draft.sale_amount, draft.currency);
   const priceValue = (selector, value) => { const node = rmsCommercialNode(root, selector, id); if (node) node.textContent = value; };
-  priceValue("[data-rms-sale-original-price]", rmsCommercialMoney(pricing.originalAmount, draft.currency));
-  priceValue("[data-rms-sale-discount]", `-${rmsCommercialMoney(pricing.discountAmount, draft.currency)}`);
-  priceValue("[data-rms-sale-discount-detail]", pricing.detail || "Sin beneficio registrado");
-  priceValue("[data-rms-sale-final-price]", rmsCommercialMoney(draft.sale_amount || pricing.finalAmount, draft.currency));
-  priceValue("[data-rms-sale-final-detail]", pricing.discountPercent > 0 ? `${pricing.discountPercent}% menos` : "Valor confirmado");
+  priceValue("[data-rms-sale-original-price]", rmsCommercialMoney(originalAmount, draft.currency));
+  priceValue("[data-rms-sale-discount]", `-${rmsCommercialMoney(discountAmount, draft.currency)}`);
+  priceValue("[data-rms-sale-discount-detail]", riskContext.label || "Ajuste registrado por línea");
+  priceValue("[data-rms-sale-final-price]", rmsCommercialMoney(draft.sale_amount, draft.currency));
+  priceValue("[data-rms-sale-final-detail]", discountPercent > 0 ? `${discountPercent}% menos` : `${draft.products.length} línea(s) confirmada(s)`);
   const productHint = root.querySelector?.(`#rms-sale-product-hint-${CSS.escape(id)}`);
-  const evaluation = workflow.evaluation || {};
-  const inheritedProductId = confirmation.inventory_product_id
-    || evaluation.recommended_inventory_product_id
-    || rmsOpportunityById(id)?.classified_product_id
-    || rmsOpportunityById(id)?.inventory_product_id
-    || "";
-  const sourceLabel = confirmation.inventory_product_id
-    ? "Negociación"
-    : evaluation.recommended_inventory_product_id
-      ? "Evaluación"
-      : "la asignación del lead";
-  if (productHint) {
-    productHint.textContent = draft.inventory_product_id && inheritedProductId && String(draft.inventory_product_id) !== String(inheritedProductId)
-      ? "Producto corregido al cerrar la venta. Se conservará la referencia negociada y esta será la compra real."
-      : `Producto preseleccionado desde ${sourceLabel}. Cámbialo solo si la compra real fue otra referencia.`;
-  }
-  const productCost = draft.quantity * draft.unit_cost;
+  if (productHint) productHint.textContent = `${draft.products.length} producto(s) en esta compra. Cada línea conservará referencia, cantidad, precio, costo y subtotal en el historial.`;
+  const productCost = rmsAttributedSaleCartTotals(draft.products).product_cost_total;
   const grossProfit = draft.sale_amount - productCost - draft.benefit_cost;
   const netProfit = grossProfit - draft.acquisition_cost;
   const invested = productCost + draft.benefit_cost + draft.acquisition_cost;
@@ -57211,7 +57274,62 @@ function updateRmsSaleEconomicsPreview(root, id) {
   if (affiliateBox) affiliateBox.innerHTML = hasAffiliate
     ? `<span class="material-symbols-outlined" aria-hidden="true">workspace_premium</span><div><strong>Afiliado o referido vinculado</strong><small>${points?.points ?? 0} puntos estimados. ${escapeHtml(points?.formula || "El cálculo final se confirma al registrar el pago.")}</small></div>`
     : `<span class="material-symbols-outlined" aria-hidden="true">group</span><div><strong>Sin afiliado vinculado</strong><small>Si existe una relación de referido, se detectará al registrar el pago.</small></div>`;
-  preview.innerHTML = [["Precio unitario", rmsCommercialMoney(draft.unit_price, draft.currency)], ["Pago calculado", rmsCommercialMoney(draft.sale_amount, draft.currency)], ["Costo producto", rmsCommercialMoney(productCost, draft.currency)], ["Beneficio", rmsCommercialMoney(draft.benefit_cost, draft.currency)], ["Adquisición", rmsCommercialMoney(draft.acquisition_cost, draft.currency)], ["Utilidad neta", rmsCommercialMoney(netProfit, draft.currency)], ["ROI", roi === null ? "Sin base de costo" : `${(roi * 100).toFixed(1)}%`]].map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
+  preview.innerHTML = [["Productos", String(draft.products.length)], ["Unidades", String(draft.quantity)], ["Pago calculado", rmsCommercialMoney(draft.sale_amount, draft.currency)], ["Costo productos", rmsCommercialMoney(productCost, draft.currency)], ["Beneficio", rmsCommercialMoney(draft.benefit_cost, draft.currency)], ["Adquisición", rmsCommercialMoney(draft.acquisition_cost, draft.currency)], ["Utilidad neta", rmsCommercialMoney(netProfit, draft.currency)], ["ROI", roi === null ? "Sin base de costo" : `${(roi * 100).toFixed(1)}%`]].map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
+}
+
+function bindRmsSaleProductLines(root, id) {
+  const builder = rmsCommercialNode(root, "[data-rms-sale-products]", id);
+  const list = builder?.querySelector("[data-rms-sale-products-list]");
+  if (!builder || !list) return;
+  const currency = () => rmsCommercialNode(root, "[data-rms-sale-currency]", id)?.value || "COP";
+  const refresh = () => {
+    const rows = Array.from(list.querySelectorAll("[data-rms-sale-product-line]"));
+    rows.forEach((line) => {
+      const quantity = Math.max(0.01, Number(line.querySelector("[data-rms-sale-line-quantity]")?.value || 1));
+      const unitPrice = Math.max(0, Number(line.querySelector("[data-rms-sale-line-price]")?.value || 0));
+      const total = line.querySelector("[data-rms-sale-line-total]");
+      if (total) total.textContent = rmsCommercialMoney(quantity * unitPrice, currency());
+      const remove = line.querySelector("[data-rms-sale-remove-product]");
+      if (remove) remove.disabled = rows.length <= 1;
+    });
+    updateRmsSaleEconomicsPreview(root, id);
+  };
+  const bindLine = (line) => {
+    if (!line || line.dataset.rmsSaleLineBound === "true") return;
+    line.dataset.rmsSaleLineBound = "true";
+    const select = line.querySelector("[data-rms-sale-line-product]");
+    select?.addEventListener("change", () => {
+      select.setCustomValidity("");
+      const product = findInventoryProductById(select.value || "");
+      const price = line.querySelector("[data-rms-sale-line-price]");
+      const cost = line.querySelector("[data-rms-sale-line-cost]");
+      if (product && price) price.value = String(Number(product.unit_price || 0));
+      if (product && cost) cost.value = String(Number(product.cost_price || 0));
+      refresh();
+    });
+    line.querySelectorAll("[data-rms-sale-line-quantity], [data-rms-sale-line-price], [data-rms-sale-line-cost]").forEach((input) => {
+      input.addEventListener("input", refresh);
+      input.addEventListener("change", refresh);
+    });
+    line.querySelector("[data-rms-sale-remove-product]")?.addEventListener("click", () => {
+      if (list.querySelectorAll("[data-rms-sale-product-line]").length <= 1) return;
+      line.remove();
+      refresh();
+    });
+  };
+  list.querySelectorAll("[data-rms-sale-product-line]").forEach(bindLine);
+  const addButton = rmsCommercialNode(root, "[data-rms-sale-add-product]", id);
+  if (addButton && addButton.dataset.rmsSaleAddBound !== "true") {
+    addButton.dataset.rmsSaleAddBound = "true";
+    addButton.addEventListener("click", () => {
+      list.insertAdjacentHTML("beforeend", rmsSaleProductLineMarkup(id, {}, { currency: currency() }));
+      const line = list.lastElementChild;
+      bindLine(line);
+      refresh();
+      line?.querySelector("[data-rms-sale-line-product]")?.focus();
+    });
+  }
+  refresh();
 }
 
 function applyRmsNegotiationContextToAttributedSales(root) {
@@ -57294,13 +57412,22 @@ function rmsCommercialOperationKey(scope = "commercial", item = {}, signature = 
 async function saveRmsAttributedSale(item, root) {
   const draft = rmsSaleDraftFromDom(root, item.id);
   const productSelect = rmsCommercialNode(root, "[data-rms-sale-product]", item.id);
-  if (!draft.inventory_product_id || draft.sale_amount <= 0) {
-    if (!draft.inventory_product_id && productSelect) {
-      productSelect.setCustomValidity("Selecciona el producto real del inventario antes de atribuir la venta.");
-      productSelect.reportValidity();
-      productSelect.focus();
+  const builder = rmsCommercialNode(root, "[data-rms-sale-products]", item.id);
+  const rows = Array.from(builder?.querySelectorAll("[data-rms-sale-product-line]") || []);
+  const invalidRow = rows.find((row) => !row.querySelector("[data-rms-sale-line-product]")?.value || Number(row.querySelector("[data-rms-sale-line-price]")?.value || 0) <= 0);
+  if (!draft.products.length || invalidRow || draft.sale_amount <= 0) {
+    const invalidSelect = invalidRow?.querySelector("[data-rms-sale-line-product]");
+    const invalidPrice = invalidRow?.querySelector("[data-rms-sale-line-price]");
+    if (invalidSelect && !invalidSelect.value) {
+      invalidSelect.setCustomValidity("Selecciona el producto real del inventario para esta línea.");
+      invalidSelect.reportValidity();
+      invalidSelect.focus();
+    } else if (invalidPrice) {
+      invalidPrice.setCustomValidity("Registra un precio unitario mayor a cero.");
+      invalidPrice.reportValidity();
+      invalidPrice.focus();
     }
-    showFeedback("Selecciona el producto confirmado del inventario y el dinero recibido para atribuir la venta.", "info", { title: "Ventas atribuidas" });
+    showFeedback("Completa producto, cantidad y precio en cada línea de la compra antes de atribuir la venta.", "info", { title: "Ventas atribuidas" });
     return;
   }
   if (productSelect) productSelect.setCustomValidity("");
