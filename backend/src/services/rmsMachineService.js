@@ -742,25 +742,25 @@ async function leadRowsForStateRefs(businessId, refs = [], filters = {}) {
     acc[type].push(row.source_id);
     return acc;
   }, {});
-  const rows = [];
+  const requests = [];
   for (const [sourceType, ids] of Object.entries(byType)) {
     // Las estaciones operativas no pueden perder un cliente solo porque su
     // fila RMS ya no esté dentro de la primera página del CRM. Se resuelven
     // todos los IDs persistidos por bloques compatibles con la consulta CRM.
     for (let offset = 0; offset < ids.length; offset += 120) {
       const sourceIds = ids.slice(offset, offset + 120);
-      const data = await listLeadCrmRows(businessId, {
+      requests.push(listLeadCrmRows(businessId, {
         ...filters,
         source_type: sourceType,
         source_ids: sourceIds,
         preserve_requested_source_refs: true,
         limit: sourceIds.length,
         offset: 0,
-      });
-      rows.push(...(data.leads || data.rows || []));
+      }));
     }
   }
-  return rows;
+  const results = await Promise.all(requests);
+  return results.flatMap((data) => data.leads || data.rows || []);
 }
 
 function rmsContactIdentityKeys(row = {}) {
@@ -978,20 +978,30 @@ async function listRmsOpportunities(businessId, filters = {}) {
   const crmFilters = { ...filters };
   delete crmFilters.rms_phase;
   delete crmFilters.phase;
-  const data = await listLeadCrmRows(businessId, {
-    ...crmFilters,
-    limit,
-    offset: filters.offset || 0,
-  });
+  const stationFastPath = lite && Boolean(phaseFilter);
+  const inventoryPromise = inventoryProductsForBusiness(businessId);
+  const stationStateRows = stationFastPath
+    ? await recentStateRowsForBusiness(businessId, limit, phaseFilter)
+    : null;
+  const data = stationFastPath
+    ? {
+      leads: await leadRowsForStateRefs(businessId, stationStateRows, crmFilters),
+      pagination: { total: stationStateRows.length, limit, offset: 0, has_more: stationStateRows.length >= limit },
+    }
+    : await listLeadCrmRows(businessId, {
+      ...crmFilters,
+      limit,
+      offset: filters.offset || 0,
+    });
   const baseRows = data.leads || data.rows || [];
   // Cuando se abre una estación, su estado RMS es la fuente de verdad. La
   // vista CRM puede estar paginada o fusionar el contacto con otra fuente,
   // pero una venta que pasó a Valorización debe aparecer siempre allí.
-  const recentStateRows = phaseFilter
+  const recentStateRows = stationStateRows || (phaseFilter
     ? await recentStateRowsForBusiness(businessId, 500, phaseFilter)
-    : await recentStateRowsForBusiness(businessId, 240);
+    : await recentStateRowsForBusiness(businessId, 240));
   const baseKeys = new Set(baseRows.map((row) => `${crmSourceType(row)}:${row.id}`));
-  const missingStateRows = recentStateRows.filter((row) => !baseKeys.has(`${crmSourceType(row)}:${row.source_id}`));
+  const missingStateRows = stationFastPath ? [] : recentStateRows.filter((row) => !baseKeys.has(`${crmSourceType(row)}:${row.source_id}`));
   const extraRows = missingStateRows.length
     ? await leadRowsForStateRefs(businessId, missingStateRows, crmFilters)
     : [];
@@ -1003,10 +1013,12 @@ async function listRmsOpportunities(businessId, filters = {}) {
       mergedRows.push(row);
     }
   });
-  const stateMap = new Map([
-    ...recentStateRows.map((row) => [`${crmSourceType(row)}:${row.source_id}`, row]),
-    ...Array.from((await stateRowsFor(businessId, mergedRows)).entries()),
-  ]);
+  const stateMap = stationFastPath
+    ? new Map(recentStateRows.map((row) => [`${crmSourceType(row)}:${row.source_id}`, row]))
+    : new Map([
+      ...recentStateRows.map((row) => [`${crmSourceType(row)}:${row.source_id}`, row]),
+      ...Array.from((await stateRowsFor(businessId, mergedRows)).entries()),
+    ]);
   if (phaseFilter === "clasificacion") {
     const acceptedDeliveries = await acceptedRmsActivationDeliveryMap(businessId);
     acceptedDeliveries.forEach((delivery, key) => {
@@ -1024,8 +1036,7 @@ async function listRmsOpportunities(businessId, filters = {}) {
     )
     : { rows: [] };
   const openRecyclingKeys = new Set((openRecyclingRows.rows || []).map((row) => `${crmSourceType(row)}:${row.source_id}`));
-  const needsInventory = true;
-  const inventoryProducts = needsInventory ? await inventoryProductsForBusiness(businessId) : [];
+  const inventoryProducts = await inventoryPromise;
   const canonicalRows = collapseRmsDuplicateContacts(mergedRows, stateMap);
   const allOpportunities = canonicalRows.map((row) => (
     opportunityFromRow(row, stateMap.get(`${crmSourceType(row)}:${row.id}`), inventoryProducts)
@@ -1966,16 +1977,22 @@ async function scheduleRmsRecyclingCase(businessId, user, payload = {}) {
 
 async function listRmsRecyclingCases(businessId, filters = {}) {
   const rows = await query(
-    `select r.*, s.rms_phase as current_phase, s.metadata as state_metadata
+    `select r.*, s.rms_phase as current_phase, s.metadata as state_metadata,
+            coalesce(owner.full_name, owner.email, nullif(r.recycle_owner, '')) as recycle_owner_name,
+            coalesce(creator.full_name, creator.email) as created_by_name,
+            coalesce(updater.full_name, updater.email) as updated_by_name
        from rms_recycling_cases r
        left join rms_lead_state s on s.business_id=r.business_id and s.source_type=r.source_type and s.source_id=r.source_id
+       left join app_users owner on owner.business_id=r.business_id and owner.id::text=r.recycle_owner
+       left join app_users creator on creator.business_id=r.business_id and creator.id=r.created_by
+       left join app_users updater on updater.business_id=r.business_id and updater.id=r.updated_by
       where r.business_id=$1 order by r.recycle_at asc`,
     [businessId]
   );
   const opportunities = (await listRmsOpportunities(businessId, { limit: 500 })).opportunities || [];
   const bySource = new Map(opportunities.map((item) => [`${item.source_type}:${item.source_id}`, item]));
   const now = Date.now();
-  const cases = rows.rows.map((row) => {
+  const allCases = rows.rows.map((row) => {
     const opportunity = bySource.get(`${row.source_type}:${row.source_id}`) || {};
     const display_status = recyclingDisplayStatus(row, now);
     const status = row.recycle_status === "REACTIVATED" && opportunity.stage === "postventa" ? "CONVERTED" : display_status;
@@ -1987,7 +2004,24 @@ async function listRmsRecyclingCases(businessId, filters = {}) {
       campaign_name: opportunity.campaign_name || null, last_interaction_at: opportunity.last_interaction_at || null,
       priority: opportunity.priority || null,
     } };
-  }).filter((item) => {
+  });
+  const caseIds = allCases.map((item) => item.id);
+  const eventRows = caseIds.length ? await query(
+    `select e.*, coalesce(actor.full_name, actor.email, 'Sistema') as actor_name
+       from rms_recycling_events e
+       left join app_users actor on actor.business_id=e.business_id and actor.id=e.created_by
+      where e.business_id=$1 and e.recycling_case_id = any($2::uuid[])
+      order by e.created_at desc`,
+    [businessId, caseIds]
+  ) : { rows: [] };
+  const historyByCase = new Map();
+  eventRows.rows.forEach((event) => {
+    const history = historyByCase.get(event.recycling_case_id) || [];
+    history.push(event);
+    historyByCase.set(event.recycling_case_id, history);
+  });
+  allCases.forEach((item) => { item.history = historyByCase.get(item.id) || []; });
+  const cases = allCases.filter((item) => {
     const filter = String(filters.status || "ALL").toUpperCase();
     if (filter !== "ALL" && item.recycle_status !== filter) return false;
     if (filters.owner && item.recycle_owner !== filters.owner) return false;
@@ -1996,13 +2030,20 @@ async function listRmsRecyclingCases(businessId, filters = {}) {
     return true;
   });
   const metrics = {
-    upcoming: cases.filter((item) => ["SCHEDULED", "DUE"].includes(item.recycle_status)).length,
-    overdue: cases.filter((item) => item.recycle_status === "OVERDUE").length,
-    reactivated: cases.filter((item) => item.recycle_status === "REACTIVATED").length,
-    converted: cases.filter((item) => item.recycle_status === "CONVERTED").length,
-    lost: cases.filter((item) => item.recycle_status === "LOST").length,
+    total: allCases.length,
+    open: allCases.filter((item) => ["SCHEDULED", "DUE", "OVERDUE"].includes(item.recycle_status)).length,
+    upcoming: allCases.filter((item) => ["SCHEDULED", "DUE"].includes(item.recycle_status)).length,
+    due: allCases.filter((item) => item.recycle_status === "DUE").length,
+    overdue: allCases.filter((item) => item.recycle_status === "OVERDUE").length,
+    reactivated: allCases.filter((item) => item.recycle_status === "REACTIVATED").length,
+    converted: allCases.filter((item) => item.recycle_status === "CONVERTED").length,
+    lost: allCases.filter((item) => item.recycle_status === "LOST").length,
   };
-  return { cases, metrics, generated_at: new Date().toISOString() };
+  const owners = Array.from(new Map(allCases.filter((item) => item.recycle_owner).map((item) => [item.recycle_owner, {
+    id: item.recycle_owner,
+    name: item.recycle_owner_name || item.recycle_owner,
+  }])).values()).sort((a, b) => a.name.localeCompare(b.name, "es"));
+  return { cases, metrics, owners, filters: { status: String(filters.status || "ALL").toUpperCase() }, generated_at: new Date().toISOString() };
 }
 
 async function updateRmsRecyclingCase(businessId, user, payload = {}) {
@@ -2015,7 +2056,11 @@ async function updateRmsRecyclingCase(businessId, user, payload = {}) {
   const operationKey = payload.idempotency_key || null;
   if (operationKey) {
     const duplicate = await query(`select * from rms_recycling_events where business_id=$1 and idempotency_key=$2`, [businessId, operationKey]);
-    if (duplicate.rows[0]) return { recycling_case: recyclingCase, duplicate: true };
+    if (duplicate.rows[0]) return {
+      recycling_case: recyclingCase,
+      confirmed_destination: recyclingCase.metadata?.reactivation_destination || null,
+      duplicate: true,
+    };
   }
   if (["RESCHEDULE", "CHANGE_STRATEGY"].includes(action)) {
     if (action === "RESCHEDULE" && !payload.recycle_at) throw badRequest("Indica la nueva fecha de reactivación.");
@@ -2689,7 +2734,21 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
   }
   const isCleared = result === "CLEARED";
   let agenda = null;
-  if (result === "RECYCLE") {
+  const recycling = result === "RECYCLE" ? await scheduleRmsRecyclingCase(businessId, user, {
+    source_id: payload.source_id, source_type: sourceType, lead_id: item.lead_id || payload.lead_id || null,
+    recycled_from_phase: "control_anti_fuga", recycle_reason: payload.recycle_reason || reason,
+    recycle_strategy: payload.recycle_strategy || "NURTURE", recycle_owner: payload.responsible || confirmation?.responsible || user.id,
+    recycle_at: review.recycle.reactivate_at, recycle_channel: null, recycle_consent: "NOT_REQUIRED", recycle_note: payload.recycle_note || reason,
+    recycle_target_phase: "procesamiento", idempotency_key: payload.idempotency_key ? `risk:${payload.idempotency_key}` : null,
+    metadata: {
+      risk_review_at: review.reviewed_at,
+      risk_review: review,
+      products: review.products,
+      recovery_offer: review.recovery_offer,
+      source_station: "control_anti_fuga",
+    },
+  }) : null;
+  if (result === "RECYCLE" && !recycling?.recycling_case?.agenda_note_id) {
     agenda = await createRmsAgendaTask(businessId, user, {
       source_id: payload.source_id, source_type: sourceType, lead_id: item.lead_id || payload.lead_id || null,
       stage: "reciclaje", action_title: "Reactivar lead reciclado con contexto actualizado",
@@ -2697,14 +2756,6 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
       revenue_potential: confirmation?.amount || item.revenue_potential, metadata: { rms_risk_review: review },
     });
   }
-  const recycling = result === "RECYCLE" ? await scheduleRmsRecyclingCase(businessId, user, {
-    source_id: payload.source_id, source_type: sourceType, lead_id: item.lead_id || payload.lead_id || null,
-    recycled_from_phase: "control_anti_fuga", recycle_reason: payload.recycle_reason || reason,
-    recycle_strategy: payload.recycle_strategy || "NURTURE", recycle_owner: payload.responsible || confirmation?.responsible || user.id,
-    recycle_at: review.recycle.reactivate_at, recycle_channel: null, recycle_consent: "NOT_REQUIRED", recycle_note: payload.recycle_note || reason,
-    recycle_target_phase: "procesamiento", idempotency_key: payload.idempotency_key ? `risk:${payload.idempotency_key}` : null,
-    metadata: { risk_review_at: review.reviewed_at, agenda_note_id: agenda?.item?.id || null },
-  }) : null;
   if (recycling?.recycling_case?.id && agenda?.item?.id) await query(
     `update rms_recycling_cases set agenda_note_id=$3, updated_at=now() where business_id=$1 and id=$2`,
     [businessId, recycling.recycling_case.id, agenda.item.id]

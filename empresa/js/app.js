@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260829-risk-product-benefit-scope-v401";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829";
+const APP_VERSION = "empresa-20260829-risk-station-fast-v403";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -50116,6 +50116,132 @@ function renderRmsRecyclingView() {
   bindRecyclingActions(root);
 }
 
+// recycling-premium-command-v402-20260829
+// Reciclaje is rendered from one operational contract. These overrides retire
+// the legacy table/action duplication while keeping the public function names.
+const rmsRecyclingPremiumUi = { requestSequence: 0, search: "", owner: "ALL" };
+
+loadRmsRecyclingData = async function loadRmsRecyclingPremiumData(options = {}) {
+  const status = options.status || state.rmsRecyclingStatus || "ALL";
+  const sequence = ++rmsRecyclingPremiumUi.requestSequence;
+  state.rmsRecyclingLoading = true;
+  try {
+    const data = await api(`/api/business/rms-machine/recycling?status=${encodeURIComponent(status)}`, { headers: authHeaders() });
+    if (sequence === rmsRecyclingPremiumUi.requestSequence) state.rmsRecycling = data;
+    return data;
+  } finally {
+    if (sequence === rmsRecyclingPremiumUi.requestSequence) state.rmsRecyclingLoading = false;
+  }
+};
+
+function recyclingStrategyOptions(selectedValue = "") {
+  const selected = String(selectedValue || "NURTURE").toUpperCase();
+  return [["NEW_CONTACT", "Nuevo contacto"], ["NEW_PROPOSAL", "Nueva propuesta"], ["NEW_ACTIVATION", "Nueva Activación 1"], ["PERMITTED_BENEFIT", "Beneficio permitido"], ["NURTURE", "Nutrición comercial"]]
+    .map(([value, label]) => `<option value="${value}" ${value === selected ? "selected" : ""}>${label}</option>`).join("");
+}
+
+function recyclingProducts(item = {}) {
+  const metadata = item.metadata || {};
+  const stateMetadata = item.state_metadata || {};
+  return [metadata.products, metadata.risk_review?.products, stateMetadata.risk_review?.products, stateMetadata.recycling?.products]
+    .find((value) => Array.isArray(value) && value.length) || [];
+}
+
+function recyclingHistoryLabel(action = "") {
+  return ({ SCHEDULED: "Caso programado", RESCHEDULED: "Fecha reprogramada", STRATEGY_CHANGED: "Estrategia actualizada", REACTIVATED: "Lead reactivado", LOST: "Cerrado como pérdida", CANCELLED: "Caso cancelado" })[String(action).toUpperCase()] || "Actualización registrada";
+}
+
+function recyclingHistoryMarkup(item = {}) {
+  const history = Array.isArray(item.history) ? item.history : [];
+  if (!history.length) return `<div class="recycling-premium-empty-history">Aún no hay eventos adicionales. La creación del caso permanece conservada en su ficha.</div>`;
+  return `<ol class="recycling-premium-timeline">${history.map((event) => `<li><span class="material-symbols-outlined" aria-hidden="true">${event.action === "REACTIVATED" ? "arrow_forward" : ["LOST", "CANCELLED"].includes(event.action) ? "block" : "history"}</span><div><strong>${escapeHtml(recyclingHistoryLabel(event.action))}</strong><p>${escapeHtml(event.reason || "Sin nota adicional")}</p><small>${escapeHtml(event.actor_name || "Sistema")} · ${escapeHtml(formatDate(event.created_at))}</small></div></li>`).join("")}</ol>`;
+}
+
+function recyclingPremiumActionPanel(item = {}, owners = []) {
+  if (!["SCHEDULED", "DUE", "OVERDUE"].includes(item.recycle_status)) return `<details class="recycling-premium-history"><summary><span class="material-symbols-outlined" aria-hidden="true">history</span>Ver historial completo</summary>${recyclingHistoryMarkup(item)}</details>`;
+  const currentOwner = String(item.recycle_owner || "");
+  const ownerOptions = [...owners];
+  if (currentOwner && !ownerOptions.some((owner) => String(owner.id) === currentOwner)) ownerOptions.unshift({ id: currentOwner, name: item.recycle_owner_name || currentOwner });
+  return `<div class="recycling-premium-action-panel">
+    <label class="recycling-premium-note"><span>Nota obligatoria de la decisión</span><textarea rows="3" data-recycling-note placeholder="Qué cambió, qué se acordó y cuál es el siguiente paso"></textarea></label>
+    <div class="recycling-premium-route"><label><span>Estación de destino</span><select data-recycling-destination><option value="procesamiento" ${item.recycle_target_phase !== "clasificacion" ? "selected" : ""}>Evaluación</option><option value="clasificacion" ${item.recycle_target_phase === "clasificacion" ? "selected" : ""}>Activación 1</option></select></label><button class="solid-button recycling-primary-action" type="button" data-recycling-action="REACTIVATE"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>Reactivar y trasladar</button></div>
+    <details class="recycling-premium-controls"><summary><span class="material-symbols-outlined" aria-hidden="true">tune</span>Ajustar plan, fecha o cierre</summary><div class="recycling-premium-control-grid"><label><span>Próximo intento</span><input type="datetime-local" value="${escapeHtml(recyclingDateTimeValue(item.recycle_at))}" data-recycling-at></label><label><span>Responsable</span><select data-recycling-owner><option value="">Por asignar</option>${ownerOptions.map((owner) => `<option value="${escapeHtml(owner.id)}" ${String(owner.id) === currentOwner ? "selected" : ""}>${escapeHtml(owner.name || owner.id)}</option>`).join("")}</select></label><button class="ghost-button compact" type="button" data-recycling-action="RESCHEDULE">Guardar programación</button><label><span>Estrategia actual</span><select data-recycling-strategy>${recyclingStrategyOptions(item.recycle_strategy)}</select></label><button class="ghost-button compact" type="button" data-recycling-action="CHANGE_STRATEGY">Guardar estrategia</button></div><div class="recycling-premium-danger-zone"><button class="ghost-button compact danger" type="button" data-recycling-action="LOST">Cerrar como pérdida</button><button class="ghost-button compact danger" type="button" data-recycling-action="CANCEL">Cancelar caso</button></div></details>
+    <details class="recycling-premium-history"><summary><span class="material-symbols-outlined" aria-hidden="true">history</span>Historial del caso (${Array.isArray(item.history) ? item.history.length : 0})</summary>${recyclingHistoryMarkup(item)}</details>
+  </div>`;
+}
+
+function recyclingPremiumCaseMarkup(item = {}, owners = []) {
+  const contact = recyclingCaseIdentity(item);
+  const products = recyclingProducts(item);
+  const riskOffer = item.metadata?.recovery_offer || item.metadata?.risk_review?.recovery_offer || {};
+  return `<article class="recycling-premium-case status-${escapeHtml(String(item.recycle_status).toLowerCase())}" data-recycling-case="${escapeHtml(item.id)}"><header class="recycling-premium-case-head"><div class="recycling-premium-identity"><span class="recycling-status status-${escapeHtml(String(item.recycle_status).toLowerCase())}">${escapeHtml(recyclingStatusLabel(item.recycle_status))}</span><h3>${escapeHtml(contact.name)}</h3><p>${escapeHtml(contact.context)}</p></div><div class="recycling-premium-date"><small>Próximo movimiento</small><strong>${escapeHtml(formatDate(item.recycle_at))}</strong><span>${escapeHtml(item.recycle_owner_name || item.recycle_owner || "Por asignar")}</span></div></header>
+    <div class="recycling-premium-facts"><div><small>Motivo</small><strong>${escapeHtml(recyclingReasonLabel(item.recycle_reason))}</strong></div><div><small>Estrategia</small><strong>${escapeHtml(recyclingStrategyLabel(item.recycle_strategy))}</strong></div><div><small>Origen</small><strong>${escapeHtml(item.recycled_from_phase === "control_anti_fuga" ? "Riesgos de fuga" : "Negociación")}</strong></div><div><small>Destino autorizado</small><strong>${escapeHtml(item.recycle_target_phase === "clasificacion" ? "Activación 1" : "Evaluación")}</strong></div></div>
+    ${products.length ? `<section class="recycling-premium-products"><header><span>Contexto multiproducto conservado</span><small>${products.length} producto${products.length === 1 ? "" : "s"}</small></header><div>${products.map((product) => `<span><strong>${escapeHtml(product.name || product.product_name_snapshot || "Producto")}</strong><small>${escapeHtml(`Cantidad ${product.quantity || 1}${product.benefit_applied ? " · beneficio aplicado" : ""}`)}</small></span>`).join("")}</div>${riskOffer.type && riskOffer.type !== "NONE" ? `<p><span class="material-symbols-outlined" aria-hidden="true">verified</span>${escapeHtml(riskOffer.label || riskOffer.detail || "Beneficio extraordinario documentado")}</p>` : ""}</section>` : ""}
+    <p class="recycling-premium-current-note"><span class="material-symbols-outlined" aria-hidden="true">notes</span>${escapeHtml(item.recycle_note || "Sin nota de contexto")}</p>${recyclingPremiumActionPanel(item, owners)}</article>`;
+}
+
+function recyclingActionKey(row, action) {
+  const button = row?.querySelector(`[data-recycling-action="${CSS.escape(action)}"]`);
+  if (button?.dataset.recyclingOperationKey) return button.dataset.recyclingOperationKey;
+  const entropy = globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
+  const key = `recycling:${row?.dataset.recyclingCase || "case"}:${action}:${entropy}`.slice(0, 160);
+  if (button) button.dataset.recyclingOperationKey = key;
+  return key;
+}
+
+async function executeRecyclingAction(button) {
+  const row = button.closest("[data-recycling-case]");
+  const recyclingCaseId = row?.dataset.recyclingCase;
+  const action = button.dataset.recyclingAction;
+  const note = String(row?.querySelector("[data-recycling-note]")?.value || "").trim();
+  if (!recyclingCaseId || note.length < 4) return showFeedback("Escribe una nota clara de al menos cuatro caracteres antes de confirmar.", "info", { title: "Reciclaje" });
+  if (["REACTIVATE", "LOST", "CANCEL"].includes(action) && !window.confirm(action === "REACTIVATE" ? "¿Reactivar y trasladar este lead a la estación seleccionada?" : "¿Confirmar este cierre de Reciclaje?")) return;
+  const destination = row.querySelector("[data-recycling-destination]")?.value || null;
+  setButtonLoading(button, true, action === "REACTIVATE" ? "Trasladando..." : "Guardando...");
+  try {
+    const result = await api("/api/business/rms-machine/recycling/action", { method: "POST", headers: authHeaders(), body: JSON.stringify({ recycling_case_id: recyclingCaseId, action, note, destination, recycle_at: row.querySelector("[data-recycling-at]")?.value ? new Date(row.querySelector("[data-recycling-at]").value).toISOString() : null, recycle_owner: row.querySelector("[data-recycling-owner]")?.value?.trim() || null, recycle_strategy: row.querySelector("[data-recycling-strategy]")?.value || null, idempotency_key: recyclingActionKey(row, action) }) });
+    if (action === "REACTIVATE") {
+      const confirmed = result?.movement?.state?.rms_phase || result?.movement?.movement?.to_phase || result?.confirmed_destination || "";
+      if (confirmed !== destination) throw new Error("El servidor no confirmó el traslado a la estación seleccionada.");
+    }
+    state.rmsMachineLoaded = false;
+    await loadRmsRecyclingData({ status: state.rmsRecyclingStatus });
+    renderRmsRecyclingView();
+    showFeedback(action === "REACTIVATE" ? `Lead trasladado a ${destination === "clasificacion" ? "Activación 1" : "Evaluación"}.` : "Cambio guardado con trazabilidad.", "success", { title: "Reciclaje" });
+  } catch (error) { setButtonLoading(button, false); showFeedback(error.message || "No pudimos actualizar el reciclaje.", "error", { title: "Reciclaje" }); }
+}
+
+bindRecyclingActions = function bindPremiumRecyclingActions(root) {
+  root.querySelectorAll("[data-recycling-go-to]").forEach((button) => button.addEventListener("click", () => selectRecyclingSection(button.dataset.recyclingGoTo || "recycling")));
+  root.querySelectorAll("[data-recycling-action]").forEach((button) => button.addEventListener("click", () => executeRecyclingAction(button)));
+};
+
+renderRmsRecyclingQueue = function renderPremiumRecyclingQueue() {
+  const root = document.getElementById("recyclingWorkspace");
+  if (!root) return;
+  const data = state.rmsRecycling || { cases: [], metrics: {}, owners: [] };
+  const metrics = data.metrics || {};
+  const status = state.rmsRecyclingStatus || "ALL";
+  const query = rmsRecyclingPremiumUi.search.trim().toLowerCase();
+  const owner = rmsRecyclingPremiumUi.owner;
+  const cases = (data.cases || []).filter((item) => {
+    if (owner !== "ALL" && String(item.recycle_owner || "") !== owner) return false;
+    if (!query) return true;
+    const contact = recyclingCaseIdentity(item);
+    return [contact.name, contact.context, item.recycle_reason, item.recycle_strategy, item.recycle_note, item.recycle_owner_name].some((value) => String(value || "").toLowerCase().includes(query));
+  });
+  const selectable = ["ALL", "SCHEDULED", "DUE", "OVERDUE", "REACTIVATED", "CONVERTED", "LOST", "CANCELLED"];
+  root.innerHTML = `<section class="recycling-premium-command"><header class="recycling-premium-hero"><div><span class="mono-label">CENTRO DE RECUPERACIÓN COMERCIAL</span><h3>Recupera oportunidades sin perder una sola decisión</h3><p>Prioriza, documenta y devuelve cada lead únicamente a Evaluación o Activación 1 con todo su contexto.</p></div><aside><span class="material-symbols-outlined" aria-hidden="true">restart_alt</span><div><strong>${escapeHtml(String(metrics.open || 0))}</strong><small>casos abiertos</small></div></aside></header>
+    <section class="recycling-premium-metrics" aria-label="Indicadores globales de Reciclaje">${[["warning", "Vencidos", metrics.overdue || 0, "urgent"], ["today", "Para hoy", metrics.due || 0, "today"], ["arrow_forward", "Reactivados", metrics.reactivated || 0, "good"], ["paid", "Convertidos", metrics.converted || 0, "gold"], ["inventory_2", "Histórico", metrics.total || 0, "neutral"]].map(([icon, label, value, tone]) => `<article class="is-${tone}"><span class="material-symbols-outlined" aria-hidden="true">${icon}</span><div><strong>${escapeHtml(String(value))}</strong><small>${label}</small></div></article>`).join("")}</section>
+    <section class="recycling-premium-toolbar" aria-label="Buscar y filtrar Reciclaje"><label class="recycling-premium-search"><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" value="${escapeHtml(rmsRecyclingPremiumUi.search)}" placeholder="Buscar lead, producto, motivo o nota" data-recycling-search></label><label><span>Estado</span><select data-recycling-status>${selectable.map((value) => `<option value="${value}" ${value === status ? "selected" : ""}>${value === "ALL" ? "Todos los estados" : recyclingStatusLabel(value)}</option>`).join("")}</select></label><label><span>Responsable</span><select data-recycling-owner-filter><option value="ALL">Todo el equipo</option>${(data.owners || []).map((entry) => `<option value="${escapeHtml(entry.id)}" ${entry.id === owner ? "selected" : ""}>${escapeHtml(entry.name)}</option>`).join("")}</select></label><button class="ghost-button compact" type="button" data-recycling-local-refresh><span class="material-symbols-outlined" aria-hidden="true">refresh</span>Actualizar</button></section>
+    <div class="recycling-premium-results"><div><strong>${cases.length}</strong> caso${cases.length === 1 ? "" : "s"} en esta vista</div><small>Prioridad: vencidos, hoy y próximos intentos.</small></div><section class="recycling-premium-list" aria-label="Cola operativa de Reciclaje">${cases.map((item) => recyclingPremiumCaseMarkup(item, data.owners || [])).join("") || `<section class="recycling-empty-insight"><span class="material-symbols-outlined" aria-hidden="true">search_off</span><div><h3>No hay casos con estos filtros</h3><p>Cambia el estado, responsable o búsqueda. Los indicadores superiores siguen mostrando el total real.</p></div></section>`}</section></section>`;
+  root.querySelector("[data-recycling-status]")?.addEventListener("change", async (event) => { state.rmsRecyclingStatus = event.target.value; await loadRmsRecyclingData({ status: event.target.value }); renderRmsRecyclingView(); });
+  root.querySelector("[data-recycling-owner-filter]")?.addEventListener("change", (event) => { rmsRecyclingPremiumUi.owner = event.target.value; renderRmsRecyclingView(); });
+  root.querySelector("[data-recycling-search]")?.addEventListener("change", (event) => { rmsRecyclingPremiumUi.search = event.target.value; renderRmsRecyclingView(); });
+  root.querySelector("[data-recycling-local-refresh]")?.addEventListener("click", async () => { await loadRmsRecyclingData({ status }); renderRmsRecyclingView(); showFeedback("Cola de Reciclaje actualizada.", "success", { title: "Reciclaje" }); });
+  bindRecyclingActions(root);
+};
+
 // RMS never treats a free-text product as a current catalog reference. This
 // reusable native picker keeps keyboard type-ahead, shows catalog context, and
 // deliberately leaves historic text as evidence instead of silently matching it.
@@ -50772,7 +50898,7 @@ function renderRmsStationLeanOnly() {
       </div>
       `}
       <footer class="rms-lean-station-foot">
-        ${display.matchingRows.length > RMS_STATION_RENDER_INITIAL_LIMIT ? `<nav class="rms-station-pagination" aria-label="Paginación de leads"><button class="ghost-button compact" type="button" data-rms-station-page-prev ${display.page <= 1 ? "disabled" : ""}>Anterior</button><span>Página ${display.page} de ${display.pageCount} · 10 por página</span><button class="ghost-button compact" type="button" data-rms-station-page-next ${display.page >= display.pageCount ? "disabled" : ""}>Siguiente</button></nav>` : ""}
+        ${display.matchingRows.length > display.pageSize ? `<nav class="rms-station-pagination" aria-label="Paginación de leads"><button class="ghost-button compact" type="button" data-rms-station-page-prev ${display.page <= 1 ? "disabled" : ""}>Anterior</button><span>Página ${display.page} de ${display.pageCount} · ${display.pageSize} por página</span><button class="ghost-button compact" type="button" data-rms-station-page-next ${display.page >= display.pageCount ? "disabled" : ""}>Siguiente</button></nav>` : ""}
         <span>Mostrando ${renderedRows.length.toLocaleString("es-CO")} de ${display.matchingRows.length.toLocaleString("es-CO")}${display.hiddenCount ? ` · ${display.hiddenCount.toLocaleString("es-CO")} más sin dibujar` : ""}</span>
         ${display.hiddenCount ? `<button class="ghost-button compact" type="button" data-rms-station-show-more>Ver ${Math.min(RMS_STATION_RENDER_INCREMENT, display.hiddenCount).toLocaleString("es-CO")} más</button>` : ""}
       </footer>
@@ -52543,7 +52669,10 @@ function rmsStationRowMatches(item = {}, phase = "") {
 }
 
 function rmsStationDisplayRows(rows = [], phase = "") {
-  const pageSize = RMS_STATION_RENDER_INITIAL_LIMIT;
+  // Riesgos contiene selectores multiproducto, autorización y trazabilidad por
+  // caso. Cuatro consolas visibles mantienen la interacción inmediata sin
+  // quitar acceso al resto mediante paginación.
+  const pageSize = phase === "control_anti_fuga" ? 4 : RMS_STATION_RENDER_INITIAL_LIMIT;
   const matchingRows = (rows || []).filter((item) => rmsStationRowMatches(item, phase));
   const pageCount = Math.max(1, Math.ceil(matchingRows.length / pageSize));
   const page = Math.min(Math.max(1, Number(state.rmsStationPage || 1)), pageCount);
@@ -52556,6 +52685,7 @@ function rmsStationDisplayRows(rows = [], phase = "") {
     page,
     pageCount,
     pageStart,
+    pageSize,
     hiddenCount: 0,
   };
 }
@@ -53150,7 +53280,7 @@ function rmsStationInputOutputMarkup(rows = [], stage = {}, nextPhase = null, op
       ${rmsStationToolbarMarkup(rows, stage)}
       ${rmsStationOutputMarkup(stage.key || "", rows, nextPhase)}
       ${rmsStationLeadTableMarkup(renderedRows, stage, nextPhase, operation)}
-      ${display.matchingRows.length > RMS_STATION_RENDER_INITIAL_LIMIT ? `<nav class="rms-station-pagination" aria-label="Paginación de leads"><button class="ghost-button compact" type="button" data-rms-station-page-prev ${display.page <= 1 ? "disabled" : ""}>Anterior</button><span>Página ${display.page} de ${display.pageCount} · 10 por página</span><button class="ghost-button compact" type="button" data-rms-station-page-next ${display.page >= display.pageCount ? "disabled" : ""}>Siguiente</button></nav>` : ""}
+      ${display.matchingRows.length > display.pageSize ? `<nav class="rms-station-pagination" aria-label="Paginación de leads"><button class="ghost-button compact" type="button" data-rms-station-page-prev ${display.page <= 1 ? "disabled" : ""}>Anterior</button><span>Página ${display.page} de ${display.pageCount} · ${display.pageSize} por página</span><button class="ghost-button compact" type="button" data-rms-station-page-next ${display.page >= display.pageCount ? "disabled" : ""}>Siguiente</button></nav>` : ""}
       ${display.hiddenCount ? `<button class="ghost-button rms-station-show-more" type="button" data-rms-station-show-more>Ver ${Math.min(RMS_STATION_RENDER_INCREMENT, display.hiddenCount).toLocaleString("es-CO")} más</button>` : ""}
       <div class="rms-station-no-results ${renderedRows.length ? "hidden" : ""}" data-rms-station-no-results><span class="material-symbols-outlined" aria-hidden="true">search_off</span><strong>No hay leads con este filtro.</strong><small>Cambia el texto o vuelve a “Todos”.</small></div>
     </section>
@@ -62790,7 +62920,9 @@ saveRmsRiskDecision = async function saveRmsRiskDecisionUnified(item, root) {
   const button = rmsCommercialNode(root, "[data-rms-save-risk-decision]", item.id);
   setButtonLoading(button, true, result === "RECYCLE" ? "Enviando..." : "Confirmando...");
   try {
-    const review = await api("/api/business/rms-machine/risk-review", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, result, reason, recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE", recovery_benefit_id: result === "CLEARED" ? recoveryBenefitId : null, discount_percent: result === "CLEARED" ? discountPercent : 0, recovery_detail: result === "CLEARED" ? recoveryDetail || null : null, products: result === "CLEARED" ? products : undefined, recycle_reason: result === "RECYCLE" ? recycleReason : null, recycle_strategy: result === "RECYCLE" ? (rmsCommercialNode(root, "[data-rms-risk-recycle-strategy]", item.id)?.value || "NURTURE") : null, recycle_note: result === "RECYCLE" ? reason : null, next_action_at: result === "RECYCLE" ? rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-risk-next-at]", item.id)?.value || "") : null, responsible: rmsCommercialWorkflow(item).confirmation?.responsible || null }) });
+    const reviewOperationKey = card?.dataset.rmsRiskReviewOperation || `risk-review:${item.id}:${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
+    if (card) card.dataset.rmsRiskReviewOperation = reviewOperationKey;
+    const review = await api("/api/business/rms-machine/risk-review", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, result, reason, recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE", recovery_benefit_id: result === "CLEARED" ? recoveryBenefitId : null, discount_percent: result === "CLEARED" ? discountPercent : 0, recovery_detail: result === "CLEARED" ? recoveryDetail || null : null, products, recycle_reason: result === "RECYCLE" ? recycleReason : null, recycle_strategy: result === "RECYCLE" ? (rmsCommercialNode(root, "[data-rms-risk-recycle-strategy]", item.id)?.value || "NURTURE") : null, recycle_note: result === "RECYCLE" ? reason : null, next_action_at: result === "RECYCLE" ? rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-risk-next-at]", item.id)?.value || "") : null, responsible: rmsCommercialWorkflow(item).confirmation?.responsible || null, idempotency_key: reviewOperationKey }) });
     const expectedDestination = result === "RECYCLE" ? "reciclaje" : "cierre";
     const confirmedDestination = review?.state?.rms_phase || review?.movement?.to_phase || "";
     if (confirmedDestination !== expectedDestination) {

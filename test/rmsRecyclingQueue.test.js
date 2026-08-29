@@ -40,3 +40,28 @@ test("Optimiza exposes operational recycling with real endpoint actions", () => 
   assert.match(app, /data-recycling-action="LOST"/);
   assert.match(app, /data-recycling-action="CANCEL"/);
 });
+
+test("Reciclaje premium keeps global metrics, product context and detailed history", () => {
+  assert.match(service, /const allCases = rows\.rows\.map/);
+  assert.match(service, /rms_recycling_events e/);
+  assert.match(service, /actor_name/);
+  assert.match(service, /allCases\.filter\(\(item\) => item\.recycle_status === "OVERDUE"\)/);
+  assert.match(service, /risk_review: review/);
+  assert.match(service, /products: review\.products/);
+  assert.match(app, /recycling-premium-command-v402-20260829/);
+  assert.match(app, /function recyclingHistoryMarkup/);
+  assert.match(app, /function recyclingProducts/);
+  assert.match(app, /recyclingStrategyOptions\(item\.recycle_strategy\)/);
+  assert.match(markup, /recycling=premium-command-v402-20260829/);
+});
+
+test("Reciclaje confirms canonical destination and uses a stable retry key", () => {
+  const executor = app.slice(app.indexOf("async function executeRecyclingAction"), app.indexOf("bindRecyclingActions = function bindPremiumRecyclingActions"));
+  assert.match(executor, /result\?\.movement\?\.state\?\.rms_phase/);
+  assert.match(executor, /if \(confirmed !== destination\)/);
+  assert.match(executor, /idempotency_key: recyclingActionKey\(row, action\)/);
+  assert.match(executor, /result\?\.confirmed_destination/);
+  assert.doesNotMatch(executor, /Date\.now/);
+  assert.match(controller, /destination: z\.enum\(\["procesamiento", "clasificacion"\]\)/);
+  assert.match(service, /confirmed_destination: recyclingCase\.metadata\?\.reactivation_destination/);
+});

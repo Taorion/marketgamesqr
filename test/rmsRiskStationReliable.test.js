@@ -224,9 +224,21 @@ test("Riesgos permite agregar productos y elegir en cuáles aplica el beneficio"
   assert.match(app, /Aplicar el beneficio a este producto/);
   assert.match(activeSave, /const products = rmsRiskProductsFromDom\(card\)/);
   assert.match(activeSave, /!products\.some\(\(product\) => product\.benefit_applied\)/);
-  assert.match(activeSave, /products: result === "CLEARED" \? products : undefined/);
+  assert.match(activeSave, /recovery_detail:[^\n]+products,/);
+  assert.match(activeSave, /idempotency_key: reviewOperationKey/);
   assert.match(service, /products: review\.products/);
   assert.match(service, /benefit_applied: offer\.recoveryOffer === "NONE" \? false/);
   assert.match(app, /risk-product-benefit-scope-v401-20260829/);
   assert.match(html, /risk-product-scope=v401-20260829/);
+});
+
+test("Riesgos abre con consulta exacta y render progresivo ligero", () => {
+  assert.match(service, /const stationFastPath = lite && Boolean\(phaseFilter\)/);
+  assert.match(service, /recentStateRowsForBusiness\(businessId, limit, phaseFilter\)/);
+  assert.match(service, /leads: await leadRowsForStateRefs\(businessId, stationStateRows, crmFilters\)/);
+  assert.match(service, /const results = await Promise\.all\(requests\)/);
+  assert.match(app, /phase === "control_anti_fuga" \? 4 : RMS_STATION_RENDER_INITIAL_LIMIT/);
+  assert.match(app, /display\.matchingRows\.length > display\.pageSize/);
+  assert.match(app, /risk-station-fast-v403-20260829/);
+  assert.match(html, /risk-speed=fast-v403-20260829/);
 });
