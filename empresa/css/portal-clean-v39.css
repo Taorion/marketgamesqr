@@ -33961,3 +33961,43 @@ html body[data-current-view="recycling"] main.portal-shell .view-section[data-vi
 html body:not(#qoriRecycleA#qoriRecycleB#qoriRecycleC#qoriRecycleD)[data-current-view="recycling"] .portal-shell .recycling-premium-hero :is(h3, strong) { color: #fff !important; }
 html body:not(#qoriRecycleA#qoriRecycleB#qoriRecycleC#qoriRecycleD)[data-current-view="recycling"] .portal-shell .recycling-premium-hero :is(p, small) { color: #d9edf5 !important; }
 html body:not(#qoriRecycleA#qoriRecycleB#qoriRecycleC#qoriRecycleD)[data-current-view="recycling"] .portal-shell .recycling-premium-hero .mono-label { color: #bfe5f2 !important; }
+/* Riesgos de fuga v409: feedback persistente y sincronizacion no bloqueante. */
+.rms-risk-live-status,
+.rms-risk-action-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(37, 99, 235, .22);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(239, 246, 255, .98), rgba(248, 250, 252, .98));
+  color: #172554;
+  padding: 12px 14px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+}
+
+.rms-risk-live-status { margin: 0 0 16px; }
+.rms-risk-action-status { margin: 12px 0; }
+.rms-risk-live-status > div,
+.rms-risk-action-status > div { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.rms-risk-live-status strong,
+.rms-risk-action-status strong { color: #0f172a; font-size: .92rem; }
+.rms-risk-live-status small,
+.rms-risk-action-status small { color: #475569; line-height: 1.4; }
+.rms-risk-live-status.is-ready,
+.rms-risk-action-status.is-success { border-color: rgba(5, 150, 105, .28); background: #ecfdf5; }
+.rms-risk-live-status.is-error,
+.rms-risk-action-status.is-error { border-color: rgba(220, 38, 38, .28); background: #fff1f2; }
+.rms-risk-action-status.is-pending { border-color: rgba(217, 119, 6, .3); background: #fffbeb; }
+.rms-risk-live-status.is-loading .busy-spinner,
+.rms-risk-action-status.is-loading .busy-spinner { flex: 0 0 auto; }
+
+@media (max-width: 640px) {
+  .rms-risk-live-status,
+  .rms-risk-action-status { align-items: flex-start; padding: 11px 12px; }
+  .rms-risk-live-status .ghost-button { width: auto; min-height: 38px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rms-risk-live-status .busy-spinner,
+  .rms-risk-action-status .busy-spinner { animation-duration: 1.6s; }
+}

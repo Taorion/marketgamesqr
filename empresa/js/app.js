@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260829-risk-direct-state-read-v408";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829";
+const APP_VERSION = "empresa-20260829-risk-responsive-feedback-v409";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2954,6 +2954,9 @@ let state = {
   rmsStationFastRenderTimer: null,
   rmsStationOpenSeq: 0,
   rmsStationSyncing: false,
+  rmsRiskStationSyncState: "idle",
+  rmsRiskStationSyncError: "",
+  rmsRiskStationLastSyncAt: "",
   rmsActivationWorkId: "",
   rmsMachineLoadPromises: new Map(),
   rmsTutorialStep: 0,
@@ -50719,6 +50722,63 @@ function hydrateRmsIntelligenceJourney(root) {
   header?.insertAdjacentHTML("afterend", rmsIntelligenceJourneyMarkup(facts));
 }
 
+function rmsRiskStationFingerprint(machine = state.rmsMachine || {}) {
+  const rows = (machine.opportunities || [])
+    .filter((item) => item?.stage === "control_anti_fuga")
+    .map((item) => ({
+      id: item.id,
+      updated_at: item.updated_at || item.last_interaction_at || "",
+      active_tickets: Number(item.active_tickets || 0),
+      redeemed_tickets: Number(item.redeemed_tickets || 0),
+      metadata: rmsQualityMetadata(item),
+    }))
+    .sort((left, right) => String(left.id || "").localeCompare(String(right.id || "")));
+  return JSON.stringify(rows);
+}
+
+function rmsRiskStationStatusMarkup(rows = []) {
+  const syncState = state.rmsRiskStationSyncState || (state.rmsStationSyncing ? "loading" : "ready");
+  const copy = syncState === "error"
+    ? {
+      icon: "sync_problem",
+      title: "No pudimos actualizar ahora",
+      detail: "La estación sigue operativa con los datos disponibles. Puedes reintentar sin perder lo escrito.",
+    }
+    : syncState === "loading"
+      ? {
+        icon: "sync",
+        title: "Actualizando casos y productos",
+        detail: "Ya puedes revisar y editar. Qori sincroniza lo más reciente sin bloquear esta pantalla.",
+      }
+      : {
+        icon: "check_circle",
+        title: "Riesgos de fuga está listo",
+        detail: `${Number(rows.length || 0).toLocaleString("es-CO")} caso(s) disponibles · los cambios se confirmarán dentro de cada lead.`,
+      };
+  return `<section class="rms-risk-live-status is-${escapeHtml(syncState)}" data-rms-risk-live-status role="status" aria-live="polite" aria-busy="${syncState === "loading" ? "true" : "false"}">
+    <span class="${syncState === "loading" ? "busy-spinner" : "material-symbols-outlined"}" aria-hidden="true">${syncState === "loading" ? "" : copy.icon}</span>
+    <div><strong>${escapeHtml(copy.title)}</strong><small>${escapeHtml(copy.detail)}</small></div>
+    ${syncState === "error" ? '<button class="ghost-button compact" type="button" data-rms-risk-retry-sync>Reintentar</button>' : ""}
+  </section>`;
+}
+
+function updateRmsRiskStationLiveStatus(rows = []) {
+  const current = rmsStationWorkspace?.querySelector("[data-rms-risk-live-status]");
+  if (!current) return false;
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = rmsRiskStationStatusMarkup(rows).trim();
+  current.replaceWith(wrapper.firstElementChild);
+  bindRmsRiskStationRetry();
+  return true;
+}
+
+function bindRmsRiskStationRetry() {
+  const button = rmsStationWorkspace?.querySelector("[data-rms-risk-retry-sync]");
+  if (!button || button.dataset.rmsRiskRetryBound === "true") return;
+  button.dataset.rmsRiskRetryBound = "true";
+  button.addEventListener("click", () => openRmsStation("control_anti_fuga", { source: "risk-retry" }));
+}
+
 function renderRmsStationLeanOnly() {
   if (!state.rmsStationScreenOpen) {
     hideRmsStationWorkspace();
@@ -50852,7 +50912,7 @@ function renderRmsStationLeanOnly() {
           <span class="rms-lean-quality-guide-count"><strong>${rows.filter((item) => !rmsActivationReady(item)).length.toLocaleString("es-CO")}</strong> pendientes</span>
         </section>
       ` : ""}
-      ${state.rmsStationSyncing ? `
+      ${phase === "control_anti_fuga" ? rmsRiskStationStatusMarkup(rows) : state.rmsStationSyncing ? `
         <section class="rms-station-progress" role="status" aria-live="polite" aria-busy="true">
           <span class="busy-spinner" aria-hidden="true"></span>
           <div><strong>Actualizando esta estación</strong><small>Puedes revisar la pantalla mientras traemos los datos más recientes.</small></div>
@@ -50912,6 +50972,7 @@ function renderRmsStationLeanOnly() {
   `;
   prepareRmsCommercialAccordions(rmsStationWorkspace);
   bindRmsMachineActions(rmsStationWorkspace);
+  if (phase === "control_anti_fuga") bindRmsRiskStationRetry();
   rmsStationWorkspace.querySelectorAll("[data-rms-close-station]").forEach((button) => button.addEventListener("click", closeRmsStation));
   rmsStationWorkspace.querySelectorAll("[data-rms-station-summary]").forEach((button) => {
     button.addEventListener("click", (event) => {
@@ -54774,12 +54835,17 @@ function openRmsStation(phase = "", options = {}) {
   state.rmsStationPage = 1;
   state.rmsStationListDeferred = false;
   state.rmsStationSyncing = true;
+  if (phase === "control_anti_fuga") {
+    state.rmsRiskStationSyncState = "loading";
+    state.rmsRiskStationSyncError = "";
+  }
   if (phase === "clasificacion" && options.focusId) state.rmsActivationWorkId = options.focusId;
   if (state.rmsStationFastRenderTimer) {
     window.clearTimeout(state.rmsStationFastRenderTimer);
     state.rmsStationFastRenderTimer = null;
   }
   const openSeq = ++state.rmsStationOpenSeq;
+  const riskFingerprintBeforeSync = phase === "control_anti_fuga" ? rmsRiskStationFingerprint() : "";
   document.getElementById("rmsMachineTutorial")?.classList.remove("is-open");
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = phase;
   if (["curaduria", "clasificacion", "procesamiento", "accion_correctiva", "cierre"].includes(phase) && !state.inventoryLoaded) {
@@ -54827,6 +54893,16 @@ function openRmsStation(phase = "", options = {}) {
       .then(() => {
         if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
         state.rmsStationSyncing = false;
+        if (phase === "control_anti_fuga") {
+          state.rmsRiskStationSyncState = "ready";
+          state.rmsRiskStationSyncError = "";
+          state.rmsRiskStationLastSyncAt = new Date().toISOString();
+          const rows = (state.rmsMachine?.opportunities || []).filter((item) => item?.stage === "control_anti_fuga");
+          // Si el servidor devuelve los mismos casos que ya estaban visibles,
+          // sólo cambia el estado. Así no destruimos formularios ni hacemos un
+          // segundo render completo de una estación que ya estaba operativa.
+          if (riskFingerprintBeforeSync === rmsRiskStationFingerprint() && updateRmsRiskStationLiveStatus(rows)) return;
+        }
         renderRmsStationOnly();
         if (phase === "clasificacion") {
           showFeedback("Activación 1 está lista con los datos más recientes.", "success", { title: "Activación 1" });
@@ -54836,6 +54912,14 @@ function openRmsStation(phase = "", options = {}) {
         console.error("RMS station lite load failed", renderError);
         if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
         state.rmsStationSyncing = false;
+        if (phase === "control_anti_fuga") {
+          state.rmsRiskStationSyncState = "error";
+          state.rmsRiskStationSyncError = renderError?.message || "No fue posible actualizar.";
+          const rows = (state.rmsMachine?.opportunities || []).filter((item) => item?.stage === "control_anti_fuga");
+          if (!updateRmsRiskStationLiveStatus(rows)) renderRmsStationOnly();
+          showFeedback("Riesgos de fuga sigue operativo con los datos disponibles. Puedes reintentar desde la franja de estado.", "info", { title: "Riesgos de fuga" });
+          return;
+        }
         renderRmsStationOnly();
         showFeedback("La estación quedó operativa con datos locales. La actualización ligera no respondió a tiempo.", "info", { title: "Estaciones" });
       });
@@ -62757,7 +62841,38 @@ function syncRmsRiskProductBenefitControls(card, id) {
   });
 }
 
+function ensureRmsRiskActionStatus(card, item) {
+  if (!card || !item?.id) return null;
+  let status = card.querySelector(`[data-rms-risk-action-status="${CSS.escape(String(item.id))}"]`);
+  if (status) return status;
+  status = document.createElement("div");
+  status.className = "rms-risk-action-status is-ready";
+  status.dataset.rmsRiskActionStatus = String(item.id);
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+  status.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">touch_app</span><div><strong>Listo para trabajar</strong><small>Qori confirmará aquí cada cambio y cada envío.</small></div>';
+  const flowStatus = card.querySelector("[data-rms-risk-phase-status]");
+  (flowStatus || card.querySelector(".rms-commercial-console-head"))?.insertAdjacentElement("afterend", status);
+  return status;
+}
+
+function setRmsRiskActionStatus(card, item, kind = "info", title = "", detail = "") {
+  const status = ensureRmsRiskActionStatus(card, item);
+  if (!status) return;
+  const icon = {
+    loading: "sync",
+    success: "check_circle",
+    error: "error",
+    pending: "edit_note",
+    info: "info",
+  }[kind] || "info";
+  status.className = `rms-risk-action-status is-${kind}`;
+  status.setAttribute("aria-busy", kind === "loading" ? "true" : "false");
+  status.innerHTML = `<span class="${kind === "loading" ? "busy-spinner" : "material-symbols-outlined"}" aria-hidden="true">${kind === "loading" ? "" : icon}</span><div><strong>${escapeHtml(title || "Estado actualizado")}</strong><small>${escapeHtml(detail || "Puedes continuar con el caso.")}</small></div>`;
+}
+
 function bindRmsRiskProductLines(card, item) {
+  ensureRmsRiskActionStatus(card, item);
   const builder = card?.querySelector(`[data-rms-risk-products="${CSS.escape(item.id)}"]`);
   const list = builder?.querySelector(".rms-risk-products-list");
   if (!builder || !list) return;
@@ -62775,14 +62890,19 @@ function bindRmsRiskProductLines(card, item) {
     const picker = line.querySelector("[data-rms-risk-line-product]");
     picker?.addEventListener("pointerdown", () => hydrateRmsRiskProductPicker(picker));
     picker?.addEventListener("focus", () => hydrateRmsRiskProductPicker(picker));
-    picker?.addEventListener("change", () => persistRmsRiskProductDraft(card, item));
-    line.querySelector("[data-rms-risk-line-quantity]")?.addEventListener("input", () => persistRmsRiskProductDraft(card, item));
-    line.querySelector("[data-rms-risk-line-benefit]")?.addEventListener("change", () => persistRmsRiskProductDraft(card, item));
+    const markPending = () => {
+      persistRmsRiskProductDraft(card, item);
+      setRmsRiskActionStatus(card, item, "pending", "Cambios de productos pendientes", "Revisa cantidades y marca a cuáles productos aplica el beneficio antes de generar o guardar.");
+    };
+    picker?.addEventListener("change", markPending);
+    line.querySelector("[data-rms-risk-line-quantity]")?.addEventListener("input", markPending);
+    line.querySelector("[data-rms-risk-line-benefit]")?.addEventListener("change", markPending);
     line.querySelector("[data-rms-risk-remove-product]")?.addEventListener("click", () => {
       if (list.querySelectorAll("[data-rms-risk-product-line]").length <= 1) return;
       line.remove();
       persistRmsRiskProductDraft(card, item);
       refresh();
+      setRmsRiskActionStatus(card, item, "pending", "Producto retirado", "El cambio está preparado y se enviará con la próxima acción del caso.");
     });
   };
   list.querySelectorAll("[data-rms-risk-product-line]").forEach(bindLine);
@@ -62794,6 +62914,7 @@ function bindRmsRiskProductLines(card, item) {
       bindLine(list.lastElementChild);
       persistRmsRiskProductDraft(card, item);
       refresh();
+      setRmsRiskActionStatus(card, item, "pending", "Producto agregado", "Selecciona el producto, ajusta la cantidad y decide si recibe el beneficio.");
       list.lastElementChild?.querySelector("[data-rms-risk-line-product]")?.focus();
     });
   }
@@ -62811,6 +62932,16 @@ function bindRmsRiskOfferContract(card, item) {
       navigateNone: rmsRiskShouldOpenResultOnInit(offer.value, hasResource),
     });
     syncRmsRiskProductBenefitControls(card, id);
+    const selectedLabel = offer.selectedOptions?.[0]?.textContent?.trim() || "";
+    if (offer.value) setRmsRiskActionStatus(
+      card,
+      item,
+      "pending",
+      offer.value === "NONE" ? "Sin concesión extraordinaria" : "Alternativa seleccionada",
+      offer.value === "NONE"
+        ? "No se generará beneficio ni ticket. Puedes registrar directamente Venta lograda o Reciclaje."
+        : `${selectedLabel}. Define los productos que reciben el beneficio antes de generar el ticket.`,
+    );
   };
   if (!offer.dataset.rmsRiskOutcomeBound) {
     offer.dataset.rmsRiskOutcomeBound = "true";
@@ -62908,21 +63039,25 @@ saveRmsRiskDecision = async function saveRmsRiskDecisionUnified(item, root) {
   const recoveryOfferValue = String(selectedOfferNode?.value || "");
   const products = rmsRiskProductsFromDom(card);
   if (result === "CLEARED" && !recoveryOfferValue) {
+    setRmsRiskActionStatus(card, item, "error", "Falta elegir una alternativa", "Selecciona una concesión autorizada o elige Sin concesión extraordinaria.");
     showFeedback("Selecciona una alternativa de recuperación o elige Sin concesión extraordinaria.", "info", { title: "Riesgos de fuga" });
     card?.querySelector(`[data-rms-risk-recovery-offer="${CSS.escape(item.id)}"]`)?.focus();
     return;
   }
   if (result === "CLEARED" && !products.length) {
+    setRmsRiskActionStatus(card, item, "error", "Falta seleccionar un producto", "Agrega al menos un producto real antes de enviar la venta.");
     showFeedback("Agrega al menos un producto real antes de enviar la venta.", "info", { title: "Riesgos de fuga" });
     card?.querySelector("[data-rms-risk-line-product]")?.focus();
     return;
   }
   if (result === "CLEARED" && recoveryOfferValue !== "NONE" && !products.some((product) => product.benefit_applied)) {
+    setRmsRiskActionStatus(card, item, "error", "Falta definir el alcance", "Marca al menos un producto al que se aplicó el beneficio.");
     showFeedback("Marca al menos un producto al que se aplicó el beneficio.", "info", { title: "Riesgos de fuga" });
     card?.querySelector("[data-rms-risk-line-benefit]")?.focus();
     return;
   }
   if (new Set(products.map((product) => product.inventory_product_id)).size !== products.length) {
+    setRmsRiskActionStatus(card, item, "error", "Hay productos repetidos", "Deja cada producto una sola vez y ajusta la cantidad en esa fila.");
     showFeedback("Cada producto debe aparecer una sola vez. Ajusta la cantidad en la misma fila.", "info", { title: "Riesgos de fuga" });
     return;
   }
@@ -62935,7 +63070,7 @@ saveRmsRiskDecision = async function saveRmsRiskDecisionUnified(item, root) {
       : result === "CLEARED" && selectedBenefit
         ? `Beneficio extraordinario aplicado: ${selectedBenefit.label}`
         : "");
-  if (!reason) { showFeedback(result === "RECYCLE" ? "Explica por qué este caso debe ir a Reciclaje." : "Explica por qué la recuperación logró la venta.", "info", { title: "Riesgos de fuga" }); return; }
+  if (!reason) { setRmsRiskActionStatus(card, item, "error", "Falta explicar el resultado", result === "RECYCLE" ? "Indica por qué el caso debe ir a Reciclaje." : "Indica por qué la recuperación logró la venta."); showFeedback(result === "RECYCLE" ? "Explica por qué este caso debe ir a Reciclaje." : "Explica por qué la recuperación logró la venta.", "info", { title: "Riesgos de fuga" }); return; }
   const recoveryOffer = recoveryBenefitId ? "CUSTOM" : recoveryOfferValue;
   const permissions = rmsRiskRecoveryAuthorizations();
   const discountPercent = recoveryOfferValue === "DISCOUNT"
@@ -62962,8 +63097,11 @@ saveRmsRiskDecision = async function saveRmsRiskDecisionUnified(item, root) {
     item.risk_review = review?.review || review?.risk_review || { ...(item.risk_review || {}), result, reason, recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE", recovery_benefit_id: result === "CLEARED" ? recoveryBenefitId : null, discount_percent: result === "CLEARED" ? discountPercent : 0, recovery_detail: result === "CLEARED" ? recoveryDetail || null : null };
     rebuildRmsOpportunityIndex(state.rmsMachine?.opportunities || []);
     state.rmsMachineLoaded = false;
-    if (result === "RECYCLE") { setView("recycling"); showFeedback("Lead enviado a Reciclaje con el motivo y contexto conservados.", "success", { title: "Riesgos de fuga" }); }
-    else { showFeedback("Venta lograda. Continúa el pago y productos en Ventas atribuidas.", "success", { title: "Riesgos de fuga" }); openRmsStation("cierre", { source: "risk-recovery" }); }
+    if (result === "RECYCLE") { setRmsRiskActionStatus(card, item, "success", "Caso enviado a Reciclaje", "Se conservaron el motivo, el contexto y los productos para una futura reactivación."); setView("recycling"); showFeedback("Lead enviado a Reciclaje con el motivo y contexto conservados.", "success", { title: "Riesgos de fuga" }); }
+    else { setRmsRiskActionStatus(card, item, "success", "Venta protegida y trasladada", "La concesión y los productos quedaron disponibles en Ventas atribuidas."); showFeedback("Venta lograda. Continúa el pago y productos en Ventas atribuidas.", "success", { title: "Riesgos de fuga" }); openRmsStation("cierre", { source: "risk-recovery" }); }
+  } catch (error) {
+    setRmsRiskActionStatus(card, item, "error", "No se pudo completar el traslado", error?.message || "El caso permanece en Riesgos de fuga. Corrige lo indicado y vuelve a intentarlo.");
+    throw error;
   } finally { setButtonLoading(button, false); }
 };
 
@@ -63143,25 +63281,29 @@ function rmsRiskSelectedOffer(root, item) {
 }
 
 async function generateRmsRiskRecoveryResource(item, root, button) {
+  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(item.id)}"]`);
   const selected = rmsRiskSelectedOffer(root, item);
   if (!selected.offer || selected.offer === "NONE") {
+    setRmsRiskActionStatus(card, item, "info", "No hace falta generar un ticket", "Selecciona una concesión autorizada o registra directamente la respuesta sin concesión extraordinaria.");
     showFeedback("Selecciona una alternativa extraordinaria autorizada antes de generar el ticket.", "info", { title: "Riesgos de fuga" });
     rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id)?.focus();
     return;
   }
-  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(item.id)}"]`);
   const products = rmsRiskProductsFromDom(card);
   if (!products.length) {
+    setRmsRiskActionStatus(card, item, "error", "Falta seleccionar un producto", "Agrega un producto real del inventario antes de generar el ticket.");
     showFeedback("Agrega al menos un producto real antes de generar el ticket.", "info", { title: "Riesgos de fuga" });
     card?.querySelector("[data-rms-risk-line-product]")?.focus();
     return;
   }
   if (!products.some((product) => product.benefit_applied)) {
+    setRmsRiskActionStatus(card, item, "error", "Falta definir el alcance", "Marca al menos un producto al que se aplicará el beneficio.");
     showFeedback("Marca al menos un producto al que se aplicará el beneficio.", "info", { title: "Riesgos de fuga" });
     card?.querySelector("[data-rms-risk-line-benefit]")?.focus();
     return;
   }
   if (new Set(products.map((product) => product.inventory_product_id)).size !== products.length) {
+    setRmsRiskActionStatus(card, item, "error", "Hay productos repetidos", "Deja cada producto una sola vez y ajusta su cantidad en esa fila.");
     showFeedback("Cada producto debe aparecer una sola vez. Ajusta la cantidad en la misma fila.", "info", { title: "Riesgos de fuga" });
     return;
   }
@@ -63169,6 +63311,7 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
   const productFingerprint = products.map((product) => `${product.inventory_product_id}:${product.quantity}:${product.benefit_applied ? 1 : 0}`).join(",");
   const fingerprint = [item.source_type || "PLAYER", item.source_id, selected.offer, selected.benefitId || "", selected.discount, selected.detail, productFingerprint, expirationDays].join(":");
   setButtonLoading(button, true, "Generando...");
+  setRmsRiskActionStatus(card, item, "loading", "Generando ticket y QR", "Estamos validando la autorización y los productos. No cierres esta pantalla.");
   try {
     const response = await api("/api/business/rms-machine/risk-recovery-resource", {
       method: "POST",
@@ -63191,7 +63334,11 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
     const status = rmsCommercialNode(root, "[data-rms-risk-resource-status]", item.id);
     if (status) status.innerHTML = rmsRiskRecoveryResourceMarkup(item);
     syncRmsRiskRecoveryPhases(root.querySelector(`[data-rms-station-lead="${CSS.escape(item.id)}"]`), item);
+    setRmsRiskActionStatus(card, item, "success", response.duplicate ? "Ticket recuperado sin costo adicional" : "Ticket y QR listos", "Ya puedes compartir el activo; el lead permanece en Riesgos hasta registrar la respuesta.");
     showFeedback(response.duplicate ? "El ticket ya estaba listo; no se descontó otro crédito." : "Ticket y activo extraordinario generados. Ya puedes compartirlos.", "success", { title: "Riesgos de fuga" });
+  } catch (error) {
+    setRmsRiskActionStatus(card, item, "error", "No se pudo generar el ticket", error?.message || "Revisa los datos e inténtalo nuevamente.");
+    throw error;
   } finally {
     setButtonLoading(button, false);
   }
@@ -63385,6 +63532,7 @@ async function saveRmsRiskDecision(item, root) {
       ? `Beneficio extraordinario aplicado: ${selectedBenefit.label}`
       : "");
   if (!reason) {
+    setRmsRiskActionStatus(card, item, "error", "Falta explicar el resultado", result === "RECYCLE" ? "Indica por qué el caso debe ir a Reciclaje." : "Indica por qué la recuperación logró la venta.");
     showFeedback(result === "RECYCLE" ? "Explica por qué este caso debe ir a Reciclaje." : "Explica por qué la recuperación logró la venta.", "info", { title: "Riesgos de fuga" });
     return;
   }
@@ -63397,19 +63545,24 @@ async function saveRmsRiskDecision(item, root) {
     || "").trim();
   const permissions = rmsRiskRecoveryAuthorizations();
   if (result === "CLEARED" && recoveryOffer === "DISCOUNT" && (!permissions.discount.enabled || discountPercent <= 0 || discountPercent > permissions.discount.max_percent)) {
+    setRmsRiskActionStatus(card, item, "error", "Descuento fuera de autorización", `Usa un valor mayor que 0 y máximo de ${permissions.discount.max_percent || 0}%.`);
     showFeedback(`El descuento debe respetar la autorización de Cuenta (máximo ${permissions.discount.max_percent || 0}%).`, "info", { title: "Riesgos de fuga" });
     return;
   }
   if (result === "CLEARED" && ["TWO_FOR_ONE", "GIFT"].includes(recoveryOffer) && !recoveryDetail) {
+    setRmsRiskActionStatus(card, item, "error", "Falta el detalle autorizado", "Describe exactamente la alternativa que aceptó el cliente.");
     showFeedback("Describe la alternativa autorizada que aceptó el cliente.", "info", { title: "Riesgos de fuga" });
     return;
   }
   if (result === "RECYCLE" && !recycleReason) {
+    setRmsRiskActionStatus(card, item, "error", "Falta el motivo de Reciclaje", "Selecciona el motivo principal antes de enviar el caso.");
     showFeedback("Selecciona el motivo principal para enviar a Reciclaje.", "info", { title: "Riesgos de fuga" });
     return;
   }
   const button = rmsCommercialNode(root, "[data-rms-save-risk-decision]", item.id);
   setButtonLoading(button, true, result === "RECYCLE" ? "Enviando..." : "Confirmando...");
+  setRmsRiskActionStatus(card, item, "loading", result === "RECYCLE" ? "Enviando a Reciclaje" : "Enviando a Ventas atribuidas", "Estamos guardando el resultado, el historial, los productos y la concesión aplicada.");
+  setRmsRiskActionStatus(card, item, "loading", result === "RECYCLE" ? "Enviando a Reciclaje" : "Enviando a Ventas atribuidas", "Estamos guardando el resultado, el historial, los productos y la concesión aplicada.");
   try {
     const review = await api("/api/business/rms-machine/risk-review", {
       method: "POST", headers: authHeaders(),
@@ -63444,12 +63597,17 @@ async function saveRmsRiskDecision(item, root) {
     rebuildRmsOpportunityIndex(state.rmsMachine?.opportunities || []);
     state.rmsMachineLoaded = true;
     if (result === "RECYCLE") {
+      setRmsRiskActionStatus(card, item, "success", "Caso enviado a Reciclaje", "Se conservaron el motivo, el contexto y el costo para una futura reactivación.");
       setView("recycling");
       showFeedback("Lead enviado a Reciclaje con el motivo, contexto y costo conservados.", "success", { title: "Riesgos de fuga" });
     } else {
+      setRmsRiskActionStatus(card, item, "success", "Venta protegida y trasladada", "La concesión y los productos quedan disponibles en Ventas atribuidas.");
       showFeedback("Venta lograda. Ahora termina el registro de pago y productos en Ventas atribuidas.", "success", { title: "Riesgos de fuga" });
       openRmsStation("cierre", { source: "risk-recovery" });
     }
+  } catch (error) {
+    setRmsRiskActionStatus(card, item, "error", "No se pudo completar el traslado", error?.message || "El caso permanece en Riesgos de fuga. Corrige lo indicado y vuelve a intentarlo.");
+    throw error;
   } finally {
     setButtonLoading(button, false);
   }

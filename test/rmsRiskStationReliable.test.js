@@ -8,6 +8,7 @@ const app = fs.readFileSync(path.join(root, "empresa/js/app.js"), "utf8");
 const html = fs.readFileSync(path.join(root, "empresa/index.html"), "utf8");
 const service = fs.readFileSync(path.join(root, "backend/src/services/rmsMachineService.js"), "utf8");
 const crmService = fs.readFileSync(path.join(root, "backend/src/services/leadCrmService.js"), "utf8");
+const portalCss = fs.readFileSync(path.join(root, "empresa/css/portal-clean-v39.css"), "utf8");
 
 test("Riesgos permite registrar una respuesta sin ticket", () => {
   assert.match(app, /requestedPhase === "deliver" && !hasResource/);
@@ -280,4 +281,19 @@ test("Riesgos conserva productos durante sincronizaciones y evita cargar el inve
   assert.match(app, /const safeResource = resource && typeof resource === "object" \? resource : \{\}/);
   assert.match(app, /risk-products-live-v405-20260829/);
   assert.match(html, /risk-products=live-v405-20260829/);
+});
+
+test("Riesgos sincroniza sin destruir el formulario y muestra feedback persistente", () => {
+  assert.match(app, /function rmsRiskStationFingerprint/);
+  assert.match(app, /riskFingerprintBeforeSync === rmsRiskStationFingerprint\(\) && updateRmsRiskStationLiveStatus\(rows\)/);
+  assert.match(app, /No pudimos actualizar ahora/);
+  assert.match(app, /data-rms-risk-retry-sync/);
+  assert.match(app, /function ensureRmsRiskActionStatus/);
+  assert.match(app, /Cambios de productos pendientes/);
+  assert.match(app, /Generando ticket y QR/);
+  assert.match(app, /Enviando a Ventas atribuidas/);
+  assert.match(portalCss, /\.rms-risk-live-status/);
+  assert.match(portalCss, /\.rms-risk-action-status/);
+  assert.match(app, /risk-responsive-feedback-v409-20260829/);
+  assert.match(html, /risk-feedback=responsive-v409-20260829/);
 });
