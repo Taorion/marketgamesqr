@@ -237,8 +237,22 @@ test("Riesgos abre con consulta exacta y render progresivo ligero", () => {
   assert.match(service, /recentStateRowsForBusiness\(businessId, limit, phaseFilter\)/);
   assert.match(service, /leads: await leadRowsForStateRefs\(businessId, stationStateRows, crmFilters\)/);
   assert.match(service, /const results = await Promise\.all\(requests\)/);
-  assert.match(app, /phase === "control_anti_fuga" \? 4 : RMS_STATION_RENDER_INITIAL_LIMIT/);
+  assert.match(app, /phase === "control_anti_fuga" \? 2 : RMS_STATION_RENDER_INITIAL_LIMIT/);
   assert.match(app, /display\.matchingRows\.length > display\.pageSize/);
   assert.match(app, /risk-station-fast-v403-20260829/);
   assert.match(html, /risk-speed=fast-v403-20260829/);
+});
+
+test("Riesgos conserva productos durante sincronizaciones y evita cargar el inventario dos veces", () => {
+  assert.match(service, /inventory_products: phaseFilter === "control_anti_fuga" \? inventoryProducts : undefined/);
+  assert.match(app, /stationPhase === "control_anti_fuga" && Array\.isArray\(data\?\.inventory_products\)/);
+  assert.doesNotMatch(app, /\["curaduria", "clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre"\]/);
+  assert.match(app, /function rmsRiskProductDraftStore/);
+  assert.match(app, /persistRmsRiskProductDraft\(card, item\)/);
+  assert.match(app, /function hydrateRmsRiskProductPicker/);
+  assert.match(app, /data-rms-risk-product-options-ready="false"/);
+  const bindingBlock = app.slice(app.indexOf("root.querySelectorAll(\".rms-risk-work-item[data-rms-station-lead]\")"), app.indexOf("root.querySelectorAll(\"[data-rms-risk-tab]\")"));
+  assert.ok(bindingBlock.indexOf("bindRmsRiskProductLines(card, item)") < bindingBlock.indexOf("mountRmsRiskOperatingFlow(card, item)"));
+  assert.match(app, /risk-products-fast-v404-20260829/);
+  assert.match(html, /risk-products=fast-v404-20260829/);
 });

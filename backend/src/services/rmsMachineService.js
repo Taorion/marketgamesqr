@@ -1065,6 +1065,7 @@ async function listRmsOpportunities(businessId, filters = {}) {
     funnel: lite ? [] : buildIntakeFunnel(opportunities),
     process_flow: lite ? [] : buildIndustrialProcess(opportunities),
     alerts: lite ? [] : rmsAlerts(opportunities),
+    inventory_products: phaseFilter === "control_anti_fuga" ? inventoryProducts : undefined,
     deduplication: { collapsed_contacts: Math.max(0, mergedRows.length - canonicalRows.length) },
     scope: phaseFilter ? { mode: "station", phase: phaseFilter, lite } : { mode: "machine", phase: "", lite },
   };
