@@ -763,6 +763,76 @@ async function leadRowsForStateRefs(businessId, refs = [], filters = {}) {
   return results.flatMap((data) => data.leads || data.rows || []);
 }
 
+async function riskLeadRowsForStateRefs(businessId, refs = []) {
+  const idsFor = (sourceType) => refs
+    .filter((row) => crmSourceType(row) === sourceType)
+    .map((row) => row.source_id)
+    .filter(Boolean);
+  const playerIds = idsFor("PLAYER");
+  const manualIds = idsFor("MANUAL");
+  const affiliateIds = idsFor("AFFILIATE");
+  const empty = { rows: [] };
+
+  // Riesgos opera sobre el estado RMS persistido. No necesita volver a
+  // calcular todas las compras, tickets, juegos y comunicaciones del CRM para
+  // mostrar identidad, productos, beneficio y destino. Estas lecturas directas
+  // evitan los laterales históricos de listLeadCrmRows en la ruta crítica.
+  const [players, manuals, affiliates] = await Promise.all([
+    playerIds.length ? query(
+      `select p.id, 'PLAYER'::text as source_type, p.id as lead_id,
+              p.name, p.document_id, p.email, p.phone,
+              coalesce(p.metadata->>'company', '') as company,
+              p.created_at, p.seller_user_id, seller.full_name as seller_name,
+              p.campaign_id, c.name as campaign_name,
+              coalesce(p.metadata->>'acquisition_channel_name_snapshot', p.metadata->>'channel', c.type, 'QR / Activacion') as channel,
+              coalesce(p.metadata->>'interest', p.metadata->>'favorite_product', p.metadata->>'product_interest', '') as top_interest,
+              coalesce(p.metadata->>'commercial_status', '') as stored_status,
+              coalesce(p.metadata, '{}'::jsonb) as metadata,
+              null::uuid as affiliate_id, false as is_affiliate
+         from players p
+         left join campaigns c on c.id = p.campaign_id and c.business_id = p.business_id
+         left join app_users seller on seller.id = p.seller_user_id and seller.business_id = p.business_id
+        where p.business_id = $1 and p.id = any($2::uuid[])
+          and coalesce(p.metadata->>'lifecycle_status', 'ACTIVE') <> 'ARCHIVED'`,
+      [businessId, playerIds]
+    ) : empty,
+    manualIds.length ? query(
+      `select ml.id, 'MANUAL'::text as source_type, null::uuid as lead_id,
+              ml.name, ml.document_id, ml.email, ml.phone, ml.company,
+              ml.created_at, ml.seller_user_id, seller.full_name as seller_name,
+              null::uuid as campaign_id, null::text as campaign_name,
+              coalesce(ml.preferred_channel, ml.source, 'Manual') as channel,
+              coalesce(ml.interest, '') as top_interest,
+              ml.status as stored_status,
+              coalesce(ml.metadata, '{}'::jsonb) as metadata,
+              null::uuid as affiliate_id, false as is_affiliate
+         from business_manual_leads ml
+         left join app_users seller on seller.id = ml.seller_user_id and seller.business_id = ml.business_id
+        where ml.business_id = $1 and ml.id = any($2::uuid[])
+          and ml.status <> 'ARCHIVED'`,
+      [businessId, manualIds]
+    ) : empty,
+    affiliateIds.length ? query(
+      `select fa.id, 'AFFILIATE'::text as source_type, null::uuid as lead_id,
+              fa.full_name as name, fa.document_id, fa.email, fa.phone,
+              coalesce(fa.card_metadata->>'company', '') as company,
+              fa.created_at, fa.seller_user_id, seller.full_name as seller_name,
+              null::uuid as campaign_id, null::text as campaign_name,
+              'Afiliados'::text as channel,
+              coalesce(fa.notes, '') as top_interest,
+              fa.status as stored_status,
+              coalesce(fa.card_metadata, '{}'::jsonb) as metadata,
+              fa.id as affiliate_id, true as is_affiliate
+         from affiliates fa
+         left join app_users seller on seller.id = fa.seller_user_id and seller.business_id = fa.business_id
+        where fa.business_id = $1 and fa.id = any($2::uuid[])
+          and fa.status <> 'DELETED'`,
+      [businessId, affiliateIds]
+    ) : empty,
+  ]);
+  return [...players.rows, ...manuals.rows, ...affiliates.rows];
+}
+
 function rmsContactIdentityKeys(row = {}) {
   const documentValue = String(row.document_id || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
   const email = String(row.email || "").trim().toLowerCase();
@@ -985,7 +1055,9 @@ async function listRmsOpportunities(businessId, filters = {}) {
     : null;
   const data = stationFastPath
     ? {
-      leads: await leadRowsForStateRefs(businessId, stationStateRows, crmFilters),
+      leads: phaseFilter === "control_anti_fuga"
+        ? await riskLeadRowsForStateRefs(businessId, stationStateRows)
+        : await leadRowsForStateRefs(businessId, stationStateRows, crmFilters),
       pagination: { total: stationStateRows.length, limit, offset: 0, has_more: stationStateRows.length >= limit },
     }
     : await listLeadCrmRows(businessId, {

@@ -236,7 +236,7 @@ test("Riesgos permite agregar productos y elegir en cuáles aplica el beneficio"
 test("Riesgos abre con consulta exacta y render progresivo ligero", () => {
   assert.match(service, /const stationFastPath = lite && Boolean\(phaseFilter\)/);
   assert.match(service, /recentStateRowsForBusiness\(businessId, limit, phaseFilter\)/);
-  assert.match(service, /leads: await leadRowsForStateRefs\(businessId, stationStateRows, crmFilters\)/);
+  assert.match(service, /phaseFilter === "control_anti_fuga"\s*\? await riskLeadRowsForStateRefs\(businessId, stationStateRows\)\s*: await leadRowsForStateRefs\(businessId, stationStateRows, crmFilters\)/);
   assert.match(service, /const results = await Promise\.all\(requests\)/);
   assert.match(app, /phase === "control_anti_fuga" \? 2 : RMS_STATION_RENDER_INITIAL_LIMIT/);
   assert.match(app, /display\.matchingRows\.length > display\.pageSize/);
@@ -253,6 +253,16 @@ test("Riesgos poda las fuentes CRM antes de calcular agregados pesados", () => {
   assert.match(crmService, /where fa\.business_id = \$1\s+\$\{exactAffiliateSourceSql\}/);
   assert.match(app, /risk-query-source-pruning-v407-20260829/);
   assert.match(html, /risk-query=source-pruning-v407-20260829/);
+});
+
+test("Riesgos lee directamente sus referencias persistidas sin agregados históricos", () => {
+  assert.match(service, /async function riskLeadRowsForStateRefs\(businessId, refs = \[\]\)/);
+  assert.match(service, /from players p[\s\S]*p\.id = any\(\$2::uuid\[\]\)/);
+  assert.match(service, /from business_manual_leads ml[\s\S]*ml\.id = any\(\$2::uuid\[\]\)/);
+  assert.match(service, /from affiliates fa[\s\S]*fa\.id = any\(\$2::uuid\[\]\)/);
+  assert.match(service, /phaseFilter === "control_anti_fuga"\s*\? await riskLeadRowsForStateRefs\(businessId, stationStateRows\)/);
+  assert.match(app, /risk-direct-state-read-v408-20260829/);
+  assert.match(html, /risk-read=direct-v408-20260829/);
 });
 
 test("Riesgos conserva productos durante sincronizaciones y evita cargar el inventario dos veces", () => {
