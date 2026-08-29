@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260829-risk-products-fast-v404";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829";
+const APP_VERSION = "empresa-20260829-risk-products-live-v405";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -54357,7 +54357,7 @@ function bindRmsMachineActions(root) {
     syncRmsRiskRecoveryPhases(card, item);
     activateRmsRiskTab(root, id, "sale");
     } catch (error) {
-      console.error("RMS risk card enhancement failed", { id, message: error?.message || String(error), stack: error?.stack || "" });
+      console.error(`RMS risk card enhancement failed (${id}): ${error?.message || String(error)}`);
       card.dataset.rmsRiskEnhancement = "degraded";
       card.querySelector(".rms-commercial-work-console")?.classList.add("rms-risk-safe-mode");
     }
@@ -62582,10 +62582,11 @@ function syncRmsRiskRecoveryPhases(card, item) {
 // respuesta se registra después y la salida usa exactamente la concesión que
 // se entregó. Conserva los mismos endpoints y contratos del flujo RMS.
 function rmsRiskResourceOfferValue(resource = {}) {
-  const offer = resource.recovery_offer || resource.benefit || {};
-  const benefitId = offer.benefit_id || resource.recovery_benefit_id || resource.benefit_id;
+  const safeResource = resource && typeof resource === "object" ? resource : {};
+  const offer = safeResource.recovery_offer || safeResource.benefit || {};
+  const benefitId = offer.benefit_id || safeResource.recovery_benefit_id || safeResource.benefit_id;
   if (benefitId) return `BENEFIT:${benefitId}`;
-  return offer.type || resource.recovery_offer_type || resource.benefit_type || "NONE";
+  return offer.type || safeResource.recovery_offer_type || safeResource.benefit_type || "NONE";
 }
 
 function rmsRiskOutcomeOfferUi(card, id, { navigateNone = false } = {}) {

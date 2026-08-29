@@ -1072,7 +1072,7 @@ async function listRmsOpportunities(businessId, filters = {}) {
 }
 
 async function getDailyQueue(businessId, filters = {}) {
-  const { opportunities, pagination, stages, quality_controls, transition_contract, operations, funnel, process_flow, alerts, scope } = await listRmsOpportunities(businessId, filters);
+  const { opportunities, pagination, stages, quality_controls, transition_contract, operations, funnel, process_flow, alerts, scope, inventory_products } = await listRmsOpportunities(businessId, filters);
   const lite = ["1", "true", true].includes(filters.lite);
   const labels = sectionLabels();
   const sections = Object.keys(labels).map((key) => ({
@@ -1097,6 +1097,7 @@ async function getDailyQueue(businessId, filters = {}) {
     events: events.events,
     pagination,
     scope,
+    inventory_products,
   };
 }
 

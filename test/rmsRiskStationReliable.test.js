@@ -245,6 +245,8 @@ test("Riesgos abre con consulta exacta y render progresivo ligero", () => {
 
 test("Riesgos conserva productos durante sincronizaciones y evita cargar el inventario dos veces", () => {
   assert.match(service, /inventory_products: phaseFilter === "control_anti_fuga" \? inventoryProducts : undefined/);
+  assert.match(service, /scope, inventory_products \} = await listRmsOpportunities/);
+  assert.match(service, /scope,\s+inventory_products,/);
   assert.match(app, /stationPhase === "control_anti_fuga" && Array\.isArray\(data\?\.inventory_products\)/);
   assert.doesNotMatch(app, /\["curaduria", "clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre"\]/);
   assert.match(app, /function rmsRiskProductDraftStore/);
@@ -253,6 +255,7 @@ test("Riesgos conserva productos durante sincronizaciones y evita cargar el inve
   assert.match(app, /data-rms-risk-product-options-ready="false"/);
   const bindingBlock = app.slice(app.indexOf("root.querySelectorAll(\".rms-risk-work-item[data-rms-station-lead]\")"), app.indexOf("root.querySelectorAll(\"[data-rms-risk-tab]\")"));
   assert.ok(bindingBlock.indexOf("bindRmsRiskProductLines(card, item)") < bindingBlock.indexOf("mountRmsRiskOperatingFlow(card, item)"));
-  assert.match(app, /risk-products-fast-v404-20260829/);
-  assert.match(html, /risk-products=fast-v404-20260829/);
+  assert.match(app, /const safeResource = resource && typeof resource === "object" \? resource : \{\}/);
+  assert.match(app, /risk-products-live-v405-20260829/);
+  assert.match(html, /risk-products=live-v405-20260829/);
 });
