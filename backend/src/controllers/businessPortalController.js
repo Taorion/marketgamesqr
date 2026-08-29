@@ -438,6 +438,8 @@ const competitiveProductSchema = z.object({
   sku: nullableText(100),
   brand: nullableText(120),
   category: nullableText(120),
+  category_id: z.string().uuid().optional().nullable(),
+  subcategory_id: z.string().uuid().optional().nullable(),
   description: nullableText(1500),
   own_price: z.number().min(0).optional().nullable(),
   currency: z.string().trim().max(12).default("COP"),
@@ -456,6 +458,7 @@ const competitorProductSchema = z.object({
   unit_of_measure: nullableText(40).optional().default("unidad"),
   category: nullableText(120),
   competitor_price: z.number().min(0),
+  comparison_quantity: z.number().positive().max(1000000).optional().default(1),
   previous_price: z.number().min(0).optional().nullable(),
   our_price: z.number().min(0).optional().nullable(),
   currency: z.string().trim().max(12).default("COP"),
@@ -541,6 +544,7 @@ const competitorPatchSchema = competitorSchema.partial();
 
 const competitorFindingSchema = z.object({
   competitor_id: z.string().uuid(),
+  competitive_product_id: z.string().uuid().optional().nullable(),
   finding_type: z.enum(["PRICE", "PRODUCT", "PROMOTION", "CAMPAIGN", "EVENT", "BENEFIT", "CHANNEL", "SOCIAL", "PARTNERSHIP", "LAUNCH", "MESSAGE", "OTHER"]).default("OTHER"),
   title: z.string().trim().min(2).max(180),
   description: nullableText(2000),
@@ -567,6 +571,7 @@ const competitorFindingPatchSchema = competitorFindingSchema.partial();
 
 const competitorCampaignSchema = z.object({
   competitor_id: z.string().uuid(),
+  competitive_product_id: z.string().uuid().optional().nullable(),
   name: z.string().trim().min(2).max(180),
   campaign_type: z.enum(["DISCOUNT", "TWO_FOR_ONE", "EVENT", "RAFFLE", "REFERRALS", "LAUNCH", "SEASONAL", "PARTNERSHIP", "INFLUENCER", "GIFT_CARD", "POST_SALE_BENEFIT", "PROMO_BUNDLE", "PHYSICAL_ACTIVATION", "OTHER"]).default("OTHER"),
   starts_at: nullableDateTime.optional().nullable(),
@@ -591,6 +596,7 @@ const competitorCampaignPatchSchema = competitorCampaignSchema.partial();
 
 const competitorEventSchema = z.object({
   competitor_id: z.string().uuid(),
+  competitive_product_id: z.string().uuid().optional().nullable(),
   name: z.string().trim().min(2).max(180),
   event_date: nullableDateTime.optional().nullable(),
   place: nullableText(220),
@@ -616,6 +622,7 @@ const competitorEventPatchSchema = competitorEventSchema.partial();
 
 const competitorTaskSchema = z.object({
   competitor_id: z.string().uuid(),
+  competitive_product_id: z.string().uuid().optional().nullable(),
   finding_id: z.string().uuid().optional().nullable(),
   title: z.string().trim().min(2).max(180),
   responsible_name: nullableText(160),
@@ -1514,6 +1521,7 @@ const competitorColumns = [
 
 const competitorCampaignColumns = [
   "competitor_id",
+  "competitive_product_id",
   "name",
   "campaign_type",
   "starts_at",
@@ -1536,6 +1544,7 @@ const competitorCampaignColumns = [
 
 const competitorEventColumns = [
   "competitor_id",
+  "competitive_product_id",
   "name",
   "event_date",
   "place",
@@ -1559,6 +1568,7 @@ const competitorEventColumns = [
 
 const competitorTaskColumns = [
   "competitor_id",
+  "competitive_product_id",
   "finding_id",
   "title",
   "responsible_name",
@@ -1612,10 +1622,15 @@ async function assertCompetitiveProductBelongsToBusiness(client, businessId, pro
   return result.rows[0];
 }
 
+async function assertOptionalCompetitiveProductBelongsToBusiness(client, businessId, productId) {
+  if (!productId) return null;
+  return assertCompetitiveProductBelongsToBusiness(client, businessId, productId);
+}
+
 async function assertTaskReferencesBelongToBusiness(client, businessId, payload) {
   if (payload.finding_id) {
     const finding = await client.query(
-      `select id, competitor_id
+      `select id, competitor_id, competitive_product_id
        from business_competitor_findings
        where id = $1 and business_id = $2 and status <> 'ARCHIVED'`,
       [payload.finding_id, businessId]
@@ -1623,6 +1638,9 @@ async function assertTaskReferencesBelongToBusiness(client, businessId, payload)
     if (!finding.rowCount) throw badRequest("El hallazgo relacionado no pertenece a este negocio o está archivado.");
     if (String(finding.rows[0].competitor_id) !== String(payload.competitor_id)) {
       throw badRequest("El hallazgo relacionado pertenece a otro competidor.");
+    }
+    if (finding.rows[0].competitive_product_id && String(finding.rows[0].competitive_product_id) !== String(payload.competitive_product_id || "")) {
+      throw badRequest("La señal relacionada pertenece a otro producto del Radar.");
     }
   }
   if (payload.related_campaign_id) {
@@ -1696,9 +1714,19 @@ async function competitiveRadarSummary(req, res, next) {
          (select count(*)::int from business_competitor_findings f where f.business_id = $1 and f.status in ('OPEN', 'IN_PROGRESS') and (f.is_threat = true or f.impact_level in ('HIGH', 'CRITICAL'))) as open_threats,
          (select count(*)::int from business_competitor_findings f where f.business_id = $1 and f.status in ('OPEN', 'IN_PROGRESS') and f.is_opportunity = true) as open_opportunities,
          (select count(*)::int from business_competitor_findings f where f.business_id = $1 and f.status <> 'ARCHIVED' and f.source_reliability = 'HIGH') as verified_findings,
-         (select count(*)::int from business_competitor_products p where p.business_id = $1 and p.is_active = true) as price_observations,
-         (select round(avg(p.competitor_price)::numeric, 2) from business_competitor_products p where p.business_id = $1 and p.is_active = true and upper(coalesce(p.currency, 'COP')) = 'COP') as average_competitor_price_cop,
-         (select round(avg(p.our_price - p.competitor_price)::numeric, 2) from business_competitor_products p where p.business_id = $1 and p.is_active = true and p.our_price is not null and upper(coalesce(p.currency, 'COP')) = 'COP') as average_price_gap_cop,
+         (select count(*)::int
+            from business_competitor_products p
+            join business_competitors c on c.business_id = p.business_id and c.id = p.competitor_id and c.is_active = true
+           where p.business_id = $1 and p.is_active = true) as price_observations,
+         (select round(avg(p.competitor_price / nullif(p.comparison_quantity, 0))::numeric, 2)
+            from business_competitor_products p
+            join business_competitors c on c.business_id = p.business_id and c.id = p.competitor_id and c.is_active = true
+           where p.business_id = $1 and p.is_active = true and upper(coalesce(p.currency, 'COP')) = 'COP') as average_competitor_price_cop,
+         (select round(avg(cp.own_price - (p.competitor_price / nullif(p.comparison_quantity, 0)))::numeric, 2)
+            from business_competitor_products p
+            join business_competitors c on c.business_id = p.business_id and c.id = p.competitor_id and c.is_active = true
+            join business_competitive_products cp on cp.business_id = p.business_id and cp.id = p.competitive_product_id and cp.is_active = true
+           where p.business_id = $1 and p.is_active = true and cp.own_price is not null and upper(coalesce(p.currency, 'COP')) = 'COP') as average_price_gap_cop,
          (select count(*)::int from business_competitor_campaigns cc where cc.business_id = $1 and cc.status = 'ACTIVE' and (cc.starts_at is null or cc.starts_at <= now()) and (cc.ends_at is null or cc.ends_at >= now())) as active_campaigns,
          (select count(*)::int from business_competitor_campaigns cc where cc.business_id = $1 and cc.status = 'ACTIVE' and cc.aggressiveness_level in ('HIGH', 'CRITICAL') and (cc.ends_at is null or cc.ends_at >= now())) as aggressive_campaigns,
          (select count(*)::int from business_competitor_events ce where ce.business_id = $1 and ce.status = 'ACTIVE' and ce.event_date >= current_date) as upcoming_events,
@@ -1825,14 +1853,20 @@ async function listCompetitorCampaigns(req, res, next) {
       params.push(req.query.competitor_id);
       filters.push(`cc.competitor_id = $${params.length}`);
     }
+    if (req.query.competitive_product_id) {
+      params.push(req.query.competitive_product_id);
+      filters.push(`cc.competitive_product_id = $${params.length}`);
+    }
     const includeArchived = ["1", "true", "yes"].includes(String(req.query.include_archived || "").toLowerCase());
     if (!includeArchived) filters.push("cc.status <> 'ARCHIVED'");
     const searchWhere = radarSearchFilter(req.query.search, params, ["cc.name", "cc.channel", "cc.offer", "cc.benefit", "cc.main_message", "c.name"]);
     params.push(boundedLimit(req.query.limit, 300, 800));
     const result = await query(
-      `select cc.*, c.name as competitor_name, c.threat_level as competitor_threat_level
+      `select cc.*, c.name as competitor_name, c.threat_level as competitor_threat_level,
+              cp.name as competitive_product_name
        from business_competitor_campaigns cc
        left join business_competitors c on c.id = cc.competitor_id and c.business_id = cc.business_id
+       left join business_competitive_products cp on cp.id = cc.competitive_product_id and cp.business_id = cc.business_id
        where cc.business_id = $1
          ${filters.length ? `and ${filters.join(" and ")}` : ""}
          ${searchWhere}
@@ -1854,6 +1888,7 @@ async function createCompetitorCampaign(req, res, next) {
     const payload = buildRadarPayload(competitorCampaignColumns, body, req.user.id);
     const result = await withTransaction(async (client) => {
       await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      await assertOptionalCompetitiveProductBelongsToBusiness(client, businessId, payload.competitive_product_id);
       const columns = ["business_id", ...Object.keys(payload)];
       const params = [businessId, ...Object.keys(payload).map((column) => column === "metadata" ? JSON.stringify(payload[column] || {}) : payload[column])];
       const placeholders = columns.map((column, index) => `$${index + 1}${column === "metadata" ? "::jsonb" : ""}`);
@@ -1886,6 +1921,7 @@ async function updateCompetitorCampaign(req, res, next) {
     ];
     const result = await withTransaction(async (client) => {
       await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      await assertOptionalCompetitiveProductBelongsToBusiness(client, businessId, payload.competitive_product_id);
       return client.query(
         `update business_competitor_campaigns
          set ${setClauses.join(", ")}, updated_at = now()
@@ -1928,14 +1964,20 @@ async function listCompetitorEvents(req, res, next) {
       params.push(req.query.competitor_id);
       filters.push(`ce.competitor_id = $${params.length}`);
     }
+    if (req.query.competitive_product_id) {
+      params.push(req.query.competitive_product_id);
+      filters.push(`ce.competitive_product_id = $${params.length}`);
+    }
     const includeArchived = ["1", "true", "yes"].includes(String(req.query.include_archived || "").toLowerCase());
     if (!includeArchived) filters.push("ce.status <> 'ARCHIVED'");
     const searchWhere = radarSearchFilter(req.query.search, params, ["ce.name", "ce.place", "ce.city", "ce.organizer", "ce.presented_offer", "ce.detected_opportunity", "c.name"]);
     params.push(boundedLimit(req.query.limit, 300, 800));
     const result = await query(
-      `select ce.*, c.name as competitor_name, c.threat_level as competitor_threat_level
+      `select ce.*, c.name as competitor_name, c.threat_level as competitor_threat_level,
+              cp.name as competitive_product_name
        from business_competitor_events ce
        left join business_competitors c on c.id = ce.competitor_id and c.business_id = ce.business_id
+       left join business_competitive_products cp on cp.id = ce.competitive_product_id and cp.business_id = ce.business_id
        where ce.business_id = $1
          ${filters.length ? `and ${filters.join(" and ")}` : ""}
          ${searchWhere}
@@ -1957,6 +1999,7 @@ async function createCompetitorEvent(req, res, next) {
     const payload = buildRadarPayload(competitorEventColumns, body, req.user.id);
     const result = await withTransaction(async (client) => {
       await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      await assertOptionalCompetitiveProductBelongsToBusiness(client, businessId, payload.competitive_product_id);
       const columns = ["business_id", ...Object.keys(payload)];
       const params = [businessId, ...Object.keys(payload).map((column) => column === "metadata" ? JSON.stringify(payload[column] || {}) : payload[column])];
       const placeholders = columns.map((column, index) => `$${index + 1}${column === "metadata" ? "::jsonb" : ""}`);
@@ -1989,6 +2032,7 @@ async function updateCompetitorEvent(req, res, next) {
     ];
     const result = await withTransaction(async (client) => {
       await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      await assertOptionalCompetitiveProductBelongsToBusiness(client, businessId, payload.competitive_product_id);
       return client.query(
         `update business_competitor_events
          set ${setClauses.join(", ")}, updated_at = now()
@@ -2031,6 +2075,10 @@ async function listCompetitorTasks(req, res, next) {
       params.push(req.query.competitor_id);
       filters.push(`ct.competitor_id = $${params.length}`);
     }
+    if (req.query.competitive_product_id) {
+      params.push(req.query.competitive_product_id);
+      filters.push(`ct.competitive_product_id = $${params.length}`);
+    }
     if (req.query.status) {
       params.push(String(req.query.status).toUpperCase());
       filters.push(`ct.status = $${params.length}`);
@@ -2039,10 +2087,12 @@ async function listCompetitorTasks(req, res, next) {
     }
     params.push(boundedLimit(req.query.limit, 300, 800));
     const result = await query(
-      `select ct.*, c.name as competitor_name, f.title as finding_title
+      `select ct.*, c.name as competitor_name, f.title as finding_title,
+              cp.name as competitive_product_name
        from business_competitor_tasks ct
        left join business_competitors c on c.id = ct.competitor_id and c.business_id = ct.business_id
        left join business_competitor_findings f on f.id = ct.finding_id and f.business_id = ct.business_id
+       left join business_competitive_products cp on cp.id = ct.competitive_product_id and cp.business_id = ct.business_id
        where ct.business_id = $1
          ${filters.length ? `and ${filters.join(" and ")}` : ""}
        order by ct.due_at asc nulls last, ct.updated_at desc
@@ -2063,6 +2113,7 @@ async function createCompetitorTask(req, res, next) {
     const payload = buildRadarPayload(competitorTaskColumns, body, req.user.id);
     const result = await withTransaction(async (client) => {
       await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      await assertOptionalCompetitiveProductBelongsToBusiness(client, businessId, payload.competitive_product_id);
       await assertTaskReferencesBelongToBusiness(client, businessId, payload);
       const columns = ["business_id", ...Object.keys(payload)];
       const params = [businessId, ...Object.keys(payload).map((column) => column === "metadata" ? JSON.stringify(payload[column] || {}) : payload[column])];
@@ -2096,6 +2147,7 @@ async function updateCompetitorTask(req, res, next) {
     ];
     const result = await withTransaction(async (client) => {
       await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      await assertOptionalCompetitiveProductBelongsToBusiness(client, businessId, payload.competitive_product_id);
       await assertTaskReferencesBelongToBusiness(client, businessId, payload);
       return client.query(
         `update business_competitor_tasks
@@ -2132,6 +2184,7 @@ async function archiveCompetitorTask(req, res, next) {
 function findingPayload(body, userId) {
   return {
     competitor_id: body.competitor_id || null,
+    competitive_product_id: body.competitive_product_id || null,
     finding_type: body.finding_type || "OTHER",
     title: body.title,
     description: body.description || null,
@@ -2166,6 +2219,10 @@ async function listCompetitorFindings(req, res, next) {
       params.push(req.query.competitor_id);
       filters.push(`f.competitor_id = $${params.length}`);
     }
+    if (req.query.competitive_product_id) {
+      params.push(req.query.competitive_product_id);
+      filters.push(`f.competitive_product_id = $${params.length}`);
+    }
     if (req.query.status) {
       params.push(String(req.query.status).toUpperCase());
       filters.push(`f.status = $${params.length}`);
@@ -2179,9 +2236,11 @@ async function listCompetitorFindings(req, res, next) {
     }
     params.push(boundedLimit(req.query.limit, 300, 800));
     const result = await query(
-      `select f.*, c.name as competitor_name, c.threat_level as competitor_threat_level
+      `select f.*, c.name as competitor_name, c.threat_level as competitor_threat_level,
+              cp.name as competitive_product_name
        from business_competitor_findings f
        left join business_competitors c on c.id = f.competitor_id and c.business_id = f.business_id
+       left join business_competitive_products cp on cp.id = f.competitive_product_id and cp.business_id = f.business_id
        where f.business_id = $1
          ${filters.length ? `and ${filters.join(" and ")}` : ""}
        order by f.detected_at desc, f.updated_at desc
@@ -2202,18 +2261,20 @@ async function createCompetitorFinding(req, res, next) {
     const payload = findingPayload(body, req.user.id);
     const result = await withTransaction(async (client) => {
       await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      await assertOptionalCompetitiveProductBelongsToBusiness(client, businessId, payload.competitive_product_id);
       return client.query(
         `insert into business_competitor_findings
-          (business_id, competitor_id, finding_type, title, description, impact_level, suggested_action,
+          (business_id, competitor_id, competitive_product_id, finding_type, title, description, impact_level, suggested_action,
            detected_at, evidence_url, evidence_image_url, due_at, status, urgency, area_affected,
            responsible_name, source_type, source_description, source_checked_at, source_reliability,
            is_threat, is_opportunity, metadata, created_by_user_id)
-         values ($1, $2, $3, $4, $5, $6, $7, coalesce($8::timestamptz, now()), $9, $10, $11::timestamptz,
-                 $12, $13, $14, $15, $16, $17, $18::timestamptz, $19, $20, $21, $22::jsonb, $23)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, coalesce($9::timestamptz, now()), $10, $11, $12::timestamptz,
+                 $13, $14, $15, $16, $17, $18, $19::timestamptz, $20, $21, $22, $23::jsonb, $24)
          returning *`,
         [
           businessId,
           payload.competitor_id,
+          payload.competitive_product_id,
           payload.finding_type,
           payload.title,
           payload.description,
@@ -2257,29 +2318,31 @@ async function updateCompetitorFinding(req, res, next) {
     const payload = findingPayload({ ...existing.rows[0], ...body }, null);
     const result = await withTransaction(async (client) => {
       await assertCompetitorBelongsToBusiness(client, businessId, payload.competitor_id);
+      await assertOptionalCompetitiveProductBelongsToBusiness(client, businessId, payload.competitive_product_id);
       return client.query(
         `update business_competitor_findings
          set competitor_id = $3,
-             finding_type = $4,
-             title = $5,
-             description = $6,
-             impact_level = $7,
-             suggested_action = $8,
-             detected_at = coalesce($9::timestamptz, detected_at),
-             evidence_url = $10,
-             evidence_image_url = $11,
-             due_at = $12::timestamptz,
-             status = $13,
-             urgency = $14,
-             area_affected = $15,
-             responsible_name = $16,
-             source_type = $17,
-             source_description = $18,
-             source_checked_at = $19::timestamptz,
-             source_reliability = $20,
-             is_threat = $21,
-             is_opportunity = $22,
-             metadata = $23::jsonb,
+             competitive_product_id = $4,
+             finding_type = $5,
+             title = $6,
+             description = $7,
+             impact_level = $8,
+             suggested_action = $9,
+             detected_at = coalesce($10::timestamptz, detected_at),
+             evidence_url = $11,
+             evidence_image_url = $12,
+             due_at = $13::timestamptz,
+             status = $14,
+             urgency = $15,
+             area_affected = $16,
+             responsible_name = $17,
+             source_type = $18,
+             source_description = $19,
+             source_checked_at = $20::timestamptz,
+             source_reliability = $21,
+             is_threat = $22,
+             is_opportunity = $23,
+             metadata = $24::jsonb,
              updated_at = now()
          where id = $1 and business_id = $2
          returning *`,
@@ -2287,6 +2350,7 @@ async function updateCompetitorFinding(req, res, next) {
           req.params.findingId,
           businessId,
           payload.competitor_id,
+          payload.competitive_product_id,
           payload.finding_type,
           payload.title,
           payload.description,
@@ -2340,6 +2404,8 @@ function competitiveProductPayload(body, userId) {
     sku: body.sku || null,
     brand: body.brand || null,
     category: body.category || null,
+    category_id: body.category_id || null,
+    subcategory_id: body.subcategory_id || null,
     description: body.description || null,
     own_price: body.own_price === null || body.own_price === undefined ? null : Number(body.own_price),
     currency: body.currency || "COP",
@@ -2348,6 +2414,30 @@ function competitiveProductPayload(body, userId) {
     metadata: body.metadata || {},
     created_by_user_id: userId || null,
   };
+}
+
+async function assertCompetitiveProductTaxonomy(client, businessId, payload) {
+  if (!payload.category_id && payload.subcategory_id) {
+    throw badRequest("Selecciona la categoría a la que pertenece la subcategoría.");
+  }
+  let category = null;
+  if (payload.category_id) {
+    const result = await client.query(
+      "select id, name from business_product_categories where id = $1 and business_id = $2",
+      [payload.category_id, businessId]
+    );
+    if (!result.rowCount) throw badRequest("La categoría seleccionada no pertenece a este negocio.");
+    category = result.rows[0];
+  }
+  if (payload.subcategory_id) {
+    const result = await client.query(
+      `select id, name, category_id from business_product_subcategories
+       where id = $1 and business_id = $2 and category_id = $3`,
+      [payload.subcategory_id, businessId, payload.category_id]
+    );
+    if (!result.rowCount) throw badRequest("La subcategoría no pertenece a la categoría seleccionada.");
+  }
+  return category;
 }
 
 function mapCompetitiveProduct(row = {}) {
@@ -2373,24 +2463,30 @@ async function listCompetitiveProducts(req, res, next) {
     let searchWhere = "";
     if (search) {
       params.push(`%${search}%`);
-      searchWhere = `and (lower(p.name) like $${params.length} or lower(coalesce(p.sku, '')) like $${params.length} or lower(coalesce(p.brand, '')) like $${params.length} or lower(coalesce(p.category, '')) like $${params.length})`;
+      searchWhere = `and (lower(p.name) like $${params.length} or lower(coalesce(p.sku, '')) like $${params.length} or lower(coalesce(p.brand, '')) like $${params.length} or lower(coalesce(category_master.name, p.category, '')) like $${params.length})`;
     }
     params.push(limit);
     const result = await query(
-      `select p.*,
-              count(distinct o.competitor_id) filter (where o.is_active = true) as provider_count,
-              count(o.id) filter (where o.is_active = true) as observation_count,
-              min(o.competitor_price) filter (where o.is_active = true) as min_provider_price,
-              max(o.competitor_price) filter (where o.is_active = true) as max_provider_price,
-              avg(o.competitor_price) filter (where o.is_active = true) as average_provider_price,
-              max(o.observed_at) filter (where o.is_active = true) as latest_observed_at
+      `select p.*, category_master.name as category_name, subcategory_master.name as subcategory_name,
+              count(distinct o.competitor_id) filter (where o.is_active = true and provider.id is not null) as provider_count,
+              count(o.id) filter (where o.is_active = true and provider.id is not null) as observation_count,
+              min(o.competitor_price / nullif(o.comparison_quantity, 0)) filter (where o.is_active = true and provider.id is not null) as min_provider_price,
+              max(o.competitor_price / nullif(o.comparison_quantity, 0)) filter (where o.is_active = true and provider.id is not null) as max_provider_price,
+              avg(o.competitor_price / nullif(o.comparison_quantity, 0)) filter (where o.is_active = true and provider.id is not null) as average_provider_price,
+              max(o.observed_at) filter (where o.is_active = true and provider.id is not null) as latest_observed_at
        from business_competitive_products p
        left join business_competitor_products o
          on o.business_id = p.business_id and o.competitive_product_id = p.id
+       left join business_competitors provider
+         on provider.business_id = o.business_id and provider.id = o.competitor_id and provider.is_active = true
+       left join business_product_categories category_master
+         on category_master.business_id = p.business_id and category_master.id = p.category_id
+       left join business_product_subcategories subcategory_master
+         on subcategory_master.business_id = p.business_id and subcategory_master.id = p.subcategory_id
        where p.business_id = $1
          ${includeInactive ? "" : "and p.is_active = true"}
          ${searchWhere}
-       group by p.id
+       group by p.id, category_master.name, subcategory_master.name
        order by p.updated_at desc, p.name asc
        limit $${params.length}`,
       params
@@ -2406,14 +2502,18 @@ async function createCompetitiveProduct(req, res, next) {
     const businessId = businessIdFor(req);
     await assertFeatureForRequest(req, businessId, "campaign_comparison");
     const payload = competitiveProductPayload(validate(competitiveProductSchema, req.body), req.user.id);
-    const result = await query(
-      `insert into business_competitive_products
-        (business_id, name, sku, brand, category, description, own_price, currency, unit_of_measure, is_active, metadata, created_by_user_id)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12)
-       returning *`,
-      [businessId, payload.name, payload.sku, payload.brand, payload.category, payload.description, payload.own_price,
-        payload.currency, payload.unit_of_measure, payload.is_active, JSON.stringify(payload.metadata), payload.created_by_user_id]
-    );
+    const result = await withTransaction(async (client) => {
+      const category = await assertCompetitiveProductTaxonomy(client, businessId, payload);
+      return client.query(
+        `insert into business_competitive_products
+          (business_id, name, sku, brand, category, category_id, subcategory_id, description, own_price, currency, unit_of_measure, is_active, metadata, created_by_user_id)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14)
+         returning *`,
+        [businessId, payload.name, payload.sku, payload.brand, category?.name || payload.category, payload.category_id, payload.subcategory_id,
+          payload.description, payload.own_price, payload.currency, payload.unit_of_measure, payload.is_active,
+          JSON.stringify(payload.metadata), payload.created_by_user_id]
+      );
+    });
     res.status(201).json({ product: mapCompetitiveProduct(result.rows[0]) });
   } catch (error) {
     if (error?.code === "23505") return next(badRequest("Ya existe un producto activo con ese nombre o SKU en este negocio."));
@@ -2430,19 +2530,16 @@ async function updateCompetitiveProduct(req, res, next) {
     const body = validate(competitiveProductPatchSchema, req.body);
     const payload = competitiveProductPayload({ ...existing.rows[0], ...body }, req.user.id);
     const result = await withTransaction(async (client) => {
+      const category = await assertCompetitiveProductTaxonomy(client, businessId, payload);
       const updated = await client.query(
         `update business_competitive_products
-         set name = $3, sku = $4, brand = $5, category = $6, description = $7, own_price = $8,
-             currency = $9, unit_of_measure = $10, is_active = $11, metadata = $12::jsonb, updated_at = now()
+         set name = $3, sku = $4, brand = $5, category = $6, category_id = $7, subcategory_id = $8,
+             description = $9, own_price = $10, currency = $11, unit_of_measure = $12,
+             is_active = $13, metadata = $14::jsonb, updated_at = now()
          where id = $1 and business_id = $2 returning *`,
-        [req.params.productId, businessId, payload.name, payload.sku, payload.brand, payload.category, payload.description,
-          payload.own_price, payload.currency, payload.unit_of_measure, payload.is_active, JSON.stringify(payload.metadata)]
-      );
-      await client.query(
-        `update business_competitor_products
-         set own_product_name = $3, our_price = $4, currency = $5, updated_at = now()
-         where business_id = $1 and competitive_product_id = $2`,
-        [businessId, req.params.productId, payload.name, payload.own_price, payload.currency]
+        [req.params.productId, businessId, payload.name, payload.sku, payload.brand, category?.name || payload.category,
+          payload.category_id, payload.subcategory_id, payload.description, payload.own_price, payload.currency,
+          payload.unit_of_measure, payload.is_active, JSON.stringify(payload.metadata)]
       );
       return updated;
     });
@@ -2491,14 +2588,22 @@ function competitorSearchWhere(search, params) {
 
 function mapCompetitorProduct(row = {}) {
   const competitorPrice = Number(row.competitor_price || 0);
+  const comparisonQuantity = Math.max(Number(row.comparison_quantity || 1), 0.0001);
   const ourPrice = row.our_price === null || row.our_price === undefined ? null : Number(row.our_price || 0);
-  const priceGap = ourPrice === null ? null : ourPrice - competitorPrice;
+  const normalizedCompetitorPrice = competitorPrice / comparisonQuantity;
+  const currentOwnPrice = row.competitive_product_own_price === null || row.competitive_product_own_price === undefined
+    ? ourPrice
+    : Number(row.competitive_product_own_price || 0);
+  const priceGap = currentOwnPrice === null ? null : currentOwnPrice - normalizedCompetitorPrice;
   return {
     ...row,
     competitor_price: competitorPrice,
+    comparison_quantity: comparisonQuantity,
+    normalized_competitor_price: normalizedCompetitorPrice,
     our_price: ourPrice,
+    current_own_price: currentOwnPrice,
     price_gap: priceGap,
-    price_gap_percent: priceGap === null || competitorPrice <= 0 ? null : Number(((priceGap / competitorPrice) * 100).toFixed(2)),
+    price_gap_percent: priceGap === null || normalizedCompetitorPrice <= 0 ? null : Number(((priceGap / normalizedCompetitorPrice) * 100).toFixed(2)),
   };
 }
 
@@ -2511,6 +2616,7 @@ function competitorProductPayload(body, userId) {
     unit_of_measure: body.unit_of_measure || "unidad",
     category: body.category || null,
     competitor_price: Number(body.competitor_price || 0),
+    comparison_quantity: Math.max(Number(body.comparison_quantity || 1), 0.0001),
     previous_price: body.previous_price === null || body.previous_price === undefined ? null : Number(body.previous_price || 0),
     our_price: body.our_price === null || body.our_price === undefined ? null : Number(body.our_price || 0),
     currency: body.currency || "COP",
@@ -2553,6 +2659,7 @@ async function listCompetitorProducts(req, res, next) {
        join business_competitive_products cp on cp.id = p.competitive_product_id and cp.business_id = p.business_id
        where p.business_id = $1
          ${includeInactive ? "" : "and p.is_active = true"}
+         ${includeInactive ? "" : "and c.is_active = true and cp.is_active = true"}
          ${productWhere}
          ${searchWhere}
        order by p.observed_at desc, p.updated_at desc
@@ -2576,11 +2683,11 @@ async function createCompetitorProduct(req, res, next) {
       const competitiveProduct = await assertCompetitiveProductBelongsToBusiness(client, businessId, payload.competitive_product_id);
       return client.query(
         `insert into business_competitor_products
-          (business_id, competitive_product_id, competitor_id, competitor_name, product_name, unit_of_measure, category, competitor_price, previous_price, our_price,
+          (business_id, competitive_product_id, competitor_id, competitor_name, product_name, unit_of_measure, category, competitor_price, comparison_quantity, previous_price, our_price,
            currency, channel, source_url, evidence_image_url, observed_at, availability, promotion_label,
            own_product_name, competitiveness_level, notes, is_active, metadata, created_by_user_id)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-                 coalesce($15::timestamptz, now()), $16, $17, $18, $19, $20, $21, $22::jsonb, $23)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
+                 coalesce($16::timestamptz, now()), $17, $18, $19, $20, $21, $22, $23::jsonb, $24)
          returning *`,
         [
           businessId,
@@ -2591,6 +2698,7 @@ async function createCompetitorProduct(req, res, next) {
           payload.unit_of_measure || competitiveProduct.unit_of_measure,
           payload.category || competitiveProduct.category,
           payload.competitor_price,
+          payload.comparison_quantity,
           payload.previous_price,
           competitiveProduct.own_price,
           competitiveProduct.currency,
@@ -2638,20 +2746,21 @@ async function updateCompetitorProduct(req, res, next) {
              unit_of_measure = $7,
              category = $8,
              competitor_price = $9,
-             previous_price = $10,
-             our_price = $11,
-             currency = $12,
-             channel = $13,
-             source_url = $14,
-             evidence_image_url = $15,
-             observed_at = coalesce($16::timestamptz, observed_at),
-             availability = $17,
-             promotion_label = $18,
-             own_product_name = $19,
-             competitiveness_level = $20,
-             notes = $21,
-             is_active = $22,
-             metadata = $23::jsonb,
+             comparison_quantity = $10,
+             previous_price = $11,
+             our_price = $12,
+             currency = $13,
+             channel = $14,
+             source_url = $15,
+             evidence_image_url = $16,
+             observed_at = coalesce($17::timestamptz, observed_at),
+             availability = $18,
+             promotion_label = $19,
+             own_product_name = $20,
+             competitiveness_level = $21,
+             notes = $22,
+             is_active = $23,
+             metadata = $24::jsonb,
              updated_at = now()
          where id = $1 and business_id = $2
          returning *`,
@@ -2665,9 +2774,10 @@ async function updateCompetitorProduct(req, res, next) {
           payload.unit_of_measure,
           payload.category,
           payload.competitor_price,
+          payload.comparison_quantity,
           payload.previous_price,
-          competitiveProduct.own_price,
-          competitiveProduct.currency,
+          existing.rows[0].our_price,
+          existing.rows[0].currency || competitiveProduct.currency,
           payload.channel,
           payload.source_url,
           payload.evidence_image_url,

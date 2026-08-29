@@ -1,4 +1,4 @@
-/* Qori Competitive Command Center · competition-command-v1-20260828 */
+/* Qori Competitive Intelligence Studio · competition-intelligence-v2-20260828 */
 body[data-current-view="competition"] {
   --radar-navy: #071a3d;
   --radar-cyan: #21d4ed;
@@ -41,7 +41,7 @@ body[data-current-view="competition"] .competition-radar-steps { display: grid; 
 body[data-current-view="competition"] .competition-radar-steps li { display: flex; gap: 10px; min-width: 0; padding: 13px; border: 1px solid rgba(255, 255, 255, .13); border-radius: 15px; background: rgba(255, 255, 255, .07); }
 body[data-current-view="competition"] .competition-radar-steps li > span { color: var(--radar-mint); font-weight: 800; font-size: .72rem; }
 body[data-current-view="competition"] .competition-radar-steps :is(strong, small) { display: block; color: #fff !important; }
-body[data-current-view="competition"] .competition-radar-steps small { margin-top: 4px; opacity: .88; line-height: 1.35; }
+body[data-current-view="competition"] .competition-radar-steps small { margin-top: 4px; opacity: 1; font-size: .76rem; line-height: 1.42; }
 
 body[data-current-view="competition"] .competition-data-status { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 15px; border: 1px solid #b9ddec; color: #153553; background: #eefaff; }
 body[data-current-view="competition"] .competition-data-status[hidden] { display: none !important; }
@@ -159,3 +159,104 @@ body .competition-detail-tabs button[aria-selected="true"] { color: #fff; backgr
   body[data-current-view="competition"] .competition-panel,
   body[data-current-view="competition"] .competition-data-status.is-loading .material-symbols-outlined { animation: none; }
 }
+
+body[data-current-view="competition"] .radar-product-tools { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+body[data-current-view="competition"] .radar-product-tools input { width: min(360px, 42vw); }
+body[data-current-view="competition"] .radar-product-tools .material-symbols-outlined { font-size: 18px; }
+body[data-current-view="competition"] :is(#competitionProductFormPanel, #radarProductFormPanel) label > small { margin-top: 5px; color: #5b6f86; font-size: .72rem; line-height: 1.35; }
+body[data-current-view="competition"] .radar-product-intelligence { display: grid; gap: 16px; margin-bottom: 18px; padding: clamp(18px, 2.5vw, 28px); overflow: hidden; border: 1px solid rgba(96,232,231,.22); border-radius: 26px; color: #fff; background: radial-gradient(circle at 88% 0%, rgba(33,212,237,.18), transparent 30%), linear-gradient(145deg, #06162f, #092c51 58%, #075b6d); box-shadow: 0 26px 70px rgba(2,20,48,.24); }
+body[data-current-view="competition"] .radar-intelligence-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; }
+body[data-current-view="competition"] .radar-intelligence-head h3 { margin: 5px 0 6px; color: #fff; font-size: clamp(1.35rem, 2.5vw, 2rem); letter-spacing: -.035em; }
+body[data-current-view="competition"] .radar-intelligence-head p { max-width: 760px; margin: 0; color: #d4e8f3; line-height: 1.5; }
+body[data-current-view="competition"] .radar-product-intelligence .mono-label { color: #74edf0 !important; }
+body[data-current-view="competition"] .radar-confidence { position: relative; display: grid; grid-template-columns: auto auto; gap: 3px 14px; min-width: 190px; padding: 13px 15px 17px; border: 1px solid rgba(255,255,255,.15); border-radius: 16px; background: rgba(255,255,255,.07); }
+body[data-current-view="competition"] .radar-confidence span { grid-column: 1 / -1; color: #bcd6e5; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+body[data-current-view="competition"] .radar-confidence strong { color: #fff; font-size: 1.5rem; }
+body[data-current-view="competition"] .radar-confidence small { align-self: center; color: #d8edf4; }
+body[data-current-view="competition"] .radar-confidence i { position: absolute; right: 14px; bottom: 9px; left: 14px; height: 4px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.14); }
+body[data-current-view="competition"] .radar-confidence i::after { display: block; width: var(--radar-confidence, 0%); height: 100%; content: ""; border-radius: inherit; background: linear-gradient(90deg, #22d3ee, #70f0d2); }
+body[data-current-view="competition"] .radar-product-kpis { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 10px; }
+body[data-current-view="competition"] .radar-product-kpis > article { display: grid; gap: 5px; min-width: 0; padding: 14px; border: 1px solid rgba(255,255,255,.12); border-radius: 16px; background: rgba(255,255,255,.07); backdrop-filter: blur(10px); }
+body[data-current-view="competition"] .radar-product-kpis span { color: #b9d5e4; font-size: .7rem; font-weight: 780; text-transform: uppercase; letter-spacing: .06em; }
+body[data-current-view="competition"] .radar-product-kpis strong { overflow: hidden; color: #fff; font-size: 1.18rem; text-overflow: ellipsis; white-space: nowrap; }
+body[data-current-view="competition"] .radar-product-kpis small { color: #c9dfea; line-height: 1.35; }
+body[data-current-view="competition"] .radar-chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+body[data-current-view="competition"] .radar-chart-card { position: relative; min-width: 0; min-height: 330px; padding: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,.12); border-radius: 20px; background: rgba(2,18,42,.5); }
+body[data-current-view="competition"] .radar-chart-card-wide { grid-column: 1 / -1; min-height: 300px; }
+body[data-current-view="competition"] .radar-chart-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+body[data-current-view="competition"] .radar-chart-card header div { display: grid; gap: 4px; }
+body[data-current-view="competition"] .radar-chart-card header strong { color: #fff; font-size: 1.05rem; }
+body[data-current-view="competition"] .radar-chart-legend { display: flex; align-items: center; gap: 7px; color: #c9dfea; font-size: .72rem; }
+body[data-current-view="competition"] .radar-chart-legend i { width: 9px; height: 9px; border-radius: 50%; background: #21d4ed; }
+body[data-current-view="competition"] .radar-chart-legend i.is-own { margin-left: 7px; background: #70f0d2; }
+body[data-current-view="competition"] .radar-chart { position: relative; min-height: 230px; }
+body[data-current-view="competition"] .radar-chart-empty { display: grid; place-items: center; align-content: center; gap: 7px; min-height: 220px; padding: 20px; text-align: center; color: #cce2ed; }
+body[data-current-view="competition"] .radar-chart-empty .material-symbols-outlined { color: #5ee1e8; font-size: 2rem; }
+body[data-current-view="competition"] .radar-chart-empty strong { color: #fff; }
+body[data-current-view="competition"] .radar-chart-empty small { color: #a9c6d6; }
+body[data-current-view="competition"] .radar-bar-chart { display: grid; gap: 12px; }
+body[data-current-view="competition"] .radar-bar-row { display: grid; grid-template-columns: minmax(100px,.7fr) minmax(120px,2fr) minmax(92px,auto); align-items: center; gap: 12px; }
+body[data-current-view="competition"] .radar-bar-row > span { overflow: hidden; color: #d8eaf2; font-size: .78rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+body[data-current-view="competition"] .radar-bar-row > div { height: 13px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.08); }
+body[data-current-view="competition"] .radar-bar-row i { display: block; width: var(--radar-bar-width); height: 100%; border-radius: inherit; background: linear-gradient(90deg, #0f8ca9, #21d4ed); box-shadow: 0 0 18px rgba(33,212,237,.28); }
+body[data-current-view="competition"] .radar-bar-row.is-own i { background: linear-gradient(90deg, #1dc8aa, #70f0d2); }
+body[data-current-view="competition"] .radar-bar-row strong { color: #fff; font-size: .8rem; text-align: right; }
+body[data-current-view="competition"] .radar-line-chart { display: block; width: 100%; height: 230px; overflow: visible; }
+body[data-current-view="competition"] .radar-grid-line { stroke: rgba(255,255,255,.09); stroke-width: 1; }
+body[data-current-view="competition"] .radar-own-line { stroke: #70f0d2; stroke-width: 2; stroke-dasharray: 7 7; }
+body[data-current-view="competition"] .radar-trend-line { fill: none; stroke: #21d4ed; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+body[data-current-view="competition"] .radar-trend-point { fill: #e8fdff; stroke: #0aa4c0; stroke-width: 3; }
+body[data-current-view="competition"] .radar-chart-axis { display: flex; justify-content: space-between; margin: -4px 28px 0; color: #a9c4d3; font-size: .68rem; }
+body[data-current-view="competition"] .radar-chart-range { position: absolute; inset: 2px auto 8px 0; display: flex; flex-direction: column; justify-content: space-between; color: #93b4c5; font-size: .62rem; }
+body[data-current-view="competition"] .radar-activity-legend { display: flex; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 18px; color: #bcd4e1; font-size: .68rem; }
+body[data-current-view="competition"] .radar-activity-legend span { display: inline-flex; align-items: center; gap: 5px; }
+body[data-current-view="competition"] .radar-activity-legend i { width: 8px; height: 8px; border-radius: 3px; }
+body[data-current-view="competition"] :is(.radar-activity-legend, .radar-activity-row) .is-campaign { background: #22d3ee; }
+body[data-current-view="competition"] :is(.radar-activity-legend, .radar-activity-row) .is-event { background: #70f0d2; }
+body[data-current-view="competition"] :is(.radar-activity-legend, .radar-activity-row) .is-signal { background: #fbbf24; }
+body[data-current-view="competition"] :is(.radar-activity-legend, .radar-activity-row) .is-task { background: #a78bfa; }
+body[data-current-view="competition"] .radar-activity-chart { display: grid; gap: 13px; }
+body[data-current-view="competition"] .radar-activity-row { display: grid; grid-template-columns: minmax(90px,.75fr) minmax(110px,1.6fr) 24px; align-items: center; gap: 10px; }
+body[data-current-view="competition"] .radar-activity-row > span { overflow: hidden; color: #d9eaf2; font-size: .74rem; text-overflow: ellipsis; white-space: nowrap; }
+body[data-current-view="competition"] .radar-activity-row > div { display: flex; height: 12px; gap: 2px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.07); }
+body[data-current-view="competition"] .radar-activity-row i { display: block; width: var(--radar-segment); min-width: 4px; height: 100%; }
+body[data-current-view="competition"] .radar-activity-row strong { color: #fff; font-size: .78rem; text-align: right; }
+body[data-current-view="competition"] .radar-insight-stream { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+body[data-current-view="competition"] .radar-insight-stream article { display: flex; gap: 11px; padding: 14px; border: 1px solid rgba(255,255,255,.12); border-radius: 16px; background: rgba(255,255,255,.06); }
+body[data-current-view="competition"] .radar-insight-stream article > .material-symbols-outlined { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border-radius: 12px; color: #041b37; background: #70f0d2; }
+body[data-current-view="competition"] .radar-insight-stream article.is-warning > .material-symbols-outlined { background: #fbbf24; }
+body[data-current-view="competition"] .radar-insight-stream div { min-width: 0; }
+body[data-current-view="competition"] .radar-insight-stream strong { color: #fff; font-size: .84rem; }
+body[data-current-view="competition"] .radar-insight-stream p { margin: 4px 0 0; color: #c4dce8; font-size: .75rem; line-height: 1.45; }
+
+@media (max-width: 980px) {
+  body[data-current-view="competition"] .radar-product-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body[data-current-view="competition"] .radar-insight-stream { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  body[data-current-view="competition"] .radar-product-tools { align-items: stretch; flex-direction: column; width: 100%; }
+  body[data-current-view="competition"] .radar-product-tools input { width: 100%; min-width: 0; }
+  body[data-current-view="competition"] .radar-product-intelligence { padding: 16px 12px; border-radius: 20px; }
+  body[data-current-view="competition"] .radar-intelligence-head { align-items: stretch; flex-direction: column; }
+  body[data-current-view="competition"] .radar-confidence { min-width: 0; }
+  body[data-current-view="competition"] .radar-product-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body[data-current-view="competition"] .radar-chart-grid { grid-template-columns: 1fr; }
+  body[data-current-view="competition"] .radar-chart-card-wide { grid-column: auto; }
+  body[data-current-view="competition"] .radar-chart-card { min-height: 300px; padding: 14px 10px; }
+  body[data-current-view="competition"] .radar-bar-row { grid-template-columns: minmax(72px,.7fr) minmax(80px,1.4fr) 76px; gap: 7px; }
+}
+@media (max-width: 430px) {
+  body[data-current-view="competition"] .radar-product-kpis { grid-template-columns: 1fr 1fr; }
+  body[data-current-view="competition"] .radar-product-kpis > article:last-child { grid-column: 1 / -1; }
+  body[data-current-view="competition"] .radar-chart-card > header { flex-direction: column; }
+}
+
+/* Keep the intelligence canvas legible above the portal's generic light-card typography. */
+html body[data-current-view="competition"] .portal-shell .radar-product-intelligence :is(h3, strong) { color: #fff !important; }
+html body[data-current-view="competition"] .portal-shell .radar-product-intelligence h3 { background: none !important; -webkit-text-fill-color: #fff !important; }
+html body[data-current-view="competition"] .portal-shell .radar-product-intelligence :is(p, small) { color: #c9dfea !important; }
+html body[data-current-view="competition"] .portal-shell .radar-product-intelligence .radar-intelligence-head p { color: #e0eef4 !important; opacity: 1 !important; -webkit-text-fill-color: #e0eef4 !important; }
+html body[data-current-view="competition"] .portal-shell .radar-product-intelligence .mono-label { color: #74edf0 !important; }
+html body[data-current-view="competition"] .portal-shell .radar-product-intelligence .radar-product-kpis span { color: #b9d5e4 !important; }
+html body[data-current-view="competition"] .portal-shell .radar-product-intelligence :is(.radar-bar-row > span, .radar-activity-row > span) { color: #d9eaf2 !important; }
+html body[data-current-view="competition"] .portal-shell .radar-product-intelligence :is(.radar-chart-legend, .radar-activity-legend, .radar-chart-axis, .radar-chart-range) { color: #bcd4e1 !important; }

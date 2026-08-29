@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/img/qori-favicon-32.png?v=qori-favicon-20260825-v120">
   <link rel="apple-touch-icon" sizes="180x180" href="/img/qori-apple-touch-icon.png?v=qori-favicon-20260825-v120">
   <link rel="manifest" href="/site.webmanifest?v=qori-favicon-20260825-v120">
-  <link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility&amp;competition=product-modal-v393-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828">
+<link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -58,7 +58,7 @@
 <link rel="stylesheet" href="css/semantic-messages.css?v=semantic-messages-v1-20260827">
 <link rel="stylesheet" href="css/sellers-premium.css?v=qori-sellers-refresh-white-v7-20260828">
 <link rel="stylesheet" href="css/guided-tutorials.css?v=guided-tutorials-v4-theme-white-20260828" media="print" data-deferred-portal-style>
-<link rel="stylesheet" href="css/competition-premium.css?v=competition-product-center-v2-20260828">
+<link rel="stylesheet" href="css/competition-premium.css?v=competition-intelligence-studio-v3-20260828">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -6282,7 +6282,8 @@
                 <label><span>Nombre del producto</span><input id="radarProductNameInput" type="text" minlength="2" maxlength="180" autocomplete="off" required></label>
                 <label><span>SKU o referencia</span><input id="radarProductSkuInput" type="text" maxlength="100"></label>
                 <label><span>Marca</span><input id="radarProductBrandInput" type="text" maxlength="120"></label>
-                <label><span>Categoría</span><input id="radarProductCategoryInput" type="text" maxlength="120"></label>
+                <label><span>Categoría</span><select id="radarProductCategoryInput"><option value="">Sin categoría</option></select></label>
+                <label><span>Subcategoría</span><select id="radarProductSubcategoryInput"><option value="">Sin subcategoría</option></select></label>
                 <label><span>Precio propio</span><input id="radarProductPriceInput" type="number" min="0" step="100"></label>
                 <label><span>Moneda</span><input id="radarProductCurrencyInput" type="text" maxlength="12" value="COP"></label>
                 <label><span>Unidad de comparación</span><select id="radarProductUnitInput"><option value="unidad">Unidad</option><option value="kg">Kilogramo (kg)</option><option value="g">Gramo (g)</option><option value="L">Litro (L)</option><option value="ml">Mililitro (ml)</option><option value="paquete">Paquete</option><option value="caja">Caja</option><option value="servicio">Servicio</option><option value="otro">Otro</option></select></label>
@@ -6293,8 +6294,11 @@
 
             <article class="surface-card data-table-card radar-product-catalog-card">
               <div class="table-card-head">
-                <div><span class="mono-label">Centro de la comparativa</span><strong>Tu catálogo competitivo</strong><small>Abre un producto para ver todos sus proveedores, precios, promociones y evidencias.</small></div>
-                <input id="radarProductSearchInput" type="search" placeholder="Buscar producto, SKU, marca o categoría">
+                <div><span class="mono-label">Centro de la comparativa</span><strong>Tu catálogo competitivo</strong><small>Abre un producto para ver proveedores, precios normalizados, promociones, señales y acciones.</small></div>
+                <div class="radar-product-tools">
+                  <button class="ghost-button compact" id="radarTaxonomyButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">category</span>Datos maestros</button>
+                  <input id="radarProductSearchInput" type="search" placeholder="Buscar producto, SKU, marca o categoría">
+                </div>
               </div>
               <div class="radar-product-grid" id="radarProductGrid"></div>
             </article>
@@ -6316,6 +6320,7 @@
                   <label><span>Unidad de medida</span><select id="competitionUnitInput"><option value="unidad">Unidad</option><option value="kg">Kilogramo (kg)</option><option value="g">Gramo (g)</option><option value="L">Litro (L)</option><option value="ml">Mililitro (ml)</option><option value="m">Metro (m)</option><option value="cm">Centímetro (cm)</option><option value="paquete">Paquete</option><option value="caja">Caja</option><option value="servicio">Servicio</option><option value="otro">Otro</option></select></label>
                   <label><span>Categoría</span><input id="competitionCategoryInput" type="text" maxlength="120"></label>
                   <label><span>Precio competidor</span><input id="competitionPriceInput" type="number" min="0" step="100" required></label>
+                  <label><span>Cantidad equivalente</span><input id="competitionQuantityInput" type="number" min="0.0001" max="1000000" step="0.0001" value="1" required><small>Cuántas unidades base incluye esta presentación. Ej.: caja de 12 = 12.</small></label>
                   <label><span>Precio anterior</span><input id="competitionPreviousPriceInput" type="number" min="0" step="100"></label>
                   <label><span>Moneda</span><input id="competitionCurrencyInput" type="text" maxlength="12" value="COP"></label>
                   <label><span>Canal o fuente</span><input id="competitionChannelInput" type="text" maxlength="120" placeholder="Web, tienda, WhatsApp, marketplace"></label>
@@ -6401,6 +6406,7 @@
                   </div>
                   <form class="modal-form inventory-form" id="competitorCampaignForm">
                     <input id="competitorCampaignIdInput" type="hidden">
+                    <label class="span-2"><span>Producto analizado</span><select id="competitorCampaignProductInput" required></select></label>
                     <label><span>Competidor</span><select id="competitorCampaignCompetitorInput" required></select></label>
                     <label><span>Tipo de campaña</span><select id="competitorCampaignTypeInput"><option value="DISCOUNT">Descuento</option><option value="TWO_FOR_ONE">2x1</option><option value="EVENT">Evento</option><option value="RAFFLE">Sorteo</option><option value="REFERRALS">Referidos</option><option value="LAUNCH">Lanzamiento</option><option value="SEASONAL">Temporada</option><option value="PARTNERSHIP">Alianza</option><option value="INFLUENCER">Influencer</option><option value="GIFT_CARD">Gift card</option><option value="POST_SALE_BENEFIT">Beneficio postventa</option><option value="PROMO_BUNDLE">Paquete promocional</option><option value="PHYSICAL_ACTIVATION">Activación física</option><option value="OTHER">Otro</option></select></label>
                     <label class="span-2"><span>Nombre de la campaña</span><input id="competitorCampaignNameInput" type="text" maxlength="180" required></label>
@@ -6432,7 +6438,7 @@
                   </div>
                   <div class="table-wrap">
                     <table>
-                      <thead><tr><th>Campaña</th><th>Competidor</th><th>Canal</th><th>Oferta</th><th>Agresividad</th><th>Impacto</th><th>Acción</th></tr></thead>
+                      <thead><tr><th>Campaña</th><th>Producto</th><th>Competidor</th><th>Canal</th><th>Oferta</th><th>Agresividad</th><th>Impacto</th><th>Acción</th></tr></thead>
                       <tbody id="competitorCampaignTable"></tbody>
                     </table>
                   </div>
@@ -6449,6 +6455,7 @@
                   </div>
                   <form class="modal-form inventory-form" id="competitorEventForm">
                     <input id="competitorEventIdInput" type="hidden">
+                    <label class="span-2"><span>Producto analizado</span><select id="competitorEventProductInput" required></select></label>
                     <label><span>Competidor</span><select id="competitorEventCompetitorInput" required></select></label>
                     <label><span>Tipo de evento</span><select id="competitorEventTypeInput"><option value="FAIR">Feria</option><option value="LAUNCH">Lanzamiento</option><option value="STORE_ACTIVATION">Activación en tienda</option><option value="PRIVATE_EVENT">Evento privado</option><option value="PARTNERSHIP">Alianza comercial</option><option value="MALL">Centro comercial</option><option value="CORPORATE">Corporativo</option><option value="EDUCATIONAL">Educativo</option><option value="SEASONAL">Temporada especial</option><option value="INFLUENCER_MEETUP">Influencer meet-up</option><option value="POP_UP">Pop-up store</option><option value="OTHER">Otro</option></select></label>
                     <label class="span-2"><span>Nombre del evento</span><input id="competitorEventNameInput" type="text" maxlength="180" required></label>
@@ -6481,7 +6488,7 @@
                   </div>
                   <div class="table-wrap">
                     <table>
-                      <thead><tr><th>Evento</th><th>Competidor</th><th>Fecha</th><th>Lugar</th><th>Oferta</th><th>Oportunidad</th><th>Acción</th></tr></thead>
+                      <thead><tr><th>Evento</th><th>Producto</th><th>Competidor</th><th>Fecha</th><th>Lugar</th><th>Oferta</th><th>Oportunidad</th><th>Acción</th></tr></thead>
                       <tbody id="competitorEventTable"></tbody>
                     </table>
                   </div>
@@ -6502,6 +6509,7 @@
                   </div>
                   <form class="modal-form inventory-form" id="competitorTaskForm">
                     <input id="competitorTaskIdInput" type="hidden">
+                    <label class="span-2"><span>Producto analizado</span><select id="competitorTaskProductInput" required></select></label>
                     <label><span>Competidor</span><select id="competitorTaskCompetitorInput" required></select></label>
                     <label><span>Señal relacionada</span><select id="competitorTaskFindingInput"><option value="">Sin señal relacionada</option></select></label>
                     <label class="span-2"><span>Acción que debe ejecutarse</span><input id="competitorTaskTitleInput" type="text" maxlength="180" required placeholder="Ej: Revisar oferta propia antes del viernes"></label>
@@ -6527,7 +6535,7 @@
                   </div>
                   <div class="table-wrap">
                     <table>
-                      <thead><tr><th>Acción</th><th>Competidor</th><th>Responsable</th><th>Fecha límite</th><th>Prioridad</th><th>Estado</th><th>Gestión</th></tr></thead>
+                      <thead><tr><th>Acción</th><th>Producto</th><th>Competidor</th><th>Responsable</th><th>Fecha límite</th><th>Prioridad</th><th>Estado</th><th>Gestión</th></tr></thead>
                       <tbody id="competitorTaskTable"></tbody>
                     </table>
                   </div>
@@ -6547,6 +6555,7 @@
                   </div>
                   <form class="modal-form inventory-form" id="competitionFindingForm">
                     <input id="findingIdInput" type="hidden">
+                    <label class="span-2"><span>Producto analizado</span><select id="findingProductInput" required></select></label>
                     <label><span>Competidor</span><select id="findingCompetitorInput" required></select></label>
                     <label><span>Tipo</span><select id="findingTypeInput"><option value="PRICE">Precio</option><option value="PRODUCT">Producto</option><option value="PROMOTION">Promoción</option><option value="CAMPAIGN">Campaña</option><option value="EVENT">Evento</option><option value="BENEFIT">Beneficio</option><option value="CHANNEL">Canal</option><option value="SOCIAL">Redes sociales</option><option value="PARTNERSHIP">Alianza</option><option value="LAUNCH">Lanzamiento</option><option value="MESSAGE">Mensaje de venta</option><option value="OTHER">Otro</option></select></label>
                     <label class="span-2"><span>Título</span><input id="findingTitleInput" type="text" maxlength="180" required></label>
@@ -6586,6 +6595,7 @@
                       <thead>
                         <tr>
                           <th>Fecha</th>
+                          <th>Producto</th>
                           <th>Competidor</th>
                           <th>Tipo</th>
                           <th>Hallazgo</th>
@@ -6632,6 +6642,28 @@
                 <div><span class="mono-label">Producto central</span><strong>Elige qué producto quieres analizar</strong><small>Todos los precios y proveedores de la comparativa se ajustan a esta selección.</small></div>
                 <select id="competitionComparisonProductSelect" aria-label="Producto para comparar"></select>
               </article>
+              <section class="radar-product-intelligence" aria-label="Analítica comparativa del producto">
+                <div class="radar-intelligence-head">
+                  <div><span class="mono-label">Qori Market Intelligence</span><h3 id="radarIntelligenceTitle">Pulso competitivo del producto</h3><p id="radarIntelligenceSummary">Selecciona un producto para convertir observaciones en decisiones.</p></div>
+                  <div class="radar-confidence" id="radarDataConfidence"><span>Confianza de datos</span><strong>—</strong><small>Sin observaciones</small></div>
+                </div>
+                <div class="radar-product-kpis" id="radarProductKpis" aria-live="polite"></div>
+                <div class="radar-chart-grid">
+                  <article class="radar-chart-card radar-chart-card-wide">
+                    <header><div><span class="mono-label">Posición de precio</span><strong>Tu precio frente al mercado</strong></div><span class="radar-chart-legend"><i class="is-own"></i>Propio <i class="is-market"></i>Proveedor</span></header>
+                    <div class="radar-chart" id="radarPricePositionChart" role="img" aria-label="Comparación de precio propio y precios de proveedores"></div>
+                  </article>
+                  <article class="radar-chart-card">
+                    <header><div><span class="mono-label">Evolución</span><strong>Movimiento observado</strong></div></header>
+                    <div class="radar-chart" id="radarPriceTrendChart" role="img" aria-label="Evolución histórica de precios"></div>
+                  </article>
+                  <article class="radar-chart-card">
+                    <header><div><span class="mono-label">Presión comercial</span><strong>Actividad por proveedor</strong></div></header>
+                    <div class="radar-chart" id="radarMarketActivityChart" role="img" aria-label="Promociones, activaciones, señales y acciones por proveedor"></div>
+                  </article>
+                </div>
+                <aside class="radar-insight-stream" id="radarProductInsights" aria-label="Lecturas recomendadas"></aside>
+              </section>
               <section class="insight-grid">
                 <article class="surface-card data-table-card">
                   <div class="table-card-head"><div><span class="mono-label">Básica</span><strong>Comparativa de competidores</strong></div></div>
@@ -6665,7 +6697,7 @@
                     <button class="ghost-button" id="competitorDetailAddCampaignButton" type="button">Promoción</button>
                     <button class="ghost-button" id="competitorDetailAddEventButton" type="button">Activación</button>
                     <button class="ghost-button" id="competitorDetailAddFindingButton" type="button">Señal</button>
-                    <button class="solid-button" id="competitorDetailAddTaskButton" type="button">Crear acciÃ³n</button>
+                    <button class="solid-button" id="competitorDetailAddTaskButton" type="button">Crear acción</button>
                     <button class="icon-button" id="competitorDetailCloseButton" type="button" aria-label="Cerrar detalle competitivo">
                       <span class="material-symbols-outlined" aria-hidden="true">close</span>
                     </button>
@@ -8411,7 +8443,7 @@
     </section>
   </div>
 
-  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility&amp;competition=product-modal-v393-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828" defer></script>
+<script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contacts-client-import-v345-20260828-default-seller" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
