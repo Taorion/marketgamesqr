@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260828-risk-benefit-snapshot-pricing-v394";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828";
+const APP_VERSION = "empresa-20260829-risk-none-initial-result-v396";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -62359,6 +62359,10 @@ rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupUnified(item = {
   </section>`;
 };
 
+function rmsRiskShouldOpenResultOnInit(offerValue = "NONE", hasResource = false) {
+  return offerValue === "NONE" && !hasResource;
+}
+
 syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified(card, item) {
   if (!card || !item) return;
   const id = item.id;
@@ -62384,8 +62388,13 @@ syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified(card, item
     prepareOffer.dataset.rmsRiskOutcomeBound = "true";
     prepareOffer.addEventListener("change", () => rmsRiskOutcomeOfferUi(card, id, { navigateNone: true }));
   }
-  rmsRiskOutcomeOfferUi(card, id);
   const hasResource = Boolean(rmsRiskRecoveryResourceFor(item)?.public_ticket_url);
+  // NONE is a complete business decision, not a pending benefit. Apply the
+  // same transition during initial render that the change listener applies,
+  // so a lead already configured without an extraordinary concession opens
+  // directly in Responder and never waits for a ticket or QR.
+  const initialNoConcession = rmsRiskShouldOpenResultOnInit(prepareOffer?.value, hasResource);
+  rmsRiskOutcomeOfferUi(card, id, { navigateNone: initialNoConcession });
   const deliverButton = card.querySelector('[data-rms-risk-phase-key="deliver"]');
   if (deliverButton) {
     deliverButton.disabled = !hasResource;

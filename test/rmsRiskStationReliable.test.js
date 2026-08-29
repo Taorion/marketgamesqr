@@ -28,12 +28,22 @@ test("la concesión se elige una vez y Responder la presenta como dato fijo", ()
 test("Sin concesión deshabilita ticket y dirige a Responder con Venta lograda", () => {
   const ui = app.slice(app.indexOf("function rmsRiskOutcomeOfferUi"), app.indexOf("function setRmsRiskRecoveryPhase"));
   const phasedMarkup = app.slice(app.indexOf("rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupUnified"), app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"));
+  const activeSync = app.slice(app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"), app.indexOf("activateRmsRiskTab = function activateRmsRiskTabUnified"));
+  const initHelperSource = app.slice(app.indexOf("function rmsRiskShouldOpenResultOnInit"), app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"));
+  const shouldOpenResult = Function(`${initHelperSource}; return rmsRiskShouldOpenResultOnInit;`)();
   assert.match(ui, /expiration\.disabled = isNone/);
   assert.match(ui, /detailWrap\.hidden = !needsDetail && !isNone/);
   assert.match(ui, /detailInput\.disabled = !needsDetail/);
   assert.match(ui, /generate\.disabled = isNone/);
   assert.match(ui, /activateRmsRiskTab\(card\.parentElement \|\| document, id, "sale"\)/);
   assert.match(ui, /setRmsRiskRecoveryPhase\(card, id, "result"\)/);
+  assert.equal(shouldOpenResult("NONE", false), true);
+  assert.equal(shouldOpenResult("DISCOUNT", false), false);
+  assert.equal(shouldOpenResult("NONE", true), false);
+  assert.match(activeSync, /const initialNoConcession = rmsRiskShouldOpenResultOnInit\(prepareOffer\?\.value, hasResource\)/);
+  assert.match(activeSync, /rmsRiskOutcomeOfferUi\(card, id, \{ navigateNone: initialNoConcession \}\)/);
+  assert.match(app, /APP_VERSION = "empresa-20260829-risk-none-initial-result-v396"/);
+  assert.match(html, /risk-none=initial-result-v396-20260829/);
   assert.doesNotMatch(phasedMarkup, /Descuento aplicado|data-rms-risk-discount-percent/);
 });
 
