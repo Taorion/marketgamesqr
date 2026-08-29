@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260829-risk-responsive-feedback-v409";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829";
+const APP_VERSION = "empresa-20260829-risk-isolated-binding-v410";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2957,6 +2957,7 @@ let state = {
   rmsRiskStationSyncState: "idle",
   rmsRiskStationSyncError: "",
   rmsRiskStationLastSyncAt: "",
+  rmsRiskStationInteractiveMs: 0,
   rmsActivationWorkId: "",
   rmsMachineLoadPromises: new Map(),
   rmsTutorialStep: 0,
@@ -50780,6 +50781,7 @@ function bindRmsRiskStationRetry() {
 }
 
 function renderRmsStationLeanOnly() {
+  const stationRenderStartedAt = globalThis.performance?.now?.() || Date.now();
   if (!state.rmsStationScreenOpen) {
     hideRmsStationWorkspace();
     return;
@@ -50972,7 +50974,18 @@ function renderRmsStationLeanOnly() {
   `;
   prepareRmsCommercialAccordions(rmsStationWorkspace);
   bindRmsMachineActions(rmsStationWorkspace);
-  if (phase === "control_anti_fuga") bindRmsRiskStationRetry();
+  if (phase === "control_anti_fuga") {
+    bindRmsRiskStationRetry();
+    state.rmsRiskStationInteractiveMs = Math.max(0, Math.round((globalThis.performance?.now?.() || Date.now()) - stationRenderStartedAt));
+    const liveStatus = rmsStationWorkspace.querySelector("[data-rms-risk-live-status]");
+    if (liveStatus) {
+      liveStatus.dataset.interactiveMs = String(state.rmsRiskStationInteractiveMs);
+      const detail = liveStatus.querySelector("small");
+      if (detail && state.rmsRiskStationSyncState === "loading") {
+        detail.textContent = `Controles listos en ${state.rmsRiskStationInteractiveMs} ms. Qori sincroniza casos y productos en segundo plano.`;
+      }
+    }
+  }
   rmsStationWorkspace.querySelectorAll("[data-rms-close-station]").forEach((button) => button.addEventListener("click", closeRmsStation));
   rmsStationWorkspace.querySelectorAll("[data-rms-station-summary]").forEach((button) => {
     button.addEventListener("click", (event) => {
@@ -53861,7 +53874,126 @@ function rmsStageLeadUnitMarkup(item = {}) {
   `;
 }
 
+function bindRmsRiskStationFastActions(root) {
+  if (!root) return;
+  const bindDelegatedActions = root.dataset.rmsRiskFastBound !== "true";
+  if (bindDelegatedActions) root.dataset.rmsRiskFastBound = "true";
+  bindRmsRiskMetricPopovers(root);
+
+  root.querySelectorAll("[data-rms-review-capture]").forEach((control) => {
+    const openReview = (event) => {
+      const interactiveTarget = event.target.closest?.("button, input, select, textarea, label, a");
+      if (interactiveTarget && interactiveTarget !== control) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const item = rmsOpportunityById(control.dataset.rmsReviewCapture || "");
+      if (item) openRmsCaptureReview(item);
+    };
+    control.addEventListener("click", openReview);
+    if (control.tagName === "TR" || control.getAttribute("role") === "button") {
+      control.addEventListener("keydown", (event) => {
+        if (!["Enter", " "].includes(event.key)) return;
+        openReview(event);
+      });
+    }
+  });
+
+  root.querySelectorAll(".rms-risk-work-item[data-rms-station-lead]").forEach((card) => {
+    const id = card.dataset.rmsStationLead || "";
+    const item = rmsOpportunityById(id);
+    if (!item) return;
+    try {
+      bindRmsRiskOfferContract(card, item);
+      bindRmsRiskProductLines(card, item);
+      mountRmsRiskOperatingFlow(card, item);
+      const consoleNode = card.querySelector(".rms-commercial-work-console");
+      const header = consoleNode?.querySelector(".rms-commercial-console-head");
+      if (consoleNode && header && !consoleNode.querySelector("[data-rms-risk-tabs]")) {
+        header.insertAdjacentHTML("afterend", rmsRiskTabsMarkup({ id }));
+      }
+      syncRmsRiskRecoveryPhases(card, item);
+      activateRmsRiskTab(root, id, "sale");
+    } catch (error) {
+      console.error(`RMS risk fast binding failed (${id}): ${error?.message || String(error)}`);
+      card.dataset.rmsRiskEnhancement = "degraded";
+      card.querySelector(".rms-commercial-work-console")?.classList.add("rms-risk-safe-mode");
+    }
+  });
+
+  if (!bindDelegatedActions) return;
+  root.addEventListener("click", (event) => {
+    const button = event.target.closest?.("button");
+    if (!button || !root.contains(button)) return;
+    const id = button.dataset.rmsRiskTab
+      || button.dataset.rmsSaveRiskDecision
+      || button.dataset.rmsGenerateRiskResource
+      || button.dataset.rmsRiskWhatsapp
+      || button.dataset.rmsRiskEmail
+      || button.dataset.rmsRiskCopyTicket
+      || button.dataset.rmsRiskDownloadTicket
+      || "";
+    const item = id ? rmsOpportunityById(id) : null;
+    if (button.hasAttribute("data-rms-open-risk-settings")) {
+      setView("account");
+      window.setTimeout(() => document.getElementById("accountRiskRecoveryAuthorizations")?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+      return;
+    }
+    if (!item) return;
+    if (button.hasAttribute("data-rms-risk-tab")) {
+      activateRmsRiskTab(root, id, button.dataset.rmsRiskTabKey || "sale");
+      return;
+    }
+    if (button.hasAttribute("data-rms-save-risk-decision")) {
+      saveRmsRiskDecision(item, root).catch((error) => showFeedback(error.message || "No pudimos guardar la decisión de riesgo.", "error", { title: "Riesgos de fuga" }));
+      return;
+    }
+    if (button.hasAttribute("data-rms-generate-risk-resource")) {
+      generateRmsRiskRecoveryResource(item, root, button).catch((error) => showFeedback(error.message || "No pudimos generar el ticket extraordinario.", "error", { title: "Riesgos de fuga" }));
+      return;
+    }
+    if (button.hasAttribute("data-rms-risk-email")) {
+      emailRmsRiskRecoveryResource(item, root, button).catch((error) => showFeedback(error.message || "No pudimos enviar el beneficio por email.", "error", { title: "Riesgos de fuga" }));
+      return;
+    }
+    if (button.hasAttribute("data-rms-risk-whatsapp")) {
+      const resource = requireRmsRiskShare(item, root);
+      if (!resource) return;
+      const digits = String(item.phone || "").replace(/\D/g, "");
+      if (!digits) {
+        showFeedback("Este lead no tiene un WhatsApp válido registrado.", "info", { title: "Riesgos de fuga" });
+        return;
+      }
+      window.open(`https://wa.me/${encodeURIComponent(digits)}?text=${encodeURIComponent(rmsRiskShareMessage(item, resource))}`, "_blank", "noopener");
+      api(`/api/business/leads/${encodeURIComponent(item.source_id)}/notes`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ source_type: item.source_type || "PLAYER", note: `Riesgos de fuga: ticket extraordinario preparado por WhatsApp (${resource.public_ticket_url}).`, note_type: "commercial", metadata: { source_module: "rms_risk_recovery", qr_code_id: resource.qr_code_id, delivery_channel: "WHATSAPP", delivery_state: "PREPARED" } }),
+      }).catch(() => null);
+      showFeedback("WhatsApp preparado con el beneficio y su ticket redimible.", "success", { title: "Riesgos de fuga" });
+      return;
+    }
+    if (button.hasAttribute("data-rms-risk-copy-ticket")) {
+      const resource = rmsRiskRecoveryResourceFor(item);
+      if (!resource?.public_ticket_url) return showFeedback("Genera primero el ticket extraordinario.", "info", { title: "Riesgos de fuga" });
+      navigator.clipboard.writeText(resource.public_ticket_url)
+        .then(() => showFeedback("Enlace del ticket copiado.", "success", { title: "Riesgos de fuga" }))
+        .catch(() => showFeedback("No pudimos copiar el enlace. Abre el ticket e inténtalo de nuevo.", "error", { title: "Riesgos de fuga" }));
+      return;
+    }
+    if (button.hasAttribute("data-rms-risk-download-ticket")) {
+      const resource = rmsRiskRecoveryResourceFor(item);
+      if (!resource?.public_ticket_url) return showFeedback("Genera primero el ticket extraordinario.", "info", { title: "Riesgos de fuga" });
+      if (resource.qr_image_data_url) downloadDataUrl(resource.filename || "beneficio-extraordinario.png", resource.qr_image_data_url);
+      else window.open(resource.public_ticket_url, "_blank", "noopener");
+    }
+  });
+}
+
 function bindRmsMachineActions(root) {
+  if (root === rmsStationWorkspace && state.rmsStationPhase === "control_anti_fuga" && root.querySelector(".rms-risk-work-item")) {
+    bindRmsRiskStationFastActions(root);
+    return;
+  }
   upgradeRmsInventoryProductInputs(root);
   upgradeRmsIntelligenceCommandDeck(root);
   upgradeRmsIntelligenceClarity(root);

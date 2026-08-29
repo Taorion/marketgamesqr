@@ -297,3 +297,13 @@ test("Riesgos sincroniza sin destruir el formulario y muestra feedback persisten
   assert.match(app, /risk-responsive-feedback-v409-20260829/);
   assert.match(html, /risk-feedback=responsive-v409-20260829/);
 });
+
+test("Riesgos enlaza únicamente sus controles antes de quedar interactivo", () => {
+  assert.match(app, /function bindRmsRiskStationFastActions/);
+  assert.match(app, /state\.rmsStationPhase === "control_anti_fuga" && root\.querySelector\("\.rms-risk-work-item"\)/);
+  assert.match(app, /bindRmsRiskStationFastActions\(root\);\s+return;/);
+  assert.match(app, /dataset\.interactiveMs = String\(state\.rmsRiskStationInteractiveMs\)/);
+  assert.match(app, /Controles listos en \$\{state\.rmsRiskStationInteractiveMs\} ms/);
+  assert.match(app, /risk-isolated-binding-v410-20260829/);
+  assert.match(html, /risk-binding=isolated-v410-20260829/);
+});
