@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260829-risk-benefit-handoff-v400";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829";
+const APP_VERSION = "empresa-20260829-risk-product-benefit-scope-v401";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -21437,7 +21437,7 @@ function saleProductSummary(item = {}) {
   const summary = products.map((product) => {
     const quantity = Number(product.quantity || 1);
     const lineTotal = Number(product.line_total || (Number(product.unit_price || 0) * quantity));
-    return `${escapeHtml(product.name || "Producto")} <span class="table-secondary">x${quantity} · ${escapeHtml(money(lineTotal))}</span>`;
+    return `${escapeHtml(product.name || "Producto")} <span class="table-secondary">x${quantity} · ${escapeHtml(money(lineTotal))}${product.benefit_applied ? " · beneficio aplicado" : ""}</span>`;
   }).join("<br>");
   const title = cleanCustomerValue(item.product_or_service);
   const firstProductName = cleanCustomerValue(products[0]?.name);
@@ -21529,7 +21529,7 @@ function saleDetailProductsMarkup(item = {}) {
     return `
       <article class="sales-detail-product-row">
         <strong>${escapeHtml(product.name || "Producto")}</strong>
-        <small>${escapeHtml([product.category, product.sku].filter(Boolean).join(" · ") || `Cantidad ${quantity} · Unitario ${money(unitPrice)}`)}</small>
+        <small>${escapeHtml([product.category, product.sku, `Cantidad ${quantity}`, `Unitario ${money(unitPrice)}`, product.benefit_applied ? "Beneficio aplicado" : "Sin beneficio extraordinario"].filter(Boolean).join(" · "))}</small>
         <b>${escapeHtml(money(lineTotal))}</b>
       </article>
     `;
@@ -49744,6 +49744,10 @@ function rmsSaleProductLineMarkup(id, line = {}, options = {}) {
   const unitPrice = Math.max(0, Number(line.unit_price ?? inventoryProduct?.unit_price ?? 0));
   const unitCost = Math.max(0, Number(line.unit_cost ?? inventoryProduct?.cost_price ?? 0));
   const primaryAttribute = options.primary ? ` data-rms-sale-product="${escapeHtml(id)}"` : "";
+  const benefitApplied = Boolean(line.benefit_applied);
+  const benefitScope = options.lockBenefitScope
+    ? `<label class="rms-sale-line-benefit ${benefitApplied ? "is-applied" : ""}"><input type="checkbox" data-rms-sale-line-benefit ${benefitApplied ? "checked" : ""} disabled aria-disabled="true"><span>${benefitApplied ? "Beneficio aplicado a este producto" : "Sin beneficio en este producto"}</span></label>`
+    : "";
   return `
     <article class="rms-sale-product-line" data-rms-sale-product-line>
       <label><span>Producto</span><select data-rms-sale-line-product${primaryAttribute}>${rmsInventoryProductPickerOptions(line.inventory_product_id || "", line.name || "")}</select></label>
@@ -49752,6 +49756,7 @@ function rmsSaleProductLineMarkup(id, line = {}, options = {}) {
       <label class="rms-sale-line-cost"><span>Costo unitario</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(unitCost))}" data-rms-sale-line-cost></label>
       <div class="rms-sale-line-total"><span>Subtotal</span><strong data-rms-sale-line-total>${escapeHtml(rmsCommercialMoney(quantity * unitPrice, options.currency || "COP"))}</strong></div>
       <button class="ghost-button danger-button compact" type="button" data-rms-sale-remove-product aria-label="Quitar producto">Quitar</button>
+      ${benefitScope}
     </article>`;
 }
 
@@ -49766,6 +49771,7 @@ function rmsSaleProductsFromDom(root, id) {
       quantity: Math.max(0.01, Number(line.querySelector("[data-rms-sale-line-quantity]")?.value || 1)),
       unit_price: Math.max(0, Number(line.querySelector("[data-rms-sale-line-price]")?.value || 0)),
       unit_cost: Math.max(0, Number(line.querySelector("[data-rms-sale-line-cost]")?.value || inventoryProduct?.cost_price || 0)),
+      benefit_applied: Boolean(line.querySelector("[data-rms-sale-line-benefit]")?.checked),
     };
   }).filter((line) => line.inventory_product_id);
 }
@@ -49820,7 +49826,32 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
     quantity,
     unit_price: quantity > 0 ? Math.round(((pricing.finalAmount || inheritedAmount || 0) / quantity) * 100) / 100 : 0,
     unit_cost: unitCost,
+    benefit_applied: hasAppliedRiskBenefit,
   };
+  const riskProducts = Array.isArray(workflow.riskHandoff?.products) && workflow.riskHandoff.products.length
+    ? workflow.riskHandoff.products
+    : Array.isArray(risk.products) && risk.products.length
+      ? risk.products
+      : [];
+  const riskDiscountPercent = Math.min(100, Math.max(0, Number(riskContext.offer?.discount_percent || (riskContext.offer?.custom_benefit?.type === "DISCOUNT" ? riskContext.offer.custom_benefit.value : 0) || 0)));
+  const initialSaleProducts = riskProducts.length ? riskProducts.map((line) => {
+    const product = findInventoryProductById(line.inventory_product_id || "");
+    const lineQuantity = Math.max(0.01, Number(line.quantity || 1));
+    const originalUnitPrice = Math.max(0, Number(product?.unit_price ?? line.product_price_snapshot ?? 0));
+    const matchesConfirmation = String(line.inventory_product_id || "") === String(confirmation.inventory_product_id || "");
+    const negotiatedUnitPrice = matchesConfirmation && Number(confirmation.amount) > 0
+      ? Number(confirmation.amount) / Math.max(0.01, Number(saleContext.quantity || 1))
+      : originalUnitPrice;
+    const benefitApplied = hasAppliedRiskBenefit && Boolean(line.benefit_applied);
+    return {
+      inventory_product_id: line.inventory_product_id,
+      name: line.name || line.product_name_snapshot || product?.name || "",
+      quantity: lineQuantity,
+      unit_price: Math.round((benefitApplied && riskDiscountPercent > 0 ? negotiatedUnitPrice * (1 - (riskDiscountPercent / 100)) : negotiatedUnitPrice) * 100) / 100,
+      unit_cost: Math.max(0, Number(product?.cost_price || 0)),
+      benefit_applied: benefitApplied,
+    };
+  }) : [initialSaleProduct];
   const inheritedChannel = confirmation.negotiation?.channel || negotiationResponse.channel || activation.channel || "";
   const inheritedResponsible = riskContext.responsible || confirmation.responsible || negotiationResponse.responsible || "";
   const evaluationResponse = RMS_EVALUATION_RESPONSES.find((entry) => entry.value === evaluation.response)?.short || evaluation.response || "Sin respuesta registrada";
@@ -49861,9 +49892,9 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
         <section class="rms-sale-price-journey" data-rms-sale-pricing="${escapeHtml(item.id)}" aria-label="Trazabilidad del precio"><header><div><span class="mono-label">TRAZABILIDAD DEL PRECIO</span><strong>Así se calculó lo que pagó el cliente</strong></div><span class="material-symbols-outlined" aria-hidden="true">receipt_long</span></header><div class="rms-sale-price-journey-track"><article><small>Precio original</small><strong data-rms-sale-original-price="${escapeHtml(item.id)}">${escapeHtml(rmsCommercialMoney(pricing.originalAmount, inheritedCurrency))}</strong><span>${escapeHtml(`${quantity} unidad(es) · ${rmsCommercialMoney(pricing.originalUnitPrice, inheritedCurrency)} c/u`)}</span></article><span class="material-symbols-outlined rms-sale-price-arrow" aria-hidden="true">arrow_forward</span><article class="is-benefit"><small>Beneficio negociado</small><strong data-rms-sale-discount="${escapeHtml(item.id)}">-${escapeHtml(rmsCommercialMoney(pricing.discountAmount, inheritedCurrency))}</strong><span data-rms-sale-discount-detail="${escapeHtml(item.id)}">${escapeHtml(pricing.detail)}</span></article><span class="material-symbols-outlined rms-sale-price-arrow" aria-hidden="true">arrow_forward</span><article class="is-final"><small>Precio final cobrado</small><strong data-rms-sale-final-price="${escapeHtml(item.id)}">${escapeHtml(rmsCommercialMoney(pricing.finalAmount, inheritedCurrency))}</strong><span data-rms-sale-final-detail="${escapeHtml(item.id)}">${pricing.discountPercent > 0 ? `${pricing.discountPercent}% menos` : "Valor confirmado"}</span></article></div><small class="rms-sale-price-journey-note">El descuento se arrastra desde la negociación o la liberación anti-fuga; el valor final es el que se registra como dinero recibido.</small></section>
         <header class="rms-commercial-console-head"><div><span class="mono-label">Compra confirmada</span><h4>Registra el pago y su rentabilidad</h4><p>La venta se atribuye a este contacto y a la ruta de Activación 1. Los costos son los que declare tu equipo.</p></div><span class="rms-commercial-state is-sale">Pago por registrar</span></header>
         <details class="rms-sale-handoff"><summary><span class="material-symbols-outlined" aria-hidden="true">route</span><span><strong>Ver información heredada</strong><small>Activación, Evaluación, Negociación y Riesgos de fuga quedan guardados. Ábrelo solo si necesitas revisar el contexto.</small></span></summary><div class="rms-sale-handoff-grid"><article><span>Activación</span><strong>${escapeHtml(activationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(activation.firstContactAt ? `Contacto ${formatDate(activation.firstContactAt)}` : "Sin fecha de contacto")}</small></article><article><span>Evaluación</span><strong>${escapeHtml(evaluationDetail || "Sin detalle adicional")}</strong><small>${escapeHtml(evaluation.next_action || "Sin próximo paso pendiente")}</small></article><article><span>Negociación</span><strong>${escapeHtml(negotiationDetail || "Venta confirmada")}</strong><small>${escapeHtml(confirmation.evidence ? "Evidencia registrada" : "Sin evidencia adicional")}</small></article><article class="rms-sale-handoff-risk"><span>Riesgos de fuga</span><strong>${escapeHtml(riskDetail || "No fue necesario intervenir")}</strong><small>${escapeHtml([riskContext.reviewedAt ? `Revisado ${formatDate(riskContext.reviewedAt)}` : "", riskContext.signalCount ? `${riskContext.signalCount} señal(es) revisada(s)` : ""].filter(Boolean).join(" · ") || "Sin revisión anti-fuga")}</small></article></div></details>
-        <section class="rms-sale-products-builder" data-rms-sale-products="${escapeHtml(item.id)}">
+        <section class="rms-sale-products-builder" data-rms-sale-products="${escapeHtml(item.id)}" data-rms-sale-benefit-scope-locked="${hasAppliedRiskBenefit ? "true" : "false"}">
           <header><div><span class="mono-label">Detalle completo de compra</span><strong>Productos comprados</strong><small id="rms-sale-product-hint-${escapeHtml(item.id)}">Agrega cada referencia que compró este cliente. Cada línea conserva cantidad, precio, costo y subtotal en el historial.</small></div><button class="ghost-button compact" type="button" data-rms-sale-add-product="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">add</span>Agregar otro producto</button></header>
-          <div class="rms-sale-products-list" data-rms-sale-products-list>${rmsSaleProductLineMarkup(item.id, initialSaleProduct, { primary: true, currency: inheritedCurrency })}</div>
+          <div class="rms-sale-products-list" data-rms-sale-products-list>${initialSaleProducts.map((line, index) => rmsSaleProductLineMarkup(item.id, line, { primary: index === 0, currency: inheritedCurrency, lockBenefitScope: hasAppliedRiskBenefit })).join("")}</div>
         </section>
         <input type="hidden" value="${escapeHtml(defaultProduct)}" data-rms-sale-product-name="${escapeHtml(item.id)}">
         <div class="rms-sale-form-grid">
@@ -56086,13 +56117,18 @@ function rmsCaptureHistoryProductsMarkup(event = {}) {
     ? metadata.products
     : Array.isArray(metadata.economics?.products)
       ? metadata.economics.products
-      : [];
+      : Array.isArray(metadata.risk_sale_handoff?.products)
+        ? metadata.risk_sale_handoff.products
+        : Array.isArray(metadata.risk_review?.products)
+          ? metadata.risk_review.products
+          : [];
   if (!products.length) return "";
   const currency = metadata.economics?.currency || "COP";
   return `<div class="rms-capture-history-products">${products.map((product) => {
     const quantity = Number(product.quantity || 1);
     const lineTotal = Number(product.line_total || (Number(product.unit_price || 0) * quantity));
-    return `<div class="rms-capture-history-product"><span><strong>${escapeHtml(product.name || product.product_name_snapshot || "Producto")}</strong><small>${escapeHtml(`Cantidad ${quantity} · Unitario ${rmsCommercialMoney(product.unit_price || 0, currency)}`)}</small></span><b>${escapeHtml(rmsCommercialMoney(lineTotal, currency))}</b></div>`;
+    const priceDetail = Number(product.unit_price || product.product_price_snapshot || 0) > 0 ? ` · Unitario ${rmsCommercialMoney(product.unit_price || product.product_price_snapshot, currency)}` : "";
+    return `<div class="rms-capture-history-product"><span><strong>${escapeHtml(product.name || product.product_name_snapshot || "Producto")}</strong><small>${escapeHtml(`Cantidad ${quantity}${priceDetail} · ${product.benefit_applied ? "Beneficio aplicado" : "Sin beneficio extraordinario"}`)}</small></span>${lineTotal > 0 ? `<b>${escapeHtml(rmsCommercialMoney(lineTotal, currency))}</b>` : ""}</div>`;
   }).join("")}</div>`;
 }
 
@@ -57335,7 +57371,7 @@ function bindRmsSaleProductLines(root, id) {
   if (addButton && addButton.dataset.rmsSaleAddBound !== "true") {
     addButton.dataset.rmsSaleAddBound = "true";
     addButton.addEventListener("click", () => {
-      list.insertAdjacentHTML("beforeend", rmsSaleProductLineMarkup(id, {}, { currency: currency() }));
+      list.insertAdjacentHTML("beforeend", rmsSaleProductLineMarkup(id, {}, { currency: currency(), lockBenefitScope: builder.dataset.rmsSaleBenefitScopeLocked === "true" }));
       const line = list.lastElementChild;
       bindLine(line);
       refresh();
@@ -62500,7 +62536,7 @@ rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupUnified(item = {
     <header class="rms-risk-phased-head"><span class="mono-label">RECUPERACIÓN EXTRAORDINARIA</span><h5>Negocia, entrega y cierra sin perder el contexto</h5><p>Una concesión autorizada, un ticket reutilizable y una única salida para el caso.</p></header>
     <ol class="rms-risk-phase-rail" aria-label="Fases de recuperación">${step("prepare", "1", "Preparar", "Beneficio opcional")}${step("deliver", "2", "Entregar", hasResource ? "QR y contacto" : "Requiere ticket", !hasResource)}${step("result", "3", "Responder", "Venta o Reciclaje")}</ol>
     <div class="rms-risk-phase-status" data-rms-risk-phase-status><strong>${hasResource ? "Fase 2 activa" : "Fase 1 activa"}</strong><small>${hasResource ? "Comparte el activo y registra la respuesta cuando el cliente confirme." : "Define una alternativa autorizada antes de generar el ticket."}</small></div>
-    <section class="rms-risk-phase-card rms-risk-phase-ticket" data-rms-risk-phase-panel="prepare"><header><span class="rms-risk-phase-number">01</span><div><span class="mono-label">NEGOCIACIÓN EXTRAORDINARIA</span><h6>Prepara una concesión solo si hace falta</h6><small>El ticket es opcional. Si ya conoces la respuesta, regístrala directamente.</small></div></header><div class="rms-risk-builder-config"><label><span>Alternativa de recuperación</span><select data-rms-risk-recovery-offer="${id}">${rmsRiskRecoveryOfferOptions()}</select><small>Solo aparecen opciones válidas de Qori.</small></label><label data-rms-risk-expiration-wrap="${id}"><span>Vigencia del ticket</span><select data-rms-risk-expiration-days="${id}"><option value="3">3 días</option><option value="7" selected>7 días</option><option value="15">15 días</option><option value="30">30 días</option></select></label><label data-rms-risk-detail-wrap="${id}" hidden><span>Detalle autorizado</span><input type="text" maxlength="1000" data-rms-risk-recovery-detail="${id}" placeholder="Describe el 2x1 u obsequio autorizado"></label></div><div class="rms-risk-phase-actions"><button class="solid-button" type="button" data-rms-generate-risk-resource="${id}"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>Generar ticket y QR</button><button class="ghost-button" type="button" data-rms-risk-phase="${id}" data-rms-risk-phase-key="result"><span class="material-symbols-outlined" aria-hidden="true">edit_note</span>Registrar respuesta sin ticket</button><small>El mismo beneficio reutiliza el activo: los reintentos no consumen otro crédito.</small></div></section>
+    <section class="rms-risk-phase-card rms-risk-phase-ticket" data-rms-risk-phase-panel="prepare"><header><span class="rms-risk-phase-number">01</span><div><span class="mono-label">NEGOCIACIÓN EXTRAORDINARIA</span><h6>Prepara una concesión solo si hace falta</h6><small>El ticket es opcional. Si ya conoces la respuesta, regístrala directamente.</small></div></header><div class="rms-risk-builder-config"><label><span>Alternativa de recuperación</span><select data-rms-risk-recovery-offer="${id}">${rmsRiskRecoveryOfferOptions()}</select><small>Solo aparecen opciones válidas de Qori.</small></label><label data-rms-risk-expiration-wrap="${id}"><span>Vigencia del ticket</span><select data-rms-risk-expiration-days="${id}"><option value="3">3 días</option><option value="7" selected>7 días</option><option value="15">15 días</option><option value="30">30 días</option></select></label><label data-rms-risk-detail-wrap="${id}" hidden><span>Detalle autorizado</span><input type="text" maxlength="1000" data-rms-risk-recovery-detail="${id}" placeholder="Describe el 2x1 u obsequio autorizado"></label></div>${rmsRiskProductsBuilderMarkup(item)}<div class="rms-risk-phase-actions"><button class="solid-button" type="button" data-rms-generate-risk-resource="${id}"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>Generar ticket y QR</button><button class="ghost-button" type="button" data-rms-risk-phase="${id}" data-rms-risk-phase-key="result"><span class="material-symbols-outlined" aria-hidden="true">edit_note</span>Registrar respuesta sin ticket</button><small>El mismo beneficio reutiliza el activo: los reintentos no consumen otro crédito.</small></div></section>
     <section class="rms-risk-phase-card rms-risk-phase-delivery" data-rms-risk-phase-panel="deliver" ${hasResource ? "" : "hidden"}><header><span class="rms-risk-phase-number">02</span><div><span class="mono-label">ENTREGA Y CONTACTO</span><h6>Comparte el activo y espera la respuesta</h6><small>El lead permanece en Riesgos de fuga hasta que el resultado quede registrado.</small></div></header><div class="rms-risk-resource-status-final" data-rms-risk-resource-status="${id}">${rmsRiskRecoveryResourceMarkup(item)}</div><div class="rms-risk-delivery-bar"><label class="checkbox-row"><input type="checkbox" data-rms-risk-consent="${id}"> Confirmo que el lead autorizó contacto comercial.</label><div><button class="ghost-button compact" type="button" data-rms-risk-whatsapp="${id}"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</button><button class="ghost-button compact" type="button" data-rms-risk-email="${id}"><span class="material-symbols-outlined" aria-hidden="true">mail</span>Email</button><button class="ghost-button compact" type="button" data-rms-risk-copy-ticket="${id}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Copiar enlace</button><button class="ghost-button compact" type="button" data-rms-risk-download-ticket="${id}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar activo</button></div></div><div class="rms-risk-phase-actions rms-risk-result-cta"><button class="solid-button compact" type="button" data-rms-risk-open-result="${id}"><span class="material-symbols-outlined" aria-hidden="true">edit_note</span>Registrar respuesta</button><small>Solo después de conocer la respuesta decide Venta lograda o Reciclaje.</small></div></section>
     <section class="rms-risk-phase-card rms-risk-phase-response" data-rms-risk-phase-panel="result" hidden><header><span class="rms-risk-phase-number">03</span><div><span class="mono-label">RESULTADO DE LA RECUPERACIÓN</span><h6>Registra una sola salida</h6><small>El beneficio usado se conserva para que Ventas reciba la condición correcta.</small></div></header><div class="rms-risk-phase-response-note">Selecciona el resultado, explica qué ocurrió y guarda. No se crean copias del lead.</div></section>
   </section>`;
@@ -62508,6 +62544,102 @@ rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupUnified(item = {
 
 function rmsRiskShouldOpenResultOnInit(offerValue = "", hasResource = false) {
   return offerValue === "NONE" && !hasResource;
+}
+
+function rmsRiskProductSeed(item = {}) {
+  const workflow = rmsCommercialWorkflow(item);
+  const inherited = Array.isArray(workflow.riskHandoff?.products) && workflow.riskHandoff.products.length
+    ? workflow.riskHandoff.products
+    : Array.isArray(workflow.risk?.products) && workflow.risk.products.length
+      ? workflow.risk.products
+      : null;
+  if (inherited) return inherited;
+  const resourceProducts = rmsRiskRecoveryResourceFor(item)?.products;
+  if (Array.isArray(resourceProducts) && resourceProducts.length) return resourceProducts;
+  const confirmation = workflow.confirmation || {};
+  const inventoryProductId = confirmation.inventory_product_id
+    || workflow.evaluation?.recommended_inventory_product_id
+    || item.classified_product_id
+    || item.inventory_product_id
+    || "";
+  return [{
+    inventory_product_id: inventoryProductId,
+    name: confirmation.product_name || workflow.evaluation?.recommended_product || rmsClassifiedProductName(item) || item.product_interest || "",
+    quantity: Math.max(0.01, Number(confirmation.sale_context?.quantity || 1)),
+    benefit_applied: false,
+  }];
+}
+
+function rmsRiskProductLineMarkup(id, line = {}, options = {}) {
+  const quantity = Math.max(0.01, Number(line.quantity || 1));
+  return `<article class="rms-risk-product-line" data-rms-risk-product-line>
+    <label><span>Producto</span><select data-rms-risk-line-product>${rmsInventoryProductPickerOptions(line.inventory_product_id || "", line.name || line.product_name_snapshot || "")}</select></label>
+    <label><span>Cantidad</span><input type="number" min="0.01" step="0.01" value="${escapeHtml(String(quantity))}" data-rms-risk-line-quantity></label>
+    <label class="rms-risk-product-benefit"><input type="checkbox" data-rms-risk-line-benefit ${line.benefit_applied ? "checked" : ""}><span>Aplicar el beneficio a este producto</span></label>
+    <button class="ghost-button danger-button compact" type="button" data-rms-risk-remove-product aria-label="Quitar producto">Quitar</button>
+  </article>`;
+}
+
+function rmsRiskProductsBuilderMarkup(item = {}) {
+  const id = escapeHtml(item.id);
+  return `<section class="rms-risk-products-builder" data-rms-risk-products="${id}"><header><div><span class="mono-label">PRODUCTOS DE ESTA COMPRA</span><strong>Define el alcance del beneficio</strong><small>Agrega cada producto y marca solamente los que recibieron la concesión extraordinaria.</small></div><button class="ghost-button compact" type="button" data-rms-risk-add-product="${id}"><span class="material-symbols-outlined" aria-hidden="true">add</span>Agregar producto</button></header><div class="rms-risk-products-list">${rmsRiskProductSeed(item).map((line) => rmsRiskProductLineMarkup(item.id, line)).join("")}</div></section>`;
+}
+
+function rmsRiskProductsFromDom(card) {
+  return Array.from(card?.querySelectorAll("[data-rms-risk-product-line]") || []).map((line) => {
+    const product = findInventoryProductById(line.querySelector("[data-rms-risk-line-product]")?.value || "");
+    return {
+      inventory_product_id: product?.id || null,
+      name: product?.name || "",
+      quantity: Math.max(0.01, Number(line.querySelector("[data-rms-risk-line-quantity]")?.value || 1)),
+      benefit_applied: Boolean(line.querySelector("[data-rms-risk-line-benefit]")?.checked),
+    };
+  }).filter((line) => line.inventory_product_id);
+}
+
+function syncRmsRiskProductBenefitControls(card, id) {
+  const offer = String(card?.querySelector(`[data-rms-risk-recovery-offer="${CSS.escape(id)}"]`)?.value || "");
+  const disabled = !offer || offer === "NONE";
+  card?.querySelectorAll("[data-rms-risk-line-benefit]").forEach((checkbox) => {
+    checkbox.disabled = disabled;
+    checkbox.closest(".rms-risk-product-benefit")?.classList.toggle("is-disabled", disabled);
+    if (disabled) checkbox.checked = false;
+  });
+}
+
+function bindRmsRiskProductLines(card, item) {
+  const builder = card?.querySelector(`[data-rms-risk-products="${CSS.escape(item.id)}"]`);
+  const list = builder?.querySelector(".rms-risk-products-list");
+  if (!builder || !list) return;
+  const refresh = () => {
+    const rows = Array.from(list.querySelectorAll("[data-rms-risk-product-line]"));
+    rows.forEach((line) => {
+      const remove = line.querySelector("[data-rms-risk-remove-product]");
+      if (remove) remove.disabled = rows.length <= 1;
+    });
+    syncRmsRiskProductBenefitControls(card, item.id);
+  };
+  const bindLine = (line) => {
+    if (!line || line.dataset.rmsRiskProductBound === "true") return;
+    line.dataset.rmsRiskProductBound = "true";
+    line.querySelector("[data-rms-risk-remove-product]")?.addEventListener("click", () => {
+      if (list.querySelectorAll("[data-rms-risk-product-line]").length <= 1) return;
+      line.remove();
+      refresh();
+    });
+  };
+  list.querySelectorAll("[data-rms-risk-product-line]").forEach(bindLine);
+  const add = builder.querySelector("[data-rms-risk-add-product]");
+  if (add && add.dataset.rmsRiskAddBound !== "true") {
+    add.dataset.rmsRiskAddBound = "true";
+    add.addEventListener("click", () => {
+      list.insertAdjacentHTML("beforeend", rmsRiskProductLineMarkup(item.id));
+      bindLine(list.lastElementChild);
+      refresh();
+      list.lastElementChild?.querySelector("[data-rms-risk-line-product]")?.focus();
+    });
+  }
+  refresh();
 }
 
 function bindRmsRiskOfferContract(card, item) {
@@ -62520,6 +62652,7 @@ function bindRmsRiskOfferContract(card, item) {
     rmsRiskOutcomeOfferUi(card, id, {
       navigateNone: rmsRiskShouldOpenResultOnInit(offer.value, hasResource),
     });
+    syncRmsRiskProductBenefitControls(card, id);
   };
   if (!offer.dataset.rmsRiskOutcomeBound) {
     offer.dataset.rmsRiskOutcomeBound = "true";
@@ -62551,6 +62684,7 @@ syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified(card, item
   }
   const hasResource = Boolean(rmsRiskRecoveryResourceFor(item)?.public_ticket_url);
   bindRmsRiskOfferContract(card, item);
+  bindRmsRiskProductLines(card, item);
   const deliverButton = card.querySelector('[data-rms-risk-phase-key="deliver"]');
   if (deliverButton) {
     deliverButton.disabled = !hasResource;
@@ -62614,9 +62748,24 @@ saveRmsRiskDecision = async function saveRmsRiskDecisionUnified(item, root) {
   const selectedOfferNode = form?.querySelector(`[data-rms-risk-selected-offer="${CSS.escape(item.id)}"]`)
     || card?.querySelector(`[data-rms-risk-recovery-offer="${CSS.escape(item.id)}"]`);
   const recoveryOfferValue = String(selectedOfferNode?.value || "");
+  const products = rmsRiskProductsFromDom(card);
   if (result === "CLEARED" && !recoveryOfferValue) {
     showFeedback("Selecciona una alternativa de recuperación o elige Sin concesión extraordinaria.", "info", { title: "Riesgos de fuga" });
     card?.querySelector(`[data-rms-risk-recovery-offer="${CSS.escape(item.id)}"]`)?.focus();
+    return;
+  }
+  if (result === "CLEARED" && !products.length) {
+    showFeedback("Agrega al menos un producto real antes de enviar la venta.", "info", { title: "Riesgos de fuga" });
+    card?.querySelector("[data-rms-risk-line-product]")?.focus();
+    return;
+  }
+  if (result === "CLEARED" && recoveryOfferValue !== "NONE" && !products.some((product) => product.benefit_applied)) {
+    showFeedback("Marca al menos un producto al que se aplicó el beneficio.", "info", { title: "Riesgos de fuga" });
+    card?.querySelector("[data-rms-risk-line-benefit]")?.focus();
+    return;
+  }
+  if (new Set(products.map((product) => product.inventory_product_id)).size !== products.length) {
+    showFeedback("Cada producto debe aparecer una sola vez. Ajusta la cantidad en la misma fila.", "info", { title: "Riesgos de fuga" });
     return;
   }
   const recoveryBenefitId = recoveryOfferValue.startsWith("BENEFIT:") ? recoveryOfferValue.slice(8) : null;
@@ -62641,7 +62790,7 @@ saveRmsRiskDecision = async function saveRmsRiskDecisionUnified(item, root) {
   const button = rmsCommercialNode(root, "[data-rms-save-risk-decision]", item.id);
   setButtonLoading(button, true, result === "RECYCLE" ? "Enviando..." : "Confirmando...");
   try {
-    const review = await api("/api/business/rms-machine/risk-review", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, result, reason, recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE", recovery_benefit_id: result === "CLEARED" ? recoveryBenefitId : null, discount_percent: result === "CLEARED" ? discountPercent : 0, recovery_detail: result === "CLEARED" ? recoveryDetail || null : null, recycle_reason: result === "RECYCLE" ? recycleReason : null, recycle_strategy: result === "RECYCLE" ? (rmsCommercialNode(root, "[data-rms-risk-recycle-strategy]", item.id)?.value || "NURTURE") : null, recycle_note: result === "RECYCLE" ? reason : null, next_action_at: result === "RECYCLE" ? rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-risk-next-at]", item.id)?.value || "") : null, responsible: rmsCommercialWorkflow(item).confirmation?.responsible || null }) });
+    const review = await api("/api/business/rms-machine/risk-review", { method: "POST", headers: authHeaders(), body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, result, reason, recovery_offer: result === "CLEARED" ? recoveryOffer : "NONE", recovery_benefit_id: result === "CLEARED" ? recoveryBenefitId : null, discount_percent: result === "CLEARED" ? discountPercent : 0, recovery_detail: result === "CLEARED" ? recoveryDetail || null : null, products: result === "CLEARED" ? products : undefined, recycle_reason: result === "RECYCLE" ? recycleReason : null, recycle_strategy: result === "RECYCLE" ? (rmsCommercialNode(root, "[data-rms-risk-recycle-strategy]", item.id)?.value || "NURTURE") : null, recycle_note: result === "RECYCLE" ? reason : null, next_action_at: result === "RECYCLE" ? rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-risk-next-at]", item.id)?.value || "") : null, responsible: rmsCommercialWorkflow(item).confirmation?.responsible || null }) });
     const expectedDestination = result === "RECYCLE" ? "reciclaje" : "cierre";
     const confirmedDestination = review?.state?.rms_phase || review?.movement?.to_phase || "";
     if (confirmedDestination !== expectedDestination) {
@@ -62839,8 +62988,25 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
     rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id)?.focus();
     return;
   }
+  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(item.id)}"]`);
+  const products = rmsRiskProductsFromDom(card);
+  if (!products.length) {
+    showFeedback("Agrega al menos un producto real antes de generar el ticket.", "info", { title: "Riesgos de fuga" });
+    card?.querySelector("[data-rms-risk-line-product]")?.focus();
+    return;
+  }
+  if (!products.some((product) => product.benefit_applied)) {
+    showFeedback("Marca al menos un producto al que se aplicará el beneficio.", "info", { title: "Riesgos de fuga" });
+    card?.querySelector("[data-rms-risk-line-benefit]")?.focus();
+    return;
+  }
+  if (new Set(products.map((product) => product.inventory_product_id)).size !== products.length) {
+    showFeedback("Cada producto debe aparecer una sola vez. Ajusta la cantidad en la misma fila.", "info", { title: "Riesgos de fuga" });
+    return;
+  }
   const expirationDays = Number(rmsCommercialNode(root, "[data-rms-risk-expiration-days]", item.id)?.value || 7);
-  const fingerprint = [item.source_type || "PLAYER", item.source_id, selected.offer, selected.benefitId || "", selected.discount, selected.detail, expirationDays].join(":");
+  const productFingerprint = products.map((product) => `${product.inventory_product_id}:${product.quantity}:${product.benefit_applied ? 1 : 0}`).join(",");
+  const fingerprint = [item.source_type || "PLAYER", item.source_id, selected.offer, selected.benefitId || "", selected.discount, selected.detail, productFingerprint, expirationDays].join(":");
   setButtonLoading(button, true, "Generando...");
   try {
     const response = await api("/api/business/rms-machine/risk-recovery-resource", {
@@ -62854,6 +63020,7 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
         recovery_benefit_id: selected.benefitId,
         discount_percent: selected.discount,
         recovery_detail: selected.detail || null,
+        products,
         expiration_days: expirationDays,
         idempotency_key: `risk-resource:${fingerprint}`.slice(0, 180),
       }),

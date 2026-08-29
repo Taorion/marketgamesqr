@@ -215,3 +215,18 @@ test("el backend conserva tipo, id, etiqueta, valor y detalle del beneficio apli
   assert.equal(validated.detail, "");
   assert.equal(validated.customBenefit.detail, "Una instalación");
 });
+
+test("Riesgos permite agregar productos y elegir en cuáles aplica el beneficio", () => {
+  const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
+  assert.match(app, /function rmsRiskProductsBuilderMarkup/);
+  assert.match(app, /data-rms-risk-add-product/);
+  assert.match(app, /data-rms-risk-line-benefit/);
+  assert.match(app, /Aplicar el beneficio a este producto/);
+  assert.match(activeSave, /const products = rmsRiskProductsFromDom\(card\)/);
+  assert.match(activeSave, /!products\.some\(\(product\) => product\.benefit_applied\)/);
+  assert.match(activeSave, /products: result === "CLEARED" \? products : undefined/);
+  assert.match(service, /products: review\.products/);
+  assert.match(service, /benefit_applied: offer\.recoveryOffer === "NONE" \? false/);
+  assert.match(app, /risk-product-benefit-scope-v401-20260829/);
+  assert.match(html, /risk-product-scope=v401-20260829/);
+});

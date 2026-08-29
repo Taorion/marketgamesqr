@@ -33753,15 +33753,84 @@ body[data-current-view="rms-machine"] .rms-sale-line-total { min-width: 0; paddi
 body[data-current-view="rms-machine"] .rms-sale-line-total strong { display: block; overflow-wrap: anywhere; color: #052a6b; }
 body[data-current-view="rms-machine"] .rms-sale-product-line :is(input, select) { width: 100%; min-width: 0; }
 body[data-current-view="rms-machine"] .rms-sale-product-line [data-rms-sale-remove-product] { margin-bottom: 4px; }
+body[data-current-view="rms-machine"] .rms-sale-line-benefit {
+  grid-column: 1 / -1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 11px;
+  background: #f8fafc;
+}
+body[data-current-view="rms-machine"] .rms-sale-line-benefit.is-applied { border-color: #86efac; background: #f0fdf4; color: #166534; }
+body[data-current-view="rms-machine"] .rms-sale-line-benefit input { width: 16px; min-width: 16px; height: 16px; }
+body[data-current-view="rms-machine"] .rms-sale-line-benefit span { margin: 0; font-size: .72rem; }
+
+/* rms-risk-product-benefit-scope-v401-20260829 */
+body[data-current-view="rms-machine"] .rms-risk-products-builder {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 15px;
+  border: 1px solid rgba(5, 42, 107, .16);
+  border-radius: 16px;
+  background: #fff;
+}
+body[data-current-view="rms-machine"] .rms-risk-products-builder > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+body[data-current-view="rms-machine"] .rms-risk-products-builder > header strong,
+body[data-current-view="rms-machine"] .rms-risk-products-builder > header small { display: block; }
+body[data-current-view="rms-machine"] .rms-risk-products-list { display: grid; gap: 10px; }
+body[data-current-view="rms-machine"] .rms-risk-product-line {
+  display: grid;
+  grid-template-columns: minmax(210px, 1.5fr) minmax(90px, .45fr) minmax(220px, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dbe4ee;
+  border-radius: 13px;
+  background: #f8fafc;
+}
+body[data-current-view="rms-machine"] .rms-risk-product-line > label > span { display: block; margin-bottom: 5px; font-size: .75rem; font-weight: 800; color: #334155; }
+body[data-current-view="rms-machine"] .rms-risk-product-line :is(select, input[type="number"]) { width: 100%; min-width: 0; }
+body[data-current-view="rms-machine"] .rms-risk-product-benefit {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 9px 11px;
+  border: 1px solid #86efac;
+  border-radius: 11px;
+  background: #f0fdf4;
+  color: #166534;
+}
+body[data-current-view="rms-machine"] .rms-risk-product-benefit.is-disabled { border-color: #cbd5e1; background: #f1f5f9; color: #64748b; }
+body[data-current-view="rms-machine"] .rms-risk-product-benefit input { width: 17px; min-width: 17px; height: 17px; }
+body[data-current-view="rms-machine"] .rms-risk-product-benefit span { margin: 0; font-size: .76rem; font-weight: 800; }
 @media (max-width: 900px) {
   body[data-current-view="rms-machine"] .rms-sale-products-builder > header { flex-direction: column; }
   body[data-current-view="rms-machine"] .rms-sale-products-builder > header button { width: 100%; }
   body[data-current-view="rms-machine"] .rms-sale-product-line { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   body[data-current-view="rms-machine"] .rms-sale-product-line > label:first-child { grid-column: 1 / -1; }
+  body[data-current-view="rms-machine"] .rms-risk-products-builder > header { flex-direction: column; }
+  body[data-current-view="rms-machine"] .rms-risk-products-builder > header button { width: 100%; }
+  body[data-current-view="rms-machine"] .rms-risk-product-line { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body[data-current-view="rms-machine"] .rms-risk-product-line > label:first-child,
+  body[data-current-view="rms-machine"] .rms-risk-product-benefit { grid-column: 1 / -1; }
 }
 @media (max-width: 520px) {
   body[data-current-view="rms-machine"] .rms-sale-products-builder { padding: 12px; }
   body[data-current-view="rms-machine"] .rms-sale-product-line { grid-template-columns: minmax(0, 1fr); }
   body[data-current-view="rms-machine"] .rms-sale-product-line > * { grid-column: 1; }
   body[data-current-view="rms-machine"] .rms-sale-product-line [data-rms-sale-remove-product] { width: 100%; }
+  body[data-current-view="rms-machine"] .rms-risk-products-builder { padding: 11px; }
+  body[data-current-view="rms-machine"] .rms-risk-product-line { grid-template-columns: minmax(0, 1fr); }
+  body[data-current-view="rms-machine"] .rms-risk-product-line > * { grid-column: 1; }
+  body[data-current-view="rms-machine"] .rms-risk-product-line [data-rms-risk-remove-product] { width: 100%; }
 }

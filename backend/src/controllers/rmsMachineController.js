@@ -154,6 +154,13 @@ const attributedSaleProductSchema = z.object({
   quantity: z.number().positive().max(100000).optional().default(1),
   unit_price: z.number().positive().max(100000000000).optional().nullable(),
   unit_cost: z.number().min(0).max(100000000000).optional().nullable(),
+  benefit_applied: z.boolean().optional().default(false),
+});
+
+const riskReviewProductSchema = z.object({
+  inventory_product_id: z.string().uuid(),
+  quantity: z.number().positive().max(100000).optional().default(1),
+  benefit_applied: z.boolean().optional().default(false),
 });
 
 const attributedSaleSchema = z.object({
@@ -311,6 +318,7 @@ const riskReviewSchema = z.object({
   recovery_benefit_id: z.string().trim().max(120).optional().nullable(),
   discount_percent: z.number().min(0).max(100).optional().default(0),
   recovery_detail: z.string().trim().max(1000).optional().nullable(),
+  products: z.array(riskReviewProductSchema).min(1).max(50).optional(),
   signals: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
@@ -322,6 +330,7 @@ const riskRecoveryResourceSchema = z.object({
   recovery_benefit_id: z.string().trim().max(120).optional().nullable(),
   discount_percent: z.number().min(0).max(100).optional().default(0),
   recovery_detail: z.string().trim().max(1000).optional().nullable(),
+  products: z.array(riskReviewProductSchema).min(1).max(50).optional(),
   expiration_days: z.number().int().min(1).max(90).optional().default(7),
   idempotency_key: z.string().trim().min(8).max(180),
 });

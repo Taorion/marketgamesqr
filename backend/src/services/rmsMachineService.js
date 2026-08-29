@@ -2494,14 +2494,36 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
   const authorizations = await riskRecoveryAuthorizationsForBusiness(businessId);
   const offer = validateRiskRecoveryOffer(payload, authorizations);
   if (offer.recoveryOffer === "NONE") throw badRequest("Selecciona un beneficio extraordinario antes de generar el ticket.");
-  const expirationDays = Math.min(90, Math.max(1, Number(payload.expiration_days || 7)));
-  const idempotencyKey = String(payload.idempotency_key || "").trim();
-  if (!idempotencyKey) throw badRequest("No fue posible identificar esta generación de ticket.");
   const currentState = await query(
     `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
     [businessId, sourceType, payload.source_id]
   );
   const currentMetadata = currentState.rows[0]?.metadata || {};
+  const confirmation = currentMetadata.commercial_confirmation || {};
+  const requestedProducts = Array.isArray(payload.products) && payload.products.length
+    ? payload.products
+    : confirmation.inventory_product_id
+      ? [{ inventory_product_id: confirmation.inventory_product_id, quantity: confirmation.sale_context?.quantity || 1, benefit_applied: true }]
+      : [];
+  if (!requestedProducts.length) throw badRequest("Agrega al menos un producto antes de generar el ticket.");
+  const repeatedProductIds = requestedProducts.map((product) => String(product.inventory_product_id || "")).filter((id, index, all) => id && all.indexOf(id) !== index);
+  if (repeatedProductIds.length) throw badRequest("Cada producto debe aparecer una sola vez. Ajusta la cantidad en su misma fila.");
+  const products = await Promise.all(requestedProducts.map(async (product) => {
+    const snapshot = await rmsInventoryProductSnapshot(businessId, product.inventory_product_id);
+    return {
+      inventory_product_id: snapshot.inventory_product_id,
+      name: snapshot.product_name_snapshot,
+      product_name_snapshot: snapshot.product_name_snapshot,
+      product_price_snapshot: snapshot.product_price_snapshot,
+      product_currency_snapshot: snapshot.product_currency_snapshot,
+      quantity: Math.max(0.01, Number(product.quantity || 1)),
+      benefit_applied: Boolean(product.benefit_applied),
+    };
+  }));
+  if (!products.some((product) => product.benefit_applied)) throw badRequest("Marca al menos un producto al que se aplicará el beneficio.");
+  const expirationDays = Math.min(90, Math.max(1, Number(payload.expiration_days || 7)));
+  const idempotencyKey = String(payload.idempotency_key || "").trim();
+  if (!idempotencyKey) throw badRequest("No fue posible identificar esta generación de ticket.");
   const productName = currentMetadata.commercial_confirmation?.product_name || item.product_interest || null;
   const ticket = await createRiskRecoveryQr(businessId, user, {
     source_type: sourceType,
@@ -2522,7 +2544,7 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
         risk_recovery: true,
       },
     },
-    metadata: { recovery_benefit_id: offer.recoveryBenefitId, authorization_snapshot: authorizations },
+    metadata: { recovery_benefit_id: offer.recoveryBenefitId, authorization_snapshot: authorizations, products },
   });
   const resource = {
     qr_code_id: ticket.qr_code.id,
@@ -2543,6 +2565,7 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
       detail: offer.detail || offer.customBenefit?.detail || null,
       label: offer.benefitLabel,
     },
+    products,
   };
   await query(
     `update rms_lead_state
@@ -2588,6 +2611,34 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
   // Las selecciones nuevas siempre se validan contra la configuración activa.
   const offer = preparedRiskRecoveryOffer(payload, metadata.risk_recovery_resource)
     || validateRiskRecoveryOffer(payload, authorizations);
+  const explicitRiskProducts = Array.isArray(payload.products) && payload.products.length > 0;
+  const requestedRiskProducts = explicitRiskProducts
+    ? payload.products
+    : confirmation?.inventory_product_id
+      ? [{ inventory_product_id: confirmation.inventory_product_id, quantity: confirmation.sale_context?.quantity || 1, benefit_applied: offer.recoveryOffer !== "NONE" }]
+      : [];
+  const repeatedRiskProductIds = requestedRiskProducts
+    .map((product) => String(product.inventory_product_id || ""))
+    .filter((id, index, all) => id && all.indexOf(id) !== index);
+  if (repeatedRiskProductIds.length) throw badRequest("Cada producto debe aparecer una sola vez en Riesgos de fuga. Ajusta la cantidad en su misma fila.");
+  const riskProducts = await Promise.all(requestedRiskProducts.map(async (product) => {
+    const snapshot = await rmsInventoryProductSnapshot(businessId, product.inventory_product_id);
+    return {
+      inventory_product_id: snapshot.inventory_product_id,
+      name: snapshot.product_name_snapshot,
+      product_name_snapshot: snapshot.product_name_snapshot,
+      product_price_snapshot: snapshot.product_price_snapshot,
+      product_currency_snapshot: snapshot.product_currency_snapshot,
+      quantity: Math.max(0.01, Number(product.quantity || 1)),
+      benefit_applied: offer.recoveryOffer === "NONE" ? false : Boolean(product.benefit_applied),
+    };
+  }));
+  if (result === "CLEARED" && explicitRiskProducts && !riskProducts.length) {
+    throw badRequest("Agrega al menos un producto antes de enviar la venta.");
+  }
+  if (result === "CLEARED" && offer.recoveryOffer !== "NONE" && explicitRiskProducts && !riskProducts.some((product) => product.benefit_applied)) {
+    throw badRequest("Marca al menos un producto al que se aplicó el beneficio extraordinario.");
+  }
   const nonConversionCost = result === "RECYCLE"
     ? await getRmsUnconvertedLeadCost(businessId, { source_type: sourceType, source_id: payload.source_id }, item)
     : null;
@@ -2605,6 +2656,7 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
       authorization_snapshot: authorizations,
     },
     recovery_resource: metadata.risk_recovery_resource || null,
+    products: riskProducts,
     recycle: result === "RECYCLE" ? { reason: payload.recycle_reason || reason, reactivate_at: payload.next_action_at || new Date(Date.now() + (30 * 86400000)).toISOString(), strategy: payload.recycle_strategy || "NURTURE", responsible: payload.responsible || confirmation?.responsible || user.id, note: payload.recycle_note || reason, non_conversion_cost: nonConversionCost } : null,
   };
   const riskSaleHandoff = result === "CLEARED" ? {
@@ -2619,6 +2671,7 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     ticket_action: review.ticket_action,
     recovery_offer: review.recovery_offer,
     recovery_resource: review.recovery_resource,
+    products: review.products,
     confirmation_snapshot: review.confirmation_snapshot,
   } : null;
   await recordRmsWorkflowEvent(businessId, user, {
@@ -2761,9 +2814,16 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     ticket_action: riskReview.ticket_action || null,
     recovery_offer: riskReview.recovery_offer || null,
     recovery_resource: riskReview.recovery_resource || workflowMetadata.risk_recovery_resource || null,
+    products: riskReview.products || [],
     confirmation_snapshot: riskReview.confirmation_snapshot || null,
   } : null);
   const riskRecoveryOffer = riskSaleHandoff?.recovery_offer || riskReview.recovery_offer || null;
+  const authoritativeRiskProducts = Array.isArray(riskSaleHandoff?.products) && riskSaleHandoff.products.length
+    ? riskSaleHandoff.products
+    : Array.isArray(riskReview.products) && riskReview.products.length
+      ? riskReview.products
+      : [];
+  const riskProductBenefitScope = new Map(authoritativeRiskProducts.map((product) => [String(product.inventory_product_id || ""), Boolean(product.benefit_applied)]));
   const riskCustomBenefit = riskRecoveryOffer?.custom_benefit || {};
   const riskBenefitDescription = riskRecoveryOffer?.type === "DISCOUNT"
     ? `Descuento extraordinario del ${Number(riskRecoveryOffer.discount_percent || 0)}%`
@@ -2863,9 +2923,13 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
       ? roundedMoney(confirmedAmount / confirmedQuantity)
       : line.originalUnitPrice;
     const explicitUnitPrice = Math.max(0, roundedMoney(line.requested.unit_price));
+    const benefitApplied = riskBenefitType !== "NONE"
+      && (riskProductBenefitScope.size
+        ? riskProductBenefitScope.get(String(line.snapshot.inventory_product_id)) === true
+        : true);
     const finalUnitPrice = requestedMultipleProducts && explicitUnitPrice > 0
       ? explicitUnitPrice
-      : riskDiscountPercent > 0
+      : riskDiscountPercent > 0 && benefitApplied
         ? roundedMoney(negotiatedBeforeBenefit * (1 - (riskDiscountPercent / 100)))
         : negotiatedBeforeBenefit;
     const originalLineTotal = roundedMoney(line.originalUnitPrice * line.quantity);
@@ -2889,6 +2953,8 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
       product_cost_total: lineProductCostTotal,
       product_currency_snapshot: line.snapshot.product_currency_snapshot,
       product_source: line.snapshot.product_source,
+      benefit_applied: benefitApplied,
+      applied_benefit: benefitApplied ? appliedRiskBenefit : null,
     };
   });
   const originalAmount = roundedMoney(normalizedProducts.reduce((sum, line) => sum + line.original_line_total, 0));

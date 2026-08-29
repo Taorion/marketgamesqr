@@ -53,7 +53,18 @@ test("el historial del lead muestra responsable, hasta 80 movimientos y producto
   assert.match(app, /function rmsCaptureHistoryProductsMarkup/);
   assert.match(app, /Historial operativo detallado/);
   assert.match(app, /event\.actor_name \|\| "Sistema Qori"/);
-  assert.match(app, /Cantidad \$\{quantity\} · Unitario/);
+  assert.match(app, /Cantidad \$\{quantity\}\$\{priceDetail\}/);
+  assert.match(app, /product\.benefit_applied \? "Beneficio aplicado" : "Sin beneficio extraordinario"/);
+});
+
+test("Ventas conserva por producto el alcance confirmado en Riesgos", () => {
+  assert.match(controller, /benefit_applied: z\.boolean\(\)\.optional\(\)\.default\(false\)/);
+  assert.match(app, /data-rms-sale-line-benefit/);
+  assert.match(app, /lockBenefitScope: hasAppliedRiskBenefit/);
+  assert.match(app, /benefit_applied: Boolean\(line\.querySelector\("\[data-rms-sale-line-benefit\]"\)\?\.checked\)/);
+  assert.match(service, /const riskProductBenefitScope = new Map/);
+  assert.match(service, /riskProductBenefitScope\.get\(String\(line\.snapshot\.inventory_product_id\)\) === true/);
+  assert.match(service, /applied_benefit: benefitApplied \? appliedRiskBenefit : null/);
 });
 
 test("los activos versionados y el responsive móvil incluyen la mejora", () => {
