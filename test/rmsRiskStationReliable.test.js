@@ -138,7 +138,7 @@ test("Sin concesión puede salir a Ventas sin exigir un beneficio ni una nota ma
   assert.match(activeSave, /recoveryOfferValue === "NONE"/);
   assert.match(activeSave, /Venta confirmada sin concesión extraordinaria\./);
   assert.match(app, /risk-destination-handoff-v399-20260829/);
-  assert.match(html, /risk-destination-handoff-v399/);
+  assert.match(html, /risk-destination=handoff-v399-20260829/);
 });
 
 test("los beneficios personalizados se guardan, activan y eliminan de forma persistente", () => {
