@@ -2333,6 +2333,7 @@ async function recordRmsNegotiationResult(businessId, user, payload = {}) {
 
 function normalizeRiskRecoveryAuthorizations(value = {}) {
   const configured = value && typeof value === "object" ? value : {};
+  const benefitIds = new Set();
   return {
     discount: {
       enabled: Boolean(configured.discount?.enabled),
@@ -2346,14 +2347,24 @@ function normalizeRiskRecoveryAuthorizations(value = {}) {
       enabled: Boolean(configured.gift?.enabled),
       label: String(configured.gift?.label || "").trim(),
     },
-    benefits: Array.isArray(configured.benefits) ? configured.benefits.map((benefit, index) => ({
-      id: String(benefit?.id || `benefit-${index + 1}`).trim(),
-      enabled: benefit?.enabled !== false,
-      type: String(benefit?.type || "OTHER").trim().toUpperCase(),
-      label: String(benefit?.label || "").trim(),
-      value: Math.max(0, Number(benefit?.value || 0)),
-      detail: String(benefit?.detail || "").trim(),
-    })).filter((benefit) => benefit.label) : [],
+    benefits: Array.isArray(configured.benefits) ? configured.benefits.map((benefit, index) => {
+      const baseId = String(benefit?.id || `benefit-${index + 1}`).trim().slice(0, 120);
+      let id = baseId;
+      let suffix = 2;
+      while (benefitIds.has(id)) {
+        const duplicateSuffix = `-${suffix++}`;
+        id = `${baseId.slice(0, 120 - duplicateSuffix.length)}${duplicateSuffix}`;
+      }
+      benefitIds.add(id);
+      return {
+        id,
+        enabled: benefit?.enabled !== false,
+        type: String(benefit?.type || "OTHER").trim().toUpperCase(),
+        label: String(benefit?.label || "").trim(),
+        value: Math.max(0, Number(benefit?.value || 0)),
+        detail: String(benefit?.detail || "").trim(),
+      };
+    }).filter((benefit) => benefit.label) : [],
   };
 }
 
@@ -2389,7 +2400,9 @@ function validateRiskRecoveryOffer(payload, authorizations) {
     ? "DISCOUNT"
     : recoveryOffer === "GIFT" || customBenefit?.type === "GIFT"
       ? "GIFT"
-      : "BONUS";
+      : recoveryOffer === "CUSTOM" && customBenefit?.type === "OTHER"
+        ? "OTHER"
+        : "BONUS";
   const benefitLabel = customBenefit?.label
     || (recoveryOffer === "DISCOUNT" ? `Descuento extraordinario del ${discountPercent}%`
       : recoveryOffer === "TWO_FOR_ONE" ? (authorizations.two_for_one.label || "Beneficio 2x1")
@@ -2460,7 +2473,9 @@ function preparedRiskRecoveryOffer(payload, resource = null) {
     ? "DISCOUNT"
     : requestedType === "GIFT" || customBenefit?.type === "GIFT"
       ? "GIFT"
-      : "BONUS";
+      : requestedType === "CUSTOM" && customBenefit?.type === "OTHER"
+        ? "OTHER"
+        : "BONUS";
   return {
     recoveryOffer: requestedType,
     discountPercent: Math.min(100, Math.max(0, Number(snapshot.discount_percent || 0))),
@@ -2763,12 +2778,28 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     ? "DISCOUNT"
     : riskRecoveryOffer?.type === "GIFT" || riskCustomBenefit.type === "GIFT"
       ? "GIFT"
+      : riskRecoveryOffer?.type === "CUSTOM" && riskCustomBenefit.type === "OTHER"
+        ? "OTHER"
       : ["TWO_FOR_ONE", "CUSTOM"].includes(riskRecoveryOffer?.type)
         ? "BONUS"
         : "NONE";
   const requestedBenefitType = String(payload.benefit_type || "NONE").toUpperCase();
-  const effectiveBenefitType = requestedBenefitType === "NONE" && riskBenefitType !== "NONE" ? riskBenefitType : requestedBenefitType;
-  const effectiveBenefitDescription = String(payload.benefit_description || "").trim() || riskBenefitDescription;
+  // A benefit already confirmed in Riesgos is authoritative. A stale or
+  // manually changed Sales field must not erase or reclassify that snapshot.
+  const effectiveBenefitType = riskBenefitType !== "NONE" ? riskBenefitType : requestedBenefitType;
+  const effectiveBenefitDescription = riskBenefitDescription || String(payload.benefit_description || "").trim();
+  const appliedRiskBenefit = riskBenefitType !== "NONE" ? {
+    source: "RISK_RECOVERY",
+    authorization_id: riskRecoveryOffer?.benefit_id || null,
+    offer_type: riskRecoveryOffer?.type || null,
+    benefit_type: riskBenefitType,
+    label: riskRecoveryOffer?.label || riskCustomBenefit.label || riskBenefitDescription,
+    configured_value: Number(riskCustomBenefit.value || 0),
+    discount_percent: Number(riskRecoveryOffer?.discount_percent || 0),
+    detail: riskCustomBenefit.detail || riskRecoveryOffer?.detail || null,
+    custom_benefit: riskRecoveryOffer?.custom_benefit || null,
+    authorization_snapshot: riskRecoveryOffer?.authorization_snapshot || null,
+  } : null;
   const riskTraceNote = riskSaleHandoff
     ? [
         `Riesgos de fuga: ${riskSaleHandoff.reason || "venta liberada"}`,
@@ -2900,6 +2931,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
     negotiated_product: negotiatedProduct,
     product_corrected_at_sale: productCorrectedAtSale,
     benefit_description: effectiveBenefitDescription || null,
+    applied_benefit: appliedRiskBenefit,
     commercial_confirmation_snapshot: workflowMetadata.commercial_confirmation || null,
     risk_review_snapshot: riskReview.result ? riskReview : null,
     risk_sale_handoff: riskSaleHandoff,
@@ -3083,7 +3115,7 @@ async function recordRmsAttributedSale(businessId, user, payload = {}) {
                 notes = coalesce(nullif(notes, ''), $4)
           where business_id = $1 and id = $2
           returning *`,
-        [businessId, existingSale.id, JSON.stringify({ risk_review_snapshot: riskReview, risk_sale_handoff: riskSaleHandoff, risk_recovery_resource: workflowMetadata.risk_recovery_resource || riskReview.recovery_resource || null }), riskTraceNote]
+        [businessId, existingSale.id, JSON.stringify({ risk_review_snapshot: riskReview, risk_sale_handoff: riskSaleHandoff, risk_recovery_resource: workflowMetadata.risk_recovery_resource || riskReview.recovery_resource || null, applied_benefit: appliedRiskBenefit }), riskTraceNote]
       );
       existingSale = repaired.rows[0] || existingSale;
     }

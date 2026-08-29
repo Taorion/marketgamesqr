@@ -985,6 +985,7 @@ function cleanSetting(value) {
 
 function riskRecoveryAuthorizationsFromSettings(settings = {}) {
   const configured = settings?.rms_risk_recovery_authorizations || {};
+  const benefitIds = new Set();
   return {
     discount: {
       enabled: Boolean(configured.discount?.enabled),
@@ -998,14 +999,24 @@ function riskRecoveryAuthorizationsFromSettings(settings = {}) {
       enabled: Boolean(configured.gift?.enabled),
       label: cleanSetting(configured.gift?.label),
     },
-    benefits: Array.isArray(configured.benefits) ? configured.benefits.map((benefit, index) => ({
-      id: cleanSetting(benefit?.id) || `benefit-${index + 1}`,
-      enabled: benefit?.enabled !== false,
-      type: cleanSetting(benefit?.type).toUpperCase() || "OTHER",
-      label: cleanSetting(benefit?.label),
-      value: Math.max(0, Number(benefit?.value || 0)),
-      detail: cleanSetting(benefit?.detail),
-    })).filter((benefit) => benefit.label) : [],
+    benefits: Array.isArray(configured.benefits) ? configured.benefits.map((benefit, index) => {
+      const baseId = (cleanSetting(benefit?.id) || `benefit-${index + 1}`).slice(0, 120);
+      let id = baseId;
+      let suffix = 2;
+      while (benefitIds.has(id)) {
+        const duplicateSuffix = `-${suffix++}`;
+        id = `${baseId.slice(0, 120 - duplicateSuffix.length)}${duplicateSuffix}`;
+      }
+      benefitIds.add(id);
+      return {
+        id,
+        enabled: benefit?.enabled !== false,
+        type: cleanSetting(benefit?.type).toUpperCase() || "OTHER",
+        label: cleanSetting(benefit?.label),
+        value: Math.max(0, Number(benefit?.value || 0)),
+        detail: cleanSetting(benefit?.detail),
+      };
+    }).filter((benefit) => benefit.label) : [],
   };
 }
 

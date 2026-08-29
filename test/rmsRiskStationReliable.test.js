@@ -150,6 +150,9 @@ test("los beneficios personalizados se guardan, activan y eliminan de forma pers
   assert.match(listeners, /data-risk-benefit-enabled/);
   assert.match(listeners, /row\.remove\(\)/);
   assert.match(listeners, /eliminado y ya no aparecerá en Riesgos de fuga/);
+  assert.match(app, /function newAccountRiskBenefitId/);
+  assert.match(app, /crypto\?\.randomUUID/);
+  assert.match(service, /while \(benefitIds\.has\(id\)\)/);
 });
 
 test("el beneficio personalizado conserva snapshot y porcentaje hasta Ventas atribuidas", () => {
@@ -159,4 +162,56 @@ test("el beneficio personalizado conserva snapshot y porcentaje hasta Ventas atr
   assert.match(service, /snapshotBenefitId !== requestedBenefitId/);
   assert.match(service, /riskRecoveryOffer\?\.type === "CUSTOM" && riskCustomBenefit\.type === "DISCOUNT" \? riskCustomBenefit\.value : 0/);
   assert.match(app, /riskContext\.offer\?\.type === "CUSTOM" && customBenefit\.type === "DISCOUNT" \? customBenefit\.value : 0/);
+});
+
+test("Ventas prioriza y bloquea el beneficio confirmado en Riesgos", () => {
+  const presentation = app.slice(app.indexOf("function rmsRiskRecoveryPresentation"), app.indexOf("function rmsDealProgressMarkup"));
+  const saleCardStart = app.indexOf("function rmsAttributedSaleStationCardMarkup");
+  const saleCard = app.slice(saleCardStart, app.indexOf("function recyclingStatusLabel", saleCardStart));
+  const saleApplyStart = app.indexOf("function applyRmsNegotiationContextToAttributedSales");
+  const saleApply = app.slice(saleApplyStart, app.indexOf("function rmsAttributedSaleKey", saleApplyStart));
+  assert.match(presentation, /type === "CUSTOM" && custom\.type === "OTHER"/);
+  assert.match(presentation, /offer\.label \|\| custom\.label \|\| fallbackLabel/);
+  assert.match(saleCard, /hasAppliedRiskBenefit \? riskContext\.benefitType/);
+  assert.match(saleCard, /Beneficio aplicado en Riesgos/);
+  assert.match(saleCard, /disabled aria-disabled/);
+  assert.match(saleApply, /hasAppliedRiskBenefit \? riskContext\.benefitType/);
+  assert.doesNotMatch(saleApply, /context\.benefit_type \|\| riskContext\.benefitType/);
+  assert.match(app, /risk-benefit-handoff-v400-20260829/);
+  assert.match(html, /risk-benefit=handoff-v400-20260829/);
+  const present = Function(`${presentation}; return rmsRiskRecoveryPresentation;`)();
+  const applied = present({
+    result: "CLEARED",
+    recovery_offer: {
+      type: "CUSTOM",
+      benefit_id: "benefit-otro",
+      label: "Instalación incluida",
+      custom_benefit: { id: "benefit-otro", type: "OTHER", label: "Instalación incluida", value: 1, detail: "Una instalación" },
+    },
+  });
+  assert.equal(applied.benefitType, "OTHER");
+  assert.equal(applied.label, "Instalación incluida");
+});
+
+test("el backend conserva tipo, id, etiqueta, valor y detalle del beneficio aplicado", () => {
+  assert.match(service, /recoveryOffer === "CUSTOM" && customBenefit\?\.type === "OTHER"/);
+  assert.match(service, /const effectiveBenefitType = riskBenefitType !== "NONE" \? riskBenefitType : requestedBenefitType/);
+  assert.match(service, /const effectiveBenefitDescription = riskBenefitDescription \|\| String\(payload\.benefit_description/);
+  assert.match(service, /source: "RISK_RECOVERY"/);
+  assert.match(service, /authorization_id: riskRecoveryOffer\?\.benefit_id/);
+  assert.match(service, /configured_value: Number\(riskCustomBenefit\.value/);
+  assert.match(service, /applied_benefit: appliedRiskBenefit/);
+  const validationSource = service.slice(service.indexOf("function normalizeRiskRecoveryAuthorizations"), service.indexOf("function rmsPersistedCaseFallbackRow"));
+  const validateOffer = Function("badRequest", `${validationSource}; return validateRiskRecoveryOffer;`)((message) => new Error(message));
+  const validated = validateOffer({ recovery_offer: "CUSTOM", recovery_benefit_id: "benefit-otro" }, {
+    discount: { enabled: false, max_percent: 0 },
+    two_for_one: { enabled: false, label: "" },
+    gift: { enabled: false, label: "" },
+    benefits: [{ id: "benefit-otro", enabled: true, type: "OTHER", label: "Instalación incluida", value: 1, detail: "Una instalación" }],
+  });
+  assert.equal(validated.benefitType, "OTHER");
+  assert.equal(validated.recoveryBenefitId, "benefit-otro");
+  assert.equal(validated.benefitLabel, "Instalación incluida");
+  assert.equal(validated.detail, "");
+  assert.equal(validated.customBenefit.detail, "Una instalación");
 });

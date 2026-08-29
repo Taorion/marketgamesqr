@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260829-risk-destination-handoff-v399";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829";
+const APP_VERSION = "empresa-20260829-risk-benefit-handoff-v400";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -35782,8 +35782,13 @@ function optionalInputValue(input) {
   return value || null;
 }
 
+function newAccountRiskBenefitId() {
+  const token = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `benefit-${token}`.slice(0, 120);
+}
+
 function accountRiskBenefitRowMarkup(benefit = {}) {
-  const id = String(benefit.id || `benefit-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+  const id = String(benefit.id || newAccountRiskBenefitId());
   return `<div class="account-risk-custom-benefit" data-risk-benefit-row data-risk-benefit-id="${escapeHtml(id)}"><label class="checkbox-row"><input type="checkbox" data-risk-benefit-enabled ${benefit.enabled !== false ? "checked" : ""}><span>Activo</span></label><label><span>Nombre del beneficio</span><input type="text" maxlength="180" data-risk-benefit-label value="${escapeHtml(benefit.label || "")}" placeholder="Ej. 20% de descuento final"></label><label><span>Tipo</span><select data-risk-benefit-type><option value="DISCOUNT" ${benefit.type === "DISCOUNT" ? "selected" : ""}>Descuento (%)</option><option value="GIFT" ${benefit.type === "GIFT" ? "selected" : ""}>Obsequio</option><option value="BONUS" ${benefit.type === "BONUS" ? "selected" : ""}>Bono o extra</option><option value="OTHER" ${!['DISCOUNT','GIFT','BONUS'].includes(benefit.type) ? "selected" : ""}>Otro</option></select></label><label><span>Valor</span><input type="number" min="0" max="100" step="0.01" data-risk-benefit-value value="${escapeHtml(String(benefit.value || ""))}" placeholder="Opcional"></label><label class="span-2"><span>Detalle operativo</span><input type="text" maxlength="500" data-risk-benefit-detail value="${escapeHtml(benefit.detail || "")}" placeholder="Condición que debe cumplir el cliente"></label><button type="button" class="link-button danger-link" data-risk-benefit-remove>Eliminar beneficio</button></div>`;
 }
 
@@ -35795,7 +35800,7 @@ function renderAccountRiskCustomBenefits(benefits = []) {
 function collectAccountRiskCustomBenefits() {
   if (!accountRiskCustomBenefits) return [];
   return Array.from(accountRiskCustomBenefits.querySelectorAll("[data-risk-benefit-row]")).map((row) => ({
-    id: row.dataset.riskBenefitId || `benefit-${Date.now()}`,
+    id: row.dataset.riskBenefitId || newAccountRiskBenefitId(),
     enabled: row.querySelector("[data-risk-benefit-enabled]")?.checked !== false,
     type: row.querySelector("[data-risk-benefit-type]")?.value || "OTHER",
     label: row.querySelector("[data-risk-benefit-label]")?.value.trim() || "",
@@ -49478,7 +49483,7 @@ function rmsRiskRecoveryPresentation(risk = {}, metadata = {}) {
   const offer = handoff.recovery_offer || risk.recovery_offer || metadata.recovery_offer || {};
   const custom = offer.custom_benefit || {};
   const type = String(offer.type || "NONE").toUpperCase();
-  const label = type === "DISCOUNT"
+  const fallbackLabel = type === "DISCOUNT"
     ? `Descuento extraordinario del ${Number(offer.discount_percent || 0)}%`
     : type === "TWO_FOR_ONE"
       ? (offer.detail || "Beneficio extraordinario 2x1")
@@ -49487,10 +49492,13 @@ function rmsRiskRecoveryPresentation(risk = {}, metadata = {}) {
         : type === "CUSTOM"
           ? (custom.label || offer.detail || "Beneficio extraordinario personalizado")
           : "Sin beneficio extraordinario";
+  const label = String(offer.label || custom.label || fallbackLabel).trim() || fallbackLabel;
   const benefitType = type === "DISCOUNT" || custom.type === "DISCOUNT"
     ? "DISCOUNT"
     : type === "GIFT" || custom.type === "GIFT"
       ? "GIFT"
+      : type === "CUSTOM" && custom.type === "OTHER"
+        ? "OTHER"
       : ["TWO_FOR_ONE", "CUSTOM"].includes(type)
         ? "BONUS"
         : "NONE";
@@ -49799,7 +49807,8 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
     || "";
   const quantity = Math.max(0.01, Number(saleContext.quantity || 1));
   const unitCost = Math.max(0, Number(inventoryProduct?.cost_price || 0));
-  const benefitType = String(saleContext.benefit_type || riskContext.benefitType || "NONE").toUpperCase();
+  const hasAppliedRiskBenefit = riskContext.decision === "CLEARED" && String(riskContext.offer?.type || "NONE").toUpperCase() !== "NONE";
+  const benefitType = String(hasAppliedRiskBenefit ? riskContext.benefitType : (saleContext.benefit_type || "NONE")).toUpperCase();
   const benefitCost = Math.max(0, Number(saleContext.benefit_cost ?? riskContext.benefitCost ?? 0));
   const acquisitionCost = Math.max(0, Number(saleContext.acquisition_cost || 0));
   const inheritedAmount = confirmation.amount ?? evaluation.budget_amount ?? negotiationResponse.amount ?? "";
@@ -49862,7 +49871,7 @@ function rmsAttributedSaleStationCardMarkup(item = {}) {
           <label><span>Moneda</span><select data-rms-sale-currency="${escapeHtml(item.id)}">${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${currency === inheritedCurrency ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
           <label><span>Medio de pago</span><select data-rms-sale-payment="${escapeHtml(item.id)}"><option value="TRANSFER">Transferencia</option><option value="CASH">Efectivo</option><option value="CARD">Tarjeta</option><option value="PAYMENT_LINK">Link de pago</option><option value="OTHER">Otro</option></select></label>
           <label><span>Vendedor responsable</span><select data-rms-sale-seller="${escapeHtml(item.id)}" data-business-sale-seller>${businessSaleSellerOptions()}</select><small>Debe ser quien cerró realmente esta venta.</small></label>
-          <label><span>Beneficio usado</span><select data-rms-sale-benefit-type="${escapeHtml(item.id)}"><option value="NONE" ${benefitType === "NONE" ? "selected" : ""}>No se usó beneficio</option><option value="DISCOUNT" ${benefitType === "DISCOUNT" ? "selected" : ""}>Descuento</option><option value="GIFT" ${benefitType === "GIFT" ? "selected" : ""}>Obsequio</option><option value="BONUS" ${benefitType === "BONUS" ? "selected" : ""}>Bono / incentivo</option><option value="OTHER" ${benefitType === "OTHER" ? "selected" : ""}>Otro</option></select></label>
+          <label><span>${hasAppliedRiskBenefit ? "Beneficio aplicado en Riesgos" : "Beneficio usado"}</span><select data-rms-sale-benefit-type="${escapeHtml(item.id)}" ${hasAppliedRiskBenefit ? "disabled aria-disabled=\"true\"" : ""}><option value="NONE" ${benefitType === "NONE" ? "selected" : ""}>No se usó beneficio</option><option value="DISCOUNT" ${benefitType === "DISCOUNT" ? "selected" : ""}>Descuento</option><option value="GIFT" ${benefitType === "GIFT" ? "selected" : ""}>Obsequio</option><option value="BONUS" ${benefitType === "BONUS" ? "selected" : ""}>Bono / incentivo</option><option value="OTHER" ${benefitType === "OTHER" ? "selected" : ""}>Otro</option></select>${hasAppliedRiskBenefit ? `<small><strong>${escapeHtml(riskContext.label)}</strong>. Esta decisión llegó confirmada desde Riesgos de fuga y no se puede reemplazar aquí.</small>` : ""}</label>
           <label><span>Costo del beneficio</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(benefitCost))}" data-rms-sale-benefit-cost="${escapeHtml(item.id)}"></label>
           <label><span>Costo de adquisición</span><input type="number" min="0" step="0.01" value="${escapeHtml(String(acquisitionCost))}" data-rms-sale-acquisition-cost="${escapeHtml(item.id)}"></label>
           <label><span>Pago recibido el</span><input type="datetime-local" value="${escapeHtml(rmsSaleDatetimeLocal())}" data-rms-sale-paid-at="${escapeHtml(item.id)}"></label>
@@ -57347,7 +57356,8 @@ function applyRmsNegotiationContextToAttributedSales(root) {
       if (field && value !== undefined && value !== null && value !== "") field.value = String(value);
     };
     setValue("[data-rms-sale-quantity]", Number(context.quantity) > 0 ? context.quantity : 1);
-    setValue("[data-rms-sale-benefit-type]", context.benefit_type || riskContext.benefitType || "NONE");
+    const hasAppliedRiskBenefit = riskContext.decision === "CLEARED" && String(riskContext.offer?.type || "NONE").toUpperCase() !== "NONE";
+    setValue("[data-rms-sale-benefit-type]", hasAppliedRiskBenefit ? riskContext.benefitType : (context.benefit_type || "NONE"));
     setValue("[data-rms-sale-benefit-cost]", Number(context.benefit_cost ?? riskContext.benefitCost) || 0);
     setValue("[data-rms-sale-acquisition-cost]", Number(context.acquisition_cost) || 0);
     const inventoryProduct = findInventoryProductById(rmsCommercialNode(root, "[data-rms-sale-product]", item?.id || "")?.value || "");
@@ -61431,7 +61441,7 @@ document.addEventListener("keydown", (event) => {
 accountProfileForm?.addEventListener("submit", submitAccountProfile);
 accountRiskAddBenefitButton?.addEventListener("click", () => {
   const benefits = collectAccountRiskCustomBenefits();
-  benefits.push({ id: `benefit-${Date.now()}`, enabled: true, type: "DISCOUNT", label: "", value: 0, detail: "" });
+  benefits.push({ id: newAccountRiskBenefitId(), enabled: true, type: "DISCOUNT", label: "", value: 0, detail: "" });
   renderAccountRiskCustomBenefits(benefits);
   accountRiskCustomBenefits?.querySelector("[data-risk-benefit-label]:last-of-type")?.focus();
   setInlineMessage(accountRiskBenefitsMessage, "Completa el beneficio y guarda las autorizaciones.", "info");
