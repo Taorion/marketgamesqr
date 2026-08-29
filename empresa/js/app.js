@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260829-risk-products-live-v405";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829";
+const APP_VERSION = "empresa-20260829-risk-query-source-pruning-v407";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -59483,17 +59483,11 @@ function sellerQueryString() {
   const status = document.getElementById("sellersStatusFilter")?.value;
   const seller = document.getElementById("sellersSellerFilter")?.value;
   const branch = document.getElementById("sellersBranchFilter")?.value;
-  const product = document.getElementById("sellersProductFilter")?.value?.trim();
-  const channel = document.getElementById("sellersChannelFilter")?.value?.trim();
-  const search = document.getElementById("sellersSearchInput")?.value?.trim();
   if (start) params.set("start_date", start);
   if (end) params.set("end_date", end);
   if (status) params.set("status", status);
   if (seller && !isBusinessSeller()) params.set("seller_id", seller);
   if (branch) params.set("branch_id", branch);
-  if (product) params.set("product", product);
-  if (channel) params.set("channel", channel);
-  if (search) params.set("search", search);
   return params.toString();
 }
 
@@ -59746,6 +59740,12 @@ function sellerRowsMarkup(rows, type) {
   return `<div class="seller-detail-list">${rows.map((row) => `<article class="seller-detail-row"><div><strong>${escapeHtml(row.event_type || row.status || "Actividad")}</strong><small>${escapeHtml(row.actor_name || "Sistema Qori")}</small></div><div><strong>${escapeHtml(sellerDate(row.created_at || row.period_start))}</strong><small>${escapeHtml(row.reason || row.notes || "Registro auditable")}</small></div></article>`).join("")}</div>`;
 }
 
+function sellerAssignedContactsMarkup(detail = {}) {
+  const assigned = detail.assigned_contacts || {};
+  const section = (title, rows = [], total = rows.length) => `<section class="seller-panel seller-assigned-contacts"><h4>${escapeHtml(title)} <span class="pill muted">${Number(total || rows.length).toLocaleString("es-CO")}</span></h4>${rows.length ? `<div class="seller-detail-list">${rows.map((row) => `<article class="seller-detail-row"><div><strong>${escapeHtml(row.name || "Contacto")}</strong><small>${escapeHtml(row.email || row.phone || row.document_id || "Sin dato de contacto")}</small></div><div><strong>${escapeHtml(row.company || "Sin empresa")}</strong><small>${escapeHtml(row.source_type || "Contacto")}</small></div><div><strong>${Number(row.purchase_count || 0).toLocaleString("es-CO")}</strong><small>Compras · ${escapeHtml(money(row.total_spent || 0))}</small></div><div><strong>${escapeHtml(row.commercial_status_label || row.commercial_status || title.slice(0, -1))}</strong><small>${escapeHtml(row.recommended_action || "Sin próxima acción")}</small></div></article>`).join("")}</div>` : `<div class="sellers-empty">No hay ${escapeHtml(title.toLowerCase())} asignados a este vendedor.</div>`}</section>`;
+  return section("Clientes", assigned.clients || [], assigned.clients_pagination?.total) + section("Leads", assigned.leads || [], assigned.leads_pagination?.total);
+}
+
 function sellerAccessMarkup(detail) {
   const seller = detail.seller || {};
   if (!detail.permissions?.can_manage) return `<section class="seller-panel"><h4>Mi perfil personal</h4><form id="sellerSelfProfileForm" class="seller-editor-fields"><label>Teléfono<input name="phone" value="${escapeHtml(seller.phone || "")}" maxlength="40"></label><label class="span-2">Nota personal<textarea name="profile_note" maxlength="500">${escapeHtml(seller.metadata?.self_profile_note || "")}</textarea></label><button class="solid-button" type="submit">Guardar mi perfil</button></form></section><section class="seller-panel"><h4>Cambiar contraseña</h4><form id="sellerSelfPasswordForm" class="seller-editor-fields"><label>Contraseña actual<input name="current_password" type="password" required></label><label>Nueva contraseña<input name="password" type="password" minlength="8" required></label><label>Confirmar contraseña<input name="password_confirm" type="password" minlength="8" required></label><button class="solid-button" type="submit">Actualizar contraseña</button></form></section>`;
@@ -59777,7 +59777,7 @@ function renderSellerDetailTab(tab = "summary") {
   body.setAttribute("aria-labelledby", activeTab?.id || "sellerTabSummary");
   if (tab === "summary") body.innerHTML = sellerSummaryMarkup(detail);
   if (tab === "sales") body.innerHTML = sellerRowsMarkup(detail.sales, "ventas");
-  if (tab === "clients") body.innerHTML = sellerRowsMarkup(detail.clients, "clientes");
+  if (tab === "clients") body.innerHTML = sellerAssignedContactsMarkup(detail);
   if (tab === "products") body.innerHTML = sellerRowsMarkup(detail.products, "productos");
   if (tab === "activity") body.innerHTML = sellerRowsMarkup(detail.activity, "actividad");
   if (tab === "goals") body.innerHTML = `${detail.permissions?.can_manage ? `<button class="solid-button" type="button" data-new-goal="${escapeHtml(detail.seller.id)}">Nueva meta</button>` : ""}${sellerGoalsMarkup(detail)}`;
@@ -59815,32 +59815,21 @@ function sellerBranchOptions(selected = "") {
   return [`<option value="">Sin sede asignada</option>`, ...(state.businessBranches || []).filter((branch) => branch.is_active !== false).map((branch) => `<option value="${escapeHtml(branch.id)}"${String(branch.id) === String(selected) ? " selected" : ""}>${escapeHtml(branch.name)}</option>`)].join("");
 }
 
-function sellerSaleProductRow(item = {}) {
-  return `<article class="seller-line-editor" data-seller-sale-product>
-    <label><span>Producto o servicio</span><input data-sale-product-name value="${escapeHtml(item.name || "")}" maxlength="180" required></label>
-    <label><span>Cantidad</span><input data-sale-product-quantity type="number" min="0.01" step="0.01" value="${escapeHtml(item.quantity || 1)}" required></label>
-    <label><span>Valor unitario</span><input data-sale-product-price type="number" min="0" step="0.01" value="${escapeHtml(item.unit_price ?? "")}" required></label>
-    <button class="icon-button" type="button" data-remove-seller-line aria-label="Eliminar producto"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
-  </article>`;
-}
-
 function sellerGoalProductRow(item = {}) {
+  const selectedId = String(item.product_id || "");
+  const products = (state.inventoryProducts || []).filter((product) => product.status !== "ARCHIVED");
+  const hasSelected = products.some((product) => String(product.id) === selectedId);
+  const options = [
+    '<option value="">Selecciona un producto creado</option>',
+    ...(!hasSelected && selectedId ? [`<option value="${escapeHtml(selectedId)}" data-product-label="${escapeHtml(item.label || "Producto guardado")}" selected>${escapeHtml(item.label || "Producto guardado")}</option>`] : []),
+    ...products.map((product) => `<option value="${escapeHtml(product.id)}" data-product-label="${escapeHtml(product.name || product.sku || "Producto")}"${String(product.id) === selectedId ? " selected" : ""}>${escapeHtml(product.name || "Producto")}${product.sku ? ` · ${escapeHtml(product.sku)}` : ""}</option>`),
+  ].join("");
   return `<article class="seller-line-editor seller-goal-line" data-seller-goal-product>
-    <label><span>Producto o plan</span><input data-goal-product-label value="${escapeHtml(item.label || "")}" maxlength="180" required></label>
+    <label><span>Producto</span><select data-goal-product-id required>${options}</select></label>
     <label><span>Unidades meta</span><input data-goal-product-units type="number" min="0" step="0.01" value="${escapeHtml(item.target_units || 0)}" required></label>
     <label><span>Revenue meta</span><input data-goal-product-revenue type="number" min="0" step="0.01" value="${escapeHtml(item.target_revenue || 0)}" required></label>
     <button class="icon-button" type="button" data-remove-seller-line aria-label="Eliminar meta de producto"><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
   </article>`;
-}
-
-function syncSellerSaleTotal() {
-  const total = Array.from(document.querySelectorAll("[data-seller-sale-product]")).reduce((sum, row) => {
-    const quantity = Number(row.querySelector("[data-sale-product-quantity]")?.value || 0);
-    const price = Number(row.querySelector("[data-sale-product-price]")?.value || 0);
-    return sum + Math.max(0, quantity) * Math.max(0, price);
-  }, 0);
-  const amount = document.querySelector('#sellerEditorFields [name="sale_amount"]');
-  if (amount) amount.value = total ? total.toFixed(2) : "";
 }
 
 function openSellerEditor(mode, seller = {}) {
@@ -59848,15 +59837,9 @@ function openSellerEditor(mode, seller = {}) {
   const modal = document.getElementById("sellerEditorModal");
   const title = document.getElementById("sellerEditorTitle"), help = document.getElementById("sellerEditorHelp"), submit = document.getElementById("sellerEditorSubmit");
   document.getElementById("sellerEditorMode").value = mode; document.getElementById("sellerEditorSellerId").value = seller.id || "";
-  document.getElementById("sellerEditorForm").dataset.idempotencyKey = mode === "sale" ? `seller-ui-${crypto.randomUUID()}` : "";
   if (mode === "seller") {
     title.textContent = seller.id ? "Editar vendedor" : "Nuevo vendedor"; help.textContent = "El acceso cuenta dentro del límite de usuarios activos del plan."; submit.textContent = seller.id ? "Guardar cambios" : "Crear vendedor";
     fields.innerHTML = `<div class="seller-editor-fields"><label>Nombre completo<input name="full_name" value="${escapeHtml(seller.full_name || "")}" required maxlength="160"></label><label>Correo<input name="email" type="email" value="${escapeHtml(seller.email || "")}" required></label>${seller.id ? "" : '<label>Contraseña inicial<input name="password" type="password" minlength="8" required></label>'}<label>Código estable<input name="seller_code" value="${escapeHtml(seller.seller_code || "")}" placeholder="VEN-001" required></label><label>Cargo<input name="job_title" value="${escapeHtml(seller.job_title || "")}"></label><label>Teléfono<input name="phone" value="${escapeHtml(seller.phone || "")}"></label><label>Territorio o zona<input name="territory" value="${escapeHtml(seller.territory || "")}"></label><label>Sede<select name="branch_id">${sellerBranchOptions(seller.branch_id)}</select></label><label>Fecha de ingreso<input name="hired_at" type="date" value="${escapeHtml(String(seller.hired_at || "").slice(0, 10))}"></label>${seller.id ? `<label>Estado<select name="status"><option value="ACTIVE"${seller.status === "ACTIVE" ? " selected" : ""}>Activo</option><option value="INACTIVE"${seller.status === "INACTIVE" ? " selected" : ""}>Inactivo</option><option value="ARCHIVED"${seller.status === "ARCHIVED" ? " selected" : ""}>Archivado</option></select></label>` : ""}<label class="span-2">Observaciones administrativas<textarea name="administrative_notes">${escapeHtml(seller.administrative_notes || "")}</textarea></label></div>`;
-  }
-  if (mode === "sale") {
-    title.textContent = "Registrar venta"; help.textContent = "La venta se guarda en business_sales con este vendedor como responsable."; submit.textContent = "Registrar venta";
-    const options = (state.sellersWorkspace?.sellers || []).filter((row) => row.status === "ACTIVE" && row.is_active).map((row) => `<option value="${escapeHtml(row.id)}"${String(row.id) === String(seller.id) ? " selected" : ""}>${escapeHtml(row.full_name)} · ${escapeHtml(row.seller_code)}</option>`).join("");
-    fields.innerHTML = `<div class="seller-editor-fields"><label>Vendedor<select name="seller_id" required><option value="">Selecciona</option>${options}</select></label><label>Fecha de pago<input name="paid_at" type="datetime-local"></label><label>Cliente<input name="customer_name" required></label><label>Correo del cliente<input name="customer_email" type="email"></label><label>Teléfono<input name="customer_phone"></label><label>Documento<input name="customer_document_id"></label><section class="seller-line-editor-group span-2"><header><div><strong>Productos vendidos</strong><small>Cada línea se sincroniza con el catálogo real.</small></div><button class="ghost-button" type="button" data-add-sale-product>Agregar producto</button></header><div data-sale-products>${sellerSaleProductRow()}</div></section><label>Valor total<input name="sale_amount" type="number" min="0.01" step="0.01" readonly required></label><label>Canal<input name="acquisition_channel"></label><label>Sede<select name="branch_id">${sellerBranchOptions("")}</select></label><label class="span-2">Notas<textarea name="notes"></textarea></label></div>`;
   }
   if (mode === "goal") {
     const goal = seller.goal || null;
@@ -59882,23 +59865,11 @@ async function submitSellerEditor(event) {
   const values = Object.fromEntries(new FormData(form));
   let endpoint = "/api/business/sellers", method = "POST", payload = values;
   if (mode === "seller" && sellerId) { endpoint += `/${encodeURIComponent(sellerId)}`; method = "PATCH"; payload.is_active = values.status === "ACTIVE"; }
-  if (mode === "sale") {
-    const products = Array.from(form.querySelectorAll("[data-seller-sale-product]")).map((row) => {
-      const name = row.querySelector("[data-sale-product-name]")?.value?.trim();
-      const quantity = Number(row.querySelector("[data-sale-product-quantity]")?.value || 0);
-      const unitPrice = Number(row.querySelector("[data-sale-product-price]")?.value || 0);
-      return { name, quantity, unit_price: unitPrice, line_total: quantity * unitPrice };
-    }).filter((item) => item.name);
-    endpoint += `/${encodeURIComponent(values.seller_id)}/sales`;
-    payload = { ...values, product_name: products[0]?.name || null, products, sale_amount: Number(values.sale_amount), paid_at: values.paid_at ? new Date(values.paid_at).toISOString() : null, idempotency_key: form.dataset.idempotencyKey || `seller-ui-${crypto.randomUUID()}` };
-    delete payload.seller_id;
-  }
   if (mode === "goal") {
-    const productTargets = Array.from(form.querySelectorAll("[data-seller-goal-product]")).map((row) => ({
-      label: row.querySelector("[data-goal-product-label]")?.value?.trim(),
-      target_units: Number(row.querySelector("[data-goal-product-units]")?.value || 0),
-      target_revenue: Number(row.querySelector("[data-goal-product-revenue]")?.value || 0),
-    })).filter((item) => item.label);
+    const productTargets = Array.from(form.querySelectorAll("[data-seller-goal-product]")).map((row) => {
+      const select = row.querySelector("[data-goal-product-id]");
+      return { product_id: select?.value || null, label: select?.selectedOptions?.[0]?.dataset.productLabel || select?.selectedOptions?.[0]?.textContent?.split(" · ")[0]?.trim(), target_units: Number(row.querySelector("[data-goal-product-units]")?.value || 0), target_revenue: Number(row.querySelector("[data-goal-product-revenue]")?.value || 0) };
+    }).filter((item) => item.product_id && item.label);
     endpoint += `/${encodeURIComponent(sellerId)}/goals`; method = "PUT"; payload = { ...values, target_revenue: Number(values.target_revenue), target_sales: Number(values.target_sales), target_new_customers: Number(values.target_new_customers), product_targets: productTargets };
   }
   if (mode === "attribution") { endpoint += `/attributions/${encodeURIComponent(sellerId)}`; method = "PATCH"; payload = values; }
@@ -59909,7 +59880,7 @@ async function submitSellerEditor(event) {
     await api(endpoint, { method, headers: authHeaders(), body: JSON.stringify(payload), noClientCache: true });
     closeSellerModal(document.getElementById("sellerEditorModal")); await loadSellersWorkspace({ quiet: true, force: true });
     if (mode === "goal" && sellerId) await openSellerDetail(sellerId);
-    showFeedback(mode === "sale" ? "Venta registrada y atribuida al vendedor." : mode === "goal" ? "Meta guardada con historial." : mode === "attribution" ? "Responsable corregido con trazabilidad completa." : "Vendedor guardado correctamente.", "success", { title: "Vendedores" });
+    showFeedback(mode === "goal" ? "Meta guardada con historial." : mode === "attribution" ? "Responsable corregido con trazabilidad completa." : "Vendedor guardado correctamente.", "success", { title: "Vendedores" });
   } catch (error) { setInlineMessage(message, error.message || "No se pudo guardar.", "error"); }
   finally { setButtonLoading(submit, false); }
 }
@@ -59919,7 +59890,7 @@ document.getElementById("sellersResetFilters")?.addEventListener("click", () => 
   const preset = document.getElementById("sellersPeriodPreset");
   if (preset) preset.value = "month";
   applySellerPeriodPreset("month");
-  ["sellersStatusFilter", "sellersSellerFilter", "sellersBranchFilter", "sellersProductFilter", "sellersChannelFilter", "sellersSearchInput"].forEach((id) => {
+  ["sellersStatusFilter", "sellersSellerFilter", "sellersBranchFilter"].forEach((id) => {
     const control = document.getElementById(id);
     if (control) control.value = "";
   });
@@ -59928,15 +59899,12 @@ document.getElementById("sellersResetFilters")?.addEventListener("click", () => 
 document.getElementById("sellersPeriodPreset")?.addEventListener("change", (event) => { applySellerPeriodPreset(event.target.value); if (event.target.value !== "custom") loadSellersWorkspace({ force: true }).catch(() => {}); });
 ["sellersStartDate", "sellersEndDate"].forEach((id) => document.getElementById(id)?.addEventListener("change", () => { const preset = document.getElementById("sellersPeriodPreset"); if (preset) preset.value = "custom"; }));
 document.getElementById("sellerNewButton")?.addEventListener("click", () => openSellerEditor("seller"));
-document.getElementById("sellerRegisterSaleButton")?.addEventListener("click", () => openSellerEditor("sale"));
 document.getElementById("sellerEditorForm")?.addEventListener("submit", submitSellerEditor);
 document.getElementById("sellerEditorFields")?.addEventListener("click", (event) => {
-  if (event.target.closest("[data-add-sale-product]")) { document.querySelector("[data-sale-products]")?.insertAdjacentHTML("beforeend", sellerSaleProductRow()); syncSellerSaleTotal(); }
   if (event.target.closest("[data-add-goal-product]")) document.querySelector("[data-goal-products]")?.insertAdjacentHTML("beforeend", sellerGoalProductRow());
   const remove = event.target.closest("[data-remove-seller-line]");
-  if (remove) { const row = remove.closest("[data-seller-sale-product],[data-seller-goal-product]"); const isSale = row?.matches("[data-seller-sale-product]"); if (isSale && document.querySelectorAll("[data-seller-sale-product]").length <= 1) { showFeedback("La venta necesita al menos un producto.", "info", { title: "Productos vendidos" }); return; } row?.remove(); if (isSale) syncSellerSaleTotal(); }
+  if (remove) remove.closest("[data-seller-goal-product]")?.remove();
 });
-document.getElementById("sellerEditorFields")?.addEventListener("input", (event) => { if (event.target.matches("[data-sale-product-quantity],[data-sale-product-price]")) syncSellerSaleTotal(); });
 document.getElementById("sellerEditorClose")?.addEventListener("click", () => closeSellerModal(document.getElementById("sellerEditorModal")));
 document.getElementById("sellerEditorCancel")?.addEventListener("click", () => closeSellerModal(document.getElementById("sellerEditorModal")));
 document.getElementById("sellerDetailClose")?.addEventListener("click", () => closeSellerModal(document.getElementById("sellerDetailModal")));
@@ -59946,7 +59914,7 @@ document.getElementById("sellerEditorModal")?.addEventListener("keydown", handle
 document.getElementById("sellersTableBody")?.addEventListener("click", (event) => { const button = event.target.closest("[data-open-seller]"); if (button) openSellerDetail(button.dataset.openSeller); if (event.target.closest("[data-empty-new-seller]")) openSellerEditor("seller"); });
 document.getElementById("sellerDetailTabs")?.addEventListener("click", (event) => { const tab = event.target.closest("[data-seller-tab]"); if (tab) renderSellerDetailTab(tab.dataset.sellerTab); });
 document.getElementById("sellerDetailTabs")?.addEventListener("keydown", (event) => { if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return; const tabs = Array.from(event.currentTarget.querySelectorAll('[role="tab"]:not([hidden])')); const current = tabs.indexOf(document.activeElement); let next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : event.key === "ArrowRight" ? (current + 1) % tabs.length : (current - 1 + tabs.length) % tabs.length; event.preventDefault(); tabs[next]?.focus(); tabs[next]?.click(); });
-document.getElementById("sellerDetailBody")?.addEventListener("click", (event) => { const retry = event.target.closest("[data-retry-seller]"); if (retry) openSellerDetail(retry.dataset.retrySeller); const goal = event.target.closest("[data-new-goal]"); if (goal) openSellerEditor("goal", state.selectedSellerDetail?.seller || { id: goal.dataset.newGoal }); const editGoal = event.target.closest("[data-edit-goal]"); if (editGoal) { const selected = state.selectedSellerDetail?.goals?.find((item) => String(item.id) === String(editGoal.dataset.editGoal)); openSellerEditor("goal", { ...(state.selectedSellerDetail?.seller || {}), goal: selected }); } const edit = event.target.closest("[data-edit-seller]"); if (edit) openSellerEditor("seller", state.selectedSellerDetail?.seller || {}); const attribution = event.target.closest("[data-reassign-attribution]"); if (attribution) openSellerEditor("attribution", { id: attribution.dataset.reassignAttribution }); });
+document.getElementById("sellerDetailBody")?.addEventListener("click", async (event) => { const retry = event.target.closest("[data-retry-seller]"); if (retry) openSellerDetail(retry.dataset.retrySeller); const goal = event.target.closest("[data-new-goal]"); if (goal) { await loadInventoryProducts({ quiet: true }); openSellerEditor("goal", state.selectedSellerDetail?.seller || { id: goal.dataset.newGoal }); } const editGoal = event.target.closest("[data-edit-goal]"); if (editGoal) { await loadInventoryProducts({ quiet: true }); const selected = state.selectedSellerDetail?.goals?.find((item) => String(item.id) === String(editGoal.dataset.editGoal)); openSellerEditor("goal", { ...(state.selectedSellerDetail?.seller || {}), goal: selected }); } const edit = event.target.closest("[data-edit-seller]"); if (edit) openSellerEditor("seller", state.selectedSellerDetail?.seller || {}); const attribution = event.target.closest("[data-reassign-attribution]"); if (attribution) openSellerEditor("attribution", { id: attribution.dataset.reassignAttribution }); });
 document.getElementById("sellerAttributionTableBody")?.addEventListener("click", (event) => { const attribution = event.target.closest("[data-reassign-attribution]"); if (attribution) openSellerEditor("attribution", { id: attribution.dataset.reassignAttribution }); });
 document.getElementById("sellerAttributionFilters")?.addEventListener("submit", (event) => { event.preventDefault(); loadSellerAttributions().catch((error) => showFeedback(error.message, "error", { title: "Atribuciones Qori" })); });
 document.getElementById("sellerAttributionRefreshButton")?.addEventListener("click", () => loadSellerAttributions().catch((error) => showFeedback(error.message, "error", { title: "Atribuciones Qori" })));

@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, "..");
 const app = fs.readFileSync(path.join(root, "empresa/js/app.js"), "utf8");
 const html = fs.readFileSync(path.join(root, "empresa/index.html"), "utf8");
 const service = fs.readFileSync(path.join(root, "backend/src/services/rmsMachineService.js"), "utf8");
+const crmService = fs.readFileSync(path.join(root, "backend/src/services/leadCrmService.js"), "utf8");
 
 test("Riesgos permite registrar una respuesta sin ticket", () => {
   assert.match(app, /requestedPhase === "deliver" && !hasResource/);
@@ -241,6 +242,17 @@ test("Riesgos abre con consulta exacta y render progresivo ligero", () => {
   assert.match(app, /display\.matchingRows\.length > display\.pageSize/);
   assert.match(app, /risk-station-fast-v403-20260829/);
   assert.match(html, /risk-speed=fast-v403-20260829/);
+});
+
+test("Riesgos poda las fuentes CRM antes de calcular agregados pesados", () => {
+  assert.match(crmService, /const exactPlayerSourceSql = exactSourceClause\("PLAYER", "p"\)/);
+  assert.match(crmService, /const exactManualSourceSql = exactSourceClause\("MANUAL", "ml"\)/);
+  assert.match(crmService, /const exactAffiliateSourceSql = exactSourceClause\("AFFILIATE", "fa"\)/);
+  assert.match(crmService, /where p\.business_id = \$1\s+\$\{exactPlayerSourceSql\}/);
+  assert.match(crmService, /where ml\.business_id = \$1\s+\$\{exactManualSourceSql\}/);
+  assert.match(crmService, /where fa\.business_id = \$1\s+\$\{exactAffiliateSourceSql\}/);
+  assert.match(app, /risk-query-source-pruning-v407-20260829/);
+  assert.match(html, /risk-query=source-pruning-v407-20260829/);
 });
 
 test("Riesgos conserva productos durante sincronizaciones y evita cargar el inventario dos veces", () => {

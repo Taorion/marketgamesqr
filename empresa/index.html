@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/img/qori-favicon-32.png?v=qori-favicon-20260825-v120">
   <link rel="apple-touch-icon" sizes="180x180" href="/img/qori-apple-touch-icon.png?v=qori-favicon-20260825-v120">
   <link rel="manifest" href="/site.webmanifest?v=qori-favicon-20260825-v120">
-<link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828&amp;intelligence=gos-reliable-v389-20260828&amp;risk-none=initial-result-v396-20260829&amp;rms-sale=multiproduct-history-v397-20260829&amp;risk-none-select=explicit-v398-20260829&amp;risk-destination=handoff-v399-20260829&amp;risk-benefit=handoff-v400-20260829&amp;risk-product-scope=v401-20260829&amp;recycling=premium-command-v402-20260829&amp;risk-speed=fast-v403-20260829&amp;risk-products=live-v405-20260829">
+<link rel="preload" as="script" href="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility-goals-contacts-v406-20260829&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828&amp;intelligence=gos-reliable-v389-20260828&amp;risk-none=initial-result-v396-20260829&amp;rms-sale=multiproduct-history-v397-20260829&amp;risk-none-select=explicit-v398-20260829&amp;risk-destination=handoff-v399-20260829&amp;risk-benefit=handoff-v400-20260829&amp;risk-product-scope=v401-20260829&amp;recycling=premium-command-v402-20260829&amp;risk-speed=fast-v403-20260829&amp;risk-products=live-v405-20260829&amp;risk-query=source-pruning-v407-20260829">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -49,7 +49,7 @@
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
   <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825-unified-email-routing-v359-rms-above-fold-v361-gos-status-contrast-v363-20260826-campaign-assistant-premium-v374-risk-fixed-concession-v385-radar-product-modal-v393-gos-intelligence-reliable-v389-rms-sale-multiproduct-history-v397-risk-none-explicit-v398-risk-destination-handoff-v399-risk-product-scope-v401-recycling-premium-v402">
   <link rel="stylesheet" href="css/attributed-sales-premium.css?v=sales-entry-modal-v371-20260826">
-<link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-seller-responsibility-v343-20260828" media="print" data-deferred-portal-style>
+<link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-seller-responsibility-v343-20260828-seller-edit-v346-20260829" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-seller-lens-v15-20260828" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/reward-pass-premium-v342.css?v=reward-pass-branches-v344-20260823" media="print" data-deferred-portal-style>
@@ -1503,14 +1503,13 @@
               </div>
               <div class="sellers-hero-actions" id="sellersAdminActions">
                 <button class="ghost-button" id="sellerNewButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">person_add</span>Nuevo vendedor</button>
-                <button class="solid-button" id="sellerRegisterSaleButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">point_of_sale</span>Registrar venta</button>
               </div>
             </header>
 
             <form class="sellers-filters" id="sellersFilters" aria-label="Filtros de vendedores">
               <div class="sellers-filter-intro">
                 <span class="material-symbols-outlined" aria-hidden="true">tune</span>
-                <div><strong>Enfoca el análisis</strong><small>Combina periodo, equipo, sede, producto o canal.</small></div>
+                <div><strong>Enfoca el análisis</strong><small>Combina periodo, equipo, sede y estado.</small></div>
               </div>
               <label><span>Periodo</span><select id="sellersPeriodPreset"><option value="month">Este mes</option><option value="30d">Últimos 30 días</option><option value="quarter">Este trimestre</option><option value="year">Este año</option><option value="custom">Personalizado</option></select></label>
               <label><span>Desde</span><input id="sellersStartDate" type="date"></label>
@@ -1518,9 +1517,6 @@
               <label><span>Estado</span><select id="sellersStatusFilter"><option value="">Todos</option><option value="ACTIVE">Activos</option><option value="INACTIVE">Inactivos</option></select></label>
               <label data-seller-admin-filter><span>Vendedor</span><select id="sellersSellerFilter"><option value="">Todo el equipo</option></select></label>
               <label><span>Sede</span><select id="sellersBranchFilter"><option value="">Todas las sedes</option></select></label>
-              <label><span>Producto o plan</span><input id="sellersProductFilter" type="search" placeholder="Nombre o código"></label>
-              <label><span>Canal</span><input id="sellersChannelFilter" type="search" placeholder="Ej. WhatsApp"></label>
-              <label class="sellers-search"><span>Nombre o código</span><input id="sellersSearchInput" type="search" placeholder="Ej. Ana o QORI-ANA-001"></label>
               <div class="sellers-filter-actions"><button class="ghost-button" id="sellersResetFilters" type="button"><span class="material-symbols-outlined" aria-hidden="true">restart_alt</span>Limpiar</button><button class="solid-button" type="submit"><span class="material-symbols-outlined" aria-hidden="true">filter_alt</span>Actualizar resultados</button></div>
             </form>
 
@@ -8410,6 +8406,19 @@
       <footer class="modal-actions"><button class="ghost-button" type="button" data-portal-email-route="cancel">Cancelar</button></footer>
     </section>
   </div>
+  <div class="modal-shell hidden contact-seller-editor-modal" id="contactSellerEditorModal" role="dialog" aria-modal="true" aria-labelledby="contactSellerEditorTitle" aria-hidden="true">
+    <section class="modal-card seller-editor-card" tabindex="-1">
+      <header class="modal-head"><div><span class="mono-label">CONTACTOS</span><h3 id="contactSellerEditorTitle">Editar datos</h3><p id="contactSellerEditorHelp">Asigna un vendedor creado en la sección Vendedores.</p></div><button class="icon-button" id="contactSellerEditorClose" type="button" aria-label="Cerrar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></header>
+      <form class="seller-editor-form" id="contactSellerEditorForm">
+        <input id="contactSellerEditorId" type="hidden">
+        <input id="contactSellerEditorSource" type="hidden">
+        <div class="seller-editor-fields"><label class="span-2"><span>Vendedor asignado</span><select id="contactSellerEditorSelect"></select><small class="field-help">Solo aparecen vendedores activos del negocio.</small></label></div>
+        <p class="error-line" id="contactSellerEditorMessage" role="status" aria-live="polite"></p>
+        <footer class="modal-actions"><button class="ghost-button" id="contactSellerEditorCancel" type="button">Cancelar</button><button class="solid-button" id="contactSellerEditorSubmit" type="submit">Guardar asignación</button></footer>
+      </form>
+    </section>
+  </div>
+
   <div class="modal-shell hidden seller-detail-modal" id="sellerDetailModal" role="dialog" aria-modal="true" aria-labelledby="sellerDetailTitle" aria-hidden="true">
     <section class="modal-card seller-detail-card" tabindex="-1">
       <header class="seller-detail-head">
@@ -8420,7 +8429,7 @@
         <button class="is-active" id="sellerTabSummary" type="button" role="tab" aria-selected="true" aria-controls="sellerDetailBody" tabindex="0" data-seller-tab="summary">Resumen</button>
         <button id="sellerTabGoals" type="button" role="tab" aria-selected="false" aria-controls="sellerDetailBody" tabindex="-1" data-seller-tab="goals">Metas</button>
         <button id="sellerTabSales" type="button" role="tab" aria-selected="false" aria-controls="sellerDetailBody" tabindex="-1" data-seller-tab="sales">Ventas</button>
-        <button id="sellerTabClients" type="button" role="tab" aria-selected="false" aria-controls="sellerDetailBody" tabindex="-1" data-seller-tab="clients">Clientes</button>
+        <button id="sellerTabClients" type="button" role="tab" aria-selected="false" aria-controls="sellerDetailBody" tabindex="-1" data-seller-tab="clients">Clientes y leads</button>
         <button id="sellerTabProducts" type="button" role="tab" aria-selected="false" aria-controls="sellerDetailBody" tabindex="-1" data-seller-tab="products">Productos o planes</button>
         <button id="sellerTabActivity" type="button" role="tab" aria-selected="false" aria-controls="sellerDetailBody" tabindex="-1" data-seller-tab="activity">Actividad</button>
         <button id="sellerTabAccess" type="button" role="tab" aria-selected="false" aria-controls="sellerDetailBody" tabindex="-1" data-seller-tab="access" data-seller-admin-only>Datos y acceso</button>
@@ -8443,9 +8452,9 @@
     </section>
   </div>
 
-<script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828&amp;intelligence=gos-reliable-v389-20260828&amp;risk-none=initial-result-v396-20260829&amp;rms-sale=multiproduct-history-v397-20260829&amp;risk-none-select=explicit-v398-20260829&amp;risk-destination=handoff-v399-20260829&amp;risk-benefit=handoff-v400-20260829&amp;risk-product-scope=v401-20260829&amp;recycling=premium-command-v402-20260829&amp;risk-speed=fast-v403-20260829&amp;risk-products=live-v405-20260829" defer></script>
+<script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility-goals-contacts-v406-20260829&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828&amp;intelligence=gos-reliable-v389-20260828&amp;risk-none=initial-result-v396-20260829&amp;rms-sale=multiproduct-history-v397-20260829&amp;risk-none-select=explicit-v398-20260829&amp;risk-destination=handoff-v399-20260829&amp;risk-benefit=handoff-v400-20260829&amp;risk-product-scope=v401-20260829&amp;recycling=premium-command-v402-20260829&amp;risk-speed=fast-v403-20260829&amp;risk-products=live-v405-20260829&amp;risk-query=source-pruning-v407-20260829" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
-<script src="js/contacts-premium-v333.js?v=contacts-client-import-v345-20260828-default-seller" defer></script>
+<script src="js/contacts-premium-v333.js?v=contacts-client-import-v345-20260828-default-seller-edit-v346-20260829" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
     <script src="js/communications.js?v=communications-history-v333-20260822-unified-email-routing-v359-20260826" defer></script>

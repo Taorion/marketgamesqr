@@ -102,3 +102,17 @@ test("el alta y la edición manual permiten un responsable opcional del mismo ne
   assert.match(app, /manualLeadEditCommercialOwnerInput/);
   assert.match(html, /Solo muestra usuarios activos de este negocio/);
 });
+
+test("Clientes y Leads permiten editar datos y asignar vendedores activos", () => {
+  const premium = read("empresa/js/contacts-premium-v333.js");
+  const html = read("empresa/index.html");
+  const sellerController = read("backend/src/controllers/sellerController.js");
+  const leadService = read("backend/src/services/leadCrmService.js");
+  assert.match(premium, /data-edit-contact-seller/);
+  assert.match(premium, /user\.role === "BUSINESS_SELLER"/);
+  assert.match(premium, /seller-responsibility/);
+  assert.match(html, /id="contactSellerEditorModal"/);
+  assert.match(leadService, /seller_user_id = \$\$\{params\.length\}::uuid/);
+  assert.match(sellerController, /assigned_contacts: \{ clients:/);
+  assert.match(html, /data-seller-tab="clients">Clientes y leads/);
+});

@@ -124,7 +124,8 @@ test("el portal separa Vendedores de Cuenta y Admin y ofrece estados accesibles"
   assert.match(html, /id="sellerTabSummary"[\s\S]+aria-controls="sellerDetailBody"/);
   assert.match(app, /loadSellerAttributions/);
   assert.match(app, /handleSellerModalKeys/);
-  assert.match(app, /data-add-sale-product/);
+  assert.doesNotMatch(html, /sellerRegisterSaleButton/);
+  assert.doesNotMatch(app, /openSellerEditor\("sale"\)/);
   assert.match(html, /qori-sellers-refresh-white-v7-20260828/);
   assert.match(html, /id="sellersResetFilters"/);
   assert.match(app, /applySellerPeriodPreset\("month"\)/);
@@ -144,4 +145,14 @@ test("el portal separa Vendedores de Cuenta y Admin y ofrece estados accesibles"
   assert.match(app, /body\.scrollTop = 0/);
   assert.match(packages, /¿Quién te dio a conocer Qori\?/);
   assert.match(packages, /role="combobox"[\s\S]+aria-controls="salesAdvisorResults"/);
+});
+
+test("Nueva meta usa el catálogo real y Vendedores elimina controles solicitados", () => {
+  const html = read("empresa/index.html");
+  const app = read("empresa/js/app.js");
+  assert.match(app, /data-goal-product-id/);
+  assert.match(app, /state\.inventoryProducts/);
+  assert.match(app, /product_id: select\?\.value/);
+  assert.doesNotMatch(html, /sellerRegisterSaleButton|sellersProductFilter|sellersChannelFilter|sellersSearchInput/);
+  assert.doesNotMatch(app, /sellerSaleProductRow|data-sale-product/);
 });

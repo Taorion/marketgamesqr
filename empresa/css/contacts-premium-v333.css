@@ -169,6 +169,27 @@ body[data-current-view="leads"] .contact-directory-more button { min-width: 190p
   .customer-csv-modal-footer button { width: 100%; }
 }
 
+body[data-current-view="leads"] .contact-directory-list-head,
+body[data-current-view="leads"] .contact-directory-card-row {
+  grid-template-columns: minmax(230px,1.2fr) minmax(150px,.75fr) minmax(180px,.85fr) minmax(190px,.9fr) minmax(132px,.55fr) !important;
+}
+body[data-current-view="leads"] .contact-directory-open {
+  display: grid;
+  justify-items: end;
+  gap: 7px;
+}
+body[data-current-view="leads"] .contact-directory-open > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--contacts-muted);
+  font-size: .72rem;
+  font-weight: 800;
+}
+@media (max-width: 980px) {
+  body[data-current-view="leads"] .contact-directory-open { justify-items: start; }
+}
+
 /* La hoja heredada usa especificidad artificial; esta capa final queda limitada a Contactos. */
 html body:not(#contactsV335A#contactsV335B#contactsV335C#contactsV335D#contactsV335E#contactsV335F)[data-current-view="leads"] .portal-shell .view-section[data-view="leads"] {
   gap: 18px !important;
@@ -328,4 +349,25 @@ html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetric
   html body:not(#contactsMetricsA#contactsMetricsB#contactsMetricsC#contactsMetricsD#contactsMetricsE#contactsMetricsF#contactsMetricsG#contactsMetricsH#contactsMetricsI#contactsMetricsJ#contactsMetricsK#contactsMetricsL)[data-current-view="leads"] .portal-shell .contact-directory-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
+}
+
+html body[data-current-view="leads"] .portal-shell .contact-directory-list-head,
+html body[data-current-view="leads"] .portal-shell .contact-directory-card-row {
+  grid-template-columns: minmax(230px,1.2fr) minmax(150px,.75fr) minmax(180px,.85fr) minmax(190px,.9fr) minmax(132px,.55fr) !important;
+}
+html body[data-current-view="leads"] .portal-shell .contact-directory-open {
+  display: grid !important;
+  justify-items: end !important;
+  gap: 7px !important;
+}
+html body[data-current-view="leads"] .portal-shell .contact-directory-open > span {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 3px;
+  color: var(--contacts-muted);
+  font-size: .72rem;
+  font-weight: 800;
+}
+@media (max-width: 980px) {
+  html body[data-current-view="leads"] .portal-shell .contact-directory-open { justify-items: start !important; }
 }

@@ -14,6 +14,7 @@ const {
   listSignupAttributions,
   reassignSignupAttribution,
 } = require("../services/sellerService");
+const { listLeadCrmRows } = require("../services/leadCrmService");
 
 const sellerCodeSchema = z.string().trim().min(3).max(40);
 const optionalText = (max) => z.string().trim().max(max).optional().nullable();
@@ -51,7 +52,7 @@ const goalSchema = z.object({
   period_start: z.string().date(),
   period_end: z.string().date(),
   target_revenue: z.number().min(0).max(999999999999),
-  target_sales: z.number().int().min(0).max(1000000),
+  target_sales: z.number().int().min(0),
   target_new_customers: z.number().int().min(0).max(1000000),
   product_targets: z.array(z.object({
     product_id: z.string().max(180).optional().nullable(),
@@ -152,12 +153,30 @@ async function listSellers(req, res, next) {
 }
 
 async function getSeller(req, res, next) {
-  try { res.set("Cache-Control", "private, no-store"); res.json(await sellerDetail(businessId(req), req.params.sellerId, req.user, filters(req))); }
+  try {
+    res.set("Cache-Control", "private, no-store");
+    const targetBusinessId = businessId(req);
+    const detail = await sellerDetail(targetBusinessId, req.params.sellerId, req.user, filters(req));
+    const [clients, leads] = await Promise.all([
+      listLeadCrmRows(targetBusinessId, { audience_type: "CLIENT", seller_id: req.params.sellerId, limit: 120, offset: 0 }),
+      listLeadCrmRows(targetBusinessId, { audience_type: "LEAD", seller_id: req.params.sellerId, limit: 120, offset: 0 }),
+    ]);
+    res.json({ ...detail, assigned_contacts: { clients: clients.leads || [], leads: leads.leads || [], clients_pagination: clients.pagination, leads_pagination: leads.pagination } });
+  }
   catch (error) { next(error); }
 }
 
 async function getSellerSelf(req, res, next) {
-  try { res.set("Cache-Control", "private, no-store"); res.json(await sellerDetail(businessId(req), req.user.id, req.user, filters(req))); }
+  try {
+    res.set("Cache-Control", "private, no-store");
+    const targetBusinessId = businessId(req);
+    const detail = await sellerDetail(targetBusinessId, req.user.id, req.user, filters(req));
+    const [clients, leads] = await Promise.all([
+      listLeadCrmRows(targetBusinessId, { audience_type: "CLIENT", seller_id: req.user.id, limit: 120, offset: 0 }),
+      listLeadCrmRows(targetBusinessId, { audience_type: "LEAD", seller_id: req.user.id, limit: 120, offset: 0 }),
+    ]);
+    res.json({ ...detail, assigned_contacts: { clients: clients.leads || [], leads: leads.leads || [], clients_pagination: clients.pagination, leads_pagination: leads.pagination } });
+  }
   catch (error) { next(error); }
 }
 
@@ -209,5 +228,5 @@ module.exports = {
   putSellerGoal,
   postSellerSale,
   patchSignupAttribution,
-  __testing: { sellerPatchSchema, sellerSaleSchema, sellerFiltersSchema },
+  __testing: { sellerPatchSchema, sellerSaleSchema, sellerFiltersSchema, goalSchema },
 };

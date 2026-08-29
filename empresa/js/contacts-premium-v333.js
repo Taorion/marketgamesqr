@@ -13,6 +13,47 @@
   state.leadDirectoryVisibleLimit = Number(state.leadDirectoryVisibleLimit || 24);
   state.leadDirectoryAudienceTotals = state.leadDirectoryAudienceTotals || { customers: 0, leads: 0 };
   state.leadDirectoryAudienceLoading = state.leadDirectoryAudienceLoading || { customers: false, leads: false };
+  let contactSellerLastFocus = null;
+
+  function activeSellerOptions(selectedId = "") {
+    const sellers = (state.businessUsers || [])
+      .filter((user) => user?.id && user.is_active !== false && user.role === "BUSINESS_SELLER")
+      .sort((left, right) => String(left.full_name || left.email || "").localeCompare(String(right.full_name || right.email || ""), "es"));
+    return ['<option value="">Sin vendedor asignado</option>', ...sellers.map((seller) => `<option value="${escapeHtml(seller.id)}"${String(seller.id) === String(selectedId || "") ? " selected" : ""}>${escapeHtml(seller.full_name || seller.email || "Vendedor")} · ${escapeHtml(seller.email || "Vendedor activo")}</option>`)].join("");
+  }
+
+  function closeContactSellerEditor() {
+    const modal = document.getElementById("contactSellerEditorModal");
+    if (!modal) return;
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+    contactSellerLastFocus?.focus?.();
+  }
+
+  function openContactSellerEditor(item = {}, trigger = null) {
+    const modal = document.getElementById("contactSellerEditorModal");
+    if (!modal) return;
+    contactSellerLastFocus = trigger || document.activeElement;
+    document.getElementById("contactSellerEditorId").value = item.id || "";
+    document.getElementById("contactSellerEditorSource").value = item.source_type || "PLAYER";
+    document.getElementById("contactSellerEditorTitle").textContent = `Editar datos · ${item.name || "Contacto"}`;
+    document.getElementById("contactSellerEditorSelect").innerHTML = activeSellerOptions(item.seller_user_id || leadDirectoryMetadata(item).commercial_owner_user_id || "");
+    document.getElementById("contactSellerEditorMessage").textContent = "";
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+    requestAnimationFrame(() => document.getElementById("contactSellerEditorSelect")?.focus());
+  }
+
+  function bindContactSellerButtons(root) {
+    root?.querySelectorAll?.("[data-edit-contact-seller]").forEach((button) => button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const item = (state.leadCrmRows || []).find((row) => String(row.id) === String(button.dataset.editContactSeller) && String(row.source_type || "PLAYER") === String(button.dataset.contactSourceType || "PLAYER"));
+      if (item) openContactSellerEditor(item, button);
+    }));
+  }
 
   normalizeContactCenterTab = (tab = "directory") => visibleContactTabs.includes(tab) ? tab : "directory";
 
@@ -89,10 +130,11 @@
           ? visibleRows.map((item) => premiumCard(item, audience === "customers" ? "customer" : "lead")).join("")
           : `<div class="empty-state compact">${escapeHtml(empty)}</div>`;
         list.querySelectorAll("[data-lead-id]").forEach((row) => {
-          const open = () => openLeadDetail({ id: row.dataset.leadId, source_type: row.dataset.sourceType || "PLAYER" });
+          const open = (event) => { if (event?.target?.closest?.("button")) return; openLeadDetail({ id: row.dataset.leadId, source_type: row.dataset.sourceType || "PLAYER" }); };
           row.addEventListener("click", open);
           row.addEventListener("keydown", (event) => { if (["Enter", " "].includes(event.key)) { event.preventDefault(); open(); } });
         });
+        bindContactSellerButtons(list);
       }
       const note = board.querySelector(".contact-directory-result-note");
       if (note) note.textContent = `Mostrando ${visibleRows.length.toLocaleString("es-CO")} de ${filteredRows.length.toLocaleString("es-CO")} coincidencias cargadas · ${audienceTotal.toLocaleString("es-CO")} ${leadDirectoryAudienceLabel(audience).toLowerCase()} en total.`;
@@ -145,7 +187,7 @@
       <div class="contact-directory-cell"><strong>${escapeHtml(company)}</strong><small>${escapeHtml(channel)}</small></div>
       <div class="contact-directory-cell"><strong>${escapeHtml(isCustomer ? sales.label : stateLabel)}</strong><small>${escapeHtml(isCustomer ? sales.meta : leadOriginText(item))}</small></div>
       <div class="contact-directory-cell"><strong>${escapeHtml(nextAction)}</strong><small>${escapeHtml(`${owner} · ${stateLabel}`)}</small></div>
-      <span class="contact-directory-open">Abrir <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span>
+      <span class="contact-directory-open"><button class="ghost-button compact" type="button" data-edit-contact-seller="${escapeHtml(item.id)}" data-contact-source-type="${escapeHtml(item.source_type || "PLAYER")}">Editar datos</button><span>Abrir <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span></span>
     </article>`;
   }
   leadDirectoryCardMarkup = premiumCard;
@@ -225,10 +267,11 @@
     const pagination = document.getElementById("leadCrmPaginationLabel");
     if (pagination) pagination.textContent = `${(customersTotal + leadsTotal).toLocaleString("es-CO")} contactos`;
     board.querySelectorAll("[data-lead-id]").forEach((row) => {
-      const open = () => openLeadDetail({ id: row.dataset.leadId, source_type: row.dataset.sourceType || "PLAYER" });
+      const open = (event) => { if (event?.target?.closest?.("button")) return; openLeadDetail({ id: row.dataset.leadId, source_type: row.dataset.sourceType || "PLAYER" }); };
       row.addEventListener("click", open);
       row.addEventListener("keydown", (event) => { if (["Enter", " "].includes(event.key)) { event.preventDefault(); open(); } });
     });
+    bindContactSellerButtons(board);
     board.querySelector("#customerCsvImportOpenButton")?.addEventListener("click", openCsvModal);
     board.querySelector("#contactDirectoryAddLeadButton")?.addEventListener("click", () => setContactCenterTab("manual"));
     board.querySelector("#contactDirectoryLoadMore")?.addEventListener("click", loadMoreRows);
@@ -312,8 +355,43 @@
   }
   function initCsv() { const ui=elements();if(!ui.modal||ui.modal.dataset.bound==="true")return;ui.modal.dataset.bound="true";ui.close.addEventListener("click",closeCsvModal);ui.cancel.addEventListener("click",closeCsvModal);ui.remove.addEventListener("click",resetFile);ui.submit.addEventListener("click",submit);ui.defaultSeller?.addEventListener("change",()=>previewCurrentFile());ui.template.addEventListener("click",()=>download("/api/business/contacts/customers/import-template.csv","plantilla-clientes.csv").catch((error)=>message(error.message,"error")));ui.errors.addEventListener("click",()=>csvState.batchId&&download(`/api/business/contacts/customers/imports/${encodeURIComponent(csvState.batchId)}/errors.csv`,`errores-clientes-${csvState.batchId}.csv`).catch((error)=>message(error.message,"error")));ui.input.addEventListener("change",()=>readFile(ui.input.files?.[0]));ui.dropzone.addEventListener("keydown",(event)=>{if(["Enter"," "].includes(event.key)){event.preventDefault();ui.input.click();}});["dragenter","dragover"].forEach((type)=>ui.dropzone.addEventListener(type,(event)=>{event.preventDefault();ui.dropzone.classList.add("is-dragover");}));["dragleave","drop"].forEach((type)=>ui.dropzone.addEventListener(type,(event)=>{event.preventDefault();ui.dropzone.classList.remove("is-dragover");}));ui.dropzone.addEventListener("drop",(event)=>readFile(event.dataTransfer?.files?.[0]));ui.modal.addEventListener("click",(event)=>{if(event.target===ui.modal)closeCsvModal();});ui.modal.addEventListener("keydown",(event)=>{if(event.key==="Escape"){event.preventDefault();closeCsvModal();return;}if(event.key!=="Tab")return;const focusable=Array.from(ui.modal.querySelectorAll('button:not([disabled]):not(.hidden),input:not([disabled]),select:not([disabled]),[tabindex="0"]')).filter((node)=>!node.closest(".hidden"));if(!focusable.length)return;const first=focusable[0],last=focusable[focusable.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}); }
 
+  function initContactSellerEditor() {
+    const modal = document.getElementById("contactSellerEditorModal");
+    const form = document.getElementById("contactSellerEditorForm");
+    if (!modal || !form || modal.dataset.bound === "true") return;
+    modal.dataset.bound = "true";
+    document.getElementById("contactSellerEditorClose")?.addEventListener("click", closeContactSellerEditor);
+    document.getElementById("contactSellerEditorCancel")?.addEventListener("click", closeContactSellerEditor);
+    modal.addEventListener("click", (event) => { if (event.target === modal) closeContactSellerEditor(); });
+    modal.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.preventDefault(); closeContactSellerEditor(); } });
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const id = document.getElementById("contactSellerEditorId")?.value;
+      const sourceType = document.getElementById("contactSellerEditorSource")?.value || "PLAYER";
+      const sellerId = document.getElementById("contactSellerEditorSelect")?.value || null;
+      const submitButton = document.getElementById("contactSellerEditorSubmit");
+      const status = document.getElementById("contactSellerEditorMessage");
+      if (!id) return;
+      status.textContent = "Guardando asignación…";
+      setButtonLoading(submitButton, true, "Guardando…");
+      try {
+        const data = await api(`/api/business/leads/${encodeURIComponent(id)}/seller-responsibility`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ seller_user_id: sellerId, source_type: sourceType }), noClientCache: true });
+        const seller = (state.businessUsers || []).find((user) => String(user.id) === String(sellerId || ""));
+        state.leadCrmRows = (state.leadCrmRows || []).map((row) => String(row.id) === String(id) && String(row.source_type || "PLAYER") === sourceType ? { ...row, ...data.contact, seller_user_id: sellerId, seller_name: seller?.full_name || null, metadata: { ...leadDirectoryMetadata(row), ...(data.contact?.metadata || data.contact?.card_metadata || {}) } } : row);
+        closeContactSellerEditor();
+        renderLeadsView();
+        showFeedback(sellerId ? `Vendedor asignado: ${seller?.full_name || "vendedor"}.` : "El contacto quedó sin vendedor asignado.", "success", { title: "Datos actualizados" });
+      } catch (error) {
+        status.textContent = error.message || "No se pudo guardar la asignación.";
+      } finally {
+        setButtonLoading(submitButton, false);
+      }
+    });
+  }
+
   prepareContactCenter();
   initCsv();
+  initContactSellerEditor();
   document.querySelectorAll("[data-lead-directory-audience]").forEach((button) => button.addEventListener("click", () => { state.leadDirectoryVisibleLimit = 24; }));
   document.addEventListener("click", (event) => {
     const nav = event.target.closest('[data-view="leads"], [data-contact-center-nav]');

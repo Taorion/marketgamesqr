@@ -89,6 +89,19 @@ test("los filtros rechazan UUID manipulados antes de llegar a PostgreSQL", () =>
   assert.equal(controllerSchemas.sellerFiltersSchema.safeParse({ branch_id: "../../../admin" }).success, false);
 });
 
+test("la meta de ventas no conserva el tope artificial de un millón", () => {
+  const parsed = controllerSchemas.goalSchema.safeParse({
+    period_start: "2026-08-01",
+    period_end: "2026-08-31",
+    target_revenue: 0,
+    target_sales: 5000000,
+    target_new_customers: 0,
+  });
+  assert.equal(parsed.success, true);
+  const migration = require("node:fs").readFileSync("database/migrations/20260829123000_seller_goal_sales_unbounded.sql", "utf8");
+  assert.match(migration, /alter column target_sales type numeric/);
+});
+
 test("la atribucion manual valida vendedor activo, tenant y permiso del actor", async () => {
   responses = [{ rows: [{ id: "seller-1", full_name: "Ana", role: "BUSINESS_SELLER", seller_code: "ANA-01" }], rowCount: 1 }];
   const seller = await sellerService.resolveBusinessSaleSeller(

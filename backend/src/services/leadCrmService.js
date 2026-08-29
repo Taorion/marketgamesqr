@@ -238,6 +238,10 @@ function listWhere(filters, params) {
     params.push(String(filters.rms_phase || "").trim().toLowerCase());
     clauses.push(`coalesce(rms_phase, 'recoleccion') = $${params.length}`);
   }
+  if (filters.seller_id) {
+    params.push(String(filters.seller_id));
+    clauses.push(`seller_user_id = $${params.length}::uuid`);
+  }
   if (filters.interest) {
     params.push(`%${normalizeSearch(filters.interest)}%`);
     clauses.push(`normalized_top_interest like $${params.length}`);
@@ -362,6 +366,27 @@ async function listLeadCrmRows(businessId, filters = {}) {
          )`;
   const params = [businessId];
   const where = listWhere(filters, params);
+  // Las estaciones RMS llegan con referencias exactas. Aplicar esos IDs solo
+  // en `scored` obliga a PostgreSQL a ejecutar antes todos los laterales de
+  // compras, tickets, juegos y activaciones del negocio. Acotamos cada fuente
+  // desde su tabla base para que el costo dependa de los leads de la estación.
+  const requestedSourceType = filters.source_type
+    ? String(filters.source_type || "").trim().toUpperCase()
+    : "";
+  const requestedSourceIds = Array.isArray(filters.source_ids)
+    ? filters.source_ids.map((value) => String(value || "").trim()).filter(Boolean)
+    : [];
+  const sourceIdsParamIndex = requestedSourceIds.length
+    ? 2 + (requestedSourceType ? 1 : 0)
+    : 0;
+  const exactSourceClause = (sourceType, alias) => {
+    if (!sourceIdsParamIndex) return "";
+    if (requestedSourceType && requestedSourceType !== sourceType) return "and false";
+    return `and ${alias}.id = any($${sourceIdsParamIndex}::uuid[])`;
+  };
+  const exactPlayerSourceSql = exactSourceClause("PLAYER", "p");
+  const exactManualSourceSql = exactSourceClause("MANUAL", "ml");
+  const exactAffiliateSourceSql = exactSourceClause("AFFILIATE", "fa");
   params.push(limit);
   const limitIndex = params.length;
   params.push(offset);
@@ -579,6 +604,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          limit 1
        ) li on true
        where p.business_id = $1
+         ${exactPlayerSourceSql}
          and coalesce(p.metadata->>'lifecycle_status', 'ACTIVE') <> 'ARCHIVED'
      ),
      manual_rows as (
@@ -694,6 +720,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
            and la.source_id = ml.id
        ) q on true
        where ml.business_id = $1
+         ${exactManualSourceSql}
          and ml.status <> 'ARCHIVED'
      ),
      affiliate_rows as (
@@ -811,6 +838,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          where apl.business_id = fa.business_id and apl.affiliate_id = fa.id
        ) l on true
        where fa.business_id = $1
+         ${exactAffiliateSourceSql}
          and fa.status <> 'DELETED'
          ${affiliateShadowExclusionSql}
      ),

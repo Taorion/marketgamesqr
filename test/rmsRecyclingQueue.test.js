@@ -65,3 +65,14 @@ test("Reciclaje confirms canonical destination and uses a stable retry key", () 
   assert.match(controller, /destination: z\.enum\(\["procesamiento", "clasificacion"\]\)/);
   assert.match(service, /confirmed_destination: recyclingCase\.metadata\?\.reactivation_destination/);
 });
+
+test("Reciclaje types the persisted reactivation destination for PostgreSQL", () => {
+  const reactivation = service.slice(
+    service.indexOf("async function updateRmsRecyclingCase"),
+    service.indexOf("function rmsExplicitBenefitCost")
+  );
+  assert.match(reactivation, /payload\.destination === "clasificacion"/);
+  assert.match(reactivation, /payload\.destination === "procesamiento"/);
+  assert.match(reactivation, /'reactivation_destination',\$5::text/);
+  assert.doesNotMatch(reactivation, /'reactivation_destination',\$5\)/);
+});
