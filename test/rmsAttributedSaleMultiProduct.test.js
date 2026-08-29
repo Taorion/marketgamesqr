@@ -57,7 +57,7 @@ test("el historial del lead muestra responsable, hasta 80 movimientos y producto
 });
 
 test("los activos versionados y el responsive móvil incluyen la mejora", () => {
-  assert.match(app, /APP_VERSION = "empresa-20260829-rms-sale-multiproduct-history-v397"/);
+  assert.match(app, /rms-sale-multiproduct-history-v397-20260829/);
   assert.match(html, /rms-sale=multiproduct-history-v397-20260829/);
   assert.match(html, /rms-sale-multiproduct-history-v397/);
   assert.match(css, /rms-sale-multiproduct-history-v397-20260829/);

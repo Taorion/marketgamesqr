@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260829-rms-sale-multiproduct-history-v397";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829";
+const APP_VERSION = "empresa-20260829-risk-none-explicit-selection-v398";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -54098,6 +54098,10 @@ function bindRmsMachineActions(root) {
     // presentación nunca puede derribar la estación ni devolver al operador
     // al mapa después de que Evaluación ya guardó el movimiento.
     try {
+    // La regla de negocio del selector se enlaza antes de cualquier mejora
+    // visual. Si una mejora secundaria falla, Sin concesión sigue anulando
+    // detalle, vigencia y generación de ticket dentro de Riesgos de fuga.
+    if (item) bindRmsRiskOfferContract(card, item);
     if (item) mountRmsRiskOperatingFlow(card, item);
     const riskFlows = card.querySelectorAll(".rms-risk-operating-flow");
     const phasedFlow = card.querySelector(".rms-risk-flow-phased");
@@ -62281,7 +62285,10 @@ function rmsRiskRecoveryAuthorizations(raw = state.businessProfile?.rms_risk_rec
 
 function rmsRiskRecoveryOfferOptions() {
   const permissions = rmsRiskRecoveryAuthorizations();
-  const options = ['<option value="NONE">Sin concesión extraordinaria</option>'];
+  const options = [
+    '<option value="" selected disabled>Selecciona una opción</option>',
+    '<option value="NONE">Sin concesión extraordinaria</option>',
+  ];
   if (permissions.discount.enabled && permissions.discount.max_percent > 0) options.push(`<option value="DISCOUNT">Descuento autorizado · hasta ${escapeHtml(String(permissions.discount.max_percent))}%</option>`);
   if (permissions.two_for_one.enabled) options.push(`<option value="TWO_FOR_ONE">2x1 autorizado${permissions.two_for_one.label ? ` · ${escapeHtml(permissions.two_for_one.label)}` : ""}</option>`);
   if (permissions.gift.enabled) options.push(`<option value="GIFT">Obsequio autorizado${permissions.gift.label ? ` · ${escapeHtml(permissions.gift.label)}` : ""}</option>`);
@@ -62397,8 +62404,10 @@ function rmsRiskResourceOfferValue(resource = {}) {
 
 function rmsRiskOutcomeOfferUi(card, id, { navigateNone = false } = {}) {
   const offerNode = card?.querySelector(`[data-rms-risk-recovery-offer="${CSS.escape(id)}"]`);
-  const offer = offerNode?.value || "NONE";
+  const offer = String(offerNode?.value || "");
+  const isBlank = !offer;
   const isNone = offer === "NONE";
+  const blocksTicket = isBlank || isNone;
   const detailWrap = card?.querySelector(`[data-rms-risk-detail-wrap="${CSS.escape(id)}"]`);
   const detailInput = card?.querySelector(`[data-rms-risk-recovery-detail="${CSS.escape(id)}"]`);
   const expirationWrap = card?.querySelector(`[data-rms-risk-expiration-wrap="${CSS.escape(id)}"]`);
@@ -62413,16 +62422,17 @@ function rmsRiskOutcomeOfferUi(card, id, { navigateNone = false } = {}) {
   }
   if (detailInput) {
     detailInput.disabled = !needsDetail;
-    if (isNone) detailInput.value = "";
+    detailInput.required = needsDetail;
+    if (isNone || isBlank) detailInput.value = "";
   }
-  if (expirationWrap) expirationWrap.classList.toggle("is-disabled", isNone);
-  if (expiration) expiration.disabled = isNone;
+  if (expirationWrap) expirationWrap.classList.toggle("is-disabled", blocksTicket);
+  if (expiration) expiration.disabled = blocksTicket;
   if (generate) {
-    generate.disabled = isNone;
-    generate.setAttribute("aria-disabled", String(isNone));
+    generate.disabled = blocksTicket;
+    generate.setAttribute("aria-disabled", String(blocksTicket));
   }
   if (selectedOffer) selectedOffer.value = offer;
-  if (fixedLabel) fixedLabel.textContent = offerNode?.selectedOptions?.[0]?.textContent?.trim() || "Sin concesión extraordinaria";
+  if (fixedLabel) fixedLabel.textContent = offerNode?.selectedOptions?.[0]?.textContent?.trim() || "Selecciona una opción";
   if (navigateNone && isNone) {
     activateRmsRiskTab(card.parentElement || document, id, "sale");
     setRmsRiskRecoveryPhase(card, id, "result");
@@ -62486,8 +62496,26 @@ rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupUnified(item = {
   </section>`;
 };
 
-function rmsRiskShouldOpenResultOnInit(offerValue = "NONE", hasResource = false) {
+function rmsRiskShouldOpenResultOnInit(offerValue = "", hasResource = false) {
   return offerValue === "NONE" && !hasResource;
+}
+
+function bindRmsRiskOfferContract(card, item) {
+  if (!card || !item) return;
+  const id = item.id;
+  const offer = card.querySelector(`[data-rms-risk-recovery-offer="${CSS.escape(id)}"]`);
+  if (!offer) return;
+  const apply = () => {
+    const hasResource = Boolean(rmsRiskRecoveryResourceFor(item)?.public_ticket_url);
+    rmsRiskOutcomeOfferUi(card, id, {
+      navigateNone: rmsRiskShouldOpenResultOnInit(offer.value, hasResource),
+    });
+  };
+  if (!offer.dataset.rmsRiskOutcomeBound) {
+    offer.dataset.rmsRiskOutcomeBound = "true";
+    offer.addEventListener("change", apply);
+  }
+  apply();
 }
 
 syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified(card, item) {
@@ -62511,17 +62539,8 @@ syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified(card, item
     const offer = resource.recovery_offer || resource.benefit || {};
     if (prepareDetail && !prepareDetail.value) prepareDetail.value = offer.detail || "";
   }
-  if (prepareOffer && !prepareOffer.dataset.rmsRiskOutcomeBound) {
-    prepareOffer.dataset.rmsRiskOutcomeBound = "true";
-    prepareOffer.addEventListener("change", () => rmsRiskOutcomeOfferUi(card, id, { navigateNone: true }));
-  }
   const hasResource = Boolean(rmsRiskRecoveryResourceFor(item)?.public_ticket_url);
-  // NONE is a complete business decision, not a pending benefit. Apply the
-  // same transition during initial render that the change listener applies,
-  // so a lead already configured without an extraordinary concession opens
-  // directly in Responder and never waits for a ticket or QR.
-  const initialNoConcession = rmsRiskShouldOpenResultOnInit(prepareOffer?.value, hasResource);
-  rmsRiskOutcomeOfferUi(card, id, { navigateNone: initialNoConcession });
+  bindRmsRiskOfferContract(card, item);
   const deliverButton = card.querySelector('[data-rms-risk-phase-key="deliver"]');
   if (deliverButton) {
     deliverButton.disabled = !hasResource;
@@ -62584,7 +62603,12 @@ saveRmsRiskDecision = async function saveRmsRiskDecisionUnified(item, root) {
   const typedReason = String(reasonNode?.value || "").trim();
   const selectedOfferNode = form?.querySelector(`[data-rms-risk-selected-offer="${CSS.escape(item.id)}"]`)
     || card?.querySelector(`[data-rms-risk-recovery-offer="${CSS.escape(item.id)}"]`);
-  const recoveryOfferValue = selectedOfferNode?.value || "NONE";
+  const recoveryOfferValue = String(selectedOfferNode?.value || "");
+  if (result === "CLEARED" && !recoveryOfferValue) {
+    showFeedback("Selecciona una alternativa de recuperación o elige Sin concesión extraordinaria.", "info", { title: "Riesgos de fuga" });
+    card?.querySelector(`[data-rms-risk-recovery-offer="${CSS.escape(item.id)}"]`)?.focus();
+    return;
+  }
   const recoveryBenefitId = recoveryOfferValue.startsWith("BENEFIT:") ? recoveryOfferValue.slice(8) : null;
   const selectedBenefit = recoveryBenefitId ? rmsRiskRecoveryAuthorizations().benefits.find((benefit) => benefit.id === recoveryBenefitId) : null;
   const reason = typedReason || (result === "RECYCLE" && recycleReason ? `Motivo de reciclaje: ${recycleReasonLabel}` : result === "CLEARED" && selectedBenefit ? `Beneficio extraordinario aplicado: ${selectedBenefit.label}` : "");
@@ -62774,7 +62798,7 @@ async function emailRmsPostSaleAsset(button) {
 }
 
 function rmsRiskSelectedOffer(root, item) {
-  const value = rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id)?.value || "NONE";
+  const value = String(rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id)?.value || "");
   const benefitId = value.startsWith("BENEFIT:") ? value.slice(8) : null;
   const permissions = rmsRiskRecoveryAuthorizations();
   const benefit = benefitId ? permissions.benefits.find((entry) => entry.id === benefitId) : null;
@@ -62789,7 +62813,7 @@ function rmsRiskSelectedOffer(root, item) {
 
 async function generateRmsRiskRecoveryResource(item, root, button) {
   const selected = rmsRiskSelectedOffer(root, item);
-  if (selected.offer === "NONE") {
+  if (!selected.offer || selected.offer === "NONE") {
     showFeedback("Selecciona una alternativa extraordinaria autorizada antes de generar el ticket.", "info", { title: "Riesgos de fuga" });
     rmsCommercialNode(root, "[data-rms-risk-recovery-offer]", item.id)?.focus();
     return;

@@ -29,22 +29,83 @@ test("Sin concesión deshabilita ticket y dirige a Responder con Venta lograda",
   const ui = app.slice(app.indexOf("function rmsRiskOutcomeOfferUi"), app.indexOf("function setRmsRiskRecoveryPhase"));
   const phasedMarkup = app.slice(app.indexOf("rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupUnified"), app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"));
   const activeSync = app.slice(app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"), app.indexOf("activateRmsRiskTab = function activateRmsRiskTabUnified"));
+  const offerContract = app.slice(app.indexOf("function bindRmsRiskOfferContract"), app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"));
   const initHelperSource = app.slice(app.indexOf("function rmsRiskShouldOpenResultOnInit"), app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"));
   const shouldOpenResult = Function(`${initHelperSource}; return rmsRiskShouldOpenResultOnInit;`)();
-  assert.match(ui, /expiration\.disabled = isNone/);
+  assert.match(ui, /expiration\.disabled = blocksTicket/);
   assert.match(ui, /detailWrap\.hidden = !needsDetail && !isNone/);
   assert.match(ui, /detailInput\.disabled = !needsDetail/);
-  assert.match(ui, /generate\.disabled = isNone/);
+  assert.match(ui, /if \(isNone \|\| isBlank\) detailInput\.value = ""/);
+  assert.match(ui, /generate\.disabled = blocksTicket/);
   assert.match(ui, /activateRmsRiskTab\(card\.parentElement \|\| document, id, "sale"\)/);
   assert.match(ui, /setRmsRiskRecoveryPhase\(card, id, "result"\)/);
   assert.equal(shouldOpenResult("NONE", false), true);
+  assert.equal(shouldOpenResult("", false), false);
   assert.equal(shouldOpenResult("DISCOUNT", false), false);
   assert.equal(shouldOpenResult("NONE", true), false);
-  assert.match(activeSync, /const initialNoConcession = rmsRiskShouldOpenResultOnInit\(prepareOffer\?\.value, hasResource\)/);
-  assert.match(activeSync, /rmsRiskOutcomeOfferUi\(card, id, \{ navigateNone: initialNoConcession \}\)/);
+  assert.match(offerContract, /rmsRiskShouldOpenResultOnInit\(offer\.value, hasResource\)/);
+  assert.match(offerContract, /offer\.addEventListener\("change", apply\)/);
+  assert.match(activeSync, /bindRmsRiskOfferContract\(card, item\)/);
+  assert.match(app, /if \(item\) bindRmsRiskOfferContract\(card, item\);/);
   assert.match(app, /risk-none-initial-result-v396-20260829/);
   assert.match(html, /risk-none=initial-result-v396-20260829/);
   assert.doesNotMatch(phasedMarkup, /Descuento aplicado|data-rms-risk-discount-percent/);
+});
+
+test("Riesgos exige una selección explícita y ofrece una opción inicial en blanco", () => {
+  const options = app.slice(app.indexOf("function rmsRiskRecoveryOfferOptions"), app.indexOf("function rmsRiskRecoveryAvailabilityMarkup"));
+  const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
+  assert.match(options, /<option value="" selected disabled>Selecciona una opción<\/option>/);
+  assert.match(options, /<option value="NONE">Sin concesión extraordinaria<\/option>/);
+  assert.match(activeSave, /result === "CLEARED" && !recoveryOfferValue/);
+  assert.match(activeSave, /Selecciona una alternativa de recuperación o elige Sin concesión extraordinaria/);
+  assert.match(app, /risk-none-explicit-selection-v398-20260829/);
+  assert.match(html, /risk-none-select=explicit-v398-20260829/);
+});
+
+test("Sin concesión aplica el bloqueo aunque la mejora visual posterior falle", () => {
+  const uiSource = app.slice(app.indexOf("function rmsRiskOutcomeOfferUi"), app.indexOf("function setRmsRiskRecoveryPhase"));
+  const calls = [];
+  const css = { escape: (value) => value };
+  const classList = { toggle() {} };
+  const nodes = {
+    offer: { value: "NONE", selectedOptions: [{ textContent: "Sin concesión extraordinaria" }] },
+    detailWrap: { hidden: true, classList },
+    detailInput: { disabled: false, required: true, value: "detalle anterior" },
+    expirationWrap: { classList },
+    expiration: { disabled: false },
+    generate: { disabled: false, setAttribute(name, value) { this[name] = value; } },
+    selectedOffer: { value: "" },
+    fixedLabel: { textContent: "" },
+  };
+  const card = {
+    parentElement: {},
+    querySelector(selector) {
+      if (selector.includes("recovery-offer")) return nodes.offer;
+      if (selector.includes("detail-wrap")) return nodes.detailWrap;
+      if (selector.includes("recovery-detail")) return nodes.detailInput;
+      if (selector.includes("expiration-wrap")) return nodes.expirationWrap;
+      if (selector.includes("expiration-days")) return nodes.expiration;
+      if (selector.includes("generate-risk-resource")) return nodes.generate;
+      if (selector.includes("selected-offer")) return nodes.selectedOffer;
+      if (selector.includes("fixed-offer-label")) return nodes.fixedLabel;
+      return null;
+    },
+  };
+  const apply = Function("CSS", "activateRmsRiskTab", "setRmsRiskRecoveryPhase", `${uiSource}; return rmsRiskOutcomeOfferUi;`)(
+    css,
+    (...args) => calls.push(["tab", ...args]),
+    (...args) => calls.push(["phase", ...args]),
+  );
+  apply(card, "lead", { navigateNone: true });
+  assert.equal(nodes.detailInput.disabled, true);
+  assert.equal(nodes.detailInput.required, false);
+  assert.equal(nodes.detailInput.value, "");
+  assert.equal(nodes.expiration.disabled, true);
+  assert.equal(nodes.generate.disabled, true);
+  assert.equal(nodes.selectedOffer.value, "NONE");
+  assert.equal(nodes.fixedLabel.textContent, "Sin concesión extraordinaria");
+  assert.deepEqual(calls.map((entry) => entry[0]), ["tab", "phase"]);
 });
 
 test("el descuento del beneficio se deriva de la autorización y no de un campo manual", () => {
