@@ -75,14 +75,24 @@ test("la estacion carga paginas adicionales sin ocultar oportunidades", () => {
 });
 
 test("la capa premium usa SVG propios, responsive real y assets versionados", () => {
+  const evaluationMarkup = app.slice(app.indexOf("function rmsEvaluationStationCardMarkup"), app.indexOf("function rmsCommercialWorkflow"));
   assert.match(app, /function rmsEvaluationIconSvg/);
-  assert.doesNotMatch(app.slice(app.indexOf("function rmsEvaluationStationCardMarkup"), app.indexOf("function rmsCommercialWorkflow")), /rms-evaluation-destination-choice/);
+  assert.doesNotMatch(evaluationMarkup, /rms-evaluation-destination-choice/);
+  assert.doesNotMatch(evaluationMarkup, /material-symbols-outlined/);
+  assert.match(app, /history: '<path/);
+  assert.match(app, /verified: '<path/);
+  assert.match(app, /person: '<circle/);
   assert.match(app, /Estación 05 \u00b7 Después de Activación 1/);
   assert.match(css, /@media \(max-width: 430px\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
-  assert.match(css, /\.rms-evaluation-choice-check[\s\S]*width: 22px/);
+  assert.match(css, /Evaluation precision pass v426/);
+  assert.match(css, /button\.rms-evaluation-choice[\s\S]*border-radius: 10px/);
+  assert.match(css, /\.rms-evaluation-choice-check[\s\S]*width: 18px/);
+  assert.match(css, /overflow-wrap: anywhere/);
+  assert.match(app, /dataset\.state = response \? "ready" : "idle"/);
+  assert.match(app, /Borrador protegido en este dispositivo/);
   assert.match(html, /evaluation-station-core\.js\?v=evaluation-core-v1-20260830/);
-  assert.match(html, /evaluation-station-premium\.css\?v=evaluation-premium-v1-20260830/);
+  assert.match(html, /evaluation-station-premium\.css\?v=evaluation-precision-v2-20260830/);
   const preload = html.match(/<link rel="preload" as="script" href="(js\/app\.js[^"]+)"/)?.[1];
   const script = html.match(/<script src="(js\/app\.js[^"]+)" defer><\/script>/)?.[1];
   assert.equal(preload, script);

@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260830-evaluation-premium-v425";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830";
+const APP_VERSION = "empresa-20260830-evaluation-precision-v426";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -49270,20 +49270,23 @@ function rmsEvaluationIconSvg(name = "route", className = "") {
     sale: '<path d="M4 4h16v14H4z"/><path d="M8 22h8M12 18v4M8 9h8M8 13h5"/>',
     recycle: '<path d="m7 19-4-4 4-4"/><path d="M3 15h11a5 5 0 0 0 5-5V8M17 5l4 3-4 3"/>',
     check: '<path d="m5 12 4 4L19 6"/>',
+    history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
+    verified: '<path d="m12 2 2.1 2.2 3-.3.8 2.9 2.7 1.4-1.2 2.8 1.2 2.8-2.7 1.4-.8 2.9-3-.3L12 22l-2.1-2.2-3 .3-.8-2.9-2.7-1.4L4.6 13 3.4 10.2 6.1 8.8l.8-2.9 3 .3Z"/><path d="m8.5 12 2.2 2.2 4.8-4.8"/>',
+    person: '<circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
   };
   return `<svg class="rms-evaluation-svg ${escapeHtml(className)}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.route}</svg>`;
 }
 
 const RMS_CURRENCIES = ["COP", "USD", "EUR", "MXN", "PEN", "CLP", "ARS", "BRL"];
 
-function rmsCommercialLeadAsideMarkup(item = {}, nextLabel = "") {
+function rmsCommercialLeadAsideMarkup(item = {}, nextLabel = "", options = {}) {
   const delivery = rmsActivationDelivery(item);
   const interest = rmsClassifiedProductName(item) || item.product_interest || item.top_interest || item.interest || "Sin interés declarado";
   const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
   return `
     <aside class="rms-commercial-work-lead">
       <span class="rms-commercial-work-kicker">${escapeHtml(nextLabel)}</span>
-      <div class="rms-activation-work-person"><span class="material-symbols-outlined" aria-hidden="true">person</span><div><strong>${escapeHtml(item.name || "Contacto")}</strong><small>${escapeHtml(contact)}</small></div></div>
+      <div class="rms-activation-work-person">${options.evaluationIcons ? rmsEvaluationIconSvg("person", "rms-evaluation-person-icon") : '<span class="material-symbols-outlined" aria-hidden="true">person</span>'}<div><strong>${escapeHtml(item.name || "Contacto")}</strong><small>${escapeHtml(contact)}</small></div></div>
       <dl class="rms-activation-work-facts">
         <div><dt>Oferta</dt><dd>${escapeHtml(delivery.offer || interest)}</dd></div>
         <div><dt>Primer contacto</dt><dd>${escapeHtml(delivery.firstContactAt ? formatDate(delivery.firstContactAt) : "Sin envío registrado")}</dd></div>
@@ -49413,12 +49416,12 @@ function rmsEvaluationStationCardMarkup(item = {}) {
     : "No hay envío confirmado; revisa el historial antes de decidir.";
   return `
     <article class="rms-commercial-work-item rms-evaluation-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
-      ${rmsCommercialLeadAsideMarkup(item, "Evaluación · decide el siguiente destino")}
+      ${rmsCommercialLeadAsideMarkup(item, "Evaluación · decide el siguiente destino", { evaluationIcons: true })}
       <section class="rms-commercial-work-console">
         <header class="rms-evaluation-hero"><div class="rms-evaluation-hero-copy"><span class="mono-label">Estación 05 · Después de Activación 1</span><h4>Convierte la respuesta en una decisión comercial clara.</h4><p>Registra lo que ocurrió. GOS aplica una sola ruta segura y entrega el contexto al siguiente equipo.</p><div class="rms-evaluation-hero-metrics"><div><span>Resultado</span><strong data-rms-evaluation-response-label="${escapeHtml(item.id)}">${escapeHtml(selectedResponseLabel)}</strong></div><div><span>Ruta automática</span><strong data-rms-evaluation-destination-label="${escapeHtml(item.id)}">${escapeHtml(selectedDestinationLabel)}</strong></div></div></div><div class="rms-evaluation-hero-signal">${rmsEvaluationIconSvg(delivery.sentAt ? "check" : "schedule")}<strong>${escapeHtml(delivery.sentAt ? "Contacto listo para evaluar" : "Validar contacto")}</strong><small>${escapeHtml(delivery.sentAt ? "Existe evidencia de contacto en el historial" : "Confirma el contacto antes de registrar una respuesta")}</small></div></header>
         <ol class="rms-evaluation-steps" aria-label="Flujo de evaluación"><li class="is-done"><b>1</b><span>Contexto</span></li><li class="${selectedResponse ? "is-done" : "is-active"}"><b>2</b><span>Resultado</span></li><li class="${selectedResponse ? "is-active" : ""}"><b>3</b><span>Contexto útil</span></li><li class="${selectedResponse ? "is-ready" : ""}"><b>4</b><span>Confirmar ruta</span></li></ol>
-        <section class="rms-evaluation-context" aria-label="Resumen de Activación 1"><span class="material-symbols-outlined" aria-hidden="true">history</span><div><strong>${escapeHtml(delivery.offer || defaultProduct || "Oferta comercial")}</strong><small>${escapeHtml(contactSummary)}</small></div><span class="rms-evaluation-context-outcome">${escapeHtml(rmsActivationOutcomeLabel(delivery.outcome))}</span></section>
-        ${selectedResponse === "PAID_SALE" ? `<section class="rms-payment-reported-notice" aria-label="Pago informado"><span class="material-symbols-outlined" aria-hidden="true">verified</span><div><strong>Pago informado: falta confirmar la venta</strong><p>El cliente reportó un pago. Primero confirma producto, valor, condición acordada y soporte antes de atribuir la venta.</p></div><div><button class="solid-button compact" type="button" data-rms-payment-confirmation="${escapeHtml(item.id)}">Ir a confirmación comercial</button><button class="ghost-button compact" type="button" data-rms-payment-continue="${escapeHtml(item.id)}">Seguir evaluando</button></div></section>` : ""}
+        <section class="rms-evaluation-context" aria-label="Resumen de Activación 1">${rmsEvaluationIconSvg("history", "rms-evaluation-context-icon")}<div><strong>${escapeHtml(delivery.offer || defaultProduct || "Oferta comercial")}</strong><small>${escapeHtml(contactSummary)}</small></div><span class="rms-evaluation-context-outcome">${escapeHtml(rmsActivationOutcomeLabel(delivery.outcome))}</span></section>
+        ${selectedResponse === "PAID_SALE" ? `<section class="rms-payment-reported-notice rms-evaluation-payment-notice" aria-label="Pago informado">${rmsEvaluationIconSvg("verified", "rms-evaluation-payment-icon")}<div><strong>Pago informado: falta confirmar la venta</strong><p>El cliente reportó un pago. Primero confirma producto, valor, condición acordada y soporte antes de atribuir la venta.</p></div><div><button class="solid-button compact" type="button" data-rms-payment-confirmation="${escapeHtml(item.id)}">Ir a confirmación comercial</button><button class="ghost-button compact" type="button" data-rms-payment-continue="${escapeHtml(item.id)}">Seguir evaluando</button></div></section>` : ""}
         <input type="hidden" data-rms-evaluation-response="${escapeHtml(item.id)}" value="${escapeHtml(selectedResponse)}">
         <input type="hidden" data-rms-evaluation-destination="${escapeHtml(item.id)}" value="${escapeHtml(selectedDestination)}">
         <section class="rms-evaluation-decision-panel" aria-label="Respuesta del cliente"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 2 · Lo que pasó</span><h5>¿Cuál fue el resultado real del contacto?</h5></div><small>Elige una sola respuesta. GOS define la ruta compatible.</small></div><div class="rms-evaluation-decision-grid">${RMS_EVALUATION_RESPONSES.map((option) => `<button class="rms-evaluation-choice ${selectedResponse === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-choice="${escapeHtml(item.id)}" data-rms-evaluation-value="${option.value}" aria-pressed="${selectedResponse === option.value ? "true" : "false"}"><span class="rms-evaluation-choice-icon" aria-hidden="true">${rmsEvaluationIconSvg(option.icon)}</span><span class="rms-evaluation-choice-copy"><em>${escapeHtml(option.eyebrow)}</em><strong>${escapeHtml(option.title)}</strong><small>${escapeHtml(option.hint)}</small></span><span class="rms-evaluation-choice-check" aria-hidden="true">${rmsEvaluationIconSvg("check")}</span></button>`).join("")}</div></section>
@@ -54186,7 +54189,14 @@ function bindRmsMachineActions(root) {
     const id = Object.values(field.dataset || {}).find((value) => value && String(value).includes("-"))
       || field.closest("[data-rms-station-lead]")?.dataset.rmsStationLead
       || "";
-    const save = () => persistRmsEvaluationDraft(root, id);
+    const save = () => {
+      persistRmsEvaluationDraft(root, id);
+      const status = rmsCommercialNode(root, "[data-rms-evaluation-status]", id);
+      if (!status || status.dataset.state === "loading") return;
+      status.dataset.state = "draft";
+      const statusCopy = status.querySelector("span");
+      if (statusCopy) statusCopy.textContent = "Borrador protegido en este dispositivo. Puedes continuar sin perder el contexto.";
+    };
     field.addEventListener("input", save);
     field.addEventListener("change", save);
   });
@@ -56940,6 +56950,16 @@ function updateRmsEvaluationRoutePreview(root, id) {
     if (title) title.textContent = route.label;
     if (detail) detail.textContent = route.detail;
     preview.classList.toggle("is-ready", Boolean(response && destination));
+  }
+  const inlineStatus = rmsCommercialNode(root, "[data-rms-evaluation-status]", id);
+  if (inlineStatus && inlineStatus.dataset.state !== "loading") {
+    inlineStatus.dataset.state = response ? "ready" : "idle";
+    const statusIcon = inlineStatus.querySelector(".rms-evaluation-svg");
+    if (statusIcon) statusIcon.outerHTML = rmsEvaluationIconSvg(response ? "check" : "route");
+    const statusCopy = inlineStatus.querySelector("span");
+    if (statusCopy) statusCopy.textContent = response
+      ? `Ruta lista hacia ${destinationLabel}. Revisa el contexto y confirma cuando esté correcto.`
+      : "Selecciona el resultado real para preparar una ruta segura.";
   }
   const nextPanel = rmsCommercialNode(root, "[data-rms-evaluation-next-panel]", id);
   nextPanel?.classList.toggle("is-visible", Boolean(response));
