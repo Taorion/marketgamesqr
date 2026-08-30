@@ -113,7 +113,11 @@ test("la interfaz nueva tiene dos destinos, un CTA y guardas responsive", () => 
   assert.match(renderer, /Venta lograda/);
   assert.match(renderer, /Enviar a Reciclaje/);
   assert.match(renderer, /data-rms-save-risk-decision/);
+  assert.ok(renderer.indexOf("rms-risk-v2-footer") < renderer.indexOf("data-rms-risk-sale-panel"));
+  assert.match(renderer, /<details class="rms-risk-v2-products"/);
+  assert.match(app, /Beneficio fijado en el ticket existente/);
   assert.match(css, /\.rms-risk-v2-destinations\s*\{[\s\S]*grid-template-columns: repeat\(2/);
   assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.rms-risk-v2-destinations\s*\{[\s\S]*grid-template-columns: 1fr/);
-  assert.match(css, /\.rms-risk-v2-footer[\s\S]*position: sticky/);
+  assert.doesNotMatch(css, /\.rms-risk-v2-footer\s*\{[^}]*position: sticky/);
+  assert.doesNotMatch(css, /\.rms-risk-v2-footer\s*\{[^}]*backdrop-filter/);
 });

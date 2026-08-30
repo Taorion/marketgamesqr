@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260830-risk-command-v419";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830";
+const APP_VERSION = "empresa-20260830-risk-direct-v420";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-direct-v420-20260830";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -50647,7 +50647,8 @@ function rmsRiskStationFingerprint(machine = state.rmsMachine || {}) {
       updated_at: item.updated_at || item.last_interaction_at || "",
       active_tickets: Number(item.active_tickets || 0),
       redeemed_tickets: Number(item.redeemed_tickets || 0),
-      metadata: rmsQualityMetadata(item),
+      risk_reviewed_at: rmsQualityMetadata(item).risk_review?.reviewed_at || "",
+      resource_id: rmsQualityMetadata(item).risk_recovery_resource?.qr_code_id || "",
     }))
     .sort((left, right) => String(left.id || "").localeCompare(String(right.id || "")));
   return JSON.stringify(rows);
@@ -50786,7 +50787,7 @@ function renderRmsStationLeanOnly() {
         </div>
         <div class="rms-lean-station-actions">
           ${phase === "recoleccion" ? `<button class="ghost-button compact" type="button" data-rms-open-collector><span class="material-symbols-outlined" aria-hidden="true">person_add</span> Nuevo lead</button>` : ""}
-          ${supportsCommercialSummary ? `<button class="ghost-button compact" type="button" data-rms-station-summary aria-expanded="${state.rmsStationSummaryOpen ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">table_chart</span> ${state.rmsStationSummaryOpen ? "Ocultar resumen" : "Resumen"}</button>` : ""}
+          ${supportsCommercialSummary && phase !== "control_anti_fuga" ? `<button class="ghost-button compact" type="button" data-rms-station-summary aria-expanded="${state.rmsStationSummaryOpen ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true">table_chart</span> ${state.rmsStationSummaryOpen ? "Ocultar resumen" : "Resumen"}</button>` : ""}
           ${isActivationStation ? `<button class="ghost-button compact" type="button" data-rms-select-activation-evaluation ${activationEvaluationRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">done_all</span> Seleccionar listos (${activationEvaluationRows.length.toLocaleString("es-CO")})</button>` : ""}
           ${isActivationStation ? `<button class="solid-button compact" type="button" data-rms-open-bulk-activation ${selectedRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">group_work</span> Activación masiva (${selectedRows.length.toLocaleString("es-CO")})</button>` : ""}
           ${isActivationStation ? `<button class="solid-button compact" type="button" data-rms-send-selected-activation-evaluation ${selectedActivationEvaluationRows.length ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span> Enviar a Evaluación (${selectedActivationEvaluationRows.length.toLocaleString("es-CO")})</button>` : ""}
@@ -50797,7 +50798,7 @@ function renderRmsStationLeanOnly() {
           ` : ""}
         </div>
       </header>
-      ${rmsStationHandoffMarkup(stage, nextPhase)}
+      ${phase === "control_anti_fuga" ? "" : rmsStationHandoffMarkup(stage, nextPhase)}
       ${supportsCommercialSummary && state.rmsStationSummaryOpen ? rmsCommercialStationSummaryMarkup(rows, phase) : ""}
       ${isActivationStation && state.rmsActivationBulkOpen ? rmsActivationBulkComposerMarkup(selectedRows) : ""}
       ${isCurationStation ? `
@@ -50860,7 +50861,6 @@ function renderRmsStationLeanOnly() {
       ` : isCommercialStation ? `
         ${phase === "inteligencia" ? rmsIntelligenceStationMarkup(state.rmsIntelligenceCases || rows) : ""}
         ${phase !== "inteligencia" ? `
-        ${phase === "control_anti_fuga" ? rmsRiskStationMetricsMarkup(rows, allOpportunities) : ""}
         <div class="rms-activation-work-list" aria-label="Consolas comerciales RMS">
           ${renderedRows.map((item) => rmsActivationStationCardMarkup(item)).join("") || `<div class="empty-state compact">${escapeHtml(isEmpty ? "No hay leads todavía." : "No hay leads con este filtro.")}</div>`}
         </div>
@@ -57340,6 +57340,9 @@ function rmsRiskV2OfferOptions(selectedValue = "") {
   if (permissions.two_for_one.enabled) options.push(["TWO_FOR_ONE", permissions.two_for_one.label || "2x1 autorizado"]);
   if (permissions.gift.enabled) options.push(["GIFT", permissions.gift.label || "Obsequio autorizado"]);
   permissions.benefits.filter((benefit) => benefit.enabled).forEach((benefit) => options.push([`BENEFIT:${benefit.id}`, benefit.label]));
+  if (selectedValue && !options.some(([value]) => value === selectedValue)) {
+    options.push([selectedValue, "Beneficio fijado en el ticket existente"]);
+  }
   return options.map(([value, label]) => `<option value="${escapeHtml(value)}" ${value === selectedValue ? "selected" : ""} ${value ? "" : "disabled"}>${escapeHtml(label)}</option>`).join("");
 }
 
@@ -57368,27 +57371,26 @@ function rmsRiskValidationStationCardMarkupV2(item = {}) {
     confirmation.responsible ? `Responsable: ${confirmation.responsible}` : "Responsable por confirmar",
   ].join(" · ");
   return `<article class="rms-commercial-work-item rms-risk-work-item rms-risk-workbench rms-risk-v2" data-rms-station-lead="${id}" data-rms-risk-operation="risk-review:${id}:${Date.now()}">
-    ${rmsCommercialLeadAsideMarkup(item, "Riesgos de fuga · decisión final")}
     <section class="rms-commercial-work-console rms-risk-command-console">
-      <header class="rms-commercial-console-head rms-risk-hero"><div><span class="mono-label">RIESGOS DE FUGA</span><h4>Recupera la venta o conserva el lead</h4><p>Una decisión, dos salidas. Usa una concesión solo cuando sea necesaria y esté autorizada.</p></div><span class="rms-commercial-state is-pending">Decisión pendiente</span></header>
-      ${rmsRiskStationStatusMarkup([item])}
-      <section class="rms-risk-v2-agreement"><span class="material-symbols-outlined" aria-hidden="true">handshake</span><div><small>ACUERDO FRÁGIL QUE RECIBES</small><strong>${escapeHtml(agreement)}</strong></div></section>
+      <header class="rms-commercial-console-head rms-risk-hero"><div><span class="mono-label">DECISIÓN FINAL</span><h4>${escapeHtml(item.name || "Contacto")}</h4><p>${escapeHtml([item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto registrado")}</p></div><span class="rms-commercial-state is-pending">Pendiente</span></header>
+      <section class="rms-risk-v2-agreement"><span class="material-symbols-outlined" aria-hidden="true">handshake</span><div><small>ACUERDO RECIBIDO</small><strong>${escapeHtml(agreement)}</strong></div></section>
       ${rmsRiskRecoveryAvailabilityMarkup()}
       <div class="rms-risk-v2-destinations" role="tablist" aria-label="Resultado del caso">
         <button class="is-active" type="button" role="tab" aria-selected="true" data-rms-risk-tab="${id}" data-rms-risk-tab-key="sale"><span class="material-symbols-outlined" aria-hidden="true">paid</span><strong>Venta lograda</strong><small>Enviar a Ventas atribuidas</small></button>
         <button type="button" role="tab" aria-selected="false" data-rms-risk-tab="${id}" data-rms-risk-tab-key="recycle"><span class="material-symbols-outlined" aria-hidden="true">autorenew</span><strong>Enviar a Reciclaje</strong><small>Conservar contexto y próxima oportunidad</small></button>
       </div>
       <input type="hidden" data-rms-risk-decision="${id}" value="CLEARED">
+      <footer class="rms-risk-v2-footer"><div><strong data-rms-risk-destination-label>Siguiente: Ventas atribuidas</strong><small>El servidor confirmará el destino antes de sacar el caso de Riesgos.</small></div><button class="solid-button" type="button" data-rms-save-risk-decision="${id}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span><span data-rms-risk-save-label>Enviar a Ventas atribuidas</span></button></footer>
       <section class="rms-risk-v2-panel" data-rms-risk-sale-panel="${id}">
-        <header><span class="mono-label">VENTA LOGRADA</span><h5>¿Qué hizo viable el cierre?</h5></header>
         <label><span>Alternativa aplicada</span><select data-rms-risk-recovery-offer="${id}" ${resource?.public_ticket_url ? "disabled" : ""}>${rmsRiskV2OfferOptions(selectedOffer)}</select><small>${resource?.public_ticket_url ? "El ticket ya fijó esta concesión y no puede cambiarse." : "Elige Sin concesión si el cliente aceptó sin incentivo extraordinario."}</small></label>
         <label data-rms-risk-detail-wrap="${id}" hidden><span>Detalle autorizado</span><input type="text" maxlength="1000" data-rms-risk-recovery-detail="${id}" placeholder="Describe exactamente el 2x1 u obsequio"></label>
-        <section class="rms-risk-v2-products"><header><div><span class="mono-label">PRODUCTOS</span><h6>Qué compra el cliente</h6></div></header>${rmsRiskProductsBuilderMarkup(item)}</section>
-        <section class="rms-risk-v2-ticket" data-rms-risk-ticket-panel="${id}" hidden>
+        <details class="rms-risk-v2-products" ${resource?.public_ticket_url ? "" : "open"}><summary>Productos de la venta</summary>${rmsRiskProductsBuilderMarkup(item)}</details>
+        <details class="rms-risk-v2-ticket" data-rms-risk-ticket-panel="${id}" hidden ${resource?.public_ticket_url ? "" : "open"}>
+          <summary>${resource?.public_ticket_url ? "Ticket listo · entrega y QR" : "Crear ticket opcional"}</summary>
           <div class="rms-risk-v2-ticket-controls"><label><span>Vigencia</span><select data-rms-risk-expiration-days="${id}" ${resource?.public_ticket_url ? "disabled" : ""}><option value="3">3 días</option><option value="7" selected>7 días</option><option value="15">15 días</option><option value="30">30 días</option></select></label>${resource?.public_ticket_url ? "" : `<button class="solid-button compact" type="button" data-rms-generate-risk-resource="${id}"><span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span>Crear ticket</button>`}</div>
           <div data-rms-risk-resource-status="${id}">${rmsRiskV2ResourceMarkup(item)}</div>
           <div class="rms-risk-v2-delivery" data-rms-risk-delivery="${id}" ${resource?.public_ticket_url ? "" : "hidden"}><label class="checkbox-row"><input type="checkbox" data-rms-risk-consent="${id}"> Confirmo autorización de contacto.</label><div class="rms-risk-v2-share"><button class="ghost-button compact" type="button" data-rms-risk-whatsapp="${id}">WhatsApp</button><button class="ghost-button compact" type="button" data-rms-risk-email="${id}">Email</button></div></div>
-        </section>
+        </details>
         <label><span>Nota del resultado <em>Opcional</em></span><textarea rows="3" data-rms-risk-reason="${id}" placeholder="Agrega solo información que Ventas atribuidas deba conocer"></textarea></label>
       </section>
       <section class="rms-risk-v2-panel" data-rms-risk-recycle-panel="${id}" hidden>
@@ -57397,7 +57399,6 @@ function rmsRiskValidationStationCardMarkupV2(item = {}) {
         <label><span>Contexto para la reactivación <em>Opcional</em></span><textarea rows="3" data-rms-risk-reason="${id}" placeholder="Qué se intentó y qué debería cambiar antes de volver a contactar"></textarea></label>
       </section>
       <div class="rms-risk-action-status" data-rms-risk-action-status="${id}" role="status" aria-live="polite"></div>
-      <footer class="rms-risk-v2-footer"><div><strong data-rms-risk-destination-label>Siguiente: Ventas atribuidas</strong><small>El servidor confirmará el destino antes de cambiar de pantalla.</small></div><button class="solid-button" type="button" data-rms-save-risk-decision="${id}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span><span data-rms-risk-save-label>Enviar a Ventas atribuidas</span></button></footer>
     </section>
   </article>`;
 }

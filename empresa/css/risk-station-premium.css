@@ -370,9 +370,19 @@
 }
 
 /* Riesgos de fuga v2 · decisión directa */
+.rms-risk-v2 {
+  display: block !important;
+  contain: none;
+}
+
+.rms-risk-v2 .rms-risk-products-list {
+  content-visibility: visible;
+  contain-intrinsic-size: auto;
+}
+
 .rms-risk-v2 .rms-risk-command-console {
   display: grid;
-  gap: 18px;
+  gap: 12px;
   min-width: 0;
 }
 
@@ -463,6 +473,16 @@
   background: #f8fbff;
 }
 
+.rms-risk-v2 :is(.rms-risk-v2-products, .rms-risk-v2-ticket) > summary {
+  cursor: pointer;
+  color: var(--risk-blue-deep);
+  font-weight: 800;
+}
+
+.rms-risk-v2 :is(.rms-risk-v2-products, .rms-risk-v2-ticket)[open] > summary {
+  margin-bottom: 12px;
+}
+
 .rms-risk-v2-ticket-controls,
 .rms-risk-v2-share,
 .rms-risk-v2-delivery,
@@ -483,15 +503,11 @@
 }
 
 .rms-risk-v2-footer {
-  position: sticky;
-  bottom: 8px;
-  z-index: 4;
   padding: 14px;
   border: 1px solid rgba(1, 52, 145, 0.22);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 16px 38px rgba(1, 34, 104, 0.16);
-  backdrop-filter: blur(12px);
+  background: #f5f9ff;
+  box-shadow: none;
 }
 
 .rms-risk-v2-footer > div {
