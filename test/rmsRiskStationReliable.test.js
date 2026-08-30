@@ -82,5 +82,5 @@ test("los assets nuevos tienen una única URL cacheada y el núcleo carga primer
   const preload = html.match(/<link rel="preload" as="script" href="(js\/app\.js[^"]+)"/)?.[1];
   const script = html.match(/<script src="(js\/app\.js[^"]+)" defer><\/script>/)?.[1];
   assert.equal(preload, script);
-  assert.match(html, /risk-v2=direct-v3-20260830/);
+  assert.match(html, /risk-v2=premium-v4-20260830/);
 });

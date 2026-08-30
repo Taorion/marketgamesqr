@@ -87,9 +87,10 @@ test("el navegador solo navega cuando el servidor confirma el destino", () => {
   assert.equal(core.confirmedDestination({ state: { rms_phase: "cierre" } }), "cierre");
   assert.equal(core.confirmedDestination({ movement: { to_phase: "reciclaje" } }), "reciclaje");
   assert.match(app, /destination !== built\.destination/);
-  assert.match(app, /rmsRiskValidationStationCardMarkup = rmsRiskValidationStationCardMarkupV2;/);
-  assert.match(app, /saveRmsRiskDecision = saveRmsRiskDecisionV2;/);
-  assert.match(app, /bindRmsRiskStationFastActions = bindRmsRiskStationFastActionsV2;/);
+  assert.match(app, /function rmsRiskValidationStationCardMarkup\(item = \{\}\)/);
+  assert.match(app, /async function saveRmsRiskDecision\(item, root\)/);
+  assert.match(app, /function bindRmsRiskStationFastActions\(root\)/);
+  assert.doesNotMatch(app, /rmsRiskValidationStationCardMarkup\s*=/);
 });
 
 test("el núcleo carga antes del bundle y la estación usa una sola consulta de productos", () => {
@@ -107,17 +108,32 @@ test("el núcleo carga antes del bundle y la estación usa una sola consulta de 
 });
 
 test("la interfaz nueva tiene dos destinos, un CTA y guardas responsive", () => {
-  const start = app.indexOf("function rmsRiskValidationStationCardMarkupV2");
+  const start = app.indexOf("function rmsRiskValidationStationCardMarkup");
   const end = app.indexOf("function rmsRiskV2SetDecision", start);
   const renderer = app.slice(start, end);
   assert.match(renderer, /Venta lograda/);
-  assert.match(renderer, /Enviar a Reciclaje/);
+  assert.match(renderer, /No es el momento/);
   assert.match(renderer, /data-rms-save-risk-decision/);
   assert.ok(renderer.indexOf("rms-risk-v2-footer") < renderer.indexOf("data-rms-risk-sale-panel"));
   assert.match(renderer, /<details class="rms-risk-v2-products"/);
+  assert.match(renderer, /data-rms-save-risk-decision="\$\{id\}" disabled/);
+  assert.match(app, /function rmsRiskV2UpdateReadiness/);
+  assert.match(app, /rmsCommercialOperationKey\("risk-review", item, operationSignature\)/);
   assert.match(app, /Beneficio fijado en el ticket existente/);
   assert.match(css, /\.rms-risk-v2-destinations\s*\{[\s\S]*grid-template-columns: repeat\(2/);
   assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.rms-risk-v2-destinations\s*\{[\s\S]*grid-template-columns: 1fr/);
   assert.doesNotMatch(css, /\.rms-risk-v2-footer\s*\{[^}]*position: sticky/);
   assert.doesNotMatch(css, /\.rms-risk-v2-footer\s*\{[^}]*backdrop-filter/);
+});
+
+test("la paginación conserva la interfaz premium y el almacenamiento de borradores existe", () => {
+  const declaration = app.indexOf('const RMS_RISK_DRAFT_STORAGE_PREFIX = "qori:rms-risk-drafts:v3"');
+  const use = app.indexOf("return `${RMS_RISK_DRAFT_STORAGE_PREFIX}:");
+  assert.ok(declaration >= 0, "el prefijo de borradores debe estar declarado");
+  assert.ok(use > declaration, "el prefijo debe declararse antes de usarse");
+  assert.match(app, /rms-risk-recovery-boundary/);
+  assert.match(app, /RMS risk station render blocked/);
+  assert.doesNotMatch(app, /RIESGOS DE FUGA · MODO SEGURO/);
+  assert.match(html, /risk-v2=premium-v4-20260830/);
+  assert.match(html, /risk-premium-v7-20260830/);
 });
