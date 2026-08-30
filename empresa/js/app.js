@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260830-risk-premium-v424";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830";
+const APP_VERSION = "empresa-20260830-evaluation-premium-v425";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -47656,6 +47656,7 @@ function renderRmsQualityControlDashboardLegacy(key = "") {
   const config = rmsQualityControlConfig(key);
   if (!config || !rmsStationWorkspace) return;
   const data = state.rmsMachine || {};
+  const serverPagination = data.pagination || {};
   const allStages = rmsFactoryStages(data);
   const controlStage = allStages.find((stage) => stage.key === key) || {};
   const visual = rmsStationVisualMeta(key);
@@ -48607,8 +48608,9 @@ async function toggleBranchActive(branchId = "", nextActive = false) {
 async function loadRmsMachineData(options = {}) {
   if (state.rmsMachineLoaded && !options.force) return state.rmsMachine;
   const stationPhase = options.stationPhase || (options.lite && state.rmsStationScreenOpen ? state.rmsStationPhase : "");
+  const stationOffset = stationPhase ? Math.max(Number(options.offset || 0), 0) : 0;
   const requestKey = stationPhase
-    ? `station:${stationPhase}:${options.fresh ? "fresh" : "cached"}`
+    ? `station:${stationPhase}:${stationOffset}:${options.fresh ? "fresh" : "cached"}`
     : `machine:${options.fresh ? "fresh" : "cached"}`;
   const pendingLoads = state.rmsMachineLoadPromises instanceof Map ? state.rmsMachineLoadPromises : new Map();
   state.rmsMachineLoadPromises = pendingLoads;
@@ -48623,6 +48625,7 @@ async function loadRmsMachineData(options = {}) {
       params.set("rms_phase", stationPhase);
       params.set("lite", "1");
       params.set("limit", "36");
+      if (stationOffset) params.set("offset", String(stationOffset));
       params.set("section_limit", "0");
     } else {
       params.set("limit", "72");
@@ -48638,7 +48641,18 @@ async function loadRmsMachineData(options = {}) {
     if (stationPhase && (!state.rmsStationScreenOpen || state.rmsStationPhase !== stationPhase)) {
       return data;
     }
-    state.rmsMachine = data;
+    if (stationPhase && options.append && state.rmsMachineScope?.phase === stationPhase) {
+      const previousRows = state.rmsMachine?.opportunities || [];
+      const byId = new Map(previousRows.map((item) => [item.id, item]));
+      (data?.opportunities || []).forEach((item) => byId.set(item.id, item));
+      state.rmsMachine = {
+        ...data,
+        opportunities: [...byId.values()],
+        pagination: { ...(data.pagination || {}), loaded: byId.size },
+      };
+    } else {
+      state.rmsMachine = data;
+    }
     if (stationPhase === "control_anti_fuga" && Array.isArray(data?.inventory_products)) {
       state.inventoryProducts = data.inventory_products;
       state.inventoryLoaded = true;
@@ -48646,10 +48660,10 @@ async function loadRmsMachineData(options = {}) {
       renderInventoryProductOptions();
     }
     state.rmsMachineScope = data?.scope || (stationPhase ? { mode: "station", phase: stationPhase, lite: true } : { mode: "machine", phase: "", lite: false });
-    rebuildRmsOpportunityIndex(data?.opportunities || []);
+    rebuildRmsOpportunityIndex(state.rmsMachine?.opportunities || []);
     state.rmsMachineLoaded = true;
     renderRmsMachineFilterOptions(rmsPrimaryFactoryStages(data));
-    return data;
+    return state.rmsMachine;
   })();
   pendingLoads.set(requestKey, request);
   try {
@@ -49070,7 +49084,7 @@ function renderRmsMachineView() {
   const allOpportunities = data.opportunities || [];
   const opportunities = rmsVisibleOpportunities(allOpportunities);
   const metrics = data.metrics || {};
-  const totalOpportunities = Number(metrics.total_opportunities || allOpportunities.length || 0);
+  const totalOpportunities = Number(serverPagination.total ?? metrics.total_opportunities ?? allOpportunities.length ?? 0);
   const isEmpty = allOpportunities.length === 0 && totalOpportunities === 0;
   arrangeRmsMachineOverview();
   if (state.rmsStationScreenOpen) {
@@ -49224,10 +49238,6 @@ const RMS_EVALUATION_RESPONSES = [
   { value: "OBJECTION", label: "Respondió con una objeción", short: "Presenta objeción", eyebrow: "Bloqueo", title: "Tiene una objeción", icon: "report_problem", hint: "Describe la objeción y envíala a Riesgos de fuga." },
 ];
 
-const RMS_EVALUATION_DESTINATIONS = [
-  { value: "NEGOTIATION", label: "Negociación", eyebrow: "Acordar", icon: "handshake", hint: "Precio, alcance, plazos o forma de pago." },
-];
-
 const RMS_EVALUATION_AUTO_DESTINATIONS = Object.freeze({
   NEGOTIATION: "NEGOTIATION",
   MISSING_INFORMATION: "NEGOTIATION",
@@ -49240,7 +49250,28 @@ const RMS_EVALUATION_AUTO_DESTINATIONS = Object.freeze({
 });
 
 function rmsEvaluationAutoDestination(response = "") {
-  return RMS_EVALUATION_AUTO_DESTINATIONS[String(response || "").toUpperCase()] || "";
+  return window.RmsEvaluationStationCore?.routeForResponse(response)?.destination
+    || RMS_EVALUATION_AUTO_DESTINATIONS[String(response || "").toUpperCase()]
+    || "";
+}
+
+function rmsEvaluationIconSvg(name = "route", className = "") {
+  const paths = {
+    handshake: '<path d="M7.2 12.7 10 15.5a2 2 0 0 0 2.8 0l4.5-4.5M3 11l4-4 3 3m11 1-4-4-3 3M8.5 17l1.4 1.4a2 2 0 0 0 2.8 0l1.1-1.1M5 19l-3-3 5-5 2 2m10 6 3-3-5-5-2 2"/>',
+    paid: '<path d="M12 2v20M17 6.5c-.9-.9-2.2-1.5-4-1.5-2.2 0-4 1.2-4 3s1.5 2.7 4.2 3.3c2.4.5 3.8 1.4 3.8 3.3 0 2-1.8 3.4-4.4 3.4-1.8 0-3.5-.6-4.6-1.7"/>',
+    send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+    schedule: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    autorenew: '<path d="M20 7h-5V2"/><path d="M20 7a8 8 0 1 0 1 7M4 17h5v5"/><path d="M4 17a8 8 0 0 0 14-3"/>',
+    do_not_disturb_on: '<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>',
+    phone_missed: '<path d="m16 2 5 5-5 5"/><path d="M21 7h-6a8 8 0 0 0-8 8v1"/><path d="M8 21H3v-5"/>',
+    report_problem: '<path d="M10.3 3.8 2.5 18a2 2 0 0 0 1.8 3h15.4a2 2 0 0 0 1.8-3L13.7 3.8a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/>',
+    route: '<circle cx="6" cy="5" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v4a4 4 0 0 0 4 4h4a4 4 0 0 1 4 4M14 5h4v6"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
+    sale: '<path d="M4 4h16v14H4z"/><path d="M8 22h8M12 18v4M8 9h8M8 13h5"/>',
+    recycle: '<path d="m7 19-4-4 4-4"/><path d="M3 15h11a5 5 0 0 0 5-5V8M17 5l4 3-4 3"/>',
+    check: '<path d="m5 12 4 4L19 6"/>',
+  };
+  return `<svg class="rms-evaluation-svg ${escapeHtml(className)}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.route}</svg>`;
 }
 
 const RMS_CURRENCIES = ["COP", "USD", "EUR", "MXN", "PEN", "CLP", "ARS", "BRL"];
@@ -49372,10 +49403,11 @@ function rmsEvaluationStationCardMarkup(item = {}) {
   const draft = rmsEvaluationCachedDraft(item.id);
   const evaluationProductId = draft.recommended_inventory_product_id || item.classified_product_id || "";
   const selectedResponse = draft.response || "";
-  const selectedDestination = rmsEvaluationAutoDestination(selectedResponse) || draft.destination || "";
+  const selectedDestination = rmsEvaluationAutoDestination(selectedResponse);
   const selectedResponseLabel = RMS_EVALUATION_RESPONSES.find((option) => option.value === selectedResponse)?.short || "Pendiente";
-  const selectedDestinationLabel = selectedResponse && selectedDestination ? rmsEvaluationRoute(selectedResponse, selectedDestination).label : "Por elegir";
-  const saveLabel = selectedDestination ? `Guardar y enviar a ${selectedDestinationLabel}` : "Elige una estación de destino";
+  const selectedRoute = rmsEvaluationRoute(selectedResponse, selectedDestination);
+  const selectedDestinationLabel = selectedResponse && selectedDestination ? selectedRoute.label : "Se define al elegir el resultado";
+  const saveLabel = selectedDestination ? `Confirmar y enviar a ${selectedDestinationLabel}` : "Elige lo que ocurrió";
   const contactSummary = delivery.sentAt
     ? `${delivery.channel === "email" ? "Email" : "WhatsApp"} enviado ${formatDate(delivery.sentAt)} · ${delivery.contactCount || 1} contacto(s)`
     : "No hay envío confirmado; revisa el historial antes de decidir.";
@@ -49383,16 +49415,15 @@ function rmsEvaluationStationCardMarkup(item = {}) {
     <article class="rms-commercial-work-item rms-evaluation-work-item" data-rms-station-lead="${escapeHtml(item.id)}">
       ${rmsCommercialLeadAsideMarkup(item, "Evaluación · decide el siguiente destino")}
       <section class="rms-commercial-work-console">
-        <header class="rms-evaluation-hero"><div class="rms-evaluation-hero-copy"><span class="mono-label" style="color:#ffffff !important;opacity:1 !important;">Estación 06 · Después de Activación 1</span><h4 style="color:#ffffff !important;opacity:1 !important;">Convierte la respuesta en una decisión comercial clara.</h4><p style="color:#ffffff !important;opacity:1 !important;">Documenta lo que dijo el cliente, define el destino y entrega al siguiente equipo un contexto que sí pueda ejecutar.</p><div class="rms-evaluation-hero-metrics"><div><span>Respuesta</span><strong data-rms-evaluation-response-label="${escapeHtml(item.id)}">${escapeHtml(selectedResponseLabel)}</strong></div><div><span>Destino</span><strong data-rms-evaluation-destination-label="${escapeHtml(item.id)}">${escapeHtml(selectedDestinationLabel)}</strong></div></div></div><div class="rms-evaluation-hero-signal"><span class="material-symbols-outlined" aria-hidden="true">insights</span><strong>${escapeHtml(delivery.sentAt ? "Contacto activo" : "Validar contacto")}</strong><small>${escapeHtml(delivery.sentAt ? "Ya existe un contacto para evaluar" : "Revisa el historial antes de registrar la decisión")}</small></div></header>
-        <ol class="rms-evaluation-steps" aria-label="Flujo de evaluación"><li class="is-done"><b>1</b><span>Contexto</span></li><li class="${selectedResponse ? "is-done" : "is-active"}"><b>2</b><span>Respuesta</span></li><li class="${selectedDestination ? "is-done" : selectedResponse ? "is-active" : ""}"><b>3</b><span>Destino</span></li><li class="${selectedDestination ? "is-active" : ""}"><b>4</b><span>Contexto útil</span></li></ol>
+        <header class="rms-evaluation-hero"><div class="rms-evaluation-hero-copy"><span class="mono-label">Estación 05 · Después de Activación 1</span><h4>Convierte la respuesta en una decisión comercial clara.</h4><p>Registra lo que ocurrió. GOS aplica una sola ruta segura y entrega el contexto al siguiente equipo.</p><div class="rms-evaluation-hero-metrics"><div><span>Resultado</span><strong data-rms-evaluation-response-label="${escapeHtml(item.id)}">${escapeHtml(selectedResponseLabel)}</strong></div><div><span>Ruta automática</span><strong data-rms-evaluation-destination-label="${escapeHtml(item.id)}">${escapeHtml(selectedDestinationLabel)}</strong></div></div></div><div class="rms-evaluation-hero-signal">${rmsEvaluationIconSvg(delivery.sentAt ? "check" : "schedule")}<strong>${escapeHtml(delivery.sentAt ? "Contacto listo para evaluar" : "Validar contacto")}</strong><small>${escapeHtml(delivery.sentAt ? "Existe evidencia de contacto en el historial" : "Confirma el contacto antes de registrar una respuesta")}</small></div></header>
+        <ol class="rms-evaluation-steps" aria-label="Flujo de evaluación"><li class="is-done"><b>1</b><span>Contexto</span></li><li class="${selectedResponse ? "is-done" : "is-active"}"><b>2</b><span>Resultado</span></li><li class="${selectedResponse ? "is-active" : ""}"><b>3</b><span>Contexto útil</span></li><li class="${selectedResponse ? "is-ready" : ""}"><b>4</b><span>Confirmar ruta</span></li></ol>
         <section class="rms-evaluation-context" aria-label="Resumen de Activación 1"><span class="material-symbols-outlined" aria-hidden="true">history</span><div><strong>${escapeHtml(delivery.offer || defaultProduct || "Oferta comercial")}</strong><small>${escapeHtml(contactSummary)}</small></div><span class="rms-evaluation-context-outcome">${escapeHtml(rmsActivationOutcomeLabel(delivery.outcome))}</span></section>
         ${selectedResponse === "PAID_SALE" ? `<section class="rms-payment-reported-notice" aria-label="Pago informado"><span class="material-symbols-outlined" aria-hidden="true">verified</span><div><strong>Pago informado: falta confirmar la venta</strong><p>El cliente reportó un pago. Primero confirma producto, valor, condición acordada y soporte antes de atribuir la venta.</p></div><div><button class="solid-button compact" type="button" data-rms-payment-confirmation="${escapeHtml(item.id)}">Ir a confirmación comercial</button><button class="ghost-button compact" type="button" data-rms-payment-continue="${escapeHtml(item.id)}">Seguir evaluando</button></div></section>` : ""}
         <input type="hidden" data-rms-evaluation-response="${escapeHtml(item.id)}" value="${escapeHtml(selectedResponse)}">
         <input type="hidden" data-rms-evaluation-destination="${escapeHtml(item.id)}" value="${escapeHtml(selectedDestination)}">
-        <section class="rms-evaluation-decision-panel" aria-label="Respuesta del cliente"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 2 · Lo que pasó</span><h5>¿Cuál fue el resultado de este contacto?</h5></div><small>Describe la realidad; la ruta la eliges después.</small></div><div class="rms-evaluation-decision-grid">${RMS_EVALUATION_RESPONSES.map((option) => `<button class="rms-evaluation-choice ${selectedResponse === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-choice="${escapeHtml(item.id)}" data-rms-evaluation-value="${option.value}" aria-pressed="${selectedResponse === option.value ? "true" : "false"}"><span class="material-symbols-outlined rms-evaluation-choice-icon" aria-hidden="true">${option.icon}</span><span class="rms-evaluation-choice-copy"><em>${escapeHtml(option.eyebrow)}</em><strong>${escapeHtml(option.title)}</strong><small>${escapeHtml(option.hint)}</small></span><span class="material-symbols-outlined rms-evaluation-choice-check" aria-hidden="true">check</span></button>`).join("")}</div></section>
-        <section class="rms-evaluation-destination-panel" aria-label="Estación de destino"><div class="rms-evaluation-panel-head"><div><span class="mono-label" style="color:#ffffff !important;opacity:1 !important;">Paso 3 · Tu decisión</span><h5 style="color:#ffffff !important;opacity:1 !important;">¿A qué estación envías este lead?</h5></div><small style="color:#ffffff !important;opacity:1 !important;">La respuesta sugiere; tú decides</small></div><div class="rms-evaluation-destination-grid">${RMS_EVALUATION_DESTINATIONS.map((option) => `<button class="rms-evaluation-destination-choice ${selectedDestination === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-destination-choice="${escapeHtml(item.id)}" data-rms-evaluation-destination-value="${option.value}" aria-pressed="${selectedDestination === option.value ? "true" : "false"}"><span class="material-symbols-outlined" aria-hidden="true" style="color:#ffffff !important;opacity:1 !important;">${option.icon}</span><span><em style="color:#ffffff !important;opacity:1 !important;">${escapeHtml(option.eyebrow)}</em><strong style="color:#ffffff !important;opacity:1 !important;">${escapeHtml(option.label)}</strong><small style="color:#ffffff !important;opacity:1 !important;">${escapeHtml(option.hint)}</small></span><span class="material-symbols-outlined rms-evaluation-destination-arrow" aria-hidden="true" style="color:#ffffff !important;opacity:1 !important;">arrow_forward</span></button>`).join("")}</div></section>
-        <aside class="rms-evaluation-route-preview" data-rms-evaluation-route="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">alt_route</span><div><span class="mono-label">Confirmación de ruta</span><strong>Elige una estación de destino</strong><small>La respuesta y el destino quedarán registrados en el historial del contacto.</small></div><span class="rms-evaluation-route-state" data-rms-evaluation-route-state="${escapeHtml(item.id)}">Pendiente</span></aside>
-        <section class="rms-evaluation-next-panel ${selectedResponse && selectedDestination ? "is-visible" : ""}" data-rms-evaluation-next-panel="${escapeHtml(item.id)}"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 4 · Contexto de continuidad</span><h5>Deja el contexto mínimo útil</h5></div><small>El resumen es opcional; el sistema registra uno si no lo escribes.</small></div><div class="rms-evaluation-form-grid">
+        <section class="rms-evaluation-decision-panel" aria-label="Respuesta del cliente"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 2 · Lo que pasó</span><h5>¿Cuál fue el resultado real del contacto?</h5></div><small>Elige una sola respuesta. GOS define la ruta compatible.</small></div><div class="rms-evaluation-decision-grid">${RMS_EVALUATION_RESPONSES.map((option) => `<button class="rms-evaluation-choice ${selectedResponse === option.value ? "is-selected" : ""}" type="button" data-rms-evaluation-choice="${escapeHtml(item.id)}" data-rms-evaluation-value="${option.value}" aria-pressed="${selectedResponse === option.value ? "true" : "false"}"><span class="rms-evaluation-choice-icon" aria-hidden="true">${rmsEvaluationIconSvg(option.icon)}</span><span class="rms-evaluation-choice-copy"><em>${escapeHtml(option.eyebrow)}</em><strong>${escapeHtml(option.title)}</strong><small>${escapeHtml(option.hint)}</small></span><span class="rms-evaluation-choice-check" aria-hidden="true">${rmsEvaluationIconSvg("check")}</span></button>`).join("")}</div></section>
+        <aside class="rms-evaluation-route-preview ${selectedResponse ? "is-ready" : ""}" data-rms-evaluation-route="${escapeHtml(item.id)}" data-route-tone="${escapeHtml(selectedRoute.tone || "pending")}">${rmsEvaluationIconSvg(selectedRoute.icon || "route", "rms-evaluation-route-icon")}<div><span class="mono-label">Ruta automática y segura</span><strong>${escapeHtml(selectedResponse ? selectedRoute.label : "Elige lo que ocurrió")}</strong><small>${escapeHtml(selectedResponse ? selectedRoute.detail : "La ruta se mostrará antes de guardar; no hay destinos ocultos ni decisiones contradictorias.")}</small></div><span class="rms-evaluation-route-state ${selectedResponse ? "is-ready" : ""}" data-rms-evaluation-route-state="${escapeHtml(item.id)}">${selectedResponse ? "Ruta lista" : "Pendiente"}</span></aside>
+        <section class="rms-evaluation-next-panel ${selectedResponse ? "is-visible" : ""}" data-rms-evaluation-next-panel="${escapeHtml(item.id)}"><div class="rms-evaluation-panel-head"><div><span class="mono-label">Paso 3 · Contexto de continuidad</span><h5>Deja solo la información que la siguiente estación necesita</h5></div><small>GOS oculta los campos que no aplican.</small></div><div class="rms-evaluation-form-grid">
           <label data-rms-evaluation-detail="commercial"><span>Producto o servicio</span><select data-rms-evaluation-product-id="${escapeHtml(item.id)}" data-rms-evaluation-draft-field>${rmsInventoryProductPickerOptions(evaluationProductId, draft.recommended_product || defaultProduct)}</select><small>Elige el producto activo que se evaluó. Los textos históricos no se vinculan automáticamente.</small></label>
           <label data-rms-evaluation-detail="commercial"><span>Presupuesto</span><input type="number" min="0" step="0.01" value="${escapeHtml(draft.budget_amount ?? "")}" data-rms-evaluation-budget="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Opcional"></label>
           <label data-rms-evaluation-detail="commercial"><span>Moneda</span><select data-rms-evaluation-currency="${escapeHtml(item.id)}" data-rms-evaluation-draft-field>${RMS_CURRENCIES.map((currency) => `<option value="${currency}" ${(draft.currency || "COP") === currency ? "selected" : ""}>${currency}</option>`).join("")}</select></label>
@@ -49408,7 +49439,7 @@ function rmsEvaluationStationCardMarkup(item = {}) {
         </div>
         <label class="rms-commercial-note-field" data-rms-evaluation-detail="recycle"><span>Explica por qué no es convertible <small>(obligatorio para Reciclaje)</small></span><textarea rows="3" data-rms-evaluation-recycle-note="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Ej.: no tiene presupuesto este trimestre y no autorizó nuevos contactos.">${escapeHtml(draft.recycle_note || "")}</textarea></label>
         <label class="rms-commercial-note-field"><span>Resumen de lo que dijo el cliente <small>(opcional)</small></span><textarea rows="4" data-rms-evaluation-note="${escapeHtml(item.id)}" data-rms-evaluation-draft-field placeholder="Opcional: respuesta, condiciones y promesas hechas. Quedará en el historial del contacto.">${escapeHtml(draft.note || "")}</textarea></label></section>
-        <div class="rms-commercial-action-row"><small><span class="material-symbols-outlined" aria-hidden="true">history</span>La decisión y el destino se guardan en la ficha del contacto.</small><button class="solid-button compact" type="button" data-rms-save-evaluation="${escapeHtml(item.id)}" ${selectedResponse && selectedDestination ? "" : "disabled"}><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span><span data-rms-evaluation-save-label="${escapeHtml(item.id)}">${escapeHtml(saveLabel)}</span></button></div>
+        <div class="rms-evaluation-submit-zone"><div class="rms-evaluation-submit-feedback" data-rms-evaluation-status="${escapeHtml(item.id)}" role="status" aria-live="polite">${rmsEvaluationIconSvg("route")}<span>La respuesta y la ruta quedarán registradas en el historial.</span></div><button class="solid-button rms-evaluation-submit" type="button" data-rms-save-evaluation="${escapeHtml(item.id)}" ${selectedResponse ? "" : "disabled"}>${rmsEvaluationIconSvg("route")}<span data-rms-evaluation-save-label="${escapeHtml(item.id)}">${escapeHtml(saveLabel)}</span></button></div>
       </section>
     </article>
   `;
@@ -50716,6 +50747,9 @@ function renderRmsStationLeanOnly() {
   const rows = rmsStationRows(phase, allOpportunities);
   const display = rmsStationDisplayRows(rows, phase);
   const renderedRows = display.visibleRows;
+  const commercialEmptyMarkup = phase === "procesamiento"
+    ? `<section class="rms-evaluation-empty" role="status">${rmsEvaluationIconSvg("route")}<div><strong>Evaluación está al día</strong><small>Los leads aparecen aquí cuando Activación 1 registra el contacto y los envía para decidir su siguiente paso.</small></div><button class="ghost-button compact" type="button" data-rms-evaluation-open-activation>Revisar Activación 1</button></section>`
+    : `<div class="empty-state compact">${escapeHtml(isEmpty ? "No hay leads todavía." : "No hay leads con este filtro.")}</div>`;
   const selectedRows = phase === "clasificacion"
     ? rmsActivationBulkSelectedRows()
     : rmsStationSelectedRows(phase, rows);
@@ -50759,7 +50793,7 @@ function renderRmsStationLeanOnly() {
     rmsMachineOpportunityCount.textContent = phase === "inteligencia"
       ? `${Number((state.rmsIntelligenceCases || []).length).toLocaleString("es-CO")} casos en memoria analítica`
       : phase
-      ? `${rows.length.toLocaleString("es-CO")} en estación / ${totalOpportunities.toLocaleString("es-CO")} total`
+      ? `${rows.length.toLocaleString("es-CO")} cargados / ${totalOpportunities.toLocaleString("es-CO")} en estación`
       : `${totalOpportunities.toLocaleString("es-CO")} oportunidades`;
   }
   renderRmsMachineFilterOptions(stages);
@@ -50862,7 +50896,7 @@ function renderRmsStationLeanOnly() {
         ${phase === "inteligencia" ? rmsIntelligenceStationMarkup(state.rmsIntelligenceCases || rows) : ""}
         ${phase !== "inteligencia" ? `
         <div class="rms-activation-work-list" aria-label="Consolas comerciales RMS">
-          ${renderedRows.map((item) => rmsActivationStationCardMarkup(item)).join("") || `<div class="empty-state compact">${escapeHtml(isEmpty ? "No hay leads todavía." : "No hay leads con este filtro.")}</div>`}
+          ${renderedRows.map((item) => rmsActivationStationCardMarkup(item)).join("") || commercialEmptyMarkup}
         </div>
         ` : ""}
       ` : `
@@ -50885,6 +50919,7 @@ function renderRmsStationLeanOnly() {
         ${display.matchingRows.length > display.pageSize ? `<nav class="rms-station-pagination" aria-label="Paginación de leads"><button class="ghost-button compact" type="button" data-rms-station-page-prev ${display.page <= 1 ? "disabled" : ""}>Anterior</button><span>Página ${display.page} de ${display.pageCount} · ${display.pageSize} por página</span><button class="ghost-button compact" type="button" data-rms-station-page-next ${display.page >= display.pageCount ? "disabled" : ""}>Siguiente</button></nav>` : ""}
         <span>Mostrando ${renderedRows.length.toLocaleString("es-CO")} de ${display.matchingRows.length.toLocaleString("es-CO")}${display.hiddenCount ? ` · ${display.hiddenCount.toLocaleString("es-CO")} más sin dibujar` : ""}</span>
         ${display.hiddenCount ? `<button class="ghost-button compact" type="button" data-rms-station-show-more>Ver ${Math.min(RMS_STATION_RENDER_INCREMENT, display.hiddenCount).toLocaleString("es-CO")} más</button>` : ""}
+        ${serverPagination.has_more ? `<button class="ghost-button compact rms-station-load-more" type="button" data-rms-station-load-more> Cargar más oportunidades </button>` : ""}
       </footer>
     </section>
   `;
@@ -50963,6 +50998,7 @@ function renderRmsStationLeanOnly() {
     });
   }
   rmsStationWorkspace.querySelector("[data-rms-station-picker]")?.addEventListener("change", (event) => openRmsStation(event.target.value || "", { source: "picker" }));
+  rmsStationWorkspace.querySelector("[data-rms-evaluation-open-activation]")?.addEventListener("click", () => openRmsStation("clasificacion", { source: "evaluation-empty" }));
   rmsStationWorkspace.querySelector("[data-rms-station-search]")?.addEventListener("input", (event) => {
     state.rmsStationSearch = event.target.value || "";
     state.rmsStationRenderLimit = RMS_STATION_RENDER_INITIAL_LIMIT;
@@ -54146,22 +54182,6 @@ function bindRmsMachineActions(root) {
       persistRmsEvaluationDraft(root, id);
     });
   });
-  root.querySelectorAll("[data-rms-evaluation-destination-choice]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const id = button.dataset.rmsEvaluationDestinationChoice || "";
-      const destination = rmsCommercialNode(root, "[data-rms-evaluation-destination]", id);
-      if (!destination) return;
-      destination.value = button.dataset.rmsEvaluationDestinationValue || "";
-      root.querySelectorAll("[data-rms-evaluation-destination-choice]").forEach((choice) => {
-        if (choice.dataset.rmsEvaluationDestinationChoice !== id) return;
-        const active = choice === button;
-        choice.classList.toggle("is-selected", active);
-        choice.setAttribute("aria-pressed", active ? "true" : "false");
-      });
-      updateRmsEvaluationRoutePreview(root, id);
-      persistRmsEvaluationDraft(root, id);
-    });
-  });
   root.querySelectorAll("[data-rms-evaluation-draft-field]").forEach((field) => {
     const id = Object.values(field.dataset || {}).find((value) => value && String(value).includes("-"))
       || field.closest("[data-rms-station-lead]")?.dataset.rmsStationLead
@@ -56824,8 +56844,28 @@ function rmsCommercialNode(root, selector, id) {
   return Array.from(root?.querySelectorAll(selector) || []).find((node) => Object.values(node.dataset || {}).includes(String(id))) || null;
 }
 
+function rmsEvaluationDraftStorageKey(id = "") {
+  return `qori:rms:evaluation:draft:${String(id || "")}`;
+}
+
 function rmsEvaluationCachedDraft(id = "") {
-  return state.rmsEvaluationDrafts?.[id] || {};
+  if (state.rmsEvaluationDrafts?.[id]) return state.rmsEvaluationDrafts[id];
+  try {
+    const stored = JSON.parse(localStorage.getItem(rmsEvaluationDraftStorageKey(id)) || "null");
+    if (stored && typeof stored === "object") {
+      if (!state.rmsEvaluationDrafts) state.rmsEvaluationDrafts = {};
+      state.rmsEvaluationDrafts[id] = stored;
+      return stored;
+    }
+  } catch (_) {
+    // Un borrador local corrupto nunca debe bloquear la estación.
+  }
+  return {};
+}
+
+function clearRmsEvaluationDraft(id = "") {
+  if (state.rmsEvaluationDrafts) delete state.rmsEvaluationDrafts[id];
+  try { localStorage.removeItem(rmsEvaluationDraftStorageKey(id)); } catch (_) { /* storage opcional */ }
 }
 
 function rmsEvaluationDefaultNextAction(response = "") {
@@ -56843,15 +56883,18 @@ function persistRmsEvaluationDraft(root, id = "") {
   if (!id) return;
   if (!state.rmsEvaluationDrafts) state.rmsEvaluationDrafts = {};
   state.rmsEvaluationDrafts[id] = rmsEvaluationDraftFromDom(root, id);
+  try { localStorage.setItem(rmsEvaluationDraftStorageKey(id), JSON.stringify(state.rmsEvaluationDrafts[id])); } catch (_) { /* storage opcional */ }
 }
 
 function rmsEvaluationRoute(response = "", destination = "") {
+  const canonical = window.RmsEvaluationStationCore?.routeForResponse(response);
   const directDestinations = {
-    NEGOTIATION: { label: "Negociación", detail: "Continuar el acuerdo de precio, alcance, plazos o forma de pago.", icon: "handshake" },
-    RISK_REVIEW: { label: "Riesgos de fuga", detail: "Registra la objeción, el silencio o la falta de interés antes de decidir cómo recuperar el caso.", icon: "shield", phase: "control_anti_fuga" },
-    ATTRIBUTED_SALE: { label: "Ventas atribuidas", detail: "La venta ya fue reportada. Completa producto, cantidad, pago y evidencia para atribuirla.", icon: "point_of_sale", phase: "cierre" },
-    RECYCLE: { label: "Reciclaje", detail: "El lead no es convertible ahora. Conserva su estación, el motivo y una fecha para revisarlo en la cola transversal.", icon: "autorenew", phase: "procesamiento" },
+    NEGOTIATION: { label: "Negociación", detail: "Continuar el acuerdo de precio, alcance, plazos o forma de pago.", icon: "handshake", tone: "agreement", phase: "accion_correctiva" },
+    RISK_REVIEW: { label: "Riesgos de fuga", detail: "Registra la objeción, el silencio o la falta de interés antes de decidir cómo recuperar el caso.", icon: "shield", tone: "risk", phase: "control_anti_fuga" },
+    ATTRIBUTED_SALE: { label: "Ventas atribuidas", detail: "La venta ya fue reportada. Completa producto, cantidad, pago y evidencia para atribuirla.", icon: "sale", tone: "sale", phase: "cierre" },
+    RECYCLE: { label: "Reciclaje", detail: "El lead no es convertible ahora. Conserva su estación, el motivo y una fecha para revisarlo en la cola transversal.", icon: "recycle", tone: "recycle", phase: "procesamiento" },
   };
+  if (canonical && directDestinations[canonical.destination]) return directDestinations[canonical.destination];
   if (directDestinations[destination]) return directDestinations[destination];
   const routes = {
     PAID_SALE: { label: "Pasa a Negociación", detail: "Confirma la condición comercial antes de controlar el riesgo del acuerdo.", icon: "handshake" },
@@ -56861,7 +56904,7 @@ function rmsEvaluationRoute(response = "", destination = "") {
     NOT_QUALIFIED: { label: "Pasa a Inteligencia GOS", detail: "Conserva el aprendizaje sin seguir presionando al contacto.", icon: "psychology" },
     RECYCLE: { label: "Pasa a Reciclaje", detail: "Registra el motivo y conserva el caso para una posible reactivación responsable.", icon: "autorenew" },
   };
-  return routes[response] || { label: "Enviar a Negociación", detail: "La Evaluación abre la conversación comercial antes de Riesgos de fuga.", icon: "alt_route" };
+  return routes[response] || { label: "Ruta pendiente", detail: "Elige lo que ocurrió para conocer el destino antes de guardar.", icon: "route", tone: "pending" };
 }
 
 function updateRmsEvaluationRoutePreview(root, id) {
@@ -56869,8 +56912,9 @@ function updateRmsEvaluationRoutePreview(root, id) {
   const destinationSelect = rmsCommercialNode(root, "[data-rms-evaluation-destination]", id);
   const preview = rmsCommercialNode(root, "[data-rms-evaluation-route]", id);
   const response = select?.value || "";
-  const destination = destinationSelect?.value || "";
-  const route = rmsEvaluationRoute(select?.value || "", destination);
+  const destination = rmsEvaluationAutoDestination(response);
+  if (destinationSelect) destinationSelect.value = destination;
+  const route = rmsEvaluationRoute(response, destination);
   const responseLabel = RMS_EVALUATION_RESPONSES.find((option) => option.value === select?.value)?.short || "Pendiente";
   const destinationLabel = response && destination ? route.label : "Por elegir";
   const responseMetric = rmsCommercialNode(root, "[data-rms-evaluation-response-label]", id);
@@ -56883,10 +56927,12 @@ function updateRmsEvaluationRoutePreview(root, id) {
     routeState.textContent = response && destination ? "Ruta lista" : "Pendiente";
     routeState.classList.toggle("is-ready", Boolean(response && destination));
   }
-  if (saveLabel) saveLabel.textContent = destination ? `Guardar y enviar a ${destinationLabel}` : "Elige una estación de destino";
+  if (saveLabel) saveLabel.textContent = destination ? `Confirmar y enviar a ${destinationLabel}` : "Elige lo que ocurrió";
   if (preview) {
-    preview.querySelector(".material-symbols-outlined")?.replaceChildren(document.createTextNode(route.icon));
-    if (saveLabel) saveLabel.textContent = destination ? `Guardar y enviar a ${destinationLabel}` : "Registra la respuesta del lead";
+    const iconNode = preview.querySelector(".rms-evaluation-route-icon");
+    if (iconNode) iconNode.outerHTML = rmsEvaluationIconSvg(route.icon, "rms-evaluation-route-icon");
+    preview.dataset.routeTone = route.tone || "pending";
+    if (saveLabel) saveLabel.textContent = destination ? `Confirmar y enviar a ${destinationLabel}` : "Registra la respuesta del lead";
     const eyebrow = preview.querySelector(".mono-label");
     if (eyebrow) eyebrow.textContent = "Destino automático";
     const title = preview.querySelector("strong");
@@ -56896,7 +56942,7 @@ function updateRmsEvaluationRoutePreview(root, id) {
     preview.classList.toggle("is-ready", Boolean(response && destination));
   }
   const nextPanel = rmsCommercialNode(root, "[data-rms-evaluation-next-panel]", id);
-  nextPanel?.classList.toggle("is-visible", Boolean(response && destination));
+  nextPanel?.classList.toggle("is-visible", Boolean(response));
   const detailVisibility = {
     commercial: ["NEGOTIATION", "PAID_SALE"].includes(response),
     followup: ["NEGOTIATION", "MISSING_INFORMATION", "NURTURE", "NO_RESPONSE", "OBJECTION", "NOT_QUALIFIED"].includes(response),
@@ -56911,7 +56957,7 @@ function updateRmsEvaluationRoutePreview(root, id) {
     field.querySelectorAll("input, select, textarea").forEach((control) => { control.disabled = !visible; });
   });
   const saveButton = rmsCommercialNode(root, "[data-rms-save-evaluation]", id);
-  if (saveButton) saveButton.disabled = !response || !destination;
+  if (saveButton) saveButton.disabled = !response;
 }
 
 function rmsCommercialNumber(root, selector, id) {
@@ -56936,6 +56982,8 @@ function rmsCommercialMoney(value, currency = "COP") {
 }
 
 function rmsEvaluationDraftFromDom(root, id) {
+  const item = rmsOpportunityById(id) || {};
+  const cached = rmsEvaluationCachedDraft(id);
   const product = findInventoryProductById(rmsCommercialNode(root, "[data-rms-evaluation-product-id]", id)?.value || "");
   const response = rmsCommercialNode(root, "[data-rms-evaluation-response]", id)?.value || "";
   const destination = rmsCommercialNode(root, "[data-rms-evaluation-destination]", id)?.value || "";
@@ -56962,6 +57010,9 @@ function rmsEvaluationDraftFromDom(root, id) {
     recycle_at: isRecycleRoute ? rmsCommercialLocalToIso(rmsCommercialNode(root, "[data-rms-evaluation-recycle-at]", id)?.value || "") : null,
     recycle_note: isRecycleRoute ? String(rmsCommercialNode(root, "[data-rms-evaluation-recycle-note]", id)?.value || "").trim() : "",
     note: String(rmsCommercialNode(root, "[data-rms-evaluation-note]", id)?.value || "").trim(),
+    idempotency_key: cached.idempotency_key
+      || window.RmsEvaluationStationCore?.createIdempotencyKey(item.source_type || "PLAYER", item.source_id || id)
+      || `evaluation:${item.source_type || "PLAYER"}:${item.source_id || id}:${Date.now()}`,
   };
   // Los controles de Reciclaje pueden conservar valores de un borrador previo.
   // No deben viajar al contrato cuando el operador escogió otra ruta.
@@ -56975,34 +57026,66 @@ function rmsEvaluationDraftFromDom(root, id) {
 
 async function saveRmsEvaluationResponse(item, root) {
   const draft = rmsEvaluationDraftFromDom(root, item.id);
-  if (!draft.response || !draft.destination) {
-    showFeedback("Selecciona el resultado y envíalo a Negociación para confirmar la condición comercial.", "info", { title: "Evaluación" });
+  const submission = window.RmsEvaluationStationCore?.canonicalSubmission({
+    source_id: item.source_id,
+    source_type: item.source_type || "PLAYER",
+    lead_id: item.lead_id || null,
+    ...draft,
+  }) || { valid: Boolean(draft.response), route: rmsEvaluationRoute(draft.response, draft.destination), payload: draft };
+  const status = rmsCommercialNode(root, "[data-rms-evaluation-status]", item.id);
+  if (!submission.valid) {
+    if (status) {
+      status.dataset.state = "error";
+      status.querySelector("span").textContent = submission.error || "Completa la decisión antes de continuar.";
+    }
+    showFeedback(submission.error || "Selecciona lo que ocurrió antes de continuar.", "info", { title: "Evaluación" });
     return;
   }
-  if (draft.response === "RECYCLE" && (!draft.recycle_reason || !draft.recycle_note || !draft.recycle_at)) {
-    showFeedback("Para enviar a Reciclaje registra el motivo, explícalo brevemente y define cuándo revisar el caso.", "info", { title: "Evaluación" });
-    return;
-  }
+  const canonicalDraft = submission.payload;
   const saveButton = rmsCommercialNode(root, "[data-rms-save-evaluation]", item.id);
-  if (saveButton) saveButton.disabled = true;
-  showFeedback("Guardando la evaluación y dirigiendo el lead…", "info", { title: "Evaluación" });
-  const result = await api("/api/business/rms-machine/evaluation-response", {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify({ source_id: item.source_id, source_type: item.source_type || "PLAYER", lead_id: item.lead_id || null, ...draft }),
-  });
-  if (state.rmsEvaluationDrafts) delete state.rmsEvaluationDrafts[item.id];
-  const destination = {
-    NEGOTIATION: "accion_correctiva",
-    RISK_REVIEW: "control_anti_fuga",
-    ATTRIBUTED_SALE: "cierre",
-    RECYCLE: "procesamiento",
-  }[draft.destination] || "accion_correctiva";
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.classList.add("is-loading");
+  }
+  if (status) {
+    status.dataset.state = "loading";
+    status.querySelector("span").textContent = `Guardando y preparando ${submission.route.label}…`;
+  }
+  showFeedback("Guardando la evaluación con una ruta verificable…", "loading", { title: "Evaluación", timeout: 0 });
+  let result;
+  try {
+    result = await api("/api/business/rms-machine/evaluation-response", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(canonicalDraft),
+    });
+  } catch (error) {
+    if (saveButton) {
+      saveButton.disabled = false;
+      saveButton.classList.remove("is-loading");
+    }
+    if (status) {
+      status.dataset.state = "error";
+      status.querySelector("span").textContent = error.message || "No se pudo confirmar la ruta. Puedes reintentar sin duplicar la operación.";
+    }
+    throw error;
+  }
+  clearRmsEvaluationDraft(item.id);
+  const destination = window.RmsEvaluationStationCore?.confirmedPhase(result, canonicalDraft.response)
+    || result?.state?.rms_phase
+    || result?.movement?.to_phase
+    || submission.route.phase;
   state.rmsMachineLoaded = false;
-  await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: destination });
   const warning = result?.agenda_warning ? " La tarea automática no se pudo crear, pero el lead sí fue dirigido." : "";
-  showFeedback(`Evaluación registrada: el lead fue enviado a ${rmsEvaluationRoute(draft.response, draft.destination).label}.${warning}`, result?.agenda_warning ? "info" : "success", { title: "Evaluación" });
-  if (draft.destination === "RECYCLE") {
+  const successMessage = result?.duplicate
+    ? `Esta evaluación ya estaba registrada en ${submission.route.label}; no se duplicó.`
+    : `Evaluación registrada: el lead fue enviado a ${submission.route.label}.`;
+  if (status) {
+    status.dataset.state = result?.agenda_warning ? "warning" : "success";
+    status.querySelector("span").textContent = `${successMessage}${warning}`;
+  }
+  showFeedback(`${successMessage}${warning}`, result?.agenda_warning ? "info" : "success", { title: "Evaluación" });
+  if (canonicalDraft.destination === "RECYCLE") {
     setView("recycling");
     return;
   }
@@ -57426,6 +57509,21 @@ function rmsRiskV2SetDecision(card, decision) {
     const active = button.dataset.rmsRiskTabKey === (recycle ? "recycle" : "sale");
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-selected", String(active));
+  });
+  rmsStationWorkspace.querySelector("[data-rms-station-load-more]")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const pagination = state.rmsMachine?.pagination || {};
+    const offset = Number(pagination.offset || 0) + Number(pagination.limit || 36);
+    button.disabled = true;
+    button.textContent = "Cargando…";
+    try {
+      await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: phase, offset, append: true });
+      renderRmsStationOnly();
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "Reintentar carga";
+      showFeedback(error.message || "No se pudieron cargar más oportunidades.", "error", { title: stage.label || "Estación" });
+    }
   });
   card.querySelector("[data-rms-risk-save-label]").textContent = recycle ? "Enviar a Reciclaje" : "Enviar a Ventas atribuidas";
   const item = rmsOpportunityById(card.dataset.rmsStationLead || "");

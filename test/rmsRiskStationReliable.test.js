@@ -24,7 +24,7 @@ test("las acciones resuelven la oportunidad exacta sin depender de la pagina glo
 
 test("Riesgos abre con lectura directa y render progresivo ligero", () => {
   assert.match(service, /const stationFastPath = lite && Boolean\(phaseFilter\)/);
-  assert.match(service, /recentStateRowsForBusiness\(businessId, limit, phaseFilter\)/);
+  assert.match(service, /recentStateRowsForBusiness\(businessId, limit, phaseFilter, stationOffset\)/);
   assert.match(service, /phaseFilter === "control_anti_fuga"\s*\? await riskLeadRowsForStateRefs\(businessId, stationStateRows\)/);
   assert.match(app, /phase === "control_anti_fuga" \? 1 : RMS_STATION_RENDER_INITIAL_LIMIT/);
   assert.match(app, /display\.matchingRows\.length > display\.pageSize/);

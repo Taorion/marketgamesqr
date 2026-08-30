@@ -1,0 +1,541 @@
+/* Qori GOS · Evaluación
+   Una sola decisión visible, una ruta determinística y feedback por lead. */
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="conversion"] .rms-evaluation-work-item {
+  --eval-navy: #052a6b;
+  --eval-blue: #0759d6;
+  --eval-cyan: #16d9d0;
+  --eval-ink: #071d3e;
+  --eval-muted: #526b83;
+  --eval-line: #cfdfec;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(5, 42, 107, .14) !important;
+  border-radius: 24px !important;
+  background: #fff !important;
+  box-shadow: 0 22px 60px rgba(5, 42, 107, .12) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead {
+  grid-template-columns: minmax(220px, .75fr) minmax(0, 1.55fr) !important;
+  margin: 0 !important;
+  padding: 18px clamp(18px, 2.3vw, 30px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid #d8e6f1 !important;
+  border-radius: 0 !important;
+  background: linear-gradient(105deg, #fff 0%, #f2f9ff 58%, #f9fdff 100%) !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item .rms-commercial-work-console {
+  display: grid !important;
+  gap: 16px !important;
+  min-width: 0 !important;
+  padding: clamp(16px, 2.4vw, 30px) !important;
+  background: linear-gradient(180deg, #f7fbff 0%, #fff 42%) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(210px, .34fr) !important;
+  align-items: stretch !important;
+  gap: 18px !important;
+  padding: clamp(20px, 2.8vw, 34px) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(22, 217, 208, .26) !important;
+  border-radius: 22px !important;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(22, 217, 208, .24), transparent 30%),
+    linear-gradient(125deg, #052a6b 0%, #064298 58%, #0759d6 100%) !important;
+  box-shadow: 0 18px 46px rgba(5, 42, 107, .22) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero :is(.mono-label, h4, p),
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-metrics :is(span, strong),
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-signal :is(strong, small) {
+  color: #fff !important;
+  -webkit-text-fill-color: currentColor !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+html body:not(#evaluationPremiumA#evaluationPremiumB#evaluationPremiumC#evaluationPremiumD)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="conversion"] .rms-evaluation-work-item .rms-evaluation-hero .rms-evaluation-hero-copy :is(.mono-label, h4),
+html body:not(#evaluationPremiumA#evaluationPremiumB#evaluationPremiumC#evaluationPremiumD)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="conversion"] .rms-evaluation-work-item .rms-evaluation-hero .rms-evaluation-hero-signal :is(strong, small) {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+html body:not(#evaluationPremiumA#evaluationPremiumB#evaluationPremiumC#evaluationPremiumD)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="conversion"] .rms-evaluation-work-item .rms-evaluation-hero .rms-evaluation-hero-copy p {
+  color: #dcecff !important;
+  -webkit-text-fill-color: #dcecff !important;
+}
+
+html body:not(#evaluationPremiumA#evaluationPremiumB#evaluationPremiumC#evaluationPremiumD)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="conversion"] .rms-evaluation-work-item > .rms-commercial-work-lead :is(.rms-commercial-work-kicker, .rms-activation-work-person strong, .rms-activation-work-person small, .rms-activation-work-facts dt, .rms-activation-work-facts dd) {
+  color: #071d3e !important;
+  -webkit-text-fill-color: #071d3e !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-copy {
+  display: grid !important;
+  align-content: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-copy h4 {
+  max-width: 760px !important;
+  margin: 0 !important;
+  font-size: clamp(1.45rem, 2.6vw, 2.25rem) !important;
+  line-height: 1.06 !important;
+  letter-spacing: -.035em !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-copy p {
+  max-width: 740px !important;
+  margin: 0 !important;
+  color: #dcecff !important;
+  font-size: .92rem !important;
+  line-height: 1.5 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-metrics {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+  margin-top: 10px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-metrics > div {
+  min-width: 0 !important;
+  padding: 10px 12px !important;
+  border: 1px solid rgba(255, 255, 255, .18) !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, .1) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-metrics span {
+  display: block !important;
+  color: #bde9ff !important;
+  font-size: .65rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-metrics strong {
+  display: block !important;
+  margin-top: 3px !important;
+  overflow: hidden !important;
+  font-size: .84rem !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-signal {
+  display: grid !important;
+  place-items: center !important;
+  align-content: center !important;
+  gap: 9px !important;
+  padding: 18px !important;
+  border: 1px solid rgba(255, 255, 255, .2) !important;
+  border-radius: 18px !important;
+  background: rgba(2, 26, 72, .3) !important;
+  text-align: center !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-svg {
+  display: block !important;
+  width: 22px !important;
+  height: 22px !important;
+  flex: 0 0 22px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-signal > .rms-evaluation-svg {
+  width: 42px !important;
+  height: 42px !important;
+  padding: 9px !important;
+  border-radius: 13px !important;
+  background: rgba(22, 217, 208, .18) !important;
+  color: #9ffcf6 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-steps {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 9px !important;
+  border: 1px solid var(--eval-line) !important;
+  border-radius: 16px !important;
+  background: #fff !important;
+  list-style: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-steps li {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  padding: 8px 10px !important;
+  border-radius: 11px !important;
+  color: #698097 !important;
+  font-size: .75rem !important;
+  font-weight: 800 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-steps li:is(.is-active, .is-ready) {
+  background: #eaf4ff !important;
+  color: var(--eval-blue) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-steps li.is-done {
+  color: #087a76 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-steps b {
+  display: grid !important;
+  width: 24px !important;
+  height: 24px !important;
+  place-items: center !important;
+  flex: 0 0 24px !important;
+  border-radius: 8px !important;
+  background: #eef4f9 !important;
+  color: inherit !important;
+  font-size: .7rem !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-context,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-decision-panel,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-next-panel {
+  border: 1px solid var(--eval-line) !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  box-shadow: 0 10px 28px rgba(5, 42, 107, .055) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-decision-panel,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-next-panel {
+  padding: clamp(16px, 2.1vw, 24px) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-panel-head h5 {
+  margin: 3px 0 0 !important;
+  color: var(--eval-ink) !important;
+  font-size: clamp(1rem, 1.55vw, 1.2rem) !important;
+  line-height: 1.25 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-decision-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 11px !important;
+  margin-top: 16px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice {
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) 22px !important;
+  align-items: start !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+  min-height: 126px !important;
+  padding: 15px !important;
+  border: 1px solid #cbddea !important;
+  border-radius: 16px !important;
+  background: linear-gradient(145deg, #fff, #f8fbfe) !important;
+  color: var(--eval-ink) !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease !important;
+}
+
+html body:not(#evaluationPremiumA#evaluationPremiumB#evaluationPremiumC#evaluationPremiumD)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="conversion"] .rms-evaluation-work-item .rms-evaluation-decision-panel .rms-evaluation-decision-grid button.rms-evaluation-choice {
+  border-radius: 16px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice:hover {
+  transform: translateY(-1px) !important;
+  border-color: #7aaeea !important;
+  box-shadow: 0 12px 24px rgba(5, 42, 107, .09) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice:focus-visible {
+  outline: 3px solid rgba(7, 89, 214, .24) !important;
+  outline-offset: 3px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice.is-selected {
+  border-color: var(--eval-blue) !important;
+  background: linear-gradient(145deg, #edf6ff, #fff) !important;
+  box-shadow: 0 12px 28px rgba(7, 89, 214, .13) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice-icon {
+  display: grid !important;
+  width: 42px !important;
+  height: 42px !important;
+  place-items: center !important;
+  border-radius: 12px !important;
+  background: #e8f3ff !important;
+  color: var(--eval-blue) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice-copy {
+  display: grid !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice-copy :is(em, strong, small) {
+  display: block !important;
+  max-width: 100% !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  hyphens: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice-copy em {
+  color: #54728c !important;
+  font-size: .66rem !important;
+  font-style: normal !important;
+  font-weight: 850 !important;
+  letter-spacing: .05em !important;
+  text-transform: uppercase !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice-copy strong {
+  color: var(--eval-ink) !important;
+  font-size: .94rem !important;
+  line-height: 1.22 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice-copy small {
+  color: var(--eval-muted) !important;
+  font-size: .77rem !important;
+  line-height: 1.4 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice-check {
+  display: grid !important;
+  width: 22px !important;
+  height: 22px !important;
+  place-items: center !important;
+  overflow: hidden !important;
+  border: 1px solid #bdd1e1 !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  color: transparent !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice-check .rms-evaluation-svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice.is-selected .rms-evaluation-choice-check {
+  border-color: var(--eval-blue) !important;
+  background: var(--eval-blue) !important;
+  color: #fff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-preview {
+  display: grid !important;
+  grid-template-columns: 48px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 17px 18px !important;
+  border: 1px dashed #b9ccdc !important;
+  border-radius: 17px !important;
+  background: #f5f8fb !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-preview > .rms-evaluation-svg {
+  width: 48px !important;
+  height: 48px !important;
+  padding: 12px !important;
+  border-radius: 14px !important;
+  background: #e8eef4 !important;
+  color: #627d94 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-preview.is-ready {
+  border-style: solid !important;
+  border-color: #9bc2ec !important;
+  background: linear-gradient(135deg, #eef7ff, #fff) !important;
+  box-shadow: 0 12px 28px rgba(5, 42, 107, .07) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-preview[data-route-tone="risk"] { border-color: #e6ba6c !important; background: linear-gradient(135deg, #fff8e9, #fff) !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-preview[data-route-tone="sale"] { border-color: #82d4bb !important; background: linear-gradient(135deg, #edfff8, #fff) !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-preview[data-route-tone="recycle"] { border-color: #c9b8ee !important; background: linear-gradient(135deg, #f7f2ff, #fff) !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-preview strong,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-preview small {
+  display: block !important;
+  color: var(--eval-ink) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-preview small {
+  margin-top: 3px !important;
+  color: var(--eval-muted) !important;
+  line-height: 1.4 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-state {
+  padding: 7px 10px !important;
+  border-radius: 999px !important;
+  background: #e7edf3 !important;
+  color: #5b7185 !important;
+  font-size: .68rem !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-state.is-ready {
+  background: #dff4ff !important;
+  color: #0759a5 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-next-panel {
+  display: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-next-panel.is-visible {
+  display: block !important;
+  animation: qori-evaluation-reveal .24s ease-out !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-form-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 13px !important;
+  margin-top: 16px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-form-grid label,
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-commercial-note-field {
+  min-width: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-submit-zone {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, auto) !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 14px !important;
+  border: 1px solid #c8dceb !important;
+  border-radius: 17px !important;
+  background: linear-gradient(135deg, #f6fbff, #fff) !important;
+  box-shadow: 0 12px 30px rgba(5, 42, 107, .07) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-submit-feedback {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  color: var(--eval-muted) !important;
+  font-size: .78rem !important;
+  font-weight: 750 !important;
+  line-height: 1.4 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-submit-feedback[data-state="loading"] { color: #0759a5 !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-submit-feedback[data-state="success"] { color: #087a58 !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-submit-feedback[data-state="warning"] { color: #9a6100 !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-submit-feedback[data-state="error"] { color: #aa2f3d !important; }
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-submit {
+  display: inline-flex !important;
+  min-height: 48px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 9px !important;
+  padding: 11px 18px !important;
+  border: 0 !important;
+  border-radius: 13px !important;
+  background: linear-gradient(135deg, #0759d6, #03459f) !important;
+  color: #fff !important;
+  font-weight: 900 !important;
+  box-shadow: 0 12px 24px rgba(7, 89, 214, .22) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-submit:disabled {
+  background: #d7e1e9 !important;
+  color: #6f8191 !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-submit.is-loading .rms-evaluation-svg {
+  animation: qori-evaluation-spin .8s linear infinite !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-empty {
+  display: grid !important;
+  grid-template-columns: 58px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: clamp(20px, 3vw, 32px) !important;
+  border: 1px dashed #a9c7df !important;
+  border-radius: 20px !important;
+  background: linear-gradient(135deg, #f2f9ff, #fff) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-empty > .rms-evaluation-svg {
+  width: 58px !important;
+  height: 58px !important;
+  padding: 15px !important;
+  border-radius: 17px !important;
+  background: #e1f2ff !important;
+  color: var(--eval-blue) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-empty :is(strong, small) { display: block !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-empty strong { color: var(--eval-ink) !important; font-size: 1rem !important; }
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-empty small { margin-top: 4px !important; color: var(--eval-muted) !important; line-height: 1.45 !important; }
+
+@keyframes qori-evaluation-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes qori-evaluation-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 920px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-signal { grid-template-columns: 42px minmax(0, 1fr) !important; justify-items: start !important; text-align: left !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-decision-grid { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice { min-height: 112px !important; }
+}
+
+@media (max-width: 680px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item > .rms-commercial-work-lead,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-form-grid,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-submit-zone,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-empty { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-steps { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-preview { grid-template-columns: 42px minmax(0, 1fr) !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-state { grid-column: 1 / -1 !important; justify-self: start !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-submit { width: 100% !important; }
+}
+
+@media (max-width: 430px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-work-item .rms-commercial-work-console { padding: 12px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero { padding: 18px !important; border-radius: 18px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-hero-metrics { grid-template-columns: 1fr !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice { grid-template-columns: 36px minmax(0, 1fr) 20px !important; min-height: 0 !important; padding: 13px !important; gap: 10px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice-icon { width: 36px !important; height: 36px !important; }
+  html body:not(#evaluationPremiumA#evaluationPremiumB#evaluationPremiumC#evaluationPremiumD)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace[data-station-theme="conversion"] .rms-evaluation-work-item .rms-evaluation-decision-panel .rms-evaluation-decision-grid button.rms-evaluation-choice { border-radius: 14px !important; }
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-route-preview { padding: 14px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-choice,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-next-panel.is-visible,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-evaluation-submit.is-loading .rms-evaluation-svg {
+    animation: none !important;
+    transition: none !important;
+  }
+}

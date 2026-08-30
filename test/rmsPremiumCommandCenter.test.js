@@ -4,6 +4,7 @@ const fs = require("node:fs");
 
 const markup = fs.readFileSync("empresa/index.html", "utf8");
 const app = fs.readFileSync("empresa/js/app.js", "utf8");
+const evaluationCore = fs.readFileSync("empresa/js/evaluation-station-core.js", "utf8");
 const css = fs.readFileSync("empresa/css/portal-clean-v39.css", "utf8");
 const legacyCss = fs.readFileSync("empresa/css/styles.css", "utf8");
 
@@ -66,8 +67,8 @@ test("the station slider is the first RMS workspace and remains above the fold",
 
 test("RMS no longer exposes internal version copy or opens Reciclaje as an operational station", () => {
   assert.doesNotMatch(app, /Qori v137 modo anti-bloqueo/);
-  assert.match(app, /RECYCLE: "procesamiento"/);
-  assert.match(app, /if \(draft\.destination === "RECYCLE"\) \{\s*setView\("recycling"\)/);
-  assert.match(app, /destination !== built\.destination/);
-  assert.match(app, /item\.stage = destination/);
+  assert.match(evaluationCore, /RECYCLE: Object\.freeze\(\{ destination: "RECYCLE", phase: "procesamiento"/);
+  assert.match(app, /if \(canonicalDraft\.destination === "RECYCLE"\) \{\s*setView\("recycling"\)/);
+  assert.match(app, /RmsEvaluationStationCore\?\.confirmedPhase\(result, canonicalDraft\.response\)/);
+  assert.match(app, /openRmsStation\(destination, \{ source: "evaluation" \}\)/);
 });

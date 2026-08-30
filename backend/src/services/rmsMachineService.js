@@ -718,18 +718,22 @@ async function stateRowsFor(businessId, rows = []) {
   return new Map(result.rows.map((row) => [`${row.source_type}:${row.source_id}`, row]));
 }
 
-async function recentStateRowsForBusiness(businessId, limit = 240, phase = "") {
+async function recentStateRowsForBusiness(businessId, limit = 240, phase = "", offset = 0) {
   const normalizedPhase = phase ? normalizePhase(phase, "") : "";
-  const params = [businessId, Math.min(Math.max(Number(limit || 240), 1), 500)];
-  const phaseClause = normalizedPhase ? "and rms_phase = $3" : "";
+  const params = [
+    businessId,
+    Math.min(Math.max(Number(limit || 240), 1), 500),
+    Math.max(Number(offset || 0), 0),
+  ];
+  const phaseClause = normalizedPhase ? "and rms_phase = $4" : "";
   if (normalizedPhase) params.push(normalizedPhase);
   const result = await query(
-    `select *
+    `select *, count(*) over()::int as rms_total_count
        from rms_lead_state
       where business_id = $1
         ${phaseClause}
       order by updated_at desc
-      limit $2`,
+      limit $2 offset $3`,
     params
   );
   return result.rows || [];
@@ -1040,6 +1044,7 @@ async function acceptedRmsActivationDeliveryMap(businessId) {
 
 async function listRmsOpportunities(businessId, filters = {}) {
   const limit = Math.min(Number(filters.limit || 120), 180);
+  const stationOffset = Math.max(Number(filters.offset || 0), 0);
   const phaseFilter = normalizePhase(filters.rms_phase || filters.phase, "");
   const lite = ["1", "true", true].includes(filters.lite);
   // Primero se obtiene la persona completa, sin limitarla a una estación.
@@ -1054,14 +1059,17 @@ async function listRmsOpportunities(businessId, filters = {}) {
   const riskStationFastPath = stationFastPath && phaseFilter === "control_anti_fuga";
   const inventoryPromise = riskStationFastPath ? Promise.resolve([]) : inventoryProductsForBusiness(businessId);
   const stationStateRows = stationFastPath
-    ? await recentStateRowsForBusiness(businessId, limit, phaseFilter)
+    ? await recentStateRowsForBusiness(businessId, limit, phaseFilter, stationOffset)
     : null;
+  const stationTotal = stationFastPath
+    ? Number(stationStateRows[0]?.rms_total_count || stationStateRows.length)
+    : 0;
   const data = stationFastPath
     ? {
       leads: phaseFilter === "control_anti_fuga"
         ? await riskLeadRowsForStateRefs(businessId, stationStateRows)
         : await leadRowsForStateRefs(businessId, stationStateRows, crmFilters),
-      pagination: { total: stationStateRows.length, limit, offset: 0, has_more: stationStateRows.length >= limit },
+      pagination: { total: stationTotal, limit, offset: stationOffset, has_more: stationOffset + stationStateRows.length < stationTotal },
     }
     : await listLeadCrmRows(businessId, {
       ...crmFilters,
@@ -1128,10 +1136,10 @@ async function listRmsOpportunities(businessId, filters = {}) {
     opportunities,
     pagination: {
       ...(data.pagination || {}),
-      total: opportunities.length,
+      total: stationFastPath ? stationTotal : opportunities.length,
       limit,
       offset: Number(filters.offset || 0),
-      has_more: false,
+      has_more: stationFastPath ? Boolean(data.pagination?.has_more) : false,
     },
     stages: RMS_PHASES,
     quality_controls: RMS_QUALITY_CONTROLS,
@@ -1744,6 +1752,13 @@ const RMS_EVALUATION_DESTINATIONS = {
   RECYCLE: RMS_EVALUATION_ROUTES.RECYCLE,
 };
 
+function rmsEvaluationDestination(response, route) {
+  if (response === "RECYCLE") return "RECYCLE";
+  if (route.phase === "cierre") return "ATTRIBUTED_SALE";
+  if (route.phase === "control_anti_fuga") return "RISK_REVIEW";
+  return "NEGOTIATION";
+}
+
 function rmsEvaluationSummary(response, route) {
   if (response === "PAID_SALE") return "La venta fue reportada desde Activación 1; falta completar producto, cantidad, pago y evidencia antes de atribuirla.";
   if (response === "NO_RESPONSE") return "El cliente no respondió a Activación 1; el caso pasa a Riesgos de fuga para decidir una recuperación responsable.";
@@ -1759,13 +1774,25 @@ function rmsEvaluationSummary(response, route) {
 
 async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
-  const item = await findOpportunity(businessId, sourceType, payload.source_id);
-  if (item.stage !== "procesamiento") throw badRequest("La respuesta solo puede registrarse desde Evaluación.");
   const response = String(payload.response || "").toUpperCase();
-  let destination = "";
   const route = RMS_EVALUATION_ROUTES[response];
   if (!RMS_EVALUATION_ROUTES[response]) throw badRequest("Selecciona una decisión comercial válida.");
-  destination = route.phase === "cierre" ? "ATTRIBUTED_SALE" : route.phase === "control_anti_fuga" ? "RISK_REVIEW" : route.phase === "reciclaje" ? "RECYCLE" : "NEGOTIATION";
+  const destination = rmsEvaluationDestination(response, route);
+  const idempotencyKey = String(payload.idempotency_key || "").trim().slice(0, 240)
+    || `evaluation:${sourceType}:${payload.source_id}:${Date.now()}`;
+  const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  const persistedEvaluation = item.state_metadata?.rms_evaluation || {};
+  if (persistedEvaluation.idempotency_key === idempotencyKey) {
+    const persistedRoute = RMS_EVALUATION_ROUTES[persistedEvaluation.response] || route;
+    return {
+      evaluation: persistedEvaluation,
+      route: persistedRoute,
+      state: { rms_phase: item.stage },
+      duplicate: true,
+      agenda_warning: item.state_metadata?.rms_evaluation_agenda_warning || null,
+    };
+  }
+  if (item.stage !== "procesamiento") throw badRequest("La respuesta solo puede registrarse desde Evaluación.");
   const recycleAt = payload.recycle_at || payload.next_action_at || null;
   const recycleNote = String(payload.recycle_note || "").trim();
   if (response === "RECYCLE") {
@@ -1778,9 +1805,10 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
     ? await rmsInventoryProductSnapshot(businessId, payload.recommended_inventory_product_id)
     : null;
   const evaluation = {
+    idempotency_key: idempotencyKey,
     response,
     scenario: ["PAID_SALE", "NEGOTIATION"].includes(response) ? (response === "PAID_SALE" ? "EASY_CLOSE" : "ASSISTED_NEGOTIATION") : response === "RECYCLE" ? "RECYCLE" : "ASSISTED_NEGOTIATION",
-    destination: destination || (route.phase === "cierre" ? "ATTRIBUTED_SALES" : route.phase === "accion_correctiva" ? "NEGOTIATION" : route.phase === "reciclaje" ? "RECYCLE" : null),
+    destination,
     route: route.phase,
     route_label: route.label,
     need: String(payload.need || "").trim() || null,
@@ -1805,34 +1833,12 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
     evaluated_at: new Date().toISOString(),
     evaluated_by: user.id,
   };
-  const historyNote = await createLeadNote(businessId, user, payload.source_id, sourceType, {
-    note: `Evaluación · ${route.label}. ${rmsEvaluationSummary(response, route)}`,
-    note_type: "commercial",
-    metadata: {
-      source_module: "rms_evaluation",
-      rms_evaluation: evaluation,
-    },
-  });
+  // La transicion es el nucleo de la operacion. Notas, agenda y proyecciones
+  // enriquecen el expediente, pero una falla secundaria nunca debe convertir
+  // un movimiento ya confirmado en un falso error para el operador.
+  let historyNote = null;
   let agenda = null;
-  let agendaWarning = null;
-  if (evaluation.next_action || evaluation.next_action_at) {
-    try {
-      agenda = await createRmsAgendaTask(businessId, user, {
-        source_id: payload.source_id,
-        source_type: sourceType,
-        lead_id: item.lead_id || payload.lead_id || null,
-        stage: route.phase,
-        action_title: evaluation.next_action || route.action,
-        note: `Evaluación RMS: ${note}`,
-        due_at: evaluation.next_action_at || undefined,
-        priority_score: evaluation.urgency === "URGENT" ? 95 : evaluation.urgency === "HIGH" ? 75 : evaluation.urgency === "LOW" ? 35 : 55,
-        revenue_potential: evaluation.budget_amount ?? item.revenue_potential,
-        metadata: { rms_evaluation_note_id: historyNote.id, rms_evaluation_response: response, rms_evaluation_destination: evaluation.destination },
-      });
-    } catch (error) {
-      agendaWarning = error?.message || "No se pudo crear la tarea automática.";
-    }
-  }
+  const sideEffectWarnings = [];
   const recycling = response === "RECYCLE" ? await scheduleRmsRecyclingCase(businessId, user, {
     source_id: payload.source_id,
     source_type: sourceType,
@@ -1846,13 +1852,9 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
     recycle_consent: "NOT_REQUIRED",
     recycle_note: recycleNote,
     recycle_target_phase: "procesamiento",
-    idempotency_key: payload.idempotency_key ? `evaluation:${payload.idempotency_key}` : null,
-    metadata: { rms_evaluation: evaluation, agenda_note_id: agenda?.item?.id || null },
+    idempotency_key: `evaluation-recycle:${idempotencyKey}`,
+    metadata: { rms_evaluation: evaluation, agenda_note_id: null },
   }) : null;
-  if (recycling?.recycling_case?.id && agenda?.item?.id) await query(
-    `update rms_recycling_cases set agenda_note_id=$3, updated_at=now() where business_id=$1 and id=$2`,
-    [businessId, recycling.recycling_case.id, agenda.item.id]
-  );
   const movement = await moveRmsLeadPhase(businessId, user, {
     source_type: sourceType,
     source_id: payload.source_id,
@@ -1866,68 +1868,121 @@ async function recordRmsEvaluationResponse(businessId, user, payload = {}) {
     reason: rmsEvaluationSummary(response, route),
     metadata: {
       rms_evaluation: evaluation,
-      rms_evaluation_note_id: historyNote.id,
-      rms_evaluation_agenda_note_id: agenda?.item?.id || null,
-      rms_evaluation_agenda_warning: agendaWarning,
       rms_evaluation_destination: evaluation.destination,
       recycling: recycling ? { status: "RECYCLED", recycling_case_id: recycling.recycling_case?.id || null, reason: payload.recycle_reason, reactivate_at: recycleAt, note: recycleNote } : null,
     },
   }, RMS_TRANSITION_AUTHORITY.EVALUATION);
+
+  try {
+    historyNote = await createLeadNote(businessId, user, payload.source_id, sourceType, {
+      note: `Evaluación · ${route.label}. ${rmsEvaluationSummary(response, route)}`,
+      note_type: "commercial",
+      metadata: { source_module: "rms_evaluation", rms_evaluation: evaluation },
+    });
+  } catch (error) {
+    sideEffectWarnings.push(error?.message || "No se pudo crear la nota comercial.");
+  }
+  if (evaluation.next_action || evaluation.next_action_at) {
+    try {
+      agenda = await createRmsAgendaTask(businessId, user, {
+        source_id: payload.source_id,
+        source_type: sourceType,
+        lead_id: item.lead_id || payload.lead_id || null,
+        stage: route.phase,
+        action_title: evaluation.next_action || route.action,
+        note: `Evaluación RMS: ${note}`,
+        due_at: evaluation.next_action_at || undefined,
+        priority_score: evaluation.urgency === "URGENT" ? 95 : evaluation.urgency === "HIGH" ? 75 : evaluation.urgency === "LOW" ? 35 : 55,
+        revenue_potential: evaluation.budget_amount ?? item.revenue_potential,
+        metadata: {
+          rms_evaluation_idempotency_key: idempotencyKey,
+          rms_evaluation_note_id: historyNote?.id || null,
+          rms_evaluation_response: response,
+          rms_evaluation_destination: evaluation.destination,
+        },
+      });
+    } catch (error) {
+      sideEffectWarnings.push(error?.message || "No se pudo crear la tarea automática.");
+    }
+  }
+  if (recycling?.recycling_case?.id && agenda?.item?.id) {
+    try {
+      await query(
+        `update rms_recycling_cases set agenda_note_id=$3, updated_at=now() where business_id=$1 and id=$2`,
+        [businessId, recycling.recycling_case.id, agenda.item.id]
+      );
+    } catch (error) {
+      sideEffectWarnings.push(error?.message || "No se pudo enlazar la agenda de Reciclaje.");
+    }
+  }
   if (response === "RECYCLE") {
-    await recordRmsWorkflowEvent(businessId, user, {
-      source_type: sourceType,
-      source_id: payload.source_id,
-      lead_id: item.lead_id || payload.lead_id || null,
-      event_type: "evaluation_sent_to_recycling",
-      event_title: "Lead enviado a Reciclaje desde Evaluación",
-      event_description: recycleNote,
-      rms_phase: "reciclaje",
-      metadata: { rms_evaluation: evaluation, recycling_case_id: recycling?.recycling_case?.id || null, movement_id: movement.movement?.id || null },
-    });
-    await markRmsLifecycleStatus(businessId, user, {
-      source_type: sourceType,
-      source_id: payload.source_id,
-      lead_id: item.lead_id || payload.lead_id || null,
-      lifecycle_status: "RECYCLED",
-      event_type: "evaluation_recycled_analyzed",
-      event_title: "Reciclaje incorporado a Inteligencia",
-      reason: recycleNote,
-      idempotency_key: `evaluation-recycle:${payload.idempotency_key || `${sourceType}:${payload.source_id}`}`,
-      metadata: { rms_evaluation: evaluation, recycling_case_id: recycling?.recycling_case?.id || null },
-    });
+    try {
+      await recordRmsWorkflowEvent(businessId, user, {
+        source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+        event_type: "evaluation_sent_to_recycling", event_title: "Lead enviado a Reciclaje desde Evaluación",
+        event_description: recycleNote, rms_phase: "reciclaje",
+        metadata: { rms_evaluation: evaluation, recycling_case_id: recycling?.recycling_case?.id || null, movement_id: movement.movement?.id || null },
+      });
+      await markRmsLifecycleStatus(businessId, user, {
+        source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+        lifecycle_status: "RECYCLED", event_type: "evaluation_recycled_analyzed",
+        event_title: "Reciclaje incorporado a Inteligencia", reason: recycleNote,
+        idempotency_key: `evaluation-recycle:${idempotencyKey}`,
+        metadata: { rms_evaluation: evaluation, recycling_case_id: recycling?.recycling_case?.id || null },
+      });
+    } catch (error) {
+      sideEffectWarnings.push(error?.message || "No se pudo actualizar la proyección de Reciclaje.");
+    }
   }
   if (response === "NOT_QUALIFIED") {
-    await markRmsLifecycleStatus(businessId, user, {
-      source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
-      lifecycle_status: "LOST_ANALYZED", event_type: "evaluation_loss_analyzed",
-      event_title: "Pérdida documentada para Inteligencia", reason: note,
-      idempotency_key: `evaluation-loss:${payload.idempotency_key || `${sourceType}:${payload.source_id}`}`,
-      metadata: { rms_evaluation: evaluation },
-    });
+    try {
+      await markRmsLifecycleStatus(businessId, user, {
+        source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+        lifecycle_status: "LOST_ANALYZED", event_type: "evaluation_loss_analyzed",
+        event_title: "Pérdida documentada para Inteligencia", reason: note,
+        idempotency_key: `evaluation-loss:${idempotencyKey}`, metadata: { rms_evaluation: evaluation },
+      });
+    } catch (error) {
+      sideEffectWarnings.push(error?.message || "No se pudo actualizar la proyección de Inteligencia.");
+    }
   }
   if (response === "PAID_SALE") {
-    await recordRmsWorkflowEvent(businessId, user, {
-      source_type: sourceType,
-      source_id: payload.source_id,
-      lead_id: item.lead_id || payload.lead_id || null,
-      event_type: "payment_reported",
-      event_title: "Pago informado por el cliente",
-      event_description: "La venta fue reportada desde Activación 1; falta completar producto, cantidad, pago y evidencia en Ventas atribuidas.",
-      rms_phase: "cierre",
-      metadata: { rms_evaluation: evaluation, movement_id: movement.movement?.id || null },
-    });
-    await recordRmsWorkflowEvent(businessId, user, {
-      source_type: sourceType,
-      source_id: payload.source_id,
-      lead_id: item.lead_id || payload.lead_id || null,
-      event_type: "attributed_sale_started",
-      event_title: "Registro de venta atribuida iniciado",
-      event_description: "El caso quedó listo para completar el registro de venta atribuida.",
-      rms_phase: "cierre",
-      metadata: { rms_evaluation: evaluation, movement_id: movement.movement?.id || null },
-    });
+    try {
+      await recordRmsWorkflowEvent(businessId, user, {
+        source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+        event_type: "payment_reported", event_title: "Pago informado por el cliente",
+        event_description: "La venta fue reportada desde Activación 1; falta completar producto, cantidad, pago y evidencia en Ventas atribuidas.",
+        rms_phase: "cierre", metadata: { rms_evaluation: evaluation, movement_id: movement.movement?.id || null },
+      });
+      await recordRmsWorkflowEvent(businessId, user, {
+        source_type: sourceType, source_id: payload.source_id, lead_id: item.lead_id || payload.lead_id || null,
+        event_type: "attributed_sale_started", event_title: "Registro de venta atribuida iniciado",
+        event_description: "El caso quedó listo para completar el registro de venta atribuida.",
+        rms_phase: "cierre", metadata: { rms_evaluation: evaluation, movement_id: movement.movement?.id || null },
+      });
+    } catch (error) {
+      sideEffectWarnings.push(error?.message || "No se pudo completar la proyección de venta.");
+    }
   }
-  return { evaluation, route, note: historyNote, agenda, agenda_warning: agendaWarning, recycling, ...movement };
+  const agendaWarning = sideEffectWarnings.length ? [...new Set(sideEffectWarnings)].join(" ") : null;
+  if (historyNote?.id || agenda?.item?.id || agendaWarning) {
+    try {
+      await query(
+        `update rms_lead_state
+            set metadata = metadata || $4::jsonb, updated_at = now()
+          where business_id = $1 and source_type = $2 and source_id = $3`,
+        [businessId, sourceType, payload.source_id, JSON.stringify({
+          rms_evaluation_note_id: historyNote?.id || null,
+          rms_evaluation_agenda_note_id: agenda?.item?.id || null,
+          rms_evaluation_agenda_warning: agendaWarning,
+        })]
+      );
+    } catch (error) {
+      sideEffectWarnings.push(error?.message || "No se pudo actualizar el resumen auxiliar.");
+    }
+  }
+  const finalWarning = sideEffectWarnings.length ? [...new Set(sideEffectWarnings)].join(" ") : null;
+  return { evaluation, route, note: historyNote, agenda, agenda_warning: finalWarning, warnings: sideEffectWarnings, recycling, ...movement };
 }
 
 function rmsCommercialConfirmationFromPayload(payload = {}, user = {}, product = {}) {
