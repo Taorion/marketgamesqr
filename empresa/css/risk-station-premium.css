@@ -413,7 +413,7 @@
 }
 
 .rms-risk-v2-destinations button {
-  display: grid;
+  display: grid !important;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 2px 10px;
   padding: 16px;
@@ -430,12 +430,16 @@
 }
 
 .rms-risk-v2-destinations button small {
-  grid-column: 2;
+  grid-column: 2 !important;
+  display: block !important;
   color: var(--risk-muted);
+  text-align: left !important;
 }
 
 .rms-risk-v2-destinations button strong {
-  grid-column: 2;
+  grid-column: 2 !important;
+  display: block !important;
+  text-align: left !important;
 }
 
 .rms-risk-v2-destinations button.is-active {
@@ -531,6 +535,10 @@
 
   .rms-risk-v2-destinations button {
     padding: 12px;
+  }
+
+  .rms-risk-v2-destinations button small {
+    display: none !important;
   }
 
   .rms-risk-v2-ticket-controls,
