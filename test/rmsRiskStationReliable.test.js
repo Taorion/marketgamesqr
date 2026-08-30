@@ -412,7 +412,8 @@ test("Riesgos usa un workbench directo, responsive y sin reubicar el formulario 
   assert.match(riskCss, /\.rms-factory-console\.is-station-mode:has\(\.rms-risk-workbench\)/);
   assert.match(riskCss, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(riskCss, /@media \(prefers-reduced-motion: reduce\)/);
-  assert.match(html, /risk-station-premium\.css\?v=risk-workbench-mobile-v416-20260830/);
+  assert.match(riskCss, /padding: 8px !important/);
+  assert.match(html, /risk-station-premium\.css\?v=risk-workbench-mobile-v417-20260830/);
   assert.match(app, /risk-workbench-v415-20260830/);
   assert.match(html, /risk-workbench=fast-v415-20260830/);
 });

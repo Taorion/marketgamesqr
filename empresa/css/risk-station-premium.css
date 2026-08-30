@@ -184,15 +184,15 @@
 
 @media (max-width: 760px) {
   .rms-factory-console.is-station-mode:has(.rms-risk-workbench) {
-    padding: 8px;
+    padding: 8px !important;
   }
 
   .rms-station-workspace:has(.rms-risk-workbench) {
-    padding-inline: 0;
+    padding-inline: 0 !important;
   }
 
   .rms-lean-station:has(.rms-risk-workbench) {
-    padding: 8px;
+    padding: 8px !important;
   }
 
   .rms-risk-workbench .rms-risk-flow-phased {
