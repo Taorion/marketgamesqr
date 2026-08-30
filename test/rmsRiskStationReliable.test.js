@@ -49,7 +49,7 @@ test("Sin concesión deshabilita ticket y dirige a Responder con Venta lograda",
   assert.equal(shouldOpenResult("DISCOUNT", false), false);
   assert.equal(shouldOpenResult("NONE", true), false);
   assert.match(offerContract, /rmsRiskShouldOpenResultOnInit\(offer\.value, hasResource\)/);
-  assert.match(offerContract, /offer\.addEventListener\("change", apply\)/);
+  assert.match(offerContract, /offer\.addEventListener\("change", \(\) => apply\(true\)\)/);
   assert.match(activeSync, /bindRmsRiskOfferContract\(card, item\)/);
   assert.match(app, /if \(item\) bindRmsRiskOfferContract\(card, item\);/);
   assert.match(app, /risk-none-initial-result-v396-20260829/);
@@ -362,4 +362,25 @@ test("Preparar persiste el ticket sin generar la imagen QR y Entregar la crea ba
   assert.doesNotMatch(generate, /Generando ticket y QR|Ticket y QR listos/);
   assert.match(app, /risk-ticket-without-qr-v413-20260830/);
   assert.match(html, /risk-qr=on-demand-v413-20260830/);
+});
+
+test("Preparar solo confirma productos y beneficio; Entregar genera el ticket y habilita el contacto", () => {
+  const flow = app.slice(app.indexOf("function rmsRiskOperatingFlowMarkupPreparedFirst"), app.indexOf("// Nunca uses el validador"));
+  const prepareAction = app.slice(app.indexOf("function prepareRmsRiskSummary"), app.indexOf("async function generateAndDownloadRmsRiskQr"));
+  assert.match(flow, /data-rms-risk-prepare-summary/);
+  assert.match(flow, /Confirmar preparación/);
+  assert.match(flow, /Esta fase no llama al generador, no crea tickets y no consume créditos/);
+  assert.match(flow, /data-rms-risk-phase-panel="deliver"/);
+  assert.match(flow, /data-rms-generate-risk-resource/);
+  assert.match(flow, /Generar ticket/);
+  assert.match(flow, /Esta es la única acción que crea el ticket y reserva el crédito/);
+  assert.match(flow, /data-rms-risk-open-result/);
+  assert.match(prepareAction, /rmsRiskPreparedDraftStore\(\)\.set/);
+  assert.match(prepareAction, /rmsRiskPreparationSummaryMarkup/);
+  assert.match(prepareAction, /\["TWO_FOR_ONE", "GIFT"\]\.includes\(selected\.offer\)/);
+  assert.doesNotMatch(prepareAction, /api\(/);
+  assert.match(app, /const products = prepared\?\.products \|\| rmsRiskProductsFromDom\(card\)/);
+  assert.match(app, /resultButton\.disabled = !hasResource/);
+  assert.match(app, /risk-preparation-handoff-v414-20260830/);
+  assert.match(html, /risk-flow=preparation-handoff-v414-20260830/);
 });
