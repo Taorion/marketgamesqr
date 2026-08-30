@@ -368,3 +368,151 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Riesgos de fuga v2 · decisión directa */
+.rms-risk-v2 .rms-risk-command-console {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.rms-risk-v2-agreement,
+.rms-risk-v2-ticket-empty,
+.rms-risk-v2-ticket-ready {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--risk-line);
+  border-radius: 16px;
+  background: var(--risk-ice);
+}
+
+.rms-risk-v2-agreement div,
+.rms-risk-v2-ticket-empty div,
+.rms-risk-v2-ticket-ready div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.rms-risk-v2-destinations {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rms-risk-v2-destinations button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 10px;
+  padding: 16px;
+  border: 1px solid var(--risk-line);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--risk-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.rms-risk-v2-destinations button .material-symbols-outlined {
+  grid-row: 1 / span 2;
+}
+
+.rms-risk-v2-destinations button small {
+  color: var(--risk-muted);
+}
+
+.rms-risk-v2-destinations button.is-active {
+  border-color: var(--risk-blue-digital);
+  background: linear-gradient(145deg, var(--risk-blue-deep), var(--risk-blue-digital));
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(1, 52, 145, 0.2);
+}
+
+.rms-risk-v2-destinations button.is-active small {
+  color: #dff7ff;
+}
+
+.rms-risk-v2-panel {
+  display: grid;
+  gap: 16px;
+  padding: clamp(16px, 2vw, 24px);
+  border: 1px solid var(--risk-line);
+  border-radius: 20px;
+  background: #fff;
+}
+
+.rms-risk-v2-panel[hidden],
+.rms-risk-v2-ticket[hidden] {
+  display: none !important;
+}
+
+.rms-risk-v2-panel > header h5,
+.rms-risk-v2-products h6 {
+  margin: 2px 0 0;
+}
+
+.rms-risk-v2-products,
+.rms-risk-v2-ticket {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--risk-line);
+  border-radius: 16px;
+  background: #f8fbff;
+}
+
+.rms-risk-v2-ticket-controls,
+.rms-risk-v2-share,
+.rms-risk-v2-delivery,
+.rms-risk-v2-footer {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rms-risk-v2-delivery[hidden] {
+  display: none !important;
+}
+
+.rms-risk-v2-ticket-ready {
+  background: #ecfff7;
+  border-color: #9ee5c6;
+}
+
+.rms-risk-v2-footer {
+  position: sticky;
+  bottom: 8px;
+  z-index: 4;
+  padding: 14px;
+  border: 1px solid rgba(1, 52, 145, 0.22);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 38px rgba(1, 34, 104, 0.16);
+  backdrop-filter: blur(12px);
+}
+
+.rms-risk-v2-footer > div {
+  display: grid;
+  gap: 2px;
+}
+
+@media (max-width: 760px) {
+  .rms-risk-v2-destinations {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-risk-v2-ticket-controls,
+  .rms-risk-v2-ticket-ready,
+  .rms-risk-v2-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .rms-risk-v2-footer .solid-button,
+  .rms-risk-v2-ticket-controls .solid-button {
+    width: 100%;
+  }
+}

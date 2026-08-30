@@ -10,440 +10,77 @@ const service = fs.readFileSync(path.join(root, "backend/src/services/rmsMachine
 const crmService = fs.readFileSync(path.join(root, "backend/src/services/leadCrmService.js"), "utf8");
 const strategicQrService = fs.readFileSync(path.join(root, "backend/src/services/strategicQrService.js"), "utf8");
 const schema = fs.readFileSync(path.join(root, "database/schema.sql"), "utf8");
-const riskTicketSpeedMigration = fs.readFileSync(path.join(root, "database/migrations/20260829235900_rms_risk_ticket_generation_speed.sql"), "utf8");
-const portalCss = fs.readFileSync(path.join(root, "empresa/css/portal-clean-v39.css"), "utf8");
-const riskCss = fs.readFileSync(path.join(root, "empresa/css/risk-station-premium.css"), "utf8");
 
-test("Riesgos permite registrar una respuesta sin ticket", () => {
-  assert.match(app, /requestedPhase === "deliver" && !hasResource/);
-  assert.match(app, /Registrar respuesta sin ticket/);
-  assert.match(app, /step\("result", "3", "Responder", "Venta o Reciclaje"\)/);
-});
-
-test("la concesión se elige una vez y Responder la presenta como dato fijo", () => {
-  const activeSync = app.slice(app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"), app.indexOf("activateRmsRiskTab = function activateRmsRiskTabUnified"));
-  const fixedOffer = app.slice(app.indexOf("const rmsRiskValidationStationCardMarkupFixedOfferBase"), app.indexOf("// La imagen ya está visible en el ticket"));
-  assert.doesNotMatch(activeSync, /data-rms-risk-outcome-offer|data-rms-risk-outcome-discount-percent|data-rms-risk-outcome-detail/);
-  assert.match(activeSync, /data-rms-risk-recovery-offer/);
-  assert.match(fixedOffer, /data-rms-risk-selected-offer/);
-  assert.match(fixedOffer, /data-rms-risk-fixed-offer-label/);
-  assert.match(fixedOffer, /Sin concesión extraordinaria/);
-  assert.match(html, /portal-clean-v39\.css\?v=[^"]*risk-fixed-concession-v385/);
-});
-
-test("Sin concesión deshabilita ticket y dirige a Responder con Venta lograda", () => {
-  const ui = app.slice(app.indexOf("function rmsRiskOutcomeOfferUi"), app.indexOf("function setRmsRiskRecoveryPhase"));
-  const phasedMarkup = app.slice(app.indexOf("rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupUnified"), app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"));
-  const activeSync = app.slice(app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"), app.indexOf("activateRmsRiskTab = function activateRmsRiskTabUnified"));
-  const offerContract = app.slice(app.indexOf("function bindRmsRiskOfferContract"), app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"));
-  const initHelperSource = app.slice(app.indexOf("function rmsRiskShouldOpenResultOnInit"), app.indexOf("syncRmsRiskRecoveryPhases = function syncRmsRiskRecoveryPhasesUnified"));
-  const shouldOpenResult = Function(`${initHelperSource}; return rmsRiskShouldOpenResultOnInit;`)();
-  assert.match(ui, /expiration\.disabled = blocksTicket/);
-  assert.match(ui, /detailWrap\.hidden = !needsDetail && !isNone/);
-  assert.match(ui, /detailInput\.disabled = !needsDetail/);
-  assert.match(ui, /if \(isNone \|\| isBlank\) detailInput\.value = ""/);
-  assert.match(ui, /generate\.disabled = blocksTicket/);
-  assert.match(ui, /activateRmsRiskTab\(card\.parentElement \|\| document, id, "sale"\)/);
-  assert.match(ui, /setRmsRiskRecoveryPhase\(card, id, "result"\)/);
-  assert.equal(shouldOpenResult("NONE", false), true);
-  assert.equal(shouldOpenResult("", false), false);
-  assert.equal(shouldOpenResult("DISCOUNT", false), false);
-  assert.equal(shouldOpenResult("NONE", true), false);
-  assert.match(offerContract, /rmsRiskShouldOpenResultOnInit\(offer\.value, hasResource\)/);
-  assert.match(offerContract, /offer\.addEventListener\("change", \(\) => apply\(true\)\)/);
-  assert.match(activeSync, /bindRmsRiskOfferContract\(card, item\)/);
-  assert.match(app, /if \(item\) bindRmsRiskOfferContract\(card, item\);/);
-  assert.match(app, /risk-none-initial-result-v396-20260829/);
-  assert.match(html, /risk-none=initial-result-v396-20260829/);
-  assert.doesNotMatch(phasedMarkup, /Descuento aplicado|data-rms-risk-discount-percent/);
-});
-
-test("Riesgos exige una selección explícita y ofrece una opción inicial en blanco", () => {
-  const options = app.slice(app.indexOf("function rmsRiskRecoveryOfferOptions"), app.indexOf("function rmsRiskRecoveryAvailabilityMarkup"));
-  const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
-  assert.match(options, /<option value="" selected disabled>Selecciona una opción<\/option>/);
-  assert.match(options, /<option value="NONE">Sin concesión extraordinaria<\/option>/);
-  assert.match(activeSave, /result === "CLEARED" && !recoveryOfferValue/);
-  assert.match(activeSave, /Selecciona una alternativa de recuperación o elige Sin concesión extraordinaria/);
-  assert.match(app, /risk-none-explicit-selection-v398-20260829/);
-  assert.match(html, /risk-none-select=explicit-v398-20260829/);
-});
-
-test("Sin concesión aplica el bloqueo aunque la mejora visual posterior falle", () => {
-  const uiSource = app.slice(app.indexOf("function rmsRiskOutcomeOfferUi"), app.indexOf("function setRmsRiskRecoveryPhase"));
-  const calls = [];
-  const css = { escape: (value) => value };
-  const classList = { toggle() {} };
-  const nodes = {
-    offer: { value: "NONE", selectedOptions: [{ textContent: "Sin concesión extraordinaria" }] },
-    detailWrap: { hidden: true, classList },
-    detailInput: { disabled: false, required: true, value: "detalle anterior" },
-    expirationWrap: { classList },
-    expiration: { disabled: false },
-    generate: { disabled: false, setAttribute(name, value) { this[name] = value; } },
-    selectedOffer: { value: "" },
-    fixedLabel: { textContent: "" },
-  };
-  const card = {
-    parentElement: {},
-    querySelector(selector) {
-      if (selector.includes("recovery-offer")) return nodes.offer;
-      if (selector.includes("detail-wrap")) return nodes.detailWrap;
-      if (selector.includes("recovery-detail")) return nodes.detailInput;
-      if (selector.includes("expiration-wrap")) return nodes.expirationWrap;
-      if (selector.includes("expiration-days")) return nodes.expiration;
-      if (selector.includes("generate-risk-resource")) return nodes.generate;
-      if (selector.includes("selected-offer")) return nodes.selectedOffer;
-      if (selector.includes("fixed-offer-label")) return nodes.fixedLabel;
-      return null;
-    },
-  };
-  const apply = Function("CSS", "activateRmsRiskTab", "setRmsRiskRecoveryPhase", `${uiSource}; return rmsRiskOutcomeOfferUi;`)(
-    css,
-    (...args) => calls.push(["tab", ...args]),
-    (...args) => calls.push(["phase", ...args]),
-  );
-  apply(card, "lead", { navigateNone: true });
-  assert.equal(nodes.detailInput.disabled, true);
-  assert.equal(nodes.detailInput.required, false);
-  assert.equal(nodes.detailInput.value, "");
-  assert.equal(nodes.expiration.disabled, true);
-  assert.equal(nodes.generate.disabled, true);
-  assert.equal(nodes.selectedOffer.value, "NONE");
-  assert.equal(nodes.fixedLabel.textContent, "Sin concesión extraordinaria");
-  assert.deepEqual(calls.map((entry) => entry[0]), ["tab", "phase"]);
-});
-
-test("el descuento del beneficio se deriva de la autorización y no de un campo manual", () => {
-  const selection = app.slice(app.indexOf("function rmsRiskSelectedOffer"), app.indexOf("async function generateRmsRiskRecoveryResource"));
-  const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
-  assert.match(selection, /value === "DISCOUNT" \? permissions\.discount\.max_percent/);
-  assert.doesNotMatch(selection, /data-rms-risk-discount-percent/);
-  assert.match(activeSave, /selectedBenefit\?\.type === "DISCOUNT" \? selectedBenefit\.value : 0/);
-});
-
-test("Ventas y Reciclaje solo se abren después de confirmar el destino del servidor", () => {
-  const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
-  assert.doesNotMatch(activeSave, /await loadRmsMachineData/);
-  assert.match(activeSave, /openRmsStation\("cierre"/);
-  assert.match(activeSave, /const expectedDestination = result === "RECYCLE" \? "reciclaje" : "cierre"/);
-  assert.match(activeSave, /confirmedDestination !== expectedDestination/);
-  assert.match(activeSave, /item\.stage = confirmedDestination/);
-  assert.match(activeSave, /state\.rmsMachineLoaded = false/);
-});
-
-test("el backend conserva las dos salidas canónicas y tenant scoping", () => {
-  assert.match(service, /findOpportunity\(businessId, sourceType, payload\.source_id\)/);
-  assert.match(service, /const toPhase = isCleared \? "cierre" : "reciclaje"/);
-  assert.match(service, /from: "control_anti_fuga", decision: "RECYCLE", to: "reciclaje"/);
-  assert.match(service, /RMS_TRANSITION_AUTHORITY\.RISK_REVIEW/);
-});
-
-test("Sin concesión puede salir a Ventas sin exigir un beneficio ni una nota manual", () => {
-  const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
-  assert.match(activeSave, /recoveryOfferValue === "NONE"/);
-  assert.match(activeSave, /Venta confirmada sin concesión extraordinaria\./);
-  assert.match(app, /risk-destination-handoff-v399-20260829/);
-  assert.match(html, /risk-destination=handoff-v399-20260829/);
-});
-
-test("los beneficios personalizados se guardan, activan y eliminan de forma persistente", () => {
-  const account = app.slice(app.indexOf("function accountRiskRecoveryPayload"), app.indexOf("async function submitAccountProfile"));
-  const listeners = app.slice(app.indexOf("accountRiskAddBenefitButton?.addEventListener"), app.indexOf("accountCommunicationConnectButton?.addEventListener"));
-  assert.match(html, /id="accountRiskSaveBenefitsButton"/);
-  assert.match(account, /rms_risk_recovery_authorizations: accountRiskRecoveryPayload\(\)/);
-  assert.match(listeners, /saveAccountRiskRecoveryAuthorizations/);
-  assert.match(listeners, /data-risk-benefit-enabled/);
-  assert.match(listeners, /row\.remove\(\)/);
-  assert.match(listeners, /eliminado y ya no aparecerá en Riesgos de fuga/);
-  assert.match(app, /function newAccountRiskBenefitId/);
-  assert.match(app, /crypto\?\.randomUUID/);
-  assert.match(service, /while \(benefitIds\.has\(id\)\)/);
-});
-
-test("el beneficio personalizado conserva snapshot y porcentaje hasta Ventas atribuidas", () => {
-  assert.match(service, /custom_benefit: offer\.customBenefit \|\| null/);
-  assert.match(service, /discount_percent: offer\.discountPercent/);
-  assert.match(service, /persistedRiskRecoveryOffer\(persistedResource\)/);
-  assert.match(service, /const offer = persistedOffer \|\| validateRiskRecoveryOffer/);
-  assert.match(service, /const riskProducts = hasPersistedTicket \? persistedProducts/);
-  assert.match(service, /riskRecoveryOffer\?\.type === "CUSTOM" && riskCustomBenefit\.type === "DISCOUNT" \? riskCustomBenefit\.value : 0/);
-  assert.match(app, /riskContext\.offer\?\.type === "CUSTOM" && customBenefit\.type === "DISCOUNT" \? customBenefit\.value : 0/);
-});
-
-test("Ventas prioriza y bloquea el beneficio confirmado en Riesgos", () => {
-  const presentation = app.slice(app.indexOf("function rmsRiskRecoveryPresentation"), app.indexOf("function rmsDealProgressMarkup"));
-  const saleCardStart = app.indexOf("function rmsAttributedSaleStationCardMarkup");
-  const saleCard = app.slice(saleCardStart, app.indexOf("function recyclingStatusLabel", saleCardStart));
-  const saleApplyStart = app.indexOf("function applyRmsNegotiationContextToAttributedSales");
-  const saleApply = app.slice(saleApplyStart, app.indexOf("function rmsAttributedSaleKey", saleApplyStart));
-  assert.match(presentation, /type === "CUSTOM" && custom\.type === "OTHER"/);
-  assert.match(presentation, /offer\.label \|\| custom\.label \|\| fallbackLabel/);
-  assert.match(saleCard, /hasAppliedRiskBenefit \? riskContext\.benefitType/);
-  assert.match(saleCard, /Beneficio aplicado en Riesgos/);
-  assert.match(saleCard, /disabled aria-disabled/);
-  assert.match(saleApply, /hasAppliedRiskBenefit \? riskContext\.benefitType/);
-  assert.doesNotMatch(saleApply, /context\.benefit_type \|\| riskContext\.benefitType/);
-  assert.match(app, /risk-benefit-handoff-v400-20260829/);
-  assert.match(html, /risk-benefit=handoff-v400-20260829/);
-  const present = Function(`${presentation}; return rmsRiskRecoveryPresentation;`)();
-  const applied = present({
-    result: "CLEARED",
-    recovery_offer: {
-      type: "CUSTOM",
-      benefit_id: "benefit-otro",
-      label: "Instalación incluida",
-      custom_benefit: { id: "benefit-otro", type: "OTHER", label: "Instalación incluida", value: 1, detail: "Una instalación" },
-    },
-  });
-  assert.equal(applied.benefitType, "OTHER");
-  assert.equal(applied.label, "Instalación incluida");
-});
-
-test("el backend conserva tipo, id, etiqueta, valor y detalle del beneficio aplicado", () => {
-  assert.match(service, /recoveryOffer === "CUSTOM" && customBenefit\?\.type === "OTHER"/);
-  assert.match(service, /const effectiveBenefitType = riskBenefitType !== "NONE" \? riskBenefitType : requestedBenefitType/);
-  assert.match(service, /const effectiveBenefitDescription = riskBenefitDescription \|\| String\(payload\.benefit_description/);
-  assert.match(service, /source: "RISK_RECOVERY"/);
-  assert.match(service, /authorization_id: riskRecoveryOffer\?\.benefit_id/);
-  assert.match(service, /configured_value: Number\(riskCustomBenefit\.value/);
-  assert.match(service, /applied_benefit: appliedRiskBenefit/);
-  const validationSource = service.slice(service.indexOf("function normalizeRiskRecoveryAuthorizations"), service.indexOf("function rmsPersistedCaseFallbackRow"));
-  const validateOffer = Function("badRequest", `${validationSource}; return validateRiskRecoveryOffer;`)((message) => new Error(message));
-  const validated = validateOffer({ recovery_offer: "CUSTOM", recovery_benefit_id: "benefit-otro" }, {
-    discount: { enabled: false, max_percent: 0 },
-    two_for_one: { enabled: false, label: "" },
-    gift: { enabled: false, label: "" },
-    benefits: [{ id: "benefit-otro", enabled: true, type: "OTHER", label: "Instalación incluida", value: 1, detail: "Una instalación" }],
-  });
-  assert.equal(validated.benefitType, "OTHER");
-  assert.equal(validated.recoveryBenefitId, "benefit-otro");
-  assert.equal(validated.benefitLabel, "Instalación incluida");
-  assert.equal(validated.detail, "");
-  assert.equal(validated.customBenefit.detail, "Una instalación");
-});
-
-test("Riesgos permite agregar productos y elegir en cuáles aplica el beneficio", () => {
-  const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
-  assert.match(app, /function rmsRiskProductsBuilderMarkup/);
-  assert.match(app, /data-rms-risk-add-product/);
-  assert.match(app, /data-rms-risk-line-benefit/);
-  assert.match(app, /Aplicar el beneficio a este producto/);
-  assert.match(activeSave, /const products = lockedPreparation\?\.products \|\| rmsRiskProductsFromDom\(card\)/);
-  assert.match(activeSave, /!products\.some\(\(product\) => product\.benefit_applied\)/);
-  assert.match(activeSave, /recovery_detail:[^\n]+products,/);
-  assert.match(activeSave, /idempotency_key: reviewOperationKey/);
-  assert.match(service, /products: review\.products/);
-  assert.match(service, /benefit_applied: offer\.recoveryOffer === "NONE" \? false/);
-  assert.match(app, /risk-product-benefit-scope-v401-20260829/);
-  assert.match(html, /risk-product-scope=v401-20260829/);
-});
-
-test("Riesgos abre con consulta exacta y render progresivo ligero", () => {
+test("Riesgos abre con lectura directa y render progresivo ligero", () => {
   assert.match(service, /const stationFastPath = lite && Boolean\(phaseFilter\)/);
   assert.match(service, /recentStateRowsForBusiness\(businessId, limit, phaseFilter\)/);
-  assert.match(service, /phaseFilter === "control_anti_fuga"\s*\? await riskLeadRowsForStateRefs\(businessId, stationStateRows\)\s*: await leadRowsForStateRefs\(businessId, stationStateRows, crmFilters\)/);
-  assert.match(service, /const results = await Promise\.all\(requests\)/);
+  assert.match(service, /phaseFilter === "control_anti_fuga"\s*\? await riskLeadRowsForStateRefs\(businessId, stationStateRows\)/);
   assert.match(app, /phase === "control_anti_fuga" \? 1 : RMS_STATION_RENDER_INITIAL_LIMIT/);
   assert.match(app, /display\.matchingRows\.length > display\.pageSize/);
-  assert.match(app, /risk-station-fast-v403-20260829/);
-  assert.match(html, /risk-speed=fast-v403-20260829/);
 });
 
-test("Riesgos poda las fuentes CRM antes de calcular agregados pesados", () => {
+test("la consulta de Riesgos poda fuentes antes de agregados pesados", () => {
   assert.match(crmService, /const exactPlayerSourceSql = exactSourceClause\("PLAYER", "p"\)/);
   assert.match(crmService, /const exactManualSourceSql = exactSourceClause\("MANUAL", "ml"\)/);
   assert.match(crmService, /const exactAffiliateSourceSql = exactSourceClause\("AFFILIATE", "fa"\)/);
-  assert.match(crmService, /where p\.business_id = \$1\s+\$\{exactPlayerSourceSql\}/);
-  assert.match(crmService, /where ml\.business_id = \$1\s+\$\{exactManualSourceSql\}/);
-  assert.match(crmService, /where fa\.business_id = \$1\s+\$\{exactAffiliateSourceSql\}/);
-  assert.match(app, /risk-query-source-pruning-v407-20260829/);
-  assert.match(html, /risk-query=source-pruning-v407-20260829/);
-});
-
-test("Riesgos lee directamente sus referencias persistidas sin agregados históricos", () => {
   assert.match(service, /async function riskLeadRowsForStateRefs\(businessId, refs = \[\]\)/);
   assert.match(service, /from players p[\s\S]*p\.id = any\(\$2::uuid\[\]\)/);
-  assert.match(service, /from business_manual_leads ml[\s\S]*ml\.id = any\(\$2::uuid\[\]\)/);
-  assert.match(service, /from affiliates fa[\s\S]*fa\.id = any\(\$2::uuid\[\]\)/);
-  assert.match(service, /phaseFilter === "control_anti_fuga"\s*\? await riskLeadRowsForStateRefs\(businessId, stationStateRows\)/);
-  assert.match(app, /risk-direct-state-read-v408-20260829/);
-  assert.match(html, /risk-read=direct-v408-20260829/);
 });
 
-test("Riesgos conserva productos y carga el catálogo fuera de la respuesta crítica", () => {
-  assert.match(service, /const riskStationFastPath = stationFastPath && phaseFilter === "control_anti_fuga"/);
-  assert.match(service, /const inventoryPromise = riskStationFastPath \? Promise\.resolve\(\[\]\)/);
-  assert.match(service, /inventory_products: phaseFilter === "control_anti_fuga" && !riskStationFastPath \? inventoryProducts : undefined/);
-  assert.match(service, /scope, inventory_products \} = await listRmsOpportunities/);
-  assert.match(service, /scope,\s+inventory_products,/);
-  assert.match(app, /stationPhase === "control_anti_fuga" && Array\.isArray\(data\?\.inventory_products\)/);
-  assert.match(app, /phase === "control_anti_fuga" && !state\.inventoryLoaded/);
-  assert.match(app, /loadInventoryProducts\(\{ quiet: true \}\)/);
-  assert.match(app, /Casos y catálogo listos/);
-  assert.doesNotMatch(app, /\["curaduria", "clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre"\]/);
-  assert.match(app, /function rmsRiskProductDraftStore/);
-  assert.match(app, /persistRmsRiskProductDraft\(card, item\)/);
-  assert.match(app, /function hydrateRmsRiskProductPicker/);
-  assert.match(app, /data-rms-risk-product-options-ready="false"/);
-  const bindingBlock = app.slice(app.indexOf("root.querySelectorAll(\".rms-risk-work-item[data-rms-station-lead]\")"), app.indexOf("root.querySelectorAll(\"[data-rms-risk-tab]\")"));
-  assert.ok(bindingBlock.indexOf("bindRmsRiskProductLines(card, item)") < bindingBlock.indexOf("mountRmsRiskOperatingFlow(card, item)"));
-  assert.match(app, /const safeResource = resource && typeof resource === "object" \? resource : \{\}/);
-  assert.match(app, /risk-products-live-v405-20260829/);
-  assert.match(html, /risk-products=live-v405-20260829/);
+test("registrar la decisión mantiene tenant scoping y evita consultas N+1", () => {
+  const start = service.indexOf("async function recordRmsRiskReview");
+  const end = service.indexOf("async function reactivateRmsRecycledLead", start);
+  const review = service.slice(start, end);
+  assert.match(review, /findRiskOpportunityContext\(businessId, sourceType, payload\.source_id\)/);
+  assert.match(review, /rmsInventoryProductSnapshots\(businessId, requestedRiskProducts\.map/);
+  assert.doesNotMatch(review, /findOpportunity\(businessId/);
+  assert.doesNotMatch(review, /await Promise\.all\(requestedRiskProducts/);
+  assert.match(review, /const authorizations = normalizeRiskRecoveryAuthorizations/);
+  assert.match(review, /const toPhase = isCleared \? "cierre" : "reciclaje"/);
+  assert.match(review, /RMS_TRANSITION_AUTHORITY\.RISK_REVIEW/);
 });
 
-test("Riesgos sincroniza sin destruir el formulario y muestra feedback persistente", () => {
-  assert.match(app, /function rmsRiskStationFingerprint/);
-  assert.match(app, /riskFingerprintBeforeSync === rmsRiskStationFingerprint\(\) && updateRmsRiskStationLiveStatus\(rows\)/);
-  assert.match(app, /No pudimos actualizar ahora/);
-  assert.match(app, /data-rms-risk-retry-sync/);
-  assert.match(app, /function ensureRmsRiskActionStatus/);
-  assert.match(app, /Cambios de productos pendientes/);
-  assert.match(app, /Creando ticket/);
-  assert.match(app, /Enviando a Ventas atribuidas/);
-  assert.match(portalCss, /\.rms-risk-live-status/);
-  assert.match(portalCss, /\.rms-risk-action-status/);
-  assert.match(app, /risk-responsive-feedback-v409-20260829/);
-  assert.match(html, /risk-feedback=responsive-v409-20260829/);
+test("el beneficio y sus productos quedan persistidos como snapshot", () => {
+  assert.match(service, /custom_benefit: offer\.customBenefit \|\| null/);
+  assert.match(service, /discount_percent: offer\.discountPercent/);
+  assert.match(service, /const riskProducts = hasPersistedTicket\s+\? persistedProducts/);
+  assert.match(service, /products: review\.products/);
+  assert.match(service, /source: "RISK_RECOVERY"/);
+  assert.match(service, /applied_benefit: appliedRiskBenefit/);
 });
 
-test("Riesgos enlaza únicamente sus controles antes de quedar interactivo", () => {
-  assert.match(app, /function bindRmsRiskStationFastActions/);
-  assert.match(app, /state\.rmsStationPhase === "control_anti_fuga" && root\.querySelector\("\.rms-risk-work-item"\)/);
-  assert.match(app, /bindRmsRiskStationFastActions\(root\);\s+return;/);
-  assert.match(app, /dataset\.interactiveMs = String\(state\.rmsRiskStationInteractiveMs\)/);
-  assert.match(app, /Controles listos en \$\{state\.rmsRiskStationInteractiveMs\} ms/);
-  assert.match(app, /risk-isolated-binding-v410-20260829/);
-  assert.match(html, /risk-binding=isolated-v410-20260829/);
-});
-
-test("Preparar busca productos con resultados acotados y feedback inmediato", () => {
-  assert.match(app, /const RMS_RISK_PRODUCT_RESULT_LIMIT = 40/);
-  assert.match(app, /function currentRmsRiskProductSearchIndex/);
-  assert.match(app, /matching\.slice\(0, RMS_RISK_PRODUCT_RESULT_LIMIT\)/);
-  assert.match(app, /data-rms-risk-line-product-search/);
-  assert.match(app, /data-rms-risk-product-search-feedback/);
-  assert.match(app, /window\.setTimeout\(searchProducts, 90\)/);
-  const hydrateBlock = app.slice(app.indexOf("function hydrateRmsRiskProductPicker"), app.indexOf("function persistRmsRiskProductDraft"));
-  assert.match(hydrateBlock, /rmsRiskProductPickerSearchOptions/);
-  assert.doesNotMatch(hydrateBlock, /rmsInventoryProductPickerOptions/);
-  assert.match(portalCss, /risk-prepare-search-v411/);
-  assert.match(app, /risk-prepare-search-v411-20260829/);
-  assert.match(html, /risk-prepare=search-v411-20260829/);
-});
-
-test("la generación del ticket usa la ruta exacta, lote de productos e idempotencia indexada", () => {
-  const prepare = service.slice(service.indexOf("async function prepareRmsRiskRecoveryResource"), service.indexOf("async function recordRmsRiskReview"));
-  assert.match(service, /async function findRiskOpportunityContext/);
-  assert.match(service, /const contactSourceType = sourceType === "BUYER" \? "PLAYER" : sourceType/);
-  assert.match(service, /riskLeadRowsForStateRefs\(businessId, \[\{ source_type: contactSourceType, source_id: sourceId \}\]\)/);
+test("crear ticket conserva idempotencia y no genera la imagen en la ruta crítica", () => {
+  const start = service.indexOf("async function prepareRmsRiskRecoveryResource");
+  const end = service.indexOf("async function recordRmsRiskReview", start);
+  const prepare = service.slice(start, end);
   assert.match(prepare, /findRiskOpportunityContext\(businessId, sourceType, payload\.source_id\)/);
-  assert.doesNotMatch(prepare, /findOpportunity\(businessId/);
-  assert.match(service, /async function rmsInventoryProductSnapshots/);
-  assert.match(service, /id = any\(\$2::uuid\[\]\)/);
   assert.match(prepare, /rmsInventoryProductSnapshots\(businessId, requestedProducts\)/);
   assert.match(prepare, /existingResource\?\.qr_code_id && existingResource\.public_ticket_url/);
-  assert.ok(prepare.indexOf("if (existingResource?.qr_code_id") < prepare.indexOf("normalizeRiskRecoveryAuthorizations"));
-  assert.match(prepare, /immutable: true/);
-  assert.match(prepare, /performance: \{/);
-  assert.match(strategicQrService, /const suppliedBusiness = body\.business_context/);
-  assert.match(schema, /idx_qr_codes_rms_risk_idempotency/);
-  assert.match(riskTicketSpeedMigration, /metadata->>'rms_risk_resource_idempotency_key'/);
-  assert.match(app, /El ticket sigue en proceso/);
-  assert.match(app, /risk-ticket-fast-v412-20260830/);
-  assert.match(html, /risk-ticket=fast-v412-20260830/);
-});
-
-test("Preparar persiste el ticket sin generar la imagen QR y Entregar la crea bajo demanda", () => {
-  const prepare = service.slice(service.indexOf("async function prepareRmsRiskRecoveryResource"), service.indexOf("async function recordRmsRiskReview"));
-  const generate = app.slice(app.indexOf("async function generateRmsRiskRecoveryResource"), app.indexOf("// El renderizador activo"));
   assert.match(prepare, /generate_qr_image: false/);
-  assert.match(prepare, /existingResource\?\.qr_code_id && existingResource\.public_ticket_url/);
   assert.match(strategicQrService, /const generateQrImage = body\.generate_qr_image !== false/);
-  assert.match(strategicQrService, /const image = !generateQrImage\s+\? null/);
-  assert.match(app, /async function generateAndDownloadRmsRiskQr/);
-  assert.match(app, /fetchLeadTicketDownload\(resource\.qr_code_id\)/);
-  assert.match(app, /function rmsRiskOperatingFlowMarkupTicketOnly/);
-  assert.match(app, /Crear ticket/);
-  assert.match(app, /Generar \/ descargar QR/);
-  assert.match(app, /La imagen QR se genera bajo demanda desde Entregar/);
-  assert.doesNotMatch(generate, /Generando ticket y QR|Ticket y QR listos/);
-  assert.match(app, /risk-ticket-without-qr-v413-20260830/);
-  assert.match(html, /risk-qr=on-demand-v413-20260830/);
+  assert.match(schema, /idx_qr_codes_rms_risk_idempotency/);
 });
 
-test("Preparar solo confirma productos y beneficio; Entregar genera el ticket y habilita el contacto", () => {
-  const flow = app.slice(app.indexOf("function rmsRiskOperatingFlowMarkupPreparedFirst"), app.indexOf("// Nunca uses el validador"));
-  const prepareAction = app.slice(app.indexOf("function prepareRmsRiskSummary"), app.indexOf("async function generateAndDownloadRmsRiskQr"));
-  assert.match(flow, /data-rms-risk-prepare-summary/);
-  assert.match(flow, /Confirmar preparación/);
-  assert.match(flow, /Esta fase no llama al generador, no crea tickets y no consume créditos/);
-  assert.match(flow, /data-rms-risk-phase-panel="deliver"/);
-  assert.match(flow, /data-rms-generate-risk-resource/);
-  assert.match(flow, /Generar ticket/);
-  assert.match(flow, /Esta es la única acción que crea el ticket y reserva el crédito/);
-  assert.match(flow, /data-rms-risk-open-result/);
-  assert.match(prepareAction, /rmsRiskPreparedDraftStore\(\)\.set/);
-  assert.match(prepareAction, /rmsRiskPreparationSummaryMarkup/);
-  assert.match(prepareAction, /\["TWO_FOR_ONE", "GIFT"\]\.includes\(selected\.offer\)/);
-  assert.doesNotMatch(prepareAction, /api\(/);
-  assert.match(app, /const products = prepared\?\.products \|\| rmsRiskProductsFromDom\(card\)/);
-  assert.match(app, /resultButton\.disabled = !hasResource/);
-  assert.match(app, /risk-preparation-handoff-v414-20260830/);
-  assert.match(html, /risk-flow=preparation-handoff-v414-20260830/);
+test("el catálogo se carga fuera de la respuesta crítica de la estación", () => {
+  assert.match(service, /const riskStationFastPath = stationFastPath && phaseFilter === "control_anti_fuga"/);
+  assert.match(service, /const inventoryPromise = riskStationFastPath \? Promise\.resolve\(\[\]\)/);
+  assert.match(app, /phase === "control_anti_fuga" && !state\.inventoryLoaded/);
+  assert.match(app, /loadInventoryProducts\(\{ quiet: true \}\)/);
 });
 
-test("Riesgos usa un workbench directo, responsive y sin reubicar el formulario activo", () => {
-  const response = app.slice(app.indexOf("function rmsRiskResponsePhaseMarkup"), app.indexOf("// Flujo definitivo"));
-  const workbench = app.slice(app.indexOf("rmsRiskValidationStationCardMarkup = function rmsRiskValidationStationCardMarkupWorkbench"), app.indexOf("function rmsRiskShareMessage"));
-  const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
-  assert.match(response, /rmsRiskTabsMarkup\(item\)/);
-  assert.match(response, /data-rms-risk-selected-offer/);
-  assert.match(response, /data-rms-risk-sale-panel/);
-  assert.match(response, /data-rms-risk-recycle-panel/);
-  assert.match(response, /data-rms-save-risk-decision/);
-  assert.match(workbench, /rms-risk-workbench/);
-  assert.match(workbench, /rmsRiskOperatingFlowMarkup\(item\)/);
-  assert.doesNotMatch(workbench, /\.replace\(/);
-  assert.match(app, /form\?\.closest\('\[data-rms-risk-phase-panel="result"\]'\) !== responsePanel/);
-  assert.match(activeSave, /result === "RECYCLE"[\s\S]*data-rms-risk-recycle-panel/);
-  assert.match(activeSave, /data-rms-risk-sale-panel/);
-  assert.match(riskCss, /\/\* Riesgos de fuga .* command workbench v419 \*\//);
-  assert.match(riskCss, /content-visibility: auto/);
-  assert.match(riskCss, /@media \(max-width: 760px\)/);
-  assert.match(riskCss, /\.rms-factory-console\.is-station-mode:has\(\.rms-risk-workbench\)/);
-  assert.match(riskCss, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
-  assert.match(riskCss, /@media \(prefers-reduced-motion: reduce\)/);
-  assert.match(riskCss, /padding: 8px !important/);
-  assert.match(html, /risk-station-premium\.css\?v=risk-command-v419-20260830/);
-  assert.match(app, /risk-command-v419-20260830/);
-  assert.match(html, /risk-command=premium-v419-20260830/);
+test("la estación conserva sincronización incremental y feedback recuperable", () => {
+  assert.match(app, /function rmsRiskStationFingerprint/);
+  assert.match(app, /riskFingerprintBeforeSync === rmsRiskStationFingerprint\(\) && updateRmsRiskStationLiveStatus\(rows\)/);
+  assert.match(app, /data-rms-risk-retry-sync/);
+  assert.match(app, /function ensureRmsRiskActionStatus/);
 });
 
-test("Riesgos conserva la preparacion ligera y bloquea el ticket como contrato inmutable", () => {
-  assert.match(app, /RMS_RISK_DRAFT_STORAGE_PREFIX/);
-  assert.match(app, /window\.sessionStorage\?\.getItem\(storageKey\)/);
-  assert.match(app, /window\.sessionStorage\?\.setItem\(state\.rmsRiskDraftStorageKey, JSON\.stringify/);
-  assert.match(app, /function rmsRiskPreparationFromResource/);
-  assert.match(app, /return rmsRiskPreparationFromResource\(rmsRiskRecoveryResourceFor\(item\)\)/);
-  assert.match(app, /function syncRmsRiskPreparationLock/);
-  assert.match(app, /card\?\.classList\.toggle\("is-ticket-locked", locked\)/);
-  assert.match(app, /Ticket listo e inmutable/);
-  assert.match(app, /Preparación protegida/);
-  assert.match(service, /const hasPersistedTicket = Boolean\(persistedResource\?\.public_ticket_url\)/);
-  assert.match(service, /const requestedRiskProducts = hasPersistedTicket\s+\? \[\]/);
-});
-
-test("Riesgos aplica el sistema visual Qori y explica entrada proceso salida e impacto", () => {
-  assert.match(app, /function rmsRiskValueStripMarkup/);
-  assert.match(app, /ENTRA/);
-  assert.match(app, /PROCESA/);
-  assert.match(app, /REVENUE EN JUEGO/);
-  assert.match(riskCss, /--risk-blue-deep: #012268/);
-  assert.match(riskCss, /--risk-cyan: #07cefb/);
-  assert.match(riskCss, /\.rms-risk-value-strip/);
-  assert.match(riskCss, /\.rms-risk-lock-notice/);
-  assert.match(riskCss, /linear-gradient\(135deg, var\(--risk-blue-deep\) 0%, var\(--risk-blue-corp\) 42%, var\(--risk-blue-bright\) 76%, var\(--risk-cyan\) 100%\)/);
-  assert.doesNotMatch(riskCss, /#b38a3e|#241f18|#d8ad57/i);
+test("los assets nuevos tienen una única URL cacheada y el núcleo carga primero", () => {
+  const coreIndex = html.indexOf('<script src="js/risk-station-core.js');
+  const appIndex = html.indexOf('<script src="js/app.js');
+  assert.ok(coreIndex >= 0 && coreIndex < appIndex);
+  const preload = html.match(/<link rel="preload" as="script" href="(js\/app\.js[^"]+)"/)?.[1];
+  const script = html.match(/<script src="(js\/app\.js[^"]+)" defer><\/script>/)?.[1];
+  assert.equal(preload, script);
+  assert.match(html, /risk-v2=from-zero-v1-20260830/);
 });

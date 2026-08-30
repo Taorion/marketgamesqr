@@ -68,5 +68,6 @@ test("RMS no longer exposes internal version copy or opens Reciclaje as an opera
   assert.doesNotMatch(app, /Qori v137 modo anti-bloqueo/);
   assert.match(app, /RECYCLE: "procesamiento"/);
   assert.match(app, /if \(draft\.destination === "RECYCLE"\) \{\s*setView\("recycling"\)/);
-  assert.match(app, /item\.stage = result === "RECYCLE" \? "control_anti_fuga" : "cierre"/);
+  assert.match(app, /destination !== built\.destination/);
+  assert.match(app, /item\.stage = destination/);
 });

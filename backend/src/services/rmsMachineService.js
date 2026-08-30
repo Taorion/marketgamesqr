@@ -2540,11 +2540,6 @@ async function rmsInventoryProductSnapshots(businessId, requestedProducts = []) 
   });
 }
 
-async function riskRecoveryAuthorizationsForBusiness(businessId) {
-  const result = await query("select settings from businesses where id = $1 and is_active = true", [businessId]);
-  return normalizeRiskRecoveryAuthorizations(result.rows[0]?.settings?.rms_risk_recovery_authorizations);
-}
-
 function validateRiskRecoveryOffer(payload, authorizations) {
   const recoveryOffer = String(payload.recovery_offer || "NONE").toUpperCase();
   if (!["NONE", "DISCOUNT", "TWO_FOR_ONE", "GIFT", "CUSTOM"].includes(recoveryOffer)) throw badRequest("Selecciona una alternativa de recuperación válida.");
@@ -2795,13 +2790,10 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
 
 async function recordRmsRiskReview(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
-  const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  const context = await findRiskOpportunityContext(businessId, sourceType, payload.source_id);
+  const item = context.item;
   if (item.stage !== "control_anti_fuga") throw badRequest("La validación final solo se registra desde Riesgos de fuga.");
-  const current = await query(
-    `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
-    [businessId, sourceType, payload.source_id]
-  );
-  const metadata = current.rows[0]?.metadata || {};
+  const metadata = context.metadata || {};
   const confirmation = metadata.commercial_confirmation;
   if (metadata.commercial_route === "NEGOTIATION_CLEAN" || confirmation?.route === "NEGOTIATION_CLEAN") {
     throw badRequest("Una venta limpia confirmada no debe volver a Riesgos de fuga; atribúyela desde Ventas atribuidas.");
@@ -2817,7 +2809,8 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
   }
   // Un ticket emitido es la fuente inmutable de beneficio y productos. Una
   // pestaña antigua nunca puede reescribir lo que el cliente recibió.
-  const offer = persistedOffer || validateRiskRecoveryOffer(payload, await riskRecoveryAuthorizationsForBusiness(businessId));
+  const authorizations = normalizeRiskRecoveryAuthorizations(context.business.settings?.rms_risk_recovery_authorizations);
+  const offer = persistedOffer || validateRiskRecoveryOffer(payload, authorizations);
   const hasPersistedTicket = Boolean(persistedResource?.public_ticket_url);
   const persistedProducts = persistedRiskRecoveryProducts(persistedResource);
   const requestedRiskProducts = hasPersistedTicket
@@ -2831,18 +2824,14 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
     .map((product) => String(product.inventory_product_id || ""))
     .filter((id, index, all) => id && all.indexOf(id) !== index);
   if (repeatedRiskProductIds.length) throw badRequest("Cada producto debe aparecer una sola vez en Riesgos de fuga. Ajusta la cantidad en su misma fila.");
-  const riskProducts = hasPersistedTicket ? persistedProducts : await Promise.all(requestedRiskProducts.map(async (product) => {
-    const snapshot = await rmsInventoryProductSnapshot(businessId, product.inventory_product_id);
-    return {
-      inventory_product_id: snapshot.inventory_product_id,
-      name: snapshot.product_name_snapshot,
-      product_name_snapshot: snapshot.product_name_snapshot,
-      product_price_snapshot: snapshot.product_price_snapshot,
-      product_currency_snapshot: snapshot.product_currency_snapshot,
-      quantity: Math.max(0.01, Number(product.quantity || 1)),
-      benefit_applied: offer.recoveryOffer === "NONE" ? false : Boolean(product.benefit_applied),
-    };
-  }));
+  const riskProducts = hasPersistedTicket
+    ? persistedProducts
+    : requestedRiskProducts.length
+      ? await rmsInventoryProductSnapshots(businessId, requestedRiskProducts.map((product) => ({
+        ...product,
+        benefit_applied: offer.recoveryOffer === "NONE" ? false : Boolean(product.benefit_applied),
+      })))
+      : [];
   if (result === "CLEARED" && !riskProducts.length) {
     throw badRequest("Agrega al menos un producto antes de enviar la venta.");
   }
