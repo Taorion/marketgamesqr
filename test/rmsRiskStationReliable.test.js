@@ -409,6 +409,8 @@ test("Riesgos usa un workbench directo, responsive y sin reubicar el formulario 
   assert.match(riskCss, /\/\* Riesgos de fuga · workbench v415 \*\//);
   assert.match(riskCss, /content-visibility: auto/);
   assert.match(riskCss, /@media \(max-width: 760px\)/);
+  assert.match(riskCss, /\.rms-factory-console\.is-station-mode:has\(\.rms-risk-workbench\)/);
+  assert.match(riskCss, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(riskCss, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(html, /risk-station-premium\.css\?v=risk-workbench-v415-20260830/);
   assert.match(app, /risk-workbench-v415-20260830/);

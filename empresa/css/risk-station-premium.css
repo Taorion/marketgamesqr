@@ -183,6 +183,18 @@
 }
 
 @media (max-width: 760px) {
+  .rms-factory-console.is-station-mode:has(.rms-risk-workbench) {
+    padding: 8px;
+  }
+
+  .rms-station-workspace:has(.rms-risk-workbench) {
+    padding-inline: 0;
+  }
+
+  .rms-lean-station:has(.rms-risk-workbench) {
+    padding: 8px;
+  }
+
   .rms-risk-workbench .rms-risk-flow-phased {
     padding: 12px;
     border-radius: 18px;
@@ -211,6 +223,13 @@
   .rms-risk-workbench .rms-risk-delivery-bar button,
   .rms-risk-workbench .rms-risk-phase-actions button {
     width: 100%;
+  }
+
+  .rms-risk-workbench .rms-risk-delivery-bar > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 8px;
   }
 }
 
