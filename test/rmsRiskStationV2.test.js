@@ -134,6 +134,11 @@ test("la paginación conserva la interfaz premium y el almacenamiento de borrado
   assert.match(app, /rms-risk-recovery-boundary/);
   assert.match(app, /RMS risk station render blocked/);
   assert.doesNotMatch(app, /RIESGOS DE FUGA · MODO SEGURO/);
-  assert.match(html, /risk-v2=premium-v4-20260830/);
+  assert.match(html, /risk-v2=premium-v5-20260830/);
   assert.match(html, /risk-premium-v7-20260830/);
+});
+
+test("descargar el QR reutiliza el renderer canónico de recursos", () => {
+  assert.match(app, /status\.innerHTML = rmsRiskV2ResourceMarkup\(item\)/);
+  assert.doesNotMatch(app, /rmsRiskRecoveryResourceMarkup/);
 });
