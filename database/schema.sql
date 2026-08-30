@@ -903,6 +903,9 @@ create index if not exists idx_ticket_center_qr_business_origin_created on qr_co
 create index if not exists idx_ticket_center_qr_business_batch_status on qr_codes(business_id, batch_id, status);
 create index if not exists idx_portal_qr_codes_player_created on qr_codes(player_id, created_at desc);
 create index if not exists idx_qr_codes_affiliate_status on qr_codes(affiliate_id, status, created_at desc);
+create index if not exists idx_qr_codes_rms_risk_idempotency
+  on qr_codes(business_id, (metadata->>'rms_risk_resource_idempotency_key'))
+  where metadata ? 'rms_risk_resource_idempotency_key';
 create unique index if not exists idx_business_sales_qr_code_unique on business_sales(qr_code_id) where qr_code_id is not null;
 create index if not exists idx_business_qr_credit_ledger_business_created on business_qr_credit_ledger(business_id, created_at desc);
 create index if not exists idx_qr_credit_purchase_orders_business_created on qr_credit_purchase_orders(business_id, created_at desc);

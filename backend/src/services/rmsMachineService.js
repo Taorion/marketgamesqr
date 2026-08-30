@@ -1288,6 +1288,31 @@ async function findOpportunity(businessId, sourceType, sourceId) {
   return item;
 }
 
+async function findRiskOpportunityContext(businessId, sourceType, sourceId) {
+  const contactSourceType = sourceType === "BUYER" ? "PLAYER" : sourceType;
+  const [contextResult, leadRows] = await Promise.all([
+    query(
+      `select s.*, b.name as business_name, b.settings as business_settings
+         from businesses b
+         left join rms_lead_state s
+           on s.business_id = b.id and s.source_type = $2 and s.source_id = $3
+        where b.id = $1 and b.is_active = true
+        limit 1`,
+      [businessId, sourceType, sourceId]
+    ),
+    riskLeadRowsForStateRefs(businessId, [{ source_type: contactSourceType, source_id: sourceId }]),
+  ]);
+  const context = contextResult.rows[0];
+  const leadRow = leadRows[0];
+  if (!context || !leadRow) throw notFound("No se encontro la oportunidad RMS.");
+  const item = opportunityFromRow(leadRow, context.id ? context : null, []);
+  return {
+    item,
+    metadata: context.metadata || {},
+    business: { id: businessId, name: context.business_name || null, settings: context.business_settings || {} },
+  };
+}
+
 function rmsCustomerIdentity(item = {}) {
   const documentId = String(item.document_id || "").trim();
   const email = String(item.email || "").trim().toLowerCase();
@@ -2487,6 +2512,31 @@ function normalizeRiskRecoveryAuthorizations(value = {}) {
   };
 }
 
+async function rmsInventoryProductSnapshots(businessId, requestedProducts = []) {
+  const ids = requestedProducts.map((product) => String(product.inventory_product_id || "")).filter(Boolean);
+  if (!ids.length) throw badRequest("Selecciona un producto o servicio activo del inventario.");
+  const result = await query(
+    `select id, name, sku, category, unit_price, cost_price, currency, stock_quantity, status
+       from business_inventory_products
+      where business_id = $1 and id = any($2::uuid[]) and status = 'ACTIVE'`,
+    [businessId, ids]
+  );
+  const byId = new Map(result.rows.map((product) => [String(product.id), product]));
+  return requestedProducts.map((requested) => {
+    const product = byId.get(String(requested.inventory_product_id || ""));
+    if (!product) throw badRequest("El producto seleccionado no está activo o no pertenece a este negocio.");
+    return {
+      inventory_product_id: product.id,
+      name: String(product.name || "").trim(),
+      product_name_snapshot: String(product.name || "").trim(),
+      product_price_snapshot: moneyNumber(product.unit_price),
+      product_currency_snapshot: String(product.currency || "COP").trim().toUpperCase().slice(0, 8) || "COP",
+      quantity: Math.max(0.01, Number(requested.quantity || 1)),
+      benefit_applied: Boolean(requested.benefit_applied),
+    };
+  });
+}
+
 async function riskRecoveryAuthorizationsForBusiness(businessId) {
   const result = await query("select settings from businesses where id = $1 and is_active = true", [businessId]);
   return normalizeRiskRecoveryAuthorizations(result.rows[0]?.settings?.rms_risk_recovery_authorizations);
@@ -2608,16 +2658,15 @@ function preparedRiskRecoveryOffer(payload, resource = null) {
 
 async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
-  const item = await findOpportunity(businessId, sourceType, payload.source_id);
+  const operationStartedAt = Date.now();
+  const context = await findRiskOpportunityContext(businessId, sourceType, payload.source_id);
+  const item = context.item;
   if (item.stage !== "control_anti_fuga") throw badRequest("El activo extraordinario solo se genera desde Riesgos de fuga.");
-  const authorizations = await riskRecoveryAuthorizationsForBusiness(businessId);
+  const authorizations = normalizeRiskRecoveryAuthorizations(context.business.settings?.rms_risk_recovery_authorizations);
   const offer = validateRiskRecoveryOffer(payload, authorizations);
   if (offer.recoveryOffer === "NONE") throw badRequest("Selecciona un beneficio extraordinario antes de generar el ticket.");
-  const currentState = await query(
-    `select metadata from rms_lead_state where business_id = $1 and source_type = $2 and source_id = $3`,
-    [businessId, sourceType, payload.source_id]
-  );
-  const currentMetadata = currentState.rows[0]?.metadata || {};
+  const contextReadyAt = Date.now();
+  const currentMetadata = context.metadata;
   const confirmation = currentMetadata.commercial_confirmation || {};
   const requestedProducts = Array.isArray(payload.products) && payload.products.length
     ? payload.products
@@ -2627,22 +2676,21 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
   if (!requestedProducts.length) throw badRequest("Agrega al menos un producto antes de generar el ticket.");
   const repeatedProductIds = requestedProducts.map((product) => String(product.inventory_product_id || "")).filter((id, index, all) => id && all.indexOf(id) !== index);
   if (repeatedProductIds.length) throw badRequest("Cada producto debe aparecer una sola vez. Ajusta la cantidad en su misma fila.");
-  const products = await Promise.all(requestedProducts.map(async (product) => {
-    const snapshot = await rmsInventoryProductSnapshot(businessId, product.inventory_product_id);
-    return {
-      inventory_product_id: snapshot.inventory_product_id,
-      name: snapshot.product_name_snapshot,
-      product_name_snapshot: snapshot.product_name_snapshot,
-      product_price_snapshot: snapshot.product_price_snapshot,
-      product_currency_snapshot: snapshot.product_currency_snapshot,
-      quantity: Math.max(0.01, Number(product.quantity || 1)),
-      benefit_applied: Boolean(product.benefit_applied),
-    };
-  }));
+  const products = await rmsInventoryProductSnapshots(businessId, requestedProducts);
   if (!products.some((product) => product.benefit_applied)) throw badRequest("Marca al menos un producto al que se aplicará el beneficio.");
   const expirationDays = Math.min(90, Math.max(1, Number(payload.expiration_days || 7)));
   const idempotencyKey = String(payload.idempotency_key || "").trim();
   if (!idempotencyKey) throw badRequest("No fue posible identificar esta generación de ticket.");
+  const existingResource = currentMetadata.risk_recovery_resource;
+  if (existingResource?.idempotency_key === idempotencyKey && existingResource.qr_code_id && existingResource.public_ticket_url && existingResource.qr_image_data_url) {
+    return {
+      resource: existingResource,
+      ticket: { qr_image_data_url: existingResource.qr_image_data_url, filename: existingResource.filename },
+      duplicate: true,
+      performance: { total_ms: Date.now() - operationStartedAt, reused: true },
+    };
+  }
+  const productsReadyAt = Date.now();
   const productName = currentMetadata.commercial_confirmation?.product_name || item.product_interest || null;
   const ticket = await createRiskRecoveryQr(businessId, user, {
     source_type: sourceType,
@@ -2652,6 +2700,7 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
     expires_mode: "CUSTOM_DATE",
     expires_at: new Date(Date.now() + expirationDays * 86400000).toISOString(),
     idempotency_key: idempotencyKey,
+    business_context: context.business,
     recovery_offer: offer.recoveryOffer,
     benefit: {
       reward_id: null,
@@ -2666,6 +2715,7 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
     metadata: { recovery_benefit_id: offer.recoveryBenefitId, authorization_snapshot: authorizations, products },
   });
   const resource = {
+    idempotency_key: idempotencyKey,
     qr_code_id: ticket.qr_code.id,
     public_ticket_url: ticket.public_ticket_url,
     qr_image_data_url: ticket.qr_image_data_url || null,
@@ -2693,6 +2743,7 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
       where business_id = $1 and source_type = $2 and source_id = $3`,
     [businessId, sourceType, payload.source_id, JSON.stringify(resource)]
   );
+  const persistedAt = Date.now();
   if (!ticket.duplicate) {
     await recordRmsWorkflowEvent(businessId, user, {
       source_type: sourceType,
@@ -2705,7 +2756,19 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
       metadata: { risk_recovery_resource: resource },
     });
   }
-  return { resource, ticket, duplicate: ticket.duplicate };
+  const completedAt = Date.now();
+  return {
+    resource,
+    ticket,
+    duplicate: ticket.duplicate,
+    performance: {
+      total_ms: completedAt - operationStartedAt,
+      context_ms: contextReadyAt - operationStartedAt,
+      products_ms: productsReadyAt - contextReadyAt,
+      ticket_ms: persistedAt - productsReadyAt,
+      audit_ms: completedAt - persistedAt,
+    },
+  };
 }
 
 async function recordRmsRiskReview(businessId, user, payload = {}) {

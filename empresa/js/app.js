@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260829-risk-prepare-search-v411";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829";
+const APP_VERSION = "empresa-20260830-risk-ticket-fast-v412";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -63517,6 +63517,10 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
   const fingerprint = [item.source_type || "PLAYER", item.source_id, selected.offer, selected.benefitId || "", selected.discount, selected.detail, productFingerprint, expirationDays].join(":");
   setButtonLoading(button, true, "Generando...");
   setRmsRiskActionStatus(card, item, "loading", "Generando ticket y QR", "Estamos validando la autorización y los productos. No cierres esta pantalla.");
+  const requestStartedAt = performance.now();
+  const generationFeedbackTimer = window.setTimeout(() => {
+    setRmsRiskActionStatus(card, item, "loading", "El ticket sigue en proceso", "Qori está reservando el crédito, persistiendo la autorización y preparando la imagen QR.");
+  }, 1200);
   try {
     const response = await api("/api/business/rms-machine/risk-recovery-resource", {
       method: "POST",
@@ -63539,12 +63543,16 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
     const status = rmsCommercialNode(root, "[data-rms-risk-resource-status]", item.id);
     if (status) status.innerHTML = rmsRiskRecoveryResourceMarkup(item);
     syncRmsRiskRecoveryPhases(root.querySelector(`[data-rms-station-lead="${CSS.escape(item.id)}"]`), item);
-    setRmsRiskActionStatus(card, item, "success", response.duplicate ? "Ticket recuperado sin costo adicional" : "Ticket y QR listos", "Ya puedes compartir el activo; el lead permanece en Riesgos hasta registrar la respuesta.");
+    const totalMs = Math.max(1, Math.round(performance.now() - requestStartedAt));
+    const serverMs = Math.max(0, Number(response.performance?.total_ms || 0));
+    const timingDetail = `${(totalMs / 1000).toFixed(1)} s en total${serverMs ? ` · ${serverMs} ms en servidor` : ""}.`;
+    setRmsRiskActionStatus(card, item, "success", response.duplicate ? "Ticket recuperado sin costo adicional" : "Ticket y QR listos", `${timingDetail} Ya puedes compartirlo; el lead permanece en Riesgos hasta registrar la respuesta.`);
     showFeedback(response.duplicate ? "El ticket ya estaba listo; no se descontó otro crédito." : "Ticket y activo extraordinario generados. Ya puedes compartirlos.", "success", { title: "Riesgos de fuga" });
   } catch (error) {
     setRmsRiskActionStatus(card, item, "error", "No se pudo generar el ticket", error?.message || "Revisa los datos e inténtalo nuevamente.");
     throw error;
   } finally {
+    window.clearTimeout(generationFeedbackTimer);
     setButtonLoading(button, false);
   }
 }

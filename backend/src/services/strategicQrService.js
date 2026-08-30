@@ -574,11 +574,14 @@ async function createRiskRecoveryQr(businessId, user, body = {}) {
 
     const links = buildPublicQrLinks(qr);
     const sharedTicketUrl = links.scan_url;
-    const businessResult = await client.query(
+    const suppliedBusiness = body.business_context && String(body.business_context.id) === String(businessId)
+      ? { id: businessId, name: body.business_context.name || null, business_settings: body.business_context.settings || {} }
+      : null;
+    const businessResult = suppliedBusiness ? null : await client.query(
       `select id, name, ${BUSINESS_BRAND_SETTINGS_SQL} as business_settings from businesses b where id = $1`,
       [businessId]
     );
-    const business = businessResult.rows[0] || null;
+    const business = suppliedBusiness || businessResult?.rows[0] || null;
     const brand = getBrandStyle(business?.business_settings || {});
     const hasFrame = Boolean(brand.ticketFrameUrl);
     const image = hasFrame

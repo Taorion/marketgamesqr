@@ -8,6 +8,9 @@ const app = fs.readFileSync(path.join(root, "empresa/js/app.js"), "utf8");
 const html = fs.readFileSync(path.join(root, "empresa/index.html"), "utf8");
 const service = fs.readFileSync(path.join(root, "backend/src/services/rmsMachineService.js"), "utf8");
 const crmService = fs.readFileSync(path.join(root, "backend/src/services/leadCrmService.js"), "utf8");
+const strategicQrService = fs.readFileSync(path.join(root, "backend/src/services/strategicQrService.js"), "utf8");
+const schema = fs.readFileSync(path.join(root, "database/schema.sql"), "utf8");
+const riskTicketSpeedMigration = fs.readFileSync(path.join(root, "database/migrations/20260829235900_rms_risk_ticket_generation_speed.sql"), "utf8");
 const portalCss = fs.readFileSync(path.join(root, "empresa/css/portal-clean-v39.css"), "utf8");
 
 test("Riesgos permite registrar una respuesta sin ticket", () => {
@@ -321,4 +324,24 @@ test("Preparar busca productos con resultados acotados y feedback inmediato", ()
   assert.match(portalCss, /risk-prepare-search-v411/);
   assert.match(app, /risk-prepare-search-v411-20260829/);
   assert.match(html, /risk-prepare=search-v411-20260829/);
+});
+
+test("la generación del ticket usa la ruta exacta, lote de productos e idempotencia indexada", () => {
+  const prepare = service.slice(service.indexOf("async function prepareRmsRiskRecoveryResource"), service.indexOf("async function recordRmsRiskReview"));
+  assert.match(service, /async function findRiskOpportunityContext/);
+  assert.match(service, /const contactSourceType = sourceType === "BUYER" \? "PLAYER" : sourceType/);
+  assert.match(service, /riskLeadRowsForStateRefs\(businessId, \[\{ source_type: contactSourceType, source_id: sourceId \}\]\)/);
+  assert.match(prepare, /findRiskOpportunityContext\(businessId, sourceType, payload\.source_id\)/);
+  assert.doesNotMatch(prepare, /findOpportunity\(businessId/);
+  assert.match(service, /async function rmsInventoryProductSnapshots/);
+  assert.match(service, /id = any\(\$2::uuid\[\]\)/);
+  assert.match(prepare, /rmsInventoryProductSnapshots\(businessId, requestedProducts\)/);
+  assert.match(prepare, /existingResource\?\.idempotency_key === idempotencyKey/);
+  assert.match(prepare, /performance: \{/);
+  assert.match(strategicQrService, /const suppliedBusiness = body\.business_context/);
+  assert.match(schema, /idx_qr_codes_rms_risk_idempotency/);
+  assert.match(riskTicketSpeedMigration, /metadata->>'rms_risk_resource_idempotency_key'/);
+  assert.match(app, /El ticket sigue en proceso/);
+  assert.match(app, /risk-ticket-fast-v412-20260830/);
+  assert.match(html, /risk-ticket=fast-v412-20260830/);
 });
