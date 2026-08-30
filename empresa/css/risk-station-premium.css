@@ -457,6 +457,10 @@
   color: #fff !important;
 }
 
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-risk-v2 .rms-risk-v2-destinations button.is-active strong {
+  color: #fff !important;
+}
+
 .rms-risk-v2-panel {
   display: grid;
   gap: 16px;
