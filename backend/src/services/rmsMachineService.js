@@ -1283,12 +1283,28 @@ function whatsappUrl(phone, message) {
 }
 
 async function findOpportunity(businessId, sourceType, sourceId) {
-  const data = await listRmsOpportunities(businessId, { limit: 180 });
-  const item = data.opportunities.find((opportunity) => (
-    opportunity.source_type === sourceType && String(opportunity.source_id) === String(sourceId)
+  const contactSourceType = sourceType === "BUYER" ? "PLAYER" : crmSourceType({ source_type: sourceType });
+  if (!sourceId) throw notFound("No se encontro la oportunidad RMS.");
+
+  // Las acciones deben resolver exactamente la misma referencia persistida que
+  // muestra la estacion. Buscarla dentro de la primera pagina de la maquina
+  // podia perderla por paginacion o por la deduplicacion visual del CRM.
+  const [stateResult, leadRows, inventoryProducts] = await Promise.all([
+    query(
+      `select *
+         from rms_lead_state
+        where business_id = $1 and source_type = $2 and source_id = $3
+        limit 1`,
+      [businessId, contactSourceType, sourceId]
+    ),
+    leadRowsForStateRefs(businessId, [{ source_type: contactSourceType, source_id: sourceId }]),
+    inventoryProductsForBusiness(businessId),
+  ]);
+  const leadRow = leadRows.find((row) => (
+    crmSourceType(row) === contactSourceType && String(row.id) === String(sourceId)
   ));
-  if (!item) throw notFound("No se encontro la oportunidad RMS.");
-  return item;
+  if (!leadRow) throw notFound("No se encontro la oportunidad RMS.");
+  return opportunityFromRow(leadRow, stateResult.rows[0] || null, inventoryProducts);
 }
 
 async function findRiskOpportunityContext(businessId, sourceType, sourceId) {

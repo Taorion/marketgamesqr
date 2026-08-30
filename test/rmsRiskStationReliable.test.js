@@ -11,6 +11,17 @@ const crmService = fs.readFileSync(path.join(root, "backend/src/services/leadCrm
 const strategicQrService = fs.readFileSync(path.join(root, "backend/src/services/strategicQrService.js"), "utf8");
 const schema = fs.readFileSync(path.join(root, "database/schema.sql"), "utf8");
 
+test("las acciones resuelven la oportunidad exacta sin depender de la pagina global", () => {
+  const start = service.indexOf("async function findOpportunity");
+  const end = service.indexOf("async function findRiskOpportunityContext", start);
+  const resolver = service.slice(start, end);
+  assert.match(resolver, /where business_id = \$1 and source_type = \$2 and source_id = \$3/);
+  assert.match(resolver, /leadRowsForStateRefs\(businessId, \[\{ source_type: contactSourceType, source_id: sourceId \}\]\)/);
+  assert.match(resolver, /crmSourceType\(row\) === contactSourceType && String\(row\.id\) === String\(sourceId\)/);
+  assert.doesNotMatch(resolver, /listRmsOpportunities/);
+  assert.doesNotMatch(resolver, /limit:\s*180/);
+});
+
 test("Riesgos abre con lectura directa y render progresivo ligero", () => {
   assert.match(service, /const stationFastPath = lite && Boolean\(phaseFilter\)/);
   assert.match(service, /recentStateRowsForBusiness\(businessId, limit, phaseFilter\)/);
