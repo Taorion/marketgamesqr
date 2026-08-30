@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260830-risk-ticket-fast-v412";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830";
+const APP_VERSION = "empresa-20260830-risk-ticket-without-qr-v413";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -53981,10 +53981,7 @@ function bindRmsRiskStationFastActions(root) {
       return;
     }
     if (button.hasAttribute("data-rms-risk-download-ticket")) {
-      const resource = rmsRiskRecoveryResourceFor(item);
-      if (!resource?.public_ticket_url) return showFeedback("Genera primero el ticket extraordinario.", "info", { title: "Riesgos de fuga" });
-      if (resource.qr_image_data_url) downloadDataUrl(resource.filename || "beneficio-extraordinario.png", resource.qr_image_data_url);
-      else window.open(resource.public_ticket_url, "_blank", "noopener");
+      generateAndDownloadRmsRiskQr(item, root, button).catch((error) => showFeedback(error.message || "No pudimos generar la imagen QR.", "error", { title: "Riesgos de fuga" }));
     }
   });
 }
@@ -54609,10 +54606,7 @@ function bindRmsMachineActions(root) {
   root.querySelectorAll("[data-rms-risk-download-ticket]").forEach((button) => {
     button.addEventListener("click", async () => {
       const item = rmsOpportunityById(button.dataset.rmsRiskDownloadTicket || "");
-      const resource = item ? rmsRiskRecoveryResourceFor(item) : null;
-      if (!resource?.public_ticket_url) return showFeedback("Genera primero el ticket extraordinario.", "info", { title: "Riesgos de fuga" });
-      if (resource.qr_image_data_url) await downloadDataUrl(resource.filename || "beneficio-extraordinario.png", resource.qr_image_data_url);
-      else window.open(resource.public_ticket_url, "_blank", "noopener");
+      if (item) await generateAndDownloadRmsRiskQr(item, root, button);
     });
   });
   root.querySelectorAll("[data-rms-reactivate-recycled]").forEach((button) => {
@@ -63485,6 +63479,34 @@ function rmsRiskSelectedOffer(root, item) {
   };
 }
 
+async function generateAndDownloadRmsRiskQr(item, root, button) {
+  const resource = rmsRiskRecoveryResourceFor(item);
+  if (!resource?.qr_code_id || !resource?.public_ticket_url) {
+    showFeedback("Crea primero el ticket extraordinario.", "info", { title: "Riesgos de fuga" });
+    return;
+  }
+  const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(item.id)}"]`);
+  setButtonLoading(button, true, "Generando QR...");
+  setRmsRiskActionStatus(card, item, "loading", "Generando imagen QR", "El ticket ya está listo. Qori está creando únicamente la imagen para descargar.");
+  try {
+    const data = await fetchLeadTicketDownload(resource.qr_code_id);
+    if (!data?.qr_image_data_url) throw new Error("El servidor no devolvió una imagen QR válida.");
+    const hydratedResource = {
+      ...resource,
+      qr_image_data_url: data.qr_image_data_url,
+      filename: data.filename || resource.filename || `ticket-${resource.qr_code_id}.png`,
+    };
+    state.rmsRiskGeneratedResources ||= {};
+    state.rmsRiskGeneratedResources[item.id] = hydratedResource;
+    const status = rmsCommercialNode(root, "[data-rms-risk-resource-status]", item.id);
+    if (status) status.innerHTML = rmsRiskRecoveryResourceMarkup(item);
+    await downloadDataUrl(hydratedResource.filename, hydratedResource.qr_image_data_url);
+    setRmsRiskActionStatus(card, item, "success", "QR generado y descargado", "La preparación del ticket no fue bloqueada; la imagen se creó bajo demanda en Entregar.");
+  } finally {
+    setButtonLoading(button, false);
+  }
+}
+
 async function generateRmsRiskRecoveryResource(item, root, button) {
   const card = root.querySelector(`[data-rms-station-lead="${CSS.escape(item.id)}"]`);
   const selected = rmsRiskSelectedOffer(root, item);
@@ -63515,11 +63537,11 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
   const expirationDays = Number(rmsCommercialNode(root, "[data-rms-risk-expiration-days]", item.id)?.value || 7);
   const productFingerprint = products.map((product) => `${product.inventory_product_id}:${product.quantity}:${product.benefit_applied ? 1 : 0}`).join(",");
   const fingerprint = [item.source_type || "PLAYER", item.source_id, selected.offer, selected.benefitId || "", selected.discount, selected.detail, productFingerprint, expirationDays].join(":");
-  setButtonLoading(button, true, "Generando...");
-  setRmsRiskActionStatus(card, item, "loading", "Generando ticket y QR", "Estamos validando la autorización y los productos. No cierres esta pantalla.");
+  setButtonLoading(button, true, "Creando ticket...");
+  setRmsRiskActionStatus(card, item, "loading", "Creando ticket", "Estamos validando la autorización y los productos. La imagen QR no se genera en esta fase.");
   const requestStartedAt = performance.now();
   const generationFeedbackTimer = window.setTimeout(() => {
-    setRmsRiskActionStatus(card, item, "loading", "El ticket sigue en proceso", "Qori está reservando el crédito, persistiendo la autorización y preparando la imagen QR.");
+    setRmsRiskActionStatus(card, item, "loading", "El ticket sigue en proceso", "Qori está reservando el crédito y persistiendo la autorización. El QR se genera después, solo si lo necesitas.");
   }, 1200);
   try {
     const response = await api("/api/business/rms-machine/risk-recovery-resource", {
@@ -63546,8 +63568,8 @@ async function generateRmsRiskRecoveryResource(item, root, button) {
     const totalMs = Math.max(1, Math.round(performance.now() - requestStartedAt));
     const serverMs = Math.max(0, Number(response.performance?.total_ms || 0));
     const timingDetail = `${(totalMs / 1000).toFixed(1)} s en total${serverMs ? ` · ${serverMs} ms en servidor` : ""}.`;
-    setRmsRiskActionStatus(card, item, "success", response.duplicate ? "Ticket recuperado sin costo adicional" : "Ticket y QR listos", `${timingDetail} Ya puedes compartirlo; el lead permanece en Riesgos hasta registrar la respuesta.`);
-    showFeedback(response.duplicate ? "El ticket ya estaba listo; no se descontó otro crédito." : "Ticket y activo extraordinario generados. Ya puedes compartirlos.", "success", { title: "Riesgos de fuga" });
+    setRmsRiskActionStatus(card, item, "success", response.duplicate ? "Ticket recuperado sin costo adicional" : "Ticket listo", `${timingDetail} Puedes copiar o enviar el enlace. Genera el QR bajo demanda desde Entregar.`);
+    showFeedback(response.duplicate ? "El ticket ya estaba listo; no se descontó otro crédito." : "Ticket extraordinario creado. El QR queda disponible bajo demanda en Entregar.", "success", { title: "Riesgos de fuga" });
   } catch (error) {
     setRmsRiskActionStatus(card, item, "error", "No se pudo generar el ticket", error?.message || "Revisa los datos e inténtalo nuevamente.");
     throw error;
@@ -63567,13 +63589,27 @@ rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupInteractive(item
   return html.replace('</section>', `<div class="rms-risk-response-bridge"><div><span class="mono-label">PASO 3 · RESPUESTA</span><strong>¿Qué respondió el cliente?</strong><small>Abre el resultado, escribe la justificación y envíalo a Ventas atribuidas o Reciclaje.</small></div><button class="solid-button compact" type="button" data-rms-risk-go-response="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">edit_note</span>Registrar respuesta</button></div></section>`);
 };
 
+// Preparar crea el ticket persistido. La imagen QR se solicita solo al descargarla en Entregar.
+const rmsRiskOperatingFlowMarkupTicketOnlyBase = rmsRiskOperatingFlowMarkup;
+rmsRiskOperatingFlowMarkup = function rmsRiskOperatingFlowMarkupTicketOnly(item = {}) {
+  return rmsRiskOperatingFlowMarkupTicketOnlyBase(item)
+    .replace(
+      /<span class="material-symbols-outlined" aria-hidden="true">qr_code_2<\/span>Generar ticket y QR/g,
+      '<span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span>Crear ticket',
+    )
+    .replace(
+      /<span class="material-symbols-outlined" aria-hidden="true">download<\/span>Descargar activo/g,
+      '<span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>Generar / descargar QR',
+    );
+};
+
 // Nunca uses el validador como sustituto de la imagen: si no hay imagen, se informa y no se navega.
 rmsRiskRecoveryResourceMarkup = function rmsRiskRecoveryResourceMarkupImageOnly(item = {}) {
   const resource = rmsRiskRecoveryResourceFor(item);
   if (!resource?.public_ticket_url) return `<div class="rms-risk-resource-empty"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2_add</span><div><strong>Aún no has generado el activo</strong><small>Selecciona una alternativa autorizada para crear el ticket.</small></div></div>`;
   const label = resource.recovery_offer?.label || resource.benefit?.label || "Beneficio extraordinario";
   const filename = escapeHtml(resource.filename || `ticket-${String(item.id || "qori").slice(0, 8)}.png`);
-  if (!resource.qr_image_data_url) return `<article class="rms-risk-resource-ready rms-risk-resource-visual"><div class="rms-risk-ticket-preview"><span class="rms-risk-image-unavailable">La imagen del ticket aún no está disponible. Genera el activo nuevamente.</span></div><div class="rms-risk-resource-copy"><span class="mono-label">ACTIVO LISTO</span><strong>${escapeHtml(label)}</strong><small>El enlace público no se mostrará como si fuera la imagen.</small></div></article>`;
+  if (!resource.qr_image_data_url) return `<article class="rms-risk-resource-ready rms-risk-resource-visual"><div class="rms-risk-ticket-preview"><span class="rms-risk-qr-fallback material-symbols-outlined" aria-hidden="true">confirmation_number</span></div><div class="rms-risk-resource-copy"><span class="mono-label">TICKET LISTO</span><strong>${escapeHtml(label)}</strong><small>El enlace ya está disponible. La imagen QR se genera bajo demanda desde Entregar.</small><code>${escapeHtml(resource.public_ticket_url)}</code></div></article>`;
   const image = `<img class="rms-risk-ticket-image" src="${escapeHtml(resource.qr_image_data_url)}" alt="Ticket ${escapeHtml(label)}" loading="lazy">`;
   return `<article class="rms-risk-resource-ready rms-risk-resource-visual"><div class="rms-risk-ticket-preview">${image}</div><div class="rms-risk-resource-copy"><span class="mono-label">TICKET LISTO PARA COMPARTIR</span><strong>${escapeHtml(label)}</strong><small>Vigente hasta ${escapeHtml(resource.expires_at ? formatDate(resource.expires_at) : "sin vencimiento")}.</small></div><div class="rms-risk-ticket-actions"><a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">visibility</span>Ver imagen</a><a class="ghost-button compact" href="${escapeHtml(resource.qr_image_data_url)}" download="${filename}"><span class="material-symbols-outlined" aria-hidden="true">download</span>Descargar imagen</a></div></article>`;
 };

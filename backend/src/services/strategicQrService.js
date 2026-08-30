@@ -584,8 +584,11 @@ async function createRiskRecoveryQr(businessId, user, body = {}) {
     const business = suppliedBusiness || businessResult?.rows[0] || null;
     const brand = getBrandStyle(business?.business_settings || {});
     const hasFrame = Boolean(brand.ticketFrameUrl);
-    const image = hasFrame
-      ? await buildBrandedTicketSvgDataUrl({
+    const generateQrImage = body.generate_qr_image !== false;
+    const image = !generateQrImage
+      ? null
+      : hasFrame
+        ? await buildBrandedTicketSvgDataUrl({
           scanUrl: sharedTicketUrl,
           brand,
           detailLines: buildTicketDetailLines({
@@ -595,7 +598,7 @@ async function createRiskRecoveryQr(businessId, user, body = {}) {
             benefitValue: benefitPayload?.value || {},
           }),
         })
-      : await QRCode.toDataURL(sharedTicketUrl);
+        : await QRCode.toDataURL(sharedTicketUrl);
 
     return {
       duplicate: Boolean(existingResult.rowCount),

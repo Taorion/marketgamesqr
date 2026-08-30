@@ -2682,7 +2682,7 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
   const idempotencyKey = String(payload.idempotency_key || "").trim();
   if (!idempotencyKey) throw badRequest("No fue posible identificar esta generación de ticket.");
   const existingResource = currentMetadata.risk_recovery_resource;
-  if (existingResource?.idempotency_key === idempotencyKey && existingResource.qr_code_id && existingResource.public_ticket_url && existingResource.qr_image_data_url) {
+  if (existingResource?.idempotency_key === idempotencyKey && existingResource.qr_code_id && existingResource.public_ticket_url) {
     return {
       resource: existingResource,
       ticket: { qr_image_data_url: existingResource.qr_image_data_url, filename: existingResource.filename },
@@ -2701,6 +2701,7 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
     expires_at: new Date(Date.now() + expirationDays * 86400000).toISOString(),
     idempotency_key: idempotencyKey,
     business_context: context.business,
+    generate_qr_image: false,
     recovery_offer: offer.recoveryOffer,
     benefit: {
       reward_id: null,

@@ -293,7 +293,7 @@ test("Riesgos sincroniza sin destruir el formulario y muestra feedback persisten
   assert.match(app, /data-rms-risk-retry-sync/);
   assert.match(app, /function ensureRmsRiskActionStatus/);
   assert.match(app, /Cambios de productos pendientes/);
-  assert.match(app, /Generando ticket y QR/);
+  assert.match(app, /Creando ticket/);
   assert.match(app, /Enviando a Ventas atribuidas/);
   assert.match(portalCss, /\.rms-risk-live-status/);
   assert.match(portalCss, /\.rms-risk-action-status/);
@@ -344,4 +344,22 @@ test("la generación del ticket usa la ruta exacta, lote de productos e idempote
   assert.match(app, /El ticket sigue en proceso/);
   assert.match(app, /risk-ticket-fast-v412-20260830/);
   assert.match(html, /risk-ticket=fast-v412-20260830/);
+});
+
+test("Preparar persiste el ticket sin generar la imagen QR y Entregar la crea bajo demanda", () => {
+  const prepare = service.slice(service.indexOf("async function prepareRmsRiskRecoveryResource"), service.indexOf("async function recordRmsRiskReview"));
+  const generate = app.slice(app.indexOf("async function generateRmsRiskRecoveryResource"), app.indexOf("// El renderizador activo"));
+  assert.match(prepare, /generate_qr_image: false/);
+  assert.match(prepare, /existingResource\?\.idempotency_key === idempotencyKey && existingResource\.qr_code_id && existingResource\.public_ticket_url/);
+  assert.match(strategicQrService, /const generateQrImage = body\.generate_qr_image !== false/);
+  assert.match(strategicQrService, /const image = !generateQrImage\s+\? null/);
+  assert.match(app, /async function generateAndDownloadRmsRiskQr/);
+  assert.match(app, /fetchLeadTicketDownload\(resource\.qr_code_id\)/);
+  assert.match(app, /function rmsRiskOperatingFlowMarkupTicketOnly/);
+  assert.match(app, /Crear ticket/);
+  assert.match(app, /Generar \/ descargar QR/);
+  assert.match(app, /La imagen QR se genera bajo demanda desde Entregar/);
+  assert.doesNotMatch(generate, /Generando ticket y QR|Ticket y QR listos/);
+  assert.match(app, /risk-ticket-without-qr-v413-20260830/);
+  assert.match(html, /risk-qr=on-demand-v413-20260830/);
 });
