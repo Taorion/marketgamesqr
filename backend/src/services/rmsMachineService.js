@@ -2575,11 +2575,13 @@ function validateRiskRecoveryOffer(payload, authorizations) {
       : recoveryOffer === "CUSTOM" && customBenefit?.type === "OTHER"
         ? "OTHER"
         : "BONUS";
-  const benefitLabel = customBenefit?.label
-    || (recoveryOffer === "DISCOUNT" ? `Descuento extraordinario del ${discountPercent}%`
-      : recoveryOffer === "TWO_FOR_ONE" ? (authorizations.two_for_one.label || "Beneficio 2x1")
-        : recoveryOffer === "GIFT" ? (authorizations.gift.label || "Obsequio extraordinario")
-          : "Beneficio extraordinario");
+  const benefitLabel = recoveryOffer === "NONE"
+    ? "Sin concesión extraordinaria"
+    : customBenefit?.label
+      || (recoveryOffer === "DISCOUNT" ? `Descuento extraordinario del ${discountPercent}%`
+        : recoveryOffer === "TWO_FOR_ONE" ? (authorizations.two_for_one.label || "Beneficio 2x1")
+          : recoveryOffer === "GIFT" ? (authorizations.gift.label || "Obsequio extraordinario")
+            : "Beneficio extraordinario");
   return {
     recoveryOffer,
     discountPercent: recoveryOffer === "DISCOUNT" ? discountPercent : customDiscountPercent,
@@ -2631,25 +2633,23 @@ async function listRmsPersistedCases(businessId, filters = {}) {
   });
 }
 
-function preparedRiskRecoveryOffer(payload, resource = null) {
+function persistedRiskRecoveryOffer(resource = null) {
   const snapshot = resource?.recovery_offer;
   if (!snapshot?.type) return null;
-  const requestedType = String(payload.recovery_offer || "NONE").toUpperCase();
-  const requestedBenefitId = String(payload.recovery_benefit_id || "").trim() || null;
+  const snapshotType = String(snapshot.type || "NONE").toUpperCase();
   const snapshotBenefitId = String(snapshot.benefit_id || "").trim() || null;
-  if (String(snapshot.type).toUpperCase() !== requestedType || snapshotBenefitId !== requestedBenefitId) return null;
   const customBenefit = snapshot.custom_benefit && typeof snapshot.custom_benefit === "object"
     ? { ...snapshot.custom_benefit }
     : null;
-  const benefitType = requestedType === "DISCOUNT" || customBenefit?.type === "DISCOUNT"
+  const benefitType = snapshotType === "DISCOUNT" || customBenefit?.type === "DISCOUNT"
     ? "DISCOUNT"
-    : requestedType === "GIFT" || customBenefit?.type === "GIFT"
+    : snapshotType === "GIFT" || customBenefit?.type === "GIFT"
       ? "GIFT"
-      : requestedType === "CUSTOM" && customBenefit?.type === "OTHER"
+      : snapshotType === "CUSTOM" && customBenefit?.type === "OTHER"
         ? "OTHER"
         : "BONUS";
   return {
-    recoveryOffer: requestedType,
+    recoveryOffer: snapshotType,
     discountPercent: Math.min(100, Math.max(0, Number(snapshot.discount_percent || 0))),
     recoveryBenefitId: snapshotBenefitId,
     customBenefit,
@@ -2659,17 +2659,44 @@ function preparedRiskRecoveryOffer(payload, resource = null) {
   };
 }
 
+function persistedRiskRecoveryProducts(resource = null) {
+  if (!Array.isArray(resource?.products)) return [];
+  return resource.products
+    .filter((product) => product?.inventory_product_id)
+    .map((product) => ({
+      inventory_product_id: product.inventory_product_id,
+      name: String(product.name || product.product_name_snapshot || "").trim(),
+      product_name_snapshot: String(product.product_name_snapshot || product.name || "").trim(),
+      product_price_snapshot: moneyNumber(product.product_price_snapshot),
+      product_currency_snapshot: String(product.product_currency_snapshot || "COP").trim().toUpperCase().slice(0, 8) || "COP",
+      quantity: Math.max(0.01, Number(product.quantity || 1)),
+      benefit_applied: Boolean(product.benefit_applied),
+    }));
+}
+
 async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const operationStartedAt = Date.now();
   const context = await findRiskOpportunityContext(businessId, sourceType, payload.source_id);
   const item = context.item;
   if (item.stage !== "control_anti_fuga") throw badRequest("El activo extraordinario solo se genera desde Riesgos de fuga.");
+  const currentMetadata = context.metadata;
+  const existingResource = currentMetadata.risk_recovery_resource;
+  // El ticket es de un solo uso por caso. Reutilizarlo antes de consultar
+  // catálogo o autorizaciones elimina el cuello de botella y evita duplicados
+  // aunque una pestaña antigua envíe otro idempotency_key.
+  if (existingResource?.qr_code_id && existingResource.public_ticket_url) {
+    return {
+      resource: existingResource,
+      ticket: { qr_image_data_url: existingResource.qr_image_data_url, filename: existingResource.filename },
+      duplicate: true,
+      performance: { total_ms: Date.now() - operationStartedAt, reused: true, immutable: true },
+    };
+  }
   const authorizations = normalizeRiskRecoveryAuthorizations(context.business.settings?.rms_risk_recovery_authorizations);
   const offer = validateRiskRecoveryOffer(payload, authorizations);
   if (offer.recoveryOffer === "NONE") throw badRequest("Selecciona un beneficio extraordinario antes de generar el ticket.");
   const contextReadyAt = Date.now();
-  const currentMetadata = context.metadata;
   const confirmation = currentMetadata.commercial_confirmation || {};
   const requestedProducts = Array.isArray(payload.products) && payload.products.length
     ? payload.products
@@ -2684,15 +2711,6 @@ async function prepareRmsRiskRecoveryResource(businessId, user, payload = {}) {
   const expirationDays = Math.min(90, Math.max(1, Number(payload.expiration_days || 7)));
   const idempotencyKey = String(payload.idempotency_key || "").trim();
   if (!idempotencyKey) throw badRequest("No fue posible identificar esta generación de ticket.");
-  const existingResource = currentMetadata.risk_recovery_resource;
-  if (existingResource?.idempotency_key === idempotencyKey && existingResource.qr_code_id && existingResource.public_ticket_url) {
-    return {
-      resource: existingResource,
-      ticket: { qr_image_data_url: existingResource.qr_image_data_url, filename: existingResource.filename },
-      duplicate: true,
-      performance: { total_ms: Date.now() - operationStartedAt, reused: true },
-    };
-  }
   const productsReadyAt = Date.now();
   const productName = currentMetadata.commercial_confirmation?.product_name || item.product_interest || null;
   const ticket = await createRiskRecoveryQr(businessId, user, {
@@ -2792,22 +2810,28 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
   const reason = String(payload.reason || "").trim() || "Revisión registrada sin detalle adicional.";
   if (!["CLEARED", "RECYCLE"].includes(result)) throw badRequest("Riesgos de fuga solo puede enviar a Ventas atribuidas o a Reciclaje.");
   if (result === "RECYCLE" && !payload.recycle_reason) throw badRequest("Para Reciclaje indica el motivo principal.");
-  const authorizations = await riskRecoveryAuthorizationsForBusiness(businessId);
-  // Un ticket ya emitido conserva la autorización exacta con la que nació.
-  // Las selecciones nuevas siempre se validan contra la configuración activa.
-  const offer = preparedRiskRecoveryOffer(payload, metadata.risk_recovery_resource)
-    || validateRiskRecoveryOffer(payload, authorizations);
-  const explicitRiskProducts = Array.isArray(payload.products) && payload.products.length > 0;
-  const requestedRiskProducts = explicitRiskProducts
-    ? payload.products
-    : confirmation?.inventory_product_id
-      ? [{ inventory_product_id: confirmation.inventory_product_id, quantity: confirmation.sale_context?.quantity || 1, benefit_applied: offer.recoveryOffer !== "NONE" }]
-      : [];
+  const persistedResource = metadata.risk_recovery_resource || null;
+  const persistedOffer = persistedRiskRecoveryOffer(persistedResource);
+  if (persistedResource?.public_ticket_url && !persistedOffer) {
+    throw badRequest("El ticket existente no conserva una preparación válida. Actualiza el caso antes de continuar.");
+  }
+  // Un ticket emitido es la fuente inmutable de beneficio y productos. Una
+  // pestaña antigua nunca puede reescribir lo que el cliente recibió.
+  const offer = persistedOffer || validateRiskRecoveryOffer(payload, await riskRecoveryAuthorizationsForBusiness(businessId));
+  const hasPersistedTicket = Boolean(persistedResource?.public_ticket_url);
+  const persistedProducts = persistedRiskRecoveryProducts(persistedResource);
+  const requestedRiskProducts = hasPersistedTicket
+    ? []
+    : Array.isArray(payload.products) && payload.products.length > 0
+      ? payload.products
+      : confirmation?.inventory_product_id
+        ? [{ inventory_product_id: confirmation.inventory_product_id, quantity: confirmation.sale_context?.quantity || 1, benefit_applied: offer.recoveryOffer !== "NONE" }]
+        : [];
   const repeatedRiskProductIds = requestedRiskProducts
     .map((product) => String(product.inventory_product_id || ""))
     .filter((id, index, all) => id && all.indexOf(id) !== index);
   if (repeatedRiskProductIds.length) throw badRequest("Cada producto debe aparecer una sola vez en Riesgos de fuga. Ajusta la cantidad en su misma fila.");
-  const riskProducts = await Promise.all(requestedRiskProducts.map(async (product) => {
+  const riskProducts = hasPersistedTicket ? persistedProducts : await Promise.all(requestedRiskProducts.map(async (product) => {
     const snapshot = await rmsInventoryProductSnapshot(businessId, product.inventory_product_id);
     return {
       inventory_product_id: snapshot.inventory_product_id,
@@ -2819,10 +2843,10 @@ async function recordRmsRiskReview(businessId, user, payload = {}) {
       benefit_applied: offer.recoveryOffer === "NONE" ? false : Boolean(product.benefit_applied),
     };
   }));
-  if (result === "CLEARED" && explicitRiskProducts && !riskProducts.length) {
+  if (result === "CLEARED" && !riskProducts.length) {
     throw badRequest("Agrega al menos un producto antes de enviar la venta.");
   }
-  if (result === "CLEARED" && offer.recoveryOffer !== "NONE" && explicitRiskProducts && !riskProducts.some((product) => product.benefit_applied)) {
+  if (result === "CLEARED" && offer.recoveryOffer !== "NONE" && !riskProducts.some((product) => product.benefit_applied)) {
     throw badRequest("Marca al menos un producto al que se aplicó el beneficio extraordinario.");
   }
   const nonConversionCost = result === "RECYCLE"

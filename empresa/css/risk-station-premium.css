@@ -1,6 +1,16 @@
-/* Riesgos de fuga · workbench v415 */
+/* Riesgos de fuga · command workbench v419 */
 .rms-risk-workbench {
+  --risk-blue-deep: #012268;
+  --risk-blue-corp: #0341b3;
+  --risk-blue-digital: #0152d7;
+  --risk-blue-bright: #0480fa;
+  --risk-cyan: #07cefb;
+  --risk-ice: #e8f3fb;
+  --risk-line: #cde0f4;
+  --risk-text: #0b1e3d;
+  --risk-muted: #54708f;
   contain: layout style;
+  color: var(--risk-text);
 }
 
 .rms-risk-workbench .rms-commercial-work-console {
@@ -11,10 +21,12 @@
   display: grid;
   gap: 18px;
   padding: clamp(16px, 2vw, 26px);
-  border: 1px solid rgba(180, 137, 53, 0.24);
+  border: 1px solid var(--risk-line);
   border-radius: 24px;
-  background: linear-gradient(145deg, #fff 0%, #fffdf8 100%);
-  box-shadow: 0 20px 55px rgba(34, 27, 15, 0.08);
+  background:
+    radial-gradient(circle at 94% 2%, rgba(7, 206, 251, 0.1), transparent 25%),
+    linear-gradient(145deg, #fff 0%, #f7fbff 100%);
+  box-shadow: 0 20px 55px rgba(1, 34, 104, 0.09);
 }
 
 .rms-risk-workbench .rms-risk-phased-head {
@@ -44,10 +56,10 @@
   align-items: center;
   gap: 10px;
   padding: 11px;
-  border: 1px solid #e8e2d7;
+  border: 1px solid var(--risk-line);
   border-radius: 16px;
   background: #fff;
-  color: #2d2922;
+  color: var(--risk-text);
   text-align: left;
   cursor: pointer;
 }
@@ -58,7 +70,8 @@
   height: 34px;
   place-items: center;
   border-radius: 50%;
-  background: #f3efe7;
+  background: var(--risk-ice);
+  color: var(--risk-blue-deep);
 }
 
 .rms-risk-workbench .rms-risk-phase-rail button span {
@@ -67,23 +80,23 @@
 }
 
 .rms-risk-workbench .rms-risk-phase-rail button small {
-  color: #736b5f;
+  color: var(--risk-muted);
 }
 
 .rms-risk-workbench .rms-risk-phase-rail .is-active button {
-  border-color: #b38a3e;
-  background: #241f18;
+  border-color: var(--risk-cyan);
+  background: linear-gradient(135deg, var(--risk-blue-deep) 0%, var(--risk-blue-corp) 42%, var(--risk-blue-bright) 76%, var(--risk-cyan) 100%);
   color: #fff;
-  box-shadow: 0 12px 28px rgba(36, 31, 24, 0.16);
+  box-shadow: 0 12px 28px rgba(4, 128, 250, 0.2);
 }
 
 .rms-risk-workbench .rms-risk-phase-rail .is-active button b {
-  background: #d8ad57;
-  color: #241f18;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--risk-blue-deep);
 }
 
 .rms-risk-workbench .rms-risk-phase-rail .is-active button small {
-  color: #e8dfcf;
+  color: #e8f3fb;
 }
 
 .rms-risk-workbench .rms-risk-phase-rail .is-complete button {
@@ -94,7 +107,7 @@
 .rms-risk-workbench .rms-risk-phase-card {
   min-width: 0;
   padding: clamp(15px, 2vw, 22px);
-  border: 1px solid #e9e4da;
+  border: 1px solid var(--risk-line);
   border-radius: 20px;
   background: #fff;
 }
@@ -117,7 +130,7 @@
 
 .rms-risk-workbench .rms-risk-phase-number {
   flex: 0 0 auto;
-  color: #a87922;
+  color: var(--risk-blue-digital);
   font: 800 1rem/1 "Plus Jakarta Sans", sans-serif;
 }
 
@@ -160,7 +173,8 @@
   margin-bottom: 16px;
   padding: 14px;
   border-radius: 16px;
-  background: #f7f4ee;
+  border: 1px solid rgba(4, 128, 250, 0.12);
+  background: #f1f8fe;
 }
 
 .rms-risk-workbench .rms-risk-ticket-generation[hidden] {
@@ -180,6 +194,105 @@
 .rms-risk-workbench .rms-risk-delivery-bar,
 .rms-risk-workbench .rms-risk-phase-actions {
   gap: 10px;
+}
+
+.rms-risk-workbench .rms-risk-value-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.rms-risk-workbench .rms-risk-value-strip article {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid var(--risk-line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 22px rgba(1, 34, 104, 0.05);
+}
+
+.rms-risk-workbench .rms-risk-value-strip .material-symbols-outlined {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--risk-ice);
+  color: var(--risk-blue-digital);
+}
+
+.rms-risk-workbench .rms-risk-value-strip div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.rms-risk-workbench .rms-risk-value-strip small {
+  color: var(--risk-blue-digital);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.rms-risk-workbench .rms-risk-value-strip strong {
+  overflow-wrap: anywhere;
+  color: var(--risk-blue-deep);
+  font-size: 0.86rem;
+  line-height: 1.28;
+}
+
+.rms-risk-workbench .rms-risk-lock-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid rgba(23, 178, 106, 0.28);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f3fbf7 0%, #eff9ff 100%);
+  color: var(--risk-text);
+}
+
+.rms-risk-workbench .rms-risk-lock-notice .material-symbols-outlined {
+  color: #17b26a;
+}
+
+.rms-risk-workbench .rms-risk-lock-notice div {
+  display: grid;
+  gap: 3px;
+}
+
+.rms-risk-workbench .rms-risk-lock-notice small {
+  color: var(--risk-muted);
+  line-height: 1.45;
+}
+
+.rms-risk-workbench .rms-risk-preparation-summary.is-locked {
+  border-color: rgba(23, 178, 106, 0.34);
+  box-shadow: 0 10px 24px rgba(23, 178, 106, 0.08);
+}
+
+.rms-risk-workbench.is-ticket-locked .rms-risk-phase-ticket input:disabled,
+.rms-risk-workbench.is-ticket-locked .rms-risk-phase-ticket select:disabled,
+.rms-risk-workbench.is-ticket-locked .rms-risk-phase-ticket button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.rms-risk-workbench :is(button, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(7, 206, 251, 0.36);
+  outline-offset: 2px;
+}
+
+.rms-risk-workbench .solid-button:not(:disabled) {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--risk-blue-deep) 0%, var(--risk-blue-corp) 46%, var(--risk-blue-bright) 100%);
+  box-shadow: 0 10px 24px rgba(4, 128, 250, 0.18);
 }
 
 @media (max-width: 760px) {
@@ -202,6 +315,10 @@
 
   .rms-risk-workbench .rms-risk-phase-rail {
     grid-template-columns: 1fr;
+  }
+
+  .rms-risk-workbench .rms-risk-value-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .rms-risk-workbench .rms-risk-phase-rail button {
@@ -230,6 +347,16 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
     gap: 8px;
+  }
+}
+
+@media (max-width: 460px) {
+  .rms-risk-workbench .rms-risk-value-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-risk-workbench .rms-risk-value-strip article {
+    padding: 11px;
   }
 }
 

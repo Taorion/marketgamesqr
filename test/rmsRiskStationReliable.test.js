@@ -164,8 +164,9 @@ test("los beneficios personalizados se guardan, activan y eliminan de forma pers
 test("el beneficio personalizado conserva snapshot y porcentaje hasta Ventas atribuidas", () => {
   assert.match(service, /custom_benefit: offer\.customBenefit \|\| null/);
   assert.match(service, /discount_percent: offer\.discountPercent/);
-  assert.match(service, /preparedRiskRecoveryOffer\(payload, metadata\.risk_recovery_resource\)/);
-  assert.match(service, /snapshotBenefitId !== requestedBenefitId/);
+  assert.match(service, /persistedRiskRecoveryOffer\(persistedResource\)/);
+  assert.match(service, /const offer = persistedOffer \|\| validateRiskRecoveryOffer/);
+  assert.match(service, /const riskProducts = hasPersistedTicket \? persistedProducts/);
   assert.match(service, /riskRecoveryOffer\?\.type === "CUSTOM" && riskCustomBenefit\.type === "DISCOUNT" \? riskCustomBenefit\.value : 0/);
   assert.match(app, /riskContext\.offer\?\.type === "CUSTOM" && customBenefit\.type === "DISCOUNT" \? customBenefit\.value : 0/);
 });
@@ -228,7 +229,7 @@ test("Riesgos permite agregar productos y elegir en cuáles aplica el beneficio"
   assert.match(app, /data-rms-risk-add-product/);
   assert.match(app, /data-rms-risk-line-benefit/);
   assert.match(app, /Aplicar el beneficio a este producto/);
-  assert.match(activeSave, /const products = rmsRiskProductsFromDom\(card\)/);
+  assert.match(activeSave, /const products = lockedPreparation\?\.products \|\| rmsRiskProductsFromDom\(card\)/);
   assert.match(activeSave, /!products\.some\(\(product\) => product\.benefit_applied\)/);
   assert.match(activeSave, /recovery_detail:[^\n]+products,/);
   assert.match(activeSave, /idempotency_key: reviewOperationKey/);
@@ -342,7 +343,9 @@ test("la generación del ticket usa la ruta exacta, lote de productos e idempote
   assert.match(service, /async function rmsInventoryProductSnapshots/);
   assert.match(service, /id = any\(\$2::uuid\[\]\)/);
   assert.match(prepare, /rmsInventoryProductSnapshots\(businessId, requestedProducts\)/);
-  assert.match(prepare, /existingResource\?\.idempotency_key === idempotencyKey/);
+  assert.match(prepare, /existingResource\?\.qr_code_id && existingResource\.public_ticket_url/);
+  assert.ok(prepare.indexOf("if (existingResource?.qr_code_id") < prepare.indexOf("normalizeRiskRecoveryAuthorizations"));
+  assert.match(prepare, /immutable: true/);
   assert.match(prepare, /performance: \{/);
   assert.match(strategicQrService, /const suppliedBusiness = body\.business_context/);
   assert.match(schema, /idx_qr_codes_rms_risk_idempotency/);
@@ -356,7 +359,7 @@ test("Preparar persiste el ticket sin generar la imagen QR y Entregar la crea ba
   const prepare = service.slice(service.indexOf("async function prepareRmsRiskRecoveryResource"), service.indexOf("async function recordRmsRiskReview"));
   const generate = app.slice(app.indexOf("async function generateRmsRiskRecoveryResource"), app.indexOf("// El renderizador activo"));
   assert.match(prepare, /generate_qr_image: false/);
-  assert.match(prepare, /existingResource\?\.idempotency_key === idempotencyKey && existingResource\.qr_code_id && existingResource\.public_ticket_url/);
+  assert.match(prepare, /existingResource\?\.qr_code_id && existingResource\.public_ticket_url/);
   assert.match(strategicQrService, /const generateQrImage = body\.generate_qr_image !== false/);
   assert.match(strategicQrService, /const image = !generateQrImage\s+\? null/);
   assert.match(app, /async function generateAndDownloadRmsRiskQr/);
@@ -406,14 +409,41 @@ test("Riesgos usa un workbench directo, responsive y sin reubicar el formulario 
   assert.match(app, /form\?\.closest\('\[data-rms-risk-phase-panel="result"\]'\) !== responsePanel/);
   assert.match(activeSave, /result === "RECYCLE"[\s\S]*data-rms-risk-recycle-panel/);
   assert.match(activeSave, /data-rms-risk-sale-panel/);
-  assert.match(riskCss, /\/\* Riesgos de fuga · workbench v415 \*\//);
+  assert.match(riskCss, /\/\* Riesgos de fuga .* command workbench v419 \*\//);
   assert.match(riskCss, /content-visibility: auto/);
   assert.match(riskCss, /@media \(max-width: 760px\)/);
   assert.match(riskCss, /\.rms-factory-console\.is-station-mode:has\(\.rms-risk-workbench\)/);
   assert.match(riskCss, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(riskCss, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(riskCss, /padding: 8px !important/);
-  assert.match(html, /risk-station-premium\.css\?v=risk-workbench-mobile-v417-20260830/);
-  assert.match(app, /risk-workbench-v415-20260830/);
-  assert.match(html, /risk-workbench=fast-v415-20260830/);
+  assert.match(html, /risk-station-premium\.css\?v=risk-command-v419-20260830/);
+  assert.match(app, /risk-command-v419-20260830/);
+  assert.match(html, /risk-command=premium-v419-20260830/);
+});
+
+test("Riesgos conserva la preparacion ligera y bloquea el ticket como contrato inmutable", () => {
+  assert.match(app, /RMS_RISK_DRAFT_STORAGE_PREFIX/);
+  assert.match(app, /window\.sessionStorage\?\.getItem\(storageKey\)/);
+  assert.match(app, /window\.sessionStorage\?\.setItem\(state\.rmsRiskDraftStorageKey, JSON\.stringify/);
+  assert.match(app, /function rmsRiskPreparationFromResource/);
+  assert.match(app, /return rmsRiskPreparationFromResource\(rmsRiskRecoveryResourceFor\(item\)\)/);
+  assert.match(app, /function syncRmsRiskPreparationLock/);
+  assert.match(app, /card\?\.classList\.toggle\("is-ticket-locked", locked\)/);
+  assert.match(app, /Ticket listo e inmutable/);
+  assert.match(app, /Preparación protegida/);
+  assert.match(service, /const hasPersistedTicket = Boolean\(persistedResource\?\.public_ticket_url\)/);
+  assert.match(service, /const requestedRiskProducts = hasPersistedTicket\s+\? \[\]/);
+});
+
+test("Riesgos aplica el sistema visual Qori y explica entrada proceso salida e impacto", () => {
+  assert.match(app, /function rmsRiskValueStripMarkup/);
+  assert.match(app, /ENTRA/);
+  assert.match(app, /PROCESA/);
+  assert.match(app, /REVENUE EN JUEGO/);
+  assert.match(riskCss, /--risk-blue-deep: #012268/);
+  assert.match(riskCss, /--risk-cyan: #07cefb/);
+  assert.match(riskCss, /\.rms-risk-value-strip/);
+  assert.match(riskCss, /\.rms-risk-lock-notice/);
+  assert.match(riskCss, /linear-gradient\(135deg, var\(--risk-blue-deep\) 0%, var\(--risk-blue-corp\) 42%, var\(--risk-blue-bright\) 76%, var\(--risk-cyan\) 100%\)/);
+  assert.doesNotMatch(riskCss, /#b38a3e|#241f18|#d8ad57/i);
 });
