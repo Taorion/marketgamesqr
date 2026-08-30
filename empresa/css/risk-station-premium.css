@@ -1,0 +1,224 @@
+/* Riesgos de fuga · workbench v415 */
+.rms-risk-workbench {
+  contain: layout style;
+}
+
+.rms-risk-workbench .rms-commercial-work-console {
+  min-width: 0;
+}
+
+.rms-risk-workbench .rms-risk-flow-phased {
+  display: grid;
+  gap: 18px;
+  padding: clamp(16px, 2vw, 26px);
+  border: 1px solid rgba(180, 137, 53, 0.24);
+  border-radius: 24px;
+  background: linear-gradient(145deg, #fff 0%, #fffdf8 100%);
+  box-shadow: 0 20px 55px rgba(34, 27, 15, 0.08);
+}
+
+.rms-risk-workbench .rms-risk-phased-head {
+  display: grid;
+  gap: 5px;
+}
+
+.rms-risk-workbench .rms-risk-phased-head h5,
+.rms-risk-workbench .rms-risk-phased-head p {
+  margin: 0;
+}
+
+.rms-risk-workbench .rms-risk-phase-rail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rms-risk-workbench .rms-risk-phase-rail button {
+  width: 100%;
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid #e8e2d7;
+  border-radius: 16px;
+  background: #fff;
+  color: #2d2922;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rms-risk-workbench .rms-risk-phase-rail button b {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f3efe7;
+}
+
+.rms-risk-workbench .rms-risk-phase-rail button span {
+  display: grid;
+  min-width: 0;
+}
+
+.rms-risk-workbench .rms-risk-phase-rail button small {
+  color: #736b5f;
+}
+
+.rms-risk-workbench .rms-risk-phase-rail .is-active button {
+  border-color: #b38a3e;
+  background: #241f18;
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(36, 31, 24, 0.16);
+}
+
+.rms-risk-workbench .rms-risk-phase-rail .is-active button b {
+  background: #d8ad57;
+  color: #241f18;
+}
+
+.rms-risk-workbench .rms-risk-phase-rail .is-active button small {
+  color: #e8dfcf;
+}
+
+.rms-risk-workbench .rms-risk-phase-rail .is-complete button {
+  border-color: rgba(38, 133, 88, 0.32);
+  background: #f1faf5;
+}
+
+.rms-risk-workbench .rms-risk-phase-card {
+  min-width: 0;
+  padding: clamp(15px, 2vw, 22px);
+  border: 1px solid #e9e4da;
+  border-radius: 20px;
+  background: #fff;
+}
+
+.rms-risk-workbench .rms-risk-phase-card[hidden] {
+  display: none !important;
+}
+
+.rms-risk-workbench .rms-risk-phase-card > header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.rms-risk-workbench .rms-risk-phase-card > header h6,
+.rms-risk-workbench .rms-risk-phase-card > header small {
+  margin: 0;
+}
+
+.rms-risk-workbench .rms-risk-phase-number {
+  flex: 0 0 auto;
+  color: #a87922;
+  font: 800 1rem/1 "Plus Jakarta Sans", sans-serif;
+}
+
+.rms-risk-workbench .rms-risk-preparation-summary {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 15px;
+  border: 1px solid rgba(38, 133, 88, 0.24);
+  border-radius: 16px;
+  background: #f4fbf7;
+}
+
+.rms-risk-workbench .rms-risk-preparation-summary header {
+  display: flex;
+  gap: 10px;
+}
+
+.rms-risk-workbench .rms-risk-preparation-summary ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rms-risk-workbench .rms-risk-preparation-summary li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(38, 133, 88, 0.14);
+}
+
+.rms-risk-workbench .rms-risk-ticket-generation {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.5fr) auto minmax(180px, 1fr);
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f7f4ee;
+}
+
+.rms-risk-workbench .rms-risk-ticket-generation[hidden] {
+  display: none !important;
+}
+
+.rms-risk-workbench .rms-risk-products-list {
+  content-visibility: auto;
+  contain-intrinsic-size: 180px;
+}
+
+.rms-risk-workbench .rms-risk-product-line,
+.rms-risk-workbench .rms-risk-recovery-form {
+  min-width: 0;
+}
+
+.rms-risk-workbench .rms-risk-delivery-bar,
+.rms-risk-workbench .rms-risk-phase-actions {
+  gap: 10px;
+}
+
+@media (max-width: 760px) {
+  .rms-risk-workbench .rms-risk-flow-phased {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .rms-risk-workbench .rms-risk-phase-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-risk-workbench .rms-risk-phase-rail button {
+    min-height: 58px;
+  }
+
+  .rms-risk-workbench .rms-risk-ticket-generation {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .rms-risk-workbench .rms-risk-preparation-summary li,
+  .rms-risk-workbench .rms-risk-delivery-bar,
+  .rms-risk-workbench .rms-risk-phase-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .rms-risk-workbench .rms-risk-delivery-bar button,
+  .rms-risk-workbench .rms-risk-phase-actions button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rms-risk-workbench *,
+  .rms-risk-workbench *::before,
+  .rms-risk-workbench *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

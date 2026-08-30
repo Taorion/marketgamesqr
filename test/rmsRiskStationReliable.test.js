@@ -12,6 +12,7 @@ const strategicQrService = fs.readFileSync(path.join(root, "backend/src/services
 const schema = fs.readFileSync(path.join(root, "database/schema.sql"), "utf8");
 const riskTicketSpeedMigration = fs.readFileSync(path.join(root, "database/migrations/20260829235900_rms_risk_ticket_generation_speed.sql"), "utf8");
 const portalCss = fs.readFileSync(path.join(root, "empresa/css/portal-clean-v39.css"), "utf8");
+const riskCss = fs.readFileSync(path.join(root, "empresa/css/risk-station-premium.css"), "utf8");
 
 test("Riesgos permite registrar una respuesta sin ticket", () => {
   assert.match(app, /requestedPhase === "deliver" && !hasResource/);
@@ -242,7 +243,7 @@ test("Riesgos abre con consulta exacta y render progresivo ligero", () => {
   assert.match(service, /recentStateRowsForBusiness\(businessId, limit, phaseFilter\)/);
   assert.match(service, /phaseFilter === "control_anti_fuga"\s*\? await riskLeadRowsForStateRefs\(businessId, stationStateRows\)\s*: await leadRowsForStateRefs\(businessId, stationStateRows, crmFilters\)/);
   assert.match(service, /const results = await Promise\.all\(requests\)/);
-  assert.match(app, /phase === "control_anti_fuga" \? 2 : RMS_STATION_RENDER_INITIAL_LIMIT/);
+  assert.match(app, /phase === "control_anti_fuga" \? 1 : RMS_STATION_RENDER_INITIAL_LIMIT/);
   assert.match(app, /display\.matchingRows\.length > display\.pageSize/);
   assert.match(app, /risk-station-fast-v403-20260829/);
   assert.match(html, /risk-speed=fast-v403-20260829/);
@@ -269,11 +270,16 @@ test("Riesgos lee directamente sus referencias persistidas sin agregados histór
   assert.match(html, /risk-read=direct-v408-20260829/);
 });
 
-test("Riesgos conserva productos durante sincronizaciones y evita cargar el inventario dos veces", () => {
-  assert.match(service, /inventory_products: phaseFilter === "control_anti_fuga" \? inventoryProducts : undefined/);
+test("Riesgos conserva productos y carga el catálogo fuera de la respuesta crítica", () => {
+  assert.match(service, /const riskStationFastPath = stationFastPath && phaseFilter === "control_anti_fuga"/);
+  assert.match(service, /const inventoryPromise = riskStationFastPath \? Promise\.resolve\(\[\]\)/);
+  assert.match(service, /inventory_products: phaseFilter === "control_anti_fuga" && !riskStationFastPath \? inventoryProducts : undefined/);
   assert.match(service, /scope, inventory_products \} = await listRmsOpportunities/);
   assert.match(service, /scope,\s+inventory_products,/);
   assert.match(app, /stationPhase === "control_anti_fuga" && Array\.isArray\(data\?\.inventory_products\)/);
+  assert.match(app, /phase === "control_anti_fuga" && !state\.inventoryLoaded/);
+  assert.match(app, /loadInventoryProducts\(\{ quiet: true \}\)/);
+  assert.match(app, /Casos y catálogo listos/);
   assert.doesNotMatch(app, /\["curaduria", "clasificacion", "procesamiento", "accion_correctiva", "control_anti_fuga", "cierre"\]/);
   assert.match(app, /function rmsRiskProductDraftStore/);
   assert.match(app, /persistRmsRiskProductDraft\(card, item\)/);
@@ -383,4 +389,28 @@ test("Preparar solo confirma productos y beneficio; Entregar genera el ticket y 
   assert.match(app, /resultButton\.disabled = !hasResource/);
   assert.match(app, /risk-preparation-handoff-v414-20260830/);
   assert.match(html, /risk-flow=preparation-handoff-v414-20260830/);
+});
+
+test("Riesgos usa un workbench directo, responsive y sin reubicar el formulario activo", () => {
+  const response = app.slice(app.indexOf("function rmsRiskResponsePhaseMarkup"), app.indexOf("// Flujo definitivo"));
+  const workbench = app.slice(app.indexOf("rmsRiskValidationStationCardMarkup = function rmsRiskValidationStationCardMarkupWorkbench"), app.indexOf("function rmsRiskShareMessage"));
+  const activeSave = app.slice(app.indexOf("saveRmsRiskDecision = async function saveRmsRiskDecisionUnified"), app.indexOf("// El activo se ve dentro de la estación"));
+  assert.match(response, /rmsRiskTabsMarkup\(item\)/);
+  assert.match(response, /data-rms-risk-selected-offer/);
+  assert.match(response, /data-rms-risk-sale-panel/);
+  assert.match(response, /data-rms-risk-recycle-panel/);
+  assert.match(response, /data-rms-save-risk-decision/);
+  assert.match(workbench, /rms-risk-workbench/);
+  assert.match(workbench, /rmsRiskOperatingFlowMarkup\(item\)/);
+  assert.doesNotMatch(workbench, /\.replace\(/);
+  assert.match(app, /form\?\.closest\('\[data-rms-risk-phase-panel="result"\]'\) !== responsePanel/);
+  assert.match(activeSave, /result === "RECYCLE"[\s\S]*data-rms-risk-recycle-panel/);
+  assert.match(activeSave, /data-rms-risk-sale-panel/);
+  assert.match(riskCss, /\/\* Riesgos de fuga · workbench v415 \*\//);
+  assert.match(riskCss, /content-visibility: auto/);
+  assert.match(riskCss, /@media \(max-width: 760px\)/);
+  assert.match(riskCss, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(html, /risk-station-premium\.css\?v=risk-workbench-v415-20260830/);
+  assert.match(app, /risk-workbench-v415-20260830/);
+  assert.match(html, /risk-workbench=fast-v415-20260830/);
 });

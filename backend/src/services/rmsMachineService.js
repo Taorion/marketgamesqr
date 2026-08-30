@@ -1049,7 +1049,10 @@ async function listRmsOpportunities(businessId, filters = {}) {
   delete crmFilters.rms_phase;
   delete crmFilters.phase;
   const stationFastPath = lite && Boolean(phaseFilter);
-  const inventoryPromise = inventoryProductsForBusiness(businessId);
+  // Riesgos abre primero el caso y carga el catálogo en paralelo desde su
+  // endpoint dedicado. El inventario completo no debe bloquear esta cola.
+  const riskStationFastPath = stationFastPath && phaseFilter === "control_anti_fuga";
+  const inventoryPromise = riskStationFastPath ? Promise.resolve([]) : inventoryProductsForBusiness(businessId);
   const stationStateRows = stationFastPath
     ? await recentStateRowsForBusiness(businessId, limit, phaseFilter)
     : null;
@@ -1137,7 +1140,7 @@ async function listRmsOpportunities(businessId, filters = {}) {
     funnel: lite ? [] : buildIntakeFunnel(opportunities),
     process_flow: lite ? [] : buildIndustrialProcess(opportunities),
     alerts: lite ? [] : rmsAlerts(opportunities),
-    inventory_products: phaseFilter === "control_anti_fuga" ? inventoryProducts : undefined,
+    inventory_products: phaseFilter === "control_anti_fuga" && !riskStationFastPath ? inventoryProducts : undefined,
     deduplication: { collapsed_contacts: Math.max(0, mergedRows.length - canonicalRows.length) },
     scope: phaseFilter ? { mode: "station", phase: phaseFilter, lite } : { mode: "machine", phase: "", lite },
   };
