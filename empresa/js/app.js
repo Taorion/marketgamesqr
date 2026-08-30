@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260830-risk-premium-v423";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v423-20260830";
+const APP_VERSION = "empresa-20260830-risk-premium-v424";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -54341,12 +54341,14 @@ function bindRmsMachineActions(root) {
   });
   root.querySelectorAll("[data-rms-risk-tab]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.closest(".rms-risk-v2")) return;
       const id = button.dataset.rmsRiskTab || "";
       activateRmsRiskTab(root, id, button.dataset.rmsRiskTabKey || "sale");
     });
   });
   root.querySelectorAll("[data-rms-save-risk-decision]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.closest(".rms-risk-v2")) return;
       const item = rmsOpportunityById(button.dataset.rmsSaveRiskDecision || "");
       if (item) saveRmsRiskDecision(item, root).catch((error) => showFeedback(error.message || "No pudimos guardar la decisión de riesgo.", "error", { title: "Riesgos de fuga" }));
     });
@@ -54359,12 +54361,14 @@ function bindRmsMachineActions(root) {
   });
   root.querySelectorAll("[data-rms-generate-risk-resource]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.closest(".rms-risk-v2")) return;
       const item = rmsOpportunityById(button.dataset.rmsGenerateRiskResource || "");
       if (item) generateRmsRiskRecoveryResource(item, root, button).catch((error) => showFeedback(error.message || "No pudimos generar el ticket extraordinario.", "error", { title: "Riesgos de fuga" }));
     });
   });
   root.querySelectorAll("[data-rms-risk-whatsapp]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (button.closest(".rms-risk-v2")) return;
       const item = rmsOpportunityById(button.dataset.rmsRiskWhatsapp || "");
       if (!item) return;
       const resource = requireRmsRiskShare(item, root);
@@ -54383,12 +54387,14 @@ function bindRmsMachineActions(root) {
   });
   root.querySelectorAll("[data-rms-risk-email]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.closest(".rms-risk-v2")) return;
       const item = rmsOpportunityById(button.dataset.rmsRiskEmail || "");
       if (item) emailRmsRiskRecoveryResource(item, root, button).catch((error) => showFeedback(error.message || "No pudimos enviar el beneficio por email.", "error", { title: "Riesgos de fuga" }));
     });
   });
   root.querySelectorAll("[data-rms-risk-copy-ticket]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (button.closest(".rms-risk-v2")) return;
       const item = rmsOpportunityById(button.dataset.rmsRiskCopyTicket || "");
       const resource = item ? rmsRiskRecoveryResourceFor(item) : null;
       if (!resource?.public_ticket_url) return showFeedback("Genera primero el ticket extraordinario.", "info", { title: "Riesgos de fuga" });
@@ -54398,6 +54404,7 @@ function bindRmsMachineActions(root) {
   });
   root.querySelectorAll("[data-rms-risk-download-ticket]").forEach((button) => {
     button.addEventListener("click", async () => {
+      if (button.closest(".rms-risk-v2")) return;
       const item = rmsOpportunityById(button.dataset.rmsRiskDownloadTicket || "");
       if (item) await generateAndDownloadRmsRiskQr(item, root, button);
     });
@@ -57336,11 +57343,33 @@ function rmsRiskV2SelectedOfferValue(item = {}) {
   return rmsRiskResourceOfferValue(resource);
 }
 
+function rmsRiskIconMarkup(name = "info") {
+  const paths = {
+    agreement: '<path d="M7 3h8l4 4v14H5V3h2Z"/><path d="M14 3v5h5M8 13l2.2 2.2L16 10"/>',
+    sale: '<circle cx="12" cy="12" r="9"/><path d="M12 6v12M15.5 8.5H10.7a2.2 2.2 0 0 0 0 4.4h2.6a2.2 2.2 0 0 1 0 4.4H8.5"/>',
+    recycle: '<path d="M20 7h-5V2"/><path d="M19 7a8 8 0 0 0-13.6-2M4 17h5v5"/><path d="M5 17a8 8 0 0 0 13.6 2"/>',
+    arrow: '<path d="M5 12h14M14 7l5 5-5 5"/>',
+    shield: '<path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    ticket: '<path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4V7Z"/><path d="M12 7v10"/>',
+    check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.6 2.6L16 9"/>',
+    touch: '<path d="M9 11V7a2 2 0 0 1 4 0v5-2a2 2 0 0 1 4 0v3-1a2 2 0 0 1 4 0v3c0 4-2.7 6-6 6h-2c-2 0-3.5-.8-4.8-2.3L4.5 14a2 2 0 0 1 2.8-2.8L9 13"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/>',
+    download: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
+    message: '<path d="M4 5h16v11H8l-4 4V5Z"/><path d="M8 9h8M8 12h5"/>',
+    email: '<path d="M3 6h18v12H3V6Z"/><path d="m3 7 9 7 9-7"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',
+    error: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 17h.01"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4"/>',
+  };
+  return `<svg class="rms-risk-icon rms-risk-icon-${escapeHtml(name)}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths[name] || paths.info}</svg>`;
+}
+
 function rmsRiskV2ResourceMarkup(item = {}) {
   const resource = rmsRiskRecoveryResourceFor(item);
-  if (!resource?.public_ticket_url) return '<div class="rms-risk-v2-ticket-empty"><span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span><div><strong>Ticket opcional</strong><small>Créalo solo si realmente vas a entregar una concesión al cliente.</small></div></div>';
+  if (!resource?.public_ticket_url) return `<div class="rms-risk-v2-ticket-empty">${rmsRiskIconMarkup("ticket")}<div><strong>Ticket opcional</strong><small>Créalo solo si realmente vas a entregar una concesión al cliente.</small></div></div>`;
   const label = resource.recovery_offer?.label || resource.benefit?.label || "Beneficio extraordinario";
-  return `<div class="rms-risk-v2-ticket-ready"><span class="material-symbols-outlined" aria-hidden="true">verified</span><div><strong>${escapeHtml(label)}</strong><small>Ticket persistido · ${escapeHtml(resource.expires_at ? `vence ${formatDate(resource.expires_at)}` : "sin vencimiento")}</small></div><button class="ghost-button compact" type="button" data-rms-risk-copy-ticket="${escapeHtml(item.id)}">Copiar enlace</button><button class="ghost-button compact" type="button" data-rms-risk-download-ticket="${escapeHtml(item.id)}">Descargar QR</button></div>`;
+  return `<div class="rms-risk-v2-ticket-ready">${rmsRiskIconMarkup("check")}<div><strong>${escapeHtml(label)}</strong><small>Ticket persistido · ${escapeHtml(resource.expires_at ? `vence ${formatDate(resource.expires_at)}` : "sin vencimiento")}</small></div><div class="rms-risk-v2-ticket-actions"><button class="ghost-button compact" type="button" data-rms-risk-copy-ticket="${escapeHtml(item.id)}">${rmsRiskIconMarkup("link")}<span>Copiar enlace</span></button><button class="ghost-button compact" type="button" data-rms-risk-download-ticket="${escapeHtml(item.id)}">${rmsRiskIconMarkup("download")}<span>Descargar QR</span></button></div></div>`;
 }
 
 function rmsRiskValidationStationCardMarkup(item = {}) {
@@ -57358,32 +57387,32 @@ function rmsRiskValidationStationCardMarkup(item = {}) {
     <section class="rms-commercial-work-console rms-risk-command-console">
       <header class="rms-commercial-console-head rms-risk-hero"><div><span class="mono-label">PROTECCIÓN DE REVENUE</span><h4>${escapeHtml(item.name || "Contacto")}</h4><p>${escapeHtml([item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto registrado")}</p></div><span class="rms-commercial-state is-pending">Decisión pendiente</span></header>
       <ol class="rms-risk-v2-route" aria-label="Ruta de la decisión"><li><span>1</span><div><strong>Acuerdo</strong><small>Validar lo recibido</small></div></li><li class="is-active"><span>2</span><div><strong>Decidir</strong><small>Venta o reciclaje</small></div></li><li><span>3</span><div><strong>Entregar</strong><small>Destino confirmado</small></div></li></ol>
-      <section class="rms-risk-v2-agreement"><span class="material-symbols-outlined" aria-hidden="true">handshake</span><div><small>ACUERDO RECIBIDO</small><strong>${escapeHtml(agreement)}</strong></div></section>
+      <section class="rms-risk-v2-agreement">${rmsRiskIconMarkup("agreement")}<div><small>ACUERDO RECIBIDO</small><strong>${escapeHtml(agreement)}</strong></div></section>
       <div class="rms-risk-v2-destinations" role="tablist" aria-label="Resultado del caso">
-        <button class="is-active" type="button" role="tab" aria-selected="true" aria-controls="rms-risk-sale-${id}" data-rms-risk-tab="${id}" data-rms-risk-tab-key="sale"><span class="material-symbols-outlined" aria-hidden="true">paid</span><strong>Venta lograda</strong><small>Proteger el acuerdo y enviarlo a Ventas atribuidas</small></button>
-        <button type="button" role="tab" aria-selected="false" aria-controls="rms-risk-recycle-${id}" data-rms-risk-tab="${id}" data-rms-risk-tab-key="recycle"><span class="material-symbols-outlined" aria-hidden="true">autorenew</span><strong>No es el momento</strong><small>Conservar contexto y preparar una nueva oportunidad</small></button>
+        <button class="is-active" type="button" role="tab" aria-selected="true" aria-controls="rms-risk-sale-${id}" data-rms-risk-tab="${id}" data-rms-risk-tab-key="sale">${rmsRiskIconMarkup("sale")}<strong>Venta lograda</strong><small>Proteger el acuerdo y enviarlo a Ventas atribuidas</small></button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="rms-risk-recycle-${id}" data-rms-risk-tab="${id}" data-rms-risk-tab-key="recycle">${rmsRiskIconMarkup("recycle")}<strong>No es el momento</strong><small>Conservar contexto y preparar una nueva oportunidad</small></button>
       </div>
       <input type="hidden" data-rms-risk-decision="${id}" value="CLEARED">
-      <footer class="rms-risk-v2-footer"><div><span class="mono-label">SALIDA SEGURA</span><strong data-rms-risk-destination-label>Completa la venta antes de enviarla</strong><small data-rms-risk-readiness-detail>Selecciona la concesión y confirma al menos un producto real.</small></div><button class="solid-button" type="button" data-rms-save-risk-decision="${id}" disabled><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span><span data-rms-risk-save-label>Enviar a Ventas atribuidas</span></button></footer>
+      <footer class="rms-risk-v2-footer"><div><span class="mono-label">SALIDA SEGURA</span><strong data-rms-risk-destination-label>Completa la venta antes de enviarla</strong><small data-rms-risk-readiness-detail>Selecciona la concesión y confirma al menos un producto real.</small></div><button class="solid-button" type="button" data-rms-save-risk-decision="${id}" disabled>${rmsRiskIconMarkup("arrow")}<span data-rms-risk-save-label>Enviar a Ventas atribuidas</span></button></footer>
+      <div class="rms-risk-action-status is-ready" data-rms-risk-action-status="${id}" role="status" aria-live="polite">${rmsRiskIconMarkup("touch")}<div><strong>Elige el resultado real</strong><small>Qori te indicará lo que falta antes de habilitar el traslado.</small></div></div>
       <section class="rms-risk-v2-panel" id="rms-risk-sale-${id}" role="tabpanel" data-rms-risk-sale-panel="${id}">
-        <header class="rms-risk-v2-panel-head"><div><span class="mono-label">VENTA PROTEGIDA</span><h5>Confirma exactamente qué aceptó el cliente</h5><p>Ventas atribuidas recibirá productos, beneficio y contexto sin volver a digitarlos.</p></div><span class="material-symbols-outlined" aria-hidden="true">verified_user</span></header>
+        <header class="rms-risk-v2-panel-head"><div><span class="mono-label">VENTA PROTEGIDA</span><h5>Confirma exactamente qué aceptó el cliente</h5><p>Ventas atribuidas recibirá productos, beneficio y contexto sin volver a digitarlos.</p></div>${rmsRiskIconMarkup("shield")}</header>
         <label><span>¿Se necesitó una concesión?</span><select data-rms-risk-recovery-offer="${id}" ${resource?.public_ticket_url ? "disabled" : ""}>${rmsRiskV2OfferOptions(selectedOffer)}</select><small>${resource?.public_ticket_url ? "El ticket ya fijó esta concesión y queda protegida contra cambios." : "Elige Sin concesión si el cliente aceptó la oferta original."}</small></label>
         <label data-rms-risk-detail-wrap="${id}" hidden><span>Detalle autorizado</span><input type="text" maxlength="1000" data-rms-risk-recovery-detail="${id}" placeholder="Describe exactamente el 2x1 u obsequio"></label>
         <details class="rms-risk-v2-products" ${resource?.public_ticket_url ? "" : "open"}><summary>Productos de la venta</summary>${rmsRiskProductsBuilderMarkup(item)}</details>
         <details class="rms-risk-v2-ticket" data-rms-risk-ticket-panel="${id}" hidden ${resource?.public_ticket_url ? "" : "open"}>
           <summary>${resource?.public_ticket_url ? "Ticket listo · entrega y QR" : "Crear ticket opcional"}</summary>
-          <div class="rms-risk-v2-ticket-controls"><label><span>Vigencia</span><select data-rms-risk-expiration-days="${id}" ${resource?.public_ticket_url ? "disabled" : ""}><option value="3">3 días</option><option value="7" selected>7 días</option><option value="15">15 días</option><option value="30">30 días</option></select></label>${resource?.public_ticket_url ? "" : `<button class="solid-button compact" type="button" data-rms-generate-risk-resource="${id}"><span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span>Crear ticket</button>`}</div>
+          <div class="rms-risk-v2-ticket-controls"><label><span>Vigencia</span><select data-rms-risk-expiration-days="${id}" ${resource?.public_ticket_url ? "disabled" : ""}><option value="3">3 días</option><option value="7" selected>7 días</option><option value="15">15 días</option><option value="30">30 días</option></select></label>${resource?.public_ticket_url ? "" : `<button class="solid-button compact" type="button" data-rms-generate-risk-resource="${id}">${rmsRiskIconMarkup("ticket")}<span>Crear ticket</span></button>`}</div>
           <div data-rms-risk-resource-status="${id}">${rmsRiskV2ResourceMarkup(item)}</div>
-          <div class="rms-risk-v2-delivery" data-rms-risk-delivery="${id}" ${resource?.public_ticket_url ? "" : "hidden"}><label class="checkbox-row"><input type="checkbox" data-rms-risk-consent="${id}"> Confirmo autorización de contacto.</label><div class="rms-risk-v2-share"><button class="ghost-button compact" type="button" data-rms-risk-whatsapp="${id}">WhatsApp</button><button class="ghost-button compact" type="button" data-rms-risk-email="${id}">Email</button></div></div>
+          <div class="rms-risk-v2-delivery" data-rms-risk-delivery="${id}" ${resource?.public_ticket_url ? "" : "hidden"}><label class="checkbox-row"><input type="checkbox" data-rms-risk-consent="${id}"><span>Confirmo autorización de contacto.</span></label><div class="rms-risk-v2-share"><button class="ghost-button compact" type="button" data-rms-risk-whatsapp="${id}">${rmsRiskIconMarkup("message")}<span>WhatsApp</span></button><button class="ghost-button compact" type="button" data-rms-risk-email="${id}">${rmsRiskIconMarkup("email")}<span>Email</span></button></div></div>
         </details>
         <label><span>Nota del resultado <em>Opcional</em></span><textarea rows="3" data-rms-risk-reason="${id}" placeholder="Agrega solo información que Ventas atribuidas deba conocer"></textarea></label>
       </section>
       <section class="rms-risk-v2-panel" id="rms-risk-recycle-${id}" role="tabpanel" data-rms-risk-recycle-panel="${id}" hidden>
-        <header class="rms-risk-v2-panel-head"><div><span class="mono-label">RECICLAJE INTELIGENTE</span><h5>Conserva la relación sin seguir presionando</h5><p>El caso sale de esta cola con motivo y estrategia trazables.</p></div><span class="material-symbols-outlined" aria-hidden="true">cycle</span></header>
+        <header class="rms-risk-v2-panel-head"><div><span class="mono-label">RECICLAJE INTELIGENTE</span><h5>Conserva la relación sin seguir presionando</h5><p>El caso sale de esta cola con motivo y estrategia trazables.</p></div>${rmsRiskIconMarkup("recycle")}</header>
         <div class="rms-sale-form-grid"><label><span>Motivo principal</span><select data-rms-risk-recycle-reason="${id}"><option value="" selected disabled>Selecciona el motivo real</option><option value="BUDGET">Presupuesto</option><option value="TIMING">Momento inadecuado</option><option value="NO_RESPONSE">Sin respuesta</option><option value="WAITING_DECISION">Decisión aplazada</option><option value="NOT_VIABLE_NOW">No es viable ahora</option><option value="OTHER">Otro</option></select></label><label><span>Estrategia futura</span><select data-rms-risk-recycle-strategy="${id}"><option value="NURTURE">Nutrición comercial</option><option value="NEW_CONTACT">Nuevo contacto</option><option value="NEW_PROPOSAL">Nueva propuesta</option><option value="NEW_ACTIVATION">Nueva activación</option><option value="PERMITTED_BENEFIT">Beneficio permitido</option></select></label><label><span>Revisar nuevamente <em>Opcional</em></span><input type="datetime-local" data-rms-risk-next-at="${id}"></label></div>
         <label><span>Contexto para la reactivación <em>Opcional</em></span><textarea rows="3" data-rms-risk-reason="${id}" placeholder="Qué se intentó y qué debería cambiar antes de volver a contactar"></textarea></label>
       </section>
-      <div class="rms-risk-action-status is-ready" data-rms-risk-action-status="${id}" role="status" aria-live="polite"><span class="material-symbols-outlined" aria-hidden="true">touch_app</span><div><strong>Elige el resultado real</strong><small>Qori te indicará lo que falta antes de habilitar el traslado.</small></div></div>
     </section>
   </article>`;
 }
@@ -57400,7 +57429,10 @@ function rmsRiskV2SetDecision(card, decision) {
   });
   card.querySelector("[data-rms-risk-save-label]").textContent = recycle ? "Enviar a Reciclaje" : "Enviar a Ventas atribuidas";
   const item = rmsOpportunityById(card.dataset.rmsStationLead || "");
-  if (item) rmsRiskV2UpdateReadiness(card, item);
+  if (item) {
+    rmsRiskV2UpdateReadiness(card, item);
+    setRmsRiskActionStatus(card, item, "info", recycle ? "Preparando una nueva oportunidad" : "Protegiendo la venta", recycle ? "Completa el motivo real y Qori conservará el contexto para retomarlo después." : "Confirma concesión y productos; Qori te avisará cuando la salida esté lista.");
+  }
 }
 
 function rmsRiskV2UpdateReadiness(card, item) {
@@ -57562,17 +57594,40 @@ function bindRmsRiskStationFastActions(root) {
     if (button.matches("[data-rms-save-risk-decision]")) return saveRmsRiskDecision(item, root).catch((error) => { setRmsRiskActionStatus(card, item, "error", "No se pudo completar el traslado", error.message); });
     if (button.matches("[data-rms-risk-copy-ticket]")) {
       const url = rmsRiskRecoveryResourceFor(item)?.public_ticket_url;
-      if (url) navigator.clipboard.writeText(url).then(() => showFeedback("Enlace copiado.", "success", { title: "Riesgos de fuga" })).catch(() => showFeedback("No fue posible copiar el enlace.", "error", { title: "Riesgos de fuga" }));
+      if (!url) {
+        setRmsRiskActionStatus(card, item, "error", "El ticket todavía no está listo", "Créalo o recupéralo antes de copiar el enlace.");
+        return;
+      }
+      setRmsRiskActionStatus(card, item, "pending", "Copiando enlace seguro", "El ticket permanece intacto mientras Qori prepara el portapapeles.");
+      navigator.clipboard.writeText(url).then(() => {
+        setRmsRiskActionStatus(card, item, "success", "Enlace copiado", "Ya puedes compartir el ticket con el cliente.");
+        showFeedback("Enlace copiado.", "success", { title: "Riesgos de fuga" });
+      }).catch(() => {
+        setRmsRiskActionStatus(card, item, "error", "No se pudo copiar el enlace", "El navegador bloqueó el portapapeles. Intenta nuevamente.");
+        showFeedback("No fue posible copiar el enlace.", "error", { title: "Riesgos de fuga" });
+      });
       return;
     }
-    if (button.matches("[data-rms-risk-download-ticket]")) return generateAndDownloadRmsRiskQr(item, root, button).catch((error) => showFeedback(error.message, "error", { title: "Riesgos de fuga" }));
+    if (button.matches("[data-rms-risk-download-ticket]")) return generateAndDownloadRmsRiskQr(item, root, button).catch((error) => {
+      setRmsRiskActionStatus(card, item, "error", "No se pudo descargar el QR", error.message);
+      showFeedback(error.message, "error", { title: "Riesgos de fuga" });
+    });
     if (button.matches("[data-rms-risk-whatsapp]")) {
       const resource = requireRmsRiskShare(item, root);
       const digits = String(item.phone || "").replace(/\D/g, "");
-      if (resource && digits) window.open(`https://wa.me/${encodeURIComponent(digits)}?text=${encodeURIComponent(rmsRiskShareMessage(item, resource))}`, "_blank", "noopener");
+      if (!resource) return;
+      if (!digits) {
+        setRmsRiskActionStatus(card, item, "error", "Falta un WhatsApp válido", "Registra el teléfono del cliente antes de preparar el mensaje.");
+        return;
+      }
+      window.open(`https://wa.me/${encodeURIComponent(digits)}?text=${encodeURIComponent(rmsRiskShareMessage(item, resource))}`, "_blank", "noopener");
+      setRmsRiskActionStatus(card, item, "success", "WhatsApp preparado", "Revisa el mensaje en la pestaña abierta antes de enviarlo.");
       return;
     }
-    if (button.matches("[data-rms-risk-email]")) return emailRmsRiskRecoveryResource(item, root, button).catch((error) => showFeedback(error.message, "error", { title: "Riesgos de fuga" }));
+    if (button.matches("[data-rms-risk-email]")) return emailRmsRiskRecoveryResource(item, root, button).catch((error) => {
+      setRmsRiskActionStatus(card, item, "error", "No se pudo preparar el email", error.message);
+      showFeedback(error.message, "error", { title: "Riesgos de fuga" });
+    });
   });
 }
 
@@ -62887,7 +62942,7 @@ function persistRmsRiskProductDraft(card, item) {
 
 function rmsRiskProductsBuilderMarkup(item = {}) {
   const id = escapeHtml(item.id);
-  return `<section class="rms-risk-products-builder" data-rms-risk-products="${id}"><header><div><span class="mono-label">PRODUCTOS DE ESTA COMPRA</span><strong>Define el alcance del beneficio</strong><small>Agrega cada producto y marca solamente los que recibieron la concesión extraordinaria.</small></div><button class="ghost-button compact" type="button" data-rms-risk-add-product="${id}"><span class="material-symbols-outlined" aria-hidden="true">add</span>Agregar producto</button></header><div class="rms-risk-products-list">${rmsRiskProductSeed(item).map((line) => rmsRiskProductLineMarkup(item.id, line)).join("")}</div></section>`;
+  return `<section class="rms-risk-products-builder" data-rms-risk-products="${id}"><header><div><span class="mono-label">PRODUCTOS DE ESTA COMPRA</span><strong>Define el alcance del beneficio</strong><small>Agrega cada producto y marca solamente los que recibieron la concesión extraordinaria.</small></div><button class="ghost-button compact" type="button" data-rms-risk-add-product="${id}">${rmsRiskIconMarkup("plus")}<span>Agregar producto</span></button></header><div class="rms-risk-products-list">${rmsRiskProductSeed(item).map((line) => rmsRiskProductLineMarkup(item.id, line)).join("")}</div></section>`;
 }
 
 function rmsRiskProductsFromDom(card) {
@@ -62923,7 +62978,7 @@ function ensureRmsRiskActionStatus(card, item) {
   status.dataset.rmsRiskActionStatus = String(item.id);
   status.setAttribute("role", "status");
   status.setAttribute("aria-live", "polite");
-  status.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">touch_app</span><div><strong>Listo para trabajar</strong><small>Qori confirmará aquí cada cambio y cada envío.</small></div>';
+  status.innerHTML = `${rmsRiskIconMarkup("touch")}<div><strong>Listo para trabajar</strong><small>Qori confirmará aquí cada cambio y cada envío.</small></div>`;
   const flowStatus = card.querySelector("[data-rms-risk-phase-status]");
   (flowStatus || card.querySelector(".rms-commercial-console-head"))?.insertAdjacentElement("afterend", status);
   return status;
@@ -62932,16 +62987,10 @@ function ensureRmsRiskActionStatus(card, item) {
 function setRmsRiskActionStatus(card, item, kind = "info", title = "", detail = "") {
   const status = ensureRmsRiskActionStatus(card, item);
   if (!status) return;
-  const icon = {
-    loading: "sync",
-    success: "check_circle",
-    error: "error",
-    pending: "edit_note",
-    info: "info",
-  }[kind] || "info";
+  const icon = { success: "check", error: "error", pending: "edit", info: "info" }[kind] || "info";
   status.className = `rms-risk-action-status is-${kind}`;
   status.setAttribute("aria-busy", kind === "loading" ? "true" : "false");
-  status.innerHTML = `<span class="${kind === "loading" ? "busy-spinner" : "material-symbols-outlined"}" aria-hidden="true">${kind === "loading" ? "" : icon}</span><div><strong>${escapeHtml(title || "Estado actualizado")}</strong><small>${escapeHtml(detail || "Puedes continuar con el caso.")}</small></div>`;
+  status.innerHTML = `${kind === "loading" ? '<span class="busy-spinner" aria-hidden="true"></span>' : rmsRiskIconMarkup(icon)}<div><strong>${escapeHtml(title || "Estado actualizado")}</strong><small>${escapeHtml(detail || "Puedes continuar con el caso.")}</small></div>`;
 }
 
 function bindRmsRiskProductLines(card, item) {
@@ -63233,18 +63282,22 @@ function requireRmsRiskShare(item, root) {
 }
 
 async function emailRmsRiskRecoveryResource(item, root, button) {
+  const card = root?.querySelector?.(`[data-rms-station-lead="${CSS.escape(String(item.id || ""))}"]`) || null;
   const resource = requireRmsRiskShare(item, root);
   if (!resource) return;
   if (!String(item.email || "").trim()) {
+    if (card) setRmsRiskActionStatus(card, item, "error", "Falta un email válido", "Registra el correo del cliente antes de preparar el envío.");
     showFeedback("Este lead no tiene un email válido registrado.", "info", { title: "Riesgos de fuga" });
     return;
   }
   const message = rmsRiskShareMessage(item, resource);
+  if (card) setRmsRiskActionStatus(card, item, "loading", "Preparando el email", "Qori está verificando la ruta de entrega configurada en Cuenta.");
   setButtonLoading(button, true, "Enviando...");
   try {
     const route = await portalEmailDeliveryRoute();
     if (route === "external") {
       openExternalEmailDraft({ to: [item.email], subject: "Tu beneficio extraordinario está listo", body: message });
+      if (card) setRmsRiskActionStatus(card, item, "info", "Borrador abierto en tu proveedor", "Revísalo y envíalo allí; Qori no lo marcará como entregado.");
       showFeedback("Beneficio preparado en tu proveedor externo. Qori no lo marcará como enviado.", "info", { title: "Riesgos de fuga" });
       return;
     }
@@ -63257,6 +63310,7 @@ async function emailRmsRiskRecoveryResource(item, root, button) {
     if (!communicationId) throw new Error("No se pudo preparar el email.");
     const delivery = await api(`/api/business/communications/${encodeURIComponent(communicationId)}/send`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ recipients: [{ source_id: item.source_id, source_type: item.source_type || "PLAYER" }], consent_confirmed: true, idempotency_key: crypto.randomUUID() }) });
     if (!Number(delivery?.results?.sent || 0)) throw new Error(delivery?.results?.failure_reasons?.[0]?.message || "El email no pudo entregarse.");
+    if (card) setRmsRiskActionStatus(card, item, "success", "Email enviado", "La entrega quedó registrada en Comunicaciones.");
     showFeedback("Beneficio enviado por email y registrado en Comunicaciones.", "success", { title: "Riesgos de fuga" });
   } finally {
     setButtonLoading(button, false);

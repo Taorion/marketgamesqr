@@ -915,3 +915,326 @@ html body:not(#qoriRiskActiveA#qoriRiskActiveB#qoriRiskActiveC#qoriRiskActiveD#q
     border-radius: 15px;
   }
 }
+
+/* Riesgos de fuga v4 · controles robustos, iconografía propia y feedback cercano */
+.rms-risk-v2 .rms-risk-icon {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  flex: 0 0 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: middle;
+}
+
+.rms-risk-v2 :is(button, .rms-risk-v2-agreement, .rms-risk-v2-ticket-ready, .rms-risk-action-status) > .rms-risk-icon {
+  pointer-events: none;
+}
+
+.rms-risk-v2 :is(button, strong, small, span, p, label) {
+  max-width: 100%;
+  text-decoration: none !important;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.rms-risk-v2 button:has(.rms-risk-icon) {
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.rms-risk-v2-destinations button > .rms-risk-icon {
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+}
+
+.rms-risk-v2-agreement > .rms-risk-icon,
+.rms-risk-v2-panel-head > .rms-risk-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 9px;
+  border: 1px solid rgba(3, 65, 179, 0.12);
+  border-radius: 13px;
+  background: #fff;
+  color: var(--risk-blue-digital);
+  box-sizing: border-box;
+}
+
+.rms-risk-v2-panel-head > .rms-risk-icon {
+  background: var(--risk-ice);
+}
+
+.rms-risk-products-builder {
+  display: grid;
+  gap: 12px;
+}
+
+.rms-risk-products-builder > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.rms-risk-products-builder > header > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.rms-risk-products-list {
+  display: grid;
+  gap: 12px;
+}
+
+body[data-current-view="rms-machine"] #rmsStationWorkspace .rms-risk-v2 .rms-risk-product-line {
+  display: grid;
+  grid-template-columns: minmax(320px, 2fr) minmax(96px, 0.42fr) minmax(190px, 0.82fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(3, 65, 179, 0.13);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #fff, #f8fbff);
+  box-shadow: 0 8px 24px rgba(1, 34, 104, 0.05);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+body[data-current-view="rms-machine"] #rmsStationWorkspace .rms-risk-v2 .rms-risk-product-line:focus-within {
+  border-color: rgba(4, 128, 250, 0.55);
+  box-shadow: var(--risk-focus-ring), 0 12px 28px rgba(1, 34, 104, 0.08);
+}
+
+.rms-risk-v2 .rms-risk-product-identity {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+}
+
+.rms-risk-v2 .rms-risk-product-identity > label {
+  min-width: 0;
+}
+
+.rms-risk-v2 .rms-risk-product-search-feedback {
+  grid-column: 1 / -1;
+  min-height: 1.2em;
+}
+
+.rms-risk-v2 .rms-risk-product-line :is(input, select) {
+  min-height: 44px;
+}
+
+html body:not(#qoriRiskCheckA#qoriRiskCheckB#qoriRiskCheckC#qoriRiskCheckD#qoriRiskCheckE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-risk-v2 :is(.rms-risk-product-benefit, .checkbox-row) input[type="checkbox"] {
+  appearance: auto !important;
+  display: inline-block !important;
+  width: 20px !important;
+  min-width: 20px !important;
+  max-width: 20px !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  max-height: 20px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 0 0 20px !important;
+  accent-color: var(--risk-blue-digital);
+  cursor: pointer;
+}
+
+html body:not(#qoriRiskCheckRowA#qoriRiskCheckRowB#qoriRiskCheckRowC#qoriRiskCheckRowD)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-risk-v2 :is(.rms-risk-product-benefit, .checkbox-row) {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  min-width: 0;
+  min-height: 48px;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  border: 1px solid rgba(3, 65, 179, 0.16);
+  border-radius: 14px;
+  background: #f5f9ff;
+  color: var(--risk-blue-deep);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.rms-risk-v2 .rms-risk-product-benefit:has(input:checked) {
+  border-color: #65d8a5;
+  background: #ecfff7;
+  box-shadow: 0 0 0 3px rgba(23, 178, 106, 0.1);
+}
+
+.rms-risk-v2 .rms-risk-product-benefit.is-disabled {
+  opacity: 0.66;
+  cursor: not-allowed;
+}
+
+.rms-risk-v2 .rms-risk-v2-ticket-ready {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+}
+
+.rms-risk-v2-ticket-ready > .rms-risk-icon {
+  width: 38px;
+  height: 38px;
+  padding: 8px;
+  border-radius: 12px;
+  background: #d9fbea;
+  color: #087a4b;
+  box-sizing: border-box;
+}
+
+.rms-risk-v2-ticket-actions,
+.rms-risk-v2-share {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rms-risk-v2-ticket-actions button,
+.rms-risk-v2-share button {
+  display: inline-flex !important;
+  min-height: 42px;
+}
+
+.rms-risk-v2 .rms-risk-v2-delivery {
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(3, 65, 179, 0.12);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.rms-risk-v2 .rms-risk-action-status {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(3, 65, 179, 0.2);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f5f9ff, #eef9ff);
+  box-shadow: 0 8px 22px rgba(1, 34, 104, 0.06);
+  overflow: hidden;
+  animation: rmsRiskFeedbackIn 220ms ease both;
+}
+
+.rms-risk-v2 .rms-risk-action-status::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--risk-blue-digital);
+}
+
+.rms-risk-v2 .rms-risk-action-status > .rms-risk-icon {
+  color: var(--risk-blue-digital);
+}
+
+.rms-risk-v2 .rms-risk-action-status.is-success::before { background: #17b26a; }
+.rms-risk-v2 .rms-risk-action-status.is-success > .rms-risk-icon { color: #087a4b; }
+.rms-risk-v2 .rms-risk-action-status.is-error::before { background: #ef4444; }
+.rms-risk-v2 .rms-risk-action-status.is-error > .rms-risk-icon { color: #c81e1e; }
+.rms-risk-v2 .rms-risk-action-status.is-pending::before { background: #e69b18; }
+.rms-risk-v2 .rms-risk-action-status.is-pending > .rms-risk-icon { color: #a96500; }
+
+@keyframes rmsRiskFeedbackIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rms-risk-v2 :is(.rms-risk-v2-products, .rms-risk-v2-ticket) > summary {
+  min-height: 28px;
+  line-height: 1.45;
+}
+
+.rms-risk-v2 :is(button, input, select, textarea, summary):focus-visible {
+  outline: none !important;
+  box-shadow: var(--risk-focus-ring) !important;
+}
+
+@media (max-width: 980px) {
+  body[data-current-view="rms-machine"] #rmsStationWorkspace .rms-risk-v2 .rms-risk-product-line {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rms-risk-v2 .rms-risk-product-identity {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .rms-risk-products-builder > header,
+  .rms-risk-v2 .rms-risk-v2-delivery {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .rms-risk-products-builder > header > button {
+    width: 100%;
+  }
+
+  body[data-current-view="rms-machine"] #rmsStationWorkspace .rms-risk-v2 .rms-risk-product-line,
+  .rms-risk-v2 .rms-risk-product-identity {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-risk-v2 .rms-risk-product-identity > *,
+  .rms-risk-v2 .rms-risk-product-search-feedback {
+    grid-column: 1;
+  }
+
+  .rms-risk-v2 .rms-risk-v2-ticket-ready {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .rms-risk-v2-ticket-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rms-risk-v2-ticket-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .rms-risk-v2-ticket-actions,
+  .rms-risk-v2-share {
+    grid-template-columns: 1fr;
+  }
+
+  .rms-risk-v2-share {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rms-risk-v2-share button {
+    width: 100%;
+  }
+
+  .rms-risk-v2 .rms-risk-action-status {
+    align-items: flex-start;
+    padding: 11px 12px;
+  }
+}

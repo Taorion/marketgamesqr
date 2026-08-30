@@ -134,11 +134,26 @@ test("la paginación conserva la interfaz premium y el almacenamiento de borrado
   assert.match(app, /rms-risk-recovery-boundary/);
   assert.match(app, /RMS risk station render blocked/);
   assert.doesNotMatch(app, /RIESGOS DE FUGA · MODO SEGURO/);
-  assert.match(html, /risk-v2=premium-v5-20260830/);
-  assert.match(html, /risk-premium-v7-20260830/);
+  assert.match(html, /risk-v2=premium-v6-20260830/);
+  assert.match(html, /risk-premium-v8-20260830/);
 });
 
 test("descargar el QR reutiliza el renderer canónico de recursos", () => {
   assert.match(app, /status\.innerHTML = rmsRiskV2ResourceMarkup\(item\)/);
   assert.doesNotMatch(app, /rmsRiskRecoveryResourceMarkup/);
+});
+
+test("la estación usa iconos propios y checkbox de tamaño controlado", () => {
+  const start = app.indexOf("function rmsRiskValidationStationCardMarkup");
+  const end = app.indexOf("function rmsRiskV2SetDecision", start);
+  const renderer = app.slice(start, end);
+  assert.match(app, /function rmsRiskIconMarkup/);
+  assert.doesNotMatch(renderer, /material-symbols-outlined/);
+  assert.ok(renderer.indexOf("rms-risk-action-status") < renderer.indexOf("data-rms-risk-sale-panel"));
+  assert.match(css, /qoriRiskCheckA/);
+  assert.match(css, /input\[type="checkbox"\][\s\S]*width: 20px !important/);
+  assert.match(css, /\.rms-risk-v2-ticket-actions/);
+  assert.match(app, /if \(button\.closest\("\.rms-risk-v2"\)\) return;/);
+  assert.match(app, /Enlace copiado[\s\S]*Ya puedes compartir el ticket con el cliente/);
+  assert.match(app, /Preparando una nueva oportunidad/);
 });
