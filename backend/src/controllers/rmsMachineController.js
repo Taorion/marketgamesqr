@@ -318,7 +318,7 @@ const riskReviewSchema = z.object({
   recovery_benefit_id: z.string().trim().max(120).optional().nullable(),
   discount_percent: z.number().min(0).max(100).optional().default(0),
   recovery_detail: z.string().trim().max(1000).optional().nullable(),
-  products: z.array(riskReviewProductSchema).min(1).max(50).optional(),
+  products: z.array(riskReviewProductSchema).max(50).optional(),
   signals: z.record(z.string(), z.unknown()).optional().default({}),
   idempotency_key: z.string().trim().min(8).max(180).optional().nullable(),
 });

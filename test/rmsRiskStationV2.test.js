@@ -8,6 +8,7 @@ const core = require(path.join(root, "empresa/js/risk-station-core.js"));
 const app = fs.readFileSync(path.join(root, "empresa/js/app.js"), "utf8");
 const html = fs.readFileSync(path.join(root, "empresa/index.html"), "utf8");
 const service = fs.readFileSync(path.join(root, "backend/src/services/rmsMachineService.js"), "utf8");
+const controller = fs.readFileSync(path.join(root, "backend/src/controllers/rmsMachineController.js"), "utf8");
 const css = fs.readFileSync(path.join(root, "empresa/css/risk-station-premium.css"), "utf8");
 
 const authorizations = {
@@ -60,7 +61,7 @@ test("reciclaje no arrastra concesiones ni productos de una venta", () => {
   assert.equal(result.valid, true);
   assert.equal(result.destination, "reciclaje");
   assert.equal(result.payload.recovery_offer, "NONE");
-  assert.deepEqual(result.payload.products, []);
+  assert.equal(Object.hasOwn(result.payload, "products"), false);
   assert.match(result.payload.reason, /Momento inadecuado/);
 });
 
@@ -81,6 +82,16 @@ test("reciclaje convierte un contexto corto opcional en una razón válida y tra
   assert.match(result.payload.reason, /Caso enviado a Reciclaje: Presupuesto\./);
   assert.match(result.payload.reason, /Contexto: das/);
   assert.ok(result.payload.reason.length >= 4);
+  assert.equal(Object.hasOwn(result.payload, "products"), false);
+});
+
+test("el contrato HTTP permite Reciclaje sin productos y Venta los sigue exigiendo en el servicio", () => {
+  const schemaStart = controller.indexOf("const riskReviewSchema");
+  const schemaEnd = controller.indexOf("const riskRecoveryResourceSchema", schemaStart);
+  const schema = controller.slice(schemaStart, schemaEnd);
+  assert.match(schema, /products: z\.array\(riskReviewProductSchema\)\.max\(50\)\.optional\(\)/);
+  assert.doesNotMatch(schema, /products: z\.array\(riskReviewProductSchema\)\.min\(1\)/);
+  assert.match(service, /if \(result === "CLEARED" && !riskProducts\.length\)/);
 });
 
 test("un ticket persistido conserva su concesión aunque Cuenta cambie después", () => {

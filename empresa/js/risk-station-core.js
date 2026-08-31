@@ -168,7 +168,7 @@
         recovery_benefit_id: isSale ? offer.benefit_id : null,
         discount_percent: isSale ? offer.discount_percent : 0,
         recovery_detail: isSale ? offer.detail : null,
-        products,
+        ...(isSale ? { products } : {}),
         recycle_reason: isSale ? null : recycleReason,
         recycle_strategy: isSale ? null : (input.recycle_strategy || "NURTURE"),
         recycle_note: isSale ? null : reason,
