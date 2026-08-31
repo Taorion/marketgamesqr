@@ -147,9 +147,14 @@
       return { valid: false, error: "Indica al menos un producto al que se aplicó el beneficio." };
     }
     const typedReason = text(input.reason);
-    const reason = typedReason || (isSale
+    const fallbackReason = isSale
       ? offer.type === "NONE" ? "Venta confirmada sin concesión extraordinaria." : `Venta recuperada con ${offer.label}.`
-      : `Caso enviado a Reciclaje: ${text(input.recycle_reason_label) || recycleReason}.`);
+      : `Caso enviado a Reciclaje: ${text(input.recycle_reason_label) || recycleReason}.`;
+    const reason = (typedReason
+      ? isSale
+        ? typedReason.length >= 4 ? typedReason : `${fallbackReason} Contexto: ${typedReason}`
+        : `${fallbackReason} Contexto: ${typedReason}`
+      : fallbackReason).slice(0, 3000);
     return {
       valid: true,
       destination: DESTINATIONS[result],

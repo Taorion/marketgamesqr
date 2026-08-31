@@ -64,6 +64,25 @@ test("reciclaje no arrastra concesiones ni productos de una venta", () => {
   assert.match(result.payload.reason, /Momento inadecuado/);
 });
 
+test("reciclaje convierte un contexto corto opcional en una razón válida y trazable", () => {
+  const result = core.buildReview({
+    source_id: "lead-short-context",
+    result: "RECYCLE",
+    recycle_reason: "BUDGET",
+    recycle_reason_label: "Presupuesto",
+    recycle_strategy: "PERMITTED_BENEFIT",
+    reason: "das",
+    next_action_at: "2026-09-02T00:34:00.000Z",
+  });
+  assert.equal(result.valid, true);
+  assert.equal(result.destination, "reciclaje");
+  assert.equal(result.payload.recycle_reason, "BUDGET");
+  assert.equal(result.payload.recycle_strategy, "PERMITTED_BENEFIT");
+  assert.match(result.payload.reason, /Caso enviado a Reciclaje: Presupuesto\./);
+  assert.match(result.payload.reason, /Contexto: das/);
+  assert.ok(result.payload.reason.length >= 4);
+});
+
 test("un ticket persistido conserva su concesión aunque Cuenta cambie después", () => {
   const result = core.buildReview({
     source_id: "lead-locked",
