@@ -72,3 +72,13 @@ test("RMS no longer exposes internal version copy or opens Reciclaje as an opera
   assert.match(app, /RmsEvaluationStationCore\?\.confirmedPhase\(result, canonicalDraft\.response\)/);
   assert.match(app, /openRmsStation\(destination, \{ source: "evaluation" \}\)/);
 });
+
+test("GOS startup and station renderers define server pagination in their own scope", () => {
+  const overview = app.slice(app.indexOf("function renderRmsMachineView"), app.indexOf("function rmsStationLeanRowMarkup"));
+  const station = app.slice(app.indexOf("function renderRmsStationLeanOnly"), app.indexOf("function renderRmsStationOnly"));
+  assert.match(overview, /const serverPagination = data\.pagination \|\| \{\};/);
+  assert.match(overview, /serverPagination\.total/);
+  assert.match(station, /const serverPagination = data\.pagination \|\| \{\};/);
+  assert.match(station, /serverPagination\.has_more/);
+  assert.match(markup, /evaluation=precision-v3-startup-hotfix-20260830/);
+});
