@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260830-evaluation-startup-hotfix-v427";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830";
+const APP_VERSION = "empresa-20260830-recycling-atomic-handoff-v428";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -50164,11 +50164,19 @@ async function executeRecyclingAction(button) {
     if (action === "REACTIVATE") {
       const confirmed = result?.movement?.state?.rms_phase || result?.movement?.movement?.to_phase || result?.confirmed_destination || "";
       if (confirmed !== destination) throw new Error("El servidor no confirmó el traslado a la estación seleccionada.");
+      if (Array.isArray(state.rmsRecycling?.cases)) {
+        state.rmsRecycling.cases = state.rmsRecycling.cases.filter((item) => String(item.id) !== String(recyclingCaseId));
+      }
+      state.rmsMachineLoaded = false;
+      setView("rms-machine");
+      openRmsStation(destination, { source: "recycling-reactivation" });
+      showFeedback(`Lead trasladado a ${destination === "clasificacion" ? "Activación 1" : "Evaluación"}. Ya está fuera de Reciclaje.`, "success", { title: "Reciclaje" });
+      return;
     }
     state.rmsMachineLoaded = false;
     await loadRmsRecyclingData({ status: state.rmsRecyclingStatus });
     renderRmsRecyclingView();
-    showFeedback(action === "REACTIVATE" ? `Lead trasladado a ${destination === "clasificacion" ? "Activación 1" : "Evaluación"}.` : "Cambio guardado con trazabilidad.", "success", { title: "Reciclaje" });
+    showFeedback("Cambio guardado con trazabilidad.", "success", { title: "Reciclaje" });
   } catch (error) { setButtonLoading(button, false); showFeedback(error.message || "No pudimos actualizar el reciclaje.", "error", { title: "Reciclaje" }); }
 }
 

@@ -1472,7 +1472,7 @@ function assertRmsTransitionAuthority(fromPhase, toPhase, authority = null) {
   throw badRequest("Esta transicion exige completar la operacion verificada de la estacion actual.");
 }
 
-async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null) {
+async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null, transactionClient = null) {
   const sourceType = crmSourceType({ source_type: payload.source_type });
   const sourceId = payload.source_id;
   const toPhase = normalizePhase(payload.to_phase || payload.rms_phase, "");
@@ -1517,7 +1517,7 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
     metadata.classified_product_currency_snapshot = primaryProduct?.currency || null;
     metadata.classification_source = "manual_inventory";
   }
-  const result = await withTransaction(async (client) => {
+  const executeMove = async (client) => {
     // Lock and validate inside the same transaction so a stale browser tab
     // cannot advance a lead after another operator already moved it.
     const current = await client.query(
@@ -1608,7 +1608,10 @@ async function moveRmsLeadPhase(businessId, user, payload = {}, authority = null
         `rms-movement:${movement.rows[0].id}`, user.id]
     );
     return { state: state.rows[0], movement: movement.rows[0] };
-  });
+  };
+  const result = transactionClient
+    ? await executeMove(transactionClient)
+    : await withTransaction(executeMove);
   return result;
 }
 
@@ -2256,9 +2259,6 @@ async function updateRmsRecyclingCase(businessId, user, payload = {}) {
     return { recycling_case: updated.rows[0] };
   }
   if (action !== "REACTIVATE") throw badRequest("Acción de Reciclaje no válida.");
-  if (!['SCHEDULED', 'REACTIVATING'].includes(recyclingCase.recycle_status)) throw badRequest("Este reciclaje ya fue cerrado.");
-  if (recyclingCase.recycle_channel && recyclingCase.recycle_consent !== "CONFIRMED") throw badRequest("No puedes reactivar por contacto sin consentimiento confirmado.");
-  const item = await findOpportunity(businessId, recyclingCase.source_type, recyclingCase.source_id);
   const destination = payload.destination === "clasificacion"
     ? "clasificacion"
     : payload.destination === "procesamiento"
@@ -2267,23 +2267,121 @@ async function updateRmsRecyclingCase(businessId, user, payload = {}) {
         ? "clasificacion"
         : "procesamiento";
   const reactivatedAt = new Date().toISOString();
-  const movement = await moveRmsLeadPhase(businessId, user, { source_id: recyclingCase.source_id, source_type: recyclingCase.source_type, lead_id: recyclingCase.lead_id || item.lead_id || null, to_phase: destination, priority: "MEDIUM", recommended_action: destination === "clasificacion" ? "Preparar una nueva Activación 1" : "Reevaluar contexto reciclado", last_operation: "recycled_lead_reactivated", reason: note, metadata: { recycle_result: "REACTIVATED", recycling_case_id: recyclingCase.id, negotiation_result: "RECYCLE", recycling: { ...(item.state_metadata?.recycling || {}), status: "REACTIVATED", recycling_case_id: recyclingCase.id, reactivation_destination: destination, reactivation_note: note, reactivated_at: reactivatedAt, reactivated_by: user.id } } }, RMS_TRANSITION_AUTHORITY.RECYCLING);
-  const updated = await query(`update rms_recycling_cases set recycle_status='REACTIVATED', recycle_note=$3, updated_by=$4, updated_at=now(), metadata=metadata || jsonb_build_object('reactivated_at',now()::text,'reactivation_destination',$5::text) where business_id=$1 and id=$2 returning *`, [businessId, recyclingCase.id, note, user.id, destination]);
-  if (updated.rows[0].agenda_note_id) await query(`update lead_notes set agenda_status='COMPLETED', progress_percent=100, updated_at=now(), metadata=metadata || jsonb_build_object('rms_recycling_reactivated_at',now()::text) where business_id=$1 and id=$2`, [businessId, updated.rows[0].agenda_note_id]);
-  await recordRmsRecyclingEvent(businessId, user, updated.rows[0], "REACTIVATED", "REACTIVATED", note, { destination, movement_id: movement.movement?.id || null }, operationKey);
-  await recordRmsWorkflowEvent(businessId, user, { source_type: recyclingCase.source_type, source_id: recyclingCase.source_id, lead_id: recyclingCase.lead_id, event_type: "recycled_lead_reactivated", event_title: `Lead reciclado reactivado hacia ${destination === "clasificacion" ? "Activación 1" : "Evaluación"}`, event_description: note, rms_phase: destination, metadata: { recycling_case_id: recyclingCase.id, movement_id: movement.movement?.id || null } });
-  const lifecycle = await markRmsLifecycleStatus(businessId, user, {
-    source_type: recyclingCase.source_type,
-    source_id: recyclingCase.source_id,
-    lead_id: recyclingCase.lead_id || item.lead_id || null,
-    lifecycle_status: "ACTIVE",
-    event_type: "recycled_lead_reactivated_analyzed",
-    event_title: "Reciclaje reactivado",
-    reason: note,
-    idempotency_key: `recycling-reactivated:${recyclingCase.id}`,
-    metadata: { recycling_case_id: recyclingCase.id, destination, movement_id: movement.movement?.id || null },
+  const canonicalOperationKey = `recycling-reactivate:${recyclingCase.id}`;
+  const reactivation = await withTransaction(async (client) => {
+    const lockedResult = await client.query(
+      `select * from rms_recycling_cases where business_id=$1 and id=$2 for update`,
+      [businessId, recyclingCase.id]
+    );
+    const lockedCase = lockedResult.rows[0];
+    if (!lockedCase) throw notFound("No encontramos este reciclaje en tu negocio.");
+    const persistedDestination = lockedCase.metadata?.reactivation_destination || lockedCase.recycle_target_phase || destination;
+    if (lockedCase.recycle_status === "REACTIVATED") {
+      return {
+        recycling_case: lockedCase,
+        movement: { state: { rms_phase: persistedDestination }, movement: null },
+        confirmed_destination: persistedDestination,
+        duplicate: true,
+      };
+    }
+    if (!["SCHEDULED", "REACTIVATING"].includes(lockedCase.recycle_status)) throw badRequest("Este reciclaje ya fue cerrado.");
+    if (lockedCase.recycle_channel && lockedCase.recycle_consent !== "CONFIRMED") throw badRequest("No puedes reactivar por contacto sin consentimiento confirmado.");
+
+    const currentResult = await client.query(
+      `select * from rms_lead_state where business_id=$1 and source_type=$2 and source_id=$3 for update`,
+      [businessId, lockedCase.source_type, lockedCase.source_id]
+    );
+    const currentState = currentResult.rows[0];
+    if (!currentState) throw notFound("No encontramos el estado comercial de este lead.");
+    const priorRecycling = currentState.metadata?.recycling || {};
+    const alreadyMoved = currentState.rms_phase === destination
+      && (String(priorRecycling.recycling_case_id || currentState.metadata?.recycling_case_id || "") === String(lockedCase.id)
+        || currentState.last_operation === "recycled_lead_reactivated");
+    const movement = alreadyMoved
+      ? { state: currentState, movement: null, duplicate: true }
+      : await moveRmsLeadPhase(businessId, user, {
+        source_id: lockedCase.source_id,
+        source_type: lockedCase.source_type,
+        lead_id: lockedCase.lead_id || currentState.lead_id || null,
+        to_phase: destination,
+        priority: "MEDIUM",
+        recommended_action: destination === "clasificacion" ? "Preparar una nueva Activación 1" : "Reevaluar contexto reciclado",
+        last_operation: "recycled_lead_reactivated",
+        reason: note,
+        metadata: {
+          recycle_result: "REACTIVATED",
+          recycling_case_id: lockedCase.id,
+          negotiation_result: "RECYCLE",
+          recycling: {
+            ...priorRecycling,
+            status: "REACTIVATED",
+            recycling_case_id: lockedCase.id,
+            reactivation_destination: destination,
+            reactivation_note: note,
+            reactivated_at: reactivatedAt,
+            reactivated_by: user.id,
+          },
+        },
+      }, RMS_TRANSITION_AUTHORITY.RECYCLING, client);
+    const updatedResult = await client.query(
+      `update rms_recycling_cases
+          set recycle_status='REACTIVATED', recycle_note=$3, recycle_target_phase=$5,
+              updated_by=$4, updated_at=now(),
+              metadata=metadata || jsonb_build_object('reactivated_at',now()::text,'reactivation_destination',$5::text,'reactivation_operation_key',$6::text)
+        where business_id=$1 and id=$2 returning *`,
+      [businessId, lockedCase.id, note, user.id, destination, canonicalOperationKey]
+    );
+    const updatedCase = updatedResult.rows[0];
+    if (updatedCase.agenda_note_id) {
+      await client.query(
+        `update lead_notes set agenda_status='COMPLETED', progress_percent=100, updated_at=now(), metadata=metadata || jsonb_build_object('rms_recycling_reactivated_at',now()::text) where business_id=$1 and id=$2`,
+        [businessId, updatedCase.agenda_note_id]
+      );
+    }
+    await client.query(
+      `insert into rms_recycling_events
+        (business_id,recycling_case_id,action,previous_status,next_status,reason,payload,idempotency_key,created_by)
+       values ($1,$2,'REACTIVATED',$3,'REACTIVATED',$4,$5::jsonb,$6,$7)
+       on conflict do nothing`,
+      [businessId, updatedCase.id, lockedCase.recycle_status, note, JSON.stringify({ destination, movement_id: movement.movement?.id || null }), canonicalOperationKey, user.id]
+    );
+    return { recycling_case: updatedCase, movement, confirmed_destination: destination, duplicate: alreadyMoved };
   });
-  return { recycling_case: updated.rows[0], movement, lifecycle };
+
+  if (reactivation.duplicate && reactivation.recycling_case.recycle_status === "REACTIVATED") return reactivation;
+  const sideEffectWarnings = [];
+  try {
+    await recordRmsWorkflowEvent(businessId, user, {
+      source_type: recyclingCase.source_type,
+      source_id: recyclingCase.source_id,
+      lead_id: recyclingCase.lead_id,
+      event_type: "recycled_lead_reactivated",
+      event_title: `Lead reciclado reactivado hacia ${destination === "clasificacion" ? "Activación 1" : "Evaluación"}`,
+      event_description: note,
+      rms_phase: destination,
+      operation_key: canonicalOperationKey,
+      metadata: { recycling_case_id: recyclingCase.id, movement_id: reactivation.movement.movement?.id || null },
+    });
+  } catch (error) {
+    sideEffectWarnings.push(error?.message || "No se pudo ampliar el historial del traslado.");
+  }
+  let lifecycle = null;
+  try {
+    lifecycle = await markRmsLifecycleStatus(businessId, user, {
+      source_type: recyclingCase.source_type,
+      source_id: recyclingCase.source_id,
+      lead_id: recyclingCase.lead_id || reactivation.movement.state?.lead_id || null,
+      lifecycle_status: "ACTIVE",
+      event_type: "recycled_lead_reactivated_analyzed",
+      event_title: "Reciclaje reactivado",
+      reason: note,
+      idempotency_key: `recycling-reactivated:${recyclingCase.id}`,
+      metadata: { recycling_case_id: recyclingCase.id, destination, movement_id: reactivation.movement.movement?.id || null },
+    });
+  } catch (error) {
+    sideEffectWarnings.push(error?.message || "No se pudo actualizar la lectura analítica del traslado.");
+  }
+  return { ...reactivation, lifecycle, side_effect_warnings: sideEffectWarnings };
 }
 
 function rmsExplicitBenefitCost(value = {}, benefitType = "") {

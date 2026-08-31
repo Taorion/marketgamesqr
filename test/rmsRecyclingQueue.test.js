@@ -52,7 +52,7 @@ test("Reciclaje premium keeps global metrics, product context and detailed histo
   assert.match(app, /function recyclingHistoryMarkup/);
   assert.match(app, /function recyclingProducts/);
   assert.match(app, /recyclingStrategyOptions\(item\.recycle_strategy\)/);
-  assert.match(markup, /recycling=premium-command-v402-20260829/);
+  assert.match(markup, /recycling=atomic-handoff-v428-20260830/);
 });
 
 test("Reciclaje confirms canonical destination and uses a stable retry key", () => {
@@ -64,6 +64,30 @@ test("Reciclaje confirms canonical destination and uses a stable retry key", () 
   assert.doesNotMatch(executor, /Date\.now/);
   assert.match(controller, /destination: z\.enum\(\["procesamiento", "clasificacion"\]\)/);
   assert.match(service, /confirmed_destination: recyclingCase\.metadata\?\.reactivation_destination/);
+});
+
+test("Reactivar is atomic, locks one case and cannot create a second movement on retry", () => {
+  const action = service.slice(
+    service.indexOf("async function updateRmsRecyclingCase"),
+    service.indexOf("function rmsExplicitBenefitCost")
+  );
+  assert.match(action, /withTransaction\(async \(client\) =>/);
+  assert.match(action, /rms_recycling_cases where business_id=\$1 and id=\$2 for update/);
+  assert.match(action, /canonicalOperationKey = `recycling-reactivate:/);
+  assert.match(action, /lockedCase\.recycle_status === "REACTIVATED"/);
+  assert.match(action, /alreadyMoved/);
+  assert.match(action, /moveRmsLeadPhase\([\s\S]*RMS_TRANSITION_AUTHORITY\.RECYCLING, client\)/);
+  assert.match(action, /set recycle_status='REACTIVATED'/);
+  assert.match(action, /on conflict do nothing/);
+  assert.match(action, /side_effect_warnings/);
+});
+
+test("la interfaz saca el caso de Reciclaje y abre la estación confirmada", () => {
+  const executor = app.slice(app.indexOf("async function executeRecyclingAction"), app.indexOf("bindRecyclingActions = function bindPremiumRecyclingActions"));
+  assert.match(executor, /state\.rmsRecycling\.cases = state\.rmsRecycling\.cases\.filter/);
+  assert.match(executor, /setView\("rms-machine"\)/);
+  assert.match(executor, /openRmsStation\(destination, \{ source: "recycling-reactivation" \}\)/);
+  assert.match(executor, /Ya está fuera de Reciclaje/);
 });
 
 test("Reciclaje types the persisted reactivation destination for PostgreSQL", () => {
