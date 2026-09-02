@@ -55,12 +55,14 @@ test("an opening station shows only a definitive loading state before final rows
   );
   assert.match(app, /rmsStationSyncError: ""/);
   assert.match(stationRenderer, /if \(state\.rmsStationSyncing \|\| state\.rmsStationSyncError\)/);
-  assert.match(stationRenderer, /Cargando los datos definitivos/);
-  assert.match(stationRenderer, /No se están mostrando datos provisionales/);
+  assert.match(stationRenderer, /Actualizando estación…/);
+  assert.match(stationRenderer, /No pudimos actualizar la estación/);
+  assert.doesNotMatch(stationRenderer, /datos definitivos|datos provisionales|información real y actualizada/);
   assert.doesNotMatch(app, /Puedes revisar la pantalla mientras traemos los datos más recientes/);
   assert.doesNotMatch(app, /quedó operativa con datos locales/);
   assert.match(css, /Estaciones Qori v430: no mostrar filas provisionales/);
   assert.match(markup, /rms-loading=definitive-v430-20260902/g);
+  assert.match(markup, /rms-loading-copy=v432-20260902/g);
   assert.match(markup, /rms-definitive-loading-v430/);
 });
 

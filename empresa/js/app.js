@@ -51239,11 +51239,8 @@ function renderRmsStationLoadState() {
       <div class="rms-station-definitive-feedback ${errorMessage ? "is-error" : "is-loading"}" role="status" aria-live="polite">
         <span class="${errorMessage ? "material-symbols-outlined" : "busy-spinner"}" aria-hidden="true">${errorMessage ? "sync_problem" : ""}</span>
         <div>
-          <strong>${errorMessage ? "No pudimos completar la carga" : "Cargando los datos definitivos"}</strong>
-          <p>${errorMessage
-            ? "No mostraremos información anterior porque podría confundirte. Reintenta para consultar el estado real de esta estación."
-            : "Espera un momento. Qori mostrará los leads una sola vez, cuando la información real y actualizada esté completa."}</p>
-          ${errorMessage ? `<small>${escapeHtml(errorMessage)}</small><button class="solid-button compact" type="button" data-rms-station-retry-load><span class="material-symbols-outlined" aria-hidden="true">refresh</span> Reintentar carga</button>` : `<small>No se están mostrando datos provisionales.</small>`}
+          <strong>${errorMessage ? "No pudimos actualizar la estación" : "Actualizando estación…"}</strong>
+          ${errorMessage ? '<p>Revisa tu conexión e inténtalo de nuevo.</p><button class="solid-button compact" type="button" data-rms-station-retry-load><span class="material-symbols-outlined" aria-hidden="true">refresh</span> Reintentar</button>' : ""}
         </div>
       </div>
     </section>
