@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260830-recycling-atomic-handoff-v428";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830";
+const APP_VERSION = "empresa-20260902-rms-station-consistency-v429";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2960,6 +2960,8 @@ let state = {
   rmsRiskStationInteractiveMs: 0,
   rmsActivationWorkId: "",
   rmsMachineLoadPromises: new Map(),
+  rmsMachineRequestSeq: 0,
+  rmsMachineLatestRequestByScope: new Map(),
   rmsTutorialStep: 0,
   rmsMachineFilters: {
     search: "",
@@ -48609,15 +48611,25 @@ async function loadRmsMachineData(options = {}) {
   if (state.rmsMachineLoaded && !options.force) return state.rmsMachine;
   const stationPhase = options.stationPhase || (options.lite && state.rmsStationScreenOpen ? state.rmsStationPhase : "");
   const stationOffset = stationPhase ? Math.max(Number(options.offset || 0), 0) : 0;
+  const search = state.rmsMachineFilters?.search || state.filter || "";
+  const priority = state.rmsMachineFilters?.priority || "";
+  const scopeKey = stationPhase ? `station:${stationPhase}` : "machine";
   const requestKey = stationPhase
-    ? `station:${stationPhase}:${stationOffset}:${options.fresh ? "fresh" : "cached"}`
-    : `machine:${options.fresh ? "fresh" : "cached"}`;
+    ? `station:${stationPhase}:${stationOffset}:${search}:${priority}:${options.fresh ? "fresh" : "cached"}`
+    : `machine:${search}:${priority}:${options.fresh ? "fresh" : "cached"}`;
   const pendingLoads = state.rmsMachineLoadPromises instanceof Map ? state.rmsMachineLoadPromises : new Map();
   state.rmsMachineLoadPromises = pendingLoads;
   if (pendingLoads.has(requestKey)) return pendingLoads.get(requestKey);
   if (state.rmsMachineLoading && !options.force) return state.rmsMachine;
   state.rmsMachineLoading = true;
   if (!options.quiet) renderRmsMachineLoading();
+  const requestSeq = Number(state.rmsMachineRequestSeq || 0) + 1;
+  state.rmsMachineRequestSeq = requestSeq;
+  const latestByScope = state.rmsMachineLatestRequestByScope instanceof Map
+    ? state.rmsMachineLatestRequestByScope
+    : new Map();
+  state.rmsMachineLatestRequestByScope = latestByScope;
+  latestByScope.set(scopeKey, requestSeq);
   const request = (async () => {
     const params = new URLSearchParams();
     if (stationPhase) {
@@ -48631,16 +48643,18 @@ async function loadRmsMachineData(options = {}) {
       params.set("limit", "72");
       params.set("section_limit", "8");
     }
-    const search = state.rmsMachineFilters?.search || state.filter || "";
     if (search) params.set("search", search);
-    if (state.rmsMachineFilters?.priority) params.set("priority", state.rmsMachineFilters.priority);
-    if (options.fresh) params.set("fresh", "1");
+    if (priority) params.set("priority", priority);
+    if (options.fresh || stationPhase) params.set("fresh", "1");
     const data = await api(`/api/business/rms-machine?${params.toString()}`, {
       headers: authHeaders(),
+      noClientCache: Boolean(options.fresh || stationPhase),
     });
+    if (latestByScope.get(scopeKey) !== requestSeq) return data;
     if (stationPhase && (!state.rmsStationScreenOpen || state.rmsStationPhase !== stationPhase)) {
       return data;
     }
+    if (!stationPhase && state.rmsStationScreenOpen) return data;
     if (stationPhase && options.append && state.rmsMachineScope?.phase === stationPhase) {
       const previousRows = state.rmsMachine?.opportunities || [];
       const byId = new Map(previousRows.map((item) => [item.id, item]));
@@ -55887,9 +55901,8 @@ async function moveSelectedRmsPhase(destinationPhase = "", sourcePhase = "") {
   }
   try {
     showFeedback("Moviendo materia prima comercial...", "loading", { title: "Máquina RMS", timeout: 0 });
-    let movedCount = 0;
-    const movedIds = [];
     const fromPhase = sourcePhase || state.rmsStationPhase || "";
+    const moveRequests = [];
     for (const id of ids) {
       const item = rmsOpportunityById(id);
       if (!item) continue;
@@ -55907,10 +55920,11 @@ async function moveSelectedRmsPhase(destinationPhase = "", sourcePhase = "") {
         showFeedback("Todos los leads de Activación 1 necesitan contacto confirmado y seguimiento agendado antes de pasar a Evaluación.", "info", { title: "Activación 1" });
         continue;
       }
-      await api("/api/business/rms-machine/lead/phase", {
-        method: "PATCH",
-        headers: authHeaders(),
-        body: JSON.stringify({
+      moveRequests.push({
+        id,
+        qualityOption,
+        productClassification,
+        payload: {
           source_id: item.source_id,
           source_type: item.source_type || "PLAYER",
           lead_id: item.lead_id || null,
@@ -55933,18 +55947,23 @@ async function moveSelectedRmsPhase(destinationPhase = "", sourcePhase = "") {
             } : {}),
             ...productClassification,
           },
-        }),
+        },
       });
-      movedCount += 1;
-      movedIds.push(id);
+    }
+    const moveResults = await runBulkRequests(moveRequests, (entry) => api("/api/business/rms-machine/lead/phase", {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify(entry.payload),
+    }), { concurrency: 4 });
+    const movedEntries = moveResults.filter((result) => result.ok).map((result) => result.item);
+    const failedEntries = moveResults.filter((result) => !result.ok);
+    const movedIds = movedEntries.map((entry) => entry.id);
+    const movedCount = movedIds.length;
+    movedEntries.forEach(({ id, qualityOption, productClassification }) => {
       if (qualityOption && state.rmsLeadQualityDraft) delete state.rmsLeadQualityDraft[id];
       if (productClassification.classified_product_name && state.rmsProductClassificationDraft) delete state.rmsProductClassificationDraft[id];
-    }
-    state.rmsMachineSelectedIds = sourcePhase
-      ? selectedIds.filter((id) => !movedIds.includes(id))
-      : [];
-    state.rmsMachineLoaded = false;
-    await loadRmsMachineData({ force: true, quiet: true });
+    });
+    state.rmsMachineSelectedIds = selectedIds.filter((id) => !movedIds.includes(id));
     if (movedCount > 0 && state.rmsStationScreenOpen) {
       const stages = rmsPrimaryFactoryStages(state.rmsMachine || {});
       const fromIndex = stages.findIndex((item) => item.key === fromPhase);
@@ -55956,12 +55975,24 @@ async function moveSelectedRmsPhase(destinationPhase = "", sourcePhase = "") {
       state.rmsStationViewMode = "all";
       if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = toPhase;
     }
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({
+      force: true,
+      quiet: true,
+      lite: Boolean(state.rmsStationScreenOpen && movedCount > 0),
+      stationPhase: state.rmsStationScreenOpen && movedCount > 0 ? toPhase : "",
+      fresh: true,
+    });
+    if (movedCount > 0 && state.rmsStationScreenOpen) state.rmsMachineSelectedIds = [];
     renderRmsMachineView();
     const destination = rmsPrimaryFactoryStages(state.rmsMachine || {}).find((item) => item.key === toPhase);
     const resultMessage = movedCount > 0
       ? `${movedCount.toLocaleString("es-CO")} lead${movedCount === 1 ? "" : "s"} enviado${movedCount === 1 ? "" : "s"}. Ahora estás en ${destination?.label || "la siguiente estación"}.`
       : "No se movieron leads; revisa los criterios de salida.";
-    showFeedback(resultMessage, movedCount > 0 ? "success" : "info", { title: "Máquina RMS" });
+    const failureSummary = failedEntries.length
+      ? ` ${failedEntries.length.toLocaleString("es-CO")} no se ${failedEntries.length === 1 ? "pudo" : "pudieron"} mover y permanecen en la estación de origen.`
+      : "";
+    showFeedback(`${resultMessage}${failureSummary}`, failedEntries.length ? "error" : movedCount > 0 ? "success" : "info", { title: "Máquina RMS" });
   } catch (error) {
     showFeedback(error.message || "No se pudo mover la fase RMS.", "error", { title: "Máquina RMS" });
   }
@@ -56033,8 +56064,6 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
     state.rmsMachineSelectedIds = [];
     if (qualityOption && state.rmsLeadQualityDraft) delete state.rmsLeadQualityDraft[item.id];
     if (productClassification.classified_product_name && state.rmsProductClassificationDraft) delete state.rmsProductClassificationDraft[item.id];
-    state.rmsMachineLoaded = false;
-    await loadRmsMachineData({ force: true, quiet: true });
     const stations = rmsPrimaryFactoryStages(state.rmsMachine || {});
     const fromIndex = stations.findIndex((station) => station.key === item.stage);
     const targetIndex = stations.findIndex((station) => station.key === toPhase);
@@ -56043,6 +56072,14 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
     state.rmsMachineFilters.phase = toPhase;
     state.rmsStationSearch = "";
     state.rmsStationViewMode = "all";
+    state.rmsMachineLoaded = false;
+    await loadRmsMachineData({
+      force: true,
+      quiet: true,
+      lite: Boolean(state.rmsStationScreenOpen),
+      stationPhase: state.rmsStationScreenOpen ? toPhase : "",
+      fresh: true,
+    });
     renderRmsMachineView();
     const destination = stations.find((station) => station.key === toPhase);
     showFeedback(`Lead movido. Ahora estás en ${destination?.label || "la estación destino"}.`, "success", { title: "Máquina RMS" });
