@@ -1117,7 +1117,19 @@ async function businessActivity(req, res, next) {
          coalesce((select max(claimed_at) from qr_claims where business_id = $1), '-infinity'::timestamptz),
          coalesce((select max(redeemed_at) from redemptions where business_id = $1), '-infinity'::timestamptz),
          coalesce((select max(created_at) from business_sales where business_id = $1), '-infinity'::timestamptz),
-         coalesce((select max(updated_at) from campaigns where business_id = $1), '-infinity'::timestamptz)
+         coalesce((select max(updated_at) from campaigns where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select updated_at from businesses where id = $1), '-infinity'::timestamptz),
+         coalesce((select max(created_at) from players where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(updated_at) from rms_lead_state where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(created_at) from rms_phase_movements where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(created_at) from rms_machine_events where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(updated_at) from rms_recycling_cases where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(created_at) from rms_recycling_events where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(updated_at) from business_inventory_products where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(updated_at) from business_acquisition_channels where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(updated_at) from branches where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(updated_at) from business_communications where business_id = $1), '-infinity'::timestamptz),
+         coalesce((select max(updated_at) from reward_passes where company_id = $1), '-infinity'::timestamptz)
        ) as last_event_at`,
       [businessId]
     );
@@ -1126,6 +1138,9 @@ async function businessActivity(req, res, next) {
     const lastEventAt = row.last_event_at && Number.isFinite(new Date(row.last_event_at).getTime())
       ? new Date(row.last_event_at).toISOString()
       : null;
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
     res.json({
       activity: {
         business_id: businessId,

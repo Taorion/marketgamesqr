@@ -1,13 +1,13 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260902-rms-definitive-loading-v430";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902";
+const APP_VERSION = "empresa-20260902-portal-live-refresh-v431";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
-const API_CLIENT_CACHE_TTL_MS = 300000;
-const ACTIVITY_POLL_INTERVAL_MS = 900000;
-const ACTIVITY_POLLING_VIEWS = new Set(["dashboard", "campaigns", "leads", "redemptions", "sales", "branches", "strategic-qr", "communications"]);
+const API_CLIENT_CACHE_TTL_MS = 30000;
+const ACTIVITY_POLL_INTERVAL_MS = 15000;
+const MUTATION_REFRESH_DELAY_MS = 350;
 const RMS_STATION_RENDER_INITIAL_LIMIT = 10;
 const RMS_STATION_RENDER_INCREMENT = 10;
 
@@ -2792,7 +2792,9 @@ let state = {
   dashboard: null,
   activityVersion: "",
   activityPollingTimer: 0,
+  activityMutationRefreshTimer: 0,
   activityRefreshInFlight: false,
+  activeViewRefreshInFlight: false,
   apiResponseCache: new Map(),
   commandCenter: null,
   commandCenterLoading: false,
@@ -4171,11 +4173,16 @@ function resetBusinessScopedState(options = {}) {
     ? options.session || {}
     : session || {};
   stopActivityPolling();
+  if (state.activityMutationRefreshTimer) {
+    window.clearTimeout(state.activityMutationRefreshTimer);
+    state.activityMutationRefreshTimer = 0;
+  }
   clearQrBatchProgressTimer();
   clearApiResponseCache();
   state.dashboard = null;
   state.activityVersion = "";
   state.activityRefreshInFlight = false;
+  state.activeViewRefreshInFlight = false;
   state.summary = null;
   state.businessProfile = null;
   state.subscription = targetSession.user?.subscription || null;
@@ -4471,6 +4478,22 @@ function clearApiResponseCache() {
   state.apiResponseCache?.clear?.();
 }
 
+function scheduleActivePortalRefresh() {
+  if (!session?.user?.business_id || lightTestMode || isPrepaidValidatorOnly()) return;
+  if (state.activityMutationRefreshTimer) window.clearTimeout(state.activityMutationRefreshTimer);
+  state.activityMutationRefreshTimer = window.setTimeout(async () => {
+    state.activityMutationRefreshTimer = 0;
+    try {
+      const refreshed = await refreshActivePortalView();
+      if (!refreshed) return;
+      const data = await apiSafe("/api/business/activity", { headers: authHeaders() }, { activity: null });
+      state.activityVersion = data.activity?.version || state.activityVersion;
+    } catch (error) {
+      console.warn("Active portal refresh failed:", error.message);
+    }
+  }, MUTATION_REFRESH_DELAY_MS);
+}
+
 function apiRequestMethod(options = {}) {
   return String(options.method || "GET").toUpperCase();
 }
@@ -4546,6 +4569,7 @@ async function api(path, options = {}) {
   }
   if (apiRequestMethod(fetchOptions) !== "GET") {
     clearApiResponseCache();
+    scheduleActivePortalRefresh();
   } else if (cacheKey) {
     state.apiResponseCache.set(cacheKey, { at: Date.now(), data: cloneApiPayload(data) });
   }
@@ -8150,7 +8174,6 @@ function startActivityPolling() {
   stopActivityPolling();
   if (lightTestMode) return;
   if (!session?.user?.business_id || isPrepaidValidatorOnly()) return;
-  if (!ACTIVITY_POLLING_VIEWS.has(state.currentView)) return;
   state.activityPollingTimer = window.setInterval(checkBusinessActivity, ACTIVITY_POLL_INTERVAL_MS);
 }
 
@@ -8166,9 +8189,89 @@ async function checkBusinessActivity() {
     const nextVersion = data.activity?.version || "";
     if (!nextVersion || nextVersion === state.activityVersion) return;
     state.activityVersion = nextVersion;
+    clearApiResponseCache();
     await refreshLiveBusinessData();
   } catch (error) {
     console.warn("Activity polling failed:", error.message);
+  }
+}
+
+function invalidateCurrentPortalView(view = state.currentView) {
+  const flagsByView = {
+    account: ["accountWorkspaceLoaded", "digitalAssetsLoaded", "storageQuotaLoaded", "leadCaptureLoaded"],
+    affiliates: ["affiliatesLoaded", "inventoryLoaded"],
+    branches: ["businessBranchesLoaded"],
+    channels: ["acquisitionChannelsLoaded", "acquisitionChannelEffortsLoaded", "leadCaptureLoaded", "digitalAssetsLoaded"],
+    communications: ["communicationsLoaded", "acquisitionChannelsLoaded"],
+    competition: ["competitionLoaded"],
+    inventory: ["inventoryLoaded", "inventoryTaxonomyLoaded"],
+    leads: ["contactFeedLoaded", "leadCrmLoaded", "leadCaptureLoaded", "leadAgendaLoaded"],
+    missions: ["missionsLoaded"],
+    sales: ["attributedSalesViewLoaded", "inventoryLoaded", "acquisitionChannelsLoaded", "businessBranchesLoaded"],
+    "smart-catalogs": ["smartCatalogLoaded", "inventoryLoaded"],
+  };
+  (flagsByView[view] || []).forEach((key) => { state[key] = false; });
+  if (view === "dashboard") state.dashboard = null;
+  if (view === "strategic-qr" || view === "redemptions") {
+    markTicketCenterDataStale(["metrics", "batches", "history", "activations"]);
+  }
+}
+
+async function refreshActivePortalView() {
+  if (!session?.user?.business_id || state.activeViewRefreshInFlight || document.hidden) return false;
+  if (state.currentView === "rms-machine" && (state.rmsMachineLoading || state.rmsStationSyncing)) return false;
+  state.activeViewRefreshInFlight = true;
+  clearApiResponseCache();
+  try {
+    if (state.currentView === "rms-machine") {
+      if (state.rmsStationScreenOpen && state.rmsRecyclingFocus) {
+        state.rmsMachineLoaded = false;
+        state.rmsStationSyncing = true;
+        state.rmsStationSyncError = "";
+        renderRmsStationOnly();
+        try {
+          await loadRmsMachineData({ force: true, quiet: true, fresh: true });
+          state.rmsStationSyncing = false;
+          renderRmsStationOnly();
+        } catch (error) {
+          state.rmsStationSyncing = false;
+          state.rmsStationSyncError = error?.message || "No fue posible obtener los datos actualizados.";
+          renderRmsStationOnly();
+          throw error;
+        }
+        return true;
+      }
+      if (state.rmsStationScreenOpen && state.rmsStationPhase) {
+        await refreshRmsOpenStation(state.rmsStationPhase);
+        return true;
+      }
+      state.rmsMachineLoaded = false;
+      renderRmsMachineLoading();
+      await loadRmsMachineData({ force: true, quiet: true, fresh: true });
+      renderRmsMachineView();
+      return true;
+    }
+    if (state.currentView === "recycling") {
+      await loadRmsRecyclingData({ status: state.rmsRecyclingStatus, force: true });
+      renderRmsRecyclingView();
+      return true;
+    }
+    if (state.currentView === "branches") {
+      state.businessBranchesLoaded = false;
+      await loadBusinessBranches({ force: true, quiet: true });
+      renderBranchesView();
+      return true;
+    }
+    if (state.currentView === "reward-passes") {
+      await Promise.all([loadRewardPasses(), loadRewardPassContext()]);
+      renderRewardPassesView();
+      return true;
+    }
+    invalidateCurrentPortalView(state.currentView);
+    setView(state.currentView);
+    return true;
+  } finally {
+    state.activeViewRefreshInFlight = false;
   }
 }
 
@@ -8220,6 +8323,9 @@ async function refreshLiveBusinessData() {
       if (state.currentView === "strategic-qr") {
         await loadTicketCenterForCurrentTab({ quiet: true });
       }
+    }
+    if (!["dashboard", "campaigns", "leads", "strategic-qr"].includes(state.currentView)) {
+      await refreshActivePortalView();
     }
     showFeedback("Gráficas actualizadas con la última actividad de tickets.", "success", { title: "Datos en vivo", timeout: 2500 });
   } catch (error) {
@@ -49922,7 +50028,7 @@ async function loadRmsRecyclingData(options = {}) {
   state.rmsRecyclingLoading = true;
   try {
     const status = options.status || state.rmsRecyclingStatus || "ALL";
-    const data = await api(`/api/business/rms-machine/recycling?status=${encodeURIComponent(status)}`, { headers: authHeaders() });
+    const data = await api(`/api/business/rms-machine/recycling?status=${encodeURIComponent(status)}`, { headers: authHeaders(), noClientCache: true });
     state.rmsRecycling = data;
     return data;
   } finally {
@@ -51159,12 +51265,12 @@ function renderRmsStationOnly() {
       renderRmsQualityControlDashboard(state.rmsQualityControlKey);
       return;
     }
-    if (state.rmsRecyclingFocus) {
-      renderRmsRecyclingWorkspace();
-      return;
-    }
     if (state.rmsStationSyncing || state.rmsStationSyncError) {
       renderRmsStationLoadState();
+      return;
+    }
+    if (state.rmsRecyclingFocus) {
+      renderRmsRecyclingWorkspace();
       return;
     }
     renderRmsStationLeanOnly();

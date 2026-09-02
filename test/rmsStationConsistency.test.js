@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const app = fs.readFileSync("empresa/js/app.js", "utf8");
 const markup = fs.readFileSync("empresa/index.html", "utf8");
 const css = fs.readFileSync("empresa/css/portal-clean-v39.css", "utf8");
+const businessPortalController = fs.readFileSync("backend/src/controllers/businessPortalController.js", "utf8");
 const loader = app.slice(
   app.indexOf("async function loadRmsMachineData"),
   app.indexOf("async function refreshRmsOpenStation")
@@ -61,4 +62,27 @@ test("an opening station shows only a definitive loading state before final rows
   assert.match(css, /Estaciones Qori v430: no mostrar filas provisionales/);
   assert.match(markup, /rms-loading=definitive-v430-20260902/g);
   assert.match(markup, /rms-definitive-loading-v430/);
+});
+
+test("the whole portal detects fresh activity without a page reload", () => {
+  const activityPolling = app.slice(
+    app.indexOf("function startActivityPolling"),
+    app.indexOf("async function loadPrepaidValidatorWorkspace")
+  );
+  assert.match(app, /const ACTIVITY_POLL_INTERVAL_MS = 15000/);
+  assert.doesNotMatch(app, /ACTIVITY_POLLING_VIEWS/);
+  assert.match(activityPolling, /clearApiResponseCache\(\)/);
+  assert.match(activityPolling, /await refreshActivePortalView\(\)/);
+  assert.match(app, /scheduleActivePortalRefresh\(\)/);
+  assert.match(app, /API_CLIENT_CACHE_TTL_MS = 30000/);
+  assert.match(markup, /live-refresh=v431-20260902/g);
+});
+
+test("RMS and Recycling changes participate in the live activity version", () => {
+  assert.match(businessPortalController, /max\(updated_at\) from rms_lead_state where business_id = \$1/);
+  assert.match(businessPortalController, /max\(created_at\) from rms_phase_movements where business_id = \$1/);
+  assert.match(businessPortalController, /max\(updated_at\) from rms_recycling_cases where business_id = \$1/);
+  assert.match(businessPortalController, /max\(created_at\) from rms_recycling_events where business_id = \$1/);
+  assert.match(businessPortalController, /Cache-Control", "no-store, no-cache/);
+  assert.match(app, /rms-machine\/recycling\?status=\$\{encodeURIComponent\(status\)\}`,[\s\S]*?noClientCache: true/);
 });
