@@ -4,6 +4,7 @@ const fs = require("node:fs");
 
 const app = fs.readFileSync("empresa/js/app.js", "utf8");
 const markup = fs.readFileSync("empresa/index.html", "utf8");
+const css = fs.readFileSync("empresa/css/portal-clean-v39.css", "utf8");
 const loader = app.slice(
   app.indexOf("async function loadRmsMachineData"),
   app.indexOf("async function refreshRmsOpenStation")
@@ -44,4 +45,20 @@ test("single handoffs switch scope before fetching the destination", () => {
   assert.match(singleMove, /stationPhase: state\.rmsStationScreenOpen \? toPhase : ""/);
   assert.match(singleMove, /fresh: true/);
   assert.match(markup, /rms-sync=consistent-v429-20260902/g);
+});
+
+test("an opening station shows only a definitive loading state before final rows", () => {
+  const stationRenderer = app.slice(
+    app.indexOf("function renderRmsStationLoadState"),
+    app.indexOf("function rmsVisibleOpportunities")
+  );
+  assert.match(app, /rmsStationSyncError: ""/);
+  assert.match(stationRenderer, /if \(state\.rmsStationSyncing \|\| state\.rmsStationSyncError\)/);
+  assert.match(stationRenderer, /Cargando los datos definitivos/);
+  assert.match(stationRenderer, /No se están mostrando datos provisionales/);
+  assert.doesNotMatch(app, /Puedes revisar la pantalla mientras traemos los datos más recientes/);
+  assert.doesNotMatch(app, /quedó operativa con datos locales/);
+  assert.match(css, /Estaciones Qori v430: no mostrar filas provisionales/);
+  assert.match(markup, /rms-loading=definitive-v430-20260902/g);
+  assert.match(markup, /rms-definitive-loading-v430/);
 });

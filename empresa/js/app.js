@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260902-rms-station-consistency-v429";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902";
+const APP_VERSION = "empresa-20260902-rms-definitive-loading-v430";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 300000;
@@ -2954,6 +2954,7 @@ let state = {
   rmsStationFastRenderTimer: null,
   rmsStationOpenSeq: 0,
   rmsStationSyncing: false,
+  rmsStationSyncError: "",
   rmsRiskStationSyncState: "idle",
   rmsRiskStationSyncError: "",
   rmsRiskStationLastSyncAt: "",
@@ -48690,12 +48691,31 @@ async function loadRmsMachineData(options = {}) {
 
 
 async function refreshRmsOpenStation(phase = state.rmsStationPhase) {
+  const refreshSeq = state.rmsStationOpenSeq;
+  const isCurrentStation = () => state.currentView === "rms-machine"
+    && state.rmsStationScreenOpen
+    && state.rmsStationPhase === phase
+    && state.rmsStationOpenSeq === refreshSeq;
   state.rmsMachineLoaded = false;
-  const data = await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: phase, fresh: true });
-  if (state.currentView === "rms-machine" && state.rmsStationScreenOpen && state.rmsStationPhase === phase) {
-    renderRmsStationOnly();
+  state.rmsStationSyncing = true;
+  state.rmsStationSyncError = "";
+  if (isCurrentStation()) renderRmsStationOnly();
+  try {
+    const data = await loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: phase, fresh: true });
+    if (isCurrentStation()) {
+      state.rmsStationSyncing = false;
+      state.rmsStationSyncError = "";
+      renderRmsStationOnly();
+    }
+    return data;
+  } catch (error) {
+    if (isCurrentStation()) {
+      state.rmsStationSyncing = false;
+      state.rmsStationSyncError = error?.message || "No fue posible obtener los datos actualizados.";
+      renderRmsStationOnly();
+    }
+    throw error;
   }
-  return data;
 }
 
 function renderRmsMachineLoading() {
@@ -50892,12 +50912,7 @@ function renderRmsStationLeanOnly() {
           <span class="rms-lean-quality-guide-count"><strong>${rows.filter((item) => !rmsActivationReady(item)).length.toLocaleString("es-CO")}</strong> pendientes</span>
         </section>
       ` : ""}
-      ${phase === "control_anti_fuga" ? rmsRiskStationStatusMarkup(rows) : state.rmsStationSyncing ? `
-        <section class="rms-station-progress" role="status" aria-live="polite" aria-busy="true">
-          <span class="busy-spinner" aria-hidden="true"></span>
-          <div><strong>Actualizando esta estación</strong><small>Puedes revisar la pantalla mientras traemos los datos más recientes.</small></div>
-        </section>
-      ` : ""}
+      ${phase === "control_anti_fuga" ? rmsRiskStationStatusMarkup(rows) : ""}
       <div class="rms-lean-station-tools ${phase === "inteligencia" ? "is-intelligence" : ""}">
         ${phase === "inteligencia" ? `
           <div class="rms-intelligence-station-summary" role="status">
@@ -51086,6 +51101,53 @@ function renderRmsRiskStationFallback(error) {
   return true;
 }
 
+function renderRmsStationLoadState() {
+  if (!rmsStationWorkspace) return;
+  const phase = state.rmsStationPhase || "recoleccion";
+  const stages = rmsPrimaryFactoryStages(state.rmsMachine || {});
+  const stageIndex = Math.max(0, stages.findIndex((item) => item.key === phase));
+  const stage = stages[stageIndex] || { key: phase, label: "Estación Qori" };
+  const visual = rmsStationVisualMeta(phase);
+  const errorMessage = String(state.rmsStationSyncError || "").trim();
+  syncRmsStationShellMode(true);
+  rmsStationWorkspace.classList.remove("hidden");
+  rmsStationWorkspace.hidden = false;
+  rmsStationWorkspace.dataset.stationTheme = visual.tone || "default";
+  rmsStationWorkspace.innerHTML = `
+    <section class="rms-lean-station rms-station-definitive-load" aria-label="${escapeHtml(stage.label || "Estación Qori")}" aria-busy="${errorMessage ? "false" : "true"}">
+      <header class="rms-lean-station-head">
+        <button class="ghost-button compact" type="button" data-rms-close-station>
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Estaciones
+        </button>
+        <div class="rms-lean-station-title">
+          <figure class="rms-lean-station-media">
+            <img src="${escapeHtml(visual.image || "")}" alt="" decoding="async">
+            <span class="rms-lean-station-symbol material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon || "precision_manufacturing")}</span>
+          </figure>
+          <div>
+            <span class="mono-label">Estación ${String(stageIndex + 1).padStart(2, "0")} · Qori</span>
+            <h3>${escapeHtml(stage.label || "Estación Qori")}</h3>
+          </div>
+        </div>
+      </header>
+      <div class="rms-station-definitive-feedback ${errorMessage ? "is-error" : "is-loading"}" role="status" aria-live="polite">
+        <span class="${errorMessage ? "material-symbols-outlined" : "busy-spinner"}" aria-hidden="true">${errorMessage ? "sync_problem" : ""}</span>
+        <div>
+          <strong>${errorMessage ? "No pudimos completar la carga" : "Cargando los datos definitivos"}</strong>
+          <p>${errorMessage
+            ? "No mostraremos información anterior porque podría confundirte. Reintenta para consultar el estado real de esta estación."
+            : "Espera un momento. Qori mostrará los leads una sola vez, cuando la información real y actualizada esté completa."}</p>
+          ${errorMessage ? `<small>${escapeHtml(errorMessage)}</small><button class="solid-button compact" type="button" data-rms-station-retry-load><span class="material-symbols-outlined" aria-hidden="true">refresh</span> Reintentar carga</button>` : `<small>No se están mostrando datos provisionales.</small>`}
+        </div>
+      </div>
+    </section>
+  `;
+  rmsStationWorkspace.querySelector("[data-rms-close-station]")?.addEventListener("click", closeRmsStation);
+  rmsStationWorkspace.querySelector("[data-rms-station-retry-load]")?.addEventListener("click", () => {
+    openRmsStation(phase, { source: "definitive-load-retry" });
+  });
+}
+
 function renderRmsStationOnly() {
   if (!state.rmsStationScreenOpen) {
     hideRmsStationWorkspace();
@@ -51099,6 +51161,10 @@ function renderRmsStationOnly() {
     }
     if (state.rmsRecyclingFocus) {
       renderRmsRecyclingWorkspace();
+      return;
+    }
+    if (state.rmsStationSyncing || state.rmsStationSyncError) {
+      renderRmsStationLoadState();
       return;
     }
     renderRmsStationLeanOnly();
@@ -53209,6 +53275,7 @@ function resetRmsStationMode() {
   state.rmsStationPage = 1;
   state.rmsStationListDeferred = false;
   state.rmsStationSyncing = false;
+  state.rmsStationSyncError = "";
   state.rmsActivationWorkId = "";
   state.rmsActivationBulkOpen = false;
   state.rmsActivationBulkQueue = null;
@@ -54815,6 +54882,7 @@ function openRmsStation(phase = "", options = {}) {
   state.rmsStationPage = 1;
   state.rmsStationListDeferred = false;
   state.rmsStationSyncing = true;
+  state.rmsStationSyncError = "";
   if (phase === "control_anti_fuga") {
     state.rmsRiskStationSyncState = "loading";
     state.rmsRiskStationSyncError = "";
@@ -54826,20 +54894,21 @@ function openRmsStation(phase = "", options = {}) {
   }
   const openSeq = ++state.rmsStationOpenSeq;
   const riskFingerprintBeforeSync = phase === "control_anti_fuga" ? rmsRiskStationFingerprint() : "";
+  const stationReadinessPromises = [];
   document.getElementById("rmsMachineTutorial")?.classList.remove("is-open");
   if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = phase;
   if (["curaduria", "clasificacion", "procesamiento", "accion_correctiva", "cierre"].includes(phase) && !state.inventoryLoaded) {
-    loadInventoryProducts({ quiet: true })
+    stationReadinessPromises.push(loadInventoryProducts({ quiet: true })
       .then(() => {
         if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
         renderRmsStationOnly();
       })
-      .catch(() => {});
+    );
   }
   if (phase === "control_anti_fuga" && !state.inventoryLoaded) {
-    // El catálogo viaja por su endpoint dedicado y nunca bloquea la apertura
-    // ni provoca un segundo render completo del formulario activo.
-    loadInventoryProducts({ quiet: true })
+    // El catálogo viaja en paralelo por su endpoint dedicado, pero la estación
+    // no revela filas hasta que casos y productos estén listos juntos.
+    stationReadinessPromises.push(loadInventoryProducts({ quiet: true })
       .then(() => {
         if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
         const liveStatus = rmsStationWorkspace?.querySelector("[data-rms-risk-live-status] small");
@@ -54847,16 +54916,16 @@ function openRmsStation(phase = "", options = {}) {
           liveStatus.textContent = `Casos y catálogo listos · ${state.inventoryProducts.length.toLocaleString("es-CO")} productos disponibles.`;
         }
       })
-      .catch(() => {});
+    );
   }
   if (phase === "postventa") {
     // La tarjeta de Valorización debe abrir con la actividad real de la venta:
     // tickets de recompra, referidos, puntos y sellos anteriores.
-    loadRmsPostSaleActions()
+    stationReadinessPromises.push(loadRmsPostSaleActions()
       .then(() => {
         if (state.rmsStationScreenOpen && state.rmsStationPhase === phase && state.rmsStationOpenSeq === openSeq) renderRmsStationOnly();
       })
-      .catch((error) => console.warn("RMS post-sale history preload failed", error));
+    );
   }
   if (phase === "inteligencia") {
     loadRmsIntelligenceData()
@@ -54867,10 +54936,12 @@ function openRmsStation(phase = "", options = {}) {
       })
       .then(() => {
         state.rmsStationSyncing = false;
+        state.rmsStationSyncError = "";
         if (state.rmsStationScreenOpen && state.rmsStationPhase === phase && state.rmsStationOpenSeq === openSeq) renderRmsStationOnly();
       })
       .catch((error) => {
         state.rmsStationSyncing = false;
+        state.rmsStationSyncError = error?.message || "No fue posible obtener los datos actualizados.";
         if (state.rmsStationScreenOpen && state.rmsStationPhase === phase && state.rmsStationOpenSeq === openSeq) renderRmsStationOnly();
         console.warn("RMS intelligence preload failed", error);
       });
@@ -54879,13 +54950,17 @@ function openRmsStation(phase = "", options = {}) {
     renderRmsStationOnly();
     rmsStationWorkspace?.scrollIntoView({ behavior: "auto", block: "start" });
     if (phase === "clasificacion") {
-      showFeedback("Actualizando la cola de Activación 1… Puedes empezar a revisar mientras terminamos.", "loading", { title: "Activación 1", timeout: 0 });
+      showFeedback("Cargando los datos definitivos de Activación 1…", "loading", { title: "Activación 1", timeout: 0 });
     }
     if (phase === "inteligencia") return;
-    loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: phase })
+    Promise.all([
+      loadRmsMachineData({ force: true, quiet: true, lite: true, stationPhase: phase }),
+      ...stationReadinessPromises,
+    ])
       .then(() => {
         if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
         state.rmsStationSyncing = false;
+        state.rmsStationSyncError = "";
         if (phase === "control_anti_fuga") {
           state.rmsRiskStationSyncState = "ready";
           state.rmsRiskStationSyncError = "";
@@ -54905,16 +54980,16 @@ function openRmsStation(phase = "", options = {}) {
         console.error("RMS station lite load failed", renderError);
         if (!state.rmsStationScreenOpen || state.rmsStationPhase !== phase || state.rmsStationOpenSeq !== openSeq) return;
         state.rmsStationSyncing = false;
+        state.rmsStationSyncError = renderError?.message || "No fue posible obtener los datos actualizados.";
         if (phase === "control_anti_fuga") {
           state.rmsRiskStationSyncState = "error";
           state.rmsRiskStationSyncError = renderError?.message || "No fue posible actualizar.";
-          const rows = (state.rmsMachine?.opportunities || []).filter((item) => item?.stage === "control_anti_fuga");
-          if (!updateRmsRiskStationLiveStatus(rows)) renderRmsStationOnly();
-          showFeedback("Riesgos de fuga sigue operativo con los datos disponibles. Puedes reintentar desde la franja de estado.", "info", { title: "Riesgos de fuga" });
+          renderRmsStationOnly();
+          showFeedback("No mostramos datos anteriores. Reintenta para cargar el estado real de Riesgos de fuga.", "error", { title: "Riesgos de fuga" });
           return;
         }
         renderRmsStationOnly();
-        showFeedback("La estación quedó operativa con datos locales. La actualización ligera no respondió a tiempo.", "info", { title: "Estaciones" });
+        showFeedback("No mostramos datos anteriores porque podrían estar desactualizados. Reintenta la carga.", "error", { title: "Estaciones" });
       });
   } catch (error) {
     state.rmsStationSyncing = false;
@@ -55976,6 +56051,11 @@ async function moveSelectedRmsPhase(destinationPhase = "", sourcePhase = "") {
       if (rmsMachinePhaseFilter) rmsMachinePhaseFilter.value = toPhase;
     }
     state.rmsMachineLoaded = false;
+    if (state.rmsStationScreenOpen && movedCount > 0) {
+      state.rmsStationSyncing = true;
+      state.rmsStationSyncError = "";
+      renderRmsStationOnly();
+    }
     await loadRmsMachineData({
       force: true,
       quiet: true,
@@ -55983,7 +56063,11 @@ async function moveSelectedRmsPhase(destinationPhase = "", sourcePhase = "") {
       stationPhase: state.rmsStationScreenOpen && movedCount > 0 ? toPhase : "",
       fresh: true,
     });
-    if (movedCount > 0 && state.rmsStationScreenOpen) state.rmsMachineSelectedIds = [];
+    if (movedCount > 0 && state.rmsStationScreenOpen) {
+      state.rmsMachineSelectedIds = [];
+      state.rmsStationSyncing = false;
+      state.rmsStationSyncError = "";
+    }
     renderRmsMachineView();
     const destination = rmsPrimaryFactoryStages(state.rmsMachine || {}).find((item) => item.key === toPhase);
     const resultMessage = movedCount > 0
@@ -55994,6 +56078,11 @@ async function moveSelectedRmsPhase(destinationPhase = "", sourcePhase = "") {
       : "";
     showFeedback(`${resultMessage}${failureSummary}`, failedEntries.length ? "error" : movedCount > 0 ? "success" : "info", { title: "Máquina RMS" });
   } catch (error) {
+    if (state.rmsStationScreenOpen && state.rmsStationSyncing) {
+      state.rmsStationSyncing = false;
+      state.rmsStationSyncError = error?.message || "No fue posible obtener los datos actualizados.";
+      renderRmsStationOnly();
+    }
     showFeedback(error.message || "No se pudo mover la fase RMS.", "error", { title: "Máquina RMS" });
   }
 }
@@ -56073,6 +56162,11 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
     state.rmsStationSearch = "";
     state.rmsStationViewMode = "all";
     state.rmsMachineLoaded = false;
+    if (state.rmsStationScreenOpen) {
+      state.rmsStationSyncing = true;
+      state.rmsStationSyncError = "";
+      renderRmsStationOnly();
+    }
     await loadRmsMachineData({
       force: true,
       quiet: true,
@@ -56080,10 +56174,17 @@ async function moveRmsOpportunityToPhase(item = {}, toPhase = "", options = {}) 
       stationPhase: state.rmsStationScreenOpen ? toPhase : "",
       fresh: true,
     });
+    state.rmsStationSyncing = false;
+    state.rmsStationSyncError = "";
     renderRmsMachineView();
     const destination = stations.find((station) => station.key === toPhase);
     showFeedback(`Lead movido. Ahora estás en ${destination?.label || "la estación destino"}.`, "success", { title: "Máquina RMS" });
   } catch (error) {
+    if (state.rmsStationScreenOpen && state.rmsStationSyncing) {
+      state.rmsStationSyncing = false;
+      state.rmsStationSyncError = error?.message || "No fue posible obtener los datos actualizados.";
+      renderRmsStationOnly();
+    }
     showFeedback(error.message || "No se pudo mover el lead.", "error", { title: "Máquina RMS" });
   }
 }
