@@ -116,3 +116,16 @@ test("Clientes y Leads permiten editar datos y asignar vendedores activos", () =
   assert.match(sellerController, /assigned_contacts: \{ clients:/);
   assert.match(html, /data-seller-tab="clients">Clientes y leads/);
 });
+
+test("el editor de contacto mantiene campos desplazables y acciones siempre alcanzables", () => {
+  const app = read("empresa/js/app.js");
+  const styles = read("empresa/css/portal-clean-v39.css");
+  assert.match(app, /lead-manual-edit-fields/);
+  assert.match(app, /lead-manual-edit-footer/);
+  assert.match(app, /manualLeadEditCancelButton/);
+  assert.match(app, /dataset\.manualEditMode = manualEditMode \? "true" : "false"/);
+  assert.match(styles, /#leadDetailModal\[data-manual-edit-mode="true"\][\s\S]*height: min\(820px, calc\(100dvh/);
+  assert.match(styles, /\.lead-manual-edit-fields \{[\s\S]*overflow-y: auto !important;/);
+  assert.match(styles, /\.lead-manual-edit-footer \{[\s\S]*grid-template-columns: minmax\(0, 0\.75fr\) minmax\(0, 1\.25fr\)/);
+  assert.match(styles, /@media \(max-width: 620px\)[\s\S]*height: 100dvh !important;/);
+});

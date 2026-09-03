@@ -34100,3 +34100,202 @@ body[data-theme="dark"][data-current-view="rms-machine"] .rms-station-definitive
   body[data-current-view="rms-machine"] .rms-station-definitive-feedback > div { justify-items: center; }
   body[data-current-view="rms-machine"] .rms-station-definitive-feedback .solid-button { justify-self: center; width: 100%; }
 }
+
+/* Contactos v434: dedicated, fully reachable contact editor. */
+html body .portal-shell #leadDetailModal[data-manual-edit-mode="true"].lead-detail-workspace {
+  padding: clamp(12px, 2.5vh, 28px) !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell #leadDetailModal[data-manual-edit-mode="true"] .lead-detail-interstitial-card {
+  width: min(880px, 100%) !important;
+  height: min(820px, calc(100dvh - clamp(24px, 5vh, 56px))) !important;
+  max-height: none !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell #leadDetailModal[data-manual-edit-mode="true"] :where(.lead-profile-header, .lead-quick-actions, .lead-tabs) {
+  display: none !important;
+}
+
+html body .portal-shell #leadDetailModal[data-manual-edit-mode="true"] .lead-tab-panel {
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+html body .portal-shell #leadDetailModal[data-manual-edit-mode="true"] .lead-manual-edit-form {
+  height: 100% !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  overflow-y: hidden !important;
+  background: #ffffff !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-intro {
+  padding: 18px clamp(18px, 3vw, 28px) 14px !important;
+  border-bottom: 1px solid rgba(5, 42, 107, 0.1) !important;
+  background: #f8fbff !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-intro strong,
+html body .portal-shell #leadDetailModal .lead-manual-edit-intro p {
+  display: block !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-intro strong {
+  margin-top: 4px !important;
+  color: #071832 !important;
+  font-size: clamp(1.05rem, 2vw, 1.3rem) !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-intro p {
+  margin: 5px 0 0 !important;
+  color: #53677f !important;
+  font-size: 0.86rem !important;
+  line-height: 1.45 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-fields {
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  align-self: stretch !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-content: start !important;
+  gap: 14px 16px !important;
+  padding: 20px clamp(18px, 3vw, 28px) 26px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-fields label {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 7px !important;
+  margin: 0 !important;
+  color: #31506f !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-fields :where(input, select, textarea) {
+  width: 100% !important;
+  min-width: 0 !important;
+  border: 1px solid #cbdced !important;
+  border-radius: 11px !important;
+  background: #ffffff !important;
+  color: #071832 !important;
+  box-shadow: none !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-fields :where(input, select) {
+  min-height: 44px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-fields :where(input, select, textarea):focus {
+  border-color: #0759d6 !important;
+  outline: 3px solid rgba(7, 89, 214, 0.14) !important;
+  outline-offset: 1px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-fields .span-2 {
+  grid-column: 1 / -1 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-footer {
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 14px clamp(18px, 3vw, 28px) !important;
+  border-top: 1px solid rgba(5, 42, 107, 0.1) !important;
+  background: #ffffff !important;
+  box-shadow: 0 -10px 26px rgba(5, 42, 107, 0.06) !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-footer .form-message {
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-footer .form-message:empty {
+  display: none !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-footer .form-message:empty + .lead-manual-edit-actions {
+  margin-left: auto !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-actions {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  gap: 10px !important;
+}
+
+html body .portal-shell #leadDetailModal .lead-manual-edit-actions button {
+  min-height: 42px !important;
+  padding: 9px 16px !important;
+  border-radius: 10px !important;
+}
+
+@media (max-width: 620px) {
+  html body .portal-shell #leadDetailModal[data-manual-edit-mode="true"].lead-detail-workspace {
+    padding: 0 !important;
+  }
+
+  html body .portal-shell #leadDetailModal[data-manual-edit-mode="true"] .lead-detail-interstitial-card {
+    width: 100% !important;
+    height: 100dvh !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  html body .portal-shell #leadDetailModal[data-manual-edit-mode="true"] .lead-workspace-head {
+    padding: 14px 16px !important;
+  }
+
+  html body .portal-shell #leadDetailModal .lead-manual-edit-intro {
+    padding: 14px 16px 12px !important;
+  }
+
+  html body .portal-shell #leadDetailModal .lead-manual-edit-fields {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    padding: 16px 16px 24px !important;
+    scrollbar-gutter: auto !important;
+  }
+
+  html body .portal-shell #leadDetailModal .lead-manual-edit-fields .span-2 {
+    grid-column: auto !important;
+  }
+
+  html body .portal-shell #leadDetailModal .lead-manual-edit-footer {
+    display: grid !important;
+    gap: 9px !important;
+    padding: 12px 16px max(12px, env(safe-area-inset-bottom)) !important;
+  }
+
+  html body .portal-shell #leadDetailModal .lead-manual-edit-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr) !important;
+    margin-left: 0 !important;
+  }
+
+  html body .portal-shell #leadDetailModal .lead-manual-edit-actions button {
+    width: 100% !important;
+  }
+}

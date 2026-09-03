@@ -41911,10 +41911,12 @@ function renderManualLeadEditForm(lead = {}) {
   const statusValue = manualLeadEditValue(lead, "status") || "NEW";
   return `
     <form class="modal-form lead-manual-edit-form" id="manualLeadEditForm">
-      <div class="span-2">
+      <div class="lead-manual-edit-intro">
         <span class="mono-label">Prospecto manual</span>
         <strong>Editar datos del directorio</strong>
+        <p>Actualiza la información comercial del contacto. Los cambios se guardan en su ficha e historial.</p>
       </div>
+      <div class="lead-manual-edit-fields">
       <label><span>Nombre</span><input id="manualLeadEditNameInput" type="text" maxlength="160" required value="${escapeHtml(manualLeadEditValue(lead, "name"))}"></label>
       <label><span>Empresa</span><input id="manualLeadEditCompanyInput" type="text" maxlength="180" value="${escapeHtml(manualLeadEditValue(lead, "company"))}"></label>
       <label><span>Cargo</span><input id="manualLeadEditJobTitleInput" type="text" maxlength="160" value="${escapeHtml(manualLeadEditValue(lead, "job_title"))}"></label>
@@ -41948,8 +41950,14 @@ function renderManualLeadEditForm(lead = {}) {
       <label class="span-2"><span>Interés</span><input id="manualLeadEditInterestInput" type="text" maxlength="500" value="${escapeHtml(manualLeadEditValue(lead, "interest"))}"></label>
       <label class="span-2"><span>Por qué es importante</span><textarea id="manualLeadEditImportanceInput" rows="2" maxlength="1000">${escapeHtml(manualLeadEditValue(lead, "importance_reason"))}</textarea></label>
       <label class="span-2"><span>Nota de seguimiento</span><textarea id="manualLeadEditNotesInput" rows="3" maxlength="2000">${escapeHtml(manualLeadEditValue(lead, "notes"))}</textarea></label>
-      <p class="form-message span-2" id="manualLeadEditMessage"></p>
-      <button class="solid-button" id="manualLeadEditSubmitButton" type="submit">Guardar cambios</button>
+      </div>
+      <footer class="lead-manual-edit-footer">
+        <p class="form-message" id="manualLeadEditMessage" role="status" aria-live="polite"></p>
+        <div class="lead-manual-edit-actions">
+          <button class="ghost-button" id="manualLeadEditCancelButton" type="button">Cancelar</button>
+          <button class="solid-button" id="manualLeadEditSubmitButton" type="submit">Guardar cambios</button>
+        </div>
+      </footer>
     </form>
   `;
 }
@@ -42442,6 +42450,7 @@ function bindLeadDetailPanelActions() {
   });
   document.getElementById("leadPurchaseForm")?.addEventListener("submit", createLeadPurchaseFromForm);
   document.getElementById("manualLeadEditForm")?.addEventListener("submit", updateManualLeadFromForm);
+  document.getElementById("manualLeadEditCancelButton")?.addEventListener("click", () => setLeadDetailTab("general", { scrollTab: true }));
   document.getElementById("leadInviteAffiliateButton")?.addEventListener("click", () => openLeadActivationModal(state.selectedLeadRef, "REFERRAL_REWARD"));
   leadDetailContent?.querySelectorAll("[data-product-select]").forEach((select) => {
     renderProductSelect(select);
@@ -42540,6 +42549,9 @@ function setLeadDetailTab(tabName = "general", options = {}) {
   if (leadDetailModal) {
     leadDetailModal.classList.toggle("is-lead-general-view", nextTab === "general");
     leadDetailModal.dataset.leadDetailTab = nextTab;
+    const selectedLead = state.selectedLeadDetail?.lead || {};
+    const manualEditMode = nextTab === "personal" && String(selectedLead.source_type || "").toUpperCase() === "MANUAL";
+    leadDetailModal.dataset.manualEditMode = manualEditMode ? "true" : "false";
   }
   leadDetailTabs?.querySelectorAll("[data-lead-tab]").forEach((tab) => {
     const isActive = tab.dataset.leadTab === nextTab;
@@ -42597,6 +42609,7 @@ async function openLeadDetail(leadRef, options = {}) {
 
 function closeLeadDetail() {
   leadDetailModal?.classList.add("hidden");
+  if (leadDetailModal) delete leadDetailModal.dataset.manualEditMode;
   document.body.classList.remove("lead-detail-open");
 }
 

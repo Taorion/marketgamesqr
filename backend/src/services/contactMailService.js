@@ -27,7 +27,7 @@ function escapeHtml(value) {
 }
 
 function contactFromAddress() {
-  return env.contactMailFrom || env.smtpUser || "Sales Machine <no-reply@marketgamesqr.com>";
+  return env.contactMailFrom || env.smtpUser || "Qori <no-reply@gosqori.com>";
 }
 
 async function sendViaResend({ subject, text, html, replyTo }) {
