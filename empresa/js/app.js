@@ -4689,9 +4689,16 @@ async function loadManualContactsData(options = {}) {
   const scopeKey = businessScopeKey();
   state.manualContactsLoading = true;
   try {
-    const data = await apiSafe("/api/business/contacts/manual?limit=500", { headers: authHeaders() }, { contacts: [] });
+    const contacts = [];
+    let offset = 0;
+    for (let page = 0; page < 20; page += 1) {
+      const data = await apiSafe(`/api/business/contacts/manual?limit=500&offset=${offset}`, { headers: authHeaders(), noClientCache: Boolean(options.force) }, { contacts: [], pagination: { has_more: false } });
+      contacts.push(...(data.contacts || []));
+      if (!data.pagination?.has_more) break;
+      offset += Number(data.pagination?.limit || 500);
+    }
     if (!isCurrentBusinessScope(scopeKey)) return;
-    state.manualContacts = data.contacts || [];
+    state.manualContacts = contacts;
     state.manualContactsLoaded = true;
   } finally {
     state.manualContactsLoading = false;

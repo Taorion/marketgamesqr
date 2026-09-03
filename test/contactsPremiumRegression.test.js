@@ -16,11 +16,14 @@ test("el directorio unifica identidades entre fuentes sin cruzar documentos inco
   assert.match(service, /case preferred\.source_type when 'PLAYER' then 1 when 'AFFILIATE' then 2 else 3 end/);
 });
 
-test("la búsqueda actualiza resultados sin reconstruir el campo de edición", () => {
+test("la búsqueda conserva respuesta inmediata y consulta toda la base", () => {
   const script = read("empresa/js/contacts-premium-v333.js");
   assert.match(script, /filters\.search = searchInput\.value/);
   assert.match(script, /const refreshMatches = \(\) =>/);
   assert.match(script, /list\.innerHTML = visibleRows\.length/);
+  assert.match(script, /contactDirectoryQuery\("customers", 0\)/);
+  assert.match(script, /contactDirectorySearchTimer = setTimeout/);
+  assert.match(script, /reloadDirectoryFromServer\(true\)/);
   assert.doesNotMatch(script, /setTimeout\(\(\) => rerender\("contactDirectorySearchInput"/);
   assert.match(script, /contact-directory-result-note" aria-live="polite"/);
 });
@@ -46,7 +49,7 @@ test("el responsable comercial aparece en importación, búsqueda y directorio",
   assert.match(script, /Responsable: \$\{owner\}/);
   assert.match(app, /metadata\.commercial_owner_email/);
   assert.match(html, /responsable_comercial/);
-  assert.match(html, /contacts-client-import-v345-20260828-default-seller/);
+  assert.match(html, /contacts-directory-premium-v347-20260903/);
 });
 
 test("cada contacto, incluidos afiliados, admite un vendedor responsable", () => {
@@ -108,13 +111,64 @@ test("Clientes y Leads permiten editar datos y asignar vendedores activos", () =
   const html = read("empresa/index.html");
   const sellerController = read("backend/src/controllers/sellerController.js");
   const leadService = read("backend/src/services/leadCrmService.js");
+  const leadController = read("backend/src/controllers/leadCrmController.js");
+  const routes = read("backend/src/routes/businessPortalRoutes.js");
   assert.match(premium, /data-edit-contact-seller/);
-  assert.match(premium, /user\.role === "BUSINESS_SELLER"/);
-  assert.match(premium, /seller-responsibility/);
+  assert.match(premium, /contactEditorName/);
+  assert.match(premium, /method: "PATCH"/);
   assert.match(html, /id="contactSellerEditorModal"/);
+  assert.match(html, /id="contactEditorEmail"/);
+  assert.match(html, /id="contactEditorArchive"/);
+  assert.match(leadController, /const contactUpdateSchema/);
+  assert.match(leadService, /async function updateLeadContact/);
+  assert.match(leadService, /Ya existe un contacto activo con el mismo correo, telefono o documento/);
+  assert.match(leadService, /where not \(source_type = \$5 and id = \$6\)/);
+  assert.match(routes, /router\.patch\("\/leads\/:leadId", requireContactDirectory, updateContact\)/);
   assert.match(leadService, /seller_user_id = \$\$\{params\.length\}::uuid/);
   assert.match(sellerController, /assigned_contacts: \{ clients:/);
   assert.match(html, /data-seller-tab="clients">Clientes y leads/);
+});
+
+test("totales, señales y paginación comparten el contrato del servidor", () => {
+  const premium = read("empresa/js/contacts-premium-v333.js");
+  const service = read("backend/src/services/leadCrmService.js");
+  assert.match(service, /commercial_status not in \('LOST', 'DELETED', 'ARCHIVED'\)/);
+  assert.match(service, /filters\.signal === "without_contact"/);
+  assert.match(service, /function leadCrmOrderBy/);
+  assert.match(service, /filtered_revenue/);
+  assert.match(service, /inactive_customer_count/);
+  assert.match(premium, /state\.leadDirectoryPaging/);
+  assert.match(premium, /paging\.offset \+ \(data\.leads \|\| \[\]\)\.length/);
+  assert.match(premium, /Resumen de toda la base filtrada/);
+});
+
+test("archivar funciona para todas las fuentes y conserva auditoría", () => {
+  const premium = read("empresa/js/contacts-premium-v333.js");
+  const service = read("backend/src/services/leadCrmService.js");
+  const controller = read("backend/src/controllers/businessPortalController.js");
+  const app = read("empresa/js/app.js");
+  const html = read("empresa/index.html");
+  assert.match(service, /update affiliates[\s\S]*'lifecycle_status', 'ARCHIVED'/);
+  assert.match(service, /contact_archived/);
+  assert.match(service, /recordLifecycleEvent/);
+  assert.match(premium, /contact-directory-archive:/);
+  assert.match(controller, /ml\.status <> 'ARCHIVED'/);
+  assert.match(controller, /pagination: \{ total, limit, offset, has_more/);
+  assert.match(app, /contacts\/manual\?limit=500&offset=\$\{offset\}/);
+  assert.match(html, /id="contactArchiveReason"/);
+  assert.match(html, /Ventas, notas, tickets y trazabilidad se conservarán/);
+});
+
+test("el editor premium tiene scroll interno, foco contenido y acciones móviles alcanzables", () => {
+  const premium = read("empresa/js/contacts-premium-v333.js");
+  const html = read("empresa/index.html");
+  const styles = read("empresa/css/contacts-premium-v333.css");
+  assert.match(html, /aria-describedby="contactSellerEditorHelp"/);
+  assert.match(premium, /function trapModalFocus/);
+  assert.match(styles, /\.contact-editor-body[\s\S]*overflow-y: auto/);
+  assert.match(styles, /\.contact-editor-form[\s\S]*grid-template-rows: minmax\(0, 1fr\) auto auto/);
+  assert.match(styles, /@media \(max-width: 620px\)[\s\S]*height: 100dvh !important/);
+  assert.match(styles, /contact-editor-actions[\s\S]*grid-template-columns/);
 });
 
 test("el editor de contacto mantiene campos desplazables y acciones siempre alcanzables", () => {

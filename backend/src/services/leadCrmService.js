@@ -254,7 +254,7 @@ function listWhere(filters, params) {
     params.push(`%${normalizeSearch(filters.city)}%`);
     clauses.push(`normalized_city like $${params.length}`);
   }
-  if (filters.audience_type === "LEAD") clauses.push("purchase_count = 0 and coalesce(metadata->>'customer_import_declared', 'false') <> 'true'");
+  if (filters.audience_type === "LEAD") clauses.push("purchase_count = 0 and coalesce(metadata->>'customer_import_declared', 'false') <> 'true' and commercial_status not in ('LOST', 'DELETED', 'ARCHIVED')");
   if (filters.audience_type === "CLIENT") clauses.push("(purchase_count > 0 or coalesce(metadata->>'customer_import_declared', 'false') = 'true')");
   if (filters.has_purchases === "true") clauses.push("purchase_count > 0");
   if (filters.has_purchases === "false") clauses.push("purchase_count = 0");
@@ -265,6 +265,15 @@ function listWhere(filters, params) {
   if (filters.has_expired_tickets === "true") clauses.push("expired_tickets > 0");
   if (filters.has_inactive_tickets === "true") clauses.push("inactive_tickets > 0");
   if (filters.has_redeemed_tickets === "true") clauses.push("redeemed_tickets > 0");
+  if (filters.signal === "active_tickets") clauses.push("active_tickets > 0");
+  if (filters.signal === "ticket_issues") clauses.push("(expired_tickets > 0 or inactive_tickets > 0)");
+  if (filters.signal === "activations") clauses.push("activation_count > 0");
+  if (filters.signal === "without_contact") clauses.push("nullif(phone, '') is null and nullif(email, '') is null");
+  if (filters.signal === "manual") clauses.push("source_type = 'MANUAL'");
+  if (filters.signal === "affiliate") clauses.push("is_affiliate = true");
+  if (filters.signal === "high_priority") clauses.push("care_priority = 'HIGH'");
+  if (filters.signal === "assigned_station") clauses.push("nullif(rms_phase, '') is not null");
+  if (filters.signal === "with_revenue") clauses.push("(purchase_count > 0 or total_spent > 0)");
   if (filters.channel) {
     params.push(`%${normalizeSearch(filters.channel)}%`);
     clauses.push(`(normalized_channel like $${params.length} or normalized_associated_channels like $${params.length})`);
@@ -294,6 +303,19 @@ function listWhere(filters, params) {
     clauses.push(`last_interaction_at <= $${params.length}::timestamptz`);
   }
   return clauses.length ? `where ${clauses.join(" and ")}` : "";
+}
+
+function leadCrmOrderBy(sort = "recommended") {
+  return ({
+    name: "name asc nulls last, created_at desc",
+    revenue: "total_spent desc, purchase_count desc, last_interaction_at desc nulls last",
+    purchase_count: "purchase_count desc, last_purchase_at desc nulls last, name asc",
+    purchase_recent: "last_purchase_at desc nulls last, name asc",
+    activations: "activation_count desc, last_interaction_at desc nulls last",
+    tickets: "active_tickets desc, redeemed_tickets desc, last_interaction_at desc nulls last",
+    priority: "case care_priority when 'HIGH' then 3 when 'MEDIUM' then 2 when 'LOW' then 1 else 0 end desc, attention_score desc",
+    recent: "last_interaction_at desc nulls last, created_at desc",
+  })[String(sort || "recommended")] || "attention_score desc, last_interaction_at desc nulls last, created_at desc";
 }
 
 async function listLeadCrmRows(businessId, filters = {}) {
@@ -366,6 +388,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          )`;
   const params = [businessId];
   const where = listWhere(filters, params);
+  const orderBy = leadCrmOrderBy(filters.sort);
   // Las estaciones RMS llegan con referencias exactas. Aplicar esos IDs solo
   // en `scored` obliga a PostgreSQL a ejecutar antes todos los laterales de
   // compras, tickets, juegos y activaciones del negocio. Acotamos cada fuente
@@ -746,9 +769,9 @@ async function listLeadCrmRows(businessId, filters = {}) {
          'Afiliados'::text as channel,
          coalesce(fa.card_metadata->>'city', '') as city,
          null::text as crm_priority,
-         'WhatsApp'::text as preferred_channel,
+         coalesce(nullif(fa.card_metadata->>'preferred_channel', ''), 'WhatsApp')::text as preferred_channel,
          null::text as preferred_contact_time,
-         ''::text as stored_status,
+         coalesce(fa.card_metadata->>'commercial_status', '')::text as stored_status,
          coalesce(s.purchase_count, 0)::int as purchase_count,
          coalesce(s.total_spent, 0)::numeric as total_spent,
          coalesce(s.avg_ticket, 0)::numeric as avg_ticket,
@@ -840,6 +863,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
        where fa.business_id = $1
          ${exactAffiliateSourceSql}
          and fa.status <> 'DELETED'
+         and coalesce(fa.card_metadata->>'lifecycle_status', 'ACTIVE') <> 'ARCHIVED'
          ${affiliateShadowExclusionSql}
      ),
      all_rows as (
@@ -933,15 +957,29 @@ async function listLeadCrmRows(businessId, filters = {}) {
          end as care_priority
        from shaped
      )
-     select *, count(*) over()::int as total_count
+     select *,
+            count(*) over()::int as total_count,
+            coalesce(sum(total_spent) over(), 0)::numeric as filtered_revenue,
+            count(*) filter (where care_priority = 'HIGH') over()::int as follow_up_count,
+            count(*) filter (where last_purchase_at is not null and last_purchase_at < now() - interval '90 days') over()::int as inactive_customer_count,
+            count(*) filter (where active_tickets > 0) over()::int as active_ticket_contact_count,
+            count(*) filter (where nullif(phone, '') is null and nullif(email, '') is null) over()::int as incomplete_contact_count
      from scored
      ${where}
-     order by attention_score desc, last_interaction_at desc nulls last, created_at desc
+     order by ${orderBy}
      limit $${limitIndex} offset $${offsetIndex}`,
     params
   );
 
   const total = Number(result.rows[0]?.total_count || 0);
+  const summary = {
+    total,
+    revenue: moneyNumber(result.rows[0]?.filtered_revenue),
+    follow_up_count: Number(result.rows[0]?.follow_up_count || 0),
+    inactive_customer_count: Number(result.rows[0]?.inactive_customer_count || 0),
+    active_ticket_contact_count: Number(result.rows[0]?.active_ticket_contact_count || 0),
+    incomplete_contact_count: Number(result.rows[0]?.incomplete_contact_count || 0),
+  };
   return {
     leads: result.rows.map((row) => ({
       ...row,
@@ -964,8 +1002,14 @@ async function listLeadCrmRows(businessId, filters = {}) {
       attention_score: Number(row.attention_score || 0),
       recommended_action: recommendedLeadAction(row),
       total_count: undefined,
+      filtered_revenue: undefined,
+      follow_up_count: undefined,
+      inactive_customer_count: undefined,
+      active_ticket_contact_count: undefined,
+      incomplete_contact_count: undefined,
     })),
     pagination: { total, limit, offset, has_more: offset + result.rows.length < total },
+    summary,
   };
 }
 
@@ -976,7 +1020,8 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
       `select fa.id, fa.business_id, null::uuid as lead_id, 'AFFILIATE'::text as source_type,
               fa.full_name as name, fa.document_id, fa.email, fa.phone, null::text as organization,
               'Afiliados'::text as channel, null::text as source_detail, fa.notes as interest,
-              'WhatsApp'::text as preferred_channel, ''::text as stored_status, null::text as priority,
+              coalesce(nullif(fa.card_metadata->>'preferred_channel', ''), 'WhatsApp')::text as preferred_channel,
+              coalesce(fa.card_metadata->>'commercial_status', '')::text as stored_status, null::text as priority,
               fa.notes, fa.card_metadata as metadata, fa.created_at, fa.updated_at,
               fa.seller_user_id, seller.full_name as seller_name, seller.email as seller_email,
               ca.campaign_id, ca.campaign_name,
@@ -1013,7 +1058,7 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
   if (source === "MANUAL") {
     const result = await client.query(
       `select ml.id, ml.business_id, null::uuid as lead_id, 'MANUAL'::text as source_type,
-              ml.name, null::text as document_id, ml.email, ml.phone, ml.company as organization,
+              ml.name, ml.document_id, ml.document_type, ml.email, ml.phone, ml.company as organization,
               coalesce(ca.campaign_channel, ml.preferred_channel, ml.source) as channel, ml.source_detail, ml.interest, ml.preferred_channel,
               ml.status as stored_status, ml.priority, ml.notes,
               ml.metadata
@@ -2185,9 +2230,6 @@ async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER"
   return withTransaction(async (client) => {
     const lead = await resolveLead(businessId, leadId, sourceType, client);
     const source = String(lead.source_type || sourceType || "PLAYER").toUpperCase();
-    if (source === "AFFILIATE") {
-      throw badRequest("Los afiliados se desactivan desde Afiliados; no se archivan como contactos.");
-    }
     const entityId = source === "MANUAL" ? lead.id : (lead.lead_id || lead.id);
     const currentStatus = source === "MANUAL" ? lead.stored_status : lead.metadata?.lifecycle_status || "ACTIVE";
     if (String(currentStatus).toUpperCase() === "ARCHIVED") {
@@ -2198,6 +2240,17 @@ async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER"
         `update business_manual_leads
             set status = 'ARCHIVED',
                 metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+                  'lifecycle_status', 'ARCHIVED', 'archived_at', now(),
+                  'archived_by_user_id', $3::text, 'archive_reason', $4::text
+                ),
+                updated_at = now()
+          where id = $1 and business_id = $2`,
+        [lead.id, businessId, user.id, payload.reason]
+      );
+    } else if (source === "AFFILIATE") {
+      await client.query(
+        `update affiliates
+            set card_metadata = coalesce(card_metadata, '{}'::jsonb) || jsonb_build_object(
                   'lifecycle_status', 'ARCHIVED', 'archived_at', now(),
                   'archived_by_user_id', $3::text, 'archive_reason', $4::text
                 ),
@@ -2445,6 +2498,116 @@ async function deleteLeadContact(businessId, user, leadId, sourceType = "PLAYER"
       source_type: source,
       cleanup: deleted,
     };
+  });
+}
+
+async function updateLeadContact(businessId, user, leadId, sourceType = "PLAYER", payload = {}) {
+  return withTransaction(async (client) => {
+    const lead = await resolveLead(businessId, leadId, sourceType, client);
+    const source = String(lead.source_type || sourceType || "PLAYER").toUpperCase();
+    let seller = null;
+    if (payload.seller_user_id) {
+      const sellerResult = await client.query(
+        `select id, full_name, email
+           from app_users
+          where id = $1 and business_id = $2 and is_active = true
+            and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR')`,
+        [payload.seller_user_id, businessId]
+      );
+      if (!sellerResult.rowCount) throw badRequest("El responsable comercial no existe o no esta activo en este negocio.");
+      seller = sellerResult.rows[0];
+    }
+
+    const duplicate = await client.query(
+      `select source_type, id, name
+         from (
+           select 'PLAYER'::text as source_type, id, name, email, phone, document_id
+             from players where business_id = $1 and coalesce(metadata->>'lifecycle_status', 'ACTIVE') <> 'ARCHIVED'
+           union all
+           select 'MANUAL'::text, id, name, email, phone, document_id
+             from business_manual_leads where business_id = $1 and status <> 'ARCHIVED'
+           union all
+           select 'AFFILIATE'::text, id, full_name, email, phone, document_id
+             from affiliates where business_id = $1 and status <> 'DELETED' and coalesce(card_metadata->>'lifecycle_status', 'ACTIVE') <> 'ARCHIVED'
+         ) contact
+        where not (source_type = $5 and id = $6)
+          and (
+            ($2::text is not null and lower(btrim(coalesce(email, ''))) = lower(btrim($2)))
+            or ($3::text is not null and regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = regexp_replace($3, '[^0-9]', '', 'g'))
+            or ($4::text is not null and regexp_replace(lower(coalesce(document_id, '')), '[^a-z0-9]', '', 'g') = regexp_replace(lower($4), '[^a-z0-9]', '', 'g'))
+          )
+        limit 1`,
+      [businessId, payload.email || null, payload.phone || null, payload.document_id || null, source, lead.id]
+    );
+    if (duplicate.rowCount) {
+      throw badRequest(`Ya existe un contacto activo con el mismo correo, telefono o documento: ${duplicate.rows[0].name || "contacto existente"}.`);
+    }
+
+    const commonMetadata = {
+      commercial_owner_user_id: seller?.id || null,
+      commercial_owner_name: seller?.full_name || null,
+      commercial_owner_email: seller?.email || null,
+      contact_updated_at: new Date().toISOString(),
+      contact_updated_by_user_id: user.id,
+    };
+    let result;
+    if (source === "MANUAL") {
+      const manualStatus = ["NEW", "CONTACTED", "FOLLOW_UP", "CONVERTED", "LOST"].includes(String(payload.status || "").toUpperCase())
+        ? String(payload.status).toUpperCase()
+        : (Number(lead.purchase_count || 0) > 0 ? "CONVERTED" : "NEW");
+      result = await client.query(
+        `update business_manual_leads
+            set name = $3, email = $4, phone = $5, document_type = $6, document_id = $7,
+                company = $8, job_title = $9, preferred_channel = $10, status = $11,
+                priority = $12, notes = $13, seller_user_id = $14,
+                metadata = coalesce(metadata, '{}'::jsonb) || $15::jsonb,
+                updated_at = now()
+          where id = $1 and business_id = $2
+          returning id, name, email, phone, document_type, document_id, company, job_title,
+                    preferred_channel, status as commercial_status, priority, notes, seller_user_id, metadata, updated_at`,
+        [lead.id, businessId, payload.name, payload.email || null, payload.phone || null,
+          payload.document_type || null, payload.document_id || null, payload.company || null,
+          payload.job_title || null, payload.preferred_channel || null, manualStatus,
+          payload.priority || "MEDIUM", payload.notes || null, seller?.id || null,
+          JSON.stringify({ ...commonMetadata, manual_company: payload.company || null, manual_job_title: payload.job_title || null, manual_notes: payload.notes || null })]
+      );
+    } else if (source === "AFFILIATE") {
+      result = await client.query(
+        `update affiliates
+            set full_name = $3, email = $4, phone = $5, document_id = $6, notes = $7,
+                seller_user_id = $8,
+                card_metadata = coalesce(card_metadata, '{}'::jsonb) || $9::jsonb,
+                updated_at = now()
+          where id = $1 and business_id = $2 and status <> 'DELETED'
+          returning id, full_name as name, email, phone, document_id, notes, seller_user_id,
+                    card_metadata as metadata, updated_at`,
+        [lead.id, businessId, payload.name, payload.email || null, payload.phone || null,
+          payload.document_id || null, payload.notes || null, seller?.id || null,
+          JSON.stringify({ ...commonMetadata, document_type: payload.document_type || null, company: payload.company || null, preferred_channel: payload.preferred_channel || null, commercial_status: payload.status || null })]
+      );
+    } else {
+      result = await client.query(
+        `update players
+            set name = $3, email = $4, phone = $5, document_id = $6,
+                seller_user_id = $7,
+                metadata = coalesce(metadata, '{}'::jsonb) || $8::jsonb
+          where id = $1 and business_id = $2
+          returning id, name, email, phone, document_id, seller_user_id, metadata, created_at as updated_at`,
+        [lead.id, businessId, payload.name, payload.email || null, payload.phone || null,
+          payload.document_id || null, seller?.id || null,
+          JSON.stringify({ ...commonMetadata, document_type: payload.document_type || null, company: payload.company || null, preferred_channel: payload.preferred_channel || null, commercial_status: payload.status || null, notes: payload.notes || null })]
+      );
+    }
+    if (!result?.rowCount) throw notFound("Contacto no encontrado.");
+    await client.query(
+      `insert into lead_events
+        (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, metadata, created_by)
+       values ($1, $2, $3, $4, 'contact_profile_updated', 'Datos del contacto actualizados', $5, $6::jsonb, $7)`,
+      [businessId, source === "PLAYER" ? lead.id : lead.lead_id || null, source, lead.id,
+        `${payload.name} fue actualizado desde el Directorio comercial.`,
+        JSON.stringify({ changed_fields: Object.keys(payload).filter((key) => key !== "source_type") }), user.id]
+    );
+    return { ...result.rows[0], source_type: source, seller_name: seller?.full_name || null, seller_email: seller?.email || null };
   });
 }
 
@@ -2963,6 +3126,7 @@ module.exports = {
   getLeadCrmDetail,
   listLeadAgenda,
   listLeadCrmRows,
+  updateLeadContact,
   updateLeadAgendaItem,
   updateLeadSellerResponsibility,
 };

@@ -6116,12 +6116,14 @@ async function listManualLeads(req, res, next) {
     if (subscription.plan.raw_status !== "ACTIVE") {
       throw forbidden("La suscripcion del negocio no esta activa.");
     }
-    const limit = boundedLimit(req.query.limit, 500, 1000);
+    const limit = boundedLimit(req.query.limit, 200, 500);
+    const offset = Math.max(0, Math.min(1000000, Number.parseInt(req.query.offset, 10) || 0));
     const result = await query(
       `select ml.*,
               seller.full_name as seller_name,
               seller.email as seller_email,
-              coalesce(ca.campaigns, '[]'::json) as campaigns
+              coalesce(ca.campaigns, '[]'::json) as campaigns,
+              count(*) over()::int as total_count
          from business_manual_leads
          ml
          left join app_users seller on seller.id = ml.seller_user_id and seller.business_id = ml.business_id
@@ -6144,11 +6146,16 @@ async function listManualLeads(req, res, next) {
              and cmc.status = 'ACTIVE'
          ) ca on true
         where ml.business_id = $1
+          and ml.status <> 'ARCHIVED'
         order by ml.updated_at desc, ml.created_at desc
-        limit $2`,
-      [businessId, limit]
+        limit $2 offset $3`,
+      [businessId, limit, offset]
     );
-    res.json({ contacts: result.rows });
+    const total = Number(result.rows[0]?.total_count || 0);
+    res.json({
+      contacts: result.rows.map(({ total_count: _totalCount, ...contact }) => contact),
+      pagination: { total, limit, offset, has_more: offset + result.rows.length < total },
+    });
   } catch (error) {
     next(error);
   }

@@ -15,6 +15,7 @@ const {
   listLeadAgenda,
   listLeadCrmRows,
   markLeadActivationOpened,
+  updateLeadContact,
   updateLeadAgendaItem,
   updateLeadSellerResponsibility,
 } = require("../services/leadCrmService");
@@ -34,6 +35,37 @@ function businessIdFor(req) {
 
 const sourceTypeSchema = z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE"]).default("PLAYER");
 const agendaSourceTypeSchema = z.enum(["PLAYER", "MANUAL", "BUYER", "AFFILIATE", "GENERAL", "CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"]);
+
+const nullableTrimmedText = (maximum) => z.preprocess(
+  (value) => String(value ?? "").trim() || null,
+  z.string().max(maximum).nullable()
+);
+
+const contactUpdateSchema = z.object({
+  source_type: z.enum(["PLAYER", "MANUAL", "AFFILIATE"]),
+  name: z.string().trim().min(2).max(160),
+  email: z.preprocess((value) => String(value ?? "").trim() || null, z.string().email().max(180).nullable()),
+  phone: nullableTrimmedText(40),
+  document_type: z.enum(["CC", "CE", "TI", "NIT", "PASSPORT", "PEP", "OTHER"]).optional().nullable(),
+  document_id: nullableTrimmedText(80),
+  company: nullableTrimmedText(180),
+  job_title: nullableTrimmedText(160),
+  preferred_channel: nullableTrimmedText(120),
+  status: z.enum(["NEW", "CONTACTED", "FOLLOW_UP", "CONVERTED", "LOST", "INTERESTED", "INACTIVE", "BUYER", "RECURRENT", "VIP"]).optional().nullable(),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional().nullable(),
+  notes: nullableTrimmedText(2000),
+  seller_user_id: z.string().uuid().optional().nullable(),
+}).superRefine((value, context) => {
+  if (!value.email && !value.phone && !value.document_id) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Agrega telefono, correo o documento para identificar el contacto.", path: ["phone"] });
+  }
+  if (value.phone && value.phone.replace(/\D/g, "").length < 7) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Escribe un telefono valido de al menos 7 digitos.", path: ["phone"] });
+  }
+  if (value.document_id && value.document_id.replace(/[^a-z0-9]/gi, "").length < 3) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Escribe un documento valido.", path: ["document_id"] });
+  }
+});
 
 const noteSchema = z.object({
   note: z.string().trim().min(2).max(3000),
@@ -374,6 +406,22 @@ async function assignSellerResponsibility(req, res, next) {
   }
 }
 
+async function updateContact(req, res, next) {
+  try {
+    const body = validate(contactUpdateSchema, req.body);
+    const contact = await updateLeadContact(
+      businessIdFor(req),
+      req.user,
+      req.params.leadId,
+      body.source_type,
+      body
+    );
+    res.json({ contact });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function sendActivation(req, res, next) {
   try {
     const body = validate(activationSchema, req.body);
@@ -434,5 +482,6 @@ module.exports = {
   listLeadsCrm,
   removeInterest,
   sendActivation,
+  updateContact,
   updateAgendaItem,
 };

@@ -53,7 +53,7 @@
     <link rel="stylesheet" href="css/risk-station-premium.css?v=risk-premium-v8-20260830">
     <link rel="stylesheet" href="css/evaluation-station-premium.css?v=evaluation-precision-v2-20260830">
   <link rel="stylesheet" href="css/attributed-sales-premium.css?v=sales-entry-modal-v371-20260826">
-<link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-seller-responsibility-v343-20260828-seller-edit-v346-20260829" media="print" data-deferred-portal-style>
+<link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-directory-premium-v347-20260903" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-seller-lens-v15-20260828" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/reward-pass-premium-v342.css?v=reward-pass-branches-v344-20260823" media="print" data-deferred-portal-style>
@@ -8410,15 +8410,41 @@
       <footer class="modal-actions"><button class="ghost-button" type="button" data-portal-email-route="cancel">Cancelar</button></footer>
     </section>
   </div>
-  <div class="modal-shell hidden contact-seller-editor-modal" id="contactSellerEditorModal" role="dialog" aria-modal="true" aria-labelledby="contactSellerEditorTitle" aria-hidden="true">
-    <section class="modal-card seller-editor-card" tabindex="-1">
-      <header class="modal-head"><div><span class="mono-label">CONTACTOS</span><h3 id="contactSellerEditorTitle">Editar datos</h3><p id="contactSellerEditorHelp">Asigna un vendedor creado en la sección Vendedores.</p></div><button class="icon-button" id="contactSellerEditorClose" type="button" aria-label="Cerrar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></header>
-      <form class="seller-editor-form" id="contactSellerEditorForm">
+  <div class="modal-shell hidden contact-editor-modal" id="contactSellerEditorModal" role="dialog" aria-modal="true" aria-labelledby="contactSellerEditorTitle" aria-describedby="contactSellerEditorHelp" aria-hidden="true">
+    <section class="modal-card contact-editor-card" tabindex="-1">
+      <header class="modal-head contact-editor-head"><div><span class="mono-label">DIRECTORIO COMERCIAL</span><h3 id="contactSellerEditorTitle">Editar contacto</h3><p id="contactSellerEditorHelp">Actualiza identidad, contacto y responsabilidad comercial sin perder su historial.</p></div><button class="icon-button" id="contactSellerEditorClose" type="button" aria-label="Cerrar editor"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></header>
+      <form class="contact-editor-form" id="contactSellerEditorForm">
         <input id="contactSellerEditorId" type="hidden">
         <input id="contactSellerEditorSource" type="hidden">
-        <div class="seller-editor-fields"><label class="span-2"><span>Vendedor asignado</span><select id="contactSellerEditorSelect"></select><small class="field-help">Solo aparecen vendedores activos del negocio.</small></label></div>
+        <div class="contact-editor-body">
+          <section class="contact-editor-context" aria-label="Contexto del contacto"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><div><strong id="contactEditorKind">Contacto del directorio</strong><small id="contactEditorContext">Los cambios quedan registrados en el historial comercial.</small></div></section>
+          <div class="contact-editor-fields">
+            <label class="span-2"><span>Nombre completo</span><input id="contactEditorName" type="text" maxlength="160" required autocomplete="name"></label>
+            <label><span>Correo</span><input id="contactEditorEmail" type="email" maxlength="180" autocomplete="email" placeholder="persona@empresa.com"></label>
+            <label><span>Teléfono o WhatsApp</span><input id="contactEditorPhone" type="tel" maxlength="40" autocomplete="tel" placeholder="+57 300 000 0000"></label>
+            <label><span>Tipo de documento</span><select id="contactEditorDocumentType"><option value="">Sin especificar</option><option value="CC">CC</option><option value="CE">CE</option><option value="TI">TI</option><option value="NIT">NIT</option><option value="PASSPORT">Pasaporte</option><option value="PEP">PEP</option><option value="OTHER">Otro</option></select></label>
+            <label><span>Número de documento</span><input id="contactEditorDocumentId" type="text" maxlength="80"></label>
+            <label><span>Empresa</span><input id="contactEditorCompany" type="text" maxlength="180" autocomplete="organization"></label>
+            <label><span>Cargo</span><input id="contactEditorJobTitle" type="text" maxlength="160" autocomplete="organization-title"></label>
+            <label><span>Canal preferido</span><input id="contactEditorPreferredChannel" type="text" maxlength="120" list="contactEditorChannelOptions" placeholder="WhatsApp, correo, llamada…"><datalist id="contactEditorChannelOptions"><option value="WhatsApp"><option value="Correo"><option value="Llamada"><option value="SMS"><option value="Presencial"></datalist></label>
+            <label><span>Estado comercial</span><select id="contactEditorStatus"><option value="NEW">Nuevo</option><option value="CONTACTED">Contactado</option><option value="FOLLOW_UP">Seguimiento</option><option value="INTERESTED">Interesado</option><option value="CONVERTED">Convertido</option><option value="INACTIVE">Inactivo</option><option value="LOST">Perdido</option><option value="BUYER">Comprador</option><option value="RECURRENT">Recurrente</option><option value="VIP">VIP</option></select></label>
+            <label><span>Prioridad</span><select id="contactEditorPriority"><option value="HIGH">Alta</option><option value="MEDIUM">Media</option><option value="LOW">Baja</option></select></label>
+            <label><span>Responsable comercial</span><select id="contactSellerEditorSelect"></select><small class="field-help">Solo usuarios activos de este negocio.</small></label>
+            <label class="span-2"><span>Notas internas</span><textarea id="contactEditorNotes" rows="4" maxlength="2000" placeholder="Contexto, preferencias o información útil para el siguiente contacto"></textarea></label>
+          </div>
+        </div>
         <p class="error-line" id="contactSellerEditorMessage" role="status" aria-live="polite"></p>
-        <footer class="modal-actions"><button class="ghost-button" id="contactSellerEditorCancel" type="button">Cancelar</button><button class="solid-button" id="contactSellerEditorSubmit" type="submit">Guardar asignación</button></footer>
+        <footer class="modal-actions contact-editor-actions"><button class="ghost-button danger-button" id="contactEditorArchive" type="button"><span class="material-symbols-outlined" aria-hidden="true">archive</span>Archivar</button><span class="contact-editor-action-spacer"></span><button class="ghost-button" id="contactSellerEditorCancel" type="button">Cancelar</button><button class="solid-button" id="contactSellerEditorSubmit" type="submit"><span class="material-symbols-outlined" aria-hidden="true">save</span>Guardar cambios</button></footer>
+      </form>
+    </section>
+  </div>
+  <div class="modal-shell hidden contact-archive-modal" id="contactArchiveModal" role="alertdialog" aria-modal="true" aria-labelledby="contactArchiveTitle" aria-describedby="contactArchiveHelp" aria-hidden="true">
+    <section class="modal-card contact-archive-card" tabindex="-1">
+      <header class="modal-head"><div><span class="mono-label">ACCIÓN SEGURA</span><h3 id="contactArchiveTitle">Archivar contacto</h3><p id="contactArchiveHelp">Se ocultará del directorio activo. Ventas, notas, tickets y trazabilidad se conservarán.</p></div><button class="icon-button" id="contactArchiveClose" type="button" aria-label="Cerrar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></header>
+      <form id="contactArchiveForm" class="contact-archive-form">
+        <div class="contact-archive-body"><div class="contact-archive-warning"><span class="material-symbols-outlined" aria-hidden="true">inventory_2</span><p><strong id="contactArchiveName">Este contacto</strong> dejará de aparecer entre los contactos activos.</p></div><label><span>Motivo del archivo</span><textarea id="contactArchiveReason" rows="4" maxlength="1000" required placeholder="Ej. solicitud del contacto, dato duplicado o relación finalizada"></textarea><small>El motivo queda registrado para auditoría.</small></label></div>
+        <p class="error-line" id="contactArchiveMessage" role="status" aria-live="polite"></p>
+        <footer class="modal-actions"><button class="ghost-button" id="contactArchiveCancel" type="button">Volver</button><button class="solid-button danger-button" id="contactArchiveSubmit" type="submit"><span class="material-symbols-outlined" aria-hidden="true">archive</span>Archivar contacto</button></footer>
       </form>
     </section>
   </div>
@@ -8460,7 +8486,7 @@
   <script src="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830" defer></script>
   <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility-goals-contacts-v406-20260829&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828&amp;intelligence=gos-reliable-v389-20260828&amp;risk-none=initial-result-v396-20260829&amp;rms-sale=multiproduct-history-v397-20260829&amp;risk-none-select=explicit-v398-20260829&amp;risk-destination=handoff-v399-20260829&amp;risk-benefit=handoff-v400-20260829&amp;risk-product-scope=v401-20260829&amp;recycling=atomic-handoff-v428-20260830&amp;risk-speed=fast-v403-20260829&amp;risk-products=live-v405-20260829&amp;risk-query=source-pruning-v407-20260829&amp;risk-read=direct-v408-20260829&amp;risk-feedback=responsive-v409-20260829&amp;risk-binding=isolated-v410-20260829&amp;risk-prepare=search-v411-20260829&amp;risk-ticket=fast-v412-20260830&amp;risk-qr=on-demand-v413-20260830&amp;risk-flow=preparation-handoff-v414-20260830&amp;risk-workbench=fast-v415-20260830&amp;risk-command=premium-v419-20260830&amp;risk-v2=premium-v6-20260830&amp;evaluation=precision-v3-startup-hotfix-20260830&amp;rms-sync=consistent-v429-20260902&amp;rms-loading=definitive-v430-20260902&amp;live-refresh=v431-20260902&amp;rms-loading-copy=v432-20260902&amp;contact-editor=modal-v434-20260903" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
-<script src="js/contacts-premium-v333.js?v=contacts-client-import-v345-20260828-default-seller-edit-v346-20260829" defer></script>
+<script src="js/contacts-premium-v333.js?v=contacts-directory-premium-v347-20260903" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
     <script src="js/communications.js?v=communications-history-v333-20260822-unified-email-routing-v359-20260826" defer></script>

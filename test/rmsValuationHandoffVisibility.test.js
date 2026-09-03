@@ -10,7 +10,7 @@ test("Valorización recupera el origen persistido aunque exista un contacto PLAY
   assert.match(crmService, /preserveRequestedSourceRefs\s*\? "select \* from all_rows"/);
   assert.match(rmsService, /source_ids: sourceIds,\s*preserve_requested_source_refs: true,/);
   assert.match(crmService, /const affiliateShadowExclusionSql = preserveRequestedSourceRefs/);
-  assert.match(crmService, /and fa\.status <> 'DELETED'\s*\$\{affiliateShadowExclusionSql\}/);
+  assert.match(crmService, /and fa\.status <> 'DELETED'[\s\S]*card_metadata->>'lifecycle_status'[\s\S]*\$\{affiliateShadowExclusionSql\}/);
 });
 
 test("el CRM general conserva su deduplicación canónica por defecto", () => {

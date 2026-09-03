@@ -120,6 +120,7 @@ const {
   removeInterest,
   sendActivation,
   previewCustomerCsvImport,
+  updateContact,
   updateAgendaItem,
 } = require("../controllers/leadCrmController");
 const {
@@ -309,7 +310,8 @@ router.get("/gamification/rewards/pending", shortBusinessCache, gamificationRewa
 router.post("/gamification/rewards/:id/deliver", deliverGamificationReward);
 router.post("/gamification/agenda/create-tasks", createGamificationAgendaTasks);
 router.get("/leads/:leadId", leadDetail);
-router.delete("/leads/:leadId", deleteContact);
+router.patch("/leads/:leadId", requireContactDirectory, updateContact);
+router.delete("/leads/:leadId", requireContactDirectory, deleteContact);
 router.post("/leads/:leadId/notes", createNote);
 router.post("/leads/:leadId/interests", addInterest);
 router.delete("/leads/:leadId/interests/:interestId", removeInterest);

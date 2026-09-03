@@ -13,13 +13,18 @@
   state.leadDirectoryVisibleLimit = Number(state.leadDirectoryVisibleLimit || 24);
   state.leadDirectoryAudienceTotals = state.leadDirectoryAudienceTotals || { customers: 0, leads: 0 };
   state.leadDirectoryAudienceLoading = state.leadDirectoryAudienceLoading || { customers: false, leads: false };
+  state.leadDirectoryAudienceSummary = state.leadDirectoryAudienceSummary || { customers: {}, leads: {} };
+  state.leadDirectoryPaging = state.leadDirectoryPaging || { customers: { offset: 0, hasMore: false }, leads: { offset: 0, hasMore: false } };
+  state.leadDirectoryRequestSeq = Number(state.leadDirectoryRequestSeq || 0);
   let contactSellerLastFocus = null;
+  let contactDirectorySearchTimer = 0;
+  let contactArchiveLastFocus = null;
 
   function activeSellerOptions(selectedId = "") {
     const sellers = (state.businessUsers || [])
-      .filter((user) => user?.id && user.is_active !== false && user.role === "BUSINESS_SELLER")
+      .filter((user) => user?.id && user.is_active !== false && ["BUSINESS_OWNER", "BUSINESS_MANAGER", "BUSINESS_SELLER", "VALIDATOR"].includes(user.role))
       .sort((left, right) => String(left.full_name || left.email || "").localeCompare(String(right.full_name || right.email || ""), "es"));
-    return ['<option value="">Sin vendedor asignado</option>', ...sellers.map((seller) => `<option value="${escapeHtml(seller.id)}"${String(seller.id) === String(selectedId || "") ? " selected" : ""}>${escapeHtml(seller.full_name || seller.email || "Vendedor")} · ${escapeHtml(seller.email || "Vendedor activo")}</option>`)].join("");
+    return ['<option value="">Sin responsable asignado</option>', ...sellers.map((seller) => `<option value="${escapeHtml(seller.id)}"${String(seller.id) === String(selectedId || "") ? " selected" : ""}>${escapeHtml(seller.full_name || seller.email || "Responsable")} · ${escapeHtml(seller.email || seller.role || "Usuario activo")}</option>`)].join("");
   }
 
   function closeContactSellerEditor() {
@@ -31,19 +36,75 @@
     contactSellerLastFocus?.focus?.();
   }
 
+  function trapModalFocus(event, modal) {
+    if (event.key !== "Tab") return;
+    const focusable = Array.from(modal.querySelectorAll('button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]'))
+      .filter((node) => !node.closest(".hidden"));
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
+
+  function closeContactArchive({ restoreEditor = true } = {}) {
+    const modal = document.getElementById("contactArchiveModal");
+    if (!modal) return;
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+    if (restoreEditor && state.pendingContactArchive) {
+      openContactSellerEditor(state.pendingContactArchive, contactArchiveLastFocus);
+      return;
+    }
+    document.body.classList.remove("modal-open");
+    contactSellerLastFocus?.focus?.();
+    state.pendingContactArchive = null;
+  }
+
+  function openContactArchive(item = {}, trigger = null) {
+    const modal = document.getElementById("contactArchiveModal");
+    if (!modal || !item.id) return;
+    state.pendingContactArchive = item;
+    contactArchiveLastFocus = trigger || document.activeElement;
+    document.getElementById("contactSellerEditorModal")?.classList.add("hidden");
+    document.getElementById("contactSellerEditorModal")?.setAttribute("aria-hidden", "true");
+    document.getElementById("contactArchiveName").textContent = item.name || "Este contacto";
+    document.getElementById("contactArchiveReason").value = "";
+    document.getElementById("contactArchiveMessage").textContent = "";
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+    requestAnimationFrame(() => document.getElementById("contactArchiveReason")?.focus());
+  }
+
   function openContactSellerEditor(item = {}, trigger = null) {
     const modal = document.getElementById("contactSellerEditorModal");
     if (!modal) return;
     contactSellerLastFocus = trigger || document.activeElement;
     document.getElementById("contactSellerEditorId").value = item.id || "";
     document.getElementById("contactSellerEditorSource").value = item.source_type || "PLAYER";
-    document.getElementById("contactSellerEditorTitle").textContent = `Editar datos · ${item.name || "Contacto"}`;
+    const metadata = leadDirectoryMetadata(item);
+    document.getElementById("contactSellerEditorTitle").textContent = `Editar contacto · ${item.name || "Sin nombre"}`;
+    document.getElementById("contactEditorKind").textContent = item.source_type === "MANUAL" ? "Contacto agregado manualmente" : item.source_type === "AFFILIATE" ? "Contacto afiliado" : "Contacto capturado";
+    document.getElementById("contactEditorContext").textContent = `${item.source_type || "PLAYER"} · ${item.id || "Sin identificador"}`;
+    document.getElementById("contactEditorName").value = item.name || "";
+    document.getElementById("contactEditorEmail").value = item.email || "";
+    document.getElementById("contactEditorPhone").value = item.phone || "";
+    document.getElementById("contactEditorDocumentType").value = item.document_type || metadata.document_type || "";
+    document.getElementById("contactEditorDocumentId").value = item.document_id || "";
+    document.getElementById("contactEditorCompany").value = item.company || item.organization || metadata.manual_company || metadata.company || "";
+    document.getElementById("contactEditorJobTitle").value = item.job_title || metadata.manual_job_title || "";
+    document.getElementById("contactEditorPreferredChannel").value = item.preferred_channel || metadata.preferred_channel || "";
+    document.getElementById("contactEditorStatus").value = item.commercial_status || item.status || metadata.manual_status || "NEW";
+    document.getElementById("contactEditorPriority").value = item.priority || item.crm_priority || metadata.manual_priority || "MEDIUM";
+    document.getElementById("contactEditorNotes").value = item.notes || metadata.manual_notes || metadata.notes || "";
     document.getElementById("contactSellerEditorSelect").innerHTML = activeSellerOptions(item.seller_user_id || leadDirectoryMetadata(item).commercial_owner_user_id || "");
     document.getElementById("contactSellerEditorMessage").textContent = "";
     modal.classList.remove("hidden");
     modal.setAttribute("aria-hidden", "false");
     document.body.classList.add("modal-open");
-    requestAnimationFrame(() => document.getElementById("contactSellerEditorSelect")?.focus());
+    document.querySelector("#contactSellerEditorModal .contact-editor-body")?.scrollTo?.({ top: 0 });
+    requestAnimationFrame(() => document.getElementById("contactEditorName")?.focus());
   }
 
   function bindContactSellerButtons(root) {
@@ -76,6 +137,19 @@
     if (identityNotice) identityNotice.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">badge</span>Tipo y número de documento requeridos para reconocer al lead y evitar duplicados.';
   }
 
+  function contactDirectoryQuery(audience, offset = 0) {
+    const filters = leadDirectoryCurrentFilters();
+    const params = new URLSearchParams({
+      audience_type: audience === "customers" ? "CLIENT" : "LEAD",
+      limit: "60",
+      offset: String(Math.max(0, Number(offset || 0))),
+      sort: filters.sort || "recommended",
+    });
+    if (String(filters.search || "").trim()) params.set("search", String(filters.search).trim());
+    if (filters.signal) params.set("signal", filters.signal);
+    return params.toString();
+  }
+
   const premiumLoadLeadCrmData = async (options = {}) => {
     if (!session?.user?.business_id) {
       state.leadCrmRows = [];
@@ -84,27 +158,39 @@
     }
     if (state.leadCrmLoaded && !options.force) return;
     if (state.leadCrmLoading && !options.force) return;
+    const requestSeq = ++state.leadDirectoryRequestSeq;
+    const requestedBusinessId = session.user.business_id;
     state.leadCrmLoading = true;
     try {
       const [customerData, leadData] = await Promise.all([
-        apiSafe("/api/business/leads/crm?audience_type=CLIENT&limit=120&offset=0", { headers: authHeaders(), noClientCache: Boolean(options.force) }, { leads: [], pagination: { total: 0 } }),
-        apiSafe("/api/business/leads/crm?audience_type=LEAD&limit=120&offset=0", { headers: authHeaders(), noClientCache: Boolean(options.force) }, { leads: [], pagination: { total: 0 } }),
+        api(`/api/business/leads/crm?${contactDirectoryQuery("customers", 0)}`, { headers: authHeaders(), noClientCache: Boolean(options.force) }),
+        api(`/api/business/leads/crm?${contactDirectoryQuery("leads", 0)}`, { headers: authHeaders(), noClientCache: Boolean(options.force) }),
       ]);
+      if (requestSeq !== state.leadDirectoryRequestSeq || String(session?.user?.business_id || "") !== String(requestedBusinessId)) return;
       state.leadCrmRows = [...(customerData.leads || []), ...(leadData.leads || [])];
       state.leadDirectoryAudienceTotals = {
         customers: Number(customerData.pagination?.total || 0),
         leads: Number(leadData.pagination?.total || 0),
       };
+      state.leadDirectoryAudienceSummary = { customers: customerData.summary || {}, leads: leadData.summary || {} };
+      state.leadDirectoryPaging = {
+        customers: { offset: (customerData.leads || []).length, hasMore: Boolean(customerData.pagination?.has_more) },
+        leads: { offset: (leadData.leads || []).length, hasMore: Boolean(leadData.pagination?.has_more) },
+      };
       state.leadCrmPagination = {
         total: state.leadDirectoryAudienceTotals.customers + state.leadDirectoryAudienceTotals.leads,
-        limit: 240,
+        limit: 120,
         offset: 0,
         has_more: Boolean(customerData.pagination?.has_more || leadData.pagination?.has_more),
       };
       state.leadDirectoryVisibleLimit = 24;
       state.leadCrmLoaded = true;
+    } catch (error) {
+      if (requestSeq !== state.leadDirectoryRequestSeq) return;
+      showFeedback(error.message || "No se pudo cargar el directorio comercial.", "error", { title: "Contactos" });
+      throw error;
     } finally {
-      state.leadCrmLoading = false;
+      if (requestSeq === state.leadDirectoryRequestSeq) state.leadCrmLoading = false;
     }
   };
   loadLeadCrmData = premiumLoadLeadCrmData;
@@ -137,22 +223,41 @@
         bindContactSellerButtons(list);
       }
       const note = board.querySelector(".contact-directory-result-note");
-      if (note) note.textContent = `Mostrando ${visibleRows.length.toLocaleString("es-CO")} de ${filteredRows.length.toLocaleString("es-CO")} coincidencias cargadas · ${audienceTotal.toLocaleString("es-CO")} ${leadDirectoryAudienceLabel(audience).toLowerCase()} en total.`;
+      if (note) note.textContent = `Mostrando ${visibleRows.length.toLocaleString("es-CO")} de ${audienceTotal.toLocaleString("es-CO")} resultados en toda la base.`;
       if (clearButton) clearButton.disabled = !(hasFilters || filters.sort !== "recommended");
       const more = board.querySelector(".contact-directory-more");
       if (more) more.hidden = !(visibleRows.length < filteredRows.length || baseRows.length < audienceTotal);
     };
+    const reloadDirectoryFromServer = async (restoreSearchFocus = false) => {
+      const cursor = searchInput?.selectionStart || 0;
+      board.setAttribute("aria-busy", "true");
+      state.leadCrmLoaded = false;
+      state.leadDirectoryVisibleLimit = 24;
+      try {
+        await premiumLoadLeadCrmData({ force: true, quiet: true });
+        renderContactDirectoryCards(state.leadCrmRows || []);
+        if (restoreSearchFocus) {
+          const replacement = document.getElementById("contactDirectorySearchInput");
+          replacement?.focus();
+          replacement?.setSelectionRange?.(cursor, cursor);
+        }
+      } finally {
+        document.getElementById("contactDirectoryVisualBoard")?.removeAttribute("aria-busy");
+      }
+    };
     searchInput?.addEventListener("input", () => {
       filters.search = searchInput.value;
       refreshMatches();
+      clearTimeout(contactDirectorySearchTimer);
+      contactDirectorySearchTimer = setTimeout(() => reloadDirectoryFromServer(true).catch(() => {}), 320);
     });
     signalFilter?.addEventListener("change", () => {
       filters.signal = signalFilter.value;
-      refreshMatches();
+      reloadDirectoryFromServer();
     });
     sortSelect?.addEventListener("change", () => {
       filters.sort = sortSelect.value || "recommended";
-      refreshMatches();
+      reloadDirectoryFromServer();
     });
     clearButton?.addEventListener("click", () => {
       filters.search = "";
@@ -161,8 +266,7 @@
       if (searchInput) searchInput.value = "";
       if (signalFilter) signalFilter.value = "";
       if (sortSelect) sortSelect.value = "recommended";
-      refreshMatches();
-      searchInput?.focus();
+      reloadDirectoryFromServer(true);
     });
   };
 
@@ -179,7 +283,7 @@
     const metadata = leadDirectoryMetadata(item);
     const company = String(item.company || metadata.manual_company || "").trim() || "Sin empresa";
     const channel = String(item.preferred_channel || leadDirectoryChannel(item) || "").trim() || "Sin canal";
-    const owner = String(metadata.commercial_owner_name || "").trim() || "Sin responsable";
+    const owner = String(item.seller_name || metadata.commercial_owner_name || "").trim() || "Sin responsable";
     const stateLabel = String(item.commercial_status_label || item.commercial_status || (isCustomer ? "Cliente" : "Lead"));
     const nextAction = String(item.recommended_action || (isCustomer ? "Revisar recompra o postventa" : "Definir siguiente contacto"));
     return `<article class="contact-directory-card-row" role="button" tabindex="0" data-lead-id="${escapeHtml(item.id)}" data-source-type="${escapeHtml(item.source_type || "PLAYER")}" aria-label="Abrir ficha comercial de ${escapeHtml(item.name || "contacto")}">
@@ -187,7 +291,7 @@
       <div class="contact-directory-cell"><strong>${escapeHtml(company)}</strong><small>${escapeHtml(channel)}</small></div>
       <div class="contact-directory-cell"><strong>${escapeHtml(isCustomer ? sales.label : stateLabel)}</strong><small>${escapeHtml(isCustomer ? sales.meta : leadOriginText(item))}</small></div>
       <div class="contact-directory-cell"><strong>${escapeHtml(nextAction)}</strong><small>${escapeHtml(`${owner} · ${stateLabel}`)}</small></div>
-      <span class="contact-directory-open"><button class="ghost-button compact" type="button" data-edit-contact-seller="${escapeHtml(item.id)}" data-contact-source-type="${escapeHtml(item.source_type || "PLAYER")}">Editar datos</button><span>Abrir <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span></span>
+      <span class="contact-directory-open"><button class="ghost-button compact" type="button" data-edit-contact-seller="${escapeHtml(item.id)}" data-contact-source-type="${escapeHtml(item.source_type || "PLAYER")}"><span class="material-symbols-outlined" aria-hidden="true">edit</span>Editar contacto</button><span>Abrir ficha <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span></span>
     </article>`;
   }
   leadDirectoryCardMarkup = premiumCard;
@@ -196,23 +300,30 @@
     const audience = leadDirectoryAudience();
     const loaded = leadDirectorySegmentRows(state.leadCrmRows || [], audience);
     const total = Number(state.leadDirectoryAudienceTotals?.[audience] || loaded.length);
+    const paging = state.leadDirectoryPaging[audience] || { offset: loaded.length, hasMore: loaded.length < total };
     state.leadDirectoryVisibleLimit = Number(state.leadDirectoryVisibleLimit || 24) + 24;
-    if (state.leadDirectoryVisibleLimit <= loaded.length || loaded.length >= total || state.leadDirectoryAudienceLoading[audience]) {
+    if (state.leadDirectoryVisibleLimit <= loaded.length || !paging.hasMore || state.leadDirectoryAudienceLoading[audience]) {
       renderContactDirectoryCards(state.leadCrmRows || []);
       return;
     }
     state.leadDirectoryAudienceLoading[audience] = true;
+    const queryFingerprint = contactDirectoryQuery(audience, 0);
     const button = document.getElementById("contactDirectoryLoadMore");
     if (button) setButtonLoading(button, true, "Cargando...");
     try {
-      const type = audience === "customers" ? "CLIENT" : "LEAD";
-      const data = await api(`/api/business/leads/crm?audience_type=${type}&limit=120&offset=${loaded.length}`, { headers: authHeaders(), noClientCache: true });
+      const data = await api(`/api/business/leads/crm?${contactDirectoryQuery(audience, paging.offset)}`, { headers: authHeaders(), noClientCache: true });
+      if (queryFingerprint !== contactDirectoryQuery(audience, 0)) return;
       const keys = new Set((state.leadCrmRows || []).map((item) => `${item.source_type || "PLAYER"}:${item.id}`));
       (data.leads || []).forEach((item) => {
         const key = `${item.source_type || "PLAYER"}:${item.id}`;
         if (!keys.has(key)) { state.leadCrmRows.push(item); keys.add(key); }
       });
       state.leadDirectoryAudienceTotals[audience] = Number(data.pagination?.total || total);
+      state.leadDirectoryAudienceSummary[audience] = data.summary || state.leadDirectoryAudienceSummary[audience] || {};
+      state.leadDirectoryPaging[audience] = {
+        offset: paging.offset + (data.leads || []).length,
+        hasMore: Boolean(data.pagination?.has_more),
+      };
     } catch (error) {
       showFeedback(error.message || "No se pudieron cargar más contactos.", "error", { title: "Contactos" });
     } finally {
@@ -246,9 +357,12 @@
     const customersTotal = Number(state.leadDirectoryAudienceTotals.customers || customers.length);
     const leadsTotal = Number(state.leadDirectoryAudienceTotals.leads || leads.length);
     const audienceTotal = audience === "customers" ? customersTotal : leadsTotal;
-    const loadedRevenue = customers.reduce((sum, item) => sum + Number(item.total_spent || 0), 0);
-    const followUps = allRows.filter((item) => ["HIGH", "URGENT"].includes(String(item.care_priority || item.priority || "").toUpperCase())).length;
-    const inactiveCustomers = customers.filter((item) => { const date = new Date(item.last_purchase_at || item.last_interaction_at || 0).getTime(); return date > 0 && Date.now() - date > 90 * 86400000; }).length;
+    const customerSummary = state.leadDirectoryAudienceSummary.customers || {};
+    const leadSummary = state.leadDirectoryAudienceSummary.leads || {};
+    const loadedRevenue = Number(customerSummary.revenue || 0) + Number(leadSummary.revenue || 0);
+    const followUps = Number(customerSummary.follow_up_count || 0) + Number(leadSummary.follow_up_count || 0);
+    const inactiveCustomers = Number(customerSummary.inactive_customer_count || 0);
+    const incompleteContacts = Number(customerSummary.incomplete_contact_count || 0) + Number(leadSummary.incomplete_contact_count || 0);
     const hasFilters = Boolean(String(filters.search || "").trim() || filters.signal);
     const empty = audience === "customers" ? (hasFilters ? "No hay clientes que coincidan con los filtros." : "Aún no hay clientes con una venta registrada.") : (hasFilters ? "No hay leads que coincidan con los filtros." : "Aún no hay leads activos.");
     syncLeadDirectoryAudienceTabs(allRows);
@@ -260,10 +374,10 @@
     board.innerHTML = `<div class="contact-directory-hero">
       <div><h3>${audience === "customers" ? "Clientes" : "Leads"}</h3><p>${audience === "customers" ? "Compradores respaldados por ventas reales. La ficha existente reúne compras, beneficios, activaciones, comunicaciones, notas y movimientos." : "Prospectos sin compra registrada. Prioriza la siguiente acción sin confundir intención con conversión."}</p></div>
       <div class="contact-directory-hero-actions">${audience === "customers" ? '<button class="solid-button" id="customerCsvImportOpenButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">upload_file</span>Importar clientes CSV</button>' : '<button class="solid-button" id="contactDirectoryAddLeadButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">person_add</span>Agregar contacto</button>'}</div>
-      <div class="contact-directory-summary" aria-label="Resumen con datos reales"><span><small>Contactos</small><strong>${(customersTotal + leadsTotal).toLocaleString("es-CO")}</strong></span><span><small>Clientes con compras</small><strong>${customersTotal.toLocaleString("es-CO")}</strong></span><span><small>Leads activos</small><strong>${leadsTotal.toLocaleString("es-CO")}</strong></span><span><small>Seguimiento pendiente</small><strong>${followUps.toLocaleString("es-CO")}</strong></span><span><small>Revenue cargado</small><strong>${escapeHtml(money(loadedRevenue))}</strong></span>${audience === "customers" ? `<span><small>Sin actividad 90 días</small><strong>${inactiveCustomers.toLocaleString("es-CO")}</strong></span>` : ""}</div>
+      <div class="contact-directory-summary" aria-label="Resumen de toda la base filtrada"><span><small>Contactos</small><strong>${(customersTotal + leadsTotal).toLocaleString("es-CO")}</strong></span><span><small>Clientes</small><strong>${customersTotal.toLocaleString("es-CO")}</strong></span><span><small>Leads activos</small><strong>${leadsTotal.toLocaleString("es-CO")}</strong></span><span><small>Prioridad alta</small><strong>${followUps.toLocaleString("es-CO")}</strong></span><span><small>Revenue total</small><strong>${escapeHtml(money(loadedRevenue))}</strong></span><span><small>Datos incompletos</small><strong>${incompleteContacts.toLocaleString("es-CO")}</strong></span>${audience === "customers" ? `<span><small>Sin actividad 90 días</small><strong>${inactiveCustomers.toLocaleString("es-CO")}</strong></span>` : ""}</div>
     </div>
-    <section class="contact-directory-toolbar" aria-label="Búsqueda y filtros del directorio"><label class="contact-directory-search-control"><span class="material-symbols-outlined" aria-hidden="true">search</span><input id="contactDirectorySearchInput" type="search" value="${escapeHtml(filters.search || "")}" placeholder="Buscar nombre, documento, correo, teléfono o empresa"></label><label class="contact-directory-select-control"><span>Filtro</span><select id="contactDirectorySignalFilter">${leadDirectoryFilterOptionMarkup(options, filters.signal)}</select></label><label class="contact-directory-select-control"><span>Ordenar</span><select id="contactDirectorySortSelect">${leadDirectoryFilterOptionMarkup([["recommended","Recomendado"],["purchase_recent","Compra más reciente"],["purchase_count","Cantidad de compras"],["revenue","Valor acumulado"],["priority","Prioridad"],["activations","Activaciones"],["tickets","Tickets activos"],["name","Nombre A-Z"]], filters.sort || "recommended")}</select></label><button class="ghost-button contact-directory-clear" id="contactDirectoryClearFilters" type="button" ${hasFilters || filters.sort !== "recommended" ? "" : "disabled"}>Limpiar</button><small class="contact-directory-result-note" aria-live="polite">Mostrando ${visibleRows.length.toLocaleString("es-CO")} de ${filteredRows.length.toLocaleString("es-CO")} coincidencias cargadas · ${audienceTotal.toLocaleString("es-CO")} ${leadDirectoryAudienceLabel(audience).toLowerCase()} en total.</small></section>
-    <div class="contact-directory-list-head" aria-hidden="true"><span>Contacto</span><span>Empresa / canal</span><span>${audience === "customers" ? "Historial comercial" : "Estado"}</span><span>Próxima acción / responsable</span><span>Ficha</span></div><div class="contact-directory-list contact-directory-unified-list">${visibleRows.length ? visibleRows.map((item) => premiumCard(item, audience === "customers" ? "customer" : "lead")).join("") : `<div class="empty-state compact">${escapeHtml(empty)}</div>`}</div>${(visibleRows.length < filteredRows.length || baseRows.length < audienceTotal) ? '<div class="contact-directory-more"><button class="ghost-button" id="contactDirectoryLoadMore" type="button">Cargar más</button></div>' : ""}`;
+    <section class="contact-directory-toolbar" aria-label="Búsqueda y filtros del directorio"><label class="contact-directory-search-control"><span class="material-symbols-outlined" aria-hidden="true">search</span><input id="contactDirectorySearchInput" type="search" value="${escapeHtml(filters.search || "")}" placeholder="Buscar en toda la base por nombre, documento, correo, teléfono o empresa" autocomplete="off"></label><label class="contact-directory-select-control"><span>Señal</span><select id="contactDirectorySignalFilter">${leadDirectoryFilterOptionMarkup(options, filters.signal)}</select></label><label class="contact-directory-select-control"><span>Ordenar</span><select id="contactDirectorySortSelect">${leadDirectoryFilterOptionMarkup([["recommended","Siguiente mejor acción"],["recent","Actividad reciente"],["purchase_recent","Compra más reciente"],["purchase_count","Cantidad de compras"],["revenue","Valor acumulado"],["priority","Prioridad"],["activations","Activaciones"],["tickets","Tickets activos"],["name","Nombre A-Z"]], filters.sort || "recommended")}</select></label><button class="ghost-button contact-directory-clear" id="contactDirectoryClearFilters" type="button" ${hasFilters || filters.sort !== "recommended" ? "" : "disabled"}>Limpiar</button><small class="contact-directory-result-note" aria-live="polite">Mostrando ${visibleRows.length.toLocaleString("es-CO")} de ${audienceTotal.toLocaleString("es-CO")} resultados en toda la base.</small></section>
+    <div class="contact-directory-list-head" aria-hidden="true"><span>Contacto</span><span>Empresa / canal</span><span>${audience === "customers" ? "Historial comercial" : "Estado"}</span><span>Próxima acción / responsable</span><span>Ficha</span></div><div class="contact-directory-list contact-directory-unified-list">${visibleRows.length ? visibleRows.map((item) => premiumCard(item, audience === "customers" ? "customer" : "lead")).join("") : `<div class="empty-state compact">${escapeHtml(empty)}</div>`}</div>${(visibleRows.length < filteredRows.length || state.leadDirectoryPaging[audience]?.hasMore) ? '<div class="contact-directory-more"><button class="ghost-button" id="contactDirectoryLoadMore" type="button">Cargar más contactos</button></div>' : ""}`;
     const pagination = document.getElementById("leadCrmPaginationLabel");
     if (pagination) pagination.textContent = `${(customersTotal + leadsTotal).toLocaleString("es-CO")} contactos`;
     board.querySelectorAll("[data-lead-id]").forEach((row) => {
@@ -362,8 +476,14 @@
     modal.dataset.bound = "true";
     document.getElementById("contactSellerEditorClose")?.addEventListener("click", closeContactSellerEditor);
     document.getElementById("contactSellerEditorCancel")?.addEventListener("click", closeContactSellerEditor);
+    document.getElementById("contactEditorArchive")?.addEventListener("click", (event) => {
+      const id = document.getElementById("contactSellerEditorId")?.value;
+      const sourceType = document.getElementById("contactSellerEditorSource")?.value || "PLAYER";
+      const item = (state.leadCrmRows || []).find((row) => String(row.id) === String(id) && String(row.source_type || "PLAYER") === sourceType);
+      if (item) openContactArchive(item, event.currentTarget);
+    });
     modal.addEventListener("click", (event) => { if (event.target === modal) closeContactSellerEditor(); });
-    modal.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.preventDefault(); closeContactSellerEditor(); } });
+    modal.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.preventDefault(); closeContactSellerEditor(); return; } trapModalFocus(event, modal); });
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const id = document.getElementById("contactSellerEditorId")?.value;
@@ -372,17 +492,76 @@
       const submitButton = document.getElementById("contactSellerEditorSubmit");
       const status = document.getElementById("contactSellerEditorMessage");
       if (!id) return;
-      status.textContent = "Guardando asignación…";
+      const payload = {
+        source_type: sourceType,
+        name: document.getElementById("contactEditorName")?.value?.trim() || "",
+        email: document.getElementById("contactEditorEmail")?.value?.trim() || null,
+        phone: document.getElementById("contactEditorPhone")?.value?.trim() || null,
+        document_type: document.getElementById("contactEditorDocumentType")?.value || null,
+        document_id: document.getElementById("contactEditorDocumentId")?.value?.trim() || null,
+        company: document.getElementById("contactEditorCompany")?.value?.trim() || null,
+        job_title: document.getElementById("contactEditorJobTitle")?.value?.trim() || null,
+        preferred_channel: document.getElementById("contactEditorPreferredChannel")?.value || null,
+        status: document.getElementById("contactEditorStatus")?.value || "NEW",
+        priority: document.getElementById("contactEditorPriority")?.value || "MEDIUM",
+        notes: document.getElementById("contactEditorNotes")?.value?.trim() || null,
+        seller_user_id: sellerId,
+      };
+      if (!payload.email && !payload.phone && !payload.document_id) {
+        status.textContent = "Agrega correo, teléfono o documento para identificar el contacto.";
+        document.getElementById("contactEditorPhone")?.focus();
+        return;
+      }
+      status.textContent = "Guardando cambios de forma segura…";
       setButtonLoading(submitButton, true, "Guardando…");
       try {
-        const data = await api(`/api/business/leads/${encodeURIComponent(id)}/seller-responsibility`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify({ seller_user_id: sellerId, source_type: sourceType }), noClientCache: true });
-        const seller = (state.businessUsers || []).find((user) => String(user.id) === String(sellerId || ""));
-        state.leadCrmRows = (state.leadCrmRows || []).map((row) => String(row.id) === String(id) && String(row.source_type || "PLAYER") === sourceType ? { ...row, ...data.contact, seller_user_id: sellerId, seller_name: seller?.full_name || null, metadata: { ...leadDirectoryMetadata(row), ...(data.contact?.metadata || data.contact?.card_metadata || {}) } } : row);
+        await api(`/api/business/leads/${encodeURIComponent(id)}`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify(payload), noClientCache: true });
+        state.leadCrmLoaded = false;
+        await premiumLoadLeadCrmData({ force: true, quiet: true });
         closeContactSellerEditor();
         renderLeadsView();
-        showFeedback(sellerId ? `Vendedor asignado: ${seller?.full_name || "vendedor"}.` : "El contacto quedó sin vendedor asignado.", "success", { title: "Datos actualizados" });
+        showFeedback("El contacto quedó actualizado y el cambio fue registrado en su historial.", "success", { title: "Datos guardados" });
       } catch (error) {
-        status.textContent = error.message || "No se pudo guardar la asignación.";
+        status.textContent = error.message || "No se pudieron guardar los cambios.";
+      } finally {
+        setButtonLoading(submitButton, false);
+      }
+    });
+  }
+
+  function initContactArchive() {
+    const modal = document.getElementById("contactArchiveModal");
+    const form = document.getElementById("contactArchiveForm");
+    if (!modal || !form || modal.dataset.bound === "true") return;
+    modal.dataset.bound = "true";
+    document.getElementById("contactArchiveClose")?.addEventListener("click", () => closeContactArchive());
+    document.getElementById("contactArchiveCancel")?.addEventListener("click", () => closeContactArchive());
+    modal.addEventListener("click", (event) => { if (event.target === modal) closeContactArchive(); });
+    modal.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.preventDefault(); closeContactArchive(); return; } trapModalFocus(event, modal); });
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const item = state.pendingContactArchive;
+      const reason = document.getElementById("contactArchiveReason")?.value?.trim() || "";
+      const messageNode = document.getElementById("contactArchiveMessage");
+      const submitButton = document.getElementById("contactArchiveSubmit");
+      if (!item?.id || reason.length < 3) {
+        messageNode.textContent = "Explica brevemente por qué se archiva este contacto.";
+        document.getElementById("contactArchiveReason")?.focus();
+        return;
+      }
+      messageNode.textContent = "Archivando sin borrar el historial…";
+      setButtonLoading(submitButton, true, "Archivando…");
+      try {
+        await api(`/api/business/leads/${encodeURIComponent(item.id)}?source_type=${encodeURIComponent(item.source_type || "PLAYER")}`, {
+          method: "DELETE", headers: authHeaders(), body: JSON.stringify({ reason, idempotency_key: `contact-directory-archive:${item.source_type || "PLAYER"}:${item.id}:${crypto.randomUUID()}` }), noClientCache: true,
+        });
+        closeContactArchive({ restoreEditor: false });
+        state.leadCrmLoaded = false;
+        await premiumLoadLeadCrmData({ force: true, quiet: true });
+        renderLeadsView();
+        showFeedback("Contacto archivado. Su historial comercial permanece disponible para auditoría.", "success", { title: "Contacto archivado" });
+      } catch (error) {
+        messageNode.textContent = error.message || "No se pudo archivar el contacto.";
       } finally {
         setButtonLoading(submitButton, false);
       }
@@ -392,6 +571,7 @@
   prepareContactCenter();
   initCsv();
   initContactSellerEditor();
+  initContactArchive();
   document.querySelectorAll("[data-lead-directory-audience]").forEach((button) => button.addEventListener("click", () => { state.leadDirectoryVisibleLimit = 24; }));
   document.addEventListener("click", (event) => {
     const nav = event.target.closest('[data-view="leads"], [data-contact-center-nav]');
