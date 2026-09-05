@@ -463,6 +463,26 @@ html body[data-current-view="leads"] .portal-shell #contactDirectoryVisualBoard[
 .contact-archive-body label,
 .contact-delete-body label { min-width: 0; display: grid; align-content: start; gap: 7px; color: #233b59; font-size: .79rem; font-weight: 850; }
 .contact-editor-fields .span-2 { grid-column: 1 / -1; }
+.contact-editor-fields .contact-affiliate-field {
+  padding: 15px 16px;
+  border: 1px solid #cfe0f1;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f7fbff 0%, #f3fffc 100%);
+}
+.contact-editor-fields .contact-affiliate-choice { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; cursor: pointer; }
+.contact-editor-fields .contact-affiliate-choice > input {
+  width: 20px !important;
+  min-width: 20px !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  margin: 2px 0 0 !important;
+  accent-color: #0868dc;
+}
+.contact-editor-fields .contact-affiliate-choice > span { display: grid; gap: 3px; color: #0b3158; }
+.contact-editor-fields .contact-affiliate-choice strong { font-size: .94rem; }
+.contact-editor-fields .contact-affiliate-choice small { color: #58708a; line-height: 1.45; }
+.contact-editor-fields .contact-affiliate-field.is-linked { border-color: #82d7bf; background: linear-gradient(135deg, #f3fffb 0%, #edf8ff 100%); }
+.contact-editor-fields .contact-affiliate-field.is-linked .contact-affiliate-choice { cursor: default; }
 .contact-editor-fields :is(input, select, textarea),
 .contact-archive-body textarea,
 .contact-delete-body input {

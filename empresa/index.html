@@ -53,7 +53,7 @@
     <link rel="stylesheet" href="css/risk-station-premium.css?v=risk-premium-v8-20260830">
     <link rel="stylesheet" href="css/evaluation-station-premium.css?v=evaluation-precision-v2-20260830">
   <link rel="stylesheet" href="css/attributed-sales-premium.css?v=sales-entry-modal-v371-20260826">
-<link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-directory-premium-v348-20260905" media="print" data-deferred-portal-style>
+<link rel="stylesheet" href="css/contacts-premium-v333.css?v=contact-promotion-v435-20260905" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-seller-lens-v15-20260828" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/reward-pass-premium-v342.css?v=reward-pass-branches-v344-20260823" media="print" data-deferred-portal-style>
@@ -63,6 +63,8 @@
 <link rel="stylesheet" href="css/sellers-premium.css?v=qori-sellers-refresh-white-v7-20260828">
 <link rel="stylesheet" href="css/guided-tutorials.css?v=guided-tutorials-v4-theme-white-20260828" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/competition-premium.css?v=competition-polish-v4-20260828">
+<link rel="stylesheet" href="css/ranking-premium.css?v=ranking-automation-v1-20260905">
+<link rel="stylesheet" href="css/activations-premium.css?v=activation-layout-v436-20260905">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -304,7 +306,7 @@
             </button>
             <button class="nav-item" data-view="missions" type="button">
               <span class="material-symbols-outlined">emoji_events</span>
-              <span><strong>Temporadas</strong><small>Misiones y aprendizaje</small></span>
+              <span><strong>Ranking</strong><small>Clientes, puntos y premios</small></span>
             </button>
             <button class="nav-item" data-view="recycling" type="button">
               <span class="material-symbols-outlined">restart_alt</span>
@@ -598,7 +600,7 @@
                     <p>Juegos, misiones, tickets y recompensas que sostienen el journey.</p>
                     <div class="button-row">
                       <button class="ghost-button" type="button" data-portal-shortcut="strategic-qr">Activaciones</button>
-                      <button class="ghost-button" type="button" data-portal-shortcut="missions">Misiones Qori</button>
+                      <button class="ghost-button" type="button" data-portal-shortcut="missions">Ranking</button>
                       <button class="ghost-button" type="button" data-portal-shortcut="reward-passes">Reward Pass</button>
                     </div>
                   </article>
@@ -1313,13 +1315,14 @@
           <section class="view-section" data-view="missions">
             <div class="view-head missions-head">
               <div>
-                <span class="mono-label">Fidelización y recompra</span>
-                <h2>Temporadas comerciales</h2>
-                <p>Visualiza quién compró más por día, semana, mes o año y premia al contacto directamente desde el ranking.</p>
+                <span class="mono-label">Inteligencia de fidelización</span>
+                <h2>Ranking</h2>
+                <p>Descubre quién compra, participa, vuelve y recomienda. Crea rankings automáticos y convierte el reconocimiento en una relación que crece.</p>
               </div>
               <div class="view-head-actions">
                 <button class="ghost-button" id="missionsRefreshButton" type="button">Actualizar</button>
                 <button class="ghost-button" id="missionsOpenAgendaButton" type="button">Ver agenda</button>
+                <button class="solid-button" id="missionsCreateButton" type="button"><span class="material-symbols-outlined" aria-hidden="true">add</span> Crear ranking</button>
               </div>
             </div>
 
@@ -1350,9 +1353,9 @@
               </article>
               <article class="surface-card mission-control-card">
                 <div>
-                  <span class="mono-label">Filtros de compra</span>
-                  <h3>Leaderboard por periodo</h3>
-                  <p>Esta sección no crea temporadas. Solo muestra ventas registradas y permite premiar a los contactos mejor posicionados.</p>
+                  <span class="mono-label">Pulso comercial en vivo</span>
+                  <h3>Ranking general de compradores</h3>
+                  <p>Lectura automática de las ventas registradas. Cambia el periodo, compara comportamiento y reconoce a un cliente sin salir de su ficha.</p>
                 </div>
                 <div class="mission-control-row">
                   <label><span>Periodo del ranking</span><select id="missionSeasonFilter"><option value="day">Hoy</option><option value="week">Semana actual</option><option value="month">Mes actual</option><option value="year">Año actual</option></select></label>
@@ -1370,9 +1373,11 @@
               <article class="surface-card missions-panel span-2 mission-leaderboard-panel">
                 <div class="card-head">
                   <div>
-                    <span class="mono-label">Leaderboard del periodo</span>
-                    <h3 class="subhead">Clientes que más compraron</h3>
+                    <span class="mono-label" id="missionLeaderboardEyebrow">Leaderboard del periodo</span>
+                    <h3 class="subhead" id="missionLeaderboardTitle">Clientes que más compraron</h3>
+                    <p id="missionLeaderboardContext">Ordenado con ventas persistidas del negocio.</p>
                   </div>
+                  <button class="ghost-button compact hidden" id="missionsBackToGlobalButton" type="button">Volver al ranking general</button>
                 </div>
                 <div class="mission-leaderboard" id="missionLeaderboard"></div>
               </article>
@@ -1380,20 +1385,20 @@
 
             <section class="surface-card mission-create-next">
               <div>
-                <span class="mono-label">Dinámicas y temporadas</span>
-                <h3>Crea una competencia cuando la necesites</h3>
-                <p>Usa una temporada para activar ranking por compras, trivia, recompra o referidos después de revisar el comportamiento del periodo.</p>
+                <span class="mono-label">Rankings automáticos</span>
+                <h3>Crea una competencia con propósito</h3>
+                <p>Elige compras, trivia, recompra, referidos o participación. Qori conectará cada evento válido, sumará puntos y protegerá la trazabilidad.</p>
               </div>
-              <button class="solid-button" id="missionsCreateButton" type="button">Crear dinámica o temporada</button>
+              <button class="solid-button" data-open-mission-wizard="top_clients_week" type="button">Crear mi primer ranking</button>
             </section>
 
             <section class="missions-dashboard-grid mission-season-operations-grid">
               <article class="surface-card missions-panel span-2">
                 <div class="card-head">
                   <div>
-                    <span class="mono-label">Temporadas creadas</span>
-                    <h3 class="subhead">Estado, alcance y acciones</h3>
-                    <p>Administra cada dinámica sin perder su campaña, periodo, ranking ni trazabilidad.</p>
+                    <span class="mono-label">Rankings configurados</span>
+                    <h3 class="subhead">Automatización, avance y control</h3>
+                    <p>Cada ranking conserva campaña, reglas, periodo, participantes y premios. Los eventos se procesan automáticamente y sin duplicados.</p>
                   </div>
                 </div>
                 <div class="mission-active-list" id="missionActiveList"></div>
@@ -1401,8 +1406,8 @@
               <article class="surface-card missions-panel">
                 <div class="card-head">
                   <div>
-                    <span class="mono-label">Entrega pendiente</span>
-                    <h3 class="subhead">Recompensas por resolver</h3>
+                    <span class="mono-label">Próxima acción</span>
+                    <h3 class="subhead">Premios por entregar</h3>
                   </div>
                 </div>
                 <div class="mission-rewards-pending" id="missionRewardsPending"></div>
@@ -1413,15 +1418,17 @@
               <div class="modal-card mission-wizard-card">
                 <div class="modal-head">
                   <div>
-                    <span class="mono-label">Crear dinámica</span>
-                    <h3 id="missionWizardTitle">Nueva temporada o misión Qori</h3>
-                    <p>Elige una plantilla, define fechas, acciones que suman puntos, ranking, recompensa y tareas de agenda.</p>
+                    <span class="mono-label">Ranking Qori</span>
+                    <h3 id="missionWizardTitle">Nuevo ranking</h3>
+                    <p>Configura el objetivo y Qori conectará automáticamente las acciones reales que alimentan la competencia.</p>
                   </div>
                   <button class="icon-button" id="missionWizardCloseButton" type="button" title="Cerrar">
                     <span class="material-symbols-outlined">close</span>
                   </button>
                 </div>
+                <div class="mission-template-grid" id="missionTemplateGrid" aria-label="Plantillas de ranking"></div>
                 <form class="modal-form mission-wizard-form" id="missionWizardForm">
+                  <input id="missionSeasonIdInput" type="hidden">
                   <label>
                     Tipo de dinámica
                     <select id="missionTemplateInput"></select>
@@ -1446,6 +1453,13 @@
                     </select>
                   </label>
                   <label>
+                    Estado inicial
+                    <select id="missionStatusInput">
+                      <option value="ACTIVE">Activo: sumar desde ahora</option>
+                      <option value="DRAFT">Borrador: activar después</option>
+                    </select>
+                  </label>
+                  <label>
                     Fecha de inicio
                     <input id="missionStartInput" type="date">
                   </label>
@@ -1460,6 +1474,7 @@
                   <label class="span-2">
                     Acciones que suman puntos
                     <textarea id="missionPointsInput" rows="5"></textarea>
+                    <small>Una acción por línea. Conserva el código entre corchetes para mantener la conexión automática.</small>
                   </label>
                   <label>
                     Ranking
@@ -1490,7 +1505,7 @@
                   <p class="inline-message span-2" id="missionWizardMessage"></p>
                   <div class="modal-actions span-2">
                     <button class="ghost-button" id="missionWizardCancelButton" type="button">Cancelar</button>
-                    <button class="solid-button" type="submit">Guardar y activar dinámica</button>
+                    <button class="solid-button" id="missionWizardSubmitButton" type="submit">Guardar ranking</button>
                   </div>
                 </form>
               </div>
@@ -8429,6 +8444,7 @@
             <label><span>Canal preferido</span><input id="contactEditorPreferredChannel" type="text" maxlength="120" list="contactEditorChannelOptions" placeholder="WhatsApp, correo, llamada…"><datalist id="contactEditorChannelOptions"><option value="WhatsApp"><option value="Correo"><option value="Llamada"><option value="SMS"><option value="Presencial"></datalist></label>
             <label><span>Estado comercial</span><select id="contactEditorStatus"><option value="NEW">Nuevo</option><option value="CONTACTED">Contactado</option><option value="FOLLOW_UP">Seguimiento</option><option value="INTERESTED">Interesado</option><option value="CONVERTED">Convertido</option><option value="INACTIVE">Inactivo</option><option value="LOST">Perdido</option><option value="BUYER">Comprador</option><option value="RECURRENT">Recurrente</option><option value="VIP">VIP</option></select></label>
             <label><span>Prioridad</span><select id="contactEditorPriority"><option value="HIGH">Alta</option><option value="MEDIUM">Media</option><option value="LOW">Baja</option></select></label>
+            <label class="span-2 contact-affiliate-field"><span class="contact-affiliate-choice"><input id="contactEditorIsAffiliate" type="checkbox"><span><strong>También es afiliado</strong><small>Conserva este contacto como cliente y crea o vincula automáticamente su ficha en Afiliados.</small></span></span></label>
             <label><span>Responsable comercial</span><select id="contactSellerEditorSelect"></select><small class="field-help">Solo usuarios activos de este negocio.</small></label>
             <label class="span-2"><span>Notas internas</span><textarea id="contactEditorNotes" rows="4" maxlength="2000" placeholder="Contexto, preferencias o información útil para el siguiente contacto"></textarea></label>
           </div>
@@ -8494,9 +8510,9 @@
 
   <script src="js/evaluation-station-core.js?v=evaluation-core-v1-20260830" defer></script>
   <script src="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830" defer></script>
-  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility-goals-contacts-v406-20260829&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828&amp;intelligence=gos-reliable-v389-20260828&amp;risk-none=initial-result-v396-20260829&amp;rms-sale=multiproduct-history-v397-20260829&amp;risk-none-select=explicit-v398-20260829&amp;risk-destination=handoff-v399-20260829&amp;risk-benefit=handoff-v400-20260829&amp;risk-product-scope=v401-20260829&amp;recycling=atomic-handoff-v428-20260830&amp;risk-speed=fast-v403-20260829&amp;risk-products=live-v405-20260829&amp;risk-query=source-pruning-v407-20260829&amp;risk-read=direct-v408-20260829&amp;risk-feedback=responsive-v409-20260829&amp;risk-binding=isolated-v410-20260829&amp;risk-prepare=search-v411-20260829&amp;risk-ticket=fast-v412-20260830&amp;risk-qr=on-demand-v413-20260830&amp;risk-flow=preparation-handoff-v414-20260830&amp;risk-workbench=fast-v415-20260830&amp;risk-command=premium-v419-20260830&amp;risk-v2=premium-v6-20260830&amp;evaluation=precision-v3-startup-hotfix-20260830&amp;rms-sync=consistent-v429-20260902&amp;rms-loading=definitive-v430-20260902&amp;live-refresh=v431-20260902&amp;rms-loading-copy=v432-20260902&amp;contact-editor=modal-v434-20260903" defer></script>
+  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility-goals-contacts-v406-20260829&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828&amp;intelligence=gos-reliable-v389-20260828&amp;risk-none=initial-result-v396-20260829&amp;rms-sale=multiproduct-history-v397-20260829&amp;risk-none-select=explicit-v398-20260829&amp;risk-destination=handoff-v399-20260829&amp;risk-benefit=handoff-v400-20260829&amp;risk-product-scope=v401-20260829&amp;recycling=atomic-handoff-v428-20260830&amp;risk-speed=fast-v403-20260829&amp;risk-products=live-v405-20260829&amp;risk-query=source-pruning-v407-20260829&amp;risk-read=direct-v408-20260829&amp;risk-feedback=responsive-v409-20260829&amp;risk-binding=isolated-v410-20260829&amp;risk-prepare=search-v411-20260829&amp;risk-ticket=fast-v412-20260830&amp;risk-qr=on-demand-v413-20260830&amp;risk-flow=preparation-handoff-v414-20260830&amp;risk-workbench=fast-v415-20260830&amp;risk-command=premium-v419-20260830&amp;risk-v2=premium-v6-20260830&amp;evaluation=precision-v3-startup-hotfix-20260830&amp;rms-sync=consistent-v429-20260902&amp;rms-loading=definitive-v430-20260902&amp;live-refresh=v431-20260902&amp;rms-loading-copy=v432-20260902&amp;contact-editor=modal-v434-20260903&amp;contact-promotion=v435-20260905&amp;activation-layout=v436-20260905" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
-<script src="js/contacts-premium-v333.js?v=contacts-directory-premium-v348-20260905" defer></script>
+<script src="js/contacts-premium-v333.js?v=contact-promotion-v435-20260905" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
     <script src="js/communications.js?v=communications-history-v333-20260822-unified-email-routing-v359-20260826" defer></script>

@@ -1,0 +1,202 @@
+/* Ranking Qori — sistema premium de reconocimiento, recurrencia y valor. */
+body[data-current-view="missions"] {
+  --ranking-ink: #062a47;
+  --ranking-muted: #597087;
+  --ranking-line: rgba(33, 107, 150, .16);
+  --ranking-blue: #0759d6;
+  --ranking-cyan: #08a8ca;
+  --ranking-gold: #e7a724;
+  --ranking-soft: #f3f9fd;
+}
+
+html body[data-current-view="missions"] .portal-shell .view-section[data-view="missions"] {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  max-width: 1480px;
+  margin-inline: auto;
+}
+
+html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head {
+  order: 1 !important;
+  position: relative;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 28px !important;
+  overflow: hidden;
+  align-items: center !important;
+  min-height: 190px;
+  padding: clamp(24px, 4vw, 46px) !important;
+  border: 1px solid rgba(255, 255, 255, .18) !important;
+  border-radius: 28px !important;
+  background:
+    radial-gradient(circle at 88% 20%, rgba(38, 214, 232, .3), transparent 26%),
+    radial-gradient(circle at 72% 100%, rgba(231, 167, 36, .2), transparent 28%),
+    linear-gradient(135deg, #052c55 0%, #0759d6 58%, #078eb8 100%) !important;
+  box-shadow: 0 26px 70px rgba(6, 52, 92, .2) !important;
+}
+
+html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head::after {
+  content: "workspace_premium";
+  position: absolute;
+  right: clamp(22px, 5vw, 72px);
+  top: 50%;
+  translate: 0 -50%;
+  color: rgba(255, 255, 255, .12);
+  font: 118px/1 "Material Symbols Outlined";
+  pointer-events: none;
+}
+
+html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head > * { position: relative; z-index: 1; }
+html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head > :first-child { grid-column: 1 !important; min-width: 0; }
+html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head h2 { margin: 5px 0 8px !important; color: #fff !important; font-size: clamp(2rem, 4vw, 3.4rem) !important; letter-spacing: -.045em; }
+html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head p { max-width: 760px; margin: 0 !important; color: rgba(255, 255, 255, .84) !important; font-size: clamp(.98rem, 1.5vw, 1.12rem); }
+html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head .mono-label { color: #8eefff !important; }
+html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head .view-head-actions { grid-column: 2 !important; align-self: end; justify-content: flex-end; }
+html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head .ghost-button { color: #fff !important; border-color: rgba(255, 255, 255, .3) !important; background: rgba(255, 255, 255, .1) !important; }
+html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head .solid-button { border-color: #fff !important; color: var(--ranking-ink) !important; background: #fff !important; box-shadow: 0 12px 30px rgba(3, 32, 61, .2); }
+
+html body[data-current-view="missions"] .mission-command-center { order: 2 !important; }
+html body[data-current-view="missions"] .mission-visualization-grid { order: 3 !important; }
+html body[data-current-view="missions"] .missions-hero { order: 4 !important; }
+html body[data-current-view="missions"] .mission-create-next { order: 5 !important; }
+html body[data-current-view="missions"] .mission-season-operations-grid { order: 6 !important; }
+
+html body[data-current-view="missions"] :is(.mission-control-card, .mission-leaderboard-panel, .mission-create-next, .missions-panel) {
+  border: 1px solid var(--ranking-line) !important;
+  border-radius: 22px !important;
+  background: rgba(255, 255, 255, .96) !important;
+  box-shadow: 0 18px 48px rgba(7, 61, 101, .07) !important;
+}
+
+html body[data-current-view="missions"] .mission-control-card {
+  grid-template-columns: minmax(300px, .75fr) minmax(520px, 1.25fr) !important;
+  align-items: end;
+  padding: 24px !important;
+}
+
+html body[data-current-view="missions"] .mission-control-row {
+  grid-template-columns: repeat(2, minmax(200px, 1fr)) !important;
+}
+
+html body[data-current-view="missions"] .mission-control-row select {
+  min-height: 48px !important;
+  border-color: var(--ranking-line) !important;
+  color: var(--ranking-ink);
+  background: var(--ranking-soft) !important;
+}
+
+html body[data-current-view="missions"] .mission-quick-actions { grid-column: 1 / -1; }
+html body[data-current-view="missions"] .mission-leaderboard-panel { padding: clamp(18px, 3vw, 28px) !important; }
+html body[data-current-view="missions"] .mission-leaderboard-panel .card-head { align-items: center; gap: 16px; }
+html body[data-current-view="missions"] #missionLeaderboardContext { margin: 4px 0 0; color: var(--ranking-muted); }
+
+html body[data-current-view="missions"] .mission-leaderboard-table-wrap {
+  max-width: 100%;
+  border: 1px solid var(--ranking-line) !important;
+  border-radius: 16px !important;
+  background: #fff !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
+
+html body[data-current-view="missions"] .mission-leaderboard-table { min-width: 820px; }
+html body[data-current-view="missions"] .mission-leaderboard-table th { color: #4b647c !important; background: #f3f8fc !important; }
+html body[data-current-view="missions"] .mission-leaderboard-table td { padding-block: 16px !important; }
+html body[data-current-view="missions"] .mission-leaderboard-table tbody tr:first-child { background: linear-gradient(90deg, rgba(231, 167, 36, .12), rgba(255, 255, 255, 0)); }
+html body[data-current-view="missions"] .mission-rank-badge { background: linear-gradient(135deg, #fff4cc, #f5cf61) !important; color: #604400 !important; box-shadow: inset 0 0 0 1px rgba(129, 83, 0, .1); }
+
+html body[data-current-view="missions"] .missions-kpis { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
+html body[data-current-view="missions"] .mission-kpi-card { min-width: 0; border: 1px solid var(--ranking-line) !important; border-radius: 18px !important; background: linear-gradient(160deg, #fff, #f3f9fd) !important; }
+html body[data-current-view="missions"] .mission-kpi-card strong { color: var(--ranking-ink) !important; font-size: clamp(1.1rem, 2vw, 1.6rem); overflow-wrap: anywhere; }
+
+html body[data-current-view="missions"] .mission-create-next {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  padding: clamp(22px, 3vw, 32px) !important;
+  background: linear-gradient(115deg, #f3fbff, #fffaf0) !important;
+}
+
+html body[data-current-view="missions"] .mission-season-operations-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.65fr) minmax(310px, .75fr) !important;
+  gap: 20px !important;
+}
+html body[data-current-view="missions"] .mission-season-operations-grid > .span-2 { grid-column: auto !important; }
+
+html body[data-current-view="missions"] .mission-active-list { grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)) !important; }
+html body[data-current-view="missions"] .mission-active-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ranking-line) !important;
+  border-radius: 20px !important;
+  background: #fff !important;
+  box-shadow: 0 14px 34px rgba(10, 58, 92, .06) !important;
+}
+html body[data-current-view="missions"] .mission-active-card::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: linear-gradient(90deg, var(--ranking-blue), var(--ranking-cyan), var(--ranking-gold)); }
+html body[data-current-view="missions"] .mission-active-card.is-active { background: linear-gradient(150deg, rgba(234, 248, 255, .9), #fff 54%) !important; }
+html body[data-current-view="missions"] .mission-active-card dl div { border: 1px solid rgba(33, 107, 150, .1); background: #f7fbfe !important; }
+html body[data-current-view="missions"] .mission-automation-pill { color: #056b65 !important; background: #e5faf5 !important; }
+html body[data-current-view="missions"] .mission-type-row .material-symbols-outlined { font-size: 15px; }
+html body[data-current-view="missions"] .ghost-button.danger { color: #a42525 !important; border-color: rgba(164, 37, 37, .22) !important; }
+
+html body[data-current-view="missions"] .mission-rewards-pending { display: grid; gap: 10px; }
+html body[data-current-view="missions"] .mission-reward-card { display: grid; gap: 12px; padding: 15px; border: 1px solid var(--ranking-line); border-radius: 16px; background: #f8fbfd; }
+html body[data-current-view="missions"] .mission-reward-card > div:first-child { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; }
+html body[data-current-view="missions"] .mission-reward-card > div:first-child small { grid-column: 2; color: var(--ranking-muted); }
+
+html body > #missionWizardModal .mission-wizard-card {
+  width: min(1040px, calc(100vw - 36px)) !important;
+  border: 1px solid rgba(255, 255, 255, .7) !important;
+  border-radius: 26px !important;
+  background: #fff !important;
+  box-shadow: 0 34px 100px rgba(1, 30, 57, .34) !important;
+}
+html body > #missionWizardModal .modal-head { padding: 24px 26px 18px !important; color: #fff; background: linear-gradient(135deg, #052c55, #0759d6 65%, #0797b9); }
+html body > #missionWizardModal .modal-head h3 { color: #fff !important; }
+html body > #missionWizardModal .modal-head p { color: rgba(255, 255, 255, .78) !important; }
+html body > #missionWizardModal .modal-head .mono-label { color: #8eefff !important; }
+html body > #missionWizardModal .modal-head .icon-button { color: #fff !important; background: rgba(255, 255, 255, .12) !important; }
+html body > #missionWizardModal .mission-template-grid { display: grid; grid-template-columns: repeat(5, minmax(180px, 1fr)); gap: 10px; padding: 18px 24px 0; overflow-x: auto; }
+html body > #missionWizardModal[data-mode="edit"] .mission-template-grid { display: none; }
+html body > #missionWizardModal .mission-template-card { display: grid; gap: 8px; min-width: 180px; padding: 14px; border: 1px solid var(--ranking-line); border-radius: 16px; background: #f7fbfe; }
+html body > #missionWizardModal .mission-template-card h4 { margin: 0; color: var(--ranking-ink); }
+html body > #missionWizardModal .mission-template-card p { margin: 0; color: var(--ranking-muted); font-size: .8rem; }
+html body > #missionWizardModal .mission-template-meta { display: flex; flex-wrap: wrap; gap: 5px; color: #49677f; font-size: .72rem; }
+html body > #missionWizardModal .mission-wizard-form { padding: 22px 26px 26px !important; }
+html body > #missionWizardModal .mission-wizard-form :is(input, select, textarea) { border-color: var(--ranking-line) !important; border-radius: 12px !important; background: #f8fbfd !important; }
+html body > #missionWizardModal .modal-actions { position: sticky; bottom: -26px; z-index: 3; margin: 4px -26px -26px; padding: 16px 26px; border-top: 1px solid var(--ranking-line); background: rgba(255, 255, 255, .96); backdrop-filter: blur(12px); }
+
+@media (max-width: 1100px) {
+  html body[data-current-view="missions"] .missions-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  html body[data-current-view="missions"] .mission-control-card,
+  html body[data-current-view="missions"] .mission-season-operations-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 620px) {
+  html body[data-current-view="missions"] .view-section[data-view="missions"] { gap: 14px !important; }
+  html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head { grid-template-columns: minmax(0, 1fr) !important; gap: 20px !important; min-height: 0; padding: 22px 18px !important; border-radius: 20px !important; }
+  html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head::after { right: -15px; font-size: 90px; }
+  html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head .view-head-actions { display: grid !important; grid-template-columns: 1fr 1fr; width: 100%; }
+  html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head .view-head-actions { grid-column: 1 !important; }
+  html body:not(#qoriRankingA#qoriRankingB#qoriRankingC#qoriRankingD#qoriRankingE)[data-current-view="missions"] .portal-shell .content-shell > .view-section.active[data-view="missions"] > .missions-head .view-head-actions .solid-button { grid-column: 1 / -1; }
+  html body[data-current-view="missions"] .mission-control-card { padding: 18px !important; }
+  html body[data-current-view="missions"] .mission-control-row { grid-template-columns: 1fr !important; }
+  html body[data-current-view="missions"] .mission-quick-actions { display: grid !important; grid-template-columns: repeat(3, 1fr); }
+  html body[data-current-view="missions"] .mission-quick-actions button { min-width: 0; padding-inline: 8px; }
+  html body[data-current-view="missions"] .missions-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  html body[data-current-view="missions"] .mission-create-next { grid-template-columns: 1fr !important; }
+  html body[data-current-view="missions"] .mission-create-next .solid-button { width: 100%; }
+  html body[data-current-view="missions"] .mission-active-list { grid-template-columns: minmax(0, 1fr) !important; }
+  html body[data-current-view="missions"] .mission-active-card { padding: 16px !important; }
+  html body[data-current-view="missions"] .mission-active-card .button-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html body[data-current-view="missions"] .mission-active-card .button-row button { width: 100%; min-width: 0; }
+  html body[data-current-view="missions"] .mission-season-operations-grid { min-width: 0; }
+  html body > #missionWizardModal.modal-shell:not(.hidden) { padding: 8px !important; }
+  html body > #missionWizardModal .mission-wizard-card { width: calc(100vw - 16px) !important; max-height: calc(100dvh - 16px) !important; border-radius: 19px !important; }
+  html body > #missionWizardModal .modal-head { padding: 20px 18px 16px !important; }
+  html body > #missionWizardModal .mission-template-grid { padding: 14px 16px 0; }
+  html body > #missionWizardModal .mission-wizard-form { grid-template-columns: minmax(0, 1fr) !important; padding: 18px !important; }
+  html body > #missionWizardModal .mission-wizard-form > * { grid-column: 1 !important; min-width: 0; }
+  html body > #missionWizardModal .modal-actions { bottom: -18px; margin: 2px -18px -18px; padding: 14px 18px; display: grid; grid-template-columns: 1fr 1fr; }
+}

@@ -132,6 +132,13 @@
     document.getElementById("contactEditorPreferredChannel").value = item.preferred_channel || metadata.preferred_channel || "";
     document.getElementById("contactEditorStatus").value = item.commercial_status || item.status || metadata.manual_status || "NEW";
     document.getElementById("contactEditorPriority").value = item.priority || item.crm_priority || metadata.manual_priority || "MEDIUM";
+    const affiliateInput = document.getElementById("contactEditorIsAffiliate");
+    if (affiliateInput) {
+      const alreadyAffiliate = item.is_affiliate === true || String(item.is_affiliate || "").toLowerCase() === "true" || String(item.source_type || "").toUpperCase() === "AFFILIATE";
+      affiliateInput.checked = alreadyAffiliate;
+      affiliateInput.disabled = alreadyAffiliate;
+      affiliateInput.closest(".contact-affiliate-field")?.classList.toggle("is-linked", alreadyAffiliate);
+    }
     document.getElementById("contactEditorNotes").value = item.notes || metadata.manual_notes || metadata.notes || "";
     document.getElementById("contactSellerEditorSelect").innerHTML = activeSellerOptions(item.seller_user_id || leadDirectoryMetadata(item).commercial_owner_user_id || "");
     document.getElementById("contactSellerEditorMessage").textContent = "";
@@ -553,6 +560,7 @@
         preferred_channel: document.getElementById("contactEditorPreferredChannel")?.value || null,
         status: document.getElementById("contactEditorStatus")?.value || "NEW",
         priority: document.getElementById("contactEditorPriority")?.value || "MEDIUM",
+        is_affiliate: Boolean(document.getElementById("contactEditorIsAffiliate")?.checked),
         notes: document.getElementById("contactEditorNotes")?.value?.trim() || null,
         seller_user_id: sellerId,
       };
@@ -564,12 +572,22 @@
       status.textContent = "Guardando cambios de forma segura…";
       setButtonLoading(submitButton, true, "Guardando…");
       try {
-        await api(`/api/business/leads/${encodeURIComponent(id)}`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify(payload), noClientCache: true });
+        const data = await api(`/api/business/leads/${encodeURIComponent(id)}`, { method: "PATCH", headers: authHeaders(), body: JSON.stringify(payload), noClientCache: true });
+        const promotedToCustomer = ["BUYER", "RECURRENT", "VIP"].includes(String(payload.status || "").toUpperCase()) || payload.is_affiliate;
+        if (promotedToCustomer) state.leadDirectoryAudience = "customers";
+        if (payload.is_affiliate) {
+          state.affiliatesLoaded = false;
+          state.affiliates = [];
+        }
         state.leadCrmLoaded = false;
         await premiumLoadLeadCrmData({ force: true, quiet: true });
         closeContactSellerEditor();
         renderLeadsView();
-        showFeedback("El contacto quedó actualizado y el cambio fue registrado en su historial.", "success", { title: "Datos guardados" });
+        const affiliateCreated = data?.contact?.affiliate_created;
+        const feedback = payload.is_affiliate
+          ? `El contacto ya está en Clientes y ${affiliateCreated ? "su ficha fue creada" : "su ficha quedó vinculada"} en Afiliados.`
+          : (promotedToCustomer ? "El contacto salió de Leads y ya aparece en Clientes." : "El contacto quedó actualizado y el cambio fue registrado en su historial.");
+        showFeedback(feedback, "success", { title: promotedToCustomer ? "Clasificación actualizada" : "Datos guardados" });
       } catch (error) {
         status.textContent = error.message || "No se pudieron guardar los cambios.";
       } finally {

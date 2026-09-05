@@ -49,7 +49,7 @@ test("el responsable comercial aparece en importación, búsqueda y directorio",
   assert.match(script, /Responsable: \$\{owner\}/);
   assert.match(app, /metadata\.commercial_owner_email/);
   assert.match(html, /responsable_comercial/);
-  assert.match(html, /contacts-directory-premium-v348-20260905/);
+  assert.match(html, /contact-promotion-v435-20260905/);
 });
 
 test("cada contacto, incluidos afiliados, admite un vendedor responsable", () => {

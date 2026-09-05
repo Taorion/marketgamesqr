@@ -169,6 +169,7 @@ const {
   patch: updateGamificationSeason,
   pause: pauseGamificationSeason,
   purchaseLeaderboard: gamificationPurchaseLeaderboard,
+  remove: deleteGamificationSeason,
   rewardsPending: gamificationRewardsPending,
   seasons: gamificationSeasons,
 } = require("../controllers/gamificationMissionController");
@@ -220,6 +221,7 @@ const requireContactDirectory = requireBusinessFeature("contact_directory");
 const requireJourney = requireBusinessFeature("journey");
 const requirePredictiveAnalytics = requireBusinessFeature("predictive_analytics");
 const requireLeadExport = requireBusinessFeature("leads_export");
+const requireRankingManager = requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES");
 
 router.get("/sellers/me", sellerModuleAccess, requireRoles("BUSINESS_SELLER"), getSellerSelf);
 router.patch("/sellers/me/profile", sellerModuleAccess, requireRoles("BUSINESS_SELLER"), patchSellerSelf);
@@ -298,18 +300,19 @@ router.post("/rms-machine/bulk-action", executeRmsBulkAction);
 router.patch("/rms-machine/lead/phase", moveRmsPhase);
 router.get("/gamification/dashboard", standardBusinessCache, gamificationDashboard);
 router.get("/gamification/seasons", standardBusinessCache, gamificationSeasons);
-router.post("/gamification/seasons", createGamificationSeason);
+router.post("/gamification/seasons", requireRankingManager, createGamificationSeason);
 router.get("/gamification/seasons/:id", shortBusinessCache, gamificationSeasonDetail);
-router.patch("/gamification/seasons/:id", updateGamificationSeason);
-router.post("/gamification/seasons/:id/activate", activateGamificationSeason);
-router.post("/gamification/seasons/:id/pause", pauseGamificationSeason);
-router.post("/gamification/seasons/:id/close", closeGamificationSeason);
-router.post("/gamification/points/award", awardGamificationPoints);
+router.patch("/gamification/seasons/:id", requireRankingManager, updateGamificationSeason);
+router.delete("/gamification/seasons/:id", requireRankingManager, deleteGamificationSeason);
+router.post("/gamification/seasons/:id/activate", requireRankingManager, activateGamificationSeason);
+router.post("/gamification/seasons/:id/pause", requireRankingManager, pauseGamificationSeason);
+router.post("/gamification/seasons/:id/close", requireRankingManager, closeGamificationSeason);
+router.post("/gamification/points/award", requireRankingManager, awardGamificationPoints);
 router.get("/gamification/purchase-leaderboard", shortBusinessCache, gamificationPurchaseLeaderboard);
 router.get("/gamification/leaderboards/:seasonId", shortBusinessCache, gamificationLeaderboard);
 router.get("/gamification/rewards/pending", shortBusinessCache, gamificationRewardsPending);
-router.post("/gamification/rewards/:id/deliver", deliverGamificationReward);
-router.post("/gamification/agenda/create-tasks", createGamificationAgendaTasks);
+router.post("/gamification/rewards/:id/deliver", requireRankingManager, deliverGamificationReward);
+router.post("/gamification/agenda/create-tasks", requireRankingManager, createGamificationAgendaTasks);
 router.get("/leads/:leadId", leadDetail);
 router.patch("/leads/:leadId", requireContactDirectory, updateContact);
 router.delete("/leads/:leadId", requireContactDirectory, deleteContact);

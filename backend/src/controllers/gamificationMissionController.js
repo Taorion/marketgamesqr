@@ -6,6 +6,7 @@ const {
   createAgendaTasks,
   createSeason,
   dashboard,
+  deleteSeason,
   deliverReward,
   getSeason,
   leaderboardForSeason,
@@ -23,6 +24,24 @@ function businessIdFor(req) {
   return req.user.business_id;
 }
 
+const rankingDateSchema = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Usa una fecha válida en formato AAAA-MM-DD.");
+const rankingPointRuleSchema = z.object({
+  action_type: z.string().trim().min(2).max(100),
+  label: z.string().trim().min(2).max(160).optional(),
+  points: z.number().int().min(-10000).max(10000),
+}).passthrough();
+const rankingRewardSchema = z.object({
+  position: z.union([z.number().int().positive(), z.string().trim().min(1).max(40)]).optional(),
+  condition: z.string().trim().min(1).max(80).optional(),
+  reward_name: z.string().trim().min(2).max(180),
+  reward_type: z.string().trim().min(2).max(60).optional(),
+}).passthrough();
+const rankingSchema = z.object({
+  ranking_type: z.enum(["POINTS", "PURCHASES", "REFERRALS", "REDEMPTIONS", "PARTICIPATION"]),
+  top_limit: z.number().int().min(1).max(50),
+  privacy_mode: z.enum(["ALIAS", "FULL_NAME"]).optional(),
+}).passthrough();
+
 const seasonSchema = z.object({
   template_key: z.string().trim().max(80).optional().nullable(),
   campaign_id: z.string().uuid().optional().nullable(),
@@ -30,18 +49,18 @@ const seasonSchema = z.object({
   description: z.string().trim().max(1200).optional().nullable(),
   type: z.string().trim().max(80).optional().nullable(),
   status: z.enum(["DRAFT", "ACTIVE", "PAUSED", "FINISHED", "CLOSED"]).optional(),
-  start_date: z.string().trim().max(40).optional().nullable(),
-  end_date: z.string().trim().max(40).optional().nullable(),
+  start_date: rankingDateSchema.optional().nullable(),
+  end_date: rankingDateSchema.optional().nullable(),
   channel: z.string().trim().max(120).optional().nullable(),
   frequency: z.string().trim().max(80).optional().nullable(),
   banner_url: z.string().trim().max(1000).optional().nullable(),
   target_segment: z.record(z.string(), z.unknown()).optional().default({}),
   settings: z.record(z.string(), z.unknown()).optional().default({}),
-  points_rules: z.array(z.record(z.string(), z.unknown())).optional(),
+  points_rules: z.array(rankingPointRuleSchema).max(30).optional(),
   streaks: z.array(z.record(z.string(), z.unknown())).optional(),
-  rewards: z.array(z.record(z.string(), z.unknown())).optional(),
+  rewards: z.array(rankingRewardSchema).max(30).optional(),
   agenda_tasks: z.array(z.record(z.string(), z.unknown())).optional(),
-  ranking: z.record(z.string(), z.unknown()).optional(),
+  ranking: rankingSchema.optional(),
 });
 
 const pointsSchema = z.object({
@@ -54,6 +73,8 @@ const pointsSchema = z.object({
   source_id: z.string().uuid().optional().nullable(),
   source_type: z.string().trim().max(80).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
+}).refine((value) => Boolean(value.lead_id || value.contact_id), {
+  message: "Selecciona un lead o contacto para asignar puntos.",
 });
 
 const agendaSchema = z.object({
@@ -128,6 +149,14 @@ async function close(req, res, next) {
   }
 }
 
+async function remove(req, res, next) {
+  try {
+    res.json(await deleteSeason(businessIdFor(req), req.params.id));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function award(req, res, next) {
   try {
     const body = validate(pointsSchema, req.body);
@@ -191,6 +220,7 @@ module.exports = {
   patch,
   pause,
   purchaseLeaderboard,
+  remove,
   rewardsPending,
   seasons,
 };

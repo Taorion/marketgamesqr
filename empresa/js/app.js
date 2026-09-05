@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260902-portal-live-refresh-v431";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902";
+const APP_VERSION = "empresa-20260905-activation-layout-v436";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 activation-layout-v436-20260905";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 30000;
@@ -250,15 +250,21 @@ const missionRewardsPending = document.getElementById("missionRewardsPending");
 const missionsCreateButton = document.getElementById("missionsCreateButton");
 const missionsRefreshButton = document.getElementById("missionsRefreshButton");
 const missionsOpenAgendaButton = document.getElementById("missionsOpenAgendaButton");
+const missionsBackToGlobalButton = document.getElementById("missionsBackToGlobalButton");
+const missionLeaderboardEyebrow = document.getElementById("missionLeaderboardEyebrow");
+const missionLeaderboardTitle = document.getElementById("missionLeaderboardTitle");
+const missionLeaderboardContext = document.getElementById("missionLeaderboardContext");
 const missionSeasonFilter = document.getElementById("missionSeasonFilter");
 const missionWizardModal = document.getElementById("missionWizardModal");
 const missionWizardForm = document.getElementById("missionWizardForm");
 const missionWizardCloseButton = document.getElementById("missionWizardCloseButton");
 const missionWizardCancelButton = document.getElementById("missionWizardCancelButton");
+const missionSeasonIdInput = document.getElementById("missionSeasonIdInput");
 const missionTemplateInput = document.getElementById("missionTemplateInput");
 const missionCampaignInput = document.getElementById("missionCampaignInput");
 const missionNameInput = document.getElementById("missionNameInput");
 const missionChannelInput = document.getElementById("missionChannelInput");
+const missionStatusInput = document.getElementById("missionStatusInput");
 const missionStartInput = document.getElementById("missionStartInput");
 const missionEndInput = document.getElementById("missionEndInput");
 const missionDescriptionInput = document.getElementById("missionDescriptionInput");
@@ -268,6 +274,7 @@ const missionTopLimitInput = document.getElementById("missionTopLimitInput");
 const missionRewardsInput = document.getElementById("missionRewardsInput");
 const missionCreateAgendaInput = document.getElementById("missionCreateAgendaInput");
 const missionWizardMessage = document.getElementById("missionWizardMessage");
+const missionWizardSubmitButton = document.getElementById("missionWizardSubmitButton");
 const smartCatalogRefreshButton = document.getElementById("smartCatalogRefreshButton");
 const smartCatalogSeedDoctorAngieButton = document.getElementById("smartCatalogSeedDoctorAngieButton");
 const smartCatalogDashboardGrid = document.getElementById("smartCatalogDashboardGrid");
@@ -2983,6 +2990,8 @@ let state = {
   missionLeaderboardSummary: null,
   missionLeaderboardLoadedPeriod: "",
   missionLeaderboardLoading: false,
+  missionViewingSeasonId: "",
+  missionMutationBusy: false,
   smartCatalogs: [],
   smartCatalogDashboard: null,
   smartCatalogProducts: [],
@@ -4296,6 +4305,8 @@ function resetBusinessScopedState(options = {}) {
   state.missionLeaderboardSummary = null;
   state.missionLeaderboardLoadedPeriod = "";
   state.missionLeaderboardLoading = false;
+  state.missionViewingSeasonId = "";
+  state.missionMutationBusy = false;
   state.selectedLeadDetail = null;
   state.selectedLeadTab = "general";
   state.selectedLeadRef = null;
@@ -19019,7 +19030,7 @@ function ensureGamingCenterUxStyles() {
     body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher button { min-height:48px; border:1px solid rgba(23,65,91,.14); background:#fff; color:#365568; font-weight:800; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-center-tool-switcher button.is-active { border-color:#052a6b; background:#f6fbff; color:#052a6b; box-shadow:inset 0 -3px 0 #052a6b; }
     body[data-current-view="strategic-qr"] .portal-shell .strategic-ticket-generators > article.is-gaming-tool-hidden { display:none !important; }
-    body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-assistant { position:sticky; top:calc(var(--topbar-height,72px) + 8px); z-index:13; display:grid; grid-template-columns:minmax(220px,.55fr) minmax(420px,1.3fr) auto; gap:12px; align-items:center; padding:12px 14px; margin:14px 0; border:1px solid #052a6b; background:rgba(255,255,255,.97); box-shadow:0 14px 36px rgba(23,65,91,.13); backdrop-filter:blur(12px); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-assistant { position:static; top:auto; z-index:13; display:grid; grid-template-columns:minmax(220px,.55fr) minmax(420px,1.3fr) auto; gap:12px; align-items:center; padding:12px 14px; margin:14px 0; border:1px solid #052a6b; background:rgba(255,255,255,.97); box-shadow:0 14px 36px rgba(23,65,91,.13); backdrop-filter:blur(12px); }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-progress-copy strong, body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-progress-copy small { display:block; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-progress-track { height:7px; margin-top:7px; background:#eaf4ff; overflow:hidden; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-builder-progress-fill { height:100%; width:0; background:linear-gradient(90deg,#052a6b,#00bfe5); transition:width .2s ease; }
@@ -19047,7 +19058,7 @@ function ensureGamingCenterUxStyles() {
     body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-phone-icon { display:grid; place-items:center; width:64px; height:64px; margin:auto; border-radius:20px; background:#052a6b; color:#fff; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-phone-screen h4, body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-phone-screen p { margin:0; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-phone-cta { padding:11px; background:#052a6b; color:#fff; font-weight:850; }
-    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-wizard-footer { position:sticky; bottom:8px; z-index:12; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 14px; margin-top:14px; border:1px solid rgba(23,65,91,.14); background:rgba(255,255,255,.97); box-shadow:0 -12px 30px rgba(23,65,91,.12); backdrop-filter:blur(12px); }
+    body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-wizard-footer { position:static; bottom:auto; z-index:12; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 14px; margin-top:14px; border:1px solid rgba(23,65,91,.14); background:rgba(255,255,255,.97); box-shadow:0 -12px 30px rgba(23,65,91,.12); backdrop-filter:blur(12px); }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-wizard-footer > div { display:flex; gap:8px; }
     body[data-current-view="strategic-qr"] .portal-shell [data-gaming-wizard-publish].hidden, body[data-current-view="strategic-qr"] .portal-shell [data-gaming-wizard-next].hidden { display:none !important; }
     body[data-current-view="strategic-qr"] .portal-shell .gaming-activation-catalog-tools { grid-column:1 / -1; display:grid; grid-template-columns:minmax(250px,1fr) auto; gap:10px; padding:12px; border:1px solid rgba(23,65,91,.13); background:#f7fbff; }
@@ -38043,6 +38054,7 @@ function leadDirectoryMetadata(item = {}) {
 
 function leadDirectoryIsCustomer(item = {}) {
   const metadata = leadDirectoryMetadata(item);
+  const commercialStatus = String(item.commercial_status || item.stored_status || item.status || metadata.commercial_status || "").toUpperCase();
   return item.is_customer === true
     || String(item.is_customer || "").toLowerCase() === "true"
     || item.is_affiliate === true
@@ -38050,6 +38062,7 @@ function leadDirectoryIsCustomer(item = {}) {
     || String(item.source_type || "").toUpperCase() === "AFFILIATE"
     || metadata.customer_import_declared === true
     || String(metadata.customer_import_declared || "").toLowerCase() === "true"
+    || ["BUYER", "RECURRENT", "VIP"].includes(commercialStatus)
     || Number(item.purchase_count || item.sales_count || item.purchases_count || 0) > 0
     || Number(item.total_spent || item.sales_total || item.purchase_total || item.sale_amount || 0) > 0
     || Boolean(item.last_purchase_at || item.last_sale_at);
@@ -56796,16 +56809,36 @@ const CLIENT_MISSION_TEMPLATES = [
   },
   {
     key: "rebuy_streak",
-    name: "Racha de recompra",
+    name: "Ranking de recompra",
     type: "REBUY_STREAK",
-    description: "Compra durante 3 meses seguidos y desbloquea un Reward Pass especial.",
+    description: "Reconoce a quienes vuelven a comprar y convierte la recurrencia en una competencia visible.",
     channel: "postventa / WhatsApp",
     points_rules: [
       { action_type: "PURCHASE", label: "Comprar", points: 100 },
       { action_type: "REBUY", label: "Recomprar", points: 150 },
     ],
-    ranking: { ranking_type: "PURCHASES", top_limit: 10 },
-    rewards: [{ condition: "3_rebuys", reward_name: "Reward Pass especial", reward_type: "REWARD_PASS" }],
+    ranking: { ranking_type: "POINTS", top_limit: 10 },
+    rewards: [{ position: "top_3", reward_name: "Reward Pass especial", reward_type: "REWARD_PASS" }],
+  },
+  {
+    key: "referral_champions",
+    name: "Campeones de referidos",
+    type: "REFERRAL_RANKING",
+    description: "Premia a los contactos que generan nuevas ventas mediante recomendaciones verificadas.",
+    channel: "QR de referido / WhatsApp",
+    points_rules: [{ action_type: "REFERRAL", label: "Venta por referido", points: 150 }],
+    ranking: { ranking_type: "REFERRALS", top_limit: 10 },
+    rewards: [{ position: "top_3", reward_name: "Beneficio por recomendación", reward_type: "CUSTOM" }],
+  },
+  {
+    key: "participation_challenge",
+    name: "Participación destacada",
+    type: "PARTICIPATION_RANKING",
+    description: "Ordena automáticamente la participación en activaciones y reconoce a los contactos más constantes.",
+    channel: "QR / landing / evento",
+    points_rules: [{ action_type: "PARTICIPATION", label: "Completar una activación", points: 50 }],
+    ranking: { ranking_type: "PARTICIPATION", top_limit: 10 },
+    rewards: [{ position: "top_3", reward_name: "Reconocimiento especial", reward_type: "CUSTOM" }],
   },
 ];
 
@@ -57084,14 +57117,23 @@ function missionStatusClass(status = "") {
 
 function missionRankingLabel(season = {}) {
   const rankingType = String(season.settings_json?.ranking?.ranking_type || "").toUpperCase();
-  if (rankingType === "PURCHASES") return "Ranking por compras";
-  if (rankingType === "POINTS") return "Ranking por puntos";
-  return rankingType ? `Ranking ${rankingType}` : "Dinámica de temporada";
+  const labels = {
+    PURCHASES: "Ranking por compras",
+    POINTS: "Ranking por puntos",
+    REFERRALS: "Ranking de referidos",
+    REDEMPTIONS: "Ranking de redenciones",
+    PARTICIPATION: "Ranking de participación",
+  };
+  return labels[rankingType] || "Ranking personalizado";
+}
+
+function canManageRankings() {
+  return ["BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(String(session?.user?.role || "").toUpperCase());
 }
 
 function missionDateProgress(season = {}) {
-  const start = season.start_date ? new Date(season.start_date) : null;
-  const end = season.end_date ? new Date(season.end_date) : null;
+  const start = season.start_date ? parseLocalDateValue(season.start_date) : null;
+  const end = season.end_date ? parseLocalDateValue(season.end_date) : null;
   if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return 0;
   const now = new Date();
   const progress = ((now.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100;
@@ -58894,15 +58936,18 @@ function renderMissionsView() {
   const period = normalizeMissionPeriod(state.missionSeasonFilter || "week");
   state.missionSeasonFilter = period;
   syncMissionPeriodControls();
+  document.querySelectorAll("#missionsCreateButton, [data-open-mission-wizard]").forEach((button) => {
+    button.classList.toggle("hidden", !canManageRankings());
+  });
   state.missionLeaderboardRows = sortMissionLeaderboardRows(state.missionLeaderboardRows || []);
   renderMissionsKpis();
   renderMissionActiveList(state.missions?.seasons || []);
   renderMissionRewards(state.missions?.rewards || []);
-  renderMissionLeaderboard(state.missionLeaderboardRows || [], "PURCHASES");
-  if (state.missionLeaderboardLoadedPeriod !== period && !state.missionLeaderboardLoading) {
+  if (!state.missionViewingSeasonId) renderMissionLeaderboard(state.missionLeaderboardRows || [], "PURCHASES");
+  if (!state.missionViewingSeasonId && state.missionLeaderboardLoadedPeriod !== period && !state.missionLeaderboardLoading) {
     loadMissionPurchaseLeaderboard(period).catch((error) => {
       renderMissionLeaderboard([], "PURCHASES");
-      showFeedback(error.message || "No se pudo cargar el leaderboard de compras.", "error", { title: "Temporadas" });
+      showFeedback(error.message || "No se pudo cargar el ranking de compras.", "error", { title: "Ranking" });
     });
   }
 }
@@ -58963,25 +59008,31 @@ function renderMissionActiveList(seasons = []) {
     const mainMetricValue = isPurchaseCompetition ? money(season.purchase_amount || 0) : Number(season.points_total || 0).toLocaleString("es-CO");
     const progress = missionDateProgress(season);
     const active = String(season.status || "").toUpperCase() === "ACTIVE";
+    const rules = Array.isArray(season.settings_json?.points_rules) ? season.settings_json.points_rules : [];
+    const automationLabel = isPurchaseCompetition
+      ? "Ventas verificadas"
+      : rules.map((rule) => rule.label || rule.action_type).filter(Boolean).slice(0, 2).join(" + ") || "Eventos configurados";
     return `
     <article class="mission-active-card ${active ? "is-active" : ""} ${isPurchaseCompetition ? "is-purchase" : ""}">
       <div class="mission-active-head">
         <div>
           <span class="mono-label">${escapeHtml(missionRankingLabel(season))}</span>
-          <h4>${escapeHtml(season.name || "Dinámica Qori")}</h4>
+          <h4>${escapeHtml(season.name || "Ranking Qori")}</h4>
           <p>${escapeHtml(season.description || "Dinámica comercial gamificada.")}</p>
         </div>
         <span class="status-chip ${missionStatusClass(season.status)}">${escapeHtml(missionStatusLabel(season.status))}</span>
       </div>
       <div class="mission-date-row">
-        <span class="pill muted">Inicio ${season.start_date ? escapeHtml(formatDate(season.start_date)) : "sin fecha"}</span>
-        <span class="pill muted">Final ${season.end_date ? escapeHtml(formatDate(season.end_date)) : "sin fecha"}</span>
+        <span class="pill muted">Inicio ${season.start_date ? escapeHtml(formatDateOnly(season.start_date)) : "sin fecha"}</span>
+        <span class="pill muted">Final ${season.end_date ? escapeHtml(formatDateOnly(season.end_date)) : "sin fecha"}</span>
         <span class="pill muted">${progress}% recorrido</span>
       </div>
-      <div class="mission-progress-track" aria-label="Progreso de temporada"><span style="width:${progress}%"></span></div>
+      <div class="mission-progress-track" aria-label="Progreso del ranking"><span style="width:${progress}%"></span></div>
       <div class="mission-type-row">
-        <span class="pill muted">${escapeHtml(season.type || "Temporada")}</span>
+        <span class="pill muted">${escapeHtml(season.type || "Ranking")}</span>
         <span class="pill muted">${escapeHtml(season.channel || "Canal mixto")}</span>
+        <span class="pill mission-automation-pill"><span class="material-symbols-outlined" aria-hidden="true">bolt</span>${escapeHtml(automationLabel)}</span>
+        ${season.campaign_name ? `<span class="pill muted"><span class="material-symbols-outlined" aria-hidden="true">campaign</span>${escapeHtml(season.campaign_name)}</span>` : ""}
       </div>
       <dl>
         <div><dt>${isPurchaseCompetition ? "Clientes" : "Participantes"}</dt><dd>${Number(participants || 0).toLocaleString("es-CO")}</dd></div>
@@ -58989,8 +59040,9 @@ function renderMissionActiveList(seasons = []) {
         <div><dt>${isPurchaseCompetition ? "Compras" : "Top"}</dt><dd>${isPurchaseCompetition ? Number(season.purchases_count || 0).toLocaleString("es-CO") : Number(season.settings_json?.ranking?.top_limit || 0).toLocaleString("es-CO")}</dd></div>
       </dl>
       <div class="button-row">
-        <button class="ghost-button" type="button" data-mission-agenda="${escapeHtml(season.id)}">Crear tareas</button>
-        <button class="ghost-button" type="button" data-mission-leaderboard="${escapeHtml(season.id)}">Ver ranking</button>
+        <button class="solid-button compact" type="button" data-mission-leaderboard="${escapeHtml(season.id)}">Ver resultados</button>
+        ${canManageRankings() ? `<button class="ghost-button compact" type="button" data-mission-edit="${escapeHtml(season.id)}">Editar</button>
+        <button class="ghost-button compact" type="button" data-mission-agenda="${escapeHtml(season.id)}">Agenda</button>
         ${String(season.status || "").toUpperCase() === "ACTIVE"
           ? `<button class="ghost-button" type="button" data-mission-status="PAUSED" data-mission-id="${escapeHtml(season.id)}">Pausar</button>`
           : String(season.status || "").toUpperCase() === "CLOSED"
@@ -58999,30 +59051,47 @@ function renderMissionActiveList(seasons = []) {
         ${["ACTIVE", "PAUSED", "DRAFT"].includes(String(season.status || "").toUpperCase())
           ? `<button class="ghost-button compact" type="button" data-mission-status="CLOSED" data-mission-id="${escapeHtml(season.id)}">Cerrar</button>`
           : ""}
+        ${["DRAFT", "CLOSED"].includes(String(season.status || "").toUpperCase())
+          ? `<button class="ghost-button compact danger" type="button" data-mission-delete="${escapeHtml(season.id)}" data-mission-name="${escapeHtml(season.name || "este ranking")}">Eliminar</button>`
+          : ""}
+        ` : ""}
       </div>
     </article>
   `;
   }).join("") || `
     <div class="empty-state">
-      ${seasons.length ? "No hay temporadas con el filtro seleccionado." : "Aún no hay dinámicas activas. Crea una temporada, un ranking de clientes o una racha de recompra para empezar."}
+      ${seasons.length ? "No hay rankings con el filtro seleccionado." : "Aún no hay rankings configurados. Crea uno por compras, trivia, recompra, referidos o participación."}
     </div>
   `;
+  missionActiveList.querySelectorAll("button").forEach((button) => {
+    button.disabled = Boolean(state.missionMutationBusy);
+    if (state.missionMutationBusy) button.setAttribute("aria-busy", "true");
+  });
   missionActiveList.querySelectorAll("[data-mission-agenda]").forEach((button) => {
     button.addEventListener("click", () => createMissionAgendaTasks(button.dataset.missionAgenda));
   });
   missionActiveList.querySelectorAll("[data-mission-leaderboard]").forEach((button) => {
     button.addEventListener("click", () => loadMissionLeaderboard(button.dataset.missionLeaderboard));
   });
+  missionActiveList.querySelectorAll("[data-mission-edit]").forEach((button) => {
+    button.addEventListener("click", () => openMissionEditor(button.dataset.missionEdit));
+  });
   missionActiveList.querySelectorAll("[data-mission-status]").forEach((button) => {
     button.addEventListener("click", () => updateMissionSeasonStatus(button.dataset.missionId, button.dataset.missionStatus));
+  });
+  missionActiveList.querySelectorAll("[data-mission-delete]").forEach((button) => {
+    button.addEventListener("click", () => deleteMissionSeason(button.dataset.missionDelete, button.dataset.missionName));
   });
 }
 
 async function updateMissionSeasonStatus(seasonId, status) {
-  if (!seasonId || !status) return;
+  if (!seasonId || !status || state.missionMutationBusy) return;
   const endpoint = { ACTIVE: "activate", PAUSED: "pause", CLOSED: "close" }[String(status).toUpperCase()];
   if (!endpoint) return;
+  if (String(status).toUpperCase() === "CLOSED" && !window.confirm("¿Cerrar este ranking y calcular sus premios? Después de cerrarlo no volverá a sumar eventos.")) return;
   try {
+    state.missionMutationBusy = true;
+    renderMissionActiveList(state.missions?.seasons || []);
     await api(`/api/business/gamification/seasons/${encodeURIComponent(seasonId)}/${endpoint}`, {
       method: "POST",
       headers: authHeaders(),
@@ -59030,9 +59099,12 @@ async function updateMissionSeasonStatus(seasonId, status) {
     state.missionsLoaded = false;
     await loadGamificationDashboard({ force: true, quiet: true });
     renderMissionsView();
-    showFeedback(`Temporada ${missionStatusLabel(status).toLowerCase()}.`, "success", { title: "Temporadas" });
+    showFeedback(`Ranking ${missionStatusLabel(status).toLowerCase()}.`, "success", { title: "Ranking" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo actualizar el estado de la temporada.", "error", { title: "Temporadas" });
+    showFeedback(error.message || "No se pudo actualizar el estado del ranking.", "error", { title: "Ranking" });
+  } finally {
+    state.missionMutationBusy = false;
+    renderMissionActiveList(state.missions?.seasons || []);
   }
 }
 
@@ -59041,8 +59113,15 @@ async function loadMissionLeaderboard(seasonId) {
     renderMissionLeaderboard([]);
     return;
   }
+  state.missionViewingSeasonId = seasonId;
   const data = await api(`/api/business/gamification/leaderboards/${encodeURIComponent(seasonId)}`, { headers: authHeaders() });
+  const season = (state.missions?.seasons || []).find((item) => item.id === seasonId);
+  if (missionLeaderboardEyebrow) missionLeaderboardEyebrow.textContent = "Resultados del ranking";
+  if (missionLeaderboardTitle) missionLeaderboardTitle.textContent = season?.name || "Ranking configurado";
+  if (missionLeaderboardContext) missionLeaderboardContext.textContent = [season?.campaign_name, data.start_date && data.end_date ? `${formatDateOnly(data.start_date)} a ${formatDateOnly(data.end_date)}` : ""].filter(Boolean).join(" · ") || "Actividad registrada automáticamente";
+  missionsBackToGlobalButton?.classList.remove("hidden");
   renderMissionLeaderboard(data.leaderboard || [], data.ranking_type || "POINTS");
+  missionLeaderboard?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function loadMissionPurchaseLeaderboard(period = "week") {
@@ -59062,6 +59141,11 @@ async function loadMissionPurchaseLeaderboard(period = "week") {
       end_date: data.end_date || null,
     };
     state.missionLeaderboardLoadedPeriod = normalizedPeriod;
+    state.missionViewingSeasonId = "";
+    if (missionLeaderboardEyebrow) missionLeaderboardEyebrow.textContent = "Leaderboard del periodo";
+    if (missionLeaderboardTitle) missionLeaderboardTitle.textContent = "Clientes que más compraron";
+    if (missionLeaderboardContext) missionLeaderboardContext.textContent = "Ordenado con ventas persistidas del negocio.";
+    missionsBackToGlobalButton?.classList.add("hidden");
     renderMissionsKpis();
     renderMissionLeaderboard(state.missionLeaderboardRows, "PURCHASES");
     return data;
@@ -59156,13 +59240,26 @@ function renderMissionLeaderboard(rows = [], rankingType = "") {
     });
     return;
   }
-  missionLeaderboard.innerHTML = rows.map((row, index) => `
-    <div class="mission-rank-row">
-      <span>#${index + 1}</span>
-      <strong>${escapeHtml(row.name || "Cliente")}</strong>
-      <small>${Number(row.points || 0).toLocaleString("es-CO")} pts</small>
-    </div>
-  `).join("") || `<div class="empty-state compact">El ranking se llenará cuando los clientes empiecen a sumar puntos.</div>`;
+  missionLeaderboard.innerHTML = rows.length ? `
+    <div class="mission-leaderboard-table-wrap">
+      <table class="mission-leaderboard-table mission-points-table">
+        <thead><tr><th>Posición</th><th>Contacto</th><th>Puntos</th><th>Acciones</th><th>Última actividad</th></tr></thead>
+        <tbody>${rows.map((row, index) => `
+          <tr>
+            <td><span class="mission-rank-badge">#${index + 1}</span></td>
+            <td>${row.source_id && ["PLAYER", "MANUAL"].includes(String(row.source_type || "").toUpperCase()) ? `<button class="link-button mission-contact-link" type="button" data-mission-points-contact="${index}"><strong>${escapeHtml(row.name || "Cliente")}</strong><small>${escapeHtml(row.phone || row.email || "Ver ficha")}</small></button>` : `<strong>${escapeHtml(row.name || "Cliente")}</strong><small>${escapeHtml(row.source_type === "AFFILIATE" ? "Afiliado" : "")}</small>`}</td>
+            <td><strong>${Number(row.points || 0).toLocaleString("es-CO")} pts</strong></td>
+            <td>${Number(row.actions_count || 0).toLocaleString("es-CO")}</td>
+            <td>${row.last_activity_at ? escapeHtml(formatDate(row.last_activity_at)) : "Sin actividad"}</td>
+          </tr>`).join("")}</tbody>
+      </table>
+    </div>` : `<div class="empty-state compact"><strong>Listo para recibir actividad.</strong><br>Los puntos aparecerán automáticamente cuando los contactos completen las acciones configuradas.</div>`;
+  missionLeaderboard.querySelectorAll("[data-mission-points-contact]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const row = rows[Number(button.dataset.missionPointsContact)];
+      if (row?.source_id && row?.source_type) openLeadDetail({ id: row.source_id, source_type: row.source_type }, { tab: "summary" });
+    });
+  });
 }
 
 function openPurchaseCompetition(period = "month") {
@@ -59170,21 +59267,31 @@ function openPurchaseCompetition(period = "month") {
   state.missionSeasonFilter = normalizedPeriod;
   state.missionLeaderboardLoadedPeriod = "";
   loadMissionPurchaseLeaderboard(normalizedPeriod).catch((error) => {
-    showFeedback(error.message || "No se pudo cargar el leaderboard de compras.", "error", { title: "Temporadas" });
+    showFeedback(error.message || "No se pudo cargar el ranking de compras.", "error", { title: "Ranking" });
   });
 }
 
 function renderMissionRewards(rewards = []) {
   if (!missionRewardsPending) return;
-  missionRewardsPending.innerHTML = rewards.map((reward) => `
+  missionRewardsPending.innerHTML = rewards.map((reward, index) => `
     <article class="mission-reward-card">
       <div>
-        <strong>${escapeHtml(reward.reward_name || "Recompensa")}</strong>
-        <small>${escapeHtml(reward.season_name || "Misión Qori")}</small>
+        <span class="mission-rank-badge">#${Number(reward.rank_position || index + 1)}</span>
+        <strong>${escapeHtml(reward.lead_name || "Ganador")}</strong>
+        <small>${escapeHtml(reward.reward_name || "Recompensa")} · ${escapeHtml(reward.season_name || "Ranking Qori")}</small>
       </div>
-      <button class="ghost-button" type="button" data-mission-deliver-reward="${escapeHtml(reward.id)}">Marcar entregado</button>
+      <div class="button-row">
+        ${reward.source_id && ["PLAYER", "MANUAL"].includes(String(reward.source_type || "").toUpperCase()) ? `<button class="ghost-button compact" type="button" data-mission-reward-contact="${index}">Ver contacto</button>` : ""}
+        ${canManageRankings() ? `<button class="solid-button compact" type="button" data-mission-deliver-reward="${escapeHtml(reward.id)}">Confirmar entrega</button>` : ""}
+      </div>
     </article>
   `).join("") || '<div class="empty-state compact">Sin recompensas pendientes por entregar.</div>';
+  missionRewardsPending.querySelectorAll("[data-mission-reward-contact]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const reward = rewards[Number(button.dataset.missionRewardContact)];
+      if (reward?.source_id && reward?.source_type) openLeadDetail({ id: reward.source_id, source_type: reward.source_type }, { tab: "summary" });
+    });
+  });
   missionRewardsPending.querySelectorAll("[data-mission-deliver-reward]").forEach((button) => {
     button.addEventListener("click", () => deliverMissionReward(button.dataset.missionDeliverReward));
   });
@@ -59213,26 +59320,36 @@ function templateTextLines(items = [], mapper) {
   return items.map(mapper).filter(Boolean).join("\n");
 }
 
-function openMissionWizard(templateKey = "weekly_trivia") {
+function openMissionWizard(templateKey = "weekly_trivia", options = {}) {
   if (missionWizardModal?.parentElement !== document.body) {
     document.body.appendChild(missionWizardModal);
   }
   fillMissionWizardOptions();
+  if (!options.season) renderMissionTemplates();
   const template = missionTemplateByKey(templateKey);
+  const season = options.season || null;
   state.missionWizardTemplateKey = template.key;
+  if (missionSeasonIdInput) missionSeasonIdInput.value = season?.id || "";
+  if (missionWizardModal) missionWizardModal.dataset.mode = season ? "edit" : "create";
+  if (document.getElementById("missionWizardTitle")) document.getElementById("missionWizardTitle").textContent = season ? "Editar ranking" : "Nuevo ranking";
+  if (missionWizardSubmitButton) missionWizardSubmitButton.textContent = season ? "Guardar cambios" : "Guardar ranking";
   if (missionTemplateInput) missionTemplateInput.value = template.key;
-  if (missionNameInput) missionNameInput.value = template.name || "";
-  if (missionDescriptionInput) missionDescriptionInput.value = template.description || "";
-  if (missionChannelInput) missionChannelInput.value = template.channel || missionChannelInput.value;
-  if (missionStartInput && !missionStartInput.value) missionStartInput.value = dateInputValue(new Date());
-  if (missionEndInput && !missionEndInput.value) missionEndInput.value = dateInputValue(new Date(Date.now() + 30 * 86400000));
-  if (missionRankingInput) missionRankingInput.value = template.ranking?.ranking_type || "POINTS";
-  if (missionTopLimitInput) missionTopLimitInput.value = String(template.ranking?.top_limit || 5);
+  if (missionTemplateInput) missionTemplateInput.disabled = Boolean(season);
+  if (missionCampaignInput) missionCampaignInput.value = season?.campaign_id || "";
+  if (missionNameInput) missionNameInput.value = season?.name || template.name || "";
+  if (missionDescriptionInput) missionDescriptionInput.value = season?.description || template.description || "";
+  if (missionChannelInput) missionChannelInput.value = season?.channel || template.channel || missionChannelInput.value;
+  if (missionStatusInput) missionStatusInput.value = season?.status === "DRAFT" ? "DRAFT" : "ACTIVE";
+  if (missionStatusInput) missionStatusInput.disabled = Boolean(season);
+  if (missionStartInput) missionStartInput.value = season?.start_date?.slice(0, 10) || dateInputValue(new Date());
+  if (missionEndInput) missionEndInput.value = season?.end_date?.slice(0, 10) || dateInputValue(new Date(Date.now() + 30 * 86400000));
+  if (missionRankingInput) missionRankingInput.value = season?.settings_json?.ranking?.ranking_type || template.ranking?.ranking_type || "POINTS";
+  if (missionTopLimitInput) missionTopLimitInput.value = String(season?.settings_json?.ranking?.top_limit || template.ranking?.top_limit || 5);
   if (missionPointsInput) {
-    missionPointsInput.value = templateTextLines(template.points_rules || [], (rule) => `${rule.label || rule.action_type}: +${rule.points || 0}`);
+    missionPointsInput.value = templateTextLines(season?.settings_json?.points_rules || template.points_rules || [], (rule) => `${rule.label || rule.action_type} [${rule.action_type}]: +${rule.points || 0}`);
   }
   if (missionRewardsInput) {
-    missionRewardsInput.value = templateTextLines(template.rewards || [], (reward) => `${reward.position || reward.condition || "Condición"}: ${reward.reward_name || "Recompensa"} (${reward.reward_type || "CUSTOM"})`);
+    missionRewardsInput.value = templateTextLines(season?.settings_json?.rewards || template.rewards || [], (reward) => `${reward.position || reward.condition || "Condición"}: ${reward.reward_name || "Recompensa"} (${reward.reward_type || "CUSTOM"})`);
   }
   if (missionWizardMessage) missionWizardMessage.textContent = "";
   missionWizardModal?.classList.remove("hidden");
@@ -59246,15 +59363,24 @@ function openMissionWizard(templateKey = "weekly_trivia") {
 function closeMissionWizard() {
   missionWizardModal?.classList.add("hidden");
   document.body.classList.remove("mission-wizard-open");
+  if (missionStatusInput) missionStatusInput.disabled = false;
+  if (missionTemplateInput) missionTemplateInput.disabled = false;
+}
+
+function openMissionEditor(seasonId) {
+  const season = (state.missions?.seasons || []).find((item) => item.id === seasonId);
+  if (!season) return;
+  openMissionWizard(season.settings_json?.template_key || "top_clients_week", { season });
 }
 
 function parseMissionPoints(text = "") {
   return String(text || "").split(/\n+/).map((line) => line.trim()).filter(Boolean).map((line) => {
-    const match = line.match(/^(.*?):\s*\+?(-?\d+)/);
+    const canonical = line.match(/^(.*?)\s*\[([A-Z0-9_]+)\]\s*:\s*\+?(-?\d+)/i);
+    const legacy = line.match(/^(.*?):\s*\+?(-?\d+)/);
     return {
-      label: match ? match[1].trim() : line,
-      action_type: slugify(match ? match[1] : line).toUpperCase().replace(/-/g, "_"),
-      points: match ? Number(match[2]) : 0,
+      label: canonical ? canonical[1].trim() : legacy ? legacy[1].trim() : line,
+      action_type: canonical ? canonical[2].toUpperCase() : slugify(legacy ? legacy[1] : line).toUpperCase().replace(/-/g, "_"),
+      points: canonical ? Number(canonical[3]) : legacy ? Number(legacy[2]) : 0,
     };
   });
 }
@@ -59272,13 +59398,14 @@ function parseMissionRewards(text = "") {
 
 async function submitMissionWizard(event) {
   event.preventDefault();
+  if (state.missionMutationBusy) return;
   const template = missionTemplateByKey(missionTemplateInput?.value || state.missionWizardTemplateKey);
   const startDate = missionStartInput?.value || null;
   const endDate = missionEndInput?.value || null;
   if (startDate && endDate && new Date(endDate).getTime() < new Date(startDate).getTime()) {
     const message = "La fecha final debe ser posterior o igual a la fecha de inicio.";
     if (missionWizardMessage) missionWizardMessage.textContent = message;
-    showFeedback(message, "info", { title: "Temporadas" });
+    showFeedback(message, "info", { title: "Ranking" });
     return;
   }
   const body = {
@@ -59287,7 +59414,7 @@ async function submitMissionWizard(event) {
     name: missionNameInput?.value?.trim() || template.name,
     description: missionDescriptionInput?.value?.trim() || template.description,
     type: template.type || "TEMPORADA_MG",
-    status: "ACTIVE",
+    status: missionStatusInput?.value || "ACTIVE",
     start_date: startDate,
     end_date: endDate,
     channel: missionChannelInput?.value || template.channel || "mixto",
@@ -59303,24 +59430,39 @@ async function submitMissionWizard(event) {
       source_module: "gamification_missions",
     },
   };
+  const seasonId = missionSeasonIdInput?.value || "";
   try {
+    state.missionMutationBusy = true;
+    if (missionWizardSubmitButton) missionWizardSubmitButton.disabled = true;
     if (missionWizardMessage) missionWizardMessage.textContent = "Guardando dinámica...";
-    const data = await api("/api/business/gamification/seasons", {
-      method: "POST",
+    const data = await api(seasonId ? `/api/business/gamification/seasons/${encodeURIComponent(seasonId)}` : "/api/business/gamification/seasons", {
+      method: seasonId ? "PATCH" : "POST",
       headers: authHeaders(),
       body: JSON.stringify(body),
     });
-    if (missionCreateAgendaInput?.checked && data?.season?.id) {
-      await createMissionAgendaTasks(data.season.id, { quiet: true });
+    let agendaWarning = "";
+    if (!seasonId && missionCreateAgendaInput?.checked && data?.season?.id) {
+      try {
+        await createMissionAgendaTasks(data.season.id, { quiet: true, throwOnError: true });
+      } catch (agendaError) {
+        agendaWarning = `El ranking quedó guardado y activo. Las tareas de agenda quedaron pendientes: ${agendaError.message || "intenta crearlas desde la tarjeta"}.`;
+      }
     }
     state.missionsLoaded = false;
     await loadGamificationDashboard({ force: true, quiet: true });
     renderMissionsView();
     closeMissionWizard();
-    showFeedback("Dinámica Qori creada y conectada con el portal.", "success", { title: "Misiones Qori" });
+    showFeedback(
+      agendaWarning || (seasonId ? "Ranking actualizado. Sus reglas y resultados permanecen conectados." : "Ranking creado y conectado automáticamente con la actividad real."),
+      agendaWarning ? "info" : "success",
+      { title: agendaWarning ? "Ranking guardado · agenda pendiente" : "Ranking" }
+    );
   } catch (error) {
     if (missionWizardMessage) missionWizardMessage.textContent = error.message || "No se pudo crear la dinámica.";
-    showFeedback(error.message || "No se pudo crear la dinámica.", "error", { title: "Misiones Qori" });
+    showFeedback(error.message || "No se pudo guardar el ranking.", "error", { title: "Ranking" });
+  } finally {
+    state.missionMutationBusy = false;
+    if (missionWizardSubmitButton) missionWizardSubmitButton.disabled = false;
   }
 }
 
@@ -59333,9 +59475,29 @@ async function createMissionAgendaTasks(seasonId, options = {}) {
       body: JSON.stringify({ season_id: seasonId }),
     });
     state.leadAgendaLoaded = false;
-    if (!options.quiet) showFeedback("Tareas de Misiones Qori creadas en la agenda.", "success", { title: "Agenda" });
+    if (!options.quiet) showFeedback("Tareas del ranking creadas en la agenda.", "success", { title: "Agenda" });
   } catch (error) {
+    if (options.throwOnError) throw error;
     if (!options.quiet) showFeedback(error.message || "No se pudieron crear las tareas.", "error", { title: "Agenda" });
+  }
+}
+
+async function deleteMissionSeason(seasonId, name = "este ranking") {
+  if (!seasonId || state.missionMutationBusy) return;
+  if (!window.confirm(`¿Eliminar definitivamente "${name}"? Esta acción elimina su configuración, puntos y premios asociados.`)) return;
+  try {
+    state.missionMutationBusy = true;
+    await api(`/api/business/gamification/seasons/${encodeURIComponent(seasonId)}`, { method: "DELETE", headers: authHeaders() });
+    state.missionsLoaded = false;
+    if (state.missionViewingSeasonId === seasonId) state.missionViewingSeasonId = "";
+    await loadGamificationDashboard({ force: true });
+    renderMissionsView();
+    showFeedback("Ranking eliminado completamente.", "success", { title: "Ranking" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo eliminar el ranking.", "error", { title: "Ranking" });
+  } finally {
+    state.missionMutationBusy = false;
+    renderMissionActiveList(state.missions?.seasons || []);
   }
 }
 
@@ -59349,9 +59511,9 @@ async function deliverMissionReward(rewardId) {
     state.missionsLoaded = false;
     await loadGamificationDashboard({ force: true, quiet: true });
     renderMissionsView();
-    showFeedback("Recompensa marcada como entregada.", "success", { title: "Misiones Qori" });
+    showFeedback("Premio marcado como entregado.", "success", { title: "Ranking" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo entregar la recompensa.", "error", { title: "Misiones Qori" });
+    showFeedback(error.message || "No se pudo registrar la entrega del premio.", "error", { title: "Ranking" });
   }
 }
 
@@ -60806,12 +60968,19 @@ missionsRefreshButton?.addEventListener("click", () => {
     loadGamificationDashboard({ force: true }),
     loadMissionPurchaseLeaderboard(state.missionSeasonFilter || "week"),
   ]).then(renderMissionsView).catch((error) => {
-    showFeedback(error.message || "No se pudo actualizar Temporadas.", "error", { title: "Temporadas" });
+    showFeedback(error.message || "No se pudo actualizar Ranking.", "error", { title: "Ranking" });
   });
 });
 missionsOpenAgendaButton?.addEventListener("click", () => {
   setContactCenterTab("agenda");
   setView("leads");
+});
+missionsBackToGlobalButton?.addEventListener("click", () => {
+  state.missionViewingSeasonId = "";
+  state.missionLeaderboardLoadedPeriod = "";
+  loadMissionPurchaseLeaderboard(state.missionSeasonFilter || "week").catch((error) => {
+    showFeedback(error.message || "No se pudo volver al ranking general.", "error", { title: "Ranking" });
+  });
 });
 missionSeasonFilter?.addEventListener("change", () => {
   state.missionSeasonFilter = normalizeMissionPeriod(missionSeasonFilter.value || "week");

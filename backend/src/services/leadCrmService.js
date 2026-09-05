@@ -656,7 +656,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          ml.priority as crm_priority,
          ml.preferred_channel,
          ml.preferred_contact_time,
-         ml.status as stored_status,
+         coalesce(nullif(ml.metadata->>'commercial_status', ''), ml.status) as stored_status,
          coalesce(s.purchase_count, 0)::int as purchase_count,
          coalesce(s.total_spent, 0)::numeric as total_spent,
          coalesce(s.avg_ticket, 0)::numeric as avg_ticket,
@@ -911,6 +911,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          (
            is_affiliate
            or purchase_count > 0
+           or upper(coalesce(stored_status, '')) in ('BUYER', 'RECURRENT', 'VIP')
            or coalesce(metadata->>'customer_import_declared', 'false') = 'true'
          ) as is_customer,
          case
@@ -2644,6 +2645,73 @@ async function permanentlyDeleteLeadContact(businessId, user, leadId, sourceType
   });
 }
 
+async function ensureAffiliateRole(client, businessId, user, lead, payload, seller) {
+  const source = String(lead.source_type || "PLAYER").toUpperCase();
+  if (source === "AFFILIATE") return { id: lead.id, existing: true };
+
+  await client.query(
+    "select pg_advisory_xact_lock(hashtextextended($1, 0))",
+    [`qori:contact-affiliate:${businessId}:${source}:${lead.id}`]
+  );
+  const existing = await client.query(
+    `select id
+       from affiliates
+      where business_id = $1
+        and status <> 'DELETED'
+        and (
+          (card_metadata->>'crm_source_type' = $2 and card_metadata->>'crm_source_id' = $3)
+          or ($4::text is not null and regexp_replace(lower(coalesce(document_id, '')), '[^a-z0-9]', '', 'g') = regexp_replace(lower($4), '[^a-z0-9]', '', 'g'))
+          or ($5::text is not null and regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = regexp_replace($5, '[^0-9]', '', 'g'))
+          or ($6::text is not null and lower(btrim(coalesce(email, ''))) = lower(btrim($6)))
+        )
+      order by
+        case when card_metadata->>'crm_source_type' = $2 and card_metadata->>'crm_source_id' = $3 then 0 else 1 end,
+        updated_at desc
+      limit 1
+      for update`,
+    [businessId, source, String(lead.id), payload.document_id || null, payload.phone || null, payload.email || null]
+  );
+  const metadata = JSON.stringify({
+    crm_source_type: source,
+    crm_source_id: String(lead.id),
+    promoted_from_contact: true,
+    promoted_at: new Date().toISOString(),
+    promoted_by_user_id: user.id,
+    document_type: payload.document_type || null,
+    company: payload.company || null,
+    preferred_channel: payload.preferred_channel || null,
+    commercial_status: payload.status || null,
+  });
+  if (existing.rowCount) {
+    const updated = await client.query(
+      `update affiliates
+          set full_name = $3,
+              document_id = $4,
+              phone = $5,
+              email = $6,
+              notes = coalesce($7, notes),
+              seller_user_id = $8,
+              status = 'ACTIVE',
+              card_metadata = coalesce(card_metadata, '{}'::jsonb) || $9::jsonb,
+              updated_at = now()
+        where business_id = $1 and id = $2
+        returning id, qr_token, status`,
+      [businessId, existing.rows[0].id, payload.name, payload.document_id || null, payload.phone || null,
+        payload.email || null, payload.notes || null, seller?.id || null, metadata]
+    );
+    return { ...updated.rows[0], existing: true };
+  }
+  const created = await client.query(
+    `insert into affiliates
+      (business_id, created_by_user_id, full_name, document_id, phone, email, qr_token, status, notes, seller_user_id, card_metadata)
+     values ($1, $2, $3, $4, $5, $6, $7, 'ACTIVE', $8, $9, $10::jsonb)
+     returning id, qr_token, status`,
+    [businessId, user.id, payload.name, payload.document_id || null, payload.phone || null,
+      payload.email || null, createSecureToken(), payload.notes || null, seller?.id || null, metadata]
+  );
+  return { ...created.rows[0], existing: false };
+}
+
 async function updateLeadContact(businessId, user, leadId, sourceType = "PLAYER", payload = {}) {
   return withTransaction(async (client) => {
     const lead = await resolveLead(businessId, leadId, sourceType, client);
@@ -2674,6 +2742,7 @@ async function updateLeadContact(businessId, user, leadId, sourceType = "PLAYER"
              from affiliates where business_id = $1 and status <> 'DELETED' and coalesce(card_metadata->>'lifecycle_status', 'ACTIVE') <> 'ARCHIVED'
          ) contact
         where not (source_type = $5 and id = $6)
+          and not (source_type = 'AFFILIATE' or $5 = 'AFFILIATE')
           and (
             ($2::text is not null and lower(btrim(coalesce(email, ''))) = lower(btrim($2)))
             or ($3::text is not null and regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') = regexp_replace($3, '[^0-9]', '', 'g'))
@@ -2695,9 +2764,12 @@ async function updateLeadContact(businessId, user, leadId, sourceType = "PLAYER"
     };
     let result;
     if (source === "MANUAL") {
-      const manualStatus = ["NEW", "CONTACTED", "FOLLOW_UP", "CONVERTED", "LOST"].includes(String(payload.status || "").toUpperCase())
-        ? String(payload.status).toUpperCase()
-        : (Number(lead.purchase_count || 0) > 0 ? "CONVERTED" : "NEW");
+      const requestedStatus = String(payload.status || "").toUpperCase();
+      const manualStatus = ["BUYER", "RECURRENT", "VIP"].includes(requestedStatus)
+        ? "CONVERTED"
+        : (["NEW", "CONTACTED", "FOLLOW_UP", "CONVERTED", "LOST"].includes(requestedStatus)
+          ? requestedStatus
+          : (Number(lead.purchase_count || 0) > 0 ? "CONVERTED" : "NEW"));
       result = await client.query(
         `update business_manual_leads
             set name = $3, email = $4, phone = $5, document_type = $6, document_id = $7,
@@ -2712,7 +2784,7 @@ async function updateLeadContact(businessId, user, leadId, sourceType = "PLAYER"
           payload.document_type || null, payload.document_id || null, payload.company || null,
           payload.job_title || null, payload.preferred_channel || null, manualStatus,
           payload.priority || "MEDIUM", payload.notes || null, seller?.id || null,
-          JSON.stringify({ ...commonMetadata, manual_company: payload.company || null, manual_job_title: payload.job_title || null, manual_notes: payload.notes || null })]
+          JSON.stringify({ ...commonMetadata, commercial_status: requestedStatus || manualStatus, manual_company: payload.company || null, manual_job_title: payload.job_title || null, manual_notes: payload.notes || null })]
       );
     } else if (source === "AFFILIATE") {
       result = await client.query(
@@ -2742,15 +2814,27 @@ async function updateLeadContact(businessId, user, leadId, sourceType = "PLAYER"
       );
     }
     if (!result?.rowCount) throw notFound("Contacto no encontrado.");
+    const affiliate = payload.is_affiliate
+      ? await ensureAffiliateRole(client, businessId, user, lead, payload, seller)
+      : null;
     await client.query(
       `insert into lead_events
         (business_id, lead_id, source_type, source_id, event_type, event_title, event_description, metadata, created_by)
        values ($1, $2, $3, $4, 'contact_profile_updated', 'Datos del contacto actualizados', $5, $6::jsonb, $7)`,
       [businessId, source === "PLAYER" ? lead.id : lead.lead_id || null, source, lead.id,
         `${payload.name} fue actualizado desde el Directorio comercial.`,
-        JSON.stringify({ changed_fields: Object.keys(payload).filter((key) => key !== "source_type") }), user.id]
+        JSON.stringify({ changed_fields: Object.keys(payload).filter((key) => key !== "source_type"), affiliate_id: affiliate?.id || null }), user.id]
     );
-    return { ...result.rows[0], source_type: source, seller_name: seller?.full_name || null, seller_email: seller?.email || null };
+    return {
+      ...result.rows[0],
+      source_type: source,
+      seller_name: seller?.full_name || null,
+      seller_email: seller?.email || null,
+      is_customer: ["BUYER", "RECURRENT", "VIP"].includes(String(payload.status || "").toUpperCase()) || undefined,
+      is_affiliate: source === "AFFILIATE" || Boolean(affiliate),
+      affiliate_id: source === "AFFILIATE" ? lead.id : affiliate?.id || null,
+      affiliate_created: Boolean(affiliate && !affiliate.existing),
+    };
   });
 }
 

@@ -54,6 +54,7 @@ const contactUpdateSchema = z.object({
   preferred_channel: nullableTrimmedText(120),
   status: z.enum(["NEW", "CONTACTED", "FOLLOW_UP", "CONVERTED", "LOST", "INTERESTED", "INACTIVE", "BUYER", "RECURRENT", "VIP"]).optional().nullable(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional().nullable(),
+  is_affiliate: z.boolean().optional(),
   notes: nullableTrimmedText(2000),
   seller_user_id: z.string().uuid().optional().nullable(),
 }).superRefine((value, context) => {
