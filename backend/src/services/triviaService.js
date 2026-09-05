@@ -5,6 +5,7 @@ const { badRequest, notFound } = require("../utils/http");
 const { createSecureToken } = require("../utils/token");
 const { logQrEvent } = require("./auditService");
 const { consumeQrCredit, ensureCreditAccount, mapPublicCreditAccount } = require("./qrCreditService");
+const { registerActivityQrInCollector } = require("./rmsCollectorIntakeService");
 
 function publicAppBaseUrl() {
   try {
@@ -516,6 +517,18 @@ async function submitPublicTrivia(slug, body) {
         ]
       );
       qr = qrResult.rows[0];
+      await registerActivityQrInCollector(client, {
+        business_id: trivia.business_id,
+        source_type: "PLAYER",
+        source_id: player.id,
+        lead_id: player.id,
+        player_id: player.id,
+        qr_code_id: qr.id,
+        campaign_id: trivia.campaign_id || null,
+        activation_id: trivia.id,
+        activation_type: activationType,
+        activation_name: trivia.title || null,
+      });
       await consumeQrCredit(client, trivia.business_id, qr.id, null);
       await logQrEvent(client, {
         business_id: trivia.business_id,

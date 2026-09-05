@@ -5,6 +5,7 @@ const { badRequest, notFound } = require("../utils/http");
 const { createSecureToken } = require("../utils/token");
 const { logQrEvent } = require("./auditService");
 const { consumeQrCredits, ensureCreditAccount, mapPublicCreditAccount } = require("./qrCreditService");
+const { registerActivityQrInCollector } = require("./rmsCollectorIntakeService");
 
 const DIGITAL_ASSET_MAX_BYTES = 5 * 1024 * 1024;
 const DIGITAL_ASSET_TYPES = new Set([
@@ -2258,6 +2259,19 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
     ]
   );
   const qr = qrResult.rows[0];
+  await registerActivityQrInCollector(client, {
+    business_id: activation.company_id,
+    source_type: participant.source_type || (participant.player_id ? "PLAYER" : null),
+    source_id: participant.source_id || participant.player_id || null,
+    lead_id: participant.player_id || null,
+    player_id: participant.player_id || null,
+    qr_code_id: qr.id,
+    campaign_id: activation.campaign_id || null,
+    activation_id: activation.id,
+    activation_type: activation.activation_type,
+    activation_name: activation.title || null,
+    participant_id: participant.id,
+  });
   const creditAccount = await consumeQrCredits(
     client,
     activation.company_id,
