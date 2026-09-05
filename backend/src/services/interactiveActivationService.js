@@ -2045,7 +2045,7 @@ async function resolveRewardPayload(client, activation, context) {
       return rewardFromScratchChoice(activation.reward_config?.choices, context.selected_choice);
     }
     const reward = rewardFromConfigArray(activation.reward_config?.choices, context.selected_choice, "choice");
-    if (activation.activation_type === "SPIN_DISCOVER" && !reward) {
+    if (["SPIN_DISCOVER", "TAP_REVEAL"].includes(activation.activation_type) && !reward) {
       throw badRequest("Debes elegir una carta valida para generar el beneficio.");
     }
     return reward;

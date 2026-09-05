@@ -652,6 +652,11 @@ button:focus-visible {
     radial-gradient(circle at 18% 10%, rgba(0, 191, 229, .17), transparent 34%),
     linear-gradient(145deg, #fff 0%, #edf9ff 100%);
   transform: rotateY(180deg);
+  visibility: hidden;
+}
+
+.spin-discover-card.is-flipped .spin-discover-card-back {
+  visibility: visible;
 }
 
 .spin-discover-card-back img {

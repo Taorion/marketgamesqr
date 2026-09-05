@@ -9,12 +9,14 @@ const styles = fs.readFileSync(path.join(root, "activacion", "styles.css"), "utf
 const html = fs.readFileSync(path.join(root, "activacion", "index.html"), "utf8");
 const service = fs.readFileSync(path.join(root, "backend", "src", "services", "interactiveActivationService.js"), "utf8");
 
-test("Gira y descubre uses a dedicated hidden flip-card experience", () => {
-  assert.match(player, /currentActivation\.activation_type === "SPIN_DISCOVER"[\s\S]*renderSpinDiscoverExperience\(fallbackChoices\)/);
+test("Gira y descubre and Toca y revela use the dedicated hidden flip-card experience", () => {
+  assert.match(player, /\["SPIN_DISCOVER", "TAP_REVEAL"\]\.includes\(currentActivation\.activation_type\)[\s\S]*renderSpinDiscoverExperience\(fallbackChoices\)/);
   assert.match(player, /spin-discover-card-front[\s\S]*Gira para descubrir/);
   assert.match(player, /spin-discover-card-back[\s\S]*Premio revelado/);
   assert.doesNotMatch(player, /spin-discover-card-front[\s\S]{0,300}rewardLabel/);
   assert.match(styles, /backface-visibility:\s*hidden/);
+  assert.match(styles, /\.spin-discover-card-back\s*\{[\s\S]*visibility:\s*hidden/);
+  assert.match(styles, /\.spin-discover-card\.is-flipped \.spin-discover-card-back\s*\{[\s\S]*visibility:\s*visible/);
   assert.match(styles, /\.spin-discover-card\.is-flipped \.spin-discover-card-inner[\s\S]*rotateY\(180deg\)/);
 });
 
@@ -26,12 +28,12 @@ test("the first flipped card locks every option and owns the QR reward", () => {
   assert.match(player, /Este será el beneficio asociado a tu QR/);
 });
 
-test("the server rejects a missing or unknown card instead of issuing a mismatched prize", () => {
-  assert.match(service, /activation\.activation_type === "SPIN_DISCOVER" && !reward/);
+test("the server rejects a missing or unknown reveal card instead of issuing a mismatched prize", () => {
+  assert.match(service, /\["SPIN_DISCOVER", "TAP_REVEAL"\]\.includes\(activation\.activation_type\) && !reward/);
   assert.match(service, /Debes elegir una carta valida para generar el beneficio/);
 });
 
 test("the public player cache marker ships both animation and behavior together", () => {
-  assert.match(html, /styles\.css\?v=spin-discover-flip-v437-20260905/);
-  assert.match(html, /activation\.js\?v=spin-discover-flip-v437-20260905/);
+  assert.match(html, /styles\.css\?v=reveal-cards-hidden-v438-20260905/);
+  assert.match(html, /activation\.js\?v=reveal-cards-hidden-v438-20260905/);
 });

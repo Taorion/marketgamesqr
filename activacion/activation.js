@@ -635,7 +635,7 @@ function renderChoiceExperience() {
     { value: "C", label: "Beneficio C" },
     { value: "D", label: "Beneficio D" },
   ];
-  if (currentActivation.activation_type === "SPIN_DISCOVER") {
+  if (["SPIN_DISCOVER", "TAP_REVEAL"].includes(currentActivation.activation_type)) {
     renderSpinDiscoverExperience(fallbackChoices);
     return;
   }
