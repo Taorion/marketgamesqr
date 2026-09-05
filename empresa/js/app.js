@@ -38043,7 +38043,12 @@ function leadDirectoryMetadata(item = {}) {
 
 function leadDirectoryIsCustomer(item = {}) {
   const metadata = leadDirectoryMetadata(item);
-  return metadata.customer_import_declared === true
+  return item.is_customer === true
+    || String(item.is_customer || "").toLowerCase() === "true"
+    || item.is_affiliate === true
+    || String(item.is_affiliate || "").toLowerCase() === "true"
+    || String(item.source_type || "").toUpperCase() === "AFFILIATE"
+    || metadata.customer_import_declared === true
     || String(metadata.customer_import_declared || "").toLowerCase() === "true"
     || Number(item.purchase_count || item.sales_count || item.purchases_count || 0) > 0
     || Number(item.total_spent || item.sales_total || item.purchase_total || item.sale_amount || 0) > 0
@@ -43297,10 +43302,9 @@ async function renderAffiliatesView() {
   ensureAffiliatesUxStyles();
   setupAffiliatePhotoCaptureUi();
   renderAffiliateDashboard();
-  const allRows = withFilters(
+  const allRows = filterRows(
     state.affiliates || [],
-    ["full_name", "document_id", "phone", "email", "status", "business_name", "qr_token", "notes"],
-    ["created_at", "updated_at"]
+    ["full_name", "document_id", "phone", "email", "status", "business_name", "qr_token", "notes"]
   );
   const affiliateSearchInput = document.getElementById("affiliateListSearchInput");
   const affiliateStatusInput = document.getElementById("affiliateListStatusFilter");

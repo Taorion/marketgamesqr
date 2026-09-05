@@ -254,8 +254,8 @@ function listWhere(filters, params) {
     params.push(`%${normalizeSearch(filters.city)}%`);
     clauses.push(`normalized_city like $${params.length}`);
   }
-  if (filters.audience_type === "LEAD") clauses.push("purchase_count = 0 and coalesce(metadata->>'customer_import_declared', 'false') <> 'true' and commercial_status not in ('LOST', 'DELETED', 'ARCHIVED')");
-  if (filters.audience_type === "CLIENT") clauses.push("(purchase_count > 0 or coalesce(metadata->>'customer_import_declared', 'false') = 'true')");
+  if (filters.audience_type === "LEAD") clauses.push("is_customer = false and commercial_status not in ('LOST', 'DELETED', 'ARCHIVED')");
+  if (filters.audience_type === "CLIENT") clauses.push("is_customer = true");
   if (filters.has_purchases === "true") clauses.push("purchase_count > 0");
   if (filters.has_purchases === "false") clauses.push("purchase_count = 0");
   if (filters.is_affiliate === "true") clauses.push("is_affiliate = true");
@@ -611,6 +611,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          select id, qr_token, status
          from affiliates fa
          where fa.business_id = p.business_id
+           and fa.status <> 'DELETED'
            and (
              (nullif(p.document_id, '') is not null and fa.document_id = p.document_id)
              or (nullif(p.phone, '') is not null and fa.phone = p.phone)
@@ -675,10 +676,10 @@ async function listLeadCrmRows(businessId, filters = {}) {
          0::int as best_score,
          greatest(ml.created_at, coalesce(s.last_purchase_at, ml.created_at), coalesce(q.last_ticket_at, ml.created_at)) as last_interaction_at,
          0::int as activation_count,
-         null::uuid as affiliate_id,
-         null::text as affiliate_code,
-         null::text as affiliate_status,
-         false as is_affiliate,
+         af.id as affiliate_id,
+         af.qr_token as affiliate_code,
+         af.status as affiliate_status,
+         (af.id is not null) as is_affiliate,
          ml.interest as top_interest,
          ml.metadata
            || jsonb_build_object(
@@ -707,6 +708,19 @@ async function listLeadCrmRows(businessId, filters = {}) {
            and cmc.manual_lead_id = ml.id
            and cmc.status = 'ACTIVE'
        ) ca on true
+       left join lateral (
+         select id, qr_token, status
+         from affiliates fa
+         where fa.business_id = ml.business_id
+           and fa.status <> 'DELETED'
+           and (
+             (nullif(ml.document_id, '') is not null and fa.document_id = ml.document_id)
+             or (nullif(ml.phone, '') is not null and regexp_replace(coalesce(fa.phone, ''), '\D', '', 'g') = regexp_replace(ml.phone, '\D', '', 'g'))
+             or (nullif(ml.email, '') is not null and lower(fa.email) = lower(ml.email))
+           )
+         order by created_at desc
+         limit 1
+       ) af on true
        left join lateral (
          select coalesce(sum(case
                   when bs.metadata->>'source_module' = 'customer_csv_import'
@@ -894,6 +908,11 @@ async function listLeadCrmRows(businessId, filters = {}) {
      ),
      shaped as (
        select *,
+         (
+           is_affiliate
+           or purchase_count > 0
+           or coalesce(metadata->>'customer_import_declared', 'false') = 'true'
+         ) as is_customer,
          case
            when nullif(stored_status, '') is not null then upper(stored_status)
            when total_spent >= 3000000 or score_total >= 500 or benefits_received >= 6 then 'VIP'

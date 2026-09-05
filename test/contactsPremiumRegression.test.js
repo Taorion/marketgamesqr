@@ -85,8 +85,9 @@ test("la importación CSV persiste clientes y los excluye de Leads aunque no ten
   assert.match(importService, /customer_import_declared: true/);
   assert.match(importService, /Cliente importado; historial comercial pendiente/);
   assert.match(importService, /if \(!row\.has_commercial_evidence\)[\s\S]*sale_id: null/);
-  assert.match(crmService, /purchase_count = 0 and coalesce\(metadata->>'customer_import_declared', 'false'\) <> 'true'/);
-  assert.match(crmService, /purchase_count > 0 or coalesce\(metadata->>'customer_import_declared', 'false'\) = 'true'/);
+  assert.match(crmService, /filters\.audience_type === "LEAD"[\s\S]*is_customer = false/);
+  assert.match(crmService, /filters\.audience_type === "CLIENT"[\s\S]*is_customer = true/);
+  assert.match(crmService, /customer_import_declared[\s\S]*as is_customer/);
   assert.match(app, /metadata\.customer_import_declared/);
   assert.match(premium, /Cliente · historial pendiente/);
   assert.match(premium, /Creando clientes por lotes de 50/);
@@ -182,4 +183,22 @@ test("el editor de contacto mantiene campos desplazables y acciones siempre alca
   assert.match(styles, /\.lead-manual-edit-fields \{[\s\S]*overflow-y: auto !important;/);
   assert.match(styles, /\.lead-manual-edit-footer \{[\s\S]*grid-template-columns: minmax\(0, 0\.75fr\) minmax\(0, 1\.25fr\)/);
   assert.match(styles, /@media \(max-width: 620px\)[\s\S]*height: 100dvh !important;/);
+});
+
+test("los afiliados se muestran como clientes y no se ocultan por antiguedad", () => {
+  const crmService = read("backend/src/services/leadCrmService.js");
+  const app = read("empresa/js/app.js");
+  const affiliateView = app.slice(
+    app.indexOf("async function renderAffiliatesView()"),
+    app.indexOf("function rewardPassStatusLabel")
+  );
+
+  assert.match(crmService, /filters\.audience_type === "LEAD"[\s\S]*is_customer = false/);
+  assert.match(crmService, /filters\.audience_type === "CLIENT"[\s\S]*is_customer = true/);
+  assert.match(crmService, /is_affiliate[\s\S]*purchase_count > 0[\s\S]*customer_import_declared[\s\S]*as is_customer/);
+  assert.match(crmService, /fa\.business_id = ml\.business_id/);
+  assert.match(app, /item\.is_customer === true/);
+  assert.match(app, /item\.is_affiliate === true/);
+  assert.match(affiliateView, /const allRows = filterRows\(/);
+  assert.doesNotMatch(affiliateView, /const allRows = withFilters\(/);
 });
