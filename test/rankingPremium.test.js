@@ -39,6 +39,19 @@ test("database automation covers every canonical ranking event idempotently", ()
   }
 });
 
+test("ranking award helper never references trigger-only TG_OP, OLD or NEW records", () => {
+  const original = read("database/migrations/20260905122242_ranking_premium_automation.sql");
+  const repair = read("database/migrations/20260905173000_fix_ranking_trigger_context.sql");
+  for (const migration of [original, repair]) {
+    const helper = migration.match(/create or replace function qori_ranking_award_event[\s\S]*?\n\$\$;/i)?.[0] || "";
+    const salesTrigger = migration.match(/create or replace function qori_ranking_sales_trigger[\s\S]*?\n\$\$;/i)?.[0] || "";
+    assert.ok(helper);
+    assert.doesNotMatch(helper, /\btg_op\b|\bold\.sale_status\b|\bnew\.sale_status\b/i);
+    assert.match(salesTrigger, /\btg_op\b/i);
+    assert.match(salesTrigger, /coalesce\(new\.sale_status, 'PAID'\) <> 'PAID'/i);
+  }
+});
+
 test("service keeps ranking, mission and leaderboard consistent", () => {
   const service = read("backend/src/services/gamificationMissionService.js");
   assert.match(service, /return withTransaction\(async \(client\) => \{/);
