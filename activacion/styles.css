@@ -518,6 +518,261 @@ button:focus-visible {
   background: rgba(214, 183, 92, .12);
 }
 
+/* Gira y descubre: one real flip, one locked prize. */
+.spin-discover-experience {
+  gap: clamp(18px, 3vw, 28px);
+  overflow: visible;
+}
+
+.spin-discover-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: clamp(14px, 2.4vw, 22px);
+  perspective: 1200px;
+}
+
+.reveal-card.spin-discover-card,
+.reveal-card.spin-discover-card:hover,
+.reveal-card.spin-discover-card:disabled {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: clamp(230px, 32vw, 310px);
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  opacity: 1;
+  perspective: 1200px;
+  cursor: pointer;
+}
+
+.spin-discover-card-inner {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  transform-style: preserve-3d;
+  transition: transform .68s cubic-bezier(.2, .72, .2, 1);
+}
+
+.spin-discover-card.is-flipped .spin-discover-card-inner {
+  transform: rotateY(180deg);
+}
+
+.spin-discover-card-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: clamp(18px, 3vw, 28px);
+  overflow: hidden;
+  border: 1px solid rgba(5, 42, 107, .2);
+  border-radius: inherit;
+  box-shadow: 0 18px 36px rgba(5, 42, 107, .13);
+  text-align: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.spin-discover-card-front {
+  color: #fff;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(0, 191, 229, .42), transparent 34%),
+    linear-gradient(145deg, #052a6b 0%, #0759d6 70%, #06398a 100%);
+}
+
+.spin-discover-card-front::before,
+.spin-discover-card-front::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.spin-discover-card-front::before {
+  inset: 10px;
+  border: 1px solid rgba(255, 255, 255, .34);
+  border-radius: 12px;
+}
+
+.spin-discover-card-front::after {
+  width: 110px;
+  height: 110px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 50%;
+  transform: rotate(24deg);
+}
+
+.spin-discover-card-mark {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 62px;
+  height: 62px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .48);
+  border-radius: 20px;
+  color: #fff;
+  background: rgba(255, 255, 255, .12);
+  font-size: 1.65rem;
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
+}
+
+.spin-discover-card-front strong,
+.spin-discover-card-front small {
+  position: relative;
+  z-index: 1;
+  display: block;
+  color: #fff;
+}
+
+.spin-discover-card-front strong {
+  font-size: 1.1rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.spin-discover-card-front small {
+  color: #dff8ff;
+  font-size: .78rem;
+  font-weight: 750;
+}
+
+.spin-discover-card-back {
+  color: #052a6b;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(0, 191, 229, .17), transparent 34%),
+    linear-gradient(145deg, #fff 0%, #edf9ff 100%);
+  transform: rotateY(180deg);
+}
+
+.spin-discover-card-back img {
+  width: min(100%, 150px);
+  max-height: 120px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.spin-discover-reward-icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, #0759d6, #00bfe5);
+  font-size: 1.7rem;
+  box-shadow: 0 12px 24px rgba(7, 89, 214, .24);
+}
+
+.spin-discover-card-back small {
+  color: #567089;
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.spin-discover-card-back strong {
+  max-width: 100%;
+  color: #052a6b;
+  font-size: clamp(1rem, 2.4vw, 1.35rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.spin-discover-card.is-locked {
+  filter: grayscale(.85);
+  opacity: .38;
+  cursor: not-allowed;
+}
+
+.spin-discover-card.is-flipped {
+  filter: none;
+  opacity: 1;
+}
+
+.spin-discover-card:not(:disabled):hover .spin-discover-card-inner {
+  transform: translateY(-5px) rotateX(2deg);
+}
+
+.spin-discover-card.is-flipped:hover .spin-discover-card-inner {
+  transform: rotateY(180deg);
+}
+
+.spin-discover-result {
+  display: grid;
+  gap: 5px;
+  padding: 16px 18px;
+  border: 1px solid rgba(0, 191, 229, .3);
+  border-radius: 14px;
+  color: #052a6b;
+  background: linear-gradient(135deg, #eefaff, #e5fbff);
+}
+
+.spin-discover-result > span {
+  color: #0759d6;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.spin-discover-result > strong {
+  font-size: clamp(1.15rem, 3vw, 1.5rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.spin-discover-result > small {
+  color: #53677f;
+  line-height: 1.4;
+}
+
+.is-premium .spin-discover-card-face {
+  border-color: rgba(214, 183, 92, .36);
+}
+
+.is-premium .spin-discover-card-front {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(214, 183, 92, .25), transparent 34%),
+    linear-gradient(145deg, #080808, #282116);
+}
+
+.is-premium .spin-discover-card-back,
+.is-premium .spin-discover-result {
+  color: #f5f1e8;
+  border-color: rgba(214, 183, 92, .4);
+  background: linear-gradient(145deg, #191713, #292319);
+}
+
+.is-premium .spin-discover-card-back :is(small,strong),
+.is-premium .spin-discover-result :is(span,strong,small) {
+  color: #f5f1e8;
+}
+
+@media (max-width: 520px) {
+  .spin-discover-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .reveal-card.spin-discover-card,
+  .reveal-card.spin-discover-card:hover,
+  .reveal-card.spin-discover-card:disabled { min-height: 210px; }
+  .spin-discover-card-face { padding: 14px 10px; }
+  .spin-discover-card-mark { width: 52px; height: 52px; border-radius: 16px; }
+  .spin-discover-card-back img { max-height: 88px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin-discover-card-inner { transition-duration: .01ms; }
+}
+
 .scratch-card {
   gap: 16px;
 }
@@ -1141,4 +1396,8 @@ body { width: 100%; max-width: 100%; overflow-x: clip; }
   .ticket-actions { display: grid; grid-template-columns: 1fr; }
   .ticket-actions > *,
   .ecommerce-reward-card .submit-button { width: 100%; }
+  .reveal-grid.spin-discover-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .reveal-card.spin-discover-card,
+  .reveal-card.spin-discover-card:hover,
+  .reveal-card.spin-discover-card:disabled { min-height: 210px; }
 }

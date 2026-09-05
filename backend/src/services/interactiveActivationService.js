@@ -2044,7 +2044,11 @@ async function resolveRewardPayload(client, activation, context) {
     if (activation.activation_type === "SCRATCH_WIN") {
       return rewardFromScratchChoice(activation.reward_config?.choices, context.selected_choice);
     }
-    return rewardFromConfigArray(activation.reward_config?.choices, context.selected_choice, "choice");
+    const reward = rewardFromConfigArray(activation.reward_config?.choices, context.selected_choice, "choice");
+    if (activation.activation_type === "SPIN_DISCOVER" && !reward) {
+      throw badRequest("Debes elegir una carta valida para generar el beneficio.");
+    }
+    return reward;
   }
   if (activation.reward_mode === "by_answer") {
     return rewardFromAnswer(activation.reward_config?.answer_rewards, context.answers);

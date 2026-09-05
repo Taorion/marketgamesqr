@@ -635,6 +635,10 @@ function renderChoiceExperience() {
     { value: "C", label: "Beneficio C" },
     { value: "D", label: "Beneficio D" },
   ];
+  if (currentActivation.activation_type === "SPIN_DISCOVER") {
+    renderSpinDiscoverExperience(fallbackChoices);
+    return;
+  }
   experienceBody.innerHTML = `
     <article class="question-card">
       <div class="question-title"><span>?</span><strong>Elige una opcion para desbloquear tu beneficio.</strong></div>
@@ -659,6 +663,80 @@ function renderChoiceExperience() {
     });
   });
   document.getElementById("choiceCompleteButton").addEventListener("click", () => completeActivation({ selected_choice: selectedChoice }));
+}
+
+function spinDiscoverRewardLabel(choice, index) {
+  return choice.reward_label || choice.benefit_label || choice.label || `Beneficio ${index + 1}`;
+}
+
+function renderSpinDiscoverExperience(choices = []) {
+  selectedChoice = null;
+  let choiceLocked = false;
+  experienceTitle.textContent = "Gira una carta y descubre tu premio";
+  experienceCopy.textContent = "Elige con cuidado: solo puedes girar una carta y el premio revelado quedará asociado a tu QR.";
+  experienceBody.innerHTML = `
+    <article class="question-card spin-discover-experience">
+      <div class="question-title"><span>?</span><strong>Elige una carta. Cuando la gires, las demás quedarán bloqueadas.</strong></div>
+      <div class="reveal-grid spin-discover-grid" role="group" aria-label="Cartas de premio">
+        ${choices.map((choice, index) => {
+          const value = choice.value || choice.key || choice.label || index;
+          const rewardLabel = spinDiscoverRewardLabel(choice, index);
+          const imageUrl = choice.image_data_url || choice.image_url || "";
+          return `
+            <button class="reveal-card spin-discover-card" type="button" data-choice="${escapeHtml(value)}" data-reward-label="${escapeHtml(rewardLabel)}" aria-label="Carta ${index + 1}: girar para descubrir" aria-pressed="false">
+              <span class="spin-discover-card-inner">
+                <span class="spin-discover-card-face spin-discover-card-front" aria-hidden="true">
+                  <span class="spin-discover-card-mark">Q</span>
+                  <strong>Carta ${String(index + 1).padStart(2, "0")}</strong>
+                  <small>Gira para descubrir</small>
+                </span>
+                <span class="spin-discover-card-face spin-discover-card-back" aria-hidden="true">
+                  ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="">` : `<span class="spin-discover-reward-icon" aria-hidden="true">✦</span>`}
+                  <small>Premio revelado</small>
+                  <strong>${escapeHtml(rewardLabel)}</strong>
+                </span>
+              </span>
+            </button>`;
+        }).join("")}
+      </div>
+      <div class="spin-discover-result hidden" id="spinDiscoverResult" role="status" aria-live="polite"></div>
+      <button class="submit-button" type="button" id="choiceCompleteButton" disabled>Primero gira una carta</button>
+    </article>
+  `;
+  const cards = Array.from(experienceBody.querySelectorAll(".spin-discover-card"));
+  const completeButton = document.getElementById("choiceCompleteButton");
+  const result = document.getElementById("spinDiscoverResult");
+  cards.forEach((button) => {
+    button.addEventListener("click", () => {
+      if (choiceLocked) return;
+      choiceLocked = true;
+      selectedChoice = button.dataset.choice;
+      const rewardLabel = button.dataset.rewardLabel || "Premio desbloqueado";
+      cards.forEach((item) => {
+        const selected = item === button;
+        item.disabled = true;
+        item.setAttribute("aria-disabled", "true");
+        item.setAttribute("aria-pressed", selected ? "true" : "false");
+        item.classList.toggle("is-flipped", selected);
+        item.classList.toggle("is-selected", selected);
+        item.classList.toggle("is-locked", !selected);
+        item.setAttribute("aria-label", selected
+          ? `Carta elegida. Premio: ${rewardLabel}`
+          : "Carta bloqueada porque ya elegiste tu premio");
+      });
+      result.innerHTML = `<span>Tu premio</span><strong>${escapeHtml(rewardLabel)}</strong><small>Este será el beneficio asociado a tu QR.</small>`;
+      result.classList.remove("hidden");
+      completeButton.disabled = false;
+      completeButton.textContent = "Generar mi QR con este premio";
+      setProgress(1, 1);
+      window.setTimeout(() => completeButton.focus(), 720);
+    }, { once: true });
+  });
+  completeButton.addEventListener("click", () => {
+    if (!choiceLocked || selectedChoice === null) return;
+    completeButton.disabled = true;
+    completeActivation({ selected_choice: selectedChoice });
+  });
 }
 
 function getChoiceOptions() {
