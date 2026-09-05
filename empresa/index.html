@@ -53,7 +53,7 @@
     <link rel="stylesheet" href="css/risk-station-premium.css?v=risk-premium-v8-20260830">
     <link rel="stylesheet" href="css/evaluation-station-premium.css?v=evaluation-precision-v2-20260830">
   <link rel="stylesheet" href="css/attributed-sales-premium.css?v=sales-entry-modal-v371-20260826">
-<link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-directory-premium-v347-20260903" media="print" data-deferred-portal-style>
+<link rel="stylesheet" href="css/contacts-premium-v333.css?v=contacts-directory-premium-v348-20260905" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-seller-lens-v15-20260828" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/reward-pass-premium-v342.css?v=reward-pass-branches-v344-20260823" media="print" data-deferred-portal-style>
@@ -8434,7 +8434,17 @@
           </div>
         </div>
         <p class="error-line" id="contactSellerEditorMessage" role="status" aria-live="polite"></p>
-        <footer class="modal-actions contact-editor-actions"><button class="ghost-button danger-button" id="contactEditorArchive" type="button"><span class="material-symbols-outlined" aria-hidden="true">archive</span>Archivar</button><span class="contact-editor-action-spacer"></span><button class="ghost-button" id="contactSellerEditorCancel" type="button">Cancelar</button><button class="solid-button" id="contactSellerEditorSubmit" type="submit"><span class="material-symbols-outlined" aria-hidden="true">save</span>Guardar cambios</button></footer>
+        <footer class="modal-actions contact-editor-actions"><button class="ghost-button danger-button" id="contactEditorArchive" type="button"><span class="material-symbols-outlined" aria-hidden="true">archive</span>Archivar</button><button class="ghost-button danger-button" id="contactEditorPermanentDelete" type="button"><span class="material-symbols-outlined" aria-hidden="true">delete_forever</span>Eliminar definitivamente</button><span class="contact-editor-action-spacer"></span><button class="ghost-button" id="contactSellerEditorCancel" type="button">Cancelar</button><button class="solid-button" id="contactSellerEditorSubmit" type="submit"><span class="material-symbols-outlined" aria-hidden="true">save</span>Guardar cambios</button></footer>
+      </form>
+    </section>
+  </div>
+  <div class="modal-shell hidden contact-delete-modal" id="contactPermanentDeleteModal" role="alertdialog" aria-modal="true" aria-labelledby="contactPermanentDeleteTitle" aria-describedby="contactPermanentDeleteHelp" aria-hidden="true">
+    <section class="modal-card contact-delete-card" tabindex="-1">
+      <header class="modal-head"><div><span class="mono-label">ACCIÓN IRREVERSIBLE</span><h3 id="contactPermanentDeleteTitle">Eliminar contacto definitivamente</h3><p id="contactPermanentDeleteHelp">Se borrarán su ficha, datos personales y trazabilidad comercial. Los comprobantes contables se conservarán sin datos personales.</p></div><button class="icon-button" id="contactPermanentDeleteClose" type="button" aria-label="Cerrar"><span class="material-symbols-outlined" aria-hidden="true">close</span></button></header>
+      <form id="contactPermanentDeleteForm" class="contact-delete-form">
+        <div class="contact-delete-body"><div class="contact-delete-warning"><span class="material-symbols-outlined" aria-hidden="true">warning</span><p><strong id="contactPermanentDeleteName">Este contacto</strong> desaparecerá del sistema y no podrá recuperarse.</p></div><label><span>Escribe ELIMINAR para confirmar</span><input id="contactPermanentDeleteConfirmation" type="text" autocomplete="off" spellcheck="false" required placeholder="ELIMINAR"><small>Esta confirmación evita eliminaciones accidentales.</small></label></div>
+        <p class="error-line" id="contactPermanentDeleteMessage" role="status" aria-live="polite"></p>
+        <footer class="modal-actions"><button class="ghost-button" id="contactPermanentDeleteCancel" type="button">Cancelar</button><button class="solid-button danger-button" id="contactPermanentDeleteSubmit" type="submit"><span class="material-symbols-outlined" aria-hidden="true">delete_forever</span>Eliminar para siempre</button></footer>
       </form>
     </section>
   </div>
@@ -8486,7 +8496,7 @@
   <script src="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830" defer></script>
   <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility-goals-contacts-v406-20260829&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828&amp;intelligence=gos-reliable-v389-20260828&amp;risk-none=initial-result-v396-20260829&amp;rms-sale=multiproduct-history-v397-20260829&amp;risk-none-select=explicit-v398-20260829&amp;risk-destination=handoff-v399-20260829&amp;risk-benefit=handoff-v400-20260829&amp;risk-product-scope=v401-20260829&amp;recycling=atomic-handoff-v428-20260830&amp;risk-speed=fast-v403-20260829&amp;risk-products=live-v405-20260829&amp;risk-query=source-pruning-v407-20260829&amp;risk-read=direct-v408-20260829&amp;risk-feedback=responsive-v409-20260829&amp;risk-binding=isolated-v410-20260829&amp;risk-prepare=search-v411-20260829&amp;risk-ticket=fast-v412-20260830&amp;risk-qr=on-demand-v413-20260830&amp;risk-flow=preparation-handoff-v414-20260830&amp;risk-workbench=fast-v415-20260830&amp;risk-command=premium-v419-20260830&amp;risk-v2=premium-v6-20260830&amp;evaluation=precision-v3-startup-hotfix-20260830&amp;rms-sync=consistent-v429-20260902&amp;rms-loading=definitive-v430-20260902&amp;live-refresh=v431-20260902&amp;rms-loading-copy=v432-20260902&amp;contact-editor=modal-v434-20260903" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
-<script src="js/contacts-premium-v333.js?v=contacts-directory-premium-v347-20260903" defer></script>
+<script src="js/contacts-premium-v333.js?v=contacts-directory-premium-v348-20260905" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
     <script src="js/communications.js?v=communications-history-v333-20260822-unified-email-routing-v359-20260826" defer></script>

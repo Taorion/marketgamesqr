@@ -19,6 +19,11 @@
   let contactSellerLastFocus = null;
   let contactDirectorySearchTimer = 0;
   let contactArchiveLastFocus = null;
+  let contactDeleteLastFocus = null;
+
+  function canPermanentlyDeleteContact() {
+    return ["BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"].includes(String(session?.user?.role || "").toUpperCase());
+  }
 
   function activeSellerOptions(selectedId = "") {
     const sellers = (state.businessUsers || [])
@@ -77,6 +82,36 @@
     requestAnimationFrame(() => document.getElementById("contactArchiveReason")?.focus());
   }
 
+  function closeContactPermanentDelete({ restoreEditor = true } = {}) {
+    const modal = document.getElementById("contactPermanentDeleteModal");
+    if (!modal) return;
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+    if (restoreEditor && state.pendingContactPermanentDelete) {
+      openContactSellerEditor(state.pendingContactPermanentDelete, contactDeleteLastFocus);
+      return;
+    }
+    document.body.classList.remove("modal-open");
+    contactSellerLastFocus?.focus?.();
+    state.pendingContactPermanentDelete = null;
+  }
+
+  function openContactPermanentDelete(item = {}, trigger = null) {
+    const modal = document.getElementById("contactPermanentDeleteModal");
+    if (!modal || !item.id || !canPermanentlyDeleteContact()) return;
+    state.pendingContactPermanentDelete = item;
+    contactDeleteLastFocus = trigger || document.activeElement;
+    document.getElementById("contactSellerEditorModal")?.classList.add("hidden");
+    document.getElementById("contactSellerEditorModal")?.setAttribute("aria-hidden", "true");
+    document.getElementById("contactPermanentDeleteName").textContent = item.name || "Este contacto";
+    document.getElementById("contactPermanentDeleteConfirmation").value = "";
+    document.getElementById("contactPermanentDeleteMessage").textContent = "";
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+    requestAnimationFrame(() => document.getElementById("contactPermanentDeleteConfirmation")?.focus());
+  }
+
   function openContactSellerEditor(item = {}, trigger = null) {
     const modal = document.getElementById("contactSellerEditorModal");
     if (!modal) return;
@@ -113,6 +148,12 @@
       event.stopPropagation();
       const item = (state.leadCrmRows || []).find((row) => String(row.id) === String(button.dataset.editContactSeller) && String(row.source_type || "PLAYER") === String(button.dataset.contactSourceType || "PLAYER"));
       if (item) openContactSellerEditor(item, button);
+    }));
+    root?.querySelectorAll?.("[data-delete-contact-permanently]").forEach((button) => button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const item = (state.leadCrmRows || []).find((row) => String(row.id) === String(button.dataset.deleteContactPermanently) && String(row.source_type || "PLAYER") === String(button.dataset.contactSourceType || "PLAYER"));
+      if (item) openContactPermanentDelete(item, button);
     }));
   }
 
@@ -291,7 +332,7 @@
       <div class="contact-directory-cell"><strong>${escapeHtml(company)}</strong><small>${escapeHtml(channel)}</small></div>
       <div class="contact-directory-cell"><strong>${escapeHtml(isCustomer ? sales.label : stateLabel)}</strong><small>${escapeHtml(isCustomer ? sales.meta : leadOriginText(item))}</small></div>
       <div class="contact-directory-cell"><strong>${escapeHtml(nextAction)}</strong><small>${escapeHtml(`${owner} · ${stateLabel}`)}</small></div>
-      <span class="contact-directory-open"><button class="ghost-button compact" type="button" data-edit-contact-seller="${escapeHtml(item.id)}" data-contact-source-type="${escapeHtml(item.source_type || "PLAYER")}"><span class="material-symbols-outlined" aria-hidden="true">edit</span>Editar contacto</button><span>Abrir ficha <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span></span>
+      <span class="contact-directory-open"><span class="contact-directory-row-actions"><button class="ghost-button compact" type="button" data-edit-contact-seller="${escapeHtml(item.id)}" data-contact-source-type="${escapeHtml(item.source_type || "PLAYER")}"><span class="material-symbols-outlined" aria-hidden="true">edit</span>Editar contacto</button>${canPermanentlyDeleteContact() ? `<button class="ghost-button compact danger-button" type="button" data-delete-contact-permanently="${escapeHtml(item.id)}" data-contact-source-type="${escapeHtml(item.source_type || "PLAYER")}"><span class="material-symbols-outlined" aria-hidden="true">delete_forever</span>Eliminar</button>` : ""}</span><span>Abrir ficha <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span></span>
     </article>`;
   }
   leadDirectoryCardMarkup = premiumCard;
@@ -482,6 +523,14 @@
       const item = (state.leadCrmRows || []).find((row) => String(row.id) === String(id) && String(row.source_type || "PLAYER") === sourceType);
       if (item) openContactArchive(item, event.currentTarget);
     });
+    const permanentDeleteButton = document.getElementById("contactEditorPermanentDelete");
+    permanentDeleteButton?.classList.toggle("hidden", !canPermanentlyDeleteContact());
+    permanentDeleteButton?.addEventListener("click", (event) => {
+      const id = document.getElementById("contactSellerEditorId")?.value;
+      const sourceType = document.getElementById("contactSellerEditorSource")?.value || "PLAYER";
+      const item = (state.leadCrmRows || []).find((row) => String(row.id) === String(id) && String(row.source_type || "PLAYER") === sourceType);
+      if (item) openContactPermanentDelete(item, event.currentTarget);
+    });
     modal.addEventListener("click", (event) => { if (event.target === modal) closeContactSellerEditor(); });
     modal.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.preventDefault(); closeContactSellerEditor(); return; } trapModalFocus(event, modal); });
     form.addEventListener("submit", async (event) => {
@@ -568,10 +617,50 @@
     });
   }
 
+  function initContactPermanentDelete() {
+    const modal = document.getElementById("contactPermanentDeleteModal");
+    const form = document.getElementById("contactPermanentDeleteForm");
+    if (!modal || !form || modal.dataset.bound === "true") return;
+    modal.dataset.bound = "true";
+    document.getElementById("contactPermanentDeleteClose")?.addEventListener("click", () => closeContactPermanentDelete());
+    document.getElementById("contactPermanentDeleteCancel")?.addEventListener("click", () => closeContactPermanentDelete());
+    modal.addEventListener("click", (event) => { if (event.target === modal) closeContactPermanentDelete(); });
+    modal.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.preventDefault(); closeContactPermanentDelete(); return; } trapModalFocus(event, modal); });
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const item = state.pendingContactPermanentDelete;
+      const confirmation = document.getElementById("contactPermanentDeleteConfirmation")?.value?.trim() || "";
+      const messageNode = document.getElementById("contactPermanentDeleteMessage");
+      const submitButton = document.getElementById("contactPermanentDeleteSubmit");
+      if (!item?.id || confirmation !== "ELIMINAR") {
+        messageNode.textContent = "Escribe ELIMINAR exactamente para confirmar.";
+        document.getElementById("contactPermanentDeleteConfirmation")?.focus();
+        return;
+      }
+      messageNode.textContent = "Eliminando todos los datos del contacto…";
+      setButtonLoading(submitButton, true, "Eliminando…");
+      try {
+        await api(`/api/business/leads/${encodeURIComponent(item.id)}/permanent?source_type=${encodeURIComponent(item.source_type || "PLAYER")}`, {
+          method: "DELETE", headers: authHeaders(), body: JSON.stringify({ confirmation }), noClientCache: true,
+        });
+        closeContactPermanentDelete({ restoreEditor: false });
+        state.leadCrmLoaded = false;
+        await premiumLoadLeadCrmData({ force: true, quiet: true });
+        renderLeadsView();
+        showFeedback("El contacto y sus datos personales fueron eliminados definitivamente. Los comprobantes contables quedaron anonimizados.", "success", { title: "Contacto eliminado" });
+      } catch (error) {
+        messageNode.textContent = error.message || "No se pudo eliminar el contacto.";
+      } finally {
+        setButtonLoading(submitButton, false);
+      }
+    });
+  }
+
   prepareContactCenter();
   initCsv();
   initContactSellerEditor();
   initContactArchive();
+  initContactPermanentDelete();
   document.querySelectorAll("[data-lead-directory-audience]").forEach((button) => button.addEventListener("click", () => { state.leadDirectoryVisibleLimit = 24; }));
   document.addEventListener("click", (event) => {
     const nav = event.target.closest('[data-view="leads"], [data-contact-center-nav]');

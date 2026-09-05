@@ -399,7 +399,8 @@ html body[data-current-view="leads"] .portal-shell #contactDirectoryVisualBoard[
 }
 
 .contact-editor-modal,
-.contact-archive-modal {
+.contact-archive-modal,
+.contact-delete-modal {
   z-index: 10050 !important;
   padding: clamp(10px, 2.4vw, 28px) !important;
   background: rgba(7, 20, 37, .76) !important;
@@ -459,10 +460,12 @@ html body[data-current-view="leads"] .portal-shell #contactDirectoryVisualBoard[
 .contact-editor-context small { overflow: hidden; color: #64748b; text-overflow: ellipsis; white-space: nowrap; }
 .contact-editor-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px 18px; }
 .contact-editor-fields label,
-.contact-archive-body label { min-width: 0; display: grid; align-content: start; gap: 7px; color: #233b59; font-size: .79rem; font-weight: 850; }
+.contact-archive-body label,
+.contact-delete-body label { min-width: 0; display: grid; align-content: start; gap: 7px; color: #233b59; font-size: .79rem; font-weight: 850; }
 .contact-editor-fields .span-2 { grid-column: 1 / -1; }
 .contact-editor-fields :is(input, select, textarea),
-.contact-archive-body textarea {
+.contact-archive-body textarea,
+.contact-delete-body input {
   width: 100%;
   min-width: 0;
   border: 1px solid #c7d5e7;
@@ -474,11 +477,14 @@ html body[data-current-view="leads"] .portal-shell #contactDirectoryVisualBoard[
 }
 .contact-editor-fields :is(input, select) { min-height: 46px; }
 .contact-editor-fields :is(input, select, textarea):focus,
-.contact-archive-body textarea:focus { outline: 3px solid rgba(7, 89, 214, .18); border-color: #0759d6; }
+.contact-archive-body textarea:focus,
+.contact-delete-body input:focus { outline: 3px solid rgba(7, 89, 214, .18); border-color: #0759d6; }
 .contact-editor-form > .error-line,
-.contact-archive-form > .error-line { min-height: 0; margin: 0; padding: 0 26px 10px; color: #a92936; background: #f7faff; }
+.contact-archive-form > .error-line,
+.contact-delete-form > .error-line { min-height: 0; margin: 0; padding: 0 26px 10px; color: #a92936; background: #f7faff; }
 .contact-editor-actions,
-.contact-archive-form > .modal-actions {
+.contact-archive-form > .modal-actions,
+.contact-delete-form > .modal-actions {
   position: relative;
   z-index: 2;
   display: flex !important;
@@ -492,10 +498,12 @@ html body[data-current-view="leads"] .portal-shell #contactDirectoryVisualBoard[
 }
 .contact-editor-action-spacer { flex: 1; }
 .contact-editor-actions button,
-.contact-archive-form > .modal-actions button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.contact-archive-form > .modal-actions button,
+.contact-delete-form > .modal-actions button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
 .contact-editor-actions .danger-button { color: #a82534; border-color: #ecc0c6; background: #fff7f8; }
 
-.contact-archive-card {
+.contact-archive-card,
+.contact-delete-card {
   width: min(560px, 100%) !important;
   max-height: calc(100dvh - 28px) !important;
   overflow: hidden !important;
@@ -504,16 +512,26 @@ html body[data-current-view="leads"] .portal-shell #contactDirectoryVisualBoard[
   box-shadow: 0 30px 80px rgba(3, 16, 33, .38) !important;
 }
 .contact-archive-form { display: grid; grid-template-rows: minmax(0, 1fr) auto auto; min-height: 0; }
-.contact-archive-body { display: grid; gap: 18px; padding: 22px 24px; overflow-y: auto; }
-.contact-archive-warning { display: flex; gap: 12px; align-items: flex-start; padding: 15px; border: 1px solid #f2c8cd; border-radius: 15px; color: #6f2430; background: #fff6f7; }
-.contact-archive-warning .material-symbols-outlined { color: #b62c3c; }
-.contact-archive-warning p { margin: 0; }
-.contact-archive-body small { color: #6b7b90; font-weight: 600; }
-.contact-archive-form > .modal-actions .solid-button.danger-button { border-color: #a81f32; color: #fff; background: #a81f32; }
+.contact-delete-form { display: grid; grid-template-rows: minmax(0, 1fr) auto auto; min-height: 0; }
+.contact-archive-body,
+.contact-delete-body { display: grid; gap: 18px; padding: 22px 24px; overflow-y: auto; }
+.contact-archive-warning,
+.contact-delete-warning { display: flex; gap: 12px; align-items: flex-start; padding: 15px; border: 1px solid #f2c8cd; border-radius: 15px; color: #6f2430; background: #fff6f7; }
+.contact-archive-warning .material-symbols-outlined,
+.contact-delete-warning .material-symbols-outlined { color: #b62c3c; }
+.contact-archive-warning p,
+.contact-delete-warning p { margin: 0; }
+.contact-archive-body small,
+.contact-delete-body small { color: #6b7b90; font-weight: 600; }
+.contact-archive-form > .modal-actions .solid-button.danger-button,
+.contact-delete-form > .modal-actions .solid-button.danger-button { border-color: #a81f32; color: #fff; background: #a81f32; }
+.contact-directory-row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.contact-directory-row-actions .danger-button { color: #a82534 !important; border-color: #ecc0c6 !important; background: #fff7f8 !important; }
 
 @media (max-width: 620px) {
   .contact-editor-modal,
-  .contact-archive-modal { align-items: stretch !important; padding: 0 !important; }
+  .contact-archive-modal,
+  .contact-delete-modal { align-items: stretch !important; padding: 0 !important; }
   .contact-editor-card {
     width: 100% !important;
     height: 100dvh !important;
@@ -529,9 +547,14 @@ html body[data-current-view="leads"] .portal-shell #contactDirectoryVisualBoard[
   .contact-editor-form > .error-line { padding: 0 14px 8px; }
   .contact-editor-actions { display: grid !important; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr) !important; padding: 11px 14px calc(11px + env(safe-area-inset-bottom)) !important; }
   .contact-editor-action-spacer { display: none; }
-  .contact-editor-actions #contactEditorArchive { grid-column: 1 / -1; }
+  .contact-editor-actions #contactEditorArchive,
+  .contact-editor-actions #contactEditorPermanentDelete { grid-column: auto; }
   .contact-editor-actions button { width: 100%; }
-  .contact-archive-card { align-self: end; width: 100% !important; max-height: 92dvh !important; border-radius: 24px 24px 0 0 !important; }
-  .contact-archive-form > .modal-actions { display: grid !important; grid-template-columns: 1fr !important; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)) !important; }
-  .contact-archive-form > .modal-actions button { width: 100%; }
+  .contact-archive-card,
+  .contact-delete-card { align-self: end; width: 100% !important; max-height: 92dvh !important; border-radius: 24px 24px 0 0 !important; }
+  .contact-archive-form > .modal-actions,
+  .contact-delete-form > .modal-actions { display: grid !important; grid-template-columns: 1fr !important; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)) !important; }
+  .contact-archive-form > .modal-actions button,
+  .contact-delete-form > .modal-actions button { width: 100%; }
+  .contact-directory-row-actions { justify-content: flex-start; }
 }

@@ -10,6 +10,7 @@ const {
   createLeadPurchase,
   deleteLeadAgendaItem,
   deleteLeadContact,
+  permanentlyDeleteLeadContact,
   deleteLeadInterest,
   getLeadCrmDetail,
   listLeadAgenda,
@@ -114,6 +115,10 @@ const agendaCancelSchema = z.object({
 const contactArchiveSchema = z.object({
   reason: z.string().trim().min(3).max(1000),
   idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
+});
+
+const contactPermanentDeleteSchema = z.object({
+  confirmation: z.literal("ELIMINAR"),
 });
 
 const sellerResponsibilitySchema = z.object({
@@ -391,6 +396,20 @@ async function deleteContact(req, res, next) {
   }
 }
 
+async function permanentlyDeleteContact(req, res, next) {
+  try {
+    validate(contactPermanentDeleteSchema, req.body || {});
+    res.json(await permanentlyDeleteLeadContact(
+      businessIdFor(req),
+      req.user,
+      req.params.leadId,
+      String(req.query.source_type || "PLAYER").toUpperCase()
+    ));
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function assignSellerResponsibility(req, res, next) {
   try {
     const body = validate(sellerResponsibilitySchema, req.body);
@@ -476,6 +495,7 @@ module.exports = {
   createNote,
   deleteAgendaItem,
   deleteContact,
+  permanentlyDeleteContact,
   leadDetail,
   markActivationOpened,
   registerLeadWhatsAppContact,

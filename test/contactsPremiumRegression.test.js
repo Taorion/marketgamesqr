@@ -49,7 +49,7 @@ test("el responsable comercial aparece en importación, búsqueda y directorio",
   assert.match(script, /Responsable: \$\{owner\}/);
   assert.match(app, /metadata\.commercial_owner_email/);
   assert.match(html, /responsable_comercial/);
-  assert.match(html, /contacts-directory-premium-v347-20260903/);
+  assert.match(html, /contacts-directory-premium-v348-20260905/);
 });
 
 test("cada contacto, incluidos afiliados, admite un vendedor responsable", () => {
@@ -170,6 +170,27 @@ test("el editor premium tiene scroll interno, foco contenido y acciones móviles
   assert.match(styles, /\.contact-editor-form[\s\S]*grid-template-rows: minmax\(0, 1fr\) auto auto/);
   assert.match(styles, /@media \(max-width: 620px\)[\s\S]*height: 100dvh !important/);
   assert.match(styles, /contact-editor-actions[\s\S]*grid-template-columns/);
+});
+
+test("cada lead y contacto admite eliminacion definitiva protegida y tenant-scoped", () => {
+  const premium = read("empresa/js/contacts-premium-v333.js");
+  const service = read("backend/src/services/leadCrmService.js");
+  const leadController = read("backend/src/controllers/leadCrmController.js");
+  const routes = read("backend/src/routes/businessPortalRoutes.js");
+  const html = read("empresa/index.html");
+  assert.match(premium, /data-delete-contact-permanently/);
+  assert.match(premium, /confirmation !== "ELIMINAR"/);
+  assert.match(premium, /\/leads\/\$\{encodeURIComponent\(item\.id\)\}\/permanent/);
+  assert.match(html, /id="contactPermanentDeleteModal"/);
+  assert.match(html, /Escribe ELIMINAR para confirmar/);
+  assert.match(leadController, /confirmation: z\.literal\("ELIMINAR"\)/);
+  assert.match(routes, /"\/leads\/:leadId\/permanent"[\s\S]*requireRoles\("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"\)/);
+  assert.match(service, /async function permanentlyDeleteLeadContact/);
+  assert.match(service, /delete from affiliates where id = \$1 and business_id = \$2/);
+  assert.match(service, /delete from business_manual_leads where id = \$1 and business_id = \$2/);
+  assert.match(service, /delete from players where id = \$1 and business_id = \$2/);
+  assert.match(service, /customer_name = null[\s\S]*rms_source_id = null/);
+  assert.doesNotMatch(service, /lead_deleted', 'Lead eliminado'/);
 });
 
 test("el editor de contacto mantiene campos desplazables y acciones siempre alcanzables", () => {

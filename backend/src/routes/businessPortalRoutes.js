@@ -110,6 +110,7 @@ const {
   createNote,
   deleteAgendaItem,
   deleteContact,
+  permanentlyDeleteContact,
   downloadCustomerCsvErrors,
   downloadCustomerCsvTemplate,
   importCustomersCsv,
@@ -312,6 +313,12 @@ router.post("/gamification/agenda/create-tasks", createGamificationAgendaTasks);
 router.get("/leads/:leadId", leadDetail);
 router.patch("/leads/:leadId", requireContactDirectory, updateContact);
 router.delete("/leads/:leadId", requireContactDirectory, deleteContact);
+router.delete(
+  "/leads/:leadId/permanent",
+  requireContactDirectory,
+  requireRoles("BUSINESS_OWNER", "ADMIN", "ADMIN_MARKET_GAMES"),
+  permanentlyDeleteContact
+);
 router.post("/leads/:leadId/notes", createNote);
 router.post("/leads/:leadId/interests", addInterest);
 router.delete("/leads/:leadId/interests/:interestId", removeInterest);
