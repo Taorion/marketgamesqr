@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260907-thermometer-speed-v446";
+const APP_VERSION = "empresa-20260907-thermometer-ticket-only-v447";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -1086,6 +1086,7 @@ const openQuestionInput = document.getElementById("openQuestionInput");
 const openQuestionPlaceholderInput = document.getElementById("openQuestionPlaceholderInput");
 const thermometerDiscountsInput = document.getElementById("thermometerDiscountsInput");
 const thermometerSpeedInput = document.getElementById("thermometerSpeedInput");
+const thermometerFulfillmentNotice = document.getElementById("thermometerFulfillmentNotice");
 const minigameDurationInput = document.getElementById("minigameDurationInput");
 const minigameMinScoreInput = document.getElementById("minigameMinScoreInput");
 const minigameMaxScoreInput = document.getElementById("minigameMaxScoreInput");
@@ -19319,6 +19320,20 @@ function resetGamingActivationBuilderForNewActivation() {
   syncActivationBenefitValueInputs({ fromLegacy: true });
 }
 
+function syncThermometerFulfillmentRestriction(type = currentActivationType()) {
+  if (!triviaBenefitFulfillmentModeInput) return;
+  const restricted = type === "THERMOMETER";
+  Array.from(triviaBenefitFulfillmentModeInput.options).forEach((option) => {
+    option.disabled = restricted && option.value !== "PHYSICAL_QR";
+  });
+  if (restricted) triviaBenefitFulfillmentModeInput.value = "PHYSICAL_QR";
+  thermometerFulfillmentNotice?.classList.toggle("hidden", !restricted);
+  thermometerFulfillmentNotice?.toggleAttribute("hidden", !restricted);
+  if (restricted) triviaBenefitFulfillmentModeInput.setAttribute("aria-describedby", "thermometerFulfillmentNotice");
+  else triviaBenefitFulfillmentModeInput.removeAttribute("aria-describedby");
+  syncBenefitFulfillmentFields();
+}
+
 function openGamingActivationBuilderModal(options = {}) {
   setTicketCenterTab("trivia");
   const modal = ensureGamingActivationBuilderModal();
@@ -29005,6 +29020,7 @@ function setActivationType(type) {
       field.required = false;
     });
   }
+  syncThermometerFulfillmentRestriction(nextType);
   updateActivationQuestionCountControls();
   if (triviaBuilderHint) {
     triviaBuilderHint.textContent = nextType === "TRIVIA"
@@ -30365,6 +30381,12 @@ function validateTriviaLauncherForm() {
   updateTriviaExpiryMode();
   updateActivationProductIntentMode();
   const type = currentActivationType();
+  if (type === "THERMOMETER" && triviaBenefitFulfillmentModeInput?.value !== "PHYSICAL_QR") {
+    syncThermometerFulfillmentRestriction(type);
+    setInlineMessage(triviaLauncherMessage, "El Termómetro entrega exclusivamente un ticket QR con el descuento obtenido.", "error");
+    triviaBenefitFulfillmentModeInput?.focus();
+    return null;
+  }
   if (!validateBenefitFulfillment(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaLauncherMessage, "beneficio de la activación")) return null;
   if (!validateActivationParticipantLock()) return null;
   if (!validateActivationProductIntent()) return null;

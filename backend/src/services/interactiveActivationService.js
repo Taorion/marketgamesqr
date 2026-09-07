@@ -2241,9 +2241,12 @@ async function resolvePositionReward(client, activation, positionPercent) {
     .sort((a, b) => a.distance - b.distance)[0]?.zone;
   if (!match) return null;
   await assertMaxAwards(client, "interactive_touch_reward_zones", match.id, match.max_awards);
+  const rewardValue = activation.activation_type === "DISCOUNT_THERMOMETER"
+    ? thermometerTicketRewardValue(match.reward_value)
+    : match.reward_value;
   return fixedRewardPayload({
     reward_type: match.reward_type,
-    reward_value: match.reward_value,
+    reward_value: rewardValue,
     reward_label: match.reward_label,
     reward_conditions: match.reward_conditions,
   }, "position", { position_percent: position, zone_id: match.id, label: match.label });
@@ -2300,6 +2303,23 @@ async function assertMaxAwards(client, tableName, sourceId, maxAwards) {
   if (Number(result.rows[0]?.total || 0) >= Number(maxAwards)) {
     throw badRequest("Este beneficio ya agoto sus cupos.");
   }
+}
+
+function thermometerTicketRewardValue(value = {}) {
+  const rewardValue = { ...(value || {}) };
+  delete rewardValue.digital_asset_id;
+  delete rewardValue.ecommerce_code;
+  delete rewardValue.ecommerce_url;
+  return {
+    ...rewardValue,
+    fulfillment: {
+      mode: "PHYSICAL_QR",
+      channel: "physical_store",
+      label: "Ticket QR de descuento",
+      instructions: "Presenta este QR para redimir el descuento obtenido en el Termómetro.",
+    },
+    redemption_channel: "physical_store",
+  };
 }
 
 function digitalAssetRewardForResponse(reward = {}) {
@@ -2893,6 +2913,7 @@ module.exports = {
   recycleInteractiveActivation,
   resolveDiagnosticResult,
   scoreAnswerWithRules,
+  thermometerTicketRewardValue,
   startInteractiveParticipant,
   updateInteractiveActivation,
 };

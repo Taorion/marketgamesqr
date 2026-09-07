@@ -69600,3 +69600,17 @@ html body #gamingActivationBuilderModal .benefit-fulfillment-panel label[hidden]
     grid-template-columns: minmax(0, 1fr);
   }
 }
+.activation-restriction-note {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(180, 83, 9, 0.28);
+  border-radius: 12px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.activation-restriction-note strong {
+  color: #7c2d12;
+}
