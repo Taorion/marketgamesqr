@@ -943,6 +943,9 @@ function renderThermometer() {
     { label: "10%", position_percent: 75 },
     { label: "5%", position_percent: 100 },
   ];
+  const configuredSpeed = Number(currentActivation.interaction_config?.speed_percent_per_second || 90);
+  const speed = Math.max(25, Math.min(250, Number.isFinite(configuredSpeed) ? configuredSpeed : 90));
+  const speedLabel = speed >= 170 ? "Muy rápida" : speed >= 120 ? "Rápida" : speed <= 65 ? "Lenta" : "Normal";
   experienceBody.innerHTML = `
     <article class="question-card">
       <div class="question-title"><span>%</span><strong>Deten el indicador cerca del mejor beneficio configurado.</strong></div>
@@ -951,22 +954,32 @@ function renderThermometer() {
         ${labels.map((zone) => `<i>${escapeHtml(zone.label || zone.reward_label)}</i>`).join("")}
       </div>
       <button class="submit-button" type="button" id="stopThermometerButton">Detener</button>
-      <p id="thermometerResult">El mayor beneficio puede estar en cualquier punto, no necesariamente al final.</p>
+      <p id="thermometerResult">Velocidad ${escapeHtml(speedLabel.toLowerCase())}. El mayor beneficio puede estar en cualquier punto.</p>
     </article>
   `;
   let position = 0;
   let direction = 1;
+  let previousTime = null;
   const pointer = document.getElementById("thermometerPointer");
-  const timer = window.setInterval(() => {
-    position += direction * 2.4;
-    if (position >= 100 || position <= 0) {
-      direction *= -1;
-      position = Math.max(0, Math.min(100, position));
+  let animationFrame = null;
+  const movePointer = (timestamp) => {
+    if (previousTime === null) previousTime = timestamp;
+    const elapsedSeconds = Math.min(0.064, Math.max(0, timestamp - previousTime) / 1000);
+    previousTime = timestamp;
+    position += direction * speed * elapsedSeconds;
+    if (position >= 100) {
+      position = Math.max(0, 200 - position);
+      direction = -1;
+    } else if (position <= 0) {
+      position = Math.min(100, -position);
+      direction = 1;
     }
     pointer.style.left = `${position}%`;
-  }, 24);
+    animationFrame = window.requestAnimationFrame(movePointer);
+  };
+  animationFrame = window.requestAnimationFrame(movePointer);
   document.getElementById("stopThermometerButton").addEventListener("click", () => {
-    window.clearInterval(timer);
+    window.cancelAnimationFrame(animationFrame);
     selectedPosition = position;
     document.getElementById("thermometerResult").textContent = `Posicion registrada: ${Math.round(position)}%.`;
     setProgress(1, 1);

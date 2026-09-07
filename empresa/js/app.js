@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260907-diagnostic-question-count-v445";
+const APP_VERSION = "empresa-20260907-thermometer-speed-v446";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -1085,6 +1085,7 @@ const triviaQuestionBuilder = document.getElementById("triviaQuestionBuilder");
 const openQuestionInput = document.getElementById("openQuestionInput");
 const openQuestionPlaceholderInput = document.getElementById("openQuestionPlaceholderInput");
 const thermometerDiscountsInput = document.getElementById("thermometerDiscountsInput");
+const thermometerSpeedInput = document.getElementById("thermometerSpeedInput");
 const minigameDurationInput = document.getElementById("minigameDurationInput");
 const minigameMinScoreInput = document.getElementById("minigameMinScoreInput");
 const minigameMaxScoreInput = document.getElementById("minigameMaxScoreInput");
@@ -30121,6 +30122,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
       interaction_config: {
         mode: "moving_indicator",
         orientation: "horizontal",
+        speed_percent_per_second: Number(activationPayload.thermometer_speed || 90),
       },
       touch_zones: discounts.map((discount, index) => ({
         label: `${discount}%`,
@@ -30406,7 +30408,7 @@ function validateTriviaLauncherForm() {
       thermometerDiscountsInput?.focus();
       return null;
     }
-    return { thermometer_discounts: thermometerDiscounts };
+    return { thermometer_discounts: thermometerDiscounts, thermometer_speed: collectThermometerSpeed() };
   }
   if (isFlatChoiceActivation(type)) {
     const choices = collectFlatChoiceOptions(type);
@@ -30657,6 +30659,11 @@ function renderActivationLinkQrOptions() {
     ...activations.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.title || "Activación sin título")}</option>`),
   ].join("");
   if (activations.some((item) => String(item.id) === String(selected))) activationLinkQrActivationSelect.value = selected;
+}
+
+function collectThermometerSpeed() {
+  const speed = Number(thermometerSpeedInput?.value || 90);
+  return [55, 90, 135, 180].includes(speed) ? speed : 90;
 }
 
 function activationLinkQrFilename(label = "QR publicitario") {
