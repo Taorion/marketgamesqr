@@ -69293,7 +69293,11 @@ html body .portal-shell .view-section.active[data-view="dashboard"] .dashboard-l
     justify-self: start !important;
   }
 }
-/* activation-full-editor-v437-20260907 */
+/* activation-full-editor-v437-mobile-v3-20260907 */
+html body.activation-edit-open #portalGuideLauncher {
+  display: none !important;
+}
+
 html body #activationEditModal {
   align-items: center !important;
   justify-content: center !important;

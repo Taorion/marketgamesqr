@@ -53,7 +53,8 @@ test("the editor exposes the operational configuration and protects historic ass
 });
 
 test("the full editor remains contained and actionable on mobile", () => {
-  assert.match(cssSource, /activation-full-editor-v437-20260907/);
+  assert.match(cssSource, /activation-full-editor-v437-mobile-v3-20260907/);
+  assert.match(cssSource, /body\.activation-edit-open #portalGuideLauncher[\s\S]*display: none !important/);
   assert.match(cssSource, /#activationEditModal \.activation-edit-form[\s\S]*overflow-y: auto !important/);
   assert.match(cssSource, /@media \(max-width: 640px\)[\s\S]*max-height: 100dvh !important/);
   assert.match(cssSource, /#activationEditModal \.modal-button-row[\s\S]*position: sticky !important/);
