@@ -69552,3 +69552,51 @@ html body #gamingActivationBuilderModal .benefit-fulfillment-panel label[hidden]
     width: 100%;
   }
 }
+.diagnostic-question-builder,
+.diagnostic-range-builder {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+[data-diagnostic-form="NEED_DIAGNOSTIC"] > .survey-builder-grid {
+  display: none;
+}
+
+.diagnostic-question-card,
+.diagnostic-range-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.diagnostic-option-grid,
+.diagnostic-range-limits {
+  display: grid;
+  gap: 10px;
+}
+
+.diagnostic-option-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  gap: 10px;
+  align-items: end;
+}
+
+.diagnostic-range-limits {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.diagnostic-results-head {
+  margin-top: 22px;
+}
+
+@media (max-width: 560px) {
+  .diagnostic-option-row,
+  .diagnostic-range-limits {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

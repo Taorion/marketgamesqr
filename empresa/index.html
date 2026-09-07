@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-quality-1-premium-v318-gos-brand-v362-20260826&amp;activation-editor=full-v3-20260907&amp;activation-question-count=v440-20260907&amp;activation-digital-download=v441-20260907&amp;link-qr-generator=v443-20260907">
+  <link rel="stylesheet" href="css/styles.css?v=rms-quality-1-premium-v318-gos-brand-v362-20260826&amp;activation-editor=full-v3-20260907&amp;activation-question-count=v440-20260907&amp;activation-digital-download=v441-20260907&amp;link-qr-generator=v443-20260907&amp;diagnostic-question-count=v445-20260907">
   <link rel="stylesheet" href="css/campaign-command-center-v314.css" media="print" data-deferred-portal-style>
   <style id="campaignCommandCenterCriticalV316">
     html body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"].campaign-premium-enabled > #campaignPremiumWorkspace { display:grid !important; }
@@ -3518,19 +3518,19 @@
                         <label class="hidden"><span>Pregunta 5</span><input data-flat-question="message" data-flat-question-type="OPEN" type="text" value="Quieres agregar algun detalle especial para el regalo?"><small>Texto libre para personalizar la recomendación.</small></label>
                       </div>
                     </div>
-                    <div class="full activation-config-panel hidden" data-activation-config="NEED_DIAGNOSTIC" data-flat-form="NEED_DIAGNOSTIC">
+                    <div class="full activation-config-panel hidden" data-activation-config="NEED_DIAGNOSTIC" data-diagnostic-form="NEED_DIAGNOSTIC">
                       <div class="activation-config-head">
                         <strong>Diagnóstico de necesidad</strong>
-                        <span>Ideal para servicios profesionales, clínicas, academias, gimnasios y asesorías.</span>
+                        <span>Cada respuesta suma puntos. La persona recibe el diagnóstico que definas para su rango y después obtiene su beneficio.</span>
                       </div>
-                      <label class="activation-question-count-field"><span>Cantidad de preguntas</span><input data-question-count-for="NEED_DIAGNOSTIC" type="number" min="1" max="5" value="3"><small>Activa de 1 a 5 preguntas para perfilar mejor al cliente.</small></label>
-                      <div class="survey-builder-grid">
-                        <label><span>Pregunta 1</span><input data-flat-question="need" data-flat-question-type="OPEN" type="text" value="Qué necesidad quieres resolver?"></label>
-                        <label><span>Pregunta 2</span><input data-flat-question="urgency" data-flat-question-type="SINGLE_CHOICE" type="text" value="Qué tan urgente es para ti?"></label>
-                        <label><span>Pregunta 3</span><input data-flat-question="goal" data-flat-question-type="OPEN" type="text" value="Qué resultado esperas lograr?"></label>
-                        <label class="hidden"><span>Pregunta 4</span><input data-flat-question="budget" data-flat-question-type="SINGLE_CHOICE" type="text" value="Qué presupuesto tienes estimado?"></label>
-                        <label class="hidden"><span>Pregunta 5</span><input data-flat-question="contact_preference" data-flat-question-type="SINGLE_CHOICE" type="text" value="Cómo prefieres recibir asesoría?"></label>
+                      <label class="activation-question-count-field"><span>Cantidad de preguntas</span><select id="diagnosticQuestionCountInput" data-question-count-for="NEED_DIAGNOSTIC"><option value="1">1 pregunta</option><option value="2">2 preguntas</option><option value="3" selected>3 preguntas</option><option value="4">4 preguntas</option><option value="5">5 preguntas</option></select><small id="diagnosticQuestionCountSummary">Se mostrarán y publicarán exactamente 3 preguntas.</small></label>
+                      <div class="diagnostic-question-builder" id="diagnosticQuestionBuilder"></div>
+                      <div class="activation-config-head diagnostic-results-head">
+                        <strong>Resultados por rango de puntuación</strong>
+                        <span>Define qué diagnóstico recibe la persona según el total. Después de este texto verá su beneficio.</span>
                       </div>
+                      <div class="diagnostic-range-builder" id="diagnosticRangeBuilder"></div>
+                      <small class="activation-help">Los rangos deben cubrir desde 0 hasta la puntuación máxima, sin cruces ni espacios.</small>
                     </div>
                     <div class="full activation-config-panel hidden" data-activation-config="WAITLIST" data-flat-form="WAITLIST">
                       <div class="activation-config-head">
@@ -8537,7 +8537,7 @@
 
   <script src="js/evaluation-station-core.js?v=evaluation-core-v1-20260830" defer></script>
   <script src="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830" defer></script>
-  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility-goals-contacts-v406-20260829&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828&amp;intelligence=gos-reliable-v389-20260828&amp;risk-none=initial-result-v396-20260829&amp;rms-sale=multiproduct-history-v397-20260829&amp;risk-none-select=explicit-v398-20260829&amp;risk-destination=handoff-v399-20260829&amp;risk-benefit=handoff-v400-20260829&amp;risk-product-scope=v401-20260829&amp;recycling=atomic-handoff-v428-20260830&amp;risk-speed=fast-v403-20260829&amp;risk-products=live-v405-20260829&amp;risk-query=source-pruning-v407-20260829&amp;risk-read=direct-v408-20260829&amp;risk-feedback=responsive-v409-20260829&amp;risk-binding=isolated-v410-20260829&amp;risk-prepare=search-v411-20260829&amp;risk-ticket=fast-v412-20260830&amp;risk-qr=on-demand-v413-20260830&amp;risk-flow=preparation-handoff-v414-20260830&amp;risk-workbench=fast-v415-20260830&amp;risk-command=premium-v419-20260830&amp;risk-v2=premium-v6-20260830&amp;evaluation=precision-v3-startup-hotfix-20260830&amp;rms-sync=consistent-v429-20260902&amp;rms-loading=definitive-v430-20260902&amp;live-refresh=v431-20260902&amp;rms-loading-copy=v432-20260902&amp;contact-editor=modal-v434-20260903&amp;contact-promotion=v435-20260905&amp;activation-layout=v436-20260905&amp;activation-editor=simple-v438-20260907&amp;activation-new=clean-v439-20260907&amp;activation-question-count=v440-20260907&amp;activation-digital-download=v441-20260907&amp;link-qr-generator=v443-20260907" defer></script>
+  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility-goals-contacts-v406-20260829&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828&amp;intelligence=gos-reliable-v389-20260828&amp;risk-none=initial-result-v396-20260829&amp;rms-sale=multiproduct-history-v397-20260829&amp;risk-none-select=explicit-v398-20260829&amp;risk-destination=handoff-v399-20260829&amp;risk-benefit=handoff-v400-20260829&amp;risk-product-scope=v401-20260829&amp;recycling=atomic-handoff-v428-20260830&amp;risk-speed=fast-v403-20260829&amp;risk-products=live-v405-20260829&amp;risk-query=source-pruning-v407-20260829&amp;risk-read=direct-v408-20260829&amp;risk-feedback=responsive-v409-20260829&amp;risk-binding=isolated-v410-20260829&amp;risk-prepare=search-v411-20260829&amp;risk-ticket=fast-v412-20260830&amp;risk-qr=on-demand-v413-20260830&amp;risk-flow=preparation-handoff-v414-20260830&amp;risk-workbench=fast-v415-20260830&amp;risk-command=premium-v419-20260830&amp;risk-v2=premium-v6-20260830&amp;evaluation=precision-v3-startup-hotfix-20260830&amp;rms-sync=consistent-v429-20260902&amp;rms-loading=definitive-v430-20260902&amp;live-refresh=v431-20260902&amp;rms-loading-copy=v432-20260902&amp;contact-editor=modal-v434-20260903&amp;contact-promotion=v435-20260905&amp;activation-layout=v436-20260905&amp;activation-editor=simple-v438-20260907&amp;activation-new=clean-v439-20260907&amp;activation-question-count=v440-20260907&amp;activation-digital-download=v441-20260907&amp;link-qr-generator=v443-20260907&amp;diagnostic-question-count=v445-20260907" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contact-promotion-v435-20260905" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>

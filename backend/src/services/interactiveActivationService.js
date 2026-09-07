@@ -1293,10 +1293,14 @@ async function completeInteractiveParticipant(slug, body) {
     validateGameSession(activation, participant, body);
 
     const answers = body.answers || {};
-    const score = body.score === undefined || body.score === null
+    const diagnosticActivation = isDiagnosticActivation(activation);
+    const score = diagnosticActivation || body.score === undefined || body.score === null
       ? await calculateAnswerScore(client, activation, answers)
       : Number(body.score);
-    const resultProfile = body.result_profile || resolveProfile(activation, answers);
+    const diagnosticResult = diagnosticActivation ? resolveDiagnosticResult(activation, score) : null;
+    const resultProfile = diagnosticActivation
+      ? (diagnosticResult?.title || diagnosticResult?.key || null)
+      : (body.result_profile || resolveProfile(activation, answers));
     const rewardPayload = await resolveRewardPayload(client, activation, {
       answers,
       score,
@@ -1351,6 +1355,7 @@ async function completeInteractiveParticipant(slug, body) {
     if (!rewardPayload || pendingReview) {
       return {
         participant: { id: participant.id, status, score, result_profile: resultProfile || null },
+        diagnostic_result: diagnosticResult,
         rewarded: false,
         message: pendingReview
           ? "Participacion registrada. El beneficio queda pendiente de aprobacion."
@@ -1370,6 +1375,7 @@ async function completeInteractiveParticipant(slug, body) {
     await recordCommunicationEvent(client, activation, attribution, "REWARD_ISSUED", { participant_id: participant.id, lead_id: participant.player_id || null, qr_code_id: reward.qr_code?.id || null });
     return {
       participant: { id: participant.id, status: "rewarded", score, result_profile: resultProfile || null },
+      diagnostic_result: diagnosticResult,
       rewarded: true,
       message: fulfillment.mode === "ECOMMERCE_CODE"
         ? "Beneficio generado. Tu codigo ecommerce esta listo para usar en la tienda online."
@@ -1429,6 +1435,7 @@ async function existingRewardResponseForIdentity(client, activation, body) {
         result_profile: reward.result_profile || null,
       },
       rewarded: true,
+      diagnostic_result: resolveDiagnosticResult(activation, reward.score),
       recovered: true,
       message: "Tu activo digital ya estaba disponible. Puedes descargarlo nuevamente.",
       reward: digitalAssetRewardForResponse(reward),
@@ -1445,6 +1452,7 @@ async function existingRewardResponseForIdentity(client, activation, body) {
       result_profile: reward.result_profile || null,
     },
     rewarded: true,
+    diagnostic_result: resolveDiagnosticResult(activation, reward.score),
     recovered: true,
     message: "QR recuperado. Ya habias generado este beneficio; no se desconto otro ticket.",
     reward,
@@ -2066,20 +2074,63 @@ async function persistAnswers(client, activationId, participantId, answers) {
   }
 }
 
+function isDiagnosticActivation(activation = {}) {
+  return ["QUICK_DIAGNOSTIC", "PREMIUM_NEED_DIAGNOSTIC"].includes(activation.activation_type)
+    || activation.interaction_config?.template === "NEED_DIAGNOSTIC";
+}
+
+function answerValues(answer) {
+  if (Array.isArray(answer)) return answer.map((value) => String(value));
+  return answer === undefined || answer === null || answer === "" ? [] : [String(answer)];
+}
+
+function scoreAnswerWithRules(rules = {}, answer) {
+  const values = answerValues(answer);
+  const optionPoints = rules.option_points && typeof rules.option_points === "object" ? rules.option_points : null;
+  if (optionPoints) {
+    return values.reduce((total, value) => {
+      const points = Number(optionPoints[value] || 0);
+      return total + (Number.isFinite(points) ? points : 0);
+    }, 0);
+  }
+  if (!Object.prototype.hasOwnProperty.call(rules, "correct_answer")) return 0;
+  return values.some((value) => value === String(rules.correct_answer)) ? Number(rules.points || 1) : 0;
+}
+
+function resolveDiagnosticResult(activation = {}, score = 0) {
+  if (!isDiagnosticActivation(activation)) return null;
+  const ranges = Array.isArray(activation.interaction_config?.diagnostic_ranges)
+    ? activation.interaction_config.diagnostic_ranges
+    : [];
+  const numericScore = Number(score || 0);
+  const match = ranges.find((range) => (
+    numericScore >= Number(range.min_score || 0)
+    && numericScore <= Number(range.max_score ?? Number.MAX_SAFE_INTEGER)
+  ));
+  if (!match) return null;
+  return {
+    key: match.key || null,
+    min_score: Number(match.min_score || 0),
+    max_score: match.max_score === null || match.max_score === undefined ? null : Number(match.max_score),
+    title: String(match.title || "Tu resultado"),
+    text: String(match.text || match.message || ""),
+    score: numericScore,
+  };
+}
+
 async function calculateAnswerScore(client, activation, answers) {
   const questionResult = await client.query(
     "select id, scoring_rules from interactive_activation_questions where activation_id = $1",
     [activation.id]
   );
-  const questionScore = questionResult.rows.reduce((total, question) => {
+  const hasQuestionScoring = questionResult.rows.some((question) => {
     const rules = question.scoring_rules || {};
-    if (!Object.prototype.hasOwnProperty.call(rules, "correct_answer")) return total;
-    const actual = answers?.[question.id];
-    return String(actual) === String(rules.correct_answer)
-      ? total + Number(rules.points || 1)
-      : total;
-  }, 0);
-  if (questionScore) return questionScore;
+    return Object.prototype.hasOwnProperty.call(rules, "correct_answer") || Boolean(rules.option_points);
+  });
+  const questionScore = questionResult.rows.reduce((total, question) => (
+    total + scoreAnswerWithRules(question.scoring_rules || {}, answers?.[question.id])
+  ), 0);
+  if (hasQuestionScoring) return questionScore;
 
   const config = activation.interaction_config || {};
   if (!Array.isArray(config.scored_answers)) return 0;
@@ -2840,6 +2891,8 @@ module.exports = {
   listInteractiveParticipants,
   listInteractiveRewards,
   recycleInteractiveActivation,
+  resolveDiagnosticResult,
+  scoreAnswerWithRules,
   startInteractiveParticipant,
   updateInteractiveActivation,
 };

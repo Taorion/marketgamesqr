@@ -1406,3 +1406,37 @@ body { width: 100%; max-width: 100%; overflow-x: clip; }
   .reveal-card.spin-discover-card:hover,
   .reveal-card.spin-discover-card:disabled { min-height: 210px; }
 }
+.diagnostic-result-card {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 20px;
+  border: 1px solid rgba(0, 191, 229, 0.3);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(5, 42, 107, 0.98), rgba(8, 73, 139, 0.96));
+  color: #fff;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.diagnostic-result-card > span {
+  color: #8cecff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.diagnostic-result-card .diagnostic-score {
+  font-size: clamp(1.7rem, 7vw, 2.5rem);
+}
+
+.diagnostic-result-card h3,
+.diagnostic-result-card p {
+  margin: 0;
+}
+
+.diagnostic-result-card p {
+  color: rgba(255, 255, 255, 0.86);
+  line-height: 1.6;
+}

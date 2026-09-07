@@ -495,8 +495,11 @@ async function startGameSession() {
 
 function renderExperience() {
   experienceStage.classList.remove("hidden");
-  experienceTitle.textContent = currentActivation.activation_label || "Completa la experiencia";
-  experienceCopy.textContent = currentActivation.activation_type === "SCRATCH_WIN"
+  const diagnostic = ["QUICK_DIAGNOSTIC", "PREMIUM_NEED_DIAGNOSTIC"].includes(currentActivation.activation_type);
+  experienceTitle.textContent = diagnostic ? "Completa tu diagnóstico" : (currentActivation.activation_label || "Completa la experiencia");
+  experienceCopy.textContent = diagnostic
+    ? "Marca una respuesta por pregunta. Al final verás tu puntuación, el diagnóstico preparado por el negocio y tu beneficio."
+    : currentActivation.activation_type === "SCRATCH_WIN"
     ? "Raspa una sola zona. Al comenzar, las otras quedan bloqueadas y veras el beneficio seleccionado."
     : currentActivation.activation_type === "OPEN_QUESTION"
     ? "No hay respuesta correcta. Escribe tu opinion o necesidad y el sistema generara el QR configurado."
@@ -520,7 +523,9 @@ function renderExperience() {
 
 function renderQuestionExperience() {
   const questions = currentActivation.questions || [];
-  const submitLabel = currentActivation.activation_type === "OPEN_QUESTION"
+  const submitLabel = ["QUICK_DIAGNOSTIC", "PREMIUM_NEED_DIAGNOSTIC"].includes(currentActivation.activation_type)
+    ? "Ver mi diagnóstico y beneficio"
+    : currentActivation.activation_type === "OPEN_QUESTION"
     ? "Enviar respuesta y obtener QR"
     : "Generar mi QR";
   if (!questions.length) {
@@ -3252,8 +3257,18 @@ async function renderResult(data) {
   const isEcommerceReward = fulfillment.mode === "ECOMMERCE_CODE";
   const isDigitalAssetReward = fulfillment.mode === "DIGITAL_ASSET";
   const rewardQrDataUrl = data.rewarded && !isDigitalAssetReward ? await ticketImageDataUrlForBrowser(data.qr_image_data_url) : "";
+  const diagnostic = data.diagnostic_result;
+  const diagnosticMarkup = diagnostic ? `
+    <section class="diagnostic-result-card" aria-label="Resultado del diagnóstico">
+      <span>Tu puntuación</span>
+      <strong class="diagnostic-score">${escapeHtml(diagnostic.score ?? data.participant?.score ?? 0)} puntos</strong>
+      <h3>${escapeHtml(diagnostic.title || "Tu resultado")}</h3>
+      <p>${escapeHtml(diagnostic.text || "")}</p>
+    </section>
+  ` : "";
   ticketResult.dataset.tone = data.rewarded ? "success" : "error";
   ticketResult.innerHTML = data.rewarded && isDigitalAssetReward ? `
+    ${diagnosticMarkup}
     <div class="result-copy">
       <span>Activo digital desbloqueado</span>
       <strong>${escapeHtml(fulfillment.asset_title || data.reward?.reward_label || "Activo digital")}</strong>
@@ -3267,6 +3282,7 @@ async function renderResult(data) {
       ${fulfillment.download_url ? `<a class="submit-button" href="${escapeHtml(fulfillment.download_url)}">Descargar activo</a>` : ""}
     </div>
   ` : data.rewarded && isEcommerceReward ? `
+    ${diagnosticMarkup}
     <div class="result-copy">
       <span>Beneficio desbloqueado</span>
       <strong>${escapeHtml(data.reward?.reward_label || "Codigo ecommerce")}</strong>
@@ -3281,6 +3297,7 @@ async function renderResult(data) {
       <button class="submit-button" type="button" id="copyEcommerceCodeButton">Copiar codigo</button>
     </div>
   ` : data.rewarded ? `
+    ${diagnosticMarkup}
     <div class="result-copy">
       <span>Beneficio generado</span>
       <strong>${escapeHtml(data.reward?.reward_label || "QR unico")}</strong>
@@ -3291,6 +3308,7 @@ async function renderResult(data) {
       <button class="submit-button" type="button" id="downloadRewardQrButton">Descargar QR</button>
     </div>
   ` : `
+    ${diagnosticMarkup}
     <div class="result-copy">
       <span>Participacion registrada</span>
       <strong>${escapeHtml(data.participant?.score ?? "")}</strong>

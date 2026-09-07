@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260907-link-qr-generator-v443";
+const APP_VERSION = "empresa-20260907-diagnostic-question-count-v445";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -29385,6 +29385,7 @@ function getActivationQuestionCount(type, fallback = 1) {
 }
 
 function updateActivationQuestionCountControls() {
+  renderDiagnosticEvaluatorBuilder();
   const openQuestionCount = getActivationQuestionCount("OPEN_QUESTION", 1);
   document.querySelectorAll("[data-open-question]").forEach((input) => {
     const active = Number(input.dataset.openQuestion || 0) <= openQuestionCount;
@@ -29405,6 +29406,19 @@ function updateActivationQuestionCountControls() {
       row.toggleAttribute("hidden", !active);
       input.disabled = !active;
     });
+  });
+  const diagnosticCount = getActivationQuestionCount("NEED_DIAGNOSTIC", 3);
+  const diagnosticSummary = document.getElementById("diagnosticQuestionCountSummary");
+  if (diagnosticSummary) {
+    diagnosticSummary.textContent = `Se mostrarán y publicarán exactamente ${diagnosticCount} ${diagnosticCount === 1 ? "pregunta" : "preguntas"}.`;
+  }
+  document.querySelectorAll("[data-diagnostic-question]").forEach((card) => {
+    const active = Number(card.dataset.diagnosticQuestion || 0) <= diagnosticCount;
+    card.classList.toggle("hidden", !active);
+    card.toggleAttribute("hidden", !active);
+    card.querySelectorAll("input, textarea").forEach((field) => { field.disabled = !active; });
+    const title = card.querySelector(":scope > strong");
+    if (title) title.textContent = `Pregunta ${card.dataset.diagnosticQuestion} de ${diagnosticCount}`;
   });
 }
 
@@ -30133,6 +30147,18 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     };
   }
 
+  if (type === "NEED_DIAGNOSTIC") {
+    return {
+      ...base,
+      reward_mode: "fixed",
+      questions: collectDiagnosticQuestions(),
+      interaction_config: {
+        template: type,
+        diagnostic_ranges: collectDiagnosticRanges(),
+      },
+    };
+  }
+
   if (isFlatFormActivation(type)) {
     return {
       ...base,
@@ -30393,6 +30419,35 @@ function validateTriviaLauncherForm() {
       return null;
     }
     return { choices };
+  }
+  if (type === "NEED_DIAGNOSTIC") {
+    const questions = collectDiagnosticQuestions();
+    const ranges = collectDiagnosticRanges().sort((left, right) => left.min_score - right.min_score);
+    const expectedQuestions = getActivationQuestionCount(type, 3);
+    const invalidQuestion = questions.find((question) => (
+      !question.question_text
+      || question.options.length < 2
+      || question.options.some((option) => !Number.isInteger(option.points) || option.points < 0)
+    ));
+    if (questions.length !== expectedQuestions || invalidQuestion) {
+      setInlineMessage(triviaLauncherMessage, `Completa las ${expectedQuestions} preguntas. Cada una necesita al menos dos respuestas y puntos enteros desde cero.`, "error");
+      return null;
+    }
+    const maximumScore = diagnosticMaximumScore(questions);
+    const invalidRange = ranges.find((range, index) => (
+      !range.title
+      || !range.text
+      || !Number.isInteger(range.min_score)
+      || !Number.isInteger(range.max_score)
+      || range.min_score < 0
+      || range.max_score < range.min_score
+      || (index === 0 ? range.min_score !== 0 : range.min_score !== ranges[index - 1].max_score + 1)
+    ));
+    if (invalidRange || ranges[ranges.length - 1]?.max_score < maximumScore) {
+      setInlineMessage(triviaLauncherMessage, `Revisa los resultados: deben empezar en 0, continuar sin espacios y cubrir hasta ${maximumScore} puntos. Cada rango necesita título y texto.`, "error");
+      return null;
+    }
+    return { questions, diagnostic_ranges: ranges };
   }
   if (isFlatFormActivation(type)) {
     const questions = collectFlatFormQuestions(type);
@@ -59299,6 +59354,89 @@ function renderMissionActiveList(seasons = []) {
   });
 }
 
+const DIAGNOSTIC_QUESTION_DEFAULTS = [
+  ["¿Qué tan urgente es resolver esta necesidad?", [["No es urgente", 0], ["Quiero resolverla pronto", 2], ["Necesito resolverla ahora", 4]]],
+  ["¿Cuánto está afectando esta situación tu resultado actual?", [["Muy poco", 0], ["De forma moderada", 2], ["Mucho", 4]]],
+  ["¿Qué tan preparado estás para tomar acción?", [["Solo estoy explorando", 0], ["Estoy evaluando opciones", 2], ["Estoy listo para empezar", 4]]],
+  ["¿Qué nivel de acompañamiento necesitas?", [["Información general", 0], ["Orientación personalizada", 2], ["Acompañamiento completo", 4]]],
+  ["¿Qué tan importante es lograr este resultado?", [["Importancia baja", 0], ["Importancia media", 2], ["Es prioritario", 4]]],
+];
+
+function renderDiagnosticEvaluatorBuilder() {
+  const questionBuilder = document.getElementById("diagnosticQuestionBuilder");
+  const rangeBuilder = document.getElementById("diagnosticRangeBuilder");
+  if (questionBuilder && !questionBuilder.children.length) {
+    questionBuilder.innerHTML = DIAGNOSTIC_QUESTION_DEFAULTS.map(([question, options], questionIndex) => `
+      <article class="diagnostic-question-card" data-diagnostic-question="${questionIndex + 1}">
+        <strong>Pregunta ${questionIndex + 1}</strong>
+        <label><span>Texto de la pregunta</span><input data-diagnostic-question-text type="text" maxlength="500" value="${escapeHtml(question)}"></label>
+        <div class="diagnostic-option-grid">
+          ${options.map(([label, points], optionIndex) => `
+            <div class="diagnostic-option-row" data-diagnostic-option="${optionIndex + 1}">
+              <label><span>Respuesta ${optionIndex + 1}</span><input data-diagnostic-option-label type="text" maxlength="180" value="${escapeHtml(label)}"></label>
+              <label><span>Puntos</span><input data-diagnostic-option-points type="number" min="0" max="10000" step="1" value="${points}"></label>
+            </div>
+          `).join("")}
+        </div>
+      </article>
+    `).join("");
+  }
+  if (rangeBuilder && !rangeBuilder.children.length) {
+    const ranges = [
+      [0, 3, "Nivel inicial", "Tu resultado indica que la necesidad todavía tiene un impacto bajo. Puedes comenzar con una orientación puntual."],
+      [4, 7, "Nivel intermedio", "Tu resultado muestra una necesidad clara. Una asesoría personalizada puede ayudarte a avanzar con mayor precisión."],
+      [8, 100, "Nivel prioritario", "Tu resultado indica una prioridad alta. Te recomendamos tomar acción y recibir acompañamiento especializado."],
+    ];
+    rangeBuilder.innerHTML = ranges.map(([min, max, title, text], index) => `
+      <article class="diagnostic-range-card" data-diagnostic-range="${index + 1}">
+        <strong>Resultado ${index + 1}</strong>
+        <div class="diagnostic-range-limits">
+          <label><span>Desde</span><input data-diagnostic-range-min type="number" min="0" max="50000" step="1" value="${min}"></label>
+          <label><span>Hasta</span><input data-diagnostic-range-max type="number" min="0" max="50000" step="1" value="${max}"></label>
+        </div>
+        <label><span>Título del resultado</span><input data-diagnostic-range-title type="text" maxlength="160" value="${escapeHtml(title)}"></label>
+        <label><span>Texto que verá la persona</span><textarea data-diagnostic-range-text rows="3" maxlength="1200">${escapeHtml(text)}</textarea></label>
+      </article>
+    `).join("");
+  }
+}
+
+function collectDiagnosticQuestions() {
+  const count = getActivationQuestionCount("NEED_DIAGNOSTIC", 3);
+  return Array.from(document.querySelectorAll("[data-diagnostic-question]"))
+    .slice(0, count)
+    .map((card, questionIndex) => {
+      const options = Array.from(card.querySelectorAll("[data-diagnostic-option]")).map((row, optionIndex) => ({
+        label: row.querySelector("[data-diagnostic-option-label]")?.value.trim() || "",
+        value: `q${questionIndex + 1}_option_${optionIndex + 1}`,
+        points: Number(row.querySelector("[data-diagnostic-option-points]")?.value || 0),
+      })).filter((option) => option.label);
+      return {
+        id: `diagnostic_q${questionIndex + 1}`,
+        question_text: card.querySelector("[data-diagnostic-question-text]")?.value.trim() || "",
+        question_type: "SINGLE_CHOICE",
+        options,
+        required: true,
+        order_index: questionIndex,
+        scoring_rules: { option_points: Object.fromEntries(options.map((option) => [option.value, option.points])) },
+      };
+    });
+}
+
+function collectDiagnosticRanges() {
+  return Array.from(document.querySelectorAll("[data-diagnostic-range]")).map((card, index) => ({
+    key: `diagnostic_result_${index + 1}`,
+    min_score: Number(card.querySelector("[data-diagnostic-range-min]")?.value || 0),
+    max_score: Number(card.querySelector("[data-diagnostic-range-max]")?.value || 0),
+    title: card.querySelector("[data-diagnostic-range-title]")?.value.trim() || "",
+    text: card.querySelector("[data-diagnostic-range-text]")?.value.trim() || "",
+  }));
+}
+
+function diagnosticMaximumScore(questions) {
+  return questions.reduce((total, question) => total + Math.max(0, ...question.options.map((option) => Number(option.points || 0))), 0);
+}
+
 async function updateMissionSeasonStatus(seasonId, status) {
   if (!seasonId || !status || state.missionMutationBusy) return;
   const endpoint = { ACTIVE: "activate", PAUSED: "pause", CLOSED: "close" }[String(status).toUpperCase()];
@@ -61750,6 +61888,12 @@ document.querySelectorAll('[data-survey-field="type"]').forEach((field) => {
 document.querySelectorAll("[data-question-count-for]").forEach((field) => {
   field.addEventListener("input", updateActivationQuestionCountControls);
   field.addEventListener("change", updateActivationQuestionCountControls);
+});
+triviaLauncherForm?.addEventListener("input", (event) => {
+  if (event.target.matches("[data-question-count-for]")) updateActivationQuestionCountControls();
+});
+triviaLauncherForm?.addEventListener("change", (event) => {
+  if (event.target.matches("[data-question-count-for]")) updateActivationQuestionCountControls();
 });
 qrBatchForm?.addEventListener("submit", submitQrBatch);
 qrCreditCheckoutForm?.addEventListener("submit", submitQrCreditCheckout);
