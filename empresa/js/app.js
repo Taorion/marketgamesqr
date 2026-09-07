@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260907-activation-full-editor-v437";
+const APP_VERSION = "empresa-20260907-activation-new-clean-v439";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -1095,6 +1095,7 @@ const minigameFireIntervalInput = document.getElementById("minigameFireIntervalI
 const minigameParticipantCooldownInput = document.getElementById("minigameParticipantCooldownInput");
 const minigameWinnerPolicyInput = document.getElementById("minigameWinnerPolicyInput");
 const activationFormBuilder = document.getElementById("activationFormBuilder");
+const activationFormBuilderInitialMarkup = activationFormBuilder?.innerHTML || "";
 const activationFormFieldCount = document.getElementById("activationFormFieldCount");
 const activationFormAddQuestionButton = document.getElementById("activationFormAddQuestionButton");
 const activationFormAddChoiceQuestionButton = document.getElementById("activationFormAddChoiceQuestionButton");
@@ -3116,7 +3117,6 @@ let state = {
   gamingActivationSearchPublished: "",
   gamingCenterCreationTool: "single",
   gamingActivationWizardStep: 0,
-  currentLauncherActivationId: null,
   activationShareId: null,
   activationShareLeads: [],
   activationShareSelectedKey: "",
@@ -4354,7 +4354,6 @@ function resetBusinessScopedState(options = {}) {
   state.strategicQrBatches = [];
   state.strategicQrHistory = [];
   state.triviaLaunchers = [];
-  state.currentLauncherActivationId = null;
   state.gamingActivationDraftId = null;
   state.activationShareId = null;
   state.activationShareLeads = [];
@@ -19273,6 +19272,32 @@ function ensureGamingActivationBuilderModal(view = document.querySelector('.view
   return modal;
 }
 
+function resetGamingActivationBuilderForNewActivation() {
+  if (activationFormBuilder && activationFormBuilderInitialMarkup) {
+    activationFormBuilder.innerHTML = activationFormBuilderInitialMarkup;
+  }
+  triviaLauncherForm?.reset();
+  state.gamingActivationWizardStep = 0;
+  state.gamingActivationDraftId = null;
+  triviaLauncherResult?.classList.add("hidden");
+  if (triviaLauncherResult) triviaLauncherResult.innerHTML = "";
+  setInlineMessage(triviaLauncherMessage, "", "info");
+  Object.keys(productVoteImages).forEach((key) => delete productVoteImages[key]);
+  triviaLauncherForm?.querySelectorAll("[data-flat-option]").forEach((input) => {
+    delete input.dataset.imageDataUrl;
+  });
+  triviaLauncherForm?.querySelectorAll("[data-product-vote-preview]").forEach((preview) => {
+    preview.removeAttribute("src");
+    preview.classList.add("hidden");
+  });
+  setActivationType(activationTypeInput?.defaultValue || "TRIVIA");
+  updateTriviaQuestionVisibility();
+  updateActivationQuestionCountControls();
+  syncActivationFormBuilder();
+  syncBenefitFulfillmentFields();
+  syncActivationBenefitValueInputs({ fromLegacy: true });
+}
+
 function openGamingActivationBuilderModal(options = {}) {
   setTicketCenterTab("trivia");
   const modal = ensureGamingActivationBuilderModal();
@@ -19288,8 +19313,7 @@ function openGamingActivationBuilderModal(options = {}) {
     showFeedback(error.message || "No se pudieron cargar las sedes de la cuenta.", "error", { title: "Sedes" });
   });
   if (options.reset !== false) {
-    state.gamingActivationWizardStep = 0;
-    state.gamingActivationDraftId = null;
+    resetGamingActivationBuilderForNewActivation();
   }
   modal.classList.remove("hidden");
   modal.removeAttribute("hidden");
@@ -31345,10 +31369,8 @@ function ensureActivationEditModal(view = document.querySelector('.view-section[
         <label class="span-2"><span>Vendedor responsable</span><select id="activationEditSellerInput"></select><small>Los nuevos leads conservarán esta atribución. El historial anterior no se reescribe.</small></label>
         <label><span>Cupo de participantes</span><input id="activationEditMaxParticipantsInput" type="number" min="1" max="1000000" placeholder="Sin limite"></label>
         <label><span>Cupo de beneficios</span><input id="activationEditMaxRewardsInput" type="number" min="1" max="1000000" placeholder="Sin limite"></label>
-        <label><span>Costo en créditos QR</span><input id="activationEditRewardCostInput" type="number" min="1" max="100" required></label>
         <label><span>Tipo de beneficio</span><select id="activationEditRewardTypeInput"><option value="PERCENT_DISCOUNT">Descuento porcentual</option><option value="FIXED_AMOUNT_DISCOUNT">Descuento en dinero</option><option value="FREE_GIFT">Regalo</option><option value="FREE_SAMPLE">Muestra gratis</option><option value="UPGRADE">Upgrade</option><option value="VIP_ACCESS">Acceso VIP</option><option value="RAFFLE_ENTRY">Sorteo</option><option value="BUY_X_GET_Y">Compra X lleva Y</option><option value="CUSTOM">Personalizado</option></select></label>
         <label class="span-2"><span>Nombre del beneficio</span><input id="activationEditRewardLabelInput" type="text" maxlength="180"></label>
-        <label class="span-2"><span>Valor del beneficio</span><textarea id="activationEditRewardValueInput" rows="3"></textarea><small>Formato JSON. Ejemplo: {"percent": 15}</small></label>
         <label class="span-2"><span>Condiciones del beneficio</span><textarea id="activationEditRewardConditionsInput" rows="2" maxlength="1000"></textarea></label>
         <label><span>Dias entre intentos</span><input id="activationEditCooldownInput" type="number" min="0" max="365"></label>
         <label class="span-2"><span>Regla para ganadores</span><select id="activationEditWinnerPolicyInput">
@@ -31406,10 +31428,8 @@ async function editInteractiveActivation(id) {
   modal.querySelector("#activationEditSellerInput").innerHTML = businessCommercialOwnerOptions(activation.seller_user_id || "").replace("Sin responsable asignado", "Sin vendedor asignado");
   modal.querySelector("#activationEditMaxParticipantsInput").value = activation.max_participants || "";
   modal.querySelector("#activationEditMaxRewardsInput").value = activation.max_rewards || "";
-  modal.querySelector("#activationEditRewardCostInput").value = activation.reward_ticket_cost || 1;
   modal.querySelector("#activationEditRewardTypeInput").value = activation.reward_config?.reward_type || "CUSTOM";
   modal.querySelector("#activationEditRewardLabelInput").value = activation.reward_config?.reward_label || "";
-  modal.querySelector("#activationEditRewardValueInput").value = JSON.stringify(activation.reward_config?.reward_value || {}, null, 2);
   modal.querySelector("#activationEditRewardConditionsInput").value = activation.reward_config?.reward_conditions || "";
   modal.querySelector("#activationEditCooldownInput").value = currentLock.cooldown_days ?? 7;
   modal.querySelector("#activationEditWinnerPolicyInput").value = currentLock.winner_policy || "block_previous_winners";
@@ -31473,15 +31493,6 @@ async function submitActivationEditModal(event) {
     showFeedback("La fecha de cierre debe ser posterior al inicio.", "error", { title: "Dato inválido" });
     return;
   }
-  let rewardValue;
-  try {
-    rewardValue = JSON.parse(String(modal.querySelector("#activationEditRewardValueInput")?.value || "{}").trim() || "{}");
-    if (!rewardValue || Array.isArray(rewardValue) || typeof rewardValue !== "object") throw new Error("invalid-object");
-  } catch {
-    setFormMessage(modal.querySelector("#activationEditMessage"), 'El valor del beneficio debe ser un objeto JSON válido, por ejemplo {"percent": 15}.', "error");
-    modal.querySelector("#activationEditRewardValueInput")?.focus();
-    return;
-  }
   if (status === "archived" && activation.status !== "archived" && !window.confirm(`Vas a anular "${activation.title}". El link quedara inactivo y no recibira nuevas participaciones. Deseas continuar?`)) {
     return;
   }
@@ -31501,12 +31512,10 @@ async function submitActivationEditModal(event) {
       seller_user_id: modal.querySelector("#activationEditSellerInput")?.value || null,
       max_participants: maxParticipants,
       max_rewards: maxRewards,
-      reward_ticket_cost: Number(modal.querySelector("#activationEditRewardCostInput")?.value || 1),
       reward_config: {
         ...(activation.reward_config || {}),
         reward_type: modal.querySelector("#activationEditRewardTypeInput")?.value || "CUSTOM",
         reward_label: String(modal.querySelector("#activationEditRewardLabelInput")?.value || "").trim() || "Beneficio desbloqueado",
-        reward_value: rewardValue,
         reward_conditions: String(modal.querySelector("#activationEditRewardConditionsInput")?.value || "").trim() || null,
       },
       visual_config: {
@@ -31552,21 +31561,6 @@ async function recycleInteractiveActivation(id) {
     showFeedback("Activación reciclada como borrador. Puedes editarla y activarla cuando este lista.", "success", { title: "Copia creada" });
   } catch (error) {
     showFeedback(error.message, "error", { title: "No se pudo reciclar" });
-  }
-}
-
-async function archivePreviousLauncherActivation(previousId, nextId) {
-  if (!previousId || String(previousId) === String(nextId)) return false;
-  try {
-    await patchInteractiveActivation(previousId, { status: "archived" });
-    return true;
-  } catch (error) {
-    showFeedback(
-      "El nuevo link fue creado, pero no se pudo archivar el link anterior. Anúlalo desde la tabla si ya no debe usarse.",
-      "error",
-      { title: "Renovación parcial" }
-    );
-    return false;
   }
 }
 
@@ -31697,7 +31691,6 @@ async function submitTriviaLauncher(event) {
   const submitButton = triviaLauncherForm.querySelector("button[type='submit']");
   const wizardLaunchButton = triviaLauncherForm.querySelector("[data-gaming-wizard-next]");
   const draftId = state.gamingActivationDraftId;
-  const previousLauncherActivationId = draftId ? null : state.currentLauncherActivationId;
   state.gamingActivationLaunchInFlight = true;
   setButtonLoading(submitButton, true, "Lanzando...");
   setButtonLoading(wizardLaunchButton, true, "Lanzando activación...");
@@ -31719,16 +31712,14 @@ async function submitTriviaLauncher(event) {
       });
 
     const activation = data.activation || data.trivia;
-    state.currentLauncherActivationId = activation.id;
     state.gamingActivationDraftId = null;
-    const archivedPrevious = await archivePreviousLauncherActivation(previousLauncherActivationId, activation.id);
     state.triviaLaunchers = [activation, ...(state.triviaLaunchers || []).filter((item) => item.id !== activation.id)];
     renderTriviaLaunchers();
     const inviteMessage = activationInviteMessage(activation);
     triviaLauncherResult.classList.remove("hidden");
     triviaLauncherResult.innerHTML = `
       <strong>Activación creada</strong>
-      <p class="table-secondary">${archivedPrevious ? "El link anterior quedó archivado y este es el link vigente." : "Este es un link nuevo y vigente para compartir."} Primero dejan sus datos, luego completan la dinámica y el sistema crea el ticket según la regla configurada.</p>
+      <p class="table-secondary">Este es un link nuevo y vigente para compartir. Primero dejan sus datos, luego completan la dinámica y el sistema crea el ticket según la regla configurada.</p>
       <p><a href="${escapeHtml(activation.public_url)}" target="_blank" rel="noopener">${escapeHtml(activation.public_url)}</a></p>
       <label class="activation-invite-preview"><span>Mensaje para invitar</span><textarea readonly rows="4">${escapeHtml(inviteMessage)}</textarea></label>
       <button class="ghost-button" type="button" id="copyTriviaLauncherResultButton">Copiar link</button>

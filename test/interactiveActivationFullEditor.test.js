@@ -27,7 +27,7 @@ test("the backend validates tenant ownership and persists acquisition attributio
   assert.match(migrationSource, /add column if not exists acquisition_channel_id uuid references business_acquisition_channels\(id\) on delete set null/);
 });
 
-test("the editor exposes the operational configuration and protects historic associations", () => {
+test("the editor exposes friendly operational fields and protects historic associations", () => {
   for (const id of [
     "activationEditCampaignInput",
     "activationEditAcquisitionChannelInput",
@@ -37,16 +37,20 @@ test("the editor exposes the operational configuration and protects historic ass
     "activationEditSellerInput",
     "activationEditMaxParticipantsInput",
     "activationEditMaxRewardsInput",
-    "activationEditRewardCostInput",
     "activationEditRewardTypeInput",
     "activationEditRewardLabelInput",
-    "activationEditRewardValueInput",
     "activationEditRewardConditionsInput",
     "activationEditCooldownInput",
     "activationEditWinnerPolicyInput",
     "activationEditInviteInput",
     "activationEditTermsInput",
   ]) assert.match(appSource, new RegExp(`id="${id}"`));
+  assert.doesNotMatch(appSource, /id="activationEditRewardCostInput"/);
+  assert.doesNotMatch(appSource, /id="activationEditRewardValueInput"/);
+  assert.doesNotMatch(appSource, /Formato JSON/);
+  assert.doesNotMatch(appSource, /reward_ticket_cost: Number\(modal\.querySelector/);
+  assert.doesNotMatch(appSource, /reward_value: rewardValue/);
+  assert.match(appSource, /reward_config: \{\s*\.\.\.\(activation\.reward_config \|\| \{\}\)/);
   assert.match(appSource, /Medio actual:/);
   assert.match(appSource, /Campaña actual:/);
   assert.match(appSource, /Sede actual:/);
