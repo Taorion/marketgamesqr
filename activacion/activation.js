@@ -3248,17 +3248,16 @@ async function completeActivation(payload = {}) {
 }
 
 async function renderResult(data) {
-  const rewardQrDataUrl = data.rewarded ? await ticketImageDataUrlForBrowser(data.qr_image_data_url) : "";
-  const benefitUrl = data.benefit_url || "";
   const fulfillment = benefitFulfillmentFromResult(data);
   const isEcommerceReward = fulfillment.mode === "ECOMMERCE_CODE";
   const isDigitalAssetReward = fulfillment.mode === "DIGITAL_ASSET";
+  const rewardQrDataUrl = data.rewarded && !isDigitalAssetReward ? await ticketImageDataUrlForBrowser(data.qr_image_data_url) : "";
   ticketResult.dataset.tone = data.rewarded ? "success" : "error";
   ticketResult.innerHTML = data.rewarded && isDigitalAssetReward ? `
     <div class="result-copy">
       <span>Activo digital desbloqueado</span>
       <strong>${escapeHtml(fulfillment.asset_title || data.reward?.reward_label || "Activo digital")}</strong>
-      <p>${escapeHtml(fulfillment.instructions)}</p>
+      <p>Tu archivo está listo para descargar.</p>
     </div>
     <div class="ecommerce-reward-card">
       <span>Tu descarga segura está lista</span>
@@ -3266,7 +3265,6 @@ async function renderResult(data) {
     </div>
     <div class="ticket-actions">
       ${fulfillment.download_url ? `<a class="submit-button" href="${escapeHtml(fulfillment.download_url)}">Descargar activo</a>` : ""}
-      ${benefitUrl ? '<button class="submit-button secondary" type="button" data-copy-benefit-link>Copiar link del beneficio</button>' : ""}
     </div>
   ` : data.rewarded && isEcommerceReward ? `
     <div class="result-copy">
@@ -3281,19 +3279,16 @@ async function renderResult(data) {
     </div>
     <div class="ticket-actions">
       <button class="submit-button" type="button" id="copyEcommerceCodeButton">Copiar codigo</button>
-      ${benefitUrl ? '<button class="submit-button secondary" type="button" data-copy-benefit-link>Copiar link del beneficio</button>' : ""}
     </div>
   ` : data.rewarded ? `
     <div class="result-copy">
       <span>Beneficio generado</span>
       <strong>${escapeHtml(data.reward?.reward_label || "QR unico")}</strong>
-      <p>Guarda o comparte este QR. Copia el enlace público del beneficio para continuar la redención en línea.</p>
+      <p>Guarda este QR y preséntalo para redimir tu beneficio.</p>
     </div>
     <img src="${escapeHtml(rewardQrDataUrl)}" alt="Beneficio QR" id="rewardQrImage">
     <div class="ticket-actions">
-      ${benefitUrl ? '<button class="submit-button" type="button" data-copy-benefit-link>Copiar link del beneficio</button>' : ""}
       <button class="submit-button" type="button" id="downloadRewardQrButton">Descargar QR</button>
-      <button class="submit-button secondary" type="button" id="shareRewardQrButton">Compartir QR</button>
     </div>
   ` : `
     <div class="result-copy">
@@ -3303,16 +3298,6 @@ async function renderResult(data) {
     </div>
   `;
   ticketResult.classList.remove("hidden");
-  ticketResult.querySelectorAll("[data-copy-benefit-link]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(benefitUrl);
-        setStatus("Link público del beneficio copiado. Ya puedes enviarlo para la redención en línea.", "success");
-      } catch (error) {
-        window.prompt("Copia el link del beneficio", benefitUrl);
-      }
-    });
-  });
   if (data.rewarded && isEcommerceReward) {
     document.getElementById("copyEcommerceCodeButton")?.addEventListener("click", async () => {
       try {
@@ -3322,13 +3307,10 @@ async function renderResult(data) {
       }
       setStatus("Codigo copiado. Usalo en el checkout de la tienda online.", "success");
     });
-  } else if (data.rewarded) {
+  } else if (data.rewarded && !isDigitalAssetReward) {
     const filename = rewardQrFilename();
     document.getElementById("downloadRewardQrButton")?.addEventListener("click", () => {
       downloadDataUrl(filename, rewardQrDataUrl);
-    });
-    document.getElementById("shareRewardQrButton")?.addEventListener("click", () => {
-      shareRewardQr({ ...data, qr_image_data_url: rewardQrDataUrl }).catch(() => downloadDataUrl(filename, rewardQrDataUrl));
     });
   }
   setProgress(2, 2);
@@ -3384,35 +3366,6 @@ async function downloadDataUrl(filename, dataUrl) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-}
-
-function dataUrlToFile(dataUrl, filename) {
-  const [header, body] = String(dataUrl || "").split(",");
-  const mime = header.match(/data:([^;]+)/)?.[1] || "image/png";
-  const binary = atob(body || "");
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-  return new File([bytes], filename, { type: mime });
-}
-
-async function shareRewardQr(data) {
-  const title = data.reward?.reward_label || "Beneficio Qori QR";
-  const text = `${title}. Presenta este QR en el punto fisico para redimir tu beneficio.`;
-  const qrImageDataUrl = String(data.qr_image_data_url || "").startsWith("data:image/svg+xml")
-    ? await convertSvgDataUrlToPngDataUrl(data.qr_image_data_url)
-    : data.qr_image_data_url;
-  const file = dataUrlToFile(qrImageDataUrl, rewardQrFilename());
-  if (navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ title, text, files: [file] });
-    return;
-  }
-  if (navigator.share) {
-    await navigator.share({ title, text });
-    return;
-  }
-  throw new Error("Compartir no disponible.");
 }
 
 participantForm.addEventListener("submit", handleParticipantSubmit);

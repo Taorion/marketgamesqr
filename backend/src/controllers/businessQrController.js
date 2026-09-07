@@ -1,5 +1,6 @@
 const { forbidden } = require("../utils/http");
-const { validate, postSaleQrSchema, qrBatchSchema, affiliateReferralQrBatchSchema } = require("../utils/validators");
+const { validate, postSaleQrSchema, linkQrSchema, qrBatchSchema, affiliateReferralQrBatchSchema } = require("../utils/validators");
+const { generateLinkQr } = require("../services/linkQrService");
 const {
   createPostSaleQr,
   createQrBatch,
@@ -53,6 +54,16 @@ async function createPostSale(req, res, next) {
       },
     });
     res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createLinkQr(req, res, next) {
+  try {
+    businessIdFor(req);
+    const body = validate(linkQrSchema, req.body);
+    res.status(201).json({ qr: await generateLinkQr(body) });
   } catch (error) {
     next(error);
   }
@@ -215,6 +226,7 @@ async function downloadBatch(req, res, next) {
 }
 
 module.exports = {
+  createLinkQr,
   createPostSale,
   createBatch,
   createAffiliateReferralBatch,

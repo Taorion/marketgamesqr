@@ -1358,12 +1358,16 @@ async function completeInteractiveParticipant(slug, body) {
       };
     }
 
-    const reward = await generateInteractiveRewardQr(client, activation, { ...participant, score, result_profile: resultProfile }, rewardPayload, {
-      user_id: activation.user_id || null,
-    });
+    const fulfillment = normalizeBenefitFulfillment(rewardPayload.reward_value || {});
+    const reward = fulfillment.mode === "DIGITAL_ASSET"
+      ? await generateInteractiveDigitalAssetReward(client, activation, { ...participant, score, result_profile: resultProfile }, rewardPayload, {
+        user_id: activation.user_id || null,
+      })
+      : await generateInteractiveRewardQr(client, activation, { ...participant, score, result_profile: resultProfile }, rewardPayload, {
+        user_id: activation.user_id || null,
+      });
     const digitalAsset = await issueInteractiveActivationAssetDownload(client, activation, participant, reward.reward);
     await recordCommunicationEvent(client, activation, attribution, "REWARD_ISSUED", { participant_id: participant.id, lead_id: participant.player_id || null, qr_code_id: reward.qr_code?.id || null });
-    const fulfillment = normalizeBenefitFulfillment(rewardPayload.reward_value || {});
     return {
       participant: { id: participant.id, status: "rewarded", score, result_profile: resultProfile || null },
       rewarded: true,
@@ -1373,12 +1377,14 @@ async function completeInteractiveParticipant(slug, body) {
           ? "Completaste la dinamica. Tu activo digital ya esta listo para descargar."
         : "Beneficio generado. El QR esta listo para redimir en tienda.",
       reward: reward.reward,
-      qr_code: reward.qr_code,
-      validator_url: reward.validator_url,
-      benefit_url: reward.benefit_url,
-      qr_image_data_url: reward.qr_image_data_url,
       credit_account: reward.credit_account,
       digital_asset: digitalAsset,
+      ...(fulfillment.mode === "DIGITAL_ASSET" ? {} : {
+        qr_code: reward.qr_code,
+        validator_url: reward.validator_url,
+        benefit_url: reward.benefit_url,
+        qr_image_data_url: reward.qr_image_data_url,
+      }),
     };
   });
 }
@@ -1393,12 +1399,14 @@ async function existingRewardResponseForIdentity(client, activation, body) {
             p.id as participant_id, p.status as participant_status, p.score, p.result_profile
      from interactive_activation_participants p
      join interactive_activation_rewards r on r.participant_id = p.id
-     join qr_codes q on q.id = r.qr_code_id
+     left join qr_codes q on q.id = r.qr_code_id
      where p.activation_id = $1
        and p.company_id = $2
        and r.status <> 'cancelled'
-       and q.status = 'ACTIVE'
-       and (q.expires_at is null or q.expires_at > now())
+       and (
+         upper(coalesce(r.reward_value->'fulfillment'->>'mode', r.reward_value->>'redemption_channel', 'PHYSICAL_QR')) in ('DIGITAL_ASSET', 'DIGITAL_DOWNLOAD')
+         or (q.status = 'ACTIVE' and (q.expires_at is null or q.expires_at > now()))
+       )
        and (
          ($3::text is not null and p.document = $3)
          or ($4::text is not null and lower(p.email) = lower($4))
@@ -1410,8 +1418,25 @@ async function existingRewardResponseForIdentity(client, activation, body) {
   );
   const reward = result.rows[0];
   if (!reward) return null;
-  const validatorUrl = buildValidatorUrl(reward.qr_token_value || reward.qr_token);
   const digitalAsset = await interactiveActivationAssetDownloadForReward(client, reward.id);
+  const fulfillment = normalizeBenefitFulfillment(reward.reward_value || {});
+  if (fulfillment.mode === "DIGITAL_ASSET") {
+    return {
+      participant: {
+        id: reward.participant_id,
+        status: reward.participant_status || "rewarded",
+        score: reward.score || null,
+        result_profile: reward.result_profile || null,
+      },
+      rewarded: true,
+      recovered: true,
+      message: "Tu activo digital ya estaba disponible. Puedes descargarlo nuevamente.",
+      reward: digitalAssetRewardForResponse(reward),
+      credit_account: null,
+      digital_asset: digitalAsset,
+    };
+  }
+  const validatorUrl = buildValidatorUrl(reward.qr_token_value || reward.qr_token);
   return {
     participant: {
       id: reward.participant_id,
@@ -2226,6 +2251,107 @@ async function assertMaxAwards(client, tableName, sourceId, maxAwards) {
   }
 }
 
+function digitalAssetRewardForResponse(reward = {}) {
+  const { qr_code_id, qr_token, public_code, ...safeReward } = reward;
+  return safeReward;
+}
+
+async function generateInteractiveDigitalAssetReward(client, activation, participant, rewardPayload, options = {}) {
+  const rewardLimit = await client.query(
+    "select count(*)::int as total from interactive_activation_rewards where activation_id = $1 and status <> 'cancelled'",
+    [activation.id]
+  );
+  if (activation.max_rewards && Number(rewardLimit.rows[0]?.total || 0) >= Number(activation.max_rewards)) {
+    throw badRequest("Esta activacion ya entrego todos los beneficios disponibles.");
+  }
+
+  const fulfillment = normalizeBenefitFulfillment(rewardPayload.reward_value || {});
+  if (!fulfillment.asset_id) throw badRequest("Selecciona el activo digital que recibira el ganador.");
+  const cost = Number(activation.reward_ticket_cost || 1);
+  const accountBefore = await ensureCreditAccount(client, activation.company_id);
+  const internalToken = createSecureToken();
+  const internalCode = `DA-${createSecureToken().slice(0, 10).toUpperCase()}`;
+  const questionnaireResult = await client.query(
+    `insert into questionnaires
+      (business_id, campaign_id, game_id, player_id, interactive_participant_id, answers)
+     values ($1, $2, $3, $4, $5, $6::jsonb)
+     returning id`,
+    [
+      activation.company_id,
+      activation.campaign_id || null,
+      await defaultGameId(client, activation.company_id),
+      participant.player_id || null,
+      participant.id,
+      jsonParam({
+        activation_id: activation.id,
+        participant_id: participant.id,
+        score: participant.score || null,
+        result_profile: participant.result_profile || null,
+        activation_form: participant.metadata?.activation_form || null,
+        rms_intake: participant.metadata?.rms_intake || null,
+        reward: rewardPayload,
+        fulfillment: "digital_asset",
+      }, {}),
+    ]
+  );
+  const rewardResult = await client.query(
+    `insert into interactive_activation_rewards
+      (activation_id, participant_id, company_id, qr_code_id, qr_token, public_code,
+       reward_type, reward_value, reward_label, reward_conditions, reward_source,
+       source_data, expires_at, ticket_transaction_id)
+     values ($1, $2, $3, null, $4, $5, $6, $7::jsonb, $8, $9, $10, $11::jsonb, $12, null)
+     returning *`,
+    [
+      activation.id,
+      participant.id,
+      activation.company_id,
+      internalToken,
+      internalCode,
+      normalizeRewardType(rewardPayload.reward_type),
+      jsonParam(rewardPayload.reward_value, {}),
+      rewardPayload.reward_label,
+      rewardPayload.reward_conditions || null,
+      rewardPayload.reward_source,
+      jsonParam({ ...(rewardPayload.source_data || {}), fulfillment: "digital_asset" }, {}),
+      activation.ends_at || null,
+    ]
+  );
+  const reward = rewardResult.rows[0];
+  const creditAccount = await consumeQrCredits(
+    client,
+    activation.company_id,
+    cost,
+    null,
+    options.user_id || null,
+    `Activo digital entregado por activacion interactiva ${activation.title}.`
+  );
+  const txResult = await client.query(
+    `insert into interactive_ticket_transactions
+      (company_id, user_id, activation_id, participant_id, reward_id, ledger_id,
+       tickets_debited, balance_before, balance_after, transaction_type, notes)
+     values ($1, $2, $3, $4, $5, null, $6, $7, $8, 'digital_asset_delivered', $9)
+     returning id`,
+    [
+      activation.company_id,
+      options.user_id || null,
+      activation.id,
+      participant.id,
+      reward.id,
+      cost,
+      Number(accountBefore.qr_balance || 0),
+      Number(creditAccount?.qr_balance ?? accountBefore.qr_balance ?? 0),
+      "Consumo de ticket al entregar un activo digital, sin QR ni codigo de redencion.",
+    ]
+  );
+  await client.query("update interactive_activation_rewards set ticket_transaction_id = $2 where id = $1", [reward.id, txResult.rows[0].id]);
+  await client.query("update interactive_activation_participants set status = 'rewarded' where id = $1", [participant.id]);
+  return {
+    reward: { ...digitalAssetRewardForResponse(reward), ticket_transaction_id: txResult.rows[0].id },
+    credit_account: mapPublicCreditAccount(creditAccount),
+    questionnaire_id: questionnaireResult.rows[0].id,
+  };
+}
+
 async function generateInteractiveRewardQr(client, activation, participant, rewardPayload, options = {}) {
   const rewardLimit = await client.query(
     "select count(*)::int as total from interactive_activation_rewards where activation_id = $1 and status <> 'cancelled'",
@@ -2540,7 +2666,7 @@ async function getInteractiveActivationReport(businessId, activationId) {
        count(distinct p.id)::int as participants,
        count(distinct p.id) filter (where p.status in ('completed', 'rewarded'))::int as completed,
        count(distinct p.id) filter (where p.status = 'abandoned')::int as abandoned,
-       count(distinct r.id)::int as qr_generated,
+       count(distinct q.id)::int as qr_generated,
        count(distinct iad.id) filter (where iad.downloaded_at is not null)::int as digital_asset_downloads,
        coalesce(sum(tx.tickets_debited), 0)::int as tickets_consumed,
        count(distinct rd.id)::int as redemptions,
@@ -2563,7 +2689,7 @@ async function getInteractiveActivationReport(businessId, activationId) {
       `select p.id as participant_id, p.player_id, p.source_type, p.source_id, p.name, p.document, p.phone, p.email,
               p.score, p.result_profile, p.status as participant_status, p.started_at,
               p.completed_at, p.created_at, p.metadata,
-              r.id as reward_id, r.status as reward_status,
+              r.id as reward_id, r.status as reward_status, r.reward_value,
               q.id as qr_code_id, q.status as qr_status, q.redeemed_at,
               q.expires_at as qr_expires_at
          from interactive_activation_participants p
@@ -2612,8 +2738,9 @@ async function getInteractiveActivationReport(businessId, activationId) {
   const participantsHistory = participantHistory.rows.map((participant) => {
     const qrStatus = String(participant.qr_status || '').toUpperCase();
     const participantStatus = String(participant.participant_status || 'started').toLowerCase();
+    const digitalAssetReward = normalizeBenefitFulfillment(participant.reward_value || {}).mode === 'DIGITAL_ASSET';
     const state = participant.reward_id
-      ? (qrStatus === 'REDEEMED' || participant.redeemed_at ? 'qr_redeemed' : qrStatus === 'ACTIVE' ? 'qr_active' : 'qr_issued')
+      ? (digitalAssetReward ? 'digital_asset_delivered' : qrStatus === 'REDEEMED' || participant.redeemed_at ? 'qr_redeemed' : qrStatus === 'ACTIVE' ? 'qr_active' : 'qr_issued')
       : participantStatus === 'completed' ? 'participated_without_benefit' : participantStatus;
     return {
       ...participant,
@@ -2652,6 +2779,7 @@ async function getInteractiveActivationReport(businessId, activationId) {
         obtained_qr: participantsHistory.filter((item) => ['qr_active', 'qr_issued', 'qr_redeemed'].includes(item.state)).length,
         qr_active: participantsHistory.filter((item) => item.state === 'qr_active').length,
         qr_redeemed: participantsHistory.filter((item) => item.state === 'qr_redeemed').length,
+        digital_asset_delivered: participantsHistory.filter((item) => item.state === 'digital_asset_delivered').length,
         participated_without_benefit: participantsHistory.filter((item) => item.state === 'participated_without_benefit').length,
         pending_participation: invitationsHistory.length,
       },

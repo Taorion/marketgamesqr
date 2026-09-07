@@ -69378,6 +69378,177 @@ html body #activationEditModal .modal-button-row {
 
 /* activation-question-count-v440-20260907: dynamic question rows must beat legacy label display rules. */
 html body #gamingActivationBuilderModal .activation-config-panel label.hidden,
-html body #gamingActivationBuilderModal .activation-config-panel label[hidden] {
+html body #gamingActivationBuilderModal .activation-config-panel label[hidden],
+html body #gamingActivationBuilderModal .benefit-fulfillment-panel label.hidden,
+html body #gamingActivationBuilderModal .benefit-fulfillment-panel label[hidden] {
   display: none !important;
+}
+
+/* link-qr-generator-v443-20260907: access QR images are separate from reward tickets. */
+.activation-link-qr-card {
+  display: grid;
+  grid-template-columns: minmax(0, .85fr) minmax(340px, 1.15fr);
+  gap: 28px;
+  margin-bottom: 22px;
+  padding: 28px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 191, 229, .18);
+  background:
+    radial-gradient(circle at 0 0, rgba(0, 191, 229, .12), transparent 34%),
+    linear-gradient(145deg, rgba(5, 42, 107, .06), rgba(255, 255, 255, .98));
+}
+
+.activation-link-qr-copy {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+}
+
+.activation-link-qr-copy h3,
+.activation-link-qr-copy p {
+  margin: 0;
+}
+
+.activation-link-qr-copy p {
+  max-width: 55ch;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.activation-link-qr-assurance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  color: #075f55;
+  background: rgba(16, 185, 129, .11);
+}
+
+.activation-link-qr-assurance .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.activation-link-qr-form {
+  display: grid;
+  gap: 13px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: inset 0 0 0 1px rgba(5, 42, 107, .08);
+}
+
+.activation-link-qr-form label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.activation-link-qr-form label > span {
+  font-size: .82rem;
+  font-weight: 750;
+}
+
+.activation-link-qr-form label em {
+  margin-left: 5px;
+  color: var(--muted);
+  font-size: .7rem;
+  font-style: normal;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.activation-link-qr-form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 12px;
+}
+
+.activation-link-qr-form .solid-button {
+  justify-self: start;
+}
+
+.activation-link-qr-result {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(5, 42, 107, .1);
+}
+
+.activation-link-qr-result.hidden {
+  display: none !important;
+}
+
+.activation-link-qr-preview {
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 16px 36px rgba(5, 42, 107, .12);
+}
+
+.activation-link-qr-preview img {
+  display: block;
+  width: 100%;
+  max-width: 230px;
+  aspect-ratio: 1;
+}
+
+.activation-link-qr-result > div:last-child {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.activation-link-qr-result strong {
+  font-size: 1.2rem;
+}
+
+.activation-link-qr-result a {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--accent-dark, #052a6b);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[data-theme="dark"] .activation-link-qr-card {
+  background:
+    radial-gradient(circle at 0 0, rgba(0, 191, 229, .15), transparent 34%),
+    linear-gradient(145deg, rgba(5, 42, 107, .85), rgba(10, 28, 38, .94));
+}
+
+:root[data-theme="dark"] .activation-link-qr-form {
+  background: rgba(4, 20, 31, .72);
+}
+
+:root[data-theme="dark"] .activation-link-qr-assurance {
+  color: #8ff0d0;
+}
+
+@media (max-width: 760px) {
+  .activation-link-qr-card,
+  .activation-link-qr-result {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .activation-link-qr-card {
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .activation-link-qr-form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .activation-link-qr-form .solid-button,
+  .activation-link-qr-result .solid-button {
+    width: 100%;
+  }
 }

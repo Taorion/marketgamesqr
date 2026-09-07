@@ -94,6 +94,14 @@ const postSaleQrSchema = z.object({
   benefit: strategicBenefitSchema,
 });
 
+const linkQrSchema = z.object({
+  url: z.string().trim().url().max(2048).refine((value) => /^https?:\/\//i.test(value), {
+    message: "El enlace debe comenzar por http:// o https://.",
+  }),
+  label: z.string().trim().min(1).max(120).optional().default("QR publicitario"),
+  size: z.union([z.literal(720), z.literal(900), z.literal(1200)]).optional().default(900),
+});
+
 const qrBatchSchema = z.object({
   name: z.string().trim().min(2).max(160),
   description: z.string().trim().max(1000).optional().nullable(),
@@ -479,6 +487,7 @@ module.exports = {
   qrOriginTypes,
   benefitTypes,
   postSaleQrSchema,
+  linkQrSchema,
   qrBatchSchema,
   affiliateReferralQrBatchSchema,
   interactiveActivationCreateSchema,

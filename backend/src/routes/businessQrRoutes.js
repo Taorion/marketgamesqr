@@ -9,6 +9,7 @@ const {
   listTrivias,
 } = require("../controllers/triviaController");
 const {
+  createLinkQr,
   createPostSale,
   createBatch,
   createAffiliateReferralBatch,
@@ -31,6 +32,7 @@ router.use(invalidateBusinessResponseCache());
 
 const qrReadCache = cacheBusinessResponse({ keyPrefix: "business-qr", ttlMs: 180_000 });
 
+router.post("/link-image", createLinkQr);
 router.post("/generic-ticket", createPostSale);
 router.post("/post-sale", createPostSale);
 router.post("/trivias", createTrivia);

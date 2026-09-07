@@ -1,7 +1,7 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260907-activation-question-count-v440";
+const APP_VERSION = "empresa-20260907-link-qr-generator-v443";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -1110,6 +1110,18 @@ const battleshipShip3Input = document.getElementById("battleshipShip3Input");
 const triviaLauncherMessage = document.getElementById("triviaLauncherMessage");
 const triviaLauncherResult = document.getElementById("triviaLauncherResult");
 const triviaLauncherTable = document.getElementById("triviaLauncherTable");
+const activationLinkQrForm = document.getElementById("activationLinkQrForm");
+const activationLinkQrActivationSelect = document.getElementById("activationLinkQrActivationSelect");
+const activationLinkQrUrlInput = document.getElementById("activationLinkQrUrlInput");
+const activationLinkQrLabelInput = document.getElementById("activationLinkQrLabelInput");
+const activationLinkQrSizeInput = document.getElementById("activationLinkQrSizeInput");
+const activationLinkQrGenerateButton = document.getElementById("activationLinkQrGenerateButton");
+const activationLinkQrMessage = document.getElementById("activationLinkQrMessage");
+const activationLinkQrResult = document.getElementById("activationLinkQrResult");
+const activationLinkQrImage = document.getElementById("activationLinkQrImage");
+const activationLinkQrResultTitle = document.getElementById("activationLinkQrResultTitle");
+const activationLinkQrTarget = document.getElementById("activationLinkQrTarget");
+const activationLinkQrDownloadButton = document.getElementById("activationLinkQrDownloadButton");
 const activationShareModal = document.getElementById("activationShareModal");
 const activationShareCloseButton = document.getElementById("activationShareCloseButton");
 const activationShareTitle = document.getElementById("activationShareTitle");
@@ -5293,7 +5305,7 @@ function benefitFulfillmentFromInputs(modeInput, codeInput, urlInput, instructio
       asset_id: asset?.id || null,
       asset_title: asset?.title || null,
       asset_file_name: asset?.file_name || null,
-      instructions: instructions || "Completaste la dinámica. Descarga tu activo digital ahora.",
+      instructions: "Tu archivo está listo para descargar.",
     };
   }
   if (mode !== "ECOMMERCE_CODE") {
@@ -5316,14 +5328,20 @@ function benefitFulfillmentFromInputs(modeInput, codeInput, urlInput, instructio
 
 function withBenefitFulfillment(value = {}, fulfillment = null) {
   if (!fulfillment) return value || {};
-  return {
+  const nextValue = {
     ...(value || {}),
     fulfillment,
     redemption_channel: fulfillment.channel,
-    ecommerce_code: fulfillment.mode === "ECOMMERCE_CODE" ? fulfillment.ecommerce_code : value?.ecommerce_code,
-    ecommerce_url: fulfillment.mode === "ECOMMERCE_CODE" ? fulfillment.ecommerce_url : value?.ecommerce_url,
-    digital_asset_id: fulfillment.mode === "DIGITAL_ASSET" ? fulfillment.asset_id : value?.digital_asset_id,
   };
+  delete nextValue.ecommerce_code;
+  delete nextValue.ecommerce_url;
+  delete nextValue.digital_asset_id;
+  if (fulfillment.mode === "ECOMMERCE_CODE") {
+    nextValue.ecommerce_code = fulfillment.ecommerce_code;
+    nextValue.ecommerce_url = fulfillment.ecommerce_url;
+  }
+  if (fulfillment.mode === "DIGITAL_ASSET") nextValue.digital_asset_id = fulfillment.asset_id;
+  return nextValue;
 }
 
 function benefitFulfillmentObject(value = {}, metadata = {}) {
@@ -5350,6 +5368,7 @@ function syncBenefitFulfillmentFields() {
     if (panel) panel.dataset.fulfillmentMode = digitalAssetMode ? "digital-asset" : ecommerceMode ? "ecommerce" : "physical";
     panel?.querySelectorAll("[data-benefit-fulfillment-field='ecommerce']").forEach((field) => {
       field.classList.toggle("hidden", !ecommerceMode);
+      field.toggleAttribute("hidden", !ecommerceMode);
       field.querySelectorAll("input, select, textarea").forEach((input) => {
         input.disabled = !ecommerceMode;
         if (!ecommerceMode) input.required = false;
@@ -5357,6 +5376,7 @@ function syncBenefitFulfillmentFields() {
     });
     panel?.querySelectorAll("[data-benefit-fulfillment-field='digital_asset']").forEach((field) => {
       field.classList.toggle("hidden", !digitalAssetMode);
+      field.toggleAttribute("hidden", !digitalAssetMode);
       field.querySelectorAll("input, select, textarea").forEach((input) => {
         input.disabled = !digitalAssetMode;
         input.required = digitalAssetMode;
@@ -19460,6 +19480,7 @@ function activationHistoryStateMeta(state = "") {
     qr_active: ["QR activo", "confirmation_number"],
     qr_redeemed: ["QR redimido", "task_alt"],
     qr_issued: ["QR generado", "qr_code_2"],
+    digital_asset_delivered: ["Activo digital entregado", "download_done"],
     participated_without_benefit: ["Participó sin beneficio", "sports_esports"],
     pending_review: ["Pendiente de aprobación", "pending_actions"],
     started: ["Intento en curso", "hourglass_top"],
@@ -30572,7 +30593,95 @@ function renderActivationPremiumMetrics() {
   `;
 }
 
+function renderActivationLinkQrOptions() {
+  if (!activationLinkQrActivationSelect) return;
+  const selected = activationLinkQrActivationSelect.value;
+  const activations = (state.triviaLaunchers || []).filter((item) => item.public_url && item.status === "active");
+  activationLinkQrActivationSelect.innerHTML = [
+    '<option value="">Selecciona una activación publicada</option>',
+    ...activations.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.title || "Activación sin título")}</option>`),
+  ].join("");
+  if (activations.some((item) => String(item.id) === String(selected))) activationLinkQrActivationSelect.value = selected;
+}
+
+function activationLinkQrFilename(label = "QR publicitario") {
+  const safeLabel = String(label || "QR publicitario")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "qr-publicitario";
+  return `${safeLabel}.png`;
+}
+
+function downloadActivationLinkQr() {
+  const dataUrl = activationLinkQrImage?.src || "";
+  if (!dataUrl.startsWith("data:image/png")) return;
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = activationLinkQrFilename(activationLinkQrResultTitle?.textContent);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+async function generateActivationLinkQr(event) {
+  event?.preventDefault();
+  const url = String(activationLinkQrUrlInput?.value || "").trim();
+  if (!/^https?:\/\//i.test(url)) {
+    setFormMessage(activationLinkQrMessage, "Pega un enlace completo que comience por https://.", "error");
+    activationLinkQrUrlInput?.focus();
+    return;
+  }
+  if (activationLinkQrGenerateButton) activationLinkQrGenerateButton.disabled = true;
+  setFormMessage(activationLinkQrMessage, "Generando la imagen QR…", "info");
+  try {
+    const data = await api("/api/business/qr/link-image", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        url,
+        label: String(activationLinkQrLabelInput?.value || "QR publicitario").trim() || "QR publicitario",
+        size: Number(activationLinkQrSizeInput?.value || 900),
+      }),
+    });
+    const qr = data.qr || {};
+    if (!String(qr.qr_image_data_url || "").startsWith("data:image/png")) throw new Error("No se pudo construir la imagen QR.");
+    activationLinkQrImage.src = qr.qr_image_data_url;
+    activationLinkQrResultTitle.textContent = qr.label || "QR publicitario";
+    activationLinkQrTarget.textContent = qr.target_url || url;
+    activationLinkQrTarget.href = qr.target_url || url;
+    activationLinkQrResult.classList.remove("hidden");
+    setFormMessage(activationLinkQrMessage, "QR listo para descargar. No se descontaron tickets.", "success");
+  } catch (error) {
+    activationLinkQrResult?.classList.add("hidden");
+    setFormMessage(activationLinkQrMessage, error.message || "No se pudo generar el QR.", "error");
+  } finally {
+    if (activationLinkQrGenerateButton) activationLinkQrGenerateButton.disabled = false;
+  }
+}
+
+function selectActivationForLinkQr() {
+  const activation = activationById(activationLinkQrActivationSelect?.value);
+  if (!activation) return;
+  if (activationLinkQrUrlInput) activationLinkQrUrlInput.value = activation.public_url || "";
+  if (activationLinkQrLabelInput) activationLinkQrLabelInput.value = `QR ${activation.title || "activación"}`.slice(0, 120);
+  activationLinkQrResult?.classList.add("hidden");
+  setFormMessage(activationLinkQrMessage, "Enlace cargado. Pulsa Generar QR para crear la imagen.", "info");
+}
+
+function prepareActivationLinkQr(activationId) {
+  const activation = activationById(activationId);
+  if (!activation?.public_url) return;
+  if (activationLinkQrActivationSelect) activationLinkQrActivationSelect.value = activation.id;
+  selectActivationForLinkQr();
+  document.querySelector(".activation-link-qr-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  window.setTimeout(() => activationLinkQrUrlInput?.focus({ preventScroll: true }), 350);
+}
+
 function renderTriviaLaunchers() {
+  renderActivationLinkQrOptions();
   if (!triviaLauncherTable) return;
   const selectedIds = new Set(activationBulkIds());
   triviaLauncherTable.innerHTML = (state.triviaLaunchers || []).length
@@ -30605,6 +30714,7 @@ function renderTriviaLaunchers() {
             ${item.status === "draft" ? `<button class="activation-primary-row-action" type="button" data-continue-activation-draft="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">edit_square</span><span>Continuar</span></button>` : `<button class="activation-primary-row-action" type="button" data-open-activation-detail="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">analytics</span><span>${archived ? "Ver historial" : "Abrir detalle"}</span></button>`}
             <details class="activation-row-menu"><summary aria-label="Más acciones para ${escapeHtml(item.title || "esta activación")}" title="Más acciones"><span class="material-symbols-outlined" aria-hidden="true">more_horiz</span></summary><div role="menu">
               ${shareable ? `<button type="button" role="menuitem" data-share-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">send</span>Enviar a un lead</button>` : ""}
+              ${item.public_url ? `<button type="button" role="menuitem" data-generate-activation-link-qr="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span>Crear QR publicitario</button>` : ""}
               ${item.public_url ? `<button type="button" role="menuitem" data-copy-activation-link="${escapeHtml(item.public_url)}"><span class="material-symbols-outlined" aria-hidden="true">link</span>Copiar enlace</button>` : ""}
               ${!archived ? `<button type="button" role="menuitem" data-edit-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">tune</span>Editar configuración</button>` : ""}
               <button type="button" role="menuitem" data-recycle-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Crear una copia</button>
@@ -30662,6 +30772,14 @@ function renderTriviaLaunchers() {
   });
   triviaLauncherTable.querySelectorAll("[data-share-activation]").forEach((button) => {
     button.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); openActivationShareModal(button.dataset.shareActivation); });
+  });
+  triviaLauncherTable.querySelectorAll("[data-generate-activation-link-qr]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      button.closest("details")?.removeAttribute("open");
+      prepareActivationLinkQr(button.dataset.generateActivationLinkQr);
+    });
   });
   triviaLauncherTable.querySelectorAll("[data-copy-activation-link]").forEach((button) => {
     button.addEventListener("click", async (event) => {
@@ -61093,6 +61211,10 @@ missionWizardCancelButton?.addEventListener("click", closeMissionWizard);
 missionWizardForm?.addEventListener("submit", submitMissionWizard);
 missionTemplateInput?.addEventListener("change", () => openMissionWizard(missionTemplateInput.value));
 bindMissionWizardOpeners(document);
+activationLinkQrForm?.addEventListener("submit", generateActivationLinkQr);
+activationLinkQrActivationSelect?.addEventListener("change", selectActivationForLinkQr);
+activationLinkQrDownloadButton?.addEventListener("click", downloadActivationLinkQr);
+activationLinkQrUrlInput?.addEventListener("input", () => activationLinkQrResult?.classList.add("hidden"));
 ticketCenterTabs.forEach((button) => {
   button.addEventListener("click", () => setTicketCenterTab(button.dataset.ticketTab));
 });
