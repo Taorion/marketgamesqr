@@ -47,7 +47,7 @@ const rewardPassPublicClaimLimit = rateLimit({
   message: "Demasiados intentos de activación. Espera unos minutos y vuelve a intentarlo.",
 });
 const projectRoot = path.join(__dirname, "../..");
-const marketGamesWebRoot = path.join(projectRoot, "Pagina web MG");
+const qoriWebRoot = path.join(projectRoot, "qori-web");
 const staticOptions = { setHeaders: setUtf8StaticHeaders };
 const utf8StaticExtensions = new Set([".css", ".html", ".js", ".json", ".svg", ".txt"]);
 const longCacheStaticExtensions = new Set([
@@ -247,7 +247,7 @@ app.post("/api/public/reward-passes/:publicCode/claim", rewardPassPublicClaimLim
 app.use("/api/payments", paymentRoutes);
 
 app.use(blockRetiredPublicAssets);
-app.use(express.static(marketGamesWebRoot, staticOptions));
+app.use(express.static(qoriWebRoot, staticOptions));
 function redirectLegacyValidator(req, res) {
   const target = new URL("/empresa/", `${req.protocol}://${req.get("host")}`);
   if (req.query.token) {
@@ -295,7 +295,7 @@ app.get(["/c/:catalogSlug", "/c/:catalogSlug/:productSlug"], (_req, res) => {
 });
 app.get("/", (_req, res) => {
   res.set("Content-Type", "text/html; charset=utf-8");
-  res.sendFile(path.join(marketGamesWebRoot, "index.html"));
+  res.sendFile(path.join(qoriWebRoot, "index.html"));
 });
 
 app.use(errorHandler);
