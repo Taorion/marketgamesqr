@@ -2589,11 +2589,11 @@ async function getInteractiveActivationReport(businessId, activationId) {
          left join affiliates af on af.business_id = la.business_id
            and la.source_type = 'AFFILIATE' and af.id = la.source_id
         where la.business_id = $2
-          and la.metadata->>'interactive_activation_id' = $1::text
+          and la.metadata->>'interactive_activation_id' = ($1::uuid)::text
           and not exists (
             select 1
               from interactive_activation_participants p2
-             where p2.activation_id = $1
+             where p2.activation_id = $1::uuid
                and p2.company_id = $2
                and (
                  (p.id is not null and p2.player_id = p.id)
