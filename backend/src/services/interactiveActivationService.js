@@ -334,6 +334,8 @@ function mapActivation(row, extras = {}) {
     business_id: row.company_id,
     campaign_id: row.campaign_id,
     campaign_name: row.campaign_name || null,
+    acquisition_channel_id: row.acquisition_channel_id || null,
+    acquisition_channel_name: row.acquisition_channel_name || null,
     branch_id: row.branch_id || null,
     branch_name: row.branch_name || null,
     seller_user_id: row.seller_user_id || null,
@@ -610,6 +612,19 @@ async function assertCampaign(client, businessId, campaignId) {
   return campaign;
 }
 
+async function assertAcquisitionChannel(client, businessId, channelId) {
+  if (!channelId) return null;
+  const result = await client.query(
+    "select id, name, status from business_acquisition_channels where id = $1 and business_id = $2",
+    [channelId, businessId]
+  );
+  const channel = result.rows[0];
+  if (!channel || channel.status !== "ACTIVE") {
+    throw badRequest("El medio de adquisicion seleccionado no existe o no esta activo para este negocio.");
+  }
+  return channel;
+}
+
 async function assertBranch(client, businessId, branchId) {
   if (!branchId) return null;
   const result = await client.query(
@@ -667,8 +682,9 @@ async function createInteractiveActivation(businessId, user, body) {
     if (!catalogItem) {
       throw badRequest("Tipo de activacion no soportado por el catalogo.");
     }
-    const [campaign, branch, seller] = await Promise.all([
+    const [campaign, acquisitionChannel, branch, seller] = await Promise.all([
       assertCampaign(client, businessId, body.campaign_id || null),
+      assertAcquisitionChannel(client, businessId, body.acquisition_channel_id || null),
       assertBranch(client, businessId, body.branch_id || null),
       assertSeller(client, businessId, body.seller_user_id || null),
     ]);
@@ -684,16 +700,17 @@ async function createInteractiveActivation(businessId, user, body) {
 
     const result = await client.query(
       `insert into interactive_activations
-        (company_id, user_id, campaign_id, branch_id, seller_user_id, title, description, category, activation_type, status,
+        (company_id, user_id, campaign_id, acquisition_channel_id, branch_id, seller_user_id, title, description, category, activation_type, status,
          reward_ticket_cost, reward_mode, reward_config, game_config, interaction_config,
          capture_config, visual_config, starts_at, ends_at, max_participants, max_rewards,
          public_slug, access_qr_token, terms)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14::jsonb, $15::jsonb, $16::jsonb, $17::jsonb, $18, $19, $20, $21, $22, $23, $24)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15::jsonb, $16::jsonb, $17::jsonb, $18::jsonb, $19, $20, $21, $22, $23, $24, $25)
        returning *`,
       [
         businessId,
         user.id,
         body.campaign_id || null,
+        acquisitionChannel?.id || null,
         body.branch_id || null,
         seller?.id || null,
         body.title,
@@ -730,7 +747,7 @@ async function createInteractiveActivation(businessId, user, body) {
     }
 
     return {
-      activation: mapActivation({ ...activation, campaign_name: campaign?.name || null, branch_name: branch?.name || null, seller_name: seller?.full_name || null }),
+      activation: mapActivation({ ...activation, campaign_name: campaign?.name || null, acquisition_channel_name: acquisitionChannel?.name || null, branch_name: branch?.name || null, seller_name: seller?.full_name || null }),
     };
   });
 }
@@ -837,17 +854,18 @@ async function listInteractiveActivations(businessId, options = {}) {
        where activation_id in (select id from recent_activations)
        group by activation_id
      )
-     select a.id, a.company_id, a.user_id, a.campaign_id, a.branch_id, a.title, a.description,
+     select a.id, a.company_id, a.user_id, a.campaign_id, a.acquisition_channel_id, a.branch_id, a.title, a.description,
             a.category, a.activation_type, a.status, a.reward_ticket_cost, a.reward_mode,
             a.reward_config, a.game_config, a.interaction_config, a.capture_config, a.visual_config,
             a.starts_at, a.ends_at, a.max_participants, a.max_rewards, a.public_slug,
             a.access_qr_token, a.terms, a.created_at, a.updated_at, a.seller_user_id,
-            c.name as campaign_name, br.name as branch_name, su.full_name as seller_name,
+            c.name as campaign_name, ac.name as acquisition_channel_name, br.name as branch_name, su.full_name as seller_name,
             coalesce(p.participants_count, 0)::int as participants_count,
             coalesce(r.rewards_count, 0)::int as rewards_count,
             coalesce(d.digital_asset_downloads, 0)::int as digital_asset_downloads
      from recent_activations a
      left join campaigns c on c.id = a.campaign_id and c.business_id = a.company_id
+     left join business_acquisition_channels ac on ac.id = a.acquisition_channel_id and ac.business_id = a.company_id
      left join branches br on br.id = a.branch_id and br.business_id = a.company_id
      left join app_users su on su.id = a.seller_user_id and su.business_id = a.company_id
      left join participant_counts p on p.activation_id = a.id
@@ -865,6 +883,12 @@ async function updateInteractiveActivation(businessId, activationId, body) {
     [activationId, businessId]
   );
   if (!currentResult.rowCount) throw notFound("Activacion no encontrada.");
+  if (Object.prototype.hasOwnProperty.call(body, "campaign_id")) {
+    await assertCampaign({ query }, businessId, body.campaign_id || null);
+  }
+  if (Object.prototype.hasOwnProperty.call(body, "acquisition_channel_id")) {
+    await assertAcquisitionChannel({ query }, businessId, body.acquisition_channel_id || null);
+  }
   if (Object.prototype.hasOwnProperty.call(body, "branch_id")) {
     await assertBranch({ query }, businessId, body.branch_id || null);
   }
@@ -892,6 +916,8 @@ async function updateInteractiveActivation(businessId, activationId, body) {
   const allowed = [
     "activation_type",
     "category",
+    "campaign_id",
+    "acquisition_channel_id",
     "branch_id",
     "seller_user_id",
     "title",
@@ -945,10 +971,17 @@ async function updateInteractiveActivation(businessId, activationId, body) {
       await insertTouchZones({ query }, activationId, body.touch_zones);
     }
   }
-  const sellerResult = result.rows[0].seller_user_id
-    ? await query("select full_name from app_users where id = $1 and business_id = $2", [result.rows[0].seller_user_id, businessId])
-    : { rows: [] };
-  return { activation: mapActivation({ ...result.rows[0], seller_name: sellerResult.rows[0]?.full_name || null }) };
+  const relatedResult = await query(
+    `select c.name as campaign_name, ac.name as acquisition_channel_name, br.name as branch_name, su.full_name as seller_name
+       from interactive_activations a
+       left join campaigns c on c.id = a.campaign_id and c.business_id = a.company_id
+       left join business_acquisition_channels ac on ac.id = a.acquisition_channel_id and ac.business_id = a.company_id
+       left join branches br on br.id = a.branch_id and br.business_id = a.company_id
+       left join app_users su on su.id = a.seller_user_id and su.business_id = a.company_id
+      where a.id = $1 and a.company_id = $2`,
+    [activationId, businessId]
+  );
+  return { activation: mapActivation({ ...result.rows[0], ...(relatedResult.rows[0] || {}) }) };
 }
 
 async function recycleInteractiveActivation(businessId, user, activationId) {
@@ -963,17 +996,18 @@ async function recycleInteractiveActivation(businessId, user, activationId) {
     const publicSlug = `${slugify(`${original.title}-reciclada`)}-${createSecureToken().slice(0, 8).toLowerCase()}`;
     const copyResult = await client.query(
       `insert into interactive_activations
-        (company_id, user_id, campaign_id, branch_id, title, description, category, activation_type, status,
+        (company_id, user_id, campaign_id, acquisition_channel_id, branch_id, title, description, category, activation_type, status,
          reward_ticket_cost, reward_mode, reward_config, game_config, interaction_config,
          capture_config, visual_config, starts_at, ends_at, max_participants, max_rewards,
          public_slug, access_qr_token, terms)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, 'draft',
-         $9, $10, $11::jsonb, $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, null, null, $16, $17, $18, $19, $20)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'draft',
+         $10, $11, $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16::jsonb, null, null, $17, $18, $19, $20, $21)
        returning *`,
       [
         original.company_id,
         user.id,
         original.campaign_id || null,
+        original.acquisition_channel_id || null,
         original.branch_id || null,
         `Copia de ${original.title}`.slice(0, 160),
         original.description || null,
@@ -1400,9 +1434,11 @@ async function existingRewardResponseForIdentity(client, activation, body) {
 
 async function lockActivationBySlug(client, slug) {
   const result = await client.query(
-    `select a.*, b.name as business_name, b.settings as business_settings
+    `select a.*, b.name as business_name, b.settings as business_settings,
+            ac.name as acquisition_channel_name
      from interactive_activations a
      join businesses b on b.id = a.company_id
+     left join business_acquisition_channels ac on ac.id = a.acquisition_channel_id and ac.business_id = a.company_id
      where a.public_slug = $1 and b.is_active = true
      for update of a`,
     [slug]
@@ -1501,6 +1537,8 @@ function activationFormMetadata(activation, body = {}, extra = {}) {
     source: "activation_custom_form",
     activation_id: activation.id,
     activation_type: activation.activation_type,
+    acquisition_channel_id: activation.acquisition_channel_id || null,
+    acquisition_channel: activation.acquisition_channel_name || null,
     phase: "recoleccion",
   };
   const summary = [];
@@ -1543,6 +1581,10 @@ function activationFormMetadata(activation, body = {}, extra = {}) {
     ...metadata,
     source_url: metadata.source_url || null,
     user_agent: metadata.user_agent || null,
+    acquisition_channel_id: metadata.acquisition_channel_id || activation.acquisition_channel_id || null,
+    acquisition_channel_name_snapshot: metadata.acquisition_channel_name_snapshot || activation.acquisition_channel_name || null,
+    acquisition_channel_source: metadata.acquisition_channel_source || (activation.acquisition_channel_id ? "ACTIVATION" : null),
+    channel: metadata.channel || activation.acquisition_channel_name || null,
     identity: {
       document_type: normalizeIdentityDocumentType(body.document_type || metadata.identity?.document_type),
       document: String(body.document || body.document_id || "").trim() || null,
@@ -2274,6 +2316,8 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
     activation_id: activation.id,
     activation_type: activation.activation_type,
     activation_name: activation.title || null,
+    acquisition_channel_id: participant.metadata?.acquisition_channel_id || activation.acquisition_channel_id || null,
+    acquisition_channel: participant.metadata?.acquisition_channel_name_snapshot || activation.acquisition_channel_name || null,
     participant_id: participant.id,
   });
   const creditAccount = await consumeQrCredits(

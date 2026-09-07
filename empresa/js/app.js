@@ -1,8 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260905-activation-layout-v436";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 activation-layout-v436-20260905";
+const APP_VERSION = "empresa-20260907-activation-full-editor-v437";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 30000;
@@ -1051,6 +1051,7 @@ const activationTypeInput = document.getElementById("activationTypeInput");
 const activationTypePicker = document.getElementById("activationTypePicker");
 const triviaCampaignInput = document.getElementById("triviaCampaignInput");
 const triviaCampaignHelp = document.getElementById("triviaCampaignHelp");
+const triviaAcquisitionChannelInput = document.getElementById("triviaAcquisitionChannelInput");
 const triviaBranchInput = document.getElementById("triviaBranchInput");
 const triviaSellerInput = document.getElementById("triviaSellerInput");
 const triviaTitleInput = document.getElementById("triviaTitleInput");
@@ -19279,6 +19280,7 @@ function openGamingActivationBuilderModal(options = {}) {
   const branchLoad = loadBusinessBranches({ force: true });
   renderInteractiveActivationBranchOptions();
   renderInteractiveActivationSellerOptions();
+  loadAcquisitionChannels().then(renderInteractiveActivationAcquisitionOptions).catch(() => renderInteractiveActivationAcquisitionOptions());
   branchLoad.then(() => {
     renderInteractiveActivationBranchOptions();
   }).catch((error) => {
@@ -19369,7 +19371,7 @@ function openGamingActivationDetailLegacy(id = "") {
   if (eyebrow) eyebrow.textContent = `${activationTypeLabel(item.activation_type)} · ${activationStatusLabel(item.status)}`;
   if (title) title.textContent = item.title || "Activación sin título";
   if (subtitle) {
-    subtitle.textContent = `${item.campaign_name || "Sin campaña"} · creada ${formatDate(item.created_at)} · ${item.ends_at ? `vence ${formatDate(item.ends_at)}` : "sin vencimiento"}`;
+    subtitle.textContent = `${item.campaign_name || "Sin campaña"} · ${item.acquisition_channel_name || "Sin medio de adquisición"} · creada ${formatDate(item.created_at)} · ${item.ends_at ? `vence ${formatDate(item.ends_at)}` : "sin vencimiento"}`;
   }
   if (body) {
     const attempts = Number(item.attempts_count || 0);
@@ -19392,7 +19394,7 @@ function openGamingActivationDetailLegacy(id = "") {
       </section>
       <section class="gaming-activation-detail-grid">
         <article><span>Campaña</span><strong>${escapeHtml(item.campaign_name || "Sin campaña")}</strong></article>
-        <article><span>Canal</span><strong>${escapeHtml(item.channel || item.metadata?.channel || "Sin canal definido")}</strong></article>
+        <article><span>Medio de adquisición</span><strong>${escapeHtml(item.acquisition_channel_name || item.channel || item.metadata?.channel || "Sin medio asignado")}</strong></article>
         <article><span>Estado</span><strong>${escapeHtml(activationStatusLabel(item.status))}</strong></article>
         <article><span>Link público</span><a href="${escapeHtml(item.public_url || "#")}" target="_blank" rel="noopener">${escapeHtml(item.public_slug || "Abrir activación")}</a></article>
       </section>
@@ -19492,7 +19494,7 @@ function renderGamingActivationDetailBody(item, report = null) {
     </section>
     <section class="gaming-activation-detail-grid">
       <article><span>Campaña</span><strong>${escapeHtml(item.campaign_name || "Sin campaña")}</strong></article>
-      <article><span>Canal</span><strong>${escapeHtml(item.channel || item.metadata?.channel || "Sin canal definido")}</strong></article>
+      <article><span>Medio de adquisición</span><strong>${escapeHtml(item.acquisition_channel_name || item.channel || item.metadata?.channel || "Sin medio asignado")}</strong></article>
       <article><span>Estado</span><strong>${escapeHtml(activationStatusLabel(item.status))}</strong></article>
       <article><span>Sin participar</span><strong>${activationMetricNumber(totals.pending_participation || 0)}</strong></article>
     </section>
@@ -19558,7 +19560,7 @@ async function openGamingActivationDetail(id = "") {
   modal.dataset.activationId = String(item.id);
   if (eyebrow) eyebrow.textContent = `${activationTypeLabel(item.activation_type)} · ${activationStatusLabel(item.status)}`;
   if (title) title.textContent = item.title || "Activación sin título";
-  if (subtitle) subtitle.textContent = `${item.campaign_name || "Sin campaña"} · creada ${formatDate(item.created_at)} · ${item.ends_at ? `vence ${formatDate(item.ends_at)}` : "sin vencimiento"}`;
+  if (subtitle) subtitle.textContent = `${item.campaign_name || "Sin campaña"} · ${item.acquisition_channel_name || "Sin medio de adquisición"} · creada ${formatDate(item.created_at)} · ${item.ends_at ? `vence ${formatDate(item.ends_at)}` : "sin vencimiento"}`;
   // La operación principal nunca depende del historial. El operador debe poder
   // abrir, enviar o editar la activación inmediatamente; el historial se
   // completa en segundo plano como información adicional.
@@ -29920,6 +29922,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
   };
   const base = {
     campaign_id: triviaCampaignInput.value || null,
+    acquisition_channel_id: triviaAcquisitionChannelInput?.value || null,
     branch_id: interactiveActivationBranchId(),
     seller_user_id: triviaSellerInput?.value || null,
     title: triviaTitleInput.value.trim(),
@@ -31264,6 +31267,43 @@ async function updateActivationStatus(id, status) {
   }
 }
 
+function activationAcquisitionOptionsMarkup(selectedId = "", selectedName = "") {
+  const active = typeof activeAcquisitionChannels === "function" ? activeAcquisitionChannels() : [];
+  const historic = selectedId && (state.acquisitionChannels || []).find((channel) => String(channel.id) === String(selectedId));
+  const selectedIsListed = active.some((channel) => String(channel.id) === String(selectedId));
+  return [
+    '<option value="">Sin medio asignado</option>',
+    ...(historic && historic.status !== "ACTIVE" ? [`<option value="${escapeHtml(historic.id)}" selected>Medio archivado: ${escapeHtml(historic.name || historic.platform || "Medio")}</option>`] : []),
+    ...(selectedId && !historic && !selectedIsListed ? [`<option value="${escapeHtml(selectedId)}" selected>Medio actual: ${escapeHtml(selectedName || "No disponible")}</option>`] : []),
+    ...active.map((channel) => `<option value="${escapeHtml(channel.id)}" ${String(channel.id) === String(selectedId) ? "selected" : ""}>${escapeHtml(channel.name || channel.platform || "Medio")}</option>`),
+  ].join("");
+}
+
+function renderInteractiveActivationAcquisitionOptions(selectedId) {
+  if (!triviaAcquisitionChannelInput) return;
+  const current = selectedId === undefined ? triviaAcquisitionChannelInput.value : selectedId;
+  triviaAcquisitionChannelInput.innerHTML = activationAcquisitionOptionsMarkup(current);
+  if (current && Array.from(triviaAcquisitionChannelInput.options).some((option) => option.value === String(current))) {
+    triviaAcquisitionChannelInput.value = String(current);
+  }
+}
+
+function activationEditCampaignOptions(selectedId = "", selectedName = "") {
+  const campaigns = state.campaigns || [];
+  const historic = selectedId && !campaigns.some((campaign) => String(campaign.id) === String(selectedId))
+    ? `<option value="${escapeHtml(selectedId)}" selected>Campaña actual: ${escapeHtml(selectedName || "No disponible")}</option>`
+    : "";
+  return '<option value="">Sin campaña asociada</option>' + historic + campaigns.map((campaign) => `<option value="${escapeHtml(campaign.id)}" ${String(campaign.id) === String(selectedId) ? "selected" : ""}>${escapeHtml(campaign.name || campaign.slug || "Campaña")}</option>`).join("");
+}
+
+function activationEditBranchOptions(selectedId = "", selectedName = "") {
+  const branches = (state.businessBranches || []).filter((branch) => branch.is_active !== false);
+  const historic = selectedId && !branches.some((branch) => String(branch.id) === String(selectedId))
+    ? `<option value="${escapeHtml(selectedId)}" selected>Sede actual: ${escapeHtml(selectedName || "No disponible")}</option>`
+    : "";
+  return '<option value="">Sin sede asignada</option>' + historic + branches.map((branch) => `<option value="${escapeHtml(branch.id)}" ${String(branch.id) === String(selectedId) ? "selected" : ""}>${escapeHtml(branch.name || "Sede")}</option>`).join("");
+}
+
 function ensureActivationEditModal(view = document.querySelector('.view-section[data-view="strategic-qr"]')) {
   if (!view && !document.getElementById("activationEditModal")) return null;
   let modal = document.getElementById("activationEditModal");
@@ -31290,6 +31330,10 @@ function ensureActivationEditModal(view = document.querySelector('.view-section[
       <form class="activation-edit-form" id="activationEditForm">
         <label class="span-2"><span>Titulo publico</span><input id="activationEditTitleInput" type="text" maxlength="160" required></label>
         <label class="span-2"><span>Descripcion de la landing</span><textarea id="activationEditDescriptionInput" rows="3" maxlength="1000"></textarea></label>
+        <label><span>Campaña</span><select id="activationEditCampaignInput"></select></label>
+        <label><span>Medio de adquisición</span><select id="activationEditAcquisitionChannelInput"></select><small>Solo muestra medios del negocio.</small></label>
+        <label><span>Sede</span><select id="activationEditBranchInput"></select></label>
+        <label><span>Fecha de inicio</span><input id="activationEditStartsAtInput" type="datetime-local"></label>
         <label><span>Estado</span><select id="activationEditStatusInput">
           <option value="draft">Borrador</option>
           <option value="active">Activa</option>
@@ -31299,13 +31343,20 @@ function ensureActivationEditModal(view = document.querySelector('.view-section[
         </select></label>
         <label><span>Fecha de cierre</span><input id="activationEditEndsAtInput" type="datetime-local"></label>
         <label class="span-2"><span>Vendedor responsable</span><select id="activationEditSellerInput"></select><small>Los nuevos leads conservarán esta atribución. El historial anterior no se reescribe.</small></label>
+        <label><span>Cupo de participantes</span><input id="activationEditMaxParticipantsInput" type="number" min="1" max="1000000" placeholder="Sin limite"></label>
         <label><span>Cupo de beneficios</span><input id="activationEditMaxRewardsInput" type="number" min="1" max="1000000" placeholder="Sin limite"></label>
+        <label><span>Costo en créditos QR</span><input id="activationEditRewardCostInput" type="number" min="1" max="100" required></label>
+        <label><span>Tipo de beneficio</span><select id="activationEditRewardTypeInput"><option value="PERCENT_DISCOUNT">Descuento porcentual</option><option value="FIXED_AMOUNT_DISCOUNT">Descuento en dinero</option><option value="FREE_GIFT">Regalo</option><option value="FREE_SAMPLE">Muestra gratis</option><option value="UPGRADE">Upgrade</option><option value="VIP_ACCESS">Acceso VIP</option><option value="RAFFLE_ENTRY">Sorteo</option><option value="BUY_X_GET_Y">Compra X lleva Y</option><option value="CUSTOM">Personalizado</option></select></label>
+        <label class="span-2"><span>Nombre del beneficio</span><input id="activationEditRewardLabelInput" type="text" maxlength="180"></label>
+        <label class="span-2"><span>Valor del beneficio</span><textarea id="activationEditRewardValueInput" rows="3"></textarea><small>Formato JSON. Ejemplo: {"percent": 15}</small></label>
+        <label class="span-2"><span>Condiciones del beneficio</span><textarea id="activationEditRewardConditionsInput" rows="2" maxlength="1000"></textarea></label>
         <label><span>Dias entre intentos</span><input id="activationEditCooldownInput" type="number" min="0" max="365"></label>
         <label class="span-2"><span>Regla para ganadores</span><select id="activationEditWinnerPolicyInput">
           <option value="block_previous_winners">Si ya gano, bloquear nuevo beneficio</option>
           <option value="allow_after_cooldown">Permitir despues de la espera</option>
         </select></label>
         <label class="span-2"><span>Mensaje para WhatsApp</span><textarea id="activationEditInviteInput" rows="4" maxlength="900"></textarea><small>Variables disponibles: {link}, {titulo}, {negocio}, {lead}</small></label>
+        <label class="span-2"><span>Términos y condiciones</span><textarea id="activationEditTermsInput" rows="4" maxlength="4000"></textarea></label>
         <p class="form-message span-2" id="activationEditMessage" role="status" aria-live="polite"></p>
         <div class="modal-button-row span-2">
           <button class="ghost-button" type="button" data-close-activation-edit>Cancelar</button>
@@ -31332,9 +31383,13 @@ function closeActivationEditModal() {
   document.body.classList.remove("activation-edit-open");
 }
 
-function editInteractiveActivation(id) {
+async function editInteractiveActivation(id) {
   const activation = activationById(id);
   if (!activation) return;
+  await Promise.all([
+    loadAcquisitionChannels().catch(() => []),
+    state.businessBranchesLoaded ? Promise.resolve() : loadBusinessBranches({ quiet: true }).catch(() => []),
+  ]);
   const modal = ensureActivationEditModal();
   if (!modal) return;
   state.activationEditId = id;
@@ -31342,13 +31397,24 @@ function editInteractiveActivation(id) {
   modal.querySelector("#activationEditTitle").textContent = `Editar ${activation.title || "activacion"}`;
   modal.querySelector("#activationEditTitleInput").value = activation.title || "";
   modal.querySelector("#activationEditDescriptionInput").value = activation.description || "";
+  modal.querySelector("#activationEditCampaignInput").innerHTML = activationEditCampaignOptions(activation.campaign_id || "", activation.campaign_name || "");
+  modal.querySelector("#activationEditAcquisitionChannelInput").innerHTML = activationAcquisitionOptionsMarkup(activation.acquisition_channel_id || "", activation.acquisition_channel_name || "");
+  modal.querySelector("#activationEditBranchInput").innerHTML = activationEditBranchOptions(activation.branch_id || "", activation.branch_name || "");
   modal.querySelector("#activationEditStatusInput").value = activation.status || "draft";
+  modal.querySelector("#activationEditStartsAtInput").value = formatInputDateTime(activation.starts_at);
   modal.querySelector("#activationEditEndsAtInput").value = formatInputDateTime(activation.ends_at);
   modal.querySelector("#activationEditSellerInput").innerHTML = businessCommercialOwnerOptions(activation.seller_user_id || "").replace("Sin responsable asignado", "Sin vendedor asignado");
+  modal.querySelector("#activationEditMaxParticipantsInput").value = activation.max_participants || "";
   modal.querySelector("#activationEditMaxRewardsInput").value = activation.max_rewards || "";
+  modal.querySelector("#activationEditRewardCostInput").value = activation.reward_ticket_cost || 1;
+  modal.querySelector("#activationEditRewardTypeInput").value = activation.reward_config?.reward_type || "CUSTOM";
+  modal.querySelector("#activationEditRewardLabelInput").value = activation.reward_config?.reward_label || "";
+  modal.querySelector("#activationEditRewardValueInput").value = JSON.stringify(activation.reward_config?.reward_value || {}, null, 2);
+  modal.querySelector("#activationEditRewardConditionsInput").value = activation.reward_config?.reward_conditions || "";
   modal.querySelector("#activationEditCooldownInput").value = currentLock.cooldown_days ?? 7;
   modal.querySelector("#activationEditWinnerPolicyInput").value = currentLock.winner_policy || "block_previous_winners";
   modal.querySelector("#activationEditInviteInput").value = activationInviteTemplate(activation);
+  modal.querySelector("#activationEditTermsInput").value = activation.terms || "";
   setFormMessage(modal.querySelector("#activationEditMessage"), "", "");
   modal.classList.remove("hidden");
   modal.removeAttribute("hidden");
@@ -31371,8 +31437,14 @@ async function submitActivationEditModal(event) {
   const description = String(modal.querySelector("#activationEditDescriptionInput")?.value || "").trim();
   const status = String(modal.querySelector("#activationEditStatusInput")?.value || activation.status || "draft");
   const inviteTemplate = String(modal.querySelector("#activationEditInviteInput")?.value || "").trim();
+  const maxParticipantsText = String(modal.querySelector("#activationEditMaxParticipantsInput")?.value || "").trim();
+  const maxParticipants = maxParticipantsText ? Number(maxParticipantsText) : null;
   const maxRewardsText = String(modal.querySelector("#activationEditMaxRewardsInput")?.value || "").trim();
   const maxRewards = maxRewardsText ? Number(maxRewardsText) : null;
+  if (maxParticipants !== null && (!Number.isFinite(maxParticipants) || maxParticipants < 1)) {
+    showFeedback("El cupo de participantes debe ser mayor a cero o quedar vacío.", "error", { title: "Dato inválido" });
+    return;
+  }
   if (maxRewards !== null && (!Number.isFinite(maxRewards) || maxRewards < 1)) {
     showFeedback("El cupo maximo debe ser un numero mayor a cero o quedar vacio.", "error", { title: "Dato invalido" });
     return;
@@ -31389,12 +31461,27 @@ async function submitActivationEditModal(event) {
     showFeedback("Politica invalida.", "error", { title: "Dato invalido" });
     return;
   }
+  const startsAtValue = String(modal.querySelector("#activationEditStartsAtInput")?.value || "").trim();
   const endsAtValue = String(modal.querySelector("#activationEditEndsAtInput")?.value || "").trim();
-  if (endsAtValue && Number.isNaN(new Date(endsAtValue).getTime())) {
-    showFeedback("La fecha de cierre no es valida.", "error", { title: "Dato invalido" });
+  if ((startsAtValue && Number.isNaN(new Date(startsAtValue).getTime())) || (endsAtValue && Number.isNaN(new Date(endsAtValue).getTime()))) {
+    showFeedback("Revisa las fechas de inicio y cierre.", "error", { title: "Dato inválido" });
     return;
   }
+  const startsAt = startsAtValue ? new Date(startsAtValue).toISOString() : null;
   const endsAt = endsAtValue ? new Date(endsAtValue).toISOString() : null;
+  if (startsAt && endsAt && new Date(startsAt) >= new Date(endsAt)) {
+    showFeedback("La fecha de cierre debe ser posterior al inicio.", "error", { title: "Dato inválido" });
+    return;
+  }
+  let rewardValue;
+  try {
+    rewardValue = JSON.parse(String(modal.querySelector("#activationEditRewardValueInput")?.value || "{}").trim() || "{}");
+    if (!rewardValue || Array.isArray(rewardValue) || typeof rewardValue !== "object") throw new Error("invalid-object");
+  } catch {
+    setFormMessage(modal.querySelector("#activationEditMessage"), 'El valor del beneficio debe ser un objeto JSON válido, por ejemplo {"percent": 15}.', "error");
+    modal.querySelector("#activationEditRewardValueInput")?.focus();
+    return;
+  }
   if (status === "archived" && activation.status !== "archived" && !window.confirm(`Vas a anular "${activation.title}". El link quedara inactivo y no recibira nuevas participaciones. Deseas continuar?`)) {
     return;
   }
@@ -31402,13 +31489,26 @@ async function submitActivationEditModal(event) {
   setButtonLoading(saveButton, true, "Guardando...");
   setFormMessage(modal.querySelector("#activationEditMessage"), "Guardando cambios...", "info");
   try {
-    await patchInteractiveActivation(id, {
+    const campaignId = modal.querySelector("#activationEditCampaignInput")?.value || null;
+    const acquisitionChannelId = modal.querySelector("#activationEditAcquisitionChannelInput")?.value || null;
+    const payload = {
       title,
       description: description || null,
       status,
+      starts_at: startsAt,
       ends_at: endsAt,
+      branch_id: modal.querySelector("#activationEditBranchInput")?.value || null,
       seller_user_id: modal.querySelector("#activationEditSellerInput")?.value || null,
+      max_participants: maxParticipants,
       max_rewards: maxRewards,
+      reward_ticket_cost: Number(modal.querySelector("#activationEditRewardCostInput")?.value || 1),
+      reward_config: {
+        ...(activation.reward_config || {}),
+        reward_type: modal.querySelector("#activationEditRewardTypeInput")?.value || "CUSTOM",
+        reward_label: String(modal.querySelector("#activationEditRewardLabelInput")?.value || "").trim() || "Beneficio desbloqueado",
+        reward_value: rewardValue,
+        reward_conditions: String(modal.querySelector("#activationEditRewardConditionsInput")?.value || "").trim() || null,
+      },
       visual_config: {
         ...(activation.visual_config || {}),
         invite_message_template: inviteTemplate || defaultActivationInviteTemplate({ title }),
@@ -31424,7 +31524,11 @@ async function submitActivationEditModal(event) {
           label: `${cooldownDays} dias de espera entre intentos`,
         },
       },
-    }, "Datos basicos actualizados.");
+      terms: String(modal.querySelector("#activationEditTermsInput")?.value || "").trim() || null,
+    };
+    if (campaignId !== (activation.campaign_id || null)) payload.campaign_id = campaignId;
+    if (acquisitionChannelId !== (activation.acquisition_channel_id || null)) payload.acquisition_channel_id = acquisitionChannelId;
+    await patchInteractiveActivation(id, payload, "Configuración completa actualizada.");
     closeActivationEditModal();
   } catch (error) {
     setFormMessage(modal.querySelector("#activationEditMessage"), error.message, "error");

@@ -18,6 +18,8 @@ function intakeMetadata(payload = {}) {
     activation_type: payload.activation_type || null,
     activation_name: payload.activation_name || null,
     campaign_id: payload.campaign_id || null,
+    ...(payload.acquisition_channel_id ? { acquisition_channel_id: payload.acquisition_channel_id } : {}),
+    ...(payload.acquisition_channel ? { acquisition_channel: payload.acquisition_channel } : {}),
     participant_id: payload.participant_id || null,
   };
 }
