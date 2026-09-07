@@ -3269,6 +3269,7 @@ async function renderResult(data) {
   const fulfillment = benefitFulfillmentFromResult(data);
   const isEcommerceReward = fulfillment.mode === "ECOMMERCE_CODE";
   const isDigitalAssetReward = fulfillment.mode === "DIGITAL_ASSET";
+  const benefitUrl = !isDigitalAssetReward ? String(data.benefit_url || "") : "";
   const rewardQrDataUrl = data.rewarded && !isDigitalAssetReward ? await ticketImageDataUrlForBrowser(data.qr_image_data_url) : "";
   const diagnostic = data.diagnostic_result;
   const diagnosticMarkup = diagnostic ? `
@@ -3308,6 +3309,7 @@ async function renderResult(data) {
     </div>
     <div class="ticket-actions">
       <button class="submit-button" type="button" id="copyEcommerceCodeButton">Copiar codigo</button>
+      ${benefitUrl ? '<button class="submit-button secondary" type="button" data-copy-benefit-link>Copiar link del beneficio</button>' : ""}
     </div>
   ` : data.rewarded ? `
     ${diagnosticMarkup}
@@ -3319,6 +3321,7 @@ async function renderResult(data) {
     <img src="${escapeHtml(rewardQrDataUrl)}" alt="Beneficio QR" id="rewardQrImage">
     <div class="ticket-actions">
       <button class="submit-button" type="button" id="downloadRewardQrButton">Descargar QR</button>
+      ${benefitUrl ? '<button class="submit-button secondary" type="button" data-copy-benefit-link>Copiar link del beneficio</button>' : ""}
     </div>
   ` : `
     ${diagnosticMarkup}
@@ -3329,6 +3332,17 @@ async function renderResult(data) {
     </div>
   `;
   ticketResult.classList.remove("hidden");
+  ticketResult.querySelectorAll("[data-copy-benefit-link]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        if (!navigator.clipboard?.writeText) throw new Error("Clipboard API no disponible");
+        await navigator.clipboard.writeText(benefitUrl);
+        setStatus("Link del beneficio copiado. Puedes enviarlo para abrir el ticket QR.", "success");
+      } catch (error) {
+        window.prompt("Copia el link del beneficio", benefitUrl);
+      }
+    });
+  });
   if (data.rewarded && isEcommerceReward) {
     document.getElementById("copyEcommerceCodeButton")?.addEventListener("click", async () => {
       try {

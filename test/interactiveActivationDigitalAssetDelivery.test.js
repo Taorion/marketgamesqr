@@ -31,9 +31,13 @@ test("digital result renders only the secure asset download action", () => {
   assert.match(publicHtml, /digital-download-only=v441-20260907/);
 });
 
-test("public participants cannot share or copy redemption links", () => {
-  assert.doesNotMatch(publicSource, /shareRewardQrButton|shareRewardQr|data-copy-benefit-link|Copiar link del beneficio|Compartir QR/);
+test("QR ticket rewards can copy their benefit link without restoring share actions", () => {
+  assert.match(publicSource, /const benefitUrl = !isDigitalAssetReward \? String\(data\.benefit_url \|\| ""\) : ""/);
+  assert.match(publicSource, /data-copy-benefit-link/);
+  assert.match(publicSource, /Copiar link del beneficio/);
+  assert.doesNotMatch(publicSource, /shareRewardQrButton|shareRewardQr|Compartir QR/);
   assert.match(publicHtml, /participant-actions=v442-20260907/);
+  assert.match(publicHtml, /ticket-benefit-link=v448-20260907/);
 });
 
 test("backend issues a digital reward without creating a QR or redemption response", () => {
