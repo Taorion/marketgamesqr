@@ -11,6 +11,7 @@ const readerScript = read("qori-web", "academia-vendedores", "app.js");
 const cultivationReader = read("qori-web", "cultivar-ventas", "index.html");
 const cultivationScript = read("qori-web", "cultivar-ventas", "app.js");
 const cultivationContent = read("qori-web", "cultivar-ventas", "content.js");
+const flipbookTurn = read("qori-web", "js", "flipbook-turn.js");
 const pagesRoot = path.join(root, "qori-web", "academia-vendedores", "pages");
 
 test("the public home links sellers to the Qori commercial academy", () => {
@@ -36,8 +37,12 @@ test("the flipbook supports spreads, mobile pages, chapters, keyboard and touch 
   assert.match(readerScript, /touchstart/);
   assert.match(readerScript, /requestFullscreen/);
   assert.match(readerScript, /preloadAround/);
-  assert.match(readerScript, /animatePageTurn/);
-  assert.match(readerScript, /cubic-bezier\(0\.16, 1, 0\.3, 1\)/);
+  assert.match(readerScript, /QoriFlipbookTurn/);
+  assert.doesNotMatch(readerScript, /animatePageTurn/);
+  assert.match(flipbookTurn, /book-turn-front/);
+  assert.match(flipbookTurn, /book-turn-back/);
+  assert.match(flipbookTurn, /duration: 720/);
+  assert.match(flipbookTurn, /rotateY\(\$\{angle\}deg\)/);
 });
 
 test("the home offers a second book for cultivating sales with Qori spirit", () => {
@@ -53,7 +58,8 @@ test("the complete GOS cultivation methodology powers a fluid responsive flipboo
   assert.match(cultivationContent, /Una venta no se persigue: se cultiva\./);
   assert.match(cultivationContent, /Qori — Tu fábrica de ingresos/);
   assert.match(cultivationScript, /function buildPages/);
-  assert.match(cultivationScript, /animatePageTurn/);
+  assert.match(cultivationScript, /QoriFlipbookTurn/);
+  assert.doesNotMatch(cultivationScript, /animatePageTurn/);
   assert.match(cultivationScript, /touchstart/);
   assert.match(cultivationScript, /mobileQuery/);
 });

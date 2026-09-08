@@ -104,50 +104,36 @@
       : `Página ${pages[0]} de ${totalPages}`;
     pageInput.value = String(currentPage);
     progress.style.width = `${(finalVisiblePage / totalPages) * 100}%`;
-    previousButtons.forEach((button) => { button.disabled = currentPage <= 1; });
-    nextButtons.forEach((button) => { button.disabled = finalVisiblePage >= totalPages; });
+    previousButtons.forEach((button) => { button.disabled = currentPage <= 1 || isTurning; });
+    nextButtons.forEach((button) => { button.disabled = finalVisiblePage >= totalPages || isTurning; });
     syncChapter();
     updateHash();
     preloadAround(pages);
-  }
-
-  async function animatePageTurn(element, direction, phase) {
-    if (!element || reducedMotionQuery.matches || typeof element.animate !== "function") return;
-    const next = direction === "next";
-    const outgoing = phase === "out";
-    const edge = next ? "left center" : "right center";
-    const angle = next ? -88 : 88;
-    const frames = outgoing
-      ? [
-          { transform: "perspective(1800px) rotateY(0deg)", opacity: 1, filter: "brightness(1)" },
-          { transform: `perspective(1800px) rotateY(${angle * 0.55}deg)`, opacity: 0.92, filter: "brightness(0.86)", offset: 0.68 },
-          { transform: `perspective(1800px) rotateY(${angle}deg)`, opacity: 0.18, filter: "brightness(0.7)" }
-        ]
-      : [
-          { transform: `perspective(1800px) rotateY(${-angle}deg)`, opacity: 0.18, filter: "brightness(0.72)" },
-          { transform: `perspective(1800px) rotateY(${angle * -0.18}deg)`, opacity: 0.96, filter: "brightness(0.96)", offset: 0.7 },
-          { transform: "perspective(1800px) rotateY(0deg)", opacity: 1, filter: "brightness(1)" }
-        ];
-    element.style.transformOrigin = edge;
-    await element.animate(frames, {
-      duration: outgoing ? 310 : 430,
-      easing: outgoing ? "cubic-bezier(0.55, 0.06, 0.68, 0.19)" : "cubic-bezier(0.16, 1, 0.3, 1)",
-      fill: "both"
-    }).finished.catch(() => {});
-    element.style.removeProperty("transform-origin");
   }
 
   async function goTo(page, direction = "next") {
     const nextPage = clamp(page);
     if (nextPage === currentPage || isTurning) return;
     isTurning = true;
-    const outgoingPage = direction === "next" && !rightPage.hidden ? rightPage : leftPage;
-    await animatePageTurn(outgoingPage, direction, "out");
+    const oldLeft = leftPage.cloneNode(true);
+    const oldRight = rightPage.hidden ? null : rightPage.cloneNode(true);
+    const previousWasSpread = !isMobile() && Boolean(oldRight);
     currentPage = nextPage;
     render();
-    const incomingPage = direction === "next" ? leftPage : (rightPage.hidden ? leftPage : rightPage);
-    await animatePageTurn(incomingPage, direction, "in");
+    await window.QoriFlipbookTurn?.({
+      book,
+      leftPage,
+      rightPage,
+      oldLeft,
+      oldRight,
+      direction,
+      previousWasSpread,
+      targetIsSpread: !isMobile() && !rightPage.hidden,
+      mobile: isMobile(),
+      reducedMotion: reducedMotionQuery.matches
+    });
     isTurning = false;
+    render();
   }
 
   function next() {

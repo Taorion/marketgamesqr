@@ -195,41 +195,27 @@
     if (window.location.hash !== hash) history.replaceState(null, "", hash);
   }
 
-  async function animatePageTurn(element, direction, phase) {
-    if (!element || reducedMotionQuery.matches || typeof element.animate !== "function") return;
-    const next = direction === "next";
-    const outgoing = phase === "out";
-    const angle = next ? -88 : 88;
-    element.style.transformOrigin = next ? "left center" : "right center";
-    const frames = outgoing
-      ? [
-          { transform: "perspective(1800px) rotateY(0deg)", opacity: 1, filter: "brightness(1)", boxShadow: "0 12px 30px rgba(0,0,0,.16)" },
-          { transform: `perspective(1800px) rotateY(${angle * 0.58}deg)`, opacity: 0.94, filter: "brightness(.82)", boxShadow: "0 28px 48px rgba(0,0,0,.3)", offset: 0.68 },
-          { transform: `perspective(1800px) rotateY(${angle}deg)`, opacity: 0.15, filter: "brightness(.65)", boxShadow: "0 10px 20px rgba(0,0,0,.1)" }
-        ]
-      : [
-          { transform: `perspective(1800px) rotateY(${-angle}deg)`, opacity: 0.15, filter: "brightness(.68)" },
-          { transform: `perspective(1800px) rotateY(${angle * -0.16}deg)`, opacity: 0.98, filter: "brightness(.96)", offset: 0.72 },
-          { transform: "perspective(1800px) rotateY(0deg)", opacity: 1, filter: "brightness(1)" }
-        ];
-    await element.animate(frames, {
-      duration: outgoing ? 320 : 440,
-      easing: outgoing ? "cubic-bezier(0.55, 0.06, 0.68, 0.19)" : "cubic-bezier(0.16, 1, 0.3, 1)",
-      fill: "both"
-    }).finished.catch(() => {});
-    element.style.removeProperty("transform-origin");
-  }
-
   async function goTo(page, direction = "next") {
     const nextPage = clamp(page);
     if (nextPage === currentPage || isTurning) return;
     isTurning = true;
-    const outgoingPage = direction === "next" && !rightPage.hidden ? rightPage : leftPage;
-    await animatePageTurn(outgoingPage, direction, "out");
+    const oldLeft = leftPage.cloneNode(true);
+    const oldRight = rightPage.hidden ? null : rightPage.cloneNode(true);
+    const previousWasSpread = !isMobile() && Boolean(oldRight);
     currentPage = nextPage;
     render();
-    const incomingPage = direction === "next" ? leftPage : (rightPage.hidden ? leftPage : rightPage);
-    await animatePageTurn(incomingPage, direction, "in");
+    await window.QoriFlipbookTurn?.({
+      book,
+      leftPage,
+      rightPage,
+      oldLeft,
+      oldRight,
+      direction,
+      previousWasSpread,
+      targetIsSpread: !isMobile() && !rightPage.hidden,
+      mobile: isMobile(),
+      reducedMotion: reducedMotionQuery.matches
+    });
     isTurning = false;
     render();
   }
