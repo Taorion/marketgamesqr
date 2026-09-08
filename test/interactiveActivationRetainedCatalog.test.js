@@ -5,6 +5,7 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 const html = fs.readFileSync(path.join(root, "empresa", "index.html"), "utf8");
+const app = fs.readFileSync(path.join(root, "empresa", "js", "app.js"), "utf8");
 const serviceSource = fs.readFileSync(path.join(root, "backend", "src", "services", "interactiveActivationService.js"), "utf8");
 const { ACTIVATION_CATALOG, listActivationCatalog } = require("../backend/src/services/interactiveActivationService");
 
@@ -65,4 +66,12 @@ test("los tipos retirados conservan lectura histórica pero no admiten nuevas cr
   assert.match(serviceSource, /const ALL_ACTIVATION_CATALOG = \[/);
   assert.match(serviceSource, /!RETAINED_ACTIVATION_TYPES\.has\(body\.activation_type\)/);
   assert.doesNotMatch(ACTIVATION_CATALOG.map((item) => item.type).join(" "), /FLEX_SURVEY|MINI_MAZE|TRUE_FALSE/);
+});
+
+test("las recetas rápidas solo seleccionan activaciones retenidas", () => {
+  const recipes = app.match(/function applyGamingActivationRecipe[\s\S]*?const recipe = recipes\[recipeKey\]/)?.[0] || "";
+  assert.match(recipes, /leads: \{ type: "OPEN_QUESTION"/);
+  assert.match(recipes, /launch: \{ type: "PRIVATE_INVITATION"/);
+  assert.doesNotMatch(recipes, /type: "SURVEY"|type: "WAITLIST"/);
+  assert.match(html, /activation-catalog=v452-20260908/);
 });

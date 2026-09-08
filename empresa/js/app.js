@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260908-activation-channel-contact-cleanup-v451";
+const APP_VERSION = "empresa-20260908-retained-activation-catalog-v452";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -19098,10 +19098,10 @@ const GAMING_CENTER_TAB_META = {
 };
 
 const GAMING_ACTIVATION_CATEGORY_TYPES = {
-  recommended: ["TRIVIA", "SCRATCH_DIGITAL", "ROULETTE_SPIN", "SPIN_DISCOVER", "PRODUCT_VOTE", "WAITLIST"],
-  capture: ["OPEN_QUESTION", "SURVEY", "PRODUCT_VOTE", "STYLE_SELECTOR", "GIFT_CURATOR", "NEED_DIAGNOSTIC", "WAITLIST", "REWARD_RESERVATION"],
-  reveal: ["SPIN_DISCOVER", "THERMOMETER", "SEALED_LETTER", "PRIVATE_INVITATION", "SCRATCH_DIGITAL", "TAP_REVEAL", "ROULETTE_SPIN"],
-  games: ["SPACE_SHOOTER", "BREAKOUT", "SNAKE", "CATCH_PRIZE", "MEMORY_PAIRS", "FAST_TAP", "MINI_MAZE", "WHACK_A_MOLE", "DODGE_RUNNER", "BALLOON_POP", "TOUCH_CATCH", "TRUE_FALSE", "ORDER_OPTIONS", "CONNECTORS", "BATTLESHIP_COORDS"],
+  recommended: ["TRIVIA", "SCRATCH_DIGITAL", "ROULETTE_SPIN", "SPIN_DISCOVER", "PRODUCT_VOTE", "PRIVATE_INVITATION"],
+  capture: ["OPEN_QUESTION", "PRODUCT_VOTE", "TRIVIA"],
+  reveal: ["SPIN_DISCOVER", "THERMOMETER", "SEALED_LETTER", "PRIVATE_INVITATION", "SCRATCH_DIGITAL", "ROULETTE_SPIN"],
+  games: ["SPACE_SHOOTER", "BREAKOUT", "SNAKE", "MEMORY_PAIRS", "WHACK_A_MOLE", "DODGE_RUNNER", "ROULETTE_SPIN", "ORDER_OPTIONS", "CONNECTORS", "BATTLESHIP_COORDS"],
 };
 
 function ensureGamingCenterUxStyles() {
@@ -19991,10 +19991,10 @@ function launchGamingActivationFromWizard() {
 
 function applyGamingActivationRecipe(recipeKey = "") {
   const recipes = {
-    leads: { type: "SURVEY", title: "Descubre qué solución es ideal para ti", description: "Responde unas preguntas rápidas y recibe un beneficio por compartir tus preferencias.", benefit: "Beneficio por completar el diagnóstico" },
+    leads: { type: "OPEN_QUESTION", title: "Descubre qué solución es ideal para ti", description: "Responde unas preguntas rápidas y recibe un beneficio por compartir tus preferencias.", benefit: "Beneficio por compartir tus respuestas" },
     instant: { type: "SCRATCH_DIGITAL", title: "Raspa y descubre tu beneficio", description: "Completa tus datos, elige una zona y revela tu premio para redimirlo.", benefit: "Premio sorpresa" },
     score: { type: "SPACE_SHOOTER", title: "Juega, supera el reto y gana", description: "Consigue el puntaje mínimo y desbloquea un beneficio QR para usar en tienda.", benefit: "Beneficio por superar el reto" },
-    launch: { type: "WAITLIST", title: "Acceso anticipado al lanzamiento", description: "Regístrate para conocer primero la novedad y recibir un beneficio de lanzamiento.", benefit: "Acceso anticipado" },
+    launch: { type: "PRIVATE_INVITATION", title: "Acceso anticipado al lanzamiento", description: "Regístrate para conocer primero la novedad y recibir una invitación privada.", benefit: "Acceso anticipado" },
   };
   const recipe = recipes[recipeKey];
   if (!recipe) return;
@@ -20167,10 +20167,10 @@ function ensureGamingCenterUx() {
     triviaLauncherForm?.insertAdjacentHTML("beforebegin", `
       <section class="gaming-activation-recipes" aria-label="Recetas rápidas de activación">
         <div class="gaming-activation-recipes-copy"><span class="mono-label">Punto de partida</span><strong>Elige un objetivo o crea desde cero</strong><small>Las recetas cargan textos editables y una dinámica recomendada.</small></div>
-        <button class="gaming-activation-recipe" type="button" data-gaming-activation-recipe="leads"><span class="material-symbols-outlined">person_search</span><span><strong>Perfilar leads</strong><small>Encuesta comercial</small></span></button>
+        <button class="gaming-activation-recipe" type="button" data-gaming-activation-recipe="leads"><span class="material-symbols-outlined">person_search</span><span><strong>Perfilar leads</strong><small>Pregunta abierta</small></span></button>
         <button class="gaming-activation-recipe" type="button" data-gaming-activation-recipe="instant"><span class="material-symbols-outlined">gesture</span><span><strong>Premio inmediato</strong><small>Raspa digital</small></span></button>
         <button class="gaming-activation-recipe" type="button" data-gaming-activation-recipe="score"><span class="material-symbols-outlined">sports_esports</span><span><strong>Reto con score</strong><small>Minijuego</small></span></button>
-        <button class="gaming-activation-recipe" type="button" data-gaming-activation-recipe="launch"><span class="material-symbols-outlined">rocket_launch</span><span><strong>Lanzamiento</strong><small>Lista de espera</small></span></button>
+        <button class="gaming-activation-recipe" type="button" data-gaming-activation-recipe="launch"><span class="material-symbols-outlined">rocket_launch</span><span><strong>Lanzamiento</strong><small>Invitación privada</small></span></button>
       </section>
       <section class="gaming-builder-assistant" aria-label="Asistente del constructor">
         <div class="gaming-builder-progress-copy"><strong data-gaming-builder-progress-value>0% completo</strong><small data-gaming-builder-progress-detail>Completa la configuración esencial</small><div class="gaming-builder-progress-track"><div class="gaming-builder-progress-fill" data-gaming-builder-progress-fill></div></div></div>
@@ -20446,9 +20446,9 @@ function configureSecretFriendGiftTicket() {
 
 function configureSecretFriendProspectActivation() {
   setTicketCenterTab("trivia");
-  setActivationType("SURVEY");
-  const surveyCountInput = document.querySelector('[data-question-count-for="SURVEY"]');
-  setFieldValue(surveyCountInput, "3");
+  setActivationType("OPEN_QUESTION");
+  const openQuestionCountInput = document.querySelector('[data-question-count-for="OPEN_QUESTION"]');
+  setFieldValue(openQuestionCountInput, "3");
   updateActivationQuestionCountControls();
   setFieldValue(triviaTitleInput, "Amigo Secreto Endulzado");
   setFieldValue(triviaDescriptionInput, "Alguien penso en ti y te dejo una sorpresa. Confirma tus datos, responde una pregunta rapida, reclama tu producto regalo en tienda y luego invita a otro prospecto.");
@@ -20467,18 +20467,15 @@ function configureSecretFriendProspectActivation() {
   setFieldValue(minigameParticipantCooldownInput, "30");
   setFieldValue(minigameWinnerPolicyInput, "block_previous_winners");
 
-  const surveyQuestions = [
-    ["1", "Para activar tu regalo, que producto o sabor elegirias hoy?", "SINGLE_CHOICE", "Opcion 1, Opcion 2, Opcion 3, Sorpresa de la marca"],
-    ["2", "A quien invitarias despues de reclamar tu sorpresa?", "SHORT_TEXT", ""],
-    ["3", "Quieres recibir nuevas invitaciones o beneficios por WhatsApp?", "SINGLE_CHOICE", "Si, No por ahora"],
+  const openQuestions = [
+    "Para activar tu regalo, ¿qué producto o sabor elegirías hoy?",
+    "¿A quién invitarías después de reclamar tu sorpresa?",
+    "¿Qué nuevas invitaciones o beneficios quisieras recibir por WhatsApp?",
   ];
-  surveyQuestions.forEach(([index, question, type, options]) => {
-    const card = document.querySelector(`[data-survey-question="${index}"]`);
-    setFieldValue(card?.querySelector('[data-survey-field="question"]'), question);
-    setFieldValue(card?.querySelector('[data-survey-field="type"]'), type);
-    setFieldValue(card?.querySelector('[data-survey-field="options"]'), options);
+  openQuestions.forEach((question, index) => {
+    setFieldValue(document.querySelector(`[data-open-question="${index + 1}"]`), question);
   });
-  updateSurveyQuestionEditors();
+  updateActivationQuestionCountControls();
   triviaLauncherForm?.scrollIntoView({ behavior: "smooth", block: "start" });
   setInlineMessage(triviaLauncherMessage, "Plantilla generica de Amigo Secreto cargada. Ajusta producto, preguntas y beneficio secundario. La campana es opcional; puedes lanzar sin asociarla.", "info");
   showFeedback("Landing prospecto preparada: datos + pregunta + ticket secundario.", "success", { title: "Amigo Secreto Endulzado" });
