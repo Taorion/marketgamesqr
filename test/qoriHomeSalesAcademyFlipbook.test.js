@@ -39,10 +39,10 @@ test("the flipbook supports spreads, mobile pages, chapters, keyboard and touch 
   assert.match(readerScript, /preloadAround/);
   assert.match(readerScript, /QoriFlipbookTurn/);
   assert.doesNotMatch(readerScript, /animatePageTurn/);
-  assert.match(flipbookTurn, /book-turn-front/);
-  assert.match(flipbookTurn, /book-turn-back/);
-  assert.match(flipbookTurn, /duration: 640/);
-  assert.match(flipbookTurn, /rotateY\(\$\{angle\}deg\)/);
+  assert.match(flipbookTurn, /book-turn-layer/);
+  assert.match(flipbookTurn, /duration: 220/);
+  assert.match(flipbookTurn, /translateX\(\$\{distance\}px\)/);
+  assert.doesNotMatch(flipbookTurn, /rotateY|perspective|book-turn-back/);
   assert.match(readerScript, /render\(\{ updateUi: false \}\)/);
   assert.match(readerScript, /finally \{[\s\S]*syncReaderUi\(\)/);
 });

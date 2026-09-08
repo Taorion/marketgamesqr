@@ -281,82 +281,29 @@ main { width: min(1240px, calc(100% - 32px)); margin: 0 auto; }
 
 .book.is-cover .book-spine { display: none; }
 
-.book-turn-static,
-.book-turn-card,
-.book-turn-face {
+.book-turn-layer {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 50%;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  height: 100%;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.book-turn-layer.is-spread,
+.book-turn-layer.is-single { grid-template-columns: 1fr 1fr; }
+
+.book-turn-face {
+  position: relative;
+  width: 100%;
   height: 100%;
   margin: 0;
   aspect-ratio: auto;
   overflow: hidden;
-  pointer-events: none;
 }
 
-.book-turn-static {
-  z-index: 6;
-}
-
-.book-turn-static.is-left { left: 0; }
-.book-turn-static.is-right { right: 0; }
-
-.book-turn-leaf {
-  position: absolute;
-  top: 0;
-  z-index: 8;
-  width: 50%;
-  height: 100%;
-  transform-style: preserve-3d;
-  will-change: transform;
-  pointer-events: none;
-}
-
-.book-turn-leaf.is-next {
-  left: 50%;
-  transform-origin: left center;
-}
-
-.book-turn-leaf.is-prev {
-  left: 0;
-  transform-origin: right center;
-}
-
-.book-turn-face {
-  inset: 0;
-  z-index: 1;
-  width: 100%;
-  border-radius: 0;
-  backface-visibility: hidden;
-  transform: translateZ(0.2px);
-}
-
-.book-turn-back {
-  transform: rotateY(180deg) translateZ(0.2px);
-}
-
-.book-turn-leaf::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  opacity: 0.34;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.28), transparent 18%, transparent 80%, rgba(255, 255, 255, 0.22));
-  backface-visibility: hidden;
-  pointer-events: none;
-}
-
-.book-turn-card {
-  z-index: 8;
-  left: 25%;
-  transform-origin: left center;
-  will-change: transform, opacity;
-}
-
-.book-turn-card.is-prev {
-  transform-origin: right center;
-}
+.book-turn-layer.is-single .book-turn-face { width: 50%; grid-column: 1 / -1; justify-self: center; }
 
 .page-arrow {
   position: absolute;
@@ -481,9 +428,10 @@ footer a { color: var(--white); font-weight: 700; }
   .book.is-cover { width: min(100%, 520px); }
   .book.is-cover .book-page-left { width: 100%; grid-column: auto; }
   .book-spine { display: none; }
-  .book-turn-leaf.is-mobile { left: 0; width: 100%; }
-  .book-turn-static { display: none; }
-  .book-turn-card { left: 0; width: 100%; }
+  .book-turn-layer,
+  .book-turn-layer.is-spread,
+  .book-turn-layer.is-single { grid-template-columns: 1fr; }
+  .book-turn-layer.is-single .book-turn-face { width: 100%; grid-column: auto; }
   .book-page-left, .book-page-right { border-radius: 5px; }
   .page-arrow { width: 36px; height: 54px; border-radius: 12px; }
   .page-arrow-prev { left: 4px; }
