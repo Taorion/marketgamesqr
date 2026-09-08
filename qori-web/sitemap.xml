@@ -7,6 +7,16 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://gosqori.com/academia-vendedores/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://gosqori.com/cultivar-ventas/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://gosqori.com/paquetes/</loc>
     <lastmod>2026-07-23</lastmod>
     <changefreq>weekly</changefreq>
