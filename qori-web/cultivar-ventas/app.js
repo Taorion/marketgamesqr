@@ -19,8 +19,8 @@
   const pages = buildPages(source);
   const totalPages = pages.length;
   let currentPage = pageFromHash();
-  let touchStartX = 0;
-  let touchStartY = 0;
+  let touchStartX = null;
+  let touchStartY = null;
   let isTurning = false;
 
   function escapeHtml(value) {
@@ -277,11 +277,18 @@
   });
 
   stage.addEventListener("touchstart", (event) => {
+    if (event.touches.length !== 1) {
+      touchStartX = null;
+      touchStartY = null;
+      return;
+    }
+    stage.removeAttribute("data-pinching");
     touchStartX = event.changedTouches[0].clientX;
     touchStartY = event.changedTouches[0].clientY;
   }, { passive: true });
 
   stage.addEventListener("touchend", (event) => {
+    if (stage.dataset.pinching === "true" || stage.dataset.zoomed === "true" || touchStartX === null || touchStartY === null) return;
     const deltaX = event.changedTouches[0].clientX - touchStartX;
     const deltaY = event.changedTouches[0].clientY - touchStartY;
     if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY)) return;

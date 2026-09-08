@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/academia-vendedores/styles.css?v=20260908-v5">
+  <link rel="stylesheet" href="/academia-vendedores/styles.css?v=20260908-secure-v6">
 </head>
 <body>
   <header class="academy-header">
@@ -53,6 +53,11 @@
               <option value="88">Modelo de negocio</option>
             </select>
           </label>
+          <div class="zoom-controls" role="group" aria-label="Zoom del libro">
+            <button type="button" data-zoom-out aria-label="Alejar" title="Alejar">−</button>
+            <button type="button" data-zoom-reset aria-label="Restablecer zoom. Nivel actual 100 por ciento" title="Restablecer zoom">100%</button>
+            <button type="button" data-zoom-in aria-label="Acercar" title="Acercar">+</button>
+          </div>
           <button class="reader-button reader-button-quiet" type="button" data-fullscreen aria-label="Ver el libro en pantalla completa">Pantalla completa</button>
         </div>
       </div>
@@ -63,7 +68,7 @@
         <button class="page-arrow page-arrow-prev" type="button" data-prev aria-label="Páginas anteriores"><span aria-hidden="true">‹</span></button>
         <div class="book" data-book>
           <figure class="book-page book-page-left" data-left-page>
-            <img data-left-image src="/academia-vendedores/pages/page-001.webp" alt="Página 1 del Brand Bible Qori" draggable="false">
+            <img data-left-image src="/academia-vendedores/pages/page-001.webp?v=20260908-secure-v6" alt="Página 1 del Brand Bible Qori" draggable="false">
           </figure>
           <div class="book-spine" aria-hidden="true"></div>
           <figure class="book-page book-page-right" data-right-page hidden>
@@ -84,7 +89,7 @@
         </div>
         <button class="reader-button reader-button-primary" type="button" data-next>Siguiente</button>
       </div>
-      <p class="reader-help">También puedes usar las flechas del teclado o deslizar sobre el libro.</p>
+      <p class="reader-help">También puedes usar las flechas del teclado, deslizar el libro o acercar con los botones y el gesto de pellizcar.</p>
     </section>
 
     <section class="learning-map" aria-labelledby="learning-map-title">
@@ -106,7 +111,8 @@
     <a href="mailto:contacto@gosqori.com">contacto@gosqori.com</a>
   </footer>
 
-  <script src="/js/flipbook-turn.js?v=20260908-v5" defer></script>
-  <script src="/academia-vendedores/app.js?v=20260908-v5" defer></script>
+  <script src="/js/flipbook-turn.js?v=20260908-secure-v7" defer></script>
+  <script src="/js/flipbook-zoom.js?v=20260908-secure-v7" defer></script>
+  <script src="/academia-vendedores/app.js?v=20260908-secure-v7" defer></script>
 </body>
 </html>

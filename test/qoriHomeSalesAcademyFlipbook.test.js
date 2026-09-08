@@ -12,6 +12,7 @@ const cultivationReader = read("qori-web", "cultivar-ventas", "index.html");
 const cultivationScript = read("qori-web", "cultivar-ventas", "app.js");
 const cultivationContent = read("qori-web", "cultivar-ventas", "content.js");
 const flipbookTurn = read("qori-web", "js", "flipbook-turn.js");
+const flipbookZoom = read("qori-web", "js", "flipbook-zoom.js");
 const pagesRoot = path.join(root, "qori-web", "academia-vendedores", "pages");
 
 test("the public home links sellers to the Qori commercial academy", () => {
@@ -45,6 +46,11 @@ test("the flipbook supports spreads, mobile pages, chapters, keyboard and touch 
   assert.doesNotMatch(flipbookTurn, /rotateY|perspective|book-turn-back/);
   assert.match(readerScript, /render\(\{ updateUi: false \}\)/);
   assert.match(readerScript, /finally \{[\s\S]*syncReaderUi\(\)/);
+  assert.match(reader, /data-zoom-out/);
+  assert.match(reader, /data-zoom-reset/);
+  assert.match(reader, /data-zoom-in/);
+  assert.match(flipbookZoom, /MAX_ZOOM = 2\.5/);
+  assert.match(flipbookZoom, /touchDistance/);
 });
 
 test("the home offers a second book for cultivating sales with Qori spirit", () => {
@@ -66,4 +72,5 @@ test("the complete GOS cultivation methodology powers a fluid responsive flipboo
   assert.match(cultivationScript, /render\(\{ updateUi: false \}\)/);
   assert.match(cultivationScript, /touchstart/);
   assert.match(cultivationScript, /mobileQuery/);
+  assert.match(cultivationReader, /flipbook-zoom\.js/);
 });

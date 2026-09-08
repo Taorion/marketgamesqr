@@ -1,7 +1,8 @@
 const SESSION_KEY = "qr_business_portal_session_v1";
+const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260907-thermometer-ticket-only-v447";
+const APP_VERSION = "empresa-20260908-training-access-v448";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -3496,6 +3497,37 @@ function isSessionExpired(value, skewMs = 30_000) {
   return Boolean(expiresAt && Date.now() + skewMs >= expiresAt);
 }
 
+function clearPortalAccessCookie() {
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${PORTAL_ACCESS_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+}
+
+function syncPortalAccessCookie(value) {
+  const token = String(value?.token || "");
+  const expiresAt = sessionExpiresAt(value);
+  if (!token || !expiresAt || expiresAt <= Date.now()) {
+    clearPortalAccessCookie();
+    return;
+  }
+  const maxAge = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${PORTAL_ACCESS_COOKIE}=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAge}; SameSite=Lax${secure}`;
+}
+
+function requestedTrainingContinuePath() {
+  const requested = new URLSearchParams(window.location.search).get("continue");
+  if (!requested) return "";
+  try {
+    const target = new URL(requested, window.location.origin);
+    const allowed = target.origin === window.location.origin
+      && ["/academia-vendedores", "/cultivar-ventas"].some((prefix) => target.pathname === prefix || target.pathname.startsWith(`${prefix}/`));
+    const continuationHash = target.hash || window.location.hash;
+    return allowed ? `${target.pathname}${target.search}${continuationHash}` : "";
+  } catch {
+    return "";
+  }
+}
+
 function removeStorageByPredicate(storage, predicate) {
   try {
     if (!storage) return;
@@ -3604,11 +3636,14 @@ function loadSession() {
       localStorage.removeItem(SESSION_KEY);
       localStorage.removeItem(VALIDATOR_SESSION_KEY);
       localStorage.setItem(APP_UPDATE_NOTICE_KEY, "Tu sesión expiro. Inicia sesión de nuevo para continuar.");
+      clearPortalAccessCookie();
       return null;
     }
+    syncPortalAccessCookie(parsed);
     return parsed;
   } catch {
     localStorage.removeItem(SESSION_KEY);
+    clearPortalAccessCookie();
     return null;
   }
 }
@@ -3629,6 +3664,7 @@ function saveSession(value) {
   session = nextSession;
   localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
   localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
+  syncPortalAccessCookie(nextSession);
 }
 
 function saveValidatorSession(value) {
@@ -3642,6 +3678,7 @@ function clearSession(options = {}) {
   clearBusinessScopedStorage(session?.user?.business_id || "", { all: true });
   resetBusinessScopedState({ session: null });
   session = null;
+  clearPortalAccessCookie();
   setPortalAuthenticationState(false);
   closeFeatureUpgradeInterstitial();
   hideFeedback();
@@ -7650,6 +7687,11 @@ function renderShell() {
 
 function applyInitialRouteParams() {
   const urlParams = new URLSearchParams(window.location.search);
+  const trainingContinuePath = requestedTrainingContinuePath();
+  if (trainingContinuePath && session?.token) {
+    window.location.replace(trainingContinuePath);
+    return;
+  }
   const requestedView = urlParams.get("view");
   const urlToken = urlParams.get("token");
   const paymentResult = urlParams.get("payment");
@@ -7728,6 +7770,12 @@ async function login(event) {
       setInlineMessage(loginError, "Acceso legacy detectado. Abriendo módulo Validador...", "success");
       showFeedback("Tu acceso usa el módulo Validador. Compra T200 para activar Portal Base.", "success", { title: "Acceso legacy", timeout: 0 });
       window.location.assign(redirectTo);
+      return;
+    }
+    const trainingContinuePath = requestedTrainingContinuePath();
+    if (trainingContinuePath) {
+      setInlineMessage(loginError, "Acceso correcto. Abriendo el material de formación...", "success");
+      window.location.replace(trainingContinuePath);
       return;
     }
     setInlineMessage(loginError, "Credenciales correctas. Cargando portal...", "success");

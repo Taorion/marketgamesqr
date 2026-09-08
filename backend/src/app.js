@@ -35,6 +35,7 @@ const {
 } = require("./controllers/rewardPassController");
 const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/errorHandler");
+const { portalWebAccessRequired } = require("./middleware/auth");
 const { rateLimit } = require("./middleware/rateLimit");
 const packageJson = require("../../package.json");
 
@@ -82,6 +83,10 @@ function setUtf8StaticHeaders(res, filePath) {
     res.setHeader("Cache-Control", "no-cache, must-revalidate");
   } else if (longCacheStaticExtensions.has(ext)) {
     res.setHeader("Cache-Control", "public, max-age=2592000, stale-while-revalidate=604800");
+  }
+  if (res.locals.qoriPortalProtectedAsset) {
+    res.setHeader("Cache-Control", "private, no-store, max-age=0");
+    res.setHeader("Pragma", "no-cache");
   }
 }
 
@@ -247,6 +252,12 @@ app.post("/api/public/reward-passes/:publicCode/claim", rewardPassPublicClaimLim
 app.use("/api/payments", paymentRoutes);
 
 app.use(blockRetiredPublicAssets);
+app.use([
+  "/academia-vendedores",
+  "/cultivar-ventas",
+  "/js/flipbook-turn.js",
+  "/js/flipbook-zoom.js",
+], portalWebAccessRequired);
 app.use(express.static(qoriWebRoot, staticOptions));
 function redirectLegacyValidator(req, res) {
   const target = new URL("/empresa/", `${req.protocol}://${req.get("host")}`);

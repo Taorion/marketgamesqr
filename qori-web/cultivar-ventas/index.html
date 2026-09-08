@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Lora:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/academia-vendedores/styles.css?v=20260908-v5">
-  <link rel="stylesheet" href="/cultivar-ventas/styles.css?v=20260908-v2">
+  <link rel="stylesheet" href="/academia-vendedores/styles.css?v=20260908-secure-v6">
+  <link rel="stylesheet" href="/cultivar-ventas/styles.css?v=20260908-secure-v3">
 </head>
 <body class="cultivation-body">
   <header class="academy-header cultivation-header">
@@ -46,6 +46,11 @@
             <span class="sr-only">Ir a una parte</span>
             <select data-chapter aria-label="Ir a una parte de la metodología"></select>
           </label>
+          <div class="zoom-controls" role="group" aria-label="Zoom del libro">
+            <button type="button" data-zoom-out aria-label="Alejar" title="Alejar">−</button>
+            <button type="button" data-zoom-reset aria-label="Restablecer zoom. Nivel actual 100 por ciento" title="Restablecer zoom">100%</button>
+            <button type="button" data-zoom-in aria-label="Acercar" title="Acercar">+</button>
+          </div>
           <button class="reader-button reader-button-quiet" type="button" data-fullscreen aria-label="Ver el libro en pantalla completa">Pantalla completa</button>
         </div>
       </div>
@@ -73,7 +78,7 @@
         </div>
         <button class="reader-button reader-button-primary" type="button" data-next>Siguiente</button>
       </div>
-      <p class="reader-help">Cambia de página con los botones, las flechas del teclado o deslizando el libro.</p>
+      <p class="reader-help">Cambia de página con los controles y acerca el texto con los botones o el gesto de pellizcar.</p>
     </section>
 
     <section class="cultivation-cycle" aria-labelledby="cycle-title">
@@ -95,8 +100,9 @@
     <a href="mailto:contacto@gosqori.com">contacto@gosqori.com</a>
   </footer>
 
-  <script src="/cultivar-ventas/content.js?v=20260908-v1" defer></script>
-  <script src="/js/flipbook-turn.js?v=20260908-v5" defer></script>
-  <script src="/cultivar-ventas/app.js?v=20260908-v5" defer></script>
+  <script src="/cultivar-ventas/content.js?v=20260908-secure-v2" defer></script>
+  <script src="/js/flipbook-turn.js?v=20260908-secure-v7" defer></script>
+  <script src="/js/flipbook-zoom.js?v=20260908-secure-v7" defer></script>
+  <script src="/cultivar-ventas/app.js?v=20260908-secure-v7" defer></script>
 </body>
 </html>
