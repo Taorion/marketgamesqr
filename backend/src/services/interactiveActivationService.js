@@ -537,10 +537,13 @@ function redactScratchRewardConfig(config = {}) {
   const choices = Array.isArray(config.choices)
     ? config.choices.map((choice, index) => {
       const slotKey = choice.value || choice.key || String.fromCharCode(65 + index);
+      const isWinner = choice.is_winner !== false && choice.reward_value?.is_winner !== false;
       return {
         value: `scratch-${index}`,
         slot_label: String(slotKey).length === 1 ? `Zona ${slotKey}` : `Casilla ${index + 1}`,
-        label: choice.reward_label || choice.benefit_label || choice.label || `Casilla ${index + 1}`,
+        label: isWinner
+          ? (choice.reward_label || choice.benefit_label || choice.label || `Beneficio ${index + 1}`)
+          : (choice.reveal_label || choice.loss_message || choice.label || "No ganaste esta vez"),
       };
     })
     : [];
@@ -1301,6 +1304,9 @@ async function completeInteractiveParticipant(slug, body) {
     const resultProfile = diagnosticActivation
       ? (diagnosticResult?.title || diagnosticResult?.key || null)
       : (body.result_profile || resolveProfile(activation, answers));
+    const scratchOutcome = activation.activation_type === "SCRATCH_WIN"
+      ? scratchChoiceOutcome(activation.reward_config?.choices, body.selected_choice)
+      : null;
     const rewardPayload = await resolveRewardPayload(client, activation, {
       answers,
       score,
@@ -1357,9 +1363,17 @@ async function completeInteractiveParticipant(slug, body) {
         participant: { id: participant.id, status, score, result_profile: resultProfile || null },
         diagnostic_result: diagnosticResult,
         rewarded: false,
+        ...(scratchOutcome ? {
+          scratch_result: {
+            is_winner: scratchOutcome.is_winner,
+            label: scratchOutcome.reveal_label,
+          },
+        } : {}),
         message: pendingReview
           ? "Participacion registrada. El beneficio queda pendiente de aprobacion."
-          : "Participacion registrada. No alcanzo el rango de beneficio configurado.",
+          : scratchOutcome && !scratchOutcome.is_winner
+            ? scratchOutcome.reveal_label
+            : "Participacion registrada. No alcanzo el rango de beneficio configurado.",
       };
     }
 
@@ -2178,16 +2192,9 @@ async function resolveRewardPayload(client, activation, context) {
 }
 
 function rewardFromScratchChoice(items = [], selectedValue) {
-  if (selectedValue === undefined || selectedValue === null) {
-    throw badRequest("Debes raspar una casilla para generar el beneficio.");
-  }
-  if (!Array.isArray(items) || !items.length) return null;
-  const matchIndex = items.findIndex((item, index) => (
-    String(item.value || item.key || item.label || item.profile) === String(selectedValue)
-    || String(selectedValue) === `scratch-${index}`
-  ));
-  if (matchIndex < 0) return null;
-  const match = items[matchIndex];
+  const outcome = scratchChoiceOutcome(items, selectedValue);
+  if (!outcome || !outcome.is_winner) return null;
+  const { match, matchIndex } = outcome;
   const rewardLabel = match.benefit_label || match.label || match.reward_label;
   const storedRewardValue = match.reward_value || match.benefit_value || { label: match.label || `Casilla ${matchIndex + 1}` };
   const percentageMatch = String(rewardLabel || "").match(/(\d+(?:[.,]\d+)?)\s*%/);
@@ -2201,6 +2208,30 @@ function rewardFromScratchChoice(items = [], selectedValue) {
     reward_label: rewardLabel,
     reward_value: rewardValue,
   }, "choice", { selected: selectedValue, scratch_index: matchIndex, scratch: true });
+}
+
+function scratchChoiceOutcome(items = [], selectedValue) {
+  if (selectedValue === undefined || selectedValue === null) {
+    throw badRequest("Debes raspar una casilla para conocer el resultado.");
+  }
+  if (!Array.isArray(items) || !items.length) return null;
+  const matchIndex = items.findIndex((item, index) => (
+    String(item.value || item.key || item.label || item.profile) === String(selectedValue)
+    || String(selectedValue) === `scratch-${index}`
+  ));
+  if (matchIndex < 0) return null;
+  const match = items[matchIndex];
+  const isWinner = match.is_winner !== false && match.reward_value?.is_winner !== false;
+  return {
+    match,
+    matchIndex,
+    is_winner: isWinner,
+    reveal_label: String(
+      isWinner
+        ? (match.reward_label || match.benefit_label || match.label || "Beneficio desbloqueado")
+        : (match.reveal_label || match.loss_message || match.label || "No ganaste esta vez")
+    ),
+  };
 }
 
 async function resolveScoreReward(client, activation, score) {
@@ -2912,7 +2943,9 @@ module.exports = {
   listInteractiveRewards,
   recycleInteractiveActivation,
   resolveDiagnosticResult,
+  rewardFromScratchChoice,
   scoreAnswerWithRules,
+  scratchChoiceOutcome,
   thermometerTicketRewardValue,
   startInteractiveParticipant,
   updateInteractiveActivation,

@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260908-training-access-v448";
+const APP_VERSION = "empresa-20260908-scratch-winners-v449";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -29527,6 +29527,16 @@ function collectFlatChoiceOptions(type) {
   return Array.from(document.querySelectorAll(`[data-flat-choice="${type}"] [data-flat-option]`))
     .map((input) => {
       const key = input.dataset.flatOption || input.value.trim();
+      const scratchWinnerField = type === "SCRATCH_DIGITAL"
+        ? document.querySelector(`[data-flat-choice="SCRATCH_DIGITAL"] [data-scratch-winner="${key}"]`)
+        : null;
+      const isScratchWinner = type !== "SCRATCH_DIGITAL" || scratchWinnerField?.value !== "loser";
+      const scratchValue = {
+        ...activationChoiceBenefitValue(input.value.trim()),
+        label: input.value.trim(),
+        scratch_slot: key,
+        is_winner: isScratchWinner,
+      };
       const imageDataUrl = type === "PRODUCT_VOTE"
         ? (input.dataset.imageDataUrl || productVoteImages[key] || "")
         : "";
@@ -29536,8 +29546,9 @@ function collectFlatChoiceOptions(type) {
         image_data_url: imageDataUrl || null,
         reward_type: triviaBenefitTypeInput.value,
         reward_label: type === "SCRATCH_DIGITAL" ? input.value.trim() : triviaBenefitLabelInput.value.trim(),
+        ...(type === "SCRATCH_DIGITAL" ? { is_winner: isScratchWinner, reveal_label: input.value.trim() } : {}),
         reward_value: type === "SCRATCH_DIGITAL"
-          ? withBenefitFulfillment(withBenefitProductScope({ ...activationChoiceBenefitValue(input.value.trim()), label: input.value.trim(), scratch_slot: key }, productScope), fulfillment)
+          ? withBenefitFulfillment(withBenefitProductScope(scratchValue, productScope), fulfillment)
           : withBenefitFulfillment(withBenefitProductScope(activationBenefitValueForPayload(), productScope), fulfillment),
       };
     })
@@ -30484,6 +30495,10 @@ function validateTriviaLauncherForm() {
     const choices = collectFlatChoiceOptions(type);
     if (type === "SCRATCH_DIGITAL" && choices.length !== 4) {
       setInlineMessage(triviaLauncherMessage, "Configura las cuatro zonas del Raspa digital.", "error");
+      return null;
+    }
+    if (type === "SCRATCH_DIGITAL" && !choices.some((choice) => choice.is_winner)) {
+      setInlineMessage(triviaLauncherMessage, "Marca al menos una casilla ganadora para el Raspa digital.", "error");
       return null;
     }
     if (choices.length < 2) {
@@ -31624,6 +31639,21 @@ function ensureActivationEditModal(view = document.querySelector('.view-section[
         <label><span>Tipo de beneficio</span><select id="activationEditRewardTypeInput"><option value="PERCENT_DISCOUNT">Descuento porcentual</option><option value="FIXED_AMOUNT_DISCOUNT">Descuento en dinero</option><option value="FREE_GIFT">Regalo</option><option value="FREE_SAMPLE">Muestra gratis</option><option value="UPGRADE">Upgrade</option><option value="VIP_ACCESS">Acceso VIP</option><option value="RAFFLE_ENTRY">Sorteo</option><option value="BUY_X_GET_Y">Compra X lleva Y</option><option value="CUSTOM">Personalizado</option></select></label>
         <label class="span-2"><span>Nombre del beneficio</span><input id="activationEditRewardLabelInput" type="text" maxlength="180"></label>
         <label class="span-2"><span>Condiciones del beneficio</span><textarea id="activationEditRewardConditionsInput" rows="2" maxlength="1000"></textarea></label>
+        <section class="activation-edit-scratch span-2 hidden" id="activationEditScratchConfig">
+          <div class="activation-edit-scratch-head">
+            <strong>Casillas del Raspa digital</strong>
+            <p>Decide cuales entregan premio. Puedes tener una o varias ganadoras.</p>
+          </div>
+          <div class="scratch-config-grid">
+            ${["A", "B", "C", "D"].map((slot) => `
+              <div class="scratch-config-card">
+                <strong>Casilla ${slot}</strong>
+                <label><span>Resultado</span><select data-edit-scratch-winner="${slot}"><option value="winner">Ganadora: entrega beneficio</option><option value="loser">No ganadora: no genera QR</option></select></label>
+                <label><span>Texto que vera el cliente</span><input data-edit-scratch-label="${slot}" type="text" maxlength="180"></label>
+              </div>`).join("")}
+          </div>
+          <small>Una casilla no ganadora registra la participacion, muestra el texto definido y no emite ticket QR.</small>
+        </section>
         <label><span>Dias entre intentos</span><input id="activationEditCooldownInput" type="number" min="0" max="365"></label>
         <label class="span-2"><span>Regla para ganadores</span><select id="activationEditWinnerPolicyInput">
           <option value="block_previous_winners">Si ya gano, bloquear nuevo beneficio</option>
@@ -31683,6 +31713,21 @@ async function editInteractiveActivation(id) {
   modal.querySelector("#activationEditRewardTypeInput").value = activation.reward_config?.reward_type || "CUSTOM";
   modal.querySelector("#activationEditRewardLabelInput").value = activation.reward_config?.reward_label || "";
   modal.querySelector("#activationEditRewardConditionsInput").value = activation.reward_config?.reward_conditions || "";
+  const scratchConfig = modal.querySelector("#activationEditScratchConfig");
+  const isScratchActivation = activation.activation_type === "SCRATCH_WIN" || activation.interaction_config?.mode === "scratch";
+  scratchConfig?.classList.toggle("hidden", !isScratchActivation);
+  if (isScratchActivation) {
+    const scratchChoices = Array.isArray(activation.reward_config?.choices) ? activation.reward_config.choices : [];
+    ["A", "B", "C", "D"].forEach((slot, index) => {
+      const choice = scratchChoices[index] || {};
+      const winner = choice.is_winner !== false && choice.reward_value?.is_winner !== false;
+      const label = choice.reveal_label || choice.reward_label || choice.benefit_label || choice.label || (winner ? "Beneficio sorpresa" : "No ganaste esta vez");
+      const winnerField = modal.querySelector(`[data-edit-scratch-winner="${slot}"]`);
+      const labelField = modal.querySelector(`[data-edit-scratch-label="${slot}"]`);
+      if (winnerField) winnerField.value = winner ? "winner" : "loser";
+      if (labelField) labelField.value = label;
+    });
+  }
   modal.querySelector("#activationEditCooldownInput").value = currentLock.cooldown_days ?? 7;
   modal.querySelector("#activationEditWinnerPolicyInput").value = currentLock.winner_policy || "block_previous_winners";
   modal.querySelector("#activationEditInviteInput").value = activationInviteTemplate(activation);
@@ -31733,6 +31778,41 @@ async function submitActivationEditModal(event) {
     showFeedback("Politica invalida.", "error", { title: "Dato invalido" });
     return;
   }
+  const isScratchActivation = activation.activation_type === "SCRATCH_WIN" || activation.interaction_config?.mode === "scratch";
+  let scratchChoices = null;
+  if (isScratchActivation) {
+    const previousChoices = Array.isArray(activation.reward_config?.choices) ? activation.reward_config.choices : [];
+    const rewardType = modal.querySelector("#activationEditRewardTypeInput")?.value || "CUSTOM";
+    scratchChoices = ["A", "B", "C", "D"].map((slot, index) => {
+      const previous = previousChoices[index] || {};
+      const label = String(modal.querySelector(`[data-edit-scratch-label="${slot}"]`)?.value || "").trim();
+      const isWinner = modal.querySelector(`[data-edit-scratch-winner="${slot}"]`)?.value !== "loser";
+      return {
+        ...previous,
+        value: previous.value || slot,
+        label,
+        reveal_label: label,
+        is_winner: isWinner,
+        reward_type: rewardType,
+        reward_label: label,
+        reward_value: {
+          ...(previous.reward_value || {}),
+          ...activationChoiceBenefitValue(label),
+          label,
+          scratch_slot: slot,
+          is_winner: isWinner,
+        },
+      };
+    });
+    if (scratchChoices.some((choice) => !choice.label)) {
+      showFeedback("Escribe el texto que vera el cliente en las cuatro casillas.", "error", { title: "Falta configurar una casilla" });
+      return;
+    }
+    if (!scratchChoices.some((choice) => choice.is_winner)) {
+      showFeedback("Marca al menos una casilla ganadora.", "error", { title: "Raspa digital sin premio" });
+      return;
+    }
+  }
   const startsAtValue = String(modal.querySelector("#activationEditStartsAtInput")?.value || "").trim();
   const endsAtValue = String(modal.querySelector("#activationEditEndsAtInput")?.value || "").trim();
   if ((startsAtValue && Number.isNaN(new Date(startsAtValue).getTime())) || (endsAtValue && Number.isNaN(new Date(endsAtValue).getTime()))) {
@@ -31769,6 +31849,7 @@ async function submitActivationEditModal(event) {
         reward_type: modal.querySelector("#activationEditRewardTypeInput")?.value || "CUSTOM",
         reward_label: String(modal.querySelector("#activationEditRewardLabelInput")?.value || "").trim() || "Beneficio desbloqueado",
         reward_conditions: String(modal.querySelector("#activationEditRewardConditionsInput")?.value || "").trim() || null,
+        ...(scratchChoices ? { choices: scratchChoices } : {}),
       },
       visual_config: {
         ...(activation.visual_config || {}),

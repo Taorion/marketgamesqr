@@ -69614,3 +69614,64 @@ html body #gamingActivationBuilderModal .benefit-fulfillment-panel label[hidden]
 .activation-restriction-note strong {
   color: #7c2d12;
 }
+
+.scratch-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  min-width: 0;
+}
+
+.scratch-config-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #d8e8f7;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.scratch-config-card > strong {
+  color: #052a6b;
+  font-size: 0.94rem;
+}
+
+.reveal-card-grid .scratch-config-card label,
+#activationEditModal .scratch-config-card label {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.activation-edit-scratch {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #cde4f8;
+  border-radius: 14px;
+  background: #f6fbff;
+}
+
+.activation-edit-scratch.hidden {
+  display: none !important;
+}
+
+.activation-edit-scratch-head {
+  display: grid;
+  gap: 4px;
+}
+
+.activation-edit-scratch-head p {
+  margin: 0;
+  color: #53677f;
+  line-height: 1.45;
+}
+
+@media (max-width: 680px) {
+  body[data-current-view="strategic-qr"] .reveal-card-grid.scratch-config-grid,
+  html body #activationEditModal .scratch-config-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}

@@ -792,7 +792,7 @@ function renderScratchExperience() {
         <strong id="scratchSelectedBenefit">Beneficio pendiente</strong>
       </div>
       <p class="scratch-help" id="scratchHelp">Raspa una sola casilla. Al desbloquearla, las otras quedan cerradas.</p>
-      <button class="submit-button" type="button" id="scratchCompleteButton" disabled>Generar mi QR para verlo</button>
+      <button class="submit-button" type="button" id="scratchCompleteButton" disabled>Ver mi resultado</button>
     </article>
   `;
   window.requestAnimationFrame(() => initScratchCanvases());
@@ -825,7 +825,7 @@ function initScratchCanvases() {
       if (selectedZone) selectedZone.textContent = slotText;
       if (selectedBenefit) selectedBenefit.textContent = benefitText;
       selectedResult?.classList.remove("hidden");
-      help.textContent = "Casilla seleccionada. Las otras quedaron bloqueadas. Termina de raspar para generar tu QR.";
+      help.textContent = "Casilla seleccionada. Las otras quedaron bloqueadas. Termina de raspar para ver tu resultado.";
     }
     return true;
   };
@@ -838,7 +838,7 @@ function initScratchCanvases() {
       onUnlock: () => {
         if (!lockSurface(surface)) return;
         button.disabled = false;
-        help.textContent = "Beneficio descubierto. Genera tu QR para recibir exactamente esta zona.";
+        help.textContent = "Resultado descubierto. Continua para registrarlo.";
         setProgress(1, 1);
       },
       isLocked: () => Boolean(lockedChoice && lockedChoice !== surface.dataset.scratchOption),
@@ -3272,6 +3272,7 @@ async function renderResult(data) {
   const benefitUrl = !isDigitalAssetReward ? String(data.benefit_url || "") : "";
   const rewardQrDataUrl = data.rewarded && !isDigitalAssetReward ? await ticketImageDataUrlForBrowser(data.qr_image_data_url) : "";
   const diagnostic = data.diagnostic_result;
+  const scratchResult = data.scratch_result;
   const diagnosticMarkup = diagnostic ? `
     <section class="diagnostic-result-card" aria-label="Resultado del diagnóstico">
       <span>Tu puntuación</span>
@@ -3280,7 +3281,7 @@ async function renderResult(data) {
       <p>${escapeHtml(diagnostic.text || "")}</p>
     </section>
   ` : "";
-  ticketResult.dataset.tone = data.rewarded ? "success" : "error";
+  ticketResult.dataset.tone = data.rewarded ? "success" : scratchResult ? "neutral" : "error";
   ticketResult.innerHTML = data.rewarded && isDigitalAssetReward ? `
     ${diagnosticMarkup}
     <div class="result-copy">
@@ -3322,6 +3323,12 @@ async function renderResult(data) {
     <div class="ticket-actions">
       <button class="submit-button" type="button" id="downloadRewardQrButton">Descargar QR</button>
       ${benefitUrl ? '<button class="submit-button secondary" type="button" data-copy-benefit-link>Copiar link del beneficio</button>' : ""}
+    </div>
+  ` : scratchResult ? `
+    <div class="result-copy">
+      <span>Resultado del Raspa digital</span>
+      <strong>${escapeHtml(scratchResult.label || "No ganaste esta vez")}</strong>
+      <p>Esta casilla no genera ticket QR. Tu participacion quedo registrada.</p>
     </div>
   ` : `
     ${diagnosticMarkup}
