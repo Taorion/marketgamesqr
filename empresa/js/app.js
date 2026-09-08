@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260908-scratch-winners-v449";
+const APP_VERSION = "empresa-20260908-scratch-slot-delivery-v450";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -5424,15 +5424,62 @@ function syncBenefitFulfillmentFields() {
   });
 }
 
-function syncActivationDigitalAssetOptions() {
-  if (!triviaDigitalAssetInput) return;
-  const selectedId = triviaDigitalAssetInput.value;
+function fillDigitalAssetSelect(select, requestedId = select?.value || "", requestedTitle = "") {
+  if (!select) return;
   const assets = (state.digitalAssets || []).filter((asset) => asset.is_active !== false);
-  triviaDigitalAssetInput.innerHTML = [
+  const selectedId = String(requestedId || "");
+  const selectedExists = assets.some((asset) => String(asset.id) === selectedId);
+  select.innerHTML = [
     '<option value="">Selecciona un activo digital</option>',
+    ...(!selectedExists && selectedId ? [`<option value="${escapeHtml(selectedId)}">${escapeHtml(requestedTitle || "Activo digital actual")}</option>`] : []),
     ...assets.map((asset) => `<option value="${escapeHtml(asset.id)}">${escapeHtml(asset.title || asset.file_name || "Activo digital")}</option>`),
   ].join("");
-  if (assets.some((asset) => asset.id === selectedId)) triviaDigitalAssetInput.value = selectedId;
+  if (selectedId) select.value = selectedId;
+}
+
+function syncActivationDigitalAssetOptions() {
+  fillDigitalAssetSelect(triviaDigitalAssetInput);
+  document.querySelectorAll("[data-scratch-asset]").forEach((select) => fillDigitalAssetSelect(select));
+  syncScratchDeliveryFields();
+}
+
+function scratchAssetFulfillment(assetId) {
+  const asset = (state.digitalAssets || []).find((item) => String(item.id) === String(assetId || ""));
+  return {
+    mode: "DIGITAL_ASSET",
+    channel: "digital_download",
+    label: "Activo digital descargable",
+    asset_id: asset?.id || assetId || null,
+    asset_title: asset?.title || asset?.file_name || null,
+    asset_file_name: asset?.file_name || null,
+    instructions: "Tu archivo esta listo para descargar.",
+  };
+}
+
+function scratchPhysicalFulfillment() {
+  return {
+    mode: "PHYSICAL_QR",
+    channel: "physical_store",
+    label: "Ticket QR fisico",
+    instructions: "Presenta el QR en el punto autorizado para redimir el beneficio.",
+  };
+}
+
+function syncScratchDeliveryFields(root = document) {
+  root.querySelectorAll("[data-scratch-winner], [data-edit-scratch-winner]").forEach((select) => {
+    const card = select.closest(".scratch-config-card");
+    const assetField = card?.querySelector("[data-scratch-asset-field]");
+    const assetSelect = assetField?.querySelector("[data-scratch-asset]");
+    const digital = select.value === "digital";
+    assetField?.classList.toggle("hidden", !digital);
+    assetField?.toggleAttribute("hidden", !digital);
+    if (assetSelect) {
+      assetSelect.disabled = !digital;
+      assetSelect.required = digital;
+    }
+    card?.classList.toggle("is-digital", digital);
+    card?.classList.toggle("is-loser", select.value === "loser");
+  });
 }
 
 function productScopeFromValue(value = {}, metadata = {}) {
@@ -29069,11 +29116,21 @@ function setActivationType(type) {
     });
   }
   syncThermometerFulfillmentRestriction(nextType);
+  const sharedFulfillmentPanel = triviaBenefitFulfillmentModeInput?.closest(".benefit-fulfillment-panel");
+  const scratchSlotDelivery = nextType === "SCRATCH_DIGITAL";
+  sharedFulfillmentPanel?.classList.toggle("hidden", scratchSlotDelivery);
+  sharedFulfillmentPanel?.toggleAttribute("hidden", scratchSlotDelivery);
+  if (scratchSlotDelivery) {
+    syncActivationDigitalAssetOptions();
+    syncScratchDeliveryFields();
+  }
   updateActivationQuestionCountControls();
   if (triviaBuilderHint) {
     triviaBuilderHint.textContent = nextType === "TRIVIA"
       ? triviaBuilderHint.textContent
-      : `${activationTypeLabel(nextType)} activa. El participante recibe QR al completar la dinámica.`;
+      : nextType === "SCRATCH_DIGITAL"
+        ? "Raspa digital activa. Cada casilla ganadora entrega el ticket QR o la descarga que configures."
+        : `${activationTypeLabel(nextType)} activa. El participante recibe QR al completar la dinámica.`;
   }
   if (triviaLauncherMessage && nextType !== "TRIVIA") {
     setInlineMessage(triviaLauncherMessage, `${activationTypeLabel(nextType)} seleccionado. Configura los campos y lanza la landing cuando este lista.`, "info");
@@ -29530,13 +29587,20 @@ function collectFlatChoiceOptions(type) {
       const scratchWinnerField = type === "SCRATCH_DIGITAL"
         ? document.querySelector(`[data-flat-choice="SCRATCH_DIGITAL"] [data-scratch-winner="${key}"]`)
         : null;
-      const isScratchWinner = type !== "SCRATCH_DIGITAL" || scratchWinnerField?.value !== "loser";
+      const scratchDelivery = scratchWinnerField?.value || "physical";
+      const isScratchWinner = type !== "SCRATCH_DIGITAL" || scratchDelivery !== "loser";
+      const scratchAssetId = type === "SCRATCH_DIGITAL"
+        ? document.querySelector(`[data-flat-choice="SCRATCH_DIGITAL"] [data-scratch-asset="${key}"]`)?.value || ""
+        : "";
       const scratchValue = {
         ...activationChoiceBenefitValue(input.value.trim()),
         label: input.value.trim(),
         scratch_slot: key,
         is_winner: isScratchWinner,
       };
+      const scratchFulfillment = scratchDelivery === "digital"
+        ? scratchAssetFulfillment(scratchAssetId)
+        : scratchPhysicalFulfillment();
       const imageDataUrl = type === "PRODUCT_VOTE"
         ? (input.dataset.imageDataUrl || productVoteImages[key] || "")
         : "";
@@ -29546,9 +29610,11 @@ function collectFlatChoiceOptions(type) {
         image_data_url: imageDataUrl || null,
         reward_type: triviaBenefitTypeInput.value,
         reward_label: type === "SCRATCH_DIGITAL" ? input.value.trim() : triviaBenefitLabelInput.value.trim(),
-        ...(type === "SCRATCH_DIGITAL" ? { is_winner: isScratchWinner, reveal_label: input.value.trim() } : {}),
+        ...(type === "SCRATCH_DIGITAL" ? { is_winner: isScratchWinner, reveal_label: input.value.trim(), delivery_mode: scratchDelivery } : {}),
         reward_value: type === "SCRATCH_DIGITAL"
-          ? withBenefitFulfillment(withBenefitProductScope(scratchValue, productScope), fulfillment)
+          ? (isScratchWinner
+            ? withBenefitFulfillment(withBenefitProductScope(scratchValue, productScope), scratchFulfillment)
+            : withBenefitProductScope(scratchValue, productScope))
           : withBenefitFulfillment(withBenefitProductScope(activationBenefitValueForPayload(), productScope), fulfillment),
       };
     })
@@ -30446,7 +30512,7 @@ function validateTriviaLauncherForm() {
     triviaBenefitFulfillmentModeInput?.focus();
     return null;
   }
-  if (!validateBenefitFulfillment(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaLauncherMessage, "beneficio de la activación")) return null;
+  if (type !== "SCRATCH_DIGITAL" && !validateBenefitFulfillment(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaLauncherMessage, "beneficio de la activación")) return null;
   if (!validateActivationParticipantLock()) return null;
   if (!validateActivationProductIntent()) return null;
   const activationFormFields = validateActivationCustomFields();
@@ -30500,6 +30566,18 @@ function validateTriviaLauncherForm() {
     if (type === "SCRATCH_DIGITAL" && !choices.some((choice) => choice.is_winner)) {
       setInlineMessage(triviaLauncherMessage, "Marca al menos una casilla ganadora para el Raspa digital.", "error");
       return null;
+    }
+    if (type === "SCRATCH_DIGITAL") {
+      const missingAsset = choices.find((choice) => (
+        choice.is_winner
+        && choice.delivery_mode === "digital"
+        && !choice.reward_value?.fulfillment?.asset_id
+      ));
+      if (missingAsset) {
+        setInlineMessage(triviaLauncherMessage, `Selecciona el activo digital de la casilla ${missingAsset.value}.`, "error");
+        document.querySelector(`[data-scratch-asset="${missingAsset.value}"]`)?.focus();
+        return null;
+      }
     }
     if (choices.length < 2) {
       setInlineMessage(triviaLauncherMessage, "Configura al menos dos opciones para esta activación.", "error");
@@ -31642,17 +31720,18 @@ function ensureActivationEditModal(view = document.querySelector('.view-section[
         <section class="activation-edit-scratch span-2 hidden" id="activationEditScratchConfig">
           <div class="activation-edit-scratch-head">
             <strong>Casillas del Raspa digital</strong>
-            <p>Decide cuales entregan premio. Puedes tener una o varias ganadoras.</p>
+            <p>Decide cuales entregan premio y si cada ganadora genera ticket QR o una descarga digital.</p>
           </div>
           <div class="scratch-config-grid">
             ${["A", "B", "C", "D"].map((slot) => `
               <div class="scratch-config-card">
                 <strong>Casilla ${slot}</strong>
-                <label><span>Resultado</span><select data-edit-scratch-winner="${slot}"><option value="winner">Ganadora: entrega beneficio</option><option value="loser">No ganadora: no genera QR</option></select></label>
+                <label><span>Resultado y entrega</span><select data-edit-scratch-winner="${slot}"><option value="physical">Ganadora: ticket QR fisico</option><option value="digital">Ganadora: activo digital descargable</option><option value="loser">No ganadora: no entrega beneficio</option></select></label>
                 <label><span>Texto que vera el cliente</span><input data-edit-scratch-label="${slot}" type="text" maxlength="180"></label>
+                <label class="hidden" data-scratch-asset-field hidden><span>Activo digital asignado</span><select data-scratch-asset="${slot}"><option value="">Selecciona un activo digital</option></select></label>
               </div>`).join("")}
           </div>
-          <small>Una casilla no ganadora registra la participacion, muestra el texto definido y no emite ticket QR.</small>
+          <small>El activo digital se habilita como descarga segura y no genera QR. Una casilla no ganadora no entrega ningun beneficio.</small>
         </section>
         <label><span>Dias entre intentos</span><input id="activationEditCooldownInput" type="number" min="0" max="365"></label>
         <label class="span-2"><span>Regla para ganadores</span><select id="activationEditWinnerPolicyInput">
@@ -31693,6 +31772,7 @@ async function editInteractiveActivation(id) {
   await Promise.all([
     loadAcquisitionChannels().catch(() => []),
     state.businessBranchesLoaded ? Promise.resolve() : loadBusinessBranches({ quiet: true }).catch(() => []),
+    state.digitalAssetsLoaded ? Promise.resolve() : loadDigitalAssets({ quiet: true }).catch(() => []),
   ]);
   const modal = ensureActivationEditModal();
   if (!modal) return;
@@ -31721,12 +31801,17 @@ async function editInteractiveActivation(id) {
     ["A", "B", "C", "D"].forEach((slot, index) => {
       const choice = scratchChoices[index] || {};
       const winner = choice.is_winner !== false && choice.reward_value?.is_winner !== false;
+      const fulfillment = benefitFulfillmentObject(choice.reward_value || {});
+      const delivery = winner && fulfillment?.mode === "DIGITAL_ASSET" ? "digital" : winner ? "physical" : "loser";
       const label = choice.reveal_label || choice.reward_label || choice.benefit_label || choice.label || (winner ? "Beneficio sorpresa" : "No ganaste esta vez");
       const winnerField = modal.querySelector(`[data-edit-scratch-winner="${slot}"]`);
       const labelField = modal.querySelector(`[data-edit-scratch-label="${slot}"]`);
-      if (winnerField) winnerField.value = winner ? "winner" : "loser";
+      const assetField = modal.querySelector(`[data-edit-scratch-winner="${slot}"]`)?.closest(".scratch-config-card")?.querySelector(`[data-scratch-asset="${slot}"]`);
+      if (winnerField) winnerField.value = delivery;
       if (labelField) labelField.value = label;
+      fillDigitalAssetSelect(assetField, fulfillment?.asset_id || choice.reward_value?.digital_asset_id || "", fulfillment?.asset_title || choice.reward_value?.digital_asset_title || "");
     });
+    syncScratchDeliveryFields(modal);
   }
   modal.querySelector("#activationEditCooldownInput").value = currentLock.cooldown_days ?? 7;
   modal.querySelector("#activationEditWinnerPolicyInput").value = currentLock.winner_policy || "block_previous_winners";
@@ -31786,22 +31871,36 @@ async function submitActivationEditModal(event) {
     scratchChoices = ["A", "B", "C", "D"].map((slot, index) => {
       const previous = previousChoices[index] || {};
       const label = String(modal.querySelector(`[data-edit-scratch-label="${slot}"]`)?.value || "").trim();
-      const isWinner = modal.querySelector(`[data-edit-scratch-winner="${slot}"]`)?.value !== "loser";
+      const delivery = modal.querySelector(`[data-edit-scratch-winner="${slot}"]`)?.value || "physical";
+      const isWinner = delivery !== "loser";
+      const assetId = modal.querySelector(`[data-edit-scratch-winner="${slot}"]`)?.closest(".scratch-config-card")?.querySelector(`[data-scratch-asset="${slot}"]`)?.value || "";
+      const baseRewardValue = {
+        ...(previous.reward_value || {}),
+        ...activationChoiceBenefitValue(label),
+        label,
+        scratch_slot: slot,
+        is_winner: isWinner,
+      };
+      let scratchRewardPayloadValue = baseRewardValue;
+      if (isWinner) {
+        scratchRewardPayloadValue = withBenefitFulfillment(baseRewardValue, delivery === "digital" ? scratchAssetFulfillment(assetId) : scratchPhysicalFulfillment());
+      } else {
+        delete scratchRewardPayloadValue.fulfillment;
+        delete scratchRewardPayloadValue.redemption_channel;
+        delete scratchRewardPayloadValue.digital_asset_id;
+        delete scratchRewardPayloadValue.ecommerce_code;
+        delete scratchRewardPayloadValue.ecommerce_url;
+      }
       return {
         ...previous,
         value: previous.value || slot,
         label,
         reveal_label: label,
         is_winner: isWinner,
+        delivery_mode: delivery,
         reward_type: rewardType,
         reward_label: label,
-        reward_value: {
-          ...(previous.reward_value || {}),
-          ...activationChoiceBenefitValue(label),
-          label,
-          scratch_slot: slot,
-          is_winner: isWinner,
-        },
+        reward_value: scratchRewardPayloadValue,
       };
     });
     if (scratchChoices.some((choice) => !choice.label)) {
@@ -31810,6 +31909,16 @@ async function submitActivationEditModal(event) {
     }
     if (!scratchChoices.some((choice) => choice.is_winner)) {
       showFeedback("Marca al menos una casilla ganadora.", "error", { title: "Raspa digital sin premio" });
+      return;
+    }
+    const missingDigitalAsset = scratchChoices.find((choice) => (
+      choice.is_winner
+      && choice.delivery_mode === "digital"
+      && !choice.reward_value?.fulfillment?.asset_id
+    ));
+    if (missingDigitalAsset) {
+      showFeedback(`Selecciona el activo digital de la casilla ${missingDigitalAsset.value}.`, "error", { title: "Falta asignar el archivo" });
+      modal.querySelector(`[data-edit-scratch-winner="${missingDigitalAsset.value}"]`)?.closest(".scratch-config-card")?.querySelector("[data-scratch-asset]")?.focus();
       return;
     }
   }
@@ -62023,7 +62132,12 @@ qrBatchExpiresModeInput?.addEventListener("change", updateQrBatchExpiryMode);
 document.querySelectorAll("[data-benefit-fulfillment-mode]").forEach((field) => {
   field.addEventListener("change", syncBenefitFulfillmentFields);
 });
+document.addEventListener("change", (event) => {
+  if (!event.target?.matches?.("[data-scratch-winner], [data-edit-scratch-winner]")) return;
+  syncScratchDeliveryFields(event.target.closest(".scratch-config-card") || document);
+});
 syncBenefitFulfillmentFields();
+syncScratchDeliveryFields();
 syncActivationBenefitValueInputs({ fromLegacy: true });
 triviaBenefitTypeInput?.addEventListener("change", () => syncActivationBenefitValueInputs());
 triviaBenefitAmountKindInput?.addEventListener("change", () => {

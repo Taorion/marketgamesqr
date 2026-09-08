@@ -23,6 +23,17 @@ const choices = [
     reward_value: { is_winner: false },
     is_winner: false,
   },
+  {
+    value: "C",
+    label: "Guia descargable",
+    reward_label: "Guia descargable",
+    reward_type: "CUSTOM",
+    reward_value: {
+      is_winner: true,
+      fulfillment: { mode: "DIGITAL_ASSET", asset_id: "asset-123", asset_title: "Guia Qori" },
+    },
+    is_winner: true,
+  },
 ];
 
 test("scratch choices can explicitly be winning or non-winning", () => {
@@ -44,14 +55,25 @@ test("legacy scratch choices remain winners when the new flag is absent", () => 
   assert.equal(service.rewardFromScratchChoice([{ value: "A", reward_label: "Regalo" }], "scratch-0").reward_label, "Regalo");
 });
 
+test("a digital winning scratch choice keeps the assigned downloadable asset", () => {
+  const winner = service.rewardFromScratchChoice(choices, "scratch-2");
+  assert.equal(winner.reward_value.fulfillment.mode, "DIGITAL_ASSET");
+  assert.equal(winner.reward_value.fulfillment.asset_id, "asset-123");
+  assert.equal(winner.reward_value.fulfillment.asset_title, "Guia Qori");
+});
+
 test("the portal offers winner selection on create and edit without JSON", () => {
   const html = read("empresa", "index.html");
   const portal = read("empresa", "js", "app.js");
   const runtime = read("activacion", "activation.js");
   const backend = read("backend", "src", "services", "interactiveActivationService.js");
   assert.match(html, /data-scratch-winner="A"/);
-  assert.match(html, /No ganadora: no genera QR/);
+  assert.match(html, /Ganadora: ticket QR fisico/);
+  assert.match(html, /Ganadora: activo digital descargable/);
+  assert.match(html, /data-scratch-asset="A"/);
   assert.match(portal, /data-edit-scratch-winner/);
+  assert.match(portal, /scratchAssetFulfillment/);
+  assert.match(portal, /Selecciona el activo digital de la casilla/);
   assert.match(portal, /Marca al menos una casilla ganadora/);
   assert.match(runtime, /Ver mi resultado/);
   assert.match(runtime, /Resultado del Raspa digital/);

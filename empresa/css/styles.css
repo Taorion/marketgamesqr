@@ -69637,6 +69637,25 @@ html body #gamingActivationBuilderModal .benefit-fulfillment-panel label[hidden]
   font-size: 0.94rem;
 }
 
+.scratch-config-card.is-digital {
+  border-color: rgba(99, 102, 241, 0.42);
+  box-shadow: 0 10px 24px rgba(67, 56, 202, 0.08);
+}
+
+.scratch-config-card.is-loser {
+  background: #f8fafc;
+}
+
+.scratch-config-card [data-scratch-asset-field] {
+  padding-top: 10px !important;
+  border-top: 1px dashed #cbd5e1 !important;
+}
+
+.scratch-config-card [data-scratch-asset-field].hidden,
+.scratch-config-card [data-scratch-asset-field][hidden] {
+  display: none !important;
+}
+
 .reveal-card-grid .scratch-config-card label,
 #activationEditModal .scratch-config-card label {
   padding: 0 !important;
