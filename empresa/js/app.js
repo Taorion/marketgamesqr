@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260908-scratch-slot-delivery-v450";
+const APP_VERSION = "empresa-20260908-activation-channel-contact-cleanup-v451";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -30125,7 +30125,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
   };
   const base = {
     campaign_id: triviaCampaignInput.value || null,
-    acquisition_channel_id: triviaAcquisitionChannelInput?.value || null,
+    acquisition_channel_id: normalizedUuidOrNull(triviaAcquisitionChannelInput?.value),
     branch_id: interactiveActivationBranchId(),
     seller_user_id: triviaSellerInput?.value || null,
     title: triviaTitleInput.value.trim(),
@@ -31637,7 +31637,9 @@ async function updateActivationStatus(id, status) {
 }
 
 function activationAcquisitionOptionsMarkup(selectedId = "", selectedName = "") {
-  const active = typeof activeAcquisitionChannels === "function" ? activeAcquisitionChannels() : [];
+  const active = typeof activeAcquisitionChannels === "function"
+    ? activeAcquisitionChannels().filter((channel) => normalizedUuidOrNull(channel.id))
+    : [];
   const historic = selectedId && (state.acquisitionChannels || []).find((channel) => String(channel.id) === String(selectedId));
   const selectedIsListed = active.some((channel) => String(channel.id) === String(selectedId));
   return [
@@ -31646,6 +31648,13 @@ function activationAcquisitionOptionsMarkup(selectedId = "", selectedName = "") 
     ...(selectedId && !historic && !selectedIsListed ? [`<option value="${escapeHtml(selectedId)}" selected>Medio actual: ${escapeHtml(selectedName || "No disponible")}</option>`] : []),
     ...active.map((channel) => `<option value="${escapeHtml(channel.id)}" ${String(channel.id) === String(selectedId) ? "selected" : ""}>${escapeHtml(channel.name || channel.platform || "Medio")}</option>`),
   ].join("");
+}
+
+function normalizedUuidOrNull(value) {
+  const candidate = String(value || "").trim();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)
+    ? candidate
+    : null;
 }
 
 function renderInteractiveActivationAcquisitionOptions(selectedId) {
@@ -31942,7 +31951,7 @@ async function submitActivationEditModal(event) {
   setFormMessage(modal.querySelector("#activationEditMessage"), "Guardando cambios...", "info");
   try {
     const campaignId = modal.querySelector("#activationEditCampaignInput")?.value || null;
-    const acquisitionChannelId = modal.querySelector("#activationEditAcquisitionChannelInput")?.value || null;
+    const acquisitionChannelId = normalizedUuidOrNull(modal.querySelector("#activationEditAcquisitionChannelInput")?.value);
     const payload = {
       title,
       description: description || null,
@@ -41235,7 +41244,6 @@ function mountContactCenterLayout() {
   appendIfFound(capturesPanel, leadCaptureTable?.closest("article"));
 
   appendIfFound(manualPanel, document.getElementById("manualContactsDirectoryCard"));
-  appendIfFound(manualPanel, manualLeadForm?.closest("article"));
 
   // La ficha debe vivir en el body: así el fixed cubre toda la aplicación y no
   // queda limitado por el shell desplazable del directorio.
@@ -41282,10 +41290,10 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "directory") {
       meta: "Directorio 1 de 3 · Contactos",
       title: "Directorio de contactos",
       copy: "Clientes y leads separados en una vista simple. Cada tarjeta muestra canal, campaña, contacto, activaciones y afiliación; haz clic para abrir la ficha completa.",
-      primaryLabel: "Agregar prospecto",
-      primaryAction: "manual-lead",
-      secondaryLabel: "Ver agenda",
-      secondaryAction: "go-agenda",
+      primaryLabel: "Ver agenda",
+      primaryAction: "go-agenda",
+      secondaryLabel: "Exportar contactos",
+      secondaryAction: "export-all",
     },
     tickets: {
       meta: "Vista 3 de 7 · Tickets",
@@ -41317,11 +41325,11 @@ function contactCenterStageConfig(tab = state.contactCenterTab || "directory") {
     manual: {
       meta: "Directorio 2 de 3 · Prospectos",
       title: "Prospectos agregados",
-      copy: "Registra contactos que llegan por WhatsApp, llamada, feria, referido o correo y mantenlos dentro del flujo comercial.",
-      primaryLabel: "Nuevo contacto",
-      primaryAction: "manual-lead",
-      secondaryLabel: "Ver directorio",
-      secondaryAction: "go-directory",
+      copy: "Consulta los prospectos agregados previamente y mantenlos dentro del flujo comercial.",
+      primaryLabel: "Ver directorio",
+      primaryAction: "go-directory",
+      secondaryLabel: "Exportar contactos",
+      secondaryAction: "export-all",
     },
     sales: {
       meta: "Vista 7 de 7 · Conversion",
@@ -41369,12 +41377,6 @@ function syncCommercialWorkspaceMode(tab = state.contactCenterTab || "directory"
 }
 
 function handleContactCenterStageAction(action = "") {
-  if (action === "manual-lead") {
-    setContactCenterTab("manual");
-    manualLeadForm?.closest("article")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    window.setTimeout(() => manualLeadNameInput?.focus?.({ preventScroll: true }), 120);
-    return;
-  }
   if (action === "create-capture") {
     setContactCenterTab("directory");
     return;

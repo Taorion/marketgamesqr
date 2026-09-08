@@ -5359,60 +5359,6 @@
                 </table>
               </div>
             </article>
-            <article class="surface-card data-table-card hidden" id="manualLeadCard" hidden>
-              <div class="table-card-head">
-                <div>
-                  <span class="mono-label">Prospecto manual</span>
-                  <h3>Agregar lead para seguimiento</h3>
-                </div>
-                <span class="pill muted">Seguimiento operativo</span>
-              </div>
-              <p class="chart-explainer">Registra contactos que llegan por correo, WhatsApp, llamada, feria o la página de contacto. Quedan mezclados en el feed comercial y en la exportación.</p>
-              <form class="modal-form" id="manualLeadForm">
-                <label><span>Nombre</span><input id="manualLeadNameInput" type="text" maxlength="160" required placeholder="Nombre del prospecto"></label>
-                <label><span>Empresa</span><input id="manualLeadCompanyInput" type="text" maxlength="180" placeholder="Empresa o marca"></label>
-                <label><span>Cargo</span><input id="manualLeadJobTitleInput" type="text" maxlength="160" placeholder="Gerente, comprador, aliado..."></label>
-                <label><span>Teléfono</span><input id="manualLeadPhoneInput" type="text" maxlength="40" placeholder="WhatsApp o celular"></label>
-                <label><span>Correo</span><input id="manualLeadEmailInput" type="email" maxlength="180" placeholder="correo@empresa.com"></label>
-                <label><span>Origen</span>
-                  <select id="manualLeadSourceInput">
-                    <option value="Formulario home">Formulario home / correo recibido</option>
-                    <option value="WhatsApp">WhatsApp</option>
-                    <option value="Llamada">Llamada</option>
-                    <option value="Referido">Referido</option>
-                    <option value="Evento">Evento o feria</option>
-                    <option value="Manual">Manual</option>
-                  </select>
-                </label>
-                <label><span>Detalle origen</span><input id="manualLeadSourceDetailInput" type="text" maxlength="220" placeholder="Asunto del correo, campaña, referido..."></label>
-                <label class="acquisition-channel-picker" data-acquisition-channel-picker="manual-lead"><span>Medio de adquisición</span><select id="manualLeadAcquisitionChannelPicker" aria-describedby="manualLeadAcquisitionChannelHelp"></select><input id="manualLeadAcquisitionChannelInput" type="text" maxlength="180" placeholder="Escribe el medio temporal" hidden><small id="manualLeadAcquisitionChannelHelp" class="field-help"></small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar medios en GOS</button></label>
-                <label><span>Sede</span><select id="manualLeadBranchInput"><option value="">Sin sede asignada</option></select><small class="field-help">La sede acompaña este contacto en su trazabilidad y KPIs.</small></label>
-                <label><span>Responsable comercial</span><select id="manualLeadCommercialOwnerInput"><option value="">Sin responsable asignado</option></select><small class="field-help">Opcional. Solo muestra usuarios activos de este negocio.</small></label>
-                <label><span>Prioridad</span>
-                  <select id="manualLeadPriorityInput">
-                    <option value="HIGH">Alta</option>
-                    <option value="MEDIUM" selected>Media</option>
-                    <option value="LOW">Baja</option>
-                  </select>
-                </label>
-                <label><span>Estado</span>
-                  <select id="manualLeadStatusInput">
-                    <option value="NEW" selected>Nuevo</option>
-                    <option value="CONTACTED">Contactado</option>
-                    <option value="FOLLOW_UP">Seguimiento</option>
-                    <option value="CONVERTED">Convertido</option>
-                    <option value="LOST">Perdido</option>
-                  </select>
-                </label>
-                <label><span>Canal preferido</span><input id="manualLeadPreferredChannelInput" type="text" maxlength="120" placeholder="WhatsApp, email, llamada..."></label>
-                <label><span>Hora o momento</span><input id="manualLeadPreferredTimeInput" type="text" maxlength="120" placeholder="Mañana, tarde, hoy, esta semana..."></label>
-                <label class="span-2"><span>Interés</span><input id="manualLeadInterestInput" type="text" maxlength="500" placeholder="Qué necesita, producto de interés, intención de compra..."></label>
-                <label class="span-2"><span>Por qué es importante</span><textarea id="manualLeadImportanceInput" rows="2" maxlength="1000" placeholder="Decisor, alto potencial, cliente estratégico, oportunidad puntual, referido clave..."></textarea></label>
-                <label class="span-2"><span>Nota de seguimiento</span><textarea id="manualLeadNotesInput" rows="3" maxlength="2000" placeholder="Pega aquí el contenido del correo o la próxima acción comercial."></textarea></label>
-                <p class="form-message span-2" id="manualLeadMessage"></p>
-                <button class="solid-button" id="manualLeadSubmitButton" type="submit">Guardar prospecto</button>
-              </form>
-            </article>
             <article class="surface-card lead-detail-workspace hidden" id="leadDetailModal" role="dialog" aria-modal="true" aria-labelledby="leadDetailTitle">
               <div class="lead-detail-interstitial-card" role="document">
                 <div class="lead-workspace-head">
@@ -8562,9 +8508,9 @@
   <script src="js/evaluation-station-core.js?v=evaluation-core-v1-20260830" defer></script>
   <script src="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830" defer></script>
   <script src="js/portal-training-access.js?v=training-access-v448-20260908" defer></script>
-  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility-goals-contacts-v406-20260829&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828&amp;intelligence=gos-reliable-v389-20260828&amp;risk-none=initial-result-v396-20260829&amp;rms-sale=multiproduct-history-v397-20260829&amp;risk-none-select=explicit-v398-20260829&amp;risk-destination=handoff-v399-20260829&amp;risk-benefit=handoff-v400-20260829&amp;risk-product-scope=v401-20260829&amp;recycling=atomic-handoff-v428-20260830&amp;risk-speed=fast-v403-20260829&amp;risk-products=live-v405-20260829&amp;risk-query=source-pruning-v407-20260829&amp;risk-read=direct-v408-20260829&amp;risk-feedback=responsive-v409-20260829&amp;risk-binding=isolated-v410-20260829&amp;risk-prepare=search-v411-20260829&amp;risk-ticket=fast-v412-20260830&amp;risk-qr=on-demand-v413-20260830&amp;risk-flow=preparation-handoff-v414-20260830&amp;risk-workbench=fast-v415-20260830&amp;risk-command=premium-v419-20260830&amp;risk-v2=premium-v6-20260830&amp;evaluation=precision-v3-startup-hotfix-20260830&amp;rms-sync=consistent-v429-20260902&amp;rms-loading=definitive-v430-20260902&amp;live-refresh=v431-20260902&amp;rms-loading-copy=v432-20260902&amp;contact-editor=modal-v434-20260903&amp;contact-promotion=v435-20260905&amp;activation-layout=v436-20260905&amp;activation-editor=simple-v438-20260907&amp;activation-new=clean-v439-20260907&amp;activation-question-count=v440-20260907&amp;activation-digital-download=v441-20260907&amp;link-qr-generator=v443-20260907&amp;diagnostic-question-count=v445-20260907&amp;thermometer-speed=v446-20260907&amp;thermometer-ticket-only=v447-20260907&amp;scratch-winners=v449-20260908&amp;scratch-slot-delivery=v450-20260908" defer></script>
+  <script src="js/app.js?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385-attributed-sales-command-v368&amp;sellers=qori-v390-20260828-contact-responsibility-goals-contacts-v406-20260829&amp;competition=intelligence-studio-v395-20260828&amp;risk-benefits=snapshot-pricing-v394-20260828&amp;intelligence=gos-reliable-v389-20260828&amp;risk-none=initial-result-v396-20260829&amp;rms-sale=multiproduct-history-v397-20260829&amp;risk-none-select=explicit-v398-20260829&amp;risk-destination=handoff-v399-20260829&amp;risk-benefit=handoff-v400-20260829&amp;risk-product-scope=v401-20260829&amp;recycling=atomic-handoff-v428-20260830&amp;risk-speed=fast-v403-20260829&amp;risk-products=live-v405-20260829&amp;risk-query=source-pruning-v407-20260829&amp;risk-read=direct-v408-20260829&amp;risk-feedback=responsive-v409-20260829&amp;risk-binding=isolated-v410-20260829&amp;risk-prepare=search-v411-20260829&amp;risk-ticket=fast-v412-20260830&amp;risk-qr=on-demand-v413-20260830&amp;risk-flow=preparation-handoff-v414-20260830&amp;risk-workbench=fast-v415-20260830&amp;risk-command=premium-v419-20260830&amp;risk-v2=premium-v6-20260830&amp;evaluation=precision-v3-startup-hotfix-20260830&amp;rms-sync=consistent-v429-20260902&amp;rms-loading=definitive-v430-20260902&amp;live-refresh=v431-20260902&amp;rms-loading-copy=v432-20260902&amp;contact-editor=modal-v434-20260903&amp;contact-promotion=v435-20260905&amp;activation-layout=v436-20260905&amp;activation-editor=simple-v438-20260907&amp;activation-new=clean-v439-20260907&amp;activation-question-count=v440-20260907&amp;activation-digital-download=v441-20260907&amp;link-qr-generator=v443-20260907&amp;diagnostic-question-count=v445-20260907&amp;thermometer-speed=v446-20260907&amp;thermometer-ticket-only=v447-20260907&amp;scratch-winners=v449-20260908&amp;scratch-slot-delivery=v450-20260908&amp;activation-channel-cleanup=v451-20260908" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
-<script src="js/contacts-premium-v333.js?v=contact-promotion-v435-20260905" defer></script>
+<script src="js/contacts-premium-v333.js?v=contact-promotion-v435-20260905&amp;manual-contact-cleanup=v451-20260908" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
     <script src="js/communications.js?v=communications-history-v333-20260822-unified-email-routing-v359-20260826" defer></script>

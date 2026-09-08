@@ -14,7 +14,9 @@ const migrationSource = read("database", "migrations", "202609070001_interactive
 
 test("activation creation and editing use the canonical acquisition channel id", () => {
   assert.match(htmlSource, /id="triviaAcquisitionChannelInput"/);
-  assert.match(appSource, /acquisition_channel_id: triviaAcquisitionChannelInput\?\.value \|\| null/);
+  assert.match(appSource, /acquisition_channel_id: normalizedUuidOrNull\(triviaAcquisitionChannelInput\?\.value\)/);
+  assert.match(appSource, /function normalizedUuidOrNull\(value\)/);
+  assert.match(appSource, /activeAcquisitionChannels\(\)\.filter\(\(channel\) => normalizedUuidOrNull\(channel\.id\)\)/);
   assert.match(appSource, /id="activationEditAcquisitionChannelInput"/);
   assert.match(appSource, /payload\.acquisition_channel_id = acquisitionChannelId/);
   assert.match(validatorSource, /acquisition_channel_id: z\.string\(\)\.uuid\(\)\.optional\(\)\.nullable\(\)/);

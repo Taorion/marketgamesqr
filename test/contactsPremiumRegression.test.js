@@ -95,16 +95,13 @@ test("la importación CSV persiste clientes y los excluye de Leads aunque no ten
   assert.doesNotMatch(premium, /Contacto pendiente/);
 });
 
-test("el alta y la edición manual permiten un responsable opcional del mismo negocio", () => {
+test("la edición manual permite un responsable opcional del mismo negocio", () => {
   const controller = read("backend/src/controllers/businessPortalController.js");
   const app = read("empresa/js/app.js");
-  const html = read("empresa/index.html");
   assert.match(controller, /commercial_owner_user_id: z\.string\(\)\.uuid\(\)\.optional\(\)\.nullable\(\)/);
   assert.match(controller, /where id = \$1[\s\S]*and business_id = \$2[\s\S]*and is_active = true/);
   assert.match(controller, /commercial_owner_name/);
-  assert.match(app, /manualLeadCommercialOwnerInput/);
   assert.match(app, /manualLeadEditCommercialOwnerInput/);
-  assert.match(html, /Solo muestra usuarios activos de este negocio/);
 });
 
 test("Clientes y Leads permiten editar datos y asignar vendedores activos", () => {
