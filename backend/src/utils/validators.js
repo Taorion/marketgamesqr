@@ -9,6 +9,14 @@ function validate(schema, source) {
   return result.data;
 }
 
+const uuidSchema = z.string().uuid();
+const activationAcquisitionChannelIdSchema = z.preprocess((value) => {
+  if (value === undefined) return undefined;
+  if (value === null || String(value).trim() === "") return null;
+  const candidate = String(value).trim();
+  return uuidSchema.safeParse(candidate).success ? candidate : null;
+}, uuidSchema.optional().nullable());
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
@@ -298,7 +306,7 @@ const interactiveActivationCreateSchema = z.object({
   title: z.string().trim().min(4).max(180),
   description: z.string().trim().max(1200).optional().nullable(),
   campaign_id: z.string().uuid().optional().nullable(),
-  acquisition_channel_id: z.string().uuid().optional().nullable(),
+  acquisition_channel_id: activationAcquisitionChannelIdSchema,
   branch_id: z.string().uuid().optional().nullable(),
   seller_user_id: z.string().uuid().optional().nullable(),
   status: z.enum(["draft", "active", "paused", "closed", "archived"]).default("active"),
@@ -339,7 +347,7 @@ const interactiveActivationUpdateSchema = z.object({
   title: z.string().trim().min(4).max(160).optional(),
   description: z.string().trim().max(1000).optional().nullable(),
   campaign_id: z.string().uuid().optional().nullable(),
-  acquisition_channel_id: z.string().uuid().optional().nullable(),
+  acquisition_channel_id: activationAcquisitionChannelIdSchema,
   branch_id: z.string().uuid().optional().nullable(),
   seller_user_id: z.string().uuid().optional().nullable(),
   status: z.enum(["draft", "active", "paused", "closed", "archived"]).optional(),

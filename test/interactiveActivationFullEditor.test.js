@@ -19,7 +19,8 @@ test("activation creation and editing use the canonical acquisition channel id",
   assert.match(appSource, /activeAcquisitionChannels\(\)\.filter\(\(channel\) => normalizedUuidOrNull\(channel\.id\)\)/);
   assert.match(appSource, /id="activationEditAcquisitionChannelInput"/);
   assert.match(appSource, /payload\.acquisition_channel_id = acquisitionChannelId/);
-  assert.match(validatorSource, /acquisition_channel_id: z\.string\(\)\.uuid\(\)\.optional\(\)\.nullable\(\)/);
+  assert.match(validatorSource, /acquisition_channel_id: activationAcquisitionChannelIdSchema/);
+  assert.match(validatorSource, /uuidSchema\.safeParse\(candidate\)\.success \? candidate : null/);
 });
 
 test("the backend validates tenant ownership and persists acquisition attribution", () => {
