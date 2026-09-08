@@ -12,14 +12,14 @@
   async function animateLeaf(leaf, direction) {
     const angle = direction === "next" ? -180 : 180;
     const animation = leaf.animate([
-      { transform: "rotateY(0deg)", filter: "brightness(1)", offset: 0 },
-      { transform: `rotateY(${angle * 0.36}deg)`, filter: "brightness(0.93)", offset: 0.42 },
-      { transform: `rotateY(${angle * 0.62}deg)`, filter: "brightness(0.72)", offset: 0.58 },
-      { transform: `rotateY(${angle * 0.86}deg)`, filter: "brightness(0.9)", offset: 0.78 },
-      { transform: `rotateY(${angle}deg)`, filter: "brightness(1)", offset: 1 }
+      { transform: "rotateY(0deg)", offset: 0 },
+      { transform: `rotateY(${angle * 0.38}deg)`, offset: 0.42 },
+      { transform: `rotateY(${angle * 0.64}deg)`, offset: 0.6 },
+      { transform: `rotateY(${angle * 0.88}deg)`, offset: 0.8 },
+      { transform: `rotateY(${angle}deg)`, offset: 1 }
     ], {
-      duration: 720,
-      easing: "cubic-bezier(0.45, 0.02, 0.18, 1)",
+      duration: 640,
+      easing: "cubic-bezier(0.4, 0, 0.2, 1)",
       fill: "both"
     });
     await animation.finished.catch(() => {});
@@ -34,8 +34,8 @@
       { transform: "perspective(1800px) rotateY(0deg) translateX(0)", opacity: 1 },
       { transform: `perspective(1800px) rotateY(${angle}deg) translateX(${direction === "next" ? "-8%" : "8%"})`, opacity: 0 }
     ], {
-      duration: 560,
-      easing: "cubic-bezier(0.45, 0.02, 0.18, 1)",
+      duration: 480,
+      easing: "cubic-bezier(0.4, 0, 0.2, 1)",
       fill: "both"
     }).finished.catch(() => {});
     card.remove();
@@ -55,8 +55,15 @@
   }) => {
     if (reducedMotion || typeof Element.prototype.animate !== "function") return;
 
+    book.classList.add("is-turning");
+
     if (!mobile && (!previousWasSpread || !targetIsSpread)) {
-      await animateSoftReveal(book, oldLeft, direction);
+      const softSource = direction === "next" ? (oldRight || oldLeft) : (oldLeft || oldRight);
+      try {
+        await animateSoftReveal(book, softSource, direction);
+      } finally {
+        book.classList.remove("is-turning");
+      }
       return;
     }
 
@@ -64,7 +71,10 @@
     const staticSource = next ? oldLeft : oldRight;
     const frontSource = mobile ? oldLeft : (next ? oldRight : oldLeft);
     const backSource = mobile ? leftPage : (next ? leftPage : rightPage);
-    if (!frontSource || !backSource) return;
+    if (!frontSource || !backSource) {
+      book.classList.remove("is-turning");
+      return;
+    }
 
     let staticPage = null;
     if (!mobile && staticSource) {
@@ -84,8 +94,12 @@
     leaf.append(front, back);
     book.appendChild(leaf);
 
-    await animateLeaf(leaf, direction);
-    leaf.remove();
-    staticPage?.remove();
+    try {
+      await animateLeaf(leaf, direction);
+    } finally {
+      leaf.remove();
+      staticPage?.remove();
+      book.classList.remove("is-turning");
+    }
   };
 })();

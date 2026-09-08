@@ -80,7 +80,20 @@
     chapter.value = String(active);
   }
 
-  function render() {
+  function syncReaderUi(pages = visiblePages()) {
+    const finalVisiblePage = pages[pages.length - 1];
+    pageLabel.textContent = pages.length > 1
+      ? `Páginas ${pages[0]}-${finalVisiblePage} de ${totalPages}`
+      : `Página ${pages[0]} de ${totalPages}`;
+    pageInput.value = String(currentPage);
+    progress.style.width = `${(finalVisiblePage / totalPages) * 100}%`;
+    previousButtons.forEach((button) => { button.disabled = currentPage <= 1 || isTurning; });
+    nextButtons.forEach((button) => { button.disabled = finalVisiblePage >= totalPages || isTurning; });
+    syncChapter();
+    updateHash();
+  }
+
+  function render({ updateUi = true } = {}) {
     currentPage = clamp(currentPage);
     const pages = visiblePages();
     const cover = !isMobile() && pages.length === 1 && pages[0] === 1;
@@ -98,17 +111,13 @@
       rightImage.alt = "";
     }
 
-    const finalVisiblePage = pages[pages.length - 1];
-    pageLabel.textContent = pages.length > 1
-      ? `Páginas ${pages[0]}-${finalVisiblePage} de ${totalPages}`
-      : `Página ${pages[0]} de ${totalPages}`;
-    pageInput.value = String(currentPage);
-    progress.style.width = `${(finalVisiblePage / totalPages) * 100}%`;
-    previousButtons.forEach((button) => { button.disabled = currentPage <= 1 || isTurning; });
-    nextButtons.forEach((button) => { button.disabled = finalVisiblePage >= totalPages || isTurning; });
-    syncChapter();
-    updateHash();
+    if (updateUi) syncReaderUi(pages);
+    else {
+      previousButtons.forEach((button) => { button.disabled = true; });
+      nextButtons.forEach((button) => { button.disabled = true; });
+    }
     preloadAround(pages);
+    return pages;
   }
 
   async function goTo(page, direction = "next") {
@@ -119,21 +128,24 @@
     const oldRight = rightPage.hidden ? null : rightPage.cloneNode(true);
     const previousWasSpread = !isMobile() && Boolean(oldRight);
     currentPage = nextPage;
-    render();
-    await window.QoriFlipbookTurn?.({
-      book,
-      leftPage,
-      rightPage,
-      oldLeft,
-      oldRight,
-      direction,
-      previousWasSpread,
-      targetIsSpread: !isMobile() && !rightPage.hidden,
-      mobile: isMobile(),
-      reducedMotion: reducedMotionQuery.matches
-    });
-    isTurning = false;
-    render();
+    render({ updateUi: false });
+    try {
+      await window.QoriFlipbookTurn?.({
+        book,
+        leftPage,
+        rightPage,
+        oldLeft,
+        oldRight,
+        direction,
+        previousWasSpread,
+        targetIsSpread: !isMobile() && !rightPage.hidden,
+        mobile: isMobile(),
+        reducedMotion: reducedMotionQuery.matches
+      });
+    } finally {
+      isTurning = false;
+      syncReaderUi();
+    }
   }
 
   function next() {
@@ -195,7 +207,7 @@
     fullscreenButton.textContent = document.fullscreenElement ? "Salir de pantalla completa" : "Pantalla completa";
   });
 
-  mobileQuery.addEventListener?.("change", render);
+  mobileQuery.addEventListener?.("change", () => { if (!isTurning) render(); });
   window.addEventListener("hashchange", () => {
     const page = pageFromHash();
     if (page !== currentPage) {

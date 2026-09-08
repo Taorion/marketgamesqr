@@ -238,7 +238,9 @@ main { width: min(1240px, calc(100% - 32px)); margin: 0 auto; }
   perspective: 1800px;
 }
 
-.book.is-cover { width: min(50%, 515px); grid-template-columns: 1fr; }
+.book.is-cover { width: min(100%, 1030px); grid-template-columns: 1fr 1fr; }
+.book.is-cover .book-page-left { width: 50%; grid-column: 1 / -1; justify-self: center; }
+.book.is-turning { pointer-events: none; }
 
 .book-page {
   position: relative;
@@ -307,7 +309,7 @@ main { width: min(1240px, calc(100% - 32px)); margin: 0 auto; }
   width: 50%;
   height: 100%;
   transform-style: preserve-3d;
-  will-change: transform, filter;
+  will-change: transform;
   pointer-events: none;
 }
 
@@ -477,6 +479,7 @@ footer a { color: var(--white); font-weight: 700; }
   .book-stage { min-height: 0; padding: 12px 44px; border-radius: 16px; }
   .book { width: min(100%, 520px); grid-template-columns: 1fr; }
   .book.is-cover { width: min(100%, 520px); }
+  .book.is-cover .book-page-left { width: 100%; grid-column: auto; }
   .book-spine { display: none; }
   .book-turn-leaf.is-mobile { left: 0; width: 100%; }
   .book-turn-static { display: none; }

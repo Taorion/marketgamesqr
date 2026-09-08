@@ -41,8 +41,10 @@ test("the flipbook supports spreads, mobile pages, chapters, keyboard and touch 
   assert.doesNotMatch(readerScript, /animatePageTurn/);
   assert.match(flipbookTurn, /book-turn-front/);
   assert.match(flipbookTurn, /book-turn-back/);
-  assert.match(flipbookTurn, /duration: 720/);
+  assert.match(flipbookTurn, /duration: 640/);
   assert.match(flipbookTurn, /rotateY\(\$\{angle\}deg\)/);
+  assert.match(readerScript, /render\(\{ updateUi: false \}\)/);
+  assert.match(readerScript, /finally \{[\s\S]*syncReaderUi\(\)/);
 });
 
 test("the home offers a second book for cultivating sales with Qori spirit", () => {
@@ -60,6 +62,8 @@ test("the complete GOS cultivation methodology powers a fluid responsive flipboo
   assert.match(cultivationScript, /function buildPages/);
   assert.match(cultivationScript, /QoriFlipbookTurn/);
   assert.doesNotMatch(cultivationScript, /animatePageTurn/);
+  assert.match(cultivationScript, /const chapterTitle = page\.continuation \? ""/);
+  assert.match(cultivationScript, /render\(\{ updateUi: false \}\)/);
   assert.match(cultivationScript, /touchstart/);
   assert.match(cultivationScript, /mobileQuery/);
 });

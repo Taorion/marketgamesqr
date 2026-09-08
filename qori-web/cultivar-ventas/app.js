@@ -153,7 +153,8 @@
       if (paragraph.startsWith("> ")) return `<blockquote>${inlineMarkup(paragraph.slice(2))}</blockquote>`;
       return `<p>${inlineMarkup(paragraph)}</p>`;
     }).join("");
-    return `<div class="paper-inner"><div class="paper-running-head"><span>${escapeHtml(page.part)}</span><span>GOS Qori</span></div><div class="paper-copy"><h3>${escapeHtml(page.title)}${page.continuation ? " · continuación" : ""}</h3>${body}</div><span class="paper-number">${pageNumber}</span></div>`;
+    const chapterTitle = page.continuation ? "" : `<h3>${escapeHtml(page.title)}</h3>`;
+    return `<div class="paper-inner"><div class="paper-running-head"><span>${escapeHtml(page.part)}</span><span>GOS Qori</span></div><div class="paper-copy">${chapterTitle}${body}</div><span class="paper-number">${pageNumber}</span></div>`;
   }
 
   function renderPage(element, pageNumber) {
@@ -170,19 +171,7 @@
     chapterPicker.value = active;
   }
 
-  function render() {
-    currentPage = clamp(currentPage);
-    const visible = visiblePages();
-    book.classList.toggle("is-cover", !isMobile() && visible.length === 1 && visible[0] === 1);
-    renderPage(leftPage, visible[0]);
-    leftPage.hidden = false;
-    if (visible.length > 1) {
-      renderPage(rightPage, visible[1]);
-      rightPage.hidden = false;
-    } else {
-      rightPage.hidden = true;
-      rightPage.innerHTML = "";
-    }
+  function syncReaderUi(visible = visiblePages()) {
     const finalPage = visible[visible.length - 1];
     pageLabel.textContent = visible.length > 1 ? `Páginas ${visible[0]}-${finalPage} de ${totalPages}` : `Página ${visible[0]} de ${totalPages}`;
     pageInput.value = String(currentPage);
@@ -195,6 +184,27 @@
     if (window.location.hash !== hash) history.replaceState(null, "", hash);
   }
 
+  function render({ updateUi = true } = {}) {
+    currentPage = clamp(currentPage);
+    const visible = visiblePages();
+    book.classList.toggle("is-cover", !isMobile() && visible.length === 1 && visible[0] === 1);
+    renderPage(leftPage, visible[0]);
+    leftPage.hidden = false;
+    if (visible.length > 1) {
+      renderPage(rightPage, visible[1]);
+      rightPage.hidden = false;
+    } else {
+      rightPage.hidden = true;
+      rightPage.innerHTML = "";
+    }
+    if (updateUi) syncReaderUi(visible);
+    else {
+      previousButtons.forEach((button) => { button.disabled = true; });
+      nextButtons.forEach((button) => { button.disabled = true; });
+    }
+    return visible;
+  }
+
   async function goTo(page, direction = "next") {
     const nextPage = clamp(page);
     if (nextPage === currentPage || isTurning) return;
@@ -203,21 +213,24 @@
     const oldRight = rightPage.hidden ? null : rightPage.cloneNode(true);
     const previousWasSpread = !isMobile() && Boolean(oldRight);
     currentPage = nextPage;
-    render();
-    await window.QoriFlipbookTurn?.({
-      book,
-      leftPage,
-      rightPage,
-      oldLeft,
-      oldRight,
-      direction,
-      previousWasSpread,
-      targetIsSpread: !isMobile() && !rightPage.hidden,
-      mobile: isMobile(),
-      reducedMotion: reducedMotionQuery.matches
-    });
-    isTurning = false;
-    render();
+    render({ updateUi: false });
+    try {
+      await window.QoriFlipbookTurn?.({
+        book,
+        leftPage,
+        rightPage,
+        oldLeft,
+        oldRight,
+        direction,
+        previousWasSpread,
+        targetIsSpread: !isMobile() && !rightPage.hidden,
+        mobile: isMobile(),
+        reducedMotion: reducedMotionQuery.matches
+      });
+    } finally {
+      isTurning = false;
+      syncReaderUi();
+    }
   }
 
   function next() {
@@ -287,7 +300,7 @@
   document.addEventListener("fullscreenchange", () => {
     fullscreenButton.textContent = document.fullscreenElement ? "Salir de pantalla completa" : "Pantalla completa";
   });
-  mobileQuery.addEventListener?.("change", render);
+  mobileQuery.addEventListener?.("change", () => { if (!isTurning) render(); });
   window.addEventListener("hashchange", () => {
     const page = pageFromHash();
     if (page !== currentPage) {

@@ -80,7 +80,7 @@
 }
 
 .cultivation-book { width: min(100%, 1080px); }
-.cultivation-book.is-cover { width: min(50%, 540px); }
+.cultivation-book.is-cover { width: min(100%, 1080px); }
 
 .cultivation-page {
   min-height: min(62vw, 675px);
