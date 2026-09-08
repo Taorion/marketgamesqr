@@ -17,43 +17,64 @@ const DIGITAL_ASSET_TYPES = new Set([
   "image/webp",
 ]);
 
-const ACTIVATION_CATALOG = [
-  { type: "TRIVIA_QUIZ", label: "Trivia / Quiz comercial", category: "commercial", group: "Comerciales rapidas", reward_modes: ["by_score", "fixed"] },
+const RETAINED_ACTIVATION_TYPES = new Set([
+  "TRIVIA_QUIZ",
+  "OPEN_QUESTION",
+  "SPIN_DISCOVER",
+  "DISCOUNT_THERMOMETER",
+  "QUICK_VOTE",
+  "SEALED_LETTER",
+  "PRIVATE_INVITATION",
+  "SCRATCH_WIN",
+  "SPACE_SHOOTER",
+  "BREAKOUT",
+  "SNAKE",
+  "MEMORY_PAIRS",
+  "WHACK_A_MOLE",
+  "ROULETTE_SPIN",
+  "ORDER_OPTIONS",
+  "CONNECTORS",
+  "BATTLESHIP_COORDS",
+  "DODGE_RUNNER",
+]);
+
+const ALL_ACTIVATION_CATALOG = [
+  { type: "TRIVIA_QUIZ", label: "Trivia", category: "commercial", group: "Comerciales rapidas", reward_modes: ["by_score", "fixed"] },
   { type: "OPEN_QUESTION", label: "Pregunta abierta", category: "commercial", group: "Comerciales rapidas", reward_modes: ["fixed", "manual_approval"] },
   { type: "FLEX_SURVEY", label: "Encuesta flexible", category: "survey", group: "Encuestas y formularios inteligentes", reward_modes: ["fixed", "by_answer"] },
-  { type: "QUICK_VOTE", label: "Votacion rapida", category: "commercial", group: "Comerciales rapidas", reward_modes: ["fixed", "by_choice"] },
+  { type: "QUICK_VOTE", label: "Votacion producto", category: "commercial", group: "Comerciales rapidas", reward_modes: ["fixed", "by_choice"] },
   { type: "QUICK_DIAGNOSTIC", label: "Diagnostico rapido", category: "commercial", group: "Comerciales rapidas", reward_modes: ["by_profile"] },
   { type: "BENEFIT_SELECTOR", label: "Selector de beneficio", category: "commercial", group: "Comerciales rapidas", reward_modes: ["by_choice"] },
   { type: "SPIN_DISCOVER", label: "Gira y descubre", category: "touch", group: "Experiencias tactiles", reward_modes: ["by_choice", "fixed"] },
-  { type: "SCRATCH_WIN", label: "Raspa y gana digital", category: "touch", group: "Experiencias tactiles", reward_modes: ["fixed", "by_score"] },
+  { type: "SCRATCH_WIN", label: "Raspa digital", category: "touch", group: "Experiencias tactiles", reward_modes: ["fixed", "by_score"] },
   { type: "TAP_REVEAL", label: "Toca y revela", category: "touch", group: "Experiencias tactiles", reward_modes: ["by_choice"] },
   { type: "CHOOSE_DOOR", label: "Elige tu puerta", category: "touch", group: "Experiencias tactiles", reward_modes: ["by_choice"] },
-  { type: "DISCOUNT_THERMOMETER", label: "Termometro de descuento", category: "touch", group: "Experiencias tactiles", reward_modes: ["by_position"] },
+  { type: "DISCOUNT_THERMOMETER", label: "Termometro", category: "touch", group: "Experiencias tactiles", reward_modes: ["by_position"] },
   { type: "LUCK_METER", label: "Medidor de suerte controlado", category: "touch", group: "Experiencias tactiles", reward_modes: ["by_position"] },
   { type: "REWARD_TRAFFIC_LIGHT", label: "Semaforo de recompensa", category: "touch", group: "Experiencias tactiles", reward_modes: ["by_position"] },
   { type: "HIDDEN_CODE", label: "Codigo oculto", category: "touch", group: "Experiencias tactiles", reward_modes: ["fixed"] },
-  { type: "SPACE_SHOOTER", label: "Marcianitos / Space Shooter", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
-  { type: "BREAKOUT", label: "Breakout / Rompe bloques", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
-  { type: "SNAKE", label: "Culebrita / Snake", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "SPACE_SHOOTER", label: "Marcianitos", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "BREAKOUT", label: "Breakout", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "SNAKE", label: "Culebrita", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "CATCH_PRIZE", label: "Atrapa el premio", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
-  { type: "MEMORY_PAIRS", label: "Memoria de pares", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "MEMORY_PAIRS", label: "Memoria pares", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "FAST_TAP", label: "Tap rapido / Reflex challenge", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "MINI_MAZE", label: "Camino correcto / Mini laberinto", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "WHACK_A_MOLE", label: "Golpea el topo", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
-  { type: "DODGE_RUNNER", label: "Runner esquiva obstaculos", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "DODGE_RUNNER", label: "Runner", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "BALLOON_POP", label: "Revienta globos", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
-  { type: "ROULETTE_SPIN", label: "Ruleta de beneficio", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "ROULETTE_SPIN", label: "Ruleta", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "TOUCH_CATCH", label: "Touch atrapalo", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "TRUE_FALSE", label: "Falso o verdadero", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "ORDER_OPTIONS", label: "Orden correcto", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "CONNECTORS", label: "Conectores", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
-  { type: "BATTLESHIP_COORDS", label: "Batalla naval por coordenadas", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "BATTLESHIP_COORDS", label: "Batalla naval", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "VIP_EXPERIENCE_SELECTOR", label: "Selector de experiencia VIP", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["by_choice"] },
   { type: "STYLE_PROFILE", label: "Perfil de estilo", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["by_profile"] },
   { type: "GIFT_CURATOR", label: "Curador de regalo", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["by_profile"] },
   { type: "PRIVATE_INVITATION", label: "Invitacion privada", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["fixed", "manual_approval"] },
   { type: "PREMIUM_NEED_DIAGNOSTIC", label: "Diagnostico de necesidad premium", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["by_profile"] },
-  { type: "SEALED_LETTER", label: "Carta sellada digital", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["fixed"] },
+  { type: "SEALED_LETTER", label: "Carta sellada", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["fixed"] },
   { type: "SILENT_AUCTION_INTENT", label: "Subasta silenciosa / intencion de compra", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["fixed"] },
   { type: "EXPERIENCE_RESERVATION", label: "Reserva de experiencia", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["fixed", "manual_approval"] },
   { type: "PREMIUM_ACCESS_CERTIFICATE", label: "Certificado de acceso premium", category: "premium", group: "Experiencias premium / lujo", reward_modes: ["fixed"] },
@@ -79,7 +100,8 @@ const ACTIVATION_CATALOG = [
   { type: "DORMANT_CUSTOMER_RECOVERY", label: "Recuperacion de cliente dormido", category: "intent", group: "Datos e intencion", reward_modes: ["fixed"] },
 ];
 
-const CATALOG_BY_TYPE = new Map(ACTIVATION_CATALOG.map((item) => [item.type, item]));
+const ACTIVATION_CATALOG = ALL_ACTIVATION_CATALOG.filter((item) => RETAINED_ACTIVATION_TYPES.has(item.type));
+const CATALOG_BY_TYPE = new Map(ALL_ACTIVATION_CATALOG.map((item) => [item.type, item]));
 const JSONB_ACTIVATION_FIELDS = new Set(["reward_config", "game_config", "interaction_config", "capture_config", "visual_config"]);
 const CUSTOM_CAPTURE_FIELD_TYPES = new Set([
   "TEXT",
@@ -682,7 +704,7 @@ async function requiredGameId(client, businessId, campaign = null) {
 async function createInteractiveActivation(businessId, user, body) {
   return withTransaction(async (client) => {
     const catalogItem = CATALOG_BY_TYPE.get(body.activation_type);
-    if (!catalogItem) {
+    if (!catalogItem || !RETAINED_ACTIVATION_TYPES.has(body.activation_type)) {
       throw badRequest("Tipo de activacion no soportado por el catalogo.");
     }
     const [campaign, acquisitionChannel, branch, seller] = await Promise.all([
