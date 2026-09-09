@@ -69838,3 +69838,62 @@ html body #gamingActivationBuilderModal .benefit-fulfillment-panel label[hidden]
     grid-row: 1 / span 3;
   }
 }
+
+/* Orden correcto: editor visual y reordenable (v459). */
+.order-steps-editor,
+.order-step-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.order-step-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(5, 42, 107, 0.14);
+  border-radius: 12px;
+  background: #f8fcff;
+}
+
+.order-step-number {
+  align-self: center;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: #052a6b;
+  color: #fff;
+  font-size: .8rem;
+  font-weight: 900;
+}
+
+.order-step-actions {
+  align-self: center;
+  display: flex;
+  gap: 6px;
+}
+
+:root[data-theme="dark"] .order-step-row {
+  border-color: rgba(124, 251, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme="dark"] .order-step-number {
+  background: #00bfe5;
+  color: #031323;
+}
+
+@media (max-width: 600px) {
+  .order-step-row {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .order-step-actions {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}

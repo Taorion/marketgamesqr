@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260909-roulette-delivery-v458";
+const APP_VERSION = "empresa-20260909-order-options-v459";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -29931,10 +29931,12 @@ const MINIGAME_SPECIFIC_CONFIG = {
   },
   ORDER_OPTIONS: {
     title: "Orden correcto",
-    summary: "Dinámica: tocar opciones en el orden correcto para completar una secuencia.",
-    help: "Escribe una secuencia por línea separando pasos con >. Ejemplo: Entrada > Plato fuerte > Postre.",
+    summary: "Define el reto y organiza visualmente los pasos en el orden que el participante debe descubrir.",
+    help: "Configura entre 3 y 8 pasos. En el juego se mezclarán automáticamente y el participante deberá tocarlos en el orden definido aquí.",
     fields: [
-      { key: "order_sequences", label: "Secuencias posibles", type: "textarea", rows: 5, value: "Entrada > Plato fuerte > Postre > Cafe\nEscanear > Jugar > Recibir QR > Redimir\nProspecto > Lead > Cliente > Referido" },
+      { key: "order_prompt", label: "Instrucción del reto", type: "text", value: "Ordena correctamente la experiencia" },
+      { key: "order_steps", label: "Orden correcto de los pasos", type: "order_steps", value: ["Entrada", "Plato fuerte", "Postre", "Café"] },
+      { key: "order_success_message", label: "Mensaje al completar", type: "text", value: "¡Orden perfecto! Preparando tu beneficio." },
     ],
   },
   CONNECTORS: {
@@ -30038,6 +30040,31 @@ function connectorPairsEditorMarkup(field) {
     </section>`;
 }
 
+function orderStepRowMarkup(label = "", index = 0, total = 3) {
+  const number = index + 1;
+  return `
+    <article class="order-step-row" data-order-step-row>
+      <span class="order-step-number" aria-hidden="true">${number}</span>
+      <label><span>Paso ${number}</span><input data-order-step type="text" maxlength="120" required value="${escapeHtml(label)}" placeholder="Ej. Confirmar la reserva" aria-label="Texto del paso ${number}"></label>
+      <div class="order-step-actions" aria-label="Organizar paso ${number}">
+        <button class="icon-button" type="button" data-order-step-move="up" aria-label="Subir paso ${number}" title="Subir"><span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span></button>
+        <button class="icon-button" type="button" data-order-step-move="down" aria-label="Bajar paso ${number}" title="Bajar"><span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span></button>
+        <button class="icon-button" type="button" data-order-step-remove aria-label="Eliminar paso ${number}" title="Eliminar" ${total <= 3 ? "disabled" : ""}><span class="material-symbols-outlined" aria-hidden="true">delete</span></button>
+      </div>
+    </article>`;
+}
+
+function orderStepsEditorMarkup(field) {
+  const steps = Array.isArray(field.value) ? field.value.slice(0, 8) : [];
+  while (steps.length < 3) steps.push("");
+  return `
+    <section class="order-steps-editor full" data-minigame-config="${escapeHtml(field.key)}">
+      <div class="connector-pairs-heading"><div><strong>${escapeHtml(field.label)}</strong><small>El número indica el orden correcto. Usa las flechas para reorganizar los pasos.</small></div><span class="connector-pair-count" data-order-step-count>${steps.length} de 8 pasos</span></div>
+      <div class="order-step-list" data-order-step-list>${steps.map((step, index) => orderStepRowMarkup(step, index, steps.length)).join("")}</div>
+      <button class="outline-button connector-pair-add" type="button" data-order-step-add><span class="material-symbols-outlined" aria-hidden="true">add</span>Agregar otro paso</button>
+    </section>`;
+}
+
 function renderMinigameSpecificConfig(type) {
   if (!minigameSpecificConfigPanel) return;
   const definition = MINIGAME_SPECIFIC_CONFIG[type];
@@ -30056,6 +30083,9 @@ function renderMinigameSpecificConfig(type) {
     if (field.type === "connector_pairs") {
       return connectorPairsEditorMarkup(field);
     }
+    if (field.type === "order_steps") {
+      return orderStepsEditorMarkup(field);
+    }
     if (field.type === "textarea") {
       return `<label class="full"><span>${escapeHtml(field.label)}</span><textarea ${common} rows="${Number(field.rows || 4)}">${escapeHtml(field.value || "")}</textarea></label>`;
     }
@@ -30067,6 +30097,8 @@ function renderMinigameSpecificConfig(type) {
       : `type="text" value="${escapeHtml(field.value || "")}"`;
     return `<label><span>${escapeHtml(field.label)}</span><input ${common} ${attrs}></label>`;
   }).join("");
+  if (type === "CONNECTORS") syncConnectorPairEditor();
+  if (type === "ORDER_OPTIONS") syncOrderStepsEditor();
 }
 
 function minigameFieldValue(key) {
@@ -30082,6 +30114,10 @@ function collectMinigameSpecificConfig(type) {
       config.pairs = connectorPairDrafts();
       return;
     }
+    if (field.type === "order_steps") {
+      config.sequences = [orderStepDrafts()];
+      return;
+    }
     const value = minigameFieldValue(field.key);
     if (field.type === "number") {
       config[field.key] = boundedInteger(value, field.value, field.min, field.max);
@@ -30093,10 +30129,6 @@ function collectMinigameSpecificConfig(type) {
   if (type === "TRUE_FALSE") {
     config.prompts = parseTrueFalsePrompts(config.true_false_prompts);
     delete config.true_false_prompts;
-  }
-  if (type === "ORDER_OPTIONS") {
-    config.sequences = parseOrderSequences(config.order_sequences);
-    delete config.order_sequences;
   }
   if (type === "MEMORY_PAIRS") {
     config.symbols = splitOptionList(config.memory_symbols).slice(0, 12);
@@ -30137,6 +30169,36 @@ function parseOrderSequences(value) {
     .map((line) => line.split(">").map((part) => part.trim()).filter(Boolean))
     .filter((items) => items.length >= 2)
     .slice(0, 8);
+}
+
+function orderStepDrafts() {
+  return Array.from(minigameSpecificConfigPanel?.querySelectorAll("[data-order-step]") || [])
+    .slice(0, 8)
+    .map((input) => String(input.value || "").trim());
+}
+
+function syncOrderStepsEditor() {
+  const editor = minigameSpecificConfigPanel?.querySelector("[data-minigame-config='order_steps']");
+  const rows = Array.from(editor?.querySelectorAll("[data-order-step-row]") || []);
+  rows.forEach((row, index) => {
+    const number = index + 1;
+    const badge = row.querySelector(".order-step-number");
+    const label = row.querySelector("label > span");
+    const input = row.querySelector("[data-order-step]");
+    const up = row.querySelector("[data-order-step-move='up']");
+    const down = row.querySelector("[data-order-step-move='down']");
+    const remove = row.querySelector("[data-order-step-remove]");
+    if (badge) badge.textContent = String(number);
+    if (label) label.textContent = `Paso ${number}`;
+    if (input) input.setAttribute("aria-label", `Texto del paso ${number}`);
+    if (up) up.disabled = index === 0;
+    if (down) down.disabled = index === rows.length - 1;
+    if (remove) remove.disabled = rows.length <= 3;
+  });
+  const count = editor?.querySelector("[data-order-step-count]");
+  if (count) count.textContent = `${rows.length} de 8 pasos`;
+  const add = editor?.querySelector("[data-order-step-add]");
+  if (add) add.disabled = rows.length >= 8;
 }
 
 function connectorPairDrafts() {
@@ -30203,9 +30265,23 @@ function validateMinigameSpecificConfig(type) {
     return null;
   }
   if (type === "ORDER_OPTIONS" && (!Array.isArray(config.sequences) || config.sequences.length < 1)) {
-    setInlineMessage(triviaLauncherMessage, "Orden correcto necesita al menos una secuencia con dos o más pasos separados por >.", "error");
-    minigameSpecificConfigPanel?.querySelector("[data-minigame-config='order_sequences']")?.focus();
+    setInlineMessage(triviaLauncherMessage, "Orden correcto necesita una secuencia completa de al menos tres pasos.", "error");
+    minigameSpecificConfigPanel?.querySelector("[data-order-step]")?.focus();
     return null;
+  }
+  if (type === "ORDER_OPTIONS") {
+    const steps = config.sequences[0] || [];
+    if (steps.length < 3 || steps.some((step) => !step)) {
+      setInlineMessage(triviaLauncherMessage, "Completa al menos tres pasos del reto de Orden correcto.", "error");
+      Array.from(minigameSpecificConfigPanel?.querySelectorAll("[data-order-step]") || []).find((input) => !input.value.trim())?.focus();
+      return null;
+    }
+    const normalized = steps.map((step) => step.toLocaleLowerCase("es"));
+    if (new Set(normalized).size !== steps.length) {
+      setInlineMessage(triviaLauncherMessage, "Cada paso debe ser diferente para que el participante pueda reconocer el orden.", "error");
+      minigameSpecificConfigPanel?.querySelector("[data-order-step]")?.focus();
+      return null;
+    }
   }
   if (type === "CONNECTORS") {
     const pairs = Array.isArray(config.pairs) ? config.pairs : [];
@@ -30574,6 +30650,9 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     const lives = Math.max(1, Math.min(10, Number(minigameLivesInput?.value || 3)));
     const fireIntervalMs = Math.max(250, Math.min(1200, Number(minigameFireIntervalInput?.value || 480)));
     const specificConfig = collectMinigameSpecificConfig(type);
+    const orderStepCount = type === "ORDER_OPTIONS" ? Number(specificConfig.sequences?.[0]?.length || 0) : 0;
+    const effectiveMinScore = type === "ORDER_OPTIONS" ? 1 : minScore;
+    const effectiveMaxScore = type === "ORDER_OPTIONS" ? Math.max(maxScore, (orderStepCount + 2) * pointsPerTarget) : maxScore;
     return {
       ...base,
       category: "minigame",
@@ -30584,7 +30663,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
         optional_fields: [],
       },
       score_rewards: [{
-        min_score: minScore,
+        min_score: effectiveMinScore,
         max_score: null,
         reward_type: benefit.reward_type,
         reward_label: benefit.reward_label,
@@ -30593,10 +30672,10 @@ function buildInteractiveActivationPayload(type, activationPayload) {
       game_config: {
         game_type: type,
         duration_seconds: durationSeconds,
-        min_duration_ms: type === "BATTLESHIP_COORDS" ? 0 : 3000,
+        min_duration_ms: ["BATTLESHIP_COORDS", "ORDER_OPTIONS"].includes(type) ? 0 : 3000,
         max_duration_ms: (durationSeconds + 10) * 1000,
-        max_score: maxScore,
-        min_score_for_reward: minScore,
+        max_score: effectiveMaxScore,
+        min_score_for_reward: effectiveMinScore,
         points_per_target: pointsPerTarget,
         penalty,
         lives,
@@ -63451,6 +63530,36 @@ document.querySelectorAll("[data-flat-option-image]").forEach((input) => {
 });
 battleshipShipCountInput?.addEventListener("input", updateBattleshipShipInputs);
 minigameSpecificConfigPanel?.addEventListener("click", (event) => {
+  const orderAddButton = event.target.closest("[data-order-step-add]");
+  if (orderAddButton) {
+    const list = minigameSpecificConfigPanel.querySelector("[data-order-step-list]");
+    const total = list?.querySelectorAll("[data-order-step-row]").length || 0;
+    if (!list || total >= 8) return;
+    list.insertAdjacentHTML("beforeend", orderStepRowMarkup("", total, total + 1));
+    syncOrderStepsEditor();
+    list.lastElementChild?.querySelector("[data-order-step]")?.focus();
+    return;
+  }
+  const orderMoveButton = event.target.closest("[data-order-step-move]");
+  if (orderMoveButton) {
+    const row = orderMoveButton.closest("[data-order-step-row]");
+    const direction = orderMoveButton.dataset.orderStepMove;
+    const sibling = direction === "up" ? row?.previousElementSibling : row?.nextElementSibling;
+    if (!row || !sibling) return;
+    if (direction === "up") row.parentElement.insertBefore(row, sibling);
+    else row.parentElement.insertBefore(sibling, row);
+    syncOrderStepsEditor();
+    row.querySelector(`[data-order-step-move="${direction}"]`)?.focus();
+    return;
+  }
+  const orderRemoveButton = event.target.closest("[data-order-step-remove]");
+  if (orderRemoveButton) {
+    const rows = minigameSpecificConfigPanel.querySelectorAll("[data-order-step-row]");
+    if (rows.length <= 3) return;
+    orderRemoveButton.closest("[data-order-step-row]")?.remove();
+    syncOrderStepsEditor();
+    return;
+  }
   const addButton = event.target.closest("[data-connector-pair-add]");
   if (addButton) {
     const list = minigameSpecificConfigPanel.querySelector("[data-connector-pair-list]");

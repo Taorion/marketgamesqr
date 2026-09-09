@@ -1302,7 +1302,7 @@ function createGameRuntime(canvas, config = {}) {
     finish() {
       if (runtime.done) return;
       runtime.done = true;
-      finishGame(runtime.score, Date.now() - runtime.startedAt);
+      finishGame(runtime.score, Date.now() - runtime.startedAt, runtime.completionPayload || {});
     },
   };
 
@@ -3008,8 +3008,14 @@ function drawTrueFalse(ctx, width, height, prompt, age, streak, promptTime = 3.6
 
 function startOrderOptions(runtime) {
   const { ctx, width, height } = runtime;
-  const sets = Array.isArray(runtime.config.sequences) && runtime.config.sequences.length
+  const configuredSets = Array.isArray(runtime.config.sequences)
     ? runtime.config.sequences
+      .filter(Array.isArray)
+      .map((sequence) => sequence.map((step) => String(step || "").trim()).filter(Boolean).slice(0, 8))
+      .filter((sequence) => sequence.length >= 3)
+    : [];
+  const sets = configuredSets.length
+    ? configuredSets
     : [
     ["Entrada", "Plato fuerte", "Postre", "Cafe"],
     ["Escanear", "Jugar", "Recibir QR", "Redimir"],
@@ -3019,48 +3025,83 @@ function startOrderOptions(runtime) {
   let sequence = createOrderSequence(sets);
   let step = 0;
   let dead = false;
-  runtime.onPointerDown = (pos) => {
-    if (dead) return;
-    const item = sequence.items.find((entry) => pos.x >= entry.x && pos.x <= entry.x + entry.w && pos.y >= entry.y && pos.y <= entry.y + entry.h);
+  let completed = false;
+  let mistakes = 0;
+  let focusPosition = 0;
+  const prompt = runtime.config.order_prompt || "Toca los pasos en el orden correcto";
+  const successMessage = runtime.config.order_success_message || "¡Orden perfecto! Preparando tu beneficio.";
+  const objective = document.getElementById("gameObjectiveValue");
+  if (objective) objective.textContent = prompt;
+  const chooseItem = (item) => {
+    if (dead || completed) return;
     if (!item || item.done) return;
     if (item.index === step) {
       item.done = true;
       step += 1;
       runtime.addScore(runtime.points);
+      if (step < sequence.items.length) setStatus(`Paso ${step} correcto. Continúa con el siguiente.`, "success");
       if (step >= sequence.items.length) {
         runtime.addScore(runtime.points * 2);
-        sequence = createOrderSequence(sets);
-        step = 0;
+        completed = true;
+        runtime.completionPayload = {
+          answers: {
+            order_completed: true,
+            order_sequence: sequence.labels,
+            order_mistakes: mistakes,
+          },
+          metadata: { order_options_completed: true, order_options_steps: sequence.labels.length },
+        };
+        setProgress(1, 1);
+        setStatus(successMessage, "success");
+        const completionTimer = window.setTimeout(() => runtime.finish(), 1200);
+        runtime.timers.push(completionTimer);
       }
     } else {
+      mistakes += 1;
       runtime.damage(1);
+      setStatus("Ese no es el siguiente paso. Intenta nuevamente.", "error");
       if (runtime.lives <= 0) dead = true;
     }
+  };
+  runtime.onPointerDown = (pos) => {
+    const position = sequence.items.findIndex((entry) => pos.x >= entry.x && pos.x <= entry.x + entry.w && pos.y >= entry.y && pos.y <= entry.y + entry.h);
+    if (position < 0) return;
+    focusPosition = position;
+    chooseItem(sequence.items[position]);
+  };
+  runtime.onControl = (key) => {
+    if (dead || completed) return;
+    if (["left", "up"].includes(key)) focusPosition = (focusPosition - 1 + sequence.items.length) % sequence.items.length;
+    if (["right", "down"].includes(key)) focusPosition = (focusPosition + 1) % sequence.items.length;
+    if (key === "fire") chooseItem(sequence.items[focusPosition]);
   };
   runtime.loop((dt, elapsed) => {
     if (dead) {
       drawRetroBackground(ctx, width, height, "ORDEN CORRECTO");
-      drawOrderSequence(ctx, sequence, step);
+      drawOrderSequence(ctx, sequence, step, focusPosition);
       drawGameOver(ctx, width, height);
+      setStatus("Se terminaron los intentos. Registraremos el resultado sin generar el beneficio.", "error");
       if (shouldFinishAfterNoLives(runtime, elapsed)) runtime.finish();
       return;
     }
     drawRetroBackground(ctx, width, height, "ORDEN CORRECTO");
-    drawOrderSequence(ctx, sequence, step);
+    drawOrderSequence(ctx, sequence, step, focusPosition);
+    if (completed) drawOrderSuccess(ctx, width, height);
   });
 }
 
 function createOrderSequence(sets) {
-  const source = sets[Math.floor(Math.random() * sets.length)];
+  const source = sets[Math.floor(Math.random() * sets.length)].slice(0, 8);
   const shuffled = shuffleArray(source.map((label, index) => ({ label, index })));
-  const w = 190;
-  const h = 58;
+  const columns = source.length <= 4 ? 1 : 2;
+  const w = columns === 1 ? 480 : 286;
+  const h = 52;
   return {
     labels: source,
     items: shuffled.map((item, pos) => ({
       ...item,
-      x: 92 + (pos % 2) * 350,
-      y: 118 + Math.floor(pos / 2) * 112,
+      x: columns === 1 ? 120 : 58 + (pos % 2) * 318,
+      y: 96 + Math.floor(pos / columns) * 68,
       w,
       h,
       done: false,
@@ -3068,19 +3109,19 @@ function createOrderSequence(sets) {
   };
 }
 
-function drawOrderSequence(ctx, sequence, step) {
+function drawOrderSequence(ctx, sequence, step, focusPosition = -1) {
   ctx.fillStyle = "#eafcff";
   ctx.font = "800 14px monospace";
-  ctx.fillText(`SIGUIENTE: ${sequence.labels[step] || "COMPLETO"}`, 18, 54);
-  sequence.items.forEach((item) => {
+  ctx.fillText(step < sequence.labels.length ? `PASO ${step + 1} DE ${sequence.labels.length}` : "SECUENCIA COMPLETA", 18, 54);
+  sequence.items.forEach((item, position) => {
     ctx.fillStyle = item.done ? "#052a6b" : "#182d45";
     ctx.fillRect(item.x, item.y, item.w, item.h);
-    ctx.strokeStyle = item.index === step ? "#f2b84b" : "#7cfbff";
+    ctx.strokeStyle = position === focusPosition ? "#f2b84b" : "#7cfbff";
     ctx.lineWidth = 3;
     ctx.strokeRect(item.x, item.y, item.w, item.h);
     ctx.fillStyle = item.done ? "#00bfe5" : "#eafcff";
-    ctx.font = "900 17px monospace";
-    ctx.fillText(item.label, item.x + 18, item.y + 36);
+    ctx.font = "900 15px monospace";
+    wrapCanvasText(ctx, item.label, item.x + item.w / 2, item.y + 23, item.w - 24, 17, "center");
   });
 }
 
@@ -3137,6 +3178,26 @@ function startConnectors(runtime) {
     drawRetroBackground(ctx, width, height, "CONECTORES");
     drawConnectorBoard(ctx, board, selected);
   });
+}
+
+function drawOrderSuccess(ctx, width, height) {
+  const panelWidth = Math.min(500, width - 48);
+  const panelHeight = 118;
+  const x = (width - panelWidth) / 2;
+  const y = (height - panelHeight) / 2;
+  ctx.fillStyle = "rgba(3, 19, 35, 0.95)";
+  ctx.fillRect(x, y, panelWidth, panelHeight);
+  ctx.strokeStyle = "#7cfbff";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(x, y, panelWidth, panelHeight);
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#f2b84b";
+  ctx.font = "900 26px monospace";
+  ctx.fillText("¡ORDEN CORRECTO!", width / 2, y + 42);
+  ctx.fillStyle = "#eafcff";
+  ctx.font = "800 14px monospace";
+  ctx.fillText("Preparando tu premio o descarga...", width / 2, y + 78);
+  ctx.textAlign = "left";
 }
 
 function drawConnectorSuccess(ctx, width, height) {
@@ -3490,11 +3551,12 @@ function cleanupGameState() {
   gameState = null;
 }
 
-function finishGame(score, durationMs) {
+function finishGame(score, durationMs, completionPayload = {}) {
   cleanupGameState();
   const startButton = document.getElementById("startGameButton");
   if (startButton) startButton.textContent = "Validando score...";
   completeActivation({
+    ...completionPayload,
     score,
     duration_ms: durationMs,
     participant_id: participant?.id,

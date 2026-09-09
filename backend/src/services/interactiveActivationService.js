@@ -722,6 +722,7 @@ async function createInteractiveActivation(businessId, user, body) {
       ...(body.reward_config || {}),
     };
     const captureConfig = normalizeCaptureConfig(body.capture_config || {});
+    const gameConfig = normalizeOrderOptionsGameConfig(body.activation_type, body.game_config || {});
 
     const result = await client.query(
       `insert into interactive_activations
@@ -746,7 +747,7 @@ async function createInteractiveActivation(businessId, user, body) {
         body.reward_ticket_cost || 1,
         body.reward_mode || "fixed",
         jsonParam(rewardConfig, {}),
-        jsonParam(body.game_config, {}),
+        jsonParam(gameConfig, {}),
         jsonParam(body.interaction_config, {}),
         jsonParam(captureConfig, {}),
         jsonParam(body.visual_config, {}),
@@ -904,7 +905,7 @@ async function listInteractiveActivations(businessId, options = {}) {
 
 async function updateInteractiveActivation(businessId, activationId, body) {
   const currentResult = await query(
-    "select id, status from interactive_activations where id = $1 and company_id = $2",
+    "select id, status, activation_type from interactive_activations where id = $1 and company_id = $2",
     [activationId, businessId]
   );
   if (!currentResult.rowCount) throw notFound("Activacion no encontrada.");
@@ -921,6 +922,10 @@ async function updateInteractiveActivation(businessId, activationId, body) {
     await assertSeller({ query }, businessId, body.seller_user_id || null);
   }
   const currentStatus = currentResult.rows[0].status;
+  const effectiveActivationType = body.activation_type || currentResult.rows[0].activation_type;
+  const normalizedGameConfig = Object.prototype.hasOwnProperty.call(body, "game_config")
+    ? normalizeOrderOptionsGameConfig(effectiveActivationType, body.game_config || {})
+    : null;
   const nextStatus = body.status || currentStatus;
   if (currentStatus === "archived") {
     throw badRequest("Una activacion archivada se conserva solo para consulta; no puede reactivarse desde este contrato.");
@@ -963,7 +968,11 @@ async function updateInteractiveActivation(businessId, activationId, body) {
   ];
   for (const key of allowed) {
     if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
-    const nextValue = key === "capture_config" ? normalizeCaptureConfig(body[key] || {}) : body[key];
+    const nextValue = key === "capture_config"
+      ? normalizeCaptureConfig(body[key] || {})
+      : key === "game_config"
+        ? normalizedGameConfig
+        : body[key];
     if (JSONB_ACTIVATION_FIELDS.has(key)) {
       values.push(jsonParam(nextValue, {}));
       fields.push(`${key} = $${values.length}::jsonb`);
@@ -1306,6 +1315,7 @@ async function completeInteractiveParticipant(slug, body) {
     const activation = await lockActivationBySlug(client, slug);
     assertActivationOpen(activation);
     applyPrivateInvitationSchedule(activation, body);
+    applyOrderOptionsResult(activation, body);
     if (!body.participant_id) assertRequiredCaptureFields(activation, body);
     if (!body.participant_id) {
       await assertActivationIdentityConsistency(client, activation, body);
@@ -1418,6 +1428,8 @@ async function completeInteractiveParticipant(slug, body) {
               ? spinOutcome.reveal_label
             : rouletteOutcome && !rouletteOutcome.is_winner
               ? rouletteOutcome.reveal_label
+            : activation.activation_type === "ORDER_OPTIONS" && body.answers?.order_completed !== true
+              ? "No se completo el orden correcto. Participacion registrada sin generar beneficio."
             : "Participacion registrada. No alcanzo el rango de beneficio configurado.",
       };
     }
@@ -2297,6 +2309,76 @@ function applyPrivateInvitationSchedule(activation, body) {
   };
 }
 
+function normalizeOrderOptionsGameConfig(activationType, gameConfig) {
+  const config = gameConfig && typeof gameConfig === "object" && !Array.isArray(gameConfig) ? { ...gameConfig } : {};
+  if (activationType !== "ORDER_OPTIONS") return config;
+  if (!Array.isArray(config.sequences) || !config.sequences.length) {
+    throw badRequest("Orden correcto necesita al menos una secuencia configurada.");
+  }
+  const sequences = config.sequences.map((sequence) => {
+    if (!Array.isArray(sequence)) throw badRequest("Cada secuencia de Orden correcto debe ser una lista de pasos.");
+    const steps = sequence.map((step) => String(step || "").trim()).filter(Boolean);
+    if (steps.length < 3 || steps.length > 8) {
+      throw badRequest("Cada secuencia de Orden correcto debe tener entre 3 y 8 pasos completos.");
+    }
+    const uniqueSteps = new Set(steps.map((step) => step.toLocaleLowerCase("es")));
+    if (uniqueSteps.size !== steps.length) {
+      throw badRequest("Cada paso de Orden correcto debe ser diferente.");
+    }
+    return steps;
+  });
+  return { ...config, sequences };
+}
+
+function applyOrderOptionsResult(activation, body) {
+  if (activation.activation_type !== "ORDER_OPTIONS") return;
+  const normalizedSequences = Array.isArray(activation.game_config?.sequences)
+    ? activation.game_config.sequences
+      .filter(Array.isArray)
+      .map((sequence) => sequence.map((step) => String(step || "").trim()).filter(Boolean).slice(0, 8))
+      .filter((sequence) => sequence.length >= 3)
+    : [];
+  const configuredSequences = normalizedSequences.length
+    ? normalizedSequences
+    : [
+      ["Entrada", "Plato fuerte", "Postre", "Cafe"],
+      ["Escanear", "Jugar", "Recibir QR", "Redimir"],
+      ["Prospecto", "Lead", "Cliente", "Referido"],
+    ];
+  const completed = body.answers?.order_completed === true;
+  const submitted = Array.isArray(body.answers?.order_sequence)
+    ? body.answers.order_sequence.map((step) => String(step || "").trim())
+    : [];
+
+  if (!completed) {
+    body.score = 0;
+    body.answers = { ...(body.answers || {}), order_completed: false, order_sequence: [] };
+    return;
+  }
+
+  const matchingSequence = configuredSequences.find((sequence) => (
+    Array.isArray(sequence)
+    && sequence.length === submitted.length
+    && sequence.every((step, index) => String(step || "").trim() === submitted[index])
+  ));
+  if (!matchingSequence) {
+    throw badRequest("La secuencia enviada no coincide con el orden configurado.");
+  }
+
+  const points = Math.max(1, Number(activation.game_config?.points_per_target || 50));
+  body.score = (matchingSequence.length + 2) * points;
+  body.answers = {
+    ...(body.answers || {}),
+    order_completed: true,
+    order_sequence: matchingSequence.map((step) => String(step)),
+  };
+  body.metadata = {
+    ...(body.metadata || {}),
+    order_options_completed: true,
+    order_options_steps: matchingSequence.length,
+  };
+}
+
 function rewardFromSpinDiscoverChoice(items = [], selectedValue) {
   const outcome = spinDiscoverChoiceOutcome(items, selectedValue);
   if (!outcome) throw badRequest("Debes elegir una carta valida para generar el beneficio.");
@@ -3070,6 +3152,7 @@ async function assertActivationOwnership(businessId, activationId) {
 
 module.exports = {
   ACTIVATION_CATALOG,
+  applyOrderOptionsResult,
   completeInteractiveParticipant,
   createInteractiveActivation,
   deleteInteractiveActivation,
@@ -3081,6 +3164,7 @@ module.exports = {
   listDeletedInteractiveActivations,
   listInteractiveActivations,
   listInteractiveParticipants,
+  normalizeOrderOptionsGameConfig,
   listInteractiveRewards,
   recycleInteractiveActivation,
   resolveDiagnosticResult,
