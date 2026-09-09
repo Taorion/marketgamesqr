@@ -36,6 +36,16 @@ test("El juego publico mezcla el lado derecho y conserva la clave de cada pareja
   assert.match(player, /createConnectorBoard\(pairs, width, height\)/);
 });
 
+test("al completar todos los conectores muestra retroalimentacion y entrega el beneficio", () => {
+  assert.match(player, /completed = true/);
+  assert.match(player, /Math\.max\(runtime\.score \+ runtime\.points \* 2, runtime\.minScoreForReward\)/);
+  assert.match(player, /Todas las conexiones son correctas\. Estamos preparando tu premio o descarga/);
+  assert.match(player, /function drawConnectorSuccess/);
+  assert.match(player, /window\.setTimeout\(\(\) => runtime\.finish\(\), 1400\)/);
+  assert.match(player, /runtime\.timers\.push\(completionTimer\)/);
+  assert.equal((player.match(/board = createConnectorBoard\(pairs, width, height\)/g) || []).length, 1);
+});
+
 test("El editor de Conectores tiene una disposicion movil sin desbordamiento horizontal", () => {
   assert.match(styles, /\.connector-pair-row\s*\{/);
   assert.match(styles, /@media \(max-width: 760px\)/);

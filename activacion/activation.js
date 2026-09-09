@@ -2899,8 +2899,9 @@ function startConnectors(runtime) {
   let board = createConnectorBoard(pairs, width, height);
   let selected = null;
   let dead = false;
+  let completed = false;
   runtime.onPointerDown = (pos) => {
-    if (dead) return;
+    if (dead || completed) return;
     const left = board.left.find((item) => pointInConnector(pos, item));
     const right = board.right.find((item) => pointInConnector(pos, item));
     if (left && !left.done) {
@@ -2915,8 +2916,12 @@ function startConnectors(runtime) {
       selected = null;
       runtime.addScore(runtime.points);
       if (board.left.every((item) => item.done)) {
-        runtime.addScore(runtime.points * 2);
-        board = createConnectorBoard(pairs, width, height);
+        completed = true;
+        runtime.setScore(Math.max(runtime.score + runtime.points * 2, runtime.minScoreForReward));
+        setProgress(1, 1);
+        setStatus("¡Muy bien! Todas las conexiones son correctas. Estamos preparando tu premio o descarga.", "success");
+        const completionTimer = window.setTimeout(() => runtime.finish(), 1400);
+        runtime.timers.push(completionTimer);
       }
     } else {
       selected = null;
@@ -2925,6 +2930,12 @@ function startConnectors(runtime) {
     }
   };
   runtime.loop((dt, elapsed) => {
+    if (completed) {
+      drawRetroBackground(ctx, width, height, "CONECTORES");
+      drawConnectorBoard(ctx, board, null);
+      drawConnectorSuccess(ctx, width, height);
+      return;
+    }
     if (dead) {
       drawRetroBackground(ctx, width, height, "CONECTORES");
       drawConnectorBoard(ctx, board, selected);
@@ -2935,6 +2946,26 @@ function startConnectors(runtime) {
     drawRetroBackground(ctx, width, height, "CONECTORES");
     drawConnectorBoard(ctx, board, selected);
   });
+}
+
+function drawConnectorSuccess(ctx, width, height) {
+  const panelWidth = Math.min(520, width - 48);
+  const panelHeight = 122;
+  const x = (width - panelWidth) / 2;
+  const y = (height - panelHeight) / 2;
+  ctx.fillStyle = "rgba(3, 19, 35, 0.94)";
+  ctx.fillRect(x, y, panelWidth, panelHeight);
+  ctx.strokeStyle = "#7cfbff";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(x, y, panelWidth, panelHeight);
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#f2b84b";
+  ctx.font = "900 25px monospace";
+  ctx.fillText("¡CONEXIONES CORRECTAS!", width / 2, y + 42);
+  ctx.fillStyle = "#eafcff";
+  ctx.font = "800 14px monospace";
+  ctx.fillText("Preparando tu premio o descarga...", width / 2, y + 78);
+  ctx.textAlign = "left";
 }
 
 function connectorPairsFromConfig(config = {}) {
