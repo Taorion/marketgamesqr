@@ -94,5 +94,5 @@ test("la landing salta el formulario y el validador trata el QR como transferibl
   assert.match(portal, /validatorPlayerValue\.textContent = isTransferableTicket \? "Ticket transferible"/);
   assert.match(publicHtml, /optional-beneficiary-data=v460-20260909/);
   assert.match(portalHtml, /optional-beneficiary-data=v460-20260909/);
-  assert.match(portal, /empresa-20260909-activation-deletion-guard-v466/);
+  assert.match(portal, /empresa-20260909-activation-status-filters-v467/);
 });

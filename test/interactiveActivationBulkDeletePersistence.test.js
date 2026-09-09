@@ -10,15 +10,17 @@ const service = fs.readFileSync(
   "utf8",
 );
 
-test("bulk-deleted activations stay outside the default operational list after reload", () => {
+test("published activations use explicit status filters without an operational aggregate", () => {
   assert.match(
     app,
-    /function activationMatchesPublishedStatus[\s\S]*normalizedSelectedStatus === "all"\) return normalizedItemStatus !== "archived"/,
+    /function activationMatchesPublishedStatus\(itemStatus = "", selectedStatus = "active"\)[\s\S]*return normalizedItemStatus === normalizedSelectedStatus/,
   );
   assert.match(app, /const matchesStatus = activationMatchesPublishedStatus\(row\.dataset\.gamingActivationStatus, status\)/);
   assert.match(app, /activationMatchesPublishedStatus\(item\.status, status\)/);
-  assert.match(app, /data-gaming-published-status-pill="all">Operativas/);
-  assert.match(app, /status === "all"[\s\S]*Number\(statusCounts\.all \|\| 0\)/);
+  assert.doesNotMatch(app, /data-gaming-published-status-pill="all"/);
+  assert.doesNotMatch(app, /<option value="all">Operativas<\/option>/);
+  assert.doesNotMatch(app, /<option value="closed">Cerradas<\/option>/);
+  assert.match(app, /data-gaming-published-status-pill="active" aria-pressed="true">Activas/);
 });
 
 test("archived history remains tenant-scoped and available for audit", () => {

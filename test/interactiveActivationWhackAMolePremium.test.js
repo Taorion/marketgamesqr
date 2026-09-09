@@ -52,5 +52,5 @@ test("el tablero premium es responsive y sus assets salen versionados juntos", (
   assert.match(styles, /@media \(max-width: 520px\)[\s\S]*\.whack-a-mole-panel \.game-hud \{ grid-template-columns: repeat\(2/);
   assert.match(publicHtml, /whack-a-mole=v461-20260909/g);
   assert.match(portalHtml, /whack-a-mole=v461-20260909/g);
-  assert.match(portal, /empresa-20260909-activation-deletion-guard-v466/);
+  assert.match(portal, /empresa-20260909-activation-status-filters-v467/);
 });

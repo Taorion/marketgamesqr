@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260909-activation-deletion-guard-v466";
+const APP_VERSION = "empresa-20260909-activation-status-filters-v467";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -3132,7 +3132,7 @@ let state = {
   triviaLauncherBulkSelection: [],
   gamingActivationCategory: "recommended",
   gamingActivationSearch: "",
-  gamingActivationStatusFilter: "all",
+  gamingActivationStatusFilter: "active",
   gamingActivationSearchPublished: "",
   gamingCenterCreationTool: "single",
   gamingActivationWizardStep: 0,
@@ -20072,15 +20072,14 @@ function applyGamingActivationRecipe(recipeKey = "") {
 function updateGamingPublishedFilters() {
   if (!triviaLauncherTable) return;
   const query = String(state.gamingActivationSearchPublished || "").trim().toLowerCase();
-  const status = state.gamingActivationStatusFilter || "all";
+  const status = state.gamingActivationStatusFilter || "active";
   let visible = 0;
   const rows = Array.from(triviaLauncherTable.querySelectorAll("[data-gaming-published-activation]"));
   const statusCounts = rows.reduce((counts, row) => {
     const key = row.dataset.gamingActivationStatus || "draft";
-    if (key !== "archived") counts.all += 1;
     counts[key] = Number(counts[key] || 0) + 1;
     return counts;
-  }, { all: 0 });
+  }, {});
   rows.forEach((row) => {
     const matchesSearch = !query || String(row.dataset.gamingActivationSearch || row.textContent || "").toLowerCase().includes(query);
     const matchesStatus = activationMatchesPublishedStatus(row.dataset.gamingActivationStatus, status);
@@ -20089,9 +20088,7 @@ function updateGamingPublishedFilters() {
     if (matches) visible += 1;
   });
   const count = document.querySelector("[data-gaming-published-count]");
-  const filteredPopulation = status === "all"
-    ? Number(statusCounts.all || 0)
-    : Number(statusCounts[status] || 0);
+  const filteredPopulation = Number(statusCounts[status] || 0);
   if (count) count.textContent = `${visible} de ${filteredPopulation} activaciones`;
   document.querySelectorAll("[data-activation-status-count]").forEach((element) => {
     element.textContent = Number(statusCounts[element.dataset.activationStatusCount] || 0).toLocaleString("es-CO");
@@ -20112,11 +20109,9 @@ function updateGamingPublishedFilters() {
   renderActivationBulkToolbar();
 }
 
-function activationMatchesPublishedStatus(itemStatus = "", selectedStatus = "all") {
+function activationMatchesPublishedStatus(itemStatus = "", selectedStatus = "active") {
   const normalizedItemStatus = String(itemStatus || "draft").toLowerCase();
-  const normalizedSelectedStatus = String(selectedStatus || "all").toLowerCase();
-  if (normalizedSelectedStatus === "archived") return normalizedItemStatus === "archived";
-  if (normalizedSelectedStatus === "all") return normalizedItemStatus !== "archived";
+  const normalizedSelectedStatus = String(selectedStatus || "active").toLowerCase();
   return normalizedItemStatus === normalizedSelectedStatus;
 }
 
@@ -20295,19 +20290,18 @@ function ensureGamingCenterUx() {
       <div class="gaming-published-toolbar">
         <div class="gaming-published-toolbar-main">
           <label><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" data-gaming-published-search placeholder="Buscar por nombre, campaña o tipo" aria-label="Buscar activaciones publicadas"></label>
-          <select data-gaming-published-status aria-label="Filtrar activaciones por estado"><option value="all">Operativas</option><option value="active">Activas</option><option value="paused">Pausadas</option><option value="draft">Borradores</option><option value="closed">Cerradas</option><option value="archived">Archivadas</option></select>
+          <select data-gaming-published-status aria-label="Filtrar activaciones por estado"><option value="active">Activas</option><option value="paused">Pausadas</option><option value="draft">Borradores</option><option value="archived">Archivadas</option></select>
           <strong data-gaming-published-count>0 activaciones</strong>
         </div>
         <div class="gaming-published-status-pills" role="group" aria-label="Vista rápida por estado">
-          <button class="is-active" type="button" data-gaming-published-status-pill="all">Operativas <b data-activation-status-count="all">0</b></button>
-          <button type="button" data-gaming-published-status-pill="active">Activas <b data-activation-status-count="active">0</b></button>
+          <button class="is-active" type="button" data-gaming-published-status-pill="active" aria-pressed="true">Activas <b data-activation-status-count="active">0</b></button>
           <button type="button" data-gaming-published-status-pill="draft">Borradores <b data-activation-status-count="draft">0</b></button>
           <button type="button" data-gaming-published-status-pill="paused">Pausadas <b data-activation-status-count="paused">0</b></button>
           <button type="button" data-gaming-published-status-pill="archived">Archivadas <b data-activation-status-count="archived">0</b></button>
         </div>
       </div>
     `);
-    publishedCard.querySelector(".table-wrap")?.insertAdjacentHTML("afterend", '<div class="gaming-published-empty hidden" data-gaming-published-empty><strong>No hay activaciones con estos filtros.</strong><br><small>Cambia la búsqueda o vuelve a todos los estados.</small></div>');
+    publishedCard.querySelector(".table-wrap")?.insertAdjacentHTML("afterend", '<div class="gaming-published-empty hidden" data-gaming-published-empty><strong>No hay activaciones con estos filtros.</strong><br><small>Cambia la búsqueda o selecciona otro estado.</small></div>');
   }
   ensureGamingActivationBuilderModal(view);
   ensureGamingActivationDetailModal(view);
@@ -20408,7 +20402,7 @@ function ensureGamingCenterUx() {
     });
     view.addEventListener("change", (event) => {
       if (event.target.matches("[data-gaming-published-status]")) {
-        state.gamingActivationStatusFilter = event.target.value || "all";
+        state.gamingActivationStatusFilter = event.target.value || "active";
         updateGamingPublishedFilters();
         return;
       }
@@ -31116,7 +31110,7 @@ function activationBulkIds() {
 
 function activationBulkVisibleIds() {
   const query = String(state.gamingActivationSearchPublished || "").trim().toLowerCase();
-  const status = state.gamingActivationStatusFilter || "all";
+  const status = state.gamingActivationStatusFilter || "active";
   return (state.triviaLaunchers || [])
     .filter((item) => {
       const search = [item.title, activationTypeLabel(item.activation_type), item.campaign_name, item.public_slug].filter(Boolean).join(" ").toLowerCase();

@@ -19,6 +19,6 @@ test("la alternativa segura permite anular y protege el historial", () => {
   assert.match(app, /data-activation-bulk-status="archived"[\s\S]*?>Anular<\/button>/);
   assert.match(app, /Sus enlaces quedar\\u00e1n inactivos y el historial permanecer\\u00e1 protegido/);
   assert.match(app, /method: "PATCH", headers: authHeaders\(\), body: JSON\.stringify\(\{ status \}\)/);
-  assert.match(app, /empresa-20260909-activation-deletion-guard-v466/);
-  assert.match(html, /activation-deletion-guard=v466-20260909/g);
+  assert.match(app, /empresa-20260909-activation-status-filters-v467/);
+  assert.match(html, /activation-status-filters=v467-20260909/g);
 });
