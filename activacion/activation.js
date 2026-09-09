@@ -674,11 +674,15 @@ function spinDiscoverRewardLabel(choice, index) {
   return choice.reward_label || choice.benefit_label || choice.label || `Beneficio ${index + 1}`;
 }
 
+function spinDiscoverChoiceHasReward(choice = {}) {
+  return choice.delivery_mode !== "none" && choice.is_winner !== false && choice.reward_value?.is_winner !== false;
+}
+
 function renderSpinDiscoverExperience(choices = []) {
   selectedChoice = null;
   let choiceLocked = false;
-  experienceTitle.textContent = "Gira una carta y descubre tu premio";
-  experienceCopy.textContent = "Elige con cuidado: solo puedes girar una carta y el premio revelado quedará asociado a tu QR.";
+  experienceTitle.textContent = "Gira una carta y descubre tu resultado";
+  experienceCopy.textContent = "Elige con cuidado: solo puedes girar una carta y el resultado revelado quedará registrado.";
   experienceBody.innerHTML = `
     <article class="question-card spin-discover-experience">
       <div class="question-title"><span>?</span><strong>Elige una carta. Cuando la gires, las demás quedarán bloqueadas.</strong></div>
@@ -686,9 +690,10 @@ function renderSpinDiscoverExperience(choices = []) {
         ${choices.map((choice, index) => {
           const value = choice.value || choice.key || choice.label || index;
           const rewardLabel = spinDiscoverRewardLabel(choice, index);
+          const hasReward = spinDiscoverChoiceHasReward(choice);
           const imageUrl = choice.image_data_url || choice.image_url || "";
           return `
-            <button class="reveal-card spin-discover-card" type="button" data-choice="${escapeHtml(value)}" data-reward-label="${escapeHtml(rewardLabel)}" aria-label="Carta ${index + 1}: girar para descubrir" aria-pressed="false">
+            <button class="reveal-card spin-discover-card" type="button" data-choice="${escapeHtml(value)}" data-reward-label="${escapeHtml(rewardLabel)}" data-has-reward="${hasReward ? "true" : "false"}" aria-label="Carta ${index + 1}: girar para descubrir" aria-pressed="false">
               <span class="spin-discover-card-inner">
                 <span class="spin-discover-card-face spin-discover-card-front" aria-hidden="true">
                   <span class="spin-discover-card-mark">Q</span>
@@ -697,7 +702,7 @@ function renderSpinDiscoverExperience(choices = []) {
                 </span>
                 <span class="spin-discover-card-face spin-discover-card-back" aria-hidden="true">
                   ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="">` : `<span class="spin-discover-reward-icon" aria-hidden="true">✦</span>`}
-                  <small>Premio revelado</small>
+                  <small>${hasReward ? "Premio revelado" : "Resultado revelado"}</small>
                   <strong>${escapeHtml(rewardLabel)}</strong>
                 </span>
               </span>
@@ -717,6 +722,7 @@ function renderSpinDiscoverExperience(choices = []) {
       choiceLocked = true;
       selectedChoice = button.dataset.choice;
       const rewardLabel = button.dataset.rewardLabel || "Premio desbloqueado";
+      const hasReward = button.dataset.hasReward !== "false";
       cards.forEach((item) => {
         const selected = item === button;
         item.disabled = true;
@@ -726,13 +732,15 @@ function renderSpinDiscoverExperience(choices = []) {
         item.classList.toggle("is-selected", selected);
         item.classList.toggle("is-locked", !selected);
         item.setAttribute("aria-label", selected
-          ? `Carta elegida. Premio: ${rewardLabel}`
+          ? `Carta elegida. Resultado: ${rewardLabel}`
           : "Carta bloqueada porque ya elegiste tu premio");
       });
-      result.innerHTML = `<span>Tu premio</span><strong>${escapeHtml(rewardLabel)}</strong><small>Este será el beneficio asociado a tu QR.</small>`;
+      result.innerHTML = hasReward
+        ? `<span>Tu premio</span><strong>${escapeHtml(rewardLabel)}</strong><small>Este será el beneficio asociado a tu entrega.</small>`
+        : `<span>Tu resultado</span><strong>${escapeHtml(rewardLabel)}</strong><small>La participación quedará registrada sin generar ticket ni descarga.</small>`;
       result.classList.remove("hidden");
       completeButton.disabled = false;
-      completeButton.textContent = "Generar mi QR con este premio";
+      completeButton.textContent = hasReward ? "Recibir mi premio" : "Ver mi resultado";
       setProgress(1, 1);
       window.setTimeout(() => completeButton.focus(), 720);
     }, { once: true });

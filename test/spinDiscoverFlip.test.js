@@ -25,7 +25,8 @@ test("the first flipped card locks every option and owns the QR reward", () => {
   assert.match(player, /cards\.forEach\(\(item\) => \{[\s\S]*item\.disabled = true/);
   assert.match(player, /item\.classList\.toggle\("is-locked", !selected\)/);
   assert.match(player, /completeActivation\(\{ selected_choice: selectedChoice \}\)/);
-  assert.match(player, /Este será el beneficio asociado a tu QR/);
+  assert.match(player, /Este será el beneficio asociado a tu entrega/);
+  assert.match(player, /La participación quedará registrada sin generar ticket ni descarga/);
 });
 
 test("the server rejects a missing or unknown reveal card instead of issuing a mismatched prize", () => {

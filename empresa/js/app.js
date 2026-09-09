@@ -2,8 +2,8 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260908-retained-activation-catalog-v452";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907";
+const APP_VERSION = "empresa-20260909-spin-card-delivery-v453";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 30000;
@@ -5440,7 +5440,9 @@ function fillDigitalAssetSelect(select, requestedId = select?.value || "", reque
 function syncActivationDigitalAssetOptions() {
   fillDigitalAssetSelect(triviaDigitalAssetInput);
   document.querySelectorAll("[data-scratch-asset]").forEach((select) => fillDigitalAssetSelect(select));
+  document.querySelectorAll("[data-spin-asset]").forEach((select) => fillDigitalAssetSelect(select));
   syncScratchDeliveryFields();
+  syncSpinDiscoverDeliveryFields();
 }
 
 function scratchAssetFulfillment(assetId) {
@@ -5482,6 +5484,23 @@ function syncScratchDeliveryFields(root = document) {
   });
 }
 
+function syncSpinDiscoverDeliveryFields(root = document) {
+  root.querySelectorAll("[data-spin-delivery], [data-edit-spin-delivery]").forEach((select) => {
+    const card = select.closest(".scratch-config-card");
+    const assetField = card?.querySelector("[data-spin-asset-field]");
+    const assetSelect = assetField?.querySelector("[data-spin-asset]");
+    const digital = select.value === "digital";
+    assetField?.classList.toggle("hidden", !digital);
+    assetField?.toggleAttribute("hidden", !digital);
+    if (assetSelect) {
+      assetSelect.disabled = !digital;
+      assetSelect.required = digital;
+    }
+    card?.classList.toggle("is-digital", digital);
+    card?.classList.toggle("is-loser", select.value === "none");
+  });
+}
+
 function productScopeFromValue(value = {}, metadata = {}) {
   return value?.product_scope || value?.value?.product_scope || metadata?.benefit_product_scope || null;
 }
@@ -5519,6 +5538,11 @@ function interactiveBaseBenefitLabel(type, activationPayload = {}) {
     const firstChoice = (activationPayload.choices || collectFlatChoiceOptions(type))[0];
     const firstLabel = String(firstChoice?.reward_label || firstChoice?.label || "").trim();
     return firstLabel.length >= 2 ? firstLabel : "Beneficio Raspa digital";
+  }
+  if (type === "SPIN_DISCOVER") {
+    const firstWinner = (activationPayload.reveal_cards || collectRevealCards()).find((card) => card.is_winner !== false);
+    const firstLabel = String(firstWinner?.benefit_label || "").trim();
+    return firstLabel.length >= 2 ? firstLabel : "Resultado Gira y descubre";
   }
   return configured || "Beneficio desbloqueado";
 }
@@ -29091,10 +29115,10 @@ function setActivationType(type) {
     updateGamingActivationWizard();
   }, 0);
   if (triviaBenefitLabelInput) {
-    const zoneBasedBenefit = nextType === "SCRATCH_DIGITAL";
-    triviaBenefitLabelInput.required = !zoneBasedBenefit;
-    triviaBenefitLabelInput.placeholder = zoneBasedBenefit
-      ? "Opcional: se usaran los beneficios de cada zona"
+    const perCardBenefit = ["SCRATCH_DIGITAL", "SPIN_DISCOVER"].includes(nextType);
+    triviaBenefitLabelInput.required = !perCardBenefit;
+    triviaBenefitLabelInput.placeholder = perCardBenefit
+      ? "Opcional: se usaran los resultados de cada card o zona"
       : "Beneficio desbloqueado por participar";
   }
   if (nextType === "TRIVIA") {
@@ -29114,12 +29138,13 @@ function setActivationType(type) {
   }
   syncThermometerFulfillmentRestriction(nextType);
   const sharedFulfillmentPanel = triviaBenefitFulfillmentModeInput?.closest(".benefit-fulfillment-panel");
-  const scratchSlotDelivery = nextType === "SCRATCH_DIGITAL";
-  sharedFulfillmentPanel?.classList.toggle("hidden", scratchSlotDelivery);
-  sharedFulfillmentPanel?.toggleAttribute("hidden", scratchSlotDelivery);
-  if (scratchSlotDelivery) {
+  const perCardDelivery = ["SCRATCH_DIGITAL", "SPIN_DISCOVER"].includes(nextType);
+  sharedFulfillmentPanel?.classList.toggle("hidden", perCardDelivery);
+  sharedFulfillmentPanel?.toggleAttribute("hidden", perCardDelivery);
+  if (perCardDelivery) {
     syncActivationDigitalAssetOptions();
     syncScratchDeliveryFields();
+    syncSpinDiscoverDeliveryFields();
   }
   updateActivationQuestionCountControls();
   if (triviaBuilderHint) {
@@ -29558,14 +29583,30 @@ function collectOpenQuestions() {
 
 function collectRevealCards() {
   const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
-  const fulfillment = benefitFulfillmentFromInputs(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaEcommerceUrlInput, triviaEcommerceInstructionsInput);
   return Array.from(document.querySelectorAll("[data-reveal-card]"))
-    .map((input) => ({
-      label: input.dataset.revealCard || "Card",
-      benefit_label: input.value.trim(),
-      benefit_type: triviaBenefitTypeInput?.value || "CUSTOM",
-      benefit_value: withBenefitFulfillment(withBenefitProductScope(activationChoiceBenefitValue(input.value.trim()), productScope), fulfillment),
-    }))
+    .map((input) => {
+      const slot = input.dataset.revealCard || "Card";
+      const card = input.closest(".scratch-config-card");
+      const delivery = card?.querySelector(`[data-spin-delivery="${slot}"]`)?.value || "physical";
+      const assetId = card?.querySelector(`[data-spin-asset="${slot}"]`)?.value || "";
+      const isWinner = delivery !== "none";
+      const baseValue = {
+        ...activationChoiceBenefitValue(input.value.trim()),
+        label: input.value.trim(),
+        spin_slot: slot,
+        is_winner: isWinner,
+      };
+      return {
+        label: slot,
+        benefit_label: input.value.trim(),
+        benefit_type: triviaBenefitTypeInput?.value || "CUSTOM",
+        benefit_value: isWinner
+          ? withBenefitFulfillment(withBenefitProductScope(baseValue, productScope), delivery === "digital" ? scratchAssetFulfillment(assetId) : scratchPhysicalFulfillment())
+          : withBenefitProductScope(baseValue, productScope),
+        delivery_mode: delivery,
+        is_winner: isWinner,
+      };
+    })
     .filter((item) => item.benefit_label);
 }
 
@@ -30237,6 +30278,8 @@ function buildInteractiveActivationPayload(type, activationPayload) {
       reward_type: card.benefit_type || benefit.reward_type,
       reward_label: card.benefit_label,
       reward_value: card.benefit_value || benefit.reward_value,
+      delivery_mode: card.delivery_mode || "physical",
+      is_winner: card.is_winner !== false,
     }));
     return {
       ...base,
@@ -30509,7 +30552,7 @@ function validateTriviaLauncherForm() {
     triviaBenefitFulfillmentModeInput?.focus();
     return null;
   }
-  if (type !== "SCRATCH_DIGITAL" && !validateBenefitFulfillment(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaLauncherMessage, "beneficio de la activación")) return null;
+  if (!["SCRATCH_DIGITAL", "SPIN_DISCOVER"].includes(type) && !validateBenefitFulfillment(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaLauncherMessage, "beneficio de la activación")) return null;
   if (!validateActivationParticipantLock()) return null;
   if (!validateActivationProductIntent()) return null;
   const activationFormFields = validateActivationCustomFields();
@@ -30541,6 +30584,15 @@ function validateTriviaLauncherForm() {
     const revealCards = collectRevealCards();
     if (revealCards.length < 2) {
       setInlineMessage(triviaLauncherMessage, "Configura al menos dos cards de beneficio para gira y descubre.", "error");
+      return null;
+    }
+    const missingAsset = revealCards.find((card) => (
+      card.delivery_mode === "digital"
+      && !card.benefit_value?.fulfillment?.asset_id
+    ));
+    if (missingAsset) {
+      setInlineMessage(triviaLauncherMessage, `Selecciona el activo digital de la card ${missingAsset.label}.`, "error");
+      document.querySelector(`[data-spin-asset="${missingAsset.label}"]`)?.focus();
       return null;
     }
     return { reveal_cards: revealCards, spin_rewards: revealCards };
@@ -31739,6 +31791,22 @@ function ensureActivationEditModal(view = document.querySelector('.view-section[
           </div>
           <small>El activo digital se habilita como descarga segura y no genera QR. Una casilla no ganadora no entrega ningun beneficio.</small>
         </section>
+        <section class="activation-edit-scratch span-2 hidden" id="activationEditSpinConfig">
+          <div class="activation-edit-scratch-head">
+            <strong>Cards de Gira y descubre</strong>
+            <p>Decide individualmente si cada card entrega ticket QR, activo digital o ningun premio.</p>
+          </div>
+          <div class="scratch-config-grid">
+            ${["A", "B", "C", "D"].map((slot) => `
+              <div class="scratch-config-card">
+                <strong>Card ${slot}</strong>
+                <label><span>Resultado y entrega</span><select data-edit-spin-delivery="${slot}"><option value="physical">Entrega ticket QR</option><option value="digital">Entrega activo digital</option><option value="none">No entrega premio</option></select></label>
+                <label><span>Texto que vera el cliente</span><input data-edit-spin-label="${slot}" type="text" maxlength="180"></label>
+                <label class="hidden" data-spin-asset-field hidden><span>Activo digital asignado</span><select data-spin-asset="${slot}"><option value="">Selecciona un activo digital</option></select></label>
+              </div>`).join("")}
+          </div>
+          <small>Las cards sin premio registran la participacion y muestran su mensaje, sin generar ticket ni descarga.</small>
+        </section>
         <label><span>Dias entre intentos</span><input id="activationEditCooldownInput" type="number" min="0" max="365"></label>
         <label class="span-2"><span>Regla para ganadores</span><select id="activationEditWinnerPolicyInput">
           <option value="block_previous_winners">Si ya gano, bloquear nuevo beneficio</option>
@@ -31818,6 +31886,26 @@ async function editInteractiveActivation(id) {
       fillDigitalAssetSelect(assetField, fulfillment?.asset_id || choice.reward_value?.digital_asset_id || "", fulfillment?.asset_title || choice.reward_value?.digital_asset_title || "");
     });
     syncScratchDeliveryFields(modal);
+  }
+  const spinConfig = modal.querySelector("#activationEditSpinConfig");
+  const isSpinActivation = activation.activation_type === "SPIN_DISCOVER";
+  spinConfig?.classList.toggle("hidden", !isSpinActivation);
+  if (isSpinActivation) {
+    const spinChoices = Array.isArray(activation.reward_config?.choices) ? activation.reward_config.choices : [];
+    ["A", "B", "C", "D"].forEach((slot, index) => {
+      const choice = spinChoices[index] || {};
+      const winner = choice.is_winner !== false && choice.reward_value?.is_winner !== false && choice.delivery_mode !== "none";
+      const fulfillment = benefitFulfillmentObject(choice.reward_value || {});
+      const delivery = winner && fulfillment?.mode === "DIGITAL_ASSET" ? "digital" : winner ? "physical" : "none";
+      const label = choice.reward_label || choice.benefit_label || choice.reward_value?.label || (winner ? "Beneficio sorpresa" : "No ganaste esta vez");
+      const deliveryField = modal.querySelector(`[data-edit-spin-delivery="${slot}"]`);
+      const labelField = modal.querySelector(`[data-edit-spin-label="${slot}"]`);
+      const assetField = deliveryField?.closest(".scratch-config-card")?.querySelector(`[data-spin-asset="${slot}"]`);
+      if (deliveryField) deliveryField.value = delivery;
+      if (labelField) labelField.value = label;
+      fillDigitalAssetSelect(assetField, fulfillment?.asset_id || choice.reward_value?.digital_asset_id || "", fulfillment?.asset_title || choice.reward_value?.digital_asset_title || "");
+    });
+    syncSpinDiscoverDeliveryFields(modal);
   }
   modal.querySelector("#activationEditCooldownInput").value = currentLock.cooldown_days ?? 7;
   modal.querySelector("#activationEditWinnerPolicyInput").value = currentLock.winner_policy || "block_previous_winners";
@@ -31928,6 +32016,60 @@ async function submitActivationEditModal(event) {
       return;
     }
   }
+  let spinChoices = null;
+  if (activation.activation_type === "SPIN_DISCOVER") {
+    const previousChoices = Array.isArray(activation.reward_config?.choices) ? activation.reward_config.choices : [];
+    const rewardType = modal.querySelector("#activationEditRewardTypeInput")?.value || "CUSTOM";
+    spinChoices = ["A", "B", "C", "D"].map((slot, index) => {
+      const previous = previousChoices[index] || {};
+      const label = String(modal.querySelector(`[data-edit-spin-label="${slot}"]`)?.value || "").trim();
+      const delivery = modal.querySelector(`[data-edit-spin-delivery="${slot}"]`)?.value || "physical";
+      const isWinner = delivery !== "none";
+      const assetId = modal.querySelector(`[data-edit-spin-delivery="${slot}"]`)?.closest(".scratch-config-card")?.querySelector(`[data-spin-asset="${slot}"]`)?.value || "";
+      const baseRewardValue = {
+        ...(previous.reward_value || {}),
+        ...activationChoiceBenefitValue(label),
+        label,
+        spin_slot: slot,
+        is_winner: isWinner,
+      };
+      let spinRewardValue = baseRewardValue;
+      if (isWinner) {
+        spinRewardValue = withBenefitFulfillment(baseRewardValue, delivery === "digital" ? scratchAssetFulfillment(assetId) : scratchPhysicalFulfillment());
+      } else {
+        delete spinRewardValue.fulfillment;
+        delete spinRewardValue.redemption_channel;
+        delete spinRewardValue.digital_asset_id;
+        delete spinRewardValue.ecommerce_code;
+        delete spinRewardValue.ecommerce_url;
+      }
+      return {
+        ...previous,
+        value: previous.value || slot,
+        label: previous.label || slot,
+        benefit_label: label,
+        reward_label: label,
+        benefit_type: rewardType,
+        reward_type: rewardType,
+        delivery_mode: delivery,
+        is_winner: isWinner,
+        reward_value: spinRewardValue,
+      };
+    });
+    if (spinChoices.some((choice) => !choice.reward_label)) {
+      showFeedback("Escribe el texto que vera el cliente en las cuatro cards.", "error", { title: "Falta configurar una card" });
+      return;
+    }
+    const missingDigitalAsset = spinChoices.find((choice) => (
+      choice.delivery_mode === "digital"
+      && !choice.reward_value?.fulfillment?.asset_id
+    ));
+    if (missingDigitalAsset) {
+      showFeedback(`Selecciona el activo digital de la card ${missingDigitalAsset.value}.`, "error", { title: "Falta asignar el archivo" });
+      modal.querySelector(`[data-edit-spin-delivery="${missingDigitalAsset.value}"]`)?.closest(".scratch-config-card")?.querySelector("[data-spin-asset]")?.focus();
+      return;
+    }
+  }
   const startsAtValue = String(modal.querySelector("#activationEditStartsAtInput")?.value || "").trim();
   const endsAtValue = String(modal.querySelector("#activationEditEndsAtInput")?.value || "").trim();
   if ((startsAtValue && Number.isNaN(new Date(startsAtValue).getTime())) || (endsAtValue && Number.isNaN(new Date(endsAtValue).getTime()))) {
@@ -31965,6 +32107,7 @@ async function submitActivationEditModal(event) {
         reward_label: String(modal.querySelector("#activationEditRewardLabelInput")?.value || "").trim() || "Beneficio desbloqueado",
         reward_conditions: String(modal.querySelector("#activationEditRewardConditionsInput")?.value || "").trim() || null,
         ...(scratchChoices ? { choices: scratchChoices } : {}),
+        ...(spinChoices ? { choices: spinChoices } : {}),
       },
       visual_config: {
         ...(activation.visual_config || {}),
@@ -62135,8 +62278,13 @@ document.addEventListener("change", (event) => {
   if (!event.target?.matches?.("[data-scratch-winner], [data-edit-scratch-winner]")) return;
   syncScratchDeliveryFields(event.target.closest(".scratch-config-card") || document);
 });
+document.addEventListener("change", (event) => {
+  if (!event.target?.matches?.("[data-spin-delivery], [data-edit-spin-delivery]")) return;
+  syncSpinDiscoverDeliveryFields(event.target.closest(".scratch-config-card") || document);
+});
 syncBenefitFulfillmentFields();
 syncScratchDeliveryFields();
+syncSpinDiscoverDeliveryFields();
 syncActivationBenefitValueInputs({ fromLegacy: true });
 triviaBenefitTypeInput?.addEventListener("change", () => syncActivationBenefitValueInputs());
 triviaBenefitAmountKindInput?.addEventListener("change", () => {
