@@ -58,7 +58,7 @@ function minigameInstruction(type, config = {}) {
     MEMORY_PAIRS: "Encuentra pares rapidamente y acumula puntos por cada acierto.",
     FAST_TAP: "Toca cada objetivo apenas aparezca. La velocidad define tu score.",
     MINI_MAZE: "Avanza tocando objetivos cercanos a la ruta y evita penalizaciones.",
-    WHACK_A_MOLE: "Toca solo los objetivos activos antes de que se escondan y evita penalizaciones.",
+    WHACK_A_MOLE: "Toca los topos antes de que se escondan, encadena rachas, aprovecha el topo dorado y evita las trampas rojas.",
     DODGE_RUNNER: "Mueve al corredor, recoge beneficios y esquiva obstaculos hasta terminar el tiempo.",
     BALLOON_POP: "Revienta globos de valor, encadena aciertos y evita globos penalizados.",
     ROULETTE_SPIN: "Gira la ruleta, detenla en una zona de beneficio y acumula el score requerido.",
@@ -1224,32 +1224,40 @@ function renderThermometer() {
 function renderMinigame() {
   const config = currentActivation.game_config || {};
   const rouletteMode = currentActivation.activation_type === "ROULETTE_SPIN";
+  const whackMode = currentActivation.activation_type === "WHACK_A_MOLE";
   experienceStage.classList.remove("hidden");
   experienceTitle.textContent = currentActivation.activation_label || (rouletteMode ? "Ruleta de beneficios" : "Minijuego con score");
   experienceCopy.textContent = minigameInstruction(currentActivation.activation_type, config);
   experienceBody.innerHTML = `
-    <article class="game-panel retro-game-panel">
+    <article class="game-panel retro-game-panel ${whackMode ? "whack-a-mole-panel" : ""}">
       <div class="game-hud">
-        <span id="scoreValue">${rouletteMode ? "Resultado pendiente" : "Score: 0"}</span>
+        <span id="scoreValue">${rouletteMode ? "Resultado pendiente" : whackMode ? "Puntos: 0" : "Score: 0"}</span>
         <span id="timeValue" ${rouletteMode ? 'style="display:none"' : ""}>Tiempo: ${escapeHtml(config.duration_seconds || 30)}</span>
         <span id="livesValue" ${rouletteMode ? 'style="display:none"' : ""}>Vidas: ${escapeHtml(config.lives || 3)}</span>
         <span id="gameObjectiveValue">${escapeHtml(minigameShortGoal(currentActivation.activation_type))}</span>
       </div>
+      ${whackMode ? `
+        <div class="whack-legend" aria-label="Cómo jugar">
+          <span><i class="whack-legend-mole" aria-hidden="true">●</i> Toca el topo</span>
+          <span><i class="whack-legend-gold" aria-hidden="true">★</i> Topo dorado: puntos extra</span>
+          <span><i class="whack-legend-trap" aria-hidden="true">!</i> Evita la trampa</span>
+        </div>` : ""}
       <div class="game-screen-wrap">
-        <canvas class="game-canvas" id="gameCanvas" width="720" height="405"></canvas>
+        <canvas class="game-canvas" id="gameCanvas" width="720" height="405" ${whackMode ? 'aria-label="Tablero de Golpea el topo. Toca los topos que aparezcan y evita las trampas."' : ""}></canvas>
       </div>
-      <div class="game-controls" aria-label="Controles touch">
+      <div class="game-controls" aria-label="Controles touch" ${whackMode ? "hidden" : ""}>
         <button type="button" data-game-control="up">Arriba</button>
         <button type="button" data-game-control="left">Izq</button>
         <button type="button" data-game-control="fire">Accion</button>
         <button type="button" data-game-control="right">Der</button>
         <button type="button" data-game-control="down">Abajo</button>
       </div>
-      <button class="submit-button" type="button" id="startGameButton">${rouletteMode ? "Girar ruleta" : "Iniciar partida"}</button>
-      <small class="game-help">${rouletteMode ? "Toca la ruleta o el boton de accion para detenerla. El segmento final define el beneficio." : "Touch directo en pantalla. En celular tambien puedes usar los controles inferiores."}</small>
+      <button class="submit-button" type="button" id="startGameButton">${rouletteMode ? "Girar ruleta" : whackMode ? "Comenzar el reto" : "Iniciar partida"}</button>
+      <small class="game-help">${rouletteMode ? "Toca la ruleta o el boton de accion para detenerla. El segmento final define el beneficio." : whackMode ? "Toca directamente el tablero. Encadena aciertos para multiplicar puntos; tocar una trampa sí descuenta una vida." : "Touch directo en pantalla. En celular tambien puedes usar los controles inferiores."}</small>
     </article>
   `;
   document.getElementById("startGameButton").addEventListener("click", startConfiguredMinigame);
+  if (whackMode) drawWhackPreview(document.getElementById("gameCanvas"), config);
 }
 
 function minigameShortGoal(type) {
@@ -1261,7 +1269,7 @@ function minigameShortGoal(type) {
     MEMORY_PAIRS: "Encuentra pares",
     FAST_TAP: "Toca rapido",
     MINI_MAZE: "Llega a meta",
-    WHACK_A_MOLE: "Atina al topo",
+    WHACK_A_MOLE: "Encadena topos",
     DODGE_RUNNER: "Esquiva y recoge",
     BALLOON_POP: "Revienta globos",
     ROULETTE_SPIN: "Deten la ruleta",
@@ -2402,52 +2410,136 @@ function drawMazeObjects(ctx, walls, goal, player) {
   ctx.fill();
 }
 
+function drawWhackPreview(canvas, config = {}) {
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const grid = buildWhackGrid(canvas.width, canvas.height, config);
+  const target = { index: Math.floor(grid.length / 2), kind: "mole", good: true, ttl: 1.4 };
+  drawWhackScene(ctx, canvas.width, canvas.height, grid, target, 0.55, 0, { text: "Toca el topo cuando aparezca", tone: "info", age: 0 }, null, [], 0);
+}
+
 function startWhackAMole(runtime) {
   const { ctx, width, height } = runtime;
   const grid = buildWhackGrid(width, height, runtime.config);
-  let target = createWhackTarget(grid, runtime.config);
+  let target = createWhackTarget(grid, runtime.config, { elapsed: 0 });
   let age = 0;
   let combo = 0;
+  let bestCombo = 0;
+  let hits = 0;
+  let misses = 0;
+  let traps = 0;
   let dead = false;
+  let feedback = { text: "¡Prepárate!", tone: "info", age: 0 };
+  let hammer = null;
+  const particles = [];
+  const comboBonus = boundedGameNumber(runtime.config.combo_bonus, 10, 0, 50);
+  const scoreValue = document.getElementById("scoreValue");
+  const objectiveValue = document.getElementById("gameObjectiveValue");
+
+  const updateHud = () => {
+    if (scoreValue) scoreValue.textContent = `Puntos: ${runtime.score}`;
+    if (objectiveValue) objectiveValue.textContent = combo > 1 ? `Racha x${combo} · ${hits} aciertos` : `${hits} aciertos · récord x${bestCombo}`;
+  };
+  const nextTarget = (elapsed) => {
+    target = createWhackTarget(grid, runtime.config, { lastIndex: target?.index, elapsed, combo });
+    age = 0;
+  };
+  const burst = (hole, tone) => {
+    for (let index = 0; index < 10; index += 1) {
+      const angle = (Math.PI * 2 * index) / 10 + Math.random() * 0.35;
+      particles.push({
+        x: hole.x,
+        y: hole.y - 28,
+        vx: Math.cos(angle) * (55 + Math.random() * 85),
+        vy: Math.sin(angle) * (55 + Math.random() * 85) - 35,
+        age: 0,
+        ttl: 0.46 + Math.random() * 0.2,
+        tone,
+      });
+    }
+  };
+
   runtime.onPointerDown = (pos) => {
     if (dead) return;
-    const hitIndex = grid.findIndex((hole) => Math.hypot(pos.x - hole.x, pos.y - hole.y) <= hole.r);
-    if (hitIndex < 0) {
+    const visible = whackTargetVisibility(target, age);
+    const targetHole = grid[target.index];
+    const targetY = targetHole.y + 13 - visible * (targetHole.r + 30);
+    const hitTarget = visible >= 0.3 && Math.hypot(pos.x - targetHole.x, pos.y - targetY) <= targetHole.r * 1.18;
+    hammer = { x: pos.x, y: pos.y, age: 0 };
+    if (!hitTarget) {
+      misses += 1;
+      runtime.addScore(-Math.ceil(runtime.penalty / 2));
+      combo = 0;
+      feedback = { text: "¡Ese hueco estaba vacío!", tone: "miss", age: 0 };
+    } else if (target.kind !== "trap") {
+      combo += 1;
+      bestCombo = Math.max(bestCombo, combo);
+      hits += 1;
+      const multiplier = target.kind === "gold" ? 2 : 1;
+      const earned = runtime.points * multiplier + Math.min(combo - 1, 8) * comboBonus;
+      runtime.addScore(earned);
+      feedback = { text: target.kind === "gold" ? `¡Dorado! +${earned}` : combo >= 3 ? `¡Racha x${combo}! +${earned}` : `¡Bien! +${earned}`, tone: target.kind, age: 0 };
+      burst(grid[target.index], target.kind);
+      nextTarget((Date.now() - runtime.startedAt) / 1000);
+    } else {
+      traps += 1;
       runtime.damage(1);
       combo = 0;
-    } else if (hitIndex === target.index && target.good) {
-      combo += 1;
-      runtime.addScore(runtime.points + Math.min(combo, 5) * 5);
-      target = createWhackTarget(grid, runtime.config);
-      age = 0;
-    } else {
-      runtime.damage(target.good ? 1 : 2);
-      combo = 0;
-      target = createWhackTarget(grid, runtime.config);
-      age = 0;
+      feedback = { text: "¡Era una trampa!", tone: "trap", age: 0 };
+      burst(grid[target.index], "trap");
+      nextTarget((Date.now() - runtime.startedAt) / 1000);
     }
+    updateHud();
     if (runtime.lives <= 0) dead = true;
   };
-  runtime.loop((dt, elapsed) => {
+
+  runtime.setScore(0);
+  updateHud();
+  runtime.loop((dt, elapsed, remaining) => {
+    feedback.age += dt;
+    if (hammer) {
+      hammer.age += dt;
+      if (hammer.age > 0.28) hammer = null;
+    }
+    particles.forEach((particle) => {
+      particle.age += dt;
+      particle.x += particle.vx * dt;
+      particle.y += particle.vy * dt;
+      particle.vy += 250 * dt;
+    });
+    for (let index = particles.length - 1; index >= 0; index -= 1) {
+      if (particles[index].age >= particles[index].ttl) particles.splice(index, 1);
+    }
+    runtime.completionPayload = {
+      metadata: {
+        game_stats: {
+          game: "WHACK_A_MOLE",
+          hits,
+          misses,
+          traps,
+          best_combo: bestCombo,
+          accuracy_percent: Math.round((hits / Math.max(1, hits + misses + traps)) * 100),
+        },
+      },
+    };
     if (dead) {
-      drawRetroBackground(ctx, width, height, "GOLPEA EL TOPO");
-      drawWhackGrid(ctx, grid, target, age, combo);
-      drawGameOver(ctx, width, height);
+      drawWhackScene(ctx, width, height, grid, target, age, combo, feedback, hammer, particles, elapsed);
+      drawGameOver(ctx, width, height, `FIN · ${hits} ACIERTOS`);
       if (shouldFinishAfterNoLives(runtime, elapsed)) runtime.finish();
       return;
     }
     age += dt;
     if (age > target.ttl) {
-      if (target.good) {
-        runtime.damage(1);
+      if (target.kind !== "trap") {
+        misses += 1;
         combo = 0;
+        feedback = { text: target.kind === "gold" ? "¡Se escapó el dorado!" : "¡Se escapó!", tone: "miss", age: 0 };
       }
-      target = createWhackTarget(grid, runtime.config);
-      age = 0;
-      if (runtime.lives <= 0) dead = true;
+      nextTarget(elapsed);
+      updateHud();
     }
-    drawRetroBackground(ctx, width, height, "GOLPEA EL TOPO");
-    drawWhackGrid(ctx, grid, target, age, combo);
+    drawWhackScene(ctx, width, height, grid, target, age, combo, feedback, hammer, particles, elapsed);
+    if (remaining <= 0 && objectiveValue) objectiveValue.textContent = `${hits} aciertos · mejor racha x${bestCombo}`;
   });
 }
 
@@ -2456,46 +2548,197 @@ function buildWhackGrid(width, height, config = {}) {
   const rows = boundedGameInteger(config.hole_rows, 3, 2, 4);
   const cols = boundedGameInteger(config.hole_cols, 3, 2, 4);
   const xGap = Math.min(170, (width - 120) / Math.max(1, cols - 1));
-  const yGap = Math.min(92, (height - 150) / Math.max(1, rows - 1));
+  const yGap = Math.min(88, (height - 166) / Math.max(1, rows - 1));
   const startX = width / 2 - ((cols - 1) * xGap) / 2;
-  const startY = 94;
+  const startY = 118;
   for (let row = 0; row < rows; row += 1) {
     for (let col = 0; col < cols; col += 1) {
-      holes.push({ x: startX + col * xGap, y: startY + row * yGap, r: rows > 3 || cols > 3 ? 28 : 34 });
+      holes.push({ x: startX + col * xGap, y: startY + row * yGap, r: rows > 3 || cols > 3 ? 27 : 33 });
     }
   }
   return holes;
 }
 
-function createWhackTarget(grid, config = {}) {
+function createWhackTarget(grid, config = {}, state = {}) {
+  let index = Math.floor(Math.random() * grid.length);
+  if (grid.length > 1 && index === state.lastIndex) index = (index + 1 + Math.floor(Math.random() * (grid.length - 1))) % grid.length;
+  const badRate = boundedGameNumber(config.bad_target_rate, 14, 0, 45) / 100;
+  const goldRate = boundedGameNumber(config.golden_target_rate, 12, 0, 35) / 100;
+  const roll = Math.random();
+  const kind = roll < badRate ? "trap" : roll < badRate + goldRate ? "gold" : "mole";
+  const difficulty = String(config.whack_difficulty || "dynamic");
+  const difficultyFactor = difficulty === "relaxed" ? 0.82 : difficulty === "fast" ? 1.18 : 1;
+  const ramp = 1 + Math.min(0.42, Number(state.elapsed || 0) * 0.014 + Number(state.combo || 0) * 0.012);
+  const baseTtl = boundedGameNumber(config.target_ttl_ms, 1100, 550, 1800) / 1000;
   return {
-    index: Math.floor(Math.random() * grid.length),
-    good: Math.random() > boundedGameNumber(config.bad_target_rate, 18, 0, 45) / 100,
-    ttl: boundedGameNumber(config.target_ttl_ms, 950, 450, 1600) / 1000,
+    index,
+    kind,
+    good: kind !== "trap",
+    ttl: Math.max(0.46, baseTtl / (difficultyFactor * ramp)),
   };
+}
+
+function whackTargetVisibility(target, age) {
+  if (!target) return 0;
+  const rise = Math.min(1, age / 0.14);
+  const hide = Math.min(1, Math.max(0, target.ttl - age) / 0.14);
+  return Math.max(0, Math.min(rise, hide));
+}
+
+function drawWhackScene(ctx, width, height, grid, target, age, combo, feedback, hammer, particles, elapsed) {
+  const sky = ctx.createLinearGradient(0, 0, 0, height);
+  sky.addColorStop(0, "#bcecff");
+  sky.addColorStop(0.44, "#e9fbff");
+  sky.addColorStop(0.45, "#8ed36d");
+  sky.addColorStop(1, "#3e8f52");
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "rgba(255,255,255,.72)";
+  [[92, 58, 54], [590, 72, 66]].forEach(([x, y, size]) => {
+    ctx.beginPath();
+    ctx.arc(x, y, size * 0.34, 0, Math.PI * 2);
+    ctx.arc(x + size * 0.34, y - 8, size * 0.42, 0, Math.PI * 2);
+    ctx.arc(x + size * 0.72, y, size * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.fillStyle = "rgba(4, 58, 45, .78)";
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(width / 2 - 150, 16, 300, 52, 18);
+  else ctx.rect(width / 2 - 150, 16, 300, 52);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.font = "900 21px Inter, sans-serif";
+  ctx.fillText("GOLPEA EL TOPO", width / 2, 49);
+  ctx.textAlign = "left";
+  drawWhackGrid(ctx, grid, target, age, combo);
+  drawWhackParticles(ctx, particles);
+  if (hammer) drawWhackHammer(ctx, hammer);
+  if (feedback?.text && feedback.age < 0.9) {
+    const alpha = Math.max(0, 1 - Math.max(0, feedback.age - 0.55) / 0.35);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = feedback.tone === "trap" || feedback.tone === "miss" ? "#8b173d" : feedback.tone === "gold" ? "#7a4b00" : "#064f43";
+    ctx.font = "900 18px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(feedback.text, width / 2, height - 18 - Math.min(16, feedback.age * 22));
+    ctx.restore();
+  }
+  ctx.fillStyle = "rgba(255,255,255,.7)";
+  ctx.font = "700 11px Inter, sans-serif";
+  ctx.fillText(`Ritmo ${elapsed < 8 ? "inicial" : elapsed < 18 ? "activo" : "máximo"}`, 16, height - 18);
 }
 
 function drawWhackGrid(ctx, grid, target, age, combo) {
   grid.forEach((hole, index) => {
-    ctx.fillStyle = "#17293b";
+    ctx.fillStyle = "rgba(19, 74, 45, .25)";
     ctx.beginPath();
-    ctx.ellipse(hole.x, hole.y + 14, hole.r + 16, hole.r * 0.48, 0, 0, Math.PI * 2);
+    ctx.ellipse(hole.x, hole.y + 19, hole.r + 24, hole.r * 0.62, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.fillStyle = "#54341f";
+    ctx.beginPath();
+    ctx.ellipse(hole.x, hole.y + 13, hole.r + 16, hole.r * 0.48, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#7f5633";
+    ctx.lineWidth = 5;
+    ctx.stroke();
     if (index !== target.index) return;
-    const progress = Math.max(0, 1 - age / target.ttl);
-    const lift = 12 + progress * 18;
-    ctx.fillStyle = target.good ? "#f2b84b" : "#ff5c8a";
+    const visibility = whackTargetVisibility(target, age);
+    const headY = hole.y + 13 - visibility * (hole.r + 30);
+    ctx.save();
     ctx.beginPath();
-    ctx.arc(hole.x, hole.y - lift, hole.r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#07111f";
-    ctx.fillRect(hole.x - 12, hole.y - lift - 8, 7, 7);
-    ctx.fillRect(hole.x + 5, hole.y - lift - 8, 7, 7);
-    ctx.fillRect(hole.x - 10, hole.y - lift + 10, 20, 4);
+    ctx.rect(hole.x - hole.r - 12, hole.y - hole.r - 35, hole.r * 2 + 24, hole.r * 2 + 49);
+    ctx.clip();
+    if (target.kind === "trap") drawWhackTrap(ctx, hole.x, headY, hole.r, visibility);
+    else drawWhackMole(ctx, hole.x, headY, hole.r, target.kind === "gold", visibility);
+    ctx.restore();
   });
-  ctx.fillStyle = "#eafcff";
-  ctx.font = "800 14px monospace";
-  ctx.fillText(`COMBO ${combo}`, 18, 54);
+  if (combo > 1) {
+    ctx.fillStyle = "#064f43";
+    ctx.font = "900 16px Inter, sans-serif";
+    ctx.fillText(`RACHA ×${combo}`, 18, 94);
+  }
+}
+
+function drawWhackMole(ctx, x, y, radius, golden, visibility) {
+  const body = golden ? "#f1b93f" : "#8a5938";
+  const light = golden ? "#ffe59a" : "#d6a174";
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.arc(x - radius * 0.62, y - radius * 0.5, radius * 0.34, 0, Math.PI * 2);
+  ctx.arc(x + radius * 0.62, y - radius * 0.5, radius * 0.34, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(x, y, radius * 0.94, radius * 1.08, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = light;
+  ctx.beginPath();
+  ctx.ellipse(x, y + radius * 0.2, radius * 0.48, radius * 0.38, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#10201d";
+  ctx.beginPath();
+  ctx.arc(x - radius * 0.34, y - radius * 0.2, 4.5, 0, Math.PI * 2);
+  ctx.arc(x + radius * 0.34, y - radius * 0.2, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#43251d";
+  ctx.beginPath();
+  ctx.ellipse(x, y + radius * 0.05, 7, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#43251d";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y + radius * 0.22, 9, 0.12, Math.PI - 0.12);
+  ctx.stroke();
+  if (golden && visibility > 0.62) {
+    ctx.fillStyle = "#fff4b8";
+    ctx.font = "900 18px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("★", x, y - radius - 9);
+    ctx.textAlign = "left";
+  }
+}
+
+function drawWhackTrap(ctx, x, y, radius) {
+  ctx.fillStyle = "#d82f56";
+  ctx.beginPath();
+  ctx.arc(x, y, radius * 0.9, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(x - radius * 0.38, y - radius * 0.38);
+  ctx.lineTo(x + radius * 0.38, y + radius * 0.38);
+  ctx.moveTo(x + radius * 0.38, y - radius * 0.38);
+  ctx.lineTo(x - radius * 0.38, y + radius * 0.38);
+  ctx.stroke();
+}
+
+function drawWhackHammer(ctx, hammer) {
+  ctx.save();
+  ctx.translate(hammer.x + 9, hammer.y - 12);
+  ctx.rotate(-0.65 + Math.min(1, hammer.age / 0.12) * 0.78);
+  ctx.globalAlpha = Math.max(0, 1 - hammer.age / 0.3);
+  ctx.fillStyle = "#704124";
+  ctx.fillRect(-4, -4, 9, 48);
+  ctx.fillStyle = "#17334a";
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-25, -17, 50, 26, 7);
+  else ctx.rect(-25, -17, 50, 26);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawWhackParticles(ctx, particles) {
+  particles.forEach((particle) => {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, 1 - particle.age / particle.ttl);
+    ctx.fillStyle = particle.tone === "trap" ? "#d82f56" : particle.tone === "gold" ? "#ffd75e" : "#ffffff";
+    ctx.beginPath();
+    ctx.arc(particle.x, particle.y, particle.tone === "gold" ? 5 : 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
 }
 
 function startDodgeRunner(runtime) {

@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260909-optional-beneficiary-data-v460";
+const APP_VERSION = "empresa-20260909-whack-a-mole-premium-v461";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -29143,6 +29143,7 @@ function setActivationType(type) {
     panel.classList.toggle("active", active);
   });
   renderMinigameSpecificConfig(nextType);
+  syncMinigameSharedFieldLabels(nextType);
   updatePrivateInvitationScheduleFields();
   updateGamingActivationCatalog();
   window.setTimeout(() => {
@@ -29894,13 +29895,15 @@ const MINIGAME_SPECIFIC_CONFIG = {
   },
   WHACK_A_MOLE: {
     title: "Golpea el topo",
-    summary: "Dinámica: tocar solo objetivos buenos antes de que se escondan y evitar falsos objetivos.",
-    help: "Más huecos y TTL bajo elevan dificultad. El porcentaje falso controla trampas.",
+    summary: "Un reto táctil con topos, rachas, premios dorados, trampas visibles y ritmo progresivo.",
+    help: "Elige un tablero cómodo y un ritmo acorde al público. Los huecos vacíos solo descuentan algunos puntos; únicamente las trampas quitan vidas.",
     fields: [
-      { key: "hole_rows", label: "Filas de huecos", type: "number", min: 2, max: 4, value: 3 },
-      { key: "hole_cols", label: "Columnas de huecos", type: "number", min: 2, max: 4, value: 3 },
-      { key: "bad_target_rate", label: "% objetivos falsos", type: "number", min: 0, max: 45, value: 18 },
-      { key: "target_ttl_ms", label: "Tiempo visible objetivo (ms)", type: "number", min: 450, max: 1600, value: 950 },
+      { key: "board_layout", label: "Tamaño del tablero", type: "select", value: "3x3", options: [["2x3", "6 huecos · fácil"], ["3x3", "9 huecos · recomendado"], ["3x4", "12 huecos · experto"]] },
+      { key: "whack_difficulty", label: "Ritmo de aparición", type: "select", value: "dynamic", options: [["relaxed", "Amable"], ["dynamic", "Progresivo · recomendado"], ["fast", "Rápido"]] },
+      { key: "target_ttl_ms", label: "Tiempo visible inicial (ms)", type: "number", min: 550, max: 1800, value: 1100 },
+      { key: "bad_target_rate", label: "% de trampas", type: "number", min: 0, max: 35, value: 14 },
+      { key: "golden_target_rate", label: "% de topos dorados 2x", type: "number", min: 0, max: 35, value: 12 },
+      { key: "combo_bonus", label: "Bonus por cada nivel de racha", type: "number", min: 0, max: 50, value: 10 },
     ],
   },
   DODGE_RUNNER: {
@@ -29995,7 +29998,7 @@ function minigameInstructionForType(type) {
     MEMORY_PAIRS: "Encuentra pares y gana puntos por rapidez.",
     FAST_TAP: "Toca los objetivos correctos tan rápido como puedas.",
     MINI_MAZE: "Avanza hacia la meta sin tocar zonas de penalizacion.",
-    WHACK_A_MOLE: "Toca solo los objetivos activos antes de que se escondan y evita penalizaciones.",
+    WHACK_A_MOLE: "Toca los topos antes de que se escondan, encadena rachas, aprovecha el topo dorado y evita las trampas rojas.",
     DODGE_RUNNER: "Mueve al corredor, recoge beneficios y esquiva obstaculos hasta terminar el tiempo.",
     BALLOON_POP: "Revienta globos de valor, encadena aciertos y evita globos penalizados.",
     ROULETTE_SPIN: "Gira la ruleta, detenla en una zona de beneficio y acumula el score requerido.",
@@ -30116,6 +30119,18 @@ function renderMinigameSpecificConfig(type) {
   if (type === "ORDER_OPTIONS") syncOrderStepsEditor();
 }
 
+function syncMinigameSharedFieldLabels(type) {
+  const whackMode = type === "WHACK_A_MOLE";
+  const setLabel = (input, label) => {
+    const span = input?.closest("label")?.querySelector("span");
+    if (span) span.textContent = label;
+  };
+  setLabel(minigamePointsInput, whackMode ? "Puntos por topo" : "Puntos por objetivo");
+  setLabel(minigamePenaltyInput, whackMode ? "Penalización por hueco vacío" : "Penalizacion");
+  setLabel(minigameLivesInput, whackMode ? "Vidas ante trampas" : "Vidas del juego");
+  minigameFireIntervalInput?.closest("label")?.classList.toggle("hidden", whackMode);
+}
+
 function minigameFieldValue(key) {
   return minigameSpecificConfigPanel?.querySelector(`[data-minigame-config="${key}"]`)?.value;
 }
@@ -30156,6 +30171,12 @@ function collectMinigameSpecificConfig(type) {
     delete config.ship_1;
     delete config.ship_2;
     delete config.ship_3;
+  }
+  if (type === "WHACK_A_MOLE") {
+    const [rows, cols] = String(config.board_layout || "3x3").split("x").map(Number);
+    config.hole_rows = boundedInteger(rows, 3, 2, 4);
+    config.hole_cols = boundedInteger(cols, 3, 2, 4);
+    delete config.board_layout;
   }
   return config;
 }
@@ -30328,6 +30349,11 @@ function validateMinigameSpecificConfig(type) {
   if (type === "BATTLESHIP_COORDS" && (!Array.isArray(config.ship_lengths) || config.ship_lengths.length < 1 || config.ship_lengths.length > 3)) {
     setInlineMessage(triviaLauncherMessage, "Batalla naval permite entre 1 y 3 barcos.", "error");
     minigameSpecificConfigPanel?.querySelector("[data-minigame-config='ship_count']")?.focus();
+    return null;
+  }
+  if (type === "WHACK_A_MOLE" && Number(config.bad_target_rate || 0) + Number(config.golden_target_rate || 0) > 60) {
+    setInlineMessage(triviaLauncherMessage, "La suma de trampas y topos dorados no puede superar el 60%; debe quedar espacio suficiente para topos normales.", "error");
+    minigameSpecificConfigPanel?.querySelector("[data-minigame-config='bad_target_rate']")?.focus();
     return null;
   }
   return config;
