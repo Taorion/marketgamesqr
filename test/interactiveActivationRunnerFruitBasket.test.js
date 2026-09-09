@@ -56,5 +56,5 @@ test("Runner tiene identidad visual de cosecha, vista previa y móvil", () => {
   assert.match(styles, /@media \(max-width: 520px\)[\s\S]*\.fruit-basket-panel \.game-hud \{ grid-template-columns: repeat\(2/);
   assert.match(publicHtml, /runner-basket=v462-20260909/g);
   assert.match(portalHtml, /runner-basket=v462-20260909/g);
-  assert.match(portal, /empresa-20260909-runner-fruit-basket-v462/);
+  assert.match(portal, /empresa-20260909-validator-product-removal-v463/);
 });

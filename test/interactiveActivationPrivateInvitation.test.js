@@ -51,5 +51,5 @@ test("la invitación tiene presentación premium, móvil y assets versionados", 
   assert.match(styles, /@media \(max-width: 520px\)/);
   assert.match(publicHtml, /private-invitation=v457-20260909/);
   assert.match(portalHtml, /private-invitation=v457-20260909/);
-  assert.match(portalApp, /empresa-20260909-runner-fruit-basket-v462/);
+  assert.match(portalApp, /empresa-20260909-validator-product-removal-v463/);
 });

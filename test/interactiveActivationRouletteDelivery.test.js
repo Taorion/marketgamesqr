@@ -62,7 +62,7 @@ test("el creador expone las tres entregas y exige el activo del segmento digital
   assert.match(portal, /function syncRouletteDeliveryFields/);
   assert.match(portal, /delivery_mode: delivery/);
   assert.match(portal, /Selecciona el activo digital del segmento/);
-  assert.match(portal, /empresa-20260909-runner-fruit-basket-v462/);
+  assert.match(portal, /empresa-20260909-validator-product-removal-v463/);
 });
 
 test("la ruleta informa el resultado y espera antes de entregar", () => {
