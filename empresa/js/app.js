@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260909-whack-a-mole-premium-v461";
+const APP_VERSION = "empresa-20260909-runner-fruit-basket-v462";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -29016,7 +29016,7 @@ function activationTypeLabel(type) {
     FAST_TAP: "Tap rápido",
     MINI_MAZE: "Mini laberinto",
     WHACK_A_MOLE: "Golpea el topo",
-    DODGE_RUNNER: "Runner esquiva",
+    DODGE_RUNNER: "Runner · Canasta de frutas",
     BALLOON_POP: "Revienta globos",
     ROULETTE_SPIN: "Ruleta",
     TOUCH_CATCH: "Touch atrápalo",
@@ -29907,14 +29907,15 @@ const MINIGAME_SPECIFIC_CONFIG = {
     ],
   },
   DODGE_RUNNER: {
-    title: "Runner esquiva",
-    summary: "Dinámica: moverse por la pantalla, recoger beneficios y esquivar obstáculos.",
-    help: "Aumenta penalizadores y velocidad para retos de habilidad; baja spawn para niños o filas rápidas.",
+    title: "Runner · Canasta de frutas",
+    summary: "La canasta se mueve solamente de lado a lado: las frutas frescas suman y las dañadas quitan vidas si son recogidas.",
+    help: "Configura un ritmo cómodo para tu público. Dejar caer una fruta no quita vidas; el castigo ocurre únicamente al recoger una fruta dañada.",
     fields: [
-      { key: "bad_item_rate", label: "% obstáculos", type: "number", min: 10, max: 70, value: 28 },
-      { key: "runner_spawn_ms", label: "Frecuencia objetos (ms)", type: "number", min: 180, max: 900, value: 580 },
-      { key: "runner_item_speed", label: "Velocidad de objetos", type: "number", min: 90, max: 340, value: 150 },
-      { key: "player_speed", label: "Velocidad jugador", type: "number", min: 160, max: 520, value: 300 },
+      { key: "bad_fruit_rate", label: "% de frutas dañadas", type: "number", min: 0, max: 55, value: 22 },
+      { key: "fruit_spawn_ms", label: "Tiempo entre frutas (ms)", type: "number", min: 260, max: 1100, value: 620 },
+      { key: "fruit_fall_speed", label: "Velocidad de caída", type: "number", min: 75, max: 300, value: 145 },
+      { key: "basket_speed", label: "Velocidad lateral de la canasta", type: "number", min: 180, max: 620, value: 390 },
+      { key: "basket_width", label: "Ancho de la canasta", type: "number", min: 72, max: 150, value: 104 },
     ],
   },
   BALLOON_POP: {
@@ -29999,7 +30000,7 @@ function minigameInstructionForType(type) {
     FAST_TAP: "Toca los objetivos correctos tan rápido como puedas.",
     MINI_MAZE: "Avanza hacia la meta sin tocar zonas de penalizacion.",
     WHACK_A_MOLE: "Toca los topos antes de que se escondan, encadena rachas, aprovecha el topo dorado y evita las trampas rojas.",
-    DODGE_RUNNER: "Mueve al corredor, recoge beneficios y esquiva obstaculos hasta terminar el tiempo.",
+    DODGE_RUNNER: "Mueve la canasta únicamente de izquierda a derecha. Atrapa frutas frescas para sumar y evita las frutas dañadas porque quitan vidas.",
     BALLOON_POP: "Revienta globos de valor, encadena aciertos y evita globos penalizados.",
     ROULETTE_SPIN: "Gira la ruleta, detenla en una zona de beneficio y acumula el score requerido.",
     TOUCH_CATCH: "Toca y atrapa objetivos móviles antes de que escapen.",
@@ -30121,14 +30122,15 @@ function renderMinigameSpecificConfig(type) {
 
 function syncMinigameSharedFieldLabels(type) {
   const whackMode = type === "WHACK_A_MOLE";
+  const basketMode = type === "DODGE_RUNNER";
   const setLabel = (input, label) => {
     const span = input?.closest("label")?.querySelector("span");
     if (span) span.textContent = label;
   };
-  setLabel(minigamePointsInput, whackMode ? "Puntos por topo" : "Puntos por objetivo");
-  setLabel(minigamePenaltyInput, whackMode ? "Penalización por hueco vacío" : "Penalizacion");
-  setLabel(minigameLivesInput, whackMode ? "Vidas ante trampas" : "Vidas del juego");
-  minigameFireIntervalInput?.closest("label")?.classList.toggle("hidden", whackMode);
+  setLabel(minigamePointsInput, whackMode ? "Puntos por topo" : basketMode ? "Puntos por fruta fresca" : "Puntos por objetivo");
+  setLabel(minigamePenaltyInput, whackMode ? "Penalización por hueco vacío" : basketMode ? "Puntos descontados por fruta dañada" : "Penalizacion");
+  setLabel(minigameLivesInput, whackMode ? "Vidas ante trampas" : basketMode ? "Vidas ante frutas dañadas" : "Vidas del juego");
+  minigameFireIntervalInput?.closest("label")?.classList.toggle("hidden", whackMode || basketMode);
 }
 
 function minigameFieldValue(key) {

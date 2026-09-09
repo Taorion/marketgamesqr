@@ -61,7 +61,7 @@ const ALL_ACTIVATION_CATALOG = [
   { type: "FAST_TAP", label: "Tap rapido / Reflex challenge", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "MINI_MAZE", label: "Camino correcto / Mini laberinto", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "WHACK_A_MOLE", label: "Golpea el topo", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
-  { type: "DODGE_RUNNER", label: "Runner", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
+  { type: "DODGE_RUNNER", label: "Runner · Canasta de frutas", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "BALLOON_POP", label: "Revienta globos", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "ROULETTE_SPIN", label: "Ruleta", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },
   { type: "TOUCH_CATCH", label: "Touch atrapalo", category: "minigame", group: "Minijuegos con score", reward_modes: ["by_score"] },

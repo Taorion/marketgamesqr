@@ -15,7 +15,7 @@ test("Golpea el topo ofrece una configuración comercial clara y persistible", (
   assert.match(portal, /config\.hole_rows = boundedInteger\(rows, 3, 2, 4\)/);
   assert.match(portal, /trampas y topos dorados no puede superar el 60%/);
   assert.match(portal, /whackMode \? "Puntos por topo"/);
-  assert.match(portal, /minigameFireIntervalInput\?\.closest\("label"\)\?\.classList\.toggle\("hidden", whackMode\)/);
+  assert.match(portal, /minigameFireIntervalInput\?\.closest\("label"\)\?\.classList\.toggle\("hidden", whackMode \|\| basketMode\)/);
 });
 
 test("la experiencia pública usa tablero táctil dedicado y castigos justos", () => {
@@ -52,5 +52,5 @@ test("el tablero premium es responsive y sus assets salen versionados juntos", (
   assert.match(styles, /@media \(max-width: 520px\)[\s\S]*\.whack-a-mole-panel \.game-hud \{ grid-template-columns: repeat\(2/);
   assert.match(publicHtml, /whack-a-mole=v461-20260909/g);
   assert.match(portalHtml, /whack-a-mole=v461-20260909/g);
-  assert.match(portal, /empresa-20260909-whack-a-mole-premium-v461/);
+  assert.match(portal, /empresa-20260909-runner-fruit-basket-v462/);
 });

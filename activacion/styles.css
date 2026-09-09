@@ -1186,6 +1186,123 @@ button:focus-visible {
 .whack-legend-gold { background: #d49b12; }
 .whack-legend-trap { background: #d82f56; }
 
+/* Runner: horizontal fruit basket experience. */
+.fruit-basket-panel {
+  gap: 14px;
+  border: 1px solid rgba(42, 121, 67, .3);
+  border-radius: 22px;
+  color: #264d35;
+  background:
+    radial-gradient(circle at 92% 4%, rgba(242, 157, 34, .2), transparent 30%),
+    linear-gradient(155deg, #fffdf1 0%, #edf9df 100%);
+  box-shadow: 0 18px 44px rgba(47, 105, 53, .14);
+}
+
+.fruit-basket-panel .game-hud {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.fruit-basket-panel .game-hud span {
+  justify-content: center;
+  min-height: 42px;
+  border-color: rgba(42, 121, 67, .18);
+  border-radius: 12px;
+  color: #245d3b;
+  background: rgba(255, 255, 255, .84);
+  box-shadow: 0 6px 18px rgba(42, 121, 67, .08);
+  font-family: Inter, sans-serif;
+  text-align: center;
+}
+
+.fruit-basket-panel .game-screen-wrap {
+  padding: 8px;
+  overflow: hidden;
+  border-color: rgba(42, 121, 67, .22);
+  border-radius: 18px;
+  background: #e9f6d6;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .84);
+}
+
+.fruit-basket-panel .game-canvas {
+  max-width: 720px;
+  border: 0;
+  border-radius: 13px;
+  background: #c7efff;
+  image-rendering: auto;
+  box-shadow: 0 12px 26px rgba(42, 121, 67, .17);
+  cursor: ew-resize;
+}
+
+.fruit-basket-panel .submit-button {
+  min-height: 54px;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #287745, #62a83d);
+  box-shadow: 0 12px 24px rgba(42, 121, 67, .22);
+  letter-spacing: .01em;
+  text-transform: none;
+}
+
+.fruit-basket-panel .game-help {
+  color: #4e6f57;
+  font-size: 13px;
+  text-align: center;
+}
+
+.fruit-basket-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.fruit-basket-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 11px;
+  border: 1px solid rgba(42, 121, 67, .14);
+  border-radius: 999px;
+  color: #3d6548;
+  background: rgba(255, 255, 255, .8);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.fruit-basket-legend i {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-style: normal;
+  line-height: 1;
+}
+
+.fruit-legend-good { background: #ef3d4f; }
+.fruit-legend-bad { background: #72523b; }
+
+.fruit-basket-controls {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fruit-basket-controls button {
+  border-color: rgba(42, 121, 67, .28);
+  border-radius: 12px;
+  color: #285e3c;
+  background: rgba(255, 255, 255, .86);
+  font-size: 13px;
+  touch-action: none;
+}
+
+.fruit-basket-controls button:active {
+  color: #fff;
+  background: #39834f;
+}
+
 .ticket-result {
   display: grid;
   justify-items: start;
@@ -1510,6 +1627,14 @@ body { width: 100%; max-width: 100%; overflow-x: clip; }
   .whack-a-mole-panel .game-canvas { min-height: 230px; object-fit: fill; }
   .whack-legend { display: grid; grid-template-columns: 1fr; }
   .whack-legend span { justify-content: flex-start; }
+  .fruit-basket-panel { padding: 11px; border-radius: 16px; }
+  .fruit-basket-panel .game-hud { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; }
+  .fruit-basket-panel .game-hud span { min-height: 38px; padding: 5px 7px; font-size: 11px; }
+  .fruit-basket-panel .game-screen-wrap { padding: 4px; border-radius: 13px; }
+  .fruit-basket-panel .game-canvas { min-height: 230px; object-fit: fill; }
+  .fruit-basket-legend { display: grid; grid-template-columns: 1fr; }
+  .fruit-basket-legend span { justify-content: flex-start; }
+  .fruit-basket-controls { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .ticket-actions { display: grid; grid-template-columns: 1fr; }
   .ticket-actions > *,
   .ecommerce-reward-card .submit-button { width: 100%; }

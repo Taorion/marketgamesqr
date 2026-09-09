@@ -59,7 +59,7 @@ function minigameInstruction(type, config = {}) {
     FAST_TAP: "Toca cada objetivo apenas aparezca. La velocidad define tu score.",
     MINI_MAZE: "Avanza tocando objetivos cercanos a la ruta y evita penalizaciones.",
     WHACK_A_MOLE: "Toca los topos antes de que se escondan, encadena rachas, aprovecha el topo dorado y evita las trampas rojas.",
-    DODGE_RUNNER: "Mueve al corredor, recoge beneficios y esquiva obstaculos hasta terminar el tiempo.",
+    DODGE_RUNNER: "Mueve la canasta únicamente de izquierda a derecha. Atrapa las frutas frescas para sumar puntos y evita recoger las frutas dañadas porque quitan vidas.",
     BALLOON_POP: "Revienta globos de valor, encadena aciertos y evita globos penalizados.",
     ROULETTE_SPIN: "Gira la ruleta, detenla en una zona de beneficio y acumula el score requerido.",
     TOUCH_CATCH: "Toca y atrapa objetivos moviles antes de que escapen.",
@@ -1225,13 +1225,14 @@ function renderMinigame() {
   const config = currentActivation.game_config || {};
   const rouletteMode = currentActivation.activation_type === "ROULETTE_SPIN";
   const whackMode = currentActivation.activation_type === "WHACK_A_MOLE";
+  const basketMode = currentActivation.activation_type === "DODGE_RUNNER";
   experienceStage.classList.remove("hidden");
   experienceTitle.textContent = currentActivation.activation_label || (rouletteMode ? "Ruleta de beneficios" : "Minijuego con score");
   experienceCopy.textContent = minigameInstruction(currentActivation.activation_type, config);
   experienceBody.innerHTML = `
-    <article class="game-panel retro-game-panel ${whackMode ? "whack-a-mole-panel" : ""}">
+    <article class="game-panel retro-game-panel ${whackMode ? "whack-a-mole-panel" : basketMode ? "fruit-basket-panel" : ""}">
       <div class="game-hud">
-        <span id="scoreValue">${rouletteMode ? "Resultado pendiente" : whackMode ? "Puntos: 0" : "Score: 0"}</span>
+        <span id="scoreValue">${rouletteMode ? "Resultado pendiente" : whackMode || basketMode ? "Puntos: 0" : "Score: 0"}</span>
         <span id="timeValue" ${rouletteMode ? 'style="display:none"' : ""}>Tiempo: ${escapeHtml(config.duration_seconds || 30)}</span>
         <span id="livesValue" ${rouletteMode ? 'style="display:none"' : ""}>Vidas: ${escapeHtml(config.lives || 3)}</span>
         <span id="gameObjectiveValue">${escapeHtml(minigameShortGoal(currentActivation.activation_type))}</span>
@@ -1241,23 +1242,33 @@ function renderMinigame() {
           <span><i class="whack-legend-mole" aria-hidden="true">●</i> Toca el topo</span>
           <span><i class="whack-legend-gold" aria-hidden="true">★</i> Topo dorado: puntos extra</span>
           <span><i class="whack-legend-trap" aria-hidden="true">!</i> Evita la trampa</span>
+        </div>` : basketMode ? `
+        <div class="fruit-basket-legend" aria-label="Cómo jugar">
+          <span><i class="fruit-legend-good" aria-hidden="true">●</i> Atrapa las frutas frescas</span>
+          <span><i class="fruit-legend-bad" aria-hidden="true">×</i> La fruta dañada quita una vida</span>
         </div>` : ""}
       <div class="game-screen-wrap">
-        <canvas class="game-canvas" id="gameCanvas" width="720" height="405" ${whackMode ? 'aria-label="Tablero de Golpea el topo. Toca los topos que aparezcan y evita las trampas."' : ""}></canvas>
+        <canvas class="game-canvas" id="gameCanvas" width="720" height="405" ${whackMode ? 'aria-label="Tablero de Golpea el topo. Toca los topos que aparezcan y evita las trampas."' : basketMode ? 'aria-label="Canasta de frutas. Mueve la canasta de lado a lado, atrapa frutas frescas y evita las dañadas."' : ""}></canvas>
       </div>
-      <div class="game-controls" aria-label="Controles touch" ${whackMode ? "hidden" : ""}>
-        <button type="button" data-game-control="up">Arriba</button>
-        <button type="button" data-game-control="left">Izq</button>
-        <button type="button" data-game-control="fire">Accion</button>
-        <button type="button" data-game-control="right">Der</button>
-        <button type="button" data-game-control="down">Abajo</button>
-      </div>
-      <button class="submit-button" type="button" id="startGameButton">${rouletteMode ? "Girar ruleta" : whackMode ? "Comenzar el reto" : "Iniciar partida"}</button>
-      <small class="game-help">${rouletteMode ? "Toca la ruleta o el boton de accion para detenerla. El segmento final define el beneficio." : whackMode ? "Toca directamente el tablero. Encadena aciertos para multiplicar puntos; tocar una trampa sí descuenta una vida." : "Touch directo en pantalla. En celular tambien puedes usar los controles inferiores."}</small>
+      ${basketMode ? `
+        <div class="game-controls fruit-basket-controls" aria-label="Mover la canasta">
+          <button type="button" data-game-control="left" aria-label="Mover canasta a la izquierda">← Izquierda</button>
+          <button type="button" data-game-control="right" aria-label="Mover canasta a la derecha">Derecha →</button>
+        </div>` : `
+        <div class="game-controls" aria-label="Controles touch" ${whackMode ? "hidden" : ""}>
+          <button type="button" data-game-control="up">Arriba</button>
+          <button type="button" data-game-control="left">Izq</button>
+          <button type="button" data-game-control="fire">Accion</button>
+          <button type="button" data-game-control="right">Der</button>
+          <button type="button" data-game-control="down">Abajo</button>
+        </div>`}
+      <button class="submit-button" type="button" id="startGameButton">${rouletteMode ? "Girar ruleta" : whackMode ? "Comenzar el reto" : basketMode ? "Comenzar la cosecha" : "Iniciar partida"}</button>
+      <small class="game-help">${rouletteMode ? "Toca la ruleta o el boton de accion para detenerla. El segmento final define el beneficio." : whackMode ? "Toca directamente el tablero. Encadena aciertos para multiplicar puntos; tocar una trampa sí descuenta una vida." : basketMode ? "Arrastra la canasta horizontalmente o usa los botones. Las frutas frescas suman; solo una fruta dañada atrapada quita vida." : "Touch directo en pantalla. En celular tambien puedes usar los controles inferiores."}</small>
     </article>
   `;
   document.getElementById("startGameButton").addEventListener("click", startConfiguredMinigame);
   if (whackMode) drawWhackPreview(document.getElementById("gameCanvas"), config);
+  if (basketMode) drawFruitBasketPreview(document.getElementById("gameCanvas"), config);
 }
 
 function minigameShortGoal(type) {
@@ -1270,7 +1281,7 @@ function minigameShortGoal(type) {
     FAST_TAP: "Toca rapido",
     MINI_MAZE: "Llega a meta",
     WHACK_A_MOLE: "Encadena topos",
-    DODGE_RUNNER: "Esquiva y recoge",
+    DODGE_RUNNER: "Atrapa frutas buenas",
     BALLOON_POP: "Revienta globos",
     ROULETTE_SPIN: "Deten la ruleta",
     TOUCH_CATCH: "Atrapa objetivos",
@@ -2741,103 +2752,252 @@ function drawWhackParticles(ctx, particles) {
   });
 }
 
+function drawFruitBasketPreview(canvas, config = {}) {
+  if (!canvas) return;
+  const basketWidth = boundedGameNumber(config.basket_width, 104, 72, 150);
+  const basket = { x: canvas.width / 2 - basketWidth / 2, y: canvas.height - 56, w: basketWidth, h: 32 };
+  const fruits = [
+    { x: canvas.width * 0.34, y: 150, r: 17, good: true, kind: "apple", rotation: 0.2 },
+    { x: canvas.width * 0.66, y: 102, r: 18, good: false, kind: "rotten", rotation: -0.2 },
+  ];
+  drawFruitBasketScene(canvas.getContext("2d"), canvas.width, canvas.height, basket, fruits, { text: "Mueve la canasta de lado a lado", tone: "good", age: 0 }, [], 0);
+}
+
 function startDodgeRunner(runtime) {
   const { ctx, width, height } = runtime;
-  const playerSpeed = boundedGameNumber(runtime.config.player_speed, 300, 160, 520);
-  const spawnBase = boundedGameNumber(runtime.config.runner_spawn_ms, 580, 180, 900) / 1000;
-  const player = { x: width / 2, y: height - 52, r: 17 };
-  const items = [];
-  let spawn = 0;
+  const basketSpeed = boundedGameNumber(runtime.config.basket_speed ?? runtime.config.player_speed, 390, 180, 620);
+  const spawnBase = boundedGameNumber(runtime.config.fruit_spawn_ms ?? runtime.config.runner_spawn_ms, 620, 260, 1100) / 1000;
+  const basketWidth = boundedGameNumber(runtime.config.basket_width, 104, 72, 150);
+  const basket = { x: width / 2 - basketWidth / 2, y: height - 56, w: basketWidth, h: 32, targetX: width / 2 };
+  const fruits = [];
+  const splashes = [];
+  let spawn = 0.45;
+  let goodCaught = 0;
+  let badCaught = 0;
+  let missedGood = 0;
   let dead = false;
-  runtime.onPointerDown = (pos) => {
-    player.x = pos.x;
-    player.y = Math.max(70, Math.min(height - 28, pos.y));
+  let feedback = { text: "¡Canasta lista!", tone: "good", age: 0 };
+  const scoreValue = document.getElementById("scoreValue");
+  const objectiveValue = document.getElementById("gameObjectiveValue");
+
+  const updateHud = () => {
+    if (scoreValue) scoreValue.textContent = `Puntos: ${runtime.score}`;
+    if (objectiveValue) objectiveValue.textContent = `${goodCaught} frutas frescas`;
   };
-  runtime.onPointerMove = runtime.onPointerDown;
+  const aimBasket = (pos) => {
+    basket.targetX = Math.max(basket.w / 2, Math.min(width - basket.w / 2, pos.x));
+  };
+  runtime.onPointerDown = aimBasket;
+  runtime.onPointerMove = aimBasket;
+  runtime.onControl = (key) => {
+    if (key === "left") basket.targetX = Math.max(basket.w / 2, basket.targetX - basket.w * 0.8);
+    if (key === "right") basket.targetX = Math.min(width - basket.w / 2, basket.targetX + basket.w * 0.8);
+  };
+  runtime.setScore(0);
+  updateHud();
   runtime.loop((dt, elapsed) => {
+    feedback.age += dt;
     if (dead) {
-      drawRetroBackground(ctx, width, height, "RUNNER");
-      drawRunnerObjects(ctx, player, items);
-      drawGameOver(ctx, width, height, "CHOQUE");
+      drawFruitBasketScene(ctx, width, height, basket, fruits, feedback, splashes, elapsed);
+      drawGameOver(ctx, width, height, `FIN · ${goodCaught} FRUTAS`);
       if (shouldFinishAfterNoLives(runtime, elapsed)) runtime.finish();
       return;
     }
-    if (runtime.keys.left) player.x -= playerSpeed * dt;
-    if (runtime.keys.right) player.x += playerSpeed * dt;
-    if (runtime.keys.up) player.y -= playerSpeed * 0.8 * dt;
-    if (runtime.keys.down) player.y += playerSpeed * 0.8 * dt;
-    player.x = Math.max(22, Math.min(width - 22, player.x));
-    player.y = Math.max(70, Math.min(height - 24, player.y));
+    if (runtime.keys.left) basket.targetX -= basketSpeed * dt;
+    if (runtime.keys.right) basket.targetX += basketSpeed * dt;
+    basket.targetX = Math.max(basket.w / 2, Math.min(width - basket.w / 2, basket.targetX));
+    const basketCenter = basket.x + basket.w / 2;
+    const step = Math.max(-basketSpeed * dt, Math.min(basketSpeed * dt, basket.targetX - basketCenter));
+    basket.x = Math.max(0, Math.min(width - basket.w, basket.x + step));
+
     spawn -= dt;
     if (spawn <= 0) {
-      items.push(createRunnerItem(width, elapsed, runtime.config));
-      spawn = Math.max(0.18, spawnBase - elapsed * 0.012);
+      fruits.push(createFallingFruit(width, elapsed, runtime.config));
+      spawn = Math.max(0.26, spawnBase - Math.min(0.22, elapsed * 0.008));
     }
-    for (let i = items.length - 1; i >= 0; i -= 1) {
-      const item = items[i];
-      item.y += item.vy * dt;
-      item.x += Math.sin(elapsed * item.swaySpeed + item.phase) * item.sway * dt;
-      if (Math.hypot(player.x - item.x, player.y - item.y) < player.r + item.r) {
-        if (item.good) {
-          runtime.addScore(runtime.points * item.scale);
+    for (let index = fruits.length - 1; index >= 0; index -= 1) {
+      const fruit = fruits[index];
+      fruit.y += fruit.vy * dt;
+      fruit.x += Math.sin(elapsed * fruit.swaySpeed + fruit.phase) * fruit.sway * dt;
+      fruit.rotation += fruit.spin * dt;
+      const caught = fruit.y + fruit.r >= basket.y
+        && fruit.y - fruit.r <= basket.y + basket.h
+        && fruit.x >= basket.x - fruit.r * 0.35
+        && fruit.x <= basket.x + basket.w + fruit.r * 0.35;
+      if (caught) {
+        if (fruit.good) {
+          goodCaught += 1;
+          runtime.addScore(runtime.points);
+          feedback = { text: `¡Fruta fresca! +${runtime.points}`, tone: "good", age: 0 };
+          splashes.push({ x: fruit.x, y: basket.y, text: `+${runtime.points}`, tone: "good", age: 0 });
         } else {
-          runtime.damage(1);
+          badCaught += 1;
+          runtime.setLives(runtime.lives - 1);
+          runtime.addScore(-runtime.penalty);
+          feedback = { text: "¡Fruta dañada! -1 vida", tone: "bad", age: 0 };
+          splashes.push({ x: fruit.x, y: basket.y, text: "-1 VIDA", tone: "bad", age: 0 });
           if (runtime.lives <= 0) dead = true;
         }
-        items.splice(i, 1);
-      } else if (item.y > height + 24) {
-        items.splice(i, 1);
+        fruits.splice(index, 1);
+        updateHud();
+      } else if (fruit.y - fruit.r > height) {
+        if (fruit.good) missedGood += 1;
+        fruits.splice(index, 1);
       }
     }
-    drawRetroBackground(ctx, width, height, "RUNNER");
-    drawRunnerLanes(ctx, width, height, elapsed);
-    drawRunnerObjects(ctx, player, items);
+    splashes.forEach((splash) => { splash.age += dt; });
+    for (let index = splashes.length - 1; index >= 0; index -= 1) {
+      if (splashes[index].age > 0.85) splashes.splice(index, 1);
+    }
+    runtime.completionPayload = {
+      metadata: {
+        game_stats: {
+          game: "DODGE_RUNNER",
+          good_fruits_caught: goodCaught,
+          bad_fruits_caught: badCaught,
+          good_fruits_missed: missedGood,
+        },
+      },
+    };
+    drawFruitBasketScene(ctx, width, height, basket, fruits, feedback, splashes, elapsed);
   });
 }
 
-function createRunnerItem(width, elapsed, config = {}) {
-  const bad = Math.random() < Math.min(0.75, boundedGameNumber(config.bad_item_rate, 28, 10, 70) / 100 + elapsed * 0.01);
-  const baseSpeed = boundedGameNumber(config.runner_item_speed, 150, 90, 340);
+function createFallingFruit(width, elapsed, config = {}) {
+  const badRate = boundedGameNumber(config.bad_fruit_rate ?? config.bad_item_rate, 22, 0, 55) / 100;
+  const goodKinds = ["apple", "orange", "pear", "berry"];
+  const good = Math.random() >= badRate;
+  const baseSpeed = boundedGameNumber(config.fruit_fall_speed ?? config.runner_item_speed, 145, 75, 300);
   return {
-    x: 40 + Math.random() * (width - 80),
-    y: 54,
-    r: bad ? 16 : 13,
-    vy: baseSpeed + Math.random() * 120 + Math.min(150, elapsed * 6),
-    good: !bad,
-    scale: Math.random() > 0.82 ? 2 : 1,
+    x: 34 + Math.random() * (width - 68),
+    y: -24,
+    r: 16 + Math.random() * 4,
+    vy: baseSpeed + Math.random() * 52 + Math.min(105, elapsed * 3.6),
+    good,
+    kind: good ? goodKinds[Math.floor(Math.random() * goodKinds.length)] : "rotten",
     phase: Math.random() * Math.PI * 2,
-    sway: 10 + Math.random() * 30,
-    swaySpeed: 1.5 + Math.random() * 2.5,
+    sway: 5 + Math.random() * 13,
+    swaySpeed: 1.1 + Math.random() * 1.8,
+    rotation: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 2.4,
   };
 }
 
-function drawRunnerLanes(ctx, width, height, elapsed) {
-  ctx.strokeStyle = "rgba(234, 252, 255, .14)";
-  ctx.lineWidth = 3;
-  for (let x = width / 2 - 180; x <= width / 2 + 180; x += 90) {
-    ctx.beginPath();
-    ctx.moveTo(x, 48 + (elapsed * 90) % 42);
-    ctx.lineTo(x, height);
-    ctx.stroke();
+function drawFruitBasketScene(ctx, width, height, basket, fruits, feedback, splashes, elapsed) {
+  const sky = ctx.createLinearGradient(0, 0, 0, height);
+  sky.addColorStop(0, "#c7efff");
+  sky.addColorStop(0.64, "#f5fbdf");
+  sky.addColorStop(0.65, "#86c85c");
+  sky.addColorStop(1, "#397b45");
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, width, height);
+  drawFruitOrchard(ctx, width, height, elapsed);
+  fruits.forEach((fruit) => drawFruit(ctx, fruit));
+  drawFruitBasket(ctx, basket);
+  splashes.forEach((splash) => {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, 1 - splash.age / 0.85);
+    ctx.fillStyle = splash.tone === "bad" ? "#a7193f" : "#12633f";
+    ctx.font = "900 17px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(splash.text, splash.x, splash.y - 18 - splash.age * 28);
+    ctx.restore();
+  });
+  if (feedback?.text && feedback.age < 1) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, 1 - Math.max(0, feedback.age - 0.65) / 0.35);
+    ctx.fillStyle = feedback.tone === "bad" ? "#a7193f" : "#115a3b";
+    ctx.font = "900 18px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(feedback.text, width / 2, 38);
+    ctx.restore();
   }
 }
 
-function drawRunnerObjects(ctx, player, items) {
-  items.forEach((item) => {
-    ctx.fillStyle = item.good ? (item.scale > 1 ? "#00bfe5" : "#f2b84b") : "#ff5c8a";
-    ctx.beginPath();
-    ctx.arc(item.x, item.y, item.r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#07111f";
-    ctx.font = "900 12px monospace";
-    ctx.fillText(item.good ? "$" : "!", item.x - 4, item.y + 4);
-  });
-  ctx.fillStyle = "#7cfbff";
+function drawFruitOrchard(ctx, width, height, elapsed) {
+  ctx.fillStyle = "rgba(255,255,255,.7)";
   ctx.beginPath();
-  ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+  ctx.arc(92, 58, 30, 0, Math.PI * 2);
+  ctx.arc(122, 50, 38, 0, Math.PI * 2);
+  ctx.arc(158, 60, 27, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = "#07111f";
-  ctx.fillRect(player.x - 10, player.y - 5, 20, 10);
+  [54, width - 62].forEach((x, index) => {
+    ctx.fillStyle = "#6e4526";
+    ctx.fillRect(x - 10, 130, 20, height - 130);
+    ctx.fillStyle = index ? "#2d7744" : "#378b4b";
+    ctx.beginPath();
+    ctx.arc(x, 118, 58, 0, Math.PI * 2);
+    ctx.arc(x + (index ? -28 : 28), 142, 42, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.fillStyle = "rgba(255,255,255,.5)";
+  ctx.font = "800 11px Inter, sans-serif";
+  ctx.fillText(elapsed < 10 ? "COSECHA EN CURSO" : "¡SIGUE MOVIENDO LA CANASTA!", 16, height - 14);
+}
+
+function drawFruit(ctx, fruit) {
+  ctx.save();
+  ctx.translate(fruit.x, fruit.y);
+  ctx.rotate(fruit.rotation || 0);
+  const colors = { apple: "#ef3d4f", orange: "#f29d22", pear: "#c7d94e", berry: "#7951c7", rotten: "#72523b" };
+  ctx.fillStyle = colors[fruit.kind] || colors.apple;
+  ctx.beginPath();
+  if (fruit.kind === "pear") ctx.ellipse(0, 3, fruit.r * 0.72, fruit.r, 0, 0, Math.PI * 2);
+  else ctx.arc(0, 2, fruit.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(73,40,24,.35)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.strokeStyle = "#624025";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(0, -fruit.r + 3);
+  ctx.lineTo(3, -fruit.r - 8);
+  ctx.stroke();
+  ctx.fillStyle = "#3d8a43";
+  ctx.beginPath();
+  ctx.ellipse(9, -fruit.r + 1, 8, 4, -0.45, 0, Math.PI * 2);
+  ctx.fill();
+  if (!fruit.good) {
+    ctx.strokeStyle = "#f8e8d0";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-7, -4);
+    ctx.lineTo(7, 8);
+    ctx.moveTo(7, -4);
+    ctx.lineTo(-7, 8);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawFruitBasket(ctx, basket) {
+  ctx.fillStyle = "rgba(19, 54, 34, .2)";
+  ctx.beginPath();
+  ctx.ellipse(basket.x + basket.w / 2, basket.y + basket.h + 7, basket.w * 0.54, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#b86e31";
+  ctx.beginPath();
+  ctx.moveTo(basket.x, basket.y);
+  ctx.lineTo(basket.x + basket.w, basket.y);
+  ctx.lineTo(basket.x + basket.w - 12, basket.y + basket.h);
+  ctx.lineTo(basket.x + 12, basket.y + basket.h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "#70411f";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.lineWidth = 2;
+  for (let x = basket.x + 18; x < basket.x + basket.w - 8; x += 18) {
+    ctx.beginPath();
+    ctx.moveTo(x, basket.y + 3);
+    ctx.lineTo(x - 5, basket.y + basket.h - 3);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.arc(basket.x + basket.w / 2, basket.y + 2, basket.w * 0.35, Math.PI, 0);
+  ctx.stroke();
 }
 
 function startBalloonPop(runtime) {
