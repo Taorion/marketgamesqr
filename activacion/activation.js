@@ -514,11 +514,105 @@ function renderExperience() {
     renderScratchExperience();
     return;
   }
+  if (currentActivation.activation_type === "SEALED_LETTER") {
+    renderSealedLetterExperience();
+    return;
+  }
   if (["SPIN_DISCOVER", "TAP_REVEAL", "CHOOSE_DOOR", "BENEFIT_SELECTOR", "QUICK_VOTE", "VIP_EXPERIENCE_SELECTOR", "STYLE_PROFILE"].includes(currentActivation.activation_type)) {
     renderChoiceExperience();
     return;
   }
   renderQuestionExperience();
+}
+
+function sealedLetterOccasionLabel(value) {
+  return {
+    WELCOME: "Cortesía de bienvenida",
+    BIRTHDAY: "Celebración de cumpleaños",
+    THANK_YOU: "Nuestro agradecimiento",
+    LOYALTY: "Reconocimiento por tu fidelidad",
+    SPECIAL: "Atención especial",
+  }[String(value || "").toUpperCase()] || "Atención especial";
+}
+
+function renderSealedLetterExperience() {
+  const visual = currentActivation.visual_config || {};
+  const businessLabel = currentActivation.business?.name || "Nuestro equipo";
+  const recipientName = String(participant?.name || "cliente especial").trim();
+  const benefitLabel = currentActivation.reward_config?.reward_label || "Una cortesía especialmente para ti";
+  const fulfillmentMode = String(currentActivation.reward_config?.fulfillment?.mode || "PHYSICAL_QR").toUpperCase();
+  const claimLabel = fulfillmentMode === "DIGITAL_ASSET"
+    ? "Recibir mi obsequio digital"
+    : fulfillmentMode === "ECOMMERCE_CODE"
+      ? "Recibir mi código de cortesía"
+      : "Generar pase para reclamar";
+  const occasion = sealedLetterOccasionLabel(visual.occasion);
+  const salutation = visual.salutation || "Tenemos el gusto de entregarte una atención especial.";
+  const message = visual.message || "Queremos agradecer tu visita y hacer de este momento una experiencia memorable. Hemos preparado esta cortesía especialmente para ti.";
+  const closing = visual.closing || "Con aprecio,";
+  const signature = visual.signature || businessLabel;
+  const sealInitial = Array.from(businessLabel.trim())[0]?.toLocaleUpperCase("es") || "Q";
+
+  experienceTitle.textContent = "Tienes una carta de cortesía";
+  experienceCopy.textContent = `Correspondencia privada preparada por ${businessLabel}. Abre el sello para conocer tu beneficio.`;
+  experienceBody.innerHTML = `
+    <section class="sealed-letter-experience" aria-label="Carta sellada de ${escapeHtml(businessLabel)}">
+      <div class="sealed-letter-correspondence">
+        <span>Correspondencia privada</span>
+        <strong>${escapeHtml(recipientName)}</strong>
+      </div>
+      <button class="sealed-envelope" type="button" id="sealedLetterEnvelope" aria-expanded="false" aria-controls="sealedLetterSheet">
+        <span class="sealed-envelope-shadow" aria-hidden="true"></span>
+        <span class="sealed-envelope-back" aria-hidden="true"></span>
+        <span class="sealed-envelope-letter-preview" aria-hidden="true"></span>
+        <span class="sealed-envelope-front" aria-hidden="true"></span>
+        <span class="sealed-envelope-flap" aria-hidden="true"></span>
+        <span class="sealed-envelope-seal" aria-hidden="true">${escapeHtml(sealInitial)}</span>
+        <span class="sealed-envelope-action">Romper el sello y abrir</span>
+      </button>
+      <article class="sealed-letter-sheet hidden" id="sealedLetterSheet" tabindex="-1">
+        <header class="sealed-letter-heading">
+          <span>${escapeHtml(occasion)}</span>
+          <small>${escapeHtml(businessLabel)}</small>
+        </header>
+        <p class="sealed-letter-recipient">Para ${escapeHtml(recipientName)},</p>
+        <h3>${escapeHtml(salutation)}</h3>
+        <p class="sealed-letter-message">${escapeHtml(message)}</p>
+        <section class="sealed-letter-benefit" aria-label="Beneficio revelado">
+          <span>La cortesía que hemos preparado para ti</span>
+          <strong>${escapeHtml(benefitLabel)}</strong>
+        </section>
+        <footer class="sealed-letter-signature">
+          <span>${escapeHtml(closing)}</span>
+          <strong>${escapeHtml(signature)}</strong>
+        </footer>
+        <button class="submit-button sealed-letter-claim" type="button" id="sealedLetterClaimButton">${escapeHtml(claimLabel)}</button>
+      </article>
+    </section>
+  `;
+
+  const envelope = document.getElementById("sealedLetterEnvelope");
+  const sheet = document.getElementById("sealedLetterSheet");
+  envelope.addEventListener("click", () => {
+    envelope.disabled = true;
+    envelope.setAttribute("aria-expanded", "true");
+    envelope.classList.add("is-opening");
+    setStatus("Abriendo tu carta de cortesía...", "info");
+    window.setTimeout(() => {
+      envelope.classList.add("is-open");
+      sheet.classList.remove("hidden");
+      window.requestAnimationFrame(() => sheet.classList.add("is-visible"));
+      setProgress(1, 1);
+      setStatus("Tu carta está abierta. Revisa la cortesía preparada para ti.", "success");
+      sheet.focus({ preventScroll: true });
+      sheet.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 850);
+  }, { once: true });
+
+  document.getElementById("sealedLetterClaimButton").addEventListener("click", () => completeActivation({
+    answers: {},
+    metadata: { sealed_letter_opened: true, sealed_letter_occasion: visual.occasion || "SPECIAL" },
+  }), { once: true });
 }
 
 function renderQuestionExperience() {

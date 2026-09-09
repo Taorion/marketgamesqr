@@ -1440,3 +1440,360 @@ body { width: 100%; max-width: 100%; overflow-x: clip; }
   color: rgba(255, 255, 255, 0.86);
   line-height: 1.6;
 }
+
+/* Carta sellada: experiencia formal de cortesía. */
+.sealed-letter-experience {
+  display: grid;
+  gap: 22px;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.sealed-letter-correspondence {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 8px;
+  color: #617080;
+}
+
+.sealed-letter-correspondence span {
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.sealed-letter-correspondence strong {
+  color: #14263b;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.sealed-envelope {
+  position: relative;
+  display: block;
+  width: min(100%, 570px);
+  height: 330px;
+  margin: 0 auto;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  perspective: 1000px;
+  transition: height .45s ease, margin .45s ease, opacity .3s ease;
+}
+
+.sealed-envelope:focus-visible {
+  outline: 3px solid #00bfe5;
+  outline-offset: 8px;
+  border-radius: 18px;
+}
+
+.sealed-envelope-shadow,
+.sealed-envelope-back,
+.sealed-envelope-front,
+.sealed-envelope-flap,
+.sealed-envelope-letter-preview {
+  position: absolute;
+  left: 5%;
+  width: 90%;
+  border-radius: 8px;
+}
+
+.sealed-envelope-shadow {
+  bottom: 12px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(22, 18, 12, .28);
+  filter: blur(18px);
+}
+
+.sealed-envelope-back {
+  top: 44px;
+  height: 250px;
+  border: 1px solid #b49a68;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.28), transparent 42%),
+    linear-gradient(160deg, #ddcda9, #b99c65);
+  box-shadow: 0 24px 48px rgba(27, 22, 14, .26);
+}
+
+.sealed-envelope-letter-preview {
+  top: 60px;
+  left: 12%;
+  width: 76%;
+  height: 190px;
+  border: 1px solid #d7c9ad;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 27px, rgba(93, 71, 43, .08) 28px),
+    #fffaf0;
+  box-shadow: 0 8px 24px rgba(38, 28, 14, .16);
+  transition: transform .7s cubic-bezier(.2,.75,.25,1), opacity .35s ease;
+}
+
+.sealed-envelope-front {
+  top: 44px;
+  height: 250px;
+  border: 1px solid #b49a68;
+  background: linear-gradient(145deg, #eadcbf, #cdb47d);
+  clip-path: polygon(0 28%, 50% 67%, 100% 28%, 100% 100%, 0 100%);
+  filter: drop-shadow(0 8px 10px rgba(55, 40, 17, .12));
+}
+
+.sealed-envelope-flap {
+  top: 44px;
+  height: 158px;
+  border: 1px solid #a98b55;
+  background: linear-gradient(155deg, #f0e4ca, #c8ad73);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  transition: transform .65s cubic-bezier(.3,.75,.2,1);
+}
+
+.sealed-envelope-seal {
+  position: absolute;
+  top: 166px;
+  left: 50%;
+  z-index: 4;
+  display: grid;
+  width: 70px;
+  height: 70px;
+  place-items: center;
+  border: 5px double rgba(255,255,255,.42);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #b9283e, #741628 70%);
+  box-shadow: 0 8px 14px rgba(66, 10, 22, .3);
+  color: #fff5dc;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  transform: translateX(-50%);
+  transition: transform .3s ease, opacity .25s ease;
+}
+
+.sealed-envelope-action {
+  position: absolute;
+  right: 0;
+  bottom: -6px;
+  left: 0;
+  color: #4d3c24;
+  font-size: .8rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.sealed-envelope:hover:not(:disabled) .sealed-envelope-seal {
+  transform: translateX(-50%) scale(1.06);
+}
+
+.sealed-envelope.is-opening .sealed-envelope-flap {
+  transform: rotateX(178deg);
+}
+
+.sealed-envelope.is-opening .sealed-envelope-seal {
+  opacity: 0;
+  transform: translateX(-50%) scale(.45) rotate(-14deg);
+}
+
+.sealed-envelope.is-opening .sealed-envelope-letter-preview {
+  transform: translateY(-58px);
+}
+
+.sealed-envelope.is-open {
+  height: 0;
+  margin: -12px auto 0;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.sealed-letter-sheet {
+  position: relative;
+  display: grid;
+  gap: 20px;
+  width: 100%;
+  padding: clamp(28px, 6vw, 54px);
+  overflow: hidden;
+  border: 1px solid #d1bf99;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(134, 105, 59, .05) 1px, transparent 1px),
+    linear-gradient(#fffdf7, #fbf4e7);
+  background-size: 24px 100%, 100% 100%;
+  box-shadow: 0 26px 60px rgba(35, 27, 15, .2);
+  color: #2f2a22;
+  font-family: Georgia, "Times New Roman", serif;
+  opacity: 0;
+  transform: translateY(24px) scale(.98);
+  transition: opacity .5s ease, transform .55s ease;
+}
+
+.sealed-letter-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  pointer-events: none;
+  border: 1px solid rgba(139, 105, 52, .22);
+}
+
+.sealed-letter-sheet.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.sealed-letter-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(116, 84, 39, .24);
+}
+
+.sealed-letter-heading span,
+.sealed-letter-heading small {
+  color: #755420;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.sealed-letter-heading small {
+  max-width: 48%;
+  text-align: right;
+}
+
+.sealed-letter-recipient,
+.sealed-letter-message,
+.sealed-letter-signature span {
+  margin: 0;
+  color: #50483d;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.sealed-letter-sheet h3 {
+  margin: 0;
+  color: #241f19;
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  line-height: 1.3;
+}
+
+.sealed-letter-benefit {
+  display: grid;
+  gap: 8px;
+  padding: 22px;
+  border: 1px solid #c6a45d;
+  background: rgba(211, 177, 105, .12);
+  text-align: center;
+}
+
+.sealed-letter-benefit span {
+  color: #755420;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.sealed-letter-benefit strong {
+  color: #6e1c2c;
+  font-size: clamp(1.45rem, 5vw, 2.2rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.sealed-letter-signature {
+  display: grid;
+  gap: 4px;
+}
+
+.sealed-letter-signature strong {
+  color: #382d1f;
+  font-size: 1.2rem;
+  font-style: italic;
+}
+
+.sealed-letter-claim {
+  width: 100%;
+  margin-top: 4px;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.is-premium .sealed-letter-claim {
+  color: #fff;
+  background: linear-gradient(135deg, #982b42, #671827);
+  box-shadow: 0 10px 22px rgba(103, 24, 39, .22);
+}
+
+.is-premium .sealed-letter-claim:hover {
+  background: linear-gradient(135deg, #aa344d, #771d2f);
+}
+
+.is-premium .sealed-letter-correspondence,
+.is-premium .sealed-letter-correspondence strong,
+.is-premium .sealed-envelope-action {
+  color: #f2dfaf;
+}
+
+@media (max-width: 520px) {
+  .sealed-letter-correspondence,
+  .sealed-letter-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .sealed-letter-heading small {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .sealed-envelope {
+    height: 270px;
+  }
+
+  .sealed-envelope-back,
+  .sealed-envelope-front {
+    top: 34px;
+    height: 200px;
+  }
+
+  .sealed-envelope-flap {
+    top: 34px;
+    height: 128px;
+  }
+
+  .sealed-envelope-letter-preview {
+    top: 48px;
+    height: 152px;
+  }
+
+  .sealed-envelope-seal {
+    top: 130px;
+    width: 58px;
+    height: 58px;
+  }
+
+  .sealed-letter-sheet {
+    padding: 30px 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sealed-envelope,
+  .sealed-envelope-flap,
+  .sealed-envelope-letter-preview,
+  .sealed-envelope-seal,
+  .sealed-letter-sheet {
+    transition-duration: .01ms;
+  }
+}
