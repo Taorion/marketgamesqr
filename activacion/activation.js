@@ -518,6 +518,10 @@ function renderExperience() {
     renderSealedLetterExperience();
     return;
   }
+  if (currentActivation.activation_type === "PRIVATE_INVITATION") {
+    renderPrivateInvitationExperience();
+    return;
+  }
   if (["SPIN_DISCOVER", "TAP_REVEAL", "CHOOSE_DOOR", "BENEFIT_SELECTOR", "QUICK_VOTE", "VIP_EXPERIENCE_SELECTOR", "STYLE_PROFILE"].includes(currentActivation.activation_type)) {
     renderChoiceExperience();
     return;
@@ -613,6 +617,88 @@ function renderSealedLetterExperience() {
     answers: {},
     metadata: { sealed_letter_opened: true, sealed_letter_occasion: visual.occasion || "SPECIAL" },
   }), { once: true });
+}
+
+function formatPrivateInvitationDate(value) {
+  const normalized = String(value || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return "Fecha por confirmar";
+  const date = new Date(`${normalized}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return "Fecha por confirmar";
+  return new Intl.DateTimeFormat("es-CO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+function privateInvitationClaimLabel() {
+  const mode = String(currentActivation.reward_config?.fulfillment?.mode || "PHYSICAL_QR").toUpperCase();
+  if (mode === "DIGITAL_ASSET") return "Confirmar fecha y recibir activo";
+  if (mode === "ECOMMERCE_CODE") return "Confirmar fecha y recibir código";
+  return "Confirmar fecha y generar invitación";
+}
+
+function renderPrivateInvitationExperience() {
+  const visual = currentActivation.visual_config || {};
+  const schedule = currentActivation.interaction_config?.schedule || {};
+  const mode = String(schedule.mode || "GUEST_CHOOSES_DATE").toUpperCase();
+  const isFixed = mode === "FIXED_EVENT_DATE";
+  const businessLabel = currentActivation.business?.name || "Nuestro equipo";
+  const serviceLabel = schedule.service_label || currentActivation.title || "Experiencia privada";
+  const message = visual.message || "Tenemos el gusto de invitarte a una experiencia privada preparada especialmente para ti.";
+  const fixedDate = String(schedule.fixed_date || "");
+  const minDate = String(schedule.min_date || "");
+  const maxDate = String(schedule.max_date || "");
+
+  experienceTitle.textContent = isFixed ? "Tu invitación privada" : "Reserva tu experiencia privada";
+  experienceCopy.textContent = isFixed
+    ? "El negocio ha reservado una fecha específica para esta invitación. Revísala y confirma para recibir tu beneficio."
+    : "Selecciona cuándo quieres vivir esta experiencia dentro de las fechas disponibles.";
+  experienceBody.innerHTML = `
+    <form class="private-invitation-experience" id="privateInvitationForm">
+      <header class="private-invitation-heading">
+        <span>Invitación exclusiva</span>
+        <small>${escapeHtml(businessLabel)}</small>
+      </header>
+      <div class="private-invitation-copy">
+        <h3>${escapeHtml(serviceLabel)}</h3>
+        <p>${escapeHtml(message)}</p>
+      </div>
+      <section class="private-invitation-date ${isFixed ? "is-fixed" : "is-selectable"}" aria-label="Fecha de la invitación">
+        <span>${isFixed ? "Fecha reservada para ti" : "¿Cuándo vas a asistir?"}</span>
+        ${isFixed ? `
+          <strong>${escapeHtml(formatPrivateInvitationDate(fixedDate))}</strong>
+          <input id="privateInvitationDateInput" type="hidden" value="${escapeHtml(fixedDate)}">
+          <small>Esta fecha fue definida por el negocio y no puede modificarse.</small>
+        ` : `
+          <input id="privateInvitationDateInput" type="date" min="${escapeHtml(minDate)}" max="${escapeHtml(maxDate)}" required>
+          <small>Disponible del ${escapeHtml(formatPrivateInvitationDate(minDate))} al ${escapeHtml(formatPrivateInvitationDate(maxDate))}.</small>
+        `}
+      </section>
+      <button class="submit-button" type="submit">${escapeHtml(privateInvitationClaimLabel())}</button>
+    </form>
+  `;
+
+  document.getElementById("privateInvitationForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const selectedDate = document.getElementById("privateInvitationDateInput")?.value || "";
+    if (!selectedDate) {
+      setStatus("Selecciona la fecha de tu visita para continuar.", "error");
+      document.getElementById("privateInvitationDateInput")?.focus();
+      return;
+    }
+    setProgress(1, 1);
+    setStatus(isFixed ? "Confirmando tu invitación..." : "Reservando la fecha elegida...", "info");
+    completeActivation({
+      answers: { visit_date: selectedDate },
+      metadata: {
+        private_invitation_schedule_mode: mode,
+        private_invitation_date: selectedDate,
+        private_invitation_service: serviceLabel,
+      },
+    });
+  });
 }
 
 function renderQuestionExperience() {

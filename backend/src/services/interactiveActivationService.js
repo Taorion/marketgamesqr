@@ -1305,6 +1305,7 @@ async function completeInteractiveParticipant(slug, body) {
   return withTransaction(async (client) => {
     const activation = await lockActivationBySlug(client, slug);
     assertActivationOpen(activation);
+    applyPrivateInvitationSchedule(activation, body);
     if (!body.participant_id) assertRequiredCaptureFields(activation, body);
     if (!body.participant_id) {
       await assertActivationIdentityConsistency(client, activation, body);
@@ -2244,6 +2245,42 @@ function rewardFromScratchChoice(items = [], selectedValue) {
     reward_label: rewardLabel,
     reward_value: rewardValue,
   }, "choice", { selected: selectedValue, scratch_index: matchIndex, scratch: true });
+}
+
+function applyPrivateInvitationSchedule(activation, body) {
+  if (activation.activation_type !== "PRIVATE_INVITATION") return;
+  const schedule = activation.interaction_config?.schedule;
+  if (!schedule || typeof schedule !== "object") return;
+  const mode = String(schedule.mode || "GUEST_CHOOSES_DATE").toUpperCase();
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  let visitDate = String(body.answers?.visit_date || "").trim();
+
+  if (mode === "FIXED_EVENT_DATE") {
+    visitDate = String(schedule.fixed_date || "").trim();
+    if (!datePattern.test(visitDate)) {
+      throw badRequest("La invitacion privada no tiene una fecha fija valida.");
+    }
+  } else {
+    const minDate = String(schedule.min_date || "").trim();
+    const maxDate = String(schedule.max_date || "").trim();
+    if (!datePattern.test(visitDate)) {
+      throw badRequest("Selecciona una fecha valida para la visita privada.");
+    }
+    if (datePattern.test(minDate) && visitDate < minDate) {
+      throw badRequest("La fecha elegida es anterior a la disponibilidad de la invitacion.");
+    }
+    if (datePattern.test(maxDate) && visitDate > maxDate) {
+      throw badRequest("La fecha elegida supera la disponibilidad de la invitacion.");
+    }
+  }
+
+  body.answers = { ...(body.answers || {}), visit_date: visitDate };
+  body.metadata = {
+    ...(body.metadata || {}),
+    private_invitation_schedule_mode: mode,
+    private_invitation_date: visitDate,
+    private_invitation_service: schedule.service_label || null,
+  };
 }
 
 function rewardFromSpinDiscoverChoice(items = [], selectedValue) {

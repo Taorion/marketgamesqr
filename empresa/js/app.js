@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260909-sealed-letter-v456";
+const APP_VERSION = "empresa-20260909-private-invitation-v457";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -29109,6 +29109,7 @@ function setActivationType(type) {
     panel.classList.toggle("active", active);
   });
   renderMinigameSpecificConfig(nextType);
+  updatePrivateInvitationScheduleFields();
   updateGamingActivationCatalog();
   window.setTimeout(() => {
     updateGamingBuilderProgress();
@@ -29748,6 +29749,20 @@ function isFlatFormActivation(type) {
 
 function isFixedPremiumActivation(type) {
   return ["SEALED_LETTER", "PRIVATE_INVITATION"].includes(type);
+}
+
+function updatePrivateInvitationScheduleFields() {
+  const mode = document.getElementById("privateInvitationScheduleModeInput")?.value || "GUEST_CHOOSES_DATE";
+  const activeSchedule = mode === "FIXED_EVENT_DATE" ? "fixed" : "guest";
+  document.querySelectorAll("[data-private-invitation-schedule]").forEach((section) => {
+    const active = section.dataset.privateInvitationSchedule === activeSchedule;
+    section.classList.toggle("hidden", !active);
+    section.toggleAttribute("hidden", !active);
+    section.querySelectorAll("input, select, textarea").forEach((field) => {
+      field.disabled = !active;
+      field.required = active && field.hasAttribute("data-private-invitation-required");
+    });
+  });
 }
 
 function isMinigameActivation(type) {
@@ -30453,6 +30468,20 @@ function buildInteractiveActivationPayload(type, activationPayload) {
     const message = type === "SEALED_LETTER"
       ? document.getElementById("sealedLetterMessageInput")?.value.trim()
       : document.getElementById("privateInvitationMessageInput")?.value.trim();
+    const privateInvitationMode = document.getElementById("privateInvitationScheduleModeInput")?.value || "GUEST_CHOOSES_DATE";
+    const privateInvitationSchedule = type === "PRIVATE_INVITATION" ? {
+      mode: privateInvitationMode,
+      service_label: document.getElementById("privateInvitationServiceInput")?.value.trim() || null,
+      min_date: privateInvitationMode === "GUEST_CHOOSES_DATE"
+        ? document.getElementById("privateInvitationStartDateInput")?.value || null
+        : null,
+      max_date: privateInvitationMode === "GUEST_CHOOSES_DATE"
+        ? document.getElementById("privateInvitationEndDateInput")?.value || null
+        : null,
+      fixed_date: privateInvitationMode === "FIXED_EVENT_DATE"
+        ? document.getElementById("privateInvitationFixedDateInput")?.value || null
+        : null,
+    } : null;
     return {
       ...base,
       reward_mode: "fixed",
@@ -30469,6 +30498,7 @@ function buildInteractiveActivationPayload(type, activationPayload) {
       },
       interaction_config: {
         template: type,
+        ...(privateInvitationSchedule ? { schedule: privateInvitationSchedule } : {}),
       },
     };
   }
@@ -30775,6 +30805,36 @@ function validateTriviaLauncherForm() {
     return { questions };
   }
   if (isFixedPremiumActivation(type)) {
+    if (type === "PRIVATE_INVITATION") {
+      const mode = document.getElementById("privateInvitationScheduleModeInput")?.value || "GUEST_CHOOSES_DATE";
+      const serviceInput = document.getElementById("privateInvitationServiceInput");
+      if (!serviceInput?.value.trim()) {
+        setInlineMessage(triviaLauncherMessage, "Escribe el nombre del servicio o evento privado.", "error");
+        serviceInput?.focus();
+        return null;
+      }
+      if (mode === "FIXED_EVENT_DATE") {
+        const fixedDateInput = document.getElementById("privateInvitationFixedDateInput");
+        if (!fixedDateInput?.value) {
+          setInlineMessage(triviaLauncherMessage, "Selecciona la fecha fija del evento privado.", "error");
+          fixedDateInput?.focus();
+          return null;
+        }
+      } else {
+        const startDateInput = document.getElementById("privateInvitationStartDateInput");
+        const endDateInput = document.getElementById("privateInvitationEndDateInput");
+        if (!startDateInput?.value || !endDateInput?.value) {
+          setInlineMessage(triviaLauncherMessage, "Define la primera y la última fecha disponibles para la visita.", "error");
+          (!startDateInput?.value ? startDateInput : endDateInput)?.focus();
+          return null;
+        }
+        if (endDateInput.value < startDateInput.value) {
+          setInlineMessage(triviaLauncherMessage, "La última fecha disponible no puede ser anterior a la primera.", "error");
+          endDateInput.focus();
+          return null;
+        }
+      }
+    }
     return { message: true };
   }
   if (type === "ROULETTE_SPIN") {
@@ -62415,6 +62475,7 @@ triviaLauncherForm?.addEventListener("input", (event) => {
 });
 triviaLauncherForm?.addEventListener("change", (event) => {
   if (event.target.matches("[data-question-count-for]")) updateActivationQuestionCountControls();
+  if (event.target.matches("#privateInvitationScheduleModeInput")) updatePrivateInvitationScheduleFields();
 });
 qrBatchForm?.addEventListener("submit", submitQrBatch);
 qrCreditCheckoutForm?.addEventListener("submit", submitQrCreditCheckout);
