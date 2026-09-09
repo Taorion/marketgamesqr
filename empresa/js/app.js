@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260909-private-invitation-v457";
+const APP_VERSION = "empresa-20260909-roulette-delivery-v458";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -5441,8 +5441,10 @@ function syncActivationDigitalAssetOptions() {
   fillDigitalAssetSelect(triviaDigitalAssetInput);
   document.querySelectorAll("[data-scratch-asset]").forEach((select) => fillDigitalAssetSelect(select));
   document.querySelectorAll("[data-spin-asset]").forEach((select) => fillDigitalAssetSelect(select));
+  document.querySelectorAll("[data-roulette-asset]").forEach((select) => fillDigitalAssetSelect(select));
   syncScratchDeliveryFields();
   syncSpinDiscoverDeliveryFields();
+  syncRouletteDeliveryFields();
 }
 
 function scratchAssetFulfillment(assetId) {
@@ -5489,6 +5491,23 @@ function syncSpinDiscoverDeliveryFields(root = document) {
     const card = select.closest(".scratch-config-card");
     const assetField = card?.querySelector("[data-spin-asset-field]");
     const assetSelect = assetField?.querySelector("[data-spin-asset]");
+    const digital = select.value === "digital";
+    assetField?.classList.toggle("hidden", !digital);
+    assetField?.toggleAttribute("hidden", !digital);
+    if (assetSelect) {
+      assetSelect.disabled = !digital;
+      assetSelect.required = digital;
+    }
+    card?.classList.toggle("is-digital", digital);
+    card?.classList.toggle("is-loser", select.value === "none");
+  });
+}
+
+function syncRouletteDeliveryFields(root = document) {
+  root.querySelectorAll("[data-roulette-delivery]").forEach((select) => {
+    const card = select.closest(".scratch-config-card");
+    const assetField = card?.querySelector("[data-roulette-asset-field]");
+    const assetSelect = assetField?.querySelector("[data-roulette-asset]");
     const digital = select.value === "digital";
     assetField?.classList.toggle("hidden", !digital);
     assetField?.toggleAttribute("hidden", !digital);
@@ -29116,10 +29135,10 @@ function setActivationType(type) {
     updateGamingActivationWizard();
   }, 0);
   if (triviaBenefitLabelInput) {
-    const perCardBenefit = ["SCRATCH_DIGITAL", "SPIN_DISCOVER"].includes(nextType);
+    const perCardBenefit = ["SCRATCH_DIGITAL", "SPIN_DISCOVER", "ROULETTE_SPIN"].includes(nextType);
     triviaBenefitLabelInput.required = !perCardBenefit;
     triviaBenefitLabelInput.placeholder = perCardBenefit
-      ? "Opcional: se usaran los resultados de cada card o zona"
+      ? "Opcional: se usaran los resultados de cada card, zona o segmento"
       : "Beneficio desbloqueado por participar";
   }
   if (nextType === "TRIVIA") {
@@ -29139,13 +29158,14 @@ function setActivationType(type) {
   }
   syncThermometerFulfillmentRestriction(nextType);
   const sharedFulfillmentPanel = triviaBenefitFulfillmentModeInput?.closest(".benefit-fulfillment-panel");
-  const perCardDelivery = ["SCRATCH_DIGITAL", "SPIN_DISCOVER"].includes(nextType);
+  const perCardDelivery = ["SCRATCH_DIGITAL", "SPIN_DISCOVER", "ROULETTE_SPIN"].includes(nextType);
   sharedFulfillmentPanel?.classList.toggle("hidden", perCardDelivery);
   sharedFulfillmentPanel?.toggleAttribute("hidden", perCardDelivery);
   if (perCardDelivery) {
     syncActivationDigitalAssetOptions();
     syncScratchDeliveryFields();
     syncSpinDiscoverDeliveryFields();
+    syncRouletteDeliveryFields();
   }
   updateActivationQuestionCountControls();
   if (triviaBuilderHint) {
@@ -29662,17 +29682,30 @@ function collectFlatChoiceOptions(type) {
 
 function collectRouletteBenefits() {
   const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
-  const fulfillment = benefitFulfillmentFromInputs(triviaBenefitFulfillmentModeInput, triviaEcommerceCodeInput, triviaEcommerceUrlInput, triviaEcommerceInstructionsInput);
   return Array.from(document.querySelectorAll("[data-roulette-benefit]"))
     .map((input, index) => {
       const label = input.value.trim();
       const value = `ROULETTE_${index + 1}`;
+      const card = input.closest(".scratch-config-card");
+      const delivery = card?.querySelector(`[data-roulette-delivery="${index + 1}"]`)?.value || "physical";
+      const assetId = card?.querySelector(`[data-roulette-asset="${index + 1}"]`)?.value || "";
+      const isWinner = delivery !== "none";
+      const baseValue = {
+        ...activationChoiceBenefitValue(label),
+        label,
+        roulette_segment: index + 1,
+        is_winner: isWinner,
+      };
       return {
         value,
         label,
         reward_type: triviaBenefitTypeInput.value,
         reward_label: label,
-        reward_value: withBenefitFulfillment(withBenefitProductScope(activationChoiceBenefitValue(label), productScope), fulfillment),
+        delivery_mode: delivery,
+        is_winner: isWinner,
+        reward_value: isWinner
+          ? withBenefitFulfillment(withBenefitProductScope(baseValue, productScope), delivery === "digital" ? scratchAssetFulfillment(assetId) : scratchPhysicalFulfillment())
+          : withBenefitProductScope(baseValue, productScope),
       };
     })
     .filter((item) => item.label);
@@ -30842,6 +30875,13 @@ function validateTriviaLauncherForm() {
     if (choices.length < 2) {
       setInlineMessage(triviaLauncherMessage, "Configura al menos dos beneficios para la ruleta.", "error");
       document.querySelector("[data-roulette-benefit]")?.focus();
+      return null;
+    }
+    const missingAsset = choices.find((choice) => choice.delivery_mode === "digital" && !choice.reward_value?.fulfillment?.asset_id);
+    if (missingAsset) {
+      const segment = missingAsset.value.replace("ROULETTE_", "");
+      setInlineMessage(triviaLauncherMessage, `Selecciona el activo digital del segmento ${segment}.`, "error");
+      document.querySelector(`[data-roulette-asset="${segment}"]`)?.focus();
       return null;
     }
     return { roulette: true, choices };
@@ -62444,9 +62484,14 @@ document.addEventListener("change", (event) => {
   if (!event.target?.matches?.("[data-spin-delivery], [data-edit-spin-delivery]")) return;
   syncSpinDiscoverDeliveryFields(event.target.closest(".scratch-config-card") || document);
 });
+document.addEventListener("change", (event) => {
+  if (!event.target?.matches?.("[data-roulette-delivery]")) return;
+  syncRouletteDeliveryFields(event.target.closest(".scratch-config-card") || document);
+});
 syncBenefitFulfillmentFields();
 syncScratchDeliveryFields();
 syncSpinDiscoverDeliveryFields();
+syncRouletteDeliveryFields();
 syncActivationBenefitValueInputs({ fromLegacy: true });
 triviaBenefitTypeInput?.addEventListener("change", () => syncActivationBenefitValueInputs());
 triviaBenefitAmountKindInput?.addEventListener("change", () => {

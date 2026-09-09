@@ -1333,6 +1333,9 @@ async function completeInteractiveParticipant(slug, body) {
     const spinOutcome = activation.activation_type === "SPIN_DISCOVER"
       ? spinDiscoverChoiceOutcome(activation.reward_config?.choices, body.selected_choice)
       : null;
+    const rouletteOutcome = activation.activation_type === "ROULETTE_SPIN"
+      ? rouletteChoiceOutcome(activation.reward_config?.choices, body.selected_choice)
+      : null;
     const rewardPayload = await resolveRewardPayload(client, activation, {
       answers,
       score,
@@ -1401,12 +1404,20 @@ async function completeInteractiveParticipant(slug, body) {
             label: spinOutcome.reveal_label,
           },
         } : {}),
+        ...(rouletteOutcome ? {
+          roulette_result: {
+            is_winner: rouletteOutcome.is_winner,
+            label: rouletteOutcome.reveal_label,
+          },
+        } : {}),
         message: pendingReview
           ? "Participacion registrada. El beneficio queda pendiente de aprobacion."
           : scratchOutcome && !scratchOutcome.is_winner
             ? scratchOutcome.reveal_label
             : spinOutcome && !spinOutcome.is_winner
               ? spinOutcome.reveal_label
+            : rouletteOutcome && !rouletteOutcome.is_winner
+              ? rouletteOutcome.reveal_label
             : "Participacion registrada. No alcanzo el rango de beneficio configurado.",
       };
     }
@@ -2213,6 +2224,9 @@ async function resolveRewardPayload(client, activation, context) {
     if (activation.activation_type === "SPIN_DISCOVER") {
       return rewardFromSpinDiscoverChoice(activation.reward_config?.choices, context.selected_choice);
     }
+    if (activation.activation_type === "ROULETTE_SPIN") {
+      return rewardFromRouletteChoice(activation.reward_config?.choices, context.selected_choice);
+    }
     const reward = rewardFromConfigArray(activation.reward_config?.choices, context.selected_choice, "choice");
     if (["SPIN_DISCOVER", "TAP_REVEAL"].includes(activation.activation_type) && !reward) {
       throw badRequest("Debes elegir una carta valida para generar el beneficio.");
@@ -2307,6 +2321,33 @@ function spinDiscoverChoiceOutcome(items = [], selectedValue) {
     matchIndex,
     is_winner: isWinner,
     reveal_label: String(match.reward_label || match.benefit_label || match.reward_value?.label || match.label || (isWinner ? "Beneficio desbloqueado" : "No ganaste esta vez")),
+  };
+}
+
+function rewardFromRouletteChoice(items = [], selectedValue) {
+  const outcome = rouletteChoiceOutcome(items, selectedValue);
+  if (!outcome) throw badRequest("La ruleta debe caer en un segmento valido para generar el resultado.");
+  if (!outcome.is_winner) return null;
+  return fixedRewardPayload(outcome.match, "choice", { selected: selectedValue, roulette_index: outcome.matchIndex });
+}
+
+function rouletteChoiceOutcome(items = [], selectedValue) {
+  if (selectedValue === undefined || selectedValue === null) {
+    throw badRequest("La ruleta debe caer en un segmento para conocer el resultado.");
+  }
+  if (!Array.isArray(items) || !items.length) return null;
+  const matchIndex = items.findIndex((item, index) => (
+    String(item.value || item.key || item.label) === String(selectedValue)
+    || String(selectedValue) === `roulette-${index}`
+  ));
+  if (matchIndex < 0) return null;
+  const match = items[matchIndex];
+  const isWinner = match.delivery_mode !== "none" && match.is_winner !== false && match.reward_value?.is_winner !== false;
+  return {
+    match,
+    matchIndex,
+    is_winner: isWinner,
+    reveal_label: String(match.reward_label || match.label || (isWinner ? "Beneficio desbloqueado" : "No ganaste esta vez")),
   };
 }
 
@@ -3044,9 +3085,11 @@ module.exports = {
   recycleInteractiveActivation,
   resolveDiagnosticResult,
   rewardFromScratchChoice,
+  rewardFromRouletteChoice,
   rewardFromSpinDiscoverChoice,
   scoreAnswerWithRules,
   scratchChoiceOutcome,
+  rouletteChoiceOutcome,
   spinDiscoverChoiceOutcome,
   thermometerTicketRewardValue,
   startInteractiveParticipant,

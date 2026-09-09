@@ -2660,6 +2660,8 @@ function startRouletteSpin(runtime) {
   ]).map((segment, index) => ({
     value: segment.value || segment.key || `ROULETTE_${index + 1}`,
     label: segment.label || segment.reward_label || `Beneficio ${index + 1}`,
+    delivery_mode: segment.delivery_mode || (segment.is_winner === false ? "none" : "physical"),
+    is_winner: segment.is_winner !== false && segment.reward_value?.is_winner !== false,
     color: palette[index % palette.length],
   }));
   let angle = 0;
@@ -2688,6 +2690,15 @@ function startRouletteSpin(runtime) {
         drawRetroBackground(ctx, width, height, "RULETA");
         drawRoulette(ctx, width / 2, height / 2 + 8, 132, segments, angle, true, landed);
         setProgress(1, 1);
+        const winsReward = landed.delivery_mode !== "none" && landed.is_winner;
+        setStatus(
+          winsReward
+            ? landed.delivery_mode === "digital"
+              ? `Ganaste ${landed.label}. Preparando tu descarga...`
+              : `Ganaste ${landed.label}. Generando tu ticket...`
+            : `${landed.label}. Este segmento no genera ticket ni descarga.`,
+          winsReward ? "success" : "info"
+        );
         window.setTimeout(() => {
           cleanupGameState();
           completeActivation({
@@ -2697,7 +2708,7 @@ function startRouletteSpin(runtime) {
             participant_id: participant?.id,
             game_session_token: gameSessionToken,
           });
-        }, 650);
+        }, 1200);
         return;
       }
     }
