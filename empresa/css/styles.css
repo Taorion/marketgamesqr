@@ -40315,6 +40315,12 @@ body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-value 
   color: #eaf4ff !important;
 }
 
+/* Captura Relámpago pertenece a Contactos > Capturas. El markup se conserva
+   para historiales existentes, pero nunca debe aparecer entre Activaciones. */
+body[data-current-view="strategic-qr"] [data-contact-captures-only] {
+  display: none !important;
+}
+
 /* Modalidad de captura de datos en activaciones (v460). */
 #gamingActivationBuilderModal .activation-capture-decision {
   display: grid;
