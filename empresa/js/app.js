@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260909-order-options-v459";
+const APP_VERSION = "empresa-20260909-optional-beneficiary-data-v460";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -1097,6 +1097,10 @@ const minigameLivesInput = document.getElementById("minigameLivesInput");
 const minigameFireIntervalInput = document.getElementById("minigameFireIntervalInput");
 const minigameParticipantCooldownInput = document.getElementById("minigameParticipantCooldownInput");
 const minigameWinnerPolicyInput = document.getElementById("minigameWinnerPolicyInput");
+const activationCollectParticipantDataInput = document.getElementById("activationCollectParticipantDataInput");
+const activationCaptureConsequence = document.getElementById("activationCaptureConsequence");
+const activationIdentityRulesPanel = document.getElementById("activationIdentityRulesPanel");
+const activationAnonymousCaptureNotice = document.getElementById("activationAnonymousCaptureNotice");
 const activationFormBuilder = document.getElementById("activationFormBuilder");
 const activationFormBuilderInitialMarkup = activationFormBuilder?.innerHTML || "";
 const activationFormFieldCount = document.getElementById("activationFormFieldCount");
@@ -18662,8 +18666,14 @@ function renderValidatorCompletedCheckout(checkout = {}) {
   validatorCheckoutSummary.dataset.state = "completed";
 }
 
+function validatorIsTransferableTicket(data = state.validatorLastValidation) {
+  return data?.qr_code?.origin_type === "INTERACTIVE_ACTIVATION"
+    && (data.qr_code.ticket_identity_mode === "TRANSFERABLE" || data.qr_code.beneficiary_data_collected === false);
+}
+
 function setValidatorOperationState(mode = "idle", data = state.validatorLastValidation) {
   const isRewardPass = validatorKind(data) === "reward_pass";
+  const isTransferableTicket = validatorIsTransferableTicket(data);
   const redeemLabel = validatorRedeemButton?.querySelector("span:last-child");
   if (validatorOperationPanel) validatorOperationPanel.dataset.mode = mode;
   validatorRewardPassFields.hidden = mode !== "validated_reward" && mode !== "completed_reward";
@@ -18681,7 +18691,7 @@ function setValidatorOperationState(mode = "idle", data = state.validatorLastVal
     idle: ["Siguiente acción", "Valida un ticket para comenzar", "La operación se adaptará automáticamente al tipo de ticket detectado.", "En espera", "capture"],
     validating: ["Consulta segura", "Comprobando autenticidad", "Estamos verificando negocio, estado, vigencia y beneficio.", "Validando", "verify"],
     rejected: ["Operación detenida", "Este ticket no puede redimirse", "Revisa el diagnóstico. No se ha modificado ningún beneficio.", "Protegido", "verify"],
-    validated_standard: ["Ticket QR aprobado", "Elige cómo aplicar el beneficio", "Si hay compra, registra sus productos: descuento, obsequio o condición se aplicarán antes de confirmar la redención.", "Listo para aplicar", "redeem"],
+    validated_standard: ["Ticket QR aprobado", isTransferableTicket ? "Confirma únicamente el beneficio" : "Elige cómo aplicar el beneficio", isTransferableTicket ? "Este ticket es transferible: no solicites ni cotejes cédula. Verifica el beneficio y confirma la redención." : "Si hay compra, registra sus productos: descuento, obsequio o condición se aplicarán antes de confirmar la redención.", isTransferableTicket ? "Sin identidad" : "Listo para aplicar", "redeem"],
     validated_reward: ["Reward Pass aprobado", "Verifica factura, documento y saldo", "Completa los datos de la compra. El sistema calculará automáticamente cuánto cubre el saldo.", "Saldo disponible", "redeem"],
     redeemed_standard: ["Operación segura", "Beneficio redimido", "La operación quedó cerrada.", "Completado", "close"],
     completed_standard: ["Operación completa", "Compra y beneficio confirmados", "El resumen final conserva subtotal, beneficio aplicado y total pagado.", "Completado", "close"],
@@ -18698,6 +18708,7 @@ function setValidatorOperationState(mode = "idle", data = state.validatorLastVal
 }
 
 function setValidatorResult(mode, title, message, data = null) {
+  const isTransferableTicket = validatorIsTransferableTicket(data);
   validatorResultTitle.textContent = title;
   validatorResultMessage.textContent = message;
   validatorResultChip.className = `result-chip ${mode}`;
@@ -18716,15 +18727,15 @@ function setValidatorResult(mode, title, message, data = null) {
     validatorProductScope,
     validatorFulfillment,
   ].filter(Boolean).join(" | ");
-  validatorPlayerValue.textContent = data?.player?.name || "-";
-  validatorDocumentValue.textContent = data?.player?.document_id || "-";
+  validatorPlayerValue.textContent = isTransferableTicket ? "Ticket transferible" : data?.player?.name || "-";
+  validatorDocumentValue.textContent = isTransferableTicket ? "No requerido" : data?.player?.document_id || "-";
   validatorContactValue.textContent = [
     data?.player?.email,
     data?.player?.phone,
     data?.reward_pass ? `Saldo: ${money(data.reward_pass.current_balance_cop)}` : "",
     data?.sale?.product_name ? `Venta: ${data.sale.product_name}` : "",
     data?.affiliate?.name ? `Recomendado por: ${data.affiliate.name}` : "",
-  ].filter(Boolean).join(" | ") || "-";
+  ].filter(Boolean).join(" | ") || (isTransferableTicket ? "Sin captura de datos personales" : "-");
   validatorExpiresValue.textContent = formatDate(data?.qr_code?.expires_at);
   validatorRedeemButton.disabled = !data?.allowed;
   if (data?.kind === "reward_pass") {
@@ -19456,6 +19467,7 @@ function resetGamingActivationBuilderForNewActivation() {
   syncActivationFormBuilder();
   syncBenefitFulfillmentFields();
   syncActivationBenefitValueInputs({ fromLegacy: true });
+  syncActivationCaptureMode();
 }
 
 function syncThermometerFulfillmentRestriction(type = currentActivationType()) {
@@ -19937,26 +19949,29 @@ function renderGamingActivationReview() {
   const icon = selectedTypeButton?.querySelector(".material-symbols-outlined")?.textContent?.trim() || "sports_esports";
   const typeName = selectedTypeButton?.querySelector("strong")?.textContent?.trim() || activationTypeLabel(type);
   const title = triviaTitleInput?.value.trim() || "Tu próxima experiencia";
-  const description = triviaDescriptionInput?.value.trim() || "Participa, deja tus datos y descubre el beneficio que la marca preparó para ti.";
+  const collectsParticipantData = activationCollectsParticipantData();
+  const description = triviaDescriptionInput?.value.trim() || (collectsParticipantData
+    ? "Participa, deja tus datos y descubre el beneficio que la marca preparó para ti."
+    : "Participa directamente y descubre el beneficio que la marca preparó para ti.");
   const campaign = triviaCampaignInput?.selectedOptions?.[0]?.textContent?.trim() || "Sin campaña asociada";
   const benefit = triviaBenefitLabelInput?.value.trim() || (type === "SCRATCH_DIGITAL" ? "Beneficio definido por zona" : "Beneficio pendiente");
   const benefitType = triviaBenefitTypeInput?.selectedOptions?.[0]?.textContent?.trim() || "Beneficio";
   const expiry = triviaExpiresModeInput?.selectedOptions?.[0]?.textContent?.trim() || "Sin expiración";
-  const customFields = collectActivationCustomFields();
+  const customFields = collectsParticipantData ? collectActivationCustomFields() : [];
   const maxWinners = triviaMaxWinnersInput?.value ? Number(triviaMaxWinnersInput.value).toLocaleString("es-CO") : "Sin límite";
   review.innerHTML = `
     <div>
-      <div class="gaming-activation-review-head"><span class="mono-label">Revisión antes de publicar</span><h4>${escapeHtml(title)}</h4><p>Confirma la promesa, la captura y la entrega. Puedes volver a cualquier paso sin perder la configuración.</p></div>
+      <div class="gaming-activation-review-head"><span class="mono-label">Revisión antes de publicar</span><h4>${escapeHtml(title)}</h4><p>${collectsParticipantData ? "Confirma la promesa, la captura y la entrega." : "Confirma la promesa, el acceso directo y la entrega transferible."} Puedes volver a cualquier paso sin perder la configuración.</p></div>
       <div class="gaming-activation-review-grid">
         <article><span>Dinámica</span><strong>${escapeHtml(typeName)}</strong></article>
         <article><span>Campaña</span><strong>${escapeHtml(campaign)}</strong></article>
         <article><span>Beneficio</span><strong>${escapeHtml(`${benefitType} · ${benefit}`)}</strong></article>
-        <article><span>Captura RMS</span><strong>${customFields.length.toLocaleString("es-CO")} pregunta(s) personalizada(s)</strong></article>
+        <article><span>Datos e identidad</span><strong>${collectsParticipantData ? `${customFields.length.toLocaleString("es-CO")} pregunta(s) GOS · ticket identificado` : "Acceso directo · ticket transferible"}</strong></article>
         <article><span>Cupo / vigencia</span><strong>${escapeHtml(`${maxWinners} · ${expiry}`)}</strong></article>
       </div>
     </div>
     <div class="gaming-activation-phone" aria-label="Vista previa aproximada de la landing">
-      <div class="gaming-activation-phone-screen"><small>${escapeHtml(activationBusinessName())}</small><span class="material-symbols-outlined gaming-activation-phone-icon" aria-hidden="true">${escapeHtml(icon)}</span><strong>${escapeHtml(typeName)}</strong><h4>${escapeHtml(title)}</h4><p>${escapeHtml(description)}</p><span class="gaming-activation-phone-cta">Participar y descubrir beneficio</span><small>${escapeHtml(benefit)}</small></div>
+      <div class="gaming-activation-phone-screen"><small>${escapeHtml(activationBusinessName())}</small><span class="material-symbols-outlined gaming-activation-phone-icon" aria-hidden="true">${escapeHtml(icon)}</span><strong>${escapeHtml(typeName)}</strong><h4>${escapeHtml(title)}</h4><p>${escapeHtml(description)}</p><span class="gaming-activation-phone-cta">${collectsParticipantData ? "Registrar datos y participar" : "Jugar ahora"}</span><small>${escapeHtml(benefit)}</small></div>
     </div>
   `;
 }
@@ -30361,10 +30376,41 @@ function validateBenefitFulfillment(modeInput, codeInput, messageNode, contextLa
   return false;
 }
 
+function activationCollectsParticipantData() {
+  return activationCollectParticipantDataInput?.checked !== false;
+}
+
+function syncActivationCaptureMode() {
+  const collectsData = activationCollectsParticipantData();
+  const formSection = triviaLauncherForm?.querySelector(".activation-builder-form");
+  formSection?.classList.toggle("is-capture-disabled", !collectsData);
+  activationAnonymousCaptureNotice?.classList.toggle("hidden", collectsData);
+  activationAnonymousCaptureNotice?.toggleAttribute("hidden", collectsData);
+  activationIdentityRulesPanel?.toggleAttribute("hidden", !collectsData);
+  activationProductIntentPanel?.toggleAttribute("hidden", !collectsData);
+  if (activationCaptureConsequence) {
+    activationCaptureConsequence.classList.toggle("is-transferable", !collectsData);
+    activationCaptureConsequence.innerHTML = collectsData
+      ? '<span class="material-symbols-outlined" aria-hidden="true">verified_user</span><p><strong>Ticket identificado.</strong> El beneficio queda asociado al participante y puede controlarse por documento.</p>'
+      : '<span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span><p><strong>Ticket transferible y no privado.</strong> El visitante pasa directo a la activación. No se recolectan datos, no se crea un lead y el validador no solicitará ni cotejará cédula; solo registrará el beneficio redimido.</p>';
+  }
+  updateGamingBuilderProgress();
+  if (Number(state.gamingActivationWizardStep || 0) === 4) renderGamingActivationReview();
+}
+
 function buildInteractiveActivationPayload(type, activationPayload) {
+  const collectsParticipantData = activationCollectsParticipantData();
+  const typedInviteMessage = triviaInviteMessageInput?.value.trim() || "";
+  const inviteMessageTemplate = !collectsParticipantData && /deja tus datos/i.test(typedInviteMessage)
+    ? "Hola, te invito a jugar {titulo}. Abre este enlace y participa directamente: {link}"
+    : typedInviteMessage || defaultActivationInviteTemplate({ title: triviaTitleInput.value.trim() });
   const baseBenefitLabel = interactiveBaseBenefitLabel(type, activationPayload);
-  const productInterest = activationProductIntentConfig();
-  const customCaptureFields = activationCustomFieldsForProductIntent(collectActivationCustomFields(), productInterest);
+  const productInterest = collectsParticipantData
+    ? activationProductIntentConfig()
+    : { mode: "NO_PRODUCT", required: false, product_id: null, product_name: null, options: [], rms_field: "interest" };
+  const customCaptureFields = collectsParticipantData
+    ? activationCustomFieldsForProductIntent(collectActivationCustomFields(), productInterest)
+    : [];
   const productScope = benefitProductScope(triviaBenefitProductModeInput, triviaBenefitProductInput);
   const fulfillment = benefitFulfillmentFromInputs(
     triviaBenefitFulfillmentModeInput,
@@ -30399,25 +30445,31 @@ function buildInteractiveActivationPayload(type, activationPayload) {
       fulfillment,
     },
     capture_config: {
-      required_fields: ["name", "phone", "email", "document"],
+      collect_participant_data: collectsParticipantData,
+      ticket_identity_mode: collectsParticipantData ? "IDENTIFIED" : "TRANSFERABLE",
+      required_fields: collectsParticipantData ? ["name", "phone", "email", "document"] : [],
       optional_fields: [],
-      participant_lock: activationParticipantLockFromForm(),
+      participant_lock: collectsParticipantData
+        ? activationParticipantLockFromForm()
+        : { scope: "activation", cooldown_days: 0, winner_policy: "allow_after_cooldown", enabled: false },
       custom_fields: customCaptureFields,
       product_interest: productInterest,
       form_schema_version: 1,
-      form_title: "Formulario RMS antes del juego",
-      rms_mapping_enabled: true,
-      rms_entry_phase: "recoleccion",
+      form_title: collectsParticipantData ? "Formulario RMS antes del juego" : null,
+      rms_mapping_enabled: collectsParticipantData,
+      rms_entry_phase: collectsParticipantData ? "recoleccion" : null,
     },
     visual_config: {
       source: "ticket_center_activation_builder",
       branch_scope: interactiveActivationBranchScope(),
-      invite_message_template: triviaInviteMessageInput?.value.trim() || defaultActivationInviteTemplate({ title: triviaTitleInput.value.trim() }),
+      invite_message_template: inviteMessageTemplate,
     },
     metadata: {
       benefit_product_scope: productScope,
       benefit_fulfillment: fulfillment,
       product_interest_config: productInterest,
+      beneficiary_data_collected: collectsParticipantData,
+      ticket_identity_mode: collectsParticipantData ? "IDENTIFIED" : "TRANSFERABLE",
     },
     benefit: {
       benefit_type: triviaBenefitTypeInput.value,
@@ -30659,8 +30711,6 @@ function buildInteractiveActivationPayload(type, activationPayload) {
       reward_mode: "by_score",
       capture_config: {
         ...base.capture_config,
-        required_fields: ["name", "phone", "email", "document"],
-        optional_fields: [],
       },
       score_rewards: [{
         min_score: effectiveMinScore,
@@ -33158,8 +33208,17 @@ async function validateValidatorToken(rawValue) {
       }
       setValidatorResult("ok", data.kind === "reward_pass" ? "Reward Pass válido" : "Ticket válido", data.message, data);
       setValidatorOperationState(data.kind === "reward_pass" ? "validated_reward" : "validated_standard", data);
-      setInlineMessage(validatorManualStatus, data.kind === "reward_pass" ? "Reward Pass válido. Confirma cédula, factura y valor a redimir." : "Ticket válido. Puedes redimir el beneficio.", "success");
-      showFeedback(data.kind === "reward_pass" ? "Reward Pass válido. Confirma documento antes de registrar redención." : "Ticket válido. Revisa los datos y redime cuando el cliente confirme.", "success", { title: "Ticket aprobado" });
+      const transferableTicket = validatorIsTransferableTicket(data);
+      setInlineMessage(validatorManualStatus, data.kind === "reward_pass"
+        ? "Reward Pass válido. Confirma cédula, factura y valor a redimir."
+        : transferableTicket
+          ? "Ticket transferible válido. No requiere cédula; confirma únicamente el beneficio."
+          : "Ticket válido. Puedes redimir el beneficio.", "success");
+      showFeedback(data.kind === "reward_pass"
+        ? "Reward Pass válido. Confirma documento antes de registrar redención."
+        : transferableTicket
+          ? "Ticket transferible aprobado. Registra la entrega del beneficio sin solicitar datos personales."
+          : "Ticket válido. Revisa los datos y redime cuando el cliente confirme.", "success", { title: "Ticket aprobado" });
     } else {
       setValidatorResult("danger", data.status || "Ticket rechazado", data.message, data);
       setValidatorOperationState("rejected", data);
@@ -63529,6 +63588,8 @@ document.querySelectorAll("[data-flat-option-image]").forEach((input) => {
   input.addEventListener("change", () => handleProductVoteImageFile(input.dataset.flatOptionImage, input.files?.[0]));
 });
 battleshipShipCountInput?.addEventListener("input", updateBattleshipShipInputs);
+activationCollectParticipantDataInput?.addEventListener("change", syncActivationCaptureMode);
+syncActivationCaptureMode();
 minigameSpecificConfigPanel?.addEventListener("click", (event) => {
   const orderAddButton = event.target.closest("[data-order-step-add]");
   if (orderAddButton) {

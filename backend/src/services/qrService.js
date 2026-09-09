@@ -315,6 +315,12 @@ async function getQrDetails(tokenInput, user) {
       created_at: qr.created_at,
       expires_at: qr.expires_at,
       redeemed_at: qr.redeemed_at,
+      beneficiary_data_collected: qr.origin_type === "INTERACTIVE_ACTIVATION"
+        ? qr.metadata?.beneficiary_data_collected !== false
+        : Boolean(qr.player_id),
+      ticket_identity_mode: qr.origin_type === "INTERACTIVE_ACTIVATION"
+        ? (qr.metadata?.ticket_identity_mode || "IDENTIFIED")
+        : null,
     },
     business: { id: qr.business_id, name: qr.business_name, slug: qr.business_slug },
     game: qr.game_id ? { id: qr.game_id, name: qr.game_name } : null,

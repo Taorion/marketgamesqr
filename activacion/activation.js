@@ -172,6 +172,10 @@ function productInterestConfig() {
   return config && typeof config === "object" ? config : {};
 }
 
+function activationCollectsParticipantData(activation = currentActivation) {
+  return activation?.capture_config?.collect_participant_data !== false;
+}
+
 function customFieldName(field) {
   return `custom_${field.key || field.id}`;
 }
@@ -361,6 +365,22 @@ function applyFixedProductInterest(activationForm, rmsIntake) {
 }
 
 function participantPayload() {
+  const trackingMetadata = {
+    source_url: window.location.href,
+    user_agent: navigator.userAgent,
+    communication_tracking_token: new URLSearchParams(window.location.search).get("qori_ref") || null,
+    communication_tracking_source: new URLSearchParams(window.location.search).get("qori_source") || null,
+  };
+  if (!activationCollectsParticipantData()) {
+    return {
+      metadata: {
+        ...trackingMetadata,
+        capture_mode: "ANONYMOUS",
+        beneficiary_data_collected: false,
+        ticket_identity_mode: "TRANSFERABLE",
+      },
+    };
+  }
   const activationForm = collectCustomFormResponses();
   const rmsIntake = rmsIntakeFromCustomForm(activationForm);
   const enriched = applyFixedProductInterest(activationForm, rmsIntake);
@@ -371,10 +391,7 @@ function participantPayload() {
     document: participantDocument.value.trim() || null,
     document_type: participantDocumentType?.value || "CC",
     metadata: {
-      source_url: window.location.href,
-      user_agent: navigator.userAgent,
-      communication_tracking_token: new URLSearchParams(window.location.search).get("qori_ref") || null,
-      communication_tracking_source: new URLSearchParams(window.location.search).get("qori_source") || null,
+      ...trackingMetadata,
       activation_form: enriched.activationForm,
       rms_intake: enriched.rmsIntake,
     },
@@ -401,9 +418,12 @@ function renderActivation(activation) {
     };
   }
   activationTitle.textContent = activation.title;
-  activationDescription.textContent = activation.activation_type === "SCRATCH_WIN"
+  const collectsParticipantData = activationCollectsParticipantData(activation);
+  activationDescription.textContent = activation.activation_type === "SCRATCH_WIN" && collectsParticipantData
     ? "Registra tus datos, responde el formulario y raspa la superficie para descubrir el premio."
-    : activation.description || "Deja tus datos, responde el formulario y completa la experiencia para desbloquear tu QR.";
+    : activation.description || (collectsParticipantData
+      ? "Deja tus datos, responde el formulario y completa la experiencia para desbloquear tu QR."
+      : "Entra directamente a la experiencia y descubre el beneficio preparado por el negocio.");
   document.title = `${activation.title} | Activacion Qori`;
   card.classList.toggle("is-premium", isPremium(activation));
   syncCaptureRequirements(activation);
@@ -412,6 +432,19 @@ function renderActivation(activation) {
     setStatus("Esta activacion no esta activa en este momento.", "error");
     return;
   }
+  const experienceStepLabel = experienceStage?.querySelector(".section-head > span");
+  if (!collectsParticipantData) {
+    participantForm.classList.add("hidden");
+    if (experienceStepLabel) experienceStepLabel.textContent = "Paso 1";
+    setStatus("Acceso directo: no solicitaremos datos personales. El ticket que obtengas será transferible y se validará únicamente por su beneficio, vigencia y estado.", "success");
+    setProgress(0, 1);
+    window.setTimeout(() => {
+      if (minigameTypes.has(activation.activation_type)) startGameSession();
+      else renderExperience();
+    }, 0);
+    return;
+  }
+  if (experienceStepLabel) experienceStepLabel.textContent = "Paso 2";
   setStatus(
     activation.activation_type === "SCRATCH_WIN"
       ? "Primero registra tus datos y responde el formulario. Luego raspa para descubrir tu premio."
@@ -423,6 +456,15 @@ function renderActivation(activation) {
 }
 
 function syncCaptureRequirements(activation) {
+  if (!activationCollectsParticipantData(activation)) {
+    participantName.required = false;
+    participantPhone.required = false;
+    participantEmail.required = false;
+    participantDocument.required = false;
+    if (participantDocumentType) participantDocumentType.required = false;
+    renderCustomFormFields({ ...activation, capture_config: { ...(activation.capture_config || {}), custom_fields: [] } });
+    return;
+  }
   const requiredFields = new Set(activation.capture_config?.required_fields || []);
   requiredFields.add("phone");
   requiredFields.add("email");
@@ -468,8 +510,10 @@ async function handleParticipantSubmit(event) {
 
 async function startGameSession() {
   const button = participantForm.querySelector("button[type='submit']");
-  button.disabled = true;
-  button.textContent = "Preparando...";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Preparando...";
+  }
   try {
     const data = await api(`/api/public/activations/${encodeURIComponent(currentActivation.public_slug)}/participants`, {
       method: "POST",
@@ -488,8 +532,10 @@ async function startGameSession() {
   } catch (error) {
     setStatus(error.message, "error");
   } finally {
-    button.disabled = false;
-    button.textContent = "Continuar";
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Continuar";
+    }
   }
 }
 
@@ -3649,7 +3695,7 @@ async function renderResult(data) {
     <div class="result-copy">
       <span>Beneficio generado</span>
       <strong>${escapeHtml(data.reward?.reward_label || "QR unico")}</strong>
-      <p>Guarda este QR y preséntalo para redimir tu beneficio.</p>
+      <p>${activationCollectsParticipantData() ? "Guarda este QR y preséntalo para redimir tu beneficio." : "Guarda este QR transferible. Al redimirlo no se solicitará ni cotejará una cédula; se validarán el beneficio, la vigencia y que no haya sido usado."}</p>
     </div>
     <img src="${escapeHtml(rewardQrDataUrl)}" alt="Beneficio QR" id="rewardQrImage">
     <div class="ticket-actions">

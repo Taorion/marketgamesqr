@@ -371,8 +371,8 @@ const interactiveActivationUpdateSchema = z.object({
 });
 
 const publicInteractiveParticipantSchema = z.object({
-  name: z.string().trim().min(2).max(160),
-  phone: z.string().trim().min(5).max(40),
+  name: z.string().trim().min(2).max(160).optional().nullable(),
+  phone: z.string().trim().min(5).max(40).optional().nullable(),
   email: z.string().email().max(160).optional().nullable(),
   document: z.string().trim().max(40).optional().nullable(),
   document_id: z.string().trim().max(40).optional().nullable(),
@@ -389,10 +389,6 @@ const publicInteractiveCompleteSchema = publicInteractiveParticipantSchema.parti
   position_percent: z.number().min(0).max(100).optional().nullable(),
   result_profile: z.string().trim().max(160).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
-}).superRefine((body, ctx) => {
-  if (!body.participant_id && (!body.name || !body.phone)) {
-    ctx.addIssue({ code: "custom", path: ["name"], message: "Nombre y telefono son requeridos si no existe participant_id." });
-  }
 });
 
 const triviaQuestionSchema = z.object({

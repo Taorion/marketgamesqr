@@ -506,21 +506,58 @@ function normalizeProductInterestConfig(config = {}) {
 }
 
 function normalizeCaptureConfig(config = {}) {
-  const required = new Set(["name", "phone", "email", "document", ...(Array.isArray(config.required_fields) ? config.required_fields : [])]);
-  const customFields = normalizeCustomCaptureFields(config.custom_fields || config.fields || []);
+  const collectsParticipantData = config.collect_participant_data !== false;
+  const required = new Set(collectsParticipantData
+    ? ["name", "phone", "email", "document", ...(Array.isArray(config.required_fields) ? config.required_fields : [])]
+    : []);
+  const customFields = collectsParticipantData ? normalizeCustomCaptureFields(config.custom_fields || config.fields || []) : [];
   return {
     ...config,
+    collect_participant_data: collectsParticipantData,
+    ticket_identity_mode: collectsParticipantData ? "IDENTIFIED" : "TRANSFERABLE",
     required_fields: Array.from(required),
     optional_fields: Array.isArray(config.optional_fields)
       ? config.optional_fields.filter((field) => !required.has(field))
       : [],
-    participant_lock: normalizeParticipantLock(config.participant_lock || {}),
+    participant_lock: collectsParticipantData
+      ? { ...normalizeParticipantLock(config.participant_lock || {}), enabled: true }
+      : { scope: "activation", cooldown_days: 0, winner_policy: "allow_after_cooldown", label: "Sin control por identidad", enabled: false },
     custom_fields: customFields,
-    product_interest: normalizeProductInterestConfig(config.product_interest || {}),
+    product_interest: collectsParticipantData
+      ? normalizeProductInterestConfig(config.product_interest || {})
+      : normalizeProductInterestConfig({ mode: "NO_PRODUCT", required: false }),
     form_schema_version: Number(config.form_schema_version || 1),
-    rms_mapping_enabled: config.rms_mapping_enabled !== false,
-    rms_entry_phase: config.rms_entry_phase || "recoleccion",
+    rms_mapping_enabled: collectsParticipantData && config.rms_mapping_enabled !== false,
+    rms_entry_phase: collectsParticipantData ? (config.rms_entry_phase || "recoleccion") : null,
   };
+}
+
+function activationCollectsParticipantData(activation = {}) {
+  return normalizeCaptureConfig(activation.capture_config || {}).collect_participant_data !== false;
+}
+
+function enforceParticipantCaptureMode(activation, body = {}) {
+  if (activationCollectsParticipantData(activation)) return body;
+  delete body.name;
+  delete body.phone;
+  delete body.email;
+  delete body.document;
+  delete body.document_id;
+  delete body.document_type;
+  const metadata = body.metadata && typeof body.metadata === "object" && !Array.isArray(body.metadata)
+    ? { ...body.metadata }
+    : {};
+  delete metadata.identity;
+  delete metadata.activation_form;
+  delete metadata.custom_form_responses;
+  delete metadata.rms_intake;
+  body.metadata = {
+    ...metadata,
+    capture_mode: "ANONYMOUS",
+    beneficiary_data_collected: false,
+    ticket_identity_mode: "TRANSFERABLE",
+  };
+  return body;
 }
 
 function publicActivation(row, questions = [], scoreRules = [], touchZones = []) {
@@ -530,7 +567,9 @@ function publicActivation(row, questions = [], scoreRules = [], touchZones = [])
   return {
     ...mapped,
     ...(scratchWin ? {
-      description: "Registra tus datos y raspa la superficie para descubrir el premio.",
+      description: mapped.capture_config.collect_participant_data
+        ? "Registra tus datos y raspa la superficie para descubrir el premio."
+        : "Raspa la superficie directamente para descubrir el premio.",
       reward_config: redactScratchRewardConfig(mapped.reward_config),
     } : {}),
     business: {
@@ -1262,6 +1301,7 @@ async function startInteractiveParticipant(slug, body) {
   return withTransaction(async (client) => {
     const activation = await lockActivationBySlug(client, slug);
     assertActivationOpen(activation);
+    enforceParticipantCaptureMode(activation, body);
     assertRequiredCaptureFields(activation, body);
     await assertActivationIdentityConsistency(client, activation, body);
     const existingReward = await existingRewardResponseForIdentity(client, activation, body);
@@ -1314,6 +1354,7 @@ async function completeInteractiveParticipant(slug, body) {
   return withTransaction(async (client) => {
     const activation = await lockActivationBySlug(client, slug);
     assertActivationOpen(activation);
+    enforceParticipantCaptureMode(activation, body);
     applyPrivateInvitationSchedule(activation, body);
     applyOrderOptionsResult(activation, body);
     if (!body.participant_id) assertRequiredCaptureFields(activation, body);
@@ -1633,6 +1674,22 @@ function hasCustomCaptureValue(value) {
 
 function activationFormMetadata(activation, body = {}, extra = {}) {
   const captureConfig = normalizeCaptureConfig(activation.capture_config || {});
+  if (!captureConfig.collect_participant_data) {
+    const metadata = body.metadata && typeof body.metadata === "object" && !Array.isArray(body.metadata) ? body.metadata : {};
+    return {
+      ...metadata,
+      source_url: metadata.source_url || null,
+      user_agent: metadata.user_agent || null,
+      communication_tracking_token: metadata.communication_tracking_token || null,
+      communication_tracking_source: metadata.communication_tracking_source || null,
+      acquisition_channel_id: metadata.acquisition_channel_id || activation.acquisition_channel_id || null,
+      acquisition_channel_name_snapshot: metadata.acquisition_channel_name_snapshot || activation.acquisition_channel_name || null,
+      capture_mode: "ANONYMOUS",
+      beneficiary_data_collected: false,
+      ticket_identity_mode: "TRANSFERABLE",
+      ...extra,
+    };
+  }
   const fields = captureConfig.custom_fields || [];
   const productInterest = captureConfig.product_interest || {};
   const responses = customCaptureResponses(body);
@@ -1731,6 +1788,7 @@ function normalizeIdentityDocumentType(value) {
 }
 
 function assertRequiredCaptureFields(activation, body) {
+  if (!activationCollectsParticipantData(activation)) return;
   const requiredFields = new Set(["name", "phone", "email", "document", ...(activation.capture_config?.required_fields || [])]);
   const document = body.document || body.document_id || "";
   const values = {
@@ -1856,6 +1914,15 @@ async function assertActivationIdentityConsistency(client, activation, body) {
 }
 
 async function resolveActivationContact(client, activation, body, metadata = {}) {
+  if (!activationCollectsParticipantData(activation)) {
+    return {
+      player_id: null,
+      source_type: "ANONYMOUS",
+      source_id: null,
+      created: false,
+      reference: { source_type: "ANONYMOUS", source_id: null, created: false },
+    };
+  }
   const identity = activationContactIdentity(body);
   if (identity.documentId || identity.email || identity.phone) {
     const lockKey = [activation.company_id, identity.documentId || identity.email || identity.phone].join(":");
@@ -2734,6 +2801,8 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
         activation_type: activation.activation_type,
         activation_category: activation.category,
         participant_id: participant.id,
+        beneficiary_data_collected: activationCollectsParticipantData(activation),
+        ticket_identity_mode: activationCollectsParticipantData(activation) ? "IDENTIFIED" : "TRANSFERABLE",
         public_code: publicCode,
         score: participant.score || null,
         result_profile: participant.result_profile || null,
@@ -2756,21 +2825,23 @@ async function generateInteractiveRewardQr(client, activation, participant, rewa
     ]
   );
   const qr = qrResult.rows[0];
-  await registerActivityQrInCollector(client, {
-    business_id: activation.company_id,
-    source_type: participant.source_type || (participant.player_id ? "PLAYER" : null),
-    source_id: participant.source_id || participant.player_id || null,
-    lead_id: participant.player_id || null,
-    player_id: participant.player_id || null,
-    qr_code_id: qr.id,
-    campaign_id: activation.campaign_id || null,
-    activation_id: activation.id,
-    activation_type: activation.activation_type,
-    activation_name: activation.title || null,
-    acquisition_channel_id: participant.metadata?.acquisition_channel_id || activation.acquisition_channel_id || null,
-    acquisition_channel: participant.metadata?.acquisition_channel_name_snapshot || activation.acquisition_channel_name || null,
-    participant_id: participant.id,
-  });
+  if (activationCollectsParticipantData(activation)) {
+    await registerActivityQrInCollector(client, {
+      business_id: activation.company_id,
+      source_type: participant.source_type || (participant.player_id ? "PLAYER" : null),
+      source_id: participant.source_id || participant.player_id || null,
+      lead_id: participant.player_id || null,
+      player_id: participant.player_id || null,
+      qr_code_id: qr.id,
+      campaign_id: activation.campaign_id || null,
+      activation_id: activation.id,
+      activation_type: activation.activation_type,
+      activation_name: activation.title || null,
+      acquisition_channel_id: participant.metadata?.acquisition_channel_id || activation.acquisition_channel_id || null,
+      acquisition_channel: participant.metadata?.acquisition_channel_name_snapshot || activation.acquisition_channel_name || null,
+      participant_id: participant.id,
+    });
+  }
   const creditAccount = await consumeQrCredits(
     client,
     activation.company_id,
@@ -3157,6 +3228,7 @@ module.exports = {
   createInteractiveActivation,
   deleteInteractiveActivation,
   downloadInteractiveActivationAsset,
+  enforceParticipantCaptureMode,
   generateInteractiveRewardQr,
   getInteractiveActivationReport,
   getPublicInteractiveActivation,
@@ -3165,6 +3237,7 @@ module.exports = {
   listInteractiveActivations,
   listInteractiveParticipants,
   normalizeOrderOptionsGameConfig,
+  normalizeCaptureConfig,
   listInteractiveRewards,
   recycleInteractiveActivation,
   resolveDiagnosticResult,

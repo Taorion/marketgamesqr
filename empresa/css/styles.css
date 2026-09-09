@@ -40315,6 +40315,112 @@ body .portal-shell .view-section[data-view="dashboard"] .dashboard-widget-value 
   color: #eaf4ff !important;
 }
 
+/* Modalidad de captura de datos en activaciones (v460). */
+#gamingActivationBuilderModal .activation-capture-decision {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(5, 42, 107, 0.16);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f8fcff, #eef7ff);
+}
+
+#gamingActivationBuilderModal .activation-capture-choice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+#gamingActivationBuilderModal .activation-capture-choice > input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#gamingActivationBuilderModal .activation-capture-check {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 2px solid #7593ad;
+  border-radius: 12px;
+  color: transparent;
+  background: #fff;
+}
+
+#gamingActivationBuilderModal .activation-capture-choice > input:checked + .activation-capture-check {
+  border-color: #0759d6;
+  color: #fff;
+  background: #0759d6;
+}
+
+#gamingActivationBuilderModal .activation-capture-choice > input:focus-visible + .activation-capture-check {
+  outline: 3px solid rgba(7, 89, 214, 0.25);
+  outline-offset: 3px;
+}
+
+#gamingActivationBuilderModal .activation-capture-choice > span:last-child,
+#gamingActivationBuilderModal .activation-capture-consequence p,
+#gamingActivationBuilderModal .activation-anonymous-capture-notice div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+#gamingActivationBuilderModal .activation-capture-choice strong,
+#gamingActivationBuilderModal .activation-anonymous-capture-notice strong {
+  color: #052a6b;
+}
+
+#gamingActivationBuilderModal .activation-capture-choice small,
+#gamingActivationBuilderModal .activation-capture-consequence p,
+#gamingActivationBuilderModal .activation-anonymous-capture-notice p {
+  margin: 0;
+  color: #53677f;
+  line-height: 1.45;
+}
+
+#gamingActivationBuilderModal .activation-capture-consequence,
+#gamingActivationBuilderModal .activation-anonymous-capture-notice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(7, 89, 214, 0.08);
+}
+
+#gamingActivationBuilderModal .activation-capture-consequence.is-transferable {
+  background: rgba(242, 184, 75, 0.16);
+}
+
+#gamingActivationBuilderModal .activation-builder-form.is-capture-disabled > :not(.activation-builder-section-head):not(.activation-anonymous-capture-notice) {
+  display: none !important;
+}
+
+:root[data-theme="dark"] #gamingActivationBuilderModal .activation-capture-decision {
+  border-color: rgba(124, 251, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme="dark"] #gamingActivationBuilderModal .activation-capture-choice strong,
+:root[data-theme="dark"] #gamingActivationBuilderModal .activation-anonymous-capture-notice strong {
+  color: #eafcff;
+}
+
+@media (max-width: 600px) {
+  #gamingActivationBuilderModal .activation-capture-choice {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  #gamingActivationBuilderModal .activation-capture-choice > input {
+    grid-column: 1;
+  }
+}
+
 :root[data-theme="dark"] body .portal-shell :where(.mono-label, .badge, .status-pill, .chip, .pill, .feature-tier-badge) {
   color: #eaf4ff !important;
   background: rgba(0, 191, 229, 0.12) !important;
