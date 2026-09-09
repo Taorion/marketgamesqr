@@ -2895,15 +2895,8 @@ function drawOrderSequence(ctx, sequence, step) {
 
 function startConnectors(runtime) {
   const { ctx, width, height } = runtime;
-  const pairs = Array.isArray(runtime.config.pairs) && runtime.config.pairs.length >= 2
-    ? runtime.config.pairs.map((pair) => [pair.left, pair.right])
-    : [
-      ["QR", "Redencion"],
-      ["Lead", "Contacto"],
-      ["Ticket", "Beneficio"],
-      ["Venta", "Revenue"],
-    ];
-  let board = createConnectorBoard(pairs, width);
+  const pairs = connectorPairsFromConfig(runtime.config);
+  let board = createConnectorBoard(pairs, width, height);
   let selected = null;
   let dead = false;
   runtime.onPointerDown = (pos) => {
@@ -2923,7 +2916,7 @@ function startConnectors(runtime) {
       runtime.addScore(runtime.points);
       if (board.left.every((item) => item.done)) {
         runtime.addScore(runtime.points * 2);
-        board = createConnectorBoard(pairs, width);
+        board = createConnectorBoard(pairs, width, height);
       }
     } else {
       selected = null;
@@ -2944,12 +2937,47 @@ function startConnectors(runtime) {
   });
 }
 
-function createConnectorBoard(pairs, width) {
-  const rightOrder = shuffleArray(pairs.map((pair, index) => ({ key: index, label: pair[1] })));
+function connectorPairsFromConfig(config = {}) {
+  const configured = Array.isArray(config.pairs)
+    ? config.pairs
+      .map((pair) => [String(pair?.left ?? pair?.[0] ?? "").trim(), String(pair?.right ?? pair?.[1] ?? "").trim()])
+      .filter(([left, right]) => left && right)
+      .slice(0, 8)
+    : [];
+  const uniqueLeft = new Set(configured.map(([left]) => left.toLocaleLowerCase("es")));
+  const uniqueRight = new Set(configured.map(([, right]) => right.toLocaleLowerCase("es")));
+  if (configured.length >= 2 && uniqueLeft.size === configured.length && uniqueRight.size === configured.length) {
+    return configured;
+  }
+  return [
+    ["QR", "Redención"],
+    ["Lead", "Contacto"],
+    ["Ticket", "Beneficio"],
+    ["Venta", "Ingresos"],
+  ];
+}
+
+function shuffledConnectorOptions(pairs) {
+  const options = shuffleArray(pairs.map((pair, index) => ({ key: index, label: pair[1] })));
+  if (options.length > 1 && options.every((item, index) => item.key === index)) {
+    options.push(options.shift());
+  }
+  return options;
+}
+
+function createConnectorBoard(pairs, width, height) {
+  const rightOrder = shuffledConnectorOptions(pairs);
+  const top = 62;
+  const availableHeight = Math.max(210, height - top - 18);
+  const gap = Math.max(6, Math.min(18, Math.floor(availableHeight / pairs.length / 4)));
+  const itemHeight = Math.max(30, Math.min(46, Math.floor((availableHeight - gap * (pairs.length - 1)) / pairs.length)));
+  const itemWidth = Math.max(180, Math.min(245, Math.floor(width * 0.34)));
+  const leftX = 34;
+  const rightX = width - itemWidth - 34;
   return {
     links: [],
-    left: pairs.map((pair, index) => ({ key: index, label: pair[0], x: 80, y: 90 + index * 70, w: 190, h: 46, done: false })),
-    right: rightOrder.map((item, index) => ({ ...item, x: width - 270, y: 90 + index * 70, w: 190, h: 46, done: false })),
+    left: pairs.map((pair, index) => ({ key: index, label: pair[0], x: leftX, y: top + index * (itemHeight + gap), w: itemWidth, h: itemHeight, done: false })),
+    right: rightOrder.map((item, index) => ({ ...item, x: rightX, y: top + index * (itemHeight + gap), w: itemWidth, h: itemHeight, done: false })),
   };
 }
 
@@ -2972,9 +3000,21 @@ function drawConnectorBoard(ctx, board, selected) {
     ctx.strokeStyle = item === selected ? "#fff" : "#7cfbff";
     ctx.strokeRect(item.x, item.y, item.w, item.h);
     ctx.fillStyle = item === selected ? "#07111f" : "#eafcff";
-    ctx.font = "900 16px monospace";
-    ctx.fillText(item.label, item.x + 16, item.y + 29);
+    ctx.font = `900 ${item.h <= 34 ? 12 : 15}px monospace`;
+    ctx.textBaseline = "middle";
+    ctx.fillText(fitConnectorLabel(ctx, item.label, item.w - 24), item.x + 12, item.y + item.h / 2);
   });
+  ctx.textBaseline = "alphabetic";
+}
+
+function fitConnectorLabel(ctx, value, maxWidth) {
+  const label = String(value || "");
+  if (ctx.measureText(label).width <= maxWidth) return label;
+  let shortened = label;
+  while (shortened.length > 1 && ctx.measureText(`${shortened}…`).width > maxWidth) {
+    shortened = shortened.slice(0, -1);
+  }
+  return `${shortened}…`;
 }
 
 function startBattleshipCoords(runtime) {

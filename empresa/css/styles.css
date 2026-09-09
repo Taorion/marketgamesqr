@@ -69694,3 +69694,147 @@ html body #gamingActivationBuilderModal .benefit-fulfillment-panel label[hidden]
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* Conectores: editor visual de relaciones (v454). */
+.connector-pairs-editor {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.connector-pairs-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.connector-pairs-heading > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.connector-pairs-heading small {
+  line-height: 1.45;
+}
+
+.connector-pair-count {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border: 1px solid rgba(0, 191, 229, 0.28);
+  border-radius: 999px;
+  background: rgba(0, 191, 229, 0.08);
+  color: #052a6b;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.connector-pair-list {
+  display: grid;
+  gap: 10px;
+}
+
+.connector-pair-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 112px minmax(0, 1fr) 40px;
+  align-items: end;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(5, 42, 107, 0.14);
+  border-radius: 12px;
+  background: #f8fcff;
+}
+
+.connector-pair-row label {
+  min-width: 0;
+}
+
+.connector-pair-number {
+  align-self: center;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: #052a6b;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.connector-pair-arrow {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #006f8b;
+  text-align: center;
+}
+
+.connector-pair-arrow small {
+  color: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.connector-pair-remove {
+  align-self: center;
+}
+
+.connector-pair-add {
+  justify-self: start;
+}
+
+:root[data-theme="dark"] .connector-pair-row {
+  border-color: rgba(124, 251, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme="dark"] .connector-pair-number {
+  background: #00bfe5;
+  color: #031323;
+}
+
+:root[data-theme="dark"] .connector-pair-count,
+:root[data-theme="dark"] .connector-pair-arrow,
+:root[data-theme="dark"] .connector-pair-arrow small {
+  color: #7cfbff !important;
+}
+
+@media (max-width: 760px) {
+  .connector-pairs-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .connector-pair-count {
+    align-self: start;
+  }
+
+  .connector-pair-row {
+    grid-template-columns: 30px minmax(0, 1fr) 40px;
+  }
+
+  .connector-pair-row label {
+    grid-column: 2 / 3;
+  }
+
+  .connector-pair-row .connector-pair-number {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+  }
+
+  .connector-pair-arrow {
+    grid-column: 2 / 3;
+    justify-content: flex-start;
+    padding-left: 4px;
+  }
+
+  .connector-pair-remove {
+    grid-column: 3;
+    grid-row: 1 / span 3;
+  }
+}

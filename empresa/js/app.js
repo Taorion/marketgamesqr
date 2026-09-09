@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260909-spin-card-delivery-v453";
+const APP_VERSION = "empresa-20260909-connectors-builder-v454";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -29891,10 +29891,20 @@ const MINIGAME_SPECIFIC_CONFIG = {
   },
   CONNECTORS: {
     title: "Conectores",
-    summary: "Dinámica: seleccionar un elemento izquierdo y luego su pareja correcta a la derecha.",
-    help: "Escribe una pareja por línea usando =. Ejemplo: QR = Redención.",
+    summary: "Define qué elemento de la izquierda se conecta correctamente con cuál elemento de la derecha.",
+    help: "Configura entre 2 y 8 parejas. En el juego, las opciones del lado derecho se mezclan automáticamente.",
     fields: [
-      { key: "connector_pairs", label: "Pares correctos", type: "textarea", rows: 5, value: "QR = Redencion\nLead = Contacto\nTicket = Beneficio\nVenta = Revenue" },
+      {
+        key: "connector_pairs",
+        label: "Conexiones correctas",
+        type: "connector_pairs",
+        value: [
+          { left: "QR", right: "Redención" },
+          { left: "Lead", right: "Contacto" },
+          { left: "Ticket", right: "Beneficio" },
+          { left: "Venta", right: "Ingresos" },
+        ],
+      },
     ],
   },
   BATTLESHIP_COORDS: {
@@ -29938,6 +29948,48 @@ function boundedInteger(value, fallback, min, max) {
   return Math.max(min, Math.min(max, Math.round(number)));
 }
 
+function connectorPairRowMarkup(pair = {}, index = 0, total = 2) {
+  const number = index + 1;
+  return `
+    <article class="connector-pair-row" data-connector-pair-row>
+      <span class="connector-pair-number" aria-hidden="true">${number}</span>
+      <label>
+        <span>Elemento izquierdo</span>
+        <input data-connector-left type="text" maxlength="120" required value="${escapeHtml(pair.left || "")}" placeholder="Ej. QR" aria-label="Elemento izquierdo de la pareja ${number}">
+      </label>
+      <span class="connector-pair-arrow" aria-hidden="true"><span class="material-symbols-outlined">arrow_forward</span><small>se conecta con</small></span>
+      <label>
+        <span>Elemento derecho</span>
+        <input data-connector-right type="text" maxlength="120" required value="${escapeHtml(pair.right || "")}" placeholder="Ej. Redención" aria-label="Elemento derecho de la pareja ${number}">
+      </label>
+      <button class="icon-button connector-pair-remove" type="button" data-connector-pair-remove aria-label="Eliminar pareja ${number}" title="Eliminar pareja" ${total <= 2 ? "disabled" : ""}>
+        <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+      </button>
+    </article>`;
+}
+
+function connectorPairsEditorMarkup(field) {
+  const pairs = Array.isArray(field.value) ? field.value.slice(0, 8) : [];
+  while (pairs.length < 2) pairs.push({ left: "", right: "" });
+  return `
+    <section class="connector-pairs-editor full" data-minigame-config="${escapeHtml(field.key)}">
+      <div class="connector-pairs-heading">
+        <div>
+          <strong>${escapeHtml(field.label)}</strong>
+          <small>Cada fila representa una relación correcta. El participante verá la columna derecha en otro orden.</small>
+        </div>
+        <span class="connector-pair-count" data-connector-pair-count>${pairs.length} de 8 parejas</span>
+      </div>
+      <div class="connector-pair-list" data-connector-pair-list>
+        ${pairs.map((pair, index) => connectorPairRowMarkup(pair, index, pairs.length)).join("")}
+      </div>
+      <button class="outline-button connector-pair-add" type="button" data-connector-pair-add>
+        <span class="material-symbols-outlined" aria-hidden="true">add_link</span>
+        Agregar otra pareja
+      </button>
+    </section>`;
+}
+
 function renderMinigameSpecificConfig(type) {
   if (!minigameSpecificConfigPanel) return;
   const definition = MINIGAME_SPECIFIC_CONFIG[type];
@@ -29953,6 +30005,9 @@ function renderMinigameSpecificConfig(type) {
   if (minigameSpecificHelp) minigameSpecificHelp.textContent = definition.help;
   minigameSpecificConfigPanel.innerHTML = definition.fields.map((field) => {
     const common = `data-minigame-config="${escapeHtml(field.key)}"`;
+    if (field.type === "connector_pairs") {
+      return connectorPairsEditorMarkup(field);
+    }
     if (field.type === "textarea") {
       return `<label class="full"><span>${escapeHtml(field.label)}</span><textarea ${common} rows="${Number(field.rows || 4)}">${escapeHtml(field.value || "")}</textarea></label>`;
     }
@@ -29975,6 +30030,10 @@ function collectMinigameSpecificConfig(type) {
   if (!definition) return {};
   const config = {};
   definition.fields.forEach((field) => {
+    if (field.type === "connector_pairs") {
+      config.pairs = connectorPairDrafts();
+      return;
+    }
     const value = minigameFieldValue(field.key);
     if (field.type === "number") {
       config[field.key] = boundedInteger(value, field.value, field.min, field.max);
@@ -29990,10 +30049,6 @@ function collectMinigameSpecificConfig(type) {
   if (type === "ORDER_OPTIONS") {
     config.sequences = parseOrderSequences(config.order_sequences);
     delete config.order_sequences;
-  }
-  if (type === "CONNECTORS") {
-    config.pairs = parseConnectorPairs(config.connector_pairs);
-    delete config.connector_pairs;
   }
   if (type === "MEMORY_PAIRS") {
     config.symbols = splitOptionList(config.memory_symbols).slice(0, 12);
@@ -30036,13 +30091,37 @@ function parseOrderSequences(value) {
     .slice(0, 8);
 }
 
-function parseConnectorPairs(value) {
-  return String(value || "")
-    .split(/\n+/)
-    .map((line) => line.split("=").map((part) => part.trim()).filter(Boolean))
-    .filter((parts) => parts.length >= 2)
-    .map(([left, right], index) => ({ key: index, left, right }))
-    .slice(0, 8);
+function connectorPairDrafts() {
+  return Array.from(minigameSpecificConfigPanel?.querySelectorAll("[data-connector-pair-row]") || [])
+    .slice(0, 8)
+    .map((row, index) => ({
+      key: index,
+      left: String(row.querySelector("[data-connector-left]")?.value || "").trim(),
+      right: String(row.querySelector("[data-connector-right]")?.value || "").trim(),
+    }));
+}
+
+function syncConnectorPairEditor() {
+  const editor = minigameSpecificConfigPanel?.querySelector("[data-minigame-config='connector_pairs']");
+  const rows = Array.from(editor?.querySelectorAll("[data-connector-pair-row]") || []);
+  rows.forEach((row, index) => {
+    const number = index + 1;
+    const badge = row.querySelector(".connector-pair-number");
+    const left = row.querySelector("[data-connector-left]");
+    const right = row.querySelector("[data-connector-right]");
+    const remove = row.querySelector("[data-connector-pair-remove]");
+    if (badge) badge.textContent = String(number);
+    if (left) left.setAttribute("aria-label", `Elemento izquierdo de la pareja ${number}`);
+    if (right) right.setAttribute("aria-label", `Elemento derecho de la pareja ${number}`);
+    if (remove) {
+      remove.disabled = rows.length <= 2;
+      remove.setAttribute("aria-label", `Eliminar pareja ${number}`);
+    }
+  });
+  const count = editor?.querySelector("[data-connector-pair-count]");
+  if (count) count.textContent = `${rows.length} de 8 parejas`;
+  const add = editor?.querySelector("[data-connector-pair-add]");
+  if (add) add.disabled = rows.length >= 8;
 }
 
 function collectBattleshipConfig() {
@@ -30080,10 +30159,27 @@ function validateMinigameSpecificConfig(type) {
     minigameSpecificConfigPanel?.querySelector("[data-minigame-config='order_sequences']")?.focus();
     return null;
   }
-  if (type === "CONNECTORS" && (!Array.isArray(config.pairs) || config.pairs.length < 2)) {
-    setInlineMessage(triviaLauncherMessage, "Conectores necesita al menos dos pares con formato: izquierda = derecha.", "error");
-    minigameSpecificConfigPanel?.querySelector("[data-minigame-config='connector_pairs']")?.focus();
-    return null;
+  if (type === "CONNECTORS") {
+    const pairs = Array.isArray(config.pairs) ? config.pairs : [];
+    if (pairs.length < 2) {
+      setInlineMessage(triviaLauncherMessage, "Conectores necesita al menos dos parejas.", "error");
+      minigameSpecificConfigPanel?.querySelector("[data-connector-left]")?.focus();
+      return null;
+    }
+    const incomplete = pairs.find((pair) => !pair.left || !pair.right);
+    if (incomplete) {
+      setInlineMessage(triviaLauncherMessage, "Completa ambos campos de cada pareja: qué elemento aparece a la izquierda y con cuál se conecta a la derecha.", "error");
+      const row = minigameSpecificConfigPanel?.querySelectorAll("[data-connector-pair-row]")?.[incomplete.key];
+      row?.querySelector(incomplete.left ? "[data-connector-right]" : "[data-connector-left]")?.focus();
+      return null;
+    }
+    const normalizedLeft = pairs.map((pair) => pair.left.toLocaleLowerCase("es"));
+    const normalizedRight = pairs.map((pair) => pair.right.toLocaleLowerCase("es"));
+    if (new Set(normalizedLeft).size !== pairs.length || new Set(normalizedRight).size !== pairs.length) {
+      setInlineMessage(triviaLauncherMessage, "Cada elemento debe ser único en su columna para que la conexión correcta no sea ambigua.", "error");
+      minigameSpecificConfigPanel?.querySelector("[data-connector-left]")?.focus();
+      return null;
+    }
   }
   if (type === "MEMORY_PAIRS" && Array.isArray(config.symbols) && config.symbols.length < config.pair_count) {
     setInlineMessage(triviaLauncherMessage, "Memoria necesita tantos símbolos como pares configurados.", "error");
@@ -63242,6 +63338,24 @@ document.querySelectorAll("[data-flat-option-image]").forEach((input) => {
   input.addEventListener("change", () => handleProductVoteImageFile(input.dataset.flatOptionImage, input.files?.[0]));
 });
 battleshipShipCountInput?.addEventListener("input", updateBattleshipShipInputs);
+minigameSpecificConfigPanel?.addEventListener("click", (event) => {
+  const addButton = event.target.closest("[data-connector-pair-add]");
+  if (addButton) {
+    const list = minigameSpecificConfigPanel.querySelector("[data-connector-pair-list]");
+    const total = list?.querySelectorAll("[data-connector-pair-row]").length || 0;
+    if (!list || total >= 8) return;
+    list.insertAdjacentHTML("beforeend", connectorPairRowMarkup({}, total, total + 1));
+    syncConnectorPairEditor();
+    list.lastElementChild?.querySelector("[data-connector-left]")?.focus();
+    return;
+  }
+  const removeButton = event.target.closest("[data-connector-pair-remove]");
+  if (!removeButton) return;
+  const rows = minigameSpecificConfigPanel.querySelectorAll("[data-connector-pair-row]");
+  if (rows.length <= 2) return;
+  removeButton.closest("[data-connector-pair-row]")?.remove();
+  syncConnectorPairEditor();
+});
 activationFormAddQuestionButton?.addEventListener("click", () => addActivationFormQuestion({
   type: "TEXT",
   rms_field: "custom",
