@@ -2,7 +2,7 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260909-validator-product-removal-v463";
+const APP_VERSION = "empresa-20260909-activation-deletion-guard-v466";
 const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
@@ -19636,12 +19636,6 @@ function openGamingActivationDetailLegacy(id = "") {
       editInteractiveActivation(button.dataset.editActivation);
     });
   });
-  modal.querySelectorAll("[data-delete-activation]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      closeGamingActivationDetail();
-      await deleteInteractiveActivation(button.dataset.deleteActivation);
-    });
-  });
   modal.classList.remove("hidden");
   modal.removeAttribute("hidden");
   window.setTimeout(() => modal.querySelector("[data-close-gaming-activation-detail]")?.focus({ preventScroll: true }), 40);
@@ -31145,7 +31139,6 @@ function renderActivationBulkToolbar() {
       <button class="ghost-button compact" type="button" data-activation-bulk-status="active" ${selected.length ? "" : "disabled"}>Activar</button>
       <button class="ghost-button compact" type="button" data-activation-bulk-status="paused" ${selected.length ? "" : "disabled"}>Pausar</button>
       <button class="ghost-button compact" type="button" data-activation-bulk-status="archived" ${selected.length ? "" : "disabled"}>Anular</button>
-      <button class="ghost-button compact danger-button" type="button" data-activation-bulk-delete ${selected.length ? "" : "disabled"}>Eliminar</button>
     </div>` : "";
   toolbar.querySelector("[data-activation-bulk-select-visible]")?.addEventListener("click", () => {
     state.triviaLauncherBulkSelection = selected.length === visibleIds.length ? [] : visibleIds;
@@ -31154,7 +31147,6 @@ function renderActivationBulkToolbar() {
   toolbar.querySelectorAll("[data-activation-bulk-status]").forEach((button) => {
     button.addEventListener("click", () => updateInteractiveActivationsBulk(button.dataset.activationBulkStatus));
   });
-  toolbar.querySelector("[data-activation-bulk-delete]")?.addEventListener("click", deleteInteractiveActivationsBulk);
 }
 
 async function updateInteractiveActivationsBulk(status) {
@@ -31176,22 +31168,6 @@ async function updateInteractiveActivationsBulk(status) {
   renderTriviaLaunchers();
   const failed = results.length - completed.length;
   showFeedback(`${completed.length} activaci\u00f3n(es) quedaron en ${label.toLowerCase()}${failed ? `. ${failed} no se pudieron actualizar.` : "."}`, failed ? "info" : "success", { title: "Operaci\u00f3n masiva" });
-}
-
-async function deleteInteractiveActivationsBulk() {
-  const ids = activationBulkIds();
-  if (!ids.length) return;
-  if (!window.confirm(`Vas a eliminar ${ids.length} activaci\u00f3n(es). Las que ya tienen participaciones o tickets se archivar\u00e1n para conservar trazabilidad. \u00bfContinuar?`)) return;
-  showFeedback(`Eliminando ${ids.length} activaci\u00f3n(es)...`, "loading", { title: "Operaci\u00f3n masiva", timeout: 0 });
-  const results = await runBulkRequests(ids, (id) => api(`/api/business/interactive-activations/${encodeURIComponent(id)}`, {
-    method: "DELETE", headers: authHeaders(),
-  }));
-  const completed = results.filter((result) => result.ok).map((result) => String(result.item));
-  state.triviaLaunchers = (state.triviaLaunchers || []).filter((item) => !completed.includes(String(item.id)));
-  state.triviaLauncherBulkSelection = [];
-  renderTriviaLaunchers();
-  const failed = results.length - completed.length;
-  showFeedback(`${completed.length} activaci\u00f3n(es) eliminadas o archivadas${failed ? `. ${failed} no se pudieron procesar.` : "."}`, failed ? "info" : "success", { title: "Operaci\u00f3n masiva" });
 }
 
 function activationCountLabel(value, singular, plural) {
@@ -31357,7 +31333,6 @@ function renderTriviaLaunchers() {
               ${item.public_url ? `<button type="button" role="menuitem" data-copy-activation-link="${escapeHtml(item.public_url)}"><span class="material-symbols-outlined" aria-hidden="true">link</span>Copiar enlace</button>` : ""}
               ${!archived ? `<button type="button" role="menuitem" data-edit-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">tune</span>Editar configuración</button>` : ""}
               <button type="button" role="menuitem" data-recycle-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">content_copy</span>Crear una copia</button>
-              ${!archived ? `<button class="is-danger" type="button" role="menuitem" data-delete-activation="${escapeHtml(item.id)}"><span class="material-symbols-outlined" aria-hidden="true">archive</span>Eliminar o archivar</button>` : ""}
             </div></details>
           </div>
         </td>
@@ -31435,9 +31410,6 @@ function renderTriviaLaunchers() {
   });
   triviaLauncherTable.querySelectorAll("[data-recycle-activation]").forEach((button) => {
     button.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); button.closest("details")?.removeAttribute("open"); recycleInteractiveActivation(button.dataset.recycleActivation); });
-  });
-  triviaLauncherTable.querySelectorAll("[data-delete-activation]").forEach((button) => {
-    button.addEventListener("click", (event) => { event.stopPropagation(); deleteInteractiveActivation(button.dataset.deleteActivation); });
   });
   updateGamingPublishedFilters();
 }
@@ -32014,27 +31986,6 @@ async function patchInteractiveActivation(id, payload, successMessage) {
   renderTriviaLaunchers();
   if (successMessage) showFeedback(successMessage, "success", { title: "Activación actualizada" });
   return activation;
-}
-
-async function deleteInteractiveActivation(id) {
-  const activation = activationById(id);
-  if (!activation) return;
-  const hasHistory = Number(activation.attempts_count || 0) > 0 || Number(activation.winners_count || 0) > 0;
-  const copy = hasHistory
-    ? `Esta activación ya tiene historial. Se retirará de la lista y quedará archivada para no romper tickets/redenciones. Deseas continuar?`
-    : `Vas a eliminar definitivamente "${activation.title}". Esta acción no se puede deshacer. Deseas continuar?`;
-  if (!window.confirm(copy)) return;
-  try {
-    const data = await api(`/api/business/interactive-activations/${encodeURIComponent(id)}`, {
-      method: "DELETE",
-      headers: authHeaders(),
-    });
-    state.triviaLaunchers = (state.triviaLaunchers || []).filter((item) => String(item.id) !== String(id));
-    renderTriviaLaunchers();
-    showFeedback(data.message || "Activación eliminada.", "success", { title: data.deleted ? "Eliminada" : "Archivada" });
-  } catch (error) {
-    showFeedback(error.message, "error", { title: "No se pudo eliminar" });
-  }
 }
 
 async function updateActivationStatus(id, status) {

@@ -31,5 +31,5 @@ test("una compra sin productos queda clara y no se puede redimir", () => {
   assert.match(styles, /\.validator-purchase-empty/);
   assert.match(html, /validator-product-removal=v463-20260909/g);
   assert.match(html, /portal-clean-v39\.css[^\"]*validator-product-removal-v463-20260909/);
-  assert.match(portal, /empresa-20260909-validator-product-removal-v463/);
+  assert.match(portal, /empresa-20260909-activation-deletion-guard-v466/);
 });
