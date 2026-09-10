@@ -34434,3 +34434,78 @@ html body[data-current-view="strategic-qr"] .portal-shell .gaming-published-stat
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* Centro de Revenue v468: tablas oscuras autocontenidas y legibles.
+   Chart Focus se monta fuera de portal-shell, por eso ambos contextos se
+   declaran de forma explicita y al final de la cascada. */
+html body[data-current-view="dashboard"] .portal-shell .command-center :is(.command-table-wrap, .command-matrix-wrap),
+html body .chart-focus-overlay :is(.command-table-wrap, .command-matrix-wrap, .drilldown-table-wrap) {
+  border-color: rgba(160, 218, 239, .24) !important;
+  background: #06182b !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .command-center :is(.command-table, .command-matrix),
+html body .chart-focus-overlay :is(.command-table, .command-matrix, .drilldown-table) {
+  color: #eaf7ff !important;
+  background: #06182b !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .command-center :is(.command-table, .command-matrix) thead th,
+html body .chart-focus-overlay :is(.command-table, .command-matrix, .drilldown-table) thead th {
+  color: #f8fdff !important;
+  background: #0b2945 !important;
+  border-color: rgba(160, 218, 239, .24) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .command-center .command-table tbody tr,
+html body[data-current-view="dashboard"] .portal-shell .command-center .command-table tbody td,
+html body .chart-focus-overlay :is(.command-table, .drilldown-table) tbody tr,
+html body .chart-focus-overlay :is(.command-table, .drilldown-table) tbody td {
+  color: #eaf7ff !important;
+  background: #081e34 !important;
+  border-color: rgba(160, 218, 239, .14) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .command-center .command-table tbody tr:nth-child(even) td,
+html body .chart-focus-overlay :is(.command-table, .drilldown-table) tbody tr:nth-child(even) td {
+  background: #0a233d !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .command-center .command-table tbody :is(strong, b),
+html body .chart-focus-overlay :is(.command-table, .drilldown-table) tbody :is(strong, b) {
+  color: #ffffff !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .command-center .command-table tbody :is(small, .table-secondary, .table-muted),
+html body .chart-focus-overlay :is(.command-table, .drilldown-table) tbody :is(small, .table-secondary, .table-muted) {
+  color: #a9cfe0 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .command-center .command-table tbody tr:hover td,
+html body[data-current-view="dashboard"] .portal-shell .command-center .command-table tbody tr:focus-visible td,
+html body[data-current-view="dashboard"] .portal-shell .command-center .command-table tbody tr.is-expanded td,
+html body .chart-focus-overlay :is(.command-table, .drilldown-table) tbody tr:hover td,
+html body .chart-focus-overlay :is(.command-table, .drilldown-table) tbody tr:focus-visible td,
+html body .chart-focus-overlay :is(.command-table, .drilldown-table) tbody tr.is-expanded td {
+  color: #ffffff !important;
+  background: #103957 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .command-center .command-matrix tbody tr,
+html body .chart-focus-overlay .command-matrix tbody tr {
+  background: #071b30 !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .command-center .command-matrix tbody td,
+html body .chart-focus-overlay .command-matrix tbody td {
+  color: #f8fdff !important;
+  background: rgba(0, 115, 174, calc(.22 + var(--intensity, 0) * .52)) !important;
+  border-color: rgba(160, 218, 239, .16) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .78) !important;
+}
+
+html body[data-current-view="dashboard"] .portal-shell .command-center .command-detail-row td,
+html body .chart-focus-overlay .command-detail-row td {
+  color: #eaf7ff !important;
+  background: #071a2e !important;
+}
