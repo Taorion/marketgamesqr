@@ -327,10 +327,65 @@ body.brand-pano-ingles {
 }
 
 .brand-pano-ingles .card-top {
+  position: relative;
   border-bottom-color: rgba(199, 173, 112, 0.48);
   background:
     radial-gradient(circle at 88% 10%, rgba(35, 79, 125, 0.72), transparent 44%),
     linear-gradient(135deg, #07111c 0%, #132a40 58%, #234f7d 130%);
+}
+
+.pano-brand-lockup {
+  display: none;
+}
+
+.brand-pano-ingles .pano-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: fit-content;
+  margin-bottom: 22px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(199, 173, 112, 0.5);
+}
+
+.brand-pano-ingles .pano-brand-lockup img {
+  width: 58px;
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 12px rgba(0, 0, 0, 0.34));
+}
+
+.brand-pano-ingles .pano-brand-lockup span {
+  display: grid;
+  gap: 2px;
+}
+
+.brand-pano-ingles .pano-brand-lockup strong {
+  color: #d8c386;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  line-height: 1;
+}
+
+.brand-pano-ingles .pano-brand-lockup small {
+  color: #f6f1e6;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 10px;
+  font-style: italic;
+  letter-spacing: 0.07em;
+}
+
+.brand-pano-ingles #businessName {
+  display: none;
+}
+
+.brand-pano-ingles h1 {
+  min-height: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .brand-pano-ingles .eyebrow,
@@ -376,6 +431,11 @@ body.brand-pano-ingles {
   background: linear-gradient(145deg, #132a40, #0a1a29);
 }
 
+.brand-pano-ingles .points-panel strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+}
+
 .brand-pano-ingles dt {
   color: #bea46b;
 }
@@ -407,6 +467,12 @@ body.brand-pano-ingles {
   color: #02070d;
 }
 
+.brand-pano-ingles footer strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  letter-spacing: 0.025em;
+}
+
 @media (max-width: 520px) {
   .card-shell {
     padding: 10px;
@@ -426,6 +492,14 @@ body.brand-pano-ingles {
   .card-top {
     grid-template-columns: 1fr;
     min-height: 168px;
+  }
+
+  .brand-pano-ingles .pano-brand-lockup {
+    margin-bottom: 18px;
+  }
+
+  .brand-pano-ingles .pano-brand-lockup strong {
+    font-size: 21px;
   }
 
   .identity-grid {

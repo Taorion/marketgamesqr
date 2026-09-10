@@ -3,7 +3,7 @@ const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
 const APP_VERSION = "empresa-20260910-qori-public-links-v472";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910 pano-ingles-affiliate-card-v471-20260910 qori-public-links-v472-20260910";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910 pano-ingles-affiliate-card-v471-20260910 qori-public-links-v472-20260910 pano-ingles-affiliate-card-v473-20260910";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 30000;
@@ -35860,6 +35860,13 @@ function isPanoInglesBusinessName(value) {
   return slug.includes("pano-ingles") || slug.includes("panos-ingles");
 }
 
+const PANO_INGLES_BUSINESS_ID = "e76b6824-918f-419c-b71c-1fa2ac92fef5";
+
+function isPanoInglesAffiliate(affiliate = {}, businessName = "") {
+  const businessId = firstTextValue(affiliate.business_id, affiliate.businessId).toLowerCase();
+  return businessId === PANO_INGLES_BUSINESS_ID || isPanoInglesBusinessName(businessName);
+}
+
 function businessCardProfile(affiliate = {}) {
   const business = state.businessProfile || sessionBusinessProfileForActiveBusiness() || {};
   const settings = {
@@ -36191,14 +36198,17 @@ async function buildAffiliateCardDataUrl(affiliate) {
     firstTextValue(businessProfile.address, businessProfile.city),
   ].filter(Boolean).slice(0, 3);
   const tokenPreview = String(affiliate.qr_token || "").slice(0, 16).toUpperCase();
+  const isPanoInglesTheme = isPanoInglesAffiliate(affiliate, businessName);
   const photoSource = affiliatePhotoSource(affiliate);
   const qrSource = affiliateQrSource(affiliate);
   const photo = await loadImageDataUrl(photoSource);
   const platformLogo = await loadImageDataUrl("/img/qori-logo.png?v=qori-brand-sello-20260723-v112");
+  const panoInglesLogo = isPanoInglesTheme
+    ? await loadImageDataUrl("/carnet-afiliado/img/el-pano-ingles-crown.png?v=pano-ingles-brand-v473-20260910")
+    : null;
   const qrImg = await loadImageDataUrl(qrSource);
 
   {
-  const isPanoInglesTheme = isPanoInglesBusinessName(businessName);
   const palette = isPanoInglesTheme ? {
     bg: "#02070D",
     card: "#07111C",
@@ -36306,12 +36316,17 @@ async function buildAffiliateCardDataUrl(affiliate) {
   const companyH = 340;
   drawPanel(companyX, companyY, companyW, companyH, palette.panelSoft);
 
-  drawInitials(businessName, companyX + 28, companyY + 28, 96, 96, {
-    background: isPanoInglesTheme ? "#081625" : "#052a6b",
-    color: palette.accent,
-    radius: 26,
-    font: "900 40px Inter, Arial, sans-serif",
-  });
+  const drewPanoInglesLogo = isPanoInglesTheme && panoInglesLogo
+    ? drawContainedImage(panoInglesLogo, companyX + 28, companyY + 28, 96, 96, 0, "rgba(0, 0, 0, 0)")
+    : false;
+  if (!drewPanoInglesLogo) {
+    drawInitials(businessName, companyX + 28, companyY + 28, 96, 96, {
+      background: isPanoInglesTheme ? "#081625" : "#052a6b",
+      color: palette.accent,
+      radius: 26,
+      font: "900 40px Inter, Arial, sans-serif",
+    });
+  }
   ctx.textAlign = "left";
   ctx.fillStyle = palette.gold;
   ctx.font = "900 13px Inter, Arial, sans-serif";

@@ -4,6 +4,10 @@ const state = {
   timer: 0,
 };
 
+const PANO_INGLES_BUSINESS_IDS = new Set([
+  "e76b6824-918f-419c-b71c-1fa2ac92fef5",
+]);
+
 const els = {
   affiliateName: document.getElementById("affiliateName"),
   businessName: document.getElementById("businessName"),
@@ -20,6 +24,7 @@ const els = {
   tokenShort: document.getElementById("tokenShort"),
   statusMessage: document.getElementById("statusMessage"),
   refreshButton: document.getElementById("refreshButton"),
+  footerBrand: document.getElementById("footerBrand"),
 };
 
 function text(value, fallback = "-") {
@@ -44,7 +49,8 @@ function normalizeBrandName(value) {
     .trim();
 }
 
-function isPanoInglesBusiness(value) {
+function isPanoInglesBusiness(value, businessId = "") {
+  if (PANO_INGLES_BUSINESS_IDS.has(String(businessId || "").trim().toLowerCase())) return true;
   const normalized = normalizeBrandName(value);
   return normalized.includes("pano ingles") || normalized.includes("panos ingles");
 }
@@ -105,7 +111,8 @@ function renderCard(data) {
   const points = Number(affiliate.points_total || affiliate.ledger_points || 0);
   const active = String(affiliate.status || "ACTIVE").toUpperCase() !== "INACTIVE";
 
-  document.body.classList.toggle("brand-pano-ingles", isPanoInglesBusiness(businessName));
+  const isPanoIngles = isPanoInglesBusiness(businessName, affiliate.business_id);
+  document.body.classList.toggle("brand-pano-ingles", isPanoIngles);
   els.affiliateName.textContent = text(affiliate.full_name, "Afiliado");
   els.businessName.textContent = businessName;
   els.cardStatus.textContent = active ? "Activo" : "Inactivo";
@@ -120,6 +127,7 @@ function renderCard(data) {
   els.tokenShort.textContent = affiliate.qr_token
     ? `Token ${String(affiliate.qr_token).slice(0, 12).toUpperCase()}...`
     : "Carnet activo";
+  if (els.footerBrand) els.footerBrand.textContent = isPanoIngles ? "El Paño Inglés" : businessName;
 
   if (affiliate.photo_data_url) {
     els.affiliatePhoto.src = affiliate.photo_data_url;
