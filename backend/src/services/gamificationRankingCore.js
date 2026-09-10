@@ -29,4 +29,37 @@ function rankingTransitionAllowed(current, target) {
   return from === to || (transitions[from] || []).includes(to);
 }
 
-module.exports = { rankingTransitionAllowed, rewardPositions };
+const RANKING_ACTION_TYPES = Object.freeze({
+  REFERRALS: ["REFERRAL"],
+  REDEMPTIONS: ["REDEMPTION", "TICKET_REDEEMED"],
+  PARTICIPATION: ["PARTICIPATION", "WEEKLY_PARTICIPATION"],
+});
+
+function rankingActionTypes(rankingType) {
+  return RANKING_ACTION_TYPES[String(rankingType || "POINTS").toUpperCase()] || [];
+}
+
+function rankingMetricLabel(rankingType) {
+  return {
+    POINTS: "Puntos",
+    PURCHASES: "Valor comprado",
+    REFERRALS: "Referidos",
+    REDEMPTIONS: "Redenciones",
+    PARTICIPATION: "Participaciones",
+  }[String(rankingType || "POINTS").toUpperCase()] || "Puntos";
+}
+
+function aliasLeaderboardName(name, rank = 0) {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return `Participante ${Number(rank || 0) + 1}`;
+  if (parts.length === 1) return `${parts[0]} ${String(Number(rank || 0) + 1).padStart(2, "0")}`;
+  return `${parts[0]} ${parts.at(-1).slice(0, 1).toUpperCase()}.`;
+}
+
+module.exports = {
+  aliasLeaderboardName,
+  rankingActionTypes,
+  rankingMetricLabel,
+  rankingTransitionAllowed,
+  rewardPositions,
+};

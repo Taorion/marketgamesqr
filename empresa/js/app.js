@@ -3043,8 +3043,10 @@ let state = {
   missionSeasonFilter: "week",
   missionLeaderboardRows: [],
   missionLeaderboardSummary: null,
+  missionLeaderboardType: "PURCHASES",
   missionLeaderboardLoadedPeriod: "",
   missionLeaderboardLoading: false,
+  missionLeaderboardRequestId: 0,
   missionViewingSeasonId: "",
   missionMutationBusy: false,
   smartCatalogs: [],
@@ -60354,7 +60356,16 @@ function sortMissionLeaderboardRows(rows = []) {
     if (order === "average_ticket_desc") return numberValue(right, "average_ticket") - numberValue(left, "average_ticket");
     if (order === "recent_desc") return dateValue(right) - dateValue(left);
     return numberValue(right, "total_spent") - numberValue(left, "total_spent");
-  });
+  }).map((row, index) => ({ ...row, rank: index + 1 }));
+}
+
+function missionRankingMetric(season = {}) {
+  const type = String(season.settings_json?.ranking?.ranking_type || "POINTS").toUpperCase();
+  if (type === "PURCHASES") return { participants: season.purchase_customers_count, label: "Valor comprado", value: money(season.purchase_amount || 0), detailLabel: "Compras", detailValue: season.purchases_count };
+  if (type === "REFERRALS") return { participants: season.participants_count, label: "Referidos", value: Number(season.referrals_count || 0).toLocaleString("es-CO"), detailLabel: "Puntos", detailValue: season.points_total };
+  if (type === "REDEMPTIONS") return { participants: season.participants_count, label: "Redenciones", value: Number(season.redemptions_count || 0).toLocaleString("es-CO"), detailLabel: "Puntos", detailValue: season.points_total };
+  if (type === "PARTICIPATION") return { participants: season.participants_count, label: "Participaciones", value: Number(season.participations_count || 0).toLocaleString("es-CO"), detailLabel: "Puntos", detailValue: season.points_total };
+  return { participants: season.participants_count, label: "Puntos", value: Number(season.points_total || 0).toLocaleString("es-CO"), detailLabel: "Top", detailValue: season.settings_json?.ranking?.top_limit || 0 };
 }
 
 function renderMissionsView() {
@@ -60429,9 +60440,7 @@ function renderMissionActiveList(seasons = []) {
   const rows = filteredMissionSeasons(seasons);
   missionActiveList.innerHTML = rows.map((season) => {
     const isPurchaseCompetition = String(season.settings_json?.ranking?.ranking_type || "").toUpperCase() === "PURCHASES";
-    const participants = isPurchaseCompetition ? season.purchase_customers_count : season.participants_count;
-    const mainMetricLabel = isPurchaseCompetition ? "Ventas del periodo" : "Puntos";
-    const mainMetricValue = isPurchaseCompetition ? money(season.purchase_amount || 0) : Number(season.points_total || 0).toLocaleString("es-CO");
+    const metric = missionRankingMetric(season);
     const progress = missionDateProgress(season);
     const active = String(season.status || "").toUpperCase() === "ACTIVE";
     const rules = Array.isArray(season.settings_json?.points_rules) ? season.settings_json.points_rules : [];
@@ -60461,9 +60470,9 @@ function renderMissionActiveList(seasons = []) {
         ${season.campaign_name ? `<span class="pill muted"><span class="material-symbols-outlined" aria-hidden="true">campaign</span>${escapeHtml(season.campaign_name)}</span>` : ""}
       </div>
       <dl>
-        <div><dt>${isPurchaseCompetition ? "Clientes" : "Participantes"}</dt><dd>${Number(participants || 0).toLocaleString("es-CO")}</dd></div>
-        <div><dt>${escapeHtml(mainMetricLabel)}</dt><dd>${escapeHtml(mainMetricValue)}</dd></div>
-        <div><dt>${isPurchaseCompetition ? "Compras" : "Top"}</dt><dd>${isPurchaseCompetition ? Number(season.purchases_count || 0).toLocaleString("es-CO") : Number(season.settings_json?.ranking?.top_limit || 0).toLocaleString("es-CO")}</dd></div>
+        <div><dt>${isPurchaseCompetition ? "Clientes" : "Participantes"}</dt><dd>${Number(metric.participants || 0).toLocaleString("es-CO")}</dd></div>
+        <div><dt>${escapeHtml(metric.label)}</dt><dd>${escapeHtml(metric.value)}</dd></div>
+        <div><dt>${escapeHtml(metric.detailLabel)}</dt><dd>${Number(metric.detailValue || 0).toLocaleString("es-CO")}</dd></div>
       </dl>
       <div class="button-row">
         <button class="solid-button compact" type="button" data-mission-leaderboard="${escapeHtml(season.id)}">Ver resultados</button>
@@ -60478,7 +60487,7 @@ function renderMissionActiveList(seasons = []) {
           ? `<button class="ghost-button compact" type="button" data-mission-status="CLOSED" data-mission-id="${escapeHtml(season.id)}">Cerrar</button>`
           : ""}
         ${["DRAFT", "CLOSED"].includes(String(season.status || "").toUpperCase())
-          ? `<button class="ghost-button compact danger" type="button" data-mission-delete="${escapeHtml(season.id)}" data-mission-name="${escapeHtml(season.name || "este ranking")}">Eliminar</button>`
+          ? `<button class="ghost-button compact danger" type="button" data-mission-delete="${escapeHtml(season.id)}" data-mission-name="${escapeHtml(season.name || "este ranking")}">Archivar</button>`
           : ""}
         ` : ""}
       </div>
@@ -60622,28 +60631,46 @@ async function loadMissionLeaderboard(seasonId) {
     renderMissionLeaderboard([]);
     return;
   }
+  const requestId = ++state.missionLeaderboardRequestId;
   state.missionViewingSeasonId = seasonId;
-  const data = await api(`/api/business/gamification/leaderboards/${encodeURIComponent(seasonId)}`, { headers: authHeaders() });
-  const season = (state.missions?.seasons || []).find((item) => item.id === seasonId);
-  if (missionLeaderboardEyebrow) missionLeaderboardEyebrow.textContent = "Resultados del ranking";
-  if (missionLeaderboardTitle) missionLeaderboardTitle.textContent = season?.name || "Ranking configurado";
-  if (missionLeaderboardContext) missionLeaderboardContext.textContent = [season?.campaign_name, data.start_date && data.end_date ? `${formatDateOnly(data.start_date)} a ${formatDateOnly(data.end_date)}` : ""].filter(Boolean).join(" · ") || "Actividad registrada automáticamente";
-  missionsBackToGlobalButton?.classList.remove("hidden");
-  renderMissionLeaderboard(data.leaderboard || [], data.ranking_type || "POINTS");
-  missionLeaderboard?.scrollIntoView({ behavior: "smooth", block: "start" });
+  state.missionLeaderboardLoading = true;
+  if (missionLeaderboard) missionLeaderboard.innerHTML = '<div class="mission-loading-state"><span class="material-symbols-outlined">leaderboard</span><strong>Calculando resultados...</strong><small>Estamos validando eventos y posiciones.</small></div>';
+  try {
+    const data = await api(`/api/business/gamification/leaderboards/${encodeURIComponent(seasonId)}`, { headers: authHeaders() });
+    if (requestId !== state.missionLeaderboardRequestId || state.missionViewingSeasonId !== seasonId) return null;
+    const season = (state.missions?.seasons || []).find((item) => item.id === seasonId);
+    if (missionLeaderboardEyebrow) missionLeaderboardEyebrow.textContent = "Resultados del ranking";
+    if (missionLeaderboardTitle) missionLeaderboardTitle.textContent = season?.name || "Ranking configurado";
+    if (missionLeaderboardContext) missionLeaderboardContext.textContent = [season?.campaign_name, data.start_date && data.end_date ? `${formatDateOnly(data.start_date)} a ${formatDateOnly(data.end_date)}` : ""].filter(Boolean).join(" · ") || "Actividad registrada automáticamente";
+    missionsBackToGlobalButton?.classList.remove("hidden");
+    state.missionLeaderboardRows = String(data.ranking_type || "").toUpperCase() === "PURCHASES"
+      ? sortMissionLeaderboardRows(data.leaderboard || [])
+      : (data.leaderboard || []);
+    state.missionLeaderboardType = String(data.ranking_type || "POINTS").toUpperCase();
+    missionLeaderboardOrder?.closest("label")?.classList.toggle("hidden", state.missionLeaderboardType !== "PURCHASES");
+    renderMissionLeaderboard(state.missionLeaderboardRows, data.ranking_type || "POINTS", data.metric_label || "");
+    missionLeaderboard?.scrollIntoView({ behavior: "smooth", block: "start" });
+    return data;
+  } finally {
+    if (requestId === state.missionLeaderboardRequestId) state.missionLeaderboardLoading = false;
+  }
 }
 
 async function loadMissionPurchaseLeaderboard(period = "week") {
   const normalizedPeriod = normalizeMissionPeriod(period);
+  const requestId = ++state.missionLeaderboardRequestId;
   state.missionLeaderboardLoading = true;
   state.missionSeasonFilter = normalizedPeriod;
   syncMissionPeriodControls();
   if (missionLeaderboard) {
-    missionLeaderboard.innerHTML = '<div class="empty-state compact">Cargando leaderboard de compras...</div>';
+    missionLeaderboard.innerHTML = '<div class="mission-loading-state"><span class="material-symbols-outlined">monitoring</span><strong>Actualizando compradores...</strong><small>Consolidando ventas del periodo elegido.</small></div>';
   }
   try {
     const data = await api(`/api/business/gamification/purchase-leaderboard?period=${encodeURIComponent(normalizedPeriod)}&limit=50`, { headers: authHeaders() });
+    if (requestId !== state.missionLeaderboardRequestId) return null;
     state.missionLeaderboardRows = sortMissionLeaderboardRows(data.leaderboard || []);
+    state.missionLeaderboardType = "PURCHASES";
+    missionLeaderboardOrder?.closest("label")?.classList.remove("hidden");
     state.missionLeaderboardSummary = {
       ...(data.summary || {}),
       start_date: data.start_date || null,
@@ -60659,7 +60686,7 @@ async function loadMissionPurchaseLeaderboard(period = "week") {
     renderMissionLeaderboard(state.missionLeaderboardRows, "PURCHASES");
     return data;
   } finally {
-    state.missionLeaderboardLoading = false;
+    if (requestId === state.missionLeaderboardRequestId) state.missionLeaderboardLoading = false;
   }
 }
 
@@ -60670,8 +60697,8 @@ function missionLeaderboardLeadRef(row = {}) {
   return { id: sourceId, source_type: sourceType };
 }
 
-function openMissionLeaderboardContact(index) {
-  const row = state.missionLeaderboardRows?.[Number(index)] || null;
+function openMissionLeaderboardContact(rowOrIndex) {
+  const row = typeof rowOrIndex === "object" ? rowOrIndex : state.missionLeaderboardRows?.[Number(rowOrIndex)] || null;
   const leadRef = missionLeaderboardLeadRef(row || {});
   if (!leadRef) {
     showFeedback("Este comprador no está conectado a un contacto del directorio todavía. Regístralo con teléfono o email para poder abrir su ficha.", "info", { title: "Leaderboard" });
@@ -60680,8 +60707,8 @@ function openMissionLeaderboardContact(index) {
   openLeadDetail(leadRef, { tab: "summary" });
 }
 
-function sendTicketToMissionLeader(index) {
-  const row = state.missionLeaderboardRows?.[Number(index)] || null;
+function sendTicketToMissionLeader(rowOrIndex) {
+  const row = typeof rowOrIndex === "object" ? rowOrIndex : state.missionLeaderboardRows?.[Number(rowOrIndex)] || null;
   const leadRef = missionLeaderboardLeadRef(row || {});
   if (!leadRef) {
     showFeedback("Este comprador no tiene contacto conectado. Primero debe existir en el directorio con el mismo teléfono o email de la venta.", "info", { title: "Enviar ticket" });
@@ -60689,13 +60716,13 @@ function sendTicketToMissionLeader(index) {
   }
   openLeadActivationModal(leadRef, "TICKET");
   const period = missionPeriodLabel(state.missionSeasonFilter || "week").toLowerCase();
-  if (leadActivationNameInput) leadActivationNameInput.value = `Ticket premio Top ${Number(row.rank || Number(index) + 1).toLocaleString("es-CO")} · ${missionPeriodLabel(state.missionSeasonFilter || "week")}`;
-  if (leadActivationBenefitValueInput) leadActivationBenefitValueInput.value = `Reconocimiento por estar en el Top ${Number(row.rank || Number(index) + 1).toLocaleString("es-CO")} de compradores del periodo ${period}.`;
+  if (leadActivationNameInput) leadActivationNameInput.value = `Ticket premio Top ${Number(row.rank || 1).toLocaleString("es-CO")} · ${missionPeriodLabel(state.missionSeasonFilter || "week")}`;
+  if (leadActivationBenefitValueInput) leadActivationBenefitValueInput.value = `Reconocimiento por estar en el Top ${Number(row.rank || 1).toLocaleString("es-CO")} de compradores del periodo ${period}.`;
   if (leadActivationMessageInput) leadActivationMessageInput.value = `Gracias por comprar con nosotros. Estás en el leaderboard de mejores compradores de ${period}; te enviamos este ticket especial como reconocimiento.`;
   showFeedback("Completa y envía el ticket desde la ventana de entrega.", "success", { title: "Ticket para comprador top" });
 }
 
-function renderMissionLeaderboard(rows = [], rankingType = "") {
+function renderMissionLeaderboard(rows = [], rankingType = "", metricLabel = "") {
   if (!missionLeaderboard) return;
   const isPurchaseRanking = String(rankingType || "").toUpperCase() === "PURCHASES"
     || rows.some((row) => String(row.ranking_type || "").toUpperCase() === "PURCHASES");
@@ -60720,19 +60747,19 @@ function renderMissionLeaderboard(rows = [], rankingType = "") {
               const contactMeta = row.phone || row.email || row.document_id || "Venta sin contacto conectado";
               return `
                 <tr>
-                  <td><span class="mission-rank-badge">#${Number(index + 1).toLocaleString("es-CO")}</span></td>
-                  <td>
-                    <button class="link-button mission-contact-link" type="button" data-mission-open-contact="${index}">
-                      <strong>${escapeHtml(row.name || "Cliente")}</strong>
+                  <td data-label="Posición"><span class="mission-rank-badge">#${Number(index + 1).toLocaleString("es-CO")}</span></td>
+                  <td data-label="Contacto">
+                    <button class="link-button mission-contact-link" type="button" data-mission-open-contact="${index}" ${leadRef ? "" : "disabled"}>
+                      <strong>${escapeHtml(row.display_name || row.name || "Cliente")}</strong>
                       <small>${escapeHtml(contactMeta)}</small>
                     </button>
                   </td>
-                  <td><strong>${money(row.total_spent || 0)}</strong></td>
-                  <td>${Number(row.purchases_count || 0).toLocaleString("es-CO")}</td>
-                  <td>${money(row.average_ticket || 0)}</td>
-                  <td>${row.last_activity_at ? escapeHtml(formatDate(row.last_activity_at)) : "Sin fecha"}</td>
-                  <td>
-                    <button class="${leadRef ? "solid-button" : "ghost-button"} compact" type="button" data-mission-send-ticket="${index}">${leadRef ? "Enviar ticket" : "Conectar contacto"}</button>
+                  <td data-label="Total comprado"><strong>${money(row.total_spent || 0)}</strong></td>
+                  <td data-label="Compras">${Number(row.purchases_count || 0).toLocaleString("es-CO")}</td>
+                  <td data-label="Ticket promedio">${money(row.average_ticket || 0)}</td>
+                  <td data-label="Última compra">${row.last_activity_at ? escapeHtml(formatDate(row.last_activity_at)) : "Sin fecha"}</td>
+                  <td data-label="Premio">
+                    ${leadRef ? `<button class="solid-button compact" type="button" data-mission-send-ticket="${index}">Preparar premio</button>` : '<span class="mission-contact-state">Sin contacto vinculado</span>'}
                   </td>
                 </tr>
               `;
@@ -60742,27 +60769,27 @@ function renderMissionLeaderboard(rows = [], rankingType = "") {
       </div>
     ` : `<div class="empty-state compact">Todavía no hay ventas registradas para ${escapeHtml(missionPeriodLabel(state.missionSeasonFilter || "week").toLowerCase())}.</div>`;
     missionLeaderboard.querySelectorAll("[data-mission-open-contact]").forEach((button) => {
-      button.addEventListener("click", () => openMissionLeaderboardContact(button.dataset.missionOpenContact));
+      button.addEventListener("click", () => openMissionLeaderboardContact(rows[Number(button.dataset.missionOpenContact)]));
     });
     missionLeaderboard.querySelectorAll("[data-mission-send-ticket]").forEach((button) => {
-      button.addEventListener("click", () => sendTicketToMissionLeader(button.dataset.missionSendTicket));
+      button.addEventListener("click", () => sendTicketToMissionLeader(rows[Number(button.dataset.missionSendTicket)]));
     });
     return;
   }
   missionLeaderboard.innerHTML = rows.length ? `
     <div class="mission-leaderboard-table-wrap">
       <table class="mission-leaderboard-table mission-points-table">
-        <thead><tr><th>Posición</th><th>Contacto</th><th>Puntos</th><th>Acciones</th><th>Última actividad</th></tr></thead>
+        <thead><tr><th>Posición</th><th>Contacto</th><th>${escapeHtml(metricLabel || (String(rankingType).toUpperCase() === "POINTS" ? "Puntos" : "Resultado"))}</th><th>Eventos válidos</th><th>Última actividad</th></tr></thead>
         <tbody>${rows.map((row, index) => `
           <tr>
-            <td><span class="mission-rank-badge">#${index + 1}</span></td>
-            <td>${row.source_id && ["PLAYER", "MANUAL"].includes(String(row.source_type || "").toUpperCase()) ? `<button class="link-button mission-contact-link" type="button" data-mission-points-contact="${index}"><strong>${escapeHtml(row.name || "Cliente")}</strong><small>${escapeHtml(row.phone || row.email || "Ver ficha")}</small></button>` : `<strong>${escapeHtml(row.name || "Cliente")}</strong><small>${escapeHtml(row.source_type === "AFFILIATE" ? "Afiliado" : "")}</small>`}</td>
-            <td><strong>${Number(row.points || 0).toLocaleString("es-CO")} pts</strong></td>
-            <td>${Number(row.actions_count || 0).toLocaleString("es-CO")}</td>
-            <td>${row.last_activity_at ? escapeHtml(formatDate(row.last_activity_at)) : "Sin actividad"}</td>
+            <td data-label="Posición"><span class="mission-rank-badge">#${index + 1}</span></td>
+            <td data-label="Contacto">${row.source_id && ["PLAYER", "MANUAL"].includes(String(row.source_type || "").toUpperCase()) ? `<button class="link-button mission-contact-link" type="button" data-mission-points-contact="${index}"><strong>${escapeHtml(row.display_name || row.name || "Cliente")}</strong><small>${escapeHtml(row.phone || row.email || "Ver ficha")}</small></button>` : `<strong>${escapeHtml(row.display_name || row.name || "Cliente")}</strong><small>${escapeHtml(row.source_type === "AFFILIATE" ? "Afiliado" : "")}</small>`}</td>
+            <td data-label="Resultado"><strong>${Number(row.metric_value ?? row.points ?? 0).toLocaleString("es-CO")}${String(rankingType).toUpperCase() === "POINTS" ? " pts" : ""}</strong></td>
+            <td data-label="Eventos válidos">${Number(row.actions_count || 0).toLocaleString("es-CO")}</td>
+            <td data-label="Última actividad">${row.last_activity_at ? escapeHtml(formatDate(row.last_activity_at)) : "Sin actividad"}</td>
           </tr>`).join("")}</tbody>
       </table>
-    </div>` : `<div class="empty-state compact"><strong>Listo para recibir actividad.</strong><br>Los puntos aparecerán automáticamente cuando los contactos completen las acciones configuradas.</div>`;
+    </div>` : `<div class="mission-empty-state"><span class="material-symbols-outlined">emoji_events</span><strong>Listo para recibir actividad</strong><small>Los resultados aparecerán automáticamente cuando se registren eventos válidos para este ranking.</small></div>`;
   missionLeaderboard.querySelectorAll("[data-mission-points-contact]").forEach((button) => {
     button.addEventListener("click", () => {
       const row = rows[Number(button.dataset.missionPointsContact)];
@@ -60791,6 +60818,7 @@ function renderMissionRewards(rewards = []) {
       </div>
       <div class="button-row">
         ${reward.source_id && ["PLAYER", "MANUAL"].includes(String(reward.source_type || "").toUpperCase()) ? `<button class="ghost-button compact" type="button" data-mission-reward-contact="${index}">Ver contacto</button>` : ""}
+        ${reward.source_id && ["PLAYER", "MANUAL"].includes(String(reward.source_type || "").toUpperCase()) ? `<button class="ghost-button compact" type="button" data-mission-prepare-reward="${index}">Preparar ticket</button>` : ""}
         ${canManageRankings() ? `<button class="solid-button compact" type="button" data-mission-deliver-reward="${escapeHtml(reward.id)}">Confirmar entrega</button>` : ""}
       </div>
     </article>
@@ -60802,8 +60830,20 @@ function renderMissionRewards(rewards = []) {
     });
   });
   missionRewardsPending.querySelectorAll("[data-mission-deliver-reward]").forEach((button) => {
-    button.addEventListener("click", () => deliverMissionReward(button.dataset.missionDeliverReward));
+    button.addEventListener("click", () => deliverMissionReward(button.dataset.missionDeliverReward, button));
   });
+  missionRewardsPending.querySelectorAll("[data-mission-prepare-reward]").forEach((button) => {
+    button.addEventListener("click", () => prepareMissionReward(rewards[Number(button.dataset.missionPrepareReward)]));
+  });
+}
+
+function prepareMissionReward(reward = {}) {
+  if (!reward?.source_id || !["PLAYER", "MANUAL"].includes(String(reward.source_type || "").toUpperCase())) return;
+  openLeadActivationModal({ id: reward.source_id, source_type: reward.source_type }, "TICKET");
+  if (leadActivationNameInput) leadActivationNameInput.value = reward.reward_name || "Premio de ranking";
+  if (leadActivationBenefitValueInput) leadActivationBenefitValueInput.value = `${reward.reward_name || "Reconocimiento especial"} por alcanzar el Top ${Number(reward.rank_position || 1).toLocaleString("es-CO")}.`;
+  if (leadActivationMessageInput) leadActivationMessageInput.value = `¡Felicitaciones! Alcanzaste una posición destacada en ${reward.season_name || "nuestro ranking"}. Preparamos este reconocimiento para ti.`;
+  showFeedback("El ticket quedó preparado. Revísalo y envíalo antes de confirmar la entrega.", "success", { title: "Premio preparado" });
 }
 
 function bindMissionWizardOpeners(root = document) {
@@ -60993,7 +61033,7 @@ async function createMissionAgendaTasks(seasonId, options = {}) {
 
 async function deleteMissionSeason(seasonId, name = "este ranking") {
   if (!seasonId || state.missionMutationBusy) return;
-  if (!window.confirm(`¿Eliminar definitivamente "${name}"? Esta acción elimina su configuración, puntos y premios asociados.`)) return;
+  if (!window.confirm(`¿Archivar "${name}"? Dejará de aparecer en la operación diaria, pero conservará sus puntos, premios e historial.`)) return;
   try {
     state.missionMutationBusy = true;
     await api(`/api/business/gamification/seasons/${encodeURIComponent(seasonId)}`, { method: "DELETE", headers: authHeaders() });
@@ -61001,18 +61041,20 @@ async function deleteMissionSeason(seasonId, name = "este ranking") {
     if (state.missionViewingSeasonId === seasonId) state.missionViewingSeasonId = "";
     await loadGamificationDashboard({ force: true });
     renderMissionsView();
-    showFeedback("Ranking eliminado completamente.", "success", { title: "Ranking" });
+    showFeedback("Ranking archivado. Su historial quedó protegido.", "success", { title: "Ranking" });
   } catch (error) {
-    showFeedback(error.message || "No se pudo eliminar el ranking.", "error", { title: "Ranking" });
+    showFeedback(error.message || "No se pudo archivar el ranking.", "error", { title: "Ranking" });
   } finally {
     state.missionMutationBusy = false;
     renderMissionActiveList(state.missions?.seasons || []);
   }
 }
 
-async function deliverMissionReward(rewardId) {
+async function deliverMissionReward(rewardId, button = null) {
   if (!rewardId) return;
+  if (!window.confirm("¿Confirmas que este premio ya fue entregado al ganador?")) return;
   try {
+    setButtonLoading(button, true, "Registrando...");
     await api(`/api/business/gamification/rewards/${encodeURIComponent(rewardId)}/deliver`, {
       method: "POST",
       headers: authHeaders(),
@@ -61023,6 +61065,8 @@ async function deliverMissionReward(rewardId) {
     showFeedback("Premio marcado como entregado.", "success", { title: "Ranking" });
   } catch (error) {
     showFeedback(error.message || "No se pudo registrar la entrega del premio.", "error", { title: "Ranking" });
+  } finally {
+    setButtonLoading(button, false);
   }
 }
 
@@ -62480,18 +62524,28 @@ document.querySelectorAll("[data-mission-period]").forEach((button) => {
   button.addEventListener("click", () => {
     state.missionSeasonFilter = normalizeMissionPeriod(button.dataset.missionPeriod || "week");
     state.missionLeaderboardLoadedPeriod = "";
-    renderMissionsView();
+    loadMissionPurchaseLeaderboard(state.missionSeasonFilter).catch((error) => {
+      showFeedback(error.message || "No se pudo cambiar el periodo del ranking.", "error", { title: "Ranking" });
+    });
   });
 });
-missionsRefreshButton?.addEventListener("click", () => {
+missionsRefreshButton?.addEventListener("click", async () => {
+  if (missionsRefreshButton.disabled) return;
   state.missionsLoaded = false;
   state.missionLeaderboardLoadedPeriod = "";
-  Promise.all([
-    loadGamificationDashboard({ force: true }),
-    loadMissionPurchaseLeaderboard(state.missionSeasonFilter || "week"),
-  ]).then(renderMissionsView).catch((error) => {
+  setButtonLoading(missionsRefreshButton, true, "Actualizando...");
+  try {
+    await Promise.all([
+      loadGamificationDashboard({ force: true }),
+      loadMissionPurchaseLeaderboard(state.missionSeasonFilter || "week"),
+    ]);
+    renderMissionsView();
+    showFeedback("Ranking actualizado con la actividad más reciente.", "success", { title: "Ranking" });
+  } catch (error) {
     showFeedback(error.message || "No se pudo actualizar Ranking.", "error", { title: "Ranking" });
-  });
+  } finally {
+    setButtonLoading(missionsRefreshButton, false);
+  }
 });
 missionsOpenAgendaButton?.addEventListener("click", () => {
   setContactCenterTab("agenda");
@@ -62510,7 +62564,10 @@ missionSeasonFilter?.addEventListener("change", () => {
   renderMissionsView();
 });
 missionLeaderboardOrder?.addEventListener("change", () => {
-  state.missionLeaderboardRows = sortMissionLeaderboardRows(state.missionLeaderboardRows || []);
+  if (state.missionLeaderboardType !== "PURCHASES") return;
+  if (state.missionLeaderboardType === "PURCHASES") {
+    state.missionLeaderboardRows = sortMissionLeaderboardRows(state.missionLeaderboardRows || []);
+  }
   renderMissionLeaderboard(state.missionLeaderboardRows, "PURCHASES");
 });
 missionWizardCloseButton?.addEventListener("click", closeMissionWizard);

@@ -1,7 +1,13 @@
 const { query, withTransaction } = require("../config/db");
 const { badRequest, notFound } = require("../utils/http");
 const { createLeadAgendaItem } = require("./leadCrmService");
-const { rankingTransitionAllowed, rewardPositions } = require("./gamificationRankingCore");
+const {
+  aliasLeaderboardName,
+  rankingActionTypes,
+  rankingMetricLabel,
+  rankingTransitionAllowed,
+  rewardPositions,
+} = require("./gamificationRankingCore");
 
 const MISSION_TEMPLATES = [
   {
@@ -70,6 +76,16 @@ const MISSION_TEMPLATES = [
     ranking: { ranking_type: "PARTICIPATION", top_limit: 10, privacy_mode: "ALIAS" },
     rewards: [{ position: "top_3", reward_name: "Reconocimiento especial", reward_type: "CUSTOM" }],
   },
+  {
+    key: "redemption_champions",
+    name: "Campeones de redenciones",
+    type: "REDEMPTION_RANKING",
+    description: "Reconoce a quienes canjean beneficios y convierte cada redencion verificada en una senal de fidelidad.",
+    channel: "QR / carnet / punto de venta",
+    points_rules: [{ action_type: "REDEMPTION", label: "Completar una redencion", points: 80 }],
+    ranking: { ranking_type: "REDEMPTIONS", top_limit: 10, privacy_mode: "ALIAS" },
+    rewards: [{ position: "top_3", reward_name: "Beneficio de fidelidad", reward_type: "CUSTOM" }],
+  },
 ];
 
 function jsonParam(value, fallback) {
@@ -106,7 +122,7 @@ function assertSeasonDates(startDate, endDate) {
 
 async function listSeasons(businessId, filters = {}) {
   const params = [businessId];
-  const clauses = ["s.business_id = $1"];
+  const clauses = ["s.business_id = $1", "s.archived_at is null"];
   if (filters.status) {
     params.push(String(filters.status).toUpperCase());
     clauses.push(`s.status = $${params.length}`);
@@ -118,6 +134,9 @@ async function listSeasons(businessId, filters = {}) {
        coalesce(m.missions_count, 0)::int as missions_count,
        coalesce(p.participants_count, 0)::int as participants_count,
        coalesce(p.points_total, 0)::int as points_total,
+       coalesce(p.referrals_count, 0)::int as referrals_count,
+       coalesce(p.redemptions_count, 0)::int as redemptions_count,
+       coalesce(p.participations_count, 0)::int as participations_count,
        coalesce(bs.purchase_customers_count, 0)::int as purchase_customers_count,
        coalesce(bs.purchases_count, 0)::int as purchases_count,
        coalesce(bs.purchase_amount, 0)::numeric as purchase_amount,
@@ -130,8 +149,11 @@ async function listSeasons(businessId, filters = {}) {
        where gm.business_id = s.business_id and gm.season_id = s.id
      ) m on true
      left join lateral (
-       select count(distinct coalesce(gpl.lead_id::text, gpl.contact_id::text, gpl.affiliate_id::text, gpl.source_id::text))::int as participants_count,
-              coalesce(sum(gpl.points), 0)::int as points_total
+        select count(distinct coalesce(gpl.lead_id::text, gpl.contact_id::text, gpl.affiliate_id::text, gpl.source_id::text))::int as participants_count,
+               coalesce(sum(gpl.points), 0)::int as points_total,
+               count(distinct gpl.source_id) filter (where gpl.action_type = 'REFERRAL')::int as referrals_count,
+               count(distinct gpl.source_id) filter (where gpl.action_type in ('REDEMPTION', 'TICKET_REDEEMED'))::int as redemptions_count,
+               count(distinct gpl.source_id) filter (where gpl.action_type in ('PARTICIPATION', 'WEEKLY_PARTICIPATION'))::int as participations_count
        from gamification_points_ledger gpl
        where gpl.business_id = s.business_id and gpl.season_id = s.id
      ) p on true
@@ -369,10 +391,23 @@ async function deleteSeason(businessId, seasonId) {
     if (!locked.rowCount) throw notFound("Ranking no encontrado.");
     const season = locked.rows[0];
     if (!["DRAFT", "CLOSED"].includes(season.status)) {
-      throw badRequest("Pausa o cierra el ranking antes de eliminarlo.");
+      throw badRequest("Cierra el ranking antes de archivarlo.");
     }
-    await client.query("delete from gamification_seasons where id = $1 and business_id = $2", [seasonId, businessId]);
-    return { deleted: true, season };
+    await client.query(
+      `update gamification_seasons
+       set archived_at = now(), status = 'CLOSED', updated_at = now()
+       where id = $1 and business_id = $2`,
+      [seasonId, businessId]
+    );
+    await client.query(
+      "update gamification_missions set status = 'CLOSED', updated_at = now() where season_id = $1 and business_id = $2",
+      [seasonId, businessId]
+    );
+    await client.query(
+      "update gamification_leaderboards set status = 'CLOSED', updated_at = now() where season_id = $1 and business_id = $2",
+      [seasonId, businessId]
+    );
+    return { archived: true, season };
   });
 }
 
@@ -422,10 +457,32 @@ async function createLeaderboard(businessId, seasonId, ranking = {}, rewards = [
 
 async function awardPoints(businessId, payload = {}) {
   if (!payload.action_type) throw badRequest("Selecciona la accion que suma puntos.");
-  const result = await query(
+  return withTransaction(async (client) => {
+    if (payload.lead_id) {
+      const lead = await client.query("select id from players where id = $1 and business_id = $2", [payload.lead_id, businessId]);
+      if (!lead.rowCount) throw badRequest("El lead seleccionado no pertenece a este negocio.");
+    }
+    if (payload.contact_id) {
+      const contact = await client.query("select id from business_manual_leads where id = $1 and business_id = $2", [payload.contact_id, businessId]);
+      if (!contact.rowCount) throw badRequest("El contacto seleccionado no pertenece a este negocio.");
+    }
+    if (payload.season_id) {
+      const season = await client.query("select id from gamification_seasons where id = $1 and business_id = $2 and archived_at is null", [payload.season_id, businessId]);
+      if (!season.rowCount) throw badRequest("El ranking seleccionado no pertenece a este negocio o esta archivado.");
+    }
+    if (payload.mission_id) {
+      const mission = await client.query(
+        "select id from gamification_missions where id = $1 and business_id = $2 and ($3::uuid is null or season_id = $3::uuid)",
+        [payload.mission_id, businessId, payload.season_id || null]
+      );
+      if (!mission.rowCount) throw badRequest("La mision seleccionada no pertenece a este ranking o negocio.");
+    }
+    const eventKey = payload.season_id && payload.idempotency_key ? `manual:${String(payload.idempotency_key).trim()}` : null;
+    const result = await client.query(
     `insert into gamification_points_ledger
-      (business_id, season_id, mission_id, lead_id, contact_id, action_type, points, source_id, source_type, metadata_json)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+      (business_id, season_id, mission_id, lead_id, contact_id, action_type, points, source_id, source_type, event_key, metadata_json)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
+     on conflict (business_id, season_id, event_key) where event_key is not null do nothing
      returning *`,
     [
       businessId,
@@ -437,10 +494,17 @@ async function awardPoints(businessId, payload = {}) {
       Number(payload.points || 0),
       payload.source_id || null,
       payload.source_type || "manual",
+      eventKey,
       jsonParam(payload.metadata || {}, {}),
     ]
   );
-  return { entry: result.rows[0] };
+    if (result.rowCount) return { entry: result.rows[0], duplicate: false };
+    const existing = await client.query(
+      "select * from gamification_points_ledger where business_id = $1 and season_id is not distinct from $2 and event_key = $3 limit 1",
+      [businessId, payload.season_id || null, eventKey]
+    );
+    return { entry: existing.rows[0] || null, duplicate: true };
+  });
 }
 
 async function dashboard(businessId) {
@@ -476,6 +540,7 @@ async function leaderboardForSeason(businessId, seasonId) {
        s.campaign_id,
        s.status,
        coalesce(gl.ranking_type, s.settings_json #>> '{ranking,ranking_type}', 'POINTS') as ranking_type,
+       coalesce(gl.privacy_mode, s.settings_json #>> '{ranking,privacy_mode}', 'ALIAS') as privacy_mode,
        least(greatest(coalesce(gl.top_limit, 10), 1), 50)::int as top_limit
      from gamification_seasons s
      left join gamification_leaderboards gl
@@ -544,9 +609,10 @@ async function leaderboardForSeason(businessId, seasonId) {
          order by p.created_at desc limit 1
        ) p on true
        left join lateral (
-         select ml.id from business_manual_leads ml
-         where ml.business_id = $1 and p.id is null and (
-           (g.email <> '' and lower(ml.email) = lower(g.email))
+          select ml.id from business_manual_leads ml
+          where ml.business_id = $1 and p.id is null and (
+            (g.document_id <> '' and ml.document_id = g.document_id)
+            or (g.email <> '' and lower(ml.email) = lower(g.email))
            or (g.phone_digits <> '' and regexp_replace(coalesce(ml.phone, ''), '[^0-9]', '', 'g') = g.phone_digits)
          )
          order by ml.created_at desc limit 1
@@ -555,41 +621,73 @@ async function leaderboardForSeason(businessId, seasonId) {
        limit $2`,
       [businessId, config.top_limit, config.start_date, config.end_date, config.campaign_id]
     );
+    const leaderboard = purchases.rows.map((row, index) => ({
+      ...row,
+      display_name: String(config.privacy_mode || "ALIAS").toUpperCase() === "ALIAS"
+        ? aliasLeaderboardName(row.name, index)
+        : row.name,
+    }));
     return {
-      leaderboard: purchases.rows,
+      leaderboard,
       ranking_type: "PURCHASES",
+      metric_label: rankingMetricLabel("PURCHASES"),
+      privacy_mode: config.privacy_mode || "ALIAS",
       start_date: config.start_date,
       end_date: config.end_date,
     };
   }
+  const rankingType = String(config.ranking_type || "POINTS").toUpperCase();
+  const actionTypes = rankingActionTypes(rankingType);
   const result = await query(
-    `select
+    `with eligible as (
+       select *
+       from gamification_points_ledger
+       where business_id = $1 and season_id = $2
+         and (cardinality($4::text[]) = 0 or action_type = any($4::text[]))
+     ), grouped as (
+       select
        coalesce(p.name, ml.name, a.full_name, 'Cliente sin nombre') as name,
        coalesce(p.phone, ml.phone, a.phone, '') as phone,
        coalesce(p.email, ml.email, a.email, '') as email,
        gpl.lead_id,
        gpl.contact_id,
        gpl.affiliate_id,
-       coalesce(gpl.lead_id, gpl.contact_id, gpl.affiliate_id) as source_id,
-       case when gpl.lead_id is not null then 'PLAYER' when gpl.contact_id is not null then 'MANUAL' when gpl.affiliate_id is not null then 'AFFILIATE' else null end as source_type,
-       sum(gpl.points)::int as points,
-       count(*)::int as actions_count,
+       coalesce(gpl.lead_id, gpl.contact_id, gpl.affiliate_id, gpl.source_id) as source_id,
+       case when gpl.lead_id is not null then 'PLAYER' when gpl.contact_id is not null then 'MANUAL' when gpl.affiliate_id is not null then 'AFFILIATE' else gpl.source_type end as source_type,
+       coalesce(sum(gpl.points), 0)::int as points,
+       count(distinct coalesce(gpl.source_type || ':' || gpl.source_id::text, gpl.event_key, gpl.id::text))::int as actions_count,
        max(gpl.created_at) as last_activity_at,
-       'POINTS'::text as ranking_type
-     from gamification_points_ledger gpl
+       $5::text as ranking_type
+     from eligible gpl
      left join players p on p.id = gpl.lead_id and p.business_id = gpl.business_id
      left join business_manual_leads ml on ml.id = gpl.contact_id and ml.business_id = gpl.business_id
      left join affiliates a on a.id = gpl.affiliate_id and a.business_id = gpl.business_id
-     where gpl.business_id = $1 and gpl.season_id = $2
      group by p.name, ml.name, a.full_name, p.phone, ml.phone, a.phone, p.email, ml.email, a.email,
-              gpl.lead_id, gpl.contact_id, gpl.affiliate_id
-     order by points desc, last_activity_at desc
+               gpl.lead_id, gpl.contact_id, gpl.affiliate_id,
+               coalesce(gpl.lead_id, gpl.contact_id, gpl.affiliate_id, gpl.source_id),
+               case when gpl.lead_id is not null then 'PLAYER' when gpl.contact_id is not null then 'MANUAL' when gpl.affiliate_id is not null then 'AFFILIATE' else gpl.source_type end
+     )
+     select row_number() over (
+              order by case when $5 = 'POINTS' then points else actions_count end desc, points desc, last_activity_at desc
+            )::int as rank,
+            grouped.*,
+            case when $5 = 'POINTS' then points else actions_count end::int as metric_value
+     from grouped
+     order by rank
      limit $3`,
-    [businessId, seasonId, config.top_limit]
+    [businessId, seasonId, config.top_limit, actionTypes, rankingType]
   );
+  const leaderboard = result.rows.map((row, index) => ({
+    ...row,
+    display_name: String(config.privacy_mode || "ALIAS").toUpperCase() === "ALIAS"
+      ? aliasLeaderboardName(row.name, index)
+      : row.name,
+  }));
   return {
-    leaderboard: result.rows,
-    ranking_type: config.ranking_type || "POINTS",
+    leaderboard,
+    ranking_type: rankingType,
+    metric_label: rankingMetricLabel(rankingType),
+    privacy_mode: config.privacy_mode || "ALIAS",
     start_date: config.start_date,
     end_date: config.end_date,
   };
@@ -693,10 +791,11 @@ async function purchaseLeaderboardByPeriod(businessId, filters = {}) {
      left join lateral (
        select ml.id
        from business_manual_leads ml
-       where ml.business_id = $1
-         and p.id is null
-         and (
-           (g.email <> '' and lower(ml.email) = lower(g.email))
+        where ml.business_id = $1
+          and p.id is null
+          and (
+            (g.document_id <> '' and ml.document_id = g.document_id)
+            or (g.email <> '' and lower(ml.email) = lower(g.email))
            or (g.phone_digits <> '' and regexp_replace(coalesce(ml.phone, ''), '[^0-9]', '', 'g') = g.phone_digits)
          )
        order by ml.created_at desc

@@ -5,7 +5,13 @@ const test = require("node:test");
 
 const root = path.resolve(__dirname, "..");
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
-const { rankingTransitionAllowed, rewardPositions } = require("../backend/src/services/gamificationRankingCore");
+const {
+  aliasLeaderboardName,
+  rankingActionTypes,
+  rankingMetricLabel,
+  rankingTransitionAllowed,
+  rewardPositions,
+} = require("../backend/src/services/gamificationRankingCore");
 
 test("reward rules resolve exact, ranged and top positions", () => {
   assert.deepEqual(rewardPositions({ position: 1 }, 5), [1]);
@@ -21,6 +27,21 @@ test("ranking lifecycle only allows explicit safe transitions", () => {
   assert.equal(rankingTransitionAllowed("ACTIVE", "CLOSED"), true);
   assert.equal(rankingTransitionAllowed("CLOSED", "ACTIVE"), false);
   assert.equal(rankingTransitionAllowed("DRAFT", "FINISHED"), false);
+});
+
+test("each ranking type resolves its own canonical metric", () => {
+  assert.deepEqual(rankingActionTypes("REFERRALS"), ["REFERRAL"]);
+  assert.deepEqual(rankingActionTypes("REDEMPTIONS"), ["REDEMPTION", "TICKET_REDEEMED"]);
+  assert.deepEqual(rankingActionTypes("PARTICIPATION"), ["PARTICIPATION", "WEEKLY_PARTICIPATION"]);
+  assert.deepEqual(rankingActionTypes("POINTS"), []);
+  assert.equal(rankingMetricLabel("REDEMPTIONS"), "Redenciones");
+  assert.equal(rankingMetricLabel("PURCHASES"), "Valor comprado");
+});
+
+test("alias mode creates recognizable names without exposing full identity", () => {
+  assert.equal(aliasLeaderboardName("Maria Fernanda Gomez", 0), "Maria G.");
+  assert.equal(aliasLeaderboardName("Samuel", 2), "Samuel 03");
+  assert.equal(aliasLeaderboardName("", 4), "Participante 5");
 });
 
 test("database automation covers every canonical ranking event idempotently", () => {
@@ -60,6 +81,20 @@ test("service keeps ranking, mission and leaderboard consistent", () => {
   assert.match(service, /sale\.campaign_id = s\.campaign_id/);
   assert.match(service, /generateSeasonRewards/);
   assert.match(service, /ranking_task_key/);
+  assert.match(service, /cardinality\(\$4::text\[\]\) = 0 or action_type = any\(\$4::text\[\]\)/);
+  assert.match(service, /display_name:/);
+  assert.match(service, /archived_at is null/);
+  assert.doesNotMatch(service, /delete from gamification_seasons/i);
+});
+
+test("affiliate point redemptions feed redemption rankings idempotently", () => {
+  const migration = read("database/migrations/202609100002_ranking_complete_reliability.sql");
+  assert.match(migration, /trg_qori_ranking_affiliate_redemption/);
+  assert.match(migration, /idx_gamification_points_ranking_action/);
+  assert.match(migration, /'REDEMPTION'/);
+  assert.match(migration, /'affiliate-redemption:' \|\| new\.id/);
+  assert.match(migration, /security invoker/i);
+  assert.match(migration, /revoke all on function qori_ranking_affiliate_redemption_trigger\(\) from public/i);
 });
 
 test("ranking mutations are role protected", () => {
@@ -81,9 +116,15 @@ test("premium ranking UI exposes complete desktop and mobile workflows", () => {
   assert.match(app, /openMissionEditor/);
   assert.match(app, /deleteMissionSeason/);
   assert.match(app, /missionMutationBusy/);
+  assert.match(app, /missionLeaderboardRequestId/);
+  assert.match(app, /prepareMissionReward/);
+  assert.match(app, /Historial protegido|historial quedó protegido/);
+  assert.match(app, /data-label="Total comprado"/);
   assert.match(app, /formatDateOnly\(season\.start_date\)/);
   assert.match(app, /\[\$\{rule\.action_type\}\]/);
   assert.match(css, /@media \(max-width: 620px\)/);
   assert.match(css, /width: calc\(100vw - 16px\)/);
   assert.match(css, /mission-season-operations-grid > \.span-2/);
+  assert.match(css, /\.portal-shell \.missions-onboarding \{[\s\S]*display: block !important/);
+  assert.match(css, /\.mission-leaderboard-table td\s*\{[\s\S]*display: grid !important/);
 });

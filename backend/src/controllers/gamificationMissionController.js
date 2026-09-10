@@ -72,6 +72,7 @@ const pointsSchema = z.object({
   points: z.number().int().min(-10000).max(10000),
   source_id: z.string().uuid().optional().nullable(),
   source_type: z.string().trim().max(80).optional().nullable(),
+  idempotency_key: z.string().trim().min(8).max(160).optional().nullable(),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
 }).refine((value) => Boolean(value.lead_id || value.contact_id), {
   message: "Selecciona un lead o contacto para asignar puntos.",
