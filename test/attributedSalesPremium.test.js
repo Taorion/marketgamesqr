@@ -71,7 +71,7 @@ test("manual sale retries are idempotent before any customer, product or points 
 });
 
 test("premium sales command exposes server filters, pagination and canonical CSV", () => {
-  assert.match(portal, /attributed-sales-premium\.css\?v=sales-entry-modal-v371/);
+  assert.match(portal, /attributed-sales-premium\.css\?v=sales-detail-modal-v372-20260910/);
   assert.match(portal, /app\.js\?v=[^"']*attributed-sales-command-v368/);
   assert.match(portal, /id="salesAnalysisStatusInput"/);
   assert.match(portal, /id="salesAnalysisSourceInput"/);
@@ -107,4 +107,17 @@ test("sale registration uses one stable accessible dialog without moving the liv
   assert.match(premiumCss, /stable sale-entry dialog v371/);
   assert.match(premiumCss, /height:min\(900px,calc\(100dvh - 32px\)\)/);
   assert.match(premiumCss, /@media \(max-width:560px\)/);
+});
+
+test("attributed sale detail is a fixed accessible overlay with internal scrolling", () => {
+  assert.match(portal, /attributed-sales-premium\.css\?v=sales-detail-modal-v372-20260910/);
+  assert.match(portal, /sales-detail-modal=v475-20260910/);
+  assert.match(app, /sales-detail-modal modal-overlay hidden/);
+  assert.match(app, /modal\.hidden = false/);
+  assert.match(app, /content\.scrollTop = 0/);
+  assert.match(app, /salesDetailReturnFocus\.focus\(\{ preventScroll: true \}\)/);
+  assert.match(premiumCss, /Stable attributed-sale detail overlay v372/);
+  assert.match(premiumCss, /#salesDetailModal\.sales-detail-modal \{[\s\S]*?position: fixed !important;[\s\S]*?height: 100dvh !important/);
+  assert.match(premiumCss, /#salesDetailModal #salesDetailContent \{[\s\S]*?overflow-y: auto !important/);
+  assert.match(premiumCss, /@media \(max-width: 460px\)[\s\S]*?#salesDetailModal \.sales-detail-card[\s\S]*?max-height: calc\(100dvh - 16px\) !important/);
 });

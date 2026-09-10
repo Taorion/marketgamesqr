@@ -21953,12 +21953,16 @@ function saleDetailAllDataRows(item = {}) {
   return rows.join("") || '<tr><td colspan="2">Sin datos adicionales.</td></tr>';
 }
 
+let salesDetailReturnFocus = null;
+
 function ensureSalesDetailModal() {
   let modal = document.getElementById("salesDetailModal");
   if (modal) return modal;
   modal = document.createElement("div");
   modal.id = "salesDetailModal";
-  modal.className = "sales-detail-modal hidden";
+  modal.className = "sales-detail-modal modal-overlay hidden";
+  modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
   modal.setAttribute("role", "dialog");
   modal.setAttribute("aria-modal", "true");
   modal.setAttribute("aria-labelledby", "salesDetailTitle");
@@ -21972,12 +21976,33 @@ function ensureSalesDetailModal() {
     </section>
   `;
   modal.addEventListener("click", (event) => {
-    if (event.target.closest("[data-sales-detail-close]")) closeSalesDetailModal();
+    if (event.target.closest("[data-sales-detail-close]")) {
+      closeSalesDetailModal();
+      return;
+    }
     const voidButton = event.target.closest("[data-sales-void]");
     if (voidButton) voidAttributedSale(voidButton.dataset.salesVoid || "");
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !modal.classList.contains("hidden")) closeSalesDetailModal();
+    if (modal.classList.contains("hidden")) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeSalesDetailModal();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = Array.from(modal.querySelectorAll('button:not([disabled]), a[href], summary, input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+      .filter((element) => !element.hidden && element.getAttribute("aria-hidden") !== "true");
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus({ preventScroll: true });
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus({ preventScroll: true });
+    }
   });
   document.body.appendChild(modal);
   return modal;
@@ -21986,7 +22011,13 @@ function ensureSalesDetailModal() {
 function closeSalesDetailModal() {
   const modal = document.getElementById("salesDetailModal");
   modal?.classList.add("hidden");
+  if (modal) {
+    modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
+  }
   document.body.classList.remove("has-sales-detail-modal");
+  if (salesDetailReturnFocus?.isConnected) salesDetailReturnFocus.focus({ preventScroll: true });
+  salesDetailReturnFocus = null;
 }
 
 async function voidAttributedSale(saleId = "") {
@@ -22023,6 +22054,7 @@ function openSalesDetailModal(key = "") {
   const content = modal.querySelector("#salesDetailContent");
   const amount = money(item.sale_amount || 0);
   const products = saleProductsForDisplay(item);
+  salesDetailReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   content.innerHTML = `
     <header class="sales-detail-head">
       <span class="mono-label">Detalle de venta</span>
@@ -22081,6 +22113,9 @@ function openSalesDetailModal(key = "") {
       </div>
     </details>
   `;
+  content.scrollTop = 0;
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
   modal.classList.remove("hidden");
   document.body.classList.add("has-sales-detail-modal");
   modal.querySelector(".sales-detail-close")?.focus();

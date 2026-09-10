@@ -192,6 +192,170 @@ body[data-current-view="sales"] .sales-ledger-footer {
   body[data-current-view="sales"] .sales-ledger-footer button { width: 100%; }
 }
 
+/* Stable attributed-sale detail overlay v372. The base geometry lives in the
+   static module sheet so it cannot disappear when legacy runtime CSS is disabled. */
+html body > #salesDetailModal.sales-detail-modal {
+  box-sizing: border-box !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: var(--portal-modal, 1100) !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
+  overflow: hidden !important;
+  isolation: isolate;
+}
+
+html body > #salesDetailModal.sales-detail-modal.hidden,
+html body > #salesDetailModal.sales-detail-modal[hidden] {
+  display: none !important;
+}
+
+html body > #salesDetailModal .sales-detail-backdrop {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  background: rgba(3, 20, 49, .68) !important;
+  backdrop-filter: blur(8px);
+}
+
+html body > #salesDetailModal .sales-detail-card {
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: min(1020px, calc(100vw - 24px)) !important;
+  max-width: 100% !important;
+  max-height: calc(100dvh - 24px) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: auto !important;
+  padding: clamp(18px, 2.6vw, 30px) !important;
+  overflow: hidden !important;
+  border: 1px solid #cbdce7 !important;
+  border-radius: 22px !important;
+  background: #fff !important;
+  box-shadow: 0 30px 90px rgba(3, 20, 49, .42) !important;
+}
+
+html body > #salesDetailModal #salesDetailContent {
+  box-sizing: border-box !important;
+  display: grid !important;
+  gap: 18px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: clamp(2px, .7vw, 8px);
+}
+
+html body > #salesDetailModal .sales-detail-head {
+  display: grid;
+  gap: 5px;
+  padding-right: 48px;
+}
+
+html body > #salesDetailModal .sales-detail-head :is(h3, p) {
+  margin: 0;
+}
+
+html body > #salesDetailModal :is(.sales-detail-hero, .sales-detail-grid) {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+html body > #salesDetailModal :is(.sales-detail-hero, .sales-detail-grid) article,
+html body > #salesDetailModal .sales-detail-product-row {
+  display: grid !important;
+  gap: 4px;
+  min-width: 0;
+  padding: 13px 14px;
+}
+
+html body > #salesDetailModal :is(.sales-detail-hero, .sales-detail-grid) article strong,
+html body > #salesDetailModal .sales-detail-product-row :is(strong, small) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+html body > #salesDetailModal .sales-detail-section,
+html body > #salesDetailModal .sales-detail-products {
+  display: grid !important;
+  gap: 9px;
+}
+
+html body > #salesDetailModal .sales-detail-section h4 {
+  margin: 0;
+}
+
+html body > #salesDetailModal .sales-detail-product-row {
+  grid-template-columns: minmax(0, 1fr) minmax(180px, .7fr) auto;
+  align-items: center;
+}
+
+html body > #salesDetailModal .sales-detail-product-row b {
+  white-space: nowrap;
+}
+
+html body > #salesDetailModal .sales-detail-raw pre {
+  max-width: 100%;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+}
+
+html body > #salesDetailModal .sales-detail-close {
+  position: absolute !important;
+  top: clamp(14px, 2vw, 22px) !important;
+  right: clamp(14px, 2vw, 22px) !important;
+  z-index: 3 !important;
+}
+
+html:has(body.has-sales-detail-modal),
+html body.has-sales-detail-modal {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+html body > #salesDetailModal .sales-detail-raw .table-wrap {
+  max-width: 100% !important;
+  overflow: auto !important;
+}
+
+@media (max-width: 460px) {
+  html body > #salesDetailModal.sales-detail-modal {
+    padding: 8px !important;
+  }
+
+  html body > #salesDetailModal .sales-detail-card {
+    width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 16px) !important;
+    padding: 17px 14px !important;
+    border-radius: 16px !important;
+  }
+
+  html body > #salesDetailModal #salesDetailContent {
+    padding-right: 2px;
+  }
+
+  html body > #salesDetailModal :is(.sales-detail-hero, .sales-detail-grid),
+  html body > #salesDetailModal .sales-detail-product-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body > #salesDetailModal .sales-detail-close {
+    top: 12px !important;
+    right: 12px !important;
+  }
+}
+
 /* Bulk revenue intake: premium, auditable and consistent with Revenue Command. */
 .sales-import-head-button { border-color: rgba(255,255,255,.34) !important; color:#fff !important; background:rgba(255,255,255,.1) !important; backdrop-filter:blur(12px); }
 .sales-import-head-button:hover { background:rgba(255,255,255,.18) !important; transform:translateY(-1px); }
