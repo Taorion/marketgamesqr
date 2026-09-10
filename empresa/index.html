@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=rms-quality-1-premium-v318-gos-brand-v362-20260826&amp;activation-editor=full-v3-20260907&amp;activation-question-count=v440-20260907&amp;activation-digital-download=v441-20260907&amp;link-qr-generator=v443-20260907&amp;diagnostic-question-count=v445-20260907&amp;thermometer-ticket-only=v447-20260907&amp;scratch-winners=v449-20260908&amp;scratch-slot-delivery=v450-20260908&amp;connectors-builder=v454-20260909&amp;order-options-editor=v459-20260909&amp;optional-beneficiary-data=v460-20260909&amp;whack-a-mole=v461-20260909&amp;runner-basket=v462-20260909&amp;validator-product-removal=v463-20260909&amp;activation-capture-cleanup=v464-20260909">
+<link rel="stylesheet" href="css/styles.css?v=rms-quality-1-premium-v318-gos-brand-v362-20260826&amp;activation-editor=full-v3-20260907&amp;activation-question-count=v440-20260907&amp;activation-digital-download=v441-20260907&amp;link-qr-generator=v443-20260907&amp;diagnostic-question-count=v445-20260907&amp;thermometer-ticket-only=v447-20260907&amp;scratch-winners=v449-20260908&amp;scratch-slot-delivery=v450-20260908&amp;connectors-builder=v454-20260909&amp;order-options-editor=v459-20260909&amp;optional-beneficiary-data=v460-20260909&amp;whack-a-mole=v461-20260909&amp;runner-basket=v462-20260909&amp;validator-product-removal=v463-20260909&amp;activation-capture-cleanup=v465-20260910">
   <link rel="stylesheet" href="css/campaign-command-center-v314.css" media="print" data-deferred-portal-style>
   <style id="campaignCommandCenterCriticalV316">
     html body[data-current-view="campaigns"] .portal-shell .view-section.active[data-view="campaigns"].campaign-premium-enabled > #campaignPremiumWorkspace { display:grid !important; }
@@ -3679,65 +3679,6 @@
                   <div class="trivia-launcher-result hidden" id="triviaLauncherResult"></div>
                 </article>
 
-                <article class="surface-card data-table-card lead-capture-card contact-captures-only" data-contact-captures-only>
-                  <div class="table-card-head">
-                    <div>
-                      <span class="mono-label">Captura Relámpago de Lead</span>
-                      <h3>Entrega un activo digital a cambio de los datos del cliente</h3>
-                    </div>
-                    <span class="status-chip ok">Visitante → QR → Lead → Descarga</span>
-                  </div>
-                  <p class="chart-explainer">Convierte visitantes físicos en leads entregando catálogos, portafolios o activos digitales mediante QR. Cada persona que escanea ya no se va como visitante: se convierte en una oportunidad registrada.</p>
-                  <form class="modal-form lead-capture-form" id="leadCaptureForm">
-                    <label><span>Nombre de la activación</span><input id="leadCaptureNameInput" type="text" maxlength="160" required placeholder="Catálogo de trajes a la medida"></label>
-                    <label><span>Campaña asociada</span><select id="leadCaptureCampaignInput"></select></label>
-                    <label><span>Canal de uso</span>
-                      <select id="leadCaptureChannelInput">
-                        <option value="tienda_fisica">Tienda física</option>
-                        <option value="feria">Feria</option>
-                        <option value="vitrina">Vitrina</option>
-                        <option value="stand">Stand</option>
-                        <option value="redes">Redes</option>
-                        <option value="evento">Evento</option>
-                        <option value="mostrador">Mostrador</option>
-                        <option value="otro">Otro</option>
-                      </select>
-                    </label>
-                    <label><span>Estado</span>
-                      <select id="leadCaptureStatusInput">
-                        <option value="ACTIVE">Activa</option>
-                        <option value="DRAFT">Borrador</option>
-                        <option value="PAUSED">Pausada</option>
-                        <option value="ENDED">Finalizada</option>
-                      </select>
-                    </label>
-                    <label><span>Inicio</span><input id="leadCaptureStartsInput" type="datetime-local"></label>
-                    <label><span>Vencimiento</span><input id="leadCaptureExpiresInput" type="datetime-local"></label>
-                    <label class="span-2"><span>Descripción interna</span><textarea id="leadCaptureDescriptionInput" rows="2" maxlength="1200" placeholder="Uso en mostrador para entregar catálogo PDF y capturar interesados."></textarea></label>
-                    <label class="span-2"><span>Qué activo entregará este Ticket Relámpago</span><select id="leadCaptureAssetSelect" required></select><small>Los activos se cargan en Cuenta → Activos digitales.</small></label>
-                    <div class="span-2 lead-capture-asset-preview" id="leadCaptureAssetPreview"></div>
-                    <label><span>Título público opcional</span><input id="leadCaptureAssetTitleInput" type="text" maxlength="180" placeholder="Si lo dejas vacío usa el título del activo"></label>
-                    <label><span>Categoría</span><input id="leadCaptureAssetCategoryInput" type="text" maxlength="80" value="catalogo" disabled></label>
-                    <label class="span-2"><span>Descripción pública opcional</span><textarea id="leadCaptureAssetDescriptionInput" rows="2" maxlength="800" placeholder="Si lo dejas vacío usa la descripción del activo."></textarea></label>
-                    <label><span>Título del bloque de detalle</span><input id="leadCaptureDetailsTitleInput" type="text" maxlength="80" value="Qué recibes"></label>
-                    <label><span>Etiqueta 1</span><input id="leadCaptureBadgeOneInput" type="text" maxlength="80" placeholder="Ej: Ebook - PDF - 1.2 MB"></label>
-                    <label class="span-2"><span>Texto del bloque de detalle</span><textarea id="leadCaptureDetailsDescriptionInput" rows="3" maxlength="800" placeholder="Ej: Un recurso listo para descargar apenas completes el formulario."></textarea></label>
-                    <label><span>Etiqueta 2</span><input id="leadCaptureBadgeTwoInput" type="text" maxlength="80" value="Acceso inmediato"></label>
-                    <label><span>Etiqueta 3</span><input id="leadCaptureBadgeThreeInput" type="text" maxlength="80" value="Enlace seguro"></label>
-                    <div class="span-2 inline-actions">
-                      <button class="ghost-button" id="leadCaptureOpenAssetsButton" type="button">Ir a biblioteca de activos</button>
-                    </div>
-                    <label><span>Texto del botón</span><input id="leadCaptureButtonTextInput" type="text" maxlength="80" value="Descargar catálogo"></label>
-                    <label><span>Texto legal</span><input id="leadCaptureConsentTextInput" type="text" maxlength="1000" value="Autorizo el tratamiento de mis datos personales para recibir información comercial relacionada con esta marca."></label>
-                    <fieldset class="span-2 lead-capture-fieldset">
-                      <legend>Campos del formulario público</legend>
-                      <div id="leadCaptureFieldsGrid"></div>
-                    </fieldset>
-                    <p class="form-message span-2" id="leadCaptureMessage"></p>
-                    <button class="solid-button" id="leadCaptureSubmitButton" type="submit">Crear captura</button>
-                  </form>
-                  <div class="lead-capture-result" id="leadCaptureResult"></div>
-                </article>
 
                 <article class="surface-card data-table-card gaming-activation-list-card" data-quiet-zone-ignore>
                   <div class="table-card-head">
@@ -3831,30 +3772,6 @@
                   </article>
                 </div>
 
-                <article class="surface-card data-table-card contact-captures-only" data-contact-captures-only>
-                  <div class="table-card-head">
-                    <div>
-                      <span class="mono-label">Capturas Relámpago lanzadas</span>
-                      <h3>Links, QR, métricas y leads capturados</h3>
-                    </div>
-                    <button class="ghost-button" id="refreshLeadCaptureButton" type="button">Actualizar</button>
-                  </div>
-                  <div class="table-wrap">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Activación</th>
-                          <th>Activo</th>
-                          <th>Métricas</th>
-                          <th>Link público</th>
-                          <th>Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody id="leadCaptureTable"></tbody>
-                    </table>
-                  </div>
-                  <div class="lead-capture-detail" id="leadCaptureDetail"></div>
-                </article>
               </section>
             </div>
 
@@ -5088,7 +5005,92 @@
               <div class="contact-center-panel active" id="contactPanelDirectory" data-contact-center-panel="directory" role="tabpanel" aria-labelledby="contactTabDirectory"></div>
               <div class="contact-center-panel hidden" id="contactPanelTickets" data-contact-center-panel="tickets" role="tabpanel" aria-labelledby="contactTabTickets" hidden></div>
               <div class="contact-center-panel hidden" id="contactPanelAgenda" data-contact-center-panel="agenda" role="tabpanel" aria-labelledby="contactTabAgenda" hidden></div>
-              <div class="contact-center-panel hidden" id="contactPanelCaptures" data-contact-center-panel="captures" role="tabpanel" aria-labelledby="contactTabCaptures" hidden></div>
+              <div class="contact-center-panel hidden" id="contactPanelCaptures" data-contact-center-panel="captures" role="tabpanel" aria-labelledby="contactTabCaptures" hidden>
+                <article class="surface-card data-table-card lead-capture-card">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">Captura Relámpago de Lead</span>
+                      <h3>Entrega un activo digital a cambio de los datos del cliente</h3>
+                    </div>
+                    <span class="status-chip ok">Visitante → QR → Lead → Descarga</span>
+                  </div>
+                  <p class="chart-explainer">Convierte visitantes físicos en leads entregando catálogos, portafolios o activos digitales mediante QR. Cada persona que escanea ya no se va como visitante: se convierte en una oportunidad registrada.</p>
+                  <form class="modal-form lead-capture-form" id="leadCaptureForm">
+                    <label><span>Nombre de la activación</span><input id="leadCaptureNameInput" type="text" maxlength="160" required placeholder="Catálogo de trajes a la medida"></label>
+                    <label><span>Campaña asociada</span><select id="leadCaptureCampaignInput"></select></label>
+                    <label><span>Canal de uso</span>
+                      <select id="leadCaptureChannelInput">
+                        <option value="tienda_fisica">Tienda física</option>
+                        <option value="feria">Feria</option>
+                        <option value="vitrina">Vitrina</option>
+                        <option value="stand">Stand</option>
+                        <option value="redes">Redes</option>
+                        <option value="evento">Evento</option>
+                        <option value="mostrador">Mostrador</option>
+                        <option value="otro">Otro</option>
+                      </select>
+                    </label>
+                    <label><span>Estado</span>
+                      <select id="leadCaptureStatusInput">
+                        <option value="ACTIVE">Activa</option>
+                        <option value="DRAFT">Borrador</option>
+                        <option value="PAUSED">Pausada</option>
+                        <option value="ENDED">Finalizada</option>
+                      </select>
+                    </label>
+                    <label><span>Inicio</span><input id="leadCaptureStartsInput" type="datetime-local"></label>
+                    <label><span>Vencimiento</span><input id="leadCaptureExpiresInput" type="datetime-local"></label>
+                    <label class="span-2"><span>Descripción interna</span><textarea id="leadCaptureDescriptionInput" rows="2" maxlength="1200" placeholder="Uso en mostrador para entregar catálogo PDF y capturar interesados."></textarea></label>
+                    <label class="span-2"><span>Qué activo entregará este Ticket Relámpago</span><select id="leadCaptureAssetSelect" required></select><small>Los activos se cargan en Cuenta → Activos digitales.</small></label>
+                    <div class="span-2 lead-capture-asset-preview" id="leadCaptureAssetPreview"></div>
+                    <label><span>Título público opcional</span><input id="leadCaptureAssetTitleInput" type="text" maxlength="180" placeholder="Si lo dejas vacío usa el título del activo"></label>
+                    <label><span>Categoría</span><input id="leadCaptureAssetCategoryInput" type="text" maxlength="80" value="catalogo" disabled></label>
+                    <label class="span-2"><span>Descripción pública opcional</span><textarea id="leadCaptureAssetDescriptionInput" rows="2" maxlength="800" placeholder="Si lo dejas vacío usa la descripción del activo."></textarea></label>
+                    <label><span>Título del bloque de detalle</span><input id="leadCaptureDetailsTitleInput" type="text" maxlength="80" value="Qué recibes"></label>
+                    <label><span>Etiqueta 1</span><input id="leadCaptureBadgeOneInput" type="text" maxlength="80" placeholder="Ej: Ebook - PDF - 1.2 MB"></label>
+                    <label class="span-2"><span>Texto del bloque de detalle</span><textarea id="leadCaptureDetailsDescriptionInput" rows="3" maxlength="800" placeholder="Ej: Un recurso listo para descargar apenas completes el formulario."></textarea></label>
+                    <label><span>Etiqueta 2</span><input id="leadCaptureBadgeTwoInput" type="text" maxlength="80" value="Acceso inmediato"></label>
+                    <label><span>Etiqueta 3</span><input id="leadCaptureBadgeThreeInput" type="text" maxlength="80" value="Enlace seguro"></label>
+                    <div class="span-2 inline-actions">
+                      <button class="ghost-button" id="leadCaptureOpenAssetsButton" type="button">Ir a biblioteca de activos</button>
+                    </div>
+                    <label><span>Texto del botón</span><input id="leadCaptureButtonTextInput" type="text" maxlength="80" value="Descargar catálogo"></label>
+                    <label><span>Texto legal</span><input id="leadCaptureConsentTextInput" type="text" maxlength="1000" value="Autorizo el tratamiento de mis datos personales para recibir información comercial relacionada con esta marca."></label>
+                    <fieldset class="span-2 lead-capture-fieldset">
+                      <legend>Campos del formulario público</legend>
+                      <div id="leadCaptureFieldsGrid"></div>
+                    </fieldset>
+                    <p class="form-message span-2" id="leadCaptureMessage"></p>
+                    <button class="solid-button" id="leadCaptureSubmitButton" type="submit">Crear captura</button>
+                  </form>
+                  <div class="lead-capture-result" id="leadCaptureResult"></div>
+                </article>
+
+                <article class="surface-card data-table-card">
+                  <div class="table-card-head">
+                    <div>
+                      <span class="mono-label">Capturas Relámpago lanzadas</span>
+                      <h3>Links, QR, métricas y leads capturados</h3>
+                    </div>
+                    <button class="ghost-button" id="refreshLeadCaptureButton" type="button">Actualizar</button>
+                  </div>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Activación</th>
+                          <th>Activo</th>
+                          <th>Métricas</th>
+                          <th>Link público</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody id="leadCaptureTable"></tbody>
+                    </table>
+                  </div>
+                  <div class="lead-capture-detail" id="leadCaptureDetail"></div>
+                </article>
+              </div>
               <div class="contact-center-panel hidden" id="contactPanelManual" data-contact-center-panel="manual" role="tabpanel" aria-labelledby="contactTabManual" hidden></div>
               <div class="contact-center-panel hidden" id="contactPanelSales" data-contact-center-panel="sales" role="tabpanel" aria-labelledby="contactTabSales" hidden></div>
             </section>
