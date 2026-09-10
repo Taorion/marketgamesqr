@@ -750,6 +750,14 @@ const affiliateManualPointsInput = document.getElementById("affiliateManualPoint
 const affiliateManualPointsReasonInput = document.getElementById("affiliateManualPointsReasonInput");
 const affiliateManualPointsButton = document.getElementById("affiliateManualPointsButton");
 const affiliateManualPointsMessage = document.getElementById("affiliateManualPointsMessage");
+const affiliateRedemptionItemInput = document.getElementById("affiliateRedemptionItemInput");
+const affiliateRedemptionPointsInput = document.getElementById("affiliateRedemptionPointsInput");
+const affiliateRedemptionReasonInput = document.getElementById("affiliateRedemptionReasonInput");
+const affiliateRedemptionBalance = document.getElementById("affiliateRedemptionBalance");
+const affiliateRedemptionCalculation = document.getElementById("affiliateRedemptionCalculation");
+const affiliateRedeemPointsButton = document.getElementById("affiliateRedeemPointsButton");
+const affiliateRedemptionMessage = document.getElementById("affiliateRedemptionMessage");
+const affiliateRedemptionHistory = document.getElementById("affiliateRedemptionHistory");
 const downloadAffiliateCardButton = document.getElementById("downloadAffiliateCardButton");
 const copyAffiliateCardLinkButton = document.getElementById("copyAffiliateCardLinkButton");
 const affiliateRewardRuleForm = document.getElementById("affiliateRewardRuleForm");
@@ -3087,6 +3095,7 @@ let state = {
   attributedSalesRequestSeq: 0,
   customerSaleIdempotencyKey: "",
   affiliatePurchaseIdempotencyKey: "",
+  affiliateRedemptionIdempotencyKey: "",
   salesAnalysisFilters: {
     search: "",
     customer: "",
@@ -4404,6 +4413,7 @@ function resetBusinessScopedState(options = {}) {
   state.attributedSalesRequestSeq += 1;
   state.customerSaleIdempotencyKey = "";
   state.affiliatePurchaseIdempotencyKey = "";
+  state.affiliateRedemptionIdempotencyKey = "";
   state.selectedAffiliateId = null;
   state.selectedAffiliate = null;
   state.selectedAffiliateLedger = [];
@@ -4732,11 +4742,16 @@ async function loadAffiliatesData() {
   }
   const scopeKey = businessScopeKey();
   showFeedback("Cargando afiliados.", "loading", { title: "Sincronizando", timeout: 0 });
-  const data = await apiSafe(`/api/portal/businesses/${session.user.business_id}/affiliates`, { headers: authHeaders() }, { affiliates: [] });
+  const [data, inventoryData] = await Promise.all([
+    apiSafe(`/api/portal/businesses/${session.user.business_id}/affiliates`, { headers: authHeaders() }, { affiliates: [] }),
+    apiSafe("/api/business/inventory/products?limit=500", { headers: authHeaders(), planGate: false }, { products: [] }),
+  ]);
   if (!isCurrentBusinessScope(scopeKey)) return;
   state.affiliates = data.affiliates || [];
   state.affiliatePointRules = data.point_rules || state.affiliatePointRules || null;
   state.affiliateRewardRules = data.reward_rules || state.affiliateRewardRules || [];
+  state.inventoryProducts = Array.isArray(inventoryData.products) ? inventoryData.products : [];
+  state.inventoryLoaded = true;
   state.affiliatesLoaded = true;
   hideFeedback();
 }
@@ -42613,6 +42628,182 @@ function ticketPublicUrl(ticket = {}) {
     || (ticket.token ? `/claim/${encodeURIComponent(ticket.token)}` : ""));
 }
 
+function affiliateProductRedemptionPoints(product = {}) {
+  const pointAmount = Number(state.affiliatePointRules?.point_amount_cop || 1000);
+  const price = Number(product.unit_price || 0);
+  if (!Number.isFinite(pointAmount) || pointAmount <= 0 || !Number.isFinite(price) || price <= 0) return 0;
+  return Math.max(0, Math.floor(price / pointAmount));
+}
+
+function selectedAffiliateRedemption() {
+  const [type = "manual", id = ""] = String(affiliateRedemptionItemInput?.value || "").split(":");
+  if (type === "product") {
+    const product = (state.inventoryProducts || []).find((item) => String(item.id) === id);
+    return product ? {
+      type,
+      id,
+      points: affiliateProductRedemptionPoints(product),
+      label: product.name || "Producto",
+    } : { type: "manual", id: "", points: 0, label: "" };
+  }
+  if (type === "reward") {
+    const reward = (state.affiliateRewardRules || []).find((item) => String(item.id) === id);
+    return reward ? {
+      type,
+      id,
+      points: Number(reward.required_points || 0),
+      label: reward.title || reward.benefit_label || "Premio",
+    } : { type: "manual", id: "", points: 0, label: "" };
+  }
+  return {
+    type: "manual",
+    id: "",
+    points: Number(affiliateRedemptionPointsInput?.value || 0),
+    label: "",
+  };
+}
+
+function syncAffiliateRedemptionControls(options = {}) {
+  if (!affiliateRedemptionItemInput) return;
+  const selectedAffiliate = state.selectedAffiliate;
+  const selection = selectedAffiliateRedemption();
+  const balance = Number(selectedAffiliate?.points_total || selectedAffiliate?.ledger_points || 0);
+  const automatic = selection.type !== "manual";
+
+  affiliateRedemptionItemInput.disabled = !selectedAffiliate;
+  affiliateRedemptionPointsInput.disabled = !selectedAffiliate || automatic;
+  affiliateRedemptionReasonInput.disabled = !selectedAffiliate;
+  if (automatic) affiliateRedemptionPointsInput.value = String(selection.points || "");
+  if (options.selectionChanged) {
+    state.affiliateRedemptionIdempotencyKey = "";
+    affiliateRedemptionReasonInput.value = automatic ? selection.label : "";
+  }
+
+  if (affiliateRedemptionBalance) {
+    affiliateRedemptionBalance.textContent = `Saldo: ${balance.toLocaleString("es-CO")} puntos`;
+  }
+  const points = automatic ? selection.points : Number(affiliateRedemptionPointsInput.value || 0);
+  const validPoints = Number.isInteger(points) && points > 0;
+  const enough = validPoints && points <= balance;
+  if (affiliateRedemptionCalculation) {
+    affiliateRedemptionCalculation.textContent = !selectedAffiliate
+      ? "Selecciona un afiliado para registrar una redencion."
+      : !validPoints
+        ? (automatic ? "Esta opcion no tiene un costo valido en puntos." : "Escribe cuantos puntos vas a descontar.")
+        : enough
+          ? `${automatic ? "Descuento automatico" : "Descuento manual"}: ${points.toLocaleString("es-CO")} puntos. Saldo final: ${(balance - points).toLocaleString("es-CO")}.`
+          : `Saldo insuficiente: requiere ${points.toLocaleString("es-CO")} y tiene ${balance.toLocaleString("es-CO")}.`;
+  }
+  affiliateRedeemPointsButton.disabled = !selectedAffiliate || !enough;
+}
+
+function renderAffiliateRedemptionControls() {
+  if (!affiliateRedemptionItemInput) return;
+  const current = affiliateRedemptionItemInput.value;
+  const products = (state.inventoryProducts || [])
+    .filter((item) => item.status !== "ARCHIVED" && affiliateProductRedemptionPoints(item) > 0);
+  const rewards = (state.affiliateRewardRules || [])
+    .filter((item) => item.status !== "ARCHIVED" && Number(item.required_points || 0) > 0);
+  affiliateRedemptionItemInput.innerHTML = [
+    '<option value="">Redencion manual</option>',
+    products.length ? `<optgroup label="Productos">${products.map((product) => {
+      const points = affiliateProductRedemptionPoints(product);
+      return `<option value="product:${escapeHtml(product.id)}">${escapeHtml(product.name || "Producto")} - ${escapeHtml(points.toLocaleString("es-CO"))} puntos</option>`;
+    }).join("")}</optgroup>` : "",
+    rewards.length ? `<optgroup label="Premios configurados">${rewards.map((reward) => `<option value="reward:${escapeHtml(reward.id)}">${escapeHtml(reward.title || reward.benefit_label || "Premio")} - ${escapeHtml(Number(reward.required_points || 0).toLocaleString("es-CO"))} puntos</option>`).join("")}</optgroup>` : "",
+  ].join("");
+  if (Array.from(affiliateRedemptionItemInput.options).some((option) => option.value === current)) {
+    affiliateRedemptionItemInput.value = current;
+  }
+  syncAffiliateRedemptionControls();
+  renderAffiliateRedemptionHistory();
+}
+
+function renderAffiliateRedemptionHistory() {
+  if (!affiliateRedemptionHistory) return;
+  if (!state.selectedAffiliateId) {
+    affiliateRedemptionHistory.innerHTML = "<small>Selecciona un afiliado para consultar sus redenciones.</small>";
+    return;
+  }
+  const redemptions = (state.selectedAffiliateLedger || [])
+    .filter((item) => item.metadata?.source === "affiliate_redemption_portal" || Number(item.points_awarded || 0) < 0)
+    .slice(0, 5);
+  affiliateRedemptionHistory.innerHTML = redemptions.length
+    ? redemptions.map((item) => `
+        <div class="affiliate-redemption-history-row">
+          <div><strong>${escapeHtml(item.reason || "Redencion")}</strong><small>${escapeHtml(formatDate(item.created_at))}</small></div>
+          <span>-${escapeHtml(Math.abs(Number(item.points_awarded || 0)).toLocaleString("es-CO"))} puntos</span>
+        </div>`).join("")
+    : "<small>Este afiliado aun no tiene redenciones registradas.</small>";
+}
+
+async function redeemSelectedAffiliatePoints() {
+  if (!state.selectedAffiliateId || !session?.user?.business_id) return;
+  const selection = selectedAffiliateRedemption();
+  const points = selection.type === "manual"
+    ? Number(affiliateRedemptionPointsInput?.value || 0)
+    : selection.points;
+  const reason = String(affiliateRedemptionReasonInput?.value || "").trim();
+  if (!Number.isInteger(points) || points <= 0) {
+    setInlineMessage(affiliateRedemptionMessage, "Escribe una cantidad de puntos mayor a 0.", "error");
+    affiliateRedemptionPointsInput?.focus();
+    return;
+  }
+  if (selection.type === "manual" && !reason) {
+    setInlineMessage(affiliateRedemptionMessage, "Escribe el motivo de la redencion manual.", "error");
+    affiliateRedemptionReasonInput?.focus();
+    return;
+  }
+  const balance = Number(state.selectedAffiliate?.points_total || state.selectedAffiliate?.ledger_points || 0);
+  if (points > balance) {
+    setInlineMessage(affiliateRedemptionMessage, `Saldo insuficiente: el afiliado tiene ${balance.toLocaleString("es-CO")} puntos.`, "error");
+    return;
+  }
+  if (!window.confirm(`Se descontaran ${points.toLocaleString("es-CO")} puntos a ${state.selectedAffiliate?.full_name || "este afiliado"}. ¿Confirmas la redencion?`)) return;
+
+  state.affiliateRedemptionIdempotencyKey ||= globalThis.crypto?.randomUUID?.()
+    || `affiliate-redemption-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  setButtonLoading(affiliateRedeemPointsButton, true, "Redimiendo...");
+  setInlineMessage(affiliateRedemptionMessage, "Registrando redencion y actualizando saldo...", "info");
+  try {
+    const payload = {
+      idempotency_key: state.affiliateRedemptionIdempotencyKey,
+      reason: reason || undefined,
+      metadata: { source_view: "affiliates" },
+    };
+    if (selection.type === "product") payload.inventory_product_id = selection.id;
+    else if (selection.type === "reward") payload.reward_rule_id = selection.id;
+    else payload.points = points;
+
+    const data = await api(`/api/portal/businesses/${session.user.business_id}/affiliates/${state.selectedAffiliateId}/redemptions`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const selectedAffiliateId = state.selectedAffiliateId;
+    state.affiliateRedemptionIdempotencyKey = "";
+    affiliateRedemptionItemInput.value = "";
+    affiliateRedemptionPointsInput.value = "";
+    affiliateRedemptionReasonInput.value = "";
+    await loadAffiliatesData();
+    state.selectedAffiliateId = selectedAffiliateId;
+    state.selectedAffiliate = data.affiliate || (state.affiliates || []).find((item) => item.id === selectedAffiliateId) || state.selectedAffiliate;
+    await renderAffiliatesView();
+    const redeemed = Number(data.redeemed || points);
+    const message = data.duplicate
+      ? "Esta redencion ya estaba registrada; no se descontaron puntos nuevamente."
+      : `Redencion registrada. Se descontaron ${redeemed.toLocaleString("es-CO")} puntos.`;
+    setInlineMessage(affiliateRedemptionMessage, message, "success");
+    showFeedback(message, "success", { title: "Puntos redimidos" });
+  } catch (error) {
+    setInlineMessage(affiliateRedemptionMessage, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo redimir" });
+  } finally {
+    setButtonLoading(affiliateRedeemPointsButton, false);
+    syncAffiliateRedemptionControls();
+  }
+}
+
 function ticketGroups(tickets = []) {
   return {
     active: tickets.filter(isActiveTicket),
@@ -44054,9 +44245,15 @@ async function openAffiliateForPoints(affiliateId) {
   const changedAffiliate = state.selectedAffiliateId && state.selectedAffiliateId !== affiliateId;
   if (changedAffiliate) {
     state.affiliatePurchaseItems = [{ name: "", quantity: 1, unit_price: 0 }];
+    state.selectedAffiliateLedger = [];
     state.affiliateLedgerEditingId = null;
+    state.affiliateRedemptionIdempotencyKey = "";
     if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.value = "";
+    if (affiliateRedemptionItemInput) affiliateRedemptionItemInput.value = "";
+    if (affiliateRedemptionPointsInput) affiliateRedemptionPointsInput.value = "";
+    if (affiliateRedemptionReasonInput) affiliateRedemptionReasonInput.value = "";
     setInlineMessage(affiliatePurchaseMessage, "", "info");
+    setInlineMessage(affiliateRedemptionMessage, "", "info");
   }
   state.selectedAffiliateId = affiliateId;
   state.filter = "";
@@ -44171,6 +44368,7 @@ function renderAffiliateLedgerTable() {
     return;
   }
   affiliateLedgerTable.innerHTML = ledger.map((item) => {
+    const isRedemption = item.metadata?.source === "affiliate_redemption_portal" || Number(item.points_awarded || 0) < 0;
     const isEditing = state.affiliateLedgerEditingId === item.id;
     if (isEditing) {
       return `
@@ -44196,7 +44394,9 @@ function renderAffiliateLedgerTable() {
         <td>${escapeHtml(item.reason || "-")}</td>
         <td>${escapeHtml(formatDate(item.created_at))}</td>
         <td>${escapeHtml(item.created_by_name || "-")}</td>
-        <td><button class="ghost-button" type="button" data-affiliate-ledger-edit="${escapeHtml(item.id)}">Editar</button></td>
+        <td>${isRedemption
+          ? '<span class="status-chip ok">Redencion</span>'
+          : `<button class="ghost-button" type="button" data-affiliate-ledger-edit="${escapeHtml(item.id)}">Editar</button>`}</td>
       </tr>
     `;
   }).join("") || '<tr><td colspan="6">Sin movimientos registrados.</td></tr>';
@@ -44459,6 +44659,7 @@ async function renderAffiliatesView() {
   renderAffiliateCommandStrip();
   renderAffiliatePurchaseCampaignOptions();
   renderAffiliateRewardRules();
+  renderAffiliateRedemptionControls();
   resetAffiliateRewardResult();
 
   affiliateTable.innerHTML = rows.map((item) => {
@@ -44582,7 +44783,9 @@ async function renderAffiliatesView() {
       qr_data_url: affiliateQrSource(detail.affiliate || {}) || affiliateQrSource(selected),
     };
     renderAffiliateSelectedSummary(state.selectedAffiliate);
+    renderAffiliateRedemptionControls();
     state.selectedAffiliateLedger = detail.ledger || [];
+    renderAffiliateRedemptionHistory();
     state.affiliateRewardUnlocks = detail.reward_unlocks || [];
     renderAffiliateRewardUnlocks();
     await renderAffiliateCardPreview(state.selectedAffiliate);
@@ -46271,6 +46474,87 @@ function ensureAffiliatesUxStyles() {
       color: #052a6b !important;
       font-weight: 760 !important;
     }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-box {
+      grid-column: 1 / -1 !important;
+      display: grid !important;
+      gap: 12px !important;
+      padding: 16px !important;
+      border: 1px solid rgba(7, 89, 214, .18) !important;
+      border-left: 4px solid #0759d6 !important;
+      border-radius: 12px !important;
+      background: linear-gradient(135deg, #f7fbff, #ffffff) !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-head,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-actions {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-head strong,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-head small {
+      display: block !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-head strong {
+      color: #052a6b !important;
+      font-size: 1rem !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-head small,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-actions small {
+      color: #53677f !important;
+      font-size: .76rem !important;
+      line-height: 1.35 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-balance {
+      flex: 0 0 auto !important;
+      padding: 7px 10px !important;
+      border-radius: 999px !important;
+      background: #eaf3ff !important;
+      color: #0759d6 !important;
+      font-size: .78rem !important;
+      font-weight: 800 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-grid {
+      display: grid !important;
+      grid-template-columns: minmax(220px, 1.25fr) minmax(150px, .55fr) minmax(210px, 1fr) !important;
+      gap: 10px !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-grid label {
+      min-height: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-actions .solid-button {
+      width: auto !important;
+      min-width: 190px !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open #affiliateRedemptionMessage {
+      margin: 0 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-history {
+      display: grid !important;
+      gap: 6px !important;
+      padding-top: 10px !important;
+      border-top: 1px solid rgba(5, 42, 107, .1) !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-history-row {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+      padding: 7px 0 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-history-row div,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-history-row strong,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-history-row small {
+      display: block !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-history-row span {
+      flex: 0 0 auto !important;
+      color: #b42318 !important;
+      font-weight: 800 !important;
+    }
     @media (max-width: 760px) {
       .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-head,
       .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-card-actions,
@@ -46282,6 +46566,17 @@ function ensureAffiliatesUxStyles() {
       }
       .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-selected-grid {
         grid-template-columns: 1fr !important;
+      }
+      .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-head,
+      .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-actions {
+        align-items: stretch !important;
+        flex-direction: column !important;
+      }
+      .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-actions .solid-button {
+        width: 100% !important;
       }
     }
     .view-section[data-view="affiliates"] .affiliate-list-panel {
@@ -63494,6 +63789,15 @@ affiliateDeleteSelectedButton?.addEventListener("click", () => {
   deleteSelectedAffiliate(selected.id, selected.full_name || "afiliado");
 });
 affiliateManualPointsButton?.addEventListener("click", awardManualAffiliatePoints);
+affiliateRedemptionItemInput?.addEventListener("change", () => syncAffiliateRedemptionControls({ selectionChanged: true }));
+affiliateRedemptionPointsInput?.addEventListener("input", () => {
+  state.affiliateRedemptionIdempotencyKey = "";
+  syncAffiliateRedemptionControls();
+});
+affiliateRedemptionReasonInput?.addEventListener("input", () => {
+  state.affiliateRedemptionIdempotencyKey = "";
+});
+affiliateRedeemPointsButton?.addEventListener("click", redeemSelectedAffiliatePoints);
 downloadAffiliateCardButton?.addEventListener("click", downloadSelectedAffiliateCard);
 copyAffiliateCardLinkButton?.addEventListener("click", copySelectedAffiliateCardLink);
 affiliateGenerateReferralQrButton?.addEventListener("click", generateSelectedAffiliateReferralQr);

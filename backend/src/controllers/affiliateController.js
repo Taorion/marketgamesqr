@@ -15,6 +15,7 @@ const {
   awardAffiliatePoints,
   getPublicAffiliateCard,
   removeAffiliateFromCampaign,
+  redeemAffiliatePoints,
   updateAffiliate,
   updateAffiliateLedgerEntry,
 } = require("../services/affiliateService");
@@ -48,6 +49,19 @@ const awardPointsSchema = z.object({
   metadata: z.record(z.any()).optional().nullable(),
 }).refine((body) => body.amount || body.points_awarded, {
   message: "Debes enviar un monto o puntos manuales.",
+});
+
+const redeemPointsSchema = z.object({
+  inventory_product_id: z.string().uuid().optional().nullable(),
+  reward_rule_id: z.string().uuid().optional().nullable(),
+  points: z.number().int().positive().optional(),
+  reason: z.string().trim().max(160).optional().nullable(),
+  idempotency_key: z.string().trim().min(8).max(160),
+  metadata: z.record(z.any()).optional().nullable(),
+}).refine((body) => body.inventory_product_id || body.reward_rule_id || body.points, {
+  message: "Selecciona un producto o escribe los puntos de la redencion manual.",
+}).refine((body) => !(body.inventory_product_id && body.reward_rule_id), {
+  message: "Selecciona solamente un producto o un premio.",
 });
 
 const updateLedgerEntrySchema = z.object({
@@ -217,6 +231,17 @@ async function awardBusinessAffiliatePoints(req, res, next) {
   }
 }
 
+async function redeemBusinessAffiliatePoints(req, res, next) {
+  try {
+    await assertFeatureForRequest(req, req.params.id, "affiliates");
+    const body = validate(redeemPointsSchema, req.body);
+    const result = await redeemAffiliatePoints(req.params.id, req.params.affiliateId, req.user, body);
+    res.status(result.duplicate ? 200 : 201).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function updateBusinessAffiliateLedgerEntry(req, res, next) {
   try {
     await assertFeatureForRequest(req, req.params.id, "affiliates");
@@ -300,6 +325,7 @@ module.exports = {
   createBusinessAffiliate,
   getBusinessAffiliate,
   awardBusinessAffiliatePoints,
+  redeemBusinessAffiliatePoints,
   updateBusinessAffiliate,
   updateBusinessAffiliateLedgerEntry,
   deleteBusinessAffiliate,

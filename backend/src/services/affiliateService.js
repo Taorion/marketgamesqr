@@ -8,6 +8,7 @@ const { logQrEvent } = require("./auditService");
 const { consumeQrCredit, ensureCreditAccount, mapPublicCreditAccount } = require("./qrCreditService");
 const {
   affiliatePointRuleMetadata,
+  affiliatePointsForAmount,
   getAffiliatePointRules,
   referralPointsForAmount,
 } = require("./affiliatePointRulesService");
@@ -338,6 +339,162 @@ async function awardAffiliatePoints(businessId, affiliateId, user, body) {
   };
 }
 
+async function redeemAffiliatePoints(businessId, affiliateId, user, body) {
+  ensureBusinessAccess(user, businessId);
+  const inventoryProductId = body.inventory_product_id || null;
+  const rewardRuleId = body.reward_rule_id || null;
+  const requestedPoints = Number(body.points || 0);
+  const idempotencyKey = String(body.idempotency_key || "").trim();
+  const manualReason = String(body.reason || "").trim();
+
+  if (!idempotencyKey) throw badRequest("No pudimos identificar esta redencion. Intenta nuevamente.");
+  if (!inventoryProductId && !rewardRuleId && (!Number.isInteger(requestedPoints) || requestedPoints <= 0)) {
+    throw badRequest("Escribe una cantidad de puntos mayor a 0.");
+  }
+  if (!inventoryProductId && !rewardRuleId && !manualReason) {
+    throw badRequest("Escribe el motivo de la redencion manual.");
+  }
+
+  const result = await withTransaction(async (client) => {
+    await client.query("select pg_advisory_xact_lock(hashtext($1))", [
+      `affiliate-redemption:${businessId}:${idempotencyKey}`,
+    ]);
+
+    const duplicate = await client.query(
+      `select *
+       from affiliate_point_redemptions
+       where business_id = $1 and idempotency_key = $2
+       limit 1`,
+      [businessId, idempotencyKey]
+    );
+
+    const affiliateResult = await client.query(
+      `select *
+       from affiliates
+       where business_id = $1 and id = $2 and status <> 'DELETED'
+       for update`,
+      [businessId, affiliateId]
+    );
+    const affiliate = affiliateResult.rows[0];
+    if (!affiliate) throw notFound("Affiliate not found.");
+
+    if (duplicate.rowCount) {
+      if (duplicate.rows[0].affiliate_id !== affiliateId) {
+        throw badRequest("La identificacion de esta redencion ya fue utilizada.");
+      }
+      return { redemption: duplicate.rows[0], affiliate, duplicate: true };
+    }
+
+    let points = requestedPoints;
+    let reason = manualReason;
+    let mode = "MANUAL";
+    let product = null;
+    let rewardRule = null;
+    let pointRules = null;
+
+    if (inventoryProductId) {
+      const productResult = await client.query(
+        `select id, name, sku, barcode, unit_price, currency
+         from business_inventory_products
+         where business_id = $1 and id = $2 and status <> 'ARCHIVED'
+         limit 1`,
+        [businessId, inventoryProductId]
+      );
+      product = productResult.rows[0];
+      if (!product) throw notFound("Producto no encontrado en el catalogo del negocio.");
+      pointRules = await getAffiliatePointRules(businessId, client);
+      points = affiliatePointsForAmount(product.unit_price, pointRules);
+      if (points < 1) {
+        throw badRequest("El producto seleccionado no tiene un precio que permita calcular puntos.");
+      }
+      reason = manualReason || `Producto: ${product.name}`;
+      mode = "PRODUCT";
+    } else if (rewardRuleId) {
+      const ruleResult = await client.query(
+        `select id, title, benefit_label, required_points, benefit_type
+         from affiliate_reward_rules
+         where business_id = $1 and id = $2 and status = 'ACTIVE'
+         limit 1`,
+        [businessId, rewardRuleId]
+      );
+      rewardRule = ruleResult.rows[0];
+      if (!rewardRule) throw notFound("Premio de afiliado no encontrado.");
+      points = Number(rewardRule.required_points || 0);
+      reason = manualReason || `Premio: ${rewardRule.title || rewardRule.benefit_label}`;
+      mode = "REWARD";
+    }
+
+    const currentBalance = Number(affiliate.points_total || 0);
+    if (currentBalance < points) {
+      throw badRequest(`Saldo insuficiente. El afiliado tiene ${currentBalance} puntos y esta redencion requiere ${points}.`);
+    }
+
+    const metadata = {
+      ...(body.metadata || {}),
+      source: "affiliate_redemption_portal",
+      redemption_mode: mode,
+      idempotency_key: idempotencyKey,
+      inventory_product_id: product?.id || null,
+      product_name: product?.name || null,
+      product_sku: product?.sku || null,
+      product_barcode: product?.barcode || null,
+      product_unit_price: product ? Number(product.unit_price || 0) : null,
+      reward_rule_id: rewardRule?.id || null,
+      reward_title: rewardRule?.title || null,
+      ...(pointRules ? affiliatePointRuleMetadata(pointRules) : {}),
+    };
+
+    const ledgerResult = await client.query(
+      `insert into affiliate_point_ledger
+        (business_id, affiliate_id, created_by_user_id, amount, points_awarded, reason, metadata)
+       values ($1, $2, $3, 0, $4, $5, $6::jsonb)
+       returning *`,
+      [businessId, affiliateId, user?.id || null, -points, reason, JSON.stringify(metadata)]
+    );
+
+    const updatedResult = await client.query(
+      `update affiliates
+       set points_total = points_total - $3
+       where business_id = $1 and id = $2 and points_total >= $3
+       returning *`,
+      [businessId, affiliateId, points]
+    );
+    if (!updatedResult.rowCount) throw badRequest("Saldo insuficiente para completar la redencion.");
+
+    const redemptionResult = await client.query(
+      `insert into affiliate_point_redemptions
+        (business_id, affiliate_id, ledger_id, inventory_product_id, reward_rule_id,
+         points_redeemed, description, idempotency_key, metadata, created_by_user_id)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10)
+       returning *`,
+      [
+        businessId,
+        affiliateId,
+        ledgerResult.rows[0].id,
+        product?.id || null,
+        rewardRule?.id || null,
+        points,
+        reason,
+        idempotencyKey,
+        JSON.stringify(metadata),
+        user?.id || null,
+      ]
+    );
+
+    return {
+      redemption: redemptionResult.rows[0],
+      affiliate: updatedResult.rows[0],
+      duplicate: false,
+    };
+  });
+
+  return {
+    ...result,
+    redeemed: Number(result.redemption.points_redeemed || 0),
+    affiliate: await getAffiliate(businessId, affiliateId, user),
+  };
+}
+
 async function listAffiliateLedger(businessId, affiliateId, user) {
   ensureBusinessAccess(user, businessId);
   const result = await query(
@@ -382,6 +539,9 @@ async function updateAffiliateLedgerEntry(businessId, affiliateId, ledgerId, use
     const currentLedger = current.rows[0];
     if (!currentLedger) {
       throw notFound("Affiliate ledger entry not found.");
+    }
+    if (currentLedger.metadata?.source === "affiliate_redemption_portal") {
+      throw badRequest("Las redenciones no se editan porque protegen el saldo y el historial del afiliado.");
     }
 
     const affiliate = await client.query(
@@ -865,6 +1025,7 @@ module.exports = {
   listAffiliateLedger,
   removeAffiliateFromCampaign,
   awardAffiliatePoints,
+  redeemAffiliatePoints,
   updateAffiliate,
   updateAffiliateLedgerEntry,
 };
