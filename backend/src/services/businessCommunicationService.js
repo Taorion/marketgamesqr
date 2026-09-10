@@ -1,6 +1,7 @@
 const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
 const { badRequest, notFound } = require("../utils/http");
+const { canonicalizePublicUrl, canonicalizePublicUrlsInText } = require("../utils/publicUrl");
 const { listLeadCrmRows } = require("./leadCrmService");
 const { moveRmsLeadPhase, recordActivationDelivery } = require("./rmsMachineService");
 const { sendBusinessCommunicationEmail } = require("./businessCommunicationMailService");
@@ -25,8 +26,8 @@ function personalize(value, contact) {
 }
 
 function messageWithActionUrl(message, actionUrl) {
-  const text = String(message || "").trim();
-  const url = String(actionUrl || "").trim();
+  const text = canonicalizePublicUrlsInText(message).trim();
+  const url = canonicalizePublicUrl(actionUrl, env.publicAppUrl);
   if (!url || text.includes(url)) return text;
   return `${text}\n\n${url}`.trim();
 }
@@ -898,8 +899,8 @@ async function sendBusinessCommunicationCore(businessId, userId, id, recipientRe
       continue;
     }
     const subject = personalize(communication.subject, contact);
-    const message = personalize(communication.email_body, contact);
-    const actionUrl = communication.metadata?.web_showcase_id ? communication.action_url : emailTrackingUrl || communication.action_url;
+    const message = canonicalizePublicUrlsInText(personalize(communication.email_body, contact));
+    const actionUrl = canonicalizePublicUrl(communication.metadata?.web_showcase_id ? communication.action_url : emailTrackingUrl || communication.action_url, env.publicAppUrl);
     const mediaAssets = normalizeMediaAssets(communication);
     const imageAttachments = makeEmailAttachments(mediaAssets);
     const fileAttachments = makeEmailFileAttachments(normalizeEmailAttachments(communication));
@@ -1209,8 +1210,9 @@ async function sendBusinessCommunicationWhatsAppCore(businessId, userId, id, rec
   }
   const pending = [...deliverable];
   await runWithConcurrency(pending, 6, async ({ contact, phone }) => {
-    const parameters = whatsappTemplateParameters(template, contact, communication.action_url);
-    const message = messageWithActionUrl(personalize(communication.whatsapp_body || "", contact), communication.action_url);
+    const canonicalActionUrl = canonicalizePublicUrl(communication.action_url, env.publicAppUrl);
+    const parameters = whatsappTemplateParameters(template, contact, canonicalActionUrl);
+    const message = messageWithActionUrl(personalize(communication.whatsapp_body || "", contact), canonicalActionUrl);
     try {
       const provider = await sendWhatsAppTemplate(businessId, { to: phone, templateName: template.name, languageCode: template.language, bodyParameters: parameters });
       await saveRecipient({ businessId, communicationId: id, contact, status: "SENT", providerMessageId: provider.id, userId, metadata: { channel: "WHATSAPP", phone, template_name: template.name, template_language: template.language, template_parameters: parameters, delivery_status: "ACCEPTED_BY_META", consent_confirmed: true } });

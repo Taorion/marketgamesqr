@@ -29,6 +29,6 @@ test("digital and downloadable cards share the El Paño Inglés palette", () => 
 test("both affiliate-card surfaces are cache-busted", () => {
   assert.match(publicHtml, /pano-ingles-brand-v471-20260910/g);
   assert.match(portalHtml, /affiliate-card=pano-ingles-v471-20260910/g);
-  assert.match(portalApp, /empresa-20260910-pano-ingles-affiliate-card-v471/);
+  assert.match(portalApp, /empresa-20260910-qori-public-links-v472/);
   assert.match(portalApp, /pano-ingles-affiliate-card-v471-20260910/);
 });

@@ -2,8 +2,8 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260910-pano-ingles-affiliate-card-v471";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910 pano-ingles-affiliate-card-v471-20260910";
+const APP_VERSION = "empresa-20260910-qori-public-links-v472";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910 pano-ingles-affiliate-card-v471-20260910 qori-public-links-v472-20260910";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 30000;
@@ -11,6 +11,32 @@ const ACTIVITY_POLL_INTERVAL_MS = 15000;
 const MUTATION_REFRESH_DELAY_MS = 350;
 const RMS_STATION_RENDER_INITIAL_LIMIT = 10;
 const RMS_STATION_RENDER_INCREMENT = 10;
+
+const QORI_PUBLIC_ORIGIN = "https://gosqori.com";
+const LEGACY_QORI_PUBLIC_HOSTS = new Set(["marketgamesqr.com", "www.marketgamesqr.com", "market-games-portal.onrender.com"]);
+
+function qoriPublicOrigin() {
+  const hostname = String(window.location.hostname || "").toLowerCase();
+  return LEGACY_QORI_PUBLIC_HOSTS.has(hostname) || hostname === "www.gosqori.com"
+    ? QORI_PUBLIC_ORIGIN
+    : window.location.origin;
+}
+
+function canonicalQoriPublicUrl(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw, `${qoriPublicOrigin()}/`);
+    if (LEGACY_QORI_PUBLIC_HOSTS.has(url.hostname.toLowerCase()) || url.hostname.toLowerCase() === "www.gosqori.com") {
+      const official = new URL(QORI_PUBLIC_ORIGIN);
+      url.protocol = official.protocol;
+      url.host = official.host;
+    }
+    return url.toString();
+  } catch {
+    return raw;
+  }
+}
 
 const PORTAL_VISIBLE_SYSTEM_NAME = "GOS";
 const PORTAL_VISIBLE_SYSTEM_PATTERN = /\bRMS\b/gi;
@@ -7976,7 +8002,7 @@ function campaignPublicLeadQrPath(campaign) {
 
 function campaignPublicLeadQrUrl(campaign) {
   const path = campaignPublicLeadQrPath(campaign);
-  return path ? `${window.location.origin}${path}` : "";
+  return path ? canonicalQoriPublicUrl(path) : "";
 }
 
 function renderCampaignAssociationInputs() {
@@ -11950,7 +11976,7 @@ function smartCatalogSelectedCatalog() {
 
 function smartCatalogPublicUrl(catalog) {
   if (!catalog) return "";
-  return catalog.public_url || `${window.location.origin}/c/${encodeURIComponent(catalog.slug || "")}`;
+  return canonicalQoriPublicUrl(catalog.public_url || `/c/${encodeURIComponent(catalog.slug || "")}`);
 }
 
 function smartCatalogStatusLabel(status) {
@@ -32817,9 +32843,9 @@ async function submitPostSaleQr(event) {
     const browserTicketDataUrl = await ticketImageDataUrlForBrowser(data.qr_image_data_url);
     const ticketFilename = filenameForDataUrl(data.filename || `ticket-${slugify(ticketUseCaseLabel)}-${data.qr_code.id}.png`, browserTicketDataUrl);
     const ticketDownloadUrl = URL.createObjectURL(dataUrlToBlob(browserTicketDataUrl));
-    const publicTicketUrl = data.public_ticket_url
+    const publicTicketUrl = canonicalQoriPublicUrl(data.public_ticket_url
       || data.claim_url
-      || (data.qr_code?.token ? `${window.location.origin}/claim/${encodeURIComponent(data.qr_code.token)}` : data.validator_url);
+      || (data.qr_code?.token ? `/claim/${encodeURIComponent(data.qr_code.token)}` : data.validator_url));
     const whatsappPhone = whatsappPhoneFromInput(postSalePhoneInput.value);
     state.qrCreditAccount = data.credit_account || state.qrCreditAccount;
     markTicketCenterDataStale(["core", "metrics", "history"]);
@@ -35913,10 +35939,10 @@ function affiliateQrSource(affiliate) {
 }
 
 function affiliateDigitalCardUrl(affiliate = {}) {
-  if (affiliate.digital_card_url) return affiliate.digital_card_url;
+  if (affiliate.digital_card_url) return canonicalQoriPublicUrl(affiliate.digital_card_url);
   const token = String(affiliate.qr_token || "").trim();
   if (!token) return "";
-  return `${window.location.origin}/carnet-afiliado/${encodeURIComponent(token)}`;
+  return canonicalQoriPublicUrl(`/carnet-afiliado/${encodeURIComponent(token)}`);
 }
 
 async function buildAffiliateCardDataUrl(affiliate) {
@@ -42566,10 +42592,10 @@ function ticketSourceDescription(ticket = {}) {
 }
 
 function ticketPublicUrl(ticket = {}) {
-  return ticket.public_ticket_url
+  return canonicalQoriPublicUrl(ticket.public_ticket_url
     || ticket.share_url
     || ticket.claim_url
-    || (ticket.token ? `${window.location.origin}/claim/${encodeURIComponent(ticket.token)}` : "");
+    || (ticket.token ? `/claim/${encodeURIComponent(ticket.token)}` : ""));
 }
 
 function ticketGroups(tickets = []) {

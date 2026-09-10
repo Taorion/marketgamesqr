@@ -18,6 +18,25 @@
   ]);
   const AUDIENCE_PAGE_SIZE = 120;
   const MAX_EMAIL_RECIPIENTS = 120;
+  const QORI_PUBLIC_ORIGIN = "https://gosqori.com";
+  const LEGACY_PUBLIC_HOSTS = new Set(["marketgamesqr.com", "www.marketgamesqr.com", "market-games-portal.onrender.com"]);
+  const canonicalPublicLink = (value = "") => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const hostname = String(window.location.hostname || "").toLowerCase();
+    const base = LEGACY_PUBLIC_HOSTS.has(hostname) || hostname === "www.gosqori.com" ? QORI_PUBLIC_ORIGIN : window.location.origin;
+    try {
+      const url = new URL(raw, `${base}/`);
+      if (LEGACY_PUBLIC_HOSTS.has(url.hostname.toLowerCase()) || url.hostname.toLowerCase() === "www.gosqori.com") {
+        const official = new URL(QORI_PUBLIC_ORIGIN);
+        url.protocol = official.protocol;
+        url.host = official.host;
+      }
+      return url.toString();
+    } catch {
+      return raw;
+    }
+  };
   const dispatchKey = () => window.crypto?.randomUUID?.() || "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
     const value = Math.floor(Math.random() * 16);
     return (char === "x" ? value : (value & 0x3) | 0x8).toString(16);
@@ -234,14 +253,14 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
       return true;
     }).slice(0, MAX_MEDIA_FILES);
   };
-  const communicationActionUrl = (item) => item?.web_showcase_slug ? item.action_url || `${window.location.origin}/c/${encodeURIComponent(item.web_showcase_slug)}` : item?.tracking_url || item?.action_url || "";
+  const communicationActionUrl = (item) => canonicalPublicLink(item?.web_showcase_slug ? item.action_url || `/c/${encodeURIComponent(item.web_showcase_slug)}` : item?.tracking_url || item?.action_url || "");
   const socialShareContent = (item) => [item?.social_copy, communicationActionUrl(item)].filter(Boolean).join("\n\n");
 
   async function shareSocialPublication(item) {
     const content = socialShareContent(item);
     if (!content) throw new Error("La publicación aún no tiene texto ni enlace para compartir.");
     if (navigator.share) {
-      await navigator.share({ title: item.title || "Publicación Qori", text: item.social_copy || "", url: item.tracking_url || item.action_url || undefined });
+      await navigator.share({ title: item.title || "Publicación Qori", text: item.social_copy || "", url: communicationActionUrl(item) || undefined });
       return "shared";
     }
     await navigator.clipboard.writeText(content);
@@ -1044,7 +1063,7 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     if (event.target.matches("#communicationWebShowcaseInput")) {
       const showcase = (state.smartCatalogs || []).find((item) => String(item.id) === String(event.target.value || ""));
       const actionUrl = document.getElementById("communicationActionUrlInput");
-      if (showcase && actionUrl) actionUrl.value = showcase.public_url || `${window.location.origin}/c/${encodeURIComponent(showcase.slug || "")}`;
+      if (showcase && actionUrl) actionUrl.value = canonicalPublicLink(showcase.public_url || `/c/${encodeURIComponent(showcase.slug || "")}`);
       try {
         await loadCommunicationShowcaseProducts(showcase?.id || null);
         renderOptions();

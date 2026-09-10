@@ -1,14 +1,12 @@
 const dotenv = require("dotenv");
+const { resolvePublicAppUrl } = require("../utils/publicUrl");
 
 dotenv.config();
 
 const isProduction = process.env.NODE_ENV === "production";
-const productionPublicAppUrl = process.env.RENDER_EXTERNAL_URL || "https://market-games-portal.onrender.com";
-const defaultPublicAppUrl = isProduction ? productionPublicAppUrl : "http://localhost:3000";
 const configuredPublicAppUrl = process.env.PUBLIC_APP_URL || "";
-const publicAppUrl = isProduction && /marketgamesqr\.com/i.test(configuredPublicAppUrl)
-  ? productionPublicAppUrl
-  : configuredPublicAppUrl || defaultPublicAppUrl;
+const publicAppUrl = resolvePublicAppUrl({ isProduction, configuredPublicAppUrl });
+const defaultPublicAppUrl = isProduction ? "https://gosqori.com" : "http://localhost:3000";
 const defaultPublicValidatorUrl = `${publicAppUrl.replace(/\/$/, "")}/empresa/`;
 
 function splitList(value) {
