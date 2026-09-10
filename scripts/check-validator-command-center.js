@@ -97,6 +97,10 @@ assert.match(rewardPassService, /assertStandaloneBusinessFeature\(user, accessRo
 assert.match(subscriptionService, /async function assertStandaloneBusinessFeature/);
 
 assert.match(css, /Validator command center v1/);
+assert.match(css, /\.validator-operation-grid\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)\s*!important/);
+assert.doesNotMatch(css, /\.validator-operation-grid\s*\{[^}]*grid-template-columns:[^;}]*minmax\(420px, 1fr\)/s);
+assert.match(css, /\.validator-operation-panel\s*\{[\s\S]*?position:\s*relative\s*!important/);
+assert.match(css, /\.validator-purchase-item\s*\{[\s\S]*?minmax\(280px, 2fr\)/);
 assert.match(css, /@media \(max-width: 760px\)/);
 assert.match(css, /\.validator-history-cards/);
 assert.match(css, /\.validator-redemption-modes/);
@@ -111,8 +115,8 @@ assert.match(app, /findValidatorInventoryProduct\(field\.value\)/);
 assert.match(app, /function validatorInventoryProductSearchValue/);
 assert.match(css, /\[hidden\][^{]*\{[^}]*display:\s*none\s*!important/s);
 assert.match(css, /\.validator-product-search-control/);
-assert.match(html, /validator-product-search-v351-20260824/g);
-assert.match(html, /acquisition-lead-sales-validator-scratch-v354-20260824/g);
+assert.match(html, /validator-product-removal=v463-20260909/g);
+assert.match(html, /validator-operation-stacked-v477-20260910/g);
 assert.match(app, /function activationChoiceBenefitValue/);
 assert.match(app, /percentageFromBenefitLabel\(label\)/);
 assert.match(benefitCheckoutService, /const scratchPercent =/);

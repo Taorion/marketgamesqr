@@ -54,3 +54,22 @@ test("redemption persistence keeps a dedicated audit record linked to the ledger
     assert.match(sql, /unique \(business_id, idempotency_key\)/);
   }
 });
+
+test("affiliate detail separates lifetime earned and redeemed totals with breakdowns", () => {
+  const service = read("backend/src/services/affiliateService.js");
+  const controller = read("backend/src/controllers/affiliateController.js");
+  const html = read("empresa/index.html");
+  const app = read("empresa/js/app.js");
+
+  assert.match(service, /async function getAffiliatePointHistorySummary/);
+  assert.match(service, /sum\(case when points_awarded > 0 then points_awarded else 0 end\)/);
+  assert.match(service, /sum\(case when points_awarded < 0 then abs\(points_awarded\) else 0 end\)/);
+  assert.match(service, /where business_id = \$1[\s\S]*affiliate_id = \$2[\s\S]*group by 1, 2/);
+  assert.match(controller, /res\.json\(\{ affiliate, ledger, point_summary, reward_unlocks \}\)/);
+  assert.match(html, /id="affiliatePointsHistorySummary"/);
+  assert.match(app, /Total ganado/);
+  assert.match(app, /Total redimido/);
+  assert.match(app, /C[óÃ³]mo gan[óÃ³] sus puntos/);
+  assert.match(app, /Historial de puntos redimidos/);
+  assert.match(app, /state\.selectedAffiliatePointSummary = detail\.point_summary/);
+});

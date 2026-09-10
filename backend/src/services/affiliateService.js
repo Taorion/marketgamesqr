@@ -516,6 +516,49 @@ async function listAffiliateLedger(businessId, affiliateId, user) {
   return result.rows;
 }
 
+async function getAffiliatePointHistorySummary(businessId, affiliateId, user) {
+  ensureBusinessAccess(user, businessId);
+  const [totalsResult, breakdownResult] = await Promise.all([
+    query(
+      `select
+         coalesce(sum(case when points_awarded > 0 then points_awarded else 0 end), 0)::bigint as earned_total,
+         coalesce(sum(case when points_awarded < 0 then abs(points_awarded) else 0 end), 0)::bigint as redeemed_total,
+         coalesce(sum(points_awarded), 0)::bigint as ledger_balance,
+         count(*) filter (where points_awarded > 0)::int as earned_events,
+         count(*) filter (where points_awarded < 0)::int as redeemed_events
+       from affiliate_point_ledger
+       where business_id = $1 and affiliate_id = $2`,
+      [businessId, affiliateId]
+    ),
+    query(
+      `select
+         case when points_awarded > 0 then 'EARNED' else 'REDEEMED' end as movement_type,
+         coalesce(nullif(trim(reason), ''), case when points_awarded > 0 then 'Puntos otorgados' else 'Redencion' end) as reason,
+         count(*)::int as events,
+         coalesce(sum(abs(points_awarded)), 0)::bigint as points,
+         max(created_at) as last_event_at
+       from affiliate_point_ledger
+       where business_id = $1
+         and affiliate_id = $2
+         and points_awarded <> 0
+       group by 1, 2
+       order by movement_type asc, points desc, reason asc`,
+      [businessId, affiliateId]
+    ),
+  ]);
+
+  const totals = totalsResult.rows[0] || {};
+  return {
+    earned_total: Number(totals.earned_total || 0),
+    redeemed_total: Number(totals.redeemed_total || 0),
+    ledger_balance: Number(totals.ledger_balance || 0),
+    earned_events: Number(totals.earned_events || 0),
+    redeemed_events: Number(totals.redeemed_events || 0),
+    earned_breakdown: breakdownResult.rows.filter((item) => item.movement_type === "EARNED"),
+    redeemed_breakdown: breakdownResult.rows.filter((item) => item.movement_type === "REDEEMED"),
+  };
+}
+
 async function updateAffiliateLedgerEntry(businessId, affiliateId, ledgerId, user, body) {
   ensureBusinessAccess(user, businessId);
 
@@ -1023,6 +1066,7 @@ module.exports = {
   listCampaignAffiliates,
   listAffiliates,
   listAffiliateLedger,
+  getAffiliatePointHistorySummary,
   removeAffiliateFromCampaign,
   awardAffiliatePoints,
   redeemAffiliatePoints,

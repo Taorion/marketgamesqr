@@ -731,6 +731,7 @@ const affiliateCardPreviewWrap = document.getElementById("affiliateCardPreviewWr
 const affiliateCardPreview = document.getElementById("affiliateCardPreview");
 const affiliateCardMeta = document.getElementById("affiliateCardMeta");
 const affiliateSelectedSummary = document.getElementById("affiliateSelectedSummary");
+const affiliatePointsHistorySummary = document.getElementById("affiliatePointsHistorySummary");
 const affiliatePurchaseCampaignInput = document.getElementById("affiliatePurchaseCampaignInput");
 const affiliatePurchaseSellerInput = document.getElementById("affiliatePurchaseSellerInput");
 const affiliatePurchaseProductInput = document.getElementById("affiliatePurchaseProductInput");
@@ -3114,6 +3115,7 @@ let state = {
   selectedAffiliateId: null,
   selectedAffiliate: null,
   selectedAffiliateLedger: [],
+  selectedAffiliatePointSummary: null,
   affiliateLedgerEditingId: null,
   affiliateEditingId: null,
   affiliateScannerStream: null,
@@ -4419,6 +4421,7 @@ function resetBusinessScopedState(options = {}) {
   state.selectedAffiliateId = null;
   state.selectedAffiliate = null;
   state.selectedAffiliateLedger = [];
+  state.selectedAffiliatePointSummary = null;
   state.affiliateLedgerEditingId = null;
   state.affiliateScannerLastValue = "";
   state.affiliateScannerLastAt = 0;
@@ -35939,7 +35942,7 @@ function businessCardProfile(affiliate = {}) {
 
 function affiliateCardMetaText(affiliate = {}) {
   const businessProfile = businessCardProfile(affiliate);
-  const points = toNumber(affiliate.points_total || affiliate.ledger_points || 0);
+  const points = toNumber(affiliate.points_total ?? affiliate.ledger_points ?? 0);
   const documentId = firstTextValue(affiliate.document_id, affiliate.document, "Sin documento");
   const qrToken = String(affiliate.qr_token || "").slice(0, 12);
   const digitalUrl = affiliateDigitalCardUrl(affiliate);
@@ -35955,7 +35958,7 @@ function renderAffiliateSelectedSummary(affiliate = null) {
   const businessProfile = businessCardProfile(affiliate);
   const qrToken = String(affiliate.qr_token || "");
   const digitalUrl = affiliateDigitalCardUrl(affiliate);
-  const currentPoints = toNumber(affiliate.points_total || affiliate.ledger_points || 0);
+  const currentPoints = toNumber(affiliate.points_total ?? affiliate.ledger_points ?? 0);
   const purchaseTotal = toNumber(affiliate.purchase_total || affiliate.total_purchase_amount || 0);
   const rows = [
     ["Documento", firstTextValue(affiliate.document_id, affiliate.document, "-")],
@@ -35972,7 +35975,7 @@ function renderAffiliateSelectedSummary(affiliate = null) {
         <strong>${escapeHtml(firstTextValue(affiliate.full_name, affiliate.name, "Afiliado"))}</strong>
       </div>
       <div class="affiliate-selected-balance">
-        <span>Puntos actuales</span>
+        <span>Saldo disponible</span>
         <strong>${escapeHtml(currentPoints.toLocaleString("es-CO"))}</strong>
         <small>${escapeHtml(money(purchaseTotal))} en compras</small>
       </div>
@@ -35985,6 +35988,76 @@ function renderAffiliateSelectedSummary(affiliate = null) {
         </div>
       `).join("")}
     </dl>
+  `;
+}
+
+function renderAffiliatePointHistorySummary() {
+  if (!affiliatePointsHistorySummary) return;
+  if (!state.selectedAffiliateId || !state.selectedAffiliate) {
+    affiliatePointsHistorySummary.innerHTML = '<div class="affiliate-selected-empty">Selecciona un afiliado para consultar sus puntos ganados y redimidos.</div>';
+    return;
+  }
+  const summary = state.selectedAffiliatePointSummary;
+  if (!summary) {
+    affiliatePointsHistorySummary.innerHTML = '<div class="affiliate-points-history-loading">Cargando acumulados e historial de puntos...</div>';
+    return;
+  }
+
+  const balance = toNumber(state.selectedAffiliate.points_total ?? summary.ledger_balance ?? 0);
+  const earnedTotal = toNumber(summary.earned_total || 0);
+  const redeemedTotal = toNumber(summary.redeemed_total || 0);
+  const earnedEvents = toNumber(summary.earned_events || 0);
+  const redeemedEvents = toNumber(summary.redeemed_events || 0);
+  const ledger = state.selectedAffiliateLedger || [];
+  const earnedHistory = ledger.filter((item) => Number(item.points_awarded || 0) > 0);
+  const redeemedHistory = ledger.filter((item) => Number(item.points_awarded || 0) < 0);
+
+  const renderBreakdown = (items, emptyText) => items?.length
+    ? items.map((item) => `
+        <div class="affiliate-points-breakdown-row">
+          <div><strong>${escapeHtml(item.reason || "Sin motivo")}</strong><small>${escapeHtml(toNumber(item.events || 0).toLocaleString("es-CO"))} movimiento(s)</small></div>
+          <span>${escapeHtml(toNumber(item.points || 0).toLocaleString("es-CO"))} pts</span>
+        </div>`).join("")
+    : `<small class="affiliate-points-empty">${escapeHtml(emptyText)}</small>`;
+
+  const renderHistory = (items, kind, totalEvents) => {
+    if (!items.length) return `<small class="affiliate-points-empty">Sin puntos ${kind === "earned" ? "ganados" : "redimidos"} todavía.</small>`;
+    const visibleCount = items.length;
+    return `
+      <div class="affiliate-points-history-list">
+        ${items.map((item) => {
+          const points = Math.abs(Number(item.points_awarded || 0));
+          return `
+            <article class="affiliate-points-history-row ${kind}">
+              <div>
+                <strong>${escapeHtml(item.reason || (kind === "earned" ? "Puntos otorgados" : "Redención"))}</strong>
+                <small>${escapeHtml(formatDate(item.created_at))}${item.created_by_name ? ` · ${escapeHtml(item.created_by_name)}` : ""}</small>
+              </div>
+              <b>${kind === "earned" ? "+" : "-"}${escapeHtml(points.toLocaleString("es-CO"))}</b>
+            </article>`;
+        }).join("")}
+      </div>
+      <small class="affiliate-points-history-count">${visibleCount < totalEvents ? `Mostrando los ${visibleCount.toLocaleString("es-CO")} movimientos más recientes de ${totalEvents.toLocaleString("es-CO")}.` : `${totalEvents.toLocaleString("es-CO")} movimiento(s) en total.`}</small>`;
+  };
+
+  affiliatePointsHistorySummary.innerHTML = `
+    <div class="affiliate-points-history-head">
+      <div><span class="mono-label">Trazabilidad de puntos</span><strong>Acumulado histórico separado del saldo</strong></div>
+      <small>Los totales consideran todo el historial del afiliado.</small>
+    </div>
+    <div class="affiliate-points-lifetime-grid">
+      <article class="balance"><span>Saldo disponible</span><strong>${escapeHtml(balance.toLocaleString("es-CO"))}</strong><small>Ganados menos redimidos</small></article>
+      <article class="earned"><span>Total ganado</span><strong>+${escapeHtml(earnedTotal.toLocaleString("es-CO"))}</strong><small>${escapeHtml(earnedEvents.toLocaleString("es-CO"))} movimiento(s)</small></article>
+      <article class="redeemed"><span>Total redimido</span><strong>-${escapeHtml(redeemedTotal.toLocaleString("es-CO"))}</strong><small>${escapeHtml(redeemedEvents.toLocaleString("es-CO"))} redención(es)</small></article>
+    </div>
+    <div class="affiliate-points-breakdown-grid">
+      <section><h4>Cómo ganó sus puntos</h4>${renderBreakdown(summary.earned_breakdown, "Aún no hay puntos ganados.")}</section>
+      <section><h4>Cómo redimió sus puntos</h4>${renderBreakdown(summary.redeemed_breakdown, "Aún no hay puntos redimidos.")}</section>
+    </div>
+    <div class="affiliate-points-timeline-grid">
+      <details open><summary>Historial de puntos ganados <span>${escapeHtml(earnedEvents.toLocaleString("es-CO"))}</span></summary>${renderHistory(earnedHistory, "earned", earnedEvents)}</details>
+      <details open><summary>Historial de puntos redimidos <span>${escapeHtml(redeemedEvents.toLocaleString("es-CO"))}</span></summary>${renderHistory(redeemedHistory, "redeemed", redeemedEvents)}</details>
+    </div>
   `;
 }
 
@@ -38360,6 +38433,7 @@ async function deleteSelectedAffiliate(affiliateId, affiliateName = "afiliado") 
     state.contactFeedLoaded = false;
     state.leadCrmLoaded = false;
     state.selectedAffiliateLedger = [];
+    state.selectedAffiliatePointSummary = null;
     if (state.selectedAffiliateId === affiliateId) {
       state.selectedAffiliateId = state.affiliates[0]?.id || null;
       state.selectedAffiliate = null;
@@ -42704,7 +42778,7 @@ function syncAffiliateRedemptionControls(options = {}) {
   if (!affiliateRedemptionItemInput) return;
   const selectedAffiliate = state.selectedAffiliate;
   const selection = selectedAffiliateRedemption();
-  const balance = Number(selectedAffiliate?.points_total || selectedAffiliate?.ledger_points || 0);
+  const balance = Number(selectedAffiliate?.points_total ?? selectedAffiliate?.ledger_points ?? 0);
   const automatic = selection.type !== "manual";
 
   affiliateRedemptionItemInput.disabled = !selectedAffiliate;
@@ -42791,7 +42865,7 @@ async function redeemSelectedAffiliatePoints() {
     affiliateRedemptionReasonInput?.focus();
     return;
   }
-  const balance = Number(state.selectedAffiliate?.points_total || state.selectedAffiliate?.ledger_points || 0);
+  const balance = Number(state.selectedAffiliate?.points_total ?? state.selectedAffiliate?.ledger_points ?? 0);
   if (points > balance) {
     setInlineMessage(affiliateRedemptionMessage, `Saldo insuficiente: el afiliado tiene ${balance.toLocaleString("es-CO")} puntos.`, "error");
     return;
@@ -44098,7 +44172,7 @@ function renderAffiliateDashboard() {
   const affiliates = state.affiliates || [];
   const total = affiliates.length;
   const active = affiliates.filter((item) => item.status !== "INACTIVE").length;
-  const totalPoints = affiliates.reduce((sum, item) => sum + toNumber(item.points_total || item.ledger_points || 0), 0);
+  const totalPoints = affiliates.reduce((sum, item) => sum + toNumber(item.points_total ?? item.ledger_points ?? 0), 0);
   const events = affiliates.reduce((sum, item) => sum + toNumber(item.point_events || 0), 0);
   const purchaseTotal = affiliates.reduce((sum, item) => sum + toNumber(item.purchase_total || 0), 0);
   const averagePurchase = events ? purchaseTotal / events : 0;
@@ -44128,7 +44202,7 @@ function renderAffiliateCommandStrip() {
   const affiliates = state.affiliates || [];
   const selected = state.selectedAffiliate || affiliates.find((item) => item.id === state.selectedAffiliateId) || null;
   const selectedPurchaseTotal = toNumber(selected?.purchase_total || 0);
-  const selectedPoints = toNumber(selected?.points_total || selected?.ledger_points || 0);
+  const selectedPoints = toNumber(selected?.points_total ?? selected?.ledger_points ?? 0);
   const selectedEvents = toNumber(selected?.point_events || 0);
 
   if (affiliateOperationChecklist) {
@@ -44163,13 +44237,13 @@ function renderAffiliateCommandStrip() {
   if (affiliateTopRankingList) {
     const ranking = affiliates
       .slice()
-      .sort((a, b) => toNumber(b.purchase_total || 0) - toNumber(a.purchase_total || 0) || toNumber(b.points_total || b.ledger_points || 0) - toNumber(a.points_total || a.ledger_points || 0))
+      .sort((a, b) => toNumber(b.purchase_total || 0) - toNumber(a.purchase_total || 0) || toNumber(b.points_total ?? b.ledger_points ?? 0) - toNumber(a.points_total ?? a.ledger_points ?? 0))
       .slice(0, 5);
     affiliateTopRankingList.innerHTML = ranking.map((affiliate, index) => `
       <button class="affiliate-top-row ${affiliate.id === state.selectedAffiliateId ? "active" : ""}" type="button" data-affiliate-top-select="${escapeHtml(affiliate.id)}">
         <span>${index + 1}</span>
         <strong>${escapeHtml(affiliate.full_name || "Afiliado")}</strong>
-        <small>${escapeHtml(money(affiliate.purchase_total || 0))} · ${escapeHtml(toNumber(affiliate.points_total || affiliate.ledger_points || 0))} pts</small>
+        <small>${escapeHtml(money(affiliate.purchase_total || 0))} · ${escapeHtml(toNumber(affiliate.points_total ?? affiliate.ledger_points ?? 0))} pts</small>
       </button>
     `).join("") || '<div class="affiliate-selected-empty">Sin afiliados para ranking.</div>';
     affiliateTopRankingList.querySelectorAll("[data-affiliate-top-select]").forEach((button) => {
@@ -44244,7 +44318,7 @@ function renderAffiliateFinderResults(rows = []) {
     <button class="affiliate-finder-result" type="button" data-affiliate-finder-select="${escapeHtml(item.id)}">
       <strong>${escapeHtml(item.full_name || "Afiliado")}</strong>
       <span>${escapeHtml(item.document_id || "Sin documento")} · ${escapeHtml(item.phone || item.email || "Sin contacto")}</span>
-      <small>${escapeHtml(toNumber(item.points_total || item.ledger_points || 0))} puntos · ${escapeHtml(String(item.qr_token || "").slice(0, 10))}</small>
+      <small>${escapeHtml(toNumber(item.points_total ?? item.ledger_points ?? 0))} puntos · ${escapeHtml(String(item.qr_token || "").slice(0, 10))}</small>
     </button>
   `).join("");
   affiliateFinderResults.querySelectorAll("[data-affiliate-finder-select]").forEach((button) => {
@@ -44283,6 +44357,7 @@ async function openAffiliateForPoints(affiliateId) {
   if (changedAffiliate) {
     state.affiliatePurchaseItems = [{ name: "", quantity: 1, unit_price: 0 }];
     state.selectedAffiliateLedger = [];
+    state.selectedAffiliatePointSummary = null;
     state.affiliateLedgerEditingId = null;
     state.affiliateRedemptionIdempotencyKey = "";
     if (affiliatePurchaseNotesInput) affiliatePurchaseNotesInput.value = "";
@@ -44700,7 +44775,7 @@ async function renderAffiliatesView() {
   resetAffiliateRewardResult();
 
   affiliateTable.innerHTML = rows.map((item) => {
-    const points = toNumber(item.points_total || item.ledger_points || 0);
+    const points = toNumber(item.points_total ?? item.ledger_points ?? 0);
     const purchases = toNumber(item.point_events || 0);
     const purchaseTotal = toNumber(item.purchase_total || 0);
     const contact = [item.document_id, item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
@@ -44763,6 +44838,8 @@ async function renderAffiliatesView() {
     affiliateCardTitle.textContent = "Sin afiliado seleccionado";
     affiliateCardMeta.textContent = "Crea o selecciona un afiliado para abrir su carnet digital.";
     renderAffiliateSelectedSummary(null);
+    state.selectedAffiliatePointSummary = null;
+    renderAffiliatePointHistorySummary();
     affiliateCardPreview.removeAttribute("src");
     affiliateCardPreviewWrap?.classList.add("is-empty");
     affiliateCardPreviewWrap?.classList.remove("is-loading");
@@ -44793,6 +44870,7 @@ async function renderAffiliatesView() {
   affiliateCardTitle.textContent = selected.full_name || "Afiliado";
   affiliateCardMeta.textContent = affiliateCardMetaText(selected);
   renderAffiliateSelectedSummary(selected);
+  renderAffiliatePointHistorySummary();
   affiliateCardPreviewWrap?.classList.remove("is-empty");
   renderAffiliatePurchaseCampaignOptions();
   if (affiliatePurchaseProductInput) affiliatePurchaseProductInput.disabled = false;
@@ -44819,9 +44897,11 @@ async function renderAffiliatesView() {
       business_logo_data_url: businessProfileLogoSource() || businessLogoSource(detail.affiliate || {}) || businessLogoSource(selected) || "",
       qr_data_url: affiliateQrSource(detail.affiliate || {}) || affiliateQrSource(selected),
     };
-    renderAffiliateSelectedSummary(state.selectedAffiliate);
-    renderAffiliateRedemptionControls();
     state.selectedAffiliateLedger = detail.ledger || [];
+    state.selectedAffiliatePointSummary = detail.point_summary || null;
+    renderAffiliateSelectedSummary(state.selectedAffiliate);
+    renderAffiliatePointHistorySummary();
+    renderAffiliateRedemptionControls();
     renderAffiliateRedemptionHistory();
     state.affiliateRewardUnlocks = detail.reward_unlocks || [];
     renderAffiliateRewardUnlocks();
@@ -45742,14 +45822,15 @@ async function downloadSelectedRewardPassImage() {
 }
 
 function ensureAffiliatesUxStyles() {
-  if (document.getElementById("affiliatesUxStylesV80")) return;
+  if (document.getElementById("affiliatesUxStylesV81")) return;
+  document.getElementById("affiliatesUxStylesV80")?.remove();
   document.getElementById("affiliatesUxStylesV79")?.remove();
   document.getElementById("affiliatesUxStylesV78")?.remove();
   document.getElementById("affiliatesUxStylesV77")?.remove();
   document.getElementById("affiliatesUxStylesV76")?.remove();
   document.getElementById("affiliatesUxStylesV75")?.remove();
   const style = document.createElement("style");
-  style.id = "affiliatesUxStylesV80";
+  style.id = "affiliatesUxStylesV81";
   style.textContent = `
     .view-section[data-view="affiliates"] .view-head {
       align-items: flex-start;
@@ -46511,6 +46592,145 @@ function ensureAffiliatesUxStyles() {
       color: #052a6b !important;
       font-weight: 760 !important;
     }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-summary {
+      display: grid !important;
+      gap: 14px !important;
+      margin: 0 0 16px !important;
+      padding: 16px !important;
+      border: 1px solid rgba(5, 42, 107, .12) !important;
+      border-radius: 14px !important;
+      background: #f8fbff !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-head {
+      display: flex !important;
+      align-items: end !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-head strong,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-head small {
+      display: block !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-head strong {
+      margin-top: 3px !important;
+      color: #052a6b !important;
+      font-size: 1rem !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-head > small,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-loading,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-empty,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-count {
+      color: #53677f !important;
+      font-size: .76rem !important;
+      line-height: 1.35 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid {
+      display: grid !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      gap: 10px !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid article {
+      display: grid !important;
+      gap: 3px !important;
+      padding: 12px !important;
+      border: 1px solid rgba(5, 42, 107, .1) !important;
+      border-radius: 12px !important;
+      background: #ffffff !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid span,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid small {
+      color: #53677f !important;
+      font-size: .72rem !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid strong {
+      color: #052a6b !important;
+      font-size: 1.45rem !important;
+      line-height: 1 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid .earned strong {
+      color: #067647 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid .redeemed strong {
+      color: #b42318 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open :is(.affiliate-points-breakdown-grid, .affiliate-points-timeline-grid) {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 10px !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open :is(.affiliate-points-breakdown-grid section, .affiliate-points-timeline-grid details) {
+      min-width: 0 !important;
+      padding: 12px !important;
+      border: 1px solid rgba(5, 42, 107, .1) !important;
+      border-radius: 12px !important;
+      background: #ffffff !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-breakdown-grid h4 {
+      margin: 0 0 8px !important;
+      color: #052a6b !important;
+      font-size: .86rem !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-breakdown-row,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-row {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 10px !important;
+      padding: 8px 0 !important;
+      border-bottom: 1px solid rgba(5, 42, 107, .08) !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open :is(.affiliate-points-breakdown-row, .affiliate-points-history-row):last-child {
+      border-bottom: 0 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open :is(.affiliate-points-breakdown-row, .affiliate-points-history-row) :is(strong, small) {
+      display: block !important;
+      overflow-wrap: anywhere !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open :is(.affiliate-points-breakdown-row, .affiliate-points-history-row) strong {
+      color: #052a6b !important;
+      font-size: .8rem !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open :is(.affiliate-points-breakdown-row, .affiliate-points-history-row) small {
+      margin-top: 2px !important;
+      color: #64748b !important;
+      font-size: .7rem !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-breakdown-row > span,
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-row > b {
+      flex: 0 0 auto !important;
+      color: #0759d6 !important;
+      font-size: .8rem !important;
+      font-weight: 820 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-row.earned > b {
+      color: #067647 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-row.redeemed > b {
+      color: #b42318 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-timeline-grid summary {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 8px !important;
+      color: #052a6b !important;
+      cursor: pointer !important;
+      font-size: .84rem !important;
+      font-weight: 800 !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-timeline-grid summary span {
+      padding: 3px 7px !important;
+      border-radius: 999px !important;
+      background: #eaf3ff !important;
+      color: #0759d6 !important;
+      font-size: .72rem !important;
+    }
+    .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-list {
+      max-height: 220px !important;
+      margin-top: 8px !important;
+      overflow-y: auto !important;
+      overscroll-behavior: contain !important;
+    }
     .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-box {
       grid-column: 1 / -1 !important;
       display: grid !important;
@@ -46605,6 +46825,13 @@ function ensureAffiliatesUxStyles() {
         grid-template-columns: 1fr !important;
       }
       .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-points-history-head {
+        align-items: start !important;
+        flex-direction: column !important;
+      }
+      .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open :is(.affiliate-points-lifetime-grid, .affiliate-points-breakdown-grid, .affiliate-points-timeline-grid) {
         grid-template-columns: 1fr !important;
       }
       .view-section[data-view="affiliates"] #affiliateOperatePanel.is-modal-open .affiliate-redemption-head,

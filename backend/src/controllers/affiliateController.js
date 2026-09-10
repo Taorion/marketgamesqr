@@ -12,6 +12,7 @@ const {
   listAffiliateRewardUnlocks,
   listCampaignAffiliates,
   listAffiliateLedger,
+  getAffiliatePointHistorySummary,
   awardAffiliatePoints,
   getPublicAffiliateCard,
   removeAffiliateFromCampaign,
@@ -154,12 +155,13 @@ async function createBusinessAffiliate(req, res, next) {
 async function getBusinessAffiliate(req, res, next) {
   try {
     await assertFeatureForRequest(req, req.params.id, "affiliates");
-    const [affiliate, ledger, reward_unlocks] = await Promise.all([
+    const [affiliate, ledger, point_summary, reward_unlocks] = await Promise.all([
       getAffiliate(req.params.id, req.params.affiliateId, req.user),
       listAffiliateLedger(req.params.id, req.params.affiliateId, req.user),
+      getAffiliatePointHistorySummary(req.params.id, req.params.affiliateId, req.user),
       listAffiliateRewardUnlocks(req.params.id, req.params.affiliateId, req.user),
     ]);
-    res.json({ affiliate, ledger, reward_unlocks });
+    res.json({ affiliate, ledger, point_summary, reward_unlocks });
   } catch (error) {
     next(error);
   }
