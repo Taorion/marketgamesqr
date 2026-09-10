@@ -2,8 +2,8 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260910-rms-rich-station-summary-v470";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910";
+const APP_VERSION = "empresa-20260910-pano-ingles-affiliate-card-v471";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910 pano-ingles-affiliate-card-v471-20260910";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 30000;
@@ -36174,25 +36174,25 @@ async function buildAffiliateCardDataUrl(affiliate) {
   {
   const isPanoInglesTheme = isPanoInglesBusinessName(businessName);
   const palette = isPanoInglesTheme ? {
-    bg: "#000209",
-    card: "#040C16",
-    top: "#0E1E2D",
-    panel: "#081625",
-    panelSoft: "#1D3550",
-    smoke: "#203041",
-    royal: "#284976",
-    ink: "#F1F3F8",
-    darkInk: "#071832",
-    muted: "#C8B57F",
-    accent: "#B29C6B",
-    gold: "#C8B57F",
-    goldShadow: "#8F815F",
-    line: "#8F815F",
-    qrBg: "#000209",
-    qrInk: "#F1F3F8",
-    qrLine: "#C8B57F",
-    qrGlow: "#8F815F",
-    footerBg: "#203041",
+    bg: "#02070D",
+    card: "#07111C",
+    top: "#0A1A29",
+    panel: "#0D1D2D",
+    panelSoft: "#173A60",
+    smoke: "#132A40",
+    royal: "#234F7D",
+    ink: "#F6F1E6",
+    darkInk: "#07111C",
+    muted: "#D8C99D",
+    accent: "#BEA46B",
+    gold: "#C7AD70",
+    goldShadow: "#7F6B43",
+    line: "#9E8758",
+    qrBg: "#02070D",
+    qrInk: "#F6F1E6",
+    qrLine: "#C7AD70",
+    qrGlow: "#7F6B43",
+    footerBg: "#132A40",
   } : {
     bg: "#052a6b",
     card: "#052a6b",

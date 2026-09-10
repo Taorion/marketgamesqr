@@ -303,6 +303,110 @@ footer {
   text-align: center;
 }
 
+/* El Paño Inglés: azul noche, azul sastre, dorado champaña y marfil. */
+body.brand-pano-ingles {
+  --qori-blue: #07111c;
+  --qori-blue-strong: #234f7d;
+  --qori-cyan: #c7ad70;
+  --qori-ink: #f6f1e6;
+  --qori-muted: #d8c99d;
+  --qori-line: rgba(199, 173, 112, 0.42);
+  --status-ok: #c7ad70;
+  --status-error: #efb4a8;
+  color-scheme: dark;
+  color: #f6f1e6;
+  background:
+    radial-gradient(circle at 82% 8%, rgba(35, 79, 125, 0.34), transparent 34%),
+    linear-gradient(145deg, #02070d 0%, #07111c 46%, #0d1d2d 100%);
+}
+
+.brand-pano-ingles .digital-card {
+  border-color: #9e8758;
+  background: linear-gradient(155deg, #07111c 0%, #0a1a29 58%, #0d1d2d 100%);
+  box-shadow: 0 28px 76px rgba(0, 0, 0, 0.58);
+}
+
+.brand-pano-ingles .card-top {
+  border-bottom-color: rgba(199, 173, 112, 0.48);
+  background:
+    radial-gradient(circle at 88% 10%, rgba(35, 79, 125, 0.72), transparent 44%),
+    linear-gradient(135deg, #07111c 0%, #132a40 58%, #234f7d 130%);
+}
+
+.brand-pano-ingles .eyebrow,
+.brand-pano-ingles .points-panel strong,
+.brand-pano-ingles .section-head h2,
+.brand-pano-ingles .photo-frame span,
+.brand-pano-ingles .ledger-item strong,
+.brand-pano-ingles footer strong {
+  color: #c7ad70;
+}
+
+.brand-pano-ingles #businessName,
+.brand-pano-ingles .points-panel span,
+.brand-pano-ingles .points-panel small,
+.brand-pano-ingles .ledger-item span,
+.brand-pano-ingles .empty-state,
+.brand-pano-ingles .status-message,
+.brand-pano-ingles footer {
+  color: #d8c99d;
+}
+
+.brand-pano-ingles .status-pill {
+  border-color: #c7ad70;
+  background: #c7ad70;
+  color: #07111c;
+}
+
+.brand-pano-ingles .status-pill.inactive {
+  border-color: rgba(239, 180, 168, 0.72);
+  background: rgba(239, 180, 168, 0.12);
+  color: #f6d4cc;
+}
+
+.brand-pano-ingles .photo-frame,
+.brand-pano-ingles .points-panel,
+.brand-pano-ingles .details-grid div,
+.brand-pano-ingles .movement-panel {
+  border-color: rgba(199, 173, 112, 0.38);
+  background: rgba(13, 29, 45, 0.9);
+}
+
+.brand-pano-ingles .photo-frame {
+  background: linear-gradient(145deg, #132a40, #0a1a29);
+}
+
+.brand-pano-ingles dt {
+  color: #bea46b;
+}
+
+.brand-pano-ingles dd,
+.brand-pano-ingles .ledger-item b {
+  color: #f6f1e6;
+}
+
+.brand-pano-ingles .section-head {
+  border-bottom-color: rgba(199, 173, 112, 0.34);
+  background: #0a1a29;
+}
+
+.brand-pano-ingles .ledger-item {
+  border: 1px solid rgba(199, 173, 112, 0.16);
+  background: #132a40;
+}
+
+.brand-pano-ingles button {
+  border-color: #c7ad70;
+  background: #c7ad70;
+  color: #07111c;
+}
+
+.brand-pano-ingles button:hover {
+  border-color: #f0dfb0;
+  background: #d8c386;
+  color: #02070d;
+}
+
 @media (max-width: 520px) {
   .card-shell {
     padding: 10px;
