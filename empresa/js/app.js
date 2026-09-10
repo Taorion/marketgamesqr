@@ -8457,6 +8457,30 @@ async function refreshActivePortalView() {
   }
 }
 
+async function refreshCurrentPortalViewFromHeader() {
+  if (!session?.user?.business_id) {
+    await loadWorkspace();
+    return;
+  }
+  if (refreshButton.disabled) return;
+  refreshButton.disabled = true;
+  refreshButton.setAttribute("aria-busy", "true");
+  showFeedback("Actualizando la vista que tienes abierta.", "loading", { title: "Actualizando", timeout: 0 });
+  try {
+    const refreshed = await refreshActivePortalView();
+    showFeedback(
+      refreshed ? "La vista actual ya muestra los datos más recientes." : "La vista ya se está actualizando.",
+      refreshed ? "success" : "info",
+      { title: refreshed ? "Vista actualizada" : "Actualización en curso" }
+    );
+  } catch (error) {
+    showFeedback(error.message || "No se pudo actualizar la vista actual.", "error", { title: "Actualización" });
+  } finally {
+    refreshButton.disabled = false;
+    refreshButton.removeAttribute("aria-busy");
+  }
+}
+
 async function refreshLiveBusinessData() {
   if (lightTestMode) return;
   if (!session?.user?.business_id || state.activityRefreshInFlight) return;
@@ -61005,7 +61029,20 @@ logoutButton.addEventListener("click", () => {
   clearSession({ message: "Sesión cerrada" });
   window.location.replace(window.location.pathname);
 });
-refreshButton.addEventListener("click", loadWorkspace);
+const MANUAL_PORTAL_REFRESH_SELECTOR = [
+  'button[id^="refresh"]',
+  'button[id$="RefreshButton"]',
+  "[data-recycling-refresh]",
+  "[data-revenue-command-refresh]",
+].join(",");
+
+document.addEventListener("click", (event) => {
+  const refreshTrigger = event.target.closest(MANUAL_PORTAL_REFRESH_SELECTOR);
+  if (!refreshTrigger || refreshTrigger.disabled) return;
+  clearApiResponseCache();
+}, true);
+
+refreshButton.addEventListener("click", refreshCurrentPortalViewFromHeader);
 globalRevenueActionButton?.addEventListener("click", openRmsCollectorModal);
 dashboardWorkspaceTabs?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-dashboard-workspace-tab]");
@@ -63351,7 +63388,19 @@ affiliateManualPointsButton?.addEventListener("click", awardManualAffiliatePoint
 downloadAffiliateCardButton?.addEventListener("click", downloadSelectedAffiliateCard);
 copyAffiliateCardLinkButton?.addEventListener("click", copySelectedAffiliateCardLink);
 affiliateGenerateReferralQrButton?.addEventListener("click", generateSelectedAffiliateReferralQr);
-refreshAffiliatesButton?.addEventListener("click", renderAffiliatesView);
+refreshAffiliatesButton?.addEventListener("click", async () => {
+  setButtonLoading(refreshAffiliatesButton, true, "Actualizando...");
+  try {
+    state.affiliatesLoaded = false;
+    await loadAffiliatesData();
+    await renderAffiliatesView();
+    showFeedback("Afiliados actualizados.", "success", { title: "Afiliados" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudieron actualizar los afiliados.", "error", { title: "Afiliados" });
+  } finally {
+    setButtonLoading(refreshAffiliatesButton, false);
+  }
+});
 affiliateOpenCreateButton?.addEventListener("click", () => openAffiliateCreateModal());
 affiliateListCreateButton?.addEventListener("click", () => openAffiliateCreateModal());
 affiliateCreateCloseButton?.addEventListener("click", closeAffiliateCreateModal);
