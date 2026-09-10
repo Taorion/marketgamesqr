@@ -2,8 +2,8 @@ const SESSION_KEY = "qr_business_portal_session_v1";
 const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
-const APP_VERSION = "empresa-20260909-activation-status-filters-v467";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909";
+const APP_VERSION = "empresa-20260910-rms-rich-station-summary-v470";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 30000;
@@ -51966,7 +51966,15 @@ function renderRmsStationLeanOnly() {
     ? rmsActivationBulkSelectedRows()
     : rmsStationSelectedRows(phase, rows);
   const eligibleRows = rmsStationOutputEligibleRows(phase, rows);
+  const stationSummaryRows = phase === "inteligencia" ? (state.rmsIntelligenceCases || []) : rows;
+  const stationRiskCount = stationSummaryRows.filter((item) => Number(item.risk_score || 0) >= 50).length;
   const visual = rmsStationVisualMeta(phase);
+  const stationSummaryMarkup = rmsStationRichSummaryMarkup(stage, stationSummaryRows, nextPhase, {
+    visual,
+    eligibleRows,
+    selectedRows,
+    riskCount: stationRiskCount,
+  }) || rmsStationHandoffMarkup(stage, nextPhase);
   const stationControlLabel = phase === "curaduria" ? "Producto" : phase === "alimentacion" ? "Calidad" : "Estado";
   const isCurationStation = phase === "alimentacion";
   const isClassifierStation = phase === "curaduria";
@@ -52044,7 +52052,7 @@ function renderRmsStationLeanOnly() {
           ` : ""}
         </div>
       </header>
-      ${phase === "control_anti_fuga" ? "" : rmsStationHandoffMarkup(stage, nextPhase)}
+      ${stationSummaryMarkup}
       ${supportsCommercialSummary && state.rmsStationSummaryOpen ? rmsCommercialStationSummaryMarkup(rows, phase) : ""}
       ${isActivationStation && state.rmsActivationBulkOpen ? rmsActivationBulkComposerMarkup(selectedRows) : ""}
       ${isCurationStation ? `
@@ -54501,6 +54509,66 @@ function rmsStationHandoffMarkup(stage = {}, nextPhase = null) {
       <div><span>Decide</span><strong>${escapeHtml(handoff.decides)}</strong></div>
       <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
       <div><span>Entrega</span><strong>${escapeHtml(delivery)}</strong></div>
+    </section>
+  `;
+}
+
+function rmsStationRichSummaryMarkup(stage = {}, rows = [], nextPhase = null, options = {}) {
+  const visual = options.visual || rmsStationVisualMeta(stage.key || "");
+  const operation = stage.operation || (state.rmsMachine?.operations || {})[stage.key] || {};
+  const handoff = RMS_STATION_HANDOFFS[stage.key] || {};
+  const eligibleRows = options.eligibleRows || [];
+  const selectedRows = options.selectedRows || [];
+  const riskCount = Number(options.riskCount || 0);
+  const isIntelligence = stage.key === "inteligencia";
+  const entityLabel = isIntelligence ? "casos" : ["cierre", "postventa"].includes(stage.key) ? "clientes" : "leads";
+  const openInsights = isIntelligence
+    ? (state.rmsIntelligenceInsights || []).filter((item) => !["APPLIED", "DISCARDED"].includes(String(item.status || "").toUpperCase())).length
+    : 0;
+  const intelligencePatterns = state.rmsIntelligencePatterns || {};
+  const patternCount = [intelligencePatterns.bottlenecks, intelligencePatterns.objections, intelligencePatterns.attributed_sales, intelligencePatterns.activation_2]
+    .filter(Array.isArray)
+    .flat().length;
+  const metrics = isIntelligence
+    ? [
+        [rows.length, "casos con historia"],
+        [openInsights, "decisiones abiertas"],
+        [(state.rmsIntelligenceInsights || []).length, "hallazgos"],
+        [patternCount, "patrones detectados"],
+      ]
+    : [
+        [rows.length, `${entityLabel} en estación`],
+        [eligibleRows.length, "listos para avanzar"],
+        [selectedRows.length, "seleccionados"],
+        [riskCount, "con señal de riesgo"],
+      ];
+  const checklist = Array.isArray(visual.checklist) ? visual.checklist.filter(Boolean) : [];
+  const delivery = handoff.delivers || (nextPhase?.label ? `Salida a ${nextPhase.label}` : visual.output || "Resultado registrado");
+  return `
+    <section class="rms-station-rich-summary" aria-label="Resumen operativo de ${escapeHtml(stage.label || "la estación")}">
+      <header class="rms-station-rich-summary-head">
+        <span class="rms-station-rich-summary-icon material-symbols-outlined" aria-hidden="true">${escapeHtml(visual.icon || "precision_manufacturing")}</span>
+        <div>
+          <span class="mono-label">Resumen operativo de la estación</span>
+          <h4>${escapeHtml(operation.primaryAction || visual.screenTitle || stage.label || "Trabajar esta estación")}</h4>
+          <p>${escapeHtml(visual.focus || "Revisa el contexto, completa el criterio y registra el siguiente movimiento.")}</p>
+        </div>
+      </header>
+      <div class="rms-station-rich-summary-metrics" aria-label="Indicadores de la estación">
+        ${metrics.map(([value, label]) => `<article><strong>${Number(value || 0).toLocaleString("es-CO")}</strong><span>${escapeHtml(label)}</span></article>`).join("")}
+      </div>
+      <div class="rms-station-rich-summary-flow" aria-label="Flujo de información de la estación">
+        <article><span>Recibe</span><strong>${escapeHtml(handoff.receives || visual.input || "Información de la etapa anterior")}</strong></article>
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        <article><span>Decide</span><strong>${escapeHtml(handoff.decides || operation.primaryAction || "Siguiente movimiento")}</strong></article>
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        <article><span>Entrega</span><strong>${escapeHtml(delivery)}</strong></article>
+      </div>
+      <div class="rms-station-rich-summary-context">
+        <article><span class="material-symbols-outlined" aria-hidden="true">input</span><div><strong>Información de entrada</strong><p>${escapeHtml(visual.input || handoff.receives || "Contexto comercial disponible")}</p></div></article>
+        <article><span class="material-symbols-outlined" aria-hidden="true">output</span><div><strong>Resultado esperado</strong><p>${escapeHtml(visual.output || delivery)}</p></div></article>
+      </div>
+      ${checklist.length ? `<div class="rms-station-rich-summary-checklist"><strong>Qué debes confirmar</strong><div>${checklist.map((item) => `<span><span class="material-symbols-outlined" aria-hidden="true">check_circle</span>${escapeHtml(item)}</span>`).join("")}</div></div>` : ""}
     </section>
   `;
 }
