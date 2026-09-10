@@ -1,0 +1,589 @@
+/* Affiliate operation modal -------------------------------------------------
+ * Final layer for the affiliate workspace once the panel is promoted to body.
+ * Keeps identity, lifetime points and operations readable without page overflow.
+ */
+html body > #affiliateOperationBackdrop.affiliate-operation-backdrop {
+  z-index: 1088 !important;
+  background: rgba(2, 18, 45, .7) !important;
+  backdrop-filter: blur(12px) saturate(.88) !important;
+}
+
+html body:has(> #affiliateOperatePanel.is-modal-open) {
+  overflow: hidden !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open {
+  display: grid !important;
+  grid-template-columns: minmax(250px, .64fr) minmax(0, 1.36fr) !important;
+  grid-template-areas:
+    "head head"
+    "card summary"
+    "meta summary"
+    "history history"
+    "actions actions" !important;
+  gap: 18px clamp(26px, 3.6vw, 52px) !important;
+  align-content: start !important;
+  position: fixed !important;
+  top: clamp(12px, 3vh, 28px) !important;
+  left: 50% !important;
+  z-index: 1090 !important;
+  width: min(1120px, calc(100vw - 32px)) !important;
+  max-width: calc(100vw - 32px) !important;
+  max-height: calc(100dvh - clamp(24px, 6vh, 56px)) !important;
+  margin: 0 !important;
+  padding: 0 clamp(22px, 3.4vw, 44px) clamp(28px, 3.8vw, 48px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: auto !important;
+  transform: translateX(-50%) !important;
+  border: 1px solid rgba(192, 217, 239, .92) !important;
+  border-radius: 28px !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f7fbff 100%) !important;
+  box-shadow: 0 38px 110px rgba(1, 24, 61, .42) !important;
+  color: #092f67 !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .table-card-head {
+  grid-area: head !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 8 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  margin: 0 calc(clamp(22px, 3.4vw, 44px) * -1) 8px !important;
+  padding: 20px clamp(22px, 3.4vw, 44px) 18px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(187, 215, 238, .82) !important;
+  border-radius: 27px 27px 0 0 !important;
+  background: rgba(255, 255, 255, .94) !important;
+  box-shadow: 0 10px 28px rgba(34, 92, 139, .07) !important;
+  backdrop-filter: blur(16px) saturate(1.08) !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .table-card-head .mono-label {
+  color: #0875d1 !important;
+  font-size: .68rem !important;
+  letter-spacing: .11em !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .table-card-head #affiliateCardTitle {
+  display: block !important;
+  margin-top: 4px !important;
+  color: #062b63 !important;
+  font-size: clamp(1.35rem, 2.4vw, 2rem) !important;
+  line-height: 1.12 !important;
+  letter-spacing: -.035em !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-operation-head-actions {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open #affiliateDeleteSelectedButton {
+  min-height: 42px !important;
+  border-color: rgba(180, 35, 24, .2) !important;
+  background: #fff8f7 !important;
+  color: #a8291f !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open #affiliateOperationCloseButton {
+  flex: 0 0 44px !important;
+  width: 44px !important;
+  height: 44px !important;
+  border: 1px solid rgba(99, 151, 194, .24) !important;
+  border-radius: 50% !important;
+  background: #eff8ff !important;
+  color: #0759a7 !important;
+  box-shadow: none !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open #affiliateOperationCloseButton:hover {
+  background: #ffffff !important;
+  border-color: rgba(0, 145, 220, .48) !important;
+  box-shadow: 0 10px 24px rgba(13, 88, 145, .14) !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-preview-wrap {
+  grid-area: card !important;
+  place-self: start center !important;
+  width: min(100%, 350px) !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 1.18 / 1 !important;
+  margin: 0 !important;
+  padding: 12px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(162, 204, 234, .5) !important;
+  border-radius: 22px !important;
+  background: radial-gradient(circle at 20% 15%, rgba(0, 184, 255, .16), transparent 48%), #f1f9ff !important;
+  box-shadow: 0 18px 38px rgba(30, 105, 158, .12) !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-preview-wrap img {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  object-fit: contain !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > #affiliateCardMeta {
+  grid-area: meta !important;
+  width: min(100%, 350px) !important;
+  margin: 0 auto !important;
+  color: #617c98 !important;
+  font-size: .78rem !important;
+  line-height: 1.5 !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .affiliate-selected-summary {
+  grid-area: summary !important;
+  align-self: stretch !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: clamp(18px, 2.5vw, 28px) !important;
+  border: 1px solid rgba(177, 209, 233, .76) !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, .82) !important;
+  box-shadow: 0 14px 34px rgba(33, 100, 153, .07) !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid div {
+  min-width: 0 !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open :is(.affiliate-selected-grid dt, .affiliate-selected-kicker, .affiliate-selected-balance span, .affiliate-selected-balance small) {
+  color: #69839e !important;
+  font-size: .68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .05em !important;
+  text-transform: uppercase !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid dd {
+  margin: 5px 0 0 !important;
+  color: #123b6b !important;
+  font-size: .84rem !important;
+  font-weight: 700 !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .affiliate-points-history-summary {
+  grid-area: history !important;
+  display: grid !important;
+  gap: 16px !important;
+  min-width: 0 !important;
+  margin: 14px 0 0 !important;
+  padding: clamp(20px, 3vw, 30px) !important;
+  border: 1px solid rgba(174, 207, 232, .78) !important;
+  border-radius: 22px !important;
+  background: linear-gradient(135deg, #f4faff, #ffffff) !important;
+  box-shadow: 0 15px 34px rgba(33, 100, 153, .07) !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-history-head {
+  display: flex !important;
+  align-items: end !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-history-head :is(strong, small) {
+  display: block !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-history-head strong {
+  margin-top: 4px !important;
+  color: #062b63 !important;
+  font-size: 1.05rem !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-history-head > small,
+html body > #affiliateOperatePanel.is-modal-open :is(.affiliate-points-history-loading, .affiliate-points-empty, .affiliate-points-history-count) {
+  color: #617991 !important;
+  font-size: .76rem !important;
+  line-height: 1.45 !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid,
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-breakdown-grid,
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-timeline-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid > article {
+  min-width: 0 !important;
+  padding: 16px !important;
+  border: 1px solid rgba(178, 210, 234, .66) !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid article > span,
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid article > small {
+  display: block !important;
+  color: #68819a !important;
+  font-size: .72rem !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid article > strong {
+  display: block !important;
+  margin: 6px 0 3px !important;
+  color: #0759d6 !important;
+  font-size: 1.45rem !important;
+  line-height: 1.05 !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid .earned > strong { color: #067647 !important; }
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid .redeemed > strong { color: #b42318 !important; }
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-breakdown-grid > article,
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-timeline-grid > details {
+  min-width: 0 !important;
+  padding: 14px 16px !important;
+  border: 1px solid rgba(181, 210, 232, .65) !important;
+  border-radius: 15px !important;
+  background: rgba(255, 255, 255, .88) !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open :is(.affiliate-points-breakdown-row, .affiliate-points-history-row) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 8px 0 !important;
+  border-bottom: 1px solid rgba(5, 42, 107, .08) !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-history-list {
+  max-height: 220px !important;
+  margin-top: 8px !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions {
+  grid-area: actions !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 18px 24px !important;
+  min-width: 0 !important;
+  margin: 12px 0 0 !important;
+  padding: 30px 0 0 !important;
+  border-top: 1px solid rgba(177, 207, 231, .8) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions :is(label, .affiliate-purchase-summary, .affiliate-purchase-builder) {
+  min-width: 0 !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions label {
+  display: grid !important;
+  gap: 7px !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions label > span {
+  color: #55738f !important;
+  font-size: .72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .035em !important;
+  text-transform: uppercase !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions :is(input, select) {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 46px !important;
+  border: 1px solid #c9ddec !important;
+  border-radius: 11px !important;
+  background: #ffffff !important;
+  color: #092f67 !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions :is(input, select):focus {
+  outline: 3px solid rgba(0, 174, 239, .14) !important;
+  border-color: #00aeee !important;
+  box-shadow: none !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions :is(.span-2, .span-3),
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-calculator,
+html body > #affiliateOperatePanel.is-modal-open .affiliate-redemption-box {
+  grid-column: 1 / -1 !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-points-calculator,
+html body > #affiliateOperatePanel.is-modal-open .affiliate-redemption-box {
+  padding: 20px !important;
+  border: 1px solid rgba(174, 207, 232, .74) !important;
+  border-radius: 18px !important;
+  background: #f6fbff !important;
+  box-shadow: none !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-redemption-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open .affiliate-redemption-head,
+html body > #affiliateOperatePanel.is-modal-open .affiliate-redemption-actions,
+html body > #affiliateOperatePanel.is-modal-open .affiliate-purchase-builder-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+}
+
+html body > #affiliateOperatePanel.is-modal-open :is(.solid-button, .ghost-button) {
+  min-height: 44px !important;
+}
+
+@media (max-width: 760px) {
+  html body > #affiliateOperatePanel.is-modal-open {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "head"
+      "summary"
+      "card"
+      "meta"
+      "history"
+      "actions" !important;
+    top: 6px !important;
+    width: calc(100vw - 12px) !important;
+    max-width: calc(100vw - 12px) !important;
+    max-height: calc(100dvh - 12px) !important;
+    gap: 15px !important;
+    padding: 0 14px 26px !important;
+    scrollbar-gutter: auto !important;
+    border-radius: 20px !important;
+  }
+
+  html body > #affiliateOperatePanel.is-modal-open > .table-card-head {
+    align-items: flex-start !important;
+    margin: 0 -14px 4px !important;
+    padding: 15px 14px 13px !important;
+    border-radius: 19px 19px 0 0 !important;
+  }
+
+  html body > #affiliateOperatePanel.is-modal-open > .table-card-head #affiliateCardTitle {
+    font-size: 1.2rem !important;
+  }
+
+  html body > #affiliateOperatePanel.is-modal-open #affiliateDeleteSelectedButton {
+    width: 42px !important;
+    min-width: 42px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    color: transparent !important;
+    font-size: 0 !important;
+  }
+
+  html body > #affiliateOperatePanel.is-modal-open #affiliateDeleteSelectedButton .material-symbols-outlined {
+    margin: auto !important;
+    color: #a8291f !important;
+    font-size: 21px !important;
+  }
+
+  html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-preview-wrap {
+    width: min(100%, 340px) !important;
+  }
+
+  html body > #affiliateOperatePanel.is-modal-open > .affiliate-selected-summary,
+  html body > #affiliateOperatePanel.is-modal-open > .affiliate-points-history-summary,
+  html body > #affiliateOperatePanel.is-modal-open .affiliate-points-calculator,
+  html body > #affiliateOperatePanel.is-modal-open .affiliate-redemption-box {
+    padding: 16px !important;
+    border-radius: 16px !important;
+  }
+
+  html body > #affiliateOperatePanel.is-modal-open .affiliate-points-history-head,
+  html body > #affiliateOperatePanel.is-modal-open .affiliate-redemption-head,
+  html body > #affiliateOperatePanel.is-modal-open .affiliate-redemption-actions,
+  html body > #affiliateOperatePanel.is-modal-open .affiliate-purchase-builder-head {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  html body > #affiliateOperatePanel.is-modal-open .affiliate-selected-grid,
+  html body > #affiliateOperatePanel.is-modal-open .affiliate-points-lifetime-grid,
+  html body > #affiliateOperatePanel.is-modal-open .affiliate-points-breakdown-grid,
+  html body > #affiliateOperatePanel.is-modal-open .affiliate-points-timeline-grid,
+  html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions,
+  html body > #affiliateOperatePanel.is-modal-open .affiliate-redemption-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions {
+    gap: 15px !important;
+    padding-top: 24px !important;
+  }
+
+  html body > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions :is(button, .solid-button, .ghost-button) {
+    width: 100% !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body > #affiliateOperatePanel.is-modal-open,
+  html body > #affiliateOperatePanel.is-modal-open * {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Specificity bridge: the legacy fluid canvas intentionally carries a strong
+ * selector. This final layer matches it so the current modal composition wins. */
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperationBackdrop.affiliate-operation-backdrop {
+  background: rgba(2, 18, 45, .7) !important;
+  backdrop-filter: blur(12px) saturate(.88) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open {
+  box-sizing: border-box !important;
+  grid-template-columns: minmax(250px, .64fr) minmax(0, 1.36fr) !important;
+  grid-template-areas:
+    "head head"
+    "card summary"
+    "meta summary"
+    "history history"
+    "actions actions" !important;
+  gap: 18px clamp(26px, 3.6vw, 52px) !important;
+  width: min(1120px, calc(100vw - 32px)) !important;
+  inline-size: min(1120px, calc(100vw - 32px)) !important;
+  max-width: calc(100vw - 32px) !important;
+  max-inline-size: calc(100vw - 32px) !important;
+  min-height: 0 !important;
+  min-block-size: 0 !important;
+  height: auto !important;
+  max-height: calc(100dvh - clamp(24px, 6vh, 56px)) !important;
+  max-block-size: calc(100dvh - clamp(24px, 6vh, 56px)) !important;
+  right: auto !important;
+  bottom: auto !important;
+  padding: 0 clamp(22px, 3.4vw, 44px) clamp(28px, 3.8vw, 48px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  border: 1px solid rgba(192, 217, 239, .92) !important;
+  border-radius: 28px !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f7fbff 100%) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .table-card-head {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 8 !important;
+  margin: 0 calc(clamp(22px, 3.4vw, 44px) * -1) 8px !important;
+  padding: 20px clamp(22px, 3.4vw, 44px) 18px !important;
+  border-bottom: 1px solid rgba(187, 215, 238, .82) !important;
+  border-radius: 27px 27px 0 0 !important;
+  background: rgba(255, 255, 255, .94) !important;
+  box-shadow: 0 10px 28px rgba(34, 92, 139, .07) !important;
+  backdrop-filter: blur(16px) saturate(1.08) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-preview-wrap {
+  width: min(100%, 350px) !important;
+  border: 1px solid rgba(162, 204, 234, .5) !important;
+  border-radius: 22px !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > #affiliateCardMeta {
+  width: min(100%, 350px) !important;
+  margin-inline: auto !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-selected-summary {
+  align-self: stretch !important;
+  padding: clamp(18px, 2.5vw, 28px) !important;
+  border: 1px solid rgba(177, 209, 233, .76) !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, .82) !important;
+  box-shadow: 0 14px 34px rgba(33, 100, 153, .07) !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions {
+  gap: 18px 24px !important;
+  margin-top: 12px !important;
+  padding-top: 30px !important;
+}
+
+html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions :is(input, select) {
+  min-height: 46px !important;
+  padding-inline: 12px !important;
+  border: 1px solid #c9ddec !important;
+  border-radius: 11px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 760px) {
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "head"
+      "summary"
+      "card"
+      "meta"
+      "history"
+      "actions" !important;
+    top: 6px !important;
+    width: calc(100vw - 12px) !important;
+    inline-size: calc(100vw - 12px) !important;
+    max-width: calc(100vw - 12px) !important;
+    max-height: calc(100dvh - 12px) !important;
+    max-block-size: calc(100dvh - 12px) !important;
+    gap: 15px !important;
+    padding: 0 14px 26px !important;
+    border-radius: 20px !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .table-card-head {
+    margin: 0 -14px 4px !important;
+    padding: 15px 14px 13px !important;
+    border-radius: 19px 19px 0 0 !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open #affiliateDeleteSelectedButton {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open #affiliateDeleteSelectedButton .material-symbols-outlined {
+    margin: auto !important;
+    color: #a8291f !important;
+    font-size: 21px !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-selected-summary {
+    padding: 16px !important;
+    border-radius: 16px !important;
+  }
+
+  html body:not(#qoriAffiliateA#qoriAffiliateB#qoriAffiliateC#qoriAffiliateD#qoriAffiliateE#qoriAffiliateF) > #affiliateOperatePanel.is-modal-open > .affiliate-card-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 15px !important;
+    padding-top: 24px !important;
+  }
+}
