@@ -539,6 +539,9 @@ function activationCollectsParticipantData(activation = {}) {
 function enforceParticipantCaptureMode(activation, body = {}) {
   if (activationCollectsParticipantData(activation)) return body;
   delete body.name;
+  delete body.given_names;
+  delete body.first_surname;
+  delete body.second_surname;
   delete body.phone;
   delete body.email;
   delete body.document;
@@ -1302,6 +1305,7 @@ async function startInteractiveParticipant(slug, body) {
     const activation = await lockActivationBySlug(client, slug);
     assertActivationOpen(activation);
     enforceParticipantCaptureMode(activation, body);
+    normalizeParticipantName(body);
     assertRequiredCaptureFields(activation, body);
     await assertActivationIdentityConsistency(client, activation, body);
     const existingReward = await existingRewardResponseForIdentity(client, activation, body);
@@ -1355,6 +1359,7 @@ async function completeInteractiveParticipant(slug, body) {
     const activation = await lockActivationBySlug(client, slug);
     assertActivationOpen(activation);
     enforceParticipantCaptureMode(activation, body);
+    normalizeParticipantName(body);
     applyPrivateInvitationSchedule(activation, body);
     applyOrderOptionsResult(activation, body);
     if (!body.participant_id) assertRequiredCaptureFields(activation, body);
@@ -1747,6 +1752,9 @@ function activationFormMetadata(activation, body = {}, extra = {}) {
     acquisition_channel_source: metadata.acquisition_channel_source || (activation.acquisition_channel_id ? "ACTIVATION" : null),
     channel: metadata.channel || activation.acquisition_channel_name || null,
     identity: {
+      given_names: String(body.given_names || "").trim() || null,
+      first_surname: String(body.first_surname || "").trim() || null,
+      second_surname: String(body.second_surname || "").trim() || null,
       document_type: normalizeIdentityDocumentType(body.document_type || metadata.identity?.document_type),
       document: String(body.document || body.document_id || "").trim() || null,
       phone: String(body.phone || "").trim() || null,
@@ -1787,8 +1795,23 @@ function normalizeIdentityDocumentType(value) {
   return allowed.has(type) ? type : "OTHER";
 }
 
+function normalizeParticipantName(body = {}) {
+  const givenNames = String(body.given_names || "").trim().replace(/\s+/g, " ");
+  const firstSurname = String(body.first_surname || "").trim().replace(/\s+/g, " ");
+  const secondSurname = String(body.second_surname || "").trim().replace(/\s+/g, " ");
+  if (givenNames || firstSurname || secondSurname) {
+    body.name = [givenNames, firstSurname, secondSurname].filter(Boolean).join(" ");
+  }
+  return { givenNames, firstSurname, secondSurname, fullName: String(body.name || "").trim() };
+}
+
 function assertRequiredCaptureFields(activation, body) {
   if (!activationCollectsParticipantData(activation)) return;
+  const participantName = normalizeParticipantName(body);
+  if ((participantName.givenNames || participantName.firstSurname || participantName.secondSurname)
+    && (!participantName.givenNames || !participantName.firstSurname)) {
+    throw badRequest("Los nombres y el primer apellido son obligatorios para esta activacion.");
+  }
   const requiredFields = new Set(["name", "phone", "email", "document", ...(activation.capture_config?.required_fields || [])]);
   const document = body.document || body.document_id || "";
   const values = {

@@ -10,6 +10,8 @@ const activationTitle = document.getElementById("activationTitle");
 const activationDescription = document.getElementById("activationDescription");
 const participantForm = document.getElementById("participantForm");
 const participantName = document.getElementById("participantName");
+const participantFirstSurname = document.getElementById("participantFirstSurname");
+const participantSecondSurname = document.getElementById("participantSecondSurname");
 const participantPhone = document.getElementById("participantPhone");
 const participantPhoneCountry = document.getElementById("participantPhoneCountry");
 const participantEmail = document.getElementById("participantEmail");
@@ -385,7 +387,10 @@ function participantPayload() {
   const rmsIntake = rmsIntakeFromCustomForm(activationForm);
   const enriched = applyFixedProductInterest(activationForm, rmsIntake);
   return {
-    name: participantName.value.trim(),
+    given_names: participantName.value.trim(),
+    first_surname: participantFirstSurname.value.trim(),
+    second_surname: participantSecondSurname.value.trim() || null,
+    name: [participantName.value, participantFirstSurname.value, participantSecondSurname.value].map((value) => value.trim()).filter(Boolean).join(" "),
     phone: `+${participantPhoneCountry?.value || "57"}${participantPhone.value.replace(/\D/g, "")}`,
     email: participantEmail.value.trim() || null,
     document: participantDocument.value.trim() || null,
@@ -458,6 +463,8 @@ function renderActivation(activation) {
 function syncCaptureRequirements(activation) {
   if (!activationCollectsParticipantData(activation)) {
     participantName.required = false;
+    participantFirstSurname.required = false;
+    participantSecondSurname.required = false;
     participantPhone.required = false;
     participantEmail.required = false;
     participantDocument.required = false;
@@ -466,6 +473,9 @@ function syncCaptureRequirements(activation) {
     return;
   }
   const requiredFields = new Set(activation.capture_config?.required_fields || []);
+  participantName.required = true;
+  participantFirstSurname.required = true;
+  participantSecondSurname.required = false;
   requiredFields.add("phone");
   requiredFields.add("email");
   requiredFields.add("document");

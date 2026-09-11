@@ -3960,7 +3960,7 @@ async function acquisitionEffortLeads(businessId, effort = {}, range = {}) {
         where $2::uuid is not null and p.company_id=$1 and p.activation_id=$2 and p.created_at between $5 and $6
        union all
        select s.id, s.lead_id,
-              coalesce(nullif(p.name,''),nullif(s.form_data->>'name',''),nullif(concat_ws(' ',s.form_data->>'first_name',s.form_data->>'last_name'),''),'Lead capturado'),
+              coalesce(nullif(p.name,''),nullif(s.form_data->>'name',''),nullif(concat_ws(' ',s.form_data->>'first_name',s.form_data->>'last_name',s.form_data->>'second_last_name'),''),'Lead capturado'),
               coalesce(nullif(p.email,''),nullif(s.form_data->>'email','')),
               coalesce(nullif(p.phone,''),nullif(s.form_data->>'phone','')),
               coalesce(nullif(p.document_id,''),nullif(s.form_data->>'document_id','')),

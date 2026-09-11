@@ -62,8 +62,9 @@ function defaultFormConfig(config = {}) {
   const fields = Array.isArray(config.fields) ? config.fields : [];
   const byName = new Map(fields.map((field) => [field.name, field]));
   const base = [
-    { name: "first_name", label: "Nombre", visible: true, required: true, type: "text" },
-    { name: "last_name", label: "Apellido", visible: true, required: false, type: "text" },
+    { name: "first_name", label: "Nombres", visible: true, required: true, type: "text" },
+    { name: "last_name", label: "Primer apellido", visible: true, required: true, type: "text" },
+    { name: "second_last_name", label: "Segundo apellido (opcional)", visible: true, required: false, type: "text" },
     { name: "phone", label: "Telefono", visible: true, required: true, type: "tel" },
     { name: "email", label: "Correo", visible: true, required: false, type: "email" },
     { name: "document_id", label: "Cedula / documento", visible: true, required: false, type: "text" },
@@ -73,7 +74,12 @@ function defaultFormConfig(config = {}) {
     { name: "interest", label: "Interes principal", visible: true, required: false, type: "text" },
     { name: "budget", label: "Presupuesto aproximado", visible: false, required: false, type: "text" },
     { name: "source_detail", label: "Como nos conociste", visible: true, required: false, type: "text" },
-  ].map((field) => ({ ...field, ...(byName.get(field.name) || {}) }));
+  ].map((field) => {
+    const merged = { ...field, ...(byName.get(field.name) || {}) };
+    return ["first_name", "last_name"].includes(field.name)
+      ? { ...merged, visible: true, required: true, label: field.label }
+      : merged;
+  });
   return {
     fields: base,
     consent_required: config.consent_required !== false,
@@ -691,7 +697,7 @@ async function findOrCreateLead(client, activation, formData) {
   const documentId = cleanText(formData.document_id, 80);
   const email = cleanText(formData.email, 180).toLowerCase();
   const phone = cleanText(formData.phone, 40);
-  const name = [formData.first_name, formData.last_name].map((value) => cleanText(value, 120)).filter(Boolean).join(" ") || cleanText(formData.name, 160) || "Lead por activo digital";
+  const name = [formData.first_name, formData.last_name, formData.second_last_name].map((value) => cleanText(value, 120)).filter(Boolean).join(" ") || cleanText(formData.name, 160) || "Lead por activo digital";
   const sourceLabel = digitalAssetSourceLabel();
   const subjectLabel = digitalAssetSubjectLabel(activation);
   const existing = await client.query(
@@ -938,12 +944,13 @@ async function downloadDigitalAsset(token, reqMeta = {}) {
 
 function submissionsToCsv(rows = [], activation = {}) {
   const csv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
-  const headers = ["nombre", "apellido", "documento", "correo", "telefono", "ciudad", "empresa", "cargo", "interes", "campana", "activacion", "activo", "fecha_captura", "consentimiento", "canal", "sucursal", "descargas"];
+  const headers = ["nombres", "primer_apellido", "segundo_apellido", "documento", "correo", "telefono", "ciudad", "empresa", "cargo", "interes", "campana", "activacion", "activo", "fecha_captura", "consentimiento", "canal", "sucursal", "descargas"];
   const lines = rows.map((row) => {
     const form = row.form_data || {};
     return [
       form.first_name || row.name,
       form.last_name,
+      form.second_last_name,
       form.document_id || row.document_id,
       form.email || row.email,
       form.phone || row.phone,

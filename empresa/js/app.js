@@ -23584,8 +23584,9 @@ function saleAffiliateSummary(item = {}) {
 }
 
 const LEAD_CAPTURE_FIELD_DEFS = [
-  ["first_name", "Nombre", true, true],
-  ["last_name", "Apellido", true, false],
+  ["first_name", "Nombres", true, true],
+  ["last_name", "Primer apellido", true, true],
+  ["second_last_name", "Segundo apellido (opcional)", true, false],
   ["phone", "Telefono", true, true],
   ["email", "Correo", true, false],
   ["document_id", "Cedula / documento", true, false],

@@ -372,6 +372,9 @@ const interactiveActivationUpdateSchema = z.object({
 
 const publicInteractiveParticipantSchema = z.object({
   name: z.string().trim().min(2).max(160).optional().nullable(),
+  given_names: z.string().trim().min(2).max(100).optional().nullable(),
+  first_surname: z.string().trim().min(2).max(80).optional().nullable(),
+  second_surname: z.string().trim().min(2).max(80).optional().nullable(),
   phone: z.string().trim().min(5).max(40).optional().nullable(),
   email: z.string().email().max(160).optional().nullable(),
   document: z.string().trim().max(40).optional().nullable(),
