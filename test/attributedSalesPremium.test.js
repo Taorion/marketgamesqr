@@ -107,6 +107,14 @@ test("sale registration uses one stable accessible dialog without moving the liv
   assert.match(premiumCss, /stable sale-entry dialog v371/);
   assert.match(premiumCss, /height:min\(900px,calc\(100dvh - 32px\)\)/);
   assert.match(premiumCss, /@media \(max-width:560px\)/);
+  const customerPosition = portal.indexOf('class="sale-form-block sale-form-block-customer"');
+  const productsPosition = portal.indexOf('class="sales-item-builder"');
+  const attributionPosition = portal.indexOf('class="sale-form-block sale-form-block-attribution"');
+  const summaryPosition = portal.indexOf('class="sale-form-block sale-form-block-summary"');
+  const actionsPosition = portal.indexOf('class="sale-form-actions"');
+  assert.ok(customerPosition < productsPosition && productsPosition < attributionPosition && attributionPosition < summaryPosition && summaryPosition < actionsPosition);
+  assert.match(portal, /Cierre de la venta/);
+  assert.match(premiumCss, /sale-form-block-customer \{ grid-column:1 !important; grid-row:1 !important/);
 });
 
 test("attributed sale detail is a fixed accessible overlay with internal scrolling", () => {

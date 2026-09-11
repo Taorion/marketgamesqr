@@ -52,7 +52,7 @@
     <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825-unified-email-routing-v359-rms-above-fold-v361-gos-status-contrast-v363-20260826-campaign-assistant-premium-v374-risk-fixed-concession-v385-radar-product-modal-v393-gos-intelligence-reliable-v389-rms-sale-multiproduct-history-v397-risk-none-explicit-v398-risk-destination-handoff-v399-risk-product-scope-v401-recycling-premium-v402-risk-feedback-v409-risk-prepare-v411-rms-definitive-loading-v430-contact-editor-modal-v434-validator-product-removal-v463-20260909-published-toolbar-v465-20260909-revenue-table-contrast-v468-20260910-station-summary-rich-v470-20260910-validator-operation-stacked-v477-20260910">
     <link rel="stylesheet" href="css/risk-station-premium.css?v=risk-premium-v8-20260830">
     <link rel="stylesheet" href="css/evaluation-station-premium.css?v=evaluation-precision-v2-20260830">
-  <link rel="stylesheet" href="css/attributed-sales-premium.css?v=sales-detail-modal-v372-20260910">
+  <link rel="stylesheet" href="css/attributed-sales-premium.css?v=sales-detail-modal-v372-20260910&amp;sale-form-order-v478-20260911">
 <link rel="stylesheet" href="css/contacts-premium-v333.css?v=contact-promotion-v435-20260905" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/revenue-center-final.css?v=revenue-seller-lens-v15-20260828" media="print" data-deferred-portal-style>
 <link rel="stylesheet" href="css/branches-premium.css?v=branches-premium-v5-20260822" media="print" data-deferred-portal-style>
@@ -5605,23 +5605,6 @@
               </div>
               <p class="chart-explainer">Completa aquí todos los datos de la venta: campaña, canal, sede, medio de llegada, cliente, productos, valor y observaciones.</p>
               <form class="modal-form customer-sale-form" id="customerAcquisitionForm">
-                <section class="sale-form-block sale-form-block-summary">
-                  <div class="sale-form-block-head">
-                    <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span>
-                    <div>
-                      <span class="mono-label">Venta</span>
-                      <strong>Valor, campaña y sede</strong>
-                    </div>
-                  </div>
-                  <div class="sale-form-grid sale-form-grid-summary">
-                    <label class="sale-field sale-field-total"><span>Total de venta</span><input id="customerAcquisitionAmountInput" type="number" min="0" step="0.01" readonly required></label>
-                    <label class="sale-field sale-field-currency"><span>Moneda</span><input id="customerAcquisitionCurrencyInput" type="text" value="COP"></label>
-                    <label class="sale-field"><span>Medio de pago</span><select id="customerAcquisitionPaymentMethodInput"><option value="">No registrado</option><option value="Efectivo">Efectivo</option><option value="Tarjeta débito">Tarjeta débito</option><option value="Tarjeta crédito">Tarjeta crédito</option><option value="Transferencia">Transferencia</option><option value="Billetera digital">Billetera digital</option><option value="Crédito">Crédito</option><option value="Mixto">Mixto</option><option value="Otro">Otro</option></select></label>
-                    <label class="sale-field sale-field-campaign"><span>Campaña atribuida</span><select id="customerAcquisitionCampaignInput"></select></label>
-                    <label class="sale-field"><span>Sede / consignación</span><select id="customerAcquisitionBranchInput"><option value="">Sin sede asignada</option></select></label>
-                    <label class="sale-field"><span>Vendedor responsable</span><select id="customerAcquisitionSellerInput" data-business-sale-seller></select><small class="field-help">Si registras la venta por otra persona, atribúyela al vendedor real.</small></label>
-                  </div>
-                </section>
                 <section class="sale-form-block sale-form-block-customer">
                   <div class="sale-form-block-head">
                     <span class="material-symbols-outlined" aria-hidden="true">person_search</span>
@@ -5687,6 +5670,23 @@
                     <label class="sale-field acquisition-channel-picker" data-acquisition-channel-picker="customer-sale"><span>Medio de adquisición</span><select id="customerAcquisitionChannelPicker" aria-describedby="customerAcquisitionChannelHelp"></select><input id="customerAcquisitionChannelInput" type="text" maxlength="180" placeholder="Escribe el medio temporal" hidden><small id="customerAcquisitionChannelHelp" class="field-help"></small><button class="text-button compact" type="button" data-open-acquisition-channels>Gestionar medios en GOS</button></label>
                     <label class="sale-field affiliate-only-config hidden"><span>Afiliado que recomendo</span><select id="customerAcquisitionAffiliateInput"></select></label>
                     <label class="sale-field sale-field-notes"><span>Observaciones</span><textarea id="customerAcquisitionNotesInput" rows="3" placeholder="Ej: volante, gamificacion, stand, anuncio o contexto puntual."></textarea></label>
+                  </div>
+                </section>
+                <section class="sale-form-block sale-form-block-summary">
+                  <div class="sale-form-block-head">
+                    <span class="material-symbols-outlined" aria-hidden="true">receipt_long</span>
+                    <div>
+                      <span class="mono-label">Cierre de la venta</span>
+                      <strong>Total, pago y responsables</strong>
+                    </div>
+                  </div>
+                  <div class="sale-form-grid sale-form-grid-summary">
+                    <label class="sale-field sale-field-total"><span>Total de venta</span><input id="customerAcquisitionAmountInput" type="number" min="0" step="0.01" readonly required></label>
+                    <label class="sale-field sale-field-currency"><span>Moneda</span><input id="customerAcquisitionCurrencyInput" type="text" value="COP"></label>
+                    <label class="sale-field"><span>Medio de pago</span><select id="customerAcquisitionPaymentMethodInput"><option value="">No registrado</option><option value="Efectivo">Efectivo</option><option value="Tarjeta débito">Tarjeta débito</option><option value="Tarjeta crédito">Tarjeta crédito</option><option value="Transferencia">Transferencia</option><option value="Billetera digital">Billetera digital</option><option value="Crédito">Crédito</option><option value="Mixto">Mixto</option><option value="Otro">Otro</option></select></label>
+                    <label class="sale-field sale-field-campaign"><span>Campaña atribuida</span><select id="customerAcquisitionCampaignInput"></select></label>
+                    <label class="sale-field"><span>Sede / consignación</span><select id="customerAcquisitionBranchInput"><option value="">Sin sede asignada</option></select></label>
+                    <label class="sale-field"><span>Vendedor responsable</span><select id="customerAcquisitionSellerInput" data-business-sale-seller></select><small class="field-help">Si registras la venta por otra persona, atribúyela al vendedor real.</small></label>
                   </div>
                 </section>
                 <div class="sale-form-actions">
