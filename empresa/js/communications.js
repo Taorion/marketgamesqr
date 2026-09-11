@@ -171,6 +171,9 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     : statusLabel(item?.status);
   const mediaInput = () => document.getElementById("communicationMediaAssetsInput");
   const emailAttachmentsInput = () => document.getElementById("communicationEmailAttachmentsInput");
+  // Los File/Blob no pertenecen al estado global del portal. Mantenerlos en este
+  // módulo evita que cualquier renderizado general intente recorrer o copiar el PDF.
+  let composerEmailAttachments = [];
   const composerModal = () => document.getElementById("communicationComposerModal");
   const composerIsOpen = () => Boolean(composerModal() && !composerModal().classList.contains("hidden"));
   const rootComposerModal = () => {
@@ -180,16 +183,12 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
   };
   const uploadedMedia = () => readJson(mediaInput()?.value);
   const setUploadedMedia = (items) => { const input = mediaInput(); if (input) input.value = JSON.stringify(items.slice(0, MAX_MEDIA_FILES)); renderMediaPreview(); };
-  const uploadedEmailAttachments = () => {
-    if (Array.isArray(state.communicationComposerEmailAttachments)) return state.communicationComposerEmailAttachments;
-    return readJson(emailAttachmentsInput()?.value);
-  };
+  const uploadedEmailAttachments = () => composerEmailAttachments;
   const setUploadedEmailAttachments = (items) => {
     const attachments = Array.isArray(items) ? items.slice(0, MAX_EMAIL_ATTACHMENTS) : [];
-    state.communicationComposerEmailAttachments = attachments;
+    composerEmailAttachments = attachments;
     const input = emailAttachmentsInput();
-    // El File nativo se conserva fuera del DOM y solo se convierte al guardar. Evitamos
-    // serializar data URLs grandes durante la selección, que podía blanquear el compositor.
+    // El DOM recibe únicamente metadatos pequeños; el binario queda aislado arriba.
     if (input) input.value = JSON.stringify(attachments.map(({ name, type, size }) => ({ name, type, size })));
     renderEmailAttachmentPreview();
   };
@@ -791,17 +790,25 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
   }
 
   async function prepareEmailAttachmentsForSave(items) {
-    return Promise.all((items || []).map(async (attachment) => {
+    const prepared = [];
+    for (const attachment of items || []) {
       const source = String(attachment?.source || "");
-      if (source) return { source, name: attachment.name, type: attachment.type, size: attachment.size };
+      if (source) {
+        prepared.push({ source, name: attachment.name, type: attachment.type, size: attachment.size });
+        continue;
+      }
       if (!(attachment?.file instanceof File)) throw new Error(`Vuelve a seleccionar ${attachment?.name || "el archivo adjunto"}.`);
-      return {
-        source: await readFileAsDataUrl(attachment.file, { label: "archivo adjunto" }),
+      prepared.push({
+        source: await readFileAsDataUrl(attachment.file, { label: `archivo adjunto ${attachment.name || ""}`.trim() }),
         name: attachment.name,
         type: attachment.type,
         size: attachment.size,
-      };
-    }));
+      });
+      // Entre archivos devolvemos el control al navegador para que el modal siga
+      // pintándose y respondiendo, incluso cerca del límite total de 8 MB.
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+    }
+    return prepared;
   }
 
   async function addMediaFiles(files) {

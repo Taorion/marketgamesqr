@@ -8423,6 +8423,11 @@ function startActivityPolling() {
 async function checkBusinessActivity() {
   if (lightTestMode) return;
   if (document.hidden) return;
+  // Abrir el selector nativo de archivos oculta temporalmente la pestaña. Al
+  // regresar no debemos refrescar Comunicaciones mientras su compositor sigue
+  // abierto: ese render podía sustituir la vista bajo el modal y dejar solo el
+  // overlay blanco. La siguiente ronda de polling se ejecuta al cerrar el modal.
+  if (document.body.classList.contains("communication-composer-open")) return;
   if (!session?.user?.business_id || state.activityRefreshInFlight) return;
   const pollSeq = state.workspaceLoadSeq;
   const pollBusinessId = session.user.business_id;

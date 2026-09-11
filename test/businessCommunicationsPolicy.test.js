@@ -45,16 +45,23 @@ test("communication history redacts heavy payloads and hydrates only on edit", (
 
 test("email attachments stay as native files until the communication is saved", () => {
   const frontend = read("empresa/js/communications.js");
+  const portal = read("empresa/js/app.js");
   const html = read("empresa/index.html");
   const selectionStart = frontend.indexOf("async function addEmailAttachmentFiles");
   const selectionEnd = frontend.indexOf("function downloadMedia", selectionStart);
   const selectionFlow = frontend.slice(selectionStart, selectionEnd);
   assert.match(selectionFlow, /incoming\.map\(\(file\) => \(\{ file, name: file\.name/);
   assert.doesNotMatch(selectionFlow, /readFileAsDataUrl\(file\)/);
+  assert.match(frontend, /let composerEmailAttachments = \[\]/);
+  assert.match(frontend, /uploadedEmailAttachments = \(\) => composerEmailAttachments/);
+  assert.doesNotMatch(frontend, /state\.communicationComposerEmailAttachments/);
   assert.match(frontend, /prepareEmailAttachmentsForSave\(emailAttachments\)/);
+  assert.doesNotMatch(frontend, /Promise\.all\(\(items \|\| \[\]\)\.map/);
   assert.match(frontend, /reader\.onabort/);
   assert.match(frontend, /tardó demasiado en prepararse/);
-  assert.match(html, /communications-pdf-overlay-v480-20260911/);
+  assert.match(portal, /if \(document\.body\.classList\.contains\("communication-composer-open"\)\) return;/);
+  assert.match(html, /communications-file-picker=v482-20260911/);
+  assert.match(html, /communications-pdf-state-v482-20260911/);
 });
 
 test("communications audience stays operable without a page-length contact list", () => {
