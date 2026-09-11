@@ -8383,7 +8383,7 @@ async function loadWorkspace() {
       setView(PORTAL_DEFAULT_VIEW);
     }
     showFeedback(
-      lightTestMode ? "Modo ligero listo. Maquina de ventas cargada sin abrir dashboard pesado." : "Datos actualizados. Ya puedes revisar saldos, tickets y ventas.",
+      lightTestMode ? "Modo ligero listo. Fábrica de ingresos cargada sin abrir el tablero completo." : "Datos actualizados. Ya puedes revisar saldos, tickets y ventas.",
       "success",
       { title: lightTestMode ? "Prueba ligera" : "Datos listos", timeout: 1800 }
     );
@@ -8677,7 +8677,7 @@ async function loadPrepaidValidatorWorkspace() {
     renderStrategicQrView();
     renderValidatorHistory([]);
     setView(PORTAL_DEFAULT_VIEW);
-    showFeedback("Maquina de ventas lista. Gaming Center sigue disponible desde el menu para crear tickets o activaciones.", "success", { title: "Herramientas listas" });
+      showFeedback("Fábrica de ingresos lista. Gaming Center sigue disponible desde el menú para crear tickets o activaciones.", "success", { title: "Herramientas listas" });
   } catch (error) {
     if (loadSeq !== state.workspaceLoadSeq || session?.user?.business_id !== loadBusinessId) return;
     showFeedback(error.message, "error", { title: "No se pudo cargar el validador" });
