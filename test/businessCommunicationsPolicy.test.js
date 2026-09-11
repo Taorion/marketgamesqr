@@ -66,8 +66,9 @@ test("email attachments stay as native files until the communication is saved", 
   assert.match(html, /communication-email-attachment-file-input/);
   assert.match(html, /communications-file-picker=v483-20260911/);
   assert.match(html, /communications-pdf-picker-v483-20260911/);
+  assert.match(html, /communications-pdf-picker-paint-v484-20260911/);
   const css = read("empresa/css/communications-flow.css");
-  assert.match(css, /#communicationComposerModal\.modal-shell:not\(\.hidden\)[^}]+backdrop-filter:\s*none\s*!important/);
+  assert.match(css, /body:not\(#qoriCommunicationPaintA#qoriCommunicationPaintB#qoriCommunicationPaintC\)[^}]+#communicationComposerModal\.modal-shell:not\(\.hidden\)[^}]+backdrop-filter:\s*none\s*!important/);
 });
 
 test("communications audience stays operable without a page-length contact list", () => {
