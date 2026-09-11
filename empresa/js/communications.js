@@ -825,7 +825,7 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     } catch (error) { showFeedback(error.message || "No se pudo preparar la imagen.", "error", { title: "Imagen" }); }
   }
 
-  async function addEmailAttachmentFiles(files) {
+  function addEmailAttachmentFiles(files) {
     const incoming = Array.from(files || []);
     if (!incoming.length) return;
     const current = uploadedEmailAttachments();
@@ -846,6 +846,26 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     const selected = incoming.map((file) => ({ file, name: file.name, type: emailAttachmentType(file), size: file.size }));
     setUploadedEmailAttachments([...current, ...selected]);
     renderComposerPreview();
+  }
+
+  function finishComposerFilePicker() {
+    // El selector nativo de Windows pausa la composición de Chrome. Al volver,
+    // forzamos un repintado pequeño del modal sin reconstruir el formulario.
+    const modal = composerModal();
+    modal?.classList.remove("is-file-picker-open");
+    if (!modal || modal.classList.contains("hidden")) return;
+    modal.classList.add("is-file-picker-repaint");
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      modal.classList.remove("is-file-picker-repaint");
+    }));
+  }
+
+  function openComposerEmailAttachmentPicker() {
+    const input = document.getElementById("communicationEmailAttachmentsUploadInput");
+    const modal = composerModal();
+    if (!input || !modal || modal.classList.contains("hidden")) return;
+    modal.classList.add("is-file-picker-open");
+    input.click();
   }
 
   function downloadMedia(item) {
@@ -1109,7 +1129,20 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     }
     if (event.target.matches("#communicationProductPromotionEnabledInput")) toggleProductPromotionFields();
     if (event.target.matches("#communicationImageUploadInput")) addMediaFiles(event.target.files).finally(() => { event.target.value = ""; });
-    if (event.target.matches("#communicationEmailAttachmentsUploadInput")) addEmailAttachmentFiles(event.target.files).finally(() => { event.target.value = ""; });
+    if (event.target.matches("#communicationEmailAttachmentsUploadInput")) {
+      const input = event.target;
+      const files = Array.from(input.files || []);
+      input.value = "";
+      try { addEmailAttachmentFiles(files); }
+      catch (error) { showFeedback(error.message || "No se pudo adjuntar el archivo.", "error", { title: "Adjuntos" }); }
+      finally { finishComposerFilePicker(); }
+    }
+  });
+  document.addEventListener("click", (event) => {
+    if (event.target.closest("[data-communication-email-attachments-pick]")) openComposerEmailAttachmentPicker();
+  });
+  window.addEventListener("focus", () => {
+    if (composerModal()?.classList.contains("is-file-picker-open")) window.setTimeout(finishComposerFilePicker, 0);
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && composerIsOpen()) { composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); }

@@ -43,7 +43,7 @@
   <link rel="stylesheet" href="css/dashboard-open-flow.css?v=20260727-v156" media="print" data-deferred-portal-style>
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159" media="print" data-deferred-portal-style>
   <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=activation-builder-catalog-fix-20260728-v177" media="print" data-deferred-portal-style>
-  <link rel="stylesheet" href="css/communications-flow.css?v=communications-history-v333-20260822" media="print" data-deferred-portal-style>
+  <link rel="stylesheet" href="css/communications-flow.css?v=communications-pdf-picker-paint-v483-20260911" media="print" data-deferred-portal-style>
   <link rel="stylesheet" href="css/revenue-center.css?v=revenue-center-v17-20260820" media="print" data-deferred-portal-style>
   <link rel="stylesheet" href="css/mobile-shell-guard.css?v=20260729-v1">
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1" media="print" data-deferred-portal-style>
@@ -8380,11 +8380,11 @@
           </section>
           <section class="communication-composer-section communication-email-attachments-section" id="communicationEmailAttachmentsSection" aria-labelledby="communicationEmailAttachmentsTitle">
             <div class="communication-composer-section-head"><span class="communication-composer-step">04</span><div><span class="mono-label">Adjuntos de email</span><strong id="communicationEmailAttachmentsTitle">Comparte documentos con tu audiencia</strong><small>Se envían como archivos adjuntos solo por email; no se incluyen en WhatsApp ni en publicaciones.</small></div></div>
-            <label class="communication-email-attachment-upload-control">
-              <input id="communicationEmailAttachmentsUploadInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,application/zip" multiple>
+            <input class="communication-email-attachment-file-input" id="communicationEmailAttachmentsUploadInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,application/zip" multiple>
+            <button class="communication-email-attachment-upload-control" type="button" data-communication-email-attachments-pick>
               <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
               <span><strong>Adjuntar archivos</strong><small>PDF, Word, Excel, PowerPoint, CSV, TXT o ZIP · hasta 5 archivos y 8 MB en total</small></span>
-            </label>
+            </button>
             <input id="communicationEmailAttachmentsInput" type="hidden" value="[]">
             <div class="communication-email-attachment-list" id="communicationEmailAttachmentsPreview" aria-live="polite"></div>
           </section>
@@ -8581,12 +8581,12 @@
   <script src="js/evaluation-station-core.js?v=evaluation-core-v1-20260830" defer></script>
   <script src="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830" defer></script>
   <script src="js/portal-training-access.js?v=training-access-v448-20260908" defer></script>
-  <script src="js/app.js?v=validator-beneficiary-v477-20260911&amp;validator-product-removal=v463-20260909&amp;rms-sale-multiproduct-history-v397&amp;affiliate-point-rule-v479-20260911&amp;communications-file-picker=v482-20260911" defer></script>
+  <script src="js/app.js?v=validator-beneficiary-v477-20260911&amp;validator-product-removal=v463-20260909&amp;rms-sale-multiproduct-history-v397&amp;affiliate-point-rule-v479-20260911&amp;communications-file-picker=v483-20260911" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contact-promotion-v435-20260905&amp;manual-contact-cleanup=v451-20260908" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
-    <script src="js/communications.js?v=communications-history-v333-20260822-unified-email-routing-v359-20260826-qori-public-links-v472-20260910-communications-pdf-state-v482-20260911" defer></script>
+    <script src="js/communications.js?v=communications-history-v333-20260822-unified-email-routing-v359-20260826-qori-public-links-v472-20260910-communications-pdf-picker-v483-20260911" defer></script>
   <script src="js/guided-tutorials.js?v=guided-tutorials-v2-gifs-white-20260828" defer></script>
 </body>
 </html>

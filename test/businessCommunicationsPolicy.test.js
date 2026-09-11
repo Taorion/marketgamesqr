@@ -47,7 +47,7 @@ test("email attachments stay as native files until the communication is saved", 
   const frontend = read("empresa/js/communications.js");
   const portal = read("empresa/js/app.js");
   const html = read("empresa/index.html");
-  const selectionStart = frontend.indexOf("async function addEmailAttachmentFiles");
+  const selectionStart = frontend.indexOf("function addEmailAttachmentFiles");
   const selectionEnd = frontend.indexOf("function downloadMedia", selectionStart);
   const selectionFlow = frontend.slice(selectionStart, selectionEnd);
   assert.match(selectionFlow, /incoming\.map\(\(file\) => \(\{ file, name: file\.name/);
@@ -60,8 +60,14 @@ test("email attachments stay as native files until the communication is saved", 
   assert.match(frontend, /reader\.onabort/);
   assert.match(frontend, /tardó demasiado en prepararse/);
   assert.match(portal, /if \(document\.body\.classList\.contains\("communication-composer-open"\)\) return;/);
-  assert.match(html, /communications-file-picker=v482-20260911/);
-  assert.match(html, /communications-pdf-state-v482-20260911/);
+  assert.match(frontend, /data-communication-email-attachments-pick/);
+  assert.match(frontend, /const files = Array\.from\(input\.files \|\| \[\]\)/);
+  assert.match(frontend, /finishComposerFilePicker/);
+  assert.match(html, /communication-email-attachment-file-input/);
+  assert.match(html, /communications-file-picker=v483-20260911/);
+  assert.match(html, /communications-pdf-picker-v483-20260911/);
+  const css = read("empresa/css/communications-flow.css");
+  assert.match(css, /#communicationComposerModal\.modal-shell:not\(\.hidden\)[^}]+backdrop-filter:\s*none\s*!important/);
 });
 
 test("communications audience stays operable without a page-length contact list", () => {
