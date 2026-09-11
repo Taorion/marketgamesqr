@@ -49,7 +49,7 @@
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1" media="print" data-deferred-portal-style>
   <link rel="stylesheet" href="css/portal-text-safety.css?v=20260731-v6">
   <!-- Final portal layer: loaded last so responsive safeguards resolve legacy overrides. -->
-    <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825-unified-email-routing-v359-rms-above-fold-v361-gos-status-contrast-v363-20260826-campaign-assistant-premium-v374-risk-fixed-concession-v385-radar-product-modal-v393-gos-intelligence-reliable-v389-rms-sale-multiproduct-history-v397-risk-none-explicit-v398-risk-destination-handoff-v399-risk-product-scope-v401-recycling-premium-v402-risk-feedback-v409-risk-prepare-v411-rms-definitive-loading-v430-contact-editor-modal-v434-validator-product-removal-v463-20260909-published-toolbar-v465-20260909-revenue-table-contrast-v468-20260910-station-summary-rich-v470-20260910-validator-operation-stacked-v477-20260910">
+  <link rel="stylesheet" href="css/portal-clean-v39.css?v=portal-tab-icons-v356-20260825-unified-email-routing-v359-rms-above-fold-v361-gos-status-contrast-v363-20260826-campaign-assistant-premium-v374-risk-fixed-concession-v385-radar-product-modal-v393-gos-intelligence-reliable-v389-rms-sale-multiproduct-history-v397-risk-none-explicit-v398-risk-destination-handoff-v399-risk-product-scope-v401-recycling-premium-v402-risk-feedback-v409-risk-prepare-v411-rms-definitive-loading-v430-contact-editor-modal-v434-validator-product-removal-v463-20260909-published-toolbar-v465-20260909-revenue-table-contrast-v468-20260910-station-summary-rich-v470-20260910-validator-operation-stacked-v477-20260910-affiliate-point-rule-v479-20260911">
     <link rel="stylesheet" href="css/risk-station-premium.css?v=risk-premium-v8-20260830">
     <link rel="stylesheet" href="css/evaluation-station-premium.css?v=evaluation-precision-v2-20260830">
   <link rel="stylesheet" href="css/attributed-sales-premium.css?v=sales-detail-modal-v372-20260910&amp;sale-form-order-v478-20260911">
@@ -1926,9 +1926,16 @@
                   <label data-account-screen="profile"><span>Sitio web</span><input id="accountWebsiteInput" type="url" maxlength="220"></label>
                   <label data-account-screen="profile"><span>Ciudad</span><input id="accountCityInput" type="text" maxlength="120"></label>
                   <label data-account-screen="profile"><span>Dirección</span><input id="accountAddressInput" type="text" maxlength="220"></label>
-                  <label class="affiliate-only-config hidden" data-account-screen="profile"><span>Monto base afiliados</span><input id="accountAffiliatePointAmountInput" type="number" min="1" step="100" value="1000"></label>
-                  <label class="affiliate-only-config hidden" data-account-screen="profile"><span>Puntos por monto base</span><input id="accountAffiliatePointRateInput" type="number" min="0.01" step="0.01" value="1"></label>
-                  <label class="affiliate-only-config hidden" data-account-screen="profile"><span>Redondeo de puntos</span><select id="accountAffiliatePointRoundingInput"><option value="floor">Hacia abajo</option><option value="ceil">Hacia arriba</option></select></label>
+                  <section class="affiliate-only-config affiliate-point-rule-card span-2 hidden" data-account-screen="profile" aria-labelledby="affiliatePointRuleTitle">
+                    <header><div><span class="mono-label">Afiliados</span><h4 id="affiliatePointRuleTitle">Regla de puntos para afiliados</h4><p>Define la equivalencia para las compras referidas. Los cambios se aplican solo a operaciones futuras.</p></div></header>
+                    <div class="affiliate-point-rule-sentence">
+                      <label><span>Por cada:</span><span class="affiliate-point-input-shell"><b aria-hidden="true">$</b><input id="accountAffiliatePointAmountInput" type="number" min="1" max="1000000000" step="1" inputmode="numeric" required aria-describedby="accountAffiliatePointAmountError"><em>COP</em></span><small class="field-error" id="accountAffiliatePointAmountError"></small></label>
+                      <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                      <label><span>El afiliado recibe:</span><span class="affiliate-point-input-shell"><input id="accountAffiliatePointRateInput" type="number" min="1" max="1000000" step="1" inputmode="numeric" required aria-describedby="accountAffiliatePointRateError"><em>puntos</em></span><small>Los puntos se entregan en unidades completas.</small><small class="field-error" id="accountAffiliatePointRateError"></small></label>
+                    </div>
+                    <div class="affiliate-point-preview" id="accountAffiliatePointPreview" aria-live="polite"></div>
+                    <details class="affiliate-point-advanced"><summary>Configuración avanzada</summary><label><span>Cuando la compra no es un múltiplo exacto</span><select id="accountAffiliatePointRoundingInput"><option value="floor">Entregar solamente puntos completos</option><option value="ceil">Redondear al punto siguiente</option></select></label></details>
+                  </section>
                   <label class="affiliate-only-config hidden" data-account-screen="profile"><span>Puntos por referido registrado</span><input id="accountAffiliateReferralRegistrationPointsInput" type="number" min="0" step="1" value="0"><small>Se acreditan cuando el referido deja nombre y un contacto en el enlace.</small></label>
                   <label class="affiliate-only-config hidden" data-account-screen="profile"><span>Puntos por referido comprador</span><input id="accountAffiliateReferralPurchasePointsInput" type="number" min="0" step="1" value="0"><small>Si es mayor a 0, reemplaza la regla variable por monto para esa compra.</small></label>
                   <p class="table-secondary span-2 affiliate-only-config hidden" data-account-screen="profile">El cliente comparte un enlace de referido; el contacto recibe su ticket solo después de completar sus datos. Configura los beneficios canjeables en Afiliados · Premios por puntos.</p>
@@ -8574,7 +8581,7 @@
   <script src="js/evaluation-station-core.js?v=evaluation-core-v1-20260830" defer></script>
   <script src="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830" defer></script>
   <script src="js/portal-training-access.js?v=training-access-v448-20260908" defer></script>
-  <script src="js/app.js?v=validator-beneficiary-v477-20260911&amp;validator-product-removal=v463-20260909" defer></script>
+  <script src="js/app.js?v=validator-beneficiary-v477-20260911&amp;validator-product-removal=v463-20260909&amp;rms-sale-multiproduct-history-v397&amp;affiliate-point-rule-v479-20260911" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contact-promotion-v435-20260905&amp;manual-contact-cleanup=v451-20260908" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>

@@ -667,6 +667,9 @@ const accountAddressInput = document.getElementById("accountAddressInput");
 const accountAffiliatePointAmountInput = document.getElementById("accountAffiliatePointAmountInput");
 const accountAffiliatePointRateInput = document.getElementById("accountAffiliatePointRateInput");
 const accountAffiliatePointRoundingInput = document.getElementById("accountAffiliatePointRoundingInput");
+const accountAffiliatePointAmountError = document.getElementById("accountAffiliatePointAmountError");
+const accountAffiliatePointRateError = document.getElementById("accountAffiliatePointRateError");
+const accountAffiliatePointPreview = document.getElementById("accountAffiliatePointPreview");
 const accountAffiliateReferralRegistrationPointsInput = document.getElementById("accountAffiliateReferralRegistrationPointsInput");
 const accountAffiliateReferralPurchasePointsInput = document.getElementById("accountAffiliateReferralPurchasePointsInput");
 const accountRiskDiscountEnabledInput = document.getElementById("accountRiskDiscountEnabledInput");
@@ -6851,9 +6854,10 @@ function renderAccountView() {
   if (accountCityInput) accountCityInput.value = business.city || "";
   if (accountAddressInput) accountAddressInput.value = business.address || "";
   const affiliatePoints = business.affiliate_points || state.affiliatePointRules || {};
-  if (accountAffiliatePointAmountInput) accountAffiliatePointAmountInput.value = String(affiliatePoints.point_amount_cop || 1000);
-  if (accountAffiliatePointRateInput) accountAffiliatePointRateInput.value = String(affiliatePoints.referral_rate || 1);
-  if (accountAffiliatePointRoundingInput) accountAffiliatePointRoundingInput.value = affiliatePoints.referral_rounding || "floor";
+  if (accountAffiliatePointAmountInput) accountAffiliatePointAmountInput.value = String(affiliatePoints.point_amount_cop ?? 1000);
+  if (accountAffiliatePointRateInput) accountAffiliatePointRateInput.value = String(affiliatePoints.referral_rate ?? 1);
+  if (accountAffiliatePointRoundingInput) accountAffiliatePointRoundingInput.value = affiliatePoints.referral_rounding ?? "floor";
+  renderAccountAffiliatePointPreview();
   if (accountAffiliateReferralRegistrationPointsInput) accountAffiliateReferralRegistrationPointsInput.value = String(affiliatePoints.referral_registration_points || 0);
   if (accountAffiliateReferralPurchasePointsInput) accountAffiliateReferralPurchasePointsInput.value = String(affiliatePoints.referral_purchase_points || 0);
   const riskRecovery = rmsRiskRecoveryAuthorizations(business.rms_risk_recovery_authorizations);
@@ -37244,6 +37248,41 @@ async function saveAccountRiskRecoveryAuthorizations({ successMessage = "Autoriz
   }
 }
 
+function readAccountAffiliatePointRule({ showErrors = true } = {}) {
+  const amountText = String(accountAffiliatePointAmountInput?.value ?? "").trim();
+  const rateText = String(accountAffiliatePointRateInput?.value ?? "").trim();
+  const pointAmount = Number(amountText);
+  const rate = Number(rateText);
+  const amountError = !amountText || !Number.isSafeInteger(pointAmount) || pointAmount < 1 || pointAmount > 1000000000 ? "Escribe un monto entero entre $1 y $1.000.000.000." : "";
+  const rateError = !rateText || !Number.isSafeInteger(rate) || rate < 1 || rate > 1000000 ? "Escribe una cantidad entera entre 1 y 1.000.000 de puntos." : "";
+  if (showErrors) {
+    if (accountAffiliatePointAmountError) accountAffiliatePointAmountError.textContent = amountError;
+    if (accountAffiliatePointRateError) accountAffiliatePointRateError.textContent = rateError;
+    if (accountAffiliatePointAmountInput) accountAffiliatePointAmountInput.setAttribute("aria-invalid", String(Boolean(amountError)));
+    if (accountAffiliatePointRateInput) accountAffiliatePointRateInput.setAttribute("aria-invalid", String(Boolean(rateError)));
+  }
+  if (amountError || rateError) return null;
+  return { pointAmount, rate, rounding: accountAffiliatePointRoundingInput?.value === "ceil" ? "ceil" : "floor" };
+}
+
+function accountAffiliatePointsForAmount(amount, rule) {
+  const raw = (Number(amount) / rule.pointAmount) * rule.rate;
+  return Math.max(0, rule.rounding === "ceil" ? Math.ceil(raw) : Math.floor(raw));
+}
+
+function renderAccountAffiliatePointPreview() {
+  if (!accountAffiliatePointPreview) return;
+  const rule = readAccountAffiliatePointRule({ showErrors: false });
+  if (!rule) {
+    accountAffiliatePointPreview.innerHTML = "<strong>Vista previa</strong><p>Completa ambos valores para ver cuántos puntos entregará una compra.</p>";
+    return;
+  }
+  const examples = [rule.pointAmount, rule.pointAmount * 2, rule.pointAmount * 4];
+  const partial = rule.pointAmount + Math.max(1, Math.floor(rule.pointAmount / 2));
+  const exampleItems = examples.map((amount) => `<li>${money(amount)} → ${accountAffiliatePointsForAmount(amount, rule).toLocaleString("es-CO")} puntos</li>`).join("");
+  accountAffiliatePointPreview.innerHTML = `<strong>Vista previa</strong><p>Con esta regla, una compra referida de ${money(examples[2])} entregará ${accountAffiliatePointsForAmount(examples[2], rule).toLocaleString("es-CO")} puntos.</p><ul>${exampleItems}</ul><small>Si la compra fuera de ${money(partial)}, se entregarían ${accountAffiliatePointsForAmount(partial, rule).toLocaleString("es-CO")} puntos: ${rule.rounding === "ceil" ? "se redondea al punto siguiente" : "se entregan solamente puntos completos"}.</small>`;
+}
+
 async function submitAccountProfile(event) {
   event.preventDefault();
   if (!session?.user?.business_id) return;
@@ -37269,9 +37308,14 @@ async function submitAccountProfile(event) {
       address: optionalInputValue(accountAddressInput),
     };
     if (affiliateConfigVisible) {
-      profilePayload.affiliate_point_amount_cop = Number(accountAffiliatePointAmountInput?.value || 0);
-      profilePayload.affiliate_referral_points_rate = Number(accountAffiliatePointRateInput?.value || 0);
-      profilePayload.affiliate_referral_points_rounding = accountAffiliatePointRoundingInput?.value || "floor";
+      const rule = readAccountAffiliatePointRule();
+      if (!rule) {
+        setInlineMessage(accountProfileMessage, "Corrige la regla de puntos antes de guardar.", "error");
+        return;
+      }
+      profilePayload.affiliate_point_amount_cop = rule.pointAmount;
+      profilePayload.affiliate_referral_points_rate = rule.rate;
+      profilePayload.affiliate_referral_points_rounding = rule.rounding;
       profilePayload.affiliate_referral_registration_points = Number(accountAffiliateReferralRegistrationPointsInput?.value || 0);
       profilePayload.affiliate_referral_purchase_points = Number(accountAffiliateReferralPurchasePointsInput?.value || 0);
     }
@@ -37288,7 +37332,10 @@ async function submitAccountProfile(event) {
     renderAccountView();
     renderAffiliatePurchaseItems();
     renderBusinessLogoPanel();
-    setInlineMessage(accountProfileMessage, "Datos guardados.", "success");
+    const savedRule = data.business?.affiliate_points;
+    setInlineMessage(accountProfileMessage, savedRule
+      ? `Regla guardada: por cada ${money(savedRule.point_amount_cop)} en compras referidas se entregarán ${Number(savedRule.referral_rate).toLocaleString("es-CO")} puntos.`
+      : "Datos guardados.", "success");
     showFeedback("La información básica de la empresa fue actualizada.", "success", { title: "Perfil actualizado" });
   } catch (error) {
     setInlineMessage(accountProfileMessage, error.message || "No se pudo guardar el perfil.", "error");
@@ -64351,6 +64398,13 @@ document.addEventListener("keydown", (event) => {
   }
 });
 accountProfileForm?.addEventListener("submit", submitAccountProfile);
+[accountAffiliatePointAmountInput, accountAffiliatePointRateInput, accountAffiliatePointRoundingInput].forEach((input) => {
+  input?.addEventListener("input", () => {
+    readAccountAffiliatePointRule();
+    renderAccountAffiliatePointPreview();
+  });
+  input?.addEventListener("change", renderAccountAffiliatePointPreview);
+});
 accountRiskAddBenefitButton?.addEventListener("click", () => {
   const benefits = collectAccountRiskCustomBenefits();
   benefits.push({ id: newAccountRiskBenefitId(), enabled: true, type: "DISCOUNT", label: "", value: 0, detail: "" });

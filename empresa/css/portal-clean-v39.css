@@ -22,6 +22,29 @@
   --qori-shadow: 0 3px 12px rgba(5, 42, 107, 0.045);
 }
 
+/* Cuenta · regla de puntos para afiliados */
+.affiliate-point-rule-card { padding: 20px; border: 1px solid color-mix(in srgb, var(--primary, #6d28d9) 20%, transparent); border-radius: 18px; background: linear-gradient(145deg, color-mix(in srgb, var(--primary, #6d28d9) 7%, #fff), #fff 56%); box-shadow: 0 12px 32px rgba(67, 44, 122, .08); }
+.affiliate-point-rule-card header p { margin: 5px 0 0; color: var(--text-muted, #667085); }
+.affiliate-point-rule-sentence { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 16px; align-items: center; margin-top: 18px; }
+.affiliate-point-rule-sentence > .material-symbols-outlined { color: var(--primary, #6d28d9); }
+.affiliate-point-input-shell { display: flex; align-items: center; gap: 8px; margin-top: 7px; padding: 0 12px; border: 1px solid #d9d5e5; border-radius: 13px; background: #fff; }
+.affiliate-point-input-shell input { min-width: 0; width: 100%; border: 0 !important; box-shadow: none !important; padding-inline: 0 !important; font-weight: 750; }
+.affiliate-point-input-shell b, .affiliate-point-input-shell em { white-space: nowrap; font-style: normal; color: var(--text-muted, #667085); }
+.affiliate-point-rule-card .field-error { display: block; min-height: 18px; margin-top: 4px; color: #b42318; }
+.affiliate-point-rule-card [aria-invalid="true"] { color: #b42318; }
+.affiliate-point-preview { margin-top: 14px; padding: 14px 16px; border-radius: 14px; background: rgba(109, 40, 217, .07); }
+.affiliate-point-preview p { margin: 5px 0 8px; }
+.affiliate-point-preview ul { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0 0 7px; padding-left: 18px; }
+.affiliate-point-advanced { margin-top: 13px; }
+.affiliate-point-advanced summary { cursor: pointer; font-weight: 700; }
+.affiliate-point-advanced label { margin-top: 12px; }
+@media (max-width: 540px) {
+  .affiliate-point-rule-card { padding: 15px; overflow: hidden; }
+  .affiliate-point-rule-sentence { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .affiliate-point-rule-sentence > .material-symbols-outlined { transform: rotate(90deg); justify-self: center; }
+  .affiliate-point-preview ul { display: grid; }
+}
+
 .portal-email-route-card {
   width: min(620px, calc(100vw - 28px));
 }

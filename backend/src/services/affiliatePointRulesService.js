@@ -4,6 +4,8 @@ const DEFAULT_AFFILIATE_POINT_AMOUNT_COP = 1000;
 const DEFAULT_REFERRAL_POINTS_RATE = 1;
 const DEFAULT_REFERRAL_ROUNDING = "floor";
 const DEFAULT_REFERRAL_REGISTRATION_POINTS = 0;
+const MAX_AFFILIATE_POINT_AMOUNT_COP = 1000000000;
+const MAX_REFERRAL_POINTS_RATE = 1000000;
 
 function positiveNumber(value, fallback) {
   const number = Number(value);
@@ -45,6 +47,40 @@ function rulesFromSettings(settings = {}) {
       0
     ),
   };
+}
+
+function assertPositiveInteger(value, label, max) {
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || number < 1 || number > max) {
+    const error = new Error(`${label} debe ser un numero entero positivo.`);
+    error.status = 400;
+    throw error;
+  }
+  return number;
+}
+
+function normalizeAffiliatePointRuleInput(input, currentRules = null) {
+  const current = currentRules || {
+    point_amount_cop: DEFAULT_AFFILIATE_POINT_AMOUNT_COP,
+    referral_rate: DEFAULT_REFERRAL_POINTS_RATE,
+    referral_rounding: DEFAULT_REFERRAL_ROUNDING,
+  };
+  const has = (key) => Object.prototype.hasOwnProperty.call(input || {}, key);
+  const pointAmount = has("affiliate_point_amount_cop")
+    ? assertPositiveInteger(input.affiliate_point_amount_cop, "El monto de referencia", MAX_AFFILIATE_POINT_AMOUNT_COP)
+    : current.point_amount_cop;
+  const rate = has("affiliate_referral_points_rate")
+    ? assertPositiveInteger(input.affiliate_referral_points_rate, "Los puntos entregados", MAX_REFERRAL_POINTS_RATE)
+    : current.referral_rate;
+  const rounding = has("affiliate_referral_points_rounding")
+    ? input.affiliate_referral_points_rounding
+    : current.referral_rounding;
+  if (!["floor", "ceil"].includes(rounding)) {
+    const error = new Error("Selecciona una politica de redondeo valida.");
+    error.status = 400;
+    throw error;
+  }
+  return { point_amount_cop: pointAmount, referral_rate: rate, referral_rounding: rounding };
 }
 
 async function getAffiliatePointRules(businessId, db = query) {
@@ -90,6 +126,7 @@ function affiliatePointRuleMetadata(rules) {
     referral_points_rounding: rules.referral_rounding,
     referral_registration_points: rules.referral_registration_points,
     referral_purchase_points: rules.referral_purchase_points,
+    affiliate_point_rule_applied_at: new Date().toISOString(),
   };
 }
 
@@ -97,9 +134,12 @@ module.exports = {
   DEFAULT_AFFILIATE_POINT_AMOUNT_COP,
   DEFAULT_REFERRAL_POINTS_RATE,
   DEFAULT_REFERRAL_REGISTRATION_POINTS,
+  MAX_AFFILIATE_POINT_AMOUNT_COP,
+  MAX_REFERRAL_POINTS_RATE,
   affiliatePointRuleMetadata,
   affiliatePointsForAmount,
   getAffiliatePointRules,
+  normalizeAffiliatePointRuleInput,
   referralPointsForAmount,
   referralRegistrationPoints,
   rulesFromSettings,

@@ -25,6 +25,7 @@ const { mapPublicCreditAccount } = require("../services/qrCreditService");
 const {
   affiliatePointRuleMetadata,
   getAffiliatePointRules,
+  normalizeAffiliatePointRuleInput,
   referralPointsForAmount,
   rulesFromSettings,
 } = require("../services/affiliatePointRulesService");
@@ -215,8 +216,8 @@ const businessProfileSchema = z.object({
   website: z.string().trim().max(220).optional().nullable(),
   city: z.string().trim().max(120).optional().nullable(),
   address: z.string().trim().max(220).optional().nullable(),
-  affiliate_point_amount_cop: z.number().positive().optional().nullable(),
-  affiliate_referral_points_rate: z.number().positive().optional().nullable(),
+  affiliate_point_amount_cop: z.number().int().min(1).max(1000000000).optional(),
+  affiliate_referral_points_rate: z.number().int().min(1).max(1000000).optional(),
   affiliate_referral_points_rounding: z.enum(["floor", "ceil"]).optional().nullable(),
   affiliate_referral_registration_points: z.number().int().min(0).max(1000000).optional().nullable(),
   affiliate_referral_purchase_points: z.number().int().min(0).max(1000000).optional().nullable(),
@@ -1204,11 +1205,11 @@ async function updateBusinessProfile(req, res, next) {
         [businessId]
       );
       const currentAffiliatePoints = currentSettings.rows[0]?.settings?.affiliate_points || {};
+      const currentRules = rulesFromSettings(currentSettings.rows[0]?.settings || {});
+      const normalizedRule = normalizeAffiliatePointRuleInput(body, currentRules);
       settingsPatch.affiliate_points = {
         ...currentAffiliatePoints,
-        point_amount_cop: Number(body.affiliate_point_amount_cop || currentAffiliatePoints.point_amount_cop || 1000),
-        referral_rate: Number(body.affiliate_referral_points_rate || currentAffiliatePoints.referral_rate || 1),
-        referral_rounding: body.affiliate_referral_points_rounding || currentAffiliatePoints.referral_rounding || "floor",
+        ...normalizedRule,
         referral_registration_points: Object.prototype.hasOwnProperty.call(body, "affiliate_referral_registration_points")
           ? Number(body.affiliate_referral_registration_points || 0)
           : Number(currentAffiliatePoints.referral_registration_points || 0),
