@@ -104,7 +104,10 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
   const communicationHistoryState = (item = {}) => {
     const status = String(item.status || "DRAFT").toUpperCase();
     const sent = Number(item.recipients_sent || 0);
+    const failed = Number(item.recipients_failed || 0);
     if (status === "ARCHIVED") return { label: "Archivada", tone: "archived", icon: "inventory_2" };
+    if (failed && sent) return { label: "Envío parcial", tone: "warning", icon: "warning" };
+    if (failed) return { label: "Envío fallido", tone: "failed", icon: "error" };
     if (isWhatsAppCommunication(item) && sent) return { label: "Enviada a Meta", tone: "sent", icon: "task_alt" };
     if (isSocialCommunication(item) && String(item.publication_status || "").toUpperCase() === "PUBLISHED") return { label: "Publicada", tone: "published", icon: "public" };
     if (status === "SENT" || sent) return { label: "Enviada", tone: "sent", icon: "task_alt" };
@@ -174,11 +177,17 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
   // Los File/Blob no pertenecen al estado global del portal. Mantenerlos en este
   // módulo evita que cualquier renderizado general intente recorrer o copiar el PDF.
   let composerEmailAttachments = [];
+  let composerOpenSequence = 0;
+  let composerReturnFocus = null;
   const composerModal = () => document.getElementById("communicationComposerModal");
   const composerIsOpen = () => Boolean(composerModal() && !composerModal().classList.contains("hidden"));
   const rootComposerModal = () => {
     const modal = composerModal();
     if (modal && modal.parentElement !== document.body) document.body.appendChild(modal);
+    if (modal?.dataset.communicationClosed === "true") {
+      window.queueMicrotask(() => document.body.classList.remove("communication-composer-open"));
+      return null;
+    }
     return modal;
   };
   const uploadedMedia = () => readJson(mediaInput()?.value);
@@ -192,6 +201,10 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     if (input) input.value = JSON.stringify(attachments.map(({ name, type, size }) => ({ name, type, size })));
     renderEmailAttachmentPreview();
   };
+  const communicationAttachmentCount = (item = {}) => Number(
+    item.metadata?.email_attachment_count
+    || (Array.isArray(item.metadata?.email_attachments) ? item.metadata.email_attachments.length : 0),
+  );
   const hasEmail = (contact) => Boolean(String(contact?.email || "").trim());
   const normalizedWhatsAppPhone = (value) => {
     const digits = String(value || "").replace(/\D/g, "");
@@ -503,6 +516,13 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
           return `<label class="communication-composer-contact ${selectedContact ? "is-selected" : ""} ${deliverable ? "" : "is-unavailable"}"><input type="checkbox" data-communication-recipient value="${esc(refKey(contact))}" ${selectedContact ? "checked" : ""} ${deliverable ? "" : "disabled"}><span class="communication-contact-avatar">${esc((contact.name || "C").slice(0, 1).toUpperCase())}</span><span class="communication-composer-contact-copy"><strong>${esc(contact.name || "Contacto sin nombre")}</strong><small>${esc([profile, contact.interest || "Sin interés registrado", `RMS: ${rmsPhaseLabel(contact.rms_phase)}`].join(" · "))}</small></span><span class="communication-contact-delivery ${deliverable ? "is-ready" : ""}">${deliverable ? esc(deliveryChannel === "whatsapp" ? contact.phone : contact.email) : deliveryChannel === "whatsapp" ? "Sin WhatsApp" : "Sin email"}</span></label>`;
         }).join("") + (state.communicationAudienceHasMore ? `<div class="communication-composer-audience-more"><span>Hay más contactos que coinciden con estos filtros.</span><button type="button" class="text-button" data-load-more-composer-audience>Cargar los siguientes</button></div>` : "")
         : '<div class="communication-composer-audience-empty"><span class="material-symbols-outlined">group</span><span>No encontramos contactos para estos filtros.</span></div>';
+    const type = document.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL";
+    const sendButton = document.getElementById("communicationComposerSaveAndSendButton");
+    if (sendButton) {
+      const baseLabel = type === "WHATSAPP" ? "Enviar WhatsApp masivo" : "Guardar y enviar email";
+      sendButton.textContent = `${baseLabel}${recipients.length ? ` · ${recipients.length}` : ""}`;
+    }
+    if (composerIsOpen() && !state.communicationAudienceLoading) updateComposerReadiness();
   }
 
   function hydrateComposerAudienceFilters() {
@@ -569,6 +589,29 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     renderComposerAudience();
   }
 
+  function setComposerReadiness({ tone = "ready", icon = "verified", title = "Todo listo para continuar", detail = "Completa el mensaje y revisa la audiencia." } = {}) {
+    const readiness = document.getElementById("communicationComposerReadiness");
+    if (!readiness) return;
+    readiness.className = `communication-composer-readiness is-${tone}`;
+    readiness.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${esc(icon)}</span><div><strong>${esc(title)}</strong><small>${esc(detail)}</small></div>`;
+  }
+
+  function updateComposerReadiness() {
+    composerModal()?.removeAttribute("aria-busy");
+    const type = document.querySelector('input[name="communicationType"]:checked')?.value || "EMAIL";
+    const deliveryChannel = type === "WHATSAPP" ? "whatsapp" : "email";
+    const recipients = type === "SOCIAL" ? [] : selectedRecipients(deliveryChannel);
+    if (type === "SOCIAL") {
+      setComposerReadiness({ icon: "public", title: "Publicación lista para preparar", detail: "Conecta un canal y una activación o vitrina para medir sus resultados." });
+      return;
+    }
+    const connected = type === "WHATSAPP" ? Boolean(state.communicationWhatsAppConnection?.ready) : Boolean(state.communicationEmailConnection?.ready);
+    const channelLabel = type === "WHATSAPP" ? "WhatsApp Business" : "Email";
+    setComposerReadiness(connected
+      ? { icon: "verified", title: `${channelLabel} conectado`, detail: `${recipients.length} destinatario${recipients.length === 1 ? "" : "s"} seleccionado${recipients.length === 1 ? "" : "s"}. Puedes guardar ahora o completar el envío.` }
+      : { tone: "warning", icon: "settings", title: `${channelLabel} requiere configuración`, detail: "Puedes guardar el borrador y completar la conexión desde Cuenta antes de enviar." });
+  }
+
   function renderComposerPreview() {
     const preview = document.getElementById("communicationComposerPreview");
     if (!preview) return;
@@ -633,7 +676,9 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     const historyChannel = String(state.communicationHistoryChannel || "ALL").toUpperCase();
     const visibleCommunications = communications.filter((item) => {
       const searchable = [item.title, item.subject, item.campaign_name, item.channel_name, item.activation_name, item.web_showcase_title, communicationTypeLabel(item.communication_type)].filter(Boolean).join(" ").toLowerCase();
-      const statusMatches = historyStatus === "ALL" || String(item.status || "DRAFT").toUpperCase() === historyStatus;
+      const statusMatches = historyStatus === "ALL"
+        || (historyStatus === "FAILED" && Number(item.recipients_failed || 0) > 0)
+        || String(item.status || "DRAFT").toUpperCase() === historyStatus;
       const itemType = String(item.communication_type || "").toUpperCase();
       const channelMatches = historyChannel === "ALL"
         || (historyChannel === "EMAIL" && ["EMAIL", "MIXED"].includes(itemType))
@@ -641,7 +686,7 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
         || itemType === historyChannel;
       return (!historyQuery || searchable.includes(historyQuery)) && statusMatches && channelMatches;
     });
-    const historyToolbar = `<form class="communication-history-toolbar" data-communication-history-filters><label><span>Buscar en historial</span><div><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" name="history_query" value="${esc(state.communicationHistoryQuery || "")}" placeholder="Título, campaña, asunto…"></div></label><label><span>Estado</span><select name="history_status"><option value="ALL" ${historyStatus === "ALL" ? "selected" : ""}>Todos</option><option value="DRAFT" ${historyStatus === "DRAFT" ? "selected" : ""}>Borradores</option><option value="READY" ${historyStatus === "READY" ? "selected" : ""}>Listas para enviar</option><option value="SENT" ${historyStatus === "SENT" ? "selected" : ""}>Enviadas</option></select></label><label><span>Canal</span><select name="history_channel"><option value="ALL" ${historyChannel === "ALL" ? "selected" : ""}>Todos los canales</option><option value="EMAIL" ${historyChannel === "EMAIL" ? "selected" : ""}>Email</option><option value="WHATSAPP" ${historyChannel === "WHATSAPP" ? "selected" : ""}>WhatsApp</option><option value="SOCIAL" ${historyChannel === "SOCIAL" ? "selected" : ""}>Publicaciones</option></select></label><button class="solid-button compact" type="submit">Aplicar</button><button class="text-button" type="button" data-clear-communication-history-filters ${historyQuery || historyStatus !== "ALL" || historyChannel !== "ALL" ? "" : "hidden"}>Limpiar</button><small>${visibleCommunications.length} de ${communications.length} comunicaciones</small></form>`;
+    const historyToolbar = `<form class="communication-history-toolbar" data-communication-history-filters><label><span>Buscar en historial</span><div><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" name="history_query" value="${esc(state.communicationHistoryQuery || "")}" placeholder="Título, campaña, asunto…"></div></label><label><span>Estado</span><select name="history_status"><option value="ALL" ${historyStatus === "ALL" ? "selected" : ""}>Todos</option><option value="DRAFT" ${historyStatus === "DRAFT" ? "selected" : ""}>Borradores</option><option value="READY" ${historyStatus === "READY" ? "selected" : ""}>Listas para enviar</option><option value="SENT" ${historyStatus === "SENT" ? "selected" : ""}>Enviadas</option><option value="FAILED" ${historyStatus === "FAILED" ? "selected" : ""}>Con fallos</option><option value="ARCHIVED" ${historyStatus === "ARCHIVED" ? "selected" : ""}>Archivadas</option></select></label><label><span>Canal</span><select name="history_channel"><option value="ALL" ${historyChannel === "ALL" ? "selected" : ""}>Todos los canales</option><option value="EMAIL" ${historyChannel === "EMAIL" ? "selected" : ""}>Email</option><option value="WHATSAPP" ${historyChannel === "WHATSAPP" ? "selected" : ""}>WhatsApp</option><option value="SOCIAL" ${historyChannel === "SOCIAL" ? "selected" : ""}>Publicaciones</option></select></label><button class="solid-button compact" type="submit">Aplicar</button><button class="text-button" type="button" data-clear-communication-history-filters ${historyQuery || historyStatus !== "ALL" || historyChannel !== "ALL" ? "" : "hidden"}>Limpiar</button><small>${visibleCommunications.length} de ${communications.length} comunicaciones</small></form>`;
     const recipientTotal = (item) => Number(item.recipients_total || 0) || (Number(item.recipients_sent || 0) + Number(item.recipients_failed || 0) + Number(item.recipients_skipped || 0));
     const communicationsSummary = `<details class="communication-history-summary"><summary><span><span class="material-symbols-outlined" aria-hidden="true">table_chart</span><span><strong>Resumen de comunicaciones</strong><small>${communications.length} piezas · ${communications.reduce((total, item) => total + recipientTotal(item), 0)} destinatarios</small></span><span class="communication-history-summary-toggle">Ver tabla <span class="material-symbols-outlined" aria-hidden="true">expand_more</span></span></summary><div class="communication-history-summary-table-wrap"><table><thead><tr><th>Comunicación</th><th>Canal</th><th>Estado</th><th>Destinatarios</th><th>Mensajes enviados</th><th>Fallidos</th><th>Actualizada</th></tr></thead><tbody>${communications.map((item) => { const historyState = communicationHistoryState(item); return `<tr><td><strong>${esc(item.title || "Comunicación sin título")}</strong><small>${esc(item.campaign_name || item.channel_name || item.activation_name || "Sin relación comercial")}</small></td><td>${esc(communicationTypeLabel(item.communication_type))}</td><td><span class="communication-history-chip is-${historyState.tone}">${esc(historyState.label)}</span></td><td>${recipientTotal(item)}</td><td>${Number(item.recipients_sent || 0)}</td><td>${Number(item.recipients_failed || 0)}</td><td>${esc(communicationHistoryDate(item.updated_at || item.created_at))}</td></tr>`; }).join("")}</tbody></table></div></details>`;
     list.innerHTML = communications.length ? `<div class="communication-history-overview"><div><span class="mono-label">Historial</span><strong>${communications.length === 1 ? "1 comunicación" : `${communications.length} comunicaciones`}</strong><small>Busca, compara y reutiliza cada pieza desde un solo lugar.</small></div><div><span>Borradores</span><strong>${draftHistory.length}</strong></div><div><span>Listas</span><strong>${readyHistory.length}</strong></div><div><span>Enviadas</span><strong>${sentHistory.length}</strong></div><div><span>Fallidos</span><strong>${failedHistory}</strong></div></div>${historyToolbar}${communicationsSummary}<div class="communication-history-results" aria-live="polite">` + visibleCommunications.map((item) => {
@@ -649,7 +694,8 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
       const historyState = communicationHistoryState(item);
       const deliveryLabel = isWhatsAppCommunication(item) ? "aceptados por Meta" : "enviados";
       const totalRecipients = Number(item.recipients_total || 0);
-      return `<article class="communication-list-item communication-history-item is-${historyState.tone} ${String(item.id) === String(state.selectedCommunicationId) ? "is-selected" : ""}" data-communication-select="${esc(item.id)}"><span class="communication-history-icon material-symbols-outlined">${historyState.icon}</span><div class="communication-history-copy"><div class="communication-history-topline"><span class="communication-history-chip is-${historyState.tone}">${esc(historyState.label)}</span><span class="mono-label">${esc(communicationTypeLabel(item.communication_type))}</span></div><strong>${esc(item.title)}</strong><p>${esc(item.web_showcase_title ? `Vitrina web: ${item.web_showcase_title}` : item.campaign_name || item.channel_name || item.activation_name || "Sin relación comercial")}</p><div class="communication-history-foot"><span>${esc(communicationHistoryDate(item.updated_at || item.created_at))}</span>${media.length ? `<span><span class="material-symbols-outlined">image</span>${media.length}</span>` : ""}</div></div><div class="communication-list-item-meta"><strong>${Number(item.recipients_sent || 0)}</strong><small>${deliveryLabel}</small>${Number(item.recipients_failed || 0) ? `<em>${Number(item.recipients_failed || 0)} fallido${Number(item.recipients_failed || 0) === 1 ? "" : "s"}</em>` : `<span>${totalRecipients} destinatario${totalRecipients === 1 ? "" : "s"}</span>`}<span class="material-symbols-outlined">arrow_forward</span></div></article>`;
+      const attachmentCount = communicationAttachmentCount(item);
+      return `<article class="communication-list-item communication-history-item is-${historyState.tone} ${String(item.id) === String(state.selectedCommunicationId) ? "is-selected" : ""}" data-communication-select="${esc(item.id)}"><span class="communication-history-icon material-symbols-outlined">${historyState.icon}</span><div class="communication-history-copy"><div class="communication-history-topline"><span class="communication-history-chip is-${historyState.tone}">${esc(historyState.label)}</span><span class="mono-label">${esc(communicationTypeLabel(item.communication_type))}</span></div><strong>${esc(item.title)}</strong><p>${esc(item.web_showcase_title ? `Vitrina web: ${item.web_showcase_title}` : item.campaign_name || item.channel_name || item.activation_name || "Sin relación comercial")}</p><div class="communication-history-foot"><span>${esc(communicationHistoryDate(item.updated_at || item.created_at))}</span>${media.length ? `<span><span class="material-symbols-outlined">image</span>${media.length}</span>` : ""}${attachmentCount ? `<span><span class="material-symbols-outlined">attach_file</span>${attachmentCount}</span>` : ""}</div></div><div class="communication-list-item-meta"><strong>${Number(item.recipients_sent || 0)}</strong><small>${deliveryLabel}</small>${Number(item.recipients_failed || 0) ? `<em>${Number(item.recipients_failed || 0)} fallido${Number(item.recipients_failed || 0) === 1 ? "" : "s"}</em>` : `<span>${totalRecipients} destinatario${totalRecipients === 1 ? "" : "s"}</span>`}<span class="material-symbols-outlined">arrow_forward</span></div></article>`;
     }).join("") + (visibleCommunications.length ? "" : '<div class="communication-empty-state communication-history-empty"><span class="material-symbols-outlined">filter_alt_off</span><strong>No hay comunicaciones con estos filtros.</strong><p>Limpia los filtros o prueba otra búsqueda.</p></div>') + "</div>" : '<div class="communication-empty-state"><span class="material-symbols-outlined">mail</span><strong>Aún no has creado comunicaciones.</strong><p>Crea una pieza y úsala en email, redes o ambos canales.</p></div>';
     const historyIds = visibleCommunications.map((item) => String(item.id));
     const historySelected = new Set(communicationHistorySelection().filter((id) => historyIds.includes(String(id))));
@@ -687,7 +733,7 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     const active = activeCommunication;
     if (!active) { sendBar.innerHTML = '<span class="material-symbols-outlined">touch_app</span><p>Elige una comunicación para preparar su envío.</p>'; return; }
     const media = mediaFor(active);
-    if (selectedPiece && active) { const historyState = communicationHistoryState(active); selectedPiece.innerHTML = `<div><div class="communication-selected-status"><span class="communication-history-chip is-${historyState.tone}">${esc(historyState.label)}</span><span>${esc(communicationHistoryDate(active.updated_at || active.created_at))}</span></div><span class="mono-label">Pieza seleccionada</span><strong>${esc(active.title)}</strong><p>${esc(active.subject || active.social_copy || "Aún sin texto de salida.")}</p><div class="communication-delivery-metrics"><span><b>${Number(active.recipients_total || 0)}</b> destinatarios</span><span><b>${Number(active.recipients_sent || 0)}</b> enviados</span><span><b>${Number(active.recipients_failed || 0)}</b> fallidos</span><span><b>${Number(active.views || 0)}</b> visitas</span><span><b>${Number(active.leads || 0)}</b> leads</span><span><b>${Number(active.completions || 0)}</b> activaciones</span><span><b>${Number(active.sales || 0)}</b> ventas</span><span><b>${metricMoney(active.revenue)}</b> revenue</span><span><b>${active.cac === null ? "—" : metricMoney(active.cac)}</b> CAC</span><span><b>${active.roi === null ? "—" : `${(Number(active.roi) * 100).toFixed(0)}%`}</b> ROI</span></div></div><div class="communication-selected-actions"><button class="ghost-button compact" type="button" data-edit-communication="${esc(active.id)}">Editar</button><button class="ghost-button compact" type="button" data-duplicate-communication="${esc(active.id)}">Duplicar</button><button class="ghost-button compact" type="button" data-archive-communication="${esc(active.id)}" ${String(active.status).toUpperCase() === "ARCHIVED" ? "disabled" : ""}>Archivar</button>${canDeleteCommunications ? `<button class="communication-delete-button compact" type="button" data-delete-communication="${esc(active.id)}"><span class="material-symbols-outlined">delete</span>Borrar</button>` : ""}</div>`; }
+    if (selectedPiece && active) { const historyState = communicationHistoryState(active); const attachmentCount = communicationAttachmentCount(active); selectedPiece.innerHTML = `<div><div class="communication-selected-status"><span class="communication-history-chip is-${historyState.tone}">${esc(historyState.label)}</span><span>${esc(communicationHistoryDate(active.updated_at || active.created_at))}</span></div><span class="mono-label">Pieza seleccionada</span><strong>${esc(active.title)}</strong><p>${esc(active.subject || active.social_copy || "Aún sin texto de salida.")}</p><div class="communication-delivery-metrics"><span><b>${Number(active.recipients_total || 0)}</b> destinatarios</span><span><b>${Number(active.recipients_sent || 0)}</b> enviados</span><span><b>${Number(active.recipients_failed || 0)}</b> fallidos</span><span><b>${attachmentCount}</b> adjuntos</span><span><b>${Number(active.views || 0)}</b> visitas</span><span><b>${Number(active.leads || 0)}</b> leads</span><span><b>${Number(active.completions || 0)}</b> activaciones</span><span><b>${Number(active.sales || 0)}</b> ventas</span><span><b>${metricMoney(active.revenue)}</b> revenue</span><span><b>${active.cac === null ? "—" : metricMoney(active.cac)}</b> CAC</span><span><b>${active.roi === null ? "—" : `${(Number(active.roi) * 100).toFixed(0)}%`}</b> ROI</span></div></div><div class="communication-selected-actions"><button class="ghost-button compact" type="button" data-edit-communication="${esc(active.id)}">Editar</button><button class="ghost-button compact" type="button" data-duplicate-communication="${esc(active.id)}">Duplicar</button><button class="ghost-button compact" type="button" data-archive-communication="${esc(active.id)}" ${String(active.status).toUpperCase() === "ARCHIVED" ? "disabled" : ""}>Archivar</button>${canDeleteCommunications ? `<button class="communication-delete-button compact" type="button" data-delete-communication="${esc(active.id)}"><span class="material-symbols-outlined">delete</span>Borrar</button>` : ""}</div>`; }
     if (selectedPiece && Number(active.recipients_total || 0) > 0) {
       const actions = selectedPiece.querySelector(".communication-selected-actions");
       if (actions && !actions.querySelector("[data-open-communication-delivery-summary]")) actions.insertAdjacentHTML("afterbegin", `<button class="ghost-button compact" type="button" data-open-communication-delivery-summary="${esc(active.id)}">Ver resumen</button>`);
@@ -746,8 +792,6 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     const emailBody = document.getElementById("communicationEmailBodyInput");
     const whatsappBody = document.getElementById("communicationWhatsAppBodyInput");
     const socialCopy = document.getElementById("communicationSocialCopyInput");
-    if (subject) subject.required = type !== "SOCIAL";
-    if (emailBody) emailBody.required = type !== "SOCIAL";
     if (subject) subject.required = ["EMAIL", "MIXED"].includes(type);
     if (emailBody) emailBody.required = ["EMAIL", "MIXED"].includes(type);
     if (whatsappBody) whatsappBody.required = false;
@@ -829,23 +873,32 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     const incoming = Array.from(files || []);
     if (!incoming.length) return;
     const current = uploadedEmailAttachments();
-    if (current.length + incoming.length > MAX_EMAIL_ATTACHMENTS) {
+    const existingKeys = new Set(current.map((attachment) => `${String(attachment?.name || "").toLowerCase()}:${Number(attachment?.size || 0)}`));
+    const uniqueIncoming = incoming.filter((file) => {
+      const key = `${String(file?.name || "").toLowerCase()}:${Number(file?.size || 0)}`;
+      if (existingKeys.has(key)) return false;
+      existingKeys.add(key);
+      return true;
+    });
+    if (!uniqueIncoming.length) { showFeedback("Ese archivo ya está adjunto a la comunicación.", "info", { title: "Adjunto repetido" }); return; }
+    if (current.length + uniqueIncoming.length > MAX_EMAIL_ATTACHMENTS) {
       showFeedback("Puedes adjuntar hasta 5 archivos por email.", "info", { title: "Adjuntos" });
       return;
     }
-    const invalid = incoming.find((file) => !EMAIL_ATTACHMENT_TYPES.has(emailAttachmentType(file)));
+    const invalid = uniqueIncoming.find((file) => !EMAIL_ATTACHMENT_TYPES.has(emailAttachmentType(file)) || Number(file?.size || 0) <= 0);
     if (invalid) {
-      showFeedback("Usa PDF, Word, Excel, PowerPoint, CSV, TXT o ZIP.", "info", { title: "Archivo no compatible" });
+      showFeedback("Usa un archivo válido en PDF, Word, Excel, PowerPoint, CSV, TXT o ZIP.", "info", { title: "Archivo no compatible" });
       return;
     }
-    const total = [...current, ...incoming].reduce((sum, attachment) => sum + Number(attachment?.size || 0), 0);
+    const total = [...current, ...uniqueIncoming].reduce((sum, attachment) => sum + Number(attachment?.size || 0), 0);
     if (total > MAX_EMAIL_ATTACHMENT_TOTAL_BYTES) {
       showFeedback("Los adjuntos del email pueden pesar hasta 8 MB en total.", "info", { title: "Adjuntos demasiado pesados" });
       return;
     }
-    const selected = incoming.map((file) => ({ file, name: file.name, type: emailAttachmentType(file), size: file.size }));
+    const selected = uniqueIncoming.map((file) => ({ file, name: file.name, type: emailAttachmentType(file), size: file.size }));
     setUploadedEmailAttachments([...current, ...selected]);
     renderComposerPreview();
+    if (uniqueIncoming.length < incoming.length) showFeedback("Omitimos los archivos repetidos y conservamos una sola copia.", "info", { title: "Adjuntos revisados" });
   }
 
   function finishComposerFilePicker() {
@@ -866,6 +919,45 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     if (!input || !modal || modal.classList.contains("hidden")) return;
     modal.classList.add("is-file-picker-open");
     input.click();
+  }
+
+  function closeComposer() {
+    composerOpenSequence += 1;
+    const modal = composerModal();
+    if (modal) modal.dataset.communicationClosed = "true";
+    modal?.classList.add("hidden");
+    modal?.removeAttribute("aria-busy");
+    document.body.classList.remove("communication-composer-open");
+    if (composerReturnFocus?.isConnected) window.requestAnimationFrame(() => composerReturnFocus.focus());
+  }
+
+  function beginComposerOpen(trigger, edit, duplicate) {
+    const requestId = ++composerOpenSequence;
+    composerReturnFocus = trigger || document.activeElement;
+    const form = document.getElementById("communicationComposerForm");
+    form?.reset();
+    state.editingCommunicationId = null;
+    if (!edit && !duplicate) state.communicationSelectedRefs = [];
+    setUploadedMedia([]);
+    setUploadedEmailAttachments([]);
+    renderOptions();
+    positionComposerAudience();
+    const title = document.getElementById("communicationComposerTitle");
+    const saveButton = document.getElementById("communicationComposerSaveButton");
+    if (title) title.textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar";
+    if (saveButton) saveButton.textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador";
+    const existingModal = composerModal();
+    if (existingModal) delete existingModal.dataset.communicationClosed;
+    const modal = rootComposerModal();
+    modal?.classList.remove("hidden");
+    document.body.classList.add("communication-composer-open");
+    hydrateComposerAudienceFilters();
+    toggleProductPromotionFields();
+    toggleComposer();
+    modal?.setAttribute("aria-busy", "true");
+    setComposerReadiness({ tone: "loading", icon: "sync", title: "Preparando tu espacio de comunicación", detail: "Cargando conexiones, relaciones comerciales y audiencia sin bloquear el formulario." });
+    window.requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus());
+    return requestId;
   }
 
   function downloadMedia(item) {
@@ -983,7 +1075,7 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
       setComposerSaveFeedback({ state: "success", step: totalSteps, total: totalSteps, title: action === "DRAFT" ? "Guardado" : "Listo", detail: action === "DRAFT" ? "El borrador quedó guardado y ya aparece en el historial." : "La acción quedó registrada correctamente." });
       await new Promise((resolve) => window.setTimeout(resolve, action === "DRAFT" ? 900 : 240));
       setComposerSaveBusy(form, false);
-      state.editingCommunicationId = null; composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); setCommunicationWorkspaceTab("history"); render();
+      state.editingCommunicationId = null; closeComposer(); setCommunicationWorkspaceTab("history"); render();
       if (action === "PUBLISH") showFeedback("La publicación quedó registrada con enlace medido. Ahora puedes copiarla, descargar imágenes o usar Compartir.", "success", { title: "Publicación medida lista" });
       else if (action !== "SEND") {
         const selectedChannel = form.querySelector("#communicationChannelInput option:checked")?.textContent?.trim();
@@ -1059,18 +1151,20 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
 
   document.addEventListener("click", async (event) => {
     const workspaceTab = event.target.closest("[data-communication-workspace-tab]"); const open = event.target.closest("[data-open-communication-composer]"); const close = event.target.closest("[data-close-communication-composer]"); const pick = event.target.closest("[data-communication-select]"); const historyPick = event.target.closest("[data-communication-history-select], [data-communication-history-select-control]"); const historySelectVisible = event.target.closest("[data-communication-history-select-visible]"); const historyArchive = event.target.closest("[data-communication-history-archive]"); const historyDelete = event.target.closest("[data-communication-history-delete]"); const all = event.target.closest("[data-communication-select-loaded]"); const clearSelection = event.target.closest("[data-communication-clear-selection]"); const send = event.target.closest("[data-send-communication]"); const copy = event.target.closest("[data-copy-communication-social]"); const share = event.target.closest("[data-share-communication-social]"); const download = event.target.closest("[data-download-communication-media]"); const publish = event.target.closest("[data-publish-communication]"); const removeMedia = event.target.closest("[data-remove-communication-media]"); const removeEmailAttachment = event.target.closest("[data-remove-communication-email-attachment]"); const clearUrl = event.target.closest("[data-clear-communication-media-url]"); const edit = event.target.closest("[data-edit-communication]"); const duplicate = event.target.closest("[data-duplicate-communication]"); const archive = event.target.closest("[data-archive-communication]"); const remove = event.target.closest("[data-delete-communication]"); const loadComposerAudience = event.target.closest("[data-load-composer-audience]"); const loadMoreComposerAudience = event.target.closest("[data-load-more-composer-audience]"); const selectComposerAudience = event.target.closest("[data-composer-select-audience]"); const clearComposerAudience = event.target.closest("[data-composer-clear-audience]");
+    const composerRequestId = open || edit || duplicate ? beginComposerOpen(open || edit || duplicate, edit, duplicate) : 0;
     const openSettings = event.target.closest("[data-open-communication-settings]");
     if (openSettings) { event.preventDefault(); document.querySelector('.nav-item[data-view="account"][data-account-screen="profile"]')?.click(); window.setTimeout(() => document.getElementById("accountSectionEmail")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120); return; }
     if (workspaceTab) { event.preventDefault(); setCommunicationWorkspaceTab(workspaceTab.dataset.communicationWorkspaceTab); return; }
     if (historyPick) { event.stopPropagation(); const input = historyPick.matches("input") ? historyPick : historyPick.querySelector("[data-communication-history-select]"); if (!input) return; if (historyPick !== input) { input.checked = !input.checked; event.preventDefault(); } const selected = new Set(communicationHistorySelection()); const id = String(input.dataset.communicationHistorySelect || ""); if (!id) return; if (input.checked) selected.add(id); else selected.delete(id); state.communicationHistorySelectedIds = Array.from(selected); render(); return; }
-    if (historySelectVisible) { event.preventDefault(); event.stopPropagation(); const ids = (state.communications || []).map((item) => String(item.id)); const selected = communicationHistorySelection(); state.communicationHistorySelectedIds = selected.length === ids.length ? [] : ids; render(); return; }
+    if (historySelectVisible) { event.preventDefault(); event.stopPropagation(); const ids = Array.from(document.querySelectorAll("[data-communication-history-select]")).map((input) => String(input.dataset.communicationHistorySelect || "")).filter(Boolean); const selected = new Set(communicationHistorySelection()); const allVisibleSelected = ids.length > 0 && ids.every((id) => selected.has(id)); ids.forEach((id) => allVisibleSelected ? selected.delete(id) : selected.add(id)); state.communicationHistorySelectedIds = Array.from(selected); render(); return; }
     if (historyArchive) { event.preventDefault(); event.stopPropagation(); await runCommunicationHistoryBulk("archive"); return; }
     if (historyDelete) { event.preventDefault(); event.stopPropagation(); await runCommunicationHistoryBulk("delete"); return; }
-    if (edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = state.communications.find((row) => String(row.id) === String(key)); try { await hydrateCommunicationPayload(item); } catch (error) { showFeedback(error.message || "No se pudo cargar el contenido completo de la comunicación.", "error", { title: "Comunicación" }); return; } }
+    if (edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = state.communications.find((row) => String(row.id) === String(key)); try { await hydrateCommunicationPayload(item); } catch (error) { setComposerReadiness({ tone: "error", icon: "error", title: "No pudimos cargar esta comunicación", detail: error.message || "Inténtalo de nuevo desde el historial." }); composerModal()?.removeAttribute("aria-busy"); showFeedback(error.message || "No se pudo cargar el contenido completo de la comunicación.", "error", { title: "Comunicación" }); return; } }
     if (open || edit || duplicate) { const relationKey = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const related = relationKey ? state.communications.find((row) => String(row.id) === String(relationKey)) : null; state.communicationPendingShowcaseId = related?.metadata?.web_showcase_id || ""; state.communicationPendingProductId = related?.metadata?.web_showcase_product_id || ""; state.communicationPendingPromotion = related?.metadata?.product_promotion || null; if (state.communicationPendingShowcaseId) { try { await loadCommunicationShowcaseProducts(state.communicationPendingShowcaseId); } catch (error) { console.warn("No se pudieron cargar los productos de la vitrina.", error); } } }
     if (open || edit || duplicate) { try { await prepareComposerRelations(); } catch (error) { console.warn("No se pudieron actualizar los canales para comunicaciones.", error); } renderOptions(); positionComposerAudience(); }
+    if ((open || edit || duplicate) && (composerRequestId !== composerOpenSequence || !composerIsOpen())) return;
     if (open || edit || duplicate) { const key = edit?.dataset.editCommunication || duplicate?.dataset.duplicateCommunication; const item = key ? state.communications.find((row) => String(row.id) === String(key)) : null; renderOptions(); const form = document.getElementById("communicationComposerForm"); form?.reset(); state.editingCommunicationId = edit ? item?.id : null; if (!edit && !duplicate) state.communicationSelectedRefs = []; if (item && form) { form.querySelector("#communicationTitleInput").value = duplicate ? `${item.title} (copia)` : item.title || ""; form.querySelector("#communicationCampaignInput").value = item.campaign_id || ""; form.querySelector("#communicationChannelInput").value = item.channel_id || ""; form.querySelector("#communicationActivationInput").value = item.activation_id || ""; form.querySelector("#communicationWebShowcaseInput").value = item.metadata?.web_showcase_id || ""; form.querySelector("#communicationSubjectInput").value = item.subject || ""; form.querySelector("#communicationEmailBodyInput").value = item.email_body || ""; form.querySelector("#communicationWhatsAppBodyInput").value = item.whatsapp_body || ""; form.querySelector("#communicationSocialCopyInput").value = item.social_copy || ""; form.querySelector("#communicationActionUrlInput").value = item.action_url || ""; const radio = form.querySelector(`input[name="communicationType"][value="${item.communication_type || "EMAIL"}"]`); if (radio) radio.checked = true; const assets = mediaFor(item); setUploadedMedia(assets.filter((asset) => String(asset.source || "").startsWith("data:"))); setUploadedEmailAttachments(Array.isArray(item.metadata?.email_attachments) ? item.metadata.email_attachments : []); form.querySelector("#communicationImageInput").value = assets.find((asset) => !String(asset.source || "").startsWith("data:"))?.source || ""; } else { setUploadedMedia([]); setUploadedEmailAttachments([]); } try { await window.loadCommunicationWhatsAppConnection?.({ force: true }); if (state.communicationWhatsAppConnection?.ready && !state.communicationWhatsAppTemplates?.length) await window.loadCommunicationWhatsAppTemplates?.(); } catch (error) { console.warn("No se pudo preparar la conexión de WhatsApp.", error); } renderWhatsAppTemplateOptions(item?.metadata?.whatsapp_template?.name || "", item?.metadata?.whatsapp_template?.body_parameters || []); document.getElementById("communicationComposerTitle").textContent = edit ? "Edita tu comunicación" : duplicate ? "Reutiliza esta comunicación" : "Crea un mensaje listo para enviar"; document.getElementById("communicationComposerSaveButton").textContent = edit ? "Guardar cambios" : duplicate ? "Guardar copia" : "Guardar borrador"; rootComposerModal()?.classList.remove("hidden"); document.body.classList.add("communication-composer-open"); hydrateComposerAudienceFilters(); try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } toggleComposer(); requestAnimationFrame(() => document.getElementById("communicationTitleInput")?.focus()); return; }
-    if (close) { composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); return; }
+    if (close) { closeComposer(); return; }
     if (loadComposerAudience) { try { await refreshComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudo cargar la audiencia.", "error", { title: "Audiencia" }); } return; }
     if (loadMoreComposerAudience) { try { await loadAudience({ append: true }); render(); renderComposerAudience(); } catch (error) { showFeedback(error.message || "No se pudieron cargar más contactos.", "error", { title: "Audiencia" }); } return; }
     if (selectComposerAudience || all) { const mode = document.querySelector('input[name="communicationType"]:checked')?.value === "WHATSAPP" ? "whatsapp" : "email"; const available = setAudienceSelection(mode); render(); renderComposerAudience(); if (!available) showFeedback(`Ya seleccionaste el máximo de ${MAX_EMAIL_RECIPIENTS} contactos por envío.`, "info", { title: "Destinatarios" }); return; }
@@ -1145,11 +1239,18 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     if (composerModal()?.classList.contains("is-file-picker-open")) window.setTimeout(finishComposerFilePicker, 0);
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && composerIsOpen()) { composerModal()?.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); }
+    if (event.key === "Escape" && composerIsOpen()) { event.preventDefault(); closeComposer(); }
+    if (event.key !== "Tab" || !composerIsOpen()) return;
+    const focusable = Array.from(composerModal().querySelectorAll('button:not([disabled]):not(.hidden), input:not([disabled]):not([type="hidden"]):not([tabindex="-1"]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex="0"]')).filter((node) => !node.closest(".hidden") && node.getClientRects().length);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   });
   document.addEventListener("click", (event) => {
     const modal = composerModal();
-    if (modal && event.target === modal) { modal.classList.add("hidden"); document.body.classList.remove("communication-composer-open"); }
+    if (modal && event.target === modal) closeComposer();
   });
   document.addEventListener("submit", (event) => {
     const form = event.target.closest("[data-communication-history-filters]");
@@ -1172,6 +1273,16 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     render();
   });
   document.getElementById("communicationAudienceFilters")?.addEventListener("submit", async (event) => { event.preventDefault(); const form = event.currentTarget; state.communicationAudienceFilters = { search: form.querySelector("#communicationAudienceSearch")?.value.trim() || "", interest: form.querySelector("#communicationAudienceInterest")?.value.trim() || "", city: form.querySelector("#communicationAudienceCity")?.value.trim() || "", has_purchases: form.querySelector("#communicationAudiencePurchases")?.value || "", score_min: form.querySelector("#communicationAudienceScore")?.value || "" }; state.communicationSelectedRefs = []; try { await loadAudience(); render(); } catch (error) { showFeedback(error.message || "No se pudo filtrar la audiencia.", "error", { title: "Audiencia" }); } });
+  const attachmentDropZone = document.querySelector("[data-communication-email-attachments-pick]");
+  ["dragenter", "dragover"].forEach((type) => attachmentDropZone?.addEventListener(type, (event) => {
+    event.preventDefault();
+    attachmentDropZone.classList.add("is-dragover");
+  }));
+  ["dragleave", "drop"].forEach((type) => attachmentDropZone?.addEventListener(type, (event) => {
+    event.preventDefault();
+    attachmentDropZone.classList.remove("is-dragover");
+    if (type === "drop") addEmailAttachmentFiles(event.dataTransfer?.files);
+  }));
   document.getElementById("communicationComposerForm")?.addEventListener("submit", save);
   document.getElementById("communicationComposerForm")?.addEventListener("input", (event) => { if (event.target.matches("#communicationImageInput") || event.target.matches("#communicationActionUrlInput")) toggleComposer(); });
   window.renderCommunicationsView = render;

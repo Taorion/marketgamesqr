@@ -43,7 +43,7 @@
   <link rel="stylesheet" href="css/dashboard-open-flow.css?v=20260727-v156" media="print" data-deferred-portal-style>
   <link rel="stylesheet" href="css/portal-open-layout.css?v=20260727-v159" media="print" data-deferred-portal-style>
   <link rel="stylesheet" href="css/portal-fluid-canvas.css?v=activation-builder-catalog-fix-20260728-v177" media="print" data-deferred-portal-style>
-  <link rel="stylesheet" href="css/communications-flow.css?v=communications-pdf-picker-paint-v484-20260911" media="print" data-deferred-portal-style>
+  <link rel="stylesheet" href="css/communications-flow.css?v=communications-experience-v485-20260911" media="print" data-deferred-portal-style>
   <link rel="stylesheet" href="css/revenue-center.css?v=revenue-center-v17-20260820" media="print" data-deferred-portal-style>
   <link rel="stylesheet" href="css/mobile-shell-guard.css?v=20260729-v1">
   <link rel="stylesheet" href="css/portal-foundation.css?v=20260730-v1" media="print" data-deferred-portal-style>
@@ -8316,18 +8316,22 @@
       </form>
     </div>
   </div>
-  <div class="modal-shell hidden" id="communicationComposerModal" role="dialog" aria-modal="true" aria-labelledby="communicationComposerTitle">
+  <div class="modal-shell hidden" id="communicationComposerModal" role="dialog" aria-modal="true" aria-labelledby="communicationComposerTitle" aria-describedby="communicationComposerDescription">
     <article class="modal-card communication-composer-modal">
       <header class="communication-composer-head">
         <div>
           <span class="mono-label">Nueva comunicación</span>
           <h3 id="communicationComposerTitle">Crea un mensaje listo para enviar</h3>
-          <p>Una sola pieza puede servir para email, redes o ambos canales.</p>
+          <p id="communicationComposerDescription">Una sola pieza puede servir para email, redes o ambos canales.</p>
         </div>
         <button class="icon-button" type="button" data-close-communication-composer aria-label="Cerrar"><span class="material-symbols-outlined">close</span></button>
       </header>
       <form class="communication-composer-form" id="communicationComposerForm">
         <div class="communication-composer-scroll">
+          <div class="communication-composer-readiness is-loading" id="communicationComposerReadiness" role="status" aria-live="polite">
+            <span class="material-symbols-outlined" aria-hidden="true">sync</span>
+            <div><strong>Preparando tu espacio de comunicación</strong><small>Cargando conexiones, relaciones comerciales y audiencia.</small></div>
+          </div>
           <section class="communication-composer-section communication-composer-foundation">
             <div class="communication-composer-section-head"><span class="communication-composer-step">01</span><div><span class="mono-label">Pieza y propósito</span><strong>¿Cómo quieres comunicar?</strong><small>Escoge el canal, conecta el esfuerzo comercial y escribe una pieza reutilizable.</small></div></div>
             <div class="communication-type-switch" role="group" aria-label="Tipo de comunicación">
@@ -8380,10 +8384,10 @@
           </section>
           <section class="communication-composer-section communication-email-attachments-section" id="communicationEmailAttachmentsSection" aria-labelledby="communicationEmailAttachmentsTitle">
             <div class="communication-composer-section-head"><span class="communication-composer-step">04</span><div><span class="mono-label">Adjuntos de email</span><strong id="communicationEmailAttachmentsTitle">Comparte documentos con tu audiencia</strong><small>Se envían como archivos adjuntos solo por email; no se incluyen en WhatsApp ni en publicaciones.</small></div></div>
-            <input class="communication-email-attachment-file-input" id="communicationEmailAttachmentsUploadInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,application/zip" multiple>
-            <button class="communication-email-attachment-upload-control" type="button" data-communication-email-attachments-pick>
+            <input class="communication-email-attachment-file-input" id="communicationEmailAttachmentsUploadInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,application/zip" multiple tabindex="-1" aria-hidden="true">
+            <button class="communication-email-attachment-upload-control" type="button" data-communication-email-attachments-pick aria-controls="communicationEmailAttachmentsUploadInput">
               <span class="material-symbols-outlined" aria-hidden="true">attach_file</span>
-              <span><strong>Adjuntar archivos</strong><small>PDF, Word, Excel, PowerPoint, CSV, TXT o ZIP · hasta 5 archivos y 8 MB en total</small></span>
+              <span><strong>Adjuntar o arrastrar archivos</strong><small>PDF, Word, Excel, PowerPoint, CSV, TXT o ZIP · hasta 5 archivos y 8 MB en total</small></span>
             </button>
             <input id="communicationEmailAttachmentsInput" type="hidden" value="[]">
             <div class="communication-email-attachment-list" id="communicationEmailAttachmentsPreview" aria-live="polite"></div>
@@ -8586,7 +8590,7 @@
 <script src="js/contacts-premium-v333.js?v=contact-promotion-v435-20260905&amp;manual-contact-cleanup=v451-20260908" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
 <script src="js/campaign-command-center-v318.js" defer></script>
-    <script src="js/communications.js?v=communications-history-v333-20260822-unified-email-routing-v359-20260826-qori-public-links-v472-20260910-communications-pdf-picker-v483-20260911" defer></script>
+    <script src="js/communications.js?v=communications-history-v333-20260822-unified-email-routing-v359-20260826-qori-public-links-v472-20260910-communications-experience-v485-20260911" defer></script>
   <script src="js/guided-tutorials.js?v=guided-tutorials-v2-gifs-white-20260828" defer></script>
 </body>
 </html>

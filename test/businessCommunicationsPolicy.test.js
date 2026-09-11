@@ -50,7 +50,8 @@ test("email attachments stay as native files until the communication is saved", 
   const selectionStart = frontend.indexOf("function addEmailAttachmentFiles");
   const selectionEnd = frontend.indexOf("function downloadMedia", selectionStart);
   const selectionFlow = frontend.slice(selectionStart, selectionEnd);
-  assert.match(selectionFlow, /incoming\.map\(\(file\) => \(\{ file, name: file\.name/);
+  assert.match(selectionFlow, /uniqueIncoming\.map\(\(file\) => \(\{ file, name: file\.name/);
+  assert.match(selectionFlow, /existingKeys\.has\(key\)/);
   assert.doesNotMatch(selectionFlow, /readFileAsDataUrl\(file\)/);
   assert.match(frontend, /let composerEmailAttachments = \[\]/);
   assert.match(frontend, /uploadedEmailAttachments = \(\) => composerEmailAttachments/);
@@ -65,10 +66,26 @@ test("email attachments stay as native files until the communication is saved", 
   assert.match(frontend, /finishComposerFilePicker/);
   assert.match(html, /communication-email-attachment-file-input/);
   assert.match(html, /communications-file-picker=v483-20260911/);
-  assert.match(html, /communications-pdf-picker-v483-20260911/);
-  assert.match(html, /communications-pdf-picker-paint-v484-20260911/);
+  assert.match(html, /communications-experience-v485-20260911/);
   const css = read("empresa/css/communications-flow.css");
   assert.match(css, /body:not\(#qoriCommunicationPaintA#qoriCommunicationPaintB#qoriCommunicationPaintC\)[^}]+#communicationComposerModal\.modal-shell:not\(\.hidden\)[^}]+backdrop-filter:\s*none\s*!important/);
+});
+
+test("communication composer opens immediately, remains closable, and exposes an accessible attachment flow", () => {
+  const frontend = read("empresa/js/communications.js");
+  const html = read("empresa/index.html");
+  const css = read("empresa/css/communications-flow.css");
+  assert.ok(frontend.indexOf("beginComposerOpen(open || edit || duplicate") < frontend.indexOf("await prepareComposerRelations()"));
+  assert.match(frontend, /composerOpenSequence/);
+  assert.match(frontend, /composerRequestId !== composerOpenSequence \|\| !composerIsOpen\(\)/);
+  assert.match(frontend, /function closeComposer\(\)/);
+  assert.match(frontend, /if \(event\.key === "Escape" && composerIsOpen\(\)\)/);
+  assert.match(frontend, /event\.key !== "Tab" \|\| !composerIsOpen\(\)/);
+  assert.match(frontend, /\["dragenter", "dragover"\]/);
+  assert.match(html, /id="communicationComposerReadiness" role="status" aria-live="polite"/);
+  assert.match(html, /id="communicationEmailAttachmentsUploadInput"[^>]+tabindex="-1" aria-hidden="true"/);
+  assert.match(html, /data-communication-email-attachments-pick aria-controls="communicationEmailAttachmentsUploadInput"/);
+  assert.match(css, /communication-email-attachment-upload-control\.is-dragover/);
 });
 
 test("communications audience stays operable without a page-length contact list", () => {
@@ -124,5 +141,9 @@ test("communications history is isolated, filterable, and visually bounded", () 
   assert.match(frontend, /data-communication-history-filters/);
   assert.match(frontend, /communicationHistoryStatus/);
   assert.match(frontend, /communication-history-results/);
+  assert.match(frontend, /historyStatus === "FAILED"/);
+  assert.match(frontend, /Envío fallido/);
+  assert.match(frontend, /communicationAttachmentCount/);
+  assert.match(frontend, /querySelectorAll\("\[data-communication-history-select\]"\)/);
   assert.match(html, /communications-history-v333-20260822/);
 });

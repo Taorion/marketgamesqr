@@ -275,6 +275,16 @@ html body > #communicationComposerModal.is-file-picker-repaint .communication-co
 #communicationComposerModal .communication-composer-head h3 { max-width: 680px; }
 #communicationComposerModal .communication-composer-form { min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 0; padding: 0 !important; overflow: hidden; }
 #communicationComposerModal .communication-composer-scroll { min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 30px 42px 20px; scroll-padding-bottom: 36px; }
+#communicationComposerModal .communication-composer-readiness { position: sticky; z-index: 4; top: -18px; display: grid; grid-template-columns: 38px minmax(0, 1fr); align-items: center; gap: 11px; margin: -12px 0 24px; padding: 12px 14px; border: 1px solid rgba(20, 121, 189, .18); border-radius: 14px; background: rgba(242, 250, 255, .97); box-shadow: 0 8px 24px rgba(8, 68, 142, .08); }
+#communicationComposerModal .communication-composer-readiness > .material-symbols-outlined { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 11px; background: #dff4ff; color: #0871c3; }
+#communicationComposerModal .communication-composer-readiness div { display: grid; gap: 2px; min-width: 0; }
+#communicationComposerModal .communication-composer-readiness strong { color: #073372; font-size: .83rem; }
+#communicationComposerModal .communication-composer-readiness small { color: #5d7694; font-size: .73rem; line-height: 1.35; }
+#communicationComposerModal .communication-composer-readiness.is-loading > .material-symbols-outlined { animation: qori-composer-progress-spin 1s linear infinite; }
+#communicationComposerModal .communication-composer-readiness.is-warning { border-color: rgba(190, 116, 12, .24); background: rgba(255, 249, 235, .98); }
+#communicationComposerModal .communication-composer-readiness.is-warning > .material-symbols-outlined { color: #9a5b08; background: #ffedc6; }
+#communicationComposerModal .communication-composer-readiness.is-error { border-color: rgba(181, 35, 61, .22); background: rgba(255, 243, 245, .98); }
+#communicationComposerModal .communication-composer-readiness.is-error > .material-symbols-outlined { color: #ad2039; background: #ffe1e7; }
 #communicationComposerModal .communication-composer-section { display: grid; gap: 16px; padding: 0 0 27px; margin: 0 0 27px; border: 0; border-bottom: 1px solid rgba(15, 79, 152, .14); background: transparent; }
 #communicationComposerModal .communication-composer-section:last-of-type { margin-bottom: 0; }
 #communicationComposerModal .communication-composer-section-head { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 13px; align-items: start; }
@@ -353,6 +363,7 @@ html body > #communicationComposerModal.is-file-picker-repaint .communication-co
   #communicationComposerModal .communication-composer-head { min-height: 138px; padding: 26px 20px 23px; }
   #communicationComposerModal .communication-composer-head h3 { font-size: 1.62rem; }
   #communicationComposerModal .communication-composer-scroll { padding: 24px 20px 18px; }
+  #communicationComposerModal .communication-composer-readiness { top: -16px; margin: -8px 0 20px; }
   #communicationComposerModal .modal-actions { align-items: stretch; flex-direction: column; padding: 13px 20px; }
   #communicationComposerModal .modal-button-row { display: grid; grid-template-columns: 1fr 1fr; }
   #communicationComposerModal .modal-button-row > .solid-button { grid-column: span 2; }
@@ -362,6 +373,19 @@ html body > #communicationComposerModal.is-file-picker-repaint .communication-co
   #communicationComposerModal .communication-composer-audience-status { align-items: flex-start; flex-direction: column; gap: 7px; }
   #communicationComposerModal .communication-composer-contact { grid-template-columns:auto 34px minmax(0,1fr); }
   #communicationComposerModal .communication-contact-delivery { display:none; }
+}
+
+@media (max-width: 420px) {
+  #communicationComposerModal .communication-composer-head { min-height: 118px; padding: 20px 16px 18px; }
+  #communicationComposerModal .communication-composer-head h3 { font-size: 1.4rem; }
+  #communicationComposerModal .communication-composer-head p { font-size: .78rem; }
+  #communicationComposerModal .communication-composer-scroll { padding: 18px 15px 14px; }
+  #communicationComposerModal .modal-actions { padding: 11px 15px calc(11px + env(safe-area-inset-bottom)); }
+  #communicationComposerModal .modal-button-row { grid-template-columns: 1fr; }
+  #communicationComposerModal .modal-button-row > .solid-button { grid-column: auto; }
+  #communicationComposerModal .modal-button-row button { width: 100%; }
+  #communicationComposerModal .communication-composer-section-head { grid-template-columns: 34px minmax(0, 1fr); gap: 10px; }
+  #communicationComposerModal .communication-composer-step { width: 34px; height: 34px; }
 }
 
 /* The gradient header is intentionally high-contrast: its copy is part of the action cue. */
@@ -449,6 +473,8 @@ body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-moda
 [data-view="communications"] .communication-list-item.communication-history-item:hover, [data-view="communications"] .communication-list-item.communication-history-item.is-selected { padding-inline: 20px; background: linear-gradient(90deg, rgba(11, 94, 203, .09), rgba(5, 185, 229, .035) 52%, transparent); }
 [data-view="communications"] .communication-history-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; color: #0874cf; background: #edf8ff; box-shadow: inset 0 0 0 1px rgba(8, 116, 207, .12); }
 [data-view="communications"] .communication-history-item.is-sent .communication-history-icon, [data-view="communications"] .communication-history-item.is-published .communication-history-icon { color: #08745d; background: #edfbf5; box-shadow: inset 0 0 0 1px rgba(8, 116, 93, .14); }
+[data-view="communications"] .communication-history-item.is-failed .communication-history-icon { color: #b4233a; background: #fff0f2; box-shadow: inset 0 0 0 1px rgba(180, 35, 58, .14); }
+[data-view="communications"] .communication-history-item.is-warning .communication-history-icon { color: #9a5b08; background: #fff7e7; box-shadow: inset 0 0 0 1px rgba(154, 91, 8, .14); }
 [data-view="communications"] .communication-history-item.is-archived .communication-history-icon { color: #657991; background: #f2f5f8; box-shadow: inset 0 0 0 1px rgba(101, 121, 145, .14); }
 [data-view="communications"] .communication-history-copy { min-width: 0; }
 [data-view="communications"] .communication-history-topline, [data-view="communications"] .communication-history-foot, [data-view="communications"] .communication-selected-status { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
@@ -456,6 +482,8 @@ body.channel-operation-modal-open > #acquisitionChannelFormPanel.is-channel-moda
 [data-view="communications"] .communication-history-chip.is-sent, [data-view="communications"] .communication-history-chip.is-published { color: #08735d; background: #e8f9f1; }
 [data-view="communications"] .communication-history-chip.is-ready { color: #066ab2; background: #e8f5ff; }
 [data-view="communications"] .communication-history-chip.is-archived { color: #61758d; background: #eef2f5; }
+[data-view="communications"] .communication-history-chip.is-failed { color: #a51d35; background: #ffecef; }
+[data-view="communications"] .communication-history-chip.is-warning { color: #8a5106; background: #fff3d8; }
 [data-view="communications"] .communication-history-copy > strong { margin-top: 7px; }
 [data-view="communications"] .communication-history-foot { margin-top: 8px; color: #6a829c; font-size: .76rem; }
 [data-view="communications"] .communication-history-foot > span { display: inline-flex; align-items: center; gap: 4px; }
@@ -864,6 +892,13 @@ html body[data-current-view="communications"] .portal-shell .communication-send-
 #communicationComposerModal .communication-email-attachment-upload-control:hover {
   border-color: #0b68ca;
   background: #f2f9ff;
+}
+
+#communicationComposerModal .communication-email-attachment-upload-control.is-dragover {
+  border-color: #08aee0;
+  border-style: solid;
+  background: #e8f8ff;
+  box-shadow: 0 0 0 4px rgba(8, 174, 224, .12);
 }
 
 #communicationComposerModal .communication-email-attachment-upload-control.is-loading {
