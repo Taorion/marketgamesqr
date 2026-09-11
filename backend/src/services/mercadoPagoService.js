@@ -334,6 +334,7 @@ async function mpRequest(path, options = {}) {
   requireMercadoPagoConfig();
   const response = await fetch(`${MP_API_BASE}${path}`, {
     ...options,
+    signal: options.signal || AbortSignal.timeout(15_000),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${env.mercadoPagoAccessToken}`,
@@ -1099,6 +1100,7 @@ async function processMercadoPagoWebhook(req) {
 
     let payableOrder = order;
     const signup = order.metadata?.signup;
+    const status = mapPaymentStatus(payment.status);
     const isRecurringSubscription = [
       "portal_monthly_subscription",
       "portal_annual_subscription",
@@ -1106,14 +1108,27 @@ async function processMercadoPagoWebhook(req) {
     ].includes(signup?.type);
     if (isRecurringSubscription && order.credited_at) {
       const existingPayment = await client.query(
-        `select id
+        `select *
          from qr_credit_purchase_orders
          where mercado_pago_payment_id = $1
          limit 1`,
         [String(payment.id)]
       );
       if (existingPayment.rowCount) {
-        return { order: mapPurchaseOrder(order), credited: false, duplicate: true };
+        if (["REJECTED", "CANCELLED"].includes(status)) {
+          const reversed = await client.query(
+            `update qr_credit_purchase_orders
+             set status = $2,
+                 payment_payload = $3,
+                 updated_at = now()
+             where id = $1
+             returning *`,
+            [existingPayment.rows[0].id, status, payment]
+          );
+          await syncSignupAttributionStatus(client, existingPayment.rows[0].id, status, payment.id);
+          return { order: mapPurchaseOrder(reversed.rows[0]), credited: false, duplicate: true, reversed: true };
+        }
+        return { order: mapPurchaseOrder(existingPayment.rows[0]), credited: false, duplicate: true };
       }
       const recurringOrder = await client.query(
         `insert into qr_credit_purchase_orders
@@ -1138,8 +1153,6 @@ async function processMercadoPagoWebhook(req) {
       );
       payableOrder = recurringOrder.rows[0];
     }
-
-    const status = mapPaymentStatus(payment.status);
 
     if (status !== "APPROVED") {
       const updated = await client.query(
@@ -1222,8 +1235,21 @@ async function createDemoCreditPurchase(user, body) {
 function mapPaymentStatus(status) {
   if (status === "approved") return "APPROVED";
   if (["rejected", "cancelled"].includes(status)) return "REJECTED";
-  if (status === "refunded") return "CANCELLED";
+  if (["refunded", "charged_back"].includes(status)) return "CANCELLED";
   return "PENDING";
+}
+
+function validateApprovedPayment(order, payment) {
+  const amount = Number(payment.transaction_amount || 0);
+  if (!Number.isFinite(amount) || amount < Number(order.price_cop)) {
+    throw badRequest("El pago aprobado no cubre el valor de la orden.");
+  }
+
+  const expectedCurrency = String(order.currency || "COP").trim().toUpperCase();
+  const receivedCurrency = String(payment.currency_id || "").trim().toUpperCase();
+  if (receivedCurrency && receivedCurrency !== expectedCurrency) {
+    throw badRequest("La moneda del pago aprobado no coincide con la orden.");
+  }
 }
 
 async function finalizeApprovedCreditPurchase(client, order, payment, options = {}) {
@@ -1231,10 +1257,7 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
     return { order: mapPurchaseOrder(order), credited: false, duplicate: true };
   }
 
-  const amount = Number(payment.transaction_amount || 0);
-  if (amount < Number(order.price_cop)) {
-    throw badRequest("El pago aprobado no cubre el valor del paquete.");
-  }
+  validateApprovedPayment(order, payment);
 
   const signup = order.metadata?.signup;
   if (["portal_monthly_subscription", "portal_annual_subscription", "portal_monthly_subscription_auto_renewal"].includes(signup?.type)) {
@@ -1262,7 +1285,7 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
   const updated = await client.query(
     `update qr_credit_purchase_orders
      set status = 'APPROVED',
-         mercado_pago_payment_id = coalesce(mercado_pago_payment_id, $2),
+         mercado_pago_payment_id = $2,
          payment_payload = $3,
          credited_at = now(),
          updated_at = now()
@@ -1288,6 +1311,8 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
   if (order.credited_at) {
     return { order: mapPurchaseOrder(order), credited: false, duplicate: true };
   }
+
+  validateApprovedPayment(order, payment);
 
   const planCode = signup.plan_code || order.package_code;
   const plan = listPlans().find((item) => (
@@ -1353,7 +1378,7 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
   const updated = await client.query(
     `update qr_credit_purchase_orders
      set status = 'APPROVED',
-         mercado_pago_payment_id = coalesce(mercado_pago_payment_id, $2),
+         mercado_pago_payment_id = $2,
          payment_payload = $3,
          credited_at = now(),
          updated_at = now()
@@ -1443,6 +1468,8 @@ module.exports = {
   __testing: {
     approvedPaymentIdFromAuthorizedInvoice,
     normalizeMercadoPagoWebhookTopic,
+    validateApprovedPayment,
+    verifyWebhookSignature,
   },
   createCreditCheckout,
   createStorageAddonCheckout,

@@ -6,6 +6,12 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "utf8");
 
+test("el validador reutiliza una clave de idempotencia al abrir Mercado Pago", () => {
+  const validator = read("validador/js/app.js");
+  assert.match(validator, /state\.qrCreditCheckoutIdempotencyKey \|\|= crypto\.randomUUID\(\)/);
+  assert.match(validator, /idempotency_key: state\.qrCreditCheckoutIdempotencyKey/);
+});
+
 test("recargas usa intención idempotente y conserva fallos recuperables", () => {
   const service = read("backend/src/services/mercadoPagoService.js");
   const migration = read("database/migrations/20260827152855_account_recharge_checkout_integrity.sql");
@@ -25,7 +31,7 @@ test("contratos de pago aceptan UUID y protegen lectura financiera", () => {
 });
 
 test("schema existente agrega columnas de checkout antes de crear sus índices", () => {
-  const schema = read("database/schema.sql");
+  const schema = read("database/schema.sql").replace(/\r\n/g, "\n");
   const addColumnsAt = schema.indexOf("alter table qr_credit_purchase_orders\n  add column if not exists checkout_key text");
   const checkoutIndexAt = schema.indexOf("create unique index if not exists ux_qr_credit_purchase_orders_business_checkout_key");
 

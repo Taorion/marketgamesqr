@@ -78,6 +78,9 @@ async function approveStorageAddonOrder(client, order, payment) {
   if (Number(payment.transaction_amount || 0) < Number(order.price_cop || 0)) {
     throw badRequest("El pago aprobado no coincide con el valor de la ampliacion de almacenamiento.");
   }
+  if (payment.currency_id && String(payment.currency_id).toUpperCase() !== "COP") {
+    throw badRequest("La moneda del pago aprobado no coincide con la ampliacion de almacenamiento.");
+  }
   const result = await client.query(
     `update business_storage_addon_orders
      set status = 'APPROVED', mercado_pago_payment_id = $2, payment_payload = $3::jsonb,

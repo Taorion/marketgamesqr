@@ -32,6 +32,8 @@ function summarizeOrder(order) {
 }
 
 async function main() {
+  const health = await request("/api/health");
+  const plans = await request("/api/public/subscription-plans");
   const login = await request("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({
@@ -42,6 +44,16 @@ async function main() {
 
   const result = {
     base_url: baseUrl,
+    health: {
+      status: health.status,
+      ok: health.ok && health.data?.ok === true,
+      database_configured: health.data?.database_configured,
+    },
+    public_plans: {
+      status: plans.status,
+      ok: plans.ok,
+      count: plans.data?.plans?.length,
+    },
     login: {
       status: login.status,
       ok: login.ok,
@@ -63,17 +75,6 @@ async function main() {
 
   const headers = { Authorization: `Bearer ${login.data.token}` };
   const ordersBefore = await request("/api/payments/qr-credits/orders", { headers });
-  const demoPurchase = await request("/api/payments/qr-credits/checkout/demo", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ package_code: process.env.PROBE_PACKAGE_CODE || "QR50" }),
-  });
-  const ordersAfterDemo = await request("/api/payments/qr-credits/orders", { headers });
-  const checkout = await request("/api/payments/qr-credits/checkout", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ package_code: process.env.PROBE_PACKAGE_CODE || "QR50" }),
-  });
 
   result.orders_before = {
     status: ordersBefore.status,
@@ -82,37 +83,25 @@ async function main() {
     latest: summarizeOrder(ordersBefore.data?.orders?.[0]),
     error: ordersBefore.data?.error,
   };
-  result.demo_purchase = {
-    status: demoPurchase.status,
-    ok: demoPurchase.ok,
-    demo: Boolean(demoPurchase.data?.demo),
-    order: summarizeOrder(demoPurchase.data?.order),
-    credit_account: demoPurchase.data?.credit_account
-      ? {
-          qr_balance: demoPurchase.data.credit_account.qr_balance,
-          qr_purchased_total: demoPurchase.data.credit_account.qr_purchased_total,
-          qr_used_total: demoPurchase.data.credit_account.qr_used_total,
-        }
-      : null,
-    error: demoPurchase.data?.error,
-    message: demoPurchase.data?.message,
-    body: demoPurchase.ok ? undefined : demoPurchase.text.slice(0, 300),
-  };
-  result.orders_after_demo = {
-    status: ordersAfterDemo.status,
-    ok: ordersAfterDemo.ok,
-    count: ordersAfterDemo.data?.orders?.length,
-    latest: summarizeOrder(ordersAfterDemo.data?.orders?.[0]),
-    error: ordersAfterDemo.data?.error,
-  };
-  result.checkout = {
-    status: checkout.status,
-    ok: checkout.ok,
-    order: summarizeOrder(checkout.data?.order),
-    error: checkout.data?.error,
-    message: checkout.data?.message,
-    body: checkout.ok ? undefined : checkout.text.slice(0, 300),
-  };
+  result.checkout = { skipped: true, reason: "Set PROBE_CREATE_CHECKOUT=true to create a real pending checkout." };
+  if (process.env.PROBE_CREATE_CHECKOUT === "true") {
+    const checkout = await request("/api/payments/qr-credits/checkout", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        package_code: process.env.PROBE_PACKAGE_CODE || "QR50",
+        idempotency_key: crypto.randomUUID(),
+      }),
+    });
+    result.checkout = {
+      status: checkout.status,
+      ok: checkout.ok,
+      order: summarizeOrder(checkout.data?.order),
+      error: checkout.data?.error,
+      message: checkout.data?.message,
+      body: checkout.ok ? undefined : checkout.text.slice(0, 300),
+    };
+  }
 
   console.log(JSON.stringify(result, null, 2));
 }

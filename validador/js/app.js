@@ -413,10 +413,14 @@ async function submitQrRecharge(event) {
   showToast("loading", "Preparando pago", "Creando checkout seguro de recarga de tickets.", 0);
   showScreenFeedback("loading", "Preparando pago", "Te enviaremos a Mercado Pago para finalizar la compra.");
   try {
+    state.qrCreditCheckoutIdempotencyKey ||= crypto.randomUUID();
     const data = await api("/api/payments/qr-credits/checkout", {
       method: "POST",
       headers: authHeaders(),
-      body: JSON.stringify({ package_code: packageCode }),
+      body: JSON.stringify({
+        package_code: packageCode,
+        idempotency_key: state.qrCreditCheckoutIdempotencyKey,
+      }),
     });
     state.qrCreditOrders = [data.order, ...state.qrCreditOrders.filter((order) => order.id !== data.order.id)];
     renderQrRechargeShop();
