@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const {
   affiliatePointRuleMetadata,
+  affiliatePurchasePointsForAmount,
   normalizeAffiliatePointRuleInput,
   referralPointsForAmount,
   rulesFromSettings,
@@ -31,6 +32,25 @@ test("la formula canonica coincide con los ejemplos y ambos redondeos", () => {
   assert.deepEqual([2500, 5000, 10000].map((amount) => referralPointsForAmount(amount, floor)), [3, 6, 12]);
   assert.equal(referralPointsForAmount(3000, floor), 3);
   assert.equal(referralPointsForAmount(3000, { ...floor, referral_rounding: "ceil" }), 4);
+});
+
+test("una compra directa de afiliado usa la relacion monetaria y no el bono fijo de referido", () => {
+  const rules = {
+    point_amount_cop: 1000,
+    referral_rate: 228,
+    referral_rounding: "floor",
+    referral_purchase_points: 2,
+  };
+  assert.equal(affiliatePurchasePointsForAmount(2000, rules), 456);
+  assert.equal(referralPointsForAmount(2000, rules), 2);
+});
+
+test("las dos rutas de compra directa distinguen puntos monetarios de puntos por referido", () => {
+  const portalController = fs.readFileSync(path.join(__dirname, "../backend/src/controllers/businessPortalController.js"), "utf8");
+  const affiliateService = fs.readFileSync(path.join(__dirname, "../backend/src/services/affiliateService.js"), "utf8");
+  assert.match(portalController, /isDirectAffiliatePurchase[\s\S]*affiliatePurchasePointsForAmount\(body\.sale_amount, affiliatePointRules\)/);
+  assert.match(portalController, /isDirectAffiliatePurchase \? "AFFILIATE_PURCHASE" : "REFERRAL_PURCHASE"/);
+  assert.match(affiliateService, /body\.metadata\?\.affiliate_purchase[\s\S]*affiliatePurchasePointsForAmount\(amount, pointRules\)/);
 });
 
 for (const invalid of [0, -1, "", "abc", NaN, Infinity, 1.5, 1000000001]) {

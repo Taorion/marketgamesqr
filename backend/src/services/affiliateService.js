@@ -8,6 +8,7 @@ const { logQrEvent } = require("./auditService");
 const { consumeQrCredit, ensureCreditAccount, mapPublicCreditAccount } = require("./qrCreditService");
 const {
   affiliatePointRuleMetadata,
+  affiliatePurchasePointsForAmount,
   affiliatePointsForAmount,
   getAffiliatePointRules,
   referralPointsForAmount,
@@ -278,7 +279,11 @@ async function awardAffiliatePoints(businessId, affiliateId, user, body) {
   // same configured referral rate as a sale captured through CRM or QR.
   // Keeping this calculation aligned prevents the preview and final balance
   // from disagreeing when a business uses a rate other than 1.
-  const points = manualPoints > 0 ? manualPoints : referralPointsForAmount(amount, pointRules);
+  const points = manualPoints > 0
+    ? manualPoints
+    : body.metadata?.affiliate_purchase
+      ? affiliatePurchasePointsForAmount(amount, pointRules)
+      : referralPointsForAmount(amount, pointRules);
   if (points < 1) {
     return {
       awarded: 0,

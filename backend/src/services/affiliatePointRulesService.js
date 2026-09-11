@@ -100,10 +100,7 @@ function affiliatePointsForAmount(amount, rules) {
   return Math.max(0, Math.floor(value / rules.point_amount_cop));
 }
 
-function referralPointsForAmount(amount, rules) {
-  if (Number(rules?.referral_purchase_points || 0) > 0) {
-    return Number(rules.referral_purchase_points);
-  }
+function affiliatePurchasePointsForAmount(amount, rules) {
   const value = Number(amount || 0);
   if (!Number.isFinite(value) || value <= 0) {
     return 0;
@@ -113,6 +110,13 @@ function referralPointsForAmount(amount, rules) {
     ? Math.ceil(rawPoints)
     : Math.floor(rawPoints);
   return Math.max(0, roundedPoints);
+}
+
+function referralPointsForAmount(amount, rules) {
+  if (Number(rules?.referral_purchase_points || 0) > 0) {
+    return Number(rules.referral_purchase_points);
+  }
+  return affiliatePurchasePointsForAmount(amount, rules);
 }
 
 function referralRegistrationPoints(rules) {
@@ -137,6 +141,7 @@ module.exports = {
   MAX_AFFILIATE_POINT_AMOUNT_COP,
   MAX_REFERRAL_POINTS_RATE,
   affiliatePointRuleMetadata,
+  affiliatePurchasePointsForAmount,
   affiliatePointsForAmount,
   getAffiliatePointRules,
   normalizeAffiliatePointRuleInput,

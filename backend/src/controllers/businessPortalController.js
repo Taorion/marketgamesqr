@@ -24,6 +24,7 @@ const {
 const { mapPublicCreditAccount } = require("../services/qrCreditService");
 const {
   affiliatePointRuleMetadata,
+  affiliatePurchasePointsForAmount,
   getAffiliatePointRules,
   normalizeAffiliatePointRuleInput,
   referralPointsForAmount,
@@ -2919,8 +2920,11 @@ async function createCustomerAcquisitionSale(req, res, next) {
       const affiliatePointRules = referredAffiliate
         ? await getAffiliatePointRules(businessId, client)
         : null;
+      const isDirectAffiliatePurchase = Boolean(body.metadata?.affiliate_purchase);
       const referralPoints = affiliatePointRules
-        ? referralPointsForAmount(body.sale_amount, affiliatePointRules)
+        ? isDirectAffiliatePurchase
+          ? affiliatePurchasePointsForAmount(body.sale_amount, affiliatePointRules)
+          : referralPointsForAmount(body.sale_amount, affiliatePointRules)
         : 0;
       const autoMatchedAffiliate = Boolean(referredAffiliate && !body.referred_affiliate_id);
       const saleProducts = Array.isArray(body.metadata?.products) && body.metadata.products.length
@@ -3036,13 +3040,14 @@ async function createCustomerAcquisitionSale(req, res, next) {
         await client.query(
           `insert into affiliate_point_ledger
             (business_id, affiliate_id, created_by_user_id, amount, points_awarded, reason, metadata)
-           values ($1, $2, $3, $4, $5, 'REFERRAL_PURCHASE', $6)`,
+           values ($1, $2, $3, $4, $5, $6, $7)`,
           [
             businessId,
             referredAffiliate.id,
             req.user.id,
             body.sale_amount,
             referralPoints,
+            isDirectAffiliatePurchase ? "AFFILIATE_PURCHASE" : "REFERRAL_PURCHASE",
             {
               sale_id: saleResult.rows[0].id,
               acquisition_source: body.acquisition_source,
@@ -3050,6 +3055,7 @@ async function createCustomerAcquisitionSale(req, res, next) {
               acquisition_channel_id: acquisitionChannel.acquisition_channel_id,
               referred_customer: body.customer_name || null,
               affiliate_match_source: autoMatchedAffiliate ? "customer_identity" : "manual_selection",
+              points_calculation: isDirectAffiliatePurchase ? "amount_rule" : "referral_rule",
               ...(affiliatePointRules ? affiliatePointRuleMetadata(affiliatePointRules) : {}),
             },
           ]
