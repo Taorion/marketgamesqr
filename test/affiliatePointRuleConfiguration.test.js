@@ -61,6 +61,10 @@ test("cada movimiento recibe instantanea completa y fecha de aplicacion", () => 
 test("la interfaz usa step 1, no sugiere secuencias artificiales y valida antes de enviar", () => {
   const html = fs.readFileSync(path.join(__dirname, "../empresa/index.html"), "utf8");
   const js = fs.readFileSync(path.join(__dirname, "../empresa/js/app.js"), "utf8");
+  const ruleCard = html.match(/<section class="[^"]*affiliate-point-rule-card[^"]*"[^>]*>/)?.[0] || "";
+  assert.ok(ruleCard, "La regla de puntos debe existir dentro de Cuenta");
+  assert.doesNotMatch(ruleCard, /\bhidden\b/, "La regla de puntos no puede quedar oculta permanentemente");
+  assert.match(html, /affiliate-point-visible-v481-20260911/);
   assert.match(html, /accountAffiliatePointAmountInput[^>]+min="1"[^>]+step="1"/);
   assert.match(html, /accountAffiliatePointRateInput[^>]+min="1"[^>]+step="1"/);
   const amountField = html.match(/<input id="accountAffiliatePointAmountInput"[^>]+>/)?.[0] || "";
