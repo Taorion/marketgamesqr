@@ -918,6 +918,9 @@ create index if not exists idx_ticket_center_qr_business_created on qr_codes(bus
 create index if not exists idx_ticket_center_qr_business_origin_created on qr_codes(business_id, origin_type, created_at desc);
 create index if not exists idx_ticket_center_qr_business_batch_status on qr_codes(business_id, batch_id, status);
 create index if not exists idx_portal_qr_codes_player_created on qr_codes(player_id, created_at desc);
+create index if not exists idx_players_business_document_identity on players (business_id, (regexp_replace(lower(coalesce(document_id, '')), '[^a-z0-9]', '', 'g'))) where nullif(regexp_replace(lower(coalesce(document_id, '')), '[^a-z0-9]', '', 'g'), '') is not null;
+create index if not exists idx_players_business_email_identity on players (business_id, (lower(email))) where nullif(email, '') is not null;
+create index if not exists idx_players_business_phone_identity on players (business_id, (regexp_replace(regexp_replace(coalesce(phone, ''), '\D', '', 'g'), '^57([0-9]{10})$', '\1'))) where nullif(regexp_replace(coalesce(phone, ''), '\D', '', 'g'), '') is not null;
 create index if not exists idx_qr_codes_affiliate_status on qr_codes(affiliate_id, status, created_at desc);
 create index if not exists idx_qr_codes_rms_risk_idempotency
   on qr_codes(business_id, (metadata->>'rms_risk_resource_idempotency_key'))

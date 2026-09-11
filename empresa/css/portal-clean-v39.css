@@ -32937,6 +32937,19 @@ html body[data-current-view="validator"] .portal-shell .validator-operation-pane
 
 html body[data-current-view="validator"] .portal-shell .validator-operation-panel[data-mode="rejected"] { border-color: rgba(220, 38, 38, .22) !important; }
 html body[data-current-view="validator"] .portal-shell .validator-operation-panel[data-mode^="completed"] { border-color: rgba(13, 148, 136, .25) !important; box-shadow: 0 18px 42px rgba(13, 148, 136, .08) !important; }
+html body[data-current-view="validator"] .portal-shell .validator-beneficiary-panel { grid-column: 1 / -1; display: grid; gap: 12px; padding: 14px; border: 1px solid rgba(7,89,214,.16); border-radius: 18px; background: linear-gradient(145deg,#f7fbff,#fff); }
+html body[data-current-view="validator"] .portal-shell .validator-beneficiary-panel[hidden] { display: none !important; }
+html body[data-current-view="validator"] .portal-shell .validator-beneficiary-state { width: fit-content; padding: 7px 11px; border-radius: 999px; color: #075f58; background: #e7faf5; font-size: .72rem; font-weight: 850; }
+html body[data-current-view="validator"] .portal-shell .validator-beneficiary-state[data-state="partial"] { color: #8a4b08; background: #fff4df; }
+html body[data-current-view="validator"] .portal-shell .validator-beneficiary-state[data-state="anonymous"] { color: #7f1d1d; background: #fff0f0; }
+html body[data-current-view="validator"] .portal-shell .validator-beneficiary-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+html body[data-current-view="validator"] .portal-shell .validator-beneficiary-fields label { display: grid; gap: 6px; min-width: 0; }
+html body[data-current-view="validator"] .portal-shell .validator-beneficiary-fields label.is-missing > span { color: #a84e06; }
+html body[data-current-view="validator"] .portal-shell .validator-beneficiary-fields label.is-missing input { border-color: #e58b2b !important; background: #fffaf2 !important; }
+html body[data-current-view="validator"] .portal-shell .validator-beneficiary-resolution, html body[data-current-view="validator"] .portal-shell .validator-privacy-note { margin: 0; color: #536b82; font-size: .7rem; line-height: 1.45; }
+html body[data-current-view="validator"] .portal-shell .validator-consent-check { display: flex !important; align-items: flex-start !important; gap: 9px; padding: 11px; border-radius: 13px; background: #eef6ff; color: #173b58; font-size: .72rem; font-weight: 720; line-height: 1.4; }
+html body[data-current-view="validator"] .portal-shell .validator-consent-check input { flex: 0 0 auto; width: 20px !important; height: 20px; min-height: 20px !important; margin-top: 1px; }
+@media (max-width: 600px) { html body[data-current-view="validator"] .portal-shell .validator-beneficiary-panel { padding: 11px; border-radius: 15px; } html body[data-current-view="validator"] .portal-shell .validator-beneficiary-fields { grid-template-columns: 1fr; } }
 
 html body[data-current-view="validator"] .portal-shell .validator-sale-form,
 html body[data-current-view="validator"] .portal-shell .validator-flow-fields {

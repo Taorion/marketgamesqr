@@ -3,7 +3,7 @@ const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
 const APP_VERSION = "empresa-20260910-qori-public-links-v472";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910 pano-ingles-affiliate-card-v471-20260910 qori-public-links-v472-20260910 pano-ingles-affiliate-card-v473-20260910";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910 pano-ingles-affiliate-card-v471-20260910 qori-public-links-v472-20260910 pano-ingles-affiliate-card-v473-20260910 empresa-20260909-activation-status-filters-v467 validator-beneficiary-v477-20260911";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 30000;
@@ -973,6 +973,16 @@ const validatorContactValue = document.getElementById("validatorContactValue");
 const validatorExpiresValue = document.getElementById("validatorExpiresValue");
 const validatorRedeemButton = document.getElementById("validatorRedeemButton");
 const validatorSaleForm = document.getElementById("validatorSaleForm");
+const validatorBeneficiaryPanel = document.getElementById("validatorBeneficiaryPanel");
+const validatorBeneficiaryHelp = document.getElementById("validatorBeneficiaryHelp");
+const validatorBeneficiaryState = document.getElementById("validatorBeneficiaryState");
+const validatorBeneficiaryNameInput = document.getElementById("validatorBeneficiaryNameInput");
+const validatorBeneficiaryPhoneInput = document.getElementById("validatorBeneficiaryPhoneInput");
+const validatorBeneficiaryEmailInput = document.getElementById("validatorBeneficiaryEmailInput");
+const validatorBeneficiaryDocumentInput = document.getElementById("validatorBeneficiaryDocumentInput");
+const validatorBeneficiaryDocumentRequired = document.getElementById("validatorBeneficiaryDocumentRequired");
+const validatorBeneficiaryDataUseInput = document.getElementById("validatorBeneficiaryDataUseInput");
+const validatorBeneficiaryResolution = document.getElementById("validatorBeneficiaryResolution");
 const validatorOperationPanel = document.getElementById("validatorOperationPanel");
 const validatorOperationEyebrow = document.getElementById("validatorOperationEyebrow");
 const validatorOperationTitle = document.getElementById("validatorOperationTitle");
@@ -3136,6 +3146,7 @@ let state = {
   validatorStream: null,
   validatorScanLoopHandle: 0,
   validatorScanning: false,
+  validatorRedemptionKey: "",
   validatorScannerMode: "none",
   validatorScanCanvas: document.createElement("canvas"),
   validatorScanContext: null,
@@ -18747,12 +18758,61 @@ function validatorIsTransferableTicket(data = state.validatorLastValidation) {
     && (data.qr_code.ticket_identity_mode === "TRANSFERABLE" || data.qr_code.beneficiary_data_collected === false);
 }
 
+function renderValidatorBeneficiary(data = null) {
+  const beneficiary = data?.beneficiary || null;
+  const person = beneficiary?.data || data?.player || {};
+  const status = beneficiary?.status || (person?.name ? "PARTIAL" : "ANONYMOUS");
+  if (validatorBeneficiaryPanel) validatorBeneficiaryPanel.hidden = !data || data.kind === "reward_pass";
+  if (!data || data.kind === "reward_pass") return;
+  validatorBeneficiaryNameInput.value = person.name || "";
+  validatorBeneficiaryPhoneInput.value = person.phone || "";
+  validatorBeneficiaryEmailInput.value = person.email || "";
+  validatorBeneficiaryDocumentInput.value = person.document_id || "";
+  validatorBeneficiaryDocumentRequired.hidden = !beneficiary?.document_required;
+  validatorBeneficiaryDocumentInput.required = Boolean(beneficiary?.document_required);
+  validatorBeneficiaryDataUseInput.checked = false;
+  const copy = {
+    IDENTIFIED: ["Datos recuperados del ticket", "Revisa la información y confirma que el beneficiario autorizó su uso para esta redención."],
+    PARTIAL: ["Datos parcialmente recuperados", "Completa los datos faltantes preguntándole directamente al beneficiario."],
+    ANONYMOUS: ["Este ticket todavía no tiene un beneficiario identificado", "Solicita nombre completo y al menos teléfono, correo o documento."],
+  }[status];
+  validatorBeneficiaryState.dataset.state = status.toLowerCase();
+  validatorBeneficiaryState.textContent = copy[0];
+  validatorBeneficiaryHelp.textContent = copy[1];
+  validatorBeneficiaryResolution.textContent = status === "IDENTIFIED" ? "Datos recuperados del ticket. Sólo completa campos vacíos; los conflictos serán bloqueados." : "Qori buscará primero coincidencias por documento, correo y teléfono dentro de este negocio.";
+  const missing = beneficiary?.missing_fields || [];
+  [validatorBeneficiaryNameInput, validatorBeneficiaryPhoneInput, validatorBeneficiaryEmailInput, validatorBeneficiaryDocumentInput].forEach((field) => field?.closest("label")?.classList.remove("is-missing"));
+  if (missing.includes("name")) validatorBeneficiaryNameInput.closest("label")?.classList.add("is-missing");
+  if (missing.includes("identifier")) [validatorBeneficiaryPhoneInput, validatorBeneficiaryEmailInput, validatorBeneficiaryDocumentInput].forEach((field) => field.closest("label")?.classList.add("is-missing"));
+  if (missing.includes("document_id")) validatorBeneficiaryDocumentInput.closest("label")?.classList.add("is-missing");
+  requestAnimationFrame(() => (missing.includes("name") ? validatorBeneficiaryNameInput : missing.includes("document_id") ? validatorBeneficiaryDocumentInput : missing.includes("identifier") ? validatorBeneficiaryPhoneInput : null)?.focus());
+}
+
+function collectValidatorBeneficiary() {
+  const beneficiary = {
+    player_id: state.validatorLastValidation?.player?.id || null,
+    name: validatorBeneficiaryNameInput.value.trim(),
+    phone: validatorBeneficiaryPhoneInput.value.trim() || null,
+    email: validatorBeneficiaryEmailInput.value.trim().toLowerCase() || null,
+    document_id: validatorBeneficiaryDocumentInput.value.trim() || null,
+    capture_source: state.validatorLastValidation?.beneficiary?.status === "IDENTIFIED" ? "TICKET" : "VALIDATOR_IN_PERSON",
+    data_use_confirmed: validatorBeneficiaryDataUseInput.checked,
+    marketing_consent: false,
+  };
+  if (!beneficiary.name) { validatorBeneficiaryNameInput.focus(); throw new Error("Ingresa el nombre completo del beneficiario."); }
+  if (!(beneficiary.phone || beneficiary.email || beneficiary.document_id)) { validatorBeneficiaryPhoneInput.focus(); throw new Error("Ingresa al menos un teléfono, correo o documento confiable."); }
+  if (validatorBeneficiaryDocumentInput.required && !beneficiary.document_id) { validatorBeneficiaryDocumentInput.focus(); throw new Error("Este beneficio exige verificar el documento."); }
+  if (!beneficiary.data_use_confirmed) { validatorBeneficiaryDataUseInput.focus(); throw new Error("Confirma que el beneficiario suministró los datos para gestionar esta redención."); }
+  return beneficiary;
+}
+
 function setValidatorOperationState(mode = "idle", data = state.validatorLastValidation) {
   const isRewardPass = validatorKind(data) === "reward_pass";
   const isTransferableTicket = validatorIsTransferableTicket(data);
   const redeemLabel = validatorRedeemButton?.querySelector("span:last-child");
   if (validatorOperationPanel) validatorOperationPanel.dataset.mode = mode;
   validatorRewardPassFields.hidden = mode !== "validated_reward" && mode !== "completed_reward";
+  if (validatorBeneficiaryPanel) validatorBeneficiaryPanel.hidden = !["validated_standard", "completed_standard"].includes(mode);
   validatorStandardSaleFields.hidden = !["validated_standard", "completed_standard"].includes(mode);
   validatorObservationField.hidden = !["validated_reward", "completed_reward", "validated_standard", "completed_standard"].includes(mode);
   validatorRedeemButton.hidden = !["validated_standard", "validated_reward"].includes(mode);
@@ -18767,7 +18827,7 @@ function setValidatorOperationState(mode = "idle", data = state.validatorLastVal
     idle: ["Siguiente acción", "Valida un ticket para comenzar", "La operación se adaptará automáticamente al tipo de ticket detectado.", "En espera", "capture"],
     validating: ["Consulta segura", "Comprobando autenticidad", "Estamos verificando negocio, estado, vigencia y beneficio.", "Validando", "verify"],
     rejected: ["Operación detenida", "Este ticket no puede redimirse", "Revisa el diagnóstico. No se ha modificado ningún beneficio.", "Protegido", "verify"],
-    validated_standard: ["Ticket QR aprobado", isTransferableTicket ? "Confirma únicamente el beneficio" : "Elige cómo aplicar el beneficio", isTransferableTicket ? "Este ticket es transferible: no solicites ni cotejes cédula. Verifica el beneficio y confirma la redención." : "Si hay compra, registra sus productos: descuento, obsequio o condición se aplicarán antes de confirmar la redención.", isTransferableTicket ? "Sin identidad" : "Listo para aplicar", "redeem"],
+    validated_standard: ["Ticket QR aprobado", "Confirma beneficiario y aplicación", isTransferableTicket ? "Identifica presencialmente al beneficiario y luego elige cómo aplicar el beneficio." : "Revisa los datos recuperados y completa únicamente lo faltante antes de redimir.", isTransferableTicket ? "Identidad pendiente" : "Listo para aplicar", "redeem"],
     validated_reward: ["Reward Pass aprobado", "Verifica factura, documento y saldo", "Completa los datos de la compra. El sistema calculará automáticamente cuánto cubre el saldo.", "Saldo disponible", "redeem"],
     redeemed_standard: ["Operación segura", "Beneficio redimido", "La operación quedó cerrada.", "Completado", "close"],
     completed_standard: ["Operación completa", "Compra y beneficio confirmados", "El resumen final conserva subtotal, beneficio aplicado y total pagado.", "Completado", "close"],
@@ -18803,16 +18863,17 @@ function setValidatorResult(mode, title, message, data = null) {
     validatorProductScope,
     validatorFulfillment,
   ].filter(Boolean).join(" | ");
-  validatorPlayerValue.textContent = isTransferableTicket ? "Ticket transferible" : data?.player?.name || "-";
-  validatorDocumentValue.textContent = isTransferableTicket ? "No requerido" : data?.player?.document_id || "-";
+  validatorPlayerValue.textContent = data?.player?.name || (isTransferableTicket ? "Por identificar presencialmente" : "-");
+  validatorDocumentValue.textContent = data?.player?.document_id || (data?.beneficiary?.document_required ? "Pendiente" : "No requerido");
   validatorContactValue.textContent = [
     data?.player?.email,
     data?.player?.phone,
     data?.reward_pass ? `Saldo: ${money(data.reward_pass.current_balance_cop)}` : "",
     data?.sale?.product_name ? `Venta: ${data.sale.product_name}` : "",
     data?.affiliate?.name ? `Recomendado por: ${data.affiliate.name}` : "",
-  ].filter(Boolean).join(" | ") || (isTransferableTicket ? "Sin captura de datos personales" : "-");
+  ].filter(Boolean).join(" | ") || (isTransferableTicket ? "Se completará durante la redención" : "-");
   validatorExpiresValue.textContent = formatDate(data?.qr_code?.expires_at);
+  renderValidatorBeneficiary(data);
   validatorRedeemButton.disabled = !data?.allowed;
   if (data?.kind === "reward_pass") {
     if (validatorRewardPassRedeemInput) validatorRewardPassRedeemInput.value = "";
@@ -18836,6 +18897,9 @@ function resetValidatorSaleForm() {
   setProductInputValue(validatorProductServiceInput, "");
   validatorSaleNotesInput.value = "";
   validatorSaleStatus.textContent = "";
+  if (validatorBeneficiaryPanel) validatorBeneficiaryPanel.hidden = true;
+  [validatorBeneficiaryNameInput, validatorBeneficiaryPhoneInput, validatorBeneficiaryEmailInput, validatorBeneficiaryDocumentInput].forEach((field) => { if (field) field.value = ""; });
+  if (validatorBeneficiaryDataUseInput) validatorBeneficiaryDataUseInput.checked = false;
   state.validatorRedemptionMode = "STANDALONE";
   state.validatorPurchaseItems = [validatorPurchaseItem()];
   state.validatorCheckoutPreview = null;
@@ -18857,6 +18921,7 @@ function resetValidatorSaleForm() {
 function resetValidatorOperation({ focus = false } = {}) {
   stopValidatorScanner();
   state.validatorLastToken = "";
+  state.validatorRedemptionKey = "";
   state.validatorLastValidation = null;
   state.validatorLastRedemption = null;
   state.validatorLastScanValue = "";
@@ -33296,12 +33361,12 @@ async function validateValidatorToken(rawValue) {
       setInlineMessage(validatorManualStatus, data.kind === "reward_pass"
         ? "Reward Pass válido. Confirma cédula, factura y valor a redimir."
         : transferableTicket
-          ? "Ticket transferible válido. No requiere cédula; confirma únicamente el beneficio."
+          ? "Ticket válido. Identifica presencialmente al beneficiario antes de redimir."
           : "Ticket válido. Puedes redimir el beneficio.", "success");
       showFeedback(data.kind === "reward_pass"
         ? "Reward Pass válido. Confirma documento antes de registrar redención."
         : transferableTicket
-          ? "Ticket transferible aprobado. Registra la entrega del beneficio sin solicitar datos personales."
+          ? "Ticket aprobado. Completa los datos suministrados por el beneficiario y confirma su uso para esta redención."
           : "Ticket válido. Revisa los datos y redime cuando el cliente confirme.", "success", { title: "Ticket aprobado" });
     } else {
       setValidatorResult("danger", data.status || "Ticket rechazado", data.message, data);
@@ -33374,6 +33439,8 @@ async function redeemValidatorToken() {
         confirm_full_consumption: !rewardPassPreview.partialAllowed && rewardPassPreview.remaining > 0,
         idempotency_key: state.rewardPassRedemptionKey || (state.rewardPassRedemptionKey = createRewardPassOperationKey("reward-pass-redeem")),
       } : {
+        idempotency_key: state.validatorRedemptionKey || (state.validatorRedemptionKey = createRewardPassOperationKey("qr-redeem")),
+        beneficiary: collectValidatorBeneficiary(),
         mode: state.validatorRedemptionMode,
         purchase: {
           subtotal: checkoutPreview?.subtotal || 0,
@@ -33387,6 +33454,7 @@ async function redeemValidatorToken() {
     });
     if (!isCurrentBusinessScope(scopeKey)) return;
     state.validatorLastRedemption = data.redemption;
+    if (!isRewardPass) state.validatorRedemptionKey = "";
     if (isRewardPass) state.rewardPassRedemptionKey = "";
     state.validatorLastValidation = {
       ...state.validatorLastValidation,

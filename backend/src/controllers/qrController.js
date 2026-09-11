@@ -6,6 +6,17 @@ const { mapPublicCreditAccount } = require("../services/qrCreditService");
 const { validate, generateQrSchema } = require("../utils/validators");
 
 const redeemCheckoutSchema = z.object({
+  idempotency_key: z.string().trim().min(8).max(160),
+  beneficiary: z.object({
+    player_id: z.string().uuid().optional().nullable(),
+    name: z.string().trim().max(180).optional().nullable(),
+    phone: z.string().trim().max(40).optional().nullable(),
+    email: z.string().trim().email().max(240).optional().nullable(),
+    document_id: z.string().trim().max(80).optional().nullable(),
+    capture_source: z.enum(["TICKET", "VALIDATOR_IN_PERSON"]).default("VALIDATOR_IN_PERSON"),
+    data_use_confirmed: z.literal(true),
+    marketing_consent: z.boolean().optional().default(false),
+  }),
   mode: z.enum(["STANDALONE", "PURCHASE"]).default("STANDALONE"),
   purchase: z.object({
     subtotal: z.number().min(0).default(0),

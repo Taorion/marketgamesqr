@@ -8,6 +8,7 @@ const { logValidation, logQrEvent } = require("./auditService");
 const { consumeQrCredit } = require("./qrCreditService");
 const { assertStandaloneBusinessFeature } = require("./subscriptionService");
 const { resolveQrContact, registerRedemptionIntake } = require("./redemptionLeadIntakeService");
+const { beneficiaryState, resolveBeneficiary } = require("./validatorBeneficiaryService");
 const {
   calculateBenefitCheckout,
   describeBenefitApplication,
@@ -199,6 +200,7 @@ async function getQrDetails(tokenInput, user) {
        b.slug as business_slug,
        c.name as campaign_name,
        c.type as campaign_type,
+       c.requires_document_check,
        g.name as game_name,
        r.name as reward_name,
        r.description as reward_description,
@@ -214,6 +216,11 @@ async function getQrDetails(tokenInput, user) {
        p.email as player_email,
        p.phone as player_phone,
        p.document_id as player_document_id,
+       ip.player_id as participant_player_id,
+       ip.name as participant_name,
+       ip.email as participant_email,
+       ip.phone as participant_phone,
+       ip.document as participant_document_id,
        a.id as affiliate_id,
        a.full_name as affiliate_name,
        a.document_id as affiliate_document_id,
@@ -226,6 +233,12 @@ async function getQrDetails(tokenInput, user) {
      left join qr_batches qb on qb.id = q.batch_id
      left join business_sales bs on bs.id = q.sale_id
      left join players p on p.id = q.player_id
+     left join lateral (
+       select participant.player_id, participant.name, participant.email, participant.phone, participant.document
+       from interactive_activation_rewards iar
+       join interactive_activation_participants participant on participant.id=iar.participant_id and participant.company_id=q.business_id
+       where iar.qr_code_id=q.id order by iar.created_at desc limit 1
+     ) ip on true
      left join affiliates a on a.id = q.affiliate_id
      where q.token = $1`,
     [token]
@@ -338,13 +351,21 @@ async function getQrDetails(tokenInput, user) {
       qr.benefit_value || {},
       qr.reward_name || qr.benefit_value?.label || "Beneficio estrategico"
     ),
-    player: qr.player_id
+    beneficiary: beneficiaryState({
+      player_id: qr.player_id || qr.participant_player_id,
+      name: qr.player_name || qr.participant_name,
+      email: qr.player_email || qr.participant_email,
+      phone: qr.player_phone || qr.participant_phone,
+      document_id: qr.player_document_id || qr.participant_document_id,
+      capture_source: "TICKET",
+    }, Boolean(qr.requires_document_check)),
+    player: (qr.player_id || qr.participant_player_id || qr.participant_name || qr.participant_email || qr.participant_phone || qr.participant_document_id)
       ? {
-          id: qr.player_id,
-          name: qr.player_name,
-          email: qr.player_email,
-          phone: qr.player_phone,
-          document_id: qr.player_document_id,
+          id: qr.player_id || qr.participant_player_id || null,
+          name: qr.player_name || qr.participant_name || null,
+          email: qr.player_email || qr.participant_email || null,
+          phone: qr.player_phone || qr.participant_phone || null,
+          document_id: qr.player_document_id || qr.participant_document_id || null,
         }
       : null,
     affiliate: qr.affiliate_id
@@ -497,11 +518,13 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
   return withTransaction(async (client) => {
     const result = await client.query(
       `select q.*, b.name as business_name, r.name as reward_name, a.full_name as affiliate_name,
+              c.requires_document_check,
               p.name as player_name, p.email as player_email, p.phone as player_phone,
               p.document_id as player_document_id
        from qr_codes q
        join businesses b on b.id = q.business_id
        left join rewards r on r.id = q.reward_id
+       left join campaigns c on c.id = q.campaign_id
        left join affiliates a on a.id = q.affiliate_id
        left join players p on p.id = q.player_id
        where q.token = $1
@@ -534,6 +557,13 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       throw forbidden("Este QR pertenece a otro negocio.");
     }
 
+    if (qr.status === "REDEEMED" && qr.metadata?.validator_redemption_idempotency_key === checkoutPayload.idempotency_key) {
+      const prior = await client.query(
+        `select rd.*, row_to_json(s) sale from redemptions rd left join attributed_sales s on s.redemption_id=rd.id where rd.qr_code_id=$1 and rd.business_id=$2 limit 1`,
+        [qr.id, qr.business_id]
+      );
+      return { status: "REDEEMED", idempotent_replay: true, message: "Esta operación ya había sido confirmada.", redemption: prior.rows[0] || null, sale: prior.rows[0]?.sale || null, business: { id: qr.business_id, name: qr.business_name } };
+    }
     if (qr.status === "REDEEMED") {
       await logValidation(client, {
         business_id: qr.business_id,
@@ -567,6 +597,28 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       throw badRequest("Este QR esta vencido.");
     }
 
+    const identity = await resolveBeneficiary(client, {
+      businessId: qr.business_id,
+      campaignId: qr.campaign_id,
+      gameId: qr.game_id,
+      branchId: checkoutPayload.purchase?.branch_id || user.branch_id || null,
+      sellerUserId: user.id,
+      currentPlayerId: qr.player_id,
+      input: checkoutPayload.beneficiary,
+      documentRequired: Boolean(qr.requires_document_check),
+      operationKey: checkoutPayload.idempotency_key,
+      qrCodeId: qr.id,
+    });
+    qr.player_id = identity.player.id;
+    qr.player_name = identity.player.name;
+    qr.player_phone = identity.player.phone;
+    qr.player_email = identity.player.email;
+    qr.player_document_id = identity.player.document_id;
+    await client.query(
+      `update qr_codes set player_id=$2, metadata=coalesce(metadata,'{}'::jsonb)||$3::jsonb where id=$1`,
+      [qr.id, identity.player.id, JSON.stringify({ validator_identity: identity.audit, validator_redemption_idempotency_key: checkoutPayload.idempotency_key })]
+    );
+
     const benefitLabel = qr.reward_name || qr.benefit_value?.label || "Beneficio estrategico";
     const checkout = calculateBenefitCheckout({
       benefitType: qr.benefit_type,
@@ -579,6 +631,8 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       benefit_application: checkout,
       origin_type: qr.origin_type,
       affiliate_id: qr.affiliate_id || null,
+      beneficiary: { player_id: qr.player_id, capture_source: identity.audit.capture_source, matched_existing: !identity.created },
+      idempotency_key: checkoutPayload.idempotency_key,
     };
     const redemption = await client.query(
       `insert into redemptions
@@ -650,9 +704,9 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
 
     await client.query(
       `update qr_codes
-       set status = 'REDEEMED', redeemed_at = now(), redeemed_by_user_id = $2
+       set status = 'REDEEMED', redeemed_at = now(), redeemed_by_user_id = $2, player_id=$3
        where id = $1`,
-      [qr.id, user.id]
+      [qr.id, user.id, qr.player_id]
     );
 
     await logValidation(client, {
@@ -718,6 +772,7 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       sale: attributedSale,
       checkout,
       referral,
+      beneficiary: { name: qr.player_name, phone: qr.player_phone, email: qr.player_email, document_id: qr.player_document_id, resolution: identity.match },
       business: { id: qr.business_id, name: qr.business_name },
       reward: { id: qr.reward_id, name: benefitLabel },
       affiliate: qr.affiliate_id ? { id: qr.affiliate_id, name: qr.affiliate_name } : null,
