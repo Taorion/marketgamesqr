@@ -499,6 +499,81 @@ async function recordAffiliateCheckout(client, qr, attributedSale, checkout, pur
   };
 }
 
+async function recordCanonicalQrCheckout(client, qr, attributedSale, checkout, purchase, user) {
+  const productSummary = purchase.product_or_service
+    || checkout.line_items.map((item) => `${item.name} x${item.quantity}`).join(", ").slice(0, 200)
+    || "Compra registrada desde Validador";
+  const totalQuantity = checkout.line_items.reduce((total, item) => total + Number(item.quantity || 0), 0) || 1;
+  const singleInventoryProductId = checkout.line_items.length === 1
+    ? checkout.line_items[0].inventory_product_id || null
+    : null;
+  const channelName = qr.metadata?.acquisition_channel_name_snapshot
+    || qr.metadata?.acquisition_channel
+    || qr.metadata?.channel
+    || "Validador QR";
+  const inserted = await client.query(
+    `insert into business_sales
+      (business_id, campaign_id, qr_code_id, customer_name, customer_phone, customer_email,
+       customer_document_id, product_name, sale_amount, currency, seller_user_id, created_by_user_id,
+       branch_id, acquisition_source, acquisition_channel, acquisition_channel_name_snapshot,
+       acquisition_channel_source, notes, rms_source_type, rms_source_id, inventory_product_id,
+       quantity, payment_method, paid_at, sale_status, idempotency_key, metadata)
+     values
+      ($1, $2, $3, $4, $5, $6,
+       $7, $8, $9, $10, $11, $11,
+       coalesce($12::uuid, $13::uuid), 'QR_REDEMPTION', $14, $14,
+       'SYSTEM_SPECIAL', $15, 'PLAYER', $16, $17,
+       $18, $19, now(), 'PAID', $20, $21::jsonb)
+     on conflict (qr_code_id) where qr_code_id is not null do update
+       set customer_name = excluded.customer_name,
+           customer_phone = excluded.customer_phone,
+           customer_email = excluded.customer_email,
+           customer_document_id = excluded.customer_document_id,
+           product_name = excluded.product_name,
+           sale_amount = excluded.sale_amount,
+           currency = excluded.currency,
+           seller_user_id = excluded.seller_user_id,
+           branch_id = excluded.branch_id,
+           payment_method = excluded.payment_method,
+           metadata = business_sales.metadata || excluded.metadata
+       where business_sales.business_id = excluded.business_id
+     returning *`,
+    [
+      qr.business_id,
+      qr.campaign_id || null,
+      qr.id,
+      qr.player_name || null,
+      qr.player_phone || null,
+      qr.player_email || null,
+      qr.player_document_id || null,
+      productSummary,
+      checkout.final_total,
+      purchase.currency || "COP",
+      user.id,
+      purchase.branch_id || null,
+      user.branch_id || null,
+      channelName,
+      purchase.notes || null,
+      qr.player_id,
+      singleInventoryProductId,
+      totalQuantity,
+      purchase.payment_method || null,
+      `validator-qr-sale:${qr.id}`,
+      JSON.stringify({
+        source_module: "qr_validator",
+        crm_source_type: "PLAYER",
+        crm_source_id: qr.player_id,
+        redemption_id: attributedSale.redemption_id,
+        attributed_sale_id: attributedSale.id,
+        product_catalog_required: false,
+        line_items: checkout.line_items,
+        benefit_application: checkout,
+      }),
+    ]
+  );
+  return inserted.rows[0];
+}
+
 async function redeemQr(tokenInput, user, checkoutPayload = {}) {
   assertQrValidator(user);
   const token = normalizeToken(tokenInput);
@@ -655,6 +730,7 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
 
     let attributedSale = null;
     let referral = null;
+    let businessSale = null;
     if (checkout.mode === "PURCHASE") {
       const purchase = checkoutPayload.purchase || {};
       const productSummary = purchase.product_or_service
@@ -699,14 +775,17 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       attributedSale = saleResult.rows[0];
       if (qr.origin_type === "AFFILIATE_REFERRAL" && qr.affiliate_id) {
         referral = await recordAffiliateCheckout(client, qr, attributedSale, checkout, checkoutPayload.purchase || {}, user);
+        businessSale = referral?.business_sale_id ? { id: referral.business_sale_id } : null;
+      } else {
+        businessSale = await recordCanonicalQrCheckout(client, qr, attributedSale, checkout, purchase, user);
       }
     }
 
     await client.query(
       `update qr_codes
-       set status = 'REDEEMED', redeemed_at = now(), redeemed_by_user_id = $2, player_id=$3
+       set status = 'REDEEMED', redeemed_at = now(), redeemed_by_user_id = $2, player_id=$3, sale_id=$4
        where id = $1`,
-      [qr.id, user.id, qr.player_id]
+      [qr.id, user.id, qr.player_id, businessSale?.id || null]
     );
 
     await logValidation(client, {
@@ -770,6 +849,7 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
         : "Beneficio redimido correctamente sin compra asociada.",
       redemption: redemption.rows[0],
       sale: attributedSale,
+      business_sale: businessSale,
       checkout,
       referral,
       beneficiary: { name: qr.player_name, phone: qr.player_phone, email: qr.player_email, document_id: qr.player_document_id, resolution: identity.match },
@@ -802,4 +882,4 @@ function buildStatusMessage(status) {
   return "QR invalido.";
 }
 
-module.exports = { generateQr, getQrDetails, redeemQr };
+module.exports = { generateQr, getQrDetails, redeemQr, recordCanonicalQrCheckout };

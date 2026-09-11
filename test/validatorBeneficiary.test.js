@@ -1,6 +1,8 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
+const path = require("node:path");
 const { beneficiaryState, normalizeBeneficiary, resolveBeneficiary } = require("../backend/src/services/validatorBeneficiaryService");
+const { recordCanonicalQrCheckout } = require("../backend/src/services/qrService");
 
 test("normaliza teléfono colombiano, email y documento", () => {
   assert.deepEqual(normalizeBeneficiary({ name: " Laura   Gómez ", phone: "300 123 4567", email: " LAURA@EXAMPLE.COM ", document_id: "1.234-567" }), {
@@ -64,12 +66,52 @@ test("todas las búsquedas y escrituras se limitan por business_id", async () =>
 
 test("el contrato de redención bloquea QR, resuelve identidad y persiste todo antes de marcarlo redimido", () => {
   const fs = require("node:fs");
-  const service = fs.readFileSync("backend/src/services/qrService.js", "utf8");
+  const service = fs.readFileSync(path.resolve(__dirname, "../backend/src/services/qrService.js"), "utf8");
   const redeem = service.slice(service.indexOf("async function redeemQr"), service.indexOf("function buildStatusMessage"));
   assert.match(redeem, /for update of q/);
   assert.ok(redeem.indexOf("resolveBeneficiary") < redeem.indexOf("insert into redemptions"));
   assert.ok(redeem.indexOf("insert into attributed_sales") < redeem.indexOf("set status = 'REDEEMED'"));
+  assert.ok(redeem.indexOf("recordCanonicalQrCheckout") < redeem.indexOf("set status = 'REDEEMED'"));
+  assert.match(service, /product_catalog_required: false/);
+  assert.match(service, /'QR_REDEMPTION'/);
+  assert.match(redeem, /sale_id=\$4/);
   assert.match(redeem, /validator_redemption_idempotency_key/);
   assert.match(redeem, /registerRedemptionIntake/);
   assert.match(redeem, /player_id=\$3/);
+});
+
+test("la migracion repara compras QR historicas y conserva productos fuera del catalogo", () => {
+  const fs = require("node:fs");
+  const migration = fs.readFileSync(path.resolve(__dirname, "../database/migrations/202609110002_qr_validator_canonical_sales.sql"), "utf8");
+  assert.match(migration, /from attributed_sales sales/);
+  assert.match(migration, /sales\.application_mode = 'PURCHASE'/);
+  assert.match(migration, /not exists[\s\S]*business_sales existing/);
+  assert.match(migration, /coalesce\([\s\S]*sales\.product_or_service[\s\S]*Compra registrada desde Validador/);
+  assert.match(migration, /'product_catalog_required', false/);
+  assert.match(migration, /on conflict \(qr_code_id\) where qr_code_id is not null do nothing/);
+  assert.match(migration, /update qr_codes qr[\s\S]*set sale_id = sales\.id/);
+});
+
+test("una compra del Validador crea la venta canonica sin exigir producto de catalogo", async () => {
+  const calls = [];
+  const client = { async query(sql, params) {
+    calls.push({ sql, params });
+    return { rows: [{ id: "sale-1", business_id: params[0], qr_code_id: params[2] }] };
+  } };
+  const sale = await recordCanonicalQrCheckout(
+    client,
+    { id: "qr-1", business_id: "business-a", campaign_id: "campaign-1", player_id: "player-1", player_name: "Laura Gomez", player_phone: "+573001234567", player_email: null, player_document_id: null, metadata: {} },
+    { id: "attributed-1", redemption_id: "redemption-1" },
+    { final_total: 45000, line_items: [{ name: "Servicio no registrado", quantity: 1, unit_price: 50000, inventory_product_id: null }] },
+    { currency: "COP", payment_method: "Efectivo", branch_id: null },
+    { id: "seller-1", branch_id: null }
+  );
+  assert.equal(sale.id, "sale-1");
+  assert.match(calls[0].sql, /insert into business_sales/);
+  assert.match(calls[0].sql, /on conflict \(qr_code_id\)/);
+  assert.equal(calls[0].params[0], "business-a");
+  assert.equal(calls[0].params[7], "Servicio no registrado x1");
+  assert.equal(calls[0].params[16], null);
+  assert.equal(JSON.parse(calls[0].params[20]).crm_source_id, "player-1");
+  assert.equal(JSON.parse(calls[0].params[20]).product_catalog_required, false);
 });
