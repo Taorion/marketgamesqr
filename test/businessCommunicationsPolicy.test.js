@@ -43,6 +43,20 @@ test("communication history redacts heavy payloads and hydrates only on edit", (
   assert.match(frontend, /communicationCommandStrip/);
 });
 
+test("email attachments stay as native files until the communication is saved", () => {
+  const frontend = read("empresa/js/communications.js");
+  const html = read("empresa/index.html");
+  const selectionStart = frontend.indexOf("async function addEmailAttachmentFiles");
+  const selectionEnd = frontend.indexOf("function downloadMedia", selectionStart);
+  const selectionFlow = frontend.slice(selectionStart, selectionEnd);
+  assert.match(selectionFlow, /incoming\.map\(\(file\) => \(\{ file, name: file\.name/);
+  assert.doesNotMatch(selectionFlow, /readFileAsDataUrl\(file\)/);
+  assert.match(frontend, /prepareEmailAttachmentsForSave\(emailAttachments\)/);
+  assert.match(frontend, /reader\.onabort/);
+  assert.match(frontend, /tardó demasiado en prepararse/);
+  assert.match(html, /communications-pdf-overlay-v480-20260911/);
+});
+
 test("communications audience stays operable without a page-length contact list", () => {
   const html = read("empresa/index.html");
   const css = read("empresa/css/communications-flow.css");

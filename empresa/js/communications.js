@@ -188,8 +188,8 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     const attachments = Array.isArray(items) ? items.slice(0, MAX_EMAIL_ATTACHMENTS) : [];
     state.communicationComposerEmailAttachments = attachments;
     const input = emailAttachmentsInput();
-    // El binario se conserva en memoria hasta guardar. Evitamos meter data URLs grandes en
-    // el DOM, que podía dejar el compositor en blanco al seleccionar documentos pesados.
+    // El File nativo se conserva fuera del DOM y solo se convierte al guardar. Evitamos
+    // serializar data URLs grandes durante la selección, que podía blanquear el compositor.
     if (input) input.value = JSON.stringify(attachments.map(({ name, type, size }) => ({ name, type, size })));
     renderEmailAttachmentPreview();
   };
@@ -765,8 +765,43 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
     renderComposerAudience();
   }
 
-  function readFileAsDataUrl(file) {
-    return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error("No pudimos leer la imagen.")); reader.readAsDataURL(file); });
+  function readFileAsDataUrl(file, { label = "archivo", timeoutMs = 30000 } = {}) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      let settled = false;
+      const finish = (callback, value) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeout);
+        reader.onload = null;
+        reader.onerror = null;
+        reader.onabort = null;
+        callback(value);
+      };
+      const timeout = window.setTimeout(() => {
+        finish(reject, new Error(`El ${label} tardó demasiado en prepararse. Inténtalo de nuevo.`));
+        try { reader.abort(); } catch {}
+      }, timeoutMs);
+      reader.onload = () => finish(resolve, reader.result);
+      reader.onerror = () => finish(reject, new Error(`No pudimos leer el ${label}.`));
+      reader.onabort = () => finish(reject, new Error(`La lectura del ${label} fue cancelada.`));
+      try { reader.readAsDataURL(file); }
+      catch { finish(reject, new Error(`No pudimos leer el ${label}.`)); }
+    });
+  }
+
+  async function prepareEmailAttachmentsForSave(items) {
+    return Promise.all((items || []).map(async (attachment) => {
+      const source = String(attachment?.source || "");
+      if (source) return { source, name: attachment.name, type: attachment.type, size: attachment.size };
+      if (!(attachment?.file instanceof File)) throw new Error(`Vuelve a seleccionar ${attachment?.name || "el archivo adjunto"}.`);
+      return {
+        source: await readFileAsDataUrl(attachment.file, { label: "archivo adjunto" }),
+        name: attachment.name,
+        type: attachment.type,
+        size: attachment.size,
+      };
+    }));
   }
 
   async function addMediaFiles(files) {
@@ -801,17 +836,9 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
       showFeedback("Los adjuntos del email pueden pesar hasta 8 MB en total.", "info", { title: "Adjuntos demasiado pesados" });
       return;
     }
-    const uploadControl = document.getElementById("communicationEmailAttachmentsUploadInput")?.closest("label");
-    uploadControl?.classList.add("is-loading");
-    try {
-      const converted = await Promise.all(incoming.map(async (file) => ({ source: await readFileAsDataUrl(file), name: file.name, type: emailAttachmentType(file), size: file.size })));
-      setUploadedEmailAttachments([...current, ...converted]);
-      renderComposerPreview();
-    } catch (error) {
-      showFeedback(error.message || "No se pudo preparar el archivo.", "error", { title: "Adjuntos" });
-    } finally {
-      uploadControl?.classList.remove("is-loading");
-    }
+    const selected = incoming.map((file) => ({ file, name: file.name, type: emailAttachmentType(file), size: file.size }));
+    setUploadedEmailAttachments([...current, ...selected]);
+    renderComposerPreview();
   }
 
   function downloadMedia(item) {
@@ -894,8 +921,9 @@ const rmsPhaseLabel = (phase) => ({ recoleccion: "Leads recolectados", alimentac
       const totalSteps = action === "DRAFT" ? 3 : 4;
       const operationLabel = action === "SEND" ? (type === "WHATSAPP" ? "WhatsApp masivo" : "Envío por email") : action === "PUBLISH" ? "Publicación medida" : "Borrador";
       setComposerSaveBusy(form, true, event.submitter);
-      setComposerSaveFeedback({ step: 1, total: totalSteps, title: `1 de ${totalSteps} · Revisando ${operationLabel.toLowerCase()}`, detail: "Estamos validando los datos antes de guardarlos." });
+      setComposerSaveFeedback({ step: 1, total: totalSteps, title: `1 de ${totalSteps} · Revisando ${operationLabel.toLowerCase()}`, detail: emailAttachments.some((attachment) => attachment?.file) ? "Estamos preparando los archivos adjuntos para guardarlos." : "Estamos validando los datos antes de guardarlos." });
       await new Promise((resolve) => window.requestAnimationFrame(resolve));
+      payload.metadata.email_attachments = await prepareEmailAttachmentsForSave(emailAttachments);
       const editingId = state.editingCommunicationId;
       setComposerSaveFeedback({ step: 2, total: totalSteps, title: `2 de ${totalSteps} · Guardando ${operationLabel.toLowerCase()}`, detail: "La pieza y sus conexiones comerciales se están registrando." });
       const data = await api(editingId ? `/api/business/communications/${editingId}` : "/api/business/communications", { method: editingId ? "PATCH" : "POST", headers: authHeaders(), body: JSON.stringify(payload) });
