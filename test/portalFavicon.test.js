@@ -43,3 +43,14 @@ test("official Qori favicon files exist and are not empty", () => {
     assert.ok(stats.size > 0, `${file} must not be empty`);
   }
 });
+
+test("portal sidebar uses a Qori mark served by the official public web root", () => {
+  assert.match(
+    portalHtml,
+    /<img class="sidebar-qori-mark" src="\/img\/qori-icon-512\.png\?v=qori-sidebar-mark-[^"]+" alt="Qori">/,
+  );
+  const sidebarMark = path.join(projectRoot, "qori-web", "img", "qori-icon-512.png");
+  const stats = fs.statSync(sidebarMark);
+  assert.ok(stats.isFile());
+  assert.ok(stats.size > 0);
+});
