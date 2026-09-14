@@ -51120,38 +51120,38 @@ function rmsStationLeanRowMarkup(item = {}, stage = {}, nextPhase = null) {
   const contact = [item.phone, item.email].filter(Boolean).join(" · ") || "Sin contacto";
   const enteredAt = item.created_at || item.last_interaction_at || item.updated_at;
   let stationControl = stage.key === "recoleccion"
-    ? `<td class="rms-lean-station-status ${readiness.ready ? "ready" : "pending"}"><strong>${escapeHtml(readiness.label)}</strong><small>${escapeHtml(readiness.detail)}</small></td>`
-    : `<td class="rms-lean-station-status ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || readiness.label || "Media")}</td>`;
+    ? `<td data-label="Estado" class="rms-lean-station-status ${readiness.ready ? "ready" : "pending"}"><strong>${escapeHtml(readiness.label)}</strong><small>${escapeHtml(readiness.detail)}</small></td>`
+    : `<td data-label="Prioridad" class="rms-lean-station-status ${escapeHtml(item.priority_class || "medium")}">${escapeHtml(item.priority_label || readiness.label || "Media")}</td>`;
   if (stage.key === "alimentacion") {
-    stationControl = `<td class="rms-lean-station-quality">${rmsLeadQualitySelectMarkup(item)}</td>`;
+    stationControl = `<td data-label="Calidad" class="rms-lean-station-quality">${rmsLeadQualitySelectMarkup(item)}</td>`;
   } else if (stage.key === "curaduria") {
-    stationControl = `<td class="rms-lean-station-product">${rmsProductClassificationMarkup(item)}</td>`;
+    stationControl = `<td data-label="Producto o servicio" class="rms-lean-station-product">${rmsProductClassificationMarkup(item)}</td>`;
   } else if (stage.key === "clasificacion") {
-    stationControl = `<td class="rms-lean-station-activation">${rmsActivationDeliveryCardMarkup(item)}</td>`;
+    stationControl = `<td data-label="Contacto y seguimiento" class="rms-lean-station-activation">${rmsActivationDeliveryCardMarkup(item)}</td>`;
   }
   const controlFirst = ["alimentacion", "curaduria", "clasificacion"].includes(stage.key);
   return `
     <tr data-rms-station-lead="${escapeHtml(item.id)}" data-rms-review-capture="${escapeHtml(item.id)}" class="${selected ? "is-selected" : ""}">
-      <td>
+      <td data-label="Seleccionar" class="rms-lean-selection-cell">
         <label class="rms-lean-station-check">
           <input type="checkbox" data-rms-select="${escapeHtml(item.id)}" aria-label="Seleccionar ${escapeHtml(item.name || "lead")}" ${selected ? "checked" : ""}>
         </label>
       </td>
-      <td>
+      <td data-label="Lead">
         <strong>${escapeHtml(item.name || "Contacto")}</strong>
         <small>${escapeHtml(contact)}</small>
       </td>
       ${controlFirst ? stationControl : ""}
-      <td>
+      <td data-label="Origen">
         <span>${escapeHtml(origin)}</span>
         <small>${escapeHtml(enteredAt ? formatDate(enteredAt) : "-")}</small>
       </td>
-      <td>
+      <td data-label="Interés">
         <span>${escapeHtml(interest)}</span>
         <small>${escapeHtml(item.stage_label || stage.label || "")}</small>
       </td>
       ${controlFirst ? "" : stationControl}
-      <td>
+      <td data-label="Acciones" class="rms-lean-actions-cell">
         <button class="ghost-button compact" type="button" data-rms-review-capture="${escapeHtml(item.id)}">Detalle</button>
         ${stage.key === "recoleccion" ? `<button class="solid-button compact" type="button" data-rms-station-send-single="${escapeHtml(item.id)}" ${readiness.ready && nextPhase ? "" : "disabled"} title="${escapeHtml(readiness.ready ? `Enviar a ${nextPhase?.label || "Curaduría"}` : readiness.detail)}"><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span> Enviar</button>` : ""}
       </td>

@@ -1,0 +1,419 @@
+/* Final table system for the RMS stations. Scoped to the station workspace. */
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table-wrap, .rms-quality-dashboard-table-wrap) {
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: clamp(340px, 56dvh, 640px) !important;
+  margin: 14px 0 0 !important;
+  padding: 0 !important;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+  border: 1px solid #c9dbea !important;
+  border-radius: 2px !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 28px rgba(17, 52, 78, .07) !important;
+  scrollbar-color: #8eb3ca #edf5fa;
+  scrollbar-width: thin;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) {
+  width: 100% !important;
+  max-width: none !important;
+  border: 0 !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  table-layout: auto !important;
+  color: #18384f !important;
+  background: #ffffff !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-station-table {
+  min-width: 860px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-dashboard-table {
+  min-width: 1080px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-premium-table {
+  min-width: 980px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 5 !important;
+  width: auto !important;
+  min-width: 112px !important;
+  padding: 11px 12px !important;
+  border: 0 !important;
+  border-right: 1px solid rgba(215, 238, 250, .16) !important;
+  border-bottom: 1px solid #061f35 !important;
+  color: #f7fcff !important;
+  background: #082f49 !important;
+  font-size: .74rem !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+  letter-spacing: .025em !important;
+  text-align: left !important;
+  text-transform: none !important;
+  white-space: normal !important;
+  box-shadow: none !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) thead th:last-child {
+  border-right: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td {
+  min-width: 0 !important;
+  padding: 12px !important;
+  border: 0 !important;
+  border-right: 1px solid #e5eef5 !important;
+  border-bottom: 1px solid #dce8f0 !important;
+  color: #26485f !important;
+  background: #ffffff !important;
+  font-size: .84rem !important;
+  line-height: 1.38 !important;
+  text-align: left !important;
+  vertical-align: top !important;
+  white-space: normal !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody tr:nth-child(even) td {
+  background: #f8fbfd !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody tr:hover td {
+  color: #12364e !important;
+  background: #eef8fd !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-station-table tbody tr.is-selected td {
+  background: #e8f3ff !important;
+  box-shadow: inset 0 2px 0 #1a73e8, inset 0 -1px 0 #bfd8ef !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody tr:last-child td {
+  border-bottom: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td:last-child {
+  border-right: 0 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-station-table :is(th, td):first-child {
+  width: 48px !important;
+  min-width: 48px !important;
+  text-align: center !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-station-table :is(th, td):nth-child(2) {
+  min-width: 180px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-station-table :is(th, td):last-child {
+  min-width: 142px !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-station-table thead th:first-child {
+  left: 0 !important;
+  z-index: 7 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-station-table tbody td:first-child {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 3 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-station-table thead th:last-child {
+  right: 0 !important;
+  z-index: 7 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-station-table tbody td:last-child {
+  position: sticky !important;
+  right: 0 !important;
+  z-index: 3 !important;
+  box-shadow: -8px 0 14px rgba(31, 70, 96, .06) !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td :is(strong, span, small),
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-station-table tbody td > :is(strong, span, small) {
+  display: block !important;
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td strong {
+  color: #103b5a !important;
+  font-size: .88rem !important;
+  font-weight: 760 !important;
+  line-height: 1.3 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td small {
+  margin-top: 3px !important;
+  color: #60798b !important;
+  font-size: .75rem !important;
+  font-weight: 550 !important;
+  line-height: 1.35 !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-actions-cell {
+  white-space: normal !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-actions-cell, .rms-quality-table-action) button {
+  min-height: 34px !important;
+  margin: 2px 4px 2px 0 !important;
+  padding: 7px 10px !important;
+  border-radius: 3px !important;
+  white-space: nowrap !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-status {
+  border-radius: 3px !important;
+  white-space: normal !important;
+}
+
+html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-station-table td :is(input, select, textarea) {
+  max-width: 100% !important;
+  border-radius: 3px !important;
+}
+
+@media (max-width: 1360px), (max-height: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table-wrap, .rms-quality-dashboard-table-wrap) {
+    max-height: clamp(300px, 52dvh, 500px) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) :is(th, td) {
+    padding: 10px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table-wrap, .rms-quality-dashboard-table-wrap) {
+    max-height: none !important;
+    margin-top: 10px !important;
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table, .rms-quality-dashboard-table tbody) {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    background: transparent !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) thead {
+    display: none !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody {
+    display: grid !important;
+    gap: 10px !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody tr {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0 !important;
+    padding: 10px 12px !important;
+    overflow: visible !important;
+    border: 1px solid #c9dbea !important;
+    border-radius: 2px !important;
+    background: #ffffff !important;
+    box-shadow: 0 8px 22px rgba(17, 52, 78, .07) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody tr:hover {
+    transform: none !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-dashboard-table tbody td:first-child,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-dashboard-table tbody td:nth-child(4) {
+    position: static !important;
+    display: grid !important;
+    grid-column: auto !important;
+    grid-template-columns: minmax(104px, .38fr) minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 9px 0 !important;
+    border: 0 !important;
+    border-bottom: 1px solid #e1ebf2 !important;
+    color: #26485f !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-align: left !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td::before {
+    display: block !important;
+    content: attr(data-label) !important;
+    color: #526f83 !important;
+    font-size: .68rem !important;
+    font-weight: 800 !important;
+    line-height: 1.35 !important;
+    letter-spacing: .025em !important;
+    text-transform: uppercase !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td > * {
+    grid-column: 2 !important;
+    min-width: 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td:last-child {
+    border-bottom: 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-selection-cell {
+    grid-template-columns: auto minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-lean-station-check {
+    margin: 0 !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-product, .rms-lean-station-quality, .rms-lean-station-status) {
+    min-width: 0 !important;
+    text-align: left !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-actions-cell, .rms-quality-table-action) {
+    grid-template-columns: minmax(104px, .38fr) minmax(0, 1fr) !important;
+    justify-items: stretch !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-actions-cell, .rms-quality-table-action) button {
+    width: 100% !important;
+    margin: 2px 0 5px !important;
+    justify-content: center !important;
+  }
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table-wrap, .rms-quality-dashboard-table-wrap) {
+  border-color: #31536b !important;
+  background: #0a2235 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table),
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td {
+  color: #dcecf5 !important;
+  border-color: #29475c !important;
+  background: #0c263a !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody tr:nth-child(even) td {
+  background: #102c42 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody tr:hover td {
+  background: #173a53 !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td :is(strong, span) {
+  color: #f4fbff !important;
+}
+
+:root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td small {
+  color: #abc2d2 !important;
+}
+
+@media (max-width: 760px) {
+  :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody tr {
+    border-color: #31536b !important;
+    background: #0c263a !important;
+  }
+
+  :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td {
+    border-color: #29475c !important;
+    background: transparent !important;
+  }
+
+  :root[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td::before {
+    color: #9eb9ca !important;
+  }
+}
+
+/* Legacy portal layers use specificity guards. This scoped guard keeps the
+   station table system authoritative without leaking into other modules. */
+html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) thead th {
+  position: sticky !important;
+  top: 0 !important;
+  color: #f7fcff !important;
+  background: #082f49 !important;
+}
+
+html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td > span {
+  color: #26485f !important;
+}
+
+html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td > small {
+  color: #60798b !important;
+}
+
+@media (max-width: 760px) {
+  html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table-wrap, .rms-quality-dashboard-table-wrap) {
+    max-height: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table, .rms-quality-dashboard-table tbody) {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) thead {
+    display: none !important;
+  }
+
+  html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody {
+    display: grid !important;
+    gap: 10px !important;
+  }
+
+  html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody tr {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 10px 12px !important;
+    border: 1px solid #c9dbea !important;
+    border-radius: 2px !important;
+    background: #ffffff !important;
+  }
+
+  html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td {
+    position: static !important;
+    display: grid !important;
+    grid-column: auto !important;
+    grid-template-columns: minmax(104px, .38fr) minmax(0, 1fr) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 9px 0 !important;
+    border: 0 !important;
+    border-bottom: 1px solid #e1ebf2 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-align: left !important;
+  }
+
+  html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace :is(.rms-lean-station-table, .rms-quality-dashboard-table) tbody td > * {
+    grid-column: 2 !important;
+    min-width: 0 !important;
+  }
+}
