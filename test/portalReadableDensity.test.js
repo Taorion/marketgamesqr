@@ -9,18 +9,18 @@ const css = fs.readFileSync(path.join(root, "empresa", "css", "portal-readable-d
 
 test("la capa legible se carga después de la compactación", () => {
   const compact = html.indexOf("portal-compact-1200x700.css");
-  const readable = html.indexOf("portal-readable-density.css?v=portal-readable-v1-20260914");
+  const readable = html.indexOf("portal-readable-density.css?v=portal-readable-v2-20260914");
   assert.ok(compact >= 0);
   assert.ok(readable > compact);
 });
 
 test("el menú recupera ancho, altura, descripciones y desplazamiento", () => {
-  assert.match(css, /--qori-readable-sidebar:\s*244px/);
+  assert.match(css, /--qori-readable-sidebar:\s*288px/);
   assert.match(css, /\.sidebar-nav[\s\S]*?overflow-y:\s*auto !important/);
-  assert.match(css, /\.nav-item strong[\s\S]*?font-size:\s*\.82rem !important[\s\S]*?line-height:\s*1\.3 !important/);
+  assert.match(css, /\.nav-item strong[\s\S]*?font-size:\s*\.9rem !important[\s\S]*?line-height:\s*1\.35 !important/);
   assert.match(css, /\.nav-item small[\s\S]*?display:\s*block !important/);
-  assert.match(css, /\.nav-item small[\s\S]*?font-size:\s*\.72rem !important/);
-  assert.match(css, /nav-item, \.sidebar-primary-nav-item\)[\s\S]*?min-height:\s*42px !important/);
+  assert.match(css, /\.nav-item small[\s\S]*?font-size:\s*\.78rem !important[\s\S]*?line-height:\s*1\.4 !important/);
+  assert.match(css, /nav-item, \.sidebar-primary-nav-item\)[\s\S]*?min-height:\s*48px !important/);
 });
 
 test("textos, controles y tablas dejan de recortarse", () => {
