@@ -1,0 +1,367 @@
+/* Nuevo lead: overlay estable, formulario legible y acciones alcanzables.
+ * El modal se monta directamente en <body> cuando se abre. */
+
+html body.has-rms-collector-modal {
+  overflow: hidden !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal.modal-shell:not(.hidden) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10050 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-width: 0 !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  overflow: hidden !important;
+  background: rgba(4, 27, 68, .7) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-card {
+  width: min(980px, calc(100vw - 32px)) !important;
+  max-width: min(980px, calc(100vw - 32px)) !important;
+  height: min(780px, calc(100dvh - 32px)) !important;
+  max-height: calc(100dvh - 32px) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows: max-content minmax(0, 1fr) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid #cbddec !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: 0 28px 80px rgba(1, 25, 66, .36) !important;
+  overflow: hidden !important;
+  transform: none !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .modal-head {
+  min-width: 0 !important;
+  min-height: 96px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 44px !important;
+  align-items: center !important;
+  gap: 18px !important;
+  padding: 15px 20px !important;
+  border-bottom: 1px solid #dce8f3 !important;
+  background: #f6fbff !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .modal-head > div {
+  min-width: 0 !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .modal-head :is(h3, p) {
+  max-width: 100% !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .modal-head h3 {
+  margin: 3px 0 4px !important;
+  color: #052b6c !important;
+  font-size: 1.28rem !important;
+  line-height: 1.2 !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .modal-head p {
+  max-width: 74ch !important;
+  margin: 0 !important;
+  color: #536f8a !important;
+  font-size: .82rem !important;
+  line-height: 1.4 !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .modal-head .icon-button {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-form {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-content: start !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 18px 20px 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-form > .rms-collector-lead-entry {
+  order: 1 !important;
+  grid-column: 1 / -1 !important;
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  border: 1px solid #d4e3ef !important;
+  border-radius: 0 !important;
+  background: #f8fbfe !important;
+  box-shadow: none !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-lead-head {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 5px !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-lead-head :is(strong, small, span) {
+  max-width: 100% !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-identity-notice {
+  width: 100% !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 7px !important;
+  padding: 8px 10px !important;
+  border: 1px solid #bfd5e8 !important;
+  border-radius: 0 !important;
+  background: #edf7fd !important;
+  color: #052b6c !important;
+  font-size: .78rem !important;
+  line-height: 1.4 !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal :is(.rms-collector-lead-grid, .rms-collector-context-grid) {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-lead-grid > .span-2 {
+  grid-column: 1 / -1 !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal label {
+  min-width: 0 !important;
+  display: grid !important;
+  align-content: start !important;
+  gap: 6px !important;
+  color: #123b5a !important;
+  font-size: .82rem !important;
+  font-weight: 750 !important;
+  line-height: 1.35 !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal label > small {
+  color: #61768d !important;
+  font-size: .74rem !important;
+  font-weight: 550 !important;
+  line-height: 1.4 !important;
+  overflow-wrap: break-word !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal :is(input, select, textarea) {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 42px !important;
+  padding: 9px 10px !important;
+  border: 1px solid #bfd3e5 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: #071832 !important;
+  font: inherit !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  box-shadow: none !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal textarea {
+  min-height: 84px !important;
+  resize: vertical !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-lead-submit {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 12px 14px !important;
+  border: 1px solid #d4e3ef !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-lead-submit > div {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 3px !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-lead-submit :is(strong, small) {
+  display: block !important;
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-context-details {
+  order: 2 !important;
+  grid-column: 1 / -1 !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid #d4e3ef !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  overflow: hidden !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-context-details > summary {
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 9px 12px !important;
+  color: #052b6c !important;
+  font-weight: 850 !important;
+  cursor: pointer !important;
+  list-style: none !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-context-details > summary::-webkit-details-marker {
+  display: none !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-context-grid {
+  padding: 0 12px 12px !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-form > label.span-2 {
+  order: 3 !important;
+  grid-column: 1 / -1 !important;
+  margin: 0 !important;
+  padding: 13px !important;
+  border: 1px solid #d4e3ef !important;
+  border-radius: 0 !important;
+  background: #f8fbfe !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-summary {
+  order: 4 !important;
+  grid-column: 1 / -1 !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  border: 1px solid #d4e3ef !important;
+  border-radius: 0 !important;
+  background: #f8fbfe !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .modal-actions {
+  position: static !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  order: 5 !important;
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  margin: 4px -20px 0 !important;
+  padding: 13px 20px !important;
+  border-top: 1px solid #d4e3ef !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal .modal-actions > *,
+html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-lead-submit > button {
+  min-width: 160px !important;
+  min-height: 42px !important;
+  border-radius: 0 !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal.has-lead-draft #rmsCollectorSubmitButton {
+  display: none !important;
+}
+
+html body.has-rms-collector-modal > #rmsCollectorModal :is(input, select, textarea, button):focus-visible {
+  outline: 3px solid rgba(0, 191, 229, .3) !important;
+  outline-offset: 2px !important;
+}
+
+@media (max-width: 700px) {
+  html body.has-rms-collector-modal > #rmsCollectorModal.modal-shell:not(.hidden) {
+    padding: 0 !important;
+  }
+
+  html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-card {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border: 0 !important;
+  }
+
+  html body.has-rms-collector-modal > #rmsCollectorModal .modal-head {
+    min-height: 0 !important;
+    grid-template-columns: minmax(0, 1fr) 42px !important;
+    gap: 10px !important;
+    padding: 12px 14px !important;
+  }
+
+  html body.has-rms-collector-modal > #rmsCollectorModal .modal-head h3 {
+    font-size: 1.12rem !important;
+  }
+
+  html body.has-rms-collector-modal > #rmsCollectorModal .modal-head p {
+    font-size: .76rem !important;
+  }
+
+  html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 13px !important;
+    padding: 14px 14px 0 !important;
+  }
+
+  html body.has-rms-collector-modal > #rmsCollectorModal :is(.rms-collector-lead-grid, .rms-collector-context-grid, .rms-collector-lead-submit) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body.has-rms-collector-modal > #rmsCollectorModal .modal-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    margin-right: -14px !important;
+    margin-left: -14px !important;
+    padding: 12px 14px !important;
+  }
+
+  html body.has-rms-collector-modal > #rmsCollectorModal :is(.modal-actions > *, .rms-collector-lead-submit > button) {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
