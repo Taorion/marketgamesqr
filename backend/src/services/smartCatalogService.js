@@ -425,6 +425,7 @@ async function listProducts(businessId, catalogId) {
      left join smart_catalog_events e on e.product_id = p.id
      left join smart_catalog_order_intents i on i.product_id = p.id
      where p.business_id = $1 and p.catalog_id = $2
+       and coalesce(p.metadata->>'archived', 'false') <> 'true'
      group by p.id
      order by p.display_order asc, p.is_featured desc, p.updated_at desc`,
     [businessId, catalogId]
@@ -528,7 +529,16 @@ async function updateProduct(businessId, catalogId, productId, body) {
 
 async function deleteProduct(businessId, catalogId, productId) {
   const result = await query(
-    "update smart_catalog_products set stock_status = 'HIDDEN', updated_at = now() where id = $1 and catalog_id = $2 and business_id = $3 returning id",
+    `update smart_catalog_products
+     set stock_status = 'HIDDEN',
+         metadata = jsonb_set(
+           jsonb_set(coalesce(metadata, '{}'::jsonb), '{archived}', 'true'::jsonb, true),
+           '{archived_at}', to_jsonb(now()::text), true
+         ),
+         updated_at = now()
+     where id = $1 and catalog_id = $2 and business_id = $3
+       and coalesce(metadata->>'archived', 'false') <> 'true'
+     returning id`,
     [productId, catalogId, businessId]
   );
   if (!result.rowCount) throw notFound("Producto de catalogo no encontrado.");

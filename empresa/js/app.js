@@ -12701,12 +12701,13 @@ function renderSmartCatalogTables() {
           <td><span class="status-chip ${smartCatalogStatusClass(catalog.status)}">${escapeHtml(smartCatalogStatusLabel(catalog.status))}</span></td>
           <td>${escapeHtml(catalog.whatsapp_number || "-")}</td>
           <td>${Number(catalog.view_count || 0).toLocaleString("es-CO")}</td>
-          <td>
+          <td><div class="table-actions smart-catalog-row-actions">
             <button class="ghost-button compact" type="button" data-smart-catalog-select="${escapeHtml(catalog.id)}">Gestionar</button>
             <button class="ghost-button compact" type="button" data-smart-catalog-edit="${escapeHtml(catalog.id)}">Editar</button>
             <button class="ghost-button compact" type="button" data-smart-catalog-status="${escapeHtml(catalog.id)}" data-smart-catalog-next-status="${publishStatus}">${publishAction}</button>
             <button class="ghost-button compact" type="button" data-smart-catalog-copy="${escapeHtml(catalog.id)}">Link</button>
-          </td>
+            <button class="ghost-button danger-button compact" type="button" data-smart-catalog-delete="${escapeHtml(catalog.id)}" aria-label="Eliminar vitrina ${escapeHtml(catalog.title)}">Eliminar</button>
+          </div></td>
         </tr>
       `;
     }).join("") : '<tr><td colspan="5">Crea tu primera vitrina web para publicar una página conectada a WhatsApp.</td></tr>';
@@ -12724,11 +12725,12 @@ function renderSmartCatalogTables() {
         <td>${escapeHtml(product.category || "-")}</td>
         <td>${product.price === null || product.price === undefined ? "-" : money(product.price)}</td>
         <td><span class="status-chip ${smartCatalogStatusClass(product.stock_status)}">${escapeHtml(smartCatalogStatusLabel(product.stock_status))}</span></td>
-        <td>
+        <td><div class="table-actions smart-catalog-row-actions">
           <button class="ghost-button compact" type="button" data-smart-product-edit="${escapeHtml(product.id)}">Editar</button>
           <button class="ghost-button compact" type="button" data-smart-product-feature="${escapeHtml(product.id)}">${product.is_featured ? "Quitar destaque" : "Destacar"}</button>
           <button class="ghost-button compact" type="button" data-smart-product-hide="${escapeHtml(product.id)}">${product.stock_status === "HIDDEN" ? "Mostrar" : "Ocultar"}</button>
-        </td>
+          <button class="ghost-button danger-button compact" type="button" data-smart-product-delete="${escapeHtml(product.id)}" aria-label="Eliminar producto ${escapeHtml(product.name)}">Eliminar</button>
+        </div></td>
       </tr>
     `).join("") : '<tr><td colspan="5">Agrega productos, servicios, combos o asesorías para activar el botón de WhatsApp.</td></tr>';
   }
@@ -13309,6 +13311,30 @@ async function updateSmartCatalogStatus(catalogId, status) {
   }
 }
 
+async function archiveSmartCatalog(catalogId) {
+  if (!catalogId) return;
+  const catalog = (state.smartCatalogs || []).find((item) => item.id === catalogId);
+  const label = catalog?.title || "esta vitrina";
+  const confirmed = window.confirm(`¿Eliminar "${label}"? Se retirará del portal y de su enlace público. Los interesados y el historial comercial se conservarán.`);
+  if (!confirmed) return;
+  try {
+    await api(`/api/business/catalogs/${encodeURIComponent(catalogId)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+    if (state.smartCatalogSelectedCatalogId === catalogId) {
+      state.smartCatalogSelectedCatalogId = "";
+      state.smartCatalogProducts = [];
+      state.smartCatalogIntents = [];
+    }
+    await refreshSmartCatalogs({ quiet: true });
+    setSmartCatalogTab("catalogs");
+    showFeedback(`La vitrina "${label}" fue eliminada. Su historial comercial se conservó.`, "success", { title: "Vitrina web Qori" });
+  } catch (error) {
+    showFeedback(error.message || "No se pudo eliminar la vitrina.", "error", { title: "Vitrina web Qori" });
+  }
+}
+
 async function updateSmartCatalogProduct(productId, patch) {
   const catalogId = state.smartCatalogSelectedCatalogId;
   if (!catalogId || !productId) return;
@@ -13319,6 +13345,22 @@ async function updateSmartCatalogProduct(productId, patch) {
   });
   await loadSmartCatalogDetail(catalogId, { quiet: true });
   renderSmartCatalogView();
+}
+
+async function deleteSmartCatalogProduct(productId) {
+  const catalogId = state.smartCatalogSelectedCatalogId;
+  if (!catalogId || !productId) return;
+  const product = (state.smartCatalogProducts || []).find((item) => item.id === productId);
+  const label = product?.name || "este producto";
+  const confirmed = window.confirm(`¿Eliminar "${label}" de la vitrina? Dejará de mostrarse y no podrá seleccionarse en nuevas compras. El historial anterior se conservará.`);
+  if (!confirmed) return;
+  await api(`/api/business/catalogs/${encodeURIComponent(catalogId)}/products/${encodeURIComponent(productId)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  await loadSmartCatalogDetail(catalogId, { quiet: true });
+  renderSmartCatalogView();
+  showFeedback(`"${label}" fue eliminado de la vitrina.`, "success", { title: "Productos" });
 }
 
 async function smartCatalogIntentAction(intentId, action) {
@@ -64663,6 +64705,7 @@ smartCatalogTable?.addEventListener("click", async (event) => {
   const copyButton = event.target.closest("[data-smart-catalog-copy]");
   const editButton = event.target.closest("[data-smart-catalog-edit]");
   const statusButton = event.target.closest("[data-smart-catalog-status]");
+  const deleteButton = event.target.closest("[data-smart-catalog-delete]");
   if (selectButton) {
     await loadSmartCatalogDetail(selectButton.dataset.smartCatalogSelect, { quiet: false });
     setSmartCatalogTab("products");
@@ -64676,6 +64719,10 @@ smartCatalogTable?.addEventListener("click", async (event) => {
     openSmartCatalogEditModal(editButton.dataset.smartCatalogEdit);
     return;
   }
+  if (deleteButton) {
+    await archiveSmartCatalog(deleteButton.dataset.smartCatalogDelete);
+    return;
+  }
   if (statusButton) {
     await updateSmartCatalogStatus(statusButton.dataset.smartCatalogStatus, statusButton.dataset.smartCatalogNextStatus);
   }
@@ -64684,10 +64731,15 @@ smartCatalogProductTable?.addEventListener("click", async (event) => {
   const featureButton = event.target.closest("[data-smart-product-feature]");
   const hideButton = event.target.closest("[data-smart-product-hide]");
   const editButton = event.target.closest("[data-smart-product-edit]");
+  const deleteButton = event.target.closest("[data-smart-product-delete]");
   try {
     if (editButton) {
       const product = (state.smartCatalogProducts || []).find((item) => item.id === editButton.dataset.smartProductEdit);
       openSmartCatalogProductModal({ product });
+      return;
+    }
+    if (deleteButton) {
+      await deleteSmartCatalogProduct(deleteButton.dataset.smartProductDelete);
       return;
     }
     if (featureButton) {
