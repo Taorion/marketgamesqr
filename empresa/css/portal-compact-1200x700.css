@@ -565,6 +565,11 @@ body[data-auth-state="guest"] .login-recovery-disclosure {
 }
 
 /* Puente de especificidad para la composicion de acceso heredada. */
+html body:not(#qoriCompactA#qoriCompactB#qoriCompactC#qoriCompactD#qoriCompactE#qoriCompactF)[data-auth-state="guest"] .portal-shell #loginPanel,
+html body:not(#qoriCompactA#qoriCompactB#qoriCompactC#qoriCompactD#qoriCompactE#qoriCompactF)[data-auth-state="guest"] .portal-shell #loginPanel * {
+  border-radius: 0 !important;
+}
+
 html body:not(#qoriCompactA#qoriCompactB#qoriCompactC#qoriCompactD#qoriCompactE#qoriCompactF)[data-auth-state="guest"] .portal-shell #loginPanel .login-vision {
   align-content: start !important;
   display: flex !important;
