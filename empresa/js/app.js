@@ -303,7 +303,6 @@ const missionCreateAgendaInput = document.getElementById("missionCreateAgendaInp
 const missionWizardMessage = document.getElementById("missionWizardMessage");
 const missionWizardSubmitButton = document.getElementById("missionWizardSubmitButton");
 const smartCatalogRefreshButton = document.getElementById("smartCatalogRefreshButton");
-const smartCatalogSeedDoctorAngieButton = document.getElementById("smartCatalogSeedDoctorAngieButton");
 const smartCatalogDashboardGrid = document.getElementById("smartCatalogDashboardGrid");
 const smartCatalogPublicLink = document.getElementById("smartCatalogPublicLink");
 const smartCatalogCopyLinkButton = document.getElementById("smartCatalogCopyLinkButton");
@@ -64626,22 +64625,6 @@ smartCatalogTabButtons.forEach((button) => {
 });
 document.getElementById("smartCatalogCreateButton")?.addEventListener("click", openSmartCatalogCreateModal);
 smartCatalogRefreshButton?.addEventListener("click", () => refreshSmartCatalogs().catch((error) => showFeedback(error.message, "error", { title: "Vitrina web Qori" })));
-smartCatalogSeedDoctorAngieButton?.addEventListener("click", async () => {
-  try {
-    showFeedback("Creando plantilla Productos de la Doctora Angie...", "loading", { title: "Vitrina web Qori", timeout: 0 });
-    const data = await api("/api/business/catalogs/templates/doctor-angie", {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({}),
-    });
-    state.smartCatalogSelectedCatalogId = data.catalog?.id || state.smartCatalogSelectedCatalogId;
-    await refreshSmartCatalogs({ quiet: true });
-    setSmartCatalogTab("products");
-    showFeedback("Plantilla creada. Revisa productos y WhatsApp antes de publicar.", "success", { title: "Vitrina web Qori" });
-  } catch (error) {
-    showFeedback(error.message || "No se pudo crear la plantilla.", "error", { title: "Vitrina web Qori" });
-  }
-});
 function isQoriModalBackdrop(target) {
   if (!(target instanceof Element)) return false;
   if (target.matches(".modal-shell, .modal-overlay, .modal-backdrop, [data-modal-overlay]")) return true;
