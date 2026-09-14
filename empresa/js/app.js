@@ -13057,6 +13057,16 @@ function ensureSmartCatalogCreateModal() {
   return modal;
 }
 
+function syncSmartCatalogCreateModalMode(modal, editing = false) {
+  if (!modal || !smartCatalogForm) return;
+  const modalLabel = modal.querySelector(".modal-head .mono-label");
+  const formLabel = smartCatalogForm.querySelector(".form-section-head .mono-label");
+  const submit = smartCatalogForm.querySelector('button[type="submit"]');
+  if (modalLabel) modalLabel.textContent = editing ? "EDITAR VITRINA WEB" : "NUEVA VITRINA WEB";
+  if (formLabel) formLabel.textContent = editing ? "Editar vitrina web" : "Crear vitrina web en 5 minutos";
+  if (submit) submit.textContent = editing ? "Guardar cambios" : "Crear vitrina web";
+}
+
 function openSmartCatalogCreateModal() {
   const modal = ensureSmartCatalogCreateModal();
   if (!modal) return;
@@ -13068,6 +13078,7 @@ function openSmartCatalogCreateModal() {
   const copy = modal.querySelector(".modal-head p");
   if (title) title.textContent = "Crea tu vitrina web";
   if (copy) copy.textContent = "Define tu marca y WhatsApp. Podrás activarla cuando la oferta esté lista.";
+  syncSmartCatalogCreateModalMode(modal, false);
   modal.classList.remove("hidden");
   window.setTimeout(() => smartCatalogForm?.querySelector('[name="title"]')?.focus({ preventScroll: true }), 40);
 }
@@ -13091,6 +13102,7 @@ function openSmartCatalogEditModal(catalogId) {
   const copy = modal.querySelector(".modal-head p");
   if (title) title.textContent = "Edita la vitrina";
   if (copy) copy.textContent = "Actualiza la marca, WhatsApp y publicación sin perder tus productos ni tus consultas.";
+  syncSmartCatalogCreateModalMode(modal, true);
   modal.classList.remove("hidden");
   window.setTimeout(() => smartCatalogForm.querySelector('[name="title"]')?.focus({ preventScroll: true }), 40);
 }
@@ -13232,7 +13244,11 @@ async function submitSmartCatalog(event) {
     closeSmartCatalogCreateModal();
     setSmartCatalogTab(editingCatalogId ? "catalogs" : "products");
   } catch (error) {
-    setInlineMessage(smartCatalogMessage, error.message || "No se pudo crear la vitrina web.", "error");
+    setInlineMessage(
+      smartCatalogMessage,
+      error.message || (editingCatalogId ? "No se pudieron guardar los cambios de la vitrina." : "No se pudo crear la vitrina web."),
+      "error"
+    );
   }
 }
 
