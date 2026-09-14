@@ -7752,33 +7752,56 @@ function togglePortalMenu() {
   if (window.matchMedia("(max-width: 960px)").matches) {
     workspace.classList.remove("sidebar-collapsed");
     workspace.classList.toggle("sidebar-open");
+    syncPortalMenuToggleState();
     return;
   }
   workspace.classList.remove("sidebar-open");
-  workspace.dataset.sidebarDesktopChoice = "1";
-  delete workspace.dataset.sidebarAutoCollapsed;
   workspace.classList.toggle("sidebar-collapsed");
+  workspace.dataset.sidebarDesktopChoice = workspace.classList.contains("sidebar-collapsed") ? "collapsed" : "expanded";
   forceSidebarMenuLeftAlignment();
+  syncPortalMenuToggleState();
 }
 
 function syncPortalResponsiveSidebar() {
   if (!workspace) return;
-  const compactDesktop = window.matchMedia("(min-width: 961px) and (max-width: 1280px)").matches;
-  if (compactDesktop && !workspace.dataset.sidebarDesktopChoice) {
-    workspace.classList.add("sidebar-collapsed");
-    workspace.dataset.sidebarAutoCollapsed = "1";
-    forceSidebarMenuLeftAlignment();
+  const mobile = window.matchMedia("(max-width: 960px)").matches;
+  if (mobile) {
+    workspace.classList.remove("sidebar-collapsed");
+    syncPortalMenuToggleState();
     return;
   }
-  if (!compactDesktop && workspace.dataset.sidebarAutoCollapsed === "1") {
-    workspace.classList.remove("sidebar-collapsed");
-    delete workspace.dataset.sidebarAutoCollapsed;
-    forceSidebarMenuLeftAlignment();
-  }
+  workspace.classList.remove("sidebar-open");
+  workspace.classList.toggle("sidebar-collapsed", workspace.dataset.sidebarDesktopChoice === "collapsed");
+  forceSidebarMenuLeftAlignment();
+  syncPortalMenuToggleState();
+}
+
+function syncPortalMenuToggleState() {
+  if (!workspace || !menuToggleButton) return;
+  const mobile = window.matchMedia("(max-width: 960px)").matches;
+  const expanded = mobile
+    ? workspace.classList.contains("sidebar-open")
+    : !workspace.classList.contains("sidebar-collapsed");
+  const stateName = mobile
+    ? (expanded ? "mobile-open" : "mobile-closed")
+    : (expanded ? "expanded" : "collapsed");
+  const actionLabel = mobile
+    ? (expanded ? "Cerrar menú principal" : "Abrir menú principal")
+    : (expanded ? "Contraer menú principal" : "Desplegar menú principal");
+  const iconName = mobile
+    ? (expanded ? "close" : "menu")
+    : (expanded ? "left_panel_close" : "left_panel_open");
+  menuToggleButton.dataset.menuState = stateName;
+  menuToggleButton.setAttribute("aria-expanded", String(expanded));
+  menuToggleButton.setAttribute("aria-label", actionLabel);
+  menuToggleButton.title = actionLabel;
+  const icon = menuToggleButton.querySelector(".material-symbols-outlined");
+  if (icon) icon.textContent = iconName;
 }
 
 function closePortalMenu() {
   workspace?.classList.remove("sidebar-open");
+  syncPortalMenuToggleState();
 }
 
 function setPortalAuthenticationState(logged) {
