@@ -1,0 +1,40 @@
+/* Final contrast guard for the product-first Competitive Radar workflow. */
+
+html body:not(#qoriRadarContrastA#qoriRadarContrastB#qoriRadarContrastC#qoriRadarContrastD#qoriRadarContrastE#qoriRadarContrastF)[data-current-view="competition"] main.portal-shell .competition-radar-workflow {
+  color: #123f63 !important;
+  border-color: #c9e1ed !important;
+  background: linear-gradient(100deg, #eef9fc 0%, #ffffff 62%) !important;
+  box-shadow: 0 12px 28px rgba(16, 68, 102, .09) !important;
+}
+
+html body:not(#qoriRadarContrastA#qoriRadarContrastB#qoriRadarContrastC#qoriRadarContrastD#qoriRadarContrastE#qoriRadarContrastF)[data-current-view="competition"] main.portal-shell .competition-radar-workflow-copy .mono-label {
+  color: #087493 !important;
+  -webkit-text-fill-color: #087493 !important;
+}
+
+html body:not(#qoriRadarContrastA#qoriRadarContrastB#qoriRadarContrastC#qoriRadarContrastD#qoriRadarContrastE#qoriRadarContrastF)[data-current-view="competition"] main.portal-shell .competition-radar-workflow-copy > strong {
+  color: #123f63 !important;
+  -webkit-text-fill-color: #123f63 !important;
+}
+
+html body:not(#qoriRadarContrastA#qoriRadarContrastB#qoriRadarContrastC#qoriRadarContrastD#qoriRadarContrastE#qoriRadarContrastF)[data-current-view="competition"] main.portal-shell .competition-radar-steps li {
+  border-color: #c9e1ed !important;
+  background: rgba(255, 255, 255, .82) !important;
+}
+
+html body:not(#qoriRadarContrastA#qoriRadarContrastB#qoriRadarContrastC#qoriRadarContrastD#qoriRadarContrastE#qoriRadarContrastF)[data-current-view="competition"] main.portal-shell .competition-radar-steps li > span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: #087d9a !important;
+}
+
+html body:not(#qoriRadarContrastA#qoriRadarContrastB#qoriRadarContrastC#qoriRadarContrastD#qoriRadarContrastE#qoriRadarContrastF)[data-current-view="competition"] main.portal-shell .competition-radar-steps strong {
+  color: #17496b !important;
+  -webkit-text-fill-color: #17496b !important;
+}
+
+html body:not(#qoriRadarContrastA#qoriRadarContrastB#qoriRadarContrastC#qoriRadarContrastD#qoriRadarContrastE#qoriRadarContrastF)[data-current-view="competition"] main.portal-shell .competition-radar-steps small {
+  color: #526f86 !important;
+  -webkit-text-fill-color: #526f86 !important;
+  opacity: 1 !important;
+}
