@@ -36,6 +36,85 @@ html body .chart-focus-tab-panel :is(.command-table-wrap, .command-matrix-wrap, 
   overscroll-behavior-inline: contain;
 }
 
+html body .chart-focus-stage:has(> .command-table-wrap) {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+html body .chart-focus-stage > .command-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-color: #5fa8cc #06182b;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: auto;
+}
+
+html body .chart-focus-stage > .command-table-wrap::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+html body .chart-focus-stage > .command-table-wrap::-webkit-scrollbar-track {
+  background: #06182b;
+}
+
+html body .chart-focus-stage > .command-table-wrap::-webkit-scrollbar-thumb {
+  border: 2px solid #06182b;
+  border-radius: 2px;
+  background: #5fa8cc;
+}
+
+html body .chart-focus-stage > .command-table-wrap .command-table:has(th:nth-child(10)) {
+  width: max-content !important;
+  min-width: 1380px !important;
+  table-layout: auto !important;
+  overflow: visible !important;
+}
+
+html body .chart-focus-stage > .command-table-wrap .command-table thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 4 !important;
+  white-space: nowrap !important;
+}
+
+html body .chart-focus-stage > .command-table-wrap .command-table :is(th, td):first-child {
+  position: sticky !important;
+  left: 0 !important;
+  z-index: 3 !important;
+  min-width: 190px !important;
+  max-width: 240px !important;
+}
+
+html body .chart-focus-stage > .command-table-wrap .command-table thead th:first-child {
+  z-index: 6 !important;
+  background: #0b2945 !important;
+}
+
+html body .chart-focus-stage > .command-table-wrap .command-table tbody td:first-child {
+  background: #081e34 !important;
+  box-shadow: 8px 0 16px rgba(0, 0, 0, .16) !important;
+}
+
+html body .chart-focus-stage > .command-table-wrap .command-table tbody tr:nth-child(even) td:first-child {
+  background: #0a233d !important;
+}
+
+html body .chart-focus-stage > .command-table-wrap .command-table tbody tr:hover td:first-child,
+html body .chart-focus-stage > .command-table-wrap .command-table tbody tr:focus-visible td:first-child {
+  background: #103957 !important;
+}
+
+html body .chart-focus-stage > .command-table-wrap .command-table :is(th, td):last-child {
+  min-width: 220px !important;
+  white-space: normal !important;
+}
+
 @media (max-width: 1360px), (max-height: 760px) {
   html body .chart-focus-overlay {
     grid-template-rows: auto minmax(0, 1fr);
@@ -117,6 +196,35 @@ html body .chart-focus-tab-panel :is(.command-table-wrap, .command-matrix-wrap, 
   }
 }
 
+@media (max-width: 1200px) {
+  html body .chart-focus-layout {
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html body .chart-focus-main {
+    display: grid;
+    grid-template-rows: auto auto auto;
+  }
+
+  html body .chart-focus-stage {
+    min-height: clamp(320px, 54vh, 480px);
+  }
+
+  html body .chart-focus-stage:has(> .command-table-wrap) {
+    height: clamp(320px, 54vh, 480px);
+    min-height: 320px;
+  }
+
+  html body .chart-focus-sidebar {
+    margin-top: 8px;
+    overflow: visible;
+  }
+}
+
 @media (max-width: 960px) {
   html body .chart-focus-overlay {
     grid-template-rows: auto minmax(0, 1fr);
@@ -154,16 +262,11 @@ html body .chart-focus-tab-panel :is(.command-table-wrap, .command-matrix-wrap, 
   }
 
   html body .chart-focus-layout {
-    display: block;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
+    padding: 8px;
   }
 
   html body .chart-focus-main {
-    display: grid;
-    grid-template-rows: auto auto auto;
+    gap: 7px;
   }
 
   html body .chart-focus-stage {
@@ -175,10 +278,6 @@ html body .chart-focus-tab-panel :is(.command-table-wrap, .command-matrix-wrap, 
     height: auto;
   }
 
-  html body .chart-focus-sidebar {
-    margin-top: 8px;
-    overflow: visible;
-  }
 }
 
 @media (max-width: 760px) {
@@ -217,8 +316,13 @@ html body .chart-focus-tab-panel :is(.command-table-wrap, .command-matrix-wrap, 
   }
 
   html body .chart-focus-stage {
-    min-height: 250px;
+    min-height: 300px;
     padding: 7px;
+  }
+
+  html body .chart-focus-stage:has(> .command-table-wrap) {
+    height: min(54vh, 420px);
+    min-height: 300px;
   }
 
   html body .chart-focus-tab-panel,
