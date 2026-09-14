@@ -14,7 +14,7 @@
   <link rel="manifest" href="/site.webmanifest?v=qori-favicon-20260825-v120">
   <link rel="preload" as="script" href="js/evaluation-station-core.js?v=evaluation-core-v1-20260830">
   <link rel="preload" as="script" href="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830">
-<link rel="preload" as="script" href="js/app.js?v=validator-beneficiary-v477-20260911&amp;validator-product-removal=v463-20260909&amp;rms-sale-multiproduct-history-v397&amp;affiliate-point-rule-v479-20260911&amp;communications-file-picker=v483-20260911&amp;qori-brand-copy=v487-20260911&amp;gos-brand-v362-20260826">
+  <link rel="preload" as="script" href="js/app.js?v=validator-beneficiary-v477-20260911&amp;validator-product-removal=v463-20260909&amp;rms-sale-multiproduct-history-v397&amp;affiliate-point-rule-v479-20260911&amp;communications-file-picker=v483-20260911&amp;qori-brand-copy=v487-20260911&amp;exact-prices=v488-20260914&amp;gos-brand-v362-20260826">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -4109,11 +4109,11 @@
                     </label>
                     <label>
                       <span>Precio</span>
-                      <input name="price" type="number" min="0" step="1000" placeholder="45000">
+                      <input name="price" type="number" min="0" step="1" inputmode="numeric" placeholder="45000">
                     </label>
                     <label>
                       <span>Precio antes / referencia</span>
-                      <input name="compare_at_price" type="number" min="0" step="1000" placeholder="60000">
+                      <input name="compare_at_price" type="number" min="0" step="1" inputmode="numeric" placeholder="60000">
                     </label>
                     <label>
                       <span>Temporada o campaña</span>
@@ -4469,11 +4469,11 @@
                     <form class="modal-form" id="launchSetupForm">
                       <label>
                         <span>Inversión total</span>
-                        <input id="launchBudgetInput" type="number" min="0" step="1000">
+                        <input id="launchBudgetInput" type="number" min="0" step="1">
                       </label>
                       <label>
                         <span>Presupuesto adicional</span>
-                        <input id="launchAdditionalBudgetInput" type="number" min="0" step="1000">
+                        <input id="launchAdditionalBudgetInput" type="number" min="0" step="1">
                       </label>
                       <label>
                         <span>Fecha de inicio</span>
@@ -4503,7 +4503,7 @@
                       </label>
                       <label>
                         <span>Meta de ventas</span>
-                        <input id="launchSalesGoalInput" type="number" min="0" step="1000">
+                        <input id="launchSalesGoalInput" type="number" min="0" step="1">
                       </label>
                       <label class="span-2">
                         <span>Observaciones del cliente</span>
@@ -4672,11 +4672,11 @@
                                   </label>
                                   <label>
                                     <span>Ticket promedio</span>
-                                    <input id="campaignCostAverageTicketInput" type="number" min="0" step="1000">
+                                    <input id="campaignCostAverageTicketInput" type="number" min="0" step="1">
                                   </label>
                                   <label>
                                     <span>Margen bruto</span>
-                                    <input id="campaignCostGrossMarginInput" type="number" min="0" step="1000">
+                                    <input id="campaignCostGrossMarginInput" type="number" min="0" step="1">
                                   </label>
                                 </div>
                               </section>
@@ -5840,7 +5840,7 @@
                   <label><span>Fecha publicación</span><input id="channelEffortPublishedInput" type="date"></label>
                   <label><span>Desde</span><input id="channelEffortStartsInput" type="date"></label>
                   <label><span>Hasta</span><input id="channelEffortEndsInput" type="date"></label>
-                  <label><span>Inversión COP</span><input id="channelEffortBudgetInput" type="number" min="0" step="100" value="0"></label>
+                  <label><span>Inversión COP</span><input id="channelEffortBudgetInput" type="number" min="0" step="1" value="0"></label>
                   <label><span>Activación creativa enlazada</span><select id="channelEffortCreativeInput"><option value="">Sin activación creativa</option></select><small>Al elegirla también se selecciona como fuente medible exclusiva.</small></label>
                   <label><span>URL publicación</span><input id="channelEffortSourceInput" type="url" maxlength="800" placeholder="https://instagram.com/..."></label>
                   <label><span>Estado</span>
@@ -5921,7 +5921,7 @@
                     </select>
                   </label>
                   <label><span>Plataforma</span><input id="acquisitionChannelPlatformInput" type="text" maxlength="120" placeholder="Instagram, Facebook, Google, WhatsApp"></label>
-                  <label><span>Inversión del periodo</span><input id="acquisitionChannelBudgetInput" type="number" min="0" step="100" value="0"></label>
+                  <label><span>Inversión del periodo</span><input id="acquisitionChannelBudgetInput" type="number" min="0" step="1" value="0"></label>
                   <label><span>Moneda</span><input id="acquisitionChannelCurrencyInput" type="text" maxlength="8" value="COP"></label>
                   <label><span>Estado</span>
                     <select id="acquisitionChannelStatusInput">
@@ -6320,7 +6320,7 @@
                 <label><span>Marca</span><input id="radarProductBrandInput" type="text" maxlength="120"></label>
                 <label><span>Categoría</span><select id="radarProductCategoryInput"><option value="">Sin categoría</option></select></label>
                 <label><span>Subcategoría</span><select id="radarProductSubcategoryInput"><option value="">Sin subcategoría</option></select></label>
-                <label><span>Precio propio</span><input id="radarProductPriceInput" type="number" min="0" step="100"></label>
+                <label><span>Precio propio</span><input id="radarProductPriceInput" type="number" min="0" step="1"></label>
                 <label><span>Moneda</span><input id="radarProductCurrencyInput" type="text" maxlength="12" value="COP"></label>
                 <label><span>Unidad de comparación</span><select id="radarProductUnitInput"><option value="unidad">Unidad</option><option value="kg">Kilogramo (kg)</option><option value="g">Gramo (g)</option><option value="L">Litro (L)</option><option value="ml">Mililitro (ml)</option><option value="paquete">Paquete</option><option value="caja">Caja</option><option value="servicio">Servicio</option><option value="otro">Otro</option></select></label>
                 <label class="span-2"><span>Descripción</span><textarea id="radarProductDescriptionInput" rows="3" maxlength="1500" placeholder="Presentación propia y criterios que deben respetarse al comparar"></textarea></label>
@@ -6355,9 +6355,9 @@
                   <label><span>Nombre o presentación del proveedor</span><input id="competitionProductNameInput" type="text" maxlength="180" required></label>
                   <label><span>Unidad de medida</span><select id="competitionUnitInput"><option value="unidad">Unidad</option><option value="kg">Kilogramo (kg)</option><option value="g">Gramo (g)</option><option value="L">Litro (L)</option><option value="ml">Mililitro (ml)</option><option value="m">Metro (m)</option><option value="cm">Centímetro (cm)</option><option value="paquete">Paquete</option><option value="caja">Caja</option><option value="servicio">Servicio</option><option value="otro">Otro</option></select></label>
                   <label><span>Categoría</span><input id="competitionCategoryInput" type="text" maxlength="120"></label>
-                  <label><span>Precio competidor</span><input id="competitionPriceInput" type="number" min="0" step="100" required></label>
+                  <label><span>Precio competidor</span><input id="competitionPriceInput" type="number" min="0" step="1" required></label>
                   <label><span>Cantidad equivalente</span><input id="competitionQuantityInput" type="number" min="0.0001" max="1000000" step="0.0001" value="1" required><small>Cuántas unidades base incluye esta presentación. Ej.: caja de 12 = 12.</small></label>
-                  <label><span>Precio anterior</span><input id="competitionPreviousPriceInput" type="number" min="0" step="100"></label>
+                  <label><span>Precio anterior</span><input id="competitionPreviousPriceInput" type="number" min="0" step="1"></label>
                   <label><span>Moneda</span><input id="competitionCurrencyInput" type="text" maxlength="12" value="COP"></label>
                   <label><span>Canal o fuente</span><input id="competitionChannelInput" type="text" maxlength="120" placeholder="Web, tienda, WhatsApp, marketplace"></label>
                   <label><span>Fecha observada</span><input id="competitionObservedAtInput" type="date"></label>
@@ -6868,7 +6868,7 @@
                   <section class="validator-flow-fields" id="validatorRewardPassFields" hidden>
                     <div class="validator-form-section-head"><span class="material-symbols-outlined" aria-hidden="true">card_giftcard</span><div><strong>Aplicar Reward Pass</strong><small>Verifica factura, saldo y documento antes de confirmar.</small></div></div>
                     <label><span>Número de factura electrónica <b>*</b></span><input id="validatorRewardPassInvoiceInput" type="text" minlength="2" maxlength="120" autocomplete="off" placeholder="Ej: FE-12345"></label>
-                    <label><span>Total de la factura <b>*</b></span><input id="validatorSaleAmountInput" type="number" min="0" step="1000" inputmode="decimal" placeholder="Valor total facturado"></label>
+                    <label><span>Total de la factura <b>*</b></span><input id="validatorSaleAmountInput" type="number" min="0" step="1" inputmode="numeric" placeholder="Valor total facturado"></label>
                     <label><span>Sede o caja</span><select id="validatorRewardPassBranchInput"><option value="">Selecciona la sede de redención</option></select></label>
                     <label><span>Documento presentado</span><input id="validatorRewardPassDocumentInput" type="text" autocomplete="off" placeholder="Número verificado"></label>
                     <input id="validatorRewardPassRedeemInput" type="hidden" readonly>
@@ -7168,11 +7168,11 @@
                   </label>
                   <label>
                     <span>Presupuesto</span>
-                    <input id="adminCampaignBudgetInput" type="number" min="0" step="1000">
+                    <input id="adminCampaignBudgetInput" type="number" min="0" step="1">
                   </label>
                   <label>
                     <span>Meta comercial</span>
-                    <input id="adminCampaignSalesGoalInput" type="number" min="0" step="1000">
+                    <input id="adminCampaignSalesGoalInput" type="number" min="0" step="1">
                   </label>
                   <label class="span-2">
                     <span>Landing URL</span>
@@ -7283,7 +7283,7 @@
                 <form class="modal-form reward-pass-form" id="rewardPassCreateForm">
                   <label>
                     <span>Valor en COP</span>
-                    <input id="rewardPassValueInput" type="number" min="1000" step="1000" required>
+                    <input id="rewardPassValueInput" type="number" min="1000" step="1" required>
                   </label>
                   <label>
                     <span>Campaña asociada</span>
@@ -8154,11 +8154,11 @@
         </label>
         <label class="campaign-compact-field">
           <span>Presupuesto</span>
-          <input id="campaignFormBudget" type="number" min="0" step="1000">
+          <input id="campaignFormBudget" type="number" min="0" step="1">
         </label>
         <label class="campaign-compact-field">
           <span>Meta comercial</span>
-          <input id="campaignFormGoal" type="number" min="0" step="1000">
+          <input id="campaignFormGoal" type="number" min="0" step="1">
         </label>
         <label class="campaign-compact-field">
           <span>Meta leads</span>
@@ -8289,7 +8289,7 @@
         </label>
         <label>
           <span>Ventas totales</span>
-          <input id="snapshotSalesAmountInput" type="number" min="0" step="1000" required>
+          <input id="snapshotSalesAmountInput" type="number" min="0" step="1" required>
         </label>
         <label>
           <span>Fecha inicio</span>
@@ -8586,7 +8586,7 @@
   <script src="js/evaluation-station-core.js?v=evaluation-core-v1-20260830" defer></script>
   <script src="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830" defer></script>
   <script src="js/portal-training-access.js?v=training-access-v448-20260908" defer></script>
-  <script src="js/app.js?v=validator-beneficiary-v477-20260911&amp;validator-product-removal=v463-20260909&amp;rms-sale-multiproduct-history-v397&amp;affiliate-point-rule-v479-20260911&amp;communications-file-picker=v483-20260911&amp;qori-brand-copy=v487-20260911&amp;gos-brand-v362-20260826" defer></script>
+  <script src="js/app.js?v=validator-beneficiary-v477-20260911&amp;validator-product-removal=v463-20260909&amp;rms-sale-multiproduct-history-v397&amp;affiliate-point-rule-v479-20260911&amp;communications-file-picker=v483-20260911&amp;qori-brand-copy=v487-20260911&amp;exact-prices=v488-20260914&amp;gos-brand-v362-20260826" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contact-promotion-v435-20260905&amp;manual-contact-cleanup=v451-20260908" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
