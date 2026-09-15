@@ -20557,8 +20557,10 @@ function ensureGamingCenterUx() {
     triviaLauncherForm?.classList.add("is-gaming-activation-wizard");
     if (triviaLauncherForm) triviaLauncherForm.noValidate = true;
     const legacyLaunchButton = triviaLauncherForm?.querySelector(".activation-launch-submit");
-    legacyLaunchButton?.setAttribute("hidden", "");
-    legacyLaunchButton?.setAttribute("aria-hidden", "true");
+    // The wizard owns the only launch action, on its final review step. Legacy
+    // CSS overrides [hidden], so leaving this submit button in the form exposes
+    // a second launch action during the configuration steps.
+    legacyLaunchButton?.remove();
     triviaLauncherForm?.insertAdjacentHTML("beforebegin", `
       <section class="gaming-activation-recipes" aria-label="Recetas rápidas de activación">
         <div class="gaming-activation-recipes-copy"><span class="mono-label">Punto de partida</span><strong>Elige un objetivo o crea desde cero</strong><small>Las recetas cargan textos editables y una dinámica recomendada.</small></div>
