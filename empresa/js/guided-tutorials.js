@@ -130,6 +130,15 @@
           <footer class="portal-guide-actions"><button class="portal-guide-exit" type="button" data-guide-exit>Salir</button><button class="portal-guide-prev" type="button" data-guide-prev>Anterior</button><button class="portal-guide-next" type="button" data-guide-next>Siguiente</button></footer>
         </article>
       </section>`);
+    // Keep the guide action in the phone header so it never covers page content.
+    const phoneLayout = window.matchMedia("(max-width: 620px)");
+    const placeLauncher = () => {
+      const launcher = document.getElementById("portalGuideLauncher");
+      if (phoneLayout.matches) document.querySelector("#workspace .topbar")?.append(launcher);
+      else document.body.insertBefore(launcher, document.getElementById("portalGuideLibrary"));
+    };
+    placeLauncher();
+    phoneLayout.addEventListener("change", placeLauncher);
     bind();
     renderLibrary();
     syncAuthVisibility();

@@ -92,7 +92,7 @@
 @media (max-width: 620px) {
   html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .topbar {
     display: grid !important;
-    grid-template-columns: 44px minmax(0, 1fr) !important;
+    grid-template-columns: 44px minmax(0, 1fr) 44px !important;
     grid-template-rows: 44px 44px !important;
     align-items: center !important;
     height: auto !important;
@@ -106,6 +106,21 @@
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .topbar #portalGuideLauncher {
+    box-sizing: border-box !important;
+    position: static !important;
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    transform: none !important;
   }
 
   html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .topbar .topbar-actions {

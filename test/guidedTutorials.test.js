@@ -9,7 +9,7 @@ const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "u
 test("el portal carga el centro de tutoriales guiados como una capa independiente", () => {
   const html = read("empresa/index.html");
   assert.match(html, /css\/guided-tutorials\.css\?v=guided-tutorials-v4-theme-white-20260828[^"]*" media="print" data-deferred-portal-style/);
-  assert.match(html, /js\/guided-tutorials\.js\?v=guided-tutorials-v2-gifs-white-20260828/);
+  assert.match(html, /js\/guided-tutorials\.js\?v=guided-tutorials-v3-phone-header-20260915/);
 });
 
 test("las guías cubren el flujo comercial real de punta a punta", () => {
