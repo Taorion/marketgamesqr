@@ -1,0 +1,235 @@
+/* Activation Studio: tablero operativo compacto, legible y responsive. */
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .view-section.active[data-view="strategic-qr"] {
+  display: grid !important;
+  align-content: start !important;
+  gap: 12px !important;
+  padding: clamp(12px, 1.6vw, 22px) !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head {
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 224px) !important;
+  gap: 20px !important;
+  min-height: 176px !important;
+  margin: 0 !important;
+  padding: 22px 26px !important;
+  border-radius: 18px !important;
+  box-shadow: 0 16px 40px rgba(3, 26, 73, .16) !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head-copy {
+  gap: 7px !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head .mono-label {
+  padding: 5px 9px !important;
+  border-radius: 8px !important;
+  font-size: .62rem !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head h2 {
+  max-width: 760px !important;
+  font-size: clamp(1.8rem, 2.65vw, 2.7rem) !important;
+  line-height: 1.06 !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head p {
+  max-width: 760px !important;
+  font-size: .88rem !important;
+  line-height: 1.45 !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-assurances {
+  gap: 6px !important;
+  margin-top: 2px !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-assurances > span {
+  padding: 5px 8px !important;
+  border-radius: 8px !important;
+  font-size: .67rem !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head-actions {
+  gap: 8px !important;
+  width: 100% !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head-actions button {
+  min-height: 44px !important;
+  padding: 7px 13px !important;
+  border-radius: 10px !important;
+  font-size: .78rem !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command {
+  grid-template-columns: minmax(230px, .7fr) minmax(460px, 1.3fr) !important;
+  gap: 16px !important;
+  margin: 0 !important;
+  padding: 14px 16px !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 24px rgba(19, 54, 91, .06) !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command h3 {
+  font-size: 1.15rem !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command p {
+  font-size: .76rem !important;
+  line-height: 1.4 !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command .gaming-center-quick-actions {
+  gap: 8px !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command .gaming-center-quick-action {
+  grid-template-columns: 36px minmax(0, 1fr) 18px !important;
+  gap: 8px !important;
+  min-height: 70px !important;
+  padding: 10px !important;
+  border-radius: 11px !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command .gaming-center-quick-action > .material-symbols-outlined:first-child {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 9px !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-flow {
+  grid-template-columns: minmax(210px, .65fr) minmax(540px, 1.35fr) !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  border-radius: 14px !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-flow li {
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+  gap: 7px !important;
+  min-height: 52px !important;
+  padding: 7px !important;
+  border-radius: 10px !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-flow li > span {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell #strategicQrKpiGrid.activation-premium-kpi-grid {
+  gap: 8px !important;
+  margin: 0 !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-kpi {
+  grid-template-columns: 34px minmax(0, 1fr) !important;
+  gap: 8px !important;
+  min-height: 82px !important;
+  padding: 11px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 6px 18px rgba(21, 57, 91, .045) !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-kpi > .material-symbols-outlined {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 9px !important;
+  font-size: 18px !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-kpi strong {
+  font-size: 1.3rem !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card {
+  margin: 0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 28px rgba(14, 44, 78, .07) !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head {
+  align-items: center !important;
+  min-height: 82px !important;
+  padding: 15px 18px !important;
+  border-radius: 14px 14px 0 0 !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar {
+  gap: 9px !important;
+  padding: 11px 16px !important;
+}
+
+html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-row:hover td {
+  background: #f5faff !important;
+}
+
+@media (max-width: 1180px) {
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command,
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-flow {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-flow-copy {
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    column-gap: 8px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+    min-height: 0 !important;
+    padding: 18px !important;
+  }
+
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head h2 {
+    font-size: clamp(1.65rem, 8vw, 2.08rem) !important;
+  }
+
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-head-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command .gaming-center-quick-actions,
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-flow ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 460px) {
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .view-section.active[data-view="strategic-qr"] {
+    padding: 10px !important;
+  }
+
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-command .gaming-center-quick-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-assurances {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-assurances > span {
+    justify-content: center !important;
+    min-width: 0 !important;
+    text-align: center !important;
+    white-space: normal !important;
+  }
+
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-flow-copy {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell #strategicQrKpiGrid.activation-premium-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-kpi {
+    min-height: 76px !important;
+  }
+}
