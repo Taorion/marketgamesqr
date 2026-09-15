@@ -88,6 +88,137 @@
   }
 }
 
+/* Let every phone header control stay inside the actual topbar row. */
+@media (max-width: 620px) {
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .topbar {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) 40px !important;
+    grid-template-rows: 44px !important;
+    align-items: center !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    gap: 6px !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .topbar .search-shell {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .topbar .topbar-actions {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    width: 40px !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .sidebar .sidebar-primary-nav-item {
+    height: auto !important;
+    min-height: 54px !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .sidebar .sidebar-primary-nav-item :is(strong, small) {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .rms-machine-live-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    padding: 6px !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .rms-machine-live-rail > div {
+    min-width: 0 !important;
+    min-height: 64px !important;
+    padding: 9px 12px !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .rms-machine-live-rail > div:last-child {
+    grid-column: 1 / -1 !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .rms-machine-live-rail strong {
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    white-space: normal !important;
+    font-size: .83rem !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card {
+    box-sizing: border-box !important;
+    flex: 0 0 calc(100% - 4px) !important;
+    width: calc(100% - 4px) !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto 150px auto auto auto !important;
+    gap: 12px !important;
+    padding: 15px !important;
+    overflow: visible !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .rms-stage-slider-shell .rms-station-entry-media {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    height: 150px !important;
+    min-height: 0 !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .rms-stage-slider-shell .rms-station-entry-main {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+    align-self: start !important;
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .rms-stage-slider-shell .rms-station-entry-flow {
+    grid-column: 1 !important;
+    grid-row: 4 !important;
+    min-height: 0 !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card > button {
+    grid-column: 1 !important;
+    grid-row: 5 !important;
+    min-height: 44px !important;
+    white-space: normal !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace #rmsQualityControlAccess .rms-quality-control-card-footer {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace #rmsQualityControlAccess .rms-quality-control-metric {
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace #rmsQualityControlAccess .rms-quality-control-card-footer > button {
+    width: 100% !important;
+    min-height: 44px !important;
+    white-space: normal !important;
+  }
+}
+
 @media (max-width: 620px) {
   html body:not(#mobileModalA#mobileModalB#mobileModalC#mobileModalD#mobileModalE#mobileModalF#mobileModalG#mobileModalH#mobileModalI#mobileModalJ) .modal-shell:not(.hidden) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
     min-width: 0 !important;

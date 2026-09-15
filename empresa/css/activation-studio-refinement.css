@@ -211,13 +211,13 @@ html body:not(#activationRefineA#activationRefineB#activationRefineC#activationR
 
   html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-assurances {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   html body:not(#activationRefineA#activationRefineB#activationRefineC#activationRefineD#activationRefineE#activationRefineF#activationRefineG#activationRefineH#activationRefineI#activationRefineJ#activationRefineK#activationRefineL)[data-current-view="strategic-qr"] .portal-shell .activation-premium-assurances > span {
-    justify-content: center !important;
+    justify-content: flex-start !important;
     min-width: 0 !important;
-    text-align: center !important;
+    text-align: left !important;
     white-space: normal !important;
   }
 

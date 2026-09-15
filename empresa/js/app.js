@@ -7271,6 +7271,7 @@ function forceSidebarMenuLeftAlignment() {
   });
 
   const rows = document.querySelectorAll(".sidebar .nav-item[data-view]");
+  const isNarrowSidebar = window.matchMedia("(max-width: 620px)").matches && !isDesktopCollapsed;
   rows.forEach((row) => {
     setImportantStyle(row, "display", "grid");
     setImportantStyle(row, "grid-template-columns", isDesktopCollapsed ? "1fr" : "28px minmax(0, 1fr) 34px");
@@ -7323,9 +7324,9 @@ function forceSidebarMenuLeftAlignment() {
       setImportantStyle(copy, "padding", "0");
       setImportantStyle(copy, "text-align", "left");
       setImportantStyle(copy, "align-self", "stretch");
-      setImportantStyle(copy, "white-space", "nowrap");
-      setImportantStyle(copy, "overflow", "hidden");
-      setImportantStyle(copy, "text-overflow", "ellipsis");
+      setImportantStyle(copy, "white-space", isNarrowSidebar ? "normal" : "nowrap");
+      setImportantStyle(copy, "overflow", isNarrowSidebar ? "visible" : "hidden");
+      setImportantStyle(copy, "text-overflow", isNarrowSidebar ? "clip" : "ellipsis");
     });
 
     const badge = row.querySelector(":scope > .feature-tier-badge");

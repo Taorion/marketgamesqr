@@ -169,3 +169,19 @@ html body .portal-shell #leadDetailModal :is(.lead-profile-header, .lead-quick-a
     height: 32px !important;
   }
 }
+
+@media (max-width: 420px) {
+  #workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs > button {
+    min-height: 52px !important;
+  }
+
+  #workspace.app-shell .lead-directory-card > #leadDirectoryAudienceTabs > button :is(strong, span:not(.material-symbols-outlined)) {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+  }
+}
