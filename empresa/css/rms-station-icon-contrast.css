@@ -1,0 +1,25 @@
+/* Final contrast lock for RMS station identity icons. */
+
+html body:not(#rmsIconA#rmsIconB#rmsIconC#rmsIconD#rmsIconE#rmsIconF#rmsIconG#rmsIconH)[data-current-view="rms-machine"] main.portal-shell #workspace :is(
+  .rms-stage-slider-title > .material-symbols-outlined,
+  .rms-station-entry-main > .material-symbols-outlined,
+  .rms-station-primary-brief > .material-symbols-outlined,
+  .rms-stage-quick-item > .material-symbols-outlined:not(.rms-stage-quick-arrow),
+  .rms-lean-station-title > .rms-lean-station-symbol
+) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: linear-gradient(145deg, #0341b3, #087d9a) !important;
+  text-shadow: none !important;
+}
+
+html body:not(#rmsIconA#rmsIconB#rmsIconC#rmsIconD#rmsIconE#rmsIconF#rmsIconG#rmsIconH)[data-current-view="rms-machine"] main.portal-shell #workspace .rms-station-icon-orbit {
+  border-color: rgba(255, 255, 255, .24) !important;
+  background: linear-gradient(145deg, #0341b3, #087d9a) !important;
+}
+
+html body:not(#rmsIconA#rmsIconB#rmsIconC#rmsIconD#rmsIconE#rmsIconF#rmsIconG#rmsIconH)[data-current-view="rms-machine"] main.portal-shell #workspace .rms-station-icon-orbit > .material-symbols-outlined {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-shadow: none !important;
+}
