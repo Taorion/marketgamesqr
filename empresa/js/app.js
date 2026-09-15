@@ -7230,7 +7230,7 @@ function forceSidebarMenuLeftAlignment() {
     && window.matchMedia("(min-width: 961px)").matches;
   const groupToggles = document.querySelectorAll(".sidebar .sidebar-nav-section > .nav-group-toggle");
   groupToggles.forEach((toggle) => {
-    setImportantStyle(toggle, "display", "grid");
+    setImportantStyle(toggle, "display", isDesktopCollapsed ? "none" : "grid");
     setImportantStyle(toggle, "grid-template-columns", isDesktopCollapsed ? "1fr" : "minmax(0, 1fr) 24px");
     setImportantStyle(toggle, "align-items", "center");
     setImportantStyle(toggle, "justify-items", isDesktopCollapsed ? "center" : "stretch");
@@ -7249,23 +7249,27 @@ function forceSidebarMenuLeftAlignment() {
   const rows = document.querySelectorAll(".sidebar .nav-item[data-view]");
   rows.forEach((row) => {
     setImportantStyle(row, "display", "grid");
-    setImportantStyle(row, "grid-template-columns", "28px minmax(0, 1fr) 34px");
-    setImportantStyle(row, "grid-auto-flow", "column");
+    setImportantStyle(row, "grid-template-columns", isDesktopCollapsed ? "1fr" : "28px minmax(0, 1fr) 34px");
+    setImportantStyle(row, "grid-auto-flow", isDesktopCollapsed ? "row" : "column");
     setImportantStyle(row, "align-items", "center");
-    setImportantStyle(row, "justify-items", "stretch");
-    setImportantStyle(row, "justify-content", "stretch");
-    setImportantStyle(row, "column-gap", "10px");
-    setImportantStyle(row, "min-height", "54px");
-    setImportantStyle(row, "padding", "8px 4px 8px 8px");
-    setImportantStyle(row, "text-align", "left");
-    setImportantStyle(row, "border-radius", "0");
+    setImportantStyle(row, "justify-items", isDesktopCollapsed ? "center" : "stretch");
+    setImportantStyle(row, "justify-content", isDesktopCollapsed ? "center" : "stretch");
+    setImportantStyle(row, "column-gap", isDesktopCollapsed ? "0" : "10px");
+    setImportantStyle(row, "width", isDesktopCollapsed ? "52px" : "100%");
+    setImportantStyle(row, "min-width", isDesktopCollapsed ? "52px" : "0");
+    setImportantStyle(row, "height", isDesktopCollapsed ? "52px" : "auto");
+    setImportantStyle(row, "min-height", isDesktopCollapsed ? "52px" : "54px");
+    setImportantStyle(row, "margin", isDesktopCollapsed ? "0 auto" : "0");
+    setImportantStyle(row, "padding", isDesktopCollapsed ? "0" : "8px 4px 8px 8px");
+    setImportantStyle(row, "text-align", isDesktopCollapsed ? "center" : "left");
+    setImportantStyle(row, "border-radius", isDesktopCollapsed ? "12px" : "0");
 
     const icon = row.querySelector(":scope > .material-symbols-outlined");
     setImportantStyle(icon, "grid-column", "1");
-    setImportantStyle(icon, "width", "28px");
-    setImportantStyle(icon, "min-width", "28px");
-    setImportantStyle(icon, "max-width", "28px");
-    setImportantStyle(icon, "height", "28px");
+    setImportantStyle(icon, "width", isDesktopCollapsed ? "24px" : "28px");
+    setImportantStyle(icon, "min-width", isDesktopCollapsed ? "24px" : "28px");
+    setImportantStyle(icon, "max-width", isDesktopCollapsed ? "24px" : "28px");
+    setImportantStyle(icon, "height", isDesktopCollapsed ? "24px" : "28px");
     setImportantStyle(icon, "display", "inline-grid");
     setImportantStyle(icon, "place-items", "center");
     setImportantStyle(icon, "overflow", "hidden");
@@ -7278,8 +7282,8 @@ function forceSidebarMenuLeftAlignment() {
     const text = row.querySelector(":scope > span:not(.material-symbols-outlined):not(.feature-tier-badge)");
     setImportantStyle(text, "grid-column", "2");
     setImportantStyle(text, "min-width", "0");
-    setImportantStyle(text, "width", "100%");
-    setImportantStyle(text, "display", "flex");
+    setImportantStyle(text, "width", isDesktopCollapsed ? "0" : "100%");
+    setImportantStyle(text, "display", isDesktopCollapsed ? "none" : "flex");
     setImportantStyle(text, "flex-direction", "column");
     setImportantStyle(text, "align-items", "flex-start");
     setImportantStyle(text, "justify-content", "flex-start");
@@ -7288,7 +7292,7 @@ function forceSidebarMenuLeftAlignment() {
     setImportantStyle(text, "place-items", "start");
     setImportantStyle(text, "text-align", "left");
     text?.querySelectorAll(":scope > strong, :scope > small").forEach((copy) => {
-      setImportantStyle(copy, "display", "block");
+      setImportantStyle(copy, "display", isDesktopCollapsed ? "none" : "block");
       setImportantStyle(copy, "width", "100%");
       setImportantStyle(copy, "max-width", "100%");
       setImportantStyle(copy, "margin", "0");
@@ -7307,7 +7311,7 @@ function forceSidebarMenuLeftAlignment() {
     setImportantStyle(badge, "width", "34px");
     setImportantStyle(badge, "min-width", "34px");
     setImportantStyle(badge, "max-width", "34px");
-    setImportantStyle(badge, "display", "inline-flex");
+    setImportantStyle(badge, "display", isDesktopCollapsed ? "none" : "inline-flex");
     setImportantStyle(badge, "justify-content", "flex-end");
     setImportantStyle(badge, "align-items", "center");
     setImportantStyle(badge, "margin", "0");
@@ -7328,9 +7332,11 @@ function forceSidebarMenuLeftAlignment() {
         "background", "border", "border-left", "box-shadow", "color",
         "-webkit-text-fill-color", "margin", "width",
       ].forEach((property) => entry.style.removeProperty(property));
-      setImportantStyle(entry, "border-radius", "0");
-      setImportantStyle(entry, "min-height", "54px");
-      setImportantStyle(entry, "padding", "8px 4px 8px 8px");
+      setImportantStyle(entry, "width", isDesktopCollapsed ? "52px" : "100%");
+      setImportantStyle(entry, "margin", isDesktopCollapsed ? "0 auto" : "0");
+      setImportantStyle(entry, "border-radius", isDesktopCollapsed ? "12px" : "0");
+      setImportantStyle(entry, "min-height", isDesktopCollapsed ? "52px" : "54px");
+      setImportantStyle(entry, "padding", isDesktopCollapsed ? "0" : "8px 4px 8px 8px");
       [icon, ...(text?.querySelectorAll(":scope > strong, :scope > small") || [])].forEach((node) => {
         node?.style.removeProperty("color");
         node?.style.removeProperty("-webkit-text-fill-color");
@@ -7342,15 +7348,16 @@ function forceSidebarMenuLeftAlignment() {
 
     setImportantStyle(entry, "background", "repeating-linear-gradient(135deg, rgba(255, 255, 255, .10) 0 8px, transparent 8px 17px), linear-gradient(135deg, #0877ff 0%, #0341b3 52%, #012268 100%)");
     setImportantStyle(entry, "border", "2px solid #69ddff");
-    setImportantStyle(entry, "border-left", "5px solid #ffffff");
+    setImportantStyle(entry, "border-left", isDesktopCollapsed ? "2px solid #69ddff" : "5px solid #ffffff");
     setImportantStyle(entry, "border-radius", "12px");
     setImportantStyle(entry, "box-shadow", "0 14px 30px rgba(1, 34, 104, .42), 0 0 0 3px rgba(105, 221, 255, .18), inset 0 1px 0 rgba(255, 255, 255, .22)");
     setImportantStyle(entry, "color", "#ffffff");
     setImportantStyle(entry, "-webkit-text-fill-color", "#ffffff");
     setImportantStyle(entry, "min-height", isDesktopCollapsed ? "52px" : "68px");
-    setImportantStyle(entry, "padding", isDesktopCollapsed ? "8px" : "9px 8px 9px 10px");
-    setImportantStyle(entry, "margin", "5px 2px");
-    setImportantStyle(entry, "width", "calc(100% - 4px)");
+    setImportantStyle(entry, "height", isDesktopCollapsed ? "52px" : "auto");
+    setImportantStyle(entry, "padding", isDesktopCollapsed ? "0" : "9px 8px 9px 10px");
+    setImportantStyle(entry, "margin", isDesktopCollapsed ? "0 auto" : "5px 2px");
+    setImportantStyle(entry, "width", isDesktopCollapsed ? "52px" : "calc(100% - 4px)");
     setImportantStyle(icon, "color", "#ffffff");
     setImportantStyle(icon, "-webkit-text-fill-color", "#ffffff");
     setImportantStyle(icon, "opacity", "1");

@@ -1,0 +1,54 @@
+/* El estado del workspace gobierna el ancho real del menu, incluso sobre las capas de densidad. */
+@media (min-width: 961px) {
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace.sidebar-collapsed .sidebar {
+    width: 76px !important;
+    min-width: 76px !important;
+    max-width: 76px !important;
+    padding: 12px 10px 16px !important;
+  }
+
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace.sidebar-collapsed .app-main {
+    width: calc(100% - 76px) !important;
+    margin-left: 76px !important;
+  }
+
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace.sidebar-collapsed .topbar {
+    left: 76px !important;
+    width: calc(100% - 76px) !important;
+  }
+
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace :is(.sidebar, .app-main, .topbar) {
+    transition: width .2s ease, left .2s ease, margin-left .2s ease, transform .2s ease !important;
+  }
+}
+
+@media (max-width: 960px) {
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace:not(.sidebar-open) .sidebar {
+    transform: translateX(-105%) !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace.sidebar-open .sidebar {
+    transform: translateX(0) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace.sidebar-open .topbar {
+    z-index: 92 !important;
+    pointer-events: none !important;
+  }
+
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace.sidebar-open .topbar #menuToggleButton {
+    pointer-events: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body[data-auth-state="authenticated"] .portal-shell #workspace :is(.sidebar, .app-main, .topbar) {
+    transition: none !important;
+  }
+}
