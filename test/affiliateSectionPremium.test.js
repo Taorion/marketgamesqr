@@ -8,9 +8,24 @@ const html = fs.readFileSync(path.join(root, "empresa", "index.html"), "utf8");
 const css = fs.readFileSync(path.join(root, "empresa", "css", "affiliates-section-premium.css"), "utf8");
 
 test("la capa premium de Afiliados carga al final del portal", () => {
-  const marker = "affiliates-section-premium.css?v=affiliates-section-premium-v1-20260914";
+  const marker = "affiliates-section-premium.css?v=affiliates-section-premium-v2-20260914";
   assert.ok(html.includes(marker));
   assert.ok(html.indexOf(marker) > html.indexOf("rms-station-tables.css"));
+});
+
+test("la jerarquia visual usa la paleta Qori sin tarjetas sobredimensionadas", () => {
+  assert.match(css, /--affiliate-navy: #031e50;/);
+  assert.match(css, /--affiliate-blue: #0759d6;/);
+  assert.match(css, /--affiliate-cyan: #00bfe5;/);
+  assert.match(css, /> \.view-head \{[\s\S]*?linear-gradient\(118deg, var\(--affiliate-navy\), #0759d6/);
+  assert.match(css, /:is\(\.affiliate-command-card,[\s\S]*?border-radius: 10px !important;[\s\S]*?box-shadow: var\(--affiliate-shadow\) !important/);
+});
+
+test("el centro de afiliados se adapta a escritorio compacto y movil", () => {
+  assert.match(css, /@media \(max-width: 1280px\)[\s\S]*?\.affiliate-dashboard-grid \{[\s\S]*?repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.affiliate-command-strip \{[\s\S]*?minmax\(0, 1\.45fr\) minmax\(240px, \.8fr\)/);
+  assert.match(css, /@media \(max-width: 820px\)[\s\S]*?:is\(\.affiliate-command-strip, \.affiliate-finder-grid\)[\s\S]*?minmax\(0, 1fr\)/);
+  assert.match(css, /\.affiliate-quick-nav \{[\s\S]*?overflow-x: auto !important/);
 });
 
 test("el directorio neutraliza recortes y mantiene acciones legibles", () => {
