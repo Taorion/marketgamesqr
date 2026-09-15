@@ -684,6 +684,9 @@ const accountRiskBenefitsMessage = document.getElementById("accountRiskBenefitsM
 const accountProfileMessage = document.getElementById("accountProfileMessage");
 const accountProfileSaveButton = document.getElementById("accountProfileSaveButton");
 const accountLogoPreview = document.getElementById("accountLogoPreview");
+const accountCommandMark = document.getElementById("accountCommandMark");
+const accountCommandLogo = document.getElementById("accountCommandLogo");
+const accountCommandLogoFallback = document.getElementById("accountCommandLogoFallback");
 const accountLogoTitle = document.getElementById("accountLogoTitle");
 const accountLogoUploadButton = document.getElementById("accountLogoUploadButton");
 const accountLogoRemoveButton = document.getElementById("accountLogoRemoveButton");
@@ -6805,6 +6808,37 @@ function ensureAccountAdminUxStyles() {
   `;
 }
 
+function renderAccountCommandBrand(business = {}) {
+  if (!accountCommandMark || !accountCommandLogo || !accountCommandLogoFallback) return;
+  const businessName = firstTextValue(business.name, session?.user?.business?.name, "Empresa");
+  const logo = firstTextValue(
+    business.logo_data_url,
+    business.logo_url,
+    business.settings?.logo_data_url,
+    business.settings?.logo_url,
+    businessProfileLogoSource()
+  );
+  const initial = businessName.trim().charAt(0).toLocaleUpperCase("es-CO") || "E";
+  const showFallback = () => {
+    accountCommandLogo.hidden = true;
+    accountCommandLogo.removeAttribute("src");
+    accountCommandLogo.alt = "";
+    accountCommandLogoFallback.hidden = false;
+    accountCommandLogoFallback.textContent = initial;
+    accountCommandMark.setAttribute("aria-label", `${businessName}, empresa sin logo cargado`);
+  };
+  if (!logo) {
+    showFallback();
+    return;
+  }
+  accountCommandLogoFallback.hidden = true;
+  accountCommandLogo.hidden = false;
+  accountCommandLogo.alt = `Logo de ${businessName}`;
+  accountCommandMark.setAttribute("aria-label", `Logo de ${businessName}`);
+  accountCommandLogo.onerror = showFallback;
+  if (accountCommandLogo.getAttribute("src") !== logo) accountCommandLogo.src = logo;
+}
+
 function renderAccountView() {
   ensureAccountAdminUxStyles();
   const business = state.businessProfile || {};
@@ -6814,6 +6848,8 @@ function renderAccountView() {
   const credit = state.qrCreditAccount || {};
   const qrBalance = Number(credit.qr_balance || 0);
   const availableQr = qrBalance.toLocaleString("es-CO");
+
+  renderAccountCommandBrand(business);
 
   setAccountText(accountBusinessName, business.name);
   setAccountText(accountBusinessNit, business.nit);
@@ -36056,8 +36092,13 @@ function businessLogoSource(affiliate) {
 function businessProfileLogoSource() {
   const sessionBusinessProfile = sessionBusinessProfileForActiveBusiness();
   return state.businessProfile?.logo_data_url
+    || state.businessProfile?.logo_url
+    || state.businessProfile?.settings?.logo_data_url
+    || state.businessProfile?.settings?.logo_url
     || sessionBusinessProfile?.logo_data_url
+    || sessionBusinessProfile?.logo_url
     || sessionBusinessProfile?.settings?.logo_data_url
+    || sessionBusinessProfile?.settings?.logo_url
     || businessLogoPreview?.querySelector("img")?.getAttribute("src")
     || accountLogoPreview?.querySelector("img")?.getAttribute("src")
     || "";

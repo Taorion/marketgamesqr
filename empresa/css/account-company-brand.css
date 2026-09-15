@@ -1,0 +1,46 @@
+/* Final company-brand treatment for the Account command hero. */
+
+html body:not(#accountBrandA#accountBrandB#accountBrandC#accountBrandD#accountBrandE#accountBrandF)[data-current-view="account"] main.portal-shell #workspace .account-command-mark {
+  overflow: hidden !important;
+}
+
+html body:not(#accountBrandA#accountBrandB#accountBrandC#accountBrandD#accountBrandE#accountBrandF)[data-current-view="account"] main.portal-shell #workspace .account-command-mark #accountCommandLogo {
+  position: absolute !important;
+  inset: 14% !important;
+  z-index: 4 !important;
+  width: 72% !important;
+  height: 72% !important;
+  padding: 12px !important;
+  border: 1px solid rgba(3, 65, 179, .1) !important;
+  border-radius: 26% !important;
+  background: rgba(255, 255, 255, .94) !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 12px 18px rgba(3, 65, 179, .12)) !important;
+  transform: rotate(-8deg) !important;
+}
+
+html body:not(#accountBrandA#accountBrandB#accountBrandC#accountBrandD#accountBrandE#accountBrandF)[data-current-view="account"] main.portal-shell #workspace .account-command-mark #accountCommandLogo[hidden] {
+  display: none !important;
+}
+
+html body:not(#accountBrandA#accountBrandB#accountBrandC#accountBrandD#accountBrandE#accountBrandF)[data-current-view="account"] main.portal-shell #workspace .account-command-logo-fallback {
+  position: absolute !important;
+  inset: 22% !important;
+  z-index: 4 !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 1px solid rgba(3, 65, 179, .12) !important;
+  border-radius: 28% !important;
+  color: #ffffff !important;
+  background: linear-gradient(145deg, #0341b3, #087d9a) !important;
+  box-shadow: 0 12px 26px rgba(3, 65, 179, .18) !important;
+  font-family: "Plus Jakarta Sans", "Manrope", sans-serif !important;
+  font-size: clamp(2.5rem, 5vw, 4rem) !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  transform: rotate(-8deg) !important;
+}
+
+html body:not(#accountBrandA#accountBrandB#accountBrandC#accountBrandD#accountBrandE#accountBrandF)[data-current-view="account"] main.portal-shell #workspace .account-command-logo-fallback[hidden] {
+  display: none !important;
+}

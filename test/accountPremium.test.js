@@ -22,8 +22,25 @@ test("Account exposes six synchronized administration areas", () => {
   assert.match(app, /supportedScreens\.includes\(screen\)/);
   assert.match(app, /APP_VERSION = "empresa-[^"]+"/);
   assert.match(html, /account-premium\.css\?v=account-plan-change-v12-20260827/);
-  assert.equal((html.match(/app\.js\?v=gos-brand-v362-20260826-plan-entitlements-v382-20260827-risk-fixed-concession-v385/g) || []).length, 2);
-  assert.match(html, /qori-favicon\.png\?v=qori-account-brand-v2-20260827/);
+  assert.equal((html.match(/app\.js\?v=[^\"]*account-company-logo=v495-20260914/g) || []).length, 2);
+  assert.doesNotMatch(account, /qori-favicon\.png/);
+  assert.match(account, /id="accountCommandLogo" alt="" hidden/);
+  assert.match(account, /id="accountCommandLogoFallback"/);
+});
+
+test("Account hero renders the persisted company logo with a clean fallback", () => {
+  const html = read("empresa/index.html");
+  const app = read("empresa/js/app.js");
+  const css = read("empresa/css/account-company-brand.css");
+  assert.equal((html.match(/account-company-logo=v495-20260914/g) || []).length, 2);
+  assert.match(html, /account-company-brand\.css\?v=account-company-brand-v1-20260914/);
+  assert.match(app, /function renderAccountCommandBrand\(business = \{\}\)/);
+  assert.match(app, /business\.logo_data_url,[\s\S]*?business\.logo_url,[\s\S]*?business\.settings\?\.logo_data_url/);
+  assert.match(app, /accountCommandLogo\.alt = `Logo de \$\{businessName\}`/);
+  assert.match(app, /accountCommandLogo\.onerror = showFallback/);
+  assert.match(app, /renderAccountCommandBrand\(business\)/);
+  assert.match(css, /#accountCommandLogo \{[\s\S]*?object-fit: contain !important/);
+  assert.match(css, /\.account-command-logo-fallback \{[\s\S]*?linear-gradient/);
 });
 
 test("Account follows the Qori premium visual system and a real mobile breakpoint", () => {
