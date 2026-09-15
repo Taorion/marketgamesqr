@@ -82,6 +82,7 @@
 <link rel="stylesheet" href="css/portal-sidebar-collapse.css?v=portal-sidebar-collapse-v1-20260914&amp;mobile-open=v496-20260915&amp;compact-groups=v497-20260915">
 <link rel="stylesheet" href="css/portal-mobile-finish.css?v=portal-mobile-finish-v2-20260915">
 <link rel="stylesheet" href="css/portal-login-refinement.css?v=portal-login-refinement-v1-20260915">
+<link rel="stylesheet" href="css/portal-inventory-table-refinement.css?v=portal-inventory-table-refinement-v1-20260915">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -6124,13 +6125,13 @@
                     <strong>Productos registrados</strong>
                   </div>
                   <div class="inventory-table-tools" aria-label="Buscar y filtrar productos">
-                    <input id="inventorySearchInput" type="search" placeholder="Buscar productos">
+                    <input id="inventorySearchInput" type="search" placeholder="Buscar productos" aria-label="Buscar productos">
                     <select id="inventoryQuickFilter" aria-label="Estado del inventario"><option value="all">Todos</option><option value="active">Activos</option><option value="low_stock">Stock bajo</option><option value="without_code">Sin código</option><option value="archived">Archivados</option></select>
                     <select id="inventoryCategoryFilter" aria-label="Categoría"><option value="">Todas las categorías</option></select>
                   </div>
                 </div>
                 <div class="table-wrap">
-                  <table>
+                  <table aria-label="Productos registrados">
                     <thead>
                       <tr>
                         <th>ID producto</th>
@@ -6138,7 +6139,7 @@
                         <th>Categoría</th>
                         <th>Precio y stock</th>
                         <th>Estado</th>
-                        <th></th>
+                        <th>Acciones</th>
                       </tr>
                     </thead>
                     <tbody id="inventoryTable"></tbody>
