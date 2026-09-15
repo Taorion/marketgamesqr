@@ -117,6 +117,35 @@
     margin: 0 !important;
     padding: 0 !important;
     justify-content: center !important;
+    display: grid !important;
+    place-items: center !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .topbar #globalRevenueActionButton {
+    box-sizing: border-box !important;
+    display: grid !important;
+    place-items: center !important;
+    position: static !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    font-size: 0 !important;
+  }
+
+  html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .topbar #globalRevenueActionButton .material-symbols-outlined {
+    display: block !important;
+    position: static !important;
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    line-height: 24px !important;
+    font-size: 24px !important;
+    text-align: center !important;
   }
 
   html body:not(#mobileLayoutA#mobileLayoutB#mobileLayoutC#mobileLayoutD#mobileLayoutE#mobileLayoutF#mobileLayoutG#mobileLayoutH#mobileLayoutI#mobileLayoutJ)[data-auth-state="authenticated"] .portal-shell #workspace .sidebar .sidebar-primary-nav-item {
@@ -233,5 +262,21 @@
 
   html body:not(#mobileModalA#mobileModalB#mobileModalC#mobileModalD#mobileModalE#mobileModalF#mobileModalG#mobileModalH#mobileModalI#mobileModalJ) .modal-shell:not(.hidden) .modal-actions > button {
     min-height: 44px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  html body:not(#mobileTabsA#mobileTabsB#mobileTabsC#mobileTabsD#mobileTabsE#mobileTabsF#mobileTabsG#mobileTabsH#mobileTabsI#mobileTabsJ)[data-auth-state="authenticated"] .portal-shell #workspace .lead-directory-card > #leadDirectoryAudienceTabs {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body:not(#mobileTabsA#mobileTabsB#mobileTabsC#mobileTabsD#mobileTabsE#mobileTabsF#mobileTabsG#mobileTabsH#mobileTabsI#mobileTabsJ)[data-auth-state="authenticated"] .portal-shell #workspace .lead-directory-card > #leadDirectoryAudienceTabs > button {
+    min-height: 52px !important;
+  }
+
+  html body:not(#mobileTabsA#mobileTabsB#mobileTabsC#mobileTabsD#mobileTabsE#mobileTabsF#mobileTabsG#mobileTabsH#mobileTabsI#mobileTabsJ)[data-auth-state="authenticated"] .portal-shell #workspace .lead-directory-card > #leadDirectoryAudienceTabs > button :is(strong, span:not(.material-symbols-outlined)) {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
   }
 }
