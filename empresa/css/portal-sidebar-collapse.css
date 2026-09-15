@@ -17,6 +17,47 @@
     width: calc(100% - 76px) !important;
   }
 
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace:is(.sidebar-collapsed, .sidebar-expanding) .sidebar .sidebar-nav {
+    align-content: start !important;
+    grid-auto-rows: max-content !important;
+    gap: 6px !important;
+  }
+
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace:is(.sidebar-collapsed, .sidebar-expanding) .sidebar .sidebar-nav-section {
+    height: auto !important;
+    align-self: start !important;
+  }
+
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace:is(.sidebar-collapsed, .sidebar-expanding) .sidebar .sidebar-nav-section > .nav-group-toggle {
+    display: grid !important;
+    width: 52px !important;
+    min-height: 52px !important;
+    margin: 0 auto !important;
+    border: 1px solid rgba(133, 192, 229, .28) !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, .045) !important;
+    color: #a8cde5 !important;
+  }
+
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace:is(.sidebar-collapsed, .sidebar-expanding) .sidebar .sidebar-nav-section.is-current > .nav-group-toggle {
+    border-color: #69ddff !important;
+    background: #174777 !important;
+    color: #fff !important;
+  }
+
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace:is(.sidebar-collapsed, .sidebar-expanding) .sidebar .sidebar-nav-section > .nav-group-toggle > .material-symbols-outlined {
+    display: grid !important;
+    color: inherit !important;
+    -webkit-text-fill-color: currentColor !important;
+    font-size: 23px !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace:is(.sidebar-collapsed, .sidebar-expanding) .sidebar .sidebar-nav-section > .sidebar-nav-section-panel {
+    display: none !important;
+  }
+
   html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace :is(.sidebar, .app-main, .topbar) {
     transition: width .2s ease, left .2s ease, margin-left .2s ease, transform .2s ease !important;
   }

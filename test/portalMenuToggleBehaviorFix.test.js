@@ -29,7 +29,9 @@ test("el ancho del escritorio y el desplazamiento movil obedecen el estado", () 
 });
 
 test("la alineacion principal distingue estados expandido y replegado", () => {
-  assert.match(app, /setImportantStyle\(toggle, "display", isDesktopCollapsed \? "none" : "grid"\)/);
+  assert.match(app, /setImportantStyle\(toggle, "display", "grid"\)/);
+  assert.match(app, /SIDEBAR_GROUP_ICONS[\s\S]*?operate: "work"[\s\S]*?admin: "settings"/);
+  assert.match(fix, /important\(group, "display", "grid"\)/);
   assert.match(app, /setImportantStyle\(row, "grid-template-columns", isDesktopCollapsed \? "1fr" : "28px minmax\(0, 1fr\) 34px"\)/);
   assert.match(app, /setImportantStyle\(text, "display", isDesktopCollapsed \? "none" : "flex"\)/);
   assert.match(app, /setImportantStyle\(badge, "display", isDesktopCollapsed \? "none" : "inline-flex"\)/);
@@ -37,7 +39,7 @@ test("la alineacion principal distingue estados expandido y replegado", () => {
 
 test("la capa de compatibilidad corrige sesiones con app cacheada", () => {
   assert.match(fix, /workspace\.classList\.contains\("sidebar-collapsed"\)/);
-  assert.match(fix, /important\(group, "display", collapsed \? "none" : "grid"\)/);
+  assert.match(fix, /important\(group, "display", "grid"\)/);
   assert.match(fix, /important\(text, "display", collapsed \? "none" : "flex"\)/);
   assert.match(fix, /toggleButton\.addEventListener\("click", syncSidebarPresentation\)/);
   assert.match(fix, /window\.addEventListener\("resize", syncSidebarPresentation/);

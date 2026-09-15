@@ -1,8 +1,48 @@
 /* Phone-only finishing layer for the authenticated portal. */
 @media (max-width: 960px) {
+  html.portal-menu-mobile-open,
+  html.portal-menu-mobile-open body {
+    overflow: hidden !important;
+    overscroll-behavior: contain;
+  }
+
+  html body:not(#mobileFinishA#mobileFinishB#mobileFinishC#mobileFinishD#mobileFinishE#mobileFinishF#mobileFinishG#mobileFinishH#mobileFinishI#mobileFinishJ)[data-auth-state="authenticated"] .portal-shell #workspace::after {
+    content: "" !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 79 !important;
+    background: rgba(5, 42, 107, .42) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: opacity .25s ease, visibility 0s linear .25s !important;
+  }
+
+  html body:not(#mobileFinishA#mobileFinishB#mobileFinishC#mobileFinishD#mobileFinishE#mobileFinishF#mobileFinishG#mobileFinishH#mobileFinishI#mobileFinishJ)[data-auth-state="authenticated"] .portal-shell #workspace.sidebar-open::after {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transition: opacity .25s ease, visibility 0s !important;
+  }
+
+  html body:not(#mobileFinishA#mobileFinishB#mobileFinishC#mobileFinishD#mobileFinishE#mobileFinishF#mobileFinishG#mobileFinishH#mobileFinishI#mobileFinishJ)[data-auth-state="authenticated"] .portal-shell #workspace .sidebar {
+    transition: transform .25s ease, opacity .25s ease, visibility 0s linear .25s !important;
+  }
+
+  html body:not(#mobileFinishA#mobileFinishB#mobileFinishC#mobileFinishD#mobileFinishE#mobileFinishF#mobileFinishG#mobileFinishH#mobileFinishI#mobileFinishJ)[data-auth-state="authenticated"] .portal-shell #workspace.sidebar-open .sidebar {
+    transition: transform .25s ease, opacity .25s ease, visibility 0s !important;
+  }
+
   html body:not(#mobileFinishA#mobileFinishB#mobileFinishC#mobileFinishD#mobileFinishE#mobileFinishF#mobileFinishG#mobileFinishH#mobileFinishI#mobileFinishJ)[data-auth-state="authenticated"] .portal-shell #workspace.sidebar-open .topbar {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
+  }
+}
+
+@media (max-width: 960px) and (prefers-reduced-motion: reduce) {
+  html body[data-auth-state="authenticated"] .portal-shell #workspace :is(.sidebar, .topbar),
+  html body[data-auth-state="authenticated"] .portal-shell #workspace::after {
+    transition: none !important;
   }
 }
 

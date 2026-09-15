@@ -8,13 +8,39 @@
   const important = (node, property, value) => {
     if (node) node.style.setProperty(property, value, "important");
   };
+  const groupIcons = { offer: "bolt", operate: "work", optimize: "trending_up", gos: "analytics", admin: "settings" };
 
   const syncSidebarPresentation = () => {
     const collapsed = window.matchMedia("(min-width: 961px)").matches
-      && workspace.classList.contains("sidebar-collapsed");
+      && (workspace.classList.contains("sidebar-collapsed") || workspace.classList.contains("sidebar-expanding"));
 
     document.querySelectorAll(".sidebar .sidebar-nav-section > .nav-group-toggle").forEach((group) => {
-      important(group, "display", collapsed ? "none" : "grid");
+      important(group, "display", "grid");
+      important(group, "width", collapsed ? "52px" : "100%");
+      important(group, "min-height", collapsed ? "52px" : "auto");
+      important(group, "margin", collapsed ? "0 auto" : "0");
+      important(group, "border-radius", collapsed ? "12px" : "0");
+      important(group, "grid-template-columns", collapsed ? "1fr" : "minmax(0, 1fr) 24px");
+      important(group, "justify-items", collapsed ? "center" : "stretch");
+      if (collapsed) important(group, "padding-inline", "0");
+      else group.style.removeProperty("padding-inline");
+      const label = group.querySelector(":scope > span:first-child");
+      important(label, "display", collapsed ? "none" : "block");
+      const name = String(label?.textContent || "").trim();
+      if (name) {
+        group.setAttribute("aria-label", name);
+        group.title = name;
+      }
+      const icon = group.querySelector(":scope > .material-symbols-outlined");
+      if (icon) {
+        icon.textContent = collapsed ? (groupIcons[group.dataset.sidebarGroupToggle] || "apps") : "expand_more";
+        important(icon, "display", "grid");
+        important(icon, "justify-self", collapsed ? "center" : "end");
+        important(icon, "grid-column", collapsed ? "1" : "2");
+        important(icon, "width", "24px");
+        if (collapsed) important(icon, "transform", "none");
+        else icon.style.removeProperty("transform");
+      }
     });
 
     document.querySelectorAll(".sidebar .nav-item[data-view]").forEach((row) => {
@@ -44,6 +70,7 @@
 
   toggleButton.addEventListener("click", syncSidebarPresentation);
   window.addEventListener("resize", syncSidebarPresentation, { passive: true });
+  window.addEventListener("qori-sidebar-presentation", syncSidebarPresentation);
   window.addEventListener("pageshow", syncSidebarPresentation);
   syncSidebarPresentation();
 })();

@@ -1678,6 +1678,13 @@ const featureUpgradeSecondaryButton = document.getElementById("featureUpgradeSec
 const navButtons = Array.from(document.querySelectorAll(".nav-item"));
 const sidebarNavSections = Array.from(document.querySelectorAll("[data-sidebar-section]"));
 const sidebarGroupToggles = Array.from(document.querySelectorAll("[data-sidebar-group-toggle]"));
+const SIDEBAR_GROUP_ICONS = Object.freeze({
+  offer: "bolt",
+  operate: "work",
+  optimize: "trending_up",
+  gos: "analytics",
+  admin: "settings",
+});
 const sidebarSectionByView = Object.freeze({
   campaigns: "gos",
   "strategic-qr": "offer",
@@ -7226,24 +7233,41 @@ function forceOperateMenuLeftAlignment() {
 }
 
 function forceSidebarMenuLeftAlignment() {
-  const isDesktopCollapsed = Boolean(workspace?.classList.contains("sidebar-collapsed"))
+  const isDesktopCollapsed = Boolean(workspace?.classList.contains("sidebar-collapsed") || workspace?.classList.contains("sidebar-expanding"))
     && window.matchMedia("(min-width: 961px)").matches;
   const groupToggles = document.querySelectorAll(".sidebar .sidebar-nav-section > .nav-group-toggle");
   groupToggles.forEach((toggle) => {
-    setImportantStyle(toggle, "display", isDesktopCollapsed ? "none" : "grid");
+    setImportantStyle(toggle, "display", "grid");
+    setImportantStyle(toggle, "width", isDesktopCollapsed ? "52px" : "100%");
+    setImportantStyle(toggle, "min-height", isDesktopCollapsed ? "52px" : "auto");
+    setImportantStyle(toggle, "margin", isDesktopCollapsed ? "0 auto" : "0");
     setImportantStyle(toggle, "grid-template-columns", isDesktopCollapsed ? "1fr" : "minmax(0, 1fr) 24px");
     setImportantStyle(toggle, "align-items", "center");
     setImportantStyle(toggle, "justify-items", isDesktopCollapsed ? "center" : "stretch");
     setImportantStyle(toggle, "justify-content", isDesktopCollapsed ? "center" : "stretch");
     setImportantStyle(toggle, "text-align", "left");
-    setImportantStyle(toggle, "border-radius", "0");
+    setImportantStyle(toggle, "border-radius", isDesktopCollapsed ? "12px" : "0");
     const label = toggle.querySelector(":scope > span:first-child");
+    const groupLabel = String(label?.textContent || "").trim();
+    if (groupLabel) {
+      toggle.setAttribute("aria-label", groupLabel);
+      toggle.title = groupLabel;
+    }
     setImportantStyle(label, "display", isDesktopCollapsed ? "none" : "block");
     setImportantStyle(label, "justify-self", isDesktopCollapsed ? "center" : "start");
     setImportantStyle(label, "text-align", "left");
     setImportantStyle(label, "width", isDesktopCollapsed ? "auto" : "100%");
     const chevron = toggle.querySelector(":scope > .material-symbols-outlined");
+    if (chevron) {
+      chevron.textContent = isDesktopCollapsed
+        ? (SIDEBAR_GROUP_ICONS[toggle.dataset.sidebarGroupToggle] || "apps")
+        : "expand_more";
+      if (isDesktopCollapsed) setImportantStyle(chevron, "transform", "none");
+      else chevron.style.removeProperty("transform");
+    }
     setImportantStyle(chevron, "justify-self", isDesktopCollapsed ? "center" : "end");
+    setImportantStyle(chevron, "grid-column", isDesktopCollapsed ? "1" : "2");
+    setImportantStyle(chevron, "width", "24px");
   });
 
   const rows = document.querySelectorAll(".sidebar .nav-item[data-view]");
@@ -7791,6 +7815,41 @@ function setView(view) {
   scheduleQuietCanvasEnhancement();
 }
 
+const SIDEBAR_DESKTOP_CHOICE_STORAGE_KEY = "qori.portal.sidebar.desktop-choice.v1";
+function savedSidebarDesktopChoice() {
+  try {
+    return window.localStorage.getItem(SIDEBAR_DESKTOP_CHOICE_STORAGE_KEY) === "collapsed" ? "collapsed" : "expanded";
+  } catch {
+    return "expanded";
+  }
+}
+workspace.dataset.sidebarDesktopChoice = savedSidebarDesktopChoice();
+function rememberSidebarDesktopChoice(choice) {
+  workspace.dataset.sidebarDesktopChoice = choice;
+  try {
+    window.localStorage.setItem(SIDEBAR_DESKTOP_CHOICE_STORAGE_KEY, choice);
+  } catch {
+    // A blocked storage preference must not block navigation.
+  }
+}
+let sidebarExpansionTimer = 0;
+function cancelSidebarExpansion() {
+  if (sidebarExpansionTimer) window.clearTimeout(sidebarExpansionTimer);
+  sidebarExpansionTimer = 0;
+  workspace.classList.remove("sidebar-expanding");
+}
+function beginSidebarExpansion() {
+  cancelSidebarExpansion();
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  workspace.classList.add("sidebar-expanding");
+  sidebarExpansionTimer = window.setTimeout(() => {
+    sidebarExpansionTimer = 0;
+    workspace.classList.remove("sidebar-expanding");
+    forceSidebarMenuLeftAlignment();
+    window.dispatchEvent(new Event("qori-sidebar-presentation"));
+  }, 220);
+}
+
 function togglePortalMenu() {
   if (!workspace) return;
   if (window.matchMedia("(max-width: 960px)").matches) {
@@ -7801,7 +7860,9 @@ function togglePortalMenu() {
   }
   workspace.classList.remove("sidebar-open");
   workspace.classList.toggle("sidebar-collapsed");
-  workspace.dataset.sidebarDesktopChoice = workspace.classList.contains("sidebar-collapsed") ? "collapsed" : "expanded";
+  if (workspace.classList.contains("sidebar-collapsed")) cancelSidebarExpansion();
+  else beginSidebarExpansion();
+  rememberSidebarDesktopChoice(workspace.classList.contains("sidebar-collapsed") ? "collapsed" : "expanded");
   forceSidebarMenuLeftAlignment();
   syncPortalMenuToggleState();
 }
@@ -7810,11 +7871,14 @@ function syncPortalResponsiveSidebar() {
   if (!workspace) return;
   const mobile = window.matchMedia("(max-width: 960px)").matches;
   if (mobile) {
+    cancelSidebarExpansion();
     workspace.classList.remove("sidebar-collapsed");
+    forceSidebarMenuLeftAlignment();
     syncPortalMenuToggleState();
     return;
   }
   workspace.classList.remove("sidebar-open");
+  cancelSidebarExpansion();
   workspace.classList.toggle("sidebar-collapsed", workspace.dataset.sidebarDesktopChoice === "collapsed");
   forceSidebarMenuLeftAlignment();
   syncPortalMenuToggleState();
@@ -7839,6 +7903,16 @@ function syncPortalMenuToggleState() {
   menuToggleButton.setAttribute("aria-expanded", String(expanded));
   menuToggleButton.setAttribute("aria-label", actionLabel);
   menuToggleButton.title = actionLabel;
+  document.body.classList.toggle("portal-menu-mobile-open", mobile && expanded);
+  document.documentElement.classList.toggle("portal-menu-mobile-open", mobile && expanded);
+  if (sidebar) {
+    const hiddenOnMobile = mobile && !expanded;
+    if (hiddenOnMobile && sidebar.contains(document.activeElement)) {
+      menuToggleButton.focus({ preventScroll: true });
+    }
+    sidebar.inert = hiddenOnMobile;
+    sidebar.setAttribute("aria-hidden", String(hiddenOnMobile));
+  }
   const icon = menuToggleButton.querySelector(".material-symbols-outlined");
   if (icon) icon.textContent = iconName;
 }
@@ -62799,8 +62873,13 @@ document.querySelector(".sidebar")?.addEventListener("click", (event) => {
 }, true);
 sidebarGroupToggles.forEach((button) => {
   button.addEventListener("click", () => {
-    // The compact sidebar is an accordion: opening one section must preserve it
-    // and close the rest, never leave the user with no current section visible.
+    if (window.matchMedia("(min-width: 961px)").matches && workspace?.classList.contains("sidebar-collapsed")) {
+      workspace.classList.remove("sidebar-collapsed");
+      beginSidebarExpansion();
+      rememberSidebarDesktopChoice("expanded");
+      forceSidebarMenuLeftAlignment();
+      syncPortalMenuToggleState();
+    }
     setSidebarAccordionSection(button.dataset.sidebarGroupToggle);
   });
 });
