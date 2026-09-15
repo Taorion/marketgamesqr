@@ -84,8 +84,8 @@ html body:not(#menuToggleA#menuToggleB#menuToggleC#menuToggleD#menuToggleE#menuT
 
   html body:not(#menuToggleA#menuToggleB#menuToggleC#menuToggleD#menuToggleE#menuToggleF)[data-auth-state="authenticated"] .portal-shell #workspace .topbar #menuToggleButton.menu-toggle-button[data-menu-state="mobile-open"] {
     position: fixed !important;
-    top: max(16px, env(safe-area-inset-top)) !important;
-    left: min(calc(88vw - 58px), 282px) !important;
+    top: max(12px, env(safe-area-inset-top)) !important;
+    left: min(calc(82vw - 54px), 226px) !important;
     z-index: 91 !important;
     border-color: #174d70 !important;
     background: #174d70 !important;

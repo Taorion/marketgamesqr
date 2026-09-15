@@ -39,10 +39,12 @@
 
   html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace.sidebar-open .topbar {
     z-index: 92 !important;
+    visibility: hidden !important;
     pointer-events: none !important;
   }
 
   html body:not(#sidebarStateA#sidebarStateB#sidebarStateC#sidebarStateD#sidebarStateE#sidebarStateF#sidebarStateG#sidebarStateH)[data-auth-state="authenticated"] .portal-shell #workspace.sidebar-open .topbar #menuToggleButton {
+    visibility: visible !important;
     pointer-events: auto !important;
   }
 }

@@ -7556,6 +7556,7 @@ function setView(view) {
     });
   }
   workspace?.classList.remove("sidebar-open");
+  syncPortalMenuToggleState();
 
   segmentTabs.forEach((tab, index) => {
     const targetView = tab.dataset.redemptionSalesTab || (index === 0 ? "redemptions" : "sales");

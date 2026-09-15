@@ -89,7 +89,16 @@ body.portal-guide-active { overflow:hidden; }
 body.portal-guide-active .portal-guide-launcher { display:none; }
 
 @media (max-width:760px) {
-  .portal-guide-launcher { right:12px; bottom:max(12px,env(safe-area-inset-bottom)); min-height:44px; padding:0 14px; }
+  .portal-guide-launcher {
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+    padding: 0;
+    font-size: 0;
+  }
   .portal-guide-library-card { inset:8px; width:calc(100vw - 16px); max-height:calc(100vh - 16px); border-radius:22px; }
   .portal-guide-library-head { padding:22px 18px 18px; }
   .portal-guide-library-head h2 { font-size:27px; }
