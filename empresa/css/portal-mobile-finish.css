@@ -280,3 +280,61 @@
     white-space: normal !important;
   }
 }
+
+@media (max-width: 620px) {
+  html body:not(#mobileAgendaA#mobileAgendaB#mobileAgendaC#mobileAgendaD#mobileAgendaE#mobileAgendaF#mobileAgendaG#mobileAgendaH#mobileAgendaI#mobileAgendaJ)[data-current-view="leads"] .portal-shell #workspace #contactCenterTabs.contact-center-tab-rail {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  html body:not(#mobileAgendaA#mobileAgendaB#mobileAgendaC#mobileAgendaD#mobileAgendaE#mobileAgendaF#mobileAgendaG#mobileAgendaH#mobileAgendaI#mobileAgendaJ)[data-current-view="leads"] .portal-shell #workspace #contactCenterTabs > .contact-center-tab-card {
+    box-sizing: border-box !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 52px !important;
+    white-space: normal !important;
+  }
+
+  html body:not(#mobileAgendaA#mobileAgendaB#mobileAgendaC#mobileAgendaD#mobileAgendaE#mobileAgendaF#mobileAgendaG#mobileAgendaH#mobileAgendaI#mobileAgendaJ)[data-current-view="leads"] .portal-shell #workspace .lead-agenda-view-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  html body:not(#mobileAgendaA#mobileAgendaB#mobileAgendaC#mobileAgendaD#mobileAgendaE#mobileAgendaF#mobileAgendaG#mobileAgendaH#mobileAgendaI#mobileAgendaJ)[data-current-view="leads"] .portal-shell #workspace .lead-agenda-view-tabs > .segment-tab {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 48px !important;
+    padding: 8px !important;
+    border: 1px solid #d8e6f2 !important;
+    background: #f6fbff !important;
+    color: #052a6b !important;
+    white-space: normal !important;
+  }
+
+  html body:not(#mobileAgendaA#mobileAgendaB#mobileAgendaC#mobileAgendaD#mobileAgendaE#mobileAgendaF#mobileAgendaG#mobileAgendaH#mobileAgendaI#mobileAgendaJ)[data-current-view="leads"] .portal-shell #workspace .lead-agenda-view-tabs > .segment-tab.active {
+    border-color: #0759d6 !important;
+    background: #eaf4ff !important;
+  }
+
+  html body:not(#mobileAgendaA#mobileAgendaB#mobileAgendaC#mobileAgendaD#mobileAgendaE#mobileAgendaF#mobileAgendaG#mobileAgendaH#mobileAgendaI#mobileAgendaJ)[data-current-view="leads"] .portal-shell #workspace .lead-agenda-view-tabs > .segment-tab :is(strong, .material-symbols-outlined) {
+    min-width: 0 !important;
+    color: #052a6b !important;
+    -webkit-text-fill-color: #052a6b !important;
+    white-space: normal !important;
+  }
+}
