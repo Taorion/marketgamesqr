@@ -62228,7 +62228,7 @@ const PORTAL_SEARCH_TARGETS = [
   { view: "sales", label: "Ventas", keywords: "venta ventas revenue" },
   { view: "validator", label: "Validar tickets", keywords: "ticket tickets validar redimir redencion" },
   { view: "dashboard", label: "Centro de Revenue", keywords: "dashboard reportes metricas revenue" },
-  { view: "reward-passes", label: "Reward Pass", keywords: "reward beneficios pass" },
+  { view: "reward-passes", label: "Tarjeta regalo", keywords: "tarjeta regalo reward beneficios pass giftcard" },
 ];
 
 function portalSearchText(value = "") {
