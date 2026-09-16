@@ -13,34 +13,46 @@ html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[d
 #gamingActivationBuilderModal :is(input,textarea,select,button) { max-width: 100%; }
 
 /* Published activations. */
+html body[data-current-view="strategic-qr"] .portal-shell .view-section[data-view="strategic-qr"] > :is(.activation-premium-head,.activation-premium-command,.activation-premium-flow,#strategicQrKpiGrid),
+html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] > .charts-grid {
+  width: min(100%,1360px) !important; max-width: 1360px !important; margin-inline: auto !important;
+}
+html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] > .charts-grid {
+  display: grid !important; grid-template-columns: minmax(0,1fr) !important; gap: 22px !important;
+}
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card {
-  width: 100% !important; max-width: 100% !important; overflow: visible !important;
+  width: 100% !important; max-width: 1360px !important; margin: 0 auto 32px !important; overflow: visible !important;
 }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card > .table-card-head {
-  align-items: flex-start !important; flex-wrap: wrap !important;
+  align-items: flex-start !important; flex-wrap: wrap !important; gap: 18px !important;
+  min-height: 0 !important; padding: 24px 28px 20px !important;
 }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card > .table-card-head > div {
   flex: 1 1 420px !important; min-width: 0 !important;
 }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card .table-wrap {
-  width: 100% !important; max-width: 100% !important; overflow-x: auto !important; overflow-y: visible !important;
+  width: calc(100% - 48px) !important; max-width: calc(100% - 48px) !important; margin: 20px auto 24px !important;
+  overflow-x: auto !important; overflow-y: visible !important; border: 1px solid #d8e5ef !important;
+  border-radius: 16px !important; background: #fff !important;
   overscroll-behavior-inline: contain !important; scrollbar-gutter: stable !important; -webkit-overflow-scrolling: touch;
 }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card table {
   width: 100% !important; min-width: 920px !important; table-layout: fixed !important;
 }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card th:first-child,
-html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card td:first-child { width: 52px !important; padding-inline: 8px !important; }
+html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card td:first-child { width: 52px !important; padding-inline: 8px !important; text-align: center !important; }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card th:nth-child(2),
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card td:nth-child(2) { width: 36% !important; }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card th:nth-child(3),
-html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card td:nth-child(3) { width: 15% !important; }
+html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card td:nth-child(3) { width: 15% !important; text-align: center !important; }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card th:nth-child(4),
-html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card td:nth-child(4) { width: 25% !important; }
+html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card td:nth-child(4) { width: 25% !important; text-align: center !important; }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card th:last-child,
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card td:last-child {
-  width: 190px !important; padding-right: 8px !important; text-align: left !important;
+  width: 190px !important; padding-inline: 12px !important; text-align: center !important;
 }
+html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card thead th:nth-child(1),
+html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card thead th:nth-child(n + 3) { text-align: center !important; }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .activation-summary-premium {
   grid-template-columns: 44px minmax(0,1fr) !important; align-items: center !important; gap: 12px !important;
 }
@@ -57,14 +69,17 @@ html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[d
   max-width: 100% !important; white-space: normal !important;
 }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .activation-outcome-premium {
-  grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 8px !important;
+  grid-template-columns: repeat(2,minmax(0,1fr)) !important; justify-items: center !important; gap: 8px !important;
 }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .activation-outcome-premium > span {
   grid-column: 1 / -1 !important; white-space: normal !important;
 }
+html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .activation-status-cell {
+  justify-items: center !important; text-align: center !important;
+}
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .activation-row-command {
   display: grid !important; grid-template-columns: minmax(0,1fr) 44px !important; align-items: center !important;
-  gap: 8px !important; width: 100% !important;
+  justify-content: center !important; gap: 8px !important; width: 100% !important;
 }
 html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .activation-primary-row-action {
   width: 100% !important; min-height: 44px !important; padding: 9px 12px !important;
@@ -186,6 +201,10 @@ html body > #gamingActivationBuilderModal .gaming-activation-builder-interstitia
 }
 
 @media (max-width: 640px) {
+  html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card .table-wrap {
+    width: calc(100% - 24px) !important; max-width: calc(100% - 24px) !important; margin: 14px auto 20px !important;
+    padding: 10px !important; border: 0 !important; border-radius: 16px !important; background: #f4f8fb !important;
+  }
   html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card :is(table,tbody,tr,td) {
     display: block !important; width: 100% !important; min-width: 0 !important;
   }
@@ -198,6 +217,10 @@ html body > #gamingActivationBuilderModal .gaming-activation-builder-interstitia
   }
   html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card td {
     padding: 12px 0 !important; border-bottom: 1px solid #e6eef6 !important; text-align: left !important;
+  }
+  html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .activation-status-cell,
+  html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .activation-outcome-premium {
+    justify-items: start !important; text-align: left !important;
   }
   html body[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] .gaming-activation-list-card td:last-child {
     padding-bottom: 0 !important; border-bottom: 0 !important;
@@ -233,6 +256,53 @@ html body > #gamingActivationBuilderModal .gaming-activation-builder-interstitia
     display: grid !important; grid-template-columns: 1fr !important; width: 100% !important;
   }
   #gamingActivationBuilderModal .gaming-activation-wizard-footer button { width: 100% !important; }
+}
+
+/* Activation table layout v507: final cascade guard for the five live columns. */
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .ticket-center-panel[data-ticket-panel="trivia"] > .charts-grid {
+  display: grid !important; grid-template-columns: minmax(0,1fr) !important; gap: 22px !important;
+  width: min(100%,1360px) !important; max-width: 1360px !important; margin-inline: auto !important;
+}
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card {
+  width: 100% !important; max-width: 1360px !important; margin: 0 auto 32px !important; padding: 0 !important;
+}
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card > .table-card-head {
+  align-items: flex-start !important; gap: 18px !important; min-height: 0 !important;
+  margin: 0 !important; padding: 24px 28px 20px !important;
+}
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar {
+  display: grid !important; grid-template-columns: minmax(0,1fr) !important; gap: 13px !important;
+  width: 100% !important; margin: 0 !important; padding: 17px 28px !important;
+}
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-published-status-pills {
+  display: grid !important; grid-template-columns: repeat(4,minmax(112px,1fr)) !important; gap: 8px !important; width: 100% !important;
+}
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card .table-wrap {
+  width: calc(100% - 48px) !important; max-width: calc(100% - 48px) !important;
+  margin: 20px auto 24px !important; padding: 0 !important; overflow-x: auto !important; overflow-y: visible !important;
+  border: 1px solid #d8e5ef !important; border-radius: 16px !important; background: #fff !important;
+}
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card table {
+  width: 100% !important; min-width: 920px !important; table-layout: fixed !important;
+}
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card :is(th,td):nth-child(1) { width: 52px !important; min-width: 52px !important; max-width: 52px !important; text-align: center !important; }
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card :is(th,td):nth-child(2) { width: 36% !important; text-align: left !important; }
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card :is(th,td):nth-child(3) { width: 15% !important; text-align: center !important; }
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card :is(th,td):nth-child(4) { width: 25% !important; text-align: center !important; }
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card :is(th,td):nth-child(5) { width: 190px !important; min-width: 190px !important; text-align: center !important; }
+html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell :is(.activation-status-cell,.activation-outcome-premium) { justify-items: center !important; text-align: center !important; }
+
+@media (max-width: 640px) {
+  html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-published-toolbar { padding: 14px !important; }
+  html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-published-status-pills { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card .table-wrap {
+    width: calc(100% - 24px) !important; max-width: calc(100% - 24px) !important; margin: 14px auto 20px !important;
+    padding: 10px !important; border: 0 !important; border-radius: 16px !important; background: #f4f8fb !important;
+  }
+  html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card :is(table,tbody,tr,td) { display: block !important; width: 100% !important; min-width: 0 !important; max-width: none !important; }
+  html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card thead { display: none !important; }
+  html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell .gaming-activation-list-card td { text-align: left !important; }
+  html body:not(#qoriActivationTableA#qoriActivationTableB#qoriActivationTableC#qoriActivationTableD#qoriActivationTableE#qoriActivationTableF#qoriActivationTableG#qoriActivationTableH#qoriActivationTableI#qoriActivationTableJ#qoriActivationTableK)[data-current-view="strategic-qr"] .portal-shell :is(.activation-status-cell,.activation-outcome-premium) { justify-items: start !important; text-align: left !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
