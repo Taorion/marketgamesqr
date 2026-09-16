@@ -45871,7 +45871,7 @@ function renderRewardPassDetailModal() {
       </section>
       <section class="reward-pass-detail-security" aria-label="Seguridad de activación">
         <div><span class="mono-label">Seguridad del beneficiario</span><strong>${hasClaim ? "Activación completada" : "PIN de activación"}</strong>${hasClaim ? "" : `<code>${escapeHtml(activationPin || "------")}</code>`}</div>
-        ${hasClaim ? '<span class="status-chip ok">Identidad vinculada</span>' : '<button class="ghost-button compact" type="button" data-rp-copy-pin>Copiar PIN y enlace</button>'}
+        ${hasClaim ? '<span class="status-chip ok">Identidad vinculada</span>' : '<button class="ghost-button compact" type="button" data-rp-copy-pin>Copiar PIN</button>'}
       </section>
       <section class="reward-pass-history-panel" aria-label="Historial de la giftcard">
         <div class="reward-pass-history-heading">
@@ -45910,7 +45910,6 @@ function renderRewardPassDetailModal() {
         <button class="ghost-button" type="button" data-rp-copy-link>Copiar enlace</button>
         <button class="ghost-button" type="button" data-rp-download="pdf">PDF</button>
         <button class="ghost-button" type="button" data-rp-download="receipt">Comprobante</button>
-        ${!["cancelled", "fully_redeemed"].includes(pass.status) ? '<button class="ghost-button" type="button" data-rp-extend>Prorrogar</button>' : ""}
         ${redemptionRows.length === 0 && !["cancelled", "fully_redeemed"].includes(pass.status) ? '<button class="ghost-button danger" type="button" data-rp-cancel>Anular</button>' : ""}
         ${whatsappUrl ? `<a class="solid-button" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">chat</span> Recordar por WhatsApp</a>` : '<span class="table-secondary">Agrega un celular para enviar recordatorios por WhatsApp.</span>'}
       </div>
@@ -45920,7 +45919,6 @@ function renderRewardPassDetailModal() {
   modal.querySelector("[data-rp-copy-pin]")?.addEventListener("click", () => copyRewardPassActivation(pass));
   modal.querySelector("[data-rp-copy-link]")?.addEventListener("click", () => copyRewardPassLink(pass.public_url));
   modal.querySelectorAll("[data-rp-download]").forEach((button) => button.addEventListener("click", () => downloadSelectedRewardPassPdf(button.dataset.rpDownload).catch((error) => showFeedback(error.message, "error"))));
-  modal.querySelector("[data-rp-extend]")?.addEventListener("click", () => extendSelectedRewardPass(pass.id));
   modal.querySelector("[data-rp-cancel]")?.addEventListener("click", () => cancelSelectedRewardPass(pass.id));
 }
 

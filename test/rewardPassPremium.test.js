@@ -113,9 +113,13 @@ test("los modales caben en 100dvh y no ocultan el formulario", () => {
 
 test("la ficha expone las operaciones reales sin perder trazabilidad", () => {
   assert.match(portalApp, /data-rp-copy-pin/);
+  assert.match(portalApp, /data-rp-copy-pin>Copiar PIN<\/button>/);
+  assert.doesNotMatch(portalApp, /Copiar PIN y enlace/);
   assert.match(portalApp, /data-rp-download="pdf"/);
   assert.match(portalApp, /data-rp-download="receipt"/);
-  assert.match(portalApp, /data-rp-extend/);
+  assert.doesNotMatch(portalApp, /data-rp-extend/);
+  assert.doesNotMatch(portalApp, />Prorrogar<\/button>/);
   assert.match(portalApp, /data-rp-cancel/);
   assert.match(portalApp, /Historial de saldo y redenciones/);
+  assert.match(portalHtml, /reward-pass-detail-actions=v501-20260916/);
 });
