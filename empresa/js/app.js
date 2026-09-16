@@ -45949,7 +45949,6 @@ function renderRewardPassDetailModal() {
         <button class="ghost-button" type="button" data-rp-copy-link>Copiar enlace</button>
         <button class="ghost-button" type="button" data-rp-download="pdf">PDF</button>
         <button class="ghost-button" type="button" data-rp-download="receipt">Comprobante</button>
-        ${redemptionRows.length === 0 && !["cancelled", "fully_redeemed"].includes(pass.status) ? '<button class="ghost-button danger" type="button" data-rp-cancel>Anular</button>' : ""}
         ${whatsappUrl ? `<a class="solid-button" href="${escapeHtml(whatsappUrl)}" target="_blank" rel="noopener"><span class="material-symbols-outlined" aria-hidden="true">chat</span> Recordar por WhatsApp</a>` : '<span class="table-secondary">Agrega un celular para enviar recordatorios por WhatsApp.</span>'}
       </div>
     </article>
@@ -45958,7 +45957,6 @@ function renderRewardPassDetailModal() {
   modal.querySelector("[data-rp-copy-pin]")?.addEventListener("click", () => copyRewardPassActivation(pass));
   modal.querySelector("[data-rp-copy-link]")?.addEventListener("click", () => copyRewardPassLink(pass.public_url));
   modal.querySelectorAll("[data-rp-download]").forEach((button) => button.addEventListener("click", () => downloadSelectedRewardPassPdf(button.dataset.rpDownload).catch((error) => showFeedback(error.message, "error"))));
-  modal.querySelector("[data-rp-cancel]")?.addEventListener("click", () => cancelSelectedRewardPass(pass.id));
 }
 
 async function selectRewardPass(id) {
@@ -46128,28 +46126,6 @@ function openRewardPassWhatsapp(id) {
   const greeting = pass.beneficiary_name ? `Hola ${pass.beneficiary_name},` : "Hola,";
   const message = encodeURIComponent(`${greeting} te comparto un Reward Pass de ${pass.company?.name || "nuestro negocio"}. Escanea el QR o abre este enlace para activar tu Gift Card Digital oficial: ${pass.public_url}`);
   window.open(`https://wa.me/${phone || ""}?text=${message}`, "_blank", "noopener");
-}
-
-async function cancelSelectedRewardPass(id) {
-  if (!window.confirm("Solo puedes anular Reward Pass sin redenciones. Deseas continuar?")) return;
-  const cancelButton = document.querySelector("#rewardPassDetailModal [data-rp-cancel]");
-  setButtonLoading(cancelButton, true, "Anulando...");
-  try {
-    const data = await api(`/api/business/reward-passes/${encodeURIComponent(id)}/cancel`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({ notes: "Anulado desde portal empresa." }),
-    });
-    state.selectedRewardPassId = data.reward_pass?.id || id;
-    state.selectedRewardPass = data.reward_pass || state.selectedRewardPass;
-    await renderRewardPassesView();
-    await selectRewardPass(id);
-    showFeedback("Reward Pass anulado correctamente.", "success", { title: "Reward Pass" });
-  } catch (error) {
-    showFeedback(error.message, "error", { title: "No se pudo anular" });
-  } finally {
-    setButtonLoading(cancelButton, false);
-  }
 }
 
 async function downloadSelectedRewardPassPdf(kind = "pdf") {
