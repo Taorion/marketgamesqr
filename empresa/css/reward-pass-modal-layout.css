@@ -1,5 +1,5 @@
 /* Final Reward Pass issuing modal layout. One scroll owner, no crossed rows. */
-html body > #rewardPassCreateModal.modal-shell:not(.hidden) {
+html body #rewardPassCreateModal.modal-shell:not(.hidden) {
   position: fixed !important;
   inset: 0 !important;
   z-index: 10050 !important;
@@ -12,7 +12,7 @@ html body > #rewardPassCreateModal.modal-shell:not(.hidden) {
   box-sizing: border-box !important;
 }
 
-html body:not(#rpModalLayoutA#rpModalLayoutB#rpModalLayoutC#rpModalLayoutD#rpModalLayoutE#rpModalLayoutF) > #rewardPassCreateModal .modal-card.reward-pass-create-modal-card {
+html body:not(#rpModalLayoutA#rpModalLayoutB#rpModalLayoutC#rpModalLayoutD#rpModalLayoutE#rpModalLayoutF) #rewardPassCreateModal .modal-card.reward-pass-create-modal-card {
   display: grid !important;
   grid-template-rows: auto minmax(0, 1fr) !important;
   width: min(1180px, calc(100vw - 32px)) !important;
@@ -27,7 +27,7 @@ html body:not(#rpModalLayoutA#rpModalLayoutB#rpModalLayoutC#rpModalLayoutD#rpMod
   box-sizing: border-box !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head {
+html body #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head {
   position: relative !important;
   inset: auto !important;
   z-index: 2 !important;
@@ -45,17 +45,17 @@ html body > #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head 
   box-sizing: border-box !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head > div {
+html body #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head > div {
   min-width: 0 !important;
 }
 
-html body:not(#rpModalTextA#rpModalTextB#rpModalTextC#rpModalTextD) > #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head :is(.mono-label, h3, p) {
+html body:not(#rpModalTextA#rpModalTextB#rpModalTextC#rpModalTextD) #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head :is(.mono-label, h3, p) {
   color: #ffffff !important;
   max-width: 72ch !important;
   overflow-wrap: anywhere !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head .icon-button {
+html body #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head .icon-button {
   position: static !important;
   flex: 0 0 auto !important;
   align-self: start !important;
@@ -63,7 +63,7 @@ html body > #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head 
   background: rgba(255, 255, 255, 0.12) !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-layout {
+html body #rewardPassCreateModal .reward-pass-layout {
   display: grid !important;
   grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr) !important;
   align-items: start !important;
@@ -81,7 +81,7 @@ html body > #rewardPassCreateModal .reward-pass-layout {
   box-sizing: border-box !important;
 }
 
-html body > #rewardPassCreateModal :is(.reward-pass-form-card, .reward-pass-preview-card) {
+html body #rewardPassCreateModal :is(.reward-pass-form-card, .reward-pass-preview-card) {
   width: 100% !important;
   min-width: 0 !important;
   height: auto !important;
@@ -91,13 +91,13 @@ html body > #rewardPassCreateModal :is(.reward-pass-form-card, .reward-pass-prev
   box-sizing: border-box !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-preview-card {
+html body #rewardPassCreateModal .reward-pass-preview-card {
   position: sticky !important;
   top: 0 !important;
   align-self: start !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-form {
+html body #rewardPassCreateModal .reward-pass-form {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 14px !important;
@@ -108,42 +108,42 @@ html body > #rewardPassCreateModal .reward-pass-form {
   overflow: visible !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-form > label {
+html body #rewardPassCreateModal .reward-pass-form > label {
   min-width: 0 !important;
   height: auto !important;
   overflow: visible !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-form > .span-2,
-html body > #rewardPassCreateModal .reward-pass-form > .modal-actions {
+html body #rewardPassCreateModal .reward-pass-form > .span-2,
+html body #rewardPassCreateModal .reward-pass-form > .modal-actions {
   grid-column: 1 / -1 !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-form :is(input, select, textarea) {
+html body #rewardPassCreateModal .reward-pass-form :is(input, select, textarea) {
   width: 100% !important;
   min-width: 0 !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-form textarea {
+html body #rewardPassCreateModal .reward-pass-form textarea {
   min-height: 118px !important;
   resize: vertical !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-form .validator-checkline {
+html body #rewardPassCreateModal .reward-pass-form .validator-checkline {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-form .validator-checkline input {
+html body #rewardPassCreateModal .reward-pass-form .validator-checkline input {
   flex: 0 0 auto !important;
   width: 20px !important;
   height: 20px !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-form .modal-actions {
+html body #rewardPassCreateModal .reward-pass-form .modal-actions {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) auto !important;
   align-items: center !important;
@@ -151,7 +151,7 @@ html body > #rewardPassCreateModal .reward-pass-form .modal-actions {
   min-width: 0 !important;
 }
 
-html body > #rewardPassCreateModal .reward-pass-form .modal-button-row {
+html body #rewardPassCreateModal .reward-pass-form .modal-button-row {
   display: flex !important;
   flex-wrap: wrap !important;
   justify-content: flex-end !important;
@@ -160,23 +160,23 @@ html body > #rewardPassCreateModal .reward-pass-form .modal-button-row {
 }
 
 @media (max-width: 980px) {
-  html body > #rewardPassCreateModal .reward-pass-layout {
+  html body #rewardPassCreateModal .reward-pass-layout {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
-  html body > #rewardPassCreateModal .reward-pass-preview-card {
+  html body #rewardPassCreateModal .reward-pass-preview-card {
     position: static !important;
     top: auto !important;
   }
 }
 
 @media (max-width: 620px) {
-  html body > #rewardPassCreateModal.modal-shell:not(.hidden) {
+  html body #rewardPassCreateModal.modal-shell:not(.hidden) {
     place-items: stretch !important;
     padding: 0 !important;
   }
 
-  html body:not(#rpModalLayoutA#rpModalLayoutB#rpModalLayoutC#rpModalLayoutD#rpModalLayoutE#rpModalLayoutF) > #rewardPassCreateModal .modal-card.reward-pass-create-modal-card {
+  html body:not(#rpModalLayoutA#rpModalLayoutB#rpModalLayoutC#rpModalLayoutD#rpModalLayoutE#rpModalLayoutF) #rewardPassCreateModal .modal-card.reward-pass-create-modal-card {
     width: 100vw !important;
     max-width: 100vw !important;
     height: 100dvh !important;
@@ -184,54 +184,54 @@ html body > #rewardPassCreateModal .reward-pass-form .modal-button-row {
     border-radius: 0 !important;
   }
 
-  html body > #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head {
+  html body #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head {
     gap: 12px !important;
     padding: 18px 16px 16px !important;
   }
 
-  html body > #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head h3 {
+  html body #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head h3 {
     font-size: 1.35rem !important;
   }
 
-  html body > #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head p {
+  html body #rewardPassCreateModal .reward-pass-create-modal-card > .modal-head p {
     font-size: 0.88rem !important;
     line-height: 1.38 !important;
   }
 
-  html body > #rewardPassCreateModal .reward-pass-layout {
+  html body #rewardPassCreateModal .reward-pass-layout {
     gap: 16px !important;
     padding: 16px 14px 24px !important;
     scrollbar-gutter: auto !important;
   }
 
-  html body > #rewardPassCreateModal .reward-pass-form-card {
+  html body #rewardPassCreateModal .reward-pass-form-card {
     order: 1 !important;
   }
 
-  html body > #rewardPassCreateModal .reward-pass-preview-card {
+  html body #rewardPassCreateModal .reward-pass-preview-card {
     order: 2 !important;
   }
 
-  html body > #rewardPassCreateModal .reward-pass-form {
+  html body #rewardPassCreateModal .reward-pass-form {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
-  html body > #rewardPassCreateModal .reward-pass-form .modal-actions {
+  html body #rewardPassCreateModal .reward-pass-form .modal-actions {
     grid-template-columns: minmax(0, 1fr) !important;
     align-items: stretch !important;
   }
 
-  html body > #rewardPassCreateModal .reward-pass-form .modal-button-row {
+  html body #rewardPassCreateModal .reward-pass-form .modal-button-row {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
     width: 100% !important;
   }
 
-  html body > #rewardPassCreateModal .reward-pass-form .modal-button-row > button {
+  html body #rewardPassCreateModal .reward-pass-form .modal-button-row > button {
     width: 100% !important;
   }
 
-  html body > #rewardPassCreateModal .reward-pass-preview-card .affiliate-card-actions {
+  html body #rewardPassCreateModal .reward-pass-preview-card .affiliate-card-actions {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }

@@ -8,6 +8,7 @@ const css = fs.readFileSync(path.join(root, "empresa", "css", "reward-pass-modal
 const html = fs.readFileSync(path.join(root, "empresa", "index.html"), "utf8");
 
 test("Emitir Reward Pass usa una sola zona de scroll sin cruces", () => {
+  assert.doesNotMatch(css, /body(?:[^\n{]*)>\s*#rewardPassCreateModal/);
   assert.match(css, /#rewardPassCreateModal\.modal-shell:not\(\.hidden\)[\s\S]*?overflow: hidden !important/);
   assert.match(css, /reward-pass-create-modal-card[\s\S]*?grid-template-rows: auto minmax\(0, 1fr\)/);
   assert.match(css, /reward-pass-layout[\s\S]*?overflow-y: auto !important/);
