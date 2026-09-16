@@ -667,7 +667,8 @@ create table if not exists business_inventory_products (
   created_by_user_id uuid references app_users(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  check (tax_classification in ('EXEMPT', 'VAT_0', 'VAT_5', 'VAT_11', 'VAT_19')),
+  constraint business_inventory_products_tax_classification_check
+    check (tax_classification in ('EXEMPT', 'EXCLUDED', 'VAT_0', 'VAT_5', 'VAT_8', 'VAT_11', 'VAT_19', 'CUSTOM')),
   unique (business_id, internal_id),
   unique (business_id, sku),
   unique (business_id, barcode)

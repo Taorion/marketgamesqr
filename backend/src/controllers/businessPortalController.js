@@ -301,7 +301,7 @@ const customerAcquisitionSaleSchema = z.object({
   metadata: z.record(z.string(), z.any()).optional().default({}),
 });
 
-const inventoryTaxClassificationSchema = z.enum(["EXEMPT", "EXCLUDED", "VAT_0", "VAT_5", "VAT_8", "VAT_11", "VAT_19"]);
+const inventoryTaxClassificationSchema = z.enum(["EXEMPT", "EXCLUDED", "VAT_0", "VAT_5", "VAT_8", "VAT_11", "VAT_19", "CUSTOM"]);
 
 const inventoryProductSchema = z.object({
   internal_id: z.string().trim().min(2).max(100).optional().nullable(),
@@ -4565,16 +4565,22 @@ function inventoryTaxRate(classification = "EXEMPT") {
   }[classification] ?? 0;
 }
 
-function inventorySellingPrice(priceBeforeTax, classification = "EXEMPT", healthyTaxRate = 0) {
+function inventorySellingPrice(priceBeforeTax, classification = "EXEMPT", healthyTaxRate = 0, taxBaseRate = null) {
   const base = Math.max(0, Number(priceBeforeTax || 0));
-  const total = base + (base * inventoryTaxRate(classification)) + (base * Math.max(0, Number(healthyTaxRate || 0)));
+  const resolvedTaxBaseRate = taxBaseRate === null || taxBaseRate === undefined
+    ? inventoryTaxRate(classification)
+    : Math.max(0, Number(taxBaseRate || 0));
+  const total = base + (base * resolvedTaxBaseRate) + (base * Math.max(0, Number(healthyTaxRate || 0)));
   return Math.round((total + Number.EPSILON) * 100) / 100;
 }
 
 function inventoryEconomics(payload) {
   const base = Math.max(0, Number(payload.price_before_tax || 0));
   const cost = Math.max(0, Number(payload.cost_price || 0));
-  const taxBaseAmount = Math.round((base * inventoryTaxRate(payload.tax_classification) + Number.EPSILON) * 100) / 100;
+  const taxBaseRate = payload.tax_base_rate === null || payload.tax_base_rate === undefined
+    ? inventoryTaxRate(payload.tax_classification)
+    : Math.max(0, Number(payload.tax_base_rate || 0));
+  const taxBaseAmount = Math.round((base * taxBaseRate + Number.EPSILON) * 100) / 100;
   const healthyTaxAmount = Math.round((base * Math.max(0, Number(payload.healthy_tax_rate || 0)) + Number.EPSILON) * 100) / 100;
   return {
     tax_base_amount: taxBaseAmount,
@@ -5774,8 +5780,14 @@ async function resolveInventoryTaxonomy(client, businessId, payload, options = {
     resolveInventoryReference(client, businessId, payload, "taxBase"),
     resolveInventoryReference(client, businessId, payload, "healthyTax"),
   ]);
+  const configuredTaxRate = taxBase ? Number(taxBase.rate || 0) : null;
+  const configuredTaxCode = `VAT_${Math.round(Number(configuredTaxRate || 0) * 100)}`;
   const taxClassificationByRate = taxBase
-    ? (Number(taxBase.rate || 0) === 0 ? (String(taxBase.name).toLowerCase().includes("excl") ? "EXCLUDED" : "EXEMPT") : `VAT_${Math.round(Number(taxBase.rate) * 100)}`)
+    ? (configuredTaxRate === 0
+      ? (String(taxBase.name).toLowerCase().includes("excl") ? "EXCLUDED" : "EXEMPT")
+      : Object.prototype.hasOwnProperty.call({ VAT_5: true, VAT_8: true, VAT_11: true, VAT_19: true }, configuredTaxCode)
+        ? configuredTaxCode
+        : "CUSTOM")
     : payload.tax_classification;
   const resolved = {
     category_id: category?.id || null,
@@ -5786,11 +5798,12 @@ async function resolveInventoryTaxonomy(client, businessId, payload, options = {
     unit_id: unit?.id || null,
     unit_label: unit?.name || payload.unit_label || "Unidad",
     tax_base_id: taxBase?.id || null,
+    tax_base_rate: configuredTaxRate,
     tax_classification: taxClassificationByRate || "EXEMPT",
     healthy_tax_id: healthyTax?.id || null,
     healthy_tax_rate: Number(healthyTax?.rate || 0),
   };
-  resolved.unit_price = inventorySellingPrice(payload.price_before_tax, resolved.tax_classification, resolved.healthy_tax_rate);
+  resolved.unit_price = inventorySellingPrice(payload.price_before_tax, resolved.tax_classification, resolved.healthy_tax_rate, resolved.tax_base_rate);
   return resolved;
 }
 
