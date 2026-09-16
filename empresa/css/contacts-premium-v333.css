@@ -578,3 +578,191 @@ html body[data-current-view="leads"] .portal-shell #contactDirectoryVisualBoard[
   .contact-delete-form > .modal-actions button { width: 100%; }
   .contact-directory-row-actions { justify-content: flex-start; }
 }
+
+/* Contactos v508: metricas del directorio sin textos superpuestos. */
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 0 18px !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid > .collapsible-kpi-panel {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 1px solid #dce7f2 !important;
+  border-radius: 16px !important;
+  background: #fff !important;
+  box-shadow: 0 12px 30px rgba(5, 42, 107, .07) !important;
+  overflow: hidden !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid > .collapsible-kpi-panel > summary {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, auto) !important;
+  align-items: center !important;
+  gap: 16px 24px !important;
+  min-width: 0 !important;
+  min-height: 82px !important;
+  padding: 16px 18px !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-title {
+  display: grid !important;
+  grid-template-columns: 32px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  align-items: center !important;
+  gap: 4px 10px !important;
+  min-width: 0 !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-title > .material-symbols-outlined {
+  grid-column: 1 !important;
+  grid-row: 1 / 3 !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: grid !important;
+  place-items: center !important;
+  position: static !important;
+  overflow: hidden !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  white-space: nowrap !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-title > .material-symbols-outlined::before {
+  content: "" !important;
+  width: 9px !important;
+  height: 9px !important;
+  display: block !important;
+  border-right: 2px solid #0759d6 !important;
+  border-bottom: 2px solid #0759d6 !important;
+  transform: rotate(45deg) !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-title > :is(strong, small) {
+  grid-column: 2 !important;
+  display: block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  position: static !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-summary {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(108px, 1fr)) !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-summary > span {
+  display: grid !important;
+  grid-template-rows: auto auto !important;
+  align-content: center !important;
+  justify-items: center !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+  min-height: 50px !important;
+  padding: 7px 10px !important;
+  position: static !important;
+  border-radius: 12px !important;
+  text-align: center !important;
+  line-height: 1.2 !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-summary > span > b {
+  display: block !important;
+  margin: 0 !important;
+  position: static !important;
+  line-height: 1.1 !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  padding: 0 18px 18px !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-grid > .kpi-card {
+  display: grid !important;
+  grid-template-rows: auto auto 1fr !important;
+  align-content: start !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+  min-height: 132px !important;
+  padding: 16px !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-grid > .kpi-card > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  position: static !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-grid > .kpi-card > strong {
+  font-size: clamp(1.45rem, 2.5vw, 2rem) !important;
+  line-height: 1.05 !important;
+}
+
+html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-grid > .kpi-card > .kpi-meta {
+  line-height: 1.35 !important;
+}
+
+@media (max-width: 1100px) {
+  html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid > .collapsible-kpi-panel > summary {
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: stretch !important;
+  }
+
+  html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 620px) {
+  html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid > .collapsible-kpi-panel > summary {
+    gap: 14px !important;
+    min-height: 0 !important;
+    padding: 15px !important;
+  }
+
+  html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-summary,
+  html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-summary > span {
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    grid-template-rows: auto !important;
+    justify-items: start !important;
+    gap: 8px !important;
+    min-height: 42px !important;
+    text-align: left !important;
+  }
+
+  html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC#contactsMetricLayoutD#contactsMetricLayoutE#contactsMetricLayoutF#contactsMetricLayoutG#contactsMetricLayoutH#contactsMetricLayoutI#contactsMetricLayoutJ#contactsMetricLayoutK)[data-current-view="leads"] .portal-shell #leadFeedKpiGrid .collapsible-kpi-grid {
+    padding: 0 15px 15px !important;
+  }
+}
