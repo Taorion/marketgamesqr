@@ -22,5 +22,5 @@ test("el modal móvil ocupa 390x844 sin desborde horizontal y mantiene acciones 
 });
 
 test("el portal carga la capa final de layout con cachebuster", () => {
-  assert.match(html, /reward-pass-modal-layout\.css\?v=reward-pass-modal-layout-v1-20260916/);
+  assert.match(html, /reward-pass-modal-layout\.css\?v=reward-pass-modal-layout-v2-20260916/);
 });
