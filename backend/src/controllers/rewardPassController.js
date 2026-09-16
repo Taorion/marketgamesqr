@@ -1,5 +1,6 @@
 const { z } = require("zod");
 const { validate } = require("../utils/validators");
+const { clearBusinessResponseCache } = require("../middleware/businessResponseCache");
 const {
   DEFAULT_TERMS,
   buildRewardPassPdf,
@@ -219,9 +220,11 @@ async function publicGet(req, res, next) {
 async function publicClaim(req, res, next) {
   try {
     const body = validate(claimRewardPassSchema, req.body || {});
+    const rewardPass = await claimRewardPass(req.params.publicCode, body);
+    clearBusinessResponseCache(rewardPass.company_id);
     res.json({
       message: "Gift Card Digital activada. Ya puedes ver el valor disponible, descargar tu PDF y presentar el QR final en el negocio emisor.",
-      reward_pass: await claimRewardPass(req.params.publicCode, body),
+      reward_pass: rewardPass,
     });
   } catch (error) {
     next(error);

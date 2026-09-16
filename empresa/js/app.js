@@ -45521,11 +45521,16 @@ async function loadRewardPasses() {
   if (search) queryParams.set("search", search);
   if (rewardPassBranchFilter?.value) queryParams.set("branch_id", rewardPassBranchFilter.value);
   const pagination = state.rewardPassPagination || { limit: 50, offset: 0 };
+  queryParams.set("fresh", "1");
   queryParams.set("limit", String(pagination.limit || 50));
   queryParams.set("offset", String(pagination.offset || 0));
   state.rewardPassLoading = true;
   state.rewardPassError = "";
-  const data = await api(`/api/business/reward-passes?${queryParams.toString()}`, { headers: authHeaders() });
+  const data = await api(`/api/business/reward-passes?${queryParams.toString()}`, {
+    headers: authHeaders(),
+    noClientCache: true,
+    cache: "no-store",
+  });
   if (!isCurrentBusinessScope(scopeKey)) return false;
   state.rewardPasses = data.reward_passes || [];
   state.rewardPassMetrics = data.metrics || null;
@@ -45928,7 +45933,11 @@ async function selectRewardPass(id) {
   state.selectedRewardPassId = id;
   showFeedback("Cargando detalle del Reward Pass.", "loading", { title: "Reward Pass", timeout: 0 });
   try {
-    const data = await api(`/api/business/reward-passes/${encodeURIComponent(id)}`, { headers: authHeaders() });
+    const data = await api(`/api/business/reward-passes/${encodeURIComponent(id)}?fresh=1`, {
+      headers: authHeaders(),
+      noClientCache: true,
+      cache: "no-store",
+    });
     if (!isCurrentBusinessScope(scopeKey) || state.selectedRewardPassId !== id) return;
     state.selectedRewardPass = data.reward_pass;
     renderRewardPassTable();
@@ -46089,16 +46098,23 @@ function openRewardPassWhatsapp(id) {
 
 async function cancelSelectedRewardPass(id) {
   if (!window.confirm("Solo puedes anular Reward Pass sin redenciones. Deseas continuar?")) return;
+  const cancelButton = document.querySelector("#rewardPassDetailModal [data-rp-cancel]");
+  setButtonLoading(cancelButton, true, "Anulando...");
   try {
-    await api(`/api/business/reward-passes/${encodeURIComponent(id)}/cancel`, {
+    const data = await api(`/api/business/reward-passes/${encodeURIComponent(id)}/cancel`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ notes: "Anulado desde portal empresa." }),
     });
+    state.selectedRewardPassId = data.reward_pass?.id || id;
+    state.selectedRewardPass = data.reward_pass || state.selectedRewardPass;
     await renderRewardPassesView();
-    showFeedback("Reward Pass anulado correctamente.");
+    await selectRewardPass(id);
+    showFeedback("Reward Pass anulado correctamente.", "success", { title: "Reward Pass" });
   } catch (error) {
-    showFeedback(error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo anular" });
+  } finally {
+    setButtonLoading(cancelButton, false);
   }
 }
 

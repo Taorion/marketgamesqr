@@ -90,6 +90,16 @@ test("la activación pública exige PIN, limita intentos y usa códigos fuertes"
   assert.match(backendApp, /max: 12/);
   assert.match(publicApp, /id="rpClaimPin"/);
   assert.match(publicApp, /security_pin: document\.getElementById\("rpClaimPin"\)/);
+  assert.match(controller, /clearBusinessResponseCache\(rewardPass\.company_id\)/);
+});
+
+test("el portal refresca activaciones y confirma la anulaciÃ³n con estado canÃ³nico", () => {
+  assert.match(portalApp, /queryParams\.set\("fresh", "1"\)/);
+  assert.match(portalApp, /reward-passes\/\$\{encodeURIComponent\(id\)\}\?fresh=1/);
+  assert.match(portalApp, /reward-passes\?\$\{queryParams\.toString\(\)\}`,[\s\S]*noClientCache: true,[\s\S]*cache: "no-store"/);
+  assert.match(portalApp, /const data = await api\(`\/api\/business\/reward-passes\/\$\{encodeURIComponent\(id\)\}\/cancel`/);
+  assert.match(portalApp, /state\.selectedRewardPass = data\.reward_pass/);
+  assert.match(portalApp, /await renderRewardPassesView\(\);\s*await selectRewardPass\(id\);/);
 });
 
 test("la interfaz premium renderiza indicadores, filtros, gráficas y tarjetas móviles", () => {
@@ -122,4 +132,5 @@ test("la ficha expone las operaciones reales sin perder trazabilidad", () => {
   assert.match(portalApp, /data-rp-cancel/);
   assert.match(portalApp, /Historial de saldo y redenciones/);
   assert.match(portalHtml, /reward-pass-detail-actions=v501-20260916/);
+  assert.match(portalHtml, /reward-pass-state-sync=v502-20260916/);
 });
