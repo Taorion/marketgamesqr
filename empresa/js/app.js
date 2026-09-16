@@ -18677,10 +18677,20 @@ function renderValidatorRewardPassBranchOptions(pass = currentRewardPassValidati
   const branches = (state.businessBranches || []).filter((branch) => branch.is_active !== false);
   const authorizedId = String(pass?.authorized_branch_id || "");
   const available = authorizedId ? branches.filter((branch) => String(branch.id) === authorizedId) : branches;
+  const isLoading = state.businessBranchesLoading && !state.businessBranchesLoaded;
+  const placeholder = isLoading
+    ? "Cargando sedes..."
+    : state.businessBranchesLoadError
+      ? "No fue posible cargar las sedes"
+      : available.length
+        ? "Selecciona la sede de redención"
+        : "No hay sedes activas";
   validatorRewardPassBranchInput.innerHTML = [
-    `<option value="">${available.length ? "Selecciona la sede de redención" : "No hay sedes activas"}</option>`,
+    `<option value="">${placeholder}</option>`,
     ...available.map((branch) => `<option value="${escapeHtml(branch.id)}">${escapeHtml(branch.name)}</option>`),
   ].join("");
+  validatorRewardPassBranchInput.disabled = isLoading || !available.length;
+  validatorRewardPassBranchInput.required = ["ALL_BRANCHES", "SPECIFIC_BRANCH"].includes(String(pass?.branch_authorization_scope || ""));
   const preferred = authorizedId || String(session?.user?.branch_id || "");
   if (preferred && available.some((branch) => String(branch.id) === preferred)) validatorRewardPassBranchInput.value = preferred;
 }
@@ -19084,6 +19094,7 @@ function setValidatorResult(mode, title, message, data = null) {
   renderValidatorBeneficiary(data);
   validatorRedeemButton.disabled = !data?.allowed;
   if (data?.kind === "reward_pass") {
+    renderValidatorRewardPassBranchOptions(data.reward_pass);
     if (validatorRewardPassRedeemInput) validatorRewardPassRedeemInput.value = "";
     if (validatorRewardPassDocumentInput) validatorRewardPassDocumentInput.value = data.reward_pass?.beneficiary_document || "";
     if (validatorSaleAmountInput) validatorSaleAmountInput.value = "";
@@ -19447,10 +19458,18 @@ async function renderValidatorView() {
       calculateValidatorCheckoutPreview();
     }
   }).catch(() => {});
-  if (!state.businessBranchesLoaded && !state.businessBranchesLoading && session?.user?.business_id && hasPlanFeature("multi_branch")) {
-    loadBusinessBranches({ quiet: true }).then(renderValidatorBranchOptions).catch(() => {});
+  if (session?.user?.business_id) {
+    renderValidatorRewardPassBranchOptions();
+    loadBusinessBranches({ quiet: true }).then(() => {
+      renderValidatorBranchOptions();
+      renderValidatorRewardPassBranchOptions();
+    }).catch(() => {
+      renderValidatorBranchOptions();
+      renderValidatorRewardPassBranchOptions();
+    });
   } else {
     renderValidatorBranchOptions();
+    renderValidatorRewardPassBranchOptions();
   }
   if (!window.isSecureContext) {
     validatorCameraStatus.textContent = "Origen inseguro";
@@ -33581,6 +33600,15 @@ async function validateValidatorToken(rawValue) {
     if (!isCurrentBusinessScope(scopeKey) || state.validatorLastToken !== token) return;
     state.validatorLastValidation = data;
     state.validatorLastRedemption = null;
+    if (data.kind === "reward_pass") {
+      try {
+        await loadBusinessBranches({ force: true, quiet: true });
+      } catch (branchError) {
+        state.businessBranchesLoadError = branchError.message || "No fue posible cargar las sedes.";
+      }
+      if (!isCurrentBusinessScope(scopeKey) || state.validatorLastToken !== token) return;
+      renderValidatorRewardPassBranchOptions(data.reward_pass);
+    }
     if (data.allowed) {
       if (data.kind !== "reward_pass") {
         await loadInventoryProducts({ quiet: true });
@@ -33653,6 +33681,11 @@ async function redeemValidatorToken() {
       }
       if (!rewardPassPreview.coverage) {
         throw new Error("No hay saldo disponible para cubrir esta factura.");
+      }
+      const branchScope = String(currentRewardPassValidation()?.branch_authorization_scope || "");
+      if (["ALL_BRANCHES", "SPECIFIC_BRANCH"].includes(branchScope) && !validatorRewardPassBranchInput?.value.trim()) {
+        validatorRewardPassBranchInput?.focus();
+        throw new Error("Selecciona la sede o caja activa donde se registrará la redención.");
       }
       if (!rewardPassPreview.partialAllowed && rewardPassPreview.remaining > 0) {
         const acceptsSingleUse = window.confirm("Este Reward Pass es de un solo uso y la factura no consume todo el saldo. Confirma que el consumidor conoce y acepta las condiciones antes de registrar la redención.");
@@ -50501,6 +50534,8 @@ async function loadBusinessBranches(options = {}) {
       ...authHeaders(),
       "Cache-Control": "no-cache",
     },
+    noClientCache: Boolean(options.force),
+    ...(options.force ? { cache: "no-store" } : {}),
   }).then((data) => {
     if (!isCurrentBusinessScope(scopeKey) || state.businessBranchesLoadSeq !== loadSeq) {
       return state.businessBranches;
