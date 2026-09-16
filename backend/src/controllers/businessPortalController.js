@@ -5035,6 +5035,40 @@ async function archiveInventoryProduct(req, res, next) {
     const body = validate(lifecycleReasonSchema, req.body || {});
     const result = await withTransaction(async (client) => {
       const existing = await client.query(
+        "select id, name, status, updated_at from business_inventory_products where id = $1 and business_id = $2 for update",
+        [req.params.productId, businessId]
+      );
+      if (!existing.rowCount) throw badRequest("Producto de inventario no encontrado.");
+      const product = existing.rows[0];
+      if (product.status === "ARCHIVED") return { product, duplicate: true };
+      const archived = await client.query(
+        `update business_inventory_products
+            set status = 'ARCHIVED', updated_at = now()
+          where id = $1 and business_id = $2
+          returning *`,
+        [product.id, businessId]
+      );
+      await recordLifecycleEvent({
+        business_id: businessId, entity_type: "INVENTORY_PRODUCT", entity_id: product.id,
+        action: "ARCHIVED", previous_status: product.status, next_status: "ARCHIVED", reason: body.reason,
+        idempotency_key: body.idempotency_key || `inventory-archive:${product.id}:${new Date(product.updated_at).getTime()}`,
+        actor_user_id: req.user.id, metadata: { product_name: product.name },
+      }, client);
+      return { product: archived.rows[0], duplicate: false };
+    });
+    res.json({ ok: true, product: result.product, archived: true, duplicate: result.duplicate });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function deleteInventoryProduct(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const body = validate(lifecycleReasonSchema, req.body || {});
+    const result = await withTransaction(async (client) => {
+      const existing = await client.query(
         "select id, name, status from business_inventory_products where id = $1 and business_id = $2 for update",
         [req.params.productId, businessId]
       );
@@ -7529,6 +7563,7 @@ module.exports = {
   archiveAcquisitionChannelEffort,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
+  deleteInventoryProduct,
   listInventoryCategories,
   createInventoryCategory,
   listInventorySubcategories,

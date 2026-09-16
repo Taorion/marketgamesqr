@@ -62,6 +62,7 @@ const {
   archiveAcquisitionChannelEffort,
   createCustomerAcquisitionSale,
   archiveInventoryProduct,
+  deleteInventoryProduct,
   listInventoryCategories,
   createInventoryCategory,
   listInventorySubcategories,
@@ -409,8 +410,9 @@ router.get("/inventory/products", standardBusinessCache, listInventoryProducts);
 router.post("/inventory/products", createInventoryProduct);
 router.post("/inventory/products/import-csv", importInventoryProductsCsv);
 router.get("/inventory/products/:productId/insights", shortBusinessCache, getInventoryProductInsights);
+router.post("/inventory/products/:productId/archive", archiveInventoryProduct);
 router.patch("/inventory/products/:productId", updateInventoryProduct);
-router.delete("/inventory/products/:productId", archiveInventoryProduct);
+router.delete("/inventory/products/:productId", deleteInventoryProduct);
 router.get("/campaigns", standardBusinessCache, listCampaigns);
 router.post("/campaigns", createCampaign);
 router.get("/campaigns/:id", shortBusinessCache, getCampaign);

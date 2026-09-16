@@ -25459,7 +25459,7 @@ function findInventoryProduct(value) {
   }
   const needle = normalizeInventoryLookup(raw);
   if (!needle) return null;
-  return (state.inventoryProducts || []).find((product) => {
+  return activeInventoryProducts().find((product) => {
     const candidates = [product.name, product.sku, product.barcode, inventoryProductLabel(product)].map(normalizeInventoryLookup);
     return candidates.includes(needle);
   }) || null;
@@ -25700,7 +25700,7 @@ async function loadInventoryProducts(options = {}) {
   state.inventoryLoadError = "";
   const request = (async () => {
     try {
-      const data = await api("/api/business/inventory/products?limit=500", { headers: authHeaders(), planGate: false });
+      const data = await api("/api/business/inventory/products?limit=500&include_archived=true", { headers: authHeaders(), planGate: false });
       if (!isCurrentBusinessScope(scopeKey)) return state.inventoryProducts;
       state.inventoryProducts = Array.isArray(data.products) ? data.products : [];
     } catch (error) {
@@ -25739,10 +25739,10 @@ function filteredInventoryProducts() {
     const matchesNeedle = !needle || [product.internal_id, product.name, product.sku, product.barcode, product.category, product.category_name, product.subcategory_name, product.brand]
       .some((value) => normalizeInventoryLookup(value).includes(needle));
     const matchesCategory = !categoryId || String(product.category_id || "") === categoryId;
-    const matchesMode = mode === "all"
+    const matchesMode = (mode === "all" && status !== "ARCHIVED")
       || (mode === "active" && status === "ACTIVE")
       || (mode === "low_stock" && status === "ACTIVE" && stock <= minStock)
-      || (mode === "without_code" && !product.sku && !product.barcode)
+      || (mode === "without_code" && status !== "ARCHIVED" && !product.sku && !product.barcode)
       || (mode === "archived" && status === "ARCHIVED");
     return matchesNeedle && matchesCategory && matchesMode;
   });
@@ -26143,7 +26143,8 @@ function renderInventoryProductGrid(rows = []) {
         </div>
         <div class="table-actions">
           <button class="ghost-button compact" type="button" data-inventory-edit="${escapeHtml(product.id)}">Editar</button>
-          <button class="ghost-button danger-button compact" type="button" data-inventory-archive="${escapeHtml(product.id)}">Archivar</button>
+          ${product.status === "ARCHIVED" ? "" : `<button class="ghost-button compact" type="button" data-inventory-archive="${escapeHtml(product.id)}">Archivar</button>`}
+          <button class="ghost-button danger-button compact" type="button" data-inventory-delete="${escapeHtml(product.id)}" ${product.has_sales ? "disabled title=\"Tiene ventas o movimientos\"" : ""}>Eliminar</button>
         </div>
       </article>
     `;
@@ -26153,6 +26154,9 @@ function renderInventoryProductGrid(rows = []) {
   });
   inventoryProductGrid.querySelectorAll("[data-inventory-archive]").forEach((button) => {
     button.addEventListener("click", () => archiveInventoryProduct(button.dataset.inventoryArchive));
+  });
+  inventoryProductGrid.querySelectorAll("[data-inventory-delete]").forEach((button) => {
+    button.addEventListener("click", () => deleteInventoryProduct(button.dataset.inventoryDelete));
   });
 }
 
@@ -26207,6 +26211,7 @@ function renderInventoryView() {
           <div class="table-actions">
             <button class="ghost-button compact" type="button" data-inventory-detail="${escapeHtml(product.id)}">Ver</button>
             <button class="ghost-button compact" type="button" data-inventory-edit="${escapeHtml(product.id)}">Editar</button>
+            ${product.status === "ARCHIVED" ? "" : `<button class="ghost-button compact" type="button" data-inventory-archive="${escapeHtml(product.id)}">Archivar</button>`}
             <button class="ghost-button danger-button compact" type="button" data-inventory-delete="${escapeHtml(product.id)}" ${product.has_sales ? "disabled title=\"Tiene ventas o movimientos\"" : ""}>Eliminar</button>
           </div>
         </td>
@@ -26231,8 +26236,11 @@ function renderInventoryView() {
   inventoryTable.querySelectorAll("[data-inventory-edit]").forEach((button) => {
     button.addEventListener("click", () => editInventoryProduct(button.dataset.inventoryEdit));
   });
+  inventoryTable.querySelectorAll("[data-inventory-archive]").forEach((button) => {
+    button.addEventListener("click", () => archiveInventoryProduct(button.dataset.inventoryArchive));
+  });
   inventoryTable.querySelectorAll("[data-inventory-delete]").forEach((button) => {
-    button.addEventListener("click", () => archiveInventoryProduct(button.dataset.inventoryDelete));
+    button.addEventListener("click", () => deleteInventoryProduct(button.dataset.inventoryDelete));
   });
 }
 
@@ -26780,8 +26788,29 @@ async function submitInventoryProduct(event) {
 async function archiveInventoryProduct(productId) {
   const product = (state.inventoryProducts || []).find((item) => item.id === productId);
   if (!product) return;
+  if (product.status === "ARCHIVED") return;
+  const reason = window.prompt(`Archivar ${product.name}. Dejará de estar disponible para nuevas ventas, pero conservará todo su historial. Motivo obligatorio:`);
+  if (!String(reason || "").trim()) return;
+  try {
+    const data = await api(`/api/business/inventory/products/${productId}/archive`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ reason: String(reason).trim() }),
+    });
+    state.inventoryProducts = (state.inventoryProducts || []).map((item) => item.id === productId ? { ...item, ...data.product } : item);
+    renderInventoryProductOptions();
+    renderInventoryView();
+    showFeedback("Producto archivado. El historial de ventas se conserva.", "success", { title: "Productos" });
+  } catch (error) {
+    showFeedback(error.message, "error", { title: "No se pudo archivar" });
+  }
+}
+
+async function deleteInventoryProduct(productId) {
+  const product = (state.inventoryProducts || []).find((item) => item.id === productId);
+  if (!product) return;
   if (product.has_sales) {
-    showFeedback("No se puede eliminar porque este producto tiene ventas o movimientos asociados.", "error", { title: "Productos" });
+    showFeedback("No se puede eliminar porque este producto tiene ventas o movimientos asociados. Puedes archivarlo para conservar el historial.", "error", { title: "Productos" });
     return;
   }
   const reason = window.prompt(`Eliminar ${product.name}. Solo es posible porque no tiene ventas ni movimientos. Motivo obligatorio:`);
@@ -26797,7 +26826,7 @@ async function archiveInventoryProduct(productId) {
     renderInventoryView();
     showFeedback("Producto eliminado.", "success", { title: "Productos" });
   } catch (error) {
-    showFeedback(error.message, "error", { title: "No se pudo archivar" });
+    showFeedback(error.message, "error", { title: "No se pudo eliminar" });
   }
 }
 
