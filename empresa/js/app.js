@@ -25760,6 +25760,7 @@ function filteredInventoryProducts() {
     const matchesCategory = !categoryId || String(product.category_id || "") === categoryId;
     const matchesMode = (mode === "all" && status !== "ARCHIVED")
       || (mode === "active" && status === "ACTIVE")
+      || (mode === "inactive" && status === "INACTIVE")
       || (mode === "low_stock" && status === "ACTIVE" && stock <= minStock)
       || (mode === "without_code" && status !== "ARCHIVED" && !product.sku && !product.barcode)
       || (mode === "archived" && status === "ARCHIVED");
