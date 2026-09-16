@@ -5581,10 +5581,10 @@ async function createInventorySubcategory(req, res, next) {
 }
 
 const inventoryCatalogDefinitions = Object.freeze({
-  brands: { table: "business_product_brands", key: "brand", label: "marca", hasRate: false },
-  units: { table: "business_product_units", key: "unit", label: "unidad de medida", hasRate: false },
-  "tax-bases": { table: "business_product_tax_bases", key: "tax_base", label: "IVA base", hasRate: true },
-  "healthy-taxes": { table: "business_product_healthy_taxes", key: "healthy_tax", label: "impuesto saludable", hasRate: true },
+  brands: { table: "business_product_brands", key: "brand", responseKey: "brands", label: "marca", hasRate: false },
+  units: { table: "business_product_units", key: "unit", responseKey: "units", label: "unidad de medida", hasRate: false },
+  "tax-bases": { table: "business_product_tax_bases", key: "tax_base", responseKey: "tax_bases", label: "IVA base", hasRate: true },
+  "healthy-taxes": { table: "business_product_healthy_taxes", key: "healthy_tax", responseKey: "healthy_taxes", label: "impuesto saludable", hasRate: true },
 });
 
 async function ensureInventoryCatalogDefaults(client, businessId) {
@@ -5615,7 +5615,7 @@ async function listInventoryCatalog(req, res, next) {
       await ensureInventoryCatalogDefaults(client, businessId);
       return client.query(`select id, internal_id, name${definition.hasRate ? ", rate" : ""}, created_at, updated_at from ${definition.table} where business_id = $1 order by name asc`, [businessId]);
     });
-    res.json({ [definition.key + "s"]: result.rows });
+    res.json({ [definition.responseKey]: result.rows });
   } catch (error) { next(error); }
 }
 
