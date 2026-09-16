@@ -34834,3 +34834,181 @@ html[data-theme="dark"] body[data-current-view="rms-machine"] .portal-shell .rms
     font-size: 22px !important;
   }
 }
+
+/* Inventario: el modal de producto necesita un solo contenedor de scroll.
+   Los estilos globales hacian desplazables y sticky tanto la tarjeta como
+   sus acciones internas, lo que cruzaba los campos y los botones. */
+html body .portal-shell #inventoryProductModal.modal-shell {
+  box-sizing: border-box !important;
+  place-items: center !important;
+  padding: clamp(10px, 2.5vw, 28px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+html body .portal-shell #inventoryProductModal .inventory-product-modal-card {
+  display: flex !important;
+  flex-direction: column !important;
+  width: min(900px, calc(100vw - 32px)) !important;
+  max-width: 900px !important;
+  max-height: calc(100dvh - 40px) !important;
+  margin: auto !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-radius: 20px !important;
+}
+
+html body .portal-shell #inventoryProductModal .modal-head {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 2 !important;
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+  padding: 18px 20px 16px !important;
+}
+
+html body .portal-shell #inventoryProductModal .modal-head > div {
+  min-width: 0 !important;
+}
+
+html body .portal-shell #inventoryProductModal .modal-head p {
+  max-width: 66ch !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body .portal-shell #inventoryProductModal .inventory-form {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 18px 20px 20px !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-content: start !important;
+  gap: 14px 16px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+html body .portal-shell #inventoryProductModal .inventory-form > * {
+  min-width: 0 !important;
+}
+
+html body .portal-shell #inventoryProductModal .inventory-form label {
+  display: grid !important;
+  align-content: start !important;
+  gap: 7px !important;
+  margin: 0 !important;
+}
+
+html body .portal-shell #inventoryProductModal .inventory-form :is(input, select, textarea) {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+html body .portal-shell #inventoryProductModal .inventory-form .span-2,
+html body .portal-shell #inventoryProductModal .inventory-form .modal-actions {
+  grid-column: 1 / -1 !important;
+}
+
+html body .portal-shell #inventoryProductModal .modal-actions {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 1 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  margin: 2px 0 0 !important;
+  padding: 16px 0 0 !important;
+  background: #ffffff !important;
+}
+
+html body .portal-shell #inventoryProductModal #inventoryMessage:empty {
+  display: none !important;
+}
+
+html body .portal-shell #inventoryProductModal #inventoryMessage:empty + .modal-button-row {
+  grid-column: 1 / -1 !important;
+  justify-self: end !important;
+}
+
+html body .portal-shell #inventoryProductModal .modal-button-row {
+  position: static !important;
+  inset: auto !important;
+  z-index: auto !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  width: auto !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+@media (max-width: 720px) {
+  html body .portal-shell #inventoryProductModal.modal-shell {
+    place-items: end center !important;
+    padding: 8px !important;
+  }
+
+  html body .portal-shell #inventoryProductModal .inventory-product-modal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 16px) !important;
+    margin: 0 !important;
+    border-radius: 18px 18px 12px 12px !important;
+  }
+
+  html body .portal-shell #inventoryProductModal .modal-head {
+    padding: 15px 16px 13px !important;
+  }
+
+  html body .portal-shell #inventoryProductModal .modal-head h3 {
+    font-size: clamp(1.25rem, 7vw, 1.65rem) !important;
+  }
+
+  html body .portal-shell #inventoryProductModal .inventory-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    padding: 14px 16px 18px !important;
+  }
+
+  html body .portal-shell #inventoryProductModal .inventory-form .span-2,
+  html body .portal-shell #inventoryProductModal .inventory-form .modal-actions {
+    grid-column: auto !important;
+  }
+
+  html body .portal-shell #inventoryProductModal .modal-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body .portal-shell #inventoryProductModal .modal-button-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    width: 100% !important;
+  }
+
+  html body .portal-shell #inventoryProductModal #inventoryMessage:empty + .modal-button-row {
+    justify-self: stretch !important;
+  }
+}
+
+@media (max-width: 420px) {
+  html body .portal-shell #inventoryProductModal .modal-head {
+    gap: 10px !important;
+  }
+
+  html body .portal-shell #inventoryProductModal .modal-head p {
+    font-size: 0.82rem !important;
+    line-height: 1.4 !important;
+  }
+
+  html body .portal-shell #inventoryProductModal .modal-button-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
