@@ -13,6 +13,8 @@ test("Emitir Reward Pass usa una sola zona de scroll sin cruces", () => {
   assert.match(css, /reward-pass-create-modal-card[\s\S]*?grid-template-rows: auto minmax\(0, 1fr\)/);
   assert.match(css, /reward-pass-layout[\s\S]*?overflow-y: auto !important/);
   assert.match(css, /modal-head[\s\S]*?height: auto !important[\s\S]*?overflow: visible !important/);
+  assert.match(css, /rpModalFormA[\s\S]*?reward-pass-form[\s\S]*?overflow: visible !important/);
+  assert.match(css, /rpModalButtonsA[\s\S]*?modal-button-row[\s\S]*?position: static !important/);
 });
 
 test("el modal móvil ocupa 390x844 sin desborde horizontal y mantiene acciones alcanzables", () => {
@@ -22,5 +24,5 @@ test("el modal móvil ocupa 390x844 sin desborde horizontal y mantiene acciones 
 });
 
 test("el portal carga la capa final de layout con cachebuster", () => {
-  assert.match(html, /reward-pass-modal-layout\.css\?v=reward-pass-modal-layout-v2-20260916/);
+  assert.match(html, /reward-pass-modal-layout\.css\?v=reward-pass-modal-layout-v3-20260916/);
 });
