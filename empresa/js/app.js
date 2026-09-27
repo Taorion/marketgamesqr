@@ -7992,6 +7992,14 @@ function applyInitialRouteParams() {
   const requestedView = urlParams.get("view");
   const urlToken = urlParams.get("token");
   const paymentResult = urlParams.get("payment");
+  const productQrId = urlParams.get("product_qr");
+  if (productQrId) {
+    setView("validator");
+    const productQrUrl = `${window.location.origin}/empresa/?view=validator&product_qr=${encodeURIComponent(productQrId)}`;
+    validatorQrTokenInput.value = productQrUrl;
+    validateValidatorToken(productQrUrl);
+    return;
+  }
   if (urlToken) {
     setView("validator");
     validatorQrTokenInput.value = urlToken;
@@ -18755,14 +18763,15 @@ async function validatorCameraDiagnostic() {
 }
 
 function validatorKind(data = state.validatorLastValidation) {
-  return data?.kind === "reward_pass" ? "reward_pass" : data ? "qr" : "";
+  return data?.kind === "reward_pass" ? "reward_pass" : data?.kind === "inventory_product" ? "inventory_product" : data ? "qr" : "";
 }
 
 function validatorKindLabel(data = state.validatorLastValidation) {
-  return validatorKind(data) === "reward_pass" ? "Reward Pass" : validatorKind(data) === "qr" ? "Ticket QR" : "Sin detectar";
+  return validatorKind(data) === "reward_pass" ? "Reward Pass" : validatorKind(data) === "inventory_product" ? "Producto de inventario" : validatorKind(data) === "qr" ? "Ticket QR" : "Sin detectar";
 }
 
 function validatorTokenPreview(data = state.validatorLastValidation) {
+  if (data?.product?.internal_id || data?.product?.sku || data?.product?.barcode) return data.product.internal_id || data.product.sku || data.product.barcode;
   if (data?.reward_pass?.public_code) return data.reward_pass.public_code;
   if (data?.qr_code?.id) return String(data.qr_code.id).slice(0, 8).toUpperCase();
   const token = String(state.validatorLastToken || "");
@@ -18887,6 +18896,19 @@ function calculateValidatorCheckoutPreview() {
   const benefit = validatorBenefitDescriptor();
   const items = validatorLineItems();
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+  if (validatorKind() === "inventory_product") {
+    state.validatorCheckoutPreview = { subtotal, discount_amount: 0, final_total: subtotal, gifts: [], line_items: items, message: "Venta directa desde QR de producto. Revisa cantidad y precio antes de guardar." };
+    validatorCheckoutBenefitLabel.textContent = "QR de producto";
+    validatorCheckoutBenefitRule.textContent = "No aplica beneficio ni descuento; se registrará una venta normal.";
+    validatorCheckoutSubtotalValue.textContent = money(subtotal);
+    validatorCheckoutDiscountValue.textContent = `-${money(0)}`;
+    validatorCheckoutTotalValue.textContent = money(subtotal);
+    validatorCheckoutGiftRow.hidden = true;
+    validatorCheckoutSummaryMessage.textContent = state.validatorCheckoutPreview.message;
+    validatorStandardSaleAmountInput.value = subtotal ? String(subtotal) : "";
+    validatorRedeemButton.disabled = !state.validatorLastValidation?.allowed || subtotal <= 0;
+    return state.validatorCheckoutPreview;
+  }
   const scopeName = String(benefit.product_scope?.product_name || "").trim().toLocaleLowerCase("es-CO");
   const scoped = scopeName ? items.filter((item) => item.name.toLocaleLowerCase("es-CO") === scopeName) : items;
   const eligibleSubtotal = (scoped.length ? scoped : items).reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
@@ -18942,8 +18964,14 @@ function calculateValidatorCheckoutPreview() {
 }
 
 function syncValidatorRedemptionMode({ renderItems = true } = {}) {
+  const isProductSale = validatorKind() === "inventory_product";
   const benefit = validatorBenefitDescriptor();
-  if (benefit.purchase_required) state.validatorRedemptionMode = "PURCHASE";
+  const sectionHeading = validatorStandardSaleFields?.querySelector(".validator-form-section-head strong");
+  const sectionHelp = validatorStandardSaleFields?.querySelector(".validator-form-section-head small");
+  if (sectionHeading) sectionHeading.textContent = isProductSale ? "Registrar venta de producto" : "Aplicar beneficio";
+  if (sectionHelp) sectionHelp.textContent = isProductSale ? "La referencia ya está cargada. Confirma cantidad, cliente y pago." : "Elige el flujo permitido por el ticket. Compra y redención se confirmarán juntas.";
+  if (benefit.purchase_required || isProductSale) state.validatorRedemptionMode = "PURCHASE";
+  if (validatorRedemptionModes) validatorRedemptionModes.hidden = isProductSale;
   validatorStandaloneModeInput.checked = state.validatorRedemptionMode === "STANDALONE";
   validatorPurchaseModeInput.checked = state.validatorRedemptionMode === "PURCHASE";
   validatorStandaloneModeInput.disabled = Boolean(benefit.purchase_required);
@@ -18955,7 +18983,9 @@ function syncValidatorRedemptionMode({ renderItems = true } = {}) {
   calculateValidatorCheckoutPreview();
   const redeemLabel = validatorRedeemButton?.querySelector("span:last-child");
   if (redeemLabel && validatorKind() !== "reward_pass") {
-    redeemLabel.textContent = state.validatorRedemptionMode === "PURCHASE"
+    redeemLabel.textContent = isProductSale
+      ? "Registrar venta"
+      : state.validatorRedemptionMode === "PURCHASE"
       ? "Aplicar beneficio y cerrar compra"
       : "Redimir beneficio sin compra";
   }
@@ -19027,20 +19057,21 @@ function collectValidatorBeneficiary() {
 
 function setValidatorOperationState(mode = "idle", data = state.validatorLastValidation) {
   const isRewardPass = validatorKind(data) === "reward_pass";
+  const isProductSale = validatorKind(data) === "inventory_product";
   const isTransferableTicket = validatorIsTransferableTicket(data);
   const redeemLabel = validatorRedeemButton?.querySelector("span:last-child");
   if (validatorOperationPanel) validatorOperationPanel.dataset.mode = mode;
   validatorRewardPassFields.hidden = mode !== "validated_reward" && mode !== "completed_reward";
-  if (validatorBeneficiaryPanel) validatorBeneficiaryPanel.hidden = !["validated_standard", "completed_standard"].includes(mode);
-  validatorStandardSaleFields.hidden = !["validated_standard", "completed_standard"].includes(mode);
-  validatorObservationField.hidden = !["validated_reward", "completed_reward", "validated_standard", "completed_standard"].includes(mode);
-  validatorRedeemButton.hidden = !["validated_standard", "validated_reward"].includes(mode);
+  if (validatorBeneficiaryPanel) validatorBeneficiaryPanel.hidden = !["validated_standard", "completed_standard", "validated_product", "completed_product"].includes(mode);
+  validatorStandardSaleFields.hidden = !["validated_standard", "completed_standard", "validated_product", "completed_product"].includes(mode);
+  validatorObservationField.hidden = !["validated_reward", "completed_reward", "validated_standard", "completed_standard", "validated_product", "completed_product"].includes(mode);
+  validatorRedeemButton.hidden = !["validated_standard", "validated_reward", "validated_product"].includes(mode);
   saveValidatorSaleButton.hidden = true;
-  validatorNewOperationButton.hidden = !["completed_reward", "completed_standard"].includes(mode);
-  validatorRedeemButton.disabled = !["validated_standard", "validated_reward"].includes(mode) || !data?.allowed;
+  validatorNewOperationButton.hidden = !["completed_reward", "completed_standard", "completed_product"].includes(mode);
+  validatorRedeemButton.disabled = !["validated_standard", "validated_reward", "validated_product"].includes(mode) || !data?.allowed;
   setValidatorFormEnabled(validatorRewardPassFields, mode === "validated_reward");
-  setValidatorFormEnabled(validatorStandardSaleFields, mode === "validated_standard");
-  if (validatorSaleNotesInput) validatorSaleNotesInput.disabled = ["completed_reward", "completed_standard"].includes(mode);
+  setValidatorFormEnabled(validatorStandardSaleFields, ["validated_standard", "validated_product"].includes(mode));
+  if (validatorSaleNotesInput) validatorSaleNotesInput.disabled = ["completed_reward", "completed_standard", "completed_product"].includes(mode);
 
   const settings = {
     idle: ["Siguiente acción", "Valida un ticket para comenzar", "La operación se adaptará automáticamente al tipo de ticket detectado.", "En espera", "capture"],
@@ -19052,18 +19083,21 @@ function setValidatorOperationState(mode = "idle", data = state.validatorLastVal
     completed_standard: ["Operación completa", "Compra y beneficio confirmados", "El resumen final conserva subtotal, beneficio aplicado y total pagado.", "Completado", "close"],
     completed_reward: ["Operación completa", "Reward Pass aplicado", "Factura, valor redimido y saldo posterior quedaron registrados en el historial.", "Completado", "close"],
   };
+  settings.validated_product = ["Producto reconocido", "Completa la venta", "La referencia y el precio ya fueron cargados. Indica cantidad, cliente y medio de pago.", "Listo para vender", "redeem"];
+  settings.completed_product = ["Venta registrada", "Producto y cliente confirmados", "La venta quedó guardada, el inventario actualizado y la referencia conservada.", "Completado", "close"];
   const [eyebrow, title, copy, badge, step] = settings[mode] || settings.idle;
   validatorOperationEyebrow.textContent = eyebrow;
   validatorOperationTitle.textContent = title;
   validatorOperationCopy.textContent = copy;
   validatorModeBadge.textContent = badge;
-  if (redeemLabel) redeemLabel.textContent = isRewardPass ? "Aplicar Reward Pass" : "Redimir beneficio";
-  if (mode === "validated_standard") syncValidatorRedemptionMode();
+  if (redeemLabel) redeemLabel.textContent = isRewardPass ? "Aplicar Reward Pass" : isProductSale ? "Registrar venta" : "Redimir beneficio";
+  if (["validated_standard", "validated_product"].includes(mode)) syncValidatorRedemptionMode();
   syncValidatorSteps(step);
 }
 
 function setValidatorResult(mode, title, message, data = null) {
   const isTransferableTicket = validatorIsTransferableTicket(data);
+  const isProduct = data?.kind === "inventory_product";
   validatorResultTitle.textContent = title;
   validatorResultMessage.textContent = message;
   validatorResultChip.className = `result-chip ${mode}`;
@@ -19072,17 +19106,17 @@ function setValidatorResult(mode, title, message, data = null) {
   validatorTicketTypeValue.textContent = validatorKindLabel(data);
   validatorTicketCodeValue.textContent = validatorTokenPreview(data);
   validatorBusinessValue.textContent = data?.business?.name || "-";
-  validatorCampaignValue.textContent = data?.campaign?.name || data?.batch?.name || "Sin campaña";
-  validatorGameValue.textContent = data?.game?.name || data?.qr_code?.origin_type || validatorKindLabel(data);
+  validatorCampaignValue.textContent = isProduct ? "Venta directa" : data?.campaign?.name || data?.batch?.name || "Sin campaña";
+  validatorGameValue.textContent = isProduct ? "Inventario / ERP" : data?.game?.name || data?.qr_code?.origin_type || validatorKindLabel(data);
   const validatorBenefitValue = data?.reward?.value || data?.reward?.benefit_value || {};
   const validatorProductScope = benefitProductScopeLabel(validatorBenefitValue);
   const validatorFulfillment = benefitFulfillmentLabel(validatorBenefitValue, data?.qr_code?.metadata || {});
-  validatorRewardValue.textContent = [
+  validatorRewardValue.textContent = isProduct ? `${data.product?.name || "Producto"} · ${money(data.product?.unit_price || 0)}` : [
     data?.reward?.display || data?.reward?.name || validatorBenefitValue?.label || "-",
     validatorProductScope,
     validatorFulfillment,
   ].filter(Boolean).join(" | ");
-  validatorPlayerValue.textContent = data?.player?.name || (isTransferableTicket ? "Por identificar presencialmente" : "-");
+  validatorPlayerValue.textContent = data?.player?.name || (isProduct ? "Por identificar" : isTransferableTicket ? "Por identificar presencialmente" : "-");
   validatorDocumentValue.textContent = data?.player?.document_id || (data?.beneficiary?.document_required ? "Pendiente" : "No requerido");
   validatorContactValue.textContent = [
     data?.player?.email,
@@ -19091,7 +19125,7 @@ function setValidatorResult(mode, title, message, data = null) {
     data?.sale?.product_name ? `Venta: ${data.sale.product_name}` : "",
     data?.affiliate?.name ? `Recomendado por: ${data.affiliate.name}` : "",
   ].filter(Boolean).join(" | ") || (isTransferableTicket ? "Se completará durante la redención" : "-");
-  validatorExpiresValue.textContent = formatDate(data?.qr_code?.expires_at);
+  validatorExpiresValue.textContent = isProduct ? "Mientras el producto esté activo" : formatDate(data?.qr_code?.expires_at);
   renderValidatorBeneficiary(data);
   validatorRedeemButton.disabled = !data?.allowed;
   if (data?.kind === "reward_pass") {
@@ -19148,8 +19182,8 @@ function resetValidatorOperation({ focus = false } = {}) {
   state.validatorLastScanAt = 0;
   validatorQrTokenInput.value = "";
   resetValidatorSaleForm();
-  setValidatorResult("neutral", "Esperando ticket", "Escanea o pega un ticket para consultar la base de datos.");
-  setInlineMessage(validatorManualStatus, "Acepta tickets QR de campaña y Reward Pass.", "info");
+  setValidatorResult("neutral", "Esperando QR", "Escanea o pega un ticket, Reward Pass o QR de producto.");
+  setInlineMessage(validatorManualStatus, "Acepta tickets QR de campaña, Reward Pass y QR de productos.", "info");
   setValidatorOperationState("idle", null);
   if (focus) validatorQrTokenInput.focus();
 }
@@ -19173,6 +19207,20 @@ function extractValidatorToken(rawValue) {
     return url.searchParams.get("token") || url.pathname.split("/").filter(Boolean).pop() || value;
   } catch {
     return value;
+  }
+}
+
+function extractInventoryProductQrId(rawValue) {
+  const value = String(rawValue || "").trim();
+  if (!value) return "";
+  const direct = value.match(/^qori:inventory-product:([0-9a-f-]{36})$/i);
+  if (direct) return direct[1].toLowerCase();
+  try {
+    const url = new URL(value, window.location.origin);
+    const productId = url.searchParams.get("product_qr") || "";
+    return /^[0-9a-f-]{36}$/i.test(productId) ? productId.toLowerCase() : "";
+  } catch {
+    return "";
   }
 }
 
@@ -26164,6 +26212,7 @@ function renderInventoryProductGrid(rows = []) {
           ${isLow ? '<span class="pill muted">Reponer stock</span>' : ""}
         </div>
         <div class="table-actions">
+          ${product.status === "ARCHIVED" ? "" : `<button class="ghost-button compact" type="button" data-inventory-qr="${escapeHtml(product.id)}"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span> QR</button>`}
           <button class="ghost-button compact" type="button" data-inventory-edit="${escapeHtml(product.id)}">Editar</button>
           ${product.status === "ARCHIVED" ? "" : `<button class="ghost-button compact" type="button" data-inventory-archive="${escapeHtml(product.id)}">Archivar</button>`}
           <button class="ghost-button danger-button compact" type="button" data-inventory-delete="${escapeHtml(product.id)}" ${product.has_sales ? "disabled title=\"Tiene ventas o movimientos\"" : ""}>Eliminar</button>
@@ -26173,6 +26222,9 @@ function renderInventoryProductGrid(rows = []) {
   }).join("");
   inventoryProductGrid.querySelectorAll("[data-inventory-edit]").forEach((button) => {
     button.addEventListener("click", () => editInventoryProduct(button.dataset.inventoryEdit));
+  });
+  inventoryProductGrid.querySelectorAll("[data-inventory-qr]").forEach((button) => {
+    button.addEventListener("click", () => openInventoryProductQr(button.dataset.inventoryQr));
   });
   inventoryProductGrid.querySelectorAll("[data-inventory-archive]").forEach((button) => {
     button.addEventListener("click", () => archiveInventoryProduct(button.dataset.inventoryArchive));
@@ -26232,6 +26284,7 @@ function renderInventoryView() {
         <td>
           <div class="table-actions">
             <button class="ghost-button compact" type="button" data-inventory-detail="${escapeHtml(product.id)}">Ver</button>
+            ${product.status === "ARCHIVED" ? "" : `<button class="ghost-button compact" type="button" data-inventory-qr="${escapeHtml(product.id)}"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span> QR</button>`}
             <button class="ghost-button compact" type="button" data-inventory-edit="${escapeHtml(product.id)}">Editar</button>
             ${product.status === "ARCHIVED" ? "" : `<button class="ghost-button compact" type="button" data-inventory-archive="${escapeHtml(product.id)}">Archivar</button>`}
             <button class="ghost-button danger-button compact" type="button" data-inventory-delete="${escapeHtml(product.id)}" ${product.has_sales ? "disabled title=\"Tiene ventas o movimientos\"" : ""}>Eliminar</button>
@@ -26257,6 +26310,9 @@ function renderInventoryView() {
   });
   inventoryTable.querySelectorAll("[data-inventory-edit]").forEach((button) => {
     button.addEventListener("click", () => editInventoryProduct(button.dataset.inventoryEdit));
+  });
+  inventoryTable.querySelectorAll("[data-inventory-qr]").forEach((button) => {
+    button.addEventListener("click", () => openInventoryProductQr(button.dataset.inventoryQr));
   });
   inventoryTable.querySelectorAll("[data-inventory-archive]").forEach((button) => {
     button.addEventListener("click", () => archiveInventoryProduct(button.dataset.inventoryArchive));
@@ -26364,6 +26420,7 @@ function renderInventoryProductDetail(data = {}) {
       </div>
       <div class="inventory-detail-actions">
         <button class="ghost-button" type="button" data-close-inventory-detail>Cerrar</button>
+        ${product.status === "ARCHIVED" ? "" : `<button class="ghost-button" type="button" data-inventory-detail-qr="${escapeHtml(product.id || "")}"><span class="material-symbols-outlined" aria-hidden="true">qr_code_2</span> Ver QR imprimible</button>`}
         <button class="solid-button" type="button" data-edit-inventory-detail="${escapeHtml(product.id || "")}">Editar producto</button>
       </div>
     </article>
@@ -26373,6 +26430,7 @@ function renderInventoryProductDetail(data = {}) {
     modal.setAttribute("aria-hidden", "true");
     editInventoryProduct(product.id);
   });
+  modal.querySelector("[data-inventory-detail-qr]")?.addEventListener("click", () => openInventoryProductQr(product.id));
   return modal;
 }
 
@@ -26779,6 +26837,7 @@ async function importInventoryProductsCsv(event) {
 async function submitInventoryProduct(event) {
   event.preventDefault();
   const productId = inventoryProductIdInput?.value || "";
+  const isNewProduct = !productId;
   const payload = inventoryFormPayload();
   if (!payload.internal_id || !payload.name || !payload.category_id || payload.price_before_tax < 0 || !Number.isInteger(payload.redemption_points_cost) || payload.redemption_points_cost <= 0) {
     setInlineMessage(inventoryMessage, "Completa ID interno, nombre, categoría, precio antes de IVA y costo de redención en puntos mayor a 0.", "error");
@@ -26804,6 +26863,7 @@ async function submitInventoryProduct(event) {
     closeInventoryProductModal();
     renderInventoryView();
     showFeedback("Producto guardado.", "success", { title: "Productos" });
+    if (isNewProduct) await openInventoryProductQr(saved.id);
   } catch (error) {
     setInlineMessage(inventoryMessage, error.message, "error");
     showFeedback(error.message, "error", { title: "No se pudo guardar" });
@@ -33576,6 +33636,7 @@ async function downloadBatchByFormat(batchId, format, template = "sticker", pape
 }
 
 async function validateValidatorToken(rawValue) {
+  const productId = extractInventoryProductQrId(rawValue);
   const token = extractValidatorToken(rawValue);
   setInlineMessage(validatorManualStatus, "", "info");
   if (!token) {
@@ -33589,7 +33650,7 @@ async function validateValidatorToken(rawValue) {
   state.validatorLastRedemption = null;
   state.rewardPassRedemptionKey = createRewardPassOperationKey("reward-pass-redeem");
   resetValidatorSaleForm();
-  validatorDetectedType.textContent = token.startsWith("rp_") ? "Reward Pass detectado" : "Ticket QR detectado";
+  validatorDetectedType.textContent = productId ? "Producto de inventario detectado" : token.startsWith("rp_") ? "Reward Pass detectado" : "Ticket QR detectado";
   setValidatorResult("neutral", "Consultando", "Validando token contra la base de datos...");
   setValidatorOperationState("validating", null);
   setButtonLoading(validateValidatorManualButton, true, "Validando...");
@@ -33598,6 +33659,27 @@ async function validateValidatorToken(rawValue) {
 
   const scopeKey = businessScopeKey();
   try {
+    if (productId) {
+      const data = await api(`/api/business/inventory/product-qr/${encodeURIComponent(productId)}/validate`, { method: "GET", headers: authHeaders() });
+      if (!isCurrentBusinessScope(scopeKey) || state.validatorLastToken !== token) return;
+      state.validatorLastValidation = data;
+      state.validatorLastRedemption = null;
+      if (data.allowed) {
+        await loadInventoryProducts({ force: true, quiet: true });
+        if (!isCurrentBusinessScope(scopeKey) || state.validatorLastToken !== token) return;
+        state.validatorRedemptionMode = "PURCHASE";
+        state.validatorPurchaseItems = [validatorPurchaseItem({ name: data.product?.name || "Producto", quantity: 1, unit_price: data.product?.unit_price || 0, inventory_product_id: data.product?.id || productId })];
+        setValidatorResult("ok", "Producto reconocido", data.message, data);
+        setValidatorOperationState("validated_product", data);
+        setInlineMessage(validatorManualStatus, "Producto reconocido. Completa cantidad, cliente y medio de pago.", "success");
+        showFeedback("Producto cargado. Completa los datos para registrar la venta.", "success", { title: "QR de producto" });
+      } else {
+        setValidatorResult("danger", "Producto no disponible", data.message, data);
+        setValidatorOperationState("rejected", data);
+        setInlineMessage(validatorManualStatus, data.message, "error");
+      }
+      return;
+    }
     const isRewardPass = token.startsWith("rp_");
     const data = await api(isRewardPass
       ? `/api/business/reward-passes/validator/${encodeURIComponent(token)}`
@@ -33667,6 +33749,11 @@ async function validateValidatorToken(rawValue) {
 
 async function redeemValidatorToken() {
   if (!state.validatorLastToken || !state.validatorLastValidation?.allowed) {
+    return;
+  }
+
+  if (validatorKind() === "inventory_product") {
+    await saveValidatorProductSale();
     return;
   }
 
@@ -33766,6 +33853,68 @@ async function redeemValidatorToken() {
     if (!isCurrentBusinessScope(scopeKey)) return;
     setValidatorResult("danger", "No se pudo redimir", error.message, state.validatorLastValidation);
     showFeedback(error.message, "error");
+  } finally {
+    if (isCurrentBusinessScope(scopeKey)) {
+      setButtonLoading(validatorRedeemButton, false);
+      validatorRedeemButton.disabled = !state.validatorLastValidation?.allowed;
+    }
+  }
+}
+
+async function saveValidatorProductSale() {
+  const checkout = calculateValidatorCheckoutPreview();
+  if (!checkout?.subtotal) {
+    setInlineMessage(validatorSaleStatus, "Registra al menos un producto con precio para guardar la venta.", "error");
+    return;
+  }
+  let beneficiary;
+  try {
+    beneficiary = collectValidatorBeneficiary();
+  } catch (error) {
+    setInlineMessage(validatorSaleStatus, error.message, "error");
+    showFeedback(error.message, "error", { title: "Completa la venta" });
+    return;
+  }
+  const lineItems = validatorLineItems().map((item) => ({ ...item, line_total: Math.round(item.quantity * item.unit_price * 100) / 100, currency: "COP" }));
+  const productSummary = lineItems.map((item) => `${item.name} x${item.quantity}`).join(", ").slice(0, 180);
+  validatorRedeemButton.disabled = true;
+  setButtonLoading(validatorRedeemButton, true, "Guardando...");
+  setInlineMessage(validatorSaleStatus, "Registrando venta y actualizando inventario...", "info");
+  const scopeKey = businessScopeKey();
+  try {
+    const data = await api("/api/business/customer-acquisition-sales", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        idempotency_key: state.validatorRedemptionKey || (state.validatorRedemptionKey = createRewardPassOperationKey("product-qr-sale")),
+        customer_name: beneficiary.name,
+        customer_phone: beneficiary.phone,
+        customer_email: beneficiary.email,
+        customer_document_id: beneficiary.document_id,
+        product_name: productSummary || state.validatorLastValidation?.product?.name || "Venta desde QR de producto",
+        sale_amount: checkout.subtotal,
+        currency: state.validatorLastValidation?.product?.currency || "COP",
+        payment_method: validatorPaymentMethodInput?.value.trim() || null,
+        acquisition_source: "QR_SCAN",
+        acquisition_channel: "Validador QR de producto",
+        notes: validatorSaleNotesInput?.value.trim() || null,
+        metadata: { products: lineItems, sale_entry: "validator_product_qr", inventory_product_qr_id: state.validatorLastValidation?.product?.id || null, data_use_confirmed: beneficiary.data_use_confirmed },
+      }),
+    });
+    if (!isCurrentBusinessScope(scopeKey)) return;
+    state.validatorRedemptionKey = "";
+    state.validatorLastValidation = { ...state.validatorLastValidation, allowed: false, sale: data.sale };
+    setValidatorResult("ok", "Venta registrada", "La venta y el movimiento de inventario quedaron guardados.", state.validatorLastValidation);
+    renderValidatorCompletedCheckout(checkout);
+    setValidatorOperationState("completed_product", state.validatorLastValidation);
+    setInlineMessage(validatorSaleStatus, "Venta registrada correctamente desde el QR del producto.", "success");
+    state.inventoryLoaded = false;
+    await loadInventoryProducts({ force: true, quiet: true });
+    showFeedback("Venta registrada y stock actualizado.", "success", { title: "QR de producto" });
+  } catch (error) {
+    if (!isCurrentBusinessScope(scopeKey)) return;
+    setInlineMessage(validatorSaleStatus, error.message, "error");
+    showFeedback(error.message, "error", { title: "No se pudo registrar la venta" });
   } finally {
     if (isCurrentBusinessScope(scopeKey)) {
       setButtonLoading(validatorRedeemButton, false);
@@ -63805,9 +63954,10 @@ validatorQrTokenInput?.addEventListener("keydown", (event) => {
 });
 validatorQrTokenInput?.addEventListener("input", () => {
   const token = extractValidatorToken(validatorQrTokenInput.value);
+  const productId = extractInventoryProductQrId(validatorQrTokenInput.value);
   validatorDetectedType.textContent = !token
     ? "Detección automática"
-    : token.startsWith("rp_") ? "Reward Pass detectado" : "Ticket QR detectado";
+    : productId ? "Producto de inventario detectado" : token.startsWith("rp_") ? "Reward Pass detectado" : "Ticket QR detectado";
 });
 validatorRedeemButton.addEventListener("click", redeemValidatorToken);
 validatorSaleForm.addEventListener("submit", (event) => event.preventDefault());
@@ -63821,7 +63971,7 @@ validatorRedemptionModes?.addEventListener("change", (event) => {
   syncValidatorRedemptionMode();
 });
 validatorAddPurchaseItemButton?.addEventListener("click", () => {
-  if (validatorOperationPanel?.dataset.mode !== "validated_standard") return;
+  if (!["validated_standard", "validated_product"].includes(validatorOperationPanel?.dataset.mode)) return;
   state.validatorPurchaseItems.push(validatorPurchaseItem());
   renderValidatorPurchaseItems();
   calculateValidatorCheckoutPreview();
@@ -63874,7 +64024,7 @@ validatorPurchaseItems?.addEventListener("change", (event) => {
 });
 validatorPurchaseItems?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-validator-remove-item]");
-  if (!button || validatorOperationPanel?.dataset.mode !== "validated_standard") return;
+  if (!button || (validatorOperationPanel?.dataset.mode !== "validated_standard" && validatorOperationPanel?.dataset.mode !== "validated_product")) return;
   const removedItem = state.validatorPurchaseItems.find((item) => item.id === button.dataset.validatorRemoveItem);
   if (!removedItem) return;
   state.validatorPurchaseItems = state.validatorPurchaseItems.filter((item) => item.id !== button.dataset.validatorRemoveItem);

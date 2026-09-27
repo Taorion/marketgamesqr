@@ -6781,7 +6781,7 @@
               <div class="validator-hero-copy">
                 <span class="mono-label">Punto de atención</span>
                 <h3>Una validación clara. Una sola redención. Revenue trazable.</h3>
-                <p>El Validador distingue tickets promocionales y Reward Pass para pedir únicamente la información necesaria en cada operación.</p>
+                <p>El Validador distingue tickets promocionales, Reward Pass y productos de inventario para pedir únicamente la información necesaria en cada operación.</p>
               </div>
               <ol class="validator-operator-flow" aria-label="Progreso de la operación">
                 <li class="validator-operator-step is-current" id="validatorStepCapture" data-validator-step="capture"><span>1</span><strong>Capturar</strong><small>Escanea o pega el ticket.</small></li>
@@ -6821,14 +6821,14 @@
                   <span class="validator-type-pill" id="validatorDetectedType">Detección automática</span>
                 </div>
                 <label class="validator-token-field" for="validatorQrTokenInput">
-                  <span>Ticket a validar</span>
+                  <span>QR, token o producto a validar</span>
                   <div class="validator-manual-grid">
                     <span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span>
                     <input id="validatorQrTokenInput" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Pega el token o la URL completa">
                     <button class="solid-button" id="validateValidatorManualButton" type="button">Validar</button>
                   </div>
                 </label>
-                <p class="validator-inline-message" id="validatorManualStatus" role="status" aria-live="polite">Acepta tickets QR de campaña y Reward Pass.</p>
+                <p class="validator-inline-message" id="validatorManualStatus" role="status" aria-live="polite">Acepta tickets QR de campaña, Reward Pass y QR de productos.</p>
                 <div class="validator-security-note">
                   <span class="material-symbols-outlined" aria-hidden="true">shield_lock</span>
                   <div><strong>Validación contra la base de datos</strong><small>El ticket se comprueba por negocio, vigencia y estado antes de permitir la redención.</small></div>
@@ -6877,7 +6877,7 @@
                       <label><span>Documento <b id="validatorBeneficiaryDocumentRequired" hidden>*</b></span><input id="validatorBeneficiaryDocumentInput" type="text" maxlength="80" inputmode="numeric" autocomplete="off"></label>
                     </div>
                     <p class="validator-beneficiary-resolution" id="validatorBeneficiaryResolution">Buscaremos primero un contacto existente dentro de este negocio.</p>
-                    <label class="validator-consent-check"><input id="validatorBeneficiaryDataUseInput" type="checkbox"><span>Confirmo que el beneficiario suministró estos datos directamente para gestionar la redención y su relación con el negocio.</span></label>
+                    <label class="validator-consent-check"><input id="validatorBeneficiaryDataUseInput" type="checkbox"><span>Confirmo que la persona suministró estos datos directamente para gestionar esta operación y su relación con el negocio.</span></label>
                     <p class="validator-privacy-note">Esta confirmación no autoriza comunicaciones promocionales. El consentimiento comercial se gestiona por separado.</p>
                   </section>
                   <section class="validator-flow-fields" id="validatorRewardPassFields" hidden>
@@ -8601,7 +8601,8 @@
   <script src="js/evaluation-station-core.js?v=evaluation-core-v1-20260830" defer></script>
   <script src="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830" defer></script>
   <script src="js/portal-training-access.js?v=training-access-v448-20260908" defer></script>
-  <script src="js/app.js?v=validator-beneficiary-v477-20260911&amp;validator-product-removal=v463-20260909&amp;rms-sale-multiproduct-history-v397&amp;affiliate-point-rule-v479-20260911&amp;communications-file-picker=v483-20260911&amp;qori-brand-copy=v487-20260911&amp;exact-prices=v488-20260914&amp;catalog-delete-actions=v489-20260914&amp;catalog-template-action=v490-20260914&amp;rms-lead-modal=v491-20260914&amp;catalog-edit-label=v492-20260914&amp;rms-station-tables=v493-20260914&amp;menu-toggle=v494-20260914&amp;mobile-navigation=v496-20260915&amp;mobile-layout=v499-20260915&amp;sidebar-motion=v497-20260915&amp;activation-wizard-cta=v498-20260915&amp;account-company-logo=v495-20260914&amp;archive-products=v500-20260916&amp;reward-pass-detail-actions=v501-20260916&amp;reward-pass-state-sync=v502-20260916&amp;reward-pass-section-label=v503-20260916&amp;validator-reward-branch=v504-20260916&amp;inventory-inactive-filter=v505-20260916&amp;reward-pass-hide-cancel=v506-20260916&amp;affiliate-redemption-product-points=v507-20260927&amp;gos-brand-v362-20260826" defer></script>
+  <script src="js/app.js?v=inventory-product-validator-v508-20260927&amp;validator-beneficiary-v477-20260911&amp;validator-product-removal=v463-20260909&amp;rms-sale-multiproduct-history=v397&amp;affiliate-point-rule-v479-20260911&amp;communications-file-picker=v483-20260911&amp;qori-brand-copy=v487-20260911&amp;exact-prices=v488-20260914&amp;catalog-delete-actions=v489-20260914&amp;catalog-template-action=v490-20260914&amp;rms-lead-modal=v491-20260914&amp;catalog-edit-label=v492-20260914&amp;rms-station-tables=v493-20260914&amp;menu-toggle=v494-20260914&amp;mobile-navigation=v496-20260915&amp;mobile-layout=v499-20260915&amp;sidebar-motion=v497-20260915&amp;activation-wizard-cta=v498-20260915&amp;account-company-logo=v495-20260914&amp;archive-products=v500-20260916&amp;reward-pass-detail-actions=v501-20260916&amp;reward-pass-state-sync=v502-20260916&amp;reward-pass-section-label=v503-20260916&amp;validator-reward-branch=v504-20260916&amp;inventory-inactive-filter=v505-20260916&amp;reward-pass-hide-cancel=v506-20260916&amp;affiliate-redemption-product-points=v507-20260927&amp;gos-brand-v362-20260826" defer></script>
+  <script src="js/inventory-product-qr.js?v=inventory-product-qr-v1-20260927" defer></script>
   <script src="js/sidebar-toggle-state-fix.js?v=sidebar-toggle-state-fix-v1-20260914&amp;compact-groups=v497-20260915" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contact-promotion-v435-20260905&amp;manual-contact-cleanup=v451-20260908" defer></script>

@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const QRCode = require("qrcode");
 const { randomUUID } = require("node:crypto");
 const { z } = require("zod");
 const { query, withTransaction } = require("../config/db");
@@ -4710,6 +4711,71 @@ async function listInventoryProducts(req, res, next) {
   }
 }
 
+function inventoryProductValidatorUrl(productId) {
+  const base = String(env.publicAppUrl || "https://gosqori.com").replace(/\/$/, "");
+  return `${base}/empresa/?view=validator&product_qr=${encodeURIComponent(productId)}`;
+}
+
+async function inventoryProductForValidator(businessId, productId) {
+  const validatedProductId = validate(z.string().uuid(), productId);
+  const result = await query(
+    `select product.id, product.business_id, product.internal_id, product.sku, product.barcode,
+            product.name, product.description, product.category, product.brand, product.unit_price,
+            product.currency, product.stock_quantity, product.unit_label, product.status,
+            business.name as business_name
+       from business_inventory_products product
+       join businesses business on business.id = product.business_id and business.is_active = true
+      where product.id = $1
+        and product.business_id = $2
+        and product.status <> 'ARCHIVED'
+      limit 1`,
+    [validatedProductId, businessId]
+  );
+  if (!result.rowCount) throw notFound("Producto no encontrado para este negocio.");
+  return result.rows[0];
+}
+
+async function getInventoryProductQr(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const product = await inventoryProductForValidator(businessId, req.params.productId);
+    const validatorUrl = inventoryProductValidatorUrl(product.id);
+    const qrImageDataUrl = await QRCode.toDataURL(validatorUrl, {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      width: 960,
+      color: { dark: "#111111", light: "#ffffff" },
+    });
+    res.set("Cache-Control", "private, no-store");
+    res.json({ kind: "inventory_product", product, validator_url: validatorUrl, qr_image_data_url: qrImageDataUrl });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function validateInventoryProductQr(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const product = await inventoryProductForValidator(businessId, req.params.productId);
+    const allowed = product.status === "ACTIVE";
+    res.set("Cache-Control", "private, no-store");
+    res.json({
+      kind: "inventory_product",
+      allowed,
+      status: product.status,
+      message: allowed
+        ? "Producto reconocido. Confirma cantidad, cliente y medio de pago para registrar la venta."
+        : "El producto existe, pero debe estar activo para registrar una venta.",
+      business: { id: product.business_id, name: product.business_name },
+      product,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function getInventoryProductInsights(req, res, next) {
   try {
     const businessId = businessIdFor(req);
@@ -7575,6 +7641,8 @@ module.exports = {
   listInventoryCatalog,
   createInventoryCatalog,
   createInventoryProduct,
+  getInventoryProductQr,
+  validateInventoryProductQr,
   importInventoryProductsCsv,
   getInventoryProductInsights,
   listInventoryProducts,

@@ -70,6 +70,8 @@ const {
   listInventoryCatalog,
   createInventoryCatalog,
   createInventoryProduct,
+  getInventoryProductQr,
+  validateInventoryProductQr,
   importInventoryProductsCsv,
   getInventoryProductInsights,
   listInventoryProducts,
@@ -409,6 +411,8 @@ router.post("/inventory/catalog/:catalog", createInventoryCatalog);
 router.get("/inventory/products", standardBusinessCache, listInventoryProducts);
 router.post("/inventory/products", createInventoryProduct);
 router.post("/inventory/products/import-csv", importInventoryProductsCsv);
+router.get("/inventory/product-qr/:productId", getInventoryProductQr);
+router.get("/inventory/product-qr/:productId/validate", validateInventoryProductQr);
 router.get("/inventory/products/:productId/insights", shortBusinessCache, getInventoryProductInsights);
 router.post("/inventory/products/:productId/archive", archiveInventoryProduct);
 router.patch("/inventory/products/:productId", updateInventoryProduct);
