@@ -319,6 +319,7 @@ const inventoryProductSchema = z.object({
   brand_id: z.string().uuid().optional().nullable(),
   brand_internal_id: z.string().trim().min(2).max(100).optional().nullable(),
   unit_price: z.number().min(0).default(0),
+  redemption_points_cost: z.number().int().min(1).max(2000000000),
   price_before_tax: z.number().min(0).optional(),
   tax_classification: inventoryTaxClassificationSchema.default("EXEMPT"),
   tax_base_id: z.string().uuid().optional().nullable(),
@@ -4638,6 +4639,7 @@ function mapInventoryPayload(body, userId) {
     healthy_tax: body.healthy_tax || null,
     healthy_tax_rate: 0,
     unit_price: inventorySellingPrice(priceBeforeTax, taxClassification, 0),
+    redemption_points_cost: Number(body.redemption_points_cost || 0),
     cost_price: body.cost_price === null || body.cost_price === undefined ? null : Number(body.cost_price || 0),
     currency: body.currency || "COP",
     stock_quantity: Number(body.stock_quantity || 0),
@@ -4824,9 +4826,9 @@ async function createInventoryProduct(req, res, next) {
       return client.query(
         `insert into business_inventory_products
           (business_id, internal_id, sku, barcode, name, description, category, category_id, subcategory_id, brand, brand_id,
-           unit_price, price_before_tax, tax_classification, tax_base_id, healthy_tax_id, cost_price, currency, stock_quantity,
+           unit_price, redemption_points_cost, price_before_tax, tax_classification, tax_base_id, healthy_tax_id, cost_price, currency, stock_quantity,
            min_stock_quantity, unit_label, unit_id, status, metadata, created_by_user_id)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25::jsonb, $26)
          returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
         [
           businessId,
@@ -4841,6 +4843,7 @@ async function createInventoryProduct(req, res, next) {
           payload.brand,
           payload.brand_id,
           payload.unit_price,
+          payload.redemption_points_cost,
           payload.price_before_tax,
           payload.tax_classification,
           payload.tax_base_id,
@@ -4931,14 +4934,14 @@ async function importInventoryProductsCsv(req, res, next) {
         const inserted = await client.query(
           `insert into business_inventory_products
             (business_id, internal_id, sku, barcode, name, description, category, category_id, subcategory_id, brand, brand_id,
-             unit_price, price_before_tax, tax_classification, tax_base_id, healthy_tax_id, cost_price, currency, stock_quantity,
+             unit_price, redemption_points_cost, price_before_tax, tax_classification, tax_base_id, healthy_tax_id, cost_price, currency, stock_quantity,
              min_stock_quantity, unit_label, unit_id, status, metadata, created_by_user_id)
-           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::jsonb, $25)
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25::jsonb, $26)
            returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
           [
             businessId, payload.internal_id, payload.sku, payload.barcode, payload.name, payload.description,
             payload.category, payload.category_id, payload.subcategory_id, payload.brand, payload.brand_id, payload.unit_price,
-            payload.price_before_tax, payload.tax_classification, payload.tax_base_id, payload.healthy_tax_id, payload.cost_price, payload.currency,
+            payload.redemption_points_cost, payload.price_before_tax, payload.tax_classification, payload.tax_base_id, payload.healthy_tax_id, payload.cost_price, payload.currency,
             payload.stock_quantity, payload.min_stock_quantity, payload.unit_label, payload.unit_id, payload.status,
             JSON.stringify(payload.metadata), payload.created_by_user_id,
           ]
@@ -4988,9 +4991,9 @@ async function updateInventoryProduct(req, res, next) {
         `update business_inventory_products
          set internal_id = $3, sku = $4, barcode = $5, name = $6, description = $7, category = $8,
              category_id = $9, subcategory_id = $10, brand = $11, brand_id = $12, unit_price = $13,
-             price_before_tax = $14, tax_classification = $15, tax_base_id = $16, healthy_tax_id = $17,
-             cost_price = $18, currency = $19, stock_quantity = $20, min_stock_quantity = $21, unit_label = $22,
-             unit_id = $23, status = $24, metadata = $25::jsonb, updated_at = now()
+             redemption_points_cost = $14, price_before_tax = $15, tax_classification = $16, tax_base_id = $17, healthy_tax_id = $18,
+             cost_price = $19, currency = $20, stock_quantity = $21, min_stock_quantity = $22, unit_label = $23,
+             unit_id = $24, status = $25, metadata = $26::jsonb, updated_at = now()
          where id = $1 and business_id = $2
          returning *, (stock_quantity <= min_stock_quantity) as low_stock`,
         [
@@ -5007,6 +5010,7 @@ async function updateInventoryProduct(req, res, next) {
           payload.brand,
           payload.brand_id,
           payload.unit_price,
+          payload.redemption_points_cost,
           payload.price_before_tax,
           payload.tax_classification,
           payload.tax_base_id,

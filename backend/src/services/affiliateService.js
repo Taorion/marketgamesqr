@@ -395,11 +395,10 @@ async function redeemAffiliatePoints(businessId, affiliateId, user, body) {
     let mode = "MANUAL";
     let product = null;
     let rewardRule = null;
-    let pointRules = null;
 
     if (inventoryProductId) {
       const productResult = await client.query(
-        `select id, name, sku, barcode, unit_price, currency
+        `select id, name, sku, barcode, unit_price, redemption_points_cost, currency
          from business_inventory_products
          where business_id = $1 and id = $2 and status <> 'ARCHIVED'
          limit 1`,
@@ -407,10 +406,9 @@ async function redeemAffiliatePoints(businessId, affiliateId, user, body) {
       );
       product = productResult.rows[0];
       if (!product) throw notFound("Producto no encontrado en el catalogo del negocio.");
-      pointRules = await getAffiliatePointRules(businessId, client);
-      points = affiliatePointsForAmount(product.unit_price, pointRules);
+      points = Number(product.redemption_points_cost || 0);
       if (points < 1) {
-        throw badRequest("El producto seleccionado no tiene un precio que permita calcular puntos.");
+        throw badRequest("El producto seleccionado no tiene configurado un costo de redencion en puntos.");
       }
       reason = manualReason || `Producto: ${product.name}`;
       mode = "PRODUCT";
@@ -444,9 +442,9 @@ async function redeemAffiliatePoints(businessId, affiliateId, user, body) {
       product_sku: product?.sku || null,
       product_barcode: product?.barcode || null,
       product_unit_price: product ? Number(product.unit_price || 0) : null,
+      product_redemption_points_cost: product ? Number(product.redemption_points_cost || 0) : null,
       reward_rule_id: rewardRule?.id || null,
       reward_title: rewardRule?.title || null,
-      ...(pointRules ? affiliatePointRuleMetadata(pointRules) : {}),
     };
 
     const ledgerResult = await client.query(

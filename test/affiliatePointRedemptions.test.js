@@ -21,10 +21,12 @@ test("affiliate redemption API is tenant scoped, atomic and idempotent", () => {
   assert.match(service, /affiliate_point_redemptions[\s\S]*idempotency_key/);
 });
 
-test("automatic redemption recalculates product or reward cost on the server", () => {
+test("automatic redemption uses the product redemption-point cost independently from COP price", () => {
   const service = read("backend/src/services/affiliateService.js");
   assert.match(service, /from business_inventory_products[\s\S]*business_id = \$1 and id = \$2/);
-  assert.match(service, /affiliatePointsForAmount\(product\.unit_price, pointRules\)/);
+  assert.match(service, /points = Number\(product\.redemption_points_cost \|\| 0\)/);
+  assert.doesNotMatch(service, /affiliatePointsForAmount\(product\.unit_price, pointRules\)/);
+  assert.match(service, /product_redemption_points_cost/);
   assert.match(service, /from affiliate_reward_rules[\s\S]*required_points/);
   assert.match(service, /Saldo insuficiente/);
 });
@@ -38,6 +40,7 @@ test("affiliate UI supports catalog and manual redemption with an immediate bala
   assert.match(html, /id="affiliateRedemptionReasonInput"/);
   assert.match(html, /id="affiliateRedeemPointsButton"/);
   assert.match(app, /function renderAffiliateRedemptionControls\(\)/);
+  assert.match(app, /Number\(product\.redemption_points_cost \|\| 0\)/);
   assert.match(app, /Saldo final:/);
   assert.match(app, /payload\.inventory_product_id = selection\.id/);
   assert.match(app, /else payload\.points = points/);

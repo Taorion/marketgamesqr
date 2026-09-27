@@ -1302,6 +1302,7 @@ const inventoryHealthyTaxInput = document.getElementById("inventoryHealthyTaxInp
 const inventoryPriceBeforeTaxInput = document.getElementById("inventoryPriceBeforeTaxInput");
 const inventoryUnitPriceInput = document.getElementById("inventoryUnitPriceInput");
 const inventoryCostPriceInput = document.getElementById("inventoryCostPriceInput");
+const inventoryRedemptionPointsCostInput = document.getElementById("inventoryRedemptionPointsCostInput");
 const inventoryMarginInput = document.getElementById("inventoryMarginInput");
 const inventoryUtilityInput = document.getElementById("inventoryUtilityInput");
 const inventoryCurrencyInput = document.getElementById("inventoryCurrencyInput");
@@ -26159,6 +26160,7 @@ function renderInventoryProductGrid(rows = []) {
           <span class="pill muted">${escapeHtml(product.category || "Sin categoría")}</span>
           <span class="pill muted">${hasCode ? escapeHtml(product.sku || product.barcode) : "Sin código"}</span>
           ${product.cost_price !== null && product.cost_price !== undefined ? `<span class="pill muted">Margen ${escapeHtml(money(margin))}</span>` : ""}
+          <span class="pill muted">Redención: ${escapeHtml(Number(product.redemption_points_cost || 0).toLocaleString("es-CO"))} puntos</span>
           ${isLow ? '<span class="pill muted">Reponer stock</span>' : ""}
         </div>
         <div class="table-actions">
@@ -26341,6 +26343,7 @@ function renderInventoryProductDetail(data = {}) {
           <div><dt>IVA</dt><dd>${escapeHtml(inventoryBaseVatLabel(product))}</dd></div>
           <div><dt>Impuesto Saludable</dt><dd>${escapeHtml(inventoryHealthyTaxLabel(product))}</dd></div>
           <div><dt>Precio de venta</dt><dd>${escapeHtml(money(product.unit_price || 0))} <small>Incluye impuestos</small></dd></div>
+          <div><dt>Costo de redención</dt><dd>${escapeHtml(Number(product.redemption_points_cost || 0).toLocaleString("es-CO"))} puntos</dd></div>
           <div><dt>Unidad</dt><dd>${escapeHtml(product.unit_label || "unidad")}</dd></div>
           <div><dt>Stock</dt><dd>${escapeHtml(`${Number(product.stock_quantity || 0).toLocaleString("es-CO")} · mínimo ${Number(product.min_stock_quantity || 0).toLocaleString("es-CO")}`)}</dd></div>
         </dl>
@@ -26433,6 +26436,7 @@ function resetInventoryForm() {
   if (inventoryTaxClassificationInput) inventoryTaxClassificationInput.value = (state.inventoryTaxBases || []).find((item) => Number(item.rate || 0) === 0 && /exento/i.test(item.name || ""))?.id || "";
   if (inventoryHealthyTaxInput) inventoryHealthyTaxInput.value = (state.inventoryHealthyTaxes || []).find((item) => Number(item.rate || 0) === 0)?.id || "";
   if (inventoryPriceBeforeTaxInput) inventoryPriceBeforeTaxInput.value = "0";
+  if (inventoryRedemptionPointsCostInput) inventoryRedemptionPointsCostInput.value = "";
   renderInventorySellingPrice();
   if (inventoryCurrencyInput) inventoryCurrencyInput.value = "COP";
   if (inventoryStockInput) inventoryStockInput.value = "0";
@@ -26461,6 +26465,7 @@ function editInventoryProduct(productId) {
   if (inventoryPriceBeforeTaxInput) inventoryPriceBeforeTaxInput.value = String(product.price_before_tax ?? product.unit_price ?? 0);
   renderInventorySellingPrice();
   if (inventoryCostPriceInput) inventoryCostPriceInput.value = product.cost_price === null || product.cost_price === undefined ? "" : String(product.cost_price || 0);
+  if (inventoryRedemptionPointsCostInput) inventoryRedemptionPointsCostInput.value = Number(product.redemption_points_cost || 0) > 0 ? String(product.redemption_points_cost) : "";
   if (inventoryCurrencyInput) inventoryCurrencyInput.value = product.currency || "COP";
   if (inventoryStockInput) inventoryStockInput.value = String(product.stock_quantity || 0);
   if (inventoryMinStockInput) inventoryMinStockInput.value = String(product.min_stock_quantity || 0);
@@ -26488,6 +26493,7 @@ function inventoryFormPayload() {
     tax_classification: "EXEMPT",
     unit_price: Number(inventoryUnitPriceInput?.value || 0),
     cost_price: inventoryCostPriceInput?.value === "" ? null : Number(inventoryCostPriceInput?.value || 0),
+    redemption_points_cost: Number(inventoryRedemptionPointsCostInput?.value || 0),
     currency: inventoryCurrencyInput?.value.trim() || "COP",
     stock_quantity: Number(inventoryStockInput?.value || 0),
     min_stock_quantity: Number(inventoryMinStockInput?.value || 0),
@@ -26709,6 +26715,7 @@ function inventoryProductsFromCsv(text = "", options = {}) {
       price_before_tax: inventoryCsvNumber(csvCell(record, ["precio_base", "precio_antes_iva", "price_before_tax", "precio_venta", "precio", "unit_price", "sale_price"]), 0, commaMode),
       unit_price: 0,
       cost_price: csvCell(record, ["costo_producto", "costo", "cost", "cost_price"]) ? inventoryCsvNumber(csvCell(record, ["costo_producto", "costo", "cost", "cost_price"]), 0, commaMode) : null,
+      redemption_points_cost: inventoryCsvNumber(csvCell(record, ["costo_redencion_puntos", "puntos_redencion", "redemption_points_cost"]), 0, commaMode),
       currency: (csvCell(record, ["moneda", "currency"]) || "COP").toUpperCase(),
       stock_quantity: inventoryCsvNumber(csvCell(record, ["stock", "cantidad", "stock_quantity"]), 0, commaMode),
       min_stock_quantity: inventoryCsvNumber(csvCell(record, ["stock_minimo", "min_stock", "min_stock_quantity"]), 0, commaMode),
@@ -26721,8 +26728,8 @@ function inventoryProductsFromCsv(text = "", options = {}) {
 
 function downloadInventoryCsvTemplate() {
   const csv = [
-    "ID Producto,nombre,categoria,subcategoria,codigo_barras,sku,marca,iva_base,impuesto_saludable,precio_base,Costo Producto,moneda,stock,stock_minimo,Unidad de Medida,estado,descripcion",
-    "PRD-001,Producto de ejemplo,Ropa,Camisas,770000000001,SKU-001,Marca creada,19%,No Aplica,\"25,000.00\",\"12,000.00\",COP,10,2,Unidad,ACTIVE,Descripcion opcional",
+    "ID Producto,nombre,categoria,subcategoria,codigo_barras,sku,marca,iva_base,impuesto_saludable,precio_base,Costo Producto,costo_redencion_puntos,moneda,stock,stock_minimo,Unidad de Medida,estado,descripcion",
+    "PRD-001,Producto de ejemplo,Ropa,Camisas,770000000001,SKU-001,Marca creada,19%,No Aplica,\"600,000.00\",\"300,000.00\",12000,COP,10,2,Unidad,ACTIVE,Descripcion opcional",
   ].join("\n");
   const link = document.createElement("a");
   link.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
@@ -26741,9 +26748,9 @@ async function importInventoryProductsCsv(event) {
   try {
     const commaMode = inventoryCsvCommaModeInput?.value || "THOUSANDS";
     const products = inventoryProductsFromCsv(await file.text(), { commaMode });
-    const incomplete = products.filter((product) => !product.internal_id || !product.name || (!product.category_internal_id && !product.category));
+    const incomplete = products.filter((product) => !product.internal_id || !product.name || (!product.category_internal_id && !product.category) || !Number.isInteger(product.redemption_points_cost) || product.redemption_points_cost <= 0);
     if (!products.length || incomplete.length) {
-      throw new Error("Cada fila necesita ID de producto, nombre y una categoría existente (ID interno o nombre). Descarga la plantilla si necesitas la estructura exacta.");
+      throw new Error("Cada fila necesita ID de producto, nombre, una categoría existente y un costo de redención entero mayor a 0. Descarga la plantilla si necesitas la estructura exacta.");
     }
     setButtonLoading(inventoryCsvImportSubmitButton, true, "Importando...");
     const commaDescription = commaMode === "DECIMAL" ? "coma decimal" : commaMode === "THOUSANDS" ? "coma de miles" : "detección automática";
@@ -26773,8 +26780,8 @@ async function submitInventoryProduct(event) {
   event.preventDefault();
   const productId = inventoryProductIdInput?.value || "";
   const payload = inventoryFormPayload();
-  if (!payload.internal_id || !payload.name || !payload.category_id || payload.price_before_tax < 0) {
-    setInlineMessage(inventoryMessage, "Completa ID interno, nombre, categoría y precio antes de IVA.", "error");
+  if (!payload.internal_id || !payload.name || !payload.category_id || payload.price_before_tax < 0 || !Number.isInteger(payload.redemption_points_cost) || payload.redemption_points_cost <= 0) {
+    setInlineMessage(inventoryMessage, "Completa ID interno, nombre, categoría, precio antes de IVA y costo de redención en puntos mayor a 0.", "error");
     return;
   }
   setButtonLoading(inventorySaveButton, true, productId ? "Actualizando..." : "Guardando...");
@@ -43130,10 +43137,8 @@ function ticketPublicUrl(ticket = {}) {
 }
 
 function affiliateProductRedemptionPoints(product = {}) {
-  const pointAmount = Number(state.affiliatePointRules?.point_amount_cop || 1000);
-  const price = Number(product.unit_price || 0);
-  if (!Number.isFinite(pointAmount) || pointAmount <= 0 || !Number.isFinite(price) || price <= 0) return 0;
-  return Math.max(0, Math.floor(price / pointAmount));
+  const points = Number(product.redemption_points_cost || 0);
+  return Number.isInteger(points) && points > 0 ? points : 0;
 }
 
 function selectedAffiliateRedemption() {

@@ -655,6 +655,7 @@ create table if not exists business_inventory_products (
   subcategory_id uuid references business_product_subcategories(id) on delete restrict,
   brand text,
   unit_price numeric(14, 2) not null default 0,
+  redemption_points_cost integer not null default 0,
   price_before_tax numeric(14, 2) not null default 0,
   tax_classification text not null default 'EXEMPT',
   cost_price numeric(14, 2),
@@ -669,6 +670,8 @@ create table if not exists business_inventory_products (
   updated_at timestamptz not null default now(),
   constraint business_inventory_products_tax_classification_check
     check (tax_classification in ('EXEMPT', 'EXCLUDED', 'VAT_0', 'VAT_5', 'VAT_8', 'VAT_11', 'VAT_19', 'CUSTOM')),
+  constraint business_inventory_products_redemption_points_cost_check
+    check (redemption_points_cost >= 0),
   unique (business_id, internal_id),
   unique (business_id, sku),
   unique (business_id, barcode)
