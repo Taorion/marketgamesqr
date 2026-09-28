@@ -13,6 +13,7 @@ const {
   calculateBenefitCheckout,
   describeBenefitApplication,
 } = require("./benefitCheckoutService");
+const { syncSaleProductsWithCatalog } = require("./productCatalogService");
 const {
   affiliatePointRuleMetadata,
   getAffiliatePointRules,
@@ -430,6 +431,7 @@ async function recordAffiliateCheckout(client, qr, attributedSale, checkout, pur
       source: "affiliate_referral_qr",
       redemption_id: attributedSale.redemption_id,
       attributed_sale_id: attributedSale.id,
+      products: checkout.line_items,
       checkout,
       ...ruleMetadata,
     }),
@@ -566,6 +568,7 @@ async function recordCanonicalQrCheckout(client, qr, attributedSale, checkout, p
         redemption_id: attributedSale.redemption_id,
         attributed_sale_id: attributedSale.id,
         product_catalog_required: false,
+        products: checkout.line_items,
         line_items: checkout.line_items,
         benefit_application: checkout,
       }),
@@ -733,6 +736,21 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
     let businessSale = null;
     if (checkout.mode === "PURCHASE") {
       const purchase = checkoutPayload.purchase || {};
+      const catalogSync = await syncSaleProductsWithCatalog(
+        client,
+        qr.business_id,
+        user.id,
+        checkout.line_items,
+        {
+          currency: purchase.currency || "COP",
+          sourceModule: "qr_validator",
+          createMissingProducts: false,
+          inventoryMovementKey: `validator-qr:${qr.id}`,
+          saleReference: `validator-qr-sale:${qr.id}`,
+          qrCodeId: qr.id,
+        }
+      );
+      checkout.line_items = catalogSync.products;
       const productSummary = purchase.product_or_service
         || checkout.line_items.map((item) => `${item.name} x${item.quantity}`).join(", ").slice(0, 200)
         || null;

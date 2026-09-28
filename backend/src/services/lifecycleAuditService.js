@@ -1,7 +1,7 @@
 const { query } = require("../config/db");
 
 const LIFECYCLE_ACTIONS = new Set([
-  "CREATED", "ARCHIVED", "RESTORED", "CANCELLED", "VOIDED", "DISABLED", "DELETED", "EVIDENCE_INVALIDATED",
+  "CREATED", "STOCK_SOLD", "ARCHIVED", "RESTORED", "CANCELLED", "VOIDED", "DISABLED", "DELETED", "EVIDENCE_INVALIDATED",
 ]);
 
 function lifecycleEventPayload(payload = {}) {
@@ -68,4 +68,43 @@ async function recordInventoryProductCreated({ businessId, product, actorUserId,
   }, client);
 }
 
-module.exports = { lifecycleEventPayload, recordLifecycleEvent, recordInventoryProductCreated };
+async function recordInventoryProductSold({
+  businessId,
+  product,
+  quantity,
+  stockBefore,
+  stockAfter,
+  actorUserId,
+  idempotencyKey,
+  source,
+  metadata = {},
+}, client = null) {
+  if (!product?.id) throw new Error("El producto es obligatorio para registrar la salida de inventario.");
+  return recordLifecycleEvent({
+    business_id: businessId,
+    entity_type: "INVENTORY_PRODUCT",
+    entity_id: product.id,
+    action: "STOCK_SOLD",
+    previous_status: product.status || "ACTIVE",
+    next_status: product.status || "ACTIVE",
+    reason: `Venta registrada: salida de ${Number(quantity || 0)} ${product.unit_label || "unidad(es)"}.`,
+    idempotency_key: idempotencyKey || null,
+    actor_user_id: actorUserId || null,
+    metadata: {
+      product_name: product.name || null,
+      quantity_sold: Number(quantity || 0),
+      stock_before_sale: Number(stockBefore || 0),
+      stock_after_sale: Number(stockAfter || 0),
+      unit_label: product.unit_label || "unidad",
+      source: String(source || "SALE").trim().toUpperCase(),
+      ...metadata,
+    },
+  }, client);
+}
+
+module.exports = {
+  lifecycleEventPayload,
+  recordLifecycleEvent,
+  recordInventoryProductCreated,
+  recordInventoryProductSold,
+};

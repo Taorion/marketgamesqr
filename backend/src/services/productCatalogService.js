@@ -1,5 +1,5 @@
 const { badRequest } = require("../utils/http");
-const { recordInventoryProductCreated } = require("./lifecycleAuditService");
+const { recordInventoryProductCreated, recordInventoryProductSold } = require("./lifecycleAuditService");
 
 function cleanText(value, max = 180) {
   const text = String(value || "").trim();
@@ -44,7 +44,8 @@ async function findCatalogProduct(client, businessId, item) {
        where id = $1
          and business_id = $2
          and status <> 'ARCHIVED'
-       limit 1`,
+       limit 1
+       for update`,
       [item.inventory_product_id, businessId]
     );
     if (!result.rowCount) {
@@ -64,13 +65,15 @@ async function findCatalogProduct(client, businessId, item) {
          or ($4::text is not null and nullif(barcode, '') = $4)
        )
      order by updated_at desc
-     limit 1`,
+     limit 1
+     for update`,
     [businessId, item.name, item.sku, item.barcode]
   );
   return result.rows[0] || null;
 }
 
-async function updateCatalogProductAfterSale(client, businessId, item, product) {
+async function updateCatalogProductAfterSale(client, businessId, userId, item, product, options = {}) {
+  const stockBefore = Number(product.stock_quantity || 0);
   const result = await client.query(
     `update business_inventory_products
      set stock_quantity = greatest(0, stock_quantity - $3::numeric),
@@ -88,7 +91,27 @@ async function updateCatalogProductAfterSale(client, businessId, item, product) 
   if (!result.rowCount) {
     throw badRequest("Uno de los productos seleccionados no existe en productos activos del negocio.");
   }
-  return result.rows[0];
+  const updatedProduct = result.rows[0];
+  const movementKey = options.inventoryMovementKey
+    ? `inventory-sale:${options.inventoryMovementKey}:${product.id}`
+    : null;
+  await recordInventoryProductSold({
+    businessId,
+    product: updatedProduct,
+    quantity: item.quantity,
+    stockBefore,
+    stockAfter: Number(updatedProduct.stock_quantity || 0),
+    actorUserId: userId,
+    idempotencyKey: movementKey,
+    source: options.sourceModule || "sales",
+    metadata: {
+      sale_reference: options.saleReference || null,
+      qr_code_id: options.qrCodeId || null,
+      unit_price: Number(item.unit_price || updatedProduct.unit_price || 0),
+      line_total: Number(item.line_total || 0),
+    },
+  }, client);
+  return updatedProduct;
 }
 
 async function createCatalogProductFromSale(client, businessId, userId, item, options = {}) {
@@ -141,6 +164,15 @@ function productPayload(item, product, source) {
     unit_price: item.unit_price || Number(product.unit_price || 0),
     line_total: item.line_total,
     source,
+    stock_quantity_after_sale: Number(product.stock_quantity || 0),
+  };
+}
+
+function openProductPayload(item) {
+  return {
+    ...item,
+    inventory_product_id: null,
+    source: "open_product",
   };
 }
 
@@ -153,9 +185,14 @@ async function syncSaleProductsWithCatalog(client, businessId, userId, products,
   for (const item of normalizedProducts) {
     const existingProduct = await findCatalogProduct(client, businessId, item);
     if (existingProduct) {
-      const updatedProduct = await updateCatalogProductAfterSale(client, businessId, item, existingProduct);
+      const updatedProduct = await updateCatalogProductAfterSale(client, businessId, userId, item, existingProduct, options);
       syncedProducts.push(productPayload(item, updatedProduct, item.inventory_product_id ? "catalog_selected" : "catalog_matched"));
       matchedProducts.push({ id: updatedProduct.id, name: updatedProduct.name });
+      continue;
+    }
+
+    if (options.createMissingProducts === false) {
+      syncedProducts.push(openProductPayload(item));
       continue;
     }
 

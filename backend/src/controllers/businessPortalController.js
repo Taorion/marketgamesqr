@@ -2979,6 +2979,8 @@ async function createCustomerAcquisitionSale(req, res, next) {
       const catalogSync = await syncSaleProductsWithCatalog(client, businessId, req.user.id, saleProducts, {
         currency: body.currency || "COP",
         sourceModule: body.metadata?.affiliate_purchase ? "affiliate_purchase" : "customer_acquisition_sale",
+        inventoryMovementKey: `customer-sale:${idempotencyKey}`,
+        saleReference: idempotencyKey,
       });
       const saleMetadata = {
         ...body.metadata,

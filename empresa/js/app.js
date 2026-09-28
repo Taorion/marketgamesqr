@@ -3,7 +3,7 @@ const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
 const APP_VERSION = "empresa-20260910-qori-public-links-v472";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "validator-customer-search-v512-20260928 empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910 pano-ingles-affiliate-card-v471-20260910 qori-public-links-v472-20260910 pano-ingles-affiliate-card-v473-20260910 empresa-20260909-activation-status-filters-v467 validator-beneficiary-v477-20260911";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "validator-inventory-sale-v513-20260928 validator-customer-search-v512-20260928 empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910 pano-ingles-affiliate-card-v471-20260910 qori-public-links-v472-20260910 pano-ingles-affiliate-card-v473-20260910 empresa-20260909-activation-status-filters-v467 validator-beneficiary-v477-20260911";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 30000;
@@ -26016,7 +26016,12 @@ async function loadInventoryProducts(options = {}) {
   state.inventoryLoadError = "";
   const request = (async () => {
     try {
-      const data = await api("/api/business/inventory/products?limit=500&include_archived=true", { headers: authHeaders(), planGate: false });
+      const data = await api("/api/business/inventory/products?limit=500&include_archived=true", {
+        headers: authHeaders(),
+        planGate: false,
+        noClientCache: Boolean(options.force),
+        ...(options.force ? { cache: "no-store" } : {}),
+      });
       if (!isCurrentBusinessScope(scopeKey)) return state.inventoryProducts;
       state.inventoryProducts = Array.isArray(data.products) ? data.products : [];
     } catch (error) {
@@ -26611,6 +26616,10 @@ function inventoryHistorySource(value) {
     CSV_IMPORT: "Importación CSV",
     SALE_AUTO_CREATE: "Creación automática desde una venta",
     HISTORICAL_BACKFILL: "Registro histórico de Qori",
+    QR_VALIDATOR: "Venta desde el Validador QR",
+    CUSTOMER_ACQUISITION_SALE: "Venta registrada en Qori",
+    AFFILIATE_PURCHASE: "Compra de afiliado",
+    HISTORICAL_VALIDATOR_REPAIR: "Venta histórica del Validador reconciliada",
   }[String(value || "").toUpperCase()] || "Inventario Qori";
 }
 
@@ -26641,13 +26650,19 @@ function renderInventoryProductDetail(data = {}) {
     ? history.map((event) => {
       const metadata = event.metadata && typeof event.metadata === "object" ? event.metadata : {};
       const isCreated = event.action === "CREATED";
-      const title = isCreated ? "Producto cargado al inventario" : event.action === "ARCHIVED" ? "Producto archivado" : event.action === "DELETED" ? "Producto eliminado" : "Producto actualizado";
+      const isStockSold = event.action === "STOCK_SOLD";
+      const title = isCreated ? "Producto cargado al inventario" : isStockSold ? "Venta descontada del inventario" : event.action === "ARCHIVED" ? "Producto archivado" : event.action === "DELETED" ? "Producto eliminado" : "Producto actualizado";
       const stock = metadata.initial_stock_quantity === null || metadata.initial_stock_quantity === undefined
         ? "Cantidad inicial no disponible"
         : `${Number(metadata.initial_stock_quantity || 0).toLocaleString("es-CO")} ${metadata.unit_label || product.unit_label || "unidad(es)"}`;
+      const movementStock = metadata.stock_before_sale === null || metadata.stock_before_sale === undefined
+        ? "existencias reconciliadas"
+        : `${Number(metadata.stock_before_sale || 0).toLocaleString("es-CO")} → ${Number(metadata.stock_after_sale || 0).toLocaleString("es-CO")} ${metadata.unit_label || product.unit_label || "unidad(es)"}`;
       const detail = isCreated
         ? `${inventoryHistorySource(metadata.source)} · ${stock}`
-        : (event.reason || `${event.previous_status || "-"} → ${event.next_status || "-"}`);
+        : isStockSold
+          ? `${inventoryHistorySource(metadata.source)} · ${Number(metadata.quantity_sold || 0).toLocaleString("es-CO")} ${metadata.unit_label || product.unit_label || "unidad(es)"} · ${movementStock}`
+          : (event.reason || `${event.previous_status || "-"} → ${event.next_status || "-"}`);
       const actor = event.actor_name || event.actor_email || "Sistema Qori";
       return `
         <div class="inventory-detail-customer">
@@ -26692,7 +26707,7 @@ function renderInventoryProductDetail(data = {}) {
       <section class="inventory-detail-section" data-inventory-product-history aria-label="Historial del inventario">
         <span>Trazabilidad</span>
         <h4>Historial del inventario</h4>
-        <p>Registro de cuándo se cargó el producto, quién lo hizo, su cantidad inicial y el origen de la carga.</p>
+        <p>Registro de cargas, ventas descontadas, cantidades y responsables de cada movimiento.</p>
         <div class="inventory-detail-customers">${historyRows}</div>
       </section>
       <div class="inventory-detail-grid">
@@ -26732,7 +26747,11 @@ async function openInventoryProductDetail(productId) {
   modal.classList.remove("hidden");
   modal.removeAttribute("aria-hidden");
   try {
-    const data = await api(`/api/business/inventory/products/${productId}/insights`, { headers: authHeaders() });
+    const data = await api(`/api/business/inventory/products/${productId}/insights`, {
+      headers: authHeaders(),
+      noClientCache: true,
+      cache: "no-store",
+    });
     renderInventoryProductDetail({ ...data, product: data.product || product });
   } catch (error) {
     showFeedback(error.message || "No se pudo cargar el detalle del producto.", "error", { title: "Productos" });
@@ -34172,6 +34191,10 @@ async function redeemValidatorToken() {
       setValidatorOperationState("completed_standard", state.validatorLastValidation);
     }
     await loadValidatorHistory();
+    if (!isRewardPass && data.checkout?.mode === "PURCHASE") {
+      state.inventoryLoaded = false;
+      await loadInventoryProducts({ force: true, quiet: true });
+    }
     showFeedback(
       isRewardPass
         ? "Reward Pass aplicado. Factura, saldo y redención quedaron registrados."
