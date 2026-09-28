@@ -33,7 +33,7 @@ const {
 } = require("../services/affiliatePointRulesService");
 const { syncSaleProductsWithCatalog } = require("../services/productCatalogService");
 const { getIndividualQrDownload } = require("../services/strategicQrService");
-const { getLeadCrmDetail } = require("../services/leadCrmService");
+const { getLeadCrmDetail, listLeadCrmRows } = require("../services/leadCrmService");
 const { assertStorageQuotaForUpload } = require("../services/storageQuotaService");
 const { recordLifecycleEvent, recordInventoryProductCreated } = require("../services/lifecycleAuditService");
 const { resolveAcquisitionChannelReference } = require("../services/acquisitionChannelService");
@@ -62,6 +62,11 @@ const acquisitionChannelReferenceSchema = z.object({
   if (!value.acquisition_channel_id && !value.acquisition_channel) {
     context.addIssue({ code: z.ZodIssueCode.custom, message: "Selecciona un canal o escribe uno temporal." });
   }
+});
+
+const validatorCustomerSearchSchema = z.object({
+  q: z.string().trim().min(2).max(160),
+  limit: z.coerce.number().int().min(1).max(20).optional().default(12),
 });
 
 async function resolveCampaignChannelReferences(client, businessId, refs = [], legacyNames = []) {
@@ -704,6 +709,39 @@ function businessIdFor(req) {
     throw forbidden("This user is not assigned to a business.");
   }
   return req.user.business_id;
+}
+
+async function searchValidatorCustomers(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    const filters = validate(validatorCustomerSearchSchema, req.query);
+    const result = await listLeadCrmRows(businessId, {
+      search: filters.q,
+      audience_type: "CLIENT",
+      limit: filters.limit,
+      offset: 0,
+      sort: "recent",
+    });
+    res.json({
+      customers: result.leads.map((customer) => ({
+        id: customer.id,
+        player_id: customer.source_type === "PLAYER" ? customer.id : customer.lead_id || null,
+        source_type: customer.source_type,
+        name: customer.name || "Cliente",
+        document_id: customer.document_id || null,
+        phone: customer.phone || null,
+        email: customer.email || null,
+        purchase_count: Number(customer.purchase_count || 0),
+        total_spent: Number(customer.total_spent || 0),
+        last_purchase_at: customer.last_purchase_at || null,
+        commercial_status: customer.commercial_status || null,
+      })),
+      query: filters.q,
+      total: Number(result.pagination?.total || 0),
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 async function commercialOwnerForBusiness(businessId, userId, db = query) {
@@ -7671,6 +7709,7 @@ module.exports = {
   updateAcquisitionChannelEffort,
   archiveAcquisitionChannelEffort,
   createCustomerAcquisitionSale,
+  searchValidatorCustomers,
   archiveInventoryProduct,
   deleteInventoryProduct,
   listInventoryCategories,

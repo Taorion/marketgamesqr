@@ -32965,6 +32965,27 @@ html body[data-current-view="validator"] .portal-shell .validator-beneficiary-pa
 html body[data-current-view="validator"] .portal-shell .validator-beneficiary-state { width: fit-content; padding: 7px 11px; border-radius: 999px; color: #075f58; background: #e7faf5; font-size: .72rem; font-weight: 850; }
 html body[data-current-view="validator"] .portal-shell .validator-beneficiary-state[data-state="partial"] { color: #8a4b08; background: #fff4df; }
 html body[data-current-view="validator"] .portal-shell .validator-beneficiary-state[data-state="anonymous"] { color: #7f1d1d; background: #fff0f0; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-lookup { display: grid; gap: 9px; padding: 12px; border: 1px solid rgba(7,89,214,.13); border-radius: 15px; background: #fff; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-lookup-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-lookup-head > div { min-width: 0; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-lookup-head strong,
+html body[data-current-view="validator"] .portal-shell .validator-customer-lookup-head small { display: block; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-lookup-head strong { color: #052a6b; font-size: .78rem; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-lookup-head small { margin-top: 2px; color: #60768d; font-size: .68rem; line-height: 1.35; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-search-field { position: relative; display: block !important; padding: 0 !important; border: 0 !important; background: transparent !important; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-search-field > .material-symbols-outlined { position: absolute; z-index: 1; top: 50%; left: 13px; color: #507097; font-size: 20px; pointer-events: none; transform: translateY(-50%); }
+html body[data-current-view="validator"] .portal-shell .validator-customer-search-field input { min-height: 44px !important; padding-left: 43px !important; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-results { display: grid; gap: 6px; max-height: 240px; overflow-y: auto; overscroll-behavior: contain; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-results[hidden] { display: none !important; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-result { width: 100%; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid #d9e7f6; border-radius: 12px; background: #f8fbff; color: #173b58; text-align: left; cursor: pointer; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-result:hover,
+html body[data-current-view="validator"] .portal-shell .validator-customer-result:focus-visible { border-color: #0759d6; background: #eef6ff; outline: 0; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-result strong,
+html body[data-current-view="validator"] .portal-shell .validator-customer-result small { display: block; min-width: 0; overflow-wrap: anywhere; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-result strong { color: #052a6b; font-size: .76rem; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-result small { margin-top: 3px; color: #5d7187; font-size: .66rem; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-result > span { color: #0759d6; font-size: 20px; }
+html body[data-current-view="validator"] .portal-shell .validator-customer-lookup-status { margin: 0; color: #536b82; font-size: .68rem; line-height: 1.4; }
 html body[data-current-view="validator"] .portal-shell .validator-beneficiary-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
 html body[data-current-view="validator"] .portal-shell .validator-beneficiary-fields label { display: grid; gap: 6px; min-width: 0; }
 html body[data-current-view="validator"] .portal-shell .validator-beneficiary-fields label.is-missing > span { color: #a84e06; }
@@ -32972,7 +32993,7 @@ html body[data-current-view="validator"] .portal-shell .validator-beneficiary-fi
 html body[data-current-view="validator"] .portal-shell .validator-beneficiary-resolution, html body[data-current-view="validator"] .portal-shell .validator-privacy-note { margin: 0; color: #536b82; font-size: .7rem; line-height: 1.45; }
 html body[data-current-view="validator"] .portal-shell .validator-consent-check { display: flex !important; align-items: flex-start !important; gap: 9px; padding: 11px; border-radius: 13px; background: #eef6ff; color: #173b58; font-size: .72rem; font-weight: 720; line-height: 1.4; }
 html body[data-current-view="validator"] .portal-shell .validator-consent-check input { flex: 0 0 auto; width: 20px !important; height: 20px; min-height: 20px !important; margin-top: 1px; }
-@media (max-width: 600px) { html body[data-current-view="validator"] .portal-shell .validator-beneficiary-panel { padding: 11px; border-radius: 15px; } html body[data-current-view="validator"] .portal-shell .validator-beneficiary-fields { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { html body[data-current-view="validator"] .portal-shell .validator-beneficiary-panel { padding: 11px; border-radius: 15px; } html body[data-current-view="validator"] .portal-shell .validator-customer-lookup-head { align-items: stretch; flex-direction: column; } html body[data-current-view="validator"] .portal-shell .validator-customer-lookup-head .ghost-button { width: 100%; } html body[data-current-view="validator"] .portal-shell .validator-beneficiary-fields { grid-template-columns: 1fr; } }
 
 html body[data-current-view="validator"] .portal-shell .validator-sale-form,
 html body[data-current-view="validator"] .portal-shell .validator-flow-fields {

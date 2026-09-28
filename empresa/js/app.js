@@ -3,7 +3,7 @@ const PORTAL_ACCESS_COOKIE = "qori_portal_access";
 const loginPanel = document.getElementById("loginPanel");
 const VALIDATOR_SESSION_KEY = "universal_qr_validator_session_v1";
 const APP_VERSION = "empresa-20260910-qori-public-links-v472";
-const PORTAL_ASSET_COMPATIBILITY_MARKERS = "empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910 pano-ingles-affiliate-card-v471-20260910 qori-public-links-v472-20260910 pano-ingles-affiliate-card-v473-20260910 empresa-20260909-activation-status-filters-v467 validator-beneficiary-v477-20260911";
+const PORTAL_ASSET_COMPATIBILITY_MARKERS = "validator-customer-search-v512-20260928 empresa-20260822-activation-calculator-branches-premium-v325 attributed-sales-command-v368 sellers-qori-v386 sellers-qori-v387 gos-intelligence-reliable-v389-20260828 risk-none-initial-result-v396-20260829 rms-sale-multiproduct-history-v397-20260829 risk-none-explicit-selection-v398-20260829 risk-destination-handoff-v399-20260829 risk-benefit-handoff-v400-20260829 risk-product-benefit-scope-v401-20260829 recycling-premium-command-v402-20260829 risk-station-fast-v403-20260829 risk-products-fast-v404-20260829 risk-products-live-v405-20260829 risk-query-source-pruning-v407-20260829 risk-direct-state-read-v408-20260829 risk-responsive-feedback-v409-20260829 risk-isolated-binding-v410-20260829 risk-prepare-search-v411-20260829 risk-ticket-fast-v412-20260830 risk-ticket-without-qr-v413-20260830 risk-preparation-handoff-v414-20260830 risk-workbench-v415-20260830 risk-command-v419-20260830 risk-premium-v424-20260830 evaluation-premium-v425-20260830 evaluation-precision-v426-20260830 evaluation-startup-hotfix-v427-20260830 recycling-atomic-handoff-v428-20260830 rms-station-consistency-v429-20260902 rms-definitive-loading-v430-20260902 portal-live-refresh-v431-20260902 contact-promotion-v435-20260905 empresa-20260905-activation-layout-v436 activation-layout-v436-20260905 activation-full-editor-v437-20260907 spin-card-delivery-v453-20260909 rms-rich-station-summary-v470-20260910 pano-ingles-affiliate-card-v471-20260910 qori-public-links-v472-20260910 pano-ingles-affiliate-card-v473-20260910 empresa-20260909-activation-status-filters-v467 validator-beneficiary-v477-20260911";
 const APP_VERSION_KEY = "qr_business_portal_app_version";
 const APP_UPDATE_NOTICE_KEY = "qr_business_portal_update_notice";
 const API_CLIENT_CACHE_TTL_MS = 30000;
@@ -988,6 +988,10 @@ const validatorBeneficiaryDocumentInput = document.getElementById("validatorBene
 const validatorBeneficiaryDocumentRequired = document.getElementById("validatorBeneficiaryDocumentRequired");
 const validatorBeneficiaryDataUseInput = document.getElementById("validatorBeneficiaryDataUseInput");
 const validatorBeneficiaryResolution = document.getElementById("validatorBeneficiaryResolution");
+const validatorCustomerLookupInput = document.getElementById("validatorCustomerLookupInput");
+const validatorCustomerNewButton = document.getElementById("validatorCustomerNewButton");
+const validatorCustomerResults = document.getElementById("validatorCustomerResults");
+const validatorCustomerLookupStatus = document.getElementById("validatorCustomerLookupStatus");
 const validatorOperationPanel = document.getElementById("validatorOperationPanel");
 const validatorOperationEyebrow = document.getElementById("validatorOperationEyebrow");
 const validatorOperationTitle = document.getElementById("validatorOperationTitle");
@@ -3175,6 +3179,10 @@ let state = {
   validatorRedemptionMode: "STANDALONE",
   validatorPurchaseItems: [],
   validatorCheckoutPreview: null,
+  validatorCustomerMatches: [],
+  validatorSelectedCustomer: null,
+  validatorCustomerSearchRequest: 0,
+  validatorCustomerSearchTimer: 0,
   snapshotEditingId: null,
   adminSelectedCampaignId: null,
   adminSelectedCampaign: null,
@@ -4464,6 +4472,11 @@ function resetBusinessScopedState(options = {}) {
   state.validatorRedemptionMode = "STANDALONE";
   state.validatorPurchaseItems = [];
   state.validatorCheckoutPreview = null;
+  state.validatorCustomerMatches = [];
+  state.validatorSelectedCustomer = null;
+  state.validatorCustomerSearchRequest = 0;
+  clearTimeout(state.validatorCustomerSearchTimer);
+  state.validatorCustomerSearchTimer = 0;
   state.snapshotEditingId = null;
   state.adminSelectedCampaignId = null;
   state.adminSelectedCampaign = null;
@@ -18868,6 +18881,10 @@ function validatorOpenCartSnapshot() {
       document: validatorBeneficiaryDocumentInput?.value || "",
       dataUseConfirmed: Boolean(validatorBeneficiaryDataUseInput?.checked),
     },
+    customerLookup: {
+      query: validatorCustomerLookupInput?.value || "",
+      selected: state.validatorSelectedCustomer ? { ...state.validatorSelectedCustomer } : null,
+    },
   };
 }
 
@@ -18881,6 +18898,11 @@ function restoreValidatorOpenCartFields(snapshot, { beneficiary = false } = {}) 
   if (validatorBeneficiaryEmailInput) validatorBeneficiaryEmailInput.value = snapshot.beneficiary.email;
   if (validatorBeneficiaryDocumentInput) validatorBeneficiaryDocumentInput.value = snapshot.beneficiary.document;
   if (validatorBeneficiaryDataUseInput) validatorBeneficiaryDataUseInput.checked = snapshot.beneficiary.dataUseConfirmed;
+  state.validatorSelectedCustomer = snapshot.customerLookup?.selected ? { ...snapshot.customerLookup.selected } : null;
+  if (validatorCustomerLookupInput) validatorCustomerLookupInput.value = snapshot.customerLookup?.query || state.validatorSelectedCustomer?.name || "";
+  if (state.validatorSelectedCustomer) {
+    setValidatorCustomerLookupStatus(`Cliente seleccionado: ${state.validatorSelectedCustomer.name || "Cliente registrado"}. Confirma su identidad y la autorización de uso de datos.`, "success");
+  }
 }
 
 function restoreValidatorOpenCart(snapshot, message = "La compra abierta se conserva sin cambios.") {
@@ -19088,6 +19110,133 @@ function validatorIsTransferableTicket(data = state.validatorLastValidation) {
     && (data.qr_code.ticket_identity_mode === "TRANSFERABLE" || data.qr_code.beneficiary_data_collected === false);
 }
 
+function setValidatorCustomerLookupStatus(message, tone = "neutral") {
+  if (!validatorCustomerLookupStatus) return;
+  validatorCustomerLookupStatus.textContent = message;
+  validatorCustomerLookupStatus.dataset.tone = tone;
+}
+
+function validatorCustomerContactLine(customer = {}) {
+  return [customer.document_id, customer.phone, customer.email].filter(Boolean).join(" · ") || "Sin dato de contacto visible";
+}
+
+function renderValidatorCustomerResults(customers = state.validatorCustomerMatches) {
+  if (!validatorCustomerResults) return;
+  state.validatorCustomerMatches = Array.isArray(customers) ? customers : [];
+  validatorCustomerResults.innerHTML = state.validatorCustomerMatches.map((customer, index) => `
+    <button class="validator-customer-result" type="button" role="option" data-validator-customer-index="${index}">
+      <span><strong>${escapeHtml(customer.name || "Cliente")}</strong><small>${escapeHtml(validatorCustomerContactLine(customer))} · ${Number(customer.purchase_count || 0).toLocaleString("es-CO")} compra${Number(customer.purchase_count || 0) === 1 ? "" : "s"}</small></span>
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+    </button>
+  `).join("");
+  validatorCustomerResults.hidden = !state.validatorCustomerMatches.length;
+}
+
+function applyValidatorCustomer(customer) {
+  if (!customer) return;
+  state.validatorSelectedCustomer = { ...customer };
+  if (validatorCustomerLookupInput) validatorCustomerLookupInput.value = customer.name || "Cliente registrado";
+  if (validatorBeneficiaryNameInput) validatorBeneficiaryNameInput.value = customer.name || "";
+  if (validatorBeneficiaryDocumentInput) validatorBeneficiaryDocumentInput.value = customer.document_id || "";
+  if (validatorBeneficiaryPhoneInput) validatorBeneficiaryPhoneInput.value = customer.phone || "";
+  if (validatorBeneficiaryEmailInput) validatorBeneficiaryEmailInput.value = customer.email || "";
+  if (validatorBeneficiaryDataUseInput) validatorBeneficiaryDataUseInput.checked = false;
+  renderValidatorCustomerResults([]);
+  if (validatorBeneficiaryState) {
+    validatorBeneficiaryState.dataset.state = "identified";
+    validatorBeneficiaryState.textContent = "Cliente existente seleccionado";
+  }
+  if (validatorBeneficiaryResolution) validatorBeneficiaryResolution.textContent = "Los datos se trajeron de la base de este negocio. Confirma presencialmente que corresponden al cliente antes de continuar.";
+  setValidatorCustomerLookupStatus(`Cliente seleccionado: ${customer.name || "Cliente registrado"}. Revisa sus datos y confirma la autorización.`, "success");
+}
+
+function resetValidatorCustomerLookup({ clearFields = false, lockedCustomer = null } = {}) {
+  clearTimeout(state.validatorCustomerSearchTimer);
+  state.validatorCustomerSearchTimer = 0;
+  state.validatorCustomerSearchRequest += 1;
+  state.validatorCustomerMatches = [];
+  state.validatorSelectedCustomer = lockedCustomer ? { ...lockedCustomer } : null;
+  renderValidatorCustomerResults([]);
+  if (validatorCustomerLookupInput) {
+    validatorCustomerLookupInput.value = lockedCustomer?.name || "";
+    validatorCustomerLookupInput.disabled = Boolean(lockedCustomer);
+  }
+  if (validatorCustomerNewButton) validatorCustomerNewButton.disabled = Boolean(lockedCustomer);
+  if (clearFields) {
+    [validatorBeneficiaryNameInput, validatorBeneficiaryPhoneInput, validatorBeneficiaryEmailInput, validatorBeneficiaryDocumentInput].forEach((field) => { if (field) field.value = ""; });
+    if (validatorBeneficiaryDataUseInput) validatorBeneficiaryDataUseInput.checked = false;
+  }
+  setValidatorCustomerLookupStatus(
+    lockedCustomer
+      ? `Cliente identificado por el ticket: ${lockedCustomer.name || "Cliente registrado"}.`
+      : "Puedes buscar un cliente registrado o completar los campos para agregar uno nuevo.",
+    lockedCustomer ? "success" : "neutral"
+  );
+}
+
+function startNewValidatorCustomer() {
+  if (validatorCustomerLookupInput?.disabled) return;
+  resetValidatorCustomerLookup({ clearFields: true });
+  if (validatorBeneficiaryState) {
+    validatorBeneficiaryState.dataset.state = "anonymous";
+    validatorBeneficiaryState.textContent = "Cliente nuevo";
+  }
+  if (validatorBeneficiaryResolution) validatorBeneficiaryResolution.textContent = "Completa nombre y al menos teléfono, correo o documento para agregar el cliente al guardar la operación.";
+  validatorBeneficiaryNameInput?.focus();
+}
+
+async function searchValidatorCustomers(rawQuery) {
+  const queryValue = String(rawQuery || "").trim();
+  const requestId = ++state.validatorCustomerSearchRequest;
+  if (queryValue.length < 2) {
+    renderValidatorCustomerResults([]);
+    setValidatorCustomerLookupStatus("Escribe al menos 2 caracteres para buscar por nombre, cédula, teléfono o correo.");
+    return;
+  }
+  const scopeKey = businessScopeKey();
+  setValidatorCustomerLookupStatus("Buscando clientes registrados...", "loading");
+  try {
+    const data = await api(`/api/business/validator/customers/search?q=${encodeURIComponent(queryValue)}&limit=12`, {
+      headers: authHeaders(),
+      planGate: false,
+    });
+    if (!isCurrentBusinessScope(scopeKey) || requestId !== state.validatorCustomerSearchRequest) return;
+    const customers = Array.isArray(data.customers) ? data.customers : [];
+    renderValidatorCustomerResults(customers);
+    setValidatorCustomerLookupStatus(
+      customers.length
+        ? `${customers.length} cliente${customers.length === 1 ? "" : "s"} encontrado${customers.length === 1 ? "" : "s"}. Selecciona el correcto.`
+        : "No encontramos clientes con esa búsqueda. Puedes registrarlo como cliente nuevo.",
+      customers.length ? "success" : "neutral"
+    );
+  } catch (error) {
+    if (!isCurrentBusinessScope(scopeKey) || requestId !== state.validatorCustomerSearchRequest) return;
+    renderValidatorCustomerResults([]);
+    setValidatorCustomerLookupStatus(error.message || "No fue posible buscar clientes.", "error");
+  }
+}
+
+function scheduleValidatorCustomerSearch() {
+  clearTimeout(state.validatorCustomerSearchTimer);
+  state.validatorSelectedCustomer = null;
+  state.validatorCustomerSearchTimer = window.setTimeout(() => searchValidatorCustomers(validatorCustomerLookupInput?.value), 280);
+}
+
+function invalidateValidatorCustomerSelection() {
+  const selected = state.validatorSelectedCustomer;
+  if (!selected) return;
+  const current = [
+    validatorBeneficiaryNameInput?.value,
+    validatorBeneficiaryDocumentInput?.value,
+    validatorBeneficiaryPhoneInput?.value,
+    validatorBeneficiaryEmailInput?.value,
+  ].map(normalizeInventoryLookup);
+  const expected = [selected.name, selected.document_id, selected.phone, selected.email].map(normalizeInventoryLookup);
+  if (current.every((value, index) => value === expected[index])) return;
+  state.validatorSelectedCustomer = null;
+  setValidatorCustomerLookupStatus("Los datos seleccionados fueron modificados. Qori los validará nuevamente antes de guardar.", "neutral");
+}
+
 function renderValidatorBeneficiary(data = null) {
   const beneficiary = data?.beneficiary || null;
   const person = beneficiary?.data || data?.player || {};
@@ -19101,6 +19250,16 @@ function renderValidatorBeneficiary(data = null) {
   validatorBeneficiaryDocumentRequired.hidden = !beneficiary?.document_required;
   validatorBeneficiaryDocumentInput.required = Boolean(beneficiary?.document_required);
   validatorBeneficiaryDataUseInput.checked = false;
+  const lockedCustomer = data?.player?.id ? {
+    id: data.player.id,
+    player_id: data.player.id,
+    source_type: "PLAYER",
+    name: person.name || "Cliente registrado",
+    phone: person.phone || null,
+    email: person.email || null,
+    document_id: person.document_id || null,
+  } : null;
+  resetValidatorCustomerLookup({ lockedCustomer });
   const copy = {
     IDENTIFIED: ["Datos recuperados del ticket", "Revisa la información y confirma que el beneficiario autorizó su uso para esta redención."],
     PARTIAL: ["Datos parcialmente recuperados", "Completa los datos faltantes preguntándole directamente al beneficiario."],
@@ -19120,7 +19279,7 @@ function renderValidatorBeneficiary(data = null) {
 
 function collectValidatorBeneficiary() {
   const beneficiary = {
-    player_id: state.validatorLastValidation?.player?.id || null,
+    player_id: state.validatorSelectedCustomer?.player_id || state.validatorLastValidation?.player?.id || null,
     name: validatorBeneficiaryNameInput.value.trim(),
     phone: validatorBeneficiaryPhoneInput.value.trim() || null,
     email: validatorBeneficiaryEmailInput.value.trim().toLowerCase() || null,
@@ -19242,6 +19401,7 @@ function resetValidatorSaleForm() {
   if (validatorBeneficiaryPanel) validatorBeneficiaryPanel.hidden = true;
   [validatorBeneficiaryNameInput, validatorBeneficiaryPhoneInput, validatorBeneficiaryEmailInput, validatorBeneficiaryDocumentInput].forEach((field) => { if (field) field.value = ""; });
   if (validatorBeneficiaryDataUseInput) validatorBeneficiaryDataUseInput.checked = false;
+  resetValidatorCustomerLookup();
   state.validatorRedemptionMode = "STANDALONE";
   state.validatorPurchaseItems = [validatorPurchaseItem()];
   state.validatorCheckoutPreview = null;
@@ -64135,6 +64295,21 @@ validatorRedeemButton.addEventListener("click", redeemValidatorToken);
 validatorSaleForm.addEventListener("submit", (event) => event.preventDefault());
 validatorSaleAmountInput?.addEventListener("input", () => rewardPassBalancePreview(true));
 validatorRewardPassRedeemInput?.addEventListener("input", () => rewardPassBalancePreview(false));
+validatorCustomerLookupInput?.addEventListener("input", scheduleValidatorCustomerSearch);
+validatorCustomerLookupInput?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  clearTimeout(state.validatorCustomerSearchTimer);
+  searchValidatorCustomers(validatorCustomerLookupInput.value);
+});
+validatorCustomerResults?.addEventListener("click", (event) => {
+  const option = event.target.closest("[data-validator-customer-index]");
+  if (!option) return;
+  const customer = state.validatorCustomerMatches[Number(option.dataset.validatorCustomerIndex)];
+  if (customer) applyValidatorCustomer(customer);
+});
+validatorCustomerNewButton?.addEventListener("click", startNewValidatorCustomer);
+[validatorBeneficiaryNameInput, validatorBeneficiaryPhoneInput, validatorBeneficiaryEmailInput, validatorBeneficiaryDocumentInput].forEach((input) => input?.addEventListener("input", invalidateValidatorCustomerSelection));
 validatorHadSaleInput?.addEventListener("change", syncValidatorSaleDependencies);
 validatorRedemptionModes?.addEventListener("change", (event) => {
   const input = event.target.closest("input[name='validatorRedemptionMode']");

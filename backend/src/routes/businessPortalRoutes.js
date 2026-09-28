@@ -61,6 +61,7 @@ const {
   updateAcquisitionChannelEffort,
   archiveAcquisitionChannelEffort,
   createCustomerAcquisitionSale,
+  searchValidatorCustomers,
   archiveInventoryProduct,
   deleteInventoryProduct,
   listInventoryCategories,
@@ -224,6 +225,7 @@ const requireContactDirectory = requireBusinessFeature("contact_directory");
 const requireJourney = requireBusinessFeature("journey");
 const requirePredictiveAnalytics = requireBusinessFeature("predictive_analytics");
 const requireLeadExport = requireBusinessFeature("leads_export");
+const requireQrValidator = requireBusinessFeature("qr_validator");
 const requireRankingManager = requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES");
 
 router.get("/sellers/me", sellerModuleAccess, requireRoles("BUSINESS_SELLER"), getSellerSelf);
@@ -251,6 +253,7 @@ router.get("/users", listBusinessUsers);
 router.post("/users", createBusinessUser);
 router.patch("/users/:userId", updateBusinessUser);
 router.use(requirePortalAccess);
+router.get("/validator/customers/search", requireQrValidator, shortBusinessCache, searchValidatorCustomers);
 router.get("/contacts/feed", standardBusinessCache, contactFeed);
 router.get("/contacts/manual", requireContactDirectory, standardBusinessCache, listManualLeads);
 router.post("/contacts/manual", requireContactDirectory, createManualLead);
