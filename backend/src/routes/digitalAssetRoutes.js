@@ -1,5 +1,6 @@
 const express = require("express");
 const { authRequired, requireRoles } = require("../middleware/auth");
+const { requirePortalAccess, requireBusinessFeature } = require("../middleware/subscription");
 const {
   create,
   list,
@@ -11,6 +12,8 @@ const {
 const router = express.Router();
 
 router.use(authRequired);
+router.use(requirePortalAccess);
+router.use(requireBusinessFeature("brand_assets"));
 router.use(requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"));
 
 router.get("/", list);

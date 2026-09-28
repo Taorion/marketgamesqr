@@ -130,7 +130,7 @@ async function sellerModuleAccess(req, _res, next) {
     if (!z.string().uuid().safeParse(target).success) {
       throw badRequest(admin ? "Indica el negocio que deseas administrar." : "Tu usuario no tiene un negocio valido asignado.");
     }
-    await assertBusinessFeature(req.user, target, "portal_access");
+    await assertBusinessFeature(req.user, target, "sellers");
     req.seller_business_id = target;
     next();
   } catch (error) { next(error); }

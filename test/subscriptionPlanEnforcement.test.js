@@ -21,12 +21,12 @@ test("el catalogo canonico gobierna precio, capacidad y oferta publica", () => {
   assert.equal(starter.monthly_price_cop, 229000);
   assert.equal(growth.monthly_price_cop, 899000);
   assert.equal(pro.monthly_price_cop, 1990000);
-  assert.equal(growth.limits.branches, 2);
-  assert.equal(pro.limits.branches, null);
-  assert.equal(pro.limits.users, null);
+  assert.equal(growth.limits.branches, 1);
+  assert.equal(pro.limits.branches, 3);
+  assert.equal(pro.limits.users, 5);
   assert.match(fallback, /code: "PRO"[\s\S]+monthly_price_cop: 1990000/);
-  assert.match(fallback, /2 sedes \/ 2 usuarios/);
-  assert.match(fallback, /Sedes y usuarios ilimitados/);
+  assert.match(fallback, /equipo de 2 usuarios/);
+  assert.match(fallback, /10 vendedores y 3 sedes/);
   assert.match(packagesHtml, /"highPrice": "1990000"/);
   assert.match(packagesHtml, /\$1\.990\.000/);
   assert.doesNotMatch(`${fallback}\n${packagesHtml}`, /1899000|1\.899\.000/);
@@ -46,8 +46,8 @@ test("las rutas operativas quedan detras de suscripcion y features reales", () =
   assert.match(routes, /contacts\/manual", requireContactDirectory/);
   assert.match(routes, /contacts\/feed\/export\.csv", requireLeadExport/);
   assert.match(routes, /rms-machine\/journeys", requireJourney/);
-  assert.match(routes, /rms-machine\/intelligence\/patterns", requirePredictiveAnalytics/);
-  assert.match(routes, /rms-machine\/post-sale-actions", shortBusinessCache, rmsPostSaleActions/);
+  assert.match(routes, /rms-machine\/intelligence\/patterns", requireRmsIntelligence/);
+  assert.match(routes, /rms-machine\/post-sale-actions", requireCustomerValuation, shortBusinessCache, rmsPostSaleActions/);
 });
 
 test("Escala puede emitir Gift Cards con limite mensual canonico", () => {

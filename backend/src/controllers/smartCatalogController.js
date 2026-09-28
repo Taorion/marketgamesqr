@@ -1,6 +1,7 @@
 const { z } = require("zod");
 const { forbidden } = require("../utils/http");
 const { validate } = require("../utils/validators");
+const { assertLimitForBusiness } = require("../services/subscriptionService");
 const {
   archiveCatalog,
   catalogDetail,
@@ -185,8 +186,11 @@ async function businessList(req, res, next) {
 
 async function businessCreate(req, res, next) {
   try {
+    const businessId = businessIdFor(req);
+    const catalogs = await listCatalogs(businessId);
+    await assertLimitForBusiness(businessId, "showcases", catalogs.length, "vitrinas web");
     const body = validate(catalogSchema, req.body);
-    res.status(201).json({ catalog: await createCatalog(businessIdFor(req), req.user, body) });
+    res.status(201).json({ catalog: await createCatalog(businessId, req.user, body) });
   } catch (error) {
     next(error);
   }

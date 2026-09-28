@@ -16,7 +16,9 @@ function storageAddonOffer(code) {
 
 function storageLimitForPlan(plan = {}) {
   const configured = plan.limits?.storage_bytes;
-  return configured === null ? null : Number(configured || DEFAULT_STORAGE_BYTES);
+  if (configured === null) return null;
+  if (configured === undefined) return DEFAULT_STORAGE_BYTES;
+  return Math.max(0, Number(configured) || 0);
 }
 
 async function getStorageSummary(businessId) {

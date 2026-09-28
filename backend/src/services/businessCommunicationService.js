@@ -7,6 +7,12 @@ const { moveRmsLeadPhase, recordActivationDelivery } = require("./rmsMachineServ
 const { sendBusinessCommunicationEmail } = require("./businessCommunicationMailService");
 const { getEmailConnectionStatus, getWhatsAppConnectionStatus, isMarketGamesInternalAccount, ownResendApiKey, saveEmailConnection, saveWhatsAppConnection } = require("./businessCommunicationCredentialService");
 const { listApprovedWhatsAppTemplates, sendWhatsAppTemplate } = require("./businessCommunicationWhatsAppService");
+const {
+  assertDailyUsageLimit,
+  assertMonthlyUsageLimit,
+  getBusinessSubscription,
+  recordUsage,
+} = require("./subscriptionService");
 
 function escapeHtml(value) {
   return String(value || "")
@@ -860,6 +866,27 @@ async function sendBusinessCommunicationCore(businessId, userId, id, recipientRe
     failure_reasons: [],
   };
   const emailPreferences = await emailPreferencesForAudience(businessId, recipientsForDelivery.map((contact) => contact.email));
+  const billableRecipients = recipientsForDelivery.filter((contact) => {
+    const email = normalizedRecipientEmail(contact.email);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !emailPreferences.get(email)?.unsubscribed_at;
+  }).length;
+  const subscription = await getBusinessSubscription(businessId);
+  await assertMonthlyUsageLimit(
+    businessId,
+    "communication_email",
+    subscription.plan.limits?.communication_emails_month,
+    billableRecipients,
+    "emails de comunicaciones",
+    { plan: subscription.plan, limit_key: "communication_emails_month" }
+  );
+  await assertDailyUsageLimit(
+    businessId,
+    "communication_email",
+    subscription.plan.limits?.communication_emails_day,
+    billableRecipients,
+    "emails de comunicaciones",
+    { plan: subscription.plan, limit_key: "communication_emails_day" }
+  );
   const consentMetadata = { consent_confirmed: true, consent_confirmed_at: new Date().toISOString(), consent_confirmed_by: userId };
   for (const contact of duplicateEmailRecipients) {
     await saveRecipient({
@@ -937,6 +964,15 @@ async function sendBusinessCommunicationCore(businessId, userId, id, recipientRe
     }
   }
   const updated = await query("update business_communications set status = $3, updated_by = $4, updated_at = now() where id = $1 and business_id = $2 returning *", [id, businessId, results.sent ? 'SENT' : communication.status, userId]);
+  if (results.sent > 0) {
+    await recordUsage({
+      business_id: businessId,
+      user_id: userId,
+      event_type: "communication_email",
+      quantity: results.sent,
+      metadata: { communication_id: id },
+    });
+  }
   await syncCommunicationChannelEffort(businessId, userId, updated.rows[0] || communication);
   return { results };
 }

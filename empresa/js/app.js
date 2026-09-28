@@ -1875,6 +1875,14 @@ function applyAccountScreen() {
 
 function openAccountSection(screen = "") {
   const normalized = normalizeAccountScreen(screen);
+  const requiredFeature = accountFeatureForScreen(normalized);
+  if (!hasPlanFeature(requiredFeature)) {
+    showFeatureUpgradeInterstitial(requiredFeature, {
+      requestedView: normalized,
+      suggestedPlanCode: requiredPlanForFeature(requiredFeature),
+    });
+    return;
+  }
   state.accountScreen = normalized;
   state.accountHashApplied = true;
   const sectionId = ACCOUNT_SCREEN_SECTION[normalized];
@@ -5870,52 +5878,76 @@ function syncCampaignSlugFromName({ force = false } = {}) {
 }
 
 const viewFeatureMap = {
-  dashboard: "portal_access",
-  "rms-machine": "leads_view",
-  sellers: null,
-  recycling: "leads_view",
-  missions: "leads_view",
-  "smart-catalogs": "portal_access",
+  dashboard: "revenue_center",
+  "rms-machine": "rms_core",
+  sellers: "sellers",
+  recycling: "recycling",
+  missions: "ranking",
+  "smart-catalogs": "showcase",
+  communications: "communications",
   account: null,
-  campaigns: "portal_access",
-  competition: "campaign_comparison",
-  channels: "sales_tracker",
-  leads: "leads_view",
+  campaigns: "campaigns",
+  competition: "competitive_radar",
+  channels: "acquisition_channels",
+  leads: "contact_directory",
   affiliates: "affiliates",
-  inventory: "gift_inventory",
+  inventory: "products",
   "reward-passes": "gift_cards",
-  redemptions: "portal_access",
+  redemptions: "redemptions",
   sales: "sales_tracker",
-  "strategic-qr": "qr_batch_generator",
+  "strategic-qr": "interactive_activations",
   validator: "qr_validator",
   branches: "multi_branch",
   admin: "admin_workspace",
 };
 
-const planTierOrder = ["STARTER", "GROWTH", "PRO", "GLOBAL"];
+const planTierOrder = ["DESPEGA", "STARTER", "GROWTH", "PRO", "GLOBAL"];
 const planTierBadges = {
   GROWTH: { label: "Medium", shortLabel: "MED", icon: "workspace_premium" },
   PRO: { label: "Premium", shortLabel: "PRO", icon: "diamond" },
 };
 const featureRequiredPlanFallback = {
-  portal_access: "STARTER",
+  portal_access: "DESPEGA",
+  account_profile: "DESPEGA",
+  account_security: "DESPEGA",
+  plan_management: "DESPEGA",
+  interactive_activations: "DESPEGA",
   leads_view: "STARTER",
   leads_export: "STARTER",
-  qr_validator: "STARTER",
-  qr_batch_generator: "STARTER",
-  template_games: "STARTER",
+  qr_validator: "DESPEGA",
+  qr_batch_generator: "DESPEGA",
+  template_games: "DESPEGA",
   dashboard_basic: "STARTER",
   campaign_reports: "STARTER",
-  affiliates: "GROWTH",
-  referrals: "GROWTH",
-  multi_branch: "GROWTH",
-  sales_tracker: "GROWTH",
+  revenue_center: "STARTER",
+  rms_core: "STARTER",
+  redemptions: "STARTER",
+  brand_assets: "STARTER",
+  products: "STARTER",
+  contact_directory: "STARTER",
+  acquisition_channels: "STARTER",
+  recycling: "STARTER",
+  showcase: "STARTER",
+  sales_tracker: "STARTER",
+  rms_intelligence: "GROWTH",
+  email_marketing: "GROWTH",
+  rms_quality_control: "GROWTH",
+  campaigns: "GROWTH",
+  communications: "GROWTH",
+  agenda: "GROWTH",
+  team_management: "GROWTH",
+  affiliates: "PRO",
+  referrals: "PRO",
+  multi_branch: "PRO",
   ticket_branding: "GROWTH",
   gift_cards: "GROWTH",
-  contact_directory: "GROWTH",
   gift_inventory: "GROWTH",
   dashboard_full: "GROWTH",
   campaign_comparison: "GROWTH",
+  competitive_radar: "PRO",
+  ranking: "PRO",
+  customer_valuation: "PRO",
+  sellers: "PRO",
   journey: "PRO",
   prize_program: "PRO",
   predictive_analytics: "PRO",
@@ -5966,6 +5998,14 @@ function currentPlan() {
   return state.subscription?.plan || session?.user?.subscription?.plan || {};
 }
 
+function portalDefaultViewForPlan() {
+  const features = currentPlan().features || {};
+  if (features.rms_core) return PORTAL_DEFAULT_VIEW;
+  if (features.interactive_activations) return "strategic-qr";
+  if (features.qr_validator) return "validator";
+  return "account";
+}
+
 function normalizePlanTierCode(value = "") {
   const code = String(value || "").toUpperCase();
   if (code === "MEDIUM") return "GROWTH";
@@ -5996,6 +6036,21 @@ function requiredPlanForFeature(feature = "") {
     .sort((a, b) => planTierIndex(a.code) - planTierIndex(b.code))
     .find((plan) => Boolean(plan.features?.[feature]));
   return normalizePlanTierCode(dynamicPlan?.code || fallbackCode);
+}
+
+function accountFeatureForScreen(screen = "") {
+  return {
+    channels: "email_marketing",
+    assets: "brand_assets",
+    admin: "team_management",
+  }[normalizeAccountScreen(screen)] || null;
+}
+
+function featureForNavigationButton(button) {
+  if (!button) return null;
+  if (button.dataset.accountScreen) return accountFeatureForScreen(button.dataset.accountScreen);
+  if (button.dataset.contactCenterNav === "agenda") return "agenda";
+  return viewFeatureMap[button.dataset.view] || null;
 }
 
 function requiredPlanForActivationType(type = "") {
@@ -7214,7 +7269,7 @@ window.renderCommunicationWhatsAppTemplateOptions = renderCommunicationWhatsAppT
 
 function applyPlanNavigation() {
   navButtons.forEach((button) => {
-    const feature = viewFeatureMap[button.dataset.view];
+    const feature = featureForNavigationButton(button);
     const adminOnly = button.dataset.view === "admin";
     button.classList.toggle("hidden", adminOnly && !isAdmin());
     const requiredCode = requiredPlanForFeature(feature);
@@ -8435,7 +8490,7 @@ async function loadWorkspace() {
     apiSafe("/api/business/access", { headers: authHeaders() }, { access: null }),
     shouldLoadDashboardData ? api(`/api/dashboard/businesses/${session.user.business_id}`, { headers: authHeaders() }) : Promise.resolve(state.dashboard || null),
     shouldLoadDashboardData ? apiSafe(`/api/business/analytics/command-center?${commandCenterQueryString()}`, { headers: authHeaders() }, null) : Promise.resolve(state.commandCenter || null),
-    api("/api/business/campaigns", { headers: authHeaders() }),
+    apiSafe("/api/business/campaigns", { headers: authHeaders() }, { summary: null, groups: null, campaigns: [] }),
     apiSafe(profileEndpoint, { headers: authHeaders() }, { business: null }),
     shouldLoadAccountData ? apiSafe("/api/qr/credits/me", { headers: authHeaders() }, { credit_account: state.qrCreditAccount || null }) : Promise.resolve({ credit_account: state.qrCreditAccount || null }),
     shouldLoadAccountData ? apiSafe("/api/public/subscription-plans", {}, { plans: state.subscriptionPlans || [], prepaid_reference: state.prepaidReference || [] }) : Promise.resolve({ plans: state.subscriptionPlans || [], prepaid_reference: state.prepaidReference || [], pricing: state.pricing }),
@@ -8512,6 +8567,10 @@ async function loadWorkspace() {
     renderSubscriptionBanner();
     applyPlanNavigation();
 
+    if (!hasPlanFeature(viewFeatureMap[state.currentView])) {
+      setView(portalDefaultViewForPlan());
+    }
+
     renderAccountView();
     if (lightTestMode) {
       businessKpiGrid.innerHTML = '<article class="surface-card">Modo prueba ligero activo. Se omitieron dashboard, analytics y feed para reducir egress de Supabase.</article>';
@@ -8543,7 +8602,7 @@ async function loadWorkspace() {
     if (lightTestMode) {
       await loadStrategicQrData({ groups: ["core", "activations"], force: true });
       renderStrategicQrView();
-      setView(PORTAL_DEFAULT_VIEW);
+      setView(portalDefaultViewForPlan());
     }
     showFeedback(
       lightTestMode ? "Modo ligero listo. Fábrica de ingresos cargada sin abrir el tablero completo." : "Datos actualizados. Ya puedes revisar saldos, tickets y ventas.",
@@ -8839,7 +8898,7 @@ async function loadPrepaidValidatorWorkspace() {
     renderCampaignAssociationInputs();
     renderStrategicQrView();
     renderValidatorHistory([]);
-    setView(PORTAL_DEFAULT_VIEW);
+    setView(portalDefaultViewForPlan());
       showFeedback("Fábrica de ingresos lista. Gaming Center sigue disponible desde el menú para crear tickets o activaciones.", "success", { title: "Herramientas listas" });
   } catch (error) {
     if (loadSeq !== state.workspaceLoadSeq || session?.user?.business_id !== loadBusinessId) return;
@@ -43004,6 +43063,14 @@ function setContactCenterTab(tab = "directory") {
 
 function openContactCenterSection(tab = "directory", options = {}) {
   const nextTab = normalizeContactCenterTab(tab);
+  const requiredFeature = nextTab === "agenda" ? "agenda" : nextTab === "sales" ? "sales_tracker" : "contact_directory";
+  if (!hasPlanFeature(requiredFeature)) {
+    showFeatureUpgradeInterstitial(requiredFeature, {
+      requestedView: nextTab,
+      suggestedPlanCode: requiredPlanForFeature(requiredFeature),
+    });
+    return;
+  }
   state.contactCenterTab = nextTab;
   if (nextTab === "agenda") {
     state.leadAgendaLoaded = false;
@@ -49089,7 +49156,7 @@ function rmsFactoryStages(data = {}) {
   const serverStages = Array.isArray(data.stages) && data.stages.length ? data.stages : [];
   const operations = data.operations || {};
   const source = serverStages.length ? serverStages : RMS_FACTORY_STAGE_BLUEPRINT;
-  return [...source].sort((left, right) => rmsFlowIndex(left.key) - rmsFlowIndex(right.key)).map((stage) => {
+  const stages = [...source].sort((left, right) => rmsFlowIndex(left.key) - rmsFlowIndex(right.key)).map((stage) => {
     const blueprint = RMS_FACTORY_STAGE_BLUEPRINT.find((item) => item.key === stage.key) || {};
     const mergedOperation = {
       ...(blueprint.operation || {}),
@@ -49105,6 +49172,11 @@ function rmsFactoryStages(data = {}) {
       storageLabel: blueprint.storageLabel || stage.storageLabel,
       operation: mergedOperation,
     };
+  });
+  return stages.filter((stage) => {
+    if (stage.key === "postventa") return hasPlanFeature("customer_valuation");
+    if (stage.key === "inteligencia") return hasPlanFeature("rms_intelligence");
+    return true;
   });
 }
 
@@ -49887,6 +49959,7 @@ function rmsPrimaryFactoryStages(data = {}) {
 }
 
 function rmsQualityControlStages(data = {}) {
+  if (!hasPlanFeature("rms_quality_control")) return [];
   const controls = Array.isArray(data.quality_controls) && data.quality_controls.length
     ? data.quality_controls
     : [

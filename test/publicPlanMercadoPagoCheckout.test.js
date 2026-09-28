@@ -22,7 +22,7 @@ test("Despega is a public monthly subscription backed by Mercado Pago", () => {
   assert.doesNotMatch(page, /window\.location\.href = `https:\/\/wa\.me/);
   assert.match(page, /fetchJson\("\/api\/public\/signup\/portal"/);
   assert.match(page, /window\.location\.href = checkoutUrl/);
-  assert.match(html, /qori-planes-pse-v3-20260928/);
+  assert.match(html, /qori-plan-matrix-v1-20260928/);
   assert.match(html, /Tarjetas, saldo Mercado Pago y PSE/);
 });
 
@@ -134,5 +134,8 @@ test("Despega participates in the public upgrade and activation contracts", () =
   const subscriptions = read("backend/src/services/subscriptionService.js");
   assert.match(subscriptions, /PUBLIC_UPGRADE_ORDER = \[PLAN_CODES\.DESPEGA, PLAN_CODES\.STARTER/);
   assert.match(subscriptions, /\('DESPEGA', 'STARTER', 'GROWTH', 'PRO', 'GLOBAL'\)/);
-  assert.match(subscriptions, /welcome_courtesy_tickets:\s*10/);
+  assert.match(subscriptions, /PLAN_CODES\.DESPEGA[\s\S]*welcome_courtesy_tickets:\s*25/);
+  assert.match(subscriptions, /PLAN_CODES\.STARTER[\s\S]*welcome_courtesy_tickets:\s*50/);
+  assert.match(subscriptions, /PLAN_CODES\.GROWTH[\s\S]*welcome_courtesy_tickets:\s*100/);
+  assert.match(subscriptions, /PLAN_CODES\.PRO[\s\S]*welcome_courtesy_tickets:\s*200/);
 });

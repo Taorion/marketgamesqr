@@ -1229,6 +1229,7 @@ async function updateBusinessProfile(req, res, next) {
       }
     });
     if (Object.prototype.hasOwnProperty.call(body, "logo_data_url") || Object.prototype.hasOwnProperty.call(body, "ticket_frame_data_url")) {
+      await assertFeatureForRequest(req, businessId, "brand_assets");
       const currentMediaBytes = Buffer.byteLength(current.settings?.logo_data_url || "") + Buffer.byteLength(current.settings?.ticket_frame_data_url || "");
       const nextMediaBytes = Buffer.byteLength(Object.prototype.hasOwnProperty.call(body, "logo_data_url") ? (body.logo_data_url || "") : (current.settings?.logo_data_url || ""))
         + Buffer.byteLength(Object.prototype.hasOwnProperty.call(body, "ticket_frame_data_url") ? (body.ticket_frame_data_url || "") : (current.settings?.ticket_frame_data_url || ""));
@@ -3587,6 +3588,18 @@ async function createAcquisitionChannel(req, res, next) {
   try {
     const businessId = businessIdFor(req);
     const body = validate(acquisitionChannelSchema, req.body);
+    if ((body.status || "ACTIVE") !== "ARCHIVED") {
+      const count = await query(
+        "select count(*)::int as total from business_acquisition_channels where business_id = $1 and status <> 'ARCHIVED'",
+        [businessId]
+      );
+      await assertLimitForBusiness(
+        businessId,
+        "acquisition_channels",
+        Number(count.rows[0]?.total || 0),
+        "medios de adquisicion"
+      );
+    }
     const slug = body.slug || slugify(body.name);
     const result = await query(
       `insert into business_acquisition_channels
@@ -3628,6 +3641,18 @@ async function updateAcquisitionChannel(req, res, next) {
     );
     if (!existing.rowCount) throw notFound("Canal no encontrado.");
     const merged = { ...existing.rows[0], ...body };
+    if (existing.rows[0].status === "ARCHIVED" && merged.status !== "ARCHIVED") {
+      const count = await query(
+        "select count(*)::int as total from business_acquisition_channels where business_id = $1 and status <> 'ARCHIVED'",
+        [businessId]
+      );
+      await assertLimitForBusiness(
+        businessId,
+        "acquisition_channels",
+        Number(count.rows[0]?.total || 0),
+        "medios de adquisicion"
+      );
+    }
     const slug = body.slug ? slugify(body.slug) : body.name ? slugify(body.name) : existing.rows[0].slug;
     const result = await query(
       `update business_acquisition_channels

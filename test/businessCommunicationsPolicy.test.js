@@ -8,7 +8,7 @@ const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), "u
 
 test("communications API is restricted to business management roles", () => {
   const routes = read("backend/src/routes/businessPortalRoutes.js");
-  assert.match(routes, /router\.use\("\/communications", requireRoles\("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"\)\)/);
+  assert.match(routes, /router\.use\("\/communications", requireCommunications, requireRoles\("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADMIN", "ADMIN_MARKET_GAMES"\)\)/);
   assert.doesNotMatch(routes, /ADMIN_Qori/);
 });
 

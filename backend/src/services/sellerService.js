@@ -271,8 +271,8 @@ async function createSeller(businessId, actor, body) {
   assertSellerAdmin(actor);
   return withTransaction(async (client) => {
     await client.query("select pg_advisory_xact_lock(hashtext($1))", [`seller-create:${businessId}`]);
-    const activeUsers = await client.query("select count(*)::int as total from app_users where business_id = $1 and is_active = true", [businessId]);
-    await assertLimitForBusiness(businessId, "users", Number(activeUsers.rows[0]?.total || 0), "usuarios");
+    const activeSellers = await client.query("select count(*)::int as total from business_seller_profiles where business_id = $1 and status = 'ACTIVE'", [businessId]);
+    await assertLimitForBusiness(businessId, "sellers", Number(activeSellers.rows[0]?.total || 0), "vendedores");
     const collision = await client.query("select id from app_users where lower(email) = lower($1) limit 1", [body.email]);
     if (collision.rowCount) throw badRequest("Ya existe un usuario registrado con este correo.");
     const code = normalizeSellerCode(body.seller_code);
@@ -330,11 +330,11 @@ async function updateSeller(businessId, sellerId, actor, body) {
       : body.is_active !== undefined ? (body.is_active ? "ACTIVE" : "INACTIVE") : null;
     if (!seller.is_active && nextIsActive === true) {
       await client.query("select pg_advisory_xact_lock(hashtext($1))", [`seller-create:${businessId}`]);
-      const activeUsers = await client.query(
-        "select count(*)::int as total from app_users where business_id = $1 and is_active = true",
+      const activeSellers = await client.query(
+        "select count(*)::int as total from business_seller_profiles where business_id = $1 and status = 'ACTIVE'",
         [businessId]
       );
-      await assertLimitForBusiness(businessId, "users", Number(activeUsers.rows[0]?.total || 0), "usuarios");
+      await assertLimitForBusiness(businessId, "sellers", Number(activeSellers.rows[0]?.total || 0), "vendedores");
     }
     await client.query(
       `update app_users set full_name = coalesce($3,full_name), email = coalesce(lower($4),email),

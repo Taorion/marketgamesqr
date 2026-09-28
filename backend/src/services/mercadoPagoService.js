@@ -896,7 +896,7 @@ async function createPortalSignupCheckout(client, payload) {
           email: payload.email,
           plan_code: plan.code,
           billing_cycle: billingCycle,
-          courtesy_tickets_quantity: 10,
+          courtesy_tickets_quantity: Number(plan.limits?.welcome_courtesy_tickets || 0),
           plan_price_cop: planPriceCop,
           sales_advisor_code: payload.sales_advisor_code || null,
         },
@@ -1376,11 +1376,13 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
     [order.business_id, order.id]
   );
   if (!previousSubscriptionOrder.rowCount) {
+    const welcomeTickets = Number(plan.limits?.welcome_courtesy_tickets || signup.courtesy_tickets_quantity || 0);
     const courtesy = await grantFirstSubscriptionCourtesyTickets(client, {
       business_id: order.business_id,
       created_by_user_id: order.created_by_user_id,
-      public_label: "10 tickets de cortesia de bienvenida",
-      notes: "Cortesia de bienvenida por primera suscripcion del cliente.",
+      quantity: welcomeTickets,
+      public_label: `${welcomeTickets} tickets de bienvenida del plan ${plan.name}`,
+      notes: `Tickets de bienvenida por primera suscripcion al plan ${plan.name}.`,
     });
     account = courtesy.account || account;
     courtesyTicketsGranted = Boolean(courtesy.granted);
