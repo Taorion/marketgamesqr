@@ -18820,6 +18820,75 @@ function validatorPurchaseItem(seed = {}) {
   };
 }
 
+function mergeValidatorScannedProduct(items = [], product = {}, createItem = validatorPurchaseItem) {
+  const productId = product.id || null;
+  const existing = productId
+    ? items.find((item) => item.inventory_product_id === productId)
+    : null;
+  if (existing) {
+    existing.name = String(product.name || existing.name || "Producto");
+    existing.quantity = Math.max(0, Number(existing.quantity || 0)) + 1;
+    existing.unit_price = Math.max(0, Number(product.unit_price ?? existing.unit_price ?? 0));
+    return { items, item: existing, added: false };
+  }
+  const nextItems = items.filter((item) => String(item.name || "").trim());
+  const item = createItem({
+    name: product.name || "Producto",
+    quantity: 1,
+    unit_price: product.unit_price || 0,
+    inventory_product_id: productId,
+  });
+  nextItems.push(item);
+  return { items: nextItems, item, added: true };
+}
+
+function validatorOpenCartSnapshot() {
+  const mode = validatorOperationPanel?.dataset.mode || "";
+  if (!["validated_product", "validated_standard"].includes(mode) || !validatorLineItems().length) return null;
+  return {
+    lastToken: state.validatorLastToken,
+    lastValidation: state.validatorLastValidation,
+    redemptionKey: state.validatorRedemptionKey,
+    redemptionMode: state.validatorRedemptionMode,
+    purchaseItems: state.validatorPurchaseItems.map((item) => ({ ...item })),
+    paymentMethod: validatorPaymentMethodInput?.value || "",
+    notes: validatorSaleNotesInput?.value || "",
+    beneficiary: {
+      name: validatorBeneficiaryNameInput?.value || "",
+      phone: validatorBeneficiaryPhoneInput?.value || "",
+      email: validatorBeneficiaryEmailInput?.value || "",
+      document: validatorBeneficiaryDocumentInput?.value || "",
+      dataUseConfirmed: Boolean(validatorBeneficiaryDataUseInput?.checked),
+    },
+  };
+}
+
+function restoreValidatorOpenCartFields(snapshot, { beneficiary = false } = {}) {
+  if (!snapshot) return;
+  if (validatorPaymentMethodInput) validatorPaymentMethodInput.value = snapshot.paymentMethod;
+  if (validatorSaleNotesInput) validatorSaleNotesInput.value = snapshot.notes;
+  if (!beneficiary) return;
+  if (validatorBeneficiaryNameInput) validatorBeneficiaryNameInput.value = snapshot.beneficiary.name;
+  if (validatorBeneficiaryPhoneInput) validatorBeneficiaryPhoneInput.value = snapshot.beneficiary.phone;
+  if (validatorBeneficiaryEmailInput) validatorBeneficiaryEmailInput.value = snapshot.beneficiary.email;
+  if (validatorBeneficiaryDocumentInput) validatorBeneficiaryDocumentInput.value = snapshot.beneficiary.document;
+  if (validatorBeneficiaryDataUseInput) validatorBeneficiaryDataUseInput.checked = snapshot.beneficiary.dataUseConfirmed;
+}
+
+function restoreValidatorOpenCart(snapshot, message = "La compra abierta se conserva sin cambios.") {
+  if (!snapshot) return;
+  state.validatorLastToken = snapshot.lastToken;
+  state.validatorLastValidation = snapshot.lastValidation;
+  state.validatorRedemptionKey = snapshot.redemptionKey;
+  state.validatorRedemptionMode = snapshot.redemptionMode;
+  state.validatorPurchaseItems = snapshot.purchaseItems.map((item) => ({ ...item }));
+  const restoredMode = validatorKind(snapshot.lastValidation) === "inventory_product" ? "validated_product" : "validated_standard";
+  setValidatorResult("ok", "Compra en curso", message, snapshot.lastValidation);
+  setValidatorOperationState(restoredMode, snapshot.lastValidation);
+  restoreValidatorOpenCartFields(snapshot, { beneficiary: true });
+  setInlineMessage(validatorManualStatus, message, "error");
+}
+
 function validatorLineItems() {
   return (state.validatorPurchaseItems || []).map((item) => ({
     name: String(item.name || "").trim(),
@@ -33680,7 +33749,9 @@ async function downloadBatchByFormat(batchId, format, template = "sticker", pape
 
 async function validateValidatorToken(rawValue) {
   const productId = extractInventoryProductQrId(rawValue);
-  const token = extractValidatorToken(rawValue);
+  const extractedToken = extractValidatorToken(rawValue);
+  const token = productId ? `product:${productId}` : extractedToken;
+  const openCart = validatorOpenCartSnapshot();
   setInlineMessage(validatorManualStatus, "", "info");
   if (!token) {
     setValidatorResult("danger", "Ticket vacío", "Pega un token o URL válido.");
@@ -33692,7 +33763,7 @@ async function validateValidatorToken(rawValue) {
   state.validatorLastValidation = null;
   state.validatorLastRedemption = null;
   state.rewardPassRedemptionKey = createRewardPassOperationKey("reward-pass-redeem");
-  resetValidatorSaleForm();
+  if (!openCart) resetValidatorSaleForm();
   validatorDetectedType.textContent = productId ? "Producto de inventario detectado" : token.startsWith("rp_") ? "Reward Pass detectado" : "Ticket QR detectado";
   setValidatorResult("neutral", "Consultando", "Validando token contra la base de datos...");
   setValidatorOperationState("validating", null);
@@ -33710,16 +33781,36 @@ async function validateValidatorToken(rawValue) {
       if (data.allowed) {
         await loadInventoryProducts({ force: true, quiet: true });
         if (!isCurrentBusinessScope(scopeKey) || state.validatorLastToken !== token) return;
+        const activeBenefit = openCart && validatorKind(openCart.lastValidation) === "qr" && openCart.lastValidation?.allowed
+          ? openCart.lastValidation
+          : null;
+        const merged = mergeValidatorScannedProduct(state.validatorPurchaseItems, data.product, validatorPurchaseItem);
         state.validatorRedemptionMode = "PURCHASE";
-        state.validatorPurchaseItems = [validatorPurchaseItem({ name: data.product?.name || "Producto", quantity: 1, unit_price: data.product?.unit_price || 0, inventory_product_id: data.product?.id || productId })];
-        setValidatorResult("ok", "Producto reconocido", data.message, data);
-        setValidatorOperationState("validated_product", data);
-        setInlineMessage(validatorManualStatus, "Producto reconocido. Completa cantidad, cliente y medio de pago.", "success");
-        showFeedback("Producto cargado. Completa los datos para registrar la venta.", "success", { title: "QR de producto" });
+        state.validatorPurchaseItems = merged.items;
+        if (activeBenefit) {
+          state.validatorLastToken = openCart.lastToken;
+          state.validatorLastValidation = activeBenefit;
+          state.validatorRedemptionKey = openCart.redemptionKey;
+          const cartMessage = `${data.product?.name || "Producto"} ${merged.added ? "agregado" : "sumado"}. El beneficio ${validatorBenefitDescriptor(activeBenefit).label} sigue activo.`;
+          setValidatorResult("ok", "Producto agregado a la compra", cartMessage, activeBenefit);
+          setValidatorOperationState("validated_standard", activeBenefit);
+          setInlineMessage(validatorManualStatus, cartMessage, "success");
+          showFeedback(cartMessage, "success", { title: "Compra actualizada" });
+        } else {
+          setValidatorResult("ok", merged.added ? "Producto agregado" : "Cantidad actualizada", data.message, data);
+          setValidatorOperationState("validated_product", data);
+          const cartMessage = `${data.product?.name || "Producto"} ${merged.added ? "agregado a la lista" : "sumado a la cantidad"}. La compra tiene ${validatorLineItems().length} producto${validatorLineItems().length === 1 ? "" : "s"}.`;
+          setInlineMessage(validatorManualStatus, cartMessage, "success");
+          showFeedback(cartMessage, "success", { title: "QR de producto" });
+        }
+        restoreValidatorOpenCartFields(openCart, { beneficiary: true });
       } else {
-        setValidatorResult("danger", "Producto no disponible", data.message, data);
-        setValidatorOperationState("rejected", data);
-        setInlineMessage(validatorManualStatus, data.message, "error");
+        if (openCart) restoreValidatorOpenCart(openCart, `${data.message} La compra abierta no fue modificada.`);
+        else {
+          setValidatorResult("danger", "Producto no disponible", data.message, data);
+          setValidatorOperationState("rejected", data);
+          setInlineMessage(validatorManualStatus, data.message, "error");
+        }
       }
       return;
     }
@@ -33747,14 +33838,22 @@ async function validateValidatorToken(rawValue) {
         await loadInventoryProducts({ quiet: true });
         if (!isCurrentBusinessScope(scopeKey) || state.validatorLastToken !== token) return;
         const scopedInventoryProduct = findInventoryProductById(data.benefit_application?.product_scope?.inventory_product_id || "");
-        state.validatorRedemptionMode = data.benefit_application?.purchase_required ? "PURCHASE" : "STANDALONE";
-        state.validatorPurchaseItems = [validatorPurchaseItem({
-          name: scopedInventoryProduct?.name || (data.benefit_application?.product_scope?.mode === "applies_to_product"
-            ? data.benefit_application.product_scope.product_name || ""
-            : ""),
-          unit_price: scopedInventoryProduct?.unit_price || 0,
-          inventory_product_id: scopedInventoryProduct?.id || data.benefit_application?.product_scope?.inventory_product_id || null,
-        })];
+        if (openCart) {
+          resetValidatorSaleForm();
+          state.validatorPurchaseItems = openCart.purchaseItems.map((item) => ({ ...item }));
+          restoreValidatorOpenCartFields(openCart);
+        } else {
+          state.validatorPurchaseItems = [validatorPurchaseItem({
+            name: scopedInventoryProduct?.name || (data.benefit_application?.product_scope?.mode === "applies_to_product"
+              ? data.benefit_application.product_scope.product_name || ""
+              : ""),
+            unit_price: scopedInventoryProduct?.unit_price || 0,
+            inventory_product_id: scopedInventoryProduct?.id || data.benefit_application?.product_scope?.inventory_product_id || null,
+          })];
+        }
+        state.validatorRedemptionMode = data.benefit_application?.purchase_required || openCart ? "PURCHASE" : "STANDALONE";
+      } else if (openCart) {
+        resetValidatorSaleForm();
       }
       setValidatorResult("ok", data.kind === "reward_pass" ? "Reward Pass válido" : "Ticket válido", data.message, data);
       setValidatorOperationState(data.kind === "reward_pass" ? "validated_reward" : "validated_standard", data);
@@ -33770,19 +33869,25 @@ async function validateValidatorToken(rawValue) {
           ? "Ticket aprobado. Completa los datos suministrados por el beneficiario y confirma su uso para esta redención."
           : "Ticket válido. Revisa los datos y redime cuando el cliente confirme.", "success", { title: "Ticket aprobado" });
     } else {
+      if (openCart) restoreValidatorOpenCart(openCart, `${data.message || "Este ticket no puede redimirse."} La compra abierta no fue modificada.`);
+      else {
       setValidatorResult("danger", data.status || "Ticket rechazado", data.message, data);
       setValidatorOperationState("rejected", data);
       setInlineMessage(validatorManualStatus, data.message || "Este ticket no puede redimirse.", "error");
+      }
       showFeedback(data.message || "Este ticket no puede redimirse.", "error", { title: "Ticket rechazado" });
     }
   } catch (error) {
     if (!isCurrentBusinessScope(scopeKey) || state.validatorLastToken !== token) return;
+    if (openCart) restoreValidatorOpenCart(openCart, `${error.message} La compra abierta no fue modificada.`);
+    else {
     state.validatorLastValidation = null;
     state.validatorLastRedemption = null;
     setValidatorResult("danger", "Validación fallida", error.message);
     setValidatorOperationState("rejected", null);
     setInlineMessage(validatorManualStatus, error.message, "error");
     showFeedback(error.message, "error", { title: "Validación fallida" });
+    }
   } finally {
     if (isCurrentBusinessScope(scopeKey)) {
       setButtonLoading(validateValidatorManualButton, false);
