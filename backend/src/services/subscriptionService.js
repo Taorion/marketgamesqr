@@ -6,6 +6,7 @@ const PLAN_CODES = {
   TICKET_BASE: "TICKET_BASE",
   GROWTH_TEMPORAL: "GROWTH_TEMPORAL",
   PREPAID_QR: "PREPAID_QR",
+  DESPEGA: "DESPEGA",
   STARTER: "STARTER",
   GROWTH: "GROWTH",
   PRO: "PRO",
@@ -15,9 +16,10 @@ const PLAN_CODES = {
 
 const unlimited = null;
 const SUBSCRIPTION_GRACE_DAYS = 15;
-const PUBLIC_UPGRADE_ORDER = [PLAN_CODES.STARTER, PLAN_CODES.GROWTH, PLAN_CODES.PRO, PLAN_CODES.GLOBAL];
+const PUBLIC_UPGRADE_ORDER = [PLAN_CODES.DESPEGA, PLAN_CODES.STARTER, PLAN_CODES.GROWTH, PLAN_CODES.PRO, PLAN_CODES.GLOBAL];
 const BASE_PORTAL_MIN_TICKETS = 200;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const DESPEGA_PORTAL_COP = 75000;
 const STARTED_PORTAL_COP = 229000;
 const MEDIUM_PORTAL_COP = 899000;
 const PREMIUM_PORTAL_COP = 1990000;
@@ -81,6 +83,11 @@ function annualCop(monthlyCop) {
 }
 
 const PLAN_PRICING_NOTES = {
+  DESPEGA: {
+    recommended_start_package: null,
+    portal_access_fee_cop: DESPEGA_PORTAL_COP,
+    pricing_note: "Despega activa la entrada esencial de Qori con portal, Validador y una primera capa de interaccion con clientes.",
+  },
   STARTER: {
     recommended_start_package: null,
     portal_access_fee_cop: STARTED_PORTAL_COP,
@@ -296,6 +303,87 @@ const PLAN_CATALOG = {
       lead_exports_month: 0,
       affiliates: 0,
       history_days: 7,
+    },
+  },
+  [PLAN_CODES.DESPEGA]: {
+    code: PLAN_CODES.DESPEGA,
+    name: "Despega",
+    category: "subscription",
+    monthly_price_cop: DESPEGA_PORTAL_COP,
+    annual_price_cop: annualCop(DESPEGA_PORTAL_COP),
+    annual_benefit_percent: 30,
+    display_currency: "COP",
+    payment_currency: "COP",
+    price_label: "COP 75.000 / mes",
+    billing_period: "monthly",
+    portal_value_cop: PLAN_PRICING_NOTES.DESPEGA.portal_access_fee_cop,
+    recommended_start_package: PLAN_PRICING_NOTES.DESPEGA.recommended_start_package,
+    best_for: "Negocios que quieren comenzar con validacion de tickets y una primera capa de interaccion con clientes.",
+    access_summary: "Entrada esencial para operar tickets, validar beneficios y consultar los contactos que interactuan con QR.",
+    pricing_note: PLAN_PRICING_NOTES.DESPEGA.pricing_note,
+    included: [
+      "Acceso al portal y tickets",
+      "Exportacion de la base que interactuo con QR",
+      "Validador de tickets",
+      "Gaming Center sin historial",
+      "Leadboard",
+      "1 sede",
+      "1 usuario",
+    ],
+    not_included: [
+      "Graficas avanzadas de redencion",
+      "Campanas activas en linea",
+      "Dashboard completo",
+      "Programa de fidelizacion",
+      "Directorio avanzado de contactos",
+    ],
+    qr_monthly_included: 0,
+    features: {
+      qr_validator: true,
+      qr_prepaid_purchase: true,
+      qr_simple_generator: true,
+      qr_batch_generator: false,
+      template_games: true,
+      portal_access: true,
+      dashboard_basic: false,
+      dashboard_full: false,
+      leads_view: true,
+      leads_export: true,
+      campaign_reports: false,
+      affiliates: false,
+      referrals: false,
+      multi_branch: false,
+      automations: false,
+      api_access: false,
+      white_label: false,
+      campaign_comparison: false,
+      focus_mode: false,
+      data_explorer: false,
+      advanced_reports: false,
+      post_sale_automation: false,
+      agenda: false,
+      sales_tracker: false,
+      ticket_branding: false,
+      gift_cards: false,
+      journey: false,
+      predictive_analytics: false,
+    },
+    limits: {
+      users: 1,
+      validators: 1,
+      branches: 1,
+      active_campaigns: 0,
+      monthly_qr_included: 0,
+      welcome_courtesy_tickets: 10,
+      lead_view_rows: 50,
+      lead_export_rows_month: 50,
+      lead_exports_month: 1,
+      metric_exports_month: 0,
+      affiliates: 0,
+      history_days: 30,
+      activation_types_month: 1,
+      active_interactive_activations: 1,
+      allowed_interactive_activation_types: STARTER_INTERACTIVE_ACTIVATION_TYPES,
     },
   },
   [PLAN_CODES.STARTER]: {
@@ -1002,7 +1090,7 @@ async function setBusinessSubscription(businessId, payload) {
   const result = await query(
     `update businesses
      set plan_code = $2,
-         plan_type = case when $2 in ('STARTER', 'GROWTH', 'PRO', 'GLOBAL') then 'premium_monthly' else plan_type end,
+         plan_type = case when $2 in ('DESPEGA', 'STARTER', 'GROWTH', 'PRO', 'GLOBAL') then 'premium_monthly' else plan_type end,
          portal_status = 'ACTIVE',
          subscription_status = $3,
          subscription_started_at = coalesce(subscription_started_at, now()),

@@ -27,7 +27,7 @@ const DESPEGA_PLAN = {
   code: "DESPEGA",
   name: "Despega",
   monthly_price_cop: 75000,
-  mode: "Entrada básica",
+  mode: "Suscripción",
   access_summary: "Entrada sencilla para validar tickets y operar una primera capa de interacción con clientes.",
   snapshot: ["1 sede", "1 usuario", "Validador incluido"],
   included: [
@@ -37,7 +37,6 @@ const DESPEGA_PLAN = {
     "Gaming Center sin historial",
     "Leadboard",
   ],
-  notSubscription: true,
 };
 
 const FALLBACK_PLANS = [
@@ -114,7 +113,7 @@ const FALLBACK_PLANS = [
 ];
 
 const CTA_LABELS = {
-  DESPEGA: "Solicitar Despega",
+  DESPEGA: "Activar Despega",
   STARTER: "Activar Crece",
   GROWTH: "Activar Escala",
   PRO: "Activar Expande",
@@ -151,7 +150,7 @@ async function fetchJson(path, options = {}) {
 }
 
 function qoriPlanFromApi(apiPlan) {
-  const fallback = FALLBACK_PLANS.find((item) => item.code === apiPlan.code);
+  const fallback = [DESPEGA_PLAN, ...FALLBACK_PLANS].find((item) => item.code === apiPlan.code);
   if (!fallback) return null;
   return {
     ...fallback,
@@ -163,11 +162,11 @@ function qoriPlanFromApi(apiPlan) {
 
 function publicPlansFromApi(data) {
   const apiPlans = Array.isArray(data?.plans) ? data.plans : [];
-  const mapped = FALLBACK_PLANS.map((fallback) => {
+  const mapped = [DESPEGA_PLAN, ...FALLBACK_PLANS].map((fallback) => {
     const apiPlan = apiPlans.find((plan) => plan.code === fallback.code);
     return apiPlan ? qoriPlanFromApi(apiPlan) : fallback;
   }).filter(Boolean);
-  return [DESPEGA_PLAN, ...mapped];
+  return mapped;
 }
 
 function renderPlans() {
@@ -344,17 +343,6 @@ function scheduleSalesAdvisorSearch() {
   salesAdvisorTimer = window.setTimeout(searchSalesAdvisors, 280);
 }
 
-async function submitEntryRequest(payload) {
-  const message = [
-    `Hola, quiero activar Qori ${selectedPlan.name}.`,
-    `Empresa: ${payload.company_name || "No registrada"}`,
-    `Contacto: ${payload.contact_name}`,
-    `Email: ${payload.email}`,
-    `Teléfono: ${payload.phone}`,
-  ].join("\n");
-  window.location.href = `https://wa.me/573057724185?text=${encodeURIComponent(message)}`;
-}
-
 async function submitSignup(event) {
   event.preventDefault();
   if (!selectedPlan?.code) {
@@ -369,11 +357,6 @@ async function submitSignup(event) {
     salesAdvisorSearch?.focus();
     return;
   }
-  if (selectedPlan.notSubscription) {
-    await submitEntryRequest(payload);
-    return;
-  }
-
   submitButton.disabled = true;
   submitButton.textContent = "Creando suscripción...";
   setMessage("Registrando cuenta y preparando autorización segura en Mercado Pago.", "info");

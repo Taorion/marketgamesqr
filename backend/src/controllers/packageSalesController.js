@@ -177,7 +177,7 @@ async function listPackageOffers(_req, res, next) {
 async function listPublicSubscriptionPlans(_req, res, next) {
   try {
     const plans = listPlans();
-    const publicPlanCodes = [PLAN_CODES.STARTER, PLAN_CODES.GROWTH, PLAN_CODES.PRO];
+    const publicPlanCodes = [PLAN_CODES.DESPEGA, PLAN_CODES.STARTER, PLAN_CODES.GROWTH, PLAN_CODES.PRO];
     res.json({
       prepaid_plan: null,
       portal_base_plan: null,
