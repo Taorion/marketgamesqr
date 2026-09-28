@@ -51,3 +51,38 @@ async function openInventoryProductQr(productId) {
     showFeedback(error.message || "No se pudo generar el QR del producto.", "error", { title: "QR de producto" });
   }
 }
+
+function inventoryProductHistoryMarkup(data = {}) {
+  const product = data.product || {};
+  const history = Array.isArray(data.history) ? data.history : [];
+  const sourceLabel = (value) => ({
+    MANUAL_FORM: "Carga manual",
+    CSV_IMPORT: "Importación CSV",
+    SALE_AUTO_CREATE: "Creación automática desde una venta",
+    HISTORICAL_BACKFILL: "Registro histórico de Qori",
+  }[String(value || "").toUpperCase()] || "Inventario Qori");
+  const rows = history.length ? history.map((event) => {
+    const metadata = event.metadata && typeof event.metadata === "object" ? event.metadata : {};
+    const created = event.action === "CREATED";
+    const title = created ? "Producto cargado al inventario" : event.action === "ARCHIVED" ? "Producto archivado" : event.action === "DELETED" ? "Producto eliminado" : "Producto actualizado";
+    const stock = metadata.initial_stock_quantity === null || metadata.initial_stock_quantity === undefined
+      ? "Cantidad inicial no disponible"
+      : `${Number(metadata.initial_stock_quantity || 0).toLocaleString("es-CO")} ${metadata.unit_label || product.unit_label || "unidad(es)"}`;
+    const detail = created ? `${sourceLabel(metadata.source)} · ${stock}` : (event.reason || `${event.previous_status || "-"} → ${event.next_status || "-"}`);
+    const date = event.created_at ? new Date(event.created_at) : null;
+    const timestamp = date && !Number.isNaN(date.getTime()) ? date.toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" }) : "Fecha no disponible";
+    return `<div class="inventory-detail-customer"><div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail)}</small></div><span><strong>${escapeHtml(timestamp)}</strong><small>${escapeHtml(event.actor_name || event.actor_email || "Sistema Qori")}</small></span></div>`;
+  }).join("") : '<p class="empty-state compact">Aún no hay eventos registrados para este producto.</p>';
+  return `<section class="inventory-detail-section" data-inventory-product-history aria-label="Historial del inventario"><span>Trazabilidad</span><h4>Historial del inventario</h4><p>Registro de cuándo se cargó el producto, quién lo hizo, su cantidad inicial y el origen de la carga.</p><div class="inventory-detail-customers">${rows}</div></section>`;
+}
+
+const renderInventoryProductDetailBeforeHistory = window.renderInventoryProductDetail;
+if (typeof renderInventoryProductDetailBeforeHistory === "function") {
+  window.renderInventoryProductDetail = function renderInventoryProductDetailWithHistory(data = {}) {
+    const modal = renderInventoryProductDetailBeforeHistory(data);
+    if (!modal?.querySelector("[data-inventory-product-history]")) {
+      modal.querySelector(".inventory-detail-grid")?.insertAdjacentHTML("beforebegin", inventoryProductHistoryMarkup(data));
+    }
+    return modal;
+  };
+}

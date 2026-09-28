@@ -1,7 +1,7 @@
 const { query } = require("../config/db");
 
 const LIFECYCLE_ACTIONS = new Set([
-  "ARCHIVED", "RESTORED", "CANCELLED", "VOIDED", "DISABLED", "DELETED", "EVIDENCE_INVALIDATED",
+  "CREATED", "ARCHIVED", "RESTORED", "CANCELLED", "VOIDED", "DISABLED", "DELETED", "EVIDENCE_INVALIDATED",
 ]);
 
 function lifecycleEventPayload(payload = {}) {
@@ -42,4 +42,30 @@ async function recordLifecycleEvent(payload, client = null) {
   return result.rows[0] || null;
 }
 
-module.exports = { lifecycleEventPayload, recordLifecycleEvent };
+async function recordInventoryProductCreated({ businessId, product, actorUserId, source, metadata = {} }, client = null) {
+  if (!product?.id) throw new Error("El producto es obligatorio para registrar su creacion.");
+  return recordLifecycleEvent({
+    business_id: businessId,
+    entity_type: "INVENTORY_PRODUCT",
+    entity_id: product.id,
+    action: "CREATED",
+    previous_status: null,
+    next_status: product.status || "ACTIVE",
+    idempotency_key: `inventory-created:${product.id}`,
+    actor_user_id: actorUserId || null,
+    metadata: {
+      product_name: product.name || null,
+      internal_id: product.internal_id || null,
+      sku: product.sku || null,
+      barcode: product.barcode || null,
+      initial_stock_quantity: Number(product.stock_quantity || 0),
+      unit_label: product.unit_label || "unidad",
+      unit_price: Number(product.unit_price || 0),
+      redemption_points_cost: Number(product.redemption_points_cost || 0),
+      source: String(source || "MANUAL_FORM").trim().toUpperCase(),
+      ...metadata,
+    },
+  }, client);
+}
+
+module.exports = { lifecycleEventPayload, recordLifecycleEvent, recordInventoryProductCreated };

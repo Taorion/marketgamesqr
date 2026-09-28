@@ -35,7 +35,7 @@ const { syncSaleProductsWithCatalog } = require("../services/productCatalogServi
 const { getIndividualQrDownload } = require("../services/strategicQrService");
 const { getLeadCrmDetail } = require("../services/leadCrmService");
 const { assertStorageQuotaForUpload } = require("../services/storageQuotaService");
-const { recordLifecycleEvent } = require("../services/lifecycleAuditService");
+const { recordLifecycleEvent, recordInventoryProductCreated } = require("../services/lifecycleAuditService");
 const { resolveAcquisitionChannelReference } = require("../services/acquisitionChannelService");
 const { listAttributedSales } = require("../services/attributedSalesService");
 const { resolveBusinessSaleSeller } = require("../services/sellerService");
@@ -4497,7 +4497,15 @@ async function createInventoryProductFromSale(client, businessId, userId, item, 
       userId || null,
     ]
   );
-  return result.rows[0];
+  const product = result.rows[0];
+  await recordInventoryProductCreated({
+    businessId,
+    product,
+    actorUserId: userId,
+    source: "SALE_AUTO_CREATE",
+    metadata: { source_module: options.sourceModule || "sales" },
+  }, client);
+  return product;
 }
 
 function saleProductPayload(item, product, source) {
@@ -4858,11 +4866,25 @@ async function getInventoryProductInsights(req, res, next) {
       [businessId, req.params.productId, product.name]
     );
     const insights = insightResult.rows[0] || {};
+    const historyResult = await query(
+      `select event.id, event.action, event.previous_status, event.next_status, event.reason,
+              event.metadata, event.created_at, event.actor_user_id,
+              actor.full_name as actor_name, actor.email as actor_email
+         from business_lifecycle_events event
+         left join app_users actor on actor.id = event.actor_user_id
+        where event.business_id = $1
+          and event.entity_type = 'INVENTORY_PRODUCT'
+          and event.entity_id = $2
+        order by event.created_at desc, event.id desc
+        limit 100`,
+      [businessId, req.params.productId]
+    );
     res.json({
       product,
       summary: insights.summary || { sales_count: 0, units_sold: 0, revenue: 0, customers_count: 0 },
       timeline: Array.isArray(insights.timeline) ? insights.timeline : [],
       customers: Array.isArray(insights.customers) ? insights.customers : [],
+      history: historyResult.rows,
     });
   } catch (error) {
     next(error);
@@ -4889,7 +4911,7 @@ async function createInventoryProduct(req, res, next) {
     const result = await withTransaction(async (client) => {
       Object.assign(payload, await resolveInventoryTaxonomy(client, businessId, payload));
       await ensureInventoryProductUnique(client, businessId, payload);
-      return client.query(
+      const inserted = await client.query(
         `insert into business_inventory_products
           (business_id, internal_id, sku, barcode, name, description, category, category_id, subcategory_id, brand, brand_id,
            unit_price, redemption_points_cost, price_before_tax, tax_classification, tax_base_id, healthy_tax_id, cost_price, currency, stock_quantity,
@@ -4925,6 +4947,13 @@ async function createInventoryProduct(req, res, next) {
           payload.created_by_user_id,
         ]
       );
+      await recordInventoryProductCreated({
+        businessId,
+        product: inserted.rows[0],
+        actorUserId: req.user.id,
+        source: "MANUAL_FORM",
+      }, client);
+      return inserted;
     });
     res.status(201).json({ product: result.rows[0] });
   } catch (error) {
@@ -5012,6 +5041,12 @@ async function importInventoryProductsCsv(req, res, next) {
             JSON.stringify(payload.metadata), payload.created_by_user_id,
           ]
         );
+        await recordInventoryProductCreated({
+          businessId,
+          product: inserted.rows[0],
+          actorUserId: req.user.id,
+          source: "CSV_IMPORT",
+        }, client);
         imported.push(inserted.rows[0]);
       }
       return { imported, skipped };

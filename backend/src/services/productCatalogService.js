@@ -1,4 +1,5 @@
 const { badRequest } = require("../utils/http");
+const { recordInventoryProductCreated } = require("./lifecycleAuditService");
 
 function cleanText(value, max = 180) {
   const text = String(value || "").trim();
@@ -119,7 +120,15 @@ async function createCatalogProductFromSale(client, businessId, userId, item, op
       userId || null,
     ]
   );
-  return result.rows[0];
+  const product = result.rows[0];
+  await recordInventoryProductCreated({
+    businessId,
+    product,
+    actorUserId: userId,
+    source: "SALE_AUTO_CREATE",
+    metadata: { source_module: options.sourceModule || "sales" },
+  }, client);
+  return product;
 }
 
 function productPayload(item, product, source) {

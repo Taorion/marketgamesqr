@@ -26350,12 +26350,29 @@ function inventoryDetailDate(value) {
     : "-";
 }
 
+function inventoryHistoryDate(value) {
+  const date = value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime())
+    ? date.toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" })
+    : "Fecha no disponible";
+}
+
+function inventoryHistorySource(value) {
+  return {
+    MANUAL_FORM: "Carga manual",
+    CSV_IMPORT: "Importación CSV",
+    SALE_AUTO_CREATE: "Creación automática desde una venta",
+    HISTORICAL_BACKFILL: "Registro histórico de Qori",
+  }[String(value || "").toUpperCase()] || "Inventario Qori";
+}
+
 function renderInventoryProductDetail(data = {}) {
   const modal = ensureInventoryProductDetailModal();
   const product = data.product || {};
   const summary = data.summary || {};
   const timeline = Array.isArray(data.timeline) ? data.timeline.slice(-30) : [];
   const customers = Array.isArray(data.customers) ? data.customers : [];
+  const history = Array.isArray(data.history) ? data.history : [];
   const maximum = Math.max(1, ...timeline.map((item) => Number(item.revenue || 0)));
   const chart = timeline.length
     ? timeline.map((item) => {
@@ -26372,6 +26389,26 @@ function renderInventoryProductDetail(data = {}) {
       </div>
     `).join("")
     : '<p class="empty-state compact">Las personas que compren este producto aparecerán aquí.</p>';
+  const historyRows = history.length
+    ? history.map((event) => {
+      const metadata = event.metadata && typeof event.metadata === "object" ? event.metadata : {};
+      const isCreated = event.action === "CREATED";
+      const title = isCreated ? "Producto cargado al inventario" : event.action === "ARCHIVED" ? "Producto archivado" : event.action === "DELETED" ? "Producto eliminado" : "Producto actualizado";
+      const stock = metadata.initial_stock_quantity === null || metadata.initial_stock_quantity === undefined
+        ? "Cantidad inicial no disponible"
+        : `${Number(metadata.initial_stock_quantity || 0).toLocaleString("es-CO")} ${metadata.unit_label || product.unit_label || "unidad(es)"}`;
+      const detail = isCreated
+        ? `${inventoryHistorySource(metadata.source)} · ${stock}`
+        : (event.reason || `${event.previous_status || "-"} → ${event.next_status || "-"}`);
+      const actor = event.actor_name || event.actor_email || "Sistema Qori";
+      return `
+        <div class="inventory-detail-customer">
+          <div><strong>${escapeHtml(title)}</strong><small>${escapeHtml(detail)}</small></div>
+          <span><strong>${escapeHtml(inventoryHistoryDate(event.created_at))}</strong><small>${escapeHtml(actor)}</small></span>
+        </div>
+      `;
+    }).join("")
+    : '<p class="empty-state compact">Aún no hay eventos registrados para este producto.</p>';
   modal.innerHTML = `
     <article class="surface-card modal-card inventory-product-detail-card" role="document" style="width:min(1040px,calc(100vw - 24px))!important;max-height:calc(100dvh - 24px)!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;scrollbar-gutter:stable!important">
       <div class="inventory-detail-heading">
@@ -26403,6 +26440,12 @@ function renderInventoryProductDetail(data = {}) {
           <div><dt>Unidad</dt><dd>${escapeHtml(product.unit_label || "unidad")}</dd></div>
           <div><dt>Stock</dt><dd>${escapeHtml(`${Number(product.stock_quantity || 0).toLocaleString("es-CO")} · mínimo ${Number(product.min_stock_quantity || 0).toLocaleString("es-CO")}`)}</dd></div>
         </dl>
+      </section>
+      <section class="inventory-detail-section" data-inventory-product-history aria-label="Historial del inventario">
+        <span>Trazabilidad</span>
+        <h4>Historial del inventario</h4>
+        <p>Registro de cuándo se cargó el producto, quién lo hizo, su cantidad inicial y el origen de la carga.</p>
+        <div class="inventory-detail-customers">${historyRows}</div>
       </section>
       <div class="inventory-detail-grid">
         <section class="inventory-detail-section">
@@ -26437,7 +26480,7 @@ function renderInventoryProductDetail(data = {}) {
 async function openInventoryProductDetail(productId) {
   const product = findInventoryProductById(productId);
   if (!product) return;
-  const modal = renderInventoryProductDetail({ product, summary: {}, timeline: [], customers: [] });
+  const modal = renderInventoryProductDetail({ product, summary: {}, timeline: [], customers: [], history: [] });
   modal.classList.remove("hidden");
   modal.removeAttribute("aria-hidden");
   try {
