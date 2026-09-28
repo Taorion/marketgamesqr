@@ -840,3 +840,16 @@ html body:not(#qoriCompactA#qoriCompactB#qoriCompactC#qoriCompactD#qoriCompactE#
     padding: 0 !important;
   }
 }
+
+/* Validator product search: keep text clear of the leading search icon. */
+html body:not(#qoriCompactA#qoriCompactB#qoriCompactC#qoriCompactD#qoriCompactE#qoriCompactF)[data-auth-state="authenticated"][data-current-view="validator"] .portal-shell #workspace .validator-product-search-control input {
+  padding: 7px 12px 7px 42px !important;
+  text-overflow: ellipsis !important;
+}
+
+html body:not(#qoriCompactA#qoriCompactB#qoriCompactC#qoriCompactD#qoriCompactE#qoriCompactF)[data-auth-state="authenticated"][data-current-view="validator"] .portal-shell #workspace .validator-product-search-control > .material-symbols-outlined {
+  left: 12px !important;
+  width: 18px !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
