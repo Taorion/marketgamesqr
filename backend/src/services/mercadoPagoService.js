@@ -341,14 +341,6 @@ async function mpRequest(path, options = {}) {
   return data;
 }
 
-function isPayerSiteMismatchError(error) {
-  const providerDetails = error?.details && typeof error.details === "object"
-    ? JSON.stringify(error.details)
-    : "";
-  const message = `${error?.message || ""} ${providerDetails}`.toLowerCase();
-  return message.includes("payer is associated with a different site");
-}
-
 async function createPublicPlanPaymentPreference(payload, plan, purchaseOrder, planPriceCop, billingLabel) {
   return mpRequest("/checkout/preferences", {
     method: "POST",
@@ -375,7 +367,7 @@ async function createPublicPlanPaymentPreference(payload, plan, purchaseOrder, p
         user_id: payload.user_id,
         plan_code: plan.code,
         signup_type: "portal_monthly_subscription",
-        checkout_mode: "payer_site_fallback",
+        checkout_mode: "public_plan_initial_payment",
       },
       payment_methods: digitalOnlyPaymentMethods(),
       ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
@@ -881,8 +873,6 @@ async function createPortalSignupCheckout(client, payload) {
   const planPriceCop = Number(plan.monthly_price_cop);
   const subscriptionType = "portal_monthly_subscription";
   const billingLabel = "mensualidad";
-  const firstChargeDate = new Date(Date.now() + 5 * 60 * 1000);
-  const recurringFrequency = planBillingFrequency(plan);
   const order = await client.query(
     `insert into qr_credit_purchase_orders
       (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)
@@ -899,8 +889,8 @@ async function createPortalSignupCheckout(client, payload) {
         source: "public_portal_signup",
         signup: {
           type: subscriptionType,
-          activation_flow: "card_preapproval",
-          requires_card_enrollment: true,
+          activation_flow: "checkout_preference",
+          requires_card_enrollment: false,
           business_id: payload.business_id,
           user_id: payload.user_id,
           email: payload.email,
@@ -915,31 +905,7 @@ async function createPortalSignupCheckout(client, payload) {
   );
   const purchaseOrder = order.rows[0];
 
-  let checkout;
-  let usedPayerSiteFallback = false;
-  try {
-    checkout = await mpRequest("/preapproval", {
-      method: "POST",
-      body: JSON.stringify({
-        reason: `${plan.name} - portal Qori (${billingLabel})`,
-        external_reference: purchaseOrder.external_reference,
-        payer_email: payload.email,
-        back_url: appUrl("/paquetes/?signup=card"),
-        notification_url: webhookUrl(),
-        auto_recurring: {
-          frequency: recurringFrequency.frequency,
-          frequency_type: recurringFrequency.frequency_type,
-          transaction_amount: planPriceCop,
-          currency_id: "COP",
-          start_date: firstChargeDate.toISOString(),
-        },
-      }),
-    });
-  } catch (error) {
-    if (!isPayerSiteMismatchError(error)) throw error;
-    checkout = await createPublicPlanPaymentPreference(payload, plan, purchaseOrder, planPriceCop, billingLabel);
-    usedPayerSiteFallback = true;
-  }
+  const checkout = await createPublicPlanPaymentPreference(payload, plan, purchaseOrder, planPriceCop, billingLabel);
 
   const updated = await client.query(
     `update qr_credit_purchase_orders
@@ -947,12 +913,6 @@ async function createPortalSignupCheckout(client, payload) {
          checkout_url = $3,
          sandbox_checkout_url = $4,
          payment_payload = $5,
-         metadata = case when $6::boolean then
-           jsonb_set(
-             jsonb_set(metadata, '{signup,activation_flow}', '"checkout_preference"'::jsonb, true),
-             '{signup,requires_card_enrollment}', 'false'::jsonb, true
-           )
-         else metadata end,
          updated_at = now()
      where id = $1
      returning *`,
@@ -962,7 +922,6 @@ async function createPortalSignupCheckout(client, payload) {
       checkout.init_point || null,
       checkout.sandbox_init_point || null,
       checkout,
-      usedPayerSiteFallback,
     ]
   );
 
@@ -1518,7 +1477,6 @@ function mapPurchaseOrder(row) {
 module.exports = {
   __testing: {
     approvedPaymentIdFromAuthorizedInvoice,
-    isPayerSiteMismatchError,
     normalizeMercadoPagoWebhookTopic,
     validateApprovedPayment,
     verifyWebhookSignature,

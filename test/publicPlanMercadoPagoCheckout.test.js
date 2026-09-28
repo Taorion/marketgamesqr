@@ -6,7 +6,7 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const { env } = require("../backend/src/config/env");
-const { __testing, createPortalSignupCheckout } = require("../backend/src/services/mercadoPagoService");
+const { createPortalSignupCheckout } = require("../backend/src/services/mercadoPagoService");
 
 test("Despega is a public monthly subscription backed by Mercado Pago", () => {
   const subscriptions = read("backend/src/services/subscriptionService.js");
@@ -22,7 +22,8 @@ test("Despega is a public monthly subscription backed by Mercado Pago", () => {
   assert.doesNotMatch(page, /window\.location\.href = `https:\/\/wa\.me/);
   assert.match(page, /fetchJson\("\/api\/public\/signup\/portal"/);
   assert.match(page, /window\.location\.href = checkoutUrl/);
-  assert.match(html, /qori-planes-mensuales-v2-20260928/);
+  assert.match(html, /qori-planes-pse-v3-20260928/);
+  assert.match(html, /Tarjetas, saldo Mercado Pago y PSE/);
 });
 
 test("all public plan checkouts are monthly-only", () => {
@@ -36,28 +37,23 @@ test("all public plan checkouts are monthly-only", () => {
   assert.match(payments, /payload\.billing_cycle && payload\.billing_cycle !== "monthly"/);
   assert.match(payments, /const billingCycle = "monthly"/);
   assert.match(payments, /const subscriptionType = "portal_monthly_subscription"/);
-  assert.match(payments, /const recurringFrequency = planBillingFrequency\(plan\)/);
+  assert.match(payments, /activation_flow:\s*"checkout_preference"/);
+  assert.match(payments, /requires_card_enrollment:\s*false/);
 });
 
-test("public plan checkout falls back only for Mercado Pago payer-site mismatches", () => {
+test("public plan checkout uses Checkout Pro without excluding PSE", () => {
   const payments = read("backend/src/services/mercadoPagoService.js");
+  const preferenceFactory = payments.match(/async function createPublicPlanPaymentPreference[\s\S]*?\r?\n}\r?\n/)[0];
 
-  assert.equal(__testing.isPayerSiteMismatchError(new Error("Payer is associated with a different site")), true);
-  assert.equal(__testing.isPayerSiteMismatchError({
-    message: "Mercado Pago rechazo la operacion.",
-    details: { cause: [{ description: "Payer is associated with a different site" }] },
-  }), true);
-  assert.equal(__testing.isPayerSiteMismatchError(new Error("Invalid transaction amount")), false);
   assert.match(payments, /createPublicPlanPaymentPreference/);
-  assert.match(payments, /checkout_mode:\s*"payer_site_fallback"/);
-  assert.match(payments, /if \(!isPayerSiteMismatchError\(error\)\) throw error/);
-  assert.doesNotMatch(
-    payments.match(/async function createPublicPlanPaymentPreference[\s\S]*?\r?\n}\r?\n/)[0],
-    /payer(_email)?:/
-  );
+  assert.match(payments, /checkout_mode:\s*"public_plan_initial_payment"/);
+  assert.doesNotMatch(preferenceFactory, /payer(_email)?:/);
+  assert.doesNotMatch(preferenceFactory, /\/preapproval/);
+  assert.doesNotMatch(payments, /excluded_payment_types:[\s\S]*?bank_transfer/);
+  assert.doesNotMatch(payments, /excluded_payment_methods:[\s\S]*?\{ id: "pse" \}/);
 });
 
-test("Despega returns a usable Checkout Pro URL when the payer belongs to another site", async () => {
+test("Despega returns Checkout Pro with cards, account money and PSE available", async () => {
   const originalFetch = global.fetch;
   const originalAccessToken = env.mercadoPagoAccessToken;
   const originalWebhookSecret = env.mercadoPagoWebhookSecret;
@@ -100,12 +96,6 @@ test("Despega returns a usable Checkout Pro URL when the payer belongs to anothe
   env.mercadoPagoWebhookSecret = "test-webhook-secret";
   global.fetch = async (url, options) => {
     requests.push({ url, body: JSON.parse(options.body) });
-    if (requests.length === 1) {
-      return {
-        ok: false,
-        async json() { return { message: "Payer is associated with a different site" }; },
-      };
-    }
     return {
       ok: true,
       async json() {
@@ -124,15 +114,14 @@ test("Despega returns a usable Checkout Pro URL when the payer belongs to anothe
       billing_cycle: "monthly",
     });
 
-    assert.equal(requests.length, 2);
-    assert.match(requests[0].url, /\/preapproval$/);
-    assert.equal(requests[0].body.payer_email, "buyer@example.com");
-    assert.match(requests[1].url, /\/checkout\/preferences$/);
-    assert.equal("payer" in requests[1].body, false);
-    assert.equal(requests[1].body.currency_id, undefined);
-    assert.equal(requests[1].body.items[0].currency_id, "COP");
-    assert.equal(requests[1].body.external_reference, "signup-1");
-    assert.equal(client.calls[1].params[5], true);
+    assert.equal(requests.length, 1);
+    assert.match(requests[0].url, /\/checkout\/preferences$/);
+    assert.equal("payer" in requests[0].body, false);
+    assert.equal(requests[0].body.currency_id, undefined);
+    assert.equal(requests[0].body.items[0].currency_id, "COP");
+    assert.equal(requests[0].body.external_reference, "signup-1");
+    assert.deepEqual(requests[0].body.payment_methods.excluded_payment_methods, [{ id: "efecty" }]);
+    assert.deepEqual(requests[0].body.payment_methods.excluded_payment_types, [{ id: "ticket" }, { id: "atm" }]);
     assert.equal(result.checkout_url, "https://www.mercadopago.com.co/checkout/v1/redirect?pref_id=preference-1");
   } finally {
     global.fetch = originalFetch;

@@ -357,8 +357,8 @@ async function submitSignup(event) {
     return;
   }
   submitButton.disabled = true;
-  submitButton.textContent = "Creando suscripción...";
-  setMessage("Registrando cuenta y preparando autorización segura en Mercado Pago.", "info");
+  submitButton.textContent = "Preparando pago...";
+  setMessage("Registrando cuenta y preparando pago seguro con tarjeta, saldo Mercado Pago o PSE.", "info");
   try {
     const data = await fetchJson("/api/public/signup/portal", {
       method: "POST",
@@ -371,9 +371,9 @@ async function submitSignup(event) {
     });
     const checkoutUrl = data.order?.checkout_url || data.order?.sandbox_checkout_url;
     if (!checkoutUrl) {
-      throw new Error("La suscripción fue registrada, pero no se recibió enlace de Mercado Pago.");
+      throw new Error("El plan fue registrado, pero no se recibió enlace de Mercado Pago.");
     }
-    setMessage("Suscripción creada. Redirigiendo a Mercado Pago...", "success");
+    setMessage("Plan registrado. Elige tarjeta, saldo Mercado Pago o PSE para completar el pago.", "success");
     window.location.href = checkoutUrl;
   } catch (error) {
     setMessage(error.message || "No se pudo completar la suscripción.", "error");
