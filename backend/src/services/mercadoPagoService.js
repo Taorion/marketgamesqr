@@ -341,6 +341,48 @@ async function mpRequest(path, options = {}) {
   return data;
 }
 
+function isPayerSiteMismatchError(error) {
+  const providerDetails = error?.details && typeof error.details === "object"
+    ? JSON.stringify(error.details)
+    : "";
+  const message = `${error?.message || ""} ${providerDetails}`.toLowerCase();
+  return message.includes("payer is associated with a different site");
+}
+
+async function createPublicPlanPaymentPreference(payload, plan, purchaseOrder, planPriceCop, billingLabel) {
+  return mpRequest("/checkout/preferences", {
+    method: "POST",
+    body: JSON.stringify({
+      items: [
+        {
+          id: plan.code,
+          title: `${plan.name} - suscripcion ${billingLabel} Qori`,
+          quantity: 1,
+          unit_price: planPriceCop,
+          currency_id: "COP",
+        },
+      ],
+      external_reference: purchaseOrder.external_reference,
+      notification_url: webhookUrl(),
+      back_urls: {
+        success: appUrl("/paquetes/?signup=success"),
+        failure: appUrl("/paquetes/?signup=failure"),
+        pending: appUrl("/paquetes/?signup=pending"),
+      },
+      metadata: {
+        order_id: purchaseOrder.id,
+        business_id: payload.business_id,
+        user_id: payload.user_id,
+        plan_code: plan.code,
+        signup_type: "portal_monthly_subscription",
+        checkout_mode: "payer_site_fallback",
+      },
+      payment_methods: digitalOnlyPaymentMethods(),
+      ...(shouldEnableAutoReturn() ? { auto_return: "approved" } : {}),
+    }),
+  });
+}
+
 function verifyWebhookSignature(req) {
   if (!env.mercadoPagoWebhookSecret) {
     throw forbidden("Webhook Mercado Pago no configurado.");
@@ -873,23 +915,31 @@ async function createPortalSignupCheckout(client, payload) {
   );
   const purchaseOrder = order.rows[0];
 
-  const preapproval = await mpRequest("/preapproval", {
-    method: "POST",
-    body: JSON.stringify({
-      reason: `${plan.name} - portal Qori (${billingLabel})`,
-      external_reference: purchaseOrder.external_reference,
-      payer_email: payload.email,
-      back_url: appUrl("/paquetes/?signup=card"),
-      notification_url: webhookUrl(),
-      auto_recurring: {
-        frequency: recurringFrequency.frequency,
-        frequency_type: recurringFrequency.frequency_type,
-        transaction_amount: planPriceCop,
-        currency_id: "COP",
-        start_date: firstChargeDate.toISOString(),
-      },
-    }),
-  });
+  let checkout;
+  let usedPayerSiteFallback = false;
+  try {
+    checkout = await mpRequest("/preapproval", {
+      method: "POST",
+      body: JSON.stringify({
+        reason: `${plan.name} - portal Qori (${billingLabel})`,
+        external_reference: purchaseOrder.external_reference,
+        payer_email: payload.email,
+        back_url: appUrl("/paquetes/?signup=card"),
+        notification_url: webhookUrl(),
+        auto_recurring: {
+          frequency: recurringFrequency.frequency,
+          frequency_type: recurringFrequency.frequency_type,
+          transaction_amount: planPriceCop,
+          currency_id: "COP",
+          start_date: firstChargeDate.toISOString(),
+        },
+      }),
+    });
+  } catch (error) {
+    if (!isPayerSiteMismatchError(error)) throw error;
+    checkout = await createPublicPlanPaymentPreference(payload, plan, purchaseOrder, planPriceCop, billingLabel);
+    usedPayerSiteFallback = true;
+  }
 
   const updated = await client.query(
     `update qr_credit_purchase_orders
@@ -897,15 +947,22 @@ async function createPortalSignupCheckout(client, payload) {
          checkout_url = $3,
          sandbox_checkout_url = $4,
          payment_payload = $5,
+         metadata = case when $6::boolean then
+           jsonb_set(
+             jsonb_set(metadata, '{signup,activation_flow}', '"checkout_preference"'::jsonb, true),
+             '{signup,requires_card_enrollment}', 'false'::jsonb, true
+           )
+         else metadata end,
          updated_at = now()
      where id = $1
      returning *`,
     [
       purchaseOrder.id,
-      preapproval.id || null,
-      preapproval.init_point || null,
-      preapproval.sandbox_init_point || null,
-      preapproval,
+      checkout.id || null,
+      checkout.init_point || null,
+      checkout.sandbox_init_point || null,
+      checkout,
+      usedPayerSiteFallback,
     ]
   );
 
@@ -1461,6 +1518,7 @@ function mapPurchaseOrder(row) {
 module.exports = {
   __testing: {
     approvedPaymentIdFromAuthorizedInvoice,
+    isPayerSiteMismatchError,
     normalizeMercadoPagoWebhookTopic,
     validateApprovedPayment,
     verifyWebhookSignature,
