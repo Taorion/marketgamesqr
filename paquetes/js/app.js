@@ -155,7 +155,6 @@ function qoriPlanFromApi(apiPlan) {
   return {
     ...fallback,
     monthly_price_cop: Number(apiPlan.monthly_price_cop || fallback.monthly_price_cop),
-    annual_price_cop: apiPlan.annual_price_cop || null,
     recommended: Boolean(apiPlan.recommended || fallback.recommended),
   };
 }

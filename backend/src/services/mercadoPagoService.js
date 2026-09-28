@@ -94,13 +94,6 @@ function billingPeriodLabel(plan, fallback = "mensualidad") {
   return plan.billing_label || (plan.billing_period === "3_days" ? "cada 3 dias" : fallback);
 }
 
-function planChargeCop(plan, billingCycle) {
-  if (billingCycle === "annual") {
-    return Number(plan.annual_price_cop || (Number(plan.monthly_price_cop || 0) * 12 * 0.7));
-  }
-  return Number(plan.monthly_price_cop || 0);
-}
-
 function addPlanBillingPeriod(date, plan, billingCycle = "monthly") {
   const next = new Date(date.getTime());
   const { frequency, frequency_type: frequencyType } = planBillingFrequency(plan || {});
@@ -838,15 +831,16 @@ async function createPortalSignupCheckout(client, payload) {
   if (!plan || !plan.monthly_price_cop) {
     throw badRequest("Plan mensual no disponible para pago automatico.");
   }
+  if (payload.billing_cycle && payload.billing_cycle !== "monthly") {
+    throw badRequest("Los planes publicos de Qori se cobran exclusivamente por mensualidad.");
+  }
 
-  const billingCycle = normalizeBillingCycle(payload.billing_cycle);
-  const planPriceCop = planChargeCop(plan, billingCycle);
-  const subscriptionType = billingCycle === "annual" ? "portal_annual_subscription" : "portal_monthly_subscription";
-  const billingLabel = billingCycle === "annual" ? "anualidad" : "mensualidad";
+  const billingCycle = "monthly";
+  const planPriceCop = Number(plan.monthly_price_cop);
+  const subscriptionType = "portal_monthly_subscription";
+  const billingLabel = "mensualidad";
   const firstChargeDate = new Date(Date.now() + 5 * 60 * 1000);
-  const recurringFrequency = billingCycle === "annual"
-    ? { frequency: 12, frequency_type: "months" }
-    : planBillingFrequency(plan);
+  const recurringFrequency = planBillingFrequency(plan);
   const order = await client.query(
     `insert into qr_credit_purchase_orders
       (business_id, created_by_user_id, package_code, package_size, package_title, price_cop, external_reference, metadata)

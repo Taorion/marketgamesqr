@@ -23,7 +23,6 @@ const DESPEGA_PORTAL_COP = 75000;
 const STARTED_PORTAL_COP = 229000;
 const MEDIUM_PORTAL_COP = 899000;
 const PREMIUM_PORTAL_COP = 1990000;
-const ANNUAL_BENEFIT_RATE = 0.3;
 const STARTER_INTERACTIVE_ACTIVATION_TYPES = ["TRIVIA_QUIZ", "OPEN_QUESTION"];
 const MEDIUM_INTERACTIVE_ACTIVATION_TYPES = [
   "TRIVIA_QUIZ",
@@ -74,14 +73,6 @@ const MEDIUM_INTERACTIVE_ACTIVATION_TYPES = [
   "WAITLIST",
   "PRESALE_BENEFIT",
 ];
-function roundCop(value) {
-  return Math.round(Number(value || 0) / 1000) * 1000;
-}
-
-function annualCop(monthlyCop) {
-  return roundCop(Number(monthlyCop || 0) * 12 * (1 - ANNUAL_BENEFIT_RATE));
-}
-
 const PLAN_PRICING_NOTES = {
   DESPEGA: {
     recommended_start_package: null,
@@ -310,8 +301,6 @@ const PLAN_CATALOG = {
     name: "Despega",
     category: "subscription",
     monthly_price_cop: DESPEGA_PORTAL_COP,
-    annual_price_cop: annualCop(DESPEGA_PORTAL_COP),
-    annual_benefit_percent: 30,
     display_currency: "COP",
     payment_currency: "COP",
     price_label: "COP 75.000 / mes",
@@ -391,8 +380,6 @@ const PLAN_CATALOG = {
     name: "Crece",
     category: "subscription",
     monthly_price_cop: STARTED_PORTAL_COP,
-    annual_price_cop: annualCop(STARTED_PORTAL_COP),
-    annual_benefit_percent: 30,
     display_currency: "COP",
     payment_currency: "COP",
     price_label: "COP 229.000 / mes",
@@ -539,8 +526,6 @@ const PLAN_CATALOG = {
     name: "Escala",
     category: "subscription",
     monthly_price_cop: MEDIUM_PORTAL_COP,
-    annual_price_cop: annualCop(MEDIUM_PORTAL_COP),
-    annual_benefit_percent: 30,
     display_currency: "COP",
     payment_currency: "COP",
     price_label: "COP 899.000 / mes",
@@ -643,8 +628,6 @@ const PLAN_CATALOG = {
     name: "Expande",
     category: "subscription",
     monthly_price_cop: PREMIUM_PORTAL_COP,
-    annual_price_cop: annualCop(PREMIUM_PORTAL_COP),
-    annual_benefit_percent: 30,
     display_currency: "COP",
     payment_currency: "COP",
     price_label: "COP 1.990.000 / mes",
