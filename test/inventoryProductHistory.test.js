@@ -30,7 +30,7 @@ test("product insights expose tenant-scoped history and the portal renders it", 
   assert.match(app, /Producto cargado al inventario/);
   assert.match(app, /Carga manual/);
   assert.match(app, /Importación CSV/);
-  assert.match(html, /inventory-product-history-v509-20260927/);
+  assert.match(html, /validator-inventory-before-sale-v511-20260928/);
 });
 
 test("migration allows CREATED and backfills existing products without inventing initial stock", () => {

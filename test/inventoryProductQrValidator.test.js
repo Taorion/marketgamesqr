@@ -31,8 +31,19 @@ test("validator recognizes a product QR and registers a canonical inventory-link
   assert.match(app, /function extractInventoryProductQrId\(rawValue\)/);
   assert.match(app, /kind === "inventory_product"/);
   assert.match(app, /inventory\/product-qr\/\$\{encodeURIComponent\(productId\)\}\/validate/);
-  assert.match(app, /mergeValidatorScannedProduct\(state\.validatorPurchaseItems, data\.product/);
+  assert.match(app, /mergeValidatorScannedProduct\(state\.validatorPurchaseItems, scannedProduct/);
   assert.match(app, /api\("\/api\/business\/customer-acquisition-sales"/);
   assert.match(app, /sale_entry: "validator_product_qr"/);
   assert.match(app, /acquisition_source: "QR_SCAN"/);
+});
+
+test("product QR exposes and preserves inventory before the sale deduction", () => {
+  const controller = read("backend/src/controllers/businessPortalController.js");
+  const app = read("empresa/js/app.js");
+  const html = read("empresa/index.html");
+  assert.match(controller, /inventory_before_sale:\s*\{[\s\S]*stock_quantity: Number\(product\.stock_quantity \|\| 0\)/);
+  assert.match(app, /stock_quantity_before_sale: data\.inventory_before_sale\?\.stock_quantity/);
+  assert.match(app, /Inventario actual antes de esta venta:/);
+  assert.match(app, /Inventario antes de la venta:/);
+  assert.match(html, /validator-inventory-before-sale-v511-20260928/g);
 });

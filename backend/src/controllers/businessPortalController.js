@@ -4773,6 +4773,10 @@ async function validateInventoryProductQr(req, res, next) {
       kind: "inventory_product",
       allowed,
       status: product.status,
+      inventory_before_sale: {
+        stock_quantity: Number(product.stock_quantity || 0),
+        unit_label: product.unit_label || "unidad(es)",
+      },
       message: allowed
         ? "Producto reconocido. Confirma cantidad, cliente y medio de pago para registrar la venta."
         : "El producto existe, pero debe estar activo para registrar una venta.",

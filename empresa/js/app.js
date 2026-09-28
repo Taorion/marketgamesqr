@@ -18817,6 +18817,10 @@ function validatorPurchaseItem(seed = {}) {
     quantity: Math.max(1, Number(seed.quantity || 1)),
     unit_price: Math.max(0, Number(seed.unit_price || 0)),
     inventory_product_id: seed.inventory_product_id || null,
+    stock_quantity_before_sale: seed.stock_quantity_before_sale === null || seed.stock_quantity_before_sale === undefined
+      ? null
+      : Math.max(0, Number(seed.stock_quantity_before_sale || 0)),
+    unit_label: String(seed.unit_label || "unidad(es)"),
   };
 }
 
@@ -18829,6 +18833,8 @@ function mergeValidatorScannedProduct(items = [], product = {}, createItem = val
     existing.name = String(product.name || existing.name || "Producto");
     existing.quantity = Math.max(0, Number(existing.quantity || 0)) + 1;
     existing.unit_price = Math.max(0, Number(product.unit_price ?? existing.unit_price ?? 0));
+    existing.stock_quantity_before_sale = product.stock_quantity_before_sale ?? product.stock_quantity ?? existing.stock_quantity_before_sale ?? null;
+    existing.unit_label = String(product.unit_label || existing.unit_label || "unidad(es)");
     return { items, item: existing, added: false };
   }
   const nextItems = items.filter((item) => String(item.name || "").trim());
@@ -18837,6 +18843,8 @@ function mergeValidatorScannedProduct(items = [], product = {}, createItem = val
     quantity: 1,
     unit_price: product.unit_price || 0,
     inventory_product_id: productId,
+    stock_quantity_before_sale: product.stock_quantity_before_sale ?? product.stock_quantity ?? null,
+    unit_label: product.unit_label || "unidad(es)",
   });
   nextItems.push(item);
   return { items: nextItems, item, added: true };
@@ -18932,6 +18940,9 @@ function renderValidatorPurchaseItems() {
     const selectedProduct = item.inventory_product_id ? findInventoryProductById(item.inventory_product_id) : null;
     const searchValue = selectedProduct ? validatorInventoryProductSearchValue(selectedProduct) : item.name || "";
     const datalistId = `validator-inventory-products-${item.id}`;
+    const inventoryBeforeSale = item.inventory_product_id && item.stock_quantity_before_sale !== null && item.stock_quantity_before_sale !== undefined
+      ? `Inventario actual antes de esta venta: ${Number(item.stock_quantity_before_sale || 0).toLocaleString("es-CO")} ${item.unit_label || "unidad(es)"}`
+      : "";
     return `
     <article class="validator-purchase-item" data-validator-purchase-item="${escapeHtml(item.id)}">
       <span class="validator-purchase-index">${index + 1}</span>
@@ -18950,6 +18961,7 @@ function renderValidatorPurchaseItems() {
             return `<option value="${escapeHtml(validatorInventoryProductSearchValue(product))}" label="${escapeHtml(`${money(product.unit_price || 0)}${stock}`)}"></option>`;
           }).join("")}
         </datalist>
+        ${inventoryBeforeSale ? `<small class="validator-product-catalog-status validator-product-stock-before-sale"><strong>${escapeHtml(inventoryBeforeSale)}</strong></small>` : ""}
         <small class="validator-product-catalog-status">${escapeHtml(catalogStatus)} · puedes escribir un producto abierto si no existe.</small>
       </label>
       <label><span>Cantidad</span><input data-validator-item-field="quantity" type="number" min="0.01" step="0.01" inputmode="decimal" value="${escapeHtml(item.quantity)}"></label>
@@ -19180,7 +19192,14 @@ function setValidatorResult(mode, title, message, data = null) {
   const validatorBenefitValue = data?.reward?.value || data?.reward?.benefit_value || {};
   const validatorProductScope = benefitProductScopeLabel(validatorBenefitValue);
   const validatorFulfillment = benefitFulfillmentLabel(validatorBenefitValue, data?.qr_code?.metadata || {});
-  validatorRewardValue.textContent = isProduct ? `${data.product?.name || "Producto"} · ${money(data.product?.unit_price || 0)}` : [
+  const productInventoryBeforeSale = data?.inventory_before_sale?.stock_quantity ?? data?.product?.stock_quantity;
+  const productUnitLabel = data?.inventory_before_sale?.unit_label || data?.product?.unit_label || "unidad(es)";
+  validatorRewardValue.textContent = isProduct ? [
+    `${data.product?.name || "Producto"} · ${money(data.product?.unit_price || 0)}`,
+    productInventoryBeforeSale === null || productInventoryBeforeSale === undefined
+      ? ""
+      : `Inventario antes de la venta: ${Number(productInventoryBeforeSale || 0).toLocaleString("es-CO")} ${productUnitLabel}`,
+  ].filter(Boolean).join(" | ") : [
     data?.reward?.display || data?.reward?.name || validatorBenefitValue?.label || "-",
     validatorProductScope,
     validatorFulfillment,
@@ -33784,7 +33803,12 @@ async function validateValidatorToken(rawValue) {
         const activeBenefit = openCart && validatorKind(openCart.lastValidation) === "qr" && openCart.lastValidation?.allowed
           ? openCart.lastValidation
           : null;
-        const merged = mergeValidatorScannedProduct(state.validatorPurchaseItems, data.product, validatorPurchaseItem);
+        const scannedProduct = {
+          ...data.product,
+          stock_quantity_before_sale: data.inventory_before_sale?.stock_quantity ?? data.product?.stock_quantity ?? null,
+          unit_label: data.inventory_before_sale?.unit_label || data.product?.unit_label || "unidad(es)",
+        };
+        const merged = mergeValidatorScannedProduct(state.validatorPurchaseItems, scannedProduct, validatorPurchaseItem);
         state.validatorRedemptionMode = "PURCHASE";
         state.validatorPurchaseItems = merged.items;
         if (activeBenefit) {
@@ -64139,8 +64163,12 @@ validatorPurchaseItems?.addEventListener("input", (event) => {
     item.inventory_product_id = product?.id || null;
     if (product) {
       item.unit_price = Math.max(0, Number(product.unit_price || 0));
+      item.stock_quantity_before_sale = product.stock_quantity ?? null;
+      item.unit_label = product.unit_label || "unidad(es)";
       const priceInput = row.querySelector('[data-validator-item-field="unit_price"]');
       if (priceInput) priceInput.value = item.unit_price || "";
+    } else {
+      item.stock_quantity_before_sale = null;
     }
     const total = Number(item.quantity || 0) * Number(item.unit_price || 0);
     row.querySelector(".validator-purchase-line-total strong").textContent = money(total);
@@ -64163,9 +64191,12 @@ validatorPurchaseItems?.addEventListener("change", (event) => {
     item.name = product.name || "";
     item.unit_price = Math.max(0, Number(product.unit_price || 0));
     item.inventory_product_id = product.id;
+    item.stock_quantity_before_sale = product.stock_quantity ?? null;
+    item.unit_label = product.unit_label || "unidad(es)";
   } else {
     item.name = field.value.trim();
     item.inventory_product_id = null;
+    item.stock_quantity_before_sale = null;
   }
   renderValidatorPurchaseItems();
   calculateValidatorCheckoutPreview();
