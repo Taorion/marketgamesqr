@@ -54544,7 +54544,7 @@ function rmsStationVisualMeta(phase = "") {
     curaduria: {
       icon: "fact_check",
       tone: "curation",
-      image: "/empresa/img/qori-station-03-clasificador.jpg",
+      image: "/empresa/img/qori-station-03-asignacion.png?v=assignment-image-v514-20260928",
       imageAlt: "Estación 03 Asignación",
       screenTitle: "Estación de almacenamiento: Asignación",
       visualLabel: "Inventario: leads con productos por asignar",
