@@ -6,6 +6,11 @@ const { badRequest, forbidden } = require("../utils/http");
 
 const OFFSETS = [1440, 30, 10];
 const GRACE_SECONDS = 300;
+const workerStatus = { started_at: null, last_success_at: null, last_error_code: null };
+
+function getAgendaPushWorkerStatus() {
+  return { configured: pushConfigured(), enabled: env.agendaPushWorkerEnabled, ...workerStatus };
+}
 
 function pushConfigured() {
   return Boolean(env.agendaPushPublicKey && env.agendaPushPrivateKey && env.agendaPushSubject);
@@ -219,10 +224,17 @@ async function runAgendaPushTick(db = pool, deliver = send) {
 
 function startAgendaPushWorker() {
   if (!env.databaseConfigured || !pushConfigured() || !env.agendaPushWorkerEnabled) return async () => {};
+  workerStatus.started_at = new Date().toISOString();
+  console.log("Agenda push worker started (30-second interval).");
   let running = null;
   const tick = () => {
     if (running) return;
-    running = runAgendaPushTick().catch((error) => {
+    running = runAgendaPushTick().then(() => {
+      if (!workerStatus.last_success_at) console.log("Agenda push worker ready (database tick successful).");
+      workerStatus.last_success_at = new Date().toISOString();
+      workerStatus.last_error_code = null;
+    }).catch((error) => {
+      workerStatus.last_error_code = error.code || error.name;
       console.error("Agenda push worker failed", error.code || error.name);
     }).finally(() => { running = null; });
   };
@@ -233,4 +245,4 @@ function startAgendaPushWorker() {
 }
 
 module.exports = { OFFSETS, pushConfigured, validateSubscription, subscribe, unsubscribe,
-  notificationPayload, sendTest, enqueueDue, processNext, runAgendaPushTick, startAgendaPushWorker };
+  notificationPayload, sendTest, enqueueDue, processNext, runAgendaPushTick, startAgendaPushWorker, getAgendaPushWorkerStatus };

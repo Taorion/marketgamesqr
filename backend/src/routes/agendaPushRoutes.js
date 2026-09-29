@@ -11,6 +11,7 @@ router.use(authRequired, requireRoles("BUSINESS_OWNER", "BUSINESS_MANAGER", "ADM
 router.get("/config", (_req, res) => res.json({
   enabled: push.pushConfigured(), public_key: push.pushConfigured() ? env.agendaPushPublicKey : null,
   offsets_minutes: push.OFFSETS,
+  worker: push.getAgendaPushWorkerStatus(),
 }));
 // Revocation remains available even if a plan no longer permits agenda access.
 router.delete("/subscription", async (req, res) => {
