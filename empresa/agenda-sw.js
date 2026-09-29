@@ -39,7 +39,8 @@ self.addEventListener("push", (event) => {
     await self.registration.showNotification(String(payload.title || "Qori · Agenda"), {
       body: String(payload.body || "Tienes una actividad pendiente"),
       icon: "/img/qori-icon-192.png", badge: "/img/qori-favicon-32.png",
-      tag: payload.tag, renotify: false,
+      // User-requested tests should alert again; retries of real reminders stay quiet.
+      tag: payload.tag, renotify: payload.tag === "qori-agenda-test",
       data: { url: url.href, identity, received_at: Date.now() },
     });
   })());

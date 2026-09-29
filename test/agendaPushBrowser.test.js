@@ -22,6 +22,15 @@ test("background worker displays valid push with stable tag", async () => {
   const w = worker(); await w.push(w.payload);
   assert.equal(w.notices.length, 1); assert.equal(w.notices[0].tag, "unique");
   assert.equal(w.notices[0].data.identity, "b:u");
+  assert.equal(w.notices[0].renotify, false);
+});
+
+test("explicit repeated tests request a new alert without changing reminder retry behavior", async () => {
+  const w = worker();
+  await w.push({ ...w.payload, tag: "qori-agenda-test" });
+  await w.push({ ...w.payload, tag: "qori-agenda-test" });
+  assert.equal(w.notices.length, 2);
+  assert.ok(w.notices.every((notice) => notice.renotify === true));
 });
 test("worker drops stale, cross-account, cross-business and external-link messages", async () => {
   const w = worker();
