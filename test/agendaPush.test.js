@@ -47,8 +47,9 @@ test("PostgreSQL scheduling, ownership, retries and security", { skip: !testUrl 
   try {
     await db.query(`
       create table businesses (id uuid primary key, is_active boolean default true);
+      create type user_role as enum ('ADMIN', 'BUSINESS_OWNER', 'VALIDATOR', 'ADMIN_MARKET_GAMES', 'BUSINESS_MANAGER', 'BUSINESS_SELLER');
       create table app_users (id uuid primary key, business_id uuid references businesses, is_active boolean default true,
-        password_version integer default 0, role text default 'BUSINESS_OWNER');
+        password_version integer default 0, role user_role default 'BUSINESS_OWNER');
       create table lead_notes (id uuid primary key, business_id uuid references businesses, created_by uuid references app_users,
         note text, next_action text, reminder_at timestamptz, agenda_status text default 'OPEN', created_at timestamptz default now());
     `);

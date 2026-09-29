@@ -146,7 +146,7 @@ async function enqueueDue(db = pool) {
        and n.agenda_status = 'OPEN'
      join agenda_push_subscriptions s on s.business_id = n.business_id and s.user_id = n.created_by and s.active
      join app_users u on u.id = s.user_id and u.business_id = s.business_id and u.is_active
-       and u.role in ('BUSINESS_OWNER','BUSINESS_MANAGER','ADMIN','ADMIN_MARKET_GAMES','ADMIN_Qori')
+       and u.role in ('BUSINESS_OWNER','BUSINESS_MANAGER','ADMIN','ADMIN_MARKET_GAMES')
        and coalesce(u.password_version, 0) = s.password_version
      join businesses b on b.id = n.business_id and b.is_active
      where n.reminder_at > now()
@@ -179,7 +179,7 @@ async function processNext(db = pool, deliver = send) {
      join agenda_push_subscriptions s on s.id = d.subscription_id
        and s.user_id = d.user_id and s.business_id = d.business_id and s.active and s.enabled_at <= d.due_at
      join app_users u on u.id = s.user_id and u.business_id = s.business_id
-       and u.role in ('BUSINESS_OWNER','BUSINESS_MANAGER','ADMIN','ADMIN_MARKET_GAMES','ADMIN_Qori')
+       and u.role in ('BUSINESS_OWNER','BUSINESS_MANAGER','ADMIN','ADMIN_MARKET_GAMES')
        and u.is_active and coalesce(u.password_version, 0) = s.password_version
      join businesses b on b.id = d.business_id and b.is_active
      where d.id = $1 and d.lease_token = $2 and d.expires_at > now() and n.reminder_at > now()`, [id, lease]
