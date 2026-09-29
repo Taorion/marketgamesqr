@@ -41,14 +41,14 @@ test("notification click opens agenda only for the current identity", async () =
   assert.deepEqual(w.opened, ["https://gosqori.com/empresa/?agenda=1"]);
 });
 
-function frontend({ ios = false, supported = true, enabled = true, stored = false } = {}) {
+function frontend({ ios = false, supported = true, enabled = true, stored = false, subscribeError = null } = {}) {
   const nodes = new Map(); const handlers = {}; const calls = [];
   for (const id of ["agendaPushPanel", "agendaPushStatus", "agendaPushEnable", "agendaPushDisable", "agendaPushTest"]) {
     nodes.set(id, { hidden: false, disabled: false, dataset: {}, textContent: "", addEventListener(event, fn) { handlers[`${id}:${event}`] = fn; } });
   }
   const sub = { endpoint: "https://fcm.googleapis.com/test", toJSON() { return { endpoint: this.endpoint, keys: {} }; }, async unsubscribe() { calls.push("unsubscribe"); } };
   const registration = { active: { postMessage(_value, ports) { queueMicrotask(() => ports[0].other.onmessage()); } },
-    pushManager: { async getSubscription() { return stored ? sub : null; }, async subscribe() { return sub; } } };
+    pushManager: { async getSubscription() { return stored ? sub : null; }, async subscribe() { if (subscribeError) throw subscribeError; return sub; } } };
   const window = { isSecureContext: true, PushManager() {}, Notification: {}, matchMedia: () => ({ matches: false }), addEventListener() {} };
   if (!supported) delete window.PushManager;
   const context = vm.createContext({ window, document: { getElementById: (id) => nodes.get(id) },
@@ -91,4 +91,23 @@ test("existing registered device survives page reload", async () => {
   const ui = frontend({ stored: true }); await ui.flush();
   assert.equal(ui.nodes.get("agendaPushTest").hidden, false);
   assert.match(ui.nodes.get("agendaPushStatus").textContent, /Activas/);
+});
+
+test("push provider registration failure explains recovery and never claims activation", async () => {
+  const ui = frontend({ subscribeError: new Error("Registration failed - push service error") });
+  await ui.flush();
+  await ui.handlers["agendaPushEnable:click"]();
+  assert.match(ui.nodes.get("agendaPushStatus").textContent, /Brave.*Google/);
+  assert.equal(ui.nodes.get("agendaPushStatus").dataset.error, "true");
+  assert.equal(ui.nodes.get("agendaPushEnable").disabled, false);
+  assert.equal(ui.nodes.get("agendaPushTest").hidden, true);
+  assert.equal(ui.calls.includes("/api/business/agenda-push/subscription"), false);
+});
+
+test("blocked permission error explains site settings", async () => {
+  const error = new Error("Permission denied"); error.name = "NotAllowedError";
+  const ui = frontend({ subscribeError: error }); await ui.flush();
+  await ui.handlers["agendaPushEnable:click"]();
+  assert.match(ui.nodes.get("agendaPushStatus").textContent, /gosqori.com/);
+  assert.equal(ui.nodes.get("agendaPushTest").hidden, true);
 });

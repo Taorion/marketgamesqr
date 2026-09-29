@@ -23,6 +23,15 @@
     status.textContent = text;
     status.dataset.error = String(error);
   }
+  function activationError(error) {
+    if (/push service|registration failed/i.test(error.message || "")) {
+      return "El navegador no pudo conectarse al servicio de notificaciones. Si usas Brave, revisa Configuración → Privacidad y seguridad → Usar servicios de Google para mensajería push. Después vuelve aquí y pulsa Activar. En otros navegadores, revisa tu conexión y los permisos de notificaciones.";
+    }
+    if (error.name === "NotAllowedError") {
+      return "El navegador bloqueó las notificaciones. Permítelas para gosqori.com en la configuración del sitio y vuelve a pulsar Activar.";
+    }
+    return error.message || "No se pudo activar este dispositivo. Vuelve a intentarlo.";
+  }
   function controls() {
     enable.hidden = active;
     disable.hidden = !subscription;
@@ -121,10 +130,12 @@
     controls();
     const current = identity();
     try {
+      message("Esperando el permiso de notificaciones del navegador…");
       // Must happen directly in the click gesture, notably on iOS.
       const permission = await Notification.requestPermission();
       if (permission !== "granted") throw new Error("No se activaron los avisos. Puedes permitirlos desde la configuración de este sitio.");
       if (current !== identity()) return;
+      message("Conectando este dispositivo al servicio de notificaciones…");
       await localRegistration();
       // A fresh subscription avoids linking a shared browser to its previous account or VAPID key.
       if (subscription && !active) { await subscription.unsubscribe(); subscription = null; }
@@ -136,7 +147,7 @@
       });
       active = true;
       message("Notificaciones activadas. Usa Enviar prueba para comprobar que llegan a este dispositivo.");
-    } catch (error) { message(error.message, true); }
+    } catch (error) { message(activationError(error), true); }
     finally { busy = false; controls(); }
   });
   async function deactivate() {

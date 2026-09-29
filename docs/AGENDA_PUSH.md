@@ -24,6 +24,12 @@ del portal usan la misma agenda y también participan. No se envían a los clien
 
 ## Comportamiento y límites
 
+- Si Brave muestra «Registration failed - push service error» al activar, revisar
+  Configuración → Privacidad y seguridad → Usar servicios de Google para mensajería
+  push. Es una preferencia del usuario; el portal no puede cambiarla. Volver a pulsar
+  Activar después de habilitarla. Este error ocurre antes de registrar el dispositivo
+  en el servidor y no se resuelve con otro despliegue de Supabase o Render.
+
 - Enviar prueba informa que el proveedor aceptó el envío; no confirma que el usuario
   lo haya visto. Validar visualmente en un computador y un celular reales antes de
   dar por comprobada la entrega de producción.
