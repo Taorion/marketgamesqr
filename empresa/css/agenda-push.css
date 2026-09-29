@@ -1,0 +1,27 @@
+#agendaPushPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 16px;
+  margin: 12px 0 18px;
+  border: 1px solid #d5e0e9;
+  border-radius: 14px;
+  background: #f3f7fa;
+  color: #20384c;
+  min-width: 0;
+}
+#agendaPushPanel[hidden] { display: none; }
+#agendaPushPanel .agenda-push-copy { flex: 1 1 260px; min-width: 0; }
+#agendaPushPanel h4 { margin: 0 0 5px; font-size: 15px; color: #172d42; }
+#agendaPushPanel p { margin: 5px 0 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+#agendaPushPanel .agenda-push-actions { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+#agendaPushPanel button { white-space: normal; min-height: 42px; max-width: 100%; }
+#agendaPushPanel [hidden] { display: none !important; }
+#agendaPushStatus[data-error="true"] { color: #a52f35; }
+@media (max-width: 620px) {
+  #agendaPushPanel { padding: 12px; gap: 12px; }
+  #agendaPushPanel .agenda-push-actions { width: 100%; }
+  #agendaPushPanel button { flex: 1 1 130px; }
+}

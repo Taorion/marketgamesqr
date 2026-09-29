@@ -8005,6 +8005,7 @@ function setPortalAuthenticationState(logged) {
 }
 
 function renderShell() {
+  window.QoriAgendaPush?.refresh();
   const logged = Boolean(session?.token);
   setPortalAuthenticationState(logged);
   loginPanel.classList.toggle("hidden", logged);
@@ -8058,6 +8059,17 @@ function applyInitialRouteParams() {
     return;
   }
   const requestedView = urlParams.get("view");
+  if (session?.token && (urlParams.has("agenda_date") || urlParams.has("agenda"))) {
+    const agendaDate = new Date(urlParams.get("agenda_date") || Date.now());
+    if (Number.isFinite(agendaDate.getTime())) state.leadAgendaAnchorDate = dateInputValue(agendaDate);
+    state.leadAgendaView = "day";
+    state.leadAgendaStatus = "OPEN";
+    openContactCenterSection("agenda");
+    ["view", "agenda", "agenda_date", "agenda_item"].forEach((key) => urlParams.delete(key));
+    const nextSearch = urlParams.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`);
+    return;
+  }
   const urlToken = urlParams.get("token");
   const paymentResult = urlParams.get("payment");
   const productQrId = urlParams.get("product_qr");
@@ -62625,7 +62637,8 @@ document.addEventListener("visibilitychange", () => {
   startActivityPolling();
   checkBusinessActivity();
 });
-logoutButton.addEventListener("click", () => {
+logoutButton.addEventListener("click", async () => {
+  await window.QoriAgendaPush?.deactivate().catch(() => {});
   stopValidatorScanner();
   resetQrBatchProgress();
   clearSession({ message: "Sesión cerrada" });

@@ -23,6 +23,9 @@ skills-lock.json
 .DS_Store
 Thumbs.db
 npm-debug.log*
+/.local-agenda-pg/
+/.local-agenda-qa/
+/supabase/.temp/
 *.log
 
 # Generated marketing drafts/assets not referenced by the app

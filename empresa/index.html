@@ -11,10 +11,10 @@
   <link rel="icon" href="/favicon.ico?v=qori-favicon-20260825-v120" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/img/qori-favicon-32.png?v=qori-favicon-20260825-v120">
   <link rel="apple-touch-icon" sizes="180x180" href="/img/qori-apple-touch-icon.png?v=qori-favicon-20260825-v120">
-  <link rel="manifest" href="/site.webmanifest?v=qori-favicon-20260825-v120">
+  <link rel="manifest" href="/empresa/agenda.webmanifest?v=agenda-push-v1-20260929">
   <link rel="preload" as="script" href="js/evaluation-station-core.js?v=evaluation-core-v1-20260830">
   <link rel="preload" as="script" href="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830">
-  <link rel="preload" as="script" href="js/app.js?v=assignment-station-image-v515-20260929">
+  <link rel="preload" as="script" href="js/app.js?v=assignment-station-image-v515-20260929&amp;agenda-push=v1-20260929">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -84,6 +84,7 @@
 <link rel="stylesheet" href="css/portal-login-refinement.css?v=portal-login-refinement-v1-20260915">
 <link rel="stylesheet" href="css/portal-inventory-table-refinement.css?v=portal-inventory-table-refinement-v1-20260915">
 <link rel="stylesheet" href="css/reward-pass-modal-layout.css?v=reward-pass-modal-layout-v3-20260916">
+  <link rel="stylesheet" href="css/agenda-push.css?v=agenda-push-v1-20260929">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -5126,6 +5127,18 @@
                 </div>
                 <span class="pill muted lead-agenda-count-pill" id="leadAgendaCount">0 pendientes</span>
               </div>
+              <section id="agendaPushPanel" aria-labelledby="agendaPushTitle">
+                <div class="agenda-push-copy">
+                  <h4 id="agendaPushTitle">Tu agenda también te avisa</h4>
+                  <p>Recibe notificaciones de las actividades que creaste, en tu computador y celular: un día, media hora y diez minutos antes.</p>
+                  <p id="agendaPushStatus" role="status" aria-live="polite">Comprobando notificaciones…</p>
+                </div>
+                <div class="agenda-push-actions">
+                  <button class="solid-button" id="agendaPushEnable" type="button" disabled>Activar en este dispositivo</button>
+                  <button class="ghost-button" id="agendaPushTest" type="button" hidden>Enviar prueba</button>
+                  <button class="ghost-button" id="agendaPushDisable" type="button" hidden>Desactivar en este dispositivo</button>
+                </div>
+              </section>
               <div class="lead-agenda-toolbar">
                 <div class="segment-tabs lead-agenda-view-tabs" role="tablist" aria-label="Visualizaciones de agenda">
                   <button class="segment-tab active" data-agenda-view="list" type="button">
@@ -8607,7 +8620,8 @@
   <script src="js/evaluation-station-core.js?v=evaluation-core-v1-20260830" defer></script>
   <script src="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830" defer></script>
   <script src="js/portal-training-access.js?v=training-access-v448-20260908" defer></script>
-  <script src="js/app.js?v=assignment-station-image-v515-20260929" defer></script>
+  <script src="js/app.js?v=assignment-station-image-v515-20260929&amp;agenda-push=v1-20260929" defer></script>
+  <script src="js/agenda-push.js?v=agenda-push-v1-20260929" defer></script>
   <script src="js/inventory-product-qr.js?v=inventory-product-history-v2-20260927" defer></script>
   <script src="js/sidebar-toggle-state-fix.js?v=sidebar-toggle-state-fix-v1-20260914&amp;compact-groups=v497-20260915" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>

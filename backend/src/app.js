@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const authRoutes = require("./routes/authRoutes");
 const qrRoutes = require("./routes/qrRoutes");
 const businessRoutes = require("./routes/businessRoutes");
+const agendaPushRoutes = require("./routes/agendaPushRoutes");
 const gameRoutes = require("./routes/gameRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const portalRoutes = require("./routes/portalRoutes");
@@ -231,6 +232,7 @@ app.use("/api/games", gameRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/portal", portalRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/business/agenda-push", agendaPushRoutes);
 app.use("/api/business", businessPortalRoutes);
 app.use("/api/business/qr", businessQrRoutes);
 app.use("/api/business/catalogs", smartCatalogRoutes);
@@ -269,6 +271,10 @@ function redirectLegacyValidator(req, res) {
 
 app.get(["/validador", "/validador/", "/qr-validador", "/qr-validador/"], redirectLegacyValidator);
 app.use("/demo", express.static(path.join(__dirname, "../..", "demo"), staticOptions));
+app.get("/empresa/agenda-sw.js", (_req, res) => {
+  res.set("Cache-Control", "no-cache, must-revalidate");
+  res.sendFile("agenda-sw.js", { root: path.join(projectRoot, "empresa") });
+});
 app.use("/empresa", express.static(path.join(__dirname, "../..", "empresa"), staticOptions));
 app.use("/admin", express.static(path.join(__dirname, "../..", "admin"), staticOptions));
 app.use("/paquetes", express.static(path.join(__dirname, "../..", "paquetes"), staticOptions));
