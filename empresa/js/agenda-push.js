@@ -9,11 +9,26 @@
   let config = null;
   let registration = null;
   let subscription = null;
-  let active = false;
+  let active = null;
   let busy = false;
+  let checking = false;
+  let retryTimer = null;
+  let retries = 0;
   let sequence = 0;
   let scope = "";
   const identity = () => session?.user?.business_id ? `${session.user.business_id}:${session.user.id}` : "";
+  // Remember consent, never use it as proof that a subscription is active.
+  const preferenceKey = (current) => `qori:agenda-push:enabled:${current}`;
+  function optedIn(current) {
+    try { return window.localStorage.getItem(preferenceKey(current)) === "true"; } catch { return false; }
+  }
+  function remember(current, enabled) {
+    if (!current) return;
+    try {
+      if (enabled) window.localStorage.setItem(preferenceKey(current), "true");
+      else window.localStorage.removeItem(preferenceKey(current));
+    } catch { /* The browser subscription remains the source of truth. */ }
+  }
   const supported = () => window.isSecureContext && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
   const iosNeedsInstall = () => (/iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1))
@@ -33,12 +48,13 @@
     return error.message || "No se pudo activar este dispositivo. Vuelve a intentarlo.";
   }
   function controls() {
-    enable.hidden = active;
+    enable.hidden = active === true || checking;
+    enable.textContent = active === null ? "Volver a comprobar" : "Activar en este dispositivo";
     disable.hidden = !subscription;
     test.hidden = !active;
-    enable.disabled = busy || !config?.enabled || !supported() || iosNeedsInstall();
-    disable.disabled = busy;
-    test.disabled = busy || !active;
+    enable.disabled = busy || checking || (active !== null && !config?.enabled) || !supported() || iosNeedsInstall();
+    disable.disabled = busy || checking;
+    test.disabled = busy || checking || !active;
   }
   async function request(path, method = "GET", body, token = session?.token) {
     const controller = new AbortController();
@@ -88,44 +104,90 @@
   }
   async function refresh() {
     const current = identity();
-    if (!current || session?.user?.role === "BUSINESS_SELLER") { panel.hidden = true; return; }
-    panel.hidden = false;
-    scope = current;
+    if (busy || (checking && current === scope)) return;
+    clearTimeout(retryTimer);
+    retryTimer = null;
     const seq = ++sequence;
-    active = false;
-    config = null;
+    if (!current || session?.user?.role === "BUSINESS_SELLER") {
+      scope = ""; active = null; subscription = null; checking = false;
+      panel.hidden = true; return;
+    }
+    panel.hidden = false;
+    if (scope !== current) { active = null; subscription = null; retries = 0; }
+    scope = current;
+    const isCurrent = () => seq === sequence && current === identity();
+    checking = true;
+    message("Comprobando notificaciones guardadas en este dispositivo…");
     controls();
     if (iosNeedsInstall()) {
+      checking = false; active = false; controls();
       message("En iPhone o iPad: abre el portal en Safari, pulsa Compartir → Añadir a pantalla de inicio. Abre Qori desde ese icono y activa los avisos aquí.");
       return;
     }
-    if (!supported()) { message("Abre el portal con HTTPS en un navegador compatible con notificaciones, como Chrome, Edge, Firefox o Safari."); return; }
+    if (!supported()) { checking = false; active = false; controls(); message("Abre el portal con HTTPS en un navegador compatible con notificaciones, como Chrome, Edge, Firefox o Safari."); return; }
     try {
       const nextConfig = await request("config");
-      if (seq !== sequence || current !== identity()) return;
+      if (!isCurrent()) return;
       config = nextConfig;
       await localRegistration();
-      if (seq !== sequence || current !== identity()) return;
-      subscription = await registration.pushManager.getSubscription();
-      await bind(current);
+      if (!isCurrent()) return;
+      let existing = await registration.pushManager.getSubscription();
+      if (!isCurrent()) return;
+      // A browser can lose/expire its subscription while retaining notification permission.
+      // Restore only this account's explicit choice, without asking permission on page load.
+      if (!existing && optedIn(current) && Notification.permission === "granted" && config.enabled) {
+        existing = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationKey(config.public_key) });
+        if (!isCurrent()) return;
+        try { await saveSubscription(existing); }
+        catch (error) {
+          // Leave no orphan subscription that would block the next recovery attempt.
+          await existing.unsubscribe().catch(() => {});
+          throw error;
+        }
+        if (!isCurrent()) return;
+      }
+      subscription = existing;
+      let nextActive = false;
       if (subscription) {
         const saved = await request("status", "POST", { endpoint: subscription.endpoint });
-        if (seq !== sequence || current !== identity()) return;
-        active = saved.active && Notification.permission === "granted" && config.enabled;
+        if (!isCurrent()) return;
+        nextActive = Boolean(saved.active && Notification.permission === "granted" && config.enabled);
+        if (!saved.active) remember(current, false);
       }
+      await bind(nextActive ? current : null);
+      if (!isCurrent()) return;
+      active = nextActive;
+      if (active) remember(current, true);
+      retries = 0;
       message(!config.enabled ? "La activación de notificaciones está pendiente en el servidor."
         : Notification.permission === "denied" ? "Las notificaciones están bloqueadas. Permítelas en la configuración de este sitio y vuelve a cargar el portal."
           : active ? "Activas en este dispositivo: 24 horas, 30 minutos y 10 minutos antes."
             : "Actívalas en cada computador o celular donde quieras recibir tus recordatorios.");
-    } catch (error) { if (seq === sequence) message(error.message, true); }
-    finally { if (seq === sequence) controls(); }
+    } catch (error) {
+      if (isCurrent()) {
+        active = null;
+        message(`No pudimos comprobar las notificaciones. ${error.message}`, true);
+        if (retries < 2) {
+          retries += 1;
+          retryTimer = setTimeout(() => { if (isCurrent()) refresh(); }, 3000 * retries);
+        }
+      }
+    } finally { if (seq === sequence) { checking = false; controls(); } }
+  }
+  async function saveSubscription(value) {
+    return request("subscription", "POST", {
+      subscription: value.toJSON(), device_name: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? "Celular o tablet" : "Computador",
+    });
   }
   function applicationKey(value) {
     const raw = atob(value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "="));
     return Uint8Array.from(raw, (character) => character.charCodeAt(0));
   }
   enable.addEventListener("click", async () => {
+    if (active === null) { await refresh(); return; }
     if (busy || !config?.enabled || !identity()) return;
+    ++sequence;
+    clearTimeout(retryTimer);
     busy = true;
     controls();
     const current = identity();
@@ -142,9 +204,9 @@
       subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationKey(config.public_key) });
       if (current !== identity()) { await subscription.unsubscribe(); subscription = null; return; }
       await bind(current);
-      await request("subscription", "POST", {
-        subscription: subscription.toJSON(), device_name: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? "Celular o tablet" : "Computador",
-      });
+      await saveSubscription(subscription);
+      if (current !== identity()) return;
+      remember(current, true);
       active = true;
       message("Notificaciones activadas. Usa Enviar prueba para comprobar que llegan a este dispositivo.");
     } catch (error) { message(activationError(error), true); }
@@ -152,7 +214,10 @@
   });
   async function deactivate() {
     const token = session?.token;
+    remember(identity(), false);
     ++sequence;
+    clearTimeout(retryTimer);
+    checking = false;
     if (!supported()) return;
     registration = registration || await navigator.serviceWorker.getRegistration("/empresa/");
     if (!registration) return;
@@ -197,6 +262,8 @@
     finally { busy = false; controls(); }
   });
   window.QoriAgendaPush = { refresh, deactivate };
-  window.addEventListener("focus", () => { if (!busy && identity() && identity() !== scope) refresh(); });
+  window.addEventListener("focus", () => { if (!busy && identity()) refresh(); });
+  window.addEventListener("online", () => { if (!busy && identity()) refresh(); });
+  window.addEventListener("pageshow", (event) => { if (event.persisted && !busy) refresh(); });
   refresh();
 })();
