@@ -16,16 +16,16 @@ test("Asignacion uses the approved station 03 image", () => {
 
   assert.match(
     stationMetadata,
-    /curaduria:[\s\S]*?image: "\/empresa\/img\/qori-station-03-asignacion\.png\?v=assignment-image-v516-20260929"/
+    /curaduria:[\s\S]*?image: "\/empresa\/img\/qori-station-03-asignacion\.png\?v=assignment-image-v517-20260929"/
   );
   assert.doesNotMatch(stationMetadata, /qori-station-03-clasificador\.jpg/);
-  assert.equal((markup.match(/assignment-station-image-v516-20260929/g) || []).length, 2);
+  assert.equal((markup.match(/assignment-station-image-v517-20260929/g) || []).length, 2);
   assert.doesNotMatch(
     app,
     /rms-station-entry-card\[data-rms-phase="curaduria"\][^\n]+clip-path: inset\(/
   );
   assert.equal(
     crypto.createHash("sha256").update(assignmentImage).digest("hex"),
-    "49778246e740c36f3ff06bec235c861be3ec8429d0344fd9beadae142737e661"
+    "70cbddee042698d12f44473540d0aebd8ffb49224e6f54ccacecfc70c0844e7a"
   );
 });
