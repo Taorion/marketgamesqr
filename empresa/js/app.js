@@ -54629,7 +54629,7 @@ function rmsStationVisualMeta(phase = "") {
     curaduria: {
       icon: "fact_check",
       tone: "curation",
-      image: "/empresa/img/qori-station-03-asignacion.png?v=assignment-image-v514-20260928",
+      image: "/empresa/img/qori-station-03-asignacion.png?v=assignment-image-v516-20260929",
       imageAlt: "Estación 03 Asignación",
       screenTitle: "Estación de almacenamiento: Asignación",
       visualLabel: "Inventario: leads con productos por asignar",
@@ -54957,7 +54957,6 @@ function ensureRmsStationUxStyles() {
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card:hover { border-color: rgba(7, 89, 214, .34) !important; background: linear-gradient(115deg,#ffffff 0%,#eefaff 54%,#ffffff 100%) !important; box-shadow: 0 34px 78px rgba(5, 42, 107, .18) !important; transform: none !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media { grid-column: 2 !important; grid-row: 1 / -1 !important; align-self: stretch !important; width: 100% !important; height: 100% !important; min-height: 0 !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; overflow: visible !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-media img { width: 100% !important; height: 100% !important; display: block !important; object-fit: contain !important; object-position: center right !important; background: #fff !important; filter: none !important; transform: none !important; clip-path: none !important; }
-    html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell > .rms-stage-board > .rms-station-entry-card[data-rms-phase="curaduria"] .rms-station-entry-media img { clip-path: inset(2.7% 3.2% 2.6% 3.2% round 7% / 4.8%) !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-topline { grid-column: 1 !important; grid-row: 1 !important; align-self: start !important; z-index: 2 !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-main { grid-column: 1 !important; grid-row: 2 !important; align-self: center !important; z-index: 2 !important; display: grid !important; grid-template-columns: 48px minmax(0,1fr) !important; gap: 14px !important; }
     html body[data-current-view="rms-machine"] .portal-shell .rms-stage-slider-shell .rms-station-entry-number { padding: 5px 8px !important; border-radius: 999px !important; background: #f6fbff !important; color: #53677f !important; letter-spacing: .05em !important; }
