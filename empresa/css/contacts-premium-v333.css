@@ -68,6 +68,11 @@ body[data-current-view="leads"] #contactCenterShell .contact-center-tab-copy { m
 body[data-current-view="leads"] #contactCenterShell .contact-center-tab-copy :is(strong,small) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body[data-current-view="leads"] #contactCenterShell .contact-center-panel { min-width: 0; }
 
+/* Agenda must pass vertical wheel/touch scrolling through to the page. */
+html body[data-current-view="leads"] .portal-shell .view-section[data-view="leads"][data-commercial-mode="agenda"] #contactPanelAgenda.active {
+  overscroll-behavior-y: auto !important;
+}
+
 body[data-current-view="leads"] #manualLeadCsvImportForm { display: none !important; }
 body[data-current-view="leads"] .lead-directory-card { overflow: hidden; border: 1px solid var(--contacts-line); border-radius: 22px; box-shadow: 0 15px 44px rgba(11,31,58,.075); }
 body[data-current-view="leads"] .lead-directory-audience-tabs { padding: 8px; gap: 8px; background: #f7f9fc; }
