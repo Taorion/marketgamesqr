@@ -40,7 +40,7 @@ self.addEventListener("push", (event) => {
       body: String(payload.body || "Tienes una actividad pendiente"),
       icon: "/img/qori-icon-192.png", badge: "/img/qori-favicon-32.png",
       tag: payload.tag, renotify: false,
-      data: { url: url.href, identity },
+      data: { url: url.href, identity, received_at: Date.now() },
     });
   })());
 });

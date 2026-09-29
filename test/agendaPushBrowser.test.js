@@ -41,13 +41,14 @@ test("notification click opens agenda only for the current identity", async () =
   assert.deepEqual(w.opened, ["https://gosqori.com/empresa/?agenda=1"]);
 });
 
-function frontend({ ios = false, supported = true, enabled = true, stored = false, subscribeError = null } = {}) {
+function frontend({ ios = false, supported = true, enabled = true, stored = false, subscribeError = null, testNotices = [] } = {}) {
   const nodes = new Map(); const handlers = {}; const calls = [];
   for (const id of ["agendaPushPanel", "agendaPushStatus", "agendaPushEnable", "agendaPushDisable", "agendaPushTest"]) {
     nodes.set(id, { hidden: false, disabled: false, dataset: {}, textContent: "", addEventListener(event, fn) { handlers[`${id}:${event}`] = fn; } });
   }
   const sub = { endpoint: "https://fcm.googleapis.com/test", toJSON() { return { endpoint: this.endpoint, keys: {} }; }, async unsubscribe() { calls.push("unsubscribe"); } };
   const registration = { active: { postMessage(_value, ports) { queueMicrotask(() => ports[0].other.onmessage()); } },
+    async getNotifications() { return testNotices; },
     pushManager: { async getSubscription() { return stored ? sub : null; }, async subscribe() { if (subscribeError) throw subscribeError; return sub; } } };
   const window = { isSecureContext: true, PushManager() {}, Notification: {}, matchMedia: () => ({ matches: false }), addEventListener() {} };
   if (!supported) delete window.PushManager;
@@ -57,7 +58,7 @@ function frontend({ ios = false, supported = true, enabled = true, stored = fals
       serviceWorker: { register: async () => registration, ready: Promise.resolve(registration), getRegistration: async () => registration } },
     Notification: { permission: "granted", requestPermission: async () => { calls.push("permission"); return "granted"; } },
     MessageChannel: class { constructor() { this.port1 = { close() {} }; this.port2 = { other: this.port1 }; } },
-    setTimeout, clearTimeout, queueMicrotask, Uint8Array, atob, AbortController,
+    setTimeout: (fn, ms) => ms === 1500 ? setTimeout(fn, 0) : setTimeout(fn, ms), clearTimeout, queueMicrotask, Uint8Array, atob, AbortController,
     fetch: async (url, options) => {
       calls.push(url);
       return { ok: true, json: async () => url.endsWith("config") ? { enabled, public_key: "AAAA" }
@@ -110,4 +111,17 @@ test("blocked permission error explains site settings", async () => {
   await ui.handlers["agendaPushEnable:click"]();
   assert.match(ui.nodes.get("agendaPushStatus").textContent, /gosqori.com/);
   assert.equal(ui.nodes.get("agendaPushTest").hidden, true);
+});
+
+test("test distinguishes browser receipt from provider acceptance", async () => {
+  for (const confirmed of [true, false]) {
+    const ui = frontend({ stored: true, testNotices: [{ data: {
+      identity: "b:u", received_at: confirmed ? Date.now() + 60000 : Date.now() - 60000,
+    } }] });
+    await ui.flush();
+    await ui.handlers["agendaPushTest:click"]();
+    assert.match(ui.nodes.get("agendaPushStatus").textContent,
+      confirmed ? /Prueba recibida por este navegador/ : /aún no confirma recepción/);
+    assert.equal(ui.nodes.get("agendaPushTest").disabled, false);
+  }
 });

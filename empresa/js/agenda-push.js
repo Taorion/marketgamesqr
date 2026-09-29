@@ -176,8 +176,23 @@
     if (!subscription || !active) return;
     busy = true; controls();
     try {
+      const started = Date.now();
       await request("test", "POST", { endpoint: subscription.endpoint });
-      message("Prueba enviada. Busca el aviso de Qori entre las notificaciones de tu dispositivo.");
+      message("Prueba enviada. Comprobando si este navegador la recibe…");
+      let received = false;
+      if (registration?.getNotifications) {
+        for (let attempt = 0; attempt < 8; attempt += 1) {
+          const notices = await registration.getNotifications({ tag: "qori-agenda-test" });
+          if (notices.some((notice) => notice.data?.identity === identity() && notice.data?.received_at >= started)) {
+            received = true;
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+        }
+      }
+      message(received
+        ? "Prueba recibida por este navegador. Si no ves el aviso, revisa el centro de notificaciones del sistema, los permisos de Brave/Chrome/Edge/Firefox/Safari y el modo No molestar."
+        : "El proveedor aceptó la prueba, pero este navegador aún no confirma recepción. Revisa la conexión, los permisos y los ajustes de notificaciones del navegador; después vuelve a probar.");
     } catch (error) { message(error.message, true); }
     finally { busy = false; controls(); }
   });

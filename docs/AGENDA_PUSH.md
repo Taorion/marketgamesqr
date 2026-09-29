@@ -30,9 +30,12 @@ del portal usan la misma agenda y también participan. No se envían a los clien
   Activar después de habilitarla. Este error ocurre antes de registrar el dispositivo
   en el servidor y no se resuelve con otro despliegue de Supabase o Render.
 
-- Enviar prueba informa que el proveedor aceptó el envío; no confirma que el usuario
-  lo haya visto. Validar visualmente en un computador y un celular reales antes de
-  dar por comprobada la entrega de producción.
+- Enviar prueba distingue la aceptación del proveedor de la recepción en el navegador.
+  Durante doce segundos consulta la notificación de prueba de esta cuenta y comprueba
+  su fecha local de recepción; una prueba antigua no sirve como confirmación nueva.
+  «Prueba recibida por este navegador» significa que el navegador registró el aviso,
+  no que el usuario haya visto un banner: No molestar y los ajustes del sistema pueden
+  ocultarlo. Validar visualmente en un computador y un celular reales.
 - Los avisos se calculan con `timestamptz`; 24 horas significa exactamente 24 horas
   antes, no el día calendario anterior. No se usa un temporizador de la página.
 - Si se crea la actividad o se activa el dispositivo después del horario de un
