@@ -48487,9 +48487,17 @@ html body .portal-shell :where(
   .lead-table-scroll,
   .agenda-table-wrap,
   .rms-stage-board,
-  .contact-center-tab-rail,
-  .sidebar-nav
+  .contact-center-tab-rail
 ) {
+  -webkit-overflow-scrolling: touch;
+  /* Keep horizontal gestures local, but let vertical scrolling reach the page.
+     overflow-x:auto also computes overflow-y:auto, even without vertical
+     overflow; containing both axes traps wheel/touch input above these lanes. */
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
+}
+
+html body .portal-shell .sidebar-nav {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }

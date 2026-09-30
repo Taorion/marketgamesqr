@@ -49,6 +49,7 @@
 ) {
   overflow-x: auto !important;
   overflow-y: visible !important;
+  overscroll-behavior-y: auto !important;
   clip-path: none !important;
   border-radius: 0 !important;
 }
