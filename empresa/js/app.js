@@ -4874,6 +4874,9 @@ async function loadLeadAgendaData(options = {}) {
   }
   if (state.leadAgendaLoaded && !options.force) return;
   if (state.leadAgendaLoading && !options.force) return;
+  const history = state.leadAgendaView === "history";
+  const requestSeq = (state.leadAgendaRequestSeq || 0) + 1;
+  state.leadAgendaRequestSeq = requestSeq;
   const range = agendaRangeForView();
   const params = new URLSearchParams({
     from: range.from.toISOString(),
@@ -4881,19 +4884,37 @@ async function loadLeadAgendaData(options = {}) {
     status: state.leadAgendaStatus || "OPEN",
     limit: "1000",
   });
+  if (history) {
+    params.delete("from");
+    params.delete("to");
+    params.set("view", "history");
+    params.set("status", "DONE");
+    params.set("limit", "50");
+    params.set("offset", String(options.append ? (state.leadAgenda || []).length : 0));
+  }
   if (!options.quiet) {
     showFeedback("Cargando agenda comercial.", "loading", { title: "Agenda", timeout: 0 });
   }
   const scopeKey = businessScopeKey();
   state.leadAgendaLoading = true;
   try {
-    const data = await apiSafe(`/api/business/leads/agenda?${params.toString()}`, { headers: authHeaders() }, { agenda: [], range: null });
-    if (!isCurrentBusinessScope(scopeKey)) return;
-    state.leadAgenda = data.agenda || [];
+    const url = `/api/business/leads/agenda?${params.toString()}`;
+    const data = history
+      ? await api(url, { headers: authHeaders(), noClientCache: true })
+      : await apiSafe(url, { headers: authHeaders() }, { agenda: [], range: null });
+    if (!isCurrentBusinessScope(scopeKey) || state.leadAgendaRequestSeq !== requestSeq) return;
+    state.leadAgenda = options.append ? [...state.leadAgenda, ...(data.agenda || [])] : (data.agenda || []);
+    state.leadAgendaHistoryHasMore = Boolean(data.pagination?.has_more);
+    state.leadAgendaError = "";
     state.leadAgendaRange = data.range || { from: range.from.toISOString(), to: range.to.toISOString() };
     state.leadAgendaLoaded = true;
+  } catch (error) {
+    if (!isCurrentBusinessScope(scopeKey) || state.leadAgendaRequestSeq !== requestSeq) return;
+    state.leadAgendaError = error.message || "No se pudo cargar el historial.";
+    state.leadAgendaLoaded = true;
+    if (!options.append) state.leadAgenda = [];
   } finally {
-    state.leadAgendaLoading = false;
+    if (state.leadAgendaRequestSeq === requestSeq) state.leadAgendaLoading = false;
     if (!options.quiet) hideFeedback();
   }
 }
@@ -41411,6 +41432,7 @@ function agendaLabelForRange() {
 }
 
 function agendaRows() {
+  if (state.leadAgendaView === "history") return (state.leadAgenda || []).slice();
   return (state.leadAgenda || [])
     .slice()
     .sort((a, b) => new Date(a.reminder_at || 0) - new Date(b.reminder_at || 0));
@@ -42231,8 +42253,29 @@ function renderAgendaYear(rows = agendaRows()) {
   }).join("")}</div>`;
 }
 
+function renderAgendaHistory(rows) {
+  const heading = '<header class="agenda-history-heading"><h3>Historial de tareas completadas</h3><p>Actividades marcadas como hechas, de todas las fechas. Las más recientes aparecen primero.</p></header>';
+  const error = state.leadAgendaError ? '<p role="alert">' + escapeHtml(state.leadAgendaError) + '</p><button type="button" class="ghost-button" data-agenda-history-retry>Reintentar</button>' : "";
+  const cards = rows.map((item) => {
+    const meeting = agendaMeetingSummary(item);
+    return '<article class="agenda-history-item"><div class="agenda-history-copy"><span class="status-chip">Completada</span><h4>'
+      + escapeHtml(item.next_action || item.note || "Actividad") + '</h4><p>' + escapeHtml(item.note || "") + '</p>'
+      + '<small>' + escapeHtml([agendaScopeLabel(agendaScopeForItem(item)), item.lead_name, item.campaign_name].filter(Boolean).join(" · ")) + '</small>'
+      + (meeting ? '<p>' + escapeHtml(meeting) + '</p>' : "")
+      + '<dl><div><dt>Completada</dt><dd>' + escapeHtml(item.completed_at ? formatDate(item.completed_at) : "Fecha no registrada") + '</dd></div>'
+      + '<div><dt>Programada</dt><dd>' + escapeHtml(formatDate(item.reminder_at)) + '</dd></div></dl></div>'
+      + '<div class="agenda-history-actions"><button type="button" class="ghost-button" data-agenda-edit="' + escapeHtml(item.id) + '">Ver / editar</button>'
+      + '<button type="button" class="ghost-button" data-agenda-status="' + escapeHtml(item.id) + '" data-next-status="OPEN">Reabrir</button></div></article>';
+  }).join("");
+  const more = state.leadAgendaHistoryHasMore && !state.leadAgendaError
+    ? '<button type="button" class="ghost-button" data-agenda-history-more>Cargar más completadas</button>' : "";
+  return heading + error + (cards || (!error ? '<div class="empty-state compact">Aún no hay tareas completadas. Al marcar una tarea como hecha, aparecerá aquí.</div>' : "")) + more;
+}
+
 function renderLeadAgenda() {
   if (!leadAgendaBoard) return;
+  const history = state.leadAgendaView === "history";
+  document.getElementById("leadAgendaCard")?.classList.toggle("is-history", history);
   renderLeadAgendaLeadOptions();
   renderLeadAgendaCampaignOptions();
   if (leadAgendaReminderInput && !leadAgendaReminderInput.value) {
@@ -42262,7 +42305,9 @@ function renderLeadAgenda() {
     leadAgendaBoard.innerHTML = '<div class="empty-state compact">Cargando agenda comercial...</div>';
     return;
   }
-  if (state.leadAgendaView === "board") {
+  if (history) {
+    leadAgendaBoard.innerHTML = renderAgendaHistory(rows);
+  } else if (state.leadAgendaView === "board") {
     leadAgendaBoard.innerHTML = renderAgendaBoardView(rows);
   } else if (state.leadAgendaView === "day") {
     leadAgendaBoard.innerHTML = renderAgendaDay(rows);
@@ -42279,6 +42324,15 @@ function renderLeadAgenda() {
 }
 
 function bindLeadAgendaActions() {
+  leadAgendaBoard?.querySelectorAll("[data-agenda-history-more], [data-agenda-history-retry]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      if (state.leadAgendaLoading) return;
+      button.disabled = true;
+      button.textContent = "Cargando...";
+      await loadLeadAgendaData({ force: true, quiet: true, append: button.hasAttribute("data-agenda-history-more") });
+      renderLeadAgenda();
+    });
+  });
   leadAgendaBoard?.querySelectorAll("[data-agenda-open-lead]").forEach((button) => {
     button.addEventListener("click", () => {
       if (!button.dataset.agendaOpenLead) return;
@@ -63621,8 +63675,13 @@ leadAgendaTemplateButtons.forEach((button) => {
 leadAgendaViewButtons.forEach((button) => {
   button.addEventListener("click", () => {
     state.leadAgendaView = button.dataset.agendaView || "list";
+    state.leadAgenda = [];
+    state.leadAgendaError = "";
+    state.leadAgendaHistoryHasMore = false;
     state.leadAgendaLoaded = false;
-    loadLeadAgendaData({ force: true, quiet: true }).then(renderLeadAgenda);
+    const loading = loadLeadAgendaData({ force: true, quiet: true });
+    renderLeadAgenda();
+    loading.then(renderLeadAgenda);
   });
 });
 leadAgendaDateInput?.addEventListener("change", () => {

@@ -1940,9 +1940,12 @@ function agendaLimit(value) {
 }
 
 async function listLeadAgenda(businessId, params = {}) {
-  const { from, to } = agendaDateRange(params);
+  const history = params.view === "history";
+  const { from, to } = history ? { from: null, to: null } : agendaDateRange(params);
+  const limit = history ? Math.min(agendaLimit(params.limit || 50), 200) : agendaLimit(params.limit);
+  const offset = history ? Math.max(0, Number.parseInt(params.offset, 10) || 0) : 0;
   const status = String(params.status || "OPEN").toUpperCase();
-  const allowedStatus = ["OPEN", "DONE", "CANCELLED", "ALL"].includes(status) ? status : "OPEN";
+  const allowedStatus = history ? "DONE" : (["OPEN", "DONE", "CANCELLED", "ALL"].includes(status) ? status : "OPEN");
   const result = await query(
     `select
         ln.id,
@@ -1996,15 +1999,16 @@ async function listLeadAgenda(businessId, params = {}) {
         and ac.id = ln.source_id
       where ln.business_id = $1
         and ln.reminder_at is not null
-        and ln.reminder_at >= $2::timestamptz
-        and ln.reminder_at <= $3::timestamptz
+        and ($2::timestamptz is null or ln.reminder_at >= $2::timestamptz)
+        and ($3::timestamptz is null or ln.reminder_at <= $3::timestamptz)
         and ($4::text = 'ALL' or ln.agenda_status = $4::text)
-      order by ln.reminder_at asc, ln.created_at asc
-      limit $5`,
-    [businessId, from, to, allowedStatus, agendaLimit(params.limit)]
+      order by ${history ? "ln.completed_at desc nulls last, ln.created_at desc, ln.id desc" : "ln.reminder_at asc, ln.created_at asc"}
+      limit $5 offset $6`,
+    [businessId, from, to, allowedStatus, history ? limit + 1 : limit, offset]
   );
   return {
-    agenda: result.rows,
+    agenda: history ? result.rows.slice(0, limit) : result.rows,
+    ...(history ? { pagination: { limit, offset, has_more: result.rows.length > limit } } : {}),
     range: { from, to },
     status: allowedStatus,
   };

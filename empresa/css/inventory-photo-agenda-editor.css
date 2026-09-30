@@ -147,3 +147,31 @@ html body #leadAgendaEditModal .agenda-edit-error:empty { display: none; }
   html body #leadAgendaEditModal .agenda-edit-modal-head { padding: 14px 16px; }
   html body #leadAgendaEditModal .lead-agenda-item.is-editing { padding: 16px !important; }
 }
+
+/* Completed activities use their full history instead of the calendar window. */
+html body #leadAgendaCard.is-history :is(#leadAgendaPrevButton, #leadAgendaNextButton, #leadAgendaDateInput, #leadAgendaStatusFilter, #leadAgendaKpis, .lead-agenda-fast-actions) { display: none !important; }
+html body #leadAgendaCard .agenda-history-heading { margin-bottom: 20px; }
+html body #leadAgendaCard .agenda-history-heading :is(h3, p) { margin: 0 0 8px; }
+html body #leadAgendaCard .agenda-history-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  padding: 20px;
+  margin-bottom: 14px;
+  border: 1px solid #d9e6df;
+  border-radius: 16px;
+  background: #fff;
+}
+html body #leadAgendaCard .agenda-history-copy { min-width: 0; overflow-wrap: anywhere; }
+html body #leadAgendaCard .agenda-history-copy h4 { margin: 10px 0 8px; font-size: 17px; }
+html body #leadAgendaCard .agenda-history-copy p { margin: 8px 0; white-space: pre-wrap; }
+html body #leadAgendaCard .agenda-history-copy dl { display: flex; flex-wrap: wrap; gap: 12px 32px; margin: 14px 0 0; }
+html body #leadAgendaCard .agenda-history-copy dt { font-size: 12px; color: #617181; }
+html body #leadAgendaCard .agenda-history-copy dd { margin: 4px 0 0; font-size: 13px; color: #18334b !important; font-weight: 600; }
+html body #leadAgendaCard .agenda-history-actions { display: flex; flex-wrap: wrap; align-content: start; gap: 8px; max-width: 240px; }
+@media (max-width: 620px) {
+  html body #leadAgendaCard .agenda-history-item { grid-template-columns: minmax(0, 1fr); padding: 14px; gap: 14px; }
+  html body #leadAgendaCard .agenda-history-actions { max-width: none; }
+  html body #leadAgendaCard .agenda-history-actions button { flex: 1 1 110px; min-width: 0; white-space: normal; }
+  html body #leadAgendaCard [data-agenda-history-more] { width: 100%; white-space: normal; }
+}
