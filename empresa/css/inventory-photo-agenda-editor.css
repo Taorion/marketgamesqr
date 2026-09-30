@@ -33,6 +33,14 @@ html body .lead-agenda-item.is-editing .lead-agenda-edit-actions {
   gap: 10px !important;
 }
 
+/* The modal is moved to body at runtime; its header must not flex-shrink
+   underneath the independently scrollable product form. */
+html body #inventoryProductModal .inventory-product-modal-card > .modal-head {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  min-height: min-content !important;
+}
+
 html body #inventoryProductForm .inventory-photo-field {
   grid-column: 1 / -1 !important;
   display: grid;
