@@ -325,8 +325,9 @@ function normalizeProductLookup(value = "") {
 
 async function inventoryProductsForBusiness(businessId) {
   const result = await query(
-    `select id, name, sku, barcode, category, brand, unit_price, cost_price, currency, stock_quantity, status
-     from business_inventory_products
+    `select id, name, sku, barcode, category, brand, unit_price, cost_price, currency, stock_quantity, status,
+            exists (select 1 from business_inventory_product_photos photo where photo.product_id = product.id and photo.business_id = product.business_id) as has_photo
+     from business_inventory_products product
      where business_id = $1 and status <> 'ARCHIVED'
      order by updated_at desc, name asc
      limit 500`,

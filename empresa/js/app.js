@@ -26517,6 +26517,7 @@ function renderInventoryProductGrid(rows = []) {
     const hasCode = Boolean(product.sku || product.barcode);
     return `
       <article class="inventory-product-card ${isLow ? "is-low" : ""} ${product.status === "ARCHIVED" ? "is-archived" : ""}">
+        ${window.inventoryPhotoEditor?.markup(product) || ""}
         <div class="inventory-product-head">
           <span>
             <strong>${escapeHtml(product.name || "Producto")}</strong>
@@ -26544,6 +26545,7 @@ function renderInventoryProductGrid(rows = []) {
       </article>
     `;
   }).join("");
+  window.inventoryPhotoEditor?.observe(inventoryProductGrid);
   inventoryProductGrid.querySelectorAll("[data-inventory-edit]").forEach((button) => {
     button.addEventListener("click", () => editInventoryProduct(button.dataset.inventoryEdit));
   });
@@ -26595,6 +26597,7 @@ function renderInventoryView() {
       <tr data-inventory-detail-row="${escapeHtml(product.id)}" tabindex="0">
         <td><strong>${escapeHtml(product.internal_id || "-")}</strong><span class="table-secondary">ID de la empresa</span></td>
         <td>
+          ${window.inventoryPhotoEditor?.markup(product) || ""}
           <strong>${escapeHtml(product.name)}</strong>
           <span class="table-secondary">${escapeHtml(product.brand || product.description || "Producto guardado")}</span>
         </td>
@@ -26617,6 +26620,7 @@ function renderInventoryView() {
       </tr>
     `;
   }).join("");
+  window.inventoryPhotoEditor?.observe(inventoryTable);
   inventoryTable.querySelectorAll("[data-inventory-detail-row]").forEach((row) => {
     row.addEventListener("click", (event) => {
       if (event.target.closest("button, input, select, a")) return;
@@ -26748,6 +26752,7 @@ function renderInventoryProductDetail(data = {}) {
       <div class="inventory-detail-heading">
         <div>
           <span class="mono-label">DETALLE DEL PRODUCTO</span>
+          ${window.inventoryPhotoEditor?.markup(product) || ""}
           <h3 id="inventoryProductDetailTitle">${escapeHtml(product.name || "Producto")}</h3>
           <p>${escapeHtml([product.category, product.brand, product.sku || product.barcode].filter(Boolean).join(" · ") || "Sin categoría ni código registrados")}</p>
         </div>
@@ -26802,6 +26807,7 @@ function renderInventoryProductDetail(data = {}) {
       </div>
     </article>
   `;
+  window.inventoryPhotoEditor?.observe(modal);
   modal.querySelector("[data-edit-inventory-detail]")?.addEventListener("click", () => {
     modal.classList.add("hidden");
     modal.setAttribute("aria-hidden", "true");
@@ -26865,6 +26871,7 @@ function closeInventoryProductModal() {
 }
 
 function resetInventoryForm() {
+  window.inventoryPhotoEditor?.reset();
   inventoryProductForm?.reset();
   if (inventoryProductIdInput) inventoryProductIdInput.value = "";
   if (inventoryInternalIdInput) inventoryInternalIdInput.value = "";
@@ -26889,6 +26896,7 @@ function resetInventoryForm() {
 function editInventoryProduct(productId) {
   const product = (state.inventoryProducts || []).find((item) => item.id === productId);
   if (!product) return;
+  window.inventoryPhotoEditor?.reset(product);
   if (inventoryProductIdInput) inventoryProductIdInput.value = product.id;
   if (inventoryInternalIdInput) inventoryInternalIdInput.value = product.internal_id || "";
   if (inventoryNameInput) inventoryNameInput.value = product.name || "";
@@ -27227,6 +27235,7 @@ async function submitInventoryProduct(event) {
   setButtonLoading(inventorySaveButton, true, productId ? "Actualizando..." : "Guardando...");
   setInlineMessage(inventoryMessage, "Guardando producto...", "info");
   try {
+    Object.assign(payload, await window.inventoryPhotoEditor.payload());
     const data = await api(productId ? `/api/business/inventory/products/${productId}` : "/api/business/inventory/products", {
       method: productId ? "PATCH" : "POST",
       headers: authHeaders(),
@@ -64633,7 +64642,7 @@ leadActivationModal?.addEventListener("click", (event) => {
 leadActivationForm?.addEventListener("submit", submitLeadActivation);
 themeSwitch?.addEventListener("change", togglePortalTheme);
 menuToggleButton?.addEventListener("click", togglePortalMenu);
-window.addEventListener("resize", syncPortalResponsiveSidebar, { passive: true });
+window.matchMedia("(max-width: 960px)").addEventListener("change", syncPortalResponsiveSidebar);
 document.addEventListener("click", (event) => {
   const clickedElement = event.target instanceof Element ? event.target : event.target?.parentElement;
   const ticketViewButton = clickedElement?.closest("[data-ticket-open-view]");
@@ -64721,12 +64730,22 @@ campaignModal.addEventListener("click", (event) => {
 snapshotModal.addEventListener("click", (event) => {
   if (event.target === snapshotModal) closeSnapshotModal();
 });
-window.addEventListener("resize", () => {
-  if (!window.matchMedia("(max-width: 960px)").matches) closePortalMenu();
-  if (state.dashboard) renderDashboard();
-  if (state.selectedCampaign) renderCampaignView();
-  if (state.strategicQrLoaded || state.currentView === "strategic-qr") renderStrategicQrView();
-});
+let portalLayoutWidth = window.innerWidth;
+let portalResizeTimer = 0;
+function handlePortalLayoutResize() {
+  const width = window.innerWidth;
+  // Mobile browser chrome and keyboards change height while scrolling/typing.
+  if (width === portalLayoutWidth) return;
+  portalLayoutWidth = width;
+  window.clearTimeout(portalResizeTimer);
+  portalResizeTimer = window.setTimeout(() => {
+    if (!window.matchMedia("(max-width: 960px)").matches) closePortalMenu();
+    if (state.currentView === "dashboard" && state.dashboard) renderDashboard();
+    if (state.currentView === "campaigns" && state.selectedCampaign) renderCampaignView();
+    if (state.currentView === "strategic-qr") renderStrategicQrView();
+  }, 120);
+}
+window.addEventListener("resize", handlePortalLayoutResize, { passive: true });
 window.addEventListener("beforeunload", () => {
   stopValidatorScanner();
   stopAffiliateFinderScanner();

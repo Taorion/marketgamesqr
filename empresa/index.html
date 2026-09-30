@@ -14,7 +14,7 @@
   <link rel="manifest" href="/empresa/agenda.webmanifest?v=agenda-push-v1-20260929">
   <link rel="preload" as="script" href="js/evaluation-station-core.js?v=evaluation-core-v1-20260830">
   <link rel="preload" as="script" href="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830">
-  <link rel="preload" as="script" href="js/app.js?v=assignment-station-image-v517-20260929&amp;agenda-push=v1-20260929">
+  <link rel="preload" as="script" href="js/app.js?v=assignment-station-image-v517-20260929&amp;agenda-push=v1-20260929&amp;inventory-photo=v1-20260930&amp;resize-performance=v1-20260930">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -86,6 +86,7 @@
 <link rel="stylesheet" href="css/reward-pass-modal-layout.css?v=reward-pass-modal-layout-v3-20260916">
   <link rel="stylesheet" href="css/agenda-push.css?v=agenda-push-v1-20260929">
   <link rel="stylesheet" href="css/portal-control-spacing.css?v=portal-control-spacing-v1-20260930">
+  <link rel="stylesheet" href="css/inventory-photo-agenda-editor.css?v=inventory-photo-agenda-v1-20260930">
 </head>
 <body data-current-view="rms-machine" data-auth-state="guest">
   <main class="portal-shell">
@@ -6053,6 +6054,11 @@
                   </div>
                   <form class="modal-form inventory-form" id="inventoryProductForm">
                     <input id="inventoryProductIdInput" type="hidden">
+                    <div class="inventory-photo-field span-2">
+                      <label><span>Foto del producto</span><input id="inventoryPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="inventoryPhotoMessage"><small id="inventoryPhotoMessage">JPG, PNG o WebP. Máximo 500 KB.</small></label>
+                      <img id="inventoryPhotoPreview" class="inventory-product-photo" alt="Vista previa de la foto del producto" width="160" height="160" hidden>
+                      <button id="inventoryPhotoRemove" class="ghost-button compact" type="button" hidden>Quitar foto</button>
+                    </div>
                     <label><span>ID interno del producto</span><input id="inventoryInternalIdInput" type="text" maxlength="100" placeholder="Ej. PRD-001" required><small>Único dentro de tu empresa.</small></label>
                     <label><span>Nombre producto</span><input id="inventoryNameInput" type="text" maxlength="180" required></label>
                     <label><span>Código de barras</span><input id="inventoryBarcodeInput" type="text" maxlength="120" placeholder="Escanea o escribe"></label>
@@ -8621,14 +8627,15 @@
   <script src="js/evaluation-station-core.js?v=evaluation-core-v1-20260830" defer></script>
   <script src="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830" defer></script>
   <script src="js/portal-training-access.js?v=training-access-v448-20260908" defer></script>
-  <script src="js/app.js?v=assignment-station-image-v517-20260929&amp;agenda-push=v1-20260929" defer></script>
+  <script src="js/inventory-photos.js?v=inventory-photo-v1-20260930" defer></script>
+  <script src="js/app.js?v=assignment-station-image-v517-20260929&amp;agenda-push=v1-20260929&amp;inventory-photo=v1-20260930&amp;resize-performance=v1-20260930" defer></script>
   <script src="js/agenda-push.js?v=agenda-push-v4-restore-20260929" defer></script>
   <script src="js/inventory-product-qr.js?v=inventory-product-history-v2-20260927" defer></script>
-  <script src="js/sidebar-toggle-state-fix.js?v=sidebar-toggle-state-fix-v1-20260914&amp;compact-groups=v497-20260915" defer></script>
+  <script src="js/sidebar-toggle-state-fix.js?v=sidebar-toggle-state-fix-v1-20260914&amp;compact-groups=v497-20260915&amp;resize-performance=v1-20260930" defer></script>
 <script src="js/sales-bulk-import.js?v=sales-bulk-import-v373-20260826" defer></script>
 <script src="js/contacts-premium-v333.js?v=contact-promotion-v435-20260905&amp;manual-contact-cleanup=v451-20260908" defer></script>
 <script src="js/rms-activation-bulk-email.js?v=resend-bulk-v329-20260822-unified-email-routing-v359-20260826" defer></script>
-<script src="js/campaign-command-center-v318.js" defer></script>
+<script src="js/campaign-command-center-v318.js?v=scoped-observer-v1-20260930" defer></script>
     <script src="js/communications.js?v=communications-history-v333-20260822-unified-email-routing-v359-20260826-qori-public-links-v472-20260910-communications-experience-v485-20260911" defer></script>
   <script src="js/guided-tutorials.js?v=guided-tutorials-v3-phone-header-20260915" defer></script>
 </body>

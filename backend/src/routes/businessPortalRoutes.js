@@ -76,6 +76,7 @@ const {
   importInventoryProductsCsv,
   getInventoryProductInsights,
   listInventoryProducts,
+  getInventoryProductPhoto,
   updateInventoryProduct,
   listCampaigns,
   createCampaign,
@@ -434,6 +435,7 @@ router.post("/inventory/subcategories", createInventorySubcategory);
 router.get("/inventory/catalog/:catalog", standardBusinessCache, listInventoryCatalog);
 router.post("/inventory/catalog/:catalog", createInventoryCatalog);
 router.get("/inventory/products", standardBusinessCache, listInventoryProducts);
+router.get("/inventory/products/:productId/photo", getInventoryProductPhoto);
 router.post("/inventory/products", createInventoryProduct);
 router.post("/inventory/products/import-csv", importInventoryProductsCsv);
 router.get("/inventory/product-qr/:productId", getInventoryProductQr);

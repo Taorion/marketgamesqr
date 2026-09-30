@@ -28,6 +28,7 @@ async function getStorageSummary(businessId) {
       `select (
           coalesce((select sum(octet_length(file_data_url) + coalesce(octet_length(cover_image_data_url), 0)) from digital_assets where business_id = $1), 0)
           + coalesce((select octet_length(settings->>'logo_data_url') + coalesce(octet_length(settings->>'ticket_frame_data_url'), 0) from businesses where id = $1), 0)
+          + coalesce((select sum(octet_length(image_data)) from business_inventory_product_photos where business_id = $1), 0)
         )::bigint as used_bytes,
         (select count(*)::int from digital_assets where business_id = $1) as assets_count`,
       [businessId]

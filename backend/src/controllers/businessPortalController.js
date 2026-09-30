@@ -6,6 +6,7 @@ const { query, withTransaction } = require("../config/db");
 const { env } = require("../config/env");
 const { forbidden, notFound, badRequest } = require("../utils/http");
 const { validate } = require("../utils/validators");
+const { MAX_PRODUCT_PHOTO_DATA_URL_LENGTH, parseInventoryPhoto, saveInventoryPhoto } = require("../services/inventoryPhotoService");
 const {
   getBusinessSummary,
   getBusinessCampaignMetrics,
@@ -310,6 +311,7 @@ const customerAcquisitionSaleSchema = z.object({
 const inventoryTaxClassificationSchema = z.enum(["EXEMPT", "EXCLUDED", "VAT_0", "VAT_5", "VAT_8", "VAT_11", "VAT_19", "CUSTOM"]);
 
 const inventoryProductSchema = z.object({
+  photo_data_url: z.string().max(MAX_PRODUCT_PHOTO_DATA_URL_LENGTH, "La foto debe pesar como máximo 500 KB.").nullable().optional(),
   internal_id: z.string().trim().min(2).max(100).optional().nullable(),
   sku: z.string().trim().max(80).optional().nullable(),
   barcode: z.string().trim().max(120).optional().nullable(),
@@ -4727,6 +4729,21 @@ function mapInventoryPayload(body, userId) {
   };
 }
 
+async function getInventoryProductPhoto(req, res, next) {
+  try {
+    const businessId = businessIdFor(req);
+    await assertFeatureForRequest(req, businessId, "gift_inventory");
+    const result = await query(
+      "select mime_type, image_data from business_inventory_product_photos where business_id = $1 and product_id = $2",
+      [businessId, req.params.productId]
+    );
+    if (!result.rowCount) throw notFound("Este producto no tiene foto.");
+    const photo = result.rows[0];
+    res.set("Cache-Control", "private, no-store");
+    res.json({ data_url: `data:${photo.mime_type};base64,${photo.image_data.toString("base64")}` });
+  } catch (error) { next(error); }
+}
+
 async function listInventoryProducts(req, res, next) {
   try {
     const businessId = businessIdFor(req);
@@ -4738,6 +4755,7 @@ async function listInventoryProducts(req, res, next) {
     params.push(limit);
     const result = await query(
       `select product.*,
+              exists (select 1 from business_inventory_product_photos photo where photo.product_id = product.id and photo.business_id = product.business_id) as has_photo,
               category.name as category_name,
               category.internal_id as category_internal_id,
               subcategory.name as subcategory_name,
@@ -4859,6 +4877,7 @@ async function getInventoryProductInsights(req, res, next) {
     await assertFeatureForRequest(req, businessId, "gift_inventory");
     const productResult = await query(
       `select product.*,
+              exists (select 1 from business_inventory_product_photos photo where photo.product_id = product.id and photo.business_id = product.business_id) as has_photo,
               tax_base.name as tax_base_name,
               tax_base.rate as tax_base_rate,
               healthy_tax.name as healthy_tax_name,
@@ -4975,6 +4994,8 @@ async function createInventoryProduct(req, res, next) {
       "productos de inventario"
     );
     const body = validate(inventoryProductSchema, req.body);
+    const photo = parseInventoryPhoto(body.photo_data_url);
+    if (photo) await assertStorageQuotaForUpload(businessId, photo.size);
     const payload = mapInventoryPayload(body, req.user.id);
     if (!payload.internal_id) throw badRequest("El ID interno del producto es obligatorio.");
     const result = await withTransaction(async (client) => {
@@ -5016,6 +5037,8 @@ async function createInventoryProduct(req, res, next) {
           payload.created_by_user_id,
         ]
       );
+      await saveInventoryPhoto(client, businessId, inserted.rows[0].id, photo);
+      inserted.rows[0].has_photo = Boolean(photo);
       await recordInventoryProductCreated({
         businessId,
         product: inserted.rows[0],
@@ -5136,6 +5159,7 @@ async function updateInventoryProduct(req, res, next) {
     const businessId = businessIdFor(req);
     await assertFeatureForRequest(req, businessId, "gift_inventory");
     const body = validate(inventoryProductPatchSchema, req.body);
+    const photo = parseInventoryPhoto(body.photo_data_url);
     const existing = await query(
       "select * from business_inventory_products where id = $1 and business_id = $2",
       [req.params.productId, businessId]
@@ -5153,11 +5177,15 @@ async function updateInventoryProduct(req, res, next) {
         "productos de inventario"
       );
     }
+    if (photo) {
+      const currentPhoto = await query("select octet_length(image_data) as size from business_inventory_product_photos where business_id = $1 and product_id = $2", [businessId, req.params.productId]);
+      await assertStorageQuotaForUpload(businessId, Math.max(0, photo.size - Number(currentPhoto.rows[0]?.size || 0)));
+    }
     const payload = mapInventoryPayload({ ...existing.rows[0], ...body }, req.user.id);
     const result = await withTransaction(async (client) => {
       Object.assign(payload, await resolveInventoryTaxonomy(client, businessId, payload));
       await ensureInventoryProductUnique(client, businessId, payload, req.params.productId);
-      return client.query(
+      const updated = await client.query(
         `update business_inventory_products
          set internal_id = $3, sku = $4, barcode = $5, name = $6, description = $7, category = $8,
              category_id = $9, subcategory_id = $10, brand = $11, brand_id = $12, unit_price = $13,
@@ -5195,6 +5223,10 @@ async function updateInventoryProduct(req, res, next) {
           JSON.stringify(payload.metadata),
         ]
       );
+      await saveInventoryPhoto(client, businessId, req.params.productId, photo);
+      const photoState = await client.query("select exists (select 1 from business_inventory_product_photos where business_id = $1 and product_id = $2) as has_photo", [businessId, req.params.productId]);
+      updated.rows[0].has_photo = photoState.rows[0].has_photo;
+      return updated;
     });
     res.json({ product: result.rows[0] });
   } catch (error) {
@@ -7751,6 +7783,7 @@ module.exports = {
   importInventoryProductsCsv,
   getInventoryProductInsights,
   listInventoryProducts,
+  getInventoryProductPhoto,
   updateInventoryProduct,
   listCampaigns,
   createCampaign,

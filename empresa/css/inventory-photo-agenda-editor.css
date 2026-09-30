@@ -1,0 +1,75 @@
+/* Editing replaces the agenda row, including its time and action columns. */
+html body .portal-shell .view-section .lead-agenda-item.is-editing,
+html body #leadDetailModal .lead-agenda-item.is-editing {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+html body .portal-shell .view-section .lead-agenda-item.is-editing > .lead-agenda-edit-form,
+html body #leadDetailModal .lead-agenda-item.is-editing > .lead-agenda-edit-form {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  gap: 16px !important;
+}
+
+html body .lead-agenda-item.is-editing .lead-agenda-edit-form > .span-2,
+html body .lead-agenda-item.is-editing .lead-agenda-edit-actions {
+  grid-column: 1 / -1 !important;
+}
+
+html body .lead-agenda-item.is-editing .lead-agenda-edit-form :is(label, input, select, textarea) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+html body .lead-agenda-item.is-editing .lead-agenda-edit-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+}
+
+html body #inventoryProductForm .inventory-photo-field {
+  grid-column: 1 / -1 !important;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+html body #inventoryProductForm .inventory-photo-field label { min-width: 0; }
+html body #inventoryProductForm #inventoryPhotoInput { width: 100%; min-width: 0; }
+html body .inventory-product-photo {
+  display: block;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #f4f7fa;
+}
+html body #inventoryProductForm #inventoryPhotoPreview,
+html body #inventoryProductDetailModal .inventory-product-photo {
+  width: 160px;
+  height: 160px;
+  max-width: 100%;
+  object-fit: contain;
+}
+html body .inventory-product-photo[hidden],
+html body #inventoryPhotoRemove[hidden] { display: none !important; }
+
+@media (max-width: 620px) {
+  html body .portal-shell .view-section .lead-agenda-item.is-editing > .lead-agenda-edit-form,
+  html body #leadDetailModal .lead-agenda-item.is-editing > .lead-agenda-edit-form,
+  html body #inventoryProductForm .inventory-photo-field {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  html body .lead-agenda-item.is-editing .lead-agenda-edit-actions > button {
+    flex: 1 1 100%;
+    white-space: normal !important;
+  }
+}

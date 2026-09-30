@@ -69,7 +69,7 @@
   };
 
   toggleButton.addEventListener("click", syncSidebarPresentation);
-  window.addEventListener("resize", syncSidebarPresentation, { passive: true });
+  window.matchMedia("(min-width: 961px)").addEventListener("change", syncSidebarPresentation);
   window.addEventListener("qori-sidebar-presentation", syncSidebarPresentation);
   window.addEventListener("pageshow", syncSidebarPresentation);
   syncSidebarPresentation();

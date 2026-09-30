@@ -1,5 +1,6 @@
 (() => {
   const applyCampaignPresentation = () => {
+    if (document.body.dataset.currentView !== "campaigns") return;
     const workspace = document.getElementById("campaignPremiumWorkspace");
     if (!workspace) return;
     const view = workspace.closest('.view-section[data-view="campaigns"]');
@@ -31,8 +32,15 @@
     });
   };
 
-  const observer = new MutationObserver(applyCampaignPresentation);
-  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "data-current-view"] });
-  document.addEventListener("DOMContentLoaded", applyCampaignPresentation, { once: true });
-  window.addEventListener("load", applyCampaignPresentation, { once: true });
+  let scheduled = false;
+  const schedulePresentation = () => {
+    if (scheduled || document.body.dataset.currentView !== "campaigns") return;
+    scheduled = true;
+    requestAnimationFrame(() => { scheduled = false; applyCampaignPresentation(); });
+  };
+  const view = document.querySelector('.view-section[data-view="campaigns"]');
+  if (view) new MutationObserver(schedulePresentation).observe(view, { childList: true, subtree: true });
+  new MutationObserver(schedulePresentation).observe(document.body, { attributes: true, attributeFilter: ["data-current-view"] });
+  document.addEventListener("DOMContentLoaded", schedulePresentation, { once: true });
+  schedulePresentation();
 })();
