@@ -417,6 +417,18 @@ html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationT
     min-width: 0 !important;
   }
 
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-decision-brief,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-premium-detail > header {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-decision-brief > div,
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-premium-detail > header > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow-wrap: anywhere !important;
+  }
+
   /* Quality cards need their full content width on phones: a fixed label
      column leaves only a few pixels for action text inside nested panels. */
   html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-premium-table tbody td {
