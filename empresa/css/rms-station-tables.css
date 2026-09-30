@@ -416,4 +416,24 @@ html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationT
     grid-column: 2 !important;
     min-width: 0 !important;
   }
+
+  /* Quality cards need their full content width on phones: a fixed label
+     column leaves only a few pixels for action text inside nested panels. */
+  html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-premium-table tbody td {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 6px !important;
+    padding-inline: 0 !important;
+  }
+
+  html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-premium-table tbody td > *,
+  html body:not(#rmsStationTablesA#rmsStationTablesB#rmsStationTablesC#rmsStationTablesD#rmsStationTablesE)[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-premium-table tbody td::before {
+    grid-column: 1 !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  html body[data-current-view="rms-machine"] .portal-shell #rmsStationWorkspace .rms-quality-premium-table .rms-quality-action-label {
+    overflow-wrap: anywhere !important;
+  }
 }
