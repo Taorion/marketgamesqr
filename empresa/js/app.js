@@ -4418,7 +4418,7 @@ function resetBusinessScopedState(options = {}) {
   state.leadAgendaStatus = "OPEN";
   state.leadAgendaAnchorDate = dateInputValue(new Date());
   state.leadAgendaRange = null;
-  state.editingAgendaId = null;
+  closeLeadAgendaEditModal();
   state.contactCenterTab = "overview";
   state.leadDirectoryAudience = "customers";
   state.leadCrmRows = [];
@@ -8545,7 +8545,7 @@ async function loadWorkspace() {
     state.leadAgendaContactsLoaded = false;
     state.leadAgendaContactsLoading = false;
     state.leadAgendaRange = null;
-    state.editingAgendaId = null;
+    closeLeadAgendaEditModal();
     state.businessUsers = businessUsersData.users || [];
     renderBusinessSaleSellerOptions();
     state.accountWorkspaceLoaded = shouldLoadAccountData;
@@ -41796,6 +41796,65 @@ function renderLeadAgendaLeadOptions() {
   }
 }
 
+function closeLeadAgendaEditModal() {
+  const modal = document.getElementById("leadAgendaEditModal");
+  if (modal?.open) modal.close();
+  state.editingAgendaId = null;
+  document.body.classList.remove("lead-agenda-edit-open");
+}
+
+function agendaEditFeedback(message) {
+  const status = document.querySelector("#leadAgendaEditModal [role='alert']");
+  if (status) status.textContent = message;
+  showFeedback(message, "error");
+}
+
+function openLeadAgendaEditModal(noteId, options = {}) {
+  const detailRows = leadDetailAgendaRows(state.selectedLeadDetail || {});
+  const rows = options.fromDetail ? [...detailRows, ...(state.leadAgenda || [])] : [...(state.leadAgenda || []), ...detailRows];
+  const item = rows.find((entry) => String(entry.id) === String(noteId));
+  if (!item) return showFeedback("No se encontró la actividad. Actualiza la Agenda.", "error");
+  let modal = document.getElementById("leadAgendaEditModal");
+  if (!modal) {
+    modal = document.createElement("dialog");
+    modal.id = "leadAgendaEditModal";
+    modal.setAttribute("aria-labelledby", "leadAgendaEditTitle");
+    document.body.appendChild(modal);
+    modal.addEventListener("close", () => {
+      state.editingAgendaId = null;
+      document.body.classList.remove("lead-agenda-edit-open");
+      modal.innerHTML = "";
+    });
+    modal.addEventListener("click", (event) => {
+      if (event.target !== modal) return;
+      const bounds = modal.getBoundingClientRect();
+      if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeLeadAgendaEditModal();
+    });
+    modal.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        closeLeadAgendaEditModal();
+      }
+    });
+  }
+  state.editingAgendaId = item.id;
+  modal.innerHTML = '<header class="agenda-edit-modal-head"><h3 id="leadAgendaEditTitle">Editar actividad</h3><button type="button" class="icon-button" aria-label="Cerrar edición">×</button></header>'
+    + agendaCardMarkup(item, { editForm: true });
+  modal.querySelector(".agenda-edit-modal-head button").addEventListener("click", closeLeadAgendaEditModal);
+  modal.querySelector("[data-agenda-cancel-edit]").addEventListener("click", closeLeadAgendaEditModal);
+  modal.querySelector("[data-agenda-delete]").addEventListener("click", () => deleteAgendaItem(item.id));
+  const form = modal.querySelector("form");
+  const status = document.createElement("p");
+  status.className = "span-2 agenda-edit-error";
+  status.setAttribute("role", "alert");
+  form.insertBefore(status, form.querySelector(".lead-agenda-edit-actions"));
+  form.addEventListener("submit", (event) => updateAgendaItemFromForm(event, item.id));
+  document.body.classList.add("lead-agenda-edit-open");
+  if (!modal.open) modal.showModal();
+  form.elements.next_action?.focus({ preventScroll: true });
+}
+
 function agendaCardMarkup(item = {}, options = {}) {
   const leadRef = {
     id: item.source_id || item.lead_id,
@@ -41817,7 +41876,7 @@ function agendaCardMarkup(item = {}, options = {}) {
   const reminderDate = formatDateOnly(item.reminder_at);
   const reminderTime = formatTimeOnly(item.reminder_at);
   const contactLine = [item.lead_name || "Contacto", item.lead_phone || "", item.campaign_name || ""].filter(Boolean).join(" · ");
-  if (state.editingAgendaId && String(state.editingAgendaId) === String(item.id)) {
+  if (options.editForm) {
     return `
       <article class="lead-agenda-item is-editing">
         <form class="lead-agenda-edit-form" data-agenda-edit-form="${escapeHtml(item.id || "")}">
@@ -42227,19 +42286,7 @@ function bindLeadAgendaActions() {
     });
   });
   leadAgendaBoard?.querySelectorAll("[data-agenda-edit]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.editingAgendaId = button.dataset.agendaEdit;
-      renderLeadAgenda();
-    });
-  });
-  leadAgendaBoard?.querySelectorAll("[data-agenda-cancel-edit]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.editingAgendaId = null;
-      renderLeadAgenda();
-    });
-  });
-  leadAgendaBoard?.querySelectorAll("[data-agenda-edit-form]").forEach((form) => {
-    form.addEventListener("submit", (event) => updateAgendaItemFromForm(event, form.dataset.agendaEditForm));
+    button.addEventListener("click", () => openLeadAgendaEditModal(button.dataset.agendaEdit));
   });
   leadAgendaBoard?.querySelectorAll("[data-agenda-check]").forEach((input) => {
     input.addEventListener("change", () => updateAgendaChecklistItem(input.dataset.agendaCheck, Number(input.dataset.checkIndex), input.checked));
@@ -42302,7 +42349,7 @@ async function updateAgendaItem(noteId, payload = {}, message = "Tarea de agenda
     headers: authHeaders(),
     body: JSON.stringify(payload),
   });
-  state.editingAgendaId = null;
+  closeLeadAgendaEditModal();
   await refreshLeadAgendaAfterMutation();
   showFeedback(message, "success");
   return result;
@@ -42332,15 +42379,15 @@ async function updateAgendaItemFromForm(event, noteId) {
   const campaign = selectedAgendaCampaignFromData(data);
   const progress = Math.max(0, Math.min(100, Number(data.get("progress_percent") || 0)));
   if (!nextAction || !note || !reminderValue) {
-    showFeedback("Completa acción, detalle y fecha para guardar la tarea.", "error");
+    agendaEditFeedback("Completa acción, detalle y fecha para guardar la tarea.", "error");
     return;
   }
   if (!scope) {
-    showFeedback("Elige un alcance o usa Sin alcance / tarea interna.", "error");
+    agendaEditFeedback("Elige un alcance o usa Sin alcance / tarea interna.", "error");
     return;
   }
   if (scope === "CONTACT" && !leadRef.id) {
-    showFeedback("Selecciona el contacto para esta tarea o cambia el alcance.", "error");
+    agendaEditFeedback("Selecciona el contacto para esta tarea o cambia el alcance.", "error");
     return;
   }
   try {
@@ -42359,7 +42406,7 @@ async function updateAgendaItemFromForm(event, noteId) {
       metadata: agendaOperationalPayloadFromFields(data, reminderValue),
     }, "Tarea editada.");
   } catch (error) {
-    showFeedback(error.message || "No se pudo editar la tarea.", "error");
+    agendaEditFeedback(error.message || "No se pudo editar la tarea.", "error");
   }
 }
 
@@ -42387,11 +42434,11 @@ async function deleteAgendaItem(noteId) {
       headers: authHeaders(),
       body: JSON.stringify({ reason: String(reason).trim(), idempotency_key: `agenda-cancel-${noteId}` }),
     });
-    state.editingAgendaId = null;
+    closeLeadAgendaEditModal();
     await refreshLeadAgendaAfterMutation();
     showFeedback("Tarea cancelada; su historial se conserva.", "success");
   } catch (error) {
-    showFeedback(error.message || "No se pudo cancelar la tarea.", "error");
+    agendaEditFeedback(error.message || "No se pudo cancelar la tarea.");
   }
 }
 
@@ -44791,19 +44838,7 @@ function bindLeadDetailPanelActions() {
     button.addEventListener("click", () => setLeadDetailTab(button.dataset.leadTabShortcut || "summary", { scrollTab: true }));
   });
   leadDetailContent?.querySelectorAll("[data-agenda-edit]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.editingAgendaId = button.dataset.agendaEdit;
-      renderLeadTab(state.selectedLeadDetail);
-    });
-  });
-  leadDetailContent?.querySelectorAll("[data-agenda-cancel-edit]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.editingAgendaId = null;
-      renderLeadTab(state.selectedLeadDetail);
-    });
-  });
-  leadDetailContent?.querySelectorAll("[data-agenda-edit-form]").forEach((form) => {
-    form.addEventListener("submit", (event) => updateAgendaItemFromForm(event, form.dataset.agendaEditForm));
+    button.addEventListener("click", () => openLeadAgendaEditModal(button.dataset.agendaEdit, { fromDetail: true }));
   });
   leadDetailContent?.querySelectorAll("[data-agenda-check]").forEach((input) => {
     input.addEventListener("change", () => updateAgendaChecklistItem(input.dataset.agendaCheck, Number(input.dataset.checkIndex), input.checked));

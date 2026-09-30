@@ -1,11 +1,13 @@
-/* Editing replaces the agenda row, including its time and action columns. */
+/* Agenda editor shares its responsive fields with the overlay. */
 html body .portal-shell .view-section .lead-agenda-item.is-editing,
-html body #leadDetailModal .lead-agenda-item.is-editing {
+html body #leadDetailModal .lead-agenda-item.is-editing,
+html body #leadAgendaEditModal .lead-agenda-item.is-editing {
   grid-template-columns: minmax(0, 1fr) !important;
 }
 
 html body .portal-shell .view-section .lead-agenda-item.is-editing > .lead-agenda-edit-form,
-html body #leadDetailModal .lead-agenda-item.is-editing > .lead-agenda-edit-form {
+html body #leadDetailModal .lead-agenda-item.is-editing > .lead-agenda-edit-form,
+html body #leadAgendaEditModal .lead-agenda-edit-form {
   grid-column: 1 / -1 !important;
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -73,6 +75,7 @@ html body #inventoryPhotoRemove[hidden] { display: none !important; }
 @media (max-width: 620px) {
   html body .portal-shell .view-section .lead-agenda-item.is-editing > .lead-agenda-edit-form,
   html body #leadDetailModal .lead-agenda-item.is-editing > .lead-agenda-edit-form,
+  html body #leadAgendaEditModal .lead-agenda-edit-form,
   html body #inventoryProductForm .inventory-photo-field {
     grid-template-columns: minmax(0, 1fr) !important;
   }
@@ -80,4 +83,67 @@ html body #inventoryPhotoRemove[hidden] { display: none !important; }
     flex: 1 1 100%;
     white-space: normal !important;
   }
+}
+
+/* Native modal keeps keyboard focus above the Agenda or contact detail. */
+html:has(body.lead-agenda-edit-open),
+html body.lead-agenda-edit-open { overflow: hidden !important; }
+html body > #leadAgendaEditModal {
+  position: fixed !important;
+  inset: 0 !important;
+  margin: auto !important;
+  width: min(880px, calc(100% - 32px)) !important;
+  max-width: calc(100% - 32px) !important;
+  max-height: calc(100dvh - 32px) !important;
+  padding: 0 !important;
+  border: 1px solid #dbe5ec !important;
+  border-radius: 20px !important;
+  background: #fff !important;
+  color: #18334b;
+  box-shadow: 0 24px 80px #122b4550;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+html body > #leadAgendaEditModal:not([open]) { display: none !important; }
+html body > #leadAgendaEditModal[open] { display: flex !important; flex-direction: column !important; }
+html body > #leadAgendaEditModal::backdrop { background: rgb(15 33 53 / 60%); }
+html body #leadAgendaEditModal .agenda-edit-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex: 0 0 auto;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e1e9ef;
+}
+html body #leadAgendaEditModal h3 { margin: 0; font-size: 21px; }
+html body #leadAgendaEditModal .agenda-edit-modal-head button { flex: 0 0 40px; font-size: 26px; }
+html body #leadAgendaEditModal .lead-agenda-item.is-editing {
+  display: block !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 24px !important;
+  border: 0 !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+html body #leadAgendaEditModal label { display: grid !important; gap: 6px; align-content: start; }
+html body #leadAgendaEditModal :is(input, select, textarea) {
+  width: 100% !important;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #cddae5;
+  border-radius: 10px;
+  background: #fff;
+  color: #18334b;
+  font: inherit;
+}
+html body #leadAgendaEditModal textarea { resize: vertical; }
+html body #leadAgendaEditModal .agenda-edit-error { margin: 0; color: #a52828; }
+html body #leadAgendaEditModal .agenda-edit-error:empty { display: none; }
+@media (max-width: 620px) {
+  html body #leadAgendaEditModal .agenda-edit-modal-head { padding: 14px 16px; }
+  html body #leadAgendaEditModal .lead-agenda-item.is-editing { padding: 16px !important; }
 }
