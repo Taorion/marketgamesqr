@@ -350,7 +350,7 @@
     background: #eaf4ff !important;
   }
 
-  html body:not(#mobileAgendaA#mobileAgendaB#mobileAgendaC#mobileAgendaD#mobileAgendaE#mobileAgendaF#mobileAgendaG#mobileAgendaH#mobileAgendaI#mobileAgendaJ)[data-current-view="leads"] .portal-shell #workspace .lead-agenda-view-tabs > .segment-tab :is(strong, .material-symbols-outlined) {
+  html body:not(#mobileAgendaA#mobileAgendaB#mobileAgendaC#mobileAgendaD#mobileAgendaE#mobileAgendaF#mobileAgendaG#mobileAgendaH#mobileAgendaI#mobileAgendaJ)[data-current-view="leads"] .portal-shell #workspace .lead-agenda-view-tabs > .segment-tab strong {
     min-width: 0 !important;
     color: #052a6b !important;
     -webkit-text-fill-color: #052a6b !important;

@@ -1,0 +1,105 @@
+/* Input density must preserve the space occupied by an overlaid search icon. */
+:is(.contact-directory-search-control, .reward-pass-search-field,
+    .recycling-premium-search, .validator-customer-search-field,
+    .validator-product-search-control, .communication-history-toolbar label > div) > input {
+  --portal-input-leading-space: 44px;
+  padding-left: var(--portal-input-leading-space) !important;
+}
+
+/* Icons are font ligatures: wrapping or shrinking them breaks the glyph and
+   lets it spill into the adjacent label. Keep each glyph in its own slot. */
+html body .portal-shell #workspace#workspace .material-symbols-outlined,
+html body .modal-shell .material-symbols-outlined {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  letter-spacing: normal !important;
+}
+
+/* Inline search fields use flex/grid space rather than overlaid icons. */
+html body .portal-shell :is(.search-shell, .lead-directory-search,
+    .redemption-search-field, .branch-search-field, .affiliate-list-search,
+    .gaming-activation-search, .rms-station-search-field,
+    .rms-product-assignment-search, .campaign-premium-toolbar > label,
+    .gaming-published-toolbar label) {
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
+html body .portal-shell :is(.search-shell, .lead-directory-search,
+    .redemption-search-field, .branch-search-field, .affiliate-list-search,
+    .gaming-activation-search, .rms-station-search-field,
+    .rms-product-assignment-search, .campaign-premium-toolbar > label,
+    .gaming-published-toolbar label) > input {
+  min-width: 0 !important;
+  flex: 1 1 0%;
+  box-sizing: border-box;
+}
+
+html body .portal-shell :is(.search-shell, .lead-directory-search,
+    .redemption-search-field, .branch-search-field, .affiliate-list-search,
+    .gaming-activation-search, .rms-station-search-field,
+    .rms-product-assignment-search, .campaign-premium-toolbar > label,
+    .gaming-published-toolbar label) > .material-symbols-outlined {
+  min-width: 1em !important;
+  flex: 0 0 auto !important;
+}
+
+@media (max-width: 620px) {
+  /* Let action labels wrap while their icon remains beside the text. */
+  html body .portal-shell #workspace#workspace :is(.solid-button,
+      .ghost-button, .danger-button):has(> .material-symbols-outlined) {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: normal;
+  }
+
+  html body .portal-shell #workspace#workspace :is(.contact-directory-toolbar, .lead-directory-search-row,
+      .redemption-control-row, .rms-station-lead-toolbar) {
+    min-width: 0 !important;
+    max-width: 100%;
+    flex-wrap: wrap !important;
+  }
+
+  /* A wrapping column with percentage flex-basis created sideways columns. */
+  html body .portal-shell #workspace#workspace .communication-audience-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    height: auto !important;
+    max-height: none !important;
+    gap: 10px !important;
+  }
+
+  html body .portal-shell #workspace#workspace .communication-audience-actions > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box;
+  }
+
+  html body .portal-shell #workspace#workspace .communication-audience-actions > button {
+    min-height: 44px !important;
+    white-space: normal !important;
+  }
+
+  html body .portal-shell #workspace#workspace .communication-consent {
+    display: grid !important;
+    grid-template-columns: 20px minmax(0, 1fr) !important;
+    align-items: start;
+    gap: 8px;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  html body .portal-shell #workspace#workspace .communication-consent > input[type="checkbox"] {
+    width: 18px !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    margin: 2px 0 0 !important;
+    padding: 0 !important;
+  }
+}

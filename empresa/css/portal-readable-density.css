@@ -207,7 +207,7 @@ html body[data-auth-state="authenticated"] .portal-shell #workspace :where(.soli
 
 html body[data-auth-state="authenticated"] .portal-shell #workspace :where(input, select, textarea) {
   min-height: 40px !important;
-  padding: 9px 10px !important;
+  padding: 9px 10px 9px var(--portal-input-leading-space, 10px) !important;
   font-size: .82rem !important;
   line-height: 1.4 !important;
 }
