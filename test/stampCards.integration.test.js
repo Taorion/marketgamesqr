@@ -197,5 +197,51 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
       await assert.rejects(()=>svc.manualStamp(business.id,user.id,m.id,{...body,reference:'paused'}),/activo/);
     }finally{await new Promise(resolve=>server.close(resolve));}
   });
+  await t.test('deleting a program preserves completed cards, issued tickets, history and metrics',async()=>{
+    const p=await svc.saveProgram(business.id,user.id,{...rules,name:'Programa para eliminar'});
+    const {member:complete}=await svc.enroll(business.id,user.id,{program_id:p.id,name:'Beneficio pendiente',document_id:'DELETECOMPLETE'});
+    const {member:progress}=await svc.enroll(business.id,user.id,{program_id:p.id,name:'En progreso',document_id:'DELETEPROGRESS'});
+    await sale('DELETECOMPLETE');await sale('DELETECOMPLETE');await sale('DELETEPROGRESS');
+    const before=(await svc.dashboard(business.id,{...filter,program_id:p.id})).metrics;
+    await assert.rejects(()=>svc.deleteProgram(other.id,user.id,p.id),/no encontrado/);
+    const a=await svc.deleteProgram(business.id,user.id,p.id);
+    const b=await svc.deleteProgram(business.id,user.id,p.id);
+    assert.equal(new Date(a.deleted_at).getTime(),new Date(b.deleted_at).getTime());
+    const ctx=await svc.context(business.id);
+    assert.equal(ctx.programs.some(x=>x.id===p.id),false);assert.ok(ctx.deleted_programs.some(x=>x.id===p.id));
+    assert.equal((await svc.context(other.id)).deleted_programs.some(x=>x.id===p.id),false);
+    const persisted=(await query('select * from stamp_programs where id=$1',[p.id])).rows[0];
+    assert.equal(persisted.deleted_by,user.id);assert.equal(persisted.status,'ARCHIVED');
+    await assert.rejects(()=>svc.saveProgram(business.id,user.id,rules,p.id),/no encontrado/);
+    await assert.rejects(()=>svc.enroll(business.id,user.id,{program_id:p.id,name:'Nuevo',document_id:'DELETEBLOCK'}),/activo/);
+    await assert.rejects(()=>svc.manualStamp(business.id,user.id,progress.id,{reference:'deleted-visit',note:'Intento',enable_manual:true}),/activo/);
+    await sale('DELETEPROGRESS');assert.equal((await current(progress)).stamps,1);
+    assert.deepEqual((await svc.dashboard(business.id,{...filter,program_id:p.id})).metrics,before);
+    assert.equal((await svc.history(business.id,{...filter,program_id:p.id})).events.length,3);
+    assert.equal((await svc.publicCard(complete.public_token)).program.deleted,true);
+    const c=await current(complete),balance=(await svc.context(business.id)).ticket_balance;
+    const reward=await svc.claim(complete.public_token,c.id);
+    assert.equal((await svc.context(business.id)).ticket_balance,balance-1);
+    assert.equal((await getQrDetails(reward.ticket_code,user)).allowed,true);
+    await svc.deleteProgram(business.id,user.id,p.id);
+    assert.equal((await getQrDetails(reward.ticket_code,user)).allowed,true);
+    await assert.rejects(()=>svc.renew(complete.public_token),/pausado/);
+    assert.ok((await svc.members(business.id,{program_id:p.id})).members.every(x=>x.program_deleted_at));
+  });
+  await t.test('DELETE HTTP route supports unused programs, validates ids and requires tenant authentication',async()=>{
+    const p=await svc.saveProgram(business.id,user.id,{...rules,name:'Sin clientes'});
+    const jwt=require('jsonwebtoken'),{app}=require('../backend/src/app');
+    const server=await new Promise(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));});
+    const base=`http://127.0.0.1:${server.address().port}/api/business/stamp-cards/programs/`;
+    const headers={Authorization:`Bearer ${jwt.sign({sub:user.id,password_version:0},process.env.JWT_SECRET)}`};
+    try{
+      assert.equal((await fetch(base+p.id,{method:'DELETE'})).status,401);
+      assert.equal((await fetch(base+'bad-id',{method:'DELETE',headers})).status,400);
+      assert.equal((await fetch(base+crypto.randomUUID(),{method:'DELETE',headers})).status,404);
+      assert.equal((await fetch(base+p.id,{method:'DELETE',headers})).status,200);
+      assert.equal((await fetch(base+p.id,{method:'DELETE',headers})).status,200);
+      assert.equal((await svc.context(business.id)).programs.some(x=>x.id===p.id),false);
+    }finally{await new Promise(resolve=>server.close(resolve));}
+  });
 });
 after(()=>pool.end());

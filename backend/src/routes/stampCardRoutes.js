@@ -40,6 +40,7 @@ router.get('/history',handle(req=>service.history(req.user.business_id,filters(r
 router.get('/members',handle(req=>service.members(req.user.business_id,filters(req))));
 router.post('/programs',handle(req=>service.saveProgram(req.user.business_id,req.user.id,parse(program,req.body))));
 router.put('/programs/:id',handle(req=>service.saveProgram(req.user.business_id,req.user.id,parse(program,req.body),parse(uuid,req.params.id))));
+router.delete('/programs/:id',handle(req=>service.deleteProgram(req.user.business_id,req.user.id,parse(uuid,req.params.id))));
 router.post('/members',handle(req=>service.enroll(req.user.business_id,req.user.id,parse(enrollment,req.body))));
 router.post('/members/:id/stamps',handle(req=>service.manualStamp(req.user.business_id,req.user.id,parse(uuid,req.params.id),
   parse(z.object({reference:z.string().trim().min(3).max(100),note:z.string().trim().min(3).max(500),enable_manual:z.boolean().default(false)}),req.body))));

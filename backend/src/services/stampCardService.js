@@ -30,18 +30,29 @@ async function context(businessId) {
       from stamp_programs p where business_id=$1 order by created_at desc`,[businessId]),
     query('select qr_balance from business_qr_credit_accounts where business_id=$1',[businessId])
   ]);
-  return { business:business.rows[0],programs:programs.rows,ticket_balance:Number(balance.rows[0]?.qr_balance || 0) };
+  return { business:business.rows[0],programs:programs.rows.filter(p=>!p.deleted_at),
+    deleted_programs:programs.rows.filter(p=>p.deleted_at).map(p=>({id:p.id,name:p.name,deleted_at:p.deleted_at})),
+    ticket_balance:Number(balance.rows[0]?.qr_balance || 0) };
 }
 async function saveProgram(businessId,userId,data,id) {
   const keys=Object.keys(data),values=Object.values(data).map(v=>v && typeof v==='object'?JSON.stringify(v):v);
   if (id) {
     const result=await query(`update stamp_programs set ${keys.map((k,i)=>`${k}=$${i+3}`).join(',')},updated_at=now()
-      where id=$1 and business_id=$2 returning *`,[id,businessId,...values]);
+      where id=$1 and business_id=$2 and deleted_at is null returning *`,[id,businessId,...values]);
     if (!result.rowCount) throw notFound('Programa no encontrado.');
     return result.rows[0];
   }
   return (await query(`insert into stamp_programs (business_id,created_by,${keys.join(',')})
     values ($1,$2,${keys.map((_,i)=>`$${i+3}`).join(',')}) returning *`,[businessId,userId,...values])).rows[0];
+}
+async function deleteProgram(businessId,userId,id) {
+  const result=await query(`update stamp_programs
+    set status='ARCHIVED',deleted_at=coalesce(deleted_at,now()),
+      deleted_by=case when deleted_at is null then $3 else deleted_by end,
+      updated_at=case when deleted_at is null then now() else updated_at end
+    where id=$1 and business_id=$2 returning id,deleted_at`,[id,businessId,userId]);
+  if (!result.rowCount) throw notFound('Programa no encontrado.');
+  return {ok:true,...result.rows[0]};
 }
 async function enroll(businessId,userId,data) {
   return withTransaction(async client=>{
@@ -60,7 +71,7 @@ async function enroll(businessId,userId,data) {
   });
 }
 async function members(businessId,{search='',offset=0,program_id}={}) {
-  const result=await query(`select m.*,p.name as program_name,p.status as program_status,p.allow_manual,c.id as cycle_id,c.cycle_number,c.stamps,c.rules,
+  const result=await query(`select m.*,p.name as program_name,p.status as program_status,p.deleted_at as program_deleted_at,p.allow_manual,c.id as cycle_id,c.cycle_number,c.stamps,c.rules,
       c.expires_at,c.claimed_at,c.review_required,q.status as ticket_status
     from stamp_members m join stamp_programs p on p.id=m.program_id
     join lateral (select * from stamp_cycles where member_id=m.id order by cycle_number desc limit 1) c on true
@@ -116,7 +127,7 @@ async function publicCard(token) {
     query(`select e.created_at,e.source,e.voided_at,c.cycle_number from stamp_events e join stamp_cycles c on c.id=e.cycle_id
       where e.member_id=$1 order by e.created_at desc limit 50`,[member.id])
   ]);
-  return { name:member.name.split(' ')[0],business:business.rows[0],program:{status:program.rows[0].status,
+  return { name:member.name.split(' ')[0],business:business.rows[0],program:{status:program.rows[0].status,deleted:Boolean(program.rows[0].deleted_at),
     name:program.rows[0].name,next_rules:publicRules(snapshot(program.rows[0]))},
     cycles:await Promise.all(cycles.rows.map(async c=>({id:c.id,cycle_number:c.cycle_number,rules:publicRules(c.rules),stamps:c.stamps,
       expires_at:c.expires_at,claimed_at:c.claimed_at,review_required:c.review_required,ticket_status:c.ticket_status,
@@ -212,4 +223,4 @@ async function dashboard(businessId,{program_id,from,to}) {
   metrics.estimated_return_pct=Number(metrics.estimated_cost)>0?Math.round((Number(metrics.linked_sales)-Number(metrics.estimated_cost))/Number(metrics.estimated_cost)*100):null;
   return {metrics,trend:trend.rows};
 }
-module.exports={normalizeDocument,snapshot,publicRules,context,saveProgram,enroll,members,manualStamp,voidStamp,publicCard,claim,renew,history,dashboard};
+module.exports={normalizeDocument,snapshot,publicRules,context,saveProgram,deleteProgram,enroll,members,manualStamp,voidStamp,publicCard,claim,renew,history,dashboard};
