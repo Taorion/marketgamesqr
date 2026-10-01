@@ -81,7 +81,7 @@ async function members(businessId,{search='',offset=0,program_id}={}) {
     order by m.created_at desc,m.id limit 26 offset $3`,[businessId,search,offset,program_id||null]);
   return { members:result.rows.slice(0,25).map(m=>({...m,url:publicUrl(m.public_token)})),has_more:result.rows.length>25 };
 }
-async function manualStamp(businessId,userId,memberId,{reference,note,enable_manual=false}) {
+async function manualStamp(businessId,userId,memberId,{reference,note}) {
   return withTransaction(async client=>{
     const m=(await client.query('select * from stamp_members where id=$1 and business_id=$2 for update',[memberId,businessId])).rows[0];
     if (!m) throw notFound('Tarjeta no encontrada.');
@@ -90,10 +90,9 @@ async function manualStamp(businessId,userId,memberId,{reference,note,enable_man
     const p=(await client.query('select status,allow_manual from stamp_programs where id=$1 and business_id=$2 for no key update',[m.program_id,businessId])).rows[0];
     const c=(await client.query('select * from stamp_cycles where member_id=$1 order by cycle_number desc limit 1 for update',[m.id])).rows[0];
     if (p.status!=='ACTIVE') throw badRequest('El programa debe estar activo para registrar visitas.');
-    if (!p.allow_manual && !enable_manual) throw badRequest('Habilita los sellos manuales para registrar esta visita.');
+    if (!p.allow_manual) throw badRequest('Habilita los sellos manuales en la configuración del programa para registrar esta visita.');
     if (c.claimed_at || c.stamps>=c.rules.stamps_required || new Date(c.expires_at)<=new Date()) throw badRequest('Esta tarjeta está completa o vencida. El cliente puede iniciar una nueva desde su enlace.');
     // Operational permission follows the program; earned benefits retain their original rules.
-    if (!p.allow_manual) await client.query('update stamp_programs set allow_manual=true,updated_at=now() where id=$1 and business_id=$2',[m.program_id,businessId]);
     const result=await client.query(`insert into stamp_events (business_id,member_id,cycle_id,source,source_key,note,actor_id,daily_guard_date)
       values ($1,$2,$3,'MANUAL',$4,$5,$6,case when $7 then (now() at time zone 'America/Bogota')::date end)
       on conflict do nothing returning id`,[businessId,m.id,c.id,`manual:${reference}`,note,userId,c.rules.one_per_day]);

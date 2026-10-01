@@ -13,8 +13,8 @@ const today=new Date().toISOString().slice(0,10),filter={from:'2020-01-01',to:'2
 const rules={name:'Café de la casa',stamps_required:2,benefit_type:'FREE_GIFT',benefit_value:{label:'Un café gratis'},minimum_purchase:5000,
   one_per_day:false,allow_manual:true,card_valid_days:365,ticket_valid_days:30,reward_cost:2000,ticket_cost:1000,terms:'Un café de la casa. Personal.',status:'ACTIVE'};
 async function sale(document='CC12345',amount=10000,extra={}){return (await query(`insert into business_sales
-  (business_id,customer_document_id,customer_name,sale_amount,paid_at,sale_status) values ($1,$2,'Cliente QA',$3,$4,$5) returning *`,
-  [extra.business||business.id,document,amount,extra.paid_at||new Date(),extra.status||'PAID'])).rows[0];}
+  (business_id,customer_document_id,customer_name,sale_amount,paid_at,sale_status) values ($1,$2,'Cliente QA',$3,coalesce($4::timestamptz,clock_timestamp()),$5) returning *`,
+  [extra.business||business.id,document,amount,extra.paid_at||null,extra.status||'PAID'])).rows[0];}
 async function current(m=member){return (await query('select * from stamp_cycles where member_id=$1 order by cycle_number desc limit 1',[m.id])).rows[0];}
 test('stamp loyalty database, issuance and public contract',{skip:process.env.STAMP_CARD_INTEGRATION!=='1'},async t=>{
   await t.test('fixtures use actual business, sale, QR and credit tables',async()=>{
@@ -172,12 +172,15 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
     assert.equal(row.allow_manual,true);assert.equal(row.program_status,'ACTIVE');
     await svc.saveProgram(business.id,user.id,{...rules,allow_manual:false},p.id);
     await assert.rejects(()=>svc.manualStamp(business.id,user.id,m.id,{...visit,reference:'blocked'}),/Habilita/);
+    await assert.rejects(()=>svc.manualStamp(business.id,user.id,m.id,{...visit,reference:'bypass',enable_manual:true}),/Habilita/);
+    assert.equal((await svc.members(business.id,{program_id:p.id})).members[0].allow_manual,false);
     await assert.rejects(()=>svc.manualStamp(other.id,user.id,m.id,{...visit,enable_manual:true}),/no encontrada/);
+    await svc.saveProgram(business.id,user.id,{...rules,allow_manual:true},p.id);
     await query("update stamp_cycles set expires_at=now()-interval '1 minute' where member_id=$1",[m.id]);
     await assert.rejects(()=>svc.manualStamp(business.id,user.id,m.id,{...visit,reference:'expired',enable_manual:true}),/vencida/);
-    assert.equal((await svc.context(business.id)).programs.find(x=>x.id===p.id).allow_manual,false);
+    assert.equal((await svc.context(business.id)).programs.find(x=>x.id===p.id).allow_manual,true);
   });
-  await t.test('HTTP manual visit can explicitly enable an existing program and retries stay idempotent',async()=>{
+  await t.test('HTTP visits honor the program configuration and cannot enable manual stamping',async()=>{
     const p=await svc.saveProgram(business.id,user.id,{...rules,allow_manual:false,stamps_required:5,one_per_day:true});
     const {member:m}=await svc.enroll(business.id,user.id,{program_id:p.id,name:'Manual HTTP',document_id:'MANUALHTTP'});
     const jwt=require('jsonwebtoken'),{app}=require('../backend/src/app');
@@ -186,12 +189,18 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
     const body={reference:'visit-enable',note:'Habilitación y visita',enable_manual:true};
     const headers={'Content-Type':'application/json',Authorization:`Bearer ${jwt.sign({sub:user.id,password_version:0},process.env.JWT_SECRET)}`};
     try{
+      assert.equal((await fetch(url,{method:'POST',headers,body:JSON.stringify(body)})).status,400);
+      assert.equal((await svc.context(business.id)).programs.find(x=>x.id===p.id).allow_manual,false);
+      assert.equal((await current(m)).stamps,0);
+      const configUrl=`http://127.0.0.1:${server.address().port}/api/business/stamp-cards/programs/${p.id}`;
+      assert.equal((await fetch(configUrl,{method:'PUT',headers,body:JSON.stringify({...rules,allow_manual:true,stamps_required:5,one_per_day:true})})).status,200);
       const results=await Promise.all([1,2].map(()=>fetch(url,{method:'POST',headers,body:JSON.stringify(body)})));
       assert.ok(results.every(r=>r.status===200));assert.equal((await current(m)).stamps,1);
       assert.equal((await svc.context(business.id)).programs.find(x=>x.id===p.id).allow_manual,true);
-      await svc.saveProgram(business.id,user.id,{...rules,allow_manual:false,one_per_day:true},p.id);
+      assert.equal((await fetch(configUrl,{method:'PUT',headers,body:JSON.stringify({...rules,allow_manual:false,one_per_day:false})})).status,200);
       const capped=await fetch(url,{method:'POST',headers,body:JSON.stringify({...body,reference:'another-today'})});
       assert.equal(capped.status,400);
+      assert.match((await capped.json()).error.message,/configuración/);
       assert.equal((await svc.context(business.id)).programs.find(x=>x.id===p.id).allow_manual,false);
       await svc.saveProgram(business.id,user.id,{...rules,status:'PAUSED',allow_manual:false},p.id);
       await assert.rejects(()=>svc.manualStamp(business.id,user.id,m.id,{...body,reference:'paused'}),/activo/);
