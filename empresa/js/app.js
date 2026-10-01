@@ -1702,6 +1702,7 @@ const sidebarSectionByView = Object.freeze({
   validator: "operate",
   redemptions: "optimize",
   affiliates: "optimize",
+  "stamp-cards": "optimize",
   dashboard: "gos",
   channels: "gos",
   competition: "gos",
@@ -5899,6 +5900,7 @@ function syncCampaignSlugFromName({ force = false } = {}) {
 }
 
 const viewFeatureMap = {
+  "stamp-cards": "portal_access",
   dashboard: "revenue_center",
   "rms-machine": "rms_core",
   sellers: "sellers",
@@ -7624,6 +7626,7 @@ function setView(view) {
     closeBranchDetailModal();
   }
   state.currentView = view;
+  if (view === "stamp-cards") window.StampCards?.open();
   const staleAccountHash = String(window.location.hash || "").replace(/^#/, "");
   if (view !== "account" && ACCOUNT_SECTION_SCREEN[staleAccountHash]) {
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}`);

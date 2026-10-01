@@ -240,6 +240,8 @@ app.use("/api/business/interactive-activations", interactiveActivationRoutes);
 app.use("/api/business/lead-capture-activations", leadCaptureRoutes);
 app.use("/api/business/digital-assets", digitalAssetRoutes);
 app.use("/api/business/reward-passes", rewardPassRoutes);
+app.use("/api/business/stamp-cards", require("./routes/stampCardRoutes").router);
+app.use("/api/public/stamp-cards", require("./routes/stampCardRoutes").publicRouter);
 app.use("/api/portal", affiliateRoutes);
 app.use("/api", salesRoutes);
 app.use("/api/public", publicGameRoutes);
@@ -284,6 +286,7 @@ app.use("/campana-productos", express.static(path.join(__dirname, "../..", "camp
 app.use("/claim", express.static(path.join(__dirname, "../..", "claim")));
 app.use("/carnet-afiliado", express.static(path.join(__dirname, "../..", "carnet-afiliado")));
 app.use("/rp", express.static(path.join(__dirname, "../..", "reward-pass-public")));
+app.use("/sellos", express.static(path.join(__dirname, "../..", "stamp-card-public")));
 app.use("/trivia", express.static(path.join(__dirname, "../..", "trivia")));
 app.use("/activacion", express.static(path.join(__dirname, "../..", "activacion")));
 app.use("/captura", express.static(path.join(__dirname, "../..", "captura")));

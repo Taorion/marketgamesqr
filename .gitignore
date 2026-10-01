@@ -25,6 +25,8 @@ Thumbs.db
 npm-debug.log*
 /.local-agenda-pg/
 /.local-agenda-qa/
+/.local-stamps-pg/
+/.local-stamps-qa/
 /supabase/.temp/
 *.log
 

@@ -359,7 +359,7 @@ async function getQrDetails(tokenInput, user) {
       phone: qr.player_phone || qr.participant_phone,
       document_id: qr.player_document_id || qr.participant_document_id,
       capture_source: "TICKET",
-    }, Boolean(qr.requires_document_check)),
+    }, Boolean(qr.requires_document_check || qr.metadata?.source === "STAMP_CARD")),
     player: (qr.player_id || qr.participant_player_id || qr.participant_name || qr.participant_email || qr.participant_phone || qr.participant_document_id)
       ? {
           id: qr.player_id || qr.participant_player_id || null,
@@ -675,6 +675,12 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       throw badRequest("Este QR esta vencido.");
     }
 
+    if (qr.metadata?.source === "STAMP_CARD") {
+      const documentKey = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (!documentKey(qr.player_document_id) || documentKey(checkoutPayload.beneficiary?.document_id) !== documentKey(qr.player_document_id)) {
+        throw badRequest("El beneficio de sellos es personal. Verifica el documento del titular de la tarjeta.");
+      }
+    }
     const identity = await resolveBeneficiary(client, {
       businessId: qr.business_id,
       campaignId: qr.campaign_id,
@@ -683,7 +689,7 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       sellerUserId: user.id,
       currentPlayerId: qr.player_id,
       input: checkoutPayload.beneficiary,
-      documentRequired: Boolean(qr.requires_document_check),
+      documentRequired: Boolean(qr.requires_document_check || qr.metadata?.source === "STAMP_CARD"),
       operationKey: checkoutPayload.idempotency_key,
       qrCodeId: qr.id,
     });
