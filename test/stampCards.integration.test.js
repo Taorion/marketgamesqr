@@ -158,5 +158,44 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
     const acl=await query(`select count(*)::int as n from pg_class c cross join lateral aclexplode(coalesce(c.relacl,acldefault('r',c.relowner))) a where c.relname like 'stamp_%' and c.relkind='r' and a.grantee=0`);
     assert.equal(acl.rows[0].n,0);
   });
+  await t.test('manual permission changes apply to existing cards without changing their reward rules',async()=>{
+    const p=await svc.saveProgram(business.id,user.id,{...rules,name:'Segundo programa',allow_manual:false,stamps_required:5});
+    const {member:m}=await svc.enroll(business.id,user.id,{program_id:p.id,name:'Cliente nuevo',document_id:'MANUALNEW'});
+    const original=(await current(m)).rules;
+    const visit={reference:'first-manual',note:'Visita verificada'};
+    await assert.rejects(()=>svc.manualStamp(business.id,user.id,m.id,visit),/Habilita/);
+    await svc.saveProgram(business.id,user.id,{...rules,name:p.name,stamps_required:7,allow_manual:true,benefit_value:{label:'Otro premio'}},p.id);
+    await svc.manualStamp(business.id,user.id,m.id,visit);
+    assert.equal((await current(m)).stamps,1);
+    assert.deepEqual((await current(m)).rules,original);
+    const row=(await svc.members(business.id,{program_id:p.id})).members[0];
+    assert.equal(row.allow_manual,true);assert.equal(row.program_status,'ACTIVE');
+    await svc.saveProgram(business.id,user.id,{...rules,allow_manual:false},p.id);
+    await assert.rejects(()=>svc.manualStamp(business.id,user.id,m.id,{...visit,reference:'blocked'}),/Habilita/);
+    await assert.rejects(()=>svc.manualStamp(other.id,user.id,m.id,{...visit,enable_manual:true}),/no encontrada/);
+    await query("update stamp_cycles set expires_at=now()-interval '1 minute' where member_id=$1",[m.id]);
+    await assert.rejects(()=>svc.manualStamp(business.id,user.id,m.id,{...visit,reference:'expired',enable_manual:true}),/vencida/);
+    assert.equal((await svc.context(business.id)).programs.find(x=>x.id===p.id).allow_manual,false);
+  });
+  await t.test('HTTP manual visit can explicitly enable an existing program and retries stay idempotent',async()=>{
+    const p=await svc.saveProgram(business.id,user.id,{...rules,allow_manual:false,stamps_required:5,one_per_day:true});
+    const {member:m}=await svc.enroll(business.id,user.id,{program_id:p.id,name:'Manual HTTP',document_id:'MANUALHTTP'});
+    const jwt=require('jsonwebtoken'),{app}=require('../backend/src/app');
+    const server=await new Promise(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));});
+    const url=`http://127.0.0.1:${server.address().port}/api/business/stamp-cards/members/${m.id}/stamps`;
+    const body={reference:'visit-enable',note:'Habilitación y visita',enable_manual:true};
+    const headers={'Content-Type':'application/json',Authorization:`Bearer ${jwt.sign({sub:user.id,password_version:0},process.env.JWT_SECRET)}`};
+    try{
+      const results=await Promise.all([1,2].map(()=>fetch(url,{method:'POST',headers,body:JSON.stringify(body)})));
+      assert.ok(results.every(r=>r.status===200));assert.equal((await current(m)).stamps,1);
+      assert.equal((await svc.context(business.id)).programs.find(x=>x.id===p.id).allow_manual,true);
+      await svc.saveProgram(business.id,user.id,{...rules,allow_manual:false,one_per_day:true},p.id);
+      const capped=await fetch(url,{method:'POST',headers,body:JSON.stringify({...body,reference:'another-today'})});
+      assert.equal(capped.status,400);
+      assert.equal((await svc.context(business.id)).programs.find(x=>x.id===p.id).allow_manual,false);
+      await svc.saveProgram(business.id,user.id,{...rules,status:'PAUSED',allow_manual:false},p.id);
+      await assert.rejects(()=>svc.manualStamp(business.id,user.id,m.id,{...body,reference:'paused'}),/activo/);
+    }finally{await new Promise(resolve=>server.close(resolve));}
+  });
 });
 after(()=>pool.end());

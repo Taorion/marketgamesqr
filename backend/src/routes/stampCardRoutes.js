@@ -42,7 +42,7 @@ router.post('/programs',handle(req=>service.saveProgram(req.user.business_id,req
 router.put('/programs/:id',handle(req=>service.saveProgram(req.user.business_id,req.user.id,parse(program,req.body),parse(uuid,req.params.id))));
 router.post('/members',handle(req=>service.enroll(req.user.business_id,req.user.id,parse(enrollment,req.body))));
 router.post('/members/:id/stamps',handle(req=>service.manualStamp(req.user.business_id,req.user.id,parse(uuid,req.params.id),
-  parse(z.object({reference:z.string().trim().min(3).max(100),note:z.string().trim().min(3).max(500)}),req.body))));
+  parse(z.object({reference:z.string().trim().min(3).max(100),note:z.string().trim().min(3).max(500),enable_manual:z.boolean().default(false)}),req.body))));
 router.post('/events/:id/void',handle(req=>service.voidStamp(req.user.business_id,req.user.id,parse(uuid,req.params.id),
   parse(z.string().trim().min(5).max(500),req.body.reason))));
 publicRouter.use(rateLimit({keyPrefix:'stamp-card-read',max:180,windowMs:15*60000}));
