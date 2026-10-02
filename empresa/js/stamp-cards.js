@@ -88,6 +88,30 @@
     if(a==='create'||a==='edit')editor(id);if(a==='delete')deleteProgram(id);if(a==='enroll')enrollForm(id);if(a==='share')share(memberRows.find(m=>m.id===id));if(a==='stamp')manual(memberRows.find(m=>m.id===id));if(a==='void')voidEvent(id);if(a==='export')exportCsv();
     if(a.endsWith('-members')){memberOffset=Math.max(0,memberOffset+(a.startsWith('next')?25:-25));loadLists();}if(a.endsWith('-history')){historyOffset=Math.max(0,historyOffset+(a.startsWith('next')?50:-50));loadLists();}
   });
-  window.StampCards={open:()=>{shell();load();}};
+  async function openFromValidator(id){
+    const scope=businessScopeKey(),d=dialog('Tarjeta del contacto','<p role="status">Buscando la tarjeta…</p>');
+    d.classList.add('sc-scan-dialog');
+    const current=()=>d.isConnected&&d.open&&isCurrentBusinessScope(scope);
+    let busy=false,stamped=false;
+    function render(result){
+      if(!current())return;
+      const c=result.card,r=c.rules;
+      d.querySelector('.sc-dialog-content').innerHTML=`<div class="sc-scan-card"><span class="sc-eyebrow">${esc(c.business_name)}</span><h4>${esc(c.name)}</h4><p>Documento: ${esc(c.document_id)}</p><p>${esc(c.program_name)} · Tarjeta ${c.cycle_number}</p><strong class="sc-scan-progress">${c.stamps} de ${r.stamps_required} sellos</strong><div class="sc-dots" aria-label="${c.stamps} de ${r.stamps_required} sellos">${Array.from({length:r.stamps_required},(_,i)=>`<span class="sc-dot ${i<c.stamps?'filled':''}" aria-hidden="true">${i<c.stamps?'✓':i+1}</span>`).join('')}</div><p><strong>Premio:</strong> ${esc(r.benefit_value.label)}</p><p>Vence ${date(c.expires_at)}${r.one_per_day?' · Máximo un sello al día':''}</p>${r.purchase_product?`<p>Compra que suma sello: ${esc(r.purchase_product.product_name)}</p>`:''}</div><p class="sc-message" role="status" id="scDialogMessage">${stamped?'Sello registrado. El progreso del cliente ya está actualizado.':esc(result.blocked_reason||'Tarjeta encontrada. Pulsa Sellar tarjeta para registrar esta visita.')}</p>${result.can_stamp&&!stamped?'<p class="sc-note">Esta acción registra una visita manual. Si ya registraste una compra que sumó sello, no la selles de nuevo.</p>':''}<footer><button type="button" data-scan-close>Volver al Validador</button><button type="button" class="sc-primary" data-scan-stamp ${!result.can_stamp||stamped?'disabled':''}>${stamped?'Tarjeta sellada':'Sellar tarjeta'}</button></footer>`;
+      d.querySelector('[data-scan-close]').onclick=()=>d.close();
+      d.querySelector('[data-scan-stamp]').onclick=async()=>{
+        if(busy||stamped||!result.can_stamp||!current())return;
+        busy=true;const button=d.querySelector('[data-scan-stamp]');button.disabled=true;button.textContent='Sellando…';
+        try{
+          const updated=await apiCall(`/validator/${encodeURIComponent(id)}/stamp`,'POST',{cycle_id:c.cycle_id,expected_stamps:c.stamps,expected_voids:c.void_count});
+          stamped=true;render(updated);
+        }catch(error){
+          if(current()){const message=d.querySelector('#scDialogMessage');message.textContent=error.message;message.classList.add('error');button.disabled=false;button.textContent='Sellar tarjeta';}
+        }finally{busy=false;}
+      };
+    }
+    try{render(await apiCall(`/validator/${encodeURIComponent(id)}`));}
+    catch(error){if(current()){d.querySelector('.sc-dialog-content').innerHTML='<p class="sc-message error" role="status"></p>';d.querySelector('[role="status"]').textContent=error.message;}throw error;}
+  }
+  window.StampCards={open:()=>{shell();load();},openFromValidator};
   if(document.body.dataset.currentView==='stamp-cards')window.StampCards.open();
 })();

@@ -100,7 +100,7 @@ async function members(businessId,{search='',offset=0,program_id}={}) {
     order by m.created_at desc,m.id limit 26 offset $3`,[businessId,search,offset,program_id||null]);
   return { members:result.rows.slice(0,25).map(m=>({...m,url:publicUrl(m.public_token)})),has_more:result.rows.length>25 };
 }
-async function manualStamp(businessId,userId,memberId,{reference,note}) {
+async function manualStamp(businessId,userId,memberId,{reference,note,expected_cycle_id,expected_stamps,expected_voids}) {
   return withTransaction(async client=>{
     const m=(await client.query('select * from stamp_members where id=$1 and business_id=$2 for update',[memberId,businessId])).rows[0];
     if (!m) throw notFound('Tarjeta no encontrada.');
@@ -108,6 +108,12 @@ async function manualStamp(businessId,userId,memberId,{reference,note}) {
     if (existing) return {duplicate:true};
     const p=(await client.query('select status,allow_manual from stamp_programs where id=$1 and business_id=$2 for no key update',[m.program_id,businessId])).rows[0];
     const c=(await client.query('select * from stamp_cycles where member_id=$1 order by cycle_number desc limit 1 for update',[m.id])).rows[0];
+    if (expected_voids!==undefined) {
+      const voids=(await client.query('select count(*)::int as n from stamp_events where cycle_id=$1 and voided_at is not null',[c.id])).rows[0].n;
+      if (voids!==expected_voids) throw badRequest('La tarjeta cambió. Escanea de nuevo antes de sellar.');
+    }
+    if ((expected_cycle_id && c.id!==expected_cycle_id) || (expected_stamps!==undefined && c.stamps!==expected_stamps))
+      throw badRequest('La tarjeta cambió. Escanea de nuevo antes de sellar.');
     if (p.status!=='ACTIVE') throw badRequest('El programa debe estar activo para registrar visitas.');
     if (!p.allow_manual) throw badRequest('Habilita los sellos manuales en la configuración del programa para registrar esta visita.');
     if (c.claimed_at || c.stamps>=c.rules.stamps_required || new Date(c.expires_at)<=new Date()) throw badRequest('Esta tarjeta está completa o vencida. El cliente puede iniciar una nueva desde su enlace.');
@@ -118,6 +124,39 @@ async function manualStamp(businessId,userId,memberId,{reference,note}) {
     if (!result.rowCount) throw badRequest('El cliente ya recibió su sello de hoy.');
     return {duplicate:false};
   });
+}
+async function identificationQr(memberId) {
+  const url=new URL('/empresa/',env.publicAppUrl);
+  url.searchParams.set('view','validator');url.searchParams.set('stamp_card',memberId);
+  return {scan_url:url.toString(),qr_image:await QRCode.toDataURL(url.toString(),{width:320,margin:4,errorCorrectionLevel:'M'})};
+}
+async function validatorCard(businessId,memberId) {
+  const result=await query(`select m.id,m.name,m.document_key,p.name as program_name,p.status as program_status,
+      p.allow_manual,p.deleted_at,c.id as cycle_id,c.cycle_number,c.stamps,c.rules,c.expires_at,c.claimed_at,
+      b.name as business_name,
+      (select count(*)::int from stamp_events e where e.cycle_id=c.id and e.voided_at is not null) as void_count,
+      exists(select 1 from stamp_events e where e.member_id=m.id and e.voided_at is null
+        and e.daily_guard_date=(now() at time zone 'America/Bogota')::date) as stamped_today
+    from stamp_members m join stamp_programs p on p.id=m.program_id and p.business_id=m.business_id
+    join businesses b on b.id=m.business_id and b.is_active=true
+    join lateral (select * from stamp_cycles where member_id=m.id order by cycle_number desc limit 1) c on true
+    where m.id=$1 and m.business_id=$2`,[memberId,businessId]);
+  const card=result.rows[0];
+  if (!card) throw notFound('Tarjeta no encontrada en este negocio.');
+  const blockedReason=card.deleted_at?'Este programa finalizó.':card.program_status!=='ACTIVE'?'El programa está pausado o archivado.':
+    card.claimed_at?'El beneficio ya fue generado. El cliente debe iniciar una nueva tarjeta desde su enlace.':
+    new Date(card.expires_at)<=new Date()?'Esta tarjeta venció. El cliente puede iniciar una nueva desde su enlace.':
+    card.stamps>=Number(card.rules.stamps_required)?'Tarjeta completa. El cliente ya puede generar su beneficio desde su enlace.':
+    !card.allow_manual?'El programa suma sellos por compras registradas. Para sellar visitas, el administrador debe habilitar los sellos manuales en Configurar programa.':
+    card.rules.one_per_day&&card.stamped_today?'El cliente ya recibió su sello de hoy.':'';
+  return {kind:'stamp_card',card:{id:card.id,name:card.name,document_id:card.document_key,
+    business_name:card.business_name,program_name:card.program_name,cycle_id:card.cycle_id,cycle_number:card.cycle_number,
+    stamps:card.stamps,void_count:card.void_count,rules:publicRules(card.rules),expires_at:card.expires_at},can_stamp:!blockedReason,blocked_reason:blockedReason};
+}
+async function stampFromQr(businessId,userId,memberId,{cycle_id,expected_stamps,expected_voids=0}) {
+  const result=await manualStamp(businessId,userId,memberId,{reference:`qr:${cycle_id}:${expected_stamps}:${expected_voids}`,
+    note:'Visita presencial sellada desde el QR de la tarjeta.',expected_cycle_id:cycle_id,expected_stamps,expected_voids});
+  return {...await validatorCard(businessId,memberId),duplicate:result.duplicate};
 }
 async function voidStamp(businessId,userId,id,reason) {
   return withTransaction(async client=>{
@@ -145,7 +184,7 @@ async function publicCard(token) {
     query(`select e.created_at,e.source,e.voided_at,c.cycle_number from stamp_events e join stamp_cycles c on c.id=e.cycle_id
       where e.member_id=$1 order by e.created_at desc limit 50`,[member.id])
   ]);
-  return { name:member.name.split(' ')[0],business:business.rows[0],program:{status:program.rows[0].status,deleted:Boolean(program.rows[0].deleted_at),
+  return { name:member.name.split(' ')[0],identification:await identificationQr(member.id),business:business.rows[0],program:{status:program.rows[0].status,deleted:Boolean(program.rows[0].deleted_at),
     name:program.rows[0].name,next_rules:publicRules(snapshot(program.rows[0]))},
     cycles:await Promise.all(cycles.rows.map(async c=>({id:c.id,cycle_number:c.cycle_number,rules:publicRules(c.rules),stamps:c.stamps,
       expires_at:c.expires_at,claimed_at:c.claimed_at,review_required:c.review_required,ticket_status:c.ticket_status,
@@ -241,4 +280,4 @@ async function dashboard(businessId,{program_id,from,to}) {
   metrics.estimated_return_pct=Number(metrics.estimated_cost)>0?Math.round((Number(metrics.linked_sales)-Number(metrics.estimated_cost))/Number(metrics.estimated_cost)*100):null;
   return {metrics,trend:trend.rows};
 }
-module.exports={normalizeDocument,snapshot,publicRules,context,saveProgram,deleteProgram,enroll,members,manualStamp,voidStamp,publicCard,claim,renew,history,dashboard};
+module.exports={normalizeDocument,snapshot,publicRules,context,saveProgram,deleteProgram,enroll,members,manualStamp,voidStamp,publicCard,claim,renew,history,dashboard,validatorCard,stampFromQr};

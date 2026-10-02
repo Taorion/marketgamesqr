@@ -16,6 +16,14 @@ Módulo en **Optimiza → Tarjeta de sellos**. Disponible para propietarios y ge
 
 Pausar o archivar detiene nuevas tarjetas y sellos; se honran las tarjetas completas no vencidas. Cambios de reglas y premios se aplican a ciclos nuevos; cada tarjeta guarda sus condiciones originales.
 
+## QR de identificación y sellado desde el Validador
+
+Todas las tarjetas, incluidas las existentes, muestran «Mi QR de tarjeta» en su enlace personal. El QR contiene el ID de la inscripción y abre `/empresa/?view=validator&stamp_card=...`; no contiene el documento ni el enlace secreto para reclamar premios. Permanece igual al iniciar ciclos nuevos y no consume tickets Qori.
+
+El Validador reconoce este QR tanto por cámara como al pegarlo y abre la ficha de la tarjeta del contacto: nombre, documento, programa, progreso y «Sellar tarjeta». El escaneo solo consulta. Un clic registra una visita manual, con referencia y responsable automáticos. Conserva la compra abierta en el Validador.
+
+Propietarios, gerentes y validadores pueden consultar y sellar tarjetas de su propio negocio. Los validadores no adquieren permisos para configurar programas. El sellado exige permiso de sellos manuales, programa activo, ciclo vigente e incompleto, y respeta el límite diario. Las compras elegibles siguen sellándose automáticamente. Las solicitudes repetidas o simultáneas no duplican el sello; se rechaza una ficha desactualizada.
+
 ## Productos de inventario
 
 En «Cómo se obtiene el sello» se puede elegir cualquier compra o una compra que incluya un producto específico del inventario activo del negocio. Se otorga un sello por compra elegible, independientemente de la cantidad de unidades. Se mantiene el mínimo de compra y el límite diario. Las ventas con varios productos y las importaciones se reconocen por el ID del producto, nunca solo por su nombre. Un regalo sin valor no cuenta como una compra del producto.

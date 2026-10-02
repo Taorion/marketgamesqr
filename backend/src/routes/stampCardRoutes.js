@@ -37,7 +37,12 @@ function filters(req) {
   return data;
 }
 const handle=fn=>async(req,res,next)=>{try {res.set('Cache-Control','private, no-store');res.json(await fn(req));}catch(error){next(error);}};
-router.use(authRequired,requirePortalAccess,requireRoles('BUSINESS_OWNER','BUSINESS_MANAGER','ADMIN','ADMIN_MARKET_GAMES'));
+router.use(authRequired,requirePortalAccess);
+const validatorRoles=requireRoles('BUSINESS_OWNER','BUSINESS_MANAGER','VALIDATOR','ADMIN','ADMIN_MARKET_GAMES');
+router.get('/validator/:id',validatorRoles,handle(req=>service.validatorCard(req.user.business_id,parse(uuid,req.params.id))));
+router.post('/validator/:id/stamp',validatorRoles,handle(req=>service.stampFromQr(req.user.business_id,req.user.id,parse(uuid,req.params.id),
+  parse(z.object({cycle_id:uuid,expected_stamps:z.number().int().min(0).max(50),expected_voids:z.number().int().nonnegative().default(0)}),req.body))));
+router.use(requireRoles('BUSINESS_OWNER','BUSINESS_MANAGER','ADMIN','ADMIN_MARKET_GAMES'));
 router.get('/context',handle(req=>service.context(req.user.business_id)));
 router.get('/dashboard',handle(req=>service.dashboard(req.user.business_id,filters(req))));
 router.get('/history',handle(req=>service.history(req.user.business_id,filters(req))));

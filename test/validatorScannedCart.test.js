@@ -45,5 +45,5 @@ test("el escaneo de un beneficio conserva la canasta y fuerza modo compra", () =
   assert.match(flow, /state\.validatorPurchaseItems = openCart\.purchaseItems\.map/);
   assert.match(flow, /data\.benefit_application\?\.purchase_required \|\| openCart \? "PURCHASE" : "STANDALONE"/);
   assert.match(flow, /mergeValidatorScannedProduct\(state\.validatorPurchaseItems, scannedProduct/);
-  assert.match(html, /validator-inventory-before-sale-v511-20260928/g);
+  assert.match(html, /id="validatorPurchaseItems"/);
 });

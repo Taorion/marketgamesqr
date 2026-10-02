@@ -8097,6 +8097,17 @@ function applyInitialRouteParams() {
   const urlToken = urlParams.get("token");
   const paymentResult = urlParams.get("payment");
   const productQrId = urlParams.get("product_qr");
+  const stampCardId = urlParams.get("stamp_card");
+  if (stampCardId) {
+    setView("validator");
+    const stampCardUrl = `${window.location.origin}/empresa/?view=validator&stamp_card=${encodeURIComponent(stampCardId)}`;
+    validatorQrTokenInput.value = stampCardUrl;
+    validateValidatorToken(stampCardUrl);
+    ["view", "stamp_card"].forEach((key) => urlParams.delete(key));
+    const nextSearch = urlParams.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`);
+    return;
+  }
   if (productQrId) {
     setView("validator");
     const productQrUrl = `${window.location.origin}/empresa/?view=validator&product_qr=${encodeURIComponent(productQrId)}`;
@@ -19525,8 +19536,8 @@ function resetValidatorOperation({ focus = false } = {}) {
   state.validatorLastScanAt = 0;
   validatorQrTokenInput.value = "";
   resetValidatorSaleForm();
-  setValidatorResult("neutral", "Esperando QR", "Escanea o pega un ticket, Reward Pass o QR de producto.");
-  setInlineMessage(validatorManualStatus, "Acepta tickets QR de campaña, Reward Pass y QR de productos.", "info");
+  setValidatorResult("neutral", "Esperando QR", "Escanea una tarjeta de sellos, un ticket, Reward Pass o QR de producto.");
+  setInlineMessage(validatorManualStatus, "Acepta tarjetas de sellos, tickets QR, Reward Pass y QR de productos.", "info");
   setValidatorOperationState("idle", null);
   if (focus) validatorQrTokenInput.focus();
 }
@@ -19550,6 +19561,20 @@ function extractValidatorToken(rawValue) {
     return url.searchParams.get("token") || url.pathname.split("/").filter(Boolean).pop() || value;
   } catch {
     return value;
+  }
+}
+
+function extractStampCardQrId(rawValue) {
+  const value = String(rawValue || "").trim();
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const direct = value.match(/^qori:stamp-card:(.+)$/i);
+  if (direct) return uuid.test(direct[1]) ? direct[1].toLowerCase() : "";
+  try {
+    const url = new URL(value, window.location.origin);
+    const id = url.searchParams.get("stamp_card") || "";
+    return uuid.test(id) ? id.toLowerCase() : "";
+  } catch {
+    return "";
   }
 }
 
@@ -34050,6 +34075,20 @@ async function downloadBatchByFormat(batchId, format, template = "sticker", pape
 }
 
 async function validateValidatorToken(rawValue) {
+  const stampCardId = extractStampCardQrId(rawValue);
+  if (stampCardId) {
+    stopValidatorScanner();
+    validatorDetectedType.textContent = "Tarjeta de sellos detectada";
+    setInlineMessage(validatorManualStatus, "Abriendo la tarjeta del contacto...", "info");
+    try {
+      if (!window.StampCards?.openFromValidator) throw new Error("Recarga el portal para abrir esta tarjeta.");
+      await window.StampCards.openFromValidator(stampCardId);
+      setInlineMessage(validatorManualStatus, "QR de tarjeta de sellos identificado. Revisa la ficha del contacto para sellar.", "info");
+    } catch (error) {
+      setInlineMessage(validatorManualStatus, error.message, "error");
+    }
+    return;
+  }
   const productId = extractInventoryProductQrId(rawValue);
   const extractedToken = extractValidatorToken(rawValue);
   const token = productId ? `product:${productId}` : extractedToken;
@@ -64502,9 +64541,10 @@ validatorQrTokenInput?.addEventListener("keydown", (event) => {
 validatorQrTokenInput?.addEventListener("input", () => {
   const token = extractValidatorToken(validatorQrTokenInput.value);
   const productId = extractInventoryProductQrId(validatorQrTokenInput.value);
+  const stampCardId = extractStampCardQrId(validatorQrTokenInput.value);
   validatorDetectedType.textContent = !token
     ? "Detección automática"
-    : productId ? "Producto de inventario detectado" : token.startsWith("rp_") ? "Reward Pass detectado" : "Ticket QR detectado";
+    : stampCardId ? "Tarjeta de sellos detectada" : productId ? "Producto de inventario detectado" : token.startsWith("rp_") ? "Reward Pass detectado" : "Ticket QR detectado";
 });
 validatorRedeemButton.addEventListener("click", redeemValidatorToken);
 validatorSaleForm.addEventListener("submit", (event) => event.preventDefault());
