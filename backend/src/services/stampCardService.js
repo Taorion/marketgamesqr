@@ -15,7 +15,7 @@ function publicRules(rules) {
 }
 function snapshot(program) {
   const keys = ['name','stamps_required','benefit_type','benefit_value','minimum_purchase','one_per_day',
-    'allow_manual','card_valid_days','ticket_valid_days','reward_cost','ticket_cost','terms'];
+    'allow_manual','card_valid_days','ticket_valid_days','reward_cost','ticket_cost','terms','purchase_product'];
   return Object.fromEntries(keys.map(key => [key, program[key]]));
 }
 async function createCycle(client, member, program, cycleNumber) {
@@ -24,17 +24,36 @@ async function createCycle(client, member, program, cycleNumber) {
   [member.business_id,member.id,cycleNumber,JSON.stringify(snapshot(program)),program.card_valid_days])).rows[0];
 }
 async function context(businessId) {
-  const [business,programs,balance] = await Promise.all([
+  const [business,programs,balance,inventory] = await Promise.all([
     query(`select name,settings->>'logo_data_url' as logo_data_url,settings->>'logo_url' as logo_url from businesses where id=$1`,[businessId]),
     query(`select p.*, (select count(*)::int from stamp_members m where m.program_id=p.id) as members
       from stamp_programs p where business_id=$1 order by created_at desc`,[businessId]),
-    query('select qr_balance from business_qr_credit_accounts where business_id=$1',[businessId])
+    query('select qr_balance from business_qr_credit_accounts where business_id=$1',[businessId]),
+    query(`select id,name,sku,internal_id from business_inventory_products
+      where business_id=$1 and status='ACTIVE' order by name,id`,[businessId])
   ]);
   return { business:business.rows[0],programs:programs.rows.filter(p=>!p.deleted_at),
     deleted_programs:programs.rows.filter(p=>p.deleted_at).map(p=>({id:p.id,name:p.name,deleted_at:p.deleted_at})),
-    ticket_balance:Number(balance.rows[0]?.qr_balance || 0) };
+    ticket_balance:Number(balance.rows[0]?.qr_balance || 0),inventory_products:inventory.rows };
 }
 async function saveProgram(businessId,userId,data,id) {
+  // Resolve names on the server; clients cannot attach another tenant's inventory.
+  data={...data,benefit_value:{...data.benefit_value},purchase_product:data.purchase_product||null};
+  const productIds=[data.purchase_product?.inventory_product_id,data.benefit_value.product_scope?.inventory_product_id].filter(Boolean);
+  if (productIds.length) {
+    const products=await query(`select id,name from business_inventory_products
+      where business_id=$1 and id=any($2::uuid[]) and status='ACTIVE'`,[businessId,productIds]);
+    const resolve=id=>{
+      const product=products.rows.find(p=>p.id===id);
+      if (!product) throw badRequest('Selecciona un producto activo del inventario de tu negocio.');
+      return {inventory_product_id:product.id,product_name:product.name};
+    };
+    if (data.purchase_product) data.purchase_product=resolve(data.purchase_product.inventory_product_id);
+    if (data.benefit_value.product_scope) {
+      if (data.benefit_type!=='FREE_GIFT') throw badRequest('El producto de premio requiere un producto o servicio gratis.');
+      data.benefit_value.product_scope={...resolve(data.benefit_value.product_scope.inventory_product_id),mode:'gift_product'};
+    }
+  }
   const keys=Object.keys(data),values=Object.values(data).map(v=>v && typeof v==='object'?JSON.stringify(v):v);
   if (id) {
     const result=await query(`update stamp_programs set ${keys.map((k,i)=>`${k}=$${i+3}`).join(',')},updated_at=now()

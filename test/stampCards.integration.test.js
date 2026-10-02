@@ -252,5 +252,69 @@ test('stamp loyalty database, issuance and public contract',{skip:process.env.ST
       assert.equal((await svc.context(business.id)).programs.some(x=>x.id===p.id),false);
     }finally{await new Promise(resolve=>server.close(resolve));}
   });
+  await t.test('inventory rules persist exact tenant products and reject forged or archived references',async()=>{
+    const product=async(b,name)=>(await query(`insert into business_inventory_products(business_id,internal_id,name,unit_price,stock_quantity)
+      values ($1,$2,$3,6000,50) returning *`,[b,crypto.randomUUID(),name])).rows[0];
+    const coffee=await product(business.id,'Café inventario'),cake=await product(business.id,'Torta inventario'),foreign=await product(other.id,'Producto privado');
+    const payload=programSchema.parse({...rules,allow_manual:false,stamps_required:5,
+      purchase_product:{inventory_product_id:coffee.id,product_name:'Nombre falso'},
+      benefit_value:{label:'Torta gratis',product_scope:{inventory_product_id:cake.id,product_name:'Premio falso'}}});
+    const p=await svc.saveProgram(business.id,user.id,payload);
+    assert.deepEqual(p.purchase_product,{inventory_product_id:coffee.id,product_name:coffee.name});
+    assert.deepEqual(p.benefit_value.product_scope,{inventory_product_id:cake.id,product_name:cake.name,mode:'gift_product'});
+    const ctx=await svc.context(business.id);assert.ok(ctx.inventory_products.some(x=>x.id===coffee.id));
+    assert.ok(!ctx.inventory_products.some(x=>x.id===foreign.id));
+    await assert.rejects(()=>svc.saveProgram(business.id,user.id,{...payload,purchase_product:{inventory_product_id:foreign.id}}),/inventario de tu negocio/);
+    await assert.rejects(()=>svc.saveProgram(business.id,user.id,{...payload,benefit_value:{label:'No permitido',product_scope:{inventory_product_id:foreign.id}}}),/inventario de tu negocio/);
+    await query("update business_inventory_products set status='ARCHIVED' where id=$1",[cake.id]);
+    await assert.rejects(()=>svc.saveProgram(business.id,user.id,payload),/producto activo/);
+    await query("update business_inventory_products set status='ACTIVE' where id=$1",[cake.id]);
+    assert.equal(programSchema.safeParse({...rules,purchase_product:{inventory_product_id:'bad'}}).success,false);
+    assert.equal(programSchema.safeParse({...rules,benefit_type:'CUSTOM',benefit_value:payload.benefit_value}).success,false);
+    const {member:m}=await svc.enroll(business.id,user.id,{program_id:p.id,name:'Inventario QA',document_id:'INVENTORYQA'});
+    const line=(id,quantity=1,unit_price=6000)=>({inventory_product_id:id,name:'Texto no autoritativo',quantity,unit_price});
+    const purchase=async(items,extra={})=>(await query(`insert into business_sales
+      (business_id,customer_document_id,sale_amount,paid_at,sale_status,metadata,inventory_product_id,quantity)
+      values ($1,'INVENTORYQA',$2,clock_timestamp(),$3,$4::jsonb,$5,1) returning *`,
+      [extra.business||business.id,extra.amount||12000,extra.status||'PAID',JSON.stringify(items),extra.product||null])).rows[0];
+    await purchase({products:[line(cake.id)]});await purchase({products:[{name:coffee.name,quantity:1,unit_price:6000}]});
+    await purchase({products:[line(coffee.id,0)]});await purchase({products:[line(coffee.id,1,0)]});
+    await purchase({products:[line(coffee.id)]},{amount:100});await purchase({products:[line(coffee.id)]},{business:other.id});
+    await purchase({products:[line(coffee.id)]},{status:'VOIDED'});await purchase({products:{bad:true}});
+    assert.equal((await current(m)).stamps,0);
+    const a=await purchase({products:[line(cake.id),line(coffee.id,3)]});assert.equal((await current(m)).stamps,1);
+    await query('update business_sales set metadata=$2::jsonb where id=$1',[a.id,JSON.stringify({products:[line(coffee.id,4)]})]);
+    assert.equal((await current(m)).stamps,1);
+    await purchase({},{product:coffee.id});assert.equal((await current(m)).stamps,2);
+    const pending=await purchase({line_items:[line(coffee.id)]},{status:'PENDING'});
+    await query("update business_sales set sale_status='PAID' where id=$1",[pending.id]);assert.equal((await current(m)).stamps,3);
+    const imported=await purchase({products:[{name:coffee.name,quantity:1,unit_price:6000}]});
+    assert.equal((await current(m)).stamps,3);
+    await query('update business_sales set metadata=$2::jsonb where id=$1',[imported.id,JSON.stringify({products:[line(coffee.id)]})]);
+    assert.equal((await current(m)).stamps,4);
+    await svc.saveProgram(business.id,user.id,{...payload,purchase_product:{inventory_product_id:cake.id},benefit_value:{label:'Café gratis',product_scope:{inventory_product_id:coffee.id}}},p.id);
+    await purchase({products:[line(cake.id)]});assert.equal((await current(m)).stamps,4);
+    await query('update business_inventory_products set name=$2 where id=$1',[coffee.id,'Nombre cambiado']);
+    await purchase({products:[line(coffee.id)]});assert.equal((await current(m)).stamps,5);
+    const c=await current(m),publicCard=await svc.publicCard(m.public_token);
+    assert.equal(publicCard.cycles[0].rules.purchase_product.product_name,'Café inventario');
+    const reward=await svc.claim(m.public_token,c.id),details=await getQrDetails(reward.ticket_code,user);
+    const qr=(await query('select benefit_value from qr_codes where id=$1',[(await current(m)).qr_code_id])).rows[0];
+    assert.equal(qr.benefit_value.product_scope.inventory_product_id,cake.id);
+    assert.equal(details.allowed,true);
+    const redeemPayload={mode:'STANDALONE',idempotency_key:crypto.randomUUID(),beneficiary:{name:'Inventario QA',document_id:'INVENTORYQA',data_use_confirmed:true}};
+    await redeemQr(reward.ticket_code,user,redeemPayload);await redeemQr(reward.ticket_code,user,redeemPayload);
+    const redemption=(await query('select metadata from redemptions where qr_code_id=$1',[(await current(m)).qr_code_id])).rows[0];
+    assert.deepEqual(redemption.metadata.benefit_application.gifts,['Torta inventario']);
+    const next=await svc.renew(m.public_token);assert.equal(next.cycle.rules.purchase_product.inventory_product_id,cake.id);
+    assert.equal(next.cycle.rules.benefit_value.product_scope.inventory_product_id,coffee.id);
+    await query("update business_sales set sale_status='VOIDED' where id=$1",[a.id]);
+    await query("update business_sales set sale_status='PAID' where id=$1",[a.id]);
+    assert.equal((await query('select stamps from stamp_cycles where id=$1',[c.id])).rows[0].stamps,4);
+    assert.equal((await current(m)).stamps,0);
+    // An already consumed sale cannot generate a second stamp on a later cycle.
+    await query('update business_sales set metadata=$2::jsonb where id=$1',[a.id,JSON.stringify({products:[line(cake.id)]})]);
+    assert.equal((await current(m)).stamps,0);
+  });
 });
 after(()=>pool.end());

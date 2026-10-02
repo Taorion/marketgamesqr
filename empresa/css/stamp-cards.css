@@ -27,6 +27,10 @@
 #scDialog .sc-card-art h4{color:#fff!important}#scDialog .sc-card-art p,#scDialog .sc-brand{color:#dceaf0!important}
 .nav-item[data-view="stamp-cards"] .feature-tier-badge{display:none!important}
 #scDialog [hidden]{display:none!important}
+#scDialog .sc-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+#scDialog .sc-form-grid>label{min-width:0;overflow-wrap:anywhere}
+#scDialog select{max-width:100%}
+@media(max-width:520px){#scDialog .sc-form-grid{grid-template-columns:minmax(0,1fr)}}
 html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) #stampCardsView :is(.sc-hero h2,.sc-card-art h4){color:#fff!important}
 html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) #stampCardsView :is(.sc-hero p,.sc-card-art p,.sc-brand){color:#dceaf0!important}
 html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) #stampCardsView :is(.sc-kpi,.sc-panel,.sc-toolbar,.sc-card,.sc-hero){border-radius:16px!important}

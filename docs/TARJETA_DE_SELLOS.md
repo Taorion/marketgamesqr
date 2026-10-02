@@ -16,6 +16,16 @@ Módulo en **Optimiza → Tarjeta de sellos**. Disponible para propietarios y ge
 
 Pausar o archivar detiene nuevas tarjetas y sellos; se honran las tarjetas completas no vencidas. Cambios de reglas y premios se aplican a ciclos nuevos; cada tarjeta guarda sus condiciones originales.
 
+## Productos de inventario
+
+En «Cómo se obtiene el sello» se puede elegir cualquier compra o una compra que incluya un producto específico del inventario activo del negocio. Se otorga un sello por compra elegible, independientemente de la cantidad de unidades. Se mantiene el mínimo de compra y el límite diario. Las ventas con varios productos y las importaciones se reconocen por el ID del producto, nunca solo por su nombre. Un regalo sin valor no cuenta como una compra del producto.
+
+Con «Producto o servicio gratis» se puede seleccionar el producto del premio. El ID y nombre se conservan en el ticket y en el canje del Validador. También se pueden describir premios sin vincularlos al inventario. La selección no cambia el flujo existente de movimientos de stock del Validador.
+
+Las tarjetas entregadas conservan el producto requerido y el premio originales, incluso al renombrar productos o editar el programa. Las nuevas condiciones aplican a nuevas tarjetas. Los sellos manuales siguen siendo una opción independiente del programa.
+
+La migración `20261002115614_stamp_inventory_products.sql` agrega la regla opcional y reconoce la vinculación de productos posterior a la creación de ventas, conservando la idempotencia por venta y cliente.
+
 ## Métricas y auditoría
 
 - Periodo de hasta un año y filtro por programa; clientes activos, visitas posteriores a la primera registrada, clientes recurrentes, ventas vinculadas, tarjetas completas, tickets emitidos y beneficios efectivamente canjeados.

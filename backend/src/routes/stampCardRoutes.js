@@ -8,15 +8,19 @@ const service=require('../services/stampCardService');
 const router=express.Router(),publicRouter=express.Router();
 const uuid=z.string().uuid();
 const money=z.coerce.number().finite().min(0).max(999999999);
+const inventoryProduct=z.object({inventory_product_id:uuid});
 const program=z.object({
   name:z.string().trim().min(3).max(120),stamps_required:z.coerce.number().int().min(2).max(50),
   benefit_type:z.enum(['FREE_GIFT','PERCENT_DISCOUNT','FIXED_AMOUNT_DISCOUNT','CUSTOM']),
-  benefit_value:z.object({label:z.string().trim().min(3).max(240),percent:money.optional(),amount:money.optional()}),
+  benefit_value:z.object({label:z.string().trim().min(3).max(240),percent:money.optional(),amount:money.optional(),product_scope:inventoryProduct.optional()}),
+  purchase_product:inventoryProduct.nullable().default(null),
   minimum_purchase:money,one_per_day:z.boolean(),allow_manual:z.boolean(),
   card_valid_days:z.coerce.number().int().min(1).max(3650),ticket_valid_days:z.coerce.number().int().min(1).max(3650),
   reward_cost:money,ticket_cost:money,terms:z.string().trim().max(4000),
   status:z.enum(['ACTIVE','PAUSED','ARCHIVED']).default('ACTIVE')
 }).superRefine((data,ctx)=>{
+  if (data.benefit_value.product_scope && data.benefit_type!=='FREE_GIFT')
+    ctx.addIssue({code:'custom',message:'Solo un producto o servicio gratis puede tener un producto de premio.'});
   if (data.benefit_type==='PERCENT_DISCOUNT' && !(data.benefit_value.percent>0 && data.benefit_value.percent<=100))
     ctx.addIssue({code:'custom',message:'El descuento debe estar entre 1 y 100 %.'});
   if (data.benefit_type==='FIXED_AMOUNT_DISCOUNT' && !(data.benefit_value.amount>0))
