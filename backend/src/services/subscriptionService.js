@@ -21,8 +21,8 @@ const BASE_PORTAL_MIN_TICKETS = 200;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DESPEGA_PORTAL_COP = 75000;
 const STARTED_PORTAL_COP = 229000;
-const MEDIUM_PORTAL_COP = 899000;
-const PREMIUM_PORTAL_COP = 1990000;
+const MEDIUM_PORTAL_COP = 999000;
+const PREMIUM_PORTAL_COP = 1999000;
 const STARTER_INTERACTIVE_ACTIVATION_TYPES = ["TRIVIA_QUIZ", "OPEN_QUESTION"];
 const MEDIUM_INTERACTIVE_ACTIVATION_TYPES = [
   "TRIVIA_QUIZ",
@@ -588,7 +588,7 @@ const PLAN_CATALOG = {
     monthly_price_cop: MEDIUM_PORTAL_COP,
     display_currency: "COP",
     payment_currency: "COP",
-    price_label: "COP 899.000 / mes",
+    price_label: "COP 999.000 / mes",
     billing_period: "monthly",
     portal_value_cop: PLAN_PRICING_NOTES.GROWTH.portal_access_fee_cop,
     recommended_start_package: PLAN_PRICING_NOTES.GROWTH.recommended_start_package,
@@ -705,7 +705,7 @@ const PLAN_CATALOG = {
     monthly_price_cop: PREMIUM_PORTAL_COP,
     display_currency: "COP",
     payment_currency: "COP",
-    price_label: "COP 1.990.000 / mes",
+    price_label: "COP 1.999.000 / mes",
     billing_period: "monthly",
     portal_value_cop: PLAN_PRICING_NOTES.PRO.portal_access_fee_cop,
     recommended_start_package: PLAN_PRICING_NOTES.PRO.recommended_start_package,

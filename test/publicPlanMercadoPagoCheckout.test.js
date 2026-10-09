@@ -53,7 +53,8 @@ test("public plan checkout uses Checkout Pro without excluding PSE", () => {
   assert.doesNotMatch(payments, /excluded_payment_methods:[\s\S]*?\{ id: "pse" \}/);
 });
 
-test("Despega returns Checkout Pro with cards, account money and PSE available", async () => {
+for (const [planCode, priceCop] of [["DESPEGA", 75000], ["STARTER", 229000], ["GROWTH", 999000], ["PRO", 1999000]]) {
+test(`${planCode} sends the canonical COP price to Checkout Pro with PSE available`, async () => {
   const originalFetch = global.fetch;
   const originalAccessToken = env.mercadoPagoAccessToken;
   const originalWebhookSecret = env.mercadoPagoWebhookSecret;
@@ -62,10 +63,10 @@ test("Despega returns Checkout Pro with cards, account money and PSE available",
     id: "order-1",
     business_id: "business-1",
     created_by_user_id: "user-1",
-    package_code: "DESPEGA",
+    package_code: planCode,
     package_size: 0,
-    package_title: "Despega - suscripcion mensualidad",
-    price_cop: 75000,
+    package_title: `${planCode} - suscripcion mensualidad`,
+    price_cop: priceCop,
     currency: "COP",
     status: "PENDING",
     external_reference: "signup-1",
@@ -75,7 +76,12 @@ test("Despega returns Checkout Pro with cards, account money and PSE available",
     calls: [],
     async query(sql, params) {
       this.calls.push({ sql, params });
-      if (/insert into qr_credit_purchase_orders/.test(sql)) return { rows: [order] };
+      if (/insert into qr_credit_purchase_orders/.test(sql)) {
+        assert.equal(params[2], planCode);
+        assert.equal(params[5], priceCop);
+        assert.equal(JSON.parse(params[6]).signup.plan_price_cop, priceCop);
+        return { rows: [order] };
+      }
       return {
         rows: [{
           ...order,
@@ -110,7 +116,7 @@ test("Despega returns Checkout Pro with cards, account money and PSE available",
       user_id: "user-1",
       email: "buyer@example.com",
       full_name: "Buyer",
-      plan_code: "DESPEGA",
+      plan_code: planCode,
       billing_cycle: "monthly",
     });
 
@@ -119,6 +125,9 @@ test("Despega returns Checkout Pro with cards, account money and PSE available",
     assert.equal("payer" in requests[0].body, false);
     assert.equal(requests[0].body.currency_id, undefined);
     assert.equal(requests[0].body.items[0].currency_id, "COP");
+    assert.equal(requests[0].body.items[0].unit_price, priceCop);
+    assert.equal(requests[0].body.items[0].quantity, 1);
+    assert.equal(result.price_cop, priceCop);
     assert.equal(requests[0].body.external_reference, "signup-1");
     assert.deepEqual(requests[0].body.payment_methods.excluded_payment_methods, [{ id: "efecty" }]);
     assert.deepEqual(requests[0].body.payment_methods.excluded_payment_types, [{ id: "ticket" }, { id: "atm" }]);
@@ -129,6 +138,7 @@ test("Despega returns Checkout Pro with cards, account money and PSE available",
     env.mercadoPagoWebhookSecret = originalWebhookSecret;
   }
 });
+}
 
 test("Despega participates in the public upgrade and activation contracts", () => {
   const subscriptions = read("backend/src/services/subscriptionService.js");

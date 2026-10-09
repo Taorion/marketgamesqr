@@ -19,17 +19,19 @@ test("el catalogo canonico gobierna precio, capacidad y oferta publica", () => {
   const packagesHtml = read("paquetes/index.html");
 
   assert.equal(starter.monthly_price_cop, 229000);
-  assert.equal(growth.monthly_price_cop, 899000);
-  assert.equal(pro.monthly_price_cop, 1990000);
+  assert.equal(growth.monthly_price_cop, 999000);
+  assert.equal(pro.monthly_price_cop, 1999000);
   assert.equal(growth.limits.branches, 1);
   assert.equal(pro.limits.branches, 3);
   assert.equal(pro.limits.users, 5);
-  assert.match(fallback, /code: "PRO"[\s\S]+monthly_price_cop: 1990000/);
+  assert.match(fallback, /code: "GROWTH"[\s\S]+monthly_price_cop: 999000/);
+  assert.match(fallback, /code: "PRO"[\s\S]+monthly_price_cop: 1999000/);
   assert.match(fallback, /equipo de 2 usuarios/);
   assert.match(fallback, /10 vendedores y 3 sedes/);
-  assert.match(packagesHtml, /"highPrice": "1990000"/);
-  assert.match(packagesHtml, /\$1\.990\.000/);
-  assert.doesNotMatch(`${fallback}\n${packagesHtml}`, /1899000|1\.899\.000/);
+  assert.match(packagesHtml, /"highPrice": "1999000"/);
+  assert.match(packagesHtml, /\$999\.000/);
+  assert.match(packagesHtml, /\$1\.999\.000/);
+  assert.doesNotMatch(`${fallback}\n${packagesHtml}`, /899000|1990000|\$899\.000|1\.990\.000/);
 });
 
 test("el pago aprobado solo activa el mismo plan canonico de la orden", () => {

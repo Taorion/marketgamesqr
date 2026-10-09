@@ -60,7 +60,7 @@ const FALLBACK_PLANS = [
   {
     code: "GROWTH",
     name: "Escala",
-    monthly_price_cop: 899000,
+    monthly_price_cop: 999000,
     mode: "Suscripción",
     recommended: true,
     access_summary: "Inteligencia comercial, campañas, comunicaciones, agenda y control de calidad.",
@@ -78,7 +78,7 @@ const FALLBACK_PLANS = [
   {
     code: "PRO",
     name: "Expande",
-    monthly_price_cop: 1990000,
+    monthly_price_cop: 1999000,
     mode: "Suscripción",
     access_summary: "Operación completa con Radar, Ranking, afiliados, sedes, vendedores y valorización.",
     snapshot: ["200 tickets iniciales", "15 campañas", "50.000 emails/mes"],
