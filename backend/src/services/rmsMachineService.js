@@ -19,6 +19,7 @@ const {
 const { normalizeIntelligenceLifecycleStatus } = require("./rmsIntelligenceLifecyclePolicy");
 const { resolveBusinessSaleSeller } = require("./sellerService");
 const { randomBytes } = require("crypto");
+const { assertAffiliateCapacity } = require("./affiliateQuotaService");
 
 // Fuente única de verdad: conserva los IDs y ordena las transiciones comerciales.
 const RMS_OPERATIONAL_STAGES = Object.freeze([
@@ -3877,6 +3878,7 @@ async function ensurePostSaleReferrerAffiliate(businessId, user, sale, item, act
       [businessId, documentId, phone, email]
     );
     if (existing.rowCount) return existing.rows[0];
+    await assertAffiliateCapacity(client, businessId);
     const created = await client.query(
       `insert into affiliates
         (business_id, created_by_user_id, full_name, document_id, phone, email, qr_token, status, notes, card_metadata)

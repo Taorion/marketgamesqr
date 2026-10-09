@@ -12,6 +12,7 @@ const { syncSaleProductsWithCatalog } = require("./productCatalogService");
 const { resolveAcquisitionChannelReference } = require("./acquisitionChannelService");
 const { recordLifecycleEvent } = require("./lifecycleAuditService");
 const { resolveBusinessSaleSeller } = require("./sellerService");
+const { assertAffiliateCapacity } = require("./affiliateQuotaService");
 
 const OPERATIONAL_AGENDA_SOURCE_TYPES = new Set(["GENERAL", "CAMPAIGN", "MARKETING", "ACTIVATION_STRATEGY", "BULK_ACTIVATION"]);
 
@@ -2705,6 +2706,7 @@ async function ensureAffiliateRole(client, businessId, user, lead, payload, sell
     );
     return { ...updated.rows[0], existing: true };
   }
+  await assertAffiliateCapacity(client, businessId);
   const created = await client.query(
     `insert into affiliates
       (business_id, created_by_user_id, full_name, document_id, phone, email, qr_token, status, notes, seller_user_id, card_metadata)

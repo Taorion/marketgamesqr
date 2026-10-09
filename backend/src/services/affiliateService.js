@@ -5,6 +5,7 @@ const { badRequest, forbidden, notFound } = require("../utils/http");
 const { createSecureToken } = require("../utils/token");
 const { canAccessBusiness } = require("../middleware/auth");
 const { logQrEvent } = require("./auditService");
+const { assertAffiliateCapacity } = require("./affiliateQuotaService");
 const { consumeQrCredit, ensureCreditAccount, mapPublicCreditAccount } = require("./qrCreditService");
 const {
   affiliatePointRuleMetadata,
@@ -125,24 +126,27 @@ async function createAffiliate(businessId, user, body) {
   }
 
   const qrToken = createSecureToken();
-  const result = await query(
-    `insert into affiliates
-      (business_id, created_by_user_id, full_name, document_id, phone, email, photo_data_url, qr_token, status, notes, card_metadata)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, 'ACTIVE', $9, $10)
-     returning *`,
-    [
-      businessId,
-      user.id,
-      body.full_name,
-      body.document_id || null,
-      body.phone || null,
-      body.email || null,
-      body.photo_data_url || null,
-      qrToken,
-      body.notes || null,
-      body.card_metadata || {},
-    ]
-  );
+  const result = await withTransaction(async (client) => {
+    await assertAffiliateCapacity(client, businessId);
+    return client.query(
+      `insert into affiliates
+        (business_id, created_by_user_id, full_name, document_id, phone, email, photo_data_url, qr_token, status, notes, card_metadata)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, 'ACTIVE', $9, $10)
+       returning *`,
+      [
+        businessId,
+        user.id,
+        body.full_name,
+        body.document_id || null,
+        body.phone || null,
+        body.email || null,
+        body.photo_data_url || null,
+        qrToken,
+        body.notes || null,
+        body.card_metadata || {},
+      ]
+    );
+  });
 
   const affiliate = await attachQrDataUrl({
     ...result.rows[0],

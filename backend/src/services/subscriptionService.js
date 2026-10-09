@@ -426,11 +426,12 @@ const PLAN_CATALOG = {
       "1 GB para branding y activos digitales",
       "Hasta 20 productos y 2 medios de adquisicion",
       "Reciclaje, ventas atribuidas y una vitrina web",
+      "10 tarjetas regalo al mes y hasta 10 afiliados",
     ],
     not_included: [
       "Inteligencia y controles de calidad GOS",
       "Campanas, comunicaciones y agenda",
-      "Equipo, tarjetas regalo, Radar, Ranking y Afiliados",
+      "Equipo, Radar y Ranking",
     ],
     qr_monthly_included: 0,
     features: {
@@ -449,7 +450,7 @@ const PLAN_CATALOG = {
       leads_view: true,
       leads_export: true,
       campaign_reports: false,
-      affiliates: false,
+      affiliates: true,
       referrals: false,
       multi_branch: false,
       automations: false,
@@ -463,7 +464,7 @@ const PLAN_CATALOG = {
       agenda: false,
       sales_tracker: true,
       ticket_branding: false,
-      gift_cards: false,
+      gift_cards: true,
       journey: false,
       predictive_analytics: false,
       revenue_center: true,
@@ -498,7 +499,8 @@ const PLAN_CATALOG = {
       lead_export_rows_month: 100,
       lead_exports_month: 2,
       metric_exports_month: 0,
-      affiliates: 0,
+      affiliates: 10,
+      gift_cards_month: 10,
       history_days: 30,
       activation_types_month: 1,
       active_interactive_activations: 1,
@@ -604,12 +606,13 @@ const PLAN_CATALOG = {
       "Hasta 50 productos, 5 medios y 5 vitrinas",
       "Inteligencia GOS y controles de calidad 1 y 2",
       "3 campanas y 3.000 emails al mes, maximo 100 diarios",
-      "Agenda comercial, 25 tarjetas regalo y equipo de 2 usuarios",
+      "Agenda comercial, 25 tarjetas regalo al mes y equipo de 2 usuarios",
+      "Hasta 50 afiliados",
     ],
     not_included: [
       "Radar Competitivo y Ranking",
       "Valorizacion de clientes",
-      "Afiliados, vendedores y sedes",
+      "Vendedores y sedes",
     ],
     qr_monthly_included: 0,
     features: {
@@ -628,7 +631,7 @@ const PLAN_CATALOG = {
       leads_view: true,
       leads_export: true,
       campaign_reports: true,
-      affiliates: false,
+      affiliates: true,
       referrals: false,
       multi_branch: false,
       automations: false,
@@ -679,7 +682,7 @@ const PLAN_CATALOG = {
       lead_export_rows_month: 1000,
       lead_exports_month: 10,
       metric_exports_month: 10,
-      affiliates: 0,
+      affiliates: 50,
       loyalty_contacts: 50,
       gift_cards_month: 25,
       gift_inventory_products: 50,
@@ -718,7 +721,7 @@ const PLAN_CATALOG = {
       "Hasta 5.000 redenciones y 5.000 contactos",
       "15 GB, 300 productos, 10 medios y 15 vitrinas",
       "15 campanas y 50.000 emails al mes sin limite diario",
-      "250 tarjetas regalo y equipo de 5 usuarios",
+      "250 tarjetas regalo al mes y equipo de 5 usuarios",
       "Radar Competitivo, Ranking y Valorizacion de clientes",
       "Hasta 100 afiliados, 10 vendedores y 3 sedes",
     ],
@@ -1511,13 +1514,11 @@ function featurePrompts(plan = {}) {
     },
     affiliates: {
       title: "Afiliados y referidos por plan",
-      message: isEnterpriseOrGlobal
-        ? "Tu plan ya incluye afiliados y referidos a escala. Usa el limite disponible para operar voz a voz medible."
-        : plan.features?.affiliates
-        ? `Tu ${plan.name || "plan"} incluye afiliados limitados. Premium desbloquea afiliados ilimitados y carnet digital.`
-        : "Medium incluye 10 afiliados; Premium desbloquea afiliados ilimitados y carnet digital.",
-      cta: "Ver Premium",
-      url: "/paquetes/?plan=PRO",
+      message: plan.features?.affiliates
+        ? `Tu plan ${plan.name} incluye ${plan.limits?.affiliates === null ? "afiliados sin limite" : `hasta ${plan.limits?.affiliates || 0} afiliados`}.`
+        : "Crece incluye hasta 10 afiliados, Escala 50 y Expande 100.",
+      cta: "Ver planes",
+      url: "/paquetes/",
     },
     active_campaigns: {
       title: "Mas campanas simultaneas",

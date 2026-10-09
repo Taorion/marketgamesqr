@@ -63,13 +63,14 @@ test("Escala puede emitir Gift Cards con limite mensual canonico", () => {
   assert.match(portal, /"reward-passes": "gift_cards"/);
 });
 
-test("Escala separa el cupo de fidelizacion del cupo de afiliados", () => {
+test("fidelizacion y afiliados comparten el cupo total del plan", () => {
   const controller = read("backend/src/controllers/affiliateController.js");
+  const quota = read("backend/src/services/affiliateQuotaService.js");
   const rmsController = read("backend/src/controllers/rmsMachineController.js");
   const portal = read("empresa/js/app.js");
-  assert.match(controller, /body\.card_metadata\?\.source === "rms_activation_2"/);
-  assert.match(controller, /isLoyaltyContact \? "loyalty_contacts" : "affiliates"/);
-  assert.match(controller, /card_metadata->>'source'/);
+  assert.doesNotMatch(controller, /isLoyaltyContact/);
+  assert.match(quota, /const limitKey = 'affiliates'/);
+  assert.doesNotMatch(quota, /rms_activation_2/);
   assert.match(rmsController, /refineryPath === "LOYALTY"[\s\S]+"affiliates"/);
   assert.match(rmsController, /body\.action_type === "REFERRAL"[\s\S]+"referrals"/);
   assert.match(portal, /requiredFeature = draft\.refinery_path === "REFERRAL"[\s\S]+"affiliates"/);

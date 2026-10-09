@@ -55,6 +55,7 @@ const FALLBACK_PLANS = [
       "1 GB para branding y activos digitales",
       "Hasta 20 productos y 2 medios de adquisición",
       "Reciclaje, ventas atribuidas y una vitrina web",
+      "10 tarjetas regalo al mes y hasta 10 afiliados",
     ],
   },
   {
@@ -72,7 +73,8 @@ const FALLBACK_PLANS = [
       "5 GB, 50 productos, 5 medios y 5 vitrinas",
       "Inteligencia GOS y controles de calidad 1 y 2",
       "3 campañas y 3.000 emails al mes, máximo 100 diarios",
-      "Agenda, 25 tarjetas regalo y equipo de 2 usuarios",
+      "Agenda, 25 tarjetas regalo al mes y equipo de 2 usuarios",
+      "Hasta 50 afiliados",
     ],
   },
   {
@@ -88,7 +90,7 @@ const FALLBACK_PLANS = [
       "Hasta 5.000 redenciones y 5.000 contactos",
       "15 GB, 300 productos, 10 medios y 15 vitrinas",
       "15 campañas y 50.000 emails al mes sin límite diario",
-      "250 tarjetas regalo y equipo de 5 usuarios",
+      "250 tarjetas regalo al mes y equipo de 5 usuarios",
       "Radar, Ranking, valorización y 100 afiliados",
       "Hasta 10 vendedores y 3 sedes",
     ],

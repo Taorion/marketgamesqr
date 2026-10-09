@@ -12,8 +12,8 @@ const plans = new Map(listPlans().map((plan) => [plan.code, plan]));
 test("la matriz canonica aplica los tickets iniciales y limites de Planes.csv", () => {
   const expected = {
     DESPEGA: { welcome_courtesy_tickets: 25, contacts: 0, products: 0, acquisition_channels: 0, showcases: 0, redemptions: 0, storage_bytes: 0, affiliates: 0, sellers: 0 },
-    STARTER: { welcome_courtesy_tickets: 50, contacts: 100, products: 20, acquisition_channels: 2, showcases: 1, redemptions: 100, storage_bytes: 1024 ** 3, affiliates: 0, sellers: 0 },
-    GROWTH: { welcome_courtesy_tickets: 100, contacts: 1000, products: 50, acquisition_channels: 5, showcases: 5, redemptions: 1000, storage_bytes: 5 * 1024 ** 3, affiliates: 0, sellers: 0 },
+    STARTER: { welcome_courtesy_tickets: 50, contacts: 100, products: 20, acquisition_channels: 2, showcases: 1, redemptions: 100, storage_bytes: 1024 ** 3, affiliates: 10, sellers: 0 },
+    GROWTH: { welcome_courtesy_tickets: 100, contacts: 1000, products: 50, acquisition_channels: 5, showcases: 5, redemptions: 1000, storage_bytes: 5 * 1024 ** 3, affiliates: 50, sellers: 0 },
     PRO: { welcome_courtesy_tickets: 200, contacts: 5000, products: 300, acquisition_channels: 10, showcases: 15, redemptions: 5000, storage_bytes: 15 * 1024 ** 3, affiliates: 100, sellers: 10 },
   };
 
@@ -35,6 +35,7 @@ test("la matriz canonica aplica los tickets iniciales y limites de Planes.csv", 
   assert.equal(plans.get("GROWTH").limits.communication_emails_day, 100);
   assert.equal(plans.get("PRO").limits.communication_emails_month, 50000);
   assert.equal(plans.get("PRO").limits.communication_emails_day, null);
+  assert.equal(plans.get("STARTER").limits.gift_cards_month, 10);
   assert.equal(plans.get("GROWTH").limits.gift_cards_month, 25);
   assert.equal(plans.get("PRO").limits.gift_cards_month, 250);
   assert.equal(plans.get("GROWTH").limits.users, 2);
@@ -47,13 +48,13 @@ test("cada modulo se abre desde el plan indicado por la matriz", () => {
 
   assert.deepEqual(featureAt("interactive_activations"), ["DESPEGA", "STARTER", "GROWTH", "PRO"]);
   assert.deepEqual(featureAt("qr_validator"), ["DESPEGA", "STARTER", "GROWTH", "PRO"]);
-  for (const feature of ["revenue_center", "rms_core", "redemptions", "brand_assets", "products", "contact_directory", "acquisition_channels", "recycling", "showcase", "sales_tracker"]) {
+  for (const feature of ["revenue_center", "rms_core", "redemptions", "brand_assets", "products", "contact_directory", "acquisition_channels", "recycling", "showcase", "sales_tracker", "gift_cards", "affiliates"]) {
     assert.deepEqual(featureAt(feature), ["STARTER", "GROWTH", "PRO"], feature);
   }
-  for (const feature of ["rms_intelligence", "email_marketing", "rms_quality_control", "campaigns", "communications", "agenda", "team_management", "gift_cards"]) {
+  for (const feature of ["rms_intelligence", "email_marketing", "rms_quality_control", "campaigns", "communications", "agenda", "team_management"]) {
     assert.deepEqual(featureAt(feature), ["GROWTH", "PRO"], feature);
   }
-  for (const feature of ["competitive_radar", "ranking", "customer_valuation", "affiliates", "sellers", "multi_branch"]) {
+  for (const feature of ["competitive_radar", "ranking", "customer_valuation", "sellers", "multi_branch"]) {
     assert.deepEqual(featureAt(feature), ["PRO"], feature);
   }
 });

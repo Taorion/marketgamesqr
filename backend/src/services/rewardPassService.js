@@ -522,7 +522,7 @@ async function createRewardPass(user, payload) {
         [businessId]
       );
       if (Number(monthlyCount.rows[0]?.total || 0) >= Number(monthlyGiftCardLimit)) {
-        throw forbidden("Limite mensual alcanzado para Gift Cards.");
+        throw forbidden(`Tu plan ${subscription.plan.name} permite emitir ${monthlyGiftCardLimit} tarjetas de regalo al mes. Alcanzaste el limite mensual.`);
       }
     }
     const ticketCost = getRewardPassTicketCostFromSettings(business.settings || {});
