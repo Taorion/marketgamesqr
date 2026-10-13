@@ -1,6 +1,10 @@
 /* Nuevo lead: overlay estable, formulario legible y acciones alcanzables.
  * El modal se monta directamente en <body> cuando se abre. */
 
+/* Las reglas importantes de esta capa prevalecen sobre los estilos globales
+ * heredados, sin aumentar la especificidad con identificadores ficticios. */
+@layer qori-lead-modal {
+
 html body.has-rms-collector-modal {
   overflow: hidden !important;
 }
@@ -95,6 +99,8 @@ html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-form {
   width: 100% !important;
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-template-rows: none !important;
+  grid-auto-rows: max-content !important;
   align-content: start !important;
   gap: 14px !important;
   margin: 0 !important;
@@ -107,6 +113,7 @@ html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-form {
   overflow-y: auto !important;
   overscroll-behavior: contain !important;
   scrollbar-gutter: stable !important;
+  scroll-padding-block: 16px !important;
 }
 
 html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-form > .rms-collector-lead-entry {
@@ -236,7 +243,7 @@ html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-context-de
   border: 1px solid #d4e3ef !important;
   border-radius: 0 !important;
   background: #fff !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 html body.has-rms-collector-modal > #rmsCollectorModal .rms-collector-context-details > summary {
@@ -364,4 +371,6 @@ html body.has-rms-collector-modal > #rmsCollectorModal :is(input, select, textar
     width: 100% !important;
     min-width: 0 !important;
   }
+}
+
 }

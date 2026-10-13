@@ -40292,6 +40292,32 @@ function leadDirectoryMetadata(item = {}) {
   return item.metadata && typeof item.metadata === "object" ? item.metadata : {};
 }
 
+function leadContextNotes(item = {}) {
+  const metadata = leadDirectoryMetadata(item);
+  return String(item.notes ?? metadata.manual_notes ?? metadata.notes ?? "").trim();
+}
+
+function renderLeadContext(item = {}, compact = false) {
+  const metadata = leadDirectoryMetadata(item);
+  const fields = [
+    ...(!compact ? [
+      ["Empresa", item.company || item.organization || metadata.manual_company || metadata.company],
+      ["Cargo", item.job_title || metadata.manual_job_title],
+      ["Identificación", [item.document_type || metadata.document_type, item.document_id].filter(Boolean).join(" · ")],
+      ["Origen", item.source_detail || item.source || item.channel],
+      ["Canal preferido", item.preferred_channel || metadata.preferred_channel],
+      ["Horario de contacto", item.preferred_contact_time],
+      ["Importancia", item.importance_reason || metadata.manual_importance_reason],
+    ] : []),
+    ["Interés capturado", item.interest || item.top_interest],
+    ["Notas de contexto", leadContextNotes(item)],
+  ].filter(([, value]) => String(value ?? "").trim());
+  if (!fields.length) return "";
+  return `<section class="lead-context ${compact ? "lead-context-preview" : "lead-context-detail"}" aria-label="Contexto del contacto">
+    <dl>${fields.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(String(value).trim())}</dd></div>`).join("")}</dl>
+  </section>`;
+}
+
 function leadDirectoryIsCustomer(item = {}) {
   const metadata = leadDirectoryMetadata(item);
   const commercialStatus = String(item.commercial_status || item.stored_status || item.status || metadata.commercial_status || "").toUpperCase();
@@ -44232,6 +44258,7 @@ function renderLeadDetailHeader(detail) {
         <span><strong>Telefono</strong>${escapeHtml(lead.phone || "-")}</span>
         <span><strong>Campaña</strong>${escapeHtml(lead.campaign_name || "-")}</span>
       </div>
+      ${renderLeadContext(lead)}
       ${renderLeadRmsJourney(detail)}
     </div>
     <div class="lead-decision-panel">
@@ -44875,6 +44902,7 @@ function renderLeadTab(detail) {
           <button class="solid-button" type="submit">Guardar nota</button>
         </form>
         <div class="lead-notes-list">
+          ${leadContextNotes(lead) ? `<article class="lead-context lead-context-detail"><strong>Notas de contexto del contacto</strong><p>${escapeHtml(leadContextNotes(lead))}</p></article>` : ""}
           ${detailList((detail.notes || []).filter((item) => !item.reminder_at).map((item) => `
             <strong>${escapeHtml(item.note_type || "Nota")}</strong>
             <span>${escapeHtml(item.note)}</span>

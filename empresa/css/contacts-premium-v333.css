@@ -771,3 +771,68 @@ html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC
     padding: 0 15px 15px !important;
   }
 }
+/* Contexto legible en el directorio y en la ficha, incluso con notas largas. */
+@layer qori-contact-context {
+  .lead-context {
+    display: block !important;
+    grid-column: 1 / -1 !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 12px 14px !important;
+    border: 1px solid #d4e3ef !important;
+    background: #f5faff !important;
+    color: #123b5a !important;
+    overflow: visible !important;
+  }
+
+  .lead-context :is(dl, div, dt, dd, p) {
+    display: block !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    text-overflow: clip !important;
+    -webkit-line-clamp: unset !important;
+    line-height: 1.5 !important;
+  }
+
+  .lead-context dl {
+    display: grid !important;
+    gap: 10px !important;
+  }
+
+  .lead-context dt {
+    color: #052b6c !important;
+    font-weight: 750 !important;
+    font-size: .78rem !important;
+  }
+
+  .lead-context :is(dd, p) {
+    color: #123b5a !important;
+    font-size: .86rem !important;
+  }
+
+  @media (max-width: 1100px) {
+    #contactDirectoryVisualBoard .contact-directory-card-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+  }
+
+  @media (max-width: 700px) {
+    #contactDirectoryVisualBoard .contact-directory-card-row {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    #contactDirectoryVisualBoard .contact-directory-card-row > * {
+      grid-column: 1 !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+    }
+  }
+}

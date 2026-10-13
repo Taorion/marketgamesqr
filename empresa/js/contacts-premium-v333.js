@@ -3,7 +3,7 @@
   leadDirectoryChannel, leadDirectoryCurrentFilters, leadDirectoryFilterOptionMarkup,
   leadDirectoryFilterOptions, leadDirectoryFilteredResult, leadDirectoryHasCommercialPotential,
   leadDirectoryIsCustomer, leadDirectoryMetadata, leadDirectorySegmentRows, leadDirectorySalesSummary,
-  leadOriginText, leadPriorityChipClass, money, openLeadDetail, renderLeadsView, session,
+  leadOriginText, leadPriorityChipClass, money, openLeadDetail, renderLeadContext, renderLeadsView, session,
   setButtonLoading, setContactCenterTab, showFeedback, state, syncLeadDirectoryAudienceTabs */
 
 (() => {
@@ -340,6 +340,7 @@
       <div class="contact-directory-cell"><strong>${escapeHtml(isCustomer ? sales.label : stateLabel)}</strong><small>${escapeHtml(isCustomer ? sales.meta : leadOriginText(item))}</small></div>
       <div class="contact-directory-cell"><strong>${escapeHtml(nextAction)}</strong><small>${escapeHtml(`${owner} · ${stateLabel}`)}</small></div>
       <span class="contact-directory-open"><span class="contact-directory-row-actions"><button class="ghost-button compact" type="button" data-edit-contact-seller="${escapeHtml(item.id)}" data-contact-source-type="${escapeHtml(item.source_type || "PLAYER")}"><span class="material-symbols-outlined" aria-hidden="true">edit</span>Editar contacto</button>${canPermanentlyDeleteContact() ? `<button class="ghost-button compact danger-button" type="button" data-delete-contact-permanently="${escapeHtml(item.id)}" data-contact-source-type="${escapeHtml(item.source_type || "PLAYER")}"><span class="material-symbols-outlined" aria-hidden="true">delete_forever</span>Eliminar</button>` : ""}</span><span>Abrir ficha <span class="material-symbols-outlined" aria-hidden="true">open_in_new</span></span></span>
+      ${renderLeadContext(item, true)}
     </article>`;
   }
   leadDirectoryCardMarkup = premiumCard;

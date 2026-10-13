@@ -13,7 +13,7 @@ test("Nuevo lead carga una capa exclusiva después de las capas globales", () =>
   const modal = html.indexOf("rms-new-lead-modal.css?v=rms-new-lead-modal-v1-20260914");
   assert.ok(readable >= 0);
   assert.ok(modal > readable);
-  assert.match(html, /rms-lead-modal=v491-20260914/g);
+  assert.ok(html.includes("lead-context=v2-20261013"));
 });
 
 test("elimina la inyección conflictiva que estrechaba y desalineaba el modal", () => {
