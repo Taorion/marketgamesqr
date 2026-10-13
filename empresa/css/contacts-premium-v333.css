@@ -836,3 +836,65 @@ html body:not(#contactsMetricLayoutA#contactsMetricLayoutB#contactsMetricLayoutC
     }
   }
 }
+/* La ficha completa comparte un scroll: General también puede crecer. */
+@layer qori-contact-modal {
+  #leadDetailModal.lead-detail-workspace:not(.hidden) {
+    position: fixed !important;
+    inset: 0 !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border: 0 !important;
+    padding: 16px !important;
+    display: grid !important;
+    place-items: center !important;
+    overflow: hidden !important;
+  }
+
+  #leadDetailModal .lead-detail-interstitial-card {
+    box-sizing: border-box !important;
+    width: min(940px, 100%) !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - 32px) !important;
+    display: block !important;
+    margin: 0 !important;
+    padding-bottom: 16px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    scrollbar-gutter: stable !important;
+    scroll-padding-block: 16px !important;
+  }
+
+  #leadDetailModal :is(.lead-profile-header, .lead-quick-actions, .lead-tab-panel) {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #leadDetailModal :is(#leadDetailHeader, #leadDetailContent, .lead-quick-actions)[hidden] {
+    display: none !important;
+  }
+
+  @media (max-width: 760px) {
+    #leadDetailModal.lead-detail-workspace:not(.hidden) {
+      padding: 8px !important;
+    }
+
+    #leadDetailModal .lead-detail-interstitial-card {
+      max-height: calc(100dvh - 16px) !important;
+      padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+    }
+
+    #leadDetailModal .lead-profile-header {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+}

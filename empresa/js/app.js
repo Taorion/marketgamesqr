@@ -45103,6 +45103,7 @@ function setLeadDetailTab(tabName = "general", options = {}) {
   }
   if (options.resetScroll !== false && leadDetailContent) {
     leadDetailContent.scrollTop = 0;
+    leadDetailModal?.querySelector(".lead-detail-interstitial-card")?.scrollTo({ top: 0 });
   }
 }
 
