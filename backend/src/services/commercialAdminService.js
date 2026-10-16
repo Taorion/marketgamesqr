@@ -12,8 +12,10 @@ const { SUPERADMIN, SELLER, PLAN_CODES, termsSchema, policySchema, requireSupera
 const uuid = z.string().uuid();
 const reasonSchema = z.string().trim().min(5).max(2000);
 const personSchema = z.object({ full_name: z.string().trim().min(2).max(160), email: z.string().trim().email().max(180), phone: z.string().trim().max(60).default("") }).strict();
+const sellerPassword = z.string().min(10, "La contraseña debe tener al menos 10 caracteres.").max(120).refine(value => Buffer.byteLength(value, "utf8") <= 72, "La contraseña es demasiado larga.");
+const businessRoles = ["BUSINESS_OWNER", "BUSINESS_MANAGER", "BUSINESS_SELLER", "VALIDATOR"];
 const sellerCreationSchema = personSchema.extend({
-  password: z.string().min(10, "La contraseña debe tener al menos 10 caracteres.").max(120).refine(value => Buffer.byteLength(value, "utf8") <= 72, "La contraseña es demasiado larga.").optional(),
+  password: sellerPassword.optional(),
   password_confirm: z.string().max(120).optional(),
 }).refine(body => body.password === body.password_confirm, { message: "La confirmación de contraseña no coincide.", path: ["password_confirm"] });
 const prospectSchema = z.object({ business_name: z.string().trim().min(2).max(160), contact_name: z.string().trim().min(2).max(160), email: z.string().trim().email().max(180), phone: z.string().trim().max(60).default(""), notes: z.string().trim().max(4000).default(""), stage: z.enum(["NEW", "CONTACTED", "NEGOTIATING", "LOST"]).default("NEW"), next_contact_at: z.string().datetime().nullable().default(null), seller_id: uuid.optional() }).strict();
@@ -26,7 +28,7 @@ async function audit(client, actor, action, entity, id, detail = {}) {
   await client.query("insert into qori_commercial_audit (actor_id, action, entity_type, entity_id, detail) values ($1,$2,$3,$4,$5::jsonb)", [actor.id, action, entity, id, JSON.stringify(detail)]);
 }
 async function sellerExists(client, id) {
-  const result = await client.query("select id from app_users where id=$1 and is_active=true and (role in ('QORI_SUPERADMIN','QORI_SELLER') or platform_role='QORI_SUPERADMIN') for share", [id]);
+  const result = await client.query("select id from app_users where id=$1 and is_active=true and (role in ('QORI_SUPERADMIN','QORI_SELLER') or platform_role in ('QORI_SUPERADMIN','QORI_SELLER')) for share", [id]);
   if (!result.rowCount) throw badRequest("El vendedor debe tener una cuenta comercial activa.");
 }
 async function locked(client, table, id) {
@@ -39,7 +41,11 @@ async function bootstrap(user) {
   requireCommercialUser(user);
   const [policies, sellers, counts] = await Promise.all([
     query(`select * from qori_commercial_policies where ($1::boolean or (is_active and expires_at > now() and (seller_id is null or seller_id=$2))) order by created_at desc limit 200`, [user.role === SUPERADMIN, user.id]),
-    query(`select u.id,u.full_name,u.email,u.is_active,p.phone,p.archived_at from app_users u left join qori_sales_profiles p on p.user_id=u.id where (u.role='QORI_SELLER' or u.id=$2) and ($1::boolean or u.id=$2) order by u.full_name`, [user.role === SUPERADMIN, user.id]),
+    query(`select u.id,u.full_name,u.email,u.role,u.platform_role,u.business_id,u.is_active as account_is_active,
+      (u.is_active and (u.role in ('QORI_SELLER','QORI_SUPERADMIN') or u.platform_role in ('QORI_SELLER','QORI_SUPERADMIN'))) as is_active,
+      p.phone,p.archived_at from app_users u left join qori_sales_profiles p on p.user_id=u.id
+      where (u.role='QORI_SELLER' or u.platform_role='QORI_SELLER' or p.user_id is not null or u.id=$2)
+        and ($1::boolean or u.id=$2) order by u.full_name`, [user.role === SUPERADMIN, user.id]),
     query(`select (select count(*)::int from qori_sales_prospects where ($1 or seller_id=$2) and stage not in ('WON','LOST')) as prospects,
       (select count(*)::int from qori_commercial_deals where ($1 or seller_id=$2) and status='PENDING') as pending,
       (select count(*)::int from qori_commercial_deals where ($1 or seller_id=$2) and status='APPROVED' and valid_until>now()) as approved,
@@ -54,7 +60,7 @@ async function createSeller(user, payload) {
   const hash = await bcrypt.hash(password, 12);
   const seller = await withTransaction(async client => {
     const existing = await client.query("select id from app_users where lower(email)=lower($1)", [body.email]);
-    if (existing.rowCount) throw badRequest("Ese correo ya tiene una cuenta. No se reasignan cuentas existentes al crear vendedores.");
+    if (existing.rowCount) throw badRequest("Ese correo ya tiene una cuenta. Usa Habilitar usuario existente para darle acceso como vendedor.");
     const result = await client.query("insert into app_users(email,password_hash,full_name,role,is_active) values(lower($1),$2,$3,'QORI_SELLER',true) returning id,email,full_name,role,is_active", [body.email, hash, body.full_name]);
     await client.query("insert into qori_sales_profiles(user_id,phone,created_by) values($1,$2,$3)", [result.rows[0].id, body.phone, user.id]);
     await audit(client, user, "SELLER_CREATED", "seller", result.rows[0].id, { name: body.full_name });
@@ -62,19 +68,60 @@ async function createSeller(user, payload) {
   });
   return { seller, credentials: { email: seller.email, password } };
 }
+function existingSellerReason(account) {
+  if (!account) return "No hay una cuenta con ese correo.";
+  if (!account.is_active) return "La cuenta está desactivada. Reactívala antes de habilitar el acceso comercial.";
+  if (account.platform_role === SUPERADMIN || !businessRoles.includes(account.role) || !account.business_id) return "Esta opción solo habilita usuarios del portal empresa, sin cambiar administradores existentes.";
+  if (account.platform_role === SELLER) return "Este usuario ya tiene acceso como vendedor. Puedes gestionarlo en Equipo de ventas.";
+  return null;
+}
+async function findExistingSeller(user, payload) {
+  requireSuperadmin(user);
+  const body=validate(z.object({email:z.string().trim().email().max(180)}).strict(),payload);
+  const account=(await query(`select u.id,u.full_name,u.email,u.role,u.platform_role,u.business_id,u.is_active,b.name as business_name
+    from app_users u left join businesses b on b.id=u.business_id where lower(u.email)=lower($1) limit 1`,[body.email])).rows[0] || null;
+  const reason=existingSellerReason(account);
+  return {user:account,eligible:!reason,reason};
+}
+async function grantExistingSeller(user, payload) {
+  requireSuperadmin(user);
+  const body=validate(z.object({user_id:uuid,password:sellerPassword,password_confirm:z.string().max(120)}).strict()
+    .refine(v=>v.password===v.password_confirm,{message:"La confirmación de contraseña no coincide.",path:["password_confirm"]}),payload);
+  const hash=await bcrypt.hash(body.password,12);
+  return withTransaction(async client=>{
+    const account=await locked(client,"app_users",body.user_id);
+    const reason=existingSellerReason(account);if(reason)throw badRequest(reason);
+    const seller=(await client.query(`update app_users set platform_role='QORI_SELLER',password_hash=$2,
+      password_version=coalesce(password_version,0)+1,updated_at=now() where id=$1
+      returning id,email,full_name,role,platform_role,business_id,is_active`,[account.id,hash])).rows[0];
+    await client.query(`insert into qori_sales_profiles(user_id,created_by) values($1,$2)
+      on conflict(user_id) do update set archived_at=null`,[account.id,user.id]);
+    await client.query("update password_reset_tokens set used_at=now() where user_id=$1 and used_at is null",[account.id]);
+    await audit(client,user,"SELLER_ACCESS_GRANTED","seller",account.id,{name:account.full_name,business_id:account.business_id,business_role:account.role});
+    return {seller,credentials:{email:account.email,password:body.password,shared_login:true}};
+  });
+}
 async function updateSeller(user, id, payload, archive = false) {
   requireSuperadmin(user);
-  const body = archive ? {} : validate(z.object({ full_name: z.string().trim().min(2).max(160).optional(), phone: z.string().trim().max(60).optional(), is_active: z.boolean().optional(), reset_password: z.boolean().optional() }).strict(), payload);
-  const password = body.reset_password ? generatedPassword() : null;
+  const body = archive ? {} : validate(z.object({ full_name: z.string().trim().min(2).max(160).optional(), phone: z.string().trim().max(60).optional(), is_active: z.boolean().optional(), reset_password: z.boolean().optional(),password:sellerPassword.optional(),password_confirm:z.string().max(120).optional() }).strict()
+    .refine(v=>v.password===v.password_confirm,{message:"La confirmación de contraseña no coincide.",path:["password_confirm"]})
+    .refine(v=>!(v.password&&v.reset_password),"Elige una contraseña propia o genera una, no ambas."), payload);
+  const password = body.password || (body.reset_password ? generatedPassword() : null);
   const hash = password ? await bcrypt.hash(password, 12) : null;
   return withTransaction(async client => {
     const current = await locked(client, "app_users", id);
-    if (current.role !== SELLER) throw badRequest("Este control solo administra vendedores de Qori.");
-    const active = archive ? false : (body.is_active ?? current.is_active);
-    const result = await client.query(`update app_users set full_name=$2,is_active=$3,password_hash=coalesce($4,password_hash),password_version=coalesce(password_version,0)+1,updated_at=now() where id=$1 returning id,email,full_name,is_active`, [id, body.full_name || current.full_name, active, hash]);
+    const profile=(await client.query("select user_id from qori_sales_profiles where user_id=$1",[id])).rows[0];
+    const shared=businessRoles.includes(current.role)&&Boolean(current.business_id);
+    if (current.platform_role===SUPERADMIN || (current.role!==SELLER && !(shared&&profile))) throw badRequest("Este control solo administra vendedores de Qori.");
+    const active = archive ? false : (body.is_active ?? (shared ? current.platform_role===SELLER : current.is_active));
+    if(shared && active && !current.is_active) throw badRequest("La cuenta del usuario está desactivada. Reactívala antes de habilitar el acceso comercial.");
+    const result = await client.query(`update app_users set full_name=$2,is_active=$3,password_hash=coalesce($4,password_hash),
+      platform_role=$5,password_version=coalesce(password_version,0)+1,updated_at=now() where id=$1
+      returning id,email,full_name,is_active,role,platform_role,business_id`, [id, body.full_name || current.full_name, shared?current.is_active:active, hash,shared?(active?SELLER:null):current.platform_role]);
     await client.query(`update qori_sales_profiles set phone=coalesce($2,phone),archived_at=case when $3 then now() when $4 then null else archived_at end where user_id=$1`, [id, body.phone ?? null, archive, active]);
     await audit(client, user, archive ? "SELLER_ARCHIVED" : "SELLER_UPDATED", "seller", id, { active, reset_password: Boolean(password) });
-    return { seller: result.rows[0], ...(password ? { credentials: { email: current.email, password } } : {}) };
+    if(password) await client.query("update password_reset_tokens set used_at=now() where user_id=$1 and used_at is null",[id]);
+    return { seller: result.rows[0], ...(password ? { credentials: { email: current.email, password,shared_login:shared } } : {}) };
   });
 }
 async function savePolicy(user, payload, id = null) {
@@ -268,4 +315,4 @@ async function updateCustomer(user,id,payload) {
     return {ok:true};
   });
 }
-module.exports={bootstrap,createSeller,updateSeller,savePolicy,list,saveProspect,createDeal,decideDeal,cancelDeal,applyDeal,updateCustomer,buildTerms};
+module.exports={bootstrap,createSeller,findExistingSeller,grantExistingSeller,updateSeller,savePolicy,list,saveProspect,createDeal,decideDeal,cancelDeal,applyDeal,updateCustomer,buildTerms};

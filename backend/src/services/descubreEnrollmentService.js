@@ -25,7 +25,7 @@ async function enrollDescubre(user, payload) {
   const passwordHash = await bcrypt.hash(body.password, 12);
   const plan = listPlans().find(p => p.code === "DESCUBRE");
   return withTransaction(async client => {
-    const seller = await client.query("select id from app_users where id=$1 and is_active and (role in ('QORI_SELLER','QORI_SUPERADMIN') or platform_role='QORI_SUPERADMIN') for share", [user.id]);
+    const seller = await client.query("select id from app_users where id=$1 and is_active and (role in ('QORI_SELLER','QORI_SUPERADMIN') or platform_role in ('QORI_SUPERADMIN','QORI_SELLER')) for share", [user.id]);
     if (!seller.rowCount) throw forbidden("Tu cuenta comercial no está habilitada.");
     await client.query("select pg_advisory_xact_lock(hashtext($1))", [`descubre-request:${body.request_id}`]);
     const previous = await client.query("select * from businesses where settings->'qori_descubre'->>'request_id'=$1", [body.request_id]);

@@ -11,6 +11,14 @@ Acceso: `/admin/`. El superadmin puede conservar su rol y negocio anteriores: el
 5. **Clientes:** consultar suscripciones, asignar cartera, suspender/reactivar y revocar beneficios con motivo. Las operaciones avanzadas conservan la administración existente de planes, negocios y convenios.
 6. **Historial:** revisar quién creó, autorizó o aplicó cada cambio.
 
+### Usuarios del portal con acceso al admin
+
+En **Equipo de ventas → Habilitar usuario existente**, el superadmin busca el correo exacto, revisa el nombre y negocio de la cuenta y define una nueva contraseña con confirmación. El permiso adicional es siempre **Vendedor Qori**: no permite gestionar vendedores, aprobar excepciones ni acceder a operaciones avanzadas.
+
+Se conservan el ID, correo, negocio, sede y rol original del portal. Admin y Portal empresa comparten la cuenta y la contraseña: asignar una nueva cierra las sesiones anteriores. Desde **Gestionar** también se puede definir otra contraseña o conservar la actual.
+
+Suspender o dar de baja el permiso comercial de un usuario existente retira solo su acceso al admin. Su cuenta del portal sigue activa. Los cambios de acceso comercial quedan en el historial sin contraseñas, y solo el superadmin puede efectuarlos.
+
 ## Reglas
 
 ### Muestra Descubre
@@ -23,7 +31,7 @@ El negocio queda en la cartera del vendedor y su prospecto se marca como inscrit
 
 **Vender suscripción** ofrece enlaces de inscripción para los cuatro planes pagados con el vendedor identificado. El cliente queda asociado a su cartera, pero su acceso pagado solo se activa cuando se aprueba el pago. Un cliente ya inscrito en Descubre debe pagar desde su cuenta para conservar el negocio y sus datos. Las ofertas, descuentos y excepciones continúan sujetos a las autorizaciones del superadmin.
 
-Prueba integral adicional: `test/descubre.integration.test.js`, con la misma base local aislada y bandera de QA descritas abajo. Simula Mercado Pago sin realizar pagos ni llamadas externas.
+Pruebas integrales adicionales: `test/descubre.integration.test.js` y `test/existingSeller.integration.test.js`, con la misma base local aislada y bandera de QA descritas abajo. Simulan pagos sin llamadas externas y comprueban el rol de negocio, el permiso comercial, la retirada del acceso y el aislamiento entre clientes.
 
 - Cada vendedor solo consulta y opera sus prospectos, ofertas y clientes asignados. No accede a las operaciones avanzadas ni administra autorizaciones.
 - Cambiar o desactivar una autorización invalida las ofertas pendientes de aplicación que dependían de su versión anterior. Los acuerdos ya aplicados se conservan hasta su vencimiento o revocación explícita.

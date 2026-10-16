@@ -44,7 +44,7 @@
       return;
     }
     if(tab==="team") {
-      content.innerHTML=`<section class="panel"><div class="panel-head"><div><h2>Equipo de ventas</h2><p>La baja retira el acceso inmediatamente y conserva el historial comercial.</p></div>${button("new-seller","Crear vendedor","",false)}</div>${table(["Vendedor","Contacto","Acceso","Acciones"],data.sellers.filter(s=>s.id!==data.user.id).map(s=>`<tr><td><strong>${esc(s.full_name)}</strong></td><td>${esc(s.email)}<small class="commercial-block">${esc(s.phone)}</small></td><td>${badge(s.is_active?"ACTIVE":s.archived_at?"Archivado":"Suspendido")}</td><td><div class="inline-actions">${button("edit-seller","Gestionar",s.id)}${!s.archived_at?button("archive-seller","Dar de baja",s.id):""}</div></td></tr>`).join(""))}</section>`;
+      content.innerHTML=`<section class="panel"><div class="panel-head"><div><h2>Equipo de ventas</h2><p>La baja retira el acceso inmediatamente y conserva el historial comercial.</p></div><div class="toolbar">${button("existing-seller","Habilitar usuario existente","",false)}${button("new-seller","Crear vendedor")}</div></div>${table(["Vendedor","Contacto","Acceso","Acciones"],data.sellers.filter(s=>s.id!==data.user.id).map(s=>`<tr><td><strong>${esc(s.full_name)}</strong></td><td>${esc(s.email)}<small class="commercial-block">${esc(s.phone)}</small></td><td>${badge(s.is_active?"ACTIVE":s.archived_at?"Archivado":"Suspendido")}</td><td><div class="inline-actions">${button("edit-seller","Gestionar",s.id)}${!s.archived_at?button("archive-seller","Dar de baja",s.id):""}</div></td></tr>`).join(""))}</section>`;
       return;
     }
     const statuses=tab==="prospects"?["NEW","CONTACTED","NEGOTIATING","WON","LOST"]:tab==="deals"?["PENDING","APPROVED","APPLIED","REJECTED","CANCELLED"]:tab==="customers"?["ACTIVE","PENDING_PAYMENT","SUSPENDED"]:[];
@@ -58,7 +58,7 @@
     content.querySelector('[data-action="previous"]').disabled=offset===0;
     content.querySelector('[data-action="next"]').disabled=!hasMore;
   }
-  function actionLabel(value){return ({DESCUBRE_ENROLLED:"Negocio inscrito en Descubre",PAID_SIGNUP_CREATED:"Inscripción con asesor y pago pendiente",SELLER_CREATED:"Vendedor creado",SELLER_ARCHIVED:"Vendedor dado de baja",SELLER_UPDATED:"Vendedor actualizado",POLICY_CREATED:"Autorización creada",POLICY_UPDATED:"Autorización actualizada",PROSPECT_CREATED:"Prospecto registrado",PROSPECT_UPDATED:"Seguimiento actualizado",DEAL_AUTHORIZED:"Oferta autorizada",EXCEPTION_REQUESTED:"Excepción solicitada",DEAL_APPROVED:"Oferta aprobada",DEAL_REJECTED:"Oferta rechazada",DEAL_CANCELLED:"Oferta cancelada",DEAL_APPLIED:"Beneficios aplicados",CUSTOMER_UPDATED:"Cliente actualizado"})[value]||value;}
+  function actionLabel(value){return ({DESCUBRE_ENROLLED:"Negocio inscrito en Descubre",PAID_SIGNUP_CREATED:"Inscripción con asesor y pago pendiente",SELLER_ACCESS_GRANTED:"Usuario habilitado como vendedor",SELLER_CREATED:"Vendedor creado",SELLER_ARCHIVED:"Vendedor dado de baja",SELLER_UPDATED:"Vendedor actualizado",POLICY_CREATED:"Autorización creada",POLICY_UPDATED:"Autorización actualizada",PROSPECT_CREATED:"Prospecto registrado",PROSPECT_UPDATED:"Seguimiento actualizado",DEAL_AUTHORIZED:"Oferta autorizada",EXCEPTION_REQUESTED:"Excepción solicitada",DEAL_APPROVED:"Oferta aprobada",DEAL_REJECTED:"Oferta rechazada",DEAL_CANCELLED:"Oferta cancelada",DEAL_APPLIED:"Beneficios aplicados",CUSTOMER_UPDATED:"Cliente actualizado"})[value]||value;}
   async function loadRows(){
     if(!["prospects","deals","customers","audit"].includes(tab)) return;
     const current=++generation;
@@ -77,7 +77,7 @@
     modal.querySelector("form").addEventListener("submit",async event=>{
       event.preventDefault();if(!submitHandler)return;
       const currentModal=modal;const btn=event.submitter;btn.disabled=true;
-      try{const result=await submitHandler(new FormData(event.target));closeModal();if(result?.password_changed){ctx.onPasswordChanged();return;}if(result?.enrollment){await refresh().catch(()=>{});showEnrollment(result.enrollment);return;}await refresh();notify("Cambios guardados correctamente.");if(result?.credentials)showCredentials(result.credentials);}
+      try{const result=await submitHandler(new FormData(event.target));closeModal();if(result?.existingSellerCandidate){existingSellerGrant(result.existingSellerCandidate);return;}if(result?.password_changed){ctx.onPasswordChanged();return;}if(result?.enrollment){await refresh().catch(()=>{});showEnrollment(result.enrollment);return;}await refresh();notify("Cambios guardados correctamente.");if(result?.credentials)showCredentials(result.credentials);}
       catch(error){if(currentModal.isConnected)currentModal.querySelector("[data-error]").textContent=error.message;else notify(error.message,true);}
       finally{btn.disabled=false;}
     });
@@ -100,7 +100,7 @@
       updateQuote();
     }
   }
-  function showCredentials(credentials){dialog("Acceso listo para entregar",`<p class="full">Copia estas credenciales y entrégalas a su titular. La contraseña se muestra solo en esta respuesta.</p>${field("email","Correo","text",credentials.email,"readonly")}${field("password","Contraseña inicial","text",credentials.password,"readonly")}<p class="full">El titular puede cambiar su contraseña desde su cuenta. No se ha enviado ningún correo automáticamente.</p>`);}
+  function showCredentials(credentials){dialog("Acceso listo para entregar",`<p class="full">Copia estas credenciales y entrégalas a su titular. La contraseña se muestra solo en esta respuesta.</p>${field("email","Correo","text",credentials.email,"readonly")}${field("password","Contraseña inicial","text",credentials.password,"readonly")}${credentials.shared_login?'<p class="full"><strong>Esta contraseña sirve para Admin y Portal empresa.</strong> La cuenta conserva su negocio y rol original.</p>':""}<p class="full">El titular puede cambiar su contraseña desde su cuenta. No se ha enviado ningún correo automáticamente.</p>`);}
   function enrollmentEditor(p={}) {
     const requestId=crypto.randomUUID();
     dialog("Inscribir negocio · Descubre",`<div class="full commercial-offer"><h3>30 días gratis para descubrir Qori</h3><p>Todos los módulos · 25 tickets iniciales · 10 afiliados · 10 Gift Cards · 100 MB.</p><p>Hasta 10 programas de sellos, con tarjetas ilimitadas en cada programa. No requiere tarjeta bancaria ni pago.</p></div>
@@ -131,11 +131,25 @@
   function prospectEditor(p={}) {
     dialog(p.id?"Seguimiento del prospecto":"Nuevo prospecto",`${field("business_name","Nombre del negocio","text",p.business_name,'required maxlength="160"')}${field("contact_name","Nombre del contacto","text",p.contact_name,'required maxlength="160"')}${field("email","Correo del administrador","email",p.email,'required')}${field("phone","Teléfono","tel",p.phone)}${select("stage","Estado",["NEW","CONTACTED","NEGOTIATING","LOST"].map(s=>[s,labels[s]]),p.stage||"NEW")}${field("next_contact_at","Próximo seguimiento","date",p.next_contact_at?.slice(0,10)||"")}${superadmin()?select("seller_id","Responsable",sellerOptions(),p.seller_id||data.user.id):""}${note("notes","Notas de la conversación",p.notes||"",false)}`,form=>request(`/prospects${p.id?`/${p.id}`:""}`,{business_name:form.get("business_name"),contact_name:form.get("contact_name"),email:form.get("email"),phone:form.get("phone"),stage:form.get("stage"),next_contact_at:form.get("next_contact_at")?new Date(`${form.get("next_contact_at")}T12:00:00`).toISOString():null,notes:form.get("notes"),...(superadmin()?{seller_id:form.get("seller_id")}: {})},p.id?"PATCH":"POST"));
   }
+  function existingSellerLookup() {
+    dialog("Habilitar usuario existente",`<p class="full">Busca la cuenta por su correo de acceso a Qori. Podrás darle el rol Vendedor Qori sin cambiar su negocio ni su rol en el portal empresa.</p>${field("email","Correo del usuario existente","email","","required autocomplete=\"off\"")}`,async form=>{
+      const result=await request("/seller-candidates?"+new URLSearchParams({email:form.get("email")}),undefined,"GET");
+      if(!result.eligible) throw new Error(result.reason);
+      return {existingSellerCandidate:result.user};
+    },"Buscar usuario");
+  }
+  function existingSellerGrant(account) {
+    const roles={BUSINESS_OWNER:"Propietario",BUSINESS_MANAGER:"Gestor",BUSINESS_SELLER:"Vendedor del negocio",VALIDATOR:"Validador"};
+    dialog("Dar acceso al admin como vendedor",`<div class="full commercial-offer"><h3>${esc(account.full_name)}</h3><p>${esc(account.email)}</p><p>Negocio: ${esc(account.business_name)} · Rol actual: ${esc(roles[account.role]||account.role)}</p><p>Permiso adicional: <strong>Vendedor Qori</strong>. Solo gestionará su cartera y beneficios autorizados.</p></div>${field("password","Nueva contraseña","password","",'required minlength="10" maxlength="72" autocomplete="new-password"')}${field("password_confirm","Confirmar contraseña","password","",'required minlength="10" maxlength="72" autocomplete="new-password"')}<p class="full commercial-help"><strong>La nueva contraseña servirá para Admin y Portal empresa.</strong> Se cerrarán sus sesiones actuales. Su negocio, datos y rol del portal se conservan.</p>`,form=>{
+      if(form.get("password")!==form.get("password_confirm"))throw new Error("La confirmación de contraseña no coincide.");
+      return request("/sellers/existing",{user_id:account.id,password:form.get("password"),password_confirm:form.get("password_confirm")});
+    },"Habilitar como vendedor");
+  }
   function sellerEditor(s={}) {
-    const accessFields = s.id ? `<p>${esc(s.email)}</p>` : `${field("email","Correo de acceso","email","","required autocomplete=\"off\"")}${field("password","Contraseña inicial","password","",'required minlength="10" maxlength="72" autocomplete="new-password"')}${field("password_confirm","Confirmar contraseña","password","",'required minlength="10" maxlength="72" autocomplete="new-password"')}<p class="full commercial-help">Define una contraseña de al menos 10 caracteres. El vendedor podrá cambiarla desde su cuenta.</p>`;
-    dialog(s.id?"Gestionar vendedor":"Crear vendedor",`${field("full_name","Nombre","text",s.full_name,'required minlength="2"')}${accessFields}${field("phone","Teléfono","tel",s.phone)}${s.id?check("is_active","Permitir acceso",s.is_active)+check("reset_password","Generar una nueva contraseña y cerrar sus sesiones"):""}`,form=>{
-      if(!s.id && form.get("password")!==form.get("password_confirm")) throw new Error("La confirmación de contraseña no coincide.");
-      return request(`/sellers${s.id?`/${s.id}`:""}`,{full_name:form.get("full_name"),phone:form.get("phone"),...(s.id?{is_active:form.has("is_active"),reset_password:form.has("reset_password")}:{email:form.get("email"),password:form.get("password"),password_confirm:form.get("password_confirm")})},s.id?"PATCH":"POST");
+    const accessFields = s.id ? `<p class="full">${esc(s.email)}${s.business_id?" · Conserva su cuenta y rol en el portal empresa.":""}</p>${field("password","Nueva contraseña (opcional)","password","",'minlength="10" maxlength="72" autocomplete="new-password"')}${field("password_confirm","Confirmar nueva contraseña","password","",'minlength="10" maxlength="72" autocomplete="new-password"')}<p class="full commercial-help">Déjala vacía para conservar la actual.${s.business_id?" Si defines una nueva, cambiará también la del portal empresa.":""}</p>` : `${field("email","Correo de acceso","email","","required autocomplete=\"off\"")}${field("password","Contraseña inicial","password","",'required minlength="10" maxlength="72" autocomplete="new-password"')}${field("password_confirm","Confirmar contraseña","password","",'required minlength="10" maxlength="72" autocomplete="new-password"')}<p class="full commercial-help">Define una contraseña de al menos 10 caracteres. El vendedor podrá cambiarla desde su cuenta.</p>`;
+    dialog(s.id?"Gestionar vendedor":"Crear vendedor",`${field("full_name","Nombre","text",s.full_name,'required minlength="2"')}${accessFields}${field("phone","Teléfono","tel",s.phone)}${s.id?check("is_active","Permitir acceso al admin",s.is_active)+check("reset_password","Generar una nueva contraseña y cerrar sus sesiones"):""}`,form=>{
+      if(form.get("password")!==form.get("password_confirm")) throw new Error("La confirmación de contraseña no coincide.");
+      return request(`/sellers${s.id?`/${s.id}`:""}`,{full_name:form.get("full_name"),phone:form.get("phone"),...(s.id?{is_active:form.has("is_active"),reset_password:form.has("reset_password"),...(form.get("password")?{password:form.get("password"),password_confirm:form.get("password_confirm")}:{})}:{email:form.get("email"),password:form.get("password"),password_confirm:form.get("password_confirm")})},s.id?"PATCH":"POST");
     });
   }
   function policyEditor(p={}) {
@@ -156,6 +170,7 @@
     if(name==="paid-signup")return paidSignup();
     if(name==="new-prospect")return prospectEditor();
     if(name==="new-seller")return sellerEditor();
+    if(name==="existing-seller")return existingSellerLookup();
     if(name==="new-policy")return policyEditor();
     if(name==="previous"||name==="next"){offset=Math.max(0,offset+(name==="next"?50:-50));await loadRows();renderContent();return;}
     const item=rows.find(r=>r.id===id);

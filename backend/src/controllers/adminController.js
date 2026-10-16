@@ -467,7 +467,7 @@ async function patchUser(req, res, next) {
     }
 
     const current = existing.rows[0];
-    if (current.platform_role === "QORI_SUPERADMIN" || ["QORI_SUPERADMIN", "QORI_SELLER"].includes(current.role)) {
+    if (current.platform_role || ["QORI_SUPERADMIN", "QORI_SELLER"].includes(current.role)) {
       throw forbidden("Gestiona las cuentas comerciales desde Equipo de ventas. La cuenta superadmin no se modifica desde este formulario.");
     }
     const hasLaunchChannels = body.launch_channels !== undefined || body.launch_channel_refs !== undefined;
@@ -513,7 +513,7 @@ async function patchUser(req, res, next) {
            can_redeem_cross_business = $6,
            is_active = $7,
            updated_at = now()
-       where id = $1
+       where id = $1 and platform_role is null and role not in ('QORI_SUPERADMIN','QORI_SELLER')
        returning id, business_id, email, full_name, role, can_redeem_cross_business, is_active, created_at, updated_at`,
       [
         current.id,
@@ -525,7 +525,7 @@ async function patchUser(req, res, next) {
         nextActive,
       ]
     );
-
+    if (!result.rowCount) throw forbidden("El acceso comercial de esta cuenta se administra desde Equipo de ventas.");
     res.json({ user: result.rows[0] });
   } catch (error) {
     next(error);

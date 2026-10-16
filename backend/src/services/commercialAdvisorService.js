@@ -5,7 +5,7 @@ const { validate } = require("../utils/validators");
 async function advisorById(id, client = { query }) {
   validate(z.string().uuid(), id);
   const result = await client.query(`select id,full_name from app_users
-    where id=$1 and is_active and (role in ('QORI_SELLER','QORI_SUPERADMIN') or platform_role='QORI_SUPERADMIN') for share`, [id]);
+    where id=$1 and is_active and (role in ('QORI_SELLER','QORI_SUPERADMIN') or platform_role in ('QORI_SUPERADMIN','QORI_SELLER')) for share`, [id]);
   if (!result.rowCount) throw badRequest("El asesor ya no está disponible. Solicita otro enlace o elige Llegué por mi cuenta.");
   return { id: result.rows[0].id, name: result.rows[0].full_name };
 }

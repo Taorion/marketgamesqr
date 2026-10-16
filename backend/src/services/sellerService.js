@@ -305,6 +305,8 @@ async function updateSeller(businessId, sellerId, actor, body) {
   assertSellerAdmin(actor);
   return withTransaction(async (client) => {
     await client.query("select pg_advisory_xact_lock(hashtext($1))", [`seller-update:${businessId}:${sellerId}`]);
+    const account = (await client.query("select platform_role from app_users where id=$1 and business_id=$2 for update", [sellerId,businessId])).rows[0];
+    if (account?.platform_role) throw forbidden("Esta cuenta tiene acceso al admin de Qori. Su acceso y credenciales se administran allí.");
     const seller = await sellerForBusiness(client, businessId, sellerId);
     if (!seller) throw notFound("Vendedor no encontrado.");
     if (body.branch_id) {

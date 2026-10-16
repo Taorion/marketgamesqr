@@ -13,7 +13,7 @@ function businessSellerSelfServiceAllowed(req) {
   return false;
 }
 
-async function authenticatedUserFromToken(token) {
+async function authenticatedUserFromToken(token, { allowCommercialAccess = false } = {}) {
   if (!token) throw unauthorized("Missing access token.");
   const payload = jwt.verify(token, env.jwtSecret);
   if (env.enforceSessionVersion && payload.session_version !== env.appSessionVersion) {
@@ -37,7 +37,7 @@ async function authenticatedUserFromToken(token) {
   if (Number(payload.password_version || 0) !== Number(user.password_version || 0)) {
     throw unauthorized("Tu contraseña cambió. Inicia sesión de nuevo en este dispositivo.");
   }
-  if (!["ADMIN", "ADMIN_MARKET_GAMES", "QORI_SUPERADMIN"].includes(user.role) && user.platform_role !== "QORI_SUPERADMIN" && user.business_id && !user.business_is_active) {
+  if (!["ADMIN", "ADMIN_MARKET_GAMES", "QORI_SUPERADMIN"].includes(user.role) && user.platform_role !== "QORI_SUPERADMIN" && !(allowCommercialAccess && user.platform_role === "QORI_SELLER") && user.business_id && !user.business_is_active) {
     throw forbidden("El negocio asignado a este usuario no esta activo.");
   }
 
@@ -61,17 +61,18 @@ async function authRequired(req, _res, next) {
     const header = req.headers.authorization || "";
     const [scheme, token] = header.split(" ");
     if (scheme !== "Bearer" || !token) throw unauthorized("Missing bearer token.");
-    const user = await authenticatedUserFromToken(token);
+    const requestPath = String(req.originalUrl || req.url || "").split("?")[0];
+    const adminRequest = requestPath.startsWith("/api/admin/");
+    const selfService = (req.method === "GET" && requestPath === "/api/auth/me") || (req.method === "POST" && requestPath === "/api/auth/password/change");
+    const user = await authenticatedUserFromToken(token, { allowCommercialAccess: adminRequest || selfService });
     req.user = user;
-    if (user.platform_role === "QORI_SUPERADMIN" && String(req.originalUrl || "").startsWith("/api/admin/")) {
-      req.user = { ...user, role: "QORI_SUPERADMIN", business_role: user.role };
+    if (["QORI_SUPERADMIN", "QORI_SELLER"].includes(user.platform_role) && adminRequest) {
+      req.user = { ...user, role: user.platform_role, business_role: user.role };
     }
-    if (user.role === "QORI_SELLER") {
-      const requestPath = String(req.originalUrl || req.url || "").split("?")[0];
-      const selfService = (req.method === "GET" && requestPath === "/api/auth/me") || (req.method === "POST" && requestPath === "/api/auth/password/change");
+    if (req.user.role === "QORI_SELLER") {
       if (!requestPath.startsWith("/api/admin/commercial/") && !selfService) throw forbidden("Tu cuenta comercial solo puede gestionar su cartera en Admin Qori.");
     }
-    if (user.role === "BUSINESS_SELLER" && !businessSellerSelfServiceAllowed(req)) {
+    if (req.user.role === "BUSINESS_SELLER" && !businessSellerSelfServiceAllowed(req)) {
       throw forbidden("Tu cuenta de vendedor solo puede acceder a Mi desempeno y a tu perfil personal.");
     }
     next();

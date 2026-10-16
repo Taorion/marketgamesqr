@@ -50,7 +50,7 @@ function publicUser(row = {}) {
 async function buildAuthUser(row = {}) {
   const user = publicUser(row);
   if (user.business_id) {
-    if (user.platform_role === "QORI_SUPERADMIN") {
+    if (["QORI_SUPERADMIN", "QORI_SELLER"].includes(user.platform_role)) {
       try { user.subscription = await getBusinessSubscription(user.business_id); } catch (error) { if (error.status !== 404) throw error; }
       return user;
     }
