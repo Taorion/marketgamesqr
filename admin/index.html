@@ -3,31 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Sales Machine</title>
+  <title>Qori | Administración</title>
+  <meta name="theme-color" content="#012268">
   <link rel="icon" type="image/png" href="/img/qori-favicon.png?v=qori-favicon-20260810-v1">
   <link rel="shortcut icon" type="image/png" href="/img/qori-favicon.png?v=qori-favicon-20260810-v1">
   <link rel="apple-touch-icon" href="/img/qori-favicon.png?v=qori-favicon-20260810-v1">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=qori-admin-20261016">
+  <link rel="stylesheet" href="css/qori-brand.css?v=qori-admin-20261016">
 </head>
 <body>
   <main class="admin-shell">
     <section class="panel login-panel" id="loginPanel">
-      <p class="eyebrow">Sales Machine</p>
-      <h1>Admin interno</h1>
+      <div class="login-story">
+        <a class="brand-lockup" href="/" aria-label="Qori, inicio"><img src="/img/qori-logo-vf.png" alt="Qori · Tu fábrica de ingresos" width="360" height="203"></a>
+        <div class="login-story-copy">
+          <p class="eyebrow">Equipo Qori</p>
+          <h2>Detrás de cada negocio,<br><span>una operación conectada.</span></h2>
+          <p>El espacio de nuestro equipo para acompañar a los clientes y hacer que las cosas pasen.</p>
+        </div>
+        <div class="login-story-footer"><span>Clientes</span><span>Operación</span><span>Resultados</span></div>
+      </div>
+      <div class="login-content">
+      <p class="eyebrow">Administración</p>
+      <h1>Bienvenido al equipo</h1>
+      <p class="login-intro">Ingresa con tu cuenta interna para gestionar la operación de Qori.</p>
       <form id="loginForm" class="grid-form">
-        <label><span>Email</span><input id="emailInput" type="email" autocomplete="email" required></label>
-        <label><span>Password</span><input id="passwordInput" type="password" autocomplete="current-password" required></label>
-        <button class="primary-button" type="submit">Entrar</button>
+        <label><span>Correo electrónico</span><input id="emailInput" type="email" autocomplete="email" placeholder="tu@correo.com" required></label>
+        <label><span>Contraseña</span><input id="passwordInput" type="password" autocomplete="current-password" placeholder="Tu contraseña" required></label>
+        <button class="primary-button" type="submit">Ingresar al admin <span aria-hidden="true">→</span></button>
       </form>
-      <p class="message" id="loginMessage"></p>
+      <p class="message" id="loginMessage" role="status" aria-live="polite"></p>
+      <p class="login-note">Acceso exclusivo para el equipo autorizado de Qori.</p>
+      <a class="login-back" href="/">← Volver a Qori</a>
+      </div>
     </section>
 
     <section class="workspace hidden" id="workspace">
       <header class="topbar">
-        <div>
-          <p class="eyebrow">Admin estrategico</p>
-          <h1>Operaciones Sales Machine</h1>
-          <p>Clientes, convenios, tickets, campanas y entregables en un solo panel interno.</p>
+        <div class="topbar-identity">
+          <a class="brand-lockup" href="/" aria-label="Qori, inicio"><img src="/img/qori-logo-vf.png" alt="Qori · Tu fábrica de ingresos" width="180" height="101"></a>
+          <div class="topbar-copy">
+          <p class="eyebrow">Administración interna</p>
+          <h1>Operaciones Qori</h1>
+          <p>Clientes, convenios y campañas. Toda la operación, conectada.</p>
+          </div>
         </div>
         <div class="toolbar">
           <a class="secondary-button link-button" href="/empresa/" target="_blank" rel="noopener">Portal empresa</a>
@@ -41,10 +60,10 @@
         <a href="#convenios">Convenios</a>
         <a href="#solicitudes">Solicitudes</a>
         <a href="#clientes">Clientes</a>
-        <a href="#operacion">Operacion</a>
+        <a href="#operacion">Operación</a>
         <a href="#reportes">Reportes</a>
         <a href="#entrega">Entrega</a>
-        <a href="#campanas-globales">Campanas</a>
+        <a href="#campanas-globales">Campañas</a>
       </nav>
 
       <section class="kpi-grid admin-stats" id="adminStatsGrid"></section>
@@ -52,17 +71,17 @@
       <section class="access-grid" aria-label="Accesos operativos">
         <a class="access-card" href="/admin/" target="_blank" rel="noopener">
           <span>Admin interno</span>
-          <strong>/admin/</strong>
-          <small>Equipo Sales Machine</small>
+          <strong>Equipo Qori <span aria-hidden="true">↗</span></strong>
+          <small>Gestión y acompañamiento</small>
         </a>
         <a class="access-card" href="/empresa/" target="_blank" rel="noopener">
           <span>Portal cliente</span>
-          <strong>/empresa/</strong>
-          <small>Owners, managers y validadores</small>
+          <strong>Portal de empresas <span aria-hidden="true">↗</span></strong>
+          <small>Administradores, gestores y validadores</small>
         </a>
         <a class="access-card" href="/paquetes/" target="_blank" rel="noopener">
-          <span>Venta publica</span>
-          <strong>/paquetes/</strong>
+          <span>Venta pública</span>
+          <strong>Planes y paquetes <span aria-hidden="true">↗</span></strong>
           <small>Solicitudes y pagos</small>
         </a>
       </section>
@@ -70,7 +89,7 @@
       <section class="panel agreement-panel" id="convenios">
         <div class="panel-head">
           <div>
-            <p class="eyebrow">Convenios Sales Machine</p>
+            <p class="eyebrow">Convenios Qori</p>
             <h2>Inscribir cliente con condiciones especiales</h2>
           </div>
         </div>
@@ -496,6 +515,7 @@
           </table>
         </div>
       </section>
+      <footer class="workspace-footer"><strong>Qori</strong><span>Tu fábrica de ingresos · Administración interna</span></footer>
     </section>
   </main>
   <script src="js/app.js?v=admin-ops-20260707"></script>
