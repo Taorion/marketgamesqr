@@ -12,6 +12,10 @@ const { SUPERADMIN, SELLER, PLAN_CODES, termsSchema, policySchema, requireSupera
 const uuid = z.string().uuid();
 const reasonSchema = z.string().trim().min(5).max(2000);
 const personSchema = z.object({ full_name: z.string().trim().min(2).max(160), email: z.string().trim().email().max(180), phone: z.string().trim().max(60).default("") }).strict();
+const sellerCreationSchema = personSchema.extend({
+  password: z.string().min(10, "La contraseña debe tener al menos 10 caracteres.").max(120).refine(value => Buffer.byteLength(value, "utf8") <= 72, "La contraseña es demasiado larga.").optional(),
+  password_confirm: z.string().max(120).optional(),
+}).refine(body => body.password === body.password_confirm, { message: "La confirmación de contraseña no coincide.", path: ["password_confirm"] });
 const prospectSchema = z.object({ business_name: z.string().trim().min(2).max(160), contact_name: z.string().trim().min(2).max(160), email: z.string().trim().email().max(180), phone: z.string().trim().max(60).default(""), notes: z.string().trim().max(4000).default(""), stage: z.enum(["NEW", "CONTACTED", "NEGOTIATING", "LOST"]).default("NEW"), next_contact_at: z.string().datetime().nullable().default(null), seller_id: uuid.optional() }).strict();
 const dealSchema = z.object({ prospect_id: uuid.nullable().default(null), business_id: uuid.nullable().default(null), policy_id: uuid.nullable().default(null), terms: termsSchema, reason: reasonSchema }).strict().refine(v => Boolean(v.prospect_id) !== Boolean(v.business_id), "Selecciona un prospecto o un cliente existente.");
 const dateAfterDays = (date, days) => new Date(date.getTime() + days * 86400000).toISOString();
@@ -45,8 +49,8 @@ async function bootstrap(user) {
 }
 async function createSeller(user, payload) {
   requireSuperadmin(user);
-  const body = validate(personSchema, payload);
-  const password = generatedPassword();
+  const body = validate(sellerCreationSchema, payload);
+  const password = body.password ?? generatedPassword();
   const hash = await bcrypt.hash(password, 12);
   const seller = await withTransaction(async client => {
     const existing = await client.query("select id from app_users where lower(email)=lower($1)", [body.email]);

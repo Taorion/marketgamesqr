@@ -4,7 +4,7 @@ Acceso: `/admin/`. El superadmin puede conservar su rol y negocio anteriores: el
 
 ## Operación
 
-1. **Equipo:** crear vendedores y entregarles las credenciales mostradas una sola vez. Desactivar o archivar impide el acceso y conserva su historial. El vendedor puede cambiar su contraseña desde el admin.
+1. **Equipo:** crear vendedores definiendo su nombre, correo de acceso, contraseña inicial (mínimo 10 caracteres) y confirmación. Entregarles las credenciales mostradas una sola vez. Desactivar o archivar impide el acceso y conserva su historial. El vendedor puede cambiar su contraseña desde el admin.
 2. **Beneficios autorizados:** definir planes, porcentaje y duración del descuento, días de prueba, tickets, módulos y cupos adicionales. Cada autorización tiene vencimiento y puede asignarse a un vendedor o a todo el equipo. No hay descuentos preautorizados por defecto.
 3. **Prospectos:** registrar contacto, etapa, notas y próxima gestión. Crear una oferta, usando una autorización para cargar sus condiciones. El vendedor puede reducirlas o solicitar una excepción.
 4. **Ofertas y excepciones:** las ofertas de nuevos clientes que respetan una autorización vigente se aprueban automáticamente. Las excepciones y cambios de clientes existentes requieren aprobación individual del superadmin. Aplicar una oferta crea el negocio y su propietario, o actualiza el cliente existente. Las credenciales nuevas se muestran una sola vez.

@@ -29,7 +29,19 @@ test("commercial admin: real PostgreSQL, API authorization, onboarding and revoc
   const terms={plan_code:"STARTER",discount_percent:10,discount_months:3,trial_days:7,bonus_tickets:50,modules:["products"],benefit_days:30,limit_overrides:{users:4}};
   const newProspect=(suffix)=>({business_name:`QA negocio ${suffix}`,contact_name:"QA Contacto",email:`${prefix}-${suffix}@example.test`,phone:"",notes:"",stage:"NEW",next_contact_at:null});
   await t.test("superadmin creates sellers; sales accounts cannot use legacy admin or grant privileges",async()=>{
-    seller1=await call(c+"/sellers",root,{full_name:"QA Vendedor Uno",email:`${prefix}-s1@example.test`,phone:""});
+    const chosenPassword="Seller-QA-Chosen!2026";
+    const sellerBody={full_name:"QA Vendedor Uno",email:`${prefix}-s1@example.test`,phone:"",password:chosenPassword,password_confirm:chosenPassword};
+    await call(c+"/sellers",root,{...sellerBody,password_confirm:"Does-not-match"},"POST",400);
+    await call(c+"/sellers",root,{...sellerBody,password:"short",password_confirm:"short"},"POST",400);
+    await call(c+"/sellers",root,{...sellerBody,password_confirm:undefined},"POST",400);
+    await call(c+"/sellers",root,{...sellerBody,role:"QORI_SUPERADMIN"},"POST",400);
+    assert.equal((await pool.query("select id from app_users where email=$1",[sellerBody.email])).rowCount,0);
+    seller1=await call(c+"/sellers",root,sellerBody);
+    assert.equal(seller1.credentials.password,chosenPassword);
+    assert.equal(seller1.seller.role,"QORI_SELLER");
+    const stored=(await pool.query("select password_hash from app_users where id=$1",[seller1.seller.id])).rows[0];
+    assert.notEqual(stored.password_hash,chosenPassword);assert.equal(await bcrypt.compare(chosenPassword,stored.password_hash),true);
+    await call(c+"/sellers",root,sellerBody,"POST",400);
     seller2=await call(c+"/sellers",root,{full_name:"QA Vendedor Dos",email:`${prefix}-s2@example.test`,phone:""});
     token1=(await call("/api/auth/login",null,seller1.credentials)).token;
     token2=(await call("/api/auth/login",null,seller2.credentials)).token;
