@@ -81,6 +81,7 @@ const state = {
 const INTERNAL_UNIT_PRICE_COP = 1000;
 
 let session = loadSession();
+let businessGeneration=0, campaignGeneration=0, campaignListGeneration=0;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -111,6 +112,12 @@ function loadSession() {
 
 function clearSession(message = "") {
   session = null;
+  ++businessGeneration;++campaignGeneration;++campaignListGeneration;
+  for(const key of Object.keys(state))state[key]=Array.isArray(state[key])?[]:typeof state[key]==="string"?"":null;
+  document.querySelectorAll('input[type="password"]').forEach(input=>input.value="");
+  workspace.querySelectorAll("tbody").forEach(table=>table.innerHTML="");
+  [summaryGrid,adminStatsGrid,creditStrip,creditDashboard,campaignReportGrid,selectedClientStats].forEach(el=>el.innerHTML="");
+  document.body.classList.remove("legacy-visible");
   localStorage.removeItem(SESSION_KEY);
   if (message) {
     localStorage.setItem(APP_UPDATE_NOTICE_KEY, message);
@@ -158,7 +165,7 @@ function dateInputValue(value) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toISOString().slice(0, 10);
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
 }
 
 function statusLabel(status) {
@@ -175,6 +182,7 @@ function statusLabel(status) {
 }
 
 async function api(path, options = {}) {
+  const requestSession=session;
   const response = await fetch(path, {
     ...options,
     headers: {
@@ -184,6 +192,7 @@ async function api(path, options = {}) {
     },
   });
   const data = await response.json().catch(() => ({}));
+  if(requestSession!==session)throw new Error("La sesión cambió; se descartó la respuesta anterior.");
   if (!response.ok) {
     if (response.status === 401) {
       clearSession(data.error?.message || "Tu sesion expiro o el panel fue actualizado. Inicia sesion de nuevo.");
@@ -196,6 +205,11 @@ async function api(path, options = {}) {
 
 function renderShell() {
   const logged = Boolean(session?.token);
+  const cachedRole=session?.user?.platform_role || session?.user?.role;
+  if(logged){
+    document.body.classList.toggle("commercial-mode",["QORI_SUPERADMIN","QORI_SELLER"].includes(cachedRole));
+    if(cachedRole!=="QORI_SUPERADMIN")document.body.classList.remove("legacy-visible");
+  }
   loginPanel.classList.toggle("hidden", logged);
   workspace.classList.toggle("hidden", !logged);
   if (!logged) {
@@ -206,7 +220,9 @@ function renderShell() {
     const notice = consumeAppUpdateNotice();
     if (notice) loginMessage.textContent = notice;
   }
+  const renderingSession=session;
   if (logged) loadWorkspace().catch(error => {
+    if(session!==renderingSession)return;
     if (document.getElementById("commercialWorkspace")) document.getElementById("commercialWorkspace").textContent = error.message;
     loginMessage.textContent = error.message;
   });
@@ -409,13 +425,13 @@ async function updateUserAccess(event) {
 
 async function updateSubscription(event) {
   event.preventDefault();
-  if (!state.selectedBusinessId) {
+  if (!state.selectedBusinessId || !state.selectedBusinessSummary) {
     subscriptionMessage.textContent = "Selecciona un cliente.";
     return;
   }
   subscriptionMessage.textContent = "Guardando plan...";
   try {
-    const endsAt = subscriptionEndsAt.value ? new Date(`${subscriptionEndsAt.value}T23:59:59.000Z`).toISOString() : null;
+    const endsAt = subscriptionEndsAt.value ? new Date(`${subscriptionEndsAt.value}T23:59:59.999`).toISOString() : null;
     await api(`/api/admin/businesses/${state.selectedBusinessId}/subscription`, {
       method: "PATCH",
       body: JSON.stringify({
@@ -436,7 +452,9 @@ async function updateSubscription(event) {
 }
 
 async function loadWorkspace() {
+  const currentSession=session;
   const identity = await api("/api/auth/me");
+  if(!session||session!==currentSession)return;
   session.user = identity.user;
   const commercial = ["QORI_SUPERADMIN", "QORI_SELLER"].includes(identity.user?.platform_role || identity.user?.role);
   document.body.classList.toggle("commercial-mode", commercial);
@@ -607,6 +625,7 @@ function renderUsers() {
 }
 
 function renderUserAccessOptions(users = state.users) {
+  users=users.filter(user=>!user.platform_role&&!user.role.startsWith("QORI_"));
   const currentValue = userAccessId.value;
   userAccessId.innerHTML = users.map((user) => `
     <option value="${escapeHtml(user.id)}">${escapeHtml(user.full_name)} - ${escapeHtml(user.email)}</option>
@@ -748,6 +767,7 @@ function syncAgreementFields() {
 }
 
 async function loadCampaigns() {
+  const generation=++campaignListGeneration,businessId=state.selectedBusinessId;
   const path = state.selectedBusinessId
     ? `/api/admin/campaigns?business_id=${encodeURIComponent(state.selectedBusinessId)}`
     : "/api/admin/campaigns";
@@ -755,6 +775,7 @@ async function loadCampaigns() {
     api(path),
     api("/api/admin/campaigns"),
   ]);
+  if(generation!==campaignListGeneration||businessId!==state.selectedBusinessId)return;
   state.campaigns = allData.campaigns || [];
   renderGlobalCampaigns();
   renderBusinessCampaigns(filteredData.campaigns || []);
@@ -796,10 +817,17 @@ function renderBusinessCampaigns(campaigns) {
 }
 
 async function loadBusinessSummary(businessId) {
+  const generation=++businessGeneration;
+  state.selectedBusinessSummary=null;state.selectedCredits=null;
+  subscriptionForm.querySelectorAll("input,select,button").forEach(el=>el.disabled=true);
+  renderBusinessSummary();
+  if(!businessId)return;
   const [data, credits] = await Promise.all([
     api(`/api/admin/businesses/${businessId}/summary`),
     api(`/api/admin/businesses/${businessId}/credits`),
   ]);
+  if(generation!==businessGeneration||businessId!==state.selectedBusinessId)return;
+  subscriptionForm.querySelectorAll("input,select,button").forEach(el=>el.disabled=false);
   state.selectedBusinessSummary = data;
   state.selectedCredits = credits;
   renderBusinessSummary();
@@ -950,10 +978,13 @@ async function addCredits(event) {
 }
 
 async function selectCampaign(campaignId) {
+  const generation=++campaignGeneration;
+  state.selectedCampaignReport=null;
   state.selectedCampaignId = campaignId;
   selectedCampaignLabel.textContent = "Cargando campana...";
   deliveryMessage.textContent = "";
   const report = await api(`/api/admin/campaigns/${campaignId}/report`);
+  if(generation!==campaignGeneration||campaignId!==state.selectedCampaignId)return;
   state.selectedCampaignReport = report;
   state.selectedBusinessId = report.business?.id || state.selectedBusinessId;
   businessFilter.value = state.selectedBusinessId;
@@ -1036,7 +1067,7 @@ function renderCampaignReport(report) {
 
 async function saveDelivery(event) {
   event.preventDefault();
-  if (!state.selectedCampaignId) {
+  if (!state.selectedCampaignId || !state.selectedCampaignReport) {
     deliveryMessage.textContent = "Selecciona una campana primero.";
     return;
   }
@@ -1077,7 +1108,7 @@ async function saveDelivery(event) {
 }
 
 async function markReady() {
-  if (!state.selectedCampaignId) {
+  if (!state.selectedCampaignId || !state.selectedCampaignReport) {
     deliveryMessage.textContent = "Selecciona una campana primero.";
     return;
   }
@@ -1098,16 +1129,17 @@ async function markReady() {
   }
 }
 
-loginForm.addEventListener("submit", login);
-agreementClientForm.addEventListener("submit", createAgreementClient);
-businessForm.addEventListener("submit", createBusiness);
-campaignForm.addEventListener("submit", createCampaign);
-deliveryForm.addEventListener("submit", saveDelivery);
-creditForm.addEventListener("submit", addCredits);
-userForm.addEventListener("submit", createUser);
-userAccessForm.addEventListener("submit", updateUserAccess);
-subscriptionForm.addEventListener("submit", updateSubscription);
-refreshButton.addEventListener("click", loadWorkspace);
+function bindAsyncForm(form,handler){
+  form.addEventListener("submit",async event=>{
+    event.preventDefault();if(form.dataset.saving==="true")return;
+    form.dataset.saving="true";form.setAttribute("aria-busy","true");
+    const buttons=[...form.querySelectorAll('button[type="submit"]')].map(button=>({button,disabled:button.disabled}));
+    buttons.forEach(({button})=>button.disabled=true);
+    try{await handler(event);}finally{delete form.dataset.saving;form.removeAttribute("aria-busy");buttons.forEach(({button,disabled})=>button.disabled=disabled);}
+  });
+}
+[[loginForm,login],[agreementClientForm,createAgreementClient],[businessForm,createBusiness],[campaignForm,createCampaign],[deliveryForm,saveDelivery],[creditForm,addCredits],[userForm,createUser],[userAccessForm,updateUserAccess],[subscriptionForm,updateSubscription]].forEach(([form,handler])=>bindAsyncForm(form,handler));
+refreshButton.addEventListener("click",async()=>{refreshButton.disabled=true;try{await loadWorkspace();}catch(error){loginMessage.textContent=error.message;const notice=document.getElementById("commercialNotice");if(notice)notice.textContent=error.message;}finally{refreshButton.disabled=false;}});
 businessFilter.addEventListener("change", async (event) => {
   state.selectedBusinessId = event.target.value;
   campaignBusinessId.value = event.target.value;

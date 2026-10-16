@@ -185,9 +185,18 @@ async function list(user, kind, params = {}) {
   const {offset,search,status} = paging(params);
   const superadmin = kind==='audit' ? hasPermission(user,'audit.view') : hasPermission(user,'portfolio.all');
   let sql;
-  if (kind === "prospects") sql = `select p.*,u.full_name as seller_name from qori_sales_prospects p join app_users u on u.id=p.seller_id where ($1 or p.seller_id=$2) and (p.business_name ilike $3 or p.email ilike $3) and ($4='' or p.stage=$4) order by p.created_at desc,p.id limit 51 offset $5`;
-  else if (kind === "deals") sql = `select d.*,coalesce(p.business_name,b.name) as customer_name,u.full_name as seller_name from qori_commercial_deals d left join qori_sales_prospects p on p.id=d.prospect_id left join businesses b on b.id=d.business_id join app_users u on u.id=d.seller_id where ($1 or d.seller_id=$2) and coalesce(p.business_name,b.name,'') ilike $3 and ($4='' or d.status=$4) order by d.created_at desc,d.id limit 51 offset $5`;
-  else if (kind === "customers") sql = `select b.id,b.name,b.slug,b.is_active,b.plan_code,b.plan_type,b.subscription_status,b.subscription_current_period_ends_at,b.settings,a.seller_id,u.full_name as seller_name from businesses b left join qori_sales_accounts a on a.business_id=b.id left join app_users u on u.id=a.seller_id where ($1 or a.seller_id=$2) and (b.name ilike $3 or b.slug ilike $3) and ($4='' or b.subscription_status=$4) order by b.created_at desc,b.id limit 51 offset $5`;
+  if (kind === "prospects") sql = `select p.*,u.full_name as seller_name from qori_sales_prospects p join app_users u on u.id=p.seller_id where ($1 or p.seller_id=$2) and (p.business_name ilike $3 or p.email ilike $3 or p.contact_name ilike $3 or p.phone ilike $3) and ($4='' or p.stage=$4) order by p.created_at desc,p.id limit 51 offset $5`;
+  else if (kind === "deals") sql = `select d.*,coalesce(p.business_name,b.name) as customer_name,u.full_name as seller_name from qori_commercial_deals d left join qori_sales_prospects p on p.id=d.prospect_id left join businesses b on b.id=d.business_id join app_users u on u.id=d.seller_id where ($1 or d.seller_id=$2) and (coalesce(p.business_name,b.name,'') ilike $3 or p.email ilike $3 or b.settings->>'contact_email' ilike $3) and ($4='' or d.status=$4) order by d.created_at desc,d.id limit 51 offset $5`;
+  else if (kind === "customers") sql = `select b.id,b.name,b.slug,b.is_active,b.plan_code,b.plan_type,b.portal_status,b.subscription_status,b.subscription_current_period_ends_at,b.settings,a.seller_id,u.full_name as seller_name
+    from businesses b left join qori_sales_accounts a on a.business_id=b.id left join app_users u on u.id=a.seller_id
+    where ($1 or a.seller_id=$2)
+      and (b.name ilike $3 or b.slug ilike $3 or b.settings->>'contact_email' ilike $3 or b.settings->>'nit' ilike $3 or b.settings->>'phone' ilike $3)
+      and ($4='' or
+        ($4='SUSPENDED' and (not b.is_active or b.subscription_status='SUSPENDED')) or
+        ($4='DESCUBRE_ACTIVE' and b.is_active and b.plan_code='DESCUBRE' and b.subscription_status='ACTIVE' and b.subscription_current_period_ends_at>now()) or
+        ($4='DESCUBRE_EXPIRED' and b.plan_code='DESCUBRE' and (b.subscription_current_period_ends_at<=now() or b.subscription_current_period_ends_at is null)) or
+        ($4 not in ('SUSPENDED','DESCUBRE_ACTIVE','DESCUBRE_EXPIRED') and b.is_active and b.subscription_status=$4))
+    order by b.created_at desc,b.id limit 51 offset $5`;
   else if (kind === "audit") { requirePermission(user,"audit.view"); sql = `select a.*,u.full_name as actor_name from qori_commercial_audit a left join app_users u on u.id=a.actor_id where ($1 or a.actor_id=$2) and (a.action ilike $3 or u.full_name ilike $3) and ($4='' or a.entity_type=$4) order by a.created_at desc,a.id limit 51 offset $5`; }
   else throw notFound();
   const result = await query(sql,[superadmin,user.id,search,status,offset]);

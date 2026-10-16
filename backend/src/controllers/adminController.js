@@ -464,72 +464,77 @@ async function patchUser(req, res, next) {
   try {
     requireMarketAdmin(req.user);
     const body = validate(patchAdminUserSchema, req.body);
-    const existing = await query("select * from app_users where id = $1", [req.params.id]);
-    if (!existing.rowCount) {
-      throw notFound("User not found.");
-    }
-
-    const current = existing.rows[0];
-    if (current.platform_role || ["QORI_SUPERADMIN", "QORI_SELLER"].includes(current.role)) {
-      throw forbidden("Gestiona las cuentas comerciales desde Equipo de ventas. La cuenta superadmin no se modifica desde este formulario.");
-    }
-    const hasLaunchChannels = body.launch_channels !== undefined || body.launch_channel_refs !== undefined;
-    const launchChannelRefs = hasLaunchChannels
-      ? await withTransaction((client) => resolveAdminCampaignChannelRefs(client, current.business_id, body.launch_channel_refs, body.launch_channels || []))
-      : null;
-    const nextRole = body.role || current.role;
-    const nextBusinessId = nextRole === "ADMIN_MARKET_GAMES" ? null : (body.business_id === undefined ? current.business_id : body.business_id);
-    const nextActive = body.is_active === undefined ? current.is_active : body.is_active;
-
-    if (nextRole === "ADMIN_MARKET_GAMES" && nextBusinessId) {
-      throw badRequest("Un empleado interno no debe quedar amarrado a un cliente.");
-    }
-    if (["BUSINESS_OWNER", "BUSINESS_MANAGER", "VALIDATOR"].includes(nextRole) && !nextBusinessId) {
-      throw badRequest("Selecciona un cliente para usuarios owner, manager o validador.");
-    }
-
-    if (["ADMIN", "ADMIN_MARKET_GAMES"].includes(current.role) && (nextRole !== current.role || nextActive === false)) {
-      const adminCount = await query(
-        `select count(*)::int as total
-         from app_users
-         where role in ('ADMIN', 'ADMIN_MARKET_GAMES')
-           and is_active = true
-           and id <> $1`,
-        [current.id]
-      );
-      if (!Number(adminCount.rows[0]?.total || 0)) {
-        throw badRequest("No puedes desactivar o degradar la ultima cuenta admin activa.");
+    const result = await withTransaction(async client => {
+      // Serialize legacy admin removals before locking an individual account.
+      await client.query("select pg_advisory_xact_lock(hashtext('qori-legacy-admin-access'))");
+      const existing = await client.query("select * from app_users where id = $1 for update", [req.params.id]);
+      if (!existing.rowCount) {
+        throw notFound("User not found.");
       }
-    }
 
-    let passwordHash = current.password_hash;
-    if (body.password) {
-      passwordHash = await bcrypt.hash(body.password, 12);
-    }
+      const current = existing.rows[0];
+      if (current.platform_role || ["QORI_SUPERADMIN", "QORI_SELLER"].includes(current.role)) {
+        throw forbidden("Gestiona las cuentas comerciales desde Equipo de ventas. La cuenta superadmin no se modifica desde este formulario.");
+      }
+      const nextRole = body.role || current.role;
+      const nextBusinessId = nextRole === "ADMIN_MARKET_GAMES" ? null : (body.business_id === undefined ? current.business_id : body.business_id);
+      const nextActive = body.is_active === undefined ? current.is_active : body.is_active;
 
-    const result = await query(
-      `update app_users
-       set business_id = $2,
-           password_hash = $3,
-           full_name = $4,
-           role = $5,
-           can_redeem_cross_business = $6,
-           is_active = $7,
-           updated_at = now()
-       where id = $1 and platform_role is null and role not in ('QORI_SUPERADMIN','QORI_SELLER')
-       returning id, business_id, email, full_name, role, can_redeem_cross_business, is_active, created_at, updated_at`,
-      [
-        current.id,
-        nextBusinessId,
-        passwordHash,
-        body.full_name || current.full_name,
-        nextRole,
-        nextRole === "VALIDATOR" ? (body.can_redeem_cross_business === undefined ? current.can_redeem_cross_business : body.can_redeem_cross_business) : false,
-        nextActive,
-      ]
-    );
-    if (!result.rowCount) throw forbidden("El acceso comercial de esta cuenta se administra desde Equipo de ventas.");
-    res.json({ user: result.rows[0] });
+      if (nextRole === "ADMIN_MARKET_GAMES" && nextBusinessId) {
+        throw badRequest("Un empleado interno no debe quedar amarrado a un cliente.");
+      }
+      if (["BUSINESS_OWNER", "BUSINESS_MANAGER", "VALIDATOR"].includes(nextRole) && !nextBusinessId) {
+        throw badRequest("Selecciona un cliente para usuarios owner, manager o validador.");
+      }
+
+      if (["ADMIN", "ADMIN_MARKET_GAMES"].includes(current.role) && (nextRole !== current.role || nextActive === false)) {
+        const adminCount = await client.query(
+          `select count(*)::int as total
+           from app_users
+           where role in ('ADMIN', 'ADMIN_MARKET_GAMES')
+             and is_active = true
+             and id <> $1`,
+          [current.id]
+        );
+        if (!Number(adminCount.rows[0]?.total || 0)) {
+          throw badRequest("No puedes desactivar o degradar la ultima cuenta admin activa.");
+        }
+      }
+
+      let passwordHash = current.password_hash;
+      if (body.password) {
+        passwordHash = await bcrypt.hash(body.password, 12);
+      }
+
+      const changedAccess = Boolean(body.password) || nextRole !== current.role || nextBusinessId !== current.business_id || nextActive !== current.is_active || (body.can_redeem_cross_business !== undefined && body.can_redeem_cross_business !== current.can_redeem_cross_business);
+      const result = await client.query(
+        `update app_users
+         set business_id = $2,
+             password_hash = $3,
+             full_name = $4,
+             role = $5,
+             can_redeem_cross_business = $6,
+             is_active = $7,
+             password_version = coalesce(password_version, 0) + case when $8 then 1 else 0 end,
+             updated_at = now()
+         where id = $1 and platform_role is null and role not in ('QORI_SUPERADMIN','QORI_SELLER')
+         returning id, business_id, email, full_name, role, can_redeem_cross_business, is_active, created_at, updated_at`,
+        [
+          current.id,
+          nextBusinessId,
+          passwordHash,
+          body.full_name || current.full_name,
+          nextRole,
+          nextRole === "VALIDATOR" ? (body.can_redeem_cross_business === undefined ? current.can_redeem_cross_business : body.can_redeem_cross_business) : false,
+          nextActive,
+          changedAccess,
+        ]
+      );
+      if (!result.rowCount) throw forbidden("El acceso comercial de esta cuenta se administra desde Equipo de ventas.");
+      if (changedAccess) await client.query("update password_reset_tokens set used_at=now() where user_id=$1 and used_at is null", [current.id]);
+      return result.rows[0];
+    });
+    res.json({ user: result });
   } catch (error) {
     next(error);
   }
@@ -539,7 +544,7 @@ async function listUsers(req, res, next) {
   try {
     requireMarketAdmin(req.user);
     const result = await query(
-      `select u.id, u.business_id, b.name as business_name, u.email, u.full_name, u.role,
+      `select u.id, u.business_id, b.name as business_name, u.email, u.full_name, u.role, u.platform_role,
               u.can_redeem_cross_business, u.is_active, u.created_at
        from app_users u
        left join businesses b on b.id = u.business_id

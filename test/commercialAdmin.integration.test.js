@@ -60,6 +60,9 @@ test("commercial admin: real PostgreSQL, API authorization, onboarding and revoc
     policy=(await call(c+"/policies",root,policyBody)).policy;
     deal=(await call(c+"/deals",token1,{prospect_id:prospect.id,policy_id:policy.id,terms,reason:"QA propuesta autorizada"})).deal;
     assert.equal(deal.status,"APPROVED");
+    const searchByEmail=c+"/deals?search="+encodeURIComponent(prospect.email);
+    assert.equal((await call(searchByEmail,token1)).rows[0].id,deal.id);
+    assert.equal((await call(searchByEmail,token2)).rows.length,0);
     await call(c+`/deals/${deal.id}/decision`,token1,{decision:"APPROVED",reason:"No permitido"},"POST",403);
     await call(c+`/deals/${deal.id}/apply`,token2,{},"POST",403);
     const results=await Promise.all([call(c+`/deals/${deal.id}/apply`,token1,{}),call(c+`/deals/${deal.id}/apply`,token1,{})]);
