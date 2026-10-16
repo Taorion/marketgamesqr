@@ -1,5 +1,5 @@
 const SESSION_KEY = "market_games_admin_session_v1";
-const APP_VERSION = "admin-20260707-admin-ops-v2";
+const APP_VERSION = "admin-commercial-20261016";
 const APP_VERSION_KEY = "market_games_admin_app_version";
 const APP_UPDATE_NOTICE_KEY = "market_games_admin_update_notice";
 
@@ -199,10 +199,17 @@ function renderShell() {
   loginPanel.classList.toggle("hidden", logged);
   workspace.classList.toggle("hidden", !logged);
   if (!logged) {
+    window.QoriCommercial?.clear();
+    document.body.classList.remove("commercial-mode", "legacy-visible");
+  }
+  if (!logged) {
     const notice = consumeAppUpdateNotice();
     if (notice) loginMessage.textContent = notice;
   }
-  if (logged) loadWorkspace();
+  if (logged) loadWorkspace().catch(error => {
+    if (document.getElementById("commercialWorkspace")) document.getElementById("commercialWorkspace").textContent = error.message;
+    loginMessage.textContent = error.message;
+  });
 }
 
 function checklistReady() {
@@ -227,6 +234,7 @@ async function login(event) {
         password: document.getElementById("passwordInput").value,
       }),
     });
+    if (!["ADMIN", "ADMIN_MARKET_GAMES", "QORI_SUPERADMIN", "QORI_SELLER"].includes(data.user?.platform_role || data.user?.role)) throw new Error("Esta cuenta no tiene acceso al admin de Qori. Usa el portal de empresas.");
     session = data;
     localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
     localStorage.setItem(SESSION_KEY, JSON.stringify(data));
@@ -428,6 +436,22 @@ async function updateSubscription(event) {
 }
 
 async function loadWorkspace() {
+  const identity = await api("/api/auth/me");
+  session.user = identity.user;
+  const commercial = ["QORI_SUPERADMIN", "QORI_SELLER"].includes(identity.user?.platform_role || identity.user?.role);
+  document.body.classList.toggle("commercial-mode", commercial);
+  document.getElementById("commercialWorkspace").classList.toggle("hidden", !commercial);
+  if (commercial) {
+    await window.QoriCommercial.load({ api, user: identity.user, onPasswordChanged: () => { clearSession("Contraseña actualizada. Inicia sesión de nuevo."); renderShell(); }, loadLegacy: async () => {
+      document.body.classList.toggle("legacy-visible");
+      if (document.body.classList.contains("legacy-visible")) await loadLegacyWorkspace();
+    } });
+    return;
+  }
+  await loadLegacyWorkspace();
+}
+
+async function loadLegacyWorkspace() {
   await Promise.all([loadBusinesses(), loadUsers(), loadPackageRequests()]);
   const businessId = state.selectedBusinessId || state.businesses[0]?.id || "";
   if (businessId) {

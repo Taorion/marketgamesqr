@@ -40,6 +40,7 @@ function publicUser(row = {}) {
     email: row.email,
     full_name: row.full_name,
     role: row.role,
+    platform_role: row.platform_role || null,
     is_active: row.is_active,
     can_redeem_cross_business: row.can_redeem_cross_business,
     branch_id: row.branch_id || null,
@@ -49,6 +50,10 @@ function publicUser(row = {}) {
 async function buildAuthUser(row = {}) {
   const user = publicUser(row);
   if (user.business_id) {
+    if (user.platform_role === "QORI_SUPERADMIN") {
+      try { user.subscription = await getBusinessSubscription(user.business_id); } catch (error) { if (error.status !== 404) throw error; }
+      return user;
+    }
     user.subscription = await getBusinessSubscription(user.business_id);
   }
   return user;
@@ -76,7 +81,7 @@ async function login(req, res, next) {
   try {
     const body = validate(loginSchema, req.body);
     const result = await query(
-      `select id, business_id, email, full_name, password_hash, password_version, role, is_active, can_redeem_cross_business, branch_id
+      `select id, business_id, email, full_name, password_hash, password_version, role, platform_role, is_active, can_redeem_cross_business, branch_id
        from app_users
        where lower(email) = lower($1)`,
       [body.email]
@@ -92,7 +97,7 @@ async function login(req, res, next) {
       throw unauthorized("Invalid credentials.");
     }
 
-    if (!["ADMIN", "ADMIN_MARKET_GAMES"].includes(user.role) && !user.business_id) {
+    if (!["ADMIN", "ADMIN_MARKET_GAMES", "QORI_SUPERADMIN", "QORI_SELLER"].includes(user.role) && !user.business_id) {
       throw badRequest("User does not have a business assigned.");
     }
 

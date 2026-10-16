@@ -21,7 +21,7 @@ async function authenticatedUserFromToken(token) {
   }
 
   const result = await query(
-      `select u.id, u.business_id, u.email, u.full_name, u.role, u.is_active, u.password_version,
+      `select u.id, u.business_id, u.email, u.full_name, u.role, u.platform_role, u.is_active, u.password_version,
               u.can_redeem_cross_business, u.branch_id,
               b.is_active as business_is_active
        from app_users u
@@ -37,7 +37,7 @@ async function authenticatedUserFromToken(token) {
   if (Number(payload.password_version || 0) !== Number(user.password_version || 0)) {
     throw unauthorized("Tu contraseña cambió. Inicia sesión de nuevo en este dispositivo.");
   }
-  if (!["ADMIN", "ADMIN_MARKET_GAMES"].includes(user.role) && user.business_id && !user.business_is_active) {
+  if (!["ADMIN", "ADMIN_MARKET_GAMES", "QORI_SUPERADMIN"].includes(user.role) && user.platform_role !== "QORI_SUPERADMIN" && user.business_id && !user.business_is_active) {
     throw forbidden("El negocio asignado a este usuario no esta activo.");
   }
 
@@ -63,6 +63,14 @@ async function authRequired(req, _res, next) {
     if (scheme !== "Bearer" || !token) throw unauthorized("Missing bearer token.");
     const user = await authenticatedUserFromToken(token);
     req.user = user;
+    if (user.platform_role === "QORI_SUPERADMIN" && String(req.originalUrl || "").startsWith("/api/admin/")) {
+      req.user = { ...user, role: "QORI_SUPERADMIN", business_role: user.role };
+    }
+    if (user.role === "QORI_SELLER") {
+      const requestPath = String(req.originalUrl || req.url || "").split("?")[0];
+      const selfService = (req.method === "GET" && requestPath === "/api/auth/me") || (req.method === "POST" && requestPath === "/api/auth/password/change");
+      if (!requestPath.startsWith("/api/admin/commercial/") && !selfService) throw forbidden("Tu cuenta comercial solo puede gestionar su cartera en Admin Qori.");
+    }
     if (user.role === "BUSINESS_SELLER" && !businessSellerSelfServiceAllowed(req)) {
       throw forbidden("Tu cuenta de vendedor solo puede acceder a Mi desempeno y a tu perfil personal.");
     }
@@ -91,7 +99,8 @@ async function portalWebAccessRequired(req, res, next) {
 
 function requireRoles(...roles) {
   return (req, _res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    const superadminAllowed = req.user?.role === "QORI_SUPERADMIN" && roles.some(role => ["ADMIN", "ADMIN_MARKET_GAMES"].includes(role));
+    if (!req.user || (!roles.includes(req.user.role) && !superadminAllowed)) {
       return next(forbidden("This role cannot perform this action."));
     }
     next();
@@ -109,7 +118,7 @@ function canAccessBusiness(user, businessId) {
   if (!user) {
     return false;
   }
-  if (user.role === "ADMIN" || user.role === "ADMIN_MARKET_GAMES") {
+  if (["ADMIN", "ADMIN_MARKET_GAMES", "QORI_SUPERADMIN"].includes(user.role)) {
     return true;
   }
   if (user.can_redeem_cross_business) {

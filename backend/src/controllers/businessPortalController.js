@@ -1357,6 +1357,13 @@ async function updateBusinessUser(req, res, next) {
     const businessId = businessIdFor(req);
     requireBusinessOwner(req);
     const body = validate(businessUserPatchSchema, req.body);
+    const protectedAccount = await query(
+      "select id from app_users where id=$1 and business_id=$2 and platform_role='QORI_SUPERADMIN'",
+      [req.params.userId, businessId]
+    );
+    if (protectedAccount.rowCount) {
+      throw forbidden("La cuenta superadmin de Qori no se modifica desde los usuarios del negocio.");
+    }
     if (req.user?.role === "BUSINESS_MANAGER" && body.is_active === false) {
       throw forbidden("Tu rol puede agregar usuarios y operar el portal, pero no desactivar usuarios.");
     }
@@ -1388,6 +1395,7 @@ async function updateBusinessUser(req, res, next) {
            updated_at = now()
        where id = $1
          and business_id = $2
+         and platform_role is distinct from 'QORI_SUPERADMIN'
          and role in ('BUSINESS_OWNER', 'BUSINESS_MANAGER', 'BUSINESS_SELLER', 'VALIDATOR')
        returning id, business_id, email, full_name, role, branch_id,
                  can_redeem_cross_business, is_active, deactivated_at, created_at, updated_at`,

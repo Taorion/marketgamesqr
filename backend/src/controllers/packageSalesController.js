@@ -43,7 +43,7 @@ const portalSignupSchema = publicSignupBaseSchema.extend({
 });
 
 function requireMarketAdmin(user) {
-  if (!["ADMIN_MARKET_GAMES", "ADMIN"].includes(user.role)) {
+  if (!["ADMIN_MARKET_GAMES", "ADMIN", "QORI_SUPERADMIN"].includes(user.role)) {
     throw forbidden("Only Sales Machine admins can perform this action.");
   }
 }

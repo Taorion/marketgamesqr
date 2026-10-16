@@ -1,6 +1,7 @@
 const { query } = require("../config/db");
 const { forbidden, badRequest, notFound } = require("../utils/http");
 const { canAccessBusiness } = require("../middleware/auth");
+const { applyCommercialEntitlements, activeTerms } = require("./commercialTerms");
 
 const PLAN_CODES = {
   TICKET_BASE: "TICKET_BASE",
@@ -977,7 +978,11 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
   const now = new Date();
   const rawStatus = row.subscription_status || row.settings?.subscription?.status || "ACTIVE";
   const periodEnd = dateOrNull(row.subscription_current_period_ends_at || row.settings?.subscription?.current_period_ends_at);
-  const graceEndsAt = periodEnd ? addDays(periodEnd, SUBSCRIPTION_GRACE_DAYS) : null;
+  const commercial = activeTerms(row, plan.code, now);
+  const trialEnd = dateOrNull(commercial?.trial_ends_at);
+  const isCommercialTrial = Boolean(trialEnd && periodEnd && periodEnd <= trialEnd);
+  const graceDays = isCommercialTrial ? 0 : SUBSCRIPTION_GRACE_DAYS;
+  const graceEndsAt = periodEnd ? addDays(periodEnd, graceDays) : null;
   const autoRenew = {
     enabled: Boolean(row.subscription_auto_renew_enabled),
     status: row.subscription_auto_renew_status || row.settings?.subscription?.auto_renew_status || "DISABLED",
@@ -1053,7 +1058,7 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
     portal_access_allowed: portalAccessAllowed,
     is_subscription: true,
     official_payment_due_at: periodEnd ? periodEnd.toISOString() : null,
-    grace_period_days: SUBSCRIPTION_GRACE_DAYS,
+    grace_period_days: graceDays,
     grace_period_ends_at: graceEndsAt ? graceEndsAt.toISOString() : null,
     days_until_due: periodEnd ? Math.max(0, daysUntil(periodEnd, now)) : null,
     days_overdue: daysOverdue,
@@ -1113,7 +1118,7 @@ function completeGlobalPlan(plan = PLAN_CATALOG[PLAN_CODES.GLOBAL]) {
 
 function planFromBusiness(row = {}) {
   const code = effectivePlanCode(row);
-  const plan = internalUnlimitedPlan(row, completeGlobalPlan(PLAN_CATALOG[code]));
+  const plan = applyCommercialEntitlements(internalUnlimitedPlan(row, completeGlobalPlan(PLAN_CATALOG[code])), row);
   const lifecycle = subscriptionLifecycle(row, plan);
   const growthExpiresAt = row.growth_expires_at || row.settings?.access?.growth_expires_at || null;
   const growthStartedAt = row.growth_started_at || row.settings?.access?.growth_started_at || null;
@@ -1285,7 +1290,7 @@ async function assertBusinessFeature(user, businessId, feature) {
   if (!canAccessBusiness(user, businessId)) {
     throw forbidden("No puedes acceder a este negocio.");
   }
-  if (["ADMIN", "ADMIN_MARKET_GAMES"].includes(user.role)) {
+  if (["ADMIN", "ADMIN_MARKET_GAMES", "QORI_SUPERADMIN"].includes(user.role)) {
     return getBusinessSubscription(businessId);
   }
   const subscription = await getBusinessSubscription(businessId);
@@ -1330,7 +1335,7 @@ async function assertStandaloneBusinessFeature(user, businessId, feature) {
     throw forbidden("No puedes acceder a este negocio.");
   }
   const subscription = await getBusinessSubscription(businessId);
-  if (["ADMIN", "ADMIN_MARKET_GAMES", "ADMIN_Qori"].includes(user.role)) {
+  if (["ADMIN", "ADMIN_MARKET_GAMES", "ADMIN_Qori", "QORI_SUPERADMIN"].includes(user.role)) {
     return subscription;
   }
   if (subscription.plan.raw_status !== "ACTIVE") {

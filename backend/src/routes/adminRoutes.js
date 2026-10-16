@@ -26,6 +26,7 @@ const {
 const router = express.Router();
 
 router.use(authRequired);
+router.use("/commercial", require("./commercialAdminRoutes"));
 router.use(requireRoles("ADMIN", "ADMIN_MARKET_GAMES"));
 router.get("/subscription-plans", listSubscriptionPlans);
 router.get("/businesses", listBusinesses);

@@ -123,6 +123,8 @@ function parseDealDate(value) {
 }
 
 function monthlyChargeForBusiness(plan, business = {}, effectiveDate = new Date()) {
+  const commercialCharge = require("./commercialTerms").commercialPrice(plan, business, effectiveDate);
+  if (commercialCharge) return commercialCharge;
   const standardPriceCop = Number(plan.monthly_price_cop || 0);
   const deal = business.settings?.commercial_deal;
   const terms = deal?.terms || {};
@@ -658,6 +660,10 @@ async function createSubscriptionAutoRenewal(user, body) {
 
   const monthlyQrIncluded = Number(plan.limits?.monthly_qr_included || plan.qr_monthly_included || 0);
   const chargeStartDate = firstAutoRenewalChargeDate(plan, currentBusiness.rows[0]?.subscription_current_period_ends_at);
+  const commercial = currentBusiness.rows[0]?.settings?.qori_commercial;
+  if (commercial?.status === "ACTIVE" && commercial.plan_code === plan.code && commercial.discount_percent > 0 && new Date(commercial.discount_ends_at) > new Date()) {
+    throw badRequest("Tu descuento comercial se aplica en Renovar suscripción. Podrás activar el débito automático al terminar el beneficio.");
+  }
   const charge = monthlyChargeForBusiness(plan, currentBusiness.rows[0], chargeStartDate);
   const { frequency, frequency_type: frequencyType } = planBillingFrequency(plan);
   const periodLabel = billingPeriodLabel(plan);
@@ -1478,6 +1484,7 @@ function mapPurchaseOrder(row) {
 
 module.exports = {
   __testing: {
+    monthlyChargeForBusiness,
     approvedPaymentIdFromAuthorizedInvoice,
     normalizeMercadoPagoWebhookTopic,
     validateApprovedPayment,
