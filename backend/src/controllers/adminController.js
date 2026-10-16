@@ -182,6 +182,9 @@ async function createBusiness(req, res, next) {
   try {
     requireMarketAdmin(req.user);
     const body = validate(businessSchema, req.body);
+    if (normalizePlanCode(body.plan_code) === "DESCUBRE") {
+      throw badRequest("Para otorgar la muestra única por NIT o cédula usa Inscribir gratis · Descubre.");
+    }
 
     const result = await withTransaction(async (client) => {
       const business = await client.query(
@@ -758,7 +761,7 @@ async function listBusinesses(req, res, next) {
 async function listSubscriptionPlans(req, res, next) {
   try {
     requireMarketAdmin(req.user);
-    res.json({ plans: listPlans() });
+    res.json({ plans: listPlans().filter(plan => plan.code !== "DESCUBRE") });
   } catch (error) {
     next(error);
   }

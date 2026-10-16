@@ -37,6 +37,10 @@ En el inicio del admin, **Inscribir gratis · Descubre** registra directamente a
 
 El acceso inicia inmediatamente y vence a los **30 días**, sin cobro automático ni días de gracia. Incluye todos los módulos, **25 tickets iniciales de entrega única, 10 afiliados, 10 Gift Cards totales y 100 MB**. La muestra permite **hasta 10 programas de sellos, con tarjetas ilimitadas en cada programa**; el resto de módulos conserva cupos pequeños definidos en el catálogo canónico. Los límites se validan en el servidor. Reintentar la misma inscripción no duplica negocio, usuario o tickets.
 
+**Una sola muestra por NIT o cédula, para siempre.** `qori_descubre_documents` conserva el documento normalizado (sin espacios, puntos ni guiones, en minúsculas), el negocio original y la fecha de otorgamiento. La reserva se registra en la misma transacción que el alta: solicitudes simultáneas con correos diferentes solo pueden obtener una muestra. El historial es privado, tiene RLS y no concede acceso a `PUBLIC`, `anon` o `authenticated`; no se elimina en cascada al borrar un negocio. Cambiar correo, nombre, documento de facturación, estado o plan no libera el documento original.
+
+La migración incorpora negocios que ya tienen Descubre o antecedentes en sus metadatos/auditoría, incluidos los que pasaron a un plan de pago. Ni vendedores ni superadmins pueden reasignar o renovar Descubre desde el cambio genérico de plan; las primeras muestras se crean exclusivamente desde **Inscribir gratis · Descubre**. Reintentar la misma solicitud devuelve la cuenta original con su vencimiento original, incluso si ya expiró. La conversión al plan pagado conserva el negocio y sus datos.
+
 El negocio queda en la cartera del vendedor y su prospecto se marca como inscrito. El titular entra en `/empresa/` con el email y la clave definidos; el primer acceso abre Tarjetas de sellos. Al terminar la muestra conserva sus datos y puede elegir un plan y pagar desde Cuenta mediante el checkout existente de Mercado Pago.
 
 **Vender suscripción** ofrece enlaces de inscripción para los cuatro planes pagados con el vendedor identificado. El cliente queda asociado a su cartera, pero su acceso pagado solo se activa cuando se aprueba el pago. Un cliente ya inscrito en Descubre debe pagar desde su cuenta para conservar el negocio y sus datos. Las ofertas, descuentos y excepciones continúan sujetos a las autorizaciones del superadmin.
@@ -62,3 +66,5 @@ Pruebas unitarias: `node --test test/commercialAuthorization.test.js test/subscr
 La integración `test/commercialAdmin.integration.test.js` exige `QORI_COMMERCIAL_QA=true` y una base local aislada en `127.0.0.1:55439`. Crea datos exclusivamente de prueba y verifica aislamiento, autorizaciones, vencimientos, aplicación concurrente e idempotencia, roles y auditoría. No ejecutar contra producción.
 
 `test/adminPermissions.integration.test.js` usa la misma base aislada y verifica permisos separados, promoción/degradación, revocación, conservación del portal, manipulación de tokens, protección de credenciales privilegiadas y degradación concurrente de administradores.
+
+`test/descubreEligibility.integration.test.js` comprueba bloqueo por documento, vencimiento, cambios de datos, concurrencia, recuperación del historial previo y conservación del antecedente tras eliminar el negocio. Ejecutar únicamente con la misma base local de QA.

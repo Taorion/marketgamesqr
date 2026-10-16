@@ -1204,6 +1204,9 @@ async function getBusinessSubscription(businessId) {
 
 async function setBusinessSubscription(businessId, payload) {
   const planCode = normalizePlanCode(payload.plan_code);
+  if (planCode === PLAN_CODES.DESCUBRE) {
+    throw badRequest("Descubre es una muestra única por NIT o cédula. No se puede reasignar ni renovar desde cambios de plan. Para una primera muestra usa Inscribir gratis · Descubre.");
+  }
   const status = payload.subscription_status || "ACTIVE";
   const current = await query(
     `select id, name, settings

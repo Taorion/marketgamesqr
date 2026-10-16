@@ -3,7 +3,7 @@ const { z } = require("zod");
 const { withTransaction } = require("../config/db");
 const { validate } = require("../utils/validators");
 const { badRequest, forbidden, notFound } = require("../utils/http");
-const { publicSignupBaseSchema, assertUniqueSignupIdentity, uniqueBusinessSlug, signupSettings } = require("./signupIdentityService");
+const { publicSignupBaseSchema, assertUniqueSignupIdentity, uniqueBusinessSlug, signupSettings, normalizeDocument, DESCUBRE_USED_MESSAGE } = require("./signupIdentityService");
 const { requireCommercialUser, requireOwner } = require("./commercialAuthorization");
 const { listPlans, planFromBusiness } = require("./subscriptionService");
 const { ensureBaseBusinessRecords, assignInitialAgreementTickets } = require("./adminProvisioningService");
@@ -44,7 +44,7 @@ async function enrollDescubre(user, payload) {
       requireOwner(user, prospect.seller_id);
       if (prospect.business_id || prospect.stage === "WON") throw badRequest("El prospecto ya fue inscrito. Gestiona su cuenta desde Clientes.");
     }
-    await assertUniqueSignupIdentity(client, body);
+    await assertUniqueSignupIdentity(client, body, { descubre:true });
     const name = body.company_name || body.contact_name;
     const slug = await uniqueBusinessSlug(client, name);
     const start = new Date();
@@ -61,6 +61,9 @@ async function enrollDescubre(user, payload) {
       (name,slug,settings,plan_code,plan_type,portal_status,subscription_status,subscription_started_at,subscription_current_period_ends_at,portal_activated_at,is_active)
       values($1,$2,$3::jsonb,'DESCUBRE','premium_monthly','ACTIVE','ACTIVE',$4,$5,$4,true) returning *`,
     [name, slug, JSON.stringify(settings), start.toISOString(), expires])).rows[0];
+    const claim = await client.query(`insert into qori_descubre_documents(document_key,business_id,granted_at)
+      values($1,$2,$3) on conflict(document_key) do nothing returning document_key`, [normalizeDocument(body.nit),business.id,start.toISOString()]);
+    if (!claim.rowCount) throw badRequest(DESCUBRE_USED_MESSAGE);
     await client.query("insert into app_users(business_id,email,password_hash,full_name,role,is_active) values($1,$2,$3,$4,'BUSINESS_OWNER',true)", [business.id, body.email, passwordHash, body.contact_name]);
     const base = await ensureBaseBusinessRecords(client, business.id, name);
     await client.query("update branches set address=$2 where id=$1 and business_id=$3", [base.branch.id, body.address || null, business.id]);

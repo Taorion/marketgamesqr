@@ -1,5 +1,6 @@
 const { z } = require("zod");
 const { badRequest } = require("../utils/http");
+const DESCUBRE_USED_MESSAGE = "Este NIT o cédula ya recibió la muestra Descubre. Solo se permite una vez por documento. El negocio debe continuar con un plan de pago.";
 
 const publicSignupBaseSchema = z.object({
   contact_name: z.string().trim().min(2).max(160),
@@ -43,7 +44,7 @@ function normalizeDocument(value) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-async function assertUniqueSignupIdentity(client, body) {
+async function assertUniqueSignupIdentity(client, body, { descubre = false } = {}) {
   const email = normalizeEmail(body.email);
   const documentId = normalizeDocument(body.nit);
   if (!email || !documentId) {
@@ -52,6 +53,11 @@ async function assertUniqueSignupIdentity(client, body) {
 
   await client.query("select pg_advisory_xact_lock(hashtext($1))", [`signup-email:${email}`]);
   await client.query("select pg_advisory_xact_lock(hashtext($1))", [`signup-document:${documentId}`]);
+
+  if (descubre) {
+    const used = await client.query("select 1 from qori_descubre_documents where document_key=$1", [documentId]);
+    if (used.rowCount) throw badRequest(DESCUBRE_USED_MESSAGE);
+  }
 
   const existingUser = await client.query(
     `select id, is_active
@@ -109,4 +115,4 @@ function signupSettings(body, type) {
 }
 
 
-module.exports={publicSignupBaseSchema,assertUniqueSignupIdentity,uniqueBusinessSlug,signupSettings};
+module.exports={publicSignupBaseSchema,assertUniqueSignupIdentity,uniqueBusinessSlug,signupSettings,normalizeDocument,DESCUBRE_USED_MESSAGE};
