@@ -13,11 +13,21 @@ Acceso: `/admin/`. El superadmin puede conservar su rol y negocio anteriores: el
 
 ### Usuarios del portal con acceso al admin
 
-En **Equipo de ventas → Habilitar usuario existente**, el superadmin busca el correo exacto, revisa el nombre y negocio de la cuenta y define una nueva contraseña con confirmación. El permiso adicional es siempre **Vendedor Qori**: no permite gestionar vendedores, aprobar excepciones ni acceder a operaciones avanzadas.
+En **Equipo de ventas → Habilitar usuario existente**, el superadmin o un usuario autorizado para crear vendedores busca el correo exacto, revisa el nombre y negocio de la cuenta y define una nueva contraseña con confirmación. Inicialmente recibe **Vendedor Qori**, con permisos para registrar prospectos, inscribir Descubre y preparar/aplicar ofertas autorizadas. Después el superadmin puede personalizar su acceso desde **Roles y permisos**.
 
 Se conservan el ID, correo, negocio, sede y rol original del portal. Admin y Portal empresa comparten la cuenta y la contraseña: asignar una nueva cierra las sesiones anteriores. Desde **Gestionar** también se puede definir otra contraseña o conservar la actual.
 
-Suspender o dar de baja el permiso comercial de un usuario existente retira solo su acceso al admin. Su cuenta del portal sigue activa. Los cambios de acceso comercial quedan en el historial sin contraseñas, y solo el superadmin puede efectuarlos.
+Suspender o dar de baja el permiso comercial de un usuario existente retira solo su acceso al admin. Su cuenta del portal sigue activa. Los cambios de acceso comercial quedan en el historial sin contraseñas.
+
+### Roles y permisos
+
+En **Equipo de ventas → Roles y permisos**, solo un superadministrador puede elegir **Superadministrador**, **Vendedor con permisos configurables** o **Sin acceso al admin**. El superadministrador tiene acceso completo, incluida la gestión de otros administradores y las operaciones avanzadas. Para crear uno nuevo, primero crea o habilita su cuenta y después cambia su rol.
+
+Los vendedores admiten 12 permisos independientes: gestionar prospectos, inscribir Descubre, gestionar ofertas, consultar equipo, crear vendedores, editar vendedores/contraseñas, suspender o dar de baja vendedores, gestionar autorizaciones comerciales, aprobar excepciones, gestionar clientes, trabajar con toda la cartera y consultar el historial global. Editar el estado desde Gestionar requiere tanto editar vendedores como suspender/dar de baja. Las acciones sobre prospectos, ofertas y clientes siguen restringidas a la cartera asignada salvo que se autorice toda la cartera. Poder consultar toda la cartera no concede las acciones de escritura.
+
+Los gestores delegados solo pueden administrar vendedores sin permisos adicionales; nunca pueden modificar roles ni restablecer credenciales de usuarios privilegiados. Un superadmin no puede cambiar su propio acceso. Los cambios de roles se serializan y vuelven a comprobar al actor para impedir que dos superadmins se degraden simultáneamente y dejen el sistema sin administrador.
+
+Guardar un cambio de acceso exige motivo, conserva la contraseña, cierra sesiones anteriores e invalida enlaces pendientes para restablecerla. El servidor consulta los permisos actuales en cada petición; no confía en los roles ni permisos enviados por el navegador o en claims antiguos del token. `admin_permissions = null` conserva el vendedor estándar anterior; `[]` retira todas las acciones configurables. El usuario mantiene acceso de consulta a su cartera y a los enlaces públicos de venta.
 
 ## Reglas
 
@@ -33,7 +43,7 @@ El negocio queda en la cartera del vendedor y su prospecto se marca como inscrit
 
 Pruebas integrales adicionales: `test/descubre.integration.test.js` y `test/existingSeller.integration.test.js`, con la misma base local aislada y bandera de QA descritas abajo. Simulan pagos sin llamadas externas y comprueban el rol de negocio, el permiso comercial, la retirada del acceso y el aislamiento entre clientes.
 
-- Cada vendedor solo consulta y opera sus prospectos, ofertas y clientes asignados. No accede a las operaciones avanzadas ni administra autorizaciones.
+- Por defecto cada vendedor solo consulta y opera sus prospectos, ofertas y clientes asignados. Los permisos adicionales se conceden expresamente; las operaciones avanzadas siguen siendo exclusivas del superadmin.
 - Cambiar o desactivar una autorización invalida las ofertas pendientes de aplicación que dependían de su versión anterior. Los acuerdos ya aplicados se conservan hasta su vencimiento o revocación explícita.
 - Los días de prueba vencen sin los días de gracia de una suscripción pagada. Sin prueba, el alta queda pendiente de pago.
 - Los módulos y cupos se validan en el servidor y caducan. Las condiciones nuevas reemplazan las anteriores; no se acumulan automáticamente.
@@ -50,3 +60,5 @@ Ejecutar `node scripts/create-qori-superadmin.js` con `DATABASE_URL`, `DB_SSL`, 
 Pruebas unitarias: `node --test test/commercialAuthorization.test.js test/subscriptionPlanEnforcement.test.js test/publicPlanMercadoPagoCheckout.test.js`.
 
 La integración `test/commercialAdmin.integration.test.js` exige `QORI_COMMERCIAL_QA=true` y una base local aislada en `127.0.0.1:55439`. Crea datos exclusivamente de prueba y verifica aislamiento, autorizaciones, vencimientos, aplicación concurrente e idempotencia, roles y auditoría. No ejecutar contra producción.
+
+`test/adminPermissions.integration.test.js` usa la misma base aislada y verifica permisos separados, promoción/degradación, revocación, conservación del portal, manipulación de tokens, protección de credenciales privilegiadas y degradación concurrente de administradores.

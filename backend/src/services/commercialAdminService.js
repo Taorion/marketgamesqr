@@ -2,12 +2,14 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const { z } = require("zod");
 const { query, withTransaction } = require("../config/db");
-const { badRequest, notFound } = require("../utils/http");
+const { badRequest, notFound, forbidden } = require("../utils/http");
 const { validate } = require("../utils/validators");
 const { listPlans, planFromBusiness } = require("./subscriptionService");
 const { ensureBaseBusinessRecords, assignInitialAgreementTickets } = require("./adminProvisioningService");
 const { MODULES, LIMIT_LABELS } = require("./commercialTerms");
 const { SUPERADMIN, SELLER, PLAN_CODES, termsSchema, policySchema, requireSuperadmin, requireCommercialUser, requireOwner, policyAllows, assertConvertible } = require("./commercialAuthorization");
+
+const { PERMISSIONS, DEFAULT_PERMISSIONS, permissionsFor, hasPermission, requirePermission, canSeeTeam, hasPrivilegedAccess } = require('./adminPermissions');
 
 const uuid = z.string().uuid();
 const reasonSchema = z.string().trim().min(5).max(2000);
@@ -40,21 +42,21 @@ async function locked(client, table, id) {
 async function bootstrap(user) {
   requireCommercialUser(user);
   const [policies, sellers, counts] = await Promise.all([
-    query(`select * from qori_commercial_policies where ($1::boolean or (is_active and expires_at > now() and (seller_id is null or seller_id=$2))) order by created_at desc limit 200`, [user.role === SUPERADMIN, user.id]),
-    query(`select u.id,u.full_name,u.email,u.role,u.platform_role,u.business_id,u.is_active as account_is_active,
+    query(`select * from qori_commercial_policies where ($1::boolean or (is_active and expires_at > now() and (seller_id is null or seller_id=$2))) order by created_at desc limit 200`, [hasPermission(user,'policies.manage'), user.id]),
+    query(`select u.id,u.full_name,u.email,u.role,u.platform_role,u.admin_permissions,u.business_id,u.is_active as account_is_active,
       (u.is_active and (u.role in ('QORI_SELLER','QORI_SUPERADMIN') or u.platform_role in ('QORI_SELLER','QORI_SUPERADMIN'))) as is_active,
       p.phone,p.archived_at from app_users u left join qori_sales_profiles p on p.user_id=u.id
-      where (u.role='QORI_SELLER' or u.platform_role='QORI_SELLER' or p.user_id is not null or u.id=$2)
-        and ($1::boolean or u.id=$2) order by u.full_name`, [user.role === SUPERADMIN, user.id]),
+      where (u.role in ('QORI_SELLER','QORI_SUPERADMIN') or u.platform_role in ('QORI_SELLER','QORI_SUPERADMIN') or p.user_id is not null or u.id=$2)
+        and ($1::boolean or u.id=$2) order by u.full_name`, [canSeeTeam(user), user.id]),
     query(`select (select count(*)::int from qori_sales_prospects where ($1 or seller_id=$2) and stage not in ('WON','LOST')) as prospects,
       (select count(*)::int from qori_commercial_deals where ($1 or seller_id=$2) and status='PENDING') as pending,
       (select count(*)::int from qori_commercial_deals where ($1 or seller_id=$2) and status='APPROVED' and valid_until>now()) as approved,
-      (select count(*)::int from businesses b where b.is_active and ($1 or exists(select 1 from qori_sales_accounts a where a.business_id=b.id and a.seller_id=$2))) as customers`, [user.role === SUPERADMIN, user.id]),
+      (select count(*)::int from businesses b where b.is_active and ($1 or exists(select 1 from qori_sales_accounts a where a.business_id=b.id and a.seller_id=$2))) as customers`, [hasPermission(user,'portfolio.all'), user.id]),
   ]);
-  return { user: { id: user.id, name: user.full_name, role: user.role }, descubre: listPlans().find(p => p.code === "DESCUBRE"), plans: listPlans().filter(p => PLAN_CODES.includes(p.code)), modules: MODULES, limit_labels: LIMIT_LABELS, policies: policies.rows, sellers: sellers.rows, counts: counts.rows[0] };
+  return { user: { id: user.id, name: user.full_name, role: user.role, permissions:permissionsFor(user), can_see_team:canSeeTeam(user) }, permission_catalog:PERMISSIONS, default_permissions:DEFAULT_PERMISSIONS, descubre: listPlans().find(p => p.code === "DESCUBRE"), plans: listPlans().filter(p => PLAN_CODES.includes(p.code)), modules: MODULES, limit_labels: LIMIT_LABELS, policies: policies.rows, sellers: sellers.rows.map(s=>({...s,admin_role:s.platform_role||s.role,privileged:hasPrivilegedAccess(s)})), counts: counts.rows[0] };
 }
 async function createSeller(user, payload) {
-  requireSuperadmin(user);
+  requirePermission(user,'team.create');
   const body = validate(sellerCreationSchema, payload);
   const password = body.password ?? generatedPassword();
   const hash = await bcrypt.hash(password, 12);
@@ -76,7 +78,7 @@ function existingSellerReason(account) {
   return null;
 }
 async function findExistingSeller(user, payload) {
-  requireSuperadmin(user);
+  requirePermission(user,'team.create');
   const body=validate(z.object({email:z.string().trim().email().max(180)}).strict(),payload);
   const account=(await query(`select u.id,u.full_name,u.email,u.role,u.platform_role,u.business_id,u.is_active,b.name as business_name
     from app_users u left join businesses b on b.id=u.business_id where lower(u.email)=lower($1) limit 1`,[body.email])).rows[0] || null;
@@ -84,13 +86,14 @@ async function findExistingSeller(user, payload) {
   return {user:account,eligible:!reason,reason};
 }
 async function grantExistingSeller(user, payload) {
-  requireSuperadmin(user);
+  requirePermission(user,'team.create');
   const body=validate(z.object({user_id:uuid,password:sellerPassword,password_confirm:z.string().max(120)}).strict()
     .refine(v=>v.password===v.password_confirm,{message:"La confirmación de contraseña no coincide.",path:["password_confirm"]}),payload);
   const hash=await bcrypt.hash(body.password,12);
   return withTransaction(async client=>{
     const account=await locked(client,"app_users",body.user_id);
     const reason=existingSellerReason(account);if(reason)throw badRequest(reason);
+    if(user.role!==SUPERADMIN && hasPrivilegedAccess(account)) throw forbidden('Solo el superadministrador puede habilitar esta cuenta.');
     const seller=(await client.query(`update app_users set platform_role='QORI_SELLER',password_hash=$2,
       password_version=coalesce(password_version,0)+1,updated_at=now() where id=$1
       returning id,email,full_name,role,platform_role,business_id,is_active`,[account.id,hash])).rows[0];
@@ -102,14 +105,17 @@ async function grantExistingSeller(user, payload) {
   });
 }
 async function updateSeller(user, id, payload, archive = false) {
-  requireSuperadmin(user);
+  requirePermission(user,archive?'team.remove':'team.edit');
   const body = archive ? {} : validate(z.object({ full_name: z.string().trim().min(2).max(160).optional(), phone: z.string().trim().max(60).optional(), is_active: z.boolean().optional(), reset_password: z.boolean().optional(),password:sellerPassword.optional(),password_confirm:z.string().max(120).optional() }).strict()
     .refine(v=>v.password===v.password_confirm,{message:"La confirmación de contraseña no coincide.",path:["password_confirm"]})
     .refine(v=>!(v.password&&v.reset_password),"Elige una contraseña propia o genera una, no ambas."), payload);
+  if(body.is_active!==undefined) requirePermission(user,'team.remove');
   const password = body.password || (body.reset_password ? generatedPassword() : null);
   const hash = password ? await bcrypt.hash(password, 12) : null;
   return withTransaction(async client => {
     const current = await locked(client, "app_users", id);
+    if(user.id===id) throw forbidden('No puedes modificar tu propio acceso.');
+    if(user.role!==SUPERADMIN && hasPrivilegedAccess(current)) throw forbidden('Solo el superadministrador puede gestionar usuarios con permisos adicionales.');
     const profile=(await client.query("select user_id from qori_sales_profiles where user_id=$1",[id])).rows[0];
     const shared=businessRoles.includes(current.role)&&Boolean(current.business_id);
     if (current.platform_role===SUPERADMIN || (current.role!==SELLER && !(shared&&profile))) throw badRequest("Este control solo administra vendedores de Qori.");
@@ -124,8 +130,40 @@ async function updateSeller(user, id, payload, archive = false) {
     return { seller: result.rows[0], ...(password ? { credentials: { email: current.email, password,shared_login:shared } } : {}) };
   });
 }
-async function savePolicy(user, payload, id = null) {
+async function updateAdminAccess(user,id,payload) {
   requireSuperadmin(user);
+  validate(uuid,id);
+  const body=validate(z.object({
+    role:z.enum([SUPERADMIN,SELLER,'NONE']),
+    permissions:z.array(z.enum(Object.keys(PERMISSIONS))).max(Object.keys(PERMISSIONS).length).default([]),
+    reason:reasonSchema,
+  }).strict(),payload);
+  if(user.id===id) throw forbidden('No puedes cambiar tu propio rol o permisos. Otro superadministrador debe hacerlo.');
+  return withTransaction(async client=>{
+    // Serialize role changes and recheck the actor after acquiring the lock.
+    // Two admins cannot concurrently demote each other and leave no active admin.
+    await client.query("select pg_advisory_xact_lock(hashtext('qori-admin-access'))");
+    const actor=(await client.query('select role,platform_role,is_active from app_users where id=$1 for share',[user.id])).rows[0];
+    if(!actor?.is_active || (actor.platform_role||actor.role)!==SUPERADMIN) throw forbidden('Tu acceso de superadministrador ya no está vigente.');
+    const current=await locked(client,'app_users',id);
+    const shared=businessRoles.includes(current.role)&&Boolean(current.business_id);
+    if(!shared && ![SELLER,SUPERADMIN].includes(current.role)) throw badRequest('Esta cuenta no admite permisos comerciales.');
+    if(shared&&!current.is_active&&body.role!=='NONE') throw badRequest('Reactiva la cuenta del portal antes de habilitar su acceso al admin.');
+    const permissions=body.role===SELLER?[...new Set(body.permissions)]:[];
+    await client.query(`update app_users set role=$2,platform_role=$3,admin_permissions=$4,
+      is_active=$5,password_version=coalesce(password_version,0)+1,updated_at=now() where id=$1`,
+      [id,shared?current.role:(body.role==='NONE'?SELLER:body.role),shared?(body.role==='NONE'?null:body.role):null,permissions,shared?current.is_active:body.role!=='NONE']);
+    await client.query(`insert into qori_sales_profiles(user_id,created_by,archived_at) values($1,$2,case when $3 then now() else null end)
+      on conflict(user_id) do update set archived_at=excluded.archived_at`,[id,user.id,body.role==='NONE']);
+    await client.query('update password_reset_tokens set used_at=now() where user_id=$1 and used_at is null',[id]);
+    await audit(client,user,'ADMIN_ACCESS_UPDATED','seller',id,{name:current.full_name,
+      previous_role:current.platform_role||current.role,role:body.role,
+      previous_permissions:current.admin_permissions,permissions,reason:body.reason});
+    return {ok:true};
+  });
+}
+async function savePolicy(user, payload, id = null) {
+  requirePermission(user,'policies.manage');
   const body = validate(policySchema, payload);
   if (new Date(body.expires_at) <= new Date() && body.is_active) throw badRequest("La autorización debe tener una fecha futura.");
   return withTransaction(async client => {
@@ -145,12 +183,12 @@ function paging(params) {
 async function list(user, kind, params = {}) {
   requireCommercialUser(user);
   const {offset,search,status} = paging(params);
-  const superadmin = user.role === SUPERADMIN;
+  const superadmin = kind==='audit' ? hasPermission(user,'audit.view') : hasPermission(user,'portfolio.all');
   let sql;
   if (kind === "prospects") sql = `select p.*,u.full_name as seller_name from qori_sales_prospects p join app_users u on u.id=p.seller_id where ($1 or p.seller_id=$2) and (p.business_name ilike $3 or p.email ilike $3) and ($4='' or p.stage=$4) order by p.created_at desc,p.id limit 51 offset $5`;
   else if (kind === "deals") sql = `select d.*,coalesce(p.business_name,b.name) as customer_name,u.full_name as seller_name from qori_commercial_deals d left join qori_sales_prospects p on p.id=d.prospect_id left join businesses b on b.id=d.business_id join app_users u on u.id=d.seller_id where ($1 or d.seller_id=$2) and coalesce(p.business_name,b.name,'') ilike $3 and ($4='' or d.status=$4) order by d.created_at desc,d.id limit 51 offset $5`;
   else if (kind === "customers") sql = `select b.id,b.name,b.slug,b.is_active,b.plan_code,b.plan_type,b.subscription_status,b.subscription_current_period_ends_at,b.settings,a.seller_id,u.full_name as seller_name from businesses b left join qori_sales_accounts a on a.business_id=b.id left join app_users u on u.id=a.seller_id where ($1 or a.seller_id=$2) and (b.name ilike $3 or b.slug ilike $3) and ($4='' or b.subscription_status=$4) order by b.created_at desc,b.id limit 51 offset $5`;
-  else if (kind === "audit") { requireSuperadmin(user); sql = `select a.*,u.full_name as actor_name from qori_commercial_audit a left join app_users u on u.id=a.actor_id where ($1 or a.actor_id=$2) and (a.action ilike $3 or u.full_name ilike $3) and ($4='' or a.entity_type=$4) order by a.created_at desc,a.id limit 51 offset $5`; }
+  else if (kind === "audit") { requirePermission(user,"audit.view"); sql = `select a.*,u.full_name as actor_name from qori_commercial_audit a left join app_users u on u.id=a.actor_id where ($1 or a.actor_id=$2) and (a.action ilike $3 or u.full_name ilike $3) and ($4='' or a.entity_type=$4) order by a.created_at desc,a.id limit 51 offset $5`; }
   else throw notFound();
   const result = await query(sql,[superadmin,user.id,search,status,offset]);
   const rows = result.rows.slice(0,50).map(row => {
@@ -161,7 +199,7 @@ async function list(user, kind, params = {}) {
   return { rows, has_more: result.rows.length > 50, next_offset: offset + rows.length };
 }
 async function saveProspect(user,payload,id=null) {
-  requireCommercialUser(user);
+  requirePermission(user,'prospects.manage');
   const body=validate(prospectSchema,payload);
   return withTransaction(async client=>{
     const current=id ? await locked(client,"qori_sales_prospects",id) : null;
@@ -180,7 +218,7 @@ async function saveProspect(user,payload,id=null) {
   });
 }
 async function createDeal(user,payload) {
-  requireCommercialUser(user);
+  requirePermission(user,'offers.manage');
   const body=validate(dealSchema,payload);
   return withTransaction(async client=>{
     let sellerId=user.id;
@@ -209,10 +247,11 @@ async function createDeal(user,payload) {
   });
 }
 async function decideDeal(user,id,payload) {
-  requireSuperadmin(user);
+  requirePermission(user,'offers.approve');
   const body=validate(z.object({ decision:z.enum(["APPROVED","REJECTED"]),reason:reasonSchema,valid_days:z.number().int().min(1).max(90).default(30) }).strict(),payload);
   return withTransaction(async client=>{
     const deal=await locked(client,"qori_commercial_deals",id);
+    requireOwner(user,deal.seller_id);
     if(!["PENDING","APPROVED"].includes(deal.status)) throw badRequest("Esta oferta ya está cerrada.");
     await sellerExists(client,deal.seller_id);
     const result=await client.query("update qori_commercial_deals set status=$2,approval_source='SUPERADMIN',approved_by=$3,approved_at=now(),decision_reason=$4,valid_until=$5,updated_at=now() where id=$1 returning *",[id,body.decision,user.id,body.reason,dateAfterDays(new Date(),body.valid_days)]);
@@ -221,6 +260,7 @@ async function decideDeal(user,id,payload) {
   });
 }
 async function cancelDeal(user,id,payload) {
+  requirePermission(user,'offers.manage');
   const reason=validate(reasonSchema,payload.reason);
   return withTransaction(async client=>{
     const deal=await locked(client,"qori_commercial_deals",id);
@@ -239,6 +279,7 @@ function buildTerms(deal,start) {
     discount_starts_at:discountStart.toISOString(),discount_ends_at:addMonths(discountStart,t.discount_months),trial_ends_at:t.trial_days?discountStart.toISOString():null };
 }
 async function applyDeal(user,id) {
+  requirePermission(user,'offers.manage');
   requireCommercialUser(user);
   const password=generatedPassword();
   const hash=await bcrypt.hash(password,12);
@@ -293,12 +334,14 @@ async function applyDeal(user,id) {
   });
 }
 async function updateCustomer(user,id,payload) {
-  requireSuperadmin(user);
+  requirePermission(user,'customers.manage');
   const body=validate(z.object({ seller_id:uuid.nullable().optional(),is_active:z.boolean().optional(),revoke_benefits:z.boolean().optional(),reason:reasonSchema }).strict(),payload);
   return withTransaction(async client=>{
     // Match applyDeal lock order (deal -> business) to avoid deadlocks during reassignment.
     await client.query("select id from qori_commercial_deals where business_id=$1 and status in ('PENDING','APPROVED') order by id for update",[validate(uuid,id)]);
     const business=await locked(client,"businesses",id);
+    const owner=(await client.query('select seller_id from qori_sales_accounts where business_id=$1',[id])).rows[0];
+    requireOwner(user,owner?.seller_id);
     if(body.seller_id) await sellerExists(client,body.seller_id);
     if(body.seller_id!==undefined) {
       const previous=await client.query("select seller_id from qori_sales_accounts where business_id=$1",[id]);
@@ -315,4 +358,4 @@ async function updateCustomer(user,id,payload) {
     return {ok:true};
   });
 }
-module.exports={bootstrap,createSeller,findExistingSeller,grantExistingSeller,updateSeller,savePolicy,list,saveProspect,createDeal,decideDeal,cancelDeal,applyDeal,updateCustomer,buildTerms};
+module.exports={bootstrap,createSeller,findExistingSeller,grantExistingSeller,updateSeller,updateAdminAccess,savePolicy,list,saveProspect,createDeal,decideDeal,cancelDeal,applyDeal,updateCustomer,buildTerms};

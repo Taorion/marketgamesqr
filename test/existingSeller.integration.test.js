@@ -80,7 +80,7 @@ test("existing portal users receive a separate seller permission without losing 
     await assert.rejects(()=>updateSeller(business.id,seller.id,{id:colleague.id,role:"BUSINESS_OWNER"},{email:"takeover@example.test"}),{status:403});
     const protectedLookup=await call(c+"/seller-candidates?email="+encodeURIComponent(superadmin.email),root);assert.equal(protectedLookup.eligible,false);
     await call(c+"/sellers/existing",root,{user_id:superadmin.id,password:newPassword,password_confirm:newPassword},400);
-    await call(c+"/sellers/"+superadmin.id,root,{password:newPassword,password_confirm:newPassword},400,"PATCH");
+    await call(c+"/sellers/"+superadmin.id,root,{password:newPassword,password_confirm:newPassword},403,"PATCH");
   });
   await t.test("inactive business does not remove commercial permission or grant portal access",async()=>{
     await pool.query("update businesses set is_active=false where id=$1",[business.id]);

@@ -21,7 +21,7 @@ async function authenticatedUserFromToken(token, { allowCommercialAccess = false
   }
 
   const result = await query(
-      `select u.id, u.business_id, u.email, u.full_name, u.role, u.platform_role, u.is_active, u.password_version,
+      `select u.id, u.business_id, u.email, u.full_name, u.role, u.platform_role, u.admin_permissions, u.is_active, u.password_version,
               u.can_redeem_cross_business, u.branch_id,
               b.is_active as business_is_active
        from app_users u

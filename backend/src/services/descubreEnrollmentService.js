@@ -8,6 +8,7 @@ const { requireCommercialUser, requireOwner } = require("./commercialAuthorizati
 const { listPlans, planFromBusiness } = require("./subscriptionService");
 const { ensureBaseBusinessRecords, assignInitialAgreementTickets } = require("./adminProvisioningService");
 
+const { requirePermission } = require('./adminPermissions');
 const enrollmentSchema = publicSignupBaseSchema.extend({
   request_id: z.string().uuid(),
   prospect_id: z.string().uuid().nullable().default(null),
@@ -19,6 +20,7 @@ function response(business, email, alreadyCreated = false) {
 }
 async function enrollDescubre(user, payload) {
   requireCommercialUser(user);
+  requirePermission(user,'enrollments.create');
   const body = validate(enrollmentSchema, payload);
   body.email = body.email.toLowerCase();
   if (body.sales_advisor_code || body.commercial_advisor_id) throw badRequest("El vendedor responsable se asigna desde tu cuenta autenticada.");

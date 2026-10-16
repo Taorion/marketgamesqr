@@ -13,6 +13,7 @@ for(const kind of ["prospects","deals","customers","audit"]) router.get(`/${kind
 router.post("/sellers",handle(req=>service.createSeller(req.user,req.body)));
 router.get("/seller-candidates",handle(req=>service.findExistingSeller(req.user,req.query)));
 router.post("/sellers/existing",handle(req=>service.grantExistingSeller(req.user,req.body)));
+router.patch("/sellers/:id/access",handle(req=>service.updateAdminAccess(req.user,req.params.id,req.body)));
 router.patch("/sellers/:id",handle(req=>service.updateSeller(req.user,req.params.id,req.body)));
 router.delete("/sellers/:id",handle(req=>service.updateSeller(req.user,req.params.id,{},true)));
 router.post("/policies",handle(req=>service.savePolicy(req.user,req.body)));
