@@ -1,5 +1,5 @@
 const SESSION_KEY = "market_games_admin_session_v1";
-const APP_VERSION = "admin-commercial-20261016";
+const APP_VERSION = "admin-descubre-20261016";
 const APP_VERSION_KEY = "market_games_admin_app_version";
 const APP_UPDATE_NOTICE_KEY = "market_games_admin_update_notice";
 

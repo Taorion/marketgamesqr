@@ -8,6 +8,7 @@ const PLAN_CODES = {
   GROWTH_TEMPORAL: "GROWTH_TEMPORAL",
   PREPAID_QR: "PREPAID_QR",
   DESPEGA: "DESPEGA",
+  DESCUBRE: "DESCUBRE",
   STARTER: "STARTER",
   GROWTH: "GROWTH",
   PRO: "PRO",
@@ -920,6 +921,30 @@ const PLAN_CATALOG = {
   },
 };
 
+// Internal acquisition sample. All product modules, with small operating quotas.
+PLAN_CATALOG[PLAN_CODES.DESCUBRE] = {
+  code: PLAN_CODES.DESCUBRE, name: "Descubre", category: "subscription",
+  monthly_price_cop: 0, price_label: "Gratis durante 30 días", billing_period: "trial",
+  public_signup_available: false, trial_days: 30, qr_monthly_included: 0,
+  access_summary: "Descubre Qori durante 30 días con todos sus módulos y cantidades pequeñas.",
+  pricing_note: "25 tickets iniciales, hasta 10 afiliados, 10 Gift Cards y 100 MB. Al terminar, elige una suscripción para continuar; tus datos se conservan.",
+  included: ["30 días gratis", "Todos los módulos de Qori", "25 tickets iniciales", "Hasta 10 afiliados", "10 Gift Cards durante la muestra", "100 MB de almacenamiento"],
+  not_included: [],
+  features: { ...PLAN_CATALOG[PLAN_CODES.PRO].features },
+  limits: {
+    users: 2, validators: 1, branches: 2, active_campaigns: 1,
+    monthly_qr_included: 0, welcome_courtesy_tickets: 25,
+    lead_view_rows: 100, lead_export_rows_month: 100, lead_exports_month: 2,
+    metric_exports_month: 2, affiliates: 10, loyalty_contacts: 10,
+    gift_cards_month: 10, gift_cards_total: 10, gift_inventory_products: 10,
+    history_days: 30, activation_types_month: 3, active_interactive_activations: 1,
+    executive_reports_month: 2, allowed_interactive_activation_types: null,
+    storage_bytes: 100 * 1024 * 1024, redemptions: 25, contacts: 100,
+    acquisition_channels: 2, showcases: 1, communication_emails_month: 100,
+    communication_emails_day: 20, sellers: 1, stamp_programs: 1, stamp_members: 10,
+  },
+};
+
 function normalizePlanCode(value) {
   const code = String(value || "").trim().toUpperCase();
   if (code === "ENTERPRISE") return PLAN_CODES.GLOBAL;
@@ -981,7 +1006,7 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
   const commercial = activeTerms(row, plan.code, now);
   const trialEnd = dateOrNull(commercial?.trial_ends_at);
   const isCommercialTrial = Boolean(trialEnd && periodEnd && periodEnd <= trialEnd);
-  const graceDays = isCommercialTrial ? 0 : SUBSCRIPTION_GRACE_DAYS;
+  const graceDays = isCommercialTrial || plan.code === PLAN_CODES.DESCUBRE ? 0 : SUBSCRIPTION_GRACE_DAYS;
   const graceEndsAt = periodEnd ? addDays(periodEnd, graceDays) : null;
   const autoRenew = {
     enabled: Boolean(row.subscription_auto_renew_enabled),
@@ -1029,8 +1054,8 @@ function subscriptionLifecycle(row = {}, plan = PLAN_CATALOG[PLAN_CODES.PREPAID_
     };
   }
 
-  const manuallyInactive = rawStatus !== "ACTIVE";
-  let accessStatus = manuallyInactive ? rawStatus : "ACTIVE";
+  const manuallyInactive = rawStatus !== "ACTIVE" || (plan.code === PLAN_CODES.DESCUBRE && !periodEnd);
+  let accessStatus = manuallyInactive ? (rawStatus === "ACTIVE" ? "LOCKED" : rawStatus) : "ACTIVE";
   let portalAccessAllowed = !manuallyInactive;
   let daysOverdue = 0;
   let daysUntilLock = null;
@@ -1145,7 +1170,7 @@ function planFromBusiness(row = {}) {
     days_until_lock: lifecycle.days_until_lock,
     auto_renew: lifecycle.auto_renew,
     lifetime_access: hasLifetimeAccess(row),
-    monthly_payment_required: row.settings?.subscription?.monthly_payment_required !== false,
+    monthly_payment_required: code !== PLAN_CODES.DESCUBRE && row.settings?.subscription?.monthly_payment_required !== false,
   };
 }
 

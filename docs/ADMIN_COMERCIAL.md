@@ -13,6 +13,18 @@ Acceso: `/admin/`. El superadmin puede conservar su rol y negocio anteriores: el
 
 ## Reglas
 
+### Muestra Descubre
+
+En el inicio del admin, **Inscribir gratis · Descubre** registra directamente al negocio y a su propietario con los mismos datos de la inscripción pública. Empresa es opcional para persona natural. El vendedor debe registrar la aceptación del titular de los términos y privacidad. La clave se define durante la inscripción y nunca se guarda en el historial comercial.
+
+El acceso inicia inmediatamente y vence a los **30 días**, sin cobro automático ni días de gracia. Incluye todos los módulos, **25 tickets iniciales de entrega única, 10 afiliados, 10 Gift Cards totales y 100 MB**. La muestra permite un programa de sellos con 10 tarjetas; el resto de módulos conserva cupos pequeños definidos en el catálogo canónico. Los límites se validan en el servidor. Reintentar la misma inscripción no duplica negocio, usuario o tickets.
+
+El negocio queda en la cartera del vendedor y su prospecto se marca como inscrito. El titular entra en `/empresa/` con el email y la clave definidos; el primer acceso abre Tarjetas de sellos. Al terminar la muestra conserva sus datos y puede elegir un plan y pagar desde Cuenta mediante el checkout existente de Mercado Pago.
+
+**Vender suscripción** ofrece enlaces de inscripción para los cuatro planes pagados con el vendedor identificado. El cliente queda asociado a su cartera, pero su acceso pagado solo se activa cuando se aprueba el pago. Un cliente ya inscrito en Descubre debe pagar desde su cuenta para conservar el negocio y sus datos. Las ofertas, descuentos y excepciones continúan sujetos a las autorizaciones del superadmin.
+
+Prueba integral adicional: `test/descubre.integration.test.js`, con la misma base local aislada y bandera de QA descritas abajo. Simula Mercado Pago sin realizar pagos ni llamadas externas.
+
 - Cada vendedor solo consulta y opera sus prospectos, ofertas y clientes asignados. No accede a las operaciones avanzadas ni administra autorizaciones.
 - Cambiar o desactivar una autorización invalida las ofertas pendientes de aplicación que dependían de su versión anterior. Los acuerdos ya aplicados se conservan hasta su vencimiento o revocación explícita.
 - Los días de prueba vencen sin los días de gracia de una suscripción pagada. Sin prueba, el alta queda pendiente de pago.

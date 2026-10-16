@@ -61,8 +61,25 @@ async function saveProgram(businessId,userId,data,id) {
     if (!result.rowCount) throw notFound('Programa no encontrado.');
     return result.rows[0];
   }
-  return (await query(`insert into stamp_programs (business_id,created_by,${keys.join(',')})
-    values ($1,$2,${keys.map((_,i)=>`$${i+3}`).join(',')}) returning *`,[businessId,userId,...values])).rows[0];
+  return withTransaction(async client=>{
+    await assertStampCapacity(client,businessId,'stamp_programs');
+    return (await client.query(`insert into stamp_programs (business_id,created_by,${keys.join(',')})
+      values ($1,$2,${keys.map((_,i)=>`$${i+3}`).join(',')}) returning *`,[businessId,userId,...values])).rows[0];
+  });
+}
+async function assertStampCapacity(client,businessId,key) {
+  await client.query('select pg_advisory_xact_lock(hashtext($1))',[`qori:stamp-quota:${businessId}`]);
+  const business=(await client.query('select * from businesses where id=$1 and is_active=true',[businessId])).rows[0];
+  if(!business) throw notFound('Negocio no encontrado.');
+  const plan=planFromBusiness(business);
+  const limit=plan.limits[key];
+  if(!Number.isFinite(limit)) return;
+  if(!plan.portal_access_allowed) throw forbidden('Tu muestra ha terminado. Elige una suscripción para continuar.');
+  const sql=key==='stamp_programs'
+    ? 'select count(*)::int as total from stamp_programs where business_id=$1 and deleted_at is null'
+    : 'select count(*)::int as total from stamp_members where business_id=$1';
+  const count=Number((await client.query(sql,[businessId])).rows[0].total);
+  if(count>=limit) throw forbidden(`Tu plan ${plan.name} permite hasta ${limit} ${key==='stamp_programs'?'programa de sellos':'tarjetas de sellos'}. Elige una suscripción para ampliar el cupo.`);
 }
 async function deleteProgram(businessId,userId,id) {
   const result=await query(`update stamp_programs
@@ -82,6 +99,7 @@ async function enroll(businessId,userId,data) {
     await client.query('select pg_advisory_xact_lock(hashtext($1))',[`stamp-enroll:${program.id}:${document}`]);
     const existing=(await client.query('select * from stamp_members where program_id=$1 and document_key=$2',[program.id,document])).rows[0];
     if (existing) return { member:existing,url:publicUrl(existing.public_token),existing:true };
+    await assertStampCapacity(client,businessId,'stamp_members');
     const member=(await client.query(`insert into stamp_members (business_id,program_id,name,document_key,phone,email,public_token,created_by)
       values ($1,$2,$3,$4,$5,$6,$7,$8) returning *`,
     [businessId,program.id,data.name,document,data.phone||null,data.email||null,crypto.randomBytes(32).toString('hex'),userId])).rows[0];

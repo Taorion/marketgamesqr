@@ -41,7 +41,7 @@ async function bootstrap(user) {
       (select count(*)::int from qori_commercial_deals where ($1 or seller_id=$2) and status='APPROVED' and valid_until>now()) as approved,
       (select count(*)::int from businesses b where b.is_active and ($1 or exists(select 1 from qori_sales_accounts a where a.business_id=b.id and a.seller_id=$2))) as customers`, [user.role === SUPERADMIN, user.id]),
   ]);
-  return { user: { id: user.id, name: user.full_name, role: user.role }, plans: listPlans().filter(p => PLAN_CODES.includes(p.code)), modules: MODULES, limit_labels: LIMIT_LABELS, policies: policies.rows, sellers: sellers.rows, counts: counts.rows[0] };
+  return { user: { id: user.id, name: user.full_name, role: user.role }, descubre: listPlans().find(p => p.code === "DESCUBRE"), plans: listPlans().filter(p => PLAN_CODES.includes(p.code)), modules: MODULES, limit_labels: LIMIT_LABELS, policies: policies.rows, sellers: sellers.rows, counts: counts.rows[0] };
 }
 async function createSeller(user, payload) {
   requireSuperadmin(user);

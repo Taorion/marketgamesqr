@@ -1484,6 +1484,7 @@ function mapPurchaseOrder(row) {
 
 module.exports = {
   __testing: {
+    finalizeApprovedPortalSubscription,
     monthlyChargeForBusiness,
     approvedPaymentIdFromAuthorizedInvoice,
     normalizeMercadoPagoWebhookTopic,

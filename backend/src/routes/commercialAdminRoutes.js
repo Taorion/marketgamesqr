@@ -8,6 +8,7 @@ const handle = fn => async(req,res,next)=>{ try { res.json(await fn(req)); } cat
   next(error);
 } };
 router.get("/bootstrap",handle(req=>service.bootstrap(req.user)));
+router.post("/enrollments/descubre",handle(req=>require("../services/descubreEnrollmentService").enrollDescubre(req.user,req.body)));
 for(const kind of ["prospects","deals","customers","audit"]) router.get(`/${kind}`,handle(req=>service.list(req.user,kind,req.query)));
 router.post("/sellers",handle(req=>service.createSeller(req.user,req.body)));
 router.patch("/sellers/:id",handle(req=>service.updateSeller(req.user,req.params.id,req.body)));

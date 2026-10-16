@@ -260,6 +260,7 @@ function signupPayload() {
     privacy_accepted: Boolean(document.getElementById("privacyAccepted")?.checked),
     legal_version: "2026-07-23",
     sales_advisor_code: salesAdvisorSeller?.checked ? selectedSalesAdvisor?.code || null : null,
+    commercial_advisor_id: salesAdvisorSeller?.checked ? selectedSalesAdvisor?.commercial_id || null : null,
   };
 }
 
@@ -340,7 +341,7 @@ async function submitSignup(event) {
   }
 
   const payload = signupPayload();
-  if (salesAdvisorSeller?.checked && !payload.sales_advisor_code) {
+  if (salesAdvisorSeller?.checked && !payload.sales_advisor_code && !payload.commercial_advisor_id) {
     setMessage("Selecciona una coincidencia válida de asesor o elige Llegué por mi cuenta.", "error");
     salesAdvisorSearch?.focus();
     return;
@@ -381,11 +382,25 @@ async function loadPlans() {
   renderPlans();
   if (initialPlanCode) {
     const match = plans.find((plan) => plan.code === initialPlanCode);
-    if (match) selectedPlan = match;
+    if (match) selectPlan(match.code);
   }
   if (selectedPlan) renderSelection();
 }
 
+async function loadLinkedCommercialAdvisor() {
+  const id=urlParams.get("advisor");
+  if(!id) return;
+  if(salesAdvisorSeller) salesAdvisorSeller.checked=true;
+  if(salesAdvisorSelf) salesAdvisorSelf.checked=false;
+  syncSalesAdvisorChoice();
+  try {
+    const result=await fetchJson(`/api/public/commercial-advisors/${encodeURIComponent(id)}`);
+    if(!salesAdvisorSeller?.checked) return;
+    selectedSalesAdvisor={name:result.advisor.name,commercial_id:result.advisor.id};
+    if(salesAdvisorSearch) salesAdvisorSearch.value=result.advisor.name;
+    if(salesAdvisorStatus) salesAdvisorStatus.textContent=`Te acompaña ${result.advisor.name}, asesor de Qori.`;
+  } catch(error) { setMessage(error.message || "No se pudo validar el asesor del enlace.","error"); }
+}
 document.addEventListener("DOMContentLoaded", () => {
   signupForm?.addEventListener("submit", submitSignup);
   salesAdvisorSelf?.addEventListener("change", syncSalesAdvisorChoice);
@@ -408,4 +423,5 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   syncSalesAdvisorChoice();
   loadPlans();
+  loadLinkedCommercialAdvisor();
 });

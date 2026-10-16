@@ -511,6 +511,11 @@ async function createRewardPass(user, payload) {
       );
       if (existing.rowCount) return { id: existing.rows[0].id, idempotent: true };
     }
+    const totalGiftCardLimit = subscription.plan.limits?.gift_cards_total;
+    if (Number.isFinite(totalGiftCardLimit)) {
+      const total = await client.query("select count(*)::int as total from reward_passes where company_id=$1", [businessId]);
+      if (Number(total.rows[0]?.total || 0) >= totalGiftCardLimit) throw forbidden(`Tu muestra ${subscription.plan.name} permite emitir hasta ${totalGiftCardLimit} Gift Cards en total. Elige una suscripción para continuar.`);
+    }
     const monthlyGiftCardLimit = subscription.plan.limits?.gift_cards_month;
     if (monthlyGiftCardLimit !== null && monthlyGiftCardLimit !== undefined) {
       const monthlyCount = await client.query(

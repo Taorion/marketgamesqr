@@ -5362,6 +5362,7 @@ function subscriptionAccessLabel(plan = {}) {
 }
 
 function subscriptionTimingText(plan = {}) {
+  if (plan.code === "DESCUBRE") return plan.portal_access_allowed ? `Descubre: muestra gratis hasta ${formatDateOnly(plan.current_period_ends_at)}. Quedan ${formatLimitValue(plan.days_until_due)} día(s). Sin cobro automático. Elige una suscripción para continuar después.` : "Tu muestra Descubre terminó. Tus datos están guardados; elige una suscripción y paga con Mercado Pago para continuar.";
   if (plan.category !== "subscription") {
     return "Portal Base: no tiene fecha mensual de renovación.";
   }
@@ -6023,6 +6024,7 @@ function currentPlan() {
 
 function portalDefaultViewForPlan() {
   const features = currentPlan().features || {};
+  if (currentPlan().code === "DESCUBRE" && currentPlan().portal_access_allowed) return "stamp-cards";
   if (features.rms_core) return PORTAL_DEFAULT_VIEW;
   if (features.interactive_activations) return "strategic-qr";
   if (features.qr_validator) return "validator";
@@ -6143,7 +6145,9 @@ function renderSubscriptionBanner() {
   const limits = planLimits();
   const access = state.access || {};
   subscriptionPlanName.textContent = plan.name || plan.code || "Plan";
-  subscriptionPlanSummary.textContent = plan.category === "ticket_base"
+  subscriptionPlanSummary.textContent = plan.code === "DESCUBRE"
+    ? "Todos los módulos durante 30 días: 25 tickets iniciales, 10 afiliados, 10 Gift Cards y 100 MB de almacenamiento."
+    : plan.category === "ticket_base"
     ? `Portal Base activo sin mensualidad. Saldo operativo: ${formatNumber(access.ticketBalance || state.qrCreditAccount?.qr_balance || 0)} tickets.`
     : plan.category === "growth_temporal"
       ? `Growth temporal activo${access.daysUntilGrowthExpiration !== null && access.daysUntilGrowthExpiration !== undefined ? `: ${access.daysUntilGrowthExpiration} días restantes` : ""}. Conservas tus tickets al volver a Base.`
@@ -6359,7 +6363,7 @@ function planBenefitList(plan) {
 
 function renderSubscriptionPricing() {
   if (!subscriptionPlansGrid) return;
-  const displayOrder = ["TICKET_BASE", "STARTER", "GROWTH", "PRO", "GLOBAL"];
+  const displayOrder = ["TICKET_BASE", "DESPEGA", "STARTER", "GROWTH", "PRO", "GLOBAL"];
   const plans = (state.subscriptionPlans || [])
     .filter((plan) => displayOrder.includes(plan.code) && !plan.testing_plan && plan.public_signup_available !== false)
     .sort((a, b) => displayOrder.indexOf(a.code) - displayOrder.indexOf(b.code));

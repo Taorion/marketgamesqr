@@ -13,6 +13,9 @@ const router = express.Router();
 
 router.get("/packages", listPackageOffers);
 router.get("/subscription-plans", listPublicSubscriptionPlans);
+router.get("/commercial-advisors/:id", rateLimit({ keyPrefix: "public-commercial-advisors", max: 30, windowMs: 15 * 60_000 }), async (req,res,next) => {
+  try { res.set("Cache-Control","no-store").json({advisor:await require("../services/commercialAdvisorService").advisorById(req.params.id)}); } catch(error) { next(error); }
+});
 router.get("/sales-advisors", rateLimit({ keyPrefix: "public-sales-advisors", max: 30, windowMs: 15 * 60_000 }), listPublicSalesAdvisors);
 router.post("/packages/requests", rateLimit({ keyPrefix: "package-request", max: 10, windowMs: 15 * 60_000 }), createPackageRequest);
 router.post("/signup/ticket-base", rateLimit({ keyPrefix: "signup-ticket-base", max: 6, windowMs: 15 * 60_000 }), createPrepaidSignup);

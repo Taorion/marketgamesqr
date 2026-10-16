@@ -9,6 +9,7 @@ const {
   createPortalSignupCheckout,
 } = require("../services/mercadoPagoService");
 const { createSignupAttribution } = require("../services/sellerService");
+const { advisorById, assignPaidSignup } = require("../services/commercialAdvisorService");
 
 const packageRequestPatchSchema = z.object({
   payment_confirmed: z.boolean().optional(),
@@ -17,25 +18,7 @@ const packageRequestPatchSchema = z.object({
   notes: z.string().trim().max(1200).optional().nullable(),
 });
 
-const publicSignupBaseSchema = z.object({
-  contact_name: z.string().trim().min(2).max(160),
-  company_name: z.string().trim().min(2).max(180).optional().nullable(),
-  nit: z.string().trim().min(5).max(40),
-  email: z.string().trim().email().max(180),
-  phone: z.string().trim().min(7).max(40),
-  website: z.string().trim().max(220).optional().nullable(),
-  city: z.string().trim().max(120).optional().nullable(),
-  address: z.string().trim().max(220).optional().nullable(),
-  password: z.string().min(8).max(120),
-  password_confirm: z.string().min(8).max(120),
-  terms_accepted: z.boolean().refine((value) => value === true, "Debes aceptar los terminos y condiciones."),
-  privacy_accepted: z.boolean().refine((value) => value === true, "Debes aceptar la politica de privacidad."),
-  legal_version: z.string().trim().max(40).default("2026-06-16"),
-  sales_advisor_code: z.string().trim().max(40).optional().nullable(),
-}).refine((body) => body.password === body.password_confirm, {
-  message: "La confirmacion de clave no coincide.",
-  path: ["password_confirm"],
-});
+const {publicSignupBaseSchema,assertUniqueSignupIdentity,uniqueBusinessSlug,signupSettings}=require("../services/signupIdentityService");
 
 const portalSignupSchema = publicSignupBaseSchema.extend({
   plan_code: z.string().trim().min(2).max(40),
@@ -46,92 +29,6 @@ function requireMarketAdmin(user) {
   if (!["ADMIN_MARKET_GAMES", "ADMIN", "QORI_SUPERADMIN"].includes(user.role)) {
     throw forbidden("Only Sales Machine admins can perform this action.");
   }
-}
-
-function slugify(value) {
-  return String(value || "cliente")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 72) || "cliente";
-}
-
-function normalizeEmail(value) {
-  return String(value || "").trim().toLowerCase();
-}
-
-function normalizeDocument(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-}
-
-async function assertUniqueSignupIdentity(client, body) {
-  const email = normalizeEmail(body.email);
-  const documentId = normalizeDocument(body.nit);
-  if (!email || !documentId) {
-    throw badRequest("Email y documento de facturacion son obligatorios.");
-  }
-
-  await client.query("select pg_advisory_xact_lock(hashtext($1))", [`signup-email:${email}`]);
-  await client.query("select pg_advisory_xact_lock(hashtext($1))", [`signup-document:${documentId}`]);
-
-  const existingUser = await client.query(
-    `select id, is_active
-     from app_users
-     where lower(email) = $1
-     limit 1`,
-    [email]
-  );
-  if (existingUser.rowCount) {
-    throw badRequest("Ya existe un usuario registrado con este correo electronico. Inicia sesion o usa otro correo.");
-  }
-
-  const existingBusiness = await client.query(
-    `select id, name
-     from businesses
-     where regexp_replace(lower(coalesce(settings->>'nit', '')), '[^a-z0-9]', '', 'g') = $1
-     limit 1`,
-    [documentId]
-  );
-  if (existingBusiness.rowCount) {
-    throw badRequest("Ya existe una empresa registrada con este documento o NIT. Inicia sesion o contacta soporte para recuperar el acceso.");
-  }
-}
-
-async function uniqueBusinessSlug(client, baseValue) {
-  const base = slugify(baseValue);
-  for (let index = 0; index < 8; index += 1) {
-    const suffix = index === 0 ? "" : `-${index + 1}`;
-    const candidate = `${base}${suffix}`;
-    const existing = await client.query("select id from businesses where slug = $1", [candidate]);
-    if (!existing.rowCount) return candidate;
-  }
-  return `${base}-${Date.now().toString(36)}`;
-}
-
-function signupSettings(body, type) {
-  return {
-    nit: body.nit,
-    contact_name: body.contact_name,
-    contact_email: body.email,
-    phone: body.phone,
-    website: body.website || "",
-    city: body.city || "",
-    address: body.address || "",
-    signup_type: type,
-    billing_cycle: body.billing_cycle || "monthly",
-    account_document_type: body.company_name ? "NIT" : "CEDULA",
-    legal_acceptance: {
-      terms_accepted: body.terms_accepted,
-      privacy_accepted: body.privacy_accepted,
-      legal_version: body.legal_version || "2026-06-16",
-      accepted_at: new Date().toISOString(),
-    },
-  };
 }
 
 function publicSignupResponse({ business, user, order = null, plan = null }) {
@@ -218,6 +115,7 @@ async function createPrepaidSignup(req, res, next) {
 async function createPortalSignup(req, res, next) {
   try {
     const body = validate(portalSignupSchema, req.body);
+    if (body.sales_advisor_code && body.commercial_advisor_id) throw badRequest("Selecciona un solo asesor para la inscripción.");
     const planCode = normalizePlanCode(body.plan_code);
     const plan = listPlans().find((item) => item.code === planCode && item.category === "subscription" && item.monthly_price_cop && item.public_signup_available !== false);
     if (!plan) {
@@ -225,6 +123,7 @@ async function createPortalSignup(req, res, next) {
     }
 
     const result = await withTransaction(async (client) => {
+      const commercialAdvisor = body.commercial_advisor_id ? await advisorById(body.commercial_advisor_id, client) : null;
       await assertUniqueSignupIdentity(client, body);
 
       const companyName = body.company_name || body.contact_name;
@@ -255,7 +154,8 @@ async function createPortalSignup(req, res, next) {
         sales_advisor_code: body.sales_advisor_code || null,
       });
 
-      await createSignupAttribution(client, {
+      if (commercialAdvisor) await assignPaidSignup(client, commercialAdvisor, business.id, order.id);
+      else await createSignupAttribution(client, {
         purchase_order_id: order.id,
         client_business_id: business.id,
         sales_advisor_code: body.sales_advisor_code || null,
