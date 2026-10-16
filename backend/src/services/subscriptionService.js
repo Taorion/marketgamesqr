@@ -941,7 +941,7 @@ PLAN_CATALOG[PLAN_CODES.DESCUBRE] = {
     executive_reports_month: 2, allowed_interactive_activation_types: null,
     storage_bytes: 100 * 1024 * 1024, redemptions: 25, contacts: 100,
     acquisition_channels: 2, showcases: 1, communication_emails_month: 100,
-    communication_emails_day: 20, sellers: 1, stamp_programs: 1, stamp_members: 10,
+    communication_emails_day: 20, sellers: 1, stamp_programs: 10, stamp_members: null,
   },
 };
 

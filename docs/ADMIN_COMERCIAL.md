@@ -17,7 +17,7 @@ Acceso: `/admin/`. El superadmin puede conservar su rol y negocio anteriores: el
 
 En el inicio del admin, **Inscribir gratis · Descubre** registra directamente al negocio y a su propietario con los mismos datos de la inscripción pública. Empresa es opcional para persona natural. El vendedor debe registrar la aceptación del titular de los términos y privacidad. La clave se define durante la inscripción y nunca se guarda en el historial comercial.
 
-El acceso inicia inmediatamente y vence a los **30 días**, sin cobro automático ni días de gracia. Incluye todos los módulos, **25 tickets iniciales de entrega única, 10 afiliados, 10 Gift Cards totales y 100 MB**. La muestra permite un programa de sellos con 10 tarjetas; el resto de módulos conserva cupos pequeños definidos en el catálogo canónico. Los límites se validan en el servidor. Reintentar la misma inscripción no duplica negocio, usuario o tickets.
+El acceso inicia inmediatamente y vence a los **30 días**, sin cobro automático ni días de gracia. Incluye todos los módulos, **25 tickets iniciales de entrega única, 10 afiliados, 10 Gift Cards totales y 100 MB**. La muestra permite **hasta 10 programas de sellos, con tarjetas ilimitadas en cada programa**; el resto de módulos conserva cupos pequeños definidos en el catálogo canónico. Los límites se validan en el servidor. Reintentar la misma inscripción no duplica negocio, usuario o tickets.
 
 El negocio queda en la cartera del vendedor y su prospecto se marca como inscrito. El titular entra en `/empresa/` con el email y la clave definidos; el primer acceso abre Tarjetas de sellos. Al terminar la muestra conserva sus datos y puede elegir un plan y pagar desde Cuenta mediante el checkout existente de Mercado Pago.
 

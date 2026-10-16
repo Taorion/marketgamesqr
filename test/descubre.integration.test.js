@@ -92,14 +92,18 @@ test('Descubre: seller onboarding, enforced quotas, expiry and paid conversion',
     assert.equal((await assertStorageQuotaForUpload(enrolled.business_id,100*1024*1024)).limit_bytes,100*1024*1024);
     await assert.rejects(()=>assertStorageQuotaForUpload(enrolled.business_id,100*1024*1024+1),{status:403});
   });
-  await t.test('owner can create, enroll and stamp; the sample limits programs and cards',async()=>{
+  await t.test('Descubre allows ten programs and unlimited cards in each program',async()=>{
     program=await call('/api/business/stamp-cards/programs',owner.token,{name:'QA Café Descubre',stamps_required:2,benefit_type:'PERCENT_DISCOUNT',benefit_value:{label:'10% de descuento',percent:10},minimum_purchase:0,one_per_day:false,allow_manual:true,card_valid_days:30,ticket_valid_days:30,reward_cost:0,ticket_cost:1,terms:'Condiciones QA',status:'ACTIVE'});
-    await call('/api/business/stamp-cards/programs',owner.token,{...program,name:'Otro programa'},403);
-    for(let i=0;i<10;i++) {
-      const result=await call('/api/business/stamp-cards/members',owner.token,{program_id:program.id,name:`Cliente ${i}`,document_id:`QA${i}00`,consent:true});
-      if(!i)member=result.member;
+    const programs=[program,...await Promise.all(Array.from({length:9},(_,i)=>call('/api/business/stamp-cards/programs',owner.token,{...program,name:`Programa adicional ${i}` })))];
+    await call('/api/business/stamp-cards/programs',owner.token,{...program,name:'Programa once'},403);
+    const plan=(await getBusinessSubscription(enrolled.business_id)).plan;
+    assert.equal(plan.limits.stamp_programs,10);assert.equal(plan.limits.stamp_members,null);
+    for(const p of programs.slice(0,2)) for(let i=0;i<11;i++) {
+      const result=await call('/api/business/stamp-cards/members',owner.token,{program_id:p.id,name:`Cliente ${i}`,document_id:`QA${i}00`,consent:true});
+      if(!member)member=result.member;
     }
-    await call('/api/business/stamp-cards/members',owner.token,{program_id:program.id,name:'Cliente once',document_id:'QA1100',consent:true},403);
+    const counts=await pool.query('select program_id,count(*)::int as total from stamp_members where business_id=$1 group by program_id',[enrolled.business_id]);
+    assert.equal(counts.rowCount,2);assert.ok(counts.rows.every(row=>row.total===11));
     await call(`/api/business/stamp-cards/members/${member.id}/stamps`,owner.token,{reference:'QA-compra-001',note:'Primera visita de prueba'});
     assert.equal(Number((await pool.query('select stamps from stamp_cycles where member_id=$1',[member.id])).rows[0].stamps),1);
   });
@@ -129,7 +133,7 @@ test('Descubre: seller onboarding, enforced quotas, expiry and paid conversion',
     assert.equal(plan.portal_access_allowed,false);assert.equal(plan.grace_period_days,0);
     await call('/api/business/stamp-cards/context',owner.token,undefined,403);
     assert.equal((await call('/api/auth/login',null,{email:body.email,password})).user.business_id,enrolled.business_id);
-    assert.equal((await pool.query('select id from stamp_members where business_id=$1',[enrolled.business_id])).rowCount,10);
+    assert.equal((await pool.query('select id from stamp_members where business_id=$1',[enrolled.business_id])).rowCount,22);
   });
   await t.test('existing sample can pay through the normal checkout; approved payment preserves data',async()=>{
     const paymentService=require('../backend/src/services/mercadoPagoService');
@@ -142,7 +146,7 @@ test('Descubre: seller onboarding, enforced quotas, expiry and paid conversion',
     });
     const plan=(await getBusinessSubscription(enrolled.business_id)).plan;
     assert.equal(plan.code,'STARTER');assert.equal(plan.portal_access_allowed,true);assert.equal(plan.monthly_payment_required,true);
-    assert.equal((await pool.query('select id from stamp_members where business_id=$1',[enrolled.business_id])).rowCount,10);
+    assert.equal((await pool.query('select id from stamp_members where business_id=$1',[enrolled.business_id])).rowCount,22);
     assert.equal((await pool.query('select seller_id from qori_sales_accounts where business_id=$1',[enrolled.business_id])).rows[0].seller_id,seller.seller.id);
   });
   await t.test('paid signup link validates active advisor and assigns portfolio without activating unpaid access',async()=>{

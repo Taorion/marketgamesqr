@@ -103,7 +103,7 @@
   function showCredentials(credentials){dialog("Acceso listo para entregar",`<p class="full">Copia estas credenciales y entrégalas a su titular. La contraseña se muestra solo en esta respuesta.</p>${field("email","Correo","text",credentials.email,"readonly")}${field("password","Contraseña inicial","text",credentials.password,"readonly")}<p class="full">El titular puede cambiar su contraseña desde su cuenta. No se ha enviado ningún correo automáticamente.</p>`);}
   function enrollmentEditor(p={}) {
     const requestId=crypto.randomUUID();
-    dialog("Inscribir negocio · Descubre",`<div class="full commercial-offer"><h3>30 días gratis para descubrir Qori</h3><p>Todos los módulos · 25 tickets iniciales · 10 afiliados · 10 Gift Cards · 100 MB.</p><p>Tarjeta de sellos: 1 programa y hasta 10 tarjetas. No requiere tarjeta bancaria ni pago.</p></div>
+    dialog("Inscribir negocio · Descubre",`<div class="full commercial-offer"><h3>30 días gratis para descubrir Qori</h3><p>Todos los módulos · 25 tickets iniciales · 10 afiliados · 10 Gift Cards · 100 MB.</p><p>Hasta 10 programas de sellos, con tarjetas ilimitadas en cada programa. No requiere tarjeta bancaria ni pago.</p></div>
       ${field("company_name","Empresa o nombre comercial","text",p.business_name||"",'maxlength="180" placeholder="Opcional si eres persona natural"')}
       ${field("contact_name","Nombre del usuario","text",p.contact_name||"",'required minlength="2" maxlength="160" autocomplete="name"')}
       ${field("nit","Documento de facturación","text","",'required minlength="5" maxlength="40"')}
