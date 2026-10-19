@@ -5,7 +5,7 @@ Módulo en **Optimiza → Tarjeta de sellos**. Disponible para propietarios y ge
 ## Operación
 
 1. Crear un programa: 2–50 sellos, premio/producto gratis, descuento porcentual, descuento en COP o beneficio personalizado. Configurar compra mínima, límite diario, vigencia de tarjeta/ticket, condiciones y costos estimados.
-2. Entregar una tarjeta con nombre y documento del cliente y confirmar su autorización de datos. La inscripción repetida en un programa devuelve el mismo enlace. El enlace personal tiene 256 bits aleatorios y usa fragmento URL para evitar propagarlo como Referer.
+2. Entregar una tarjeta con nombre y documento del cliente y confirmar su autorización de datos, o compartir el **QR de inscripción** del programa para que se inscriba por autoservicio. La inscripción repetida desde el portal autenticado devuelve el mismo enlace. El enlace personal usa un secreto de 256 bits y un fragmento URL para evitar propagarlo como Referer.
 3. Registrar compras pagadas en los flujos habituales de Qori usando el mismo documento. Un trigger sobre `business_sales` acredita los sellos; no se cuentan las copias de ventas atribuidas. No se acreditan compras anteriores a la inscripción, sin documento, no pagadas, sin valor positivo o por debajo del mínimo. La primera transición a PAID también puede acreditar; restaurar una venta anulada no acredita por segunda vez.
 4. En «Configurar programa» el gerente activa o desactiva «Permitir sellos manuales». Solo cuando está activado aparece «Sellar visita» en las tarjetas vigentes e incompletas del programa activo. Este permiso aplica también a tarjetas ya entregadas; sus metas y beneficios no cambian. Registrar una visita no cambia esta configuración. Los programas nuevos dejan la opción desactivada hasta que el negocio la elija. Las visitas manuales exigen referencia única y motivo, no fabrican ingresos y respetan el límite diario.
 
@@ -15,6 +15,18 @@ Módulo en **Optimiza → Tarjeta de sellos**. Disponible para propietarios y ge
 7. El cliente inicia una nueva tarjeta después de generar el ticket o vencer su tarjeta. Conserva el mismo enlace y los beneficios anteriores. Las compras recibidas mientras una tarjeta está completa no acumulan sellos adicionales; esto se explica tanto al gerente como al cliente.
 
 Pausar o archivar detiene nuevas tarjetas y sellos; se honran las tarjetas completas no vencidas. Cambios de reglas y premios se aplican a ciclos nuevos; cada tarjeta guarda sus condiciones originales.
+
+## QR de inscripción por autoservicio
+
+Cada programa existente o nuevo tiene **QR de inscripción**: abre una vista con su QR estable, descarga PNG, enlace para copiar/compartir y acceso al formulario. No requiere migración nueva ni consume tickets. El mismo QR sigue sirviendo cuando se edita o reactiva el programa.
+
+El cliente escanea el QR y abre `/sellos/inscripcion.html?programa=<id>`, sin cuenta de Qori. Ve el nombre y logo del negocio, beneficio y condiciones; registra nombre y documento, celular/correo opcionales y autoriza el uso de datos. Al enviar se crea su inscripción y primer ciclo con cero sellos; abre directamente su tarjeta personalizada, con enlace para guardar y QR de identificación. La inscripción aparece en las tarjetas e indicadores del negocio.
+
+Solo se admiten programas activos y no eliminados de negocios activos con acceso vigente. Se aplican los cupos configurados por el plan y límites de solicitudes. La API obtiene el negocio desde el programa; no acepta del cliente negocio, sellos, reglas, premio ni token de tarjeta. Los datos públicos omiten costos, documentos y registros privados.
+
+Se conserva una tarjeta por documento normalizado y programa. El navegador genera una clave aleatoria de 256 bits para reintentar el alta; el servidor deriva el secreto de la tarjeta incluyendo programa y documento. Solo esa clave permite recuperar el resultado del mismo envío. Otro visitante que conozca el documento no recibe el enlace ni modifica la tarjeta existente: debe usar su enlace personal o solicitarlo al negocio. Si el almacenamiento local está disponible, se ofrece abrir la tarjeta guardada en ese dispositivo. No se envían mensajes, correos ni WhatsApp automáticamente.
+
+Rutas: `GET /api/business/stamp-cards/programs/:id/enrollment-qr` (propietario/gerente del negocio), `GET /api/public/stamp-cards/programs/:id` y `POST /api/public/stamp-cards/programs/:id/enroll`. Las respuestas no se almacenan en caché. La recuperación autenticada del portal se conserva.
 
 ## QR de identificación y sellado desde el Validador
 
@@ -50,7 +62,7 @@ Prueba local aislada (PostgreSQL en `127.0.0.1:55439`):
 
 ```text
 node scripts/stamp-card-local-setup.js
-STAMP_CARD_INTEGRATION=1 node --test test/stampCards.integration.test.js
+STAMP_CARD_INTEGRATION=1 node --test test/stampCards.integration.test.js test/stampSelfService.integration.test.js test/stampCardQr.test.js test/validatorScannedCart.test.js
 node scripts/stamp-card-local-server.js
 ```
 

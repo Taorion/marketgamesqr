@@ -90,19 +90,54 @@ async function deleteProgram(businessId,userId,id) {
   if (!result.rowCount) throw notFound('Programa no encontrado.');
   return {ok:true,...result.rows[0]};
 }
-async function enroll(businessId,userId,data) {
+async function enrollmentQr(businessId,programId) {
+  const program=(await query('select id,name from stamp_programs where id=$1 and business_id=$2 and deleted_at is null',[programId,businessId])).rows[0];
+  if (!program) throw notFound('Programa no encontrado.');
+  const url=new URL('/sellos/inscripcion.html',env.publicAppUrl);
+  url.searchParams.set('programa',program.id);
+  return {url:url.toString(),program_name:program.name,qr_image:await QRCode.toDataURL(url.toString(),{width:600,margin:4,errorCorrectionLevel:'M'})};
+}
+async function registrationProgram(programId) {
+  const program=(await query(`select p.* from stamp_programs p join businesses b on b.id=p.business_id
+    where p.id=$1 and p.deleted_at is null and p.status='ACTIVE' and b.is_active=true`,[programId])).rows[0];
+  if (!program) throw notFound('Este programa no está disponible para inscripciones. Consulta con el negocio.');
+  return program;
+}
+async function publicProgram(programId) {
+  const program=await registrationProgram(programId);
+  const business=(await query('select * from businesses where id=$1 and is_active=true',[program.business_id])).rows[0];
+  if (!business || !planFromBusiness(business).portal_access_allowed) throw forbidden('Las inscripciones no están disponibles. Consulta con el negocio.');
+  return {business:{name:business.name,logo_data_url:business.settings?.logo_data_url||null,logo_url:business.settings?.logo_url||null},
+    program:{id:program.id,...publicRules(snapshot(program))}};
+}
+async function publicEnroll(programId,data) {
+  if (data.consent!==true || !/^[a-f0-9]{64}$/.test(data.access_key||'')) throw badRequest('Confirma la autorización e intenta nuevamente.');
+  const program=await registrationProgram(programId);
+  const result=await enroll(program.business_id,null,{...data,program_id:program.id},{accessKey:data.access_key});
+  // Public registration must never return member records or recover a card by document alone.
+  return {url:result.url,existing:result.existing};
+}
+async function enroll(businessId,userId,data,{accessKey}={}) {
   return withTransaction(async client=>{
     const program=(await client.query('select * from stamp_programs where id=$1 and business_id=$2 for share',[data.program_id,businessId])).rows[0];
-    if (!program || program.status!=='ACTIVE') throw badRequest('El programa debe estar activo.');
+    if (!program || program.status!=='ACTIVE' || program.deleted_at) throw badRequest('El programa debe estar activo.');
+    if (accessKey) {
+      const business=(await client.query('select * from businesses where id=$1 and is_active=true for share',[businessId])).rows[0];
+      if (!business || !planFromBusiness(business).portal_access_allowed) throw forbidden('Las inscripciones no están disponibles. Consulta con el negocio.');
+    }
     const document=normalizeDocument(data.document_id);
     if (document.length<3 || document.length>80) throw badRequest('Documento no válido.');
     await client.query('select pg_advisory_xact_lock(hashtext($1))',[`stamp-enroll:${program.id}:${document}`]);
     const existing=(await client.query('select * from stamp_members where program_id=$1 and document_key=$2',[program.id,document])).rows[0];
-    if (existing) return { member:existing,url:publicUrl(existing.public_token),existing:true };
+    const publicToken=accessKey?crypto.createHash('sha256').update(`stamp-registration:${program.id}:${document}:${accessKey}`).digest('hex'):crypto.randomBytes(32).toString('hex');
+    if (existing) {
+      if (accessKey && existing.public_token!==publicToken) throw badRequest('No pudimos completar la inscripción. Si ya tienes tarjeta, abre tu enlace personal o pide al negocio que te lo comparta.');
+      return { member:existing,url:publicUrl(existing.public_token),existing:true };
+    }
     await assertStampCapacity(client,businessId,'stamp_members');
     const member=(await client.query(`insert into stamp_members (business_id,program_id,name,document_key,phone,email,public_token,created_by)
       values ($1,$2,$3,$4,$5,$6,$7,$8) returning *`,
-    [businessId,program.id,data.name,document,data.phone||null,data.email||null,crypto.randomBytes(32).toString('hex'),userId])).rows[0];
+    [businessId,program.id,data.name,document,data.phone||null,data.email||null,publicToken,userId])).rows[0];
     await createCycle(client,member,program,1);
     return { member,url:publicUrl(member.public_token),existing:false };
   });
@@ -298,4 +333,4 @@ async function dashboard(businessId,{program_id,from,to}) {
   metrics.estimated_return_pct=Number(metrics.estimated_cost)>0?Math.round((Number(metrics.linked_sales)-Number(metrics.estimated_cost))/Number(metrics.estimated_cost)*100):null;
   return {metrics,trend:trend.rows};
 }
-module.exports={normalizeDocument,snapshot,publicRules,context,saveProgram,deleteProgram,enroll,members,manualStamp,voidStamp,publicCard,claim,renew,history,dashboard,validatorCard,stampFromQr};
+module.exports={normalizeDocument,snapshot,publicRules,context,saveProgram,deleteProgram,enroll,members,manualStamp,voidStamp,publicCard,claim,renew,history,dashboard,validatorCard,stampFromQr,enrollmentQr,publicProgram,publicEnroll};

@@ -28,6 +28,7 @@ const program=z.object({
 });
 const enrollment=z.object({program_id:uuid,name:z.string().trim().min(2).max(160),document_id:z.string().trim().min(3).max(80),
   phone:z.string().trim().max(40).optional(),email:z.union([z.string().email().max(180),z.literal('')]).optional(),consent:z.literal(true)});
+const publicEnrollment=enrollment.omit({program_id:true}).extend({access_key:z.string().regex(/^[a-f0-9]{64}$/)});
 function parse(schema,input) {const r=schema.safeParse(input);if(!r.success)throw badRequest(r.error.issues.map(i=>i.message).join(' '));return r.data;}
 function filters(req) {
   const today=new Date().toISOString().slice(0,10),start=new Date(Date.now()-29*86400000).toISOString().slice(0,10);
@@ -47,6 +48,7 @@ router.get('/context',handle(req=>service.context(req.user.business_id)));
 router.get('/dashboard',handle(req=>service.dashboard(req.user.business_id,filters(req))));
 router.get('/history',handle(req=>service.history(req.user.business_id,filters(req))));
 router.get('/members',handle(req=>service.members(req.user.business_id,filters(req))));
+router.get('/programs/:id/enrollment-qr',handle(req=>service.enrollmentQr(req.user.business_id,parse(uuid,req.params.id))));
 router.post('/programs',handle(req=>service.saveProgram(req.user.business_id,req.user.id,parse(program,req.body))));
 router.put('/programs/:id',handle(req=>service.saveProgram(req.user.business_id,req.user.id,parse(program,req.body),parse(uuid,req.params.id))));
 router.delete('/programs/:id',handle(req=>service.deleteProgram(req.user.business_id,req.user.id,parse(uuid,req.params.id))));
@@ -56,8 +58,11 @@ router.post('/members/:id/stamps',handle(req=>service.manualStamp(req.user.busin
 router.post('/events/:id/void',handle(req=>service.voidStamp(req.user.business_id,req.user.id,parse(uuid,req.params.id),
   parse(z.string().trim().min(5).max(500),req.body.reason))));
 publicRouter.use(rateLimit({keyPrefix:'stamp-card-read',max:180,windowMs:15*60000}));
+publicRouter.get('/programs/:id',handle(req=>service.publicProgram(parse(uuid,req.params.id))));
+publicRouter.post('/programs/:id/enroll',rateLimit({keyPrefix:'stamp-card-enroll',max:20,windowMs:15*60000}),
+  handle(req=>service.publicEnroll(parse(uuid,req.params.id),parse(publicEnrollment,req.body))));
 publicRouter.get('/:token',handle(req=>service.publicCard(req.params.token)));
 publicRouter.post('/:token/claim',rateLimit({keyPrefix:'stamp-card-claim',max:30,windowMs:15*60000}),
   handle(req=>service.claim(req.params.token,parse(uuid,req.body.cycle_id))));
 publicRouter.post('/:token/renew',rateLimit({keyPrefix:'stamp-card-renew',max:20,windowMs:15*60000}),handle(req=>service.renew(req.params.token)));
-module.exports={router,publicRouter,program,enrollment};
+module.exports={router,publicRouter,program,enrollment,publicEnrollment};

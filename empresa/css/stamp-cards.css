@@ -40,6 +40,7 @@
 @media(max-width:520px){#scDialog.sc-scan-dialog footer{bottom:-18px}}
 html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) #scDialog .sc-scan-card strong{color:#fff!important;-webkit-text-fill-color:#fff!important}
 @media(max-width:520px){#scDialog .sc-form-grid{grid-template-columns:minmax(0,1fr)}}
+#scDialog .sc-registration-qr{text-align:center;background:#f4f7f9;border-radius:16px;padding:20px;color:#173548}#scDialog .sc-registration-qr img{display:block;width:min(100%,300px);height:auto;margin:12px auto}#scDialog .sc-registration-qr h4{font-size:20px;margin:10px 0;overflow-wrap:anywhere}#scDialog .sc-registration-qr .sc-eyebrow{color:#335a6c}
 html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) #stampCardsView :is(.sc-hero h2,.sc-card-art h4){color:#fff!important}
 html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) #stampCardsView :is(.sc-hero p,.sc-card-art p,.sc-brand){color:#dceaf0!important}
 html body:not(#qoriBrandA#qoriBrandB#qoriBrandC#qoriBrandD) #stampCardsView :is(.sc-kpi,.sc-panel,.sc-toolbar,.sc-card,.sc-hero){border-radius:16px!important}
