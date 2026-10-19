@@ -91,11 +91,11 @@ async function deleteProgram(businessId,userId,id) {
   return {ok:true,...result.rows[0]};
 }
 async function enrollmentQr(businessId,programId) {
-  const program=(await query('select id,name from stamp_programs where id=$1 and business_id=$2 and deleted_at is null',[programId,businessId])).rows[0];
+  const program=(await query('select id,name,status from stamp_programs where id=$1 and business_id=$2 and deleted_at is null',[programId,businessId])).rows[0];
   if (!program) throw notFound('Programa no encontrado.');
   const url=new URL('/sellos/inscripcion.html',env.publicAppUrl);
   url.searchParams.set('programa',program.id);
-  return {url:url.toString(),program_name:program.name,qr_image:await QRCode.toDataURL(url.toString(),{width:600,margin:4,errorCorrectionLevel:'M'})};
+  return {url:url.toString(),program_name:program.name,program_status:program.status,qr_image:await QRCode.toDataURL(url.toString(),{width:600,margin:4,errorCorrectionLevel:'M'})};
 }
 async function registrationProgram(programId) {
   const program=(await query(`select p.* from stamp_programs p join businesses b on b.id=p.business_id

@@ -66,10 +66,16 @@ test('program QR self-service registration',{skip:process.env.STAMP_CARD_INTEGRA
   await t.test('consent, identity and retry key are required',async()=>{
     for(const override of [{consent:false},{name:''},{document_id:'---'},{access_key:'guess'},{email:'bad'}])assert.equal((await post({...customer(),...override})).status,400);
   });
+  await t.test('pasted email whitespace is normalized before creating the card',async()=>{
+    const input={...customer(),email:'  ana@example.test  '};
+    const result=await post(input);assert.equal(result.status,200);
+    assert.equal((await query('select email from stamp_members where program_id=$1 and document_key=$2',[program.id,svc.normalizeDocument(input.document_id)])).rows[0].email,'ana@example.test');
+  });
   await t.test('paused, archived, deleted and inactive-business programs reject registration',async()=>{
     const p=await svc.saveProgram(business.id,user.id,rules);
     for(const status of ['PAUSED','ARCHIVED']){
       await svc.saveProgram(business.id,user.id,{...rules,status},p.id);
+      const qr=await svc.enrollmentQr(business.id,p.id);assert.equal(qr.program_status,status);assert.ok(qr.url.includes(p.id));
       await assert.rejects(()=>svc.publicProgram(p.id),/no está disponible/);
       await assert.rejects(()=>svc.publicEnroll(p.id,customer()),/no está disponible/);
     }

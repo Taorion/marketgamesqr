@@ -27,7 +27,7 @@ const program=z.object({
     ctx.addIssue({code:'custom',message:'Ingresa el valor del descuento.'});
 });
 const enrollment=z.object({program_id:uuid,name:z.string().trim().min(2).max(160),document_id:z.string().trim().min(3).max(80),
-  phone:z.string().trim().max(40).optional(),email:z.union([z.string().email().max(180),z.literal('')]).optional(),consent:z.literal(true)});
+  phone:z.string().trim().max(40).optional(),email:z.string().trim().max(180).refine(value=>value===''||z.string().email().safeParse(value).success,'Ingresa un correo válido.').optional(),consent:z.literal(true)});
 const publicEnrollment=enrollment.omit({program_id:true}).extend({access_key:z.string().regex(/^[a-f0-9]{64}$/)});
 function parse(schema,input) {const r=schema.safeParse(input);if(!r.success)throw badRequest(r.error.issues.map(i=>i.message).join(' '));return r.data;}
 function filters(req) {

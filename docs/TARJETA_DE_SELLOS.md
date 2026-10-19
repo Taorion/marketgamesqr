@@ -22,6 +22,8 @@ Cada programa existente o nuevo tiene **QR de inscripción**: abre una vista con
 
 El cliente escanea el QR y abre `/sellos/inscripcion.html?programa=<id>`, sin cuenta de Qori. Ve el nombre y logo del negocio, beneficio y condiciones; registra nombre y documento, celular/correo opcionales y autoriza el uso de datos. Al enviar se crea su inscripción y primer ciclo con cero sellos; abre directamente su tarjeta personalizada, con enlace para guardar y QR de identificación. La inscripción aparece en las tarjetas e indicadores del negocio.
 
+La vista del QR avisa si el programa está pausado o archivado. Si compartir no está disponible, intenta copiar el enlace. El formulario público explica los enlaces incompletos, limita las esperas de conexión a 20 segundos y permite reintentar sin perder la clave del alta. El acceso a una tarjeta guardada en el dispositivo permanece visible aunque no se puedan abrir nuevas inscripciones. Los correos pegados se normalizan quitando espacios al inicio y al final.
+
 Solo se admiten programas activos y no eliminados de negocios activos con acceso vigente. Se aplican los cupos configurados por el plan y límites de solicitudes. La API obtiene el negocio desde el programa; no acepta del cliente negocio, sellos, reglas, premio ni token de tarjeta. Los datos públicos omiten costos, documentos y registros privados.
 
 Se conserva una tarjeta por documento normalizado y programa. El navegador genera una clave aleatoria de 256 bits para reintentar el alta; el servidor deriva el secreto de la tarjeta incluyendo programa y documento. Solo esa clave permite recuperar el resultado del mismo envío. Otro visitante que conozca el documento no recibe el enlace ni modifica la tarjeta existente: debe usar su enlace personal o solicitarlo al negocio. Si el almacenamiento local está disponible, se ofrece abrir la tarjeta guardada en ese dispositivo. No se envían mensajes, correos ni WhatsApp automáticamente.
@@ -62,7 +64,7 @@ Prueba local aislada (PostgreSQL en `127.0.0.1:55439`):
 
 ```text
 node scripts/stamp-card-local-setup.js
-STAMP_CARD_INTEGRATION=1 node --test test/stampCards.integration.test.js test/stampSelfService.integration.test.js test/stampCardQr.test.js test/validatorScannedCart.test.js
+STAMP_CARD_INTEGRATION=1 node --test test/stampCards.integration.test.js test/stampSelfService.integration.test.js test/stampRegistrationUi.test.js test/stampCardQr.test.js test/validatorScannedCart.test.js
 node scripts/stamp-card-local-server.js
 ```
 

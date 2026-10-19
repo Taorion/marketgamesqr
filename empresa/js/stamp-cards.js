@@ -81,9 +81,15 @@
     try{
       const result=await apiCall(`/programs/${id}/enrollment-qr`);
       if(!d.isConnected||!d.open||!isCurrentBusinessScope(scope))return;
+      const paused=result.program_status&&result.program_status!=='ACTIVE';
       d.querySelector('.sc-dialog-content').innerHTML=`<div class="sc-registration-qr"><span class="sc-eyebrow">${esc(ctx.business.name)}</span><h4>${esc(result.program_name)}</h4><p>Escanea y crea tu tarjeta de sellos</p><img src="${esc(result.qr_image)}" alt="QR de inscripción a ${esc(result.program_name)}"></div><p>Exhibe este QR en tu negocio o comparte el enlace. Cada cliente registra sus datos y recibe su propia tarjeta. El programa debe estar activo para aceptar inscripciones.</p><a class="sc-share-link" href="${esc(result.url)}" target="_blank" rel="noopener noreferrer">${esc(result.url)}</a><div class="sc-actions"><a href="${esc(result.qr_image)}" download="qr-inscripcion-${id}.png">Descargar QR</a><button id="scCopyRegistration">Copiar enlace</button><button id="scShareRegistration">Compartir</button><a href="${esc(result.url)}" target="_blank" rel="noopener noreferrer">Abrir inscripción</a></div><p class="sc-message" role="status" id="scDialogMessage"></p>`;
-      d.querySelector('#scCopyRegistration').onclick=async()=>{try{await navigator.clipboard.writeText(result.url);d.querySelector('#scDialogMessage').textContent='Enlace de inscripción copiado.';}catch{d.querySelector('#scDialogMessage').textContent='Selecciona y copia el enlace que aparece arriba.';}};
-      d.querySelector('#scShareRegistration').onclick=async()=>{if(navigator.share){try{await navigator.share({title:result.program_name,text:`Crea tu tarjeta de sellos de ${ctx.business.name}`,url:result.url});}catch{}}else d.querySelector('#scCopyRegistration').click();};
+      if(paused)d.querySelector('.sc-registration-qr').insertAdjacentHTML('afterend',`<p class="sc-note" role="status">Programa ${result.program_status==='PAUSED'?'pausado':'archivado'}: no acepta inscripciones. Actívalo desde Configurar para que los clientes puedan crear su tarjeta. Este QR seguirá siendo el mismo.</p>`);
+      const copyLink=async()=>{try{await navigator.clipboard.writeText(result.url);d.querySelector('#scDialogMessage').textContent='Enlace de inscripción copiado.';}catch{d.querySelector('#scDialogMessage').textContent='Selecciona y copia el enlace que aparece arriba.';}};
+      d.querySelector('#scCopyRegistration').onclick=copyLink;
+      d.querySelector('#scShareRegistration').onclick=async()=>{
+        if(navigator.share){try{await navigator.share({title:result.program_name,text:`Crea tu tarjeta de sellos de ${ctx.business.name}`,url:result.url});return;}catch(error){if(error.name==='AbortError')return;}}
+        await copyLink();
+      };
     }catch(error){if(d.isConnected&&d.open)d.querySelector('#scDialogMessage').textContent=error.message;}
   }
   function enrollForm(id){const active=ctx.programs.filter(p=>p.status==='ACTIVE');if(!active.length){message('Crea o activa un programa antes de entregar tarjetas.',true);return;}
