@@ -101,7 +101,7 @@ test("commercial admin: real PostgreSQL, API authorization, onboarding and revoc
     await call(c+`/customers/${businessId}`,root,{seller_id:seller2.seller.id,reason:"Reasignación de prueba"},"PATCH");
     assert.equal((await call(c+"/customers",token1)).rows.some(b=>b.id===businessId),false);
     assert.equal((await call(c+"/customers",token2)).rows.some(b=>b.id===businessId),true);
-    await call(c+`/deals/${offer.id}/apply`,token1,{},"POST",400);
+    await call(c+`/deals/${offer.id}/apply`,token1,{},"POST",403);
   });
   await t.test("revocation is visible in computed access and cannot be done by a seller",async()=>{
     await call(c+`/customers/${businessId}`,token2,{revoke_benefits:true,reason:"Intento sin permiso"},"PATCH",403);
@@ -114,7 +114,9 @@ test("commercial admin: real PostgreSQL, API authorization, onboarding and revoc
     await call(c+"/bootstrap",token1,undefined,"GET",401);
     const audit=await call(c+"/audit",root);assert.ok(audit.rows.length>=15);
     assert.equal(JSON.stringify(audit).includes(seller1.credentials.password),false);
-    await call(c+"/audit",token2,undefined,"GET",403);
+    const ownAudit=await call(c+"/audit",token2);
+    assert.ok(ownAudit.rows.length>0);
+    assert.ok(ownAudit.rows.every(a=>[seller2.seller.id,businessId,prospect.id].includes(a.entity_id)));
   });
   await t.test("a business owner can also be superadmin without losing their business identity",async()=>{
     const saved=(await pool.query("update app_users set platform_role='QORI_SUPERADMIN' where email=$1 returning id,business_id,role",[ownerCredentials.email])).rows[0];

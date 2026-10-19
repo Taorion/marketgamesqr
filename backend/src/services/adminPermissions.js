@@ -18,13 +18,14 @@ const DEFAULT_PERMISSIONS = ['prospects.manage', 'enrollments.create', 'offers.m
 function permissionsFor(user) {
   if (user?.role === 'QORI_SUPERADMIN') return Object.keys(PERMISSIONS);
   if (user?.role !== 'QORI_SELLER') return [];
-  return Array.isArray(user.admin_permissions) ? user.admin_permissions.filter(p => Object.hasOwn(PERMISSIONS, p)) : [...DEFAULT_PERMISSIONS];
+  // Seller scope is a role boundary, including accounts with legacy global grants.
+  return Array.isArray(user.admin_permissions) ? user.admin_permissions.filter(p => DEFAULT_PERMISSIONS.includes(p)) : [...DEFAULT_PERMISSIONS];
 }
 const hasPermission = (user, permission) => permissionsFor(user).includes(permission);
 function requirePermission(user, permission) {
   if (!hasPermission(user, permission)) throw forbidden('No tienes permiso para esta acción. Solicítalo al superadministrador.');
 }
-const canSeeTeam = user => ['team.view','team.create','team.edit','team.remove','policies.manage','customers.manage','portfolio.all'].some(p => hasPermission(user,p));
+const canSeeTeam = user => user?.role === 'QORI_SUPERADMIN';
 // A delegated staff manager must never reset credentials or revive a privileged account.
 function hasPrivilegedAccess(account) {
   return account.role === 'QORI_SUPERADMIN' || account.platform_role === 'QORI_SUPERADMIN'

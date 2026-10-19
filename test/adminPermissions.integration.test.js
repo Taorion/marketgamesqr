@@ -33,7 +33,7 @@ test('admin roles and delegated permissions are enforced against real persisted 
     const boot=await call(c+'/bootstrap',sellerToken);assert.deepEqual(boot.user.permissions,DEFAULT_PERMISSIONS);assert.equal(boot.user.can_see_team,false);
     await access(other,[], 'QORI_SUPERADMIN',sellerToken,403);
     await call(c+'/sellers',sellerToken,{full_name:'Forbidden',email:'forbidden@example.test'},403);
-    await call(c+'/policies',sellerToken,policyBody,403);await call(c+'/audit',sellerToken,undefined,403);
+    await call(c+'/policies',sellerToken,policyBody,403);await call(c+'/audit',sellerToken);
     await call('/api/admin/users',sellerToken,undefined,403);
     prospect=(await call(c+'/prospects',await token(other),prospectBody)).prospect;
     deal=(await call(c+'/deals',await token(other),{prospect_id:prospect.id,terms:{plan_code:'STARTER'},reason:'Needs exception approval'})).deal;
@@ -47,42 +47,29 @@ test('admin roles and delegated permissions are enforced against real persisted 
     await call(c+`/deals/${deal.id}/apply`,sellerToken,{},403);
     await call(c+`/deals/${deal.id}/cancel`,sellerToken,{reason:'Not permitted'},403);
   });
-  await t.test('team creation does not authorize removal, editing or privileged roles',async()=>{
-    await access(seller,['team.create']);sellerToken=await token(seller);
-    const created=await call(c+'/sellers',sellerToken,{full_name:'Delegated created',email:`${prefix}-created@example.test`});
-    assert.equal(created.seller.role,'QORI_SELLER');
-    await call(c+`/sellers/${created.seller.id}`,sellerToken,undefined,403,'DELETE');
-    await call(c+`/sellers/${created.seller.id}`,sellerToken,{full_name:'Cannot edit'},403,'PATCH');
-    await call(c+'/sellers',sellerToken,{full_name:'Forged',email:`${prefix}-forged@example.test`,admin_permissions:['team.remove']},400);
-    await access(other,[], 'QORI_SUPERADMIN',sellerToken,403);
-    assert.equal((await call(c+'/bootstrap',sellerToken)).user.can_see_team,true);
+  await t.test('global permissions cannot be granted to the seller role',async()=>{
+    for(const permission of Object.keys(PERMISSIONS).filter(p=>!DEFAULT_PERMISSIONS.includes(p))) {
+      await access(seller,[permission],'QORI_SELLER',rootToken,400);
+    }
+    await access(seller,DEFAULT_PERMISSIONS);sellerToken=await token(seller);
+    assert.equal((await call(c+'/bootstrap',sellerToken)).user.can_see_team,false);
   });
-  await t.test('delegated editing and removal cannot take over privileged accounts',async()=>{
-    await access(seller,['team.edit','team.remove','team.create']);sellerToken=await token(seller);
-    await call(c+`/sellers/${other.id}`,sellerToken,{full_name:'Edited seller'},200,'PATCH');
-    await call(c+`/sellers/${root.id}`,sellerToken,{password:'Takeover-QA!2026',password_confirm:'Takeover-QA!2026'},403,'PATCH');
-    await call(c+`/sellers/${seller.id}`,sellerToken,undefined,403,'DELETE');
-    await access(dual,['team.create']);
-    await call(c+`/sellers/${dual.id}`,sellerToken,{reset_password:true},403,'PATCH');
-    await call(c+`/sellers/${dual.id}`,sellerToken,undefined,403,'DELETE');
-    await access(dual,[]);
-    await call(c+`/sellers/${dual.id}`,sellerToken,undefined,200,'DELETE');
-    const u=(await pool.query('select * from app_users where id=$1',[dual.id])).rows[0];assert.equal(u.is_active,true);assert.equal(u.role,'BUSINESS_OWNER');assert.equal(u.platform_role,null);
-  });
-  await t.test('policy management and audit are separate from approval and all-portfolio access',async()=>{
-    await access(seller,['policies.manage','audit.view']);sellerToken=await token(seller);
-    await call(c+'/policies',sellerToken,policyBody);await call(c+'/audit',sellerToken);
+  await t.test('legacy global grants never widen seller access or allow team administration',async()=>{
+    await pool.query('update app_users set admin_permissions=$2 where id=$1',[seller.id,Object.keys(PERMISSIONS)]);
+    sellerToken=await token(seller);
+    const boot=await call(c+'/bootstrap',sellerToken);
+    assert.deepEqual(boot.user.permissions,DEFAULT_PERMISSIONS);assert.equal(boot.user.can_see_team,false);
+    assert.deepEqual(boot.sellers.map(s=>s.id),[seller.id]);
+    await call(c+'/sellers',sellerToken,{full_name:'Forbidden',email:'forbidden@example.test'},403);
+    await call(c+`/sellers/${other.id}`,sellerToken,undefined,403);
+    await call(c+`/sellers/${other.id}`,sellerToken,{full_name:'Cannot edit'},403,'PATCH');
+    await call(c+`/sellers/${other.id}`,sellerToken,undefined,403,'DELETE');
+    await call(c+'/policies',sellerToken,policyBody,403);
     await call(c+`/deals/${deal.id}/decision`,sellerToken,{decision:'APPROVED',reason:'Not permitted'},403);
+    await call(c+`/customers/${business.id}`,sellerToken,{is_active:false,reason:'Not permitted'},403,'PATCH');
     assert.equal((await call(c+'/prospects',sellerToken)).rows.length,0);
-  });
-  await t.test('approval and customer management remain scoped unless all-portfolio is granted',async()=>{
-    await access(seller,['offers.approve','customers.manage']);sellerToken=await token(seller);
-    await call(c+`/deals/${deal.id}/decision`,sellerToken,{decision:'APPROVED',reason:'Outside own portfolio'},403);
-    await call(c+`/customers/${business.id}`,sellerToken,{is_active:false,reason:'Outside own portfolio'},403,'PATCH');
-    await access(seller,['offers.approve','customers.manage','portfolio.all']);sellerToken=await token(seller);
-    assert.ok((await call(c+'/prospects',sellerToken)).rows.some(p=>p.id===prospect.id));
-    const approved=await call(c+`/deals/${deal.id}/decision`,sellerToken,{decision:'APPROVED',reason:'Delegated approval allowed'});assert.equal(approved.deal.status,'APPROVED');
-    await call(c+`/customers/${business.id}`,sellerToken,{is_active:true,reason:'Delegated customer management'},200,'PATCH');
+    await call(c+`/prospects?seller_id=${other.id}`,sellerToken,undefined,403);
+    await call(c+`/audit?seller_id=${other.id}`,sellerToken,undefined,403);
     await call('/api/admin/users',sellerToken,undefined,403);
     await call('/api/qa/business/'+business.id,sellerToken,undefined,403);
   });
@@ -116,7 +103,7 @@ test('admin roles and delegated permissions are enforced against real persisted 
   });
   await t.test('permission changes have auditable before/after records without credentials',async()=>{
     const audit=(await pool.query("select detail from qori_commercial_audit where entity_id=$1 and action='ADMIN_ACCESS_UPDATED'",[seller.id])).rows;
-    assert.ok(audit.length>=5);assert.ok(audit.every(a=>a.detail.reason&&Array.isArray(a.detail.permissions)));
+    assert.ok(audit.length>=2);assert.ok(audit.every(a=>a.detail.reason&&Array.isArray(a.detail.permissions)));
     assert.equal(JSON.stringify(audit).includes('password'),false);
   });
 });

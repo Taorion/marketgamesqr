@@ -27,7 +27,27 @@ function addMonths(date, months) { const end = new Date(date); const day = end.g
 const generatedPassword = () => crypto.randomBytes(18).toString("base64url") + "!7aA";
 
 async function audit(client, actor, action, entity, id, detail = {}) {
+  let subject={};
+  if(entity==='prospect') subject=(await client.query('select seller_id,business_name as name from qori_sales_prospects where id=$1',[id])).rows[0]||{};
+  if(entity==='deal') subject=(await client.query(`select d.seller_id,coalesce(p.business_name,b.name) as name from qori_commercial_deals d
+    left join qori_sales_prospects p on p.id=d.prospect_id left join businesses b on b.id=d.business_id where d.id=$1`,[id])).rows[0]||{};
+  if(entity==='business') subject=(await client.query('select a.seller_id,b.name from businesses b left join qori_sales_accounts a on a.business_id=b.id where b.id=$1',[id])).rows[0]||{};
+  detail={...subject,...detail};
   await client.query("insert into qori_commercial_audit (actor_id, action, entity_type, entity_id, detail) values ($1,$2,$3,$4,$5::jsonb)", [actor.id, action, entity, id, JSON.stringify(detail)]);
+}
+function changedFields(before,after,keys) {
+  return Object.fromEntries(keys.filter(key=>String(before?.[key]??'')!==String(after?.[key]??''))
+    .map(key=>[key,{before:before?.[key]??null,after:after?.[key]??null}]));
+}
+async function requireDealPortfolio(client,user,deal) {
+  requireOwner(user,deal.seller_id);
+  if(user.role===SUPERADMIN)return;
+  if(deal.prospect_id) {
+    const prospect=(await client.query('select seller_id,business_id from qori_sales_prospects where id=$1',[deal.prospect_id])).rows[0];
+    requireOwner(user,prospect?.seller_id);
+    if(prospect?.business_id) requireOwner(user,(await client.query('select seller_id from qori_sales_accounts where business_id=$1',[prospect.business_id])).rows[0]?.seller_id);
+  }
+  if(deal.business_id) requireOwner(user,(await client.query('select seller_id from qori_sales_accounts where business_id=$1',[deal.business_id])).rows[0]?.seller_id);
 }
 async function sellerExists(client, id) {
   const result = await client.query("select id from app_users where id=$1 and is_active=true and (role in ('QORI_SUPERADMIN','QORI_SELLER') or platform_role in ('QORI_SUPERADMIN','QORI_SELLER')) for share", [id]);
@@ -39,8 +59,15 @@ async function locked(client, table, id) {
   if (!result.rowCount) throw notFound("Registro no encontrado.");
   return result.rows[0];
 }
-async function bootstrap(user) {
+function sellerScope(user,params={}) {
   requireCommercialUser(user);
+  const id=params.seller_id?validate(uuid,params.seller_id):user.id;
+  requireOwner(user,id);
+  return {id,all:user.role===SUPERADMIN&&!params.seller_id};
+}
+async function bootstrap(user,params={}) {
+  requireCommercialUser(user);
+  const scope=sellerScope(user,params);
   const [policies, sellers, counts] = await Promise.all([
     query(`select * from qori_commercial_policies where ($1::boolean or (is_active and expires_at > now() and (seller_id is null or seller_id=$2))) order by created_at desc limit 200`, [hasPermission(user,'policies.manage'), user.id]),
     query(`select u.id,u.full_name,u.email,u.role,u.platform_role,u.admin_permissions,u.business_id,u.is_active as account_is_active,
@@ -51,9 +78,30 @@ async function bootstrap(user) {
     query(`select (select count(*)::int from qori_sales_prospects where ($1 or seller_id=$2) and stage not in ('WON','LOST')) as prospects,
       (select count(*)::int from qori_commercial_deals where ($1 or seller_id=$2) and status='PENDING') as pending,
       (select count(*)::int from qori_commercial_deals where ($1 or seller_id=$2) and status='APPROVED' and valid_until>now()) as approved,
-      (select count(*)::int from businesses b where b.is_active and ($1 or exists(select 1 from qori_sales_accounts a where a.business_id=b.id and a.seller_id=$2))) as customers`, [hasPermission(user,'portfolio.all'), user.id]),
+      (select count(*)::int from businesses b where b.is_active and ($1 or exists(select 1 from qori_sales_accounts a where a.business_id=b.id and a.seller_id=$2))) as customers`, [scope.all, scope.id]),
   ]);
-  return { user: { id: user.id, name: user.full_name, role: user.role, permissions:permissionsFor(user), can_see_team:canSeeTeam(user) }, permission_catalog:PERMISSIONS, default_permissions:DEFAULT_PERMISSIONS, descubre: listPlans().find(p => p.code === "DESCUBRE"), plans: listPlans().filter(p => PLAN_CODES.includes(p.code)), modules: MODULES, limit_labels: LIMIT_LABELS, policies: policies.rows, sellers: sellers.rows.map(s=>({...s,admin_role:s.platform_role||s.role,privileged:hasPrivilegedAccess(s)})), counts: counts.rows[0] };
+  return { user: { id: user.id, name: user.full_name, role: user.role, permissions:permissionsFor(user), can_see_team:canSeeTeam(user) }, permission_catalog:PERMISSIONS, default_permissions:DEFAULT_PERMISSIONS, descubre: listPlans().find(p => p.code === "DESCUBRE"), plans: listPlans().filter(p => PLAN_CODES.includes(p.code)), modules: MODULES, limit_labels: LIMIT_LABELS, policies: policies.rows, sellers: sellers.rows.map(s=>({...s,admin_permissions:permissionsFor({...s,role:s.platform_role||s.role}),admin_role:s.platform_role||s.role,privileged:(s.platform_role||s.role)===SUPERADMIN})), counts: counts.rows[0] };
+}
+async function sellerDetails(user,id) {
+  validate(uuid,id);requireOwner(user,id);
+  const seller=(await query(`select u.id,u.full_name,u.email,u.role,u.platform_role,u.business_id,u.is_active as account_is_active,
+    (u.is_active and (u.role in ('QORI_SELLER','QORI_SUPERADMIN') or u.platform_role in ('QORI_SELLER','QORI_SUPERADMIN'))) as is_active,
+    u.created_at,u.updated_at,p.phone,p.archived_at,p.created_at as seller_since,creator.full_name as created_by_name,b.name as business_name
+    from app_users u left join qori_sales_profiles p on p.user_id=u.id left join app_users creator on creator.id=p.created_by
+    left join businesses b on b.id=u.business_id where u.id=$1
+    and (p.user_id is not null or u.role in ('QORI_SELLER','QORI_SUPERADMIN') or u.platform_role in ('QORI_SELLER','QORI_SUPERADMIN'))`,[id])).rows[0];
+  if(!seller)throw notFound('Vendedor no encontrado.');
+  const stats=(await query(`select
+    (select count(*)::int from qori_sales_prospects where seller_id=$1) as prospects_total,
+    (select count(*)::int from qori_sales_prospects where seller_id=$1 and stage not in ('WON','LOST')) as prospects_open,
+    (select count(*)::int from qori_sales_prospects where seller_id=$1 and stage='WON') as prospects_won,
+    (select count(*)::int from qori_sales_prospects where seller_id=$1 and stage='LOST') as prospects_lost,
+    (select count(*)::int from qori_sales_prospects where seller_id=$1 and stage not in ('WON','LOST') and next_contact_at<now()) as overdue,
+    (select count(*)::int from qori_commercial_deals where seller_id=$1) as deals_total,
+    (select count(*)::int from qori_commercial_deals where seller_id=$1 and status='APPLIED') as deals_applied,
+    (select count(*)::int from qori_sales_accounts where seller_id=$1) as customers_total,
+    (select max(created_at) from qori_commercial_audit where actor_id=$1) as last_activity_at`,[id])).rows[0];
+  return {seller:{...seller,admin_role:seller.platform_role||seller.role},stats};
 }
 async function createSeller(user, payload) {
   requirePermission(user,'team.create');
@@ -116,7 +164,7 @@ async function updateSeller(user, id, payload, archive = false) {
     const current = await locked(client, "app_users", id);
     if(user.id===id) throw forbidden('No puedes modificar tu propio acceso.');
     if(user.role!==SUPERADMIN && hasPrivilegedAccess(current)) throw forbidden('Solo el superadministrador puede gestionar usuarios con permisos adicionales.');
-    const profile=(await client.query("select user_id from qori_sales_profiles where user_id=$1",[id])).rows[0];
+    const profile=(await client.query("select user_id,phone from qori_sales_profiles where user_id=$1",[id])).rows[0];
     const shared=businessRoles.includes(current.role)&&Boolean(current.business_id);
     if (current.platform_role===SUPERADMIN || (current.role!==SELLER && !(shared&&profile))) throw badRequest("Este control solo administra vendedores de Qori.");
     const active = archive ? false : (body.is_active ?? (shared ? current.platform_role===SELLER : current.is_active));
@@ -125,7 +173,8 @@ async function updateSeller(user, id, payload, archive = false) {
       platform_role=$5,password_version=coalesce(password_version,0)+1,updated_at=now() where id=$1
       returning id,email,full_name,is_active,role,platform_role,business_id`, [id, body.full_name || current.full_name, shared?current.is_active:active, hash,shared?(active?SELLER:null):current.platform_role]);
     await client.query(`update qori_sales_profiles set phone=coalesce($2,phone),archived_at=case when $3 then now() when $4 then null else archived_at end where user_id=$1`, [id, body.phone ?? null, archive, active]);
-    await audit(client, user, archive ? "SELLER_ARCHIVED" : "SELLER_UPDATED", "seller", id, { active, reset_password: Boolean(password) });
+    await audit(client, user, archive ? "SELLER_ARCHIVED" : "SELLER_UPDATED", "seller", id, { name:body.full_name||current.full_name,active, reset_password: Boolean(password),
+      changes:changedFields({...current,phone:profile?.phone},{...result.rows[0],phone:body.phone??profile?.phone},['full_name','phone','is_active','platform_role']) });
     if(password) await client.query("update password_reset_tokens set used_at=now() where user_id=$1 and used_at is null",[id]);
     return { seller: result.rows[0], ...(password ? { credentials: { email: current.email, password,shared_login:shared } } : {}) };
   });
@@ -138,6 +187,7 @@ async function updateAdminAccess(user,id,payload) {
     permissions:z.array(z.enum(Object.keys(PERMISSIONS))).max(Object.keys(PERMISSIONS).length).default([]),
     reason:reasonSchema,
   }).strict(),payload);
+  if(body.role===SELLER&&body.permissions.some(p=>!DEFAULT_PERMISSIONS.includes(p))) throw badRequest('El vendedor solo puede recibir permisos sobre su propio trabajo. El acceso al equipo requiere el rol de superadministrador.');
   if(user.id===id) throw forbidden('No puedes cambiar tu propio rol o permisos. Otro superadministrador debe hacerlo.');
   return withTransaction(async client=>{
     // Serialize role changes and recheck the actor after acquiring the lock.
@@ -183,10 +233,14 @@ function paging(params) {
 async function list(user, kind, params = {}) {
   requireCommercialUser(user);
   const {offset,search,status} = paging(params);
-  const superadmin = kind==='audit' ? hasPermission(user,'audit.view') : hasPermission(user,'portfolio.all');
+  const scope=sellerScope(user,params);
+  const currentDealOwner=user.role===SUPERADMIN?'true':`(d.prospect_id is null or p.seller_id=$2) and
+    (p.business_id is null or exists(select 1 from qori_sales_accounts own where own.business_id=p.business_id and own.seller_id=$2)) and
+    (d.business_id is null or exists(select 1 from qori_sales_accounts own where own.business_id=d.business_id and own.seller_id=$2))`;
+  const currentProspectOwner=user.role===SUPERADMIN?'true':`(p.business_id is null or exists(select 1 from qori_sales_accounts own where own.business_id=p.business_id and own.seller_id=$2))`;
   let sql;
-  if (kind === "prospects") sql = `select p.*,u.full_name as seller_name from qori_sales_prospects p join app_users u on u.id=p.seller_id where ($1 or p.seller_id=$2) and (p.business_name ilike $3 or p.email ilike $3 or p.contact_name ilike $3 or p.phone ilike $3) and ($4='' or p.stage=$4) order by p.created_at desc,p.id limit 51 offset $5`;
-  else if (kind === "deals") sql = `select d.*,coalesce(p.business_name,b.name) as customer_name,u.full_name as seller_name from qori_commercial_deals d left join qori_sales_prospects p on p.id=d.prospect_id left join businesses b on b.id=d.business_id join app_users u on u.id=d.seller_id where ($1 or d.seller_id=$2) and (coalesce(p.business_name,b.name,'') ilike $3 or p.email ilike $3 or b.settings->>'contact_email' ilike $3) and ($4='' or d.status=$4) order by d.created_at desc,d.id limit 51 offset $5`;
+  if (kind === "prospects") sql = `select p.*,u.full_name as seller_name from qori_sales_prospects p join app_users u on u.id=p.seller_id where ($1 or (p.seller_id=$2 and ${currentProspectOwner})) and (p.business_name ilike $3 or p.email ilike $3 or p.contact_name ilike $3 or p.phone ilike $3) and ($4='' or p.stage=$4) order by p.created_at desc,p.id limit 51 offset $5`;
+  else if (kind === "deals") sql = `select d.*,coalesce(p.business_name,b.name) as customer_name,u.full_name as seller_name from qori_commercial_deals d left join qori_sales_prospects p on p.id=d.prospect_id left join businesses b on b.id=d.business_id join app_users u on u.id=d.seller_id where ($1 or (d.seller_id=$2 and ${currentDealOwner})) and (coalesce(p.business_name,b.name,'') ilike $3 or p.email ilike $3 or b.settings->>'contact_email' ilike $3) and ($4='' or d.status=$4) order by d.created_at desc,d.id limit 51 offset $5`;
   else if (kind === "customers") sql = `select b.id,b.name,b.slug,b.is_active,b.plan_code,b.plan_type,b.portal_status,b.subscription_status,b.subscription_current_period_ends_at,b.settings,a.seller_id,u.full_name as seller_name
     from businesses b left join qori_sales_accounts a on a.business_id=b.id left join app_users u on u.id=a.seller_id
     where ($1 or a.seller_id=$2)
@@ -197,9 +251,19 @@ async function list(user, kind, params = {}) {
         ($4='DESCUBRE_EXPIRED' and b.plan_code='DESCUBRE' and (b.subscription_current_period_ends_at<=now() or b.subscription_current_period_ends_at is null)) or
         ($4 not in ('SUSPENDED','DESCUBRE_ACTIVE','DESCUBRE_EXPIRED') and b.is_active and b.subscription_status=$4))
     order by b.created_at desc,b.id limit 51 offset $5`;
-  else if (kind === "audit") { requirePermission(user,"audit.view"); sql = `select a.*,u.full_name as actor_name from qori_commercial_audit a left join app_users u on u.id=a.actor_id where ($1 or a.actor_id=$2) and (a.action ilike $3 or u.full_name ilike $3) and ($4='' or a.entity_type=$4) order by a.created_at desc,a.id limit 51 offset $5`; }
+  else if (kind === "audit") {
+    const subject=`(a.entity_type='seller' and a.entity_id=$2)
+      or (a.entity_type='prospect' and exists(select 1 from qori_sales_prospects p where p.id=a.entity_id and p.seller_id=$2 and ${currentProspectOwner}))
+      or (a.entity_type='business' and exists(select 1 from qori_sales_accounts own where own.business_id=a.entity_id and own.seller_id=$2))
+      or (a.entity_type='deal' and exists(select 1 from qori_commercial_deals d left join qori_sales_prospects p on p.id=d.prospect_id
+        where d.id=a.entity_id and d.seller_id=$2 and ${currentDealOwner}))`;
+    const historical=user.role===SUPERADMIN?`or a.actor_id=$2 or a.detail->>'seller_id'=$2::text or a.detail->>'previous_seller_id'=$2::text`:'';
+    sql=`select a.*,u.full_name as actor_name from qori_commercial_audit a left join app_users u on u.id=a.actor_id
+      where ($1 or (${subject} ${historical})) and (a.action ilike $3 or u.full_name ilike $3 or a.detail->>'name' ilike $3 or a.detail->>'reason' ilike $3)
+      and ($4='' or a.entity_type=$4) order by a.created_at desc,a.id limit 51 offset $5`;
+  }
   else throw notFound();
-  const result = await query(sql,[superadmin,user.id,search,status,offset]);
+  const result = await query(sql,[scope.all,scope.id,search,status,offset]);
   const rows = result.rows.slice(0,50).map(row => {
     if (kind !== "customers") return row;
     const { settings, ...publicRow } = row;
@@ -222,7 +286,8 @@ async function saveProspect(user,payload,id=null) {
     }
     const values=[sellerId,body.business_name,body.contact_name,body.email.toLowerCase(),body.phone,body.notes,body.stage,body.next_contact_at];
     const result=id ? await client.query("update qori_sales_prospects set seller_id=$1,business_name=$2,contact_name=$3,email=$4,phone=$5,notes=$6,stage=$7,next_contact_at=$8,updated_at=now() where id=$9 returning *",[...values,id]) : await client.query("insert into qori_sales_prospects(seller_id,business_name,contact_name,email,phone,notes,stage,next_contact_at) values($1,$2,$3,$4,$5,$6,$7,$8) returning *",values);
-    await audit(client,user,id?"PROSPECT_UPDATED":"PROSPECT_CREATED","prospect",result.rows[0].id,{ seller_id:sellerId,stage:body.stage });
+    await audit(client,user,id?"PROSPECT_UPDATED":"PROSPECT_CREATED","prospect",result.rows[0].id,{ seller_id:sellerId,previous_seller_id:current?.seller_id||null,stage:body.stage,
+      changes:changedFields(current,result.rows[0],['business_name','contact_name','email','phone','notes','stage','next_contact_at','seller_id']) });
     return { prospect:result.rows[0] };
   });
 }
@@ -260,7 +325,7 @@ async function decideDeal(user,id,payload) {
   const body=validate(z.object({ decision:z.enum(["APPROVED","REJECTED"]),reason:reasonSchema,valid_days:z.number().int().min(1).max(90).default(30) }).strict(),payload);
   return withTransaction(async client=>{
     const deal=await locked(client,"qori_commercial_deals",id);
-    requireOwner(user,deal.seller_id);
+    await requireDealPortfolio(client,user,deal);
     if(!["PENDING","APPROVED"].includes(deal.status)) throw badRequest("Esta oferta ya está cerrada.");
     await sellerExists(client,deal.seller_id);
     const result=await client.query("update qori_commercial_deals set status=$2,approval_source='SUPERADMIN',approved_by=$3,approved_at=now(),decision_reason=$4,valid_until=$5,updated_at=now() where id=$1 returning *",[id,body.decision,user.id,body.reason,dateAfterDays(new Date(),body.valid_days)]);
@@ -273,7 +338,7 @@ async function cancelDeal(user,id,payload) {
   const reason=validate(reasonSchema,payload.reason);
   return withTransaction(async client=>{
     const deal=await locked(client,"qori_commercial_deals",id);
-    requireOwner(user,deal.seller_id);
+    await requireDealPortfolio(client,user,deal);
     if(!["PENDING","APPROVED"].includes(deal.status)) throw badRequest("La oferta ya fue cerrada.");
     await client.query("update qori_commercial_deals set status='CANCELLED',decision_reason=$2,updated_at=now() where id=$1",[id,reason]);
     await audit(client,user,"DEAL_CANCELLED","deal",id,{reason});
@@ -294,7 +359,7 @@ async function applyDeal(user,id) {
   const hash=await bcrypt.hash(password,12);
   return withTransaction(async client=>{
     const deal=await locked(client,"qori_commercial_deals",id);
-    requireOwner(user,deal.seller_id);
+    await requireDealPortfolio(client,user,deal);
     if(deal.status==="APPLIED") return { business_id:deal.business_id,already_applied:true };
     const policy=deal.policy_id ? await locked(client,"qori_commercial_policies",deal.policy_id) : null;
     assertConvertible(deal,user,policy);
@@ -355,6 +420,7 @@ async function updateCustomer(user,id,payload) {
     if(body.seller_id!==undefined) {
       const previous=await client.query("select seller_id from qori_sales_accounts where business_id=$1",[id]);
       await client.query("insert into qori_sales_accounts(business_id,seller_id,assigned_by) values($1,$2,$3) on conflict(business_id) do update set seller_id=$2,assigned_by=$3,updated_at=now()",[id,body.seller_id,user.id]);
+      if(body.seller_id) await client.query('update qori_sales_prospects set seller_id=$2,updated_at=now() where business_id=$1',[id,body.seller_id]);
       if((previous.rows[0]?.seller_id||null)!==body.seller_id) await client.query("update qori_commercial_deals set status='CANCELLED',decision_reason='Cartera reasignada',updated_at=now() where business_id=$1 and status in ('PENDING','APPROVED')",[id]);
     }
     if(body.is_active!==undefined) await client.query("update businesses set is_active=$2,updated_at=now() where id=$1",[id,body.is_active]);
@@ -363,8 +429,8 @@ async function updateCustomer(user,id,payload) {
       const unpaidTrial=Boolean(terms.trial_ends_at && business.subscription_current_period_ends_at && new Date(business.subscription_current_period_ends_at)<=new Date(terms.trial_ends_at));
       await client.query("update businesses set settings=jsonb_set(settings,'{qori_commercial}',$2::jsonb),subscription_status=case when $3 then 'PENDING_PAYMENT' else subscription_status end,updated_at=now() where id=$1",[id,JSON.stringify(terms),unpaidTrial]);
     }
-    await audit(client,user,"CUSTOMER_UPDATED","business",id,body);
+    await audit(client,user,"CUSTOMER_UPDATED","business",id,{...body,previous_seller_id:owner?.seller_id||null});
     return {ok:true};
   });
 }
-module.exports={bootstrap,createSeller,findExistingSeller,grantExistingSeller,updateSeller,updateAdminAccess,savePolicy,list,saveProspect,createDeal,decideDeal,cancelDeal,applyDeal,updateCustomer,buildTerms};
+module.exports={bootstrap,sellerDetails,createSeller,findExistingSeller,grantExistingSeller,updateSeller,updateAdminAccess,savePolicy,list,saveProspect,createDeal,decideDeal,cancelDeal,applyDeal,updateCustomer,buildTerms};

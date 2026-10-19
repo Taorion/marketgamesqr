@@ -33,7 +33,8 @@ async function enrollDescubre(user, payload) {
     const previous = await client.query("select * from businesses where settings->'qori_descubre'->>'request_id'=$1", [body.request_id]);
     if (previous.rowCount) {
       const business = previous.rows[0];
-      requireOwner(user, business.settings.qori_descubre.seller_id);
+      const owner=(await client.query('select seller_id from qori_sales_accounts where business_id=$1',[business.id])).rows[0];
+      requireOwner(user, owner?.seller_id);
       if (business.settings.contact_email !== body.email || business.settings.nit !== body.nit) throw badRequest("Esta inscripción ya fue utilizada con otros datos.");
       return response(business, body.email, true);
     }

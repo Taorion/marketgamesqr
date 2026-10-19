@@ -7,10 +7,11 @@ const handle = fn => async(req,res,next)=>{ try { res.json(await fn(req)); } cat
   if(error.code==="23505") {error.status=409;error.publicMessage="Ya existe un registro con esos datos. Actualiza la lista antes de continuar.";}
   next(error);
 } };
-router.get("/bootstrap",handle(req=>service.bootstrap(req.user)));
+router.get("/bootstrap",handle(req=>service.bootstrap(req.user,req.query)));
 router.post("/enrollments/descubre",handle(req=>require("../services/descubreEnrollmentService").enrollDescubre(req.user,req.body)));
 for(const kind of ["prospects","deals","customers","audit"]) router.get(`/${kind}`,handle(req=>service.list(req.user,kind,req.query)));
 router.post("/sellers",handle(req=>service.createSeller(req.user,req.body)));
+router.get("/sellers/:id",handle(req=>service.sellerDetails(req.user,req.params.id)));
 router.get("/seller-candidates",handle(req=>service.findExistingSeller(req.user,req.query)));
 router.post("/sellers/existing",handle(req=>service.grantExistingSeller(req.user,req.body)));
 router.patch("/sellers/:id/access",handle(req=>service.updateAdminAccess(req.user,req.params.id,req.body)));

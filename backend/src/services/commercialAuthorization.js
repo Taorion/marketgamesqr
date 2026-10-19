@@ -1,7 +1,6 @@
 const { z } = require("zod");
 const { forbidden, badRequest } = require("../utils/http");
 const { MODULES, LIMIT_LABELS } = require("./commercialTerms");
-const { hasPermission } = require('./adminPermissions');
 const SUPERADMIN = "QORI_SUPERADMIN";
 const SELLER = "QORI_SELLER";
 const PLAN_CODES = ["DESPEGA", "STARTER", "GROWTH", "PRO"];
@@ -28,7 +27,7 @@ const policySchema = z.object({
 });
 function requireSuperadmin(user) { if (user?.role !== SUPERADMIN) throw forbidden("Solo el superadmin puede autorizar esta acción."); }
 function requireCommercialUser(user) { if (![SUPERADMIN, SELLER].includes(user?.role)) throw forbidden("Necesitas una cuenta comercial de Qori."); }
-function requireOwner(user, sellerId) { requireCommercialUser(user); if (!hasPermission(user, 'portfolio.all') && user.id !== sellerId) throw forbidden("Este registro pertenece a otro vendedor."); }
+function requireOwner(user, sellerId) { requireCommercialUser(user); if (user.role !== SUPERADMIN && user.id !== sellerId) throw forbidden("Este registro pertenece a otro vendedor."); }
 function policyAllows(policy, terms, sellerId, now = new Date()) {
   if (!policy || !policy.is_active || new Date(policy.expires_at) <= now || (policy.seller_id && policy.seller_id !== sellerId)) return false;
   return policy.plan_codes.includes(terms.plan_code) && terms.discount_percent <= Number(policy.max_discount_percent)
