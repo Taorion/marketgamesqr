@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const { z } = require("zod");
+const { syncCommercialContact, syncCommercialBusiness } = require('./commercialContactSyncService');
 const { query, withTransaction } = require("../config/db");
 const { badRequest, notFound, forbidden } = require("../utils/http");
 const { validate } = require("../utils/validators");
@@ -288,6 +289,7 @@ async function saveProspect(user,payload,id=null) {
     const result=id ? await client.query("update qori_sales_prospects set seller_id=$1,business_name=$2,contact_name=$3,email=$4,phone=$5,notes=$6,stage=$7,next_contact_at=$8,updated_at=now() where id=$9 returning *",[...values,id]) : await client.query("insert into qori_sales_prospects(seller_id,business_name,contact_name,email,phone,notes,stage,next_contact_at) values($1,$2,$3,$4,$5,$6,$7,$8) returning *",values);
     await audit(client,user,id?"PROSPECT_UPDATED":"PROSPECT_CREATED","prospect",result.rows[0].id,{ seller_id:sellerId,previous_seller_id:current?.seller_id||null,stage:body.stage,
       changes:changedFields(current,result.rows[0],['business_name','contact_name','email','phone','notes','stage','next_contact_at','seller_id']) });
+    await syncCommercialContact(client,{prospect:result.rows[0],sellerId,actorId:user.id});
     return { prospect:result.rows[0] };
   });
 }
@@ -360,7 +362,10 @@ async function applyDeal(user,id) {
   return withTransaction(async client=>{
     const deal=await locked(client,"qori_commercial_deals",id);
     await requireDealPortfolio(client,user,deal);
-    if(deal.status==="APPLIED") return { business_id:deal.business_id,already_applied:true };
+    if(deal.status==="APPLIED") {
+      await syncCommercialBusiness(client,deal.business_id,user.id);
+      return { business_id:deal.business_id,already_applied:true };
+    }
     const policy=deal.policy_id ? await locked(client,"qori_commercial_policies",deal.policy_id) : null;
     assertConvertible(deal,user,policy);
     await sellerExists(client,deal.seller_id);
@@ -403,6 +408,7 @@ async function applyDeal(user,id) {
     await client.query(`insert into qori_sales_accounts(business_id,seller_id,assigned_by) values($1,$2,$3) on conflict(business_id) do nothing`,[business.id,deal.seller_id,user.id]);
     await assignInitialAgreementTickets(client,business.id,deal.terms.bonus_tickets,user.id,`Beneficio autorizado ${deal.id}`);
     await client.query("update qori_commercial_deals set status='APPLIED',business_id=$2,applied_at=now(),applied_by=$3,updated_at=now() where id=$1",[id,business.id,user.id]);
+    await syncCommercialBusiness(client,business.id,user.id);
     await audit(client,user,"DEAL_APPLIED","deal",id,{business_id:business.id,terms:deal.terms});
     return {business_id:business.id,business_name:business.name,subscription:planFromBusiness(business),...(credentials?{credentials}:{})};
   });
@@ -429,6 +435,7 @@ async function updateCustomer(user,id,payload) {
       const unpaidTrial=Boolean(terms.trial_ends_at && business.subscription_current_period_ends_at && new Date(business.subscription_current_period_ends_at)<=new Date(terms.trial_ends_at));
       await client.query("update businesses set settings=jsonb_set(settings,'{qori_commercial}',$2::jsonb),subscription_status=case when $3 then 'PENDING_PAYMENT' else subscription_status end,updated_at=now() where id=$1",[id,JSON.stringify(terms),unpaidTrial]);
     }
+    await syncCommercialBusiness(client,id,user.id);
     await audit(client,user,"CUSTOMER_UPDATED","business",id,{...body,previous_seller_id:owner?.seller_id||null});
     return {ok:true};
   });

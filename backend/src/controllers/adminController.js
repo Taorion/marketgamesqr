@@ -1,5 +1,6 @@
 const { ensureBaseBusinessRecords, assignInitialAgreementTickets } = require("../services/adminProvisioningService");
 const bcrypt = require("bcryptjs");
+const { syncCommercialBusiness } = require('../services/commercialContactSyncService');
 const { z } = require("zod");
 const { query, withTransaction } = require("../config/db");
 const { badRequest, forbidden, notFound } = require("../utils/http");
@@ -223,6 +224,7 @@ async function createBusiness(req, res, next) {
         }));
       }
 
+      await syncCommercialBusiness(client,business.rows[0].id,req.user.id);
       return { business: business.rows[0], owner, credit_account };
     });
 
@@ -327,6 +329,8 @@ async function createAgreementClient(req, res, next) {
         req.user.id,
         body.agreement_notes || "Tickets iniciales asignados al crear cliente con convenio."
       );
+
+      await syncCommercialBusiness(client,business.rows[0].id,req.user.id);
 
       return {
         business: business.rows[0],

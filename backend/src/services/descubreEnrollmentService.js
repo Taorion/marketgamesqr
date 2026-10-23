@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const { syncCommercialBusiness } = require('./commercialContactSyncService');
 const { z } = require("zod");
 const { withTransaction } = require("../config/db");
 const { validate } = require("../utils/validators");
@@ -36,6 +37,7 @@ async function enrollDescubre(user, payload) {
       const owner=(await client.query('select seller_id from qori_sales_accounts where business_id=$1',[business.id])).rows[0];
       requireOwner(user, owner?.seller_id);
       if (business.settings.contact_email !== body.email || business.settings.nit !== body.nit) throw badRequest("Esta inscripción ya fue utilizada con otros datos.");
+      await syncCommercialBusiness(client, business.id, user.id);
       return response(business, body.email, true);
     }
     let prospect;
@@ -76,6 +78,7 @@ async function enrollDescubre(user, payload) {
       await client.query("insert into qori_sales_prospects(seller_id,business_id,business_name,contact_name,email,phone,stage) values($1,$2,$3,$4,$5,$6,'WON')", [sellerId,business.id,name,body.contact_name,body.email,body.phone]);
     }
     await client.query("insert into qori_commercial_audit(actor_id,action,entity_type,entity_id,detail) values($1,'DESCUBRE_ENROLLED','business',$2,$3::jsonb)", [user.id,business.id,JSON.stringify({name,plan_code:"DESCUBRE",seller_id:sellerId,trial_days:plan.trial_days,ends_at:expires,initial_tickets:25})]);
+    await syncCommercialBusiness(client, business.id, user.id);
     return response(business, body.email);
   });
 }
