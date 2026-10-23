@@ -241,7 +241,8 @@ function listWhere(filters, params) {
   }
   if (filters.seller_id) {
     params.push(String(filters.seller_id));
-    clauses.push(`seller_user_id = $${params.length}::uuid`);
+    clauses.push(`(seller_user_id = $${params.length}::uuid or
+      (seller_user_id is null and metadata->'qori_admin'->>'seller_id' = $${params.length}::text))`);
   }
   if (filters.interest) {
     params.push(`%${normalizeSearch(filters.interest)}%`);
@@ -431,7 +432,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          coalesce(p.metadata->>'company', '') as company,
          p.created_at,
          p.seller_user_id,
-         seller.full_name as seller_name,
+         coalesce(seller.full_name, p.metadata->'qori_admin'->>'seller_name') as seller_name,
          seller.email as seller_email,
          coalesce(latest_capture.campaign_id, p.campaign_id) as campaign_id,
          coalesce(latest_capture.campaign_name, c.name) as campaign_name,
@@ -646,7 +647,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          ml.company,
          ml.created_at,
          ml.seller_user_id,
-         seller.full_name as seller_name,
+         coalesce(seller.full_name, ml.metadata->'qori_admin'->>'seller_name') as seller_name,
          seller.email as seller_email,
          ca.campaign_id,
          ca.campaign_name,
@@ -775,7 +776,7 @@ async function listLeadCrmRows(businessId, filters = {}) {
          coalesce(fa.card_metadata->>'company', '') as company,
          fa.created_at,
          fa.seller_user_id,
-         seller.full_name as seller_name,
+         coalesce(seller.full_name, fa.card_metadata->'qori_admin'->>'seller_name') as seller_name,
          seller.email as seller_email,
          ca.campaign_id,
          ca.campaign_name,
@@ -1044,7 +1045,7 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
               coalesce(nullif(fa.card_metadata->>'preferred_channel', ''), 'WhatsApp')::text as preferred_channel,
               coalesce(fa.card_metadata->>'commercial_status', '')::text as stored_status, null::text as priority,
               fa.notes, fa.card_metadata as metadata, fa.created_at, fa.updated_at,
-              fa.seller_user_id, seller.full_name as seller_name, seller.email as seller_email,
+              fa.seller_user_id, coalesce(seller.full_name, fa.card_metadata->'qori_admin'->>'seller_name') as seller_name, seller.email as seller_email,
               ca.campaign_id, ca.campaign_name,
               fa.id as affiliate_id, fa.qr_token as affiliate_code, fa.status as affiliate_status,
               fa.points_total as affiliate_points_total,
@@ -1095,7 +1096,7 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
               ca.campaign_id,
               ca.campaign_name,
               ml.created_at, ml.updated_at,
-              ml.seller_user_id, seller.full_name as seller_name, seller.email as seller_email,
+              ml.seller_user_id, coalesce(seller.full_name, ml.metadata->'qori_admin'->>'seller_name') as seller_name, seller.email as seller_email,
               rms.rms_phase, rms.rms_phase_updated_at, rms.rms_last_operation
        from business_manual_leads ml
        left join app_users seller on seller.id = ml.seller_user_id and seller.business_id = ml.business_id
@@ -1166,7 +1167,7 @@ async function resolveLead(businessId, leadId, sourceType = "PLAYER", client = {
               'campaign_name', latest_capture.campaign_name
             ) else '{}'::jsonb end as metadata,
             p.created_at, p.created_at as updated_at,
-            p.seller_user_id, seller.full_name as seller_name, seller.email as seller_email,
+            p.seller_user_id, coalesce(seller.full_name, p.metadata->'qori_admin'->>'seller_name') as seller_name, seller.email as seller_email,
             coalesce(p.metadata->>'commercial_status', '') as stored_status,
             rms.rms_phase, rms.rms_phase_updated_at, rms.rms_last_operation
      from players p

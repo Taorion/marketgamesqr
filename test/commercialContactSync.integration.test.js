@@ -2,18 +2,18 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 
-test('admin contacts synchronize into the internal Qori CRM', {skip:process.env.QORI_COMMERCIAL_QA !== 'true'}, async t => {
+test('admin contacts synchronize into Orbital Innovation CRM', {skip:process.env.QORI_COMMERCIAL_QA !== 'true'}, async t => {
   const url = new URL(process.env.DATABASE_URL);
   assert.equal(url.hostname,'127.0.0.1');
   assert.equal(url.port,'55439');
   const {pool,withTransaction} = require('../backend/src/config/db');
-  const {syncCommercialContact,syncCommercialBusiness} = require('../backend/src/services/commercialContactSyncService');
+  const {commercialContactBusiness,syncCommercialContact,syncCommercialBusiness} = require('../backend/src/services/commercialContactSyncService');
   const {enrollDescubre} = require('../backend/src/services/descubreEnrollmentService');
   const {saveProspect,updateCustomer} = require('../backend/src/services/commercialAdminService');
   const {listLeadCrmRows} = require('../backend/src/services/leadCrmService');
   t.after(()=>pool.end());
   const prefix=randomUUID();
-  const internal=(await pool.query(`insert into businesses(name,slug,settings) values('Qori QA','marketgames-qr','{"internal_account":true}')
+  const internal=(await pool.query(`insert into businesses(name,slug,settings) values('Orbital Innovation QA','orbital-innovation-sas','{"internal_account":true}')
     on conflict(slug) do update set is_active=true,settings=businesses.settings||'{"internal_account":true}'::jsonb returning id`)).rows[0];
   const other=(await pool.query('insert into businesses(name,slug) values($1,$2) returning id',['Other tenant',prefix])).rows[0];
   const seller=(await pool.query(`insert into app_users(business_id,email,password_hash,full_name,role,platform_role)
@@ -23,6 +23,12 @@ test('admin contacts synchronize into the internal Qori CRM', {skip:process.env.
   const phone='3'+String(BigInt('0x'+prefix.replaceAll('-','').slice(0,12)) % 1000000000n).padStart(9,'0');
   const foreign=(await pool.query(`insert into business_manual_leads(business_id,name,email) values($1,'Same name elsewhere',$2) returning *`,[other.id,email])).rows[0];
   let prospect,contactId,businessId;
+  await t.test('legacy Qori directory cannot become the admin CRM destination',async()=>{
+    const legacy=(await pool.query(`insert into businesses(name,slug,settings) values('Legacy Qori','marketgames-qr','{"internal_account":true}')
+      on conflict(slug) do update set is_active=true returning id`)).rows[0];
+    const destination=await commercialContactBusiness(pool);
+    assert.equal(destination.id,internal.id);assert.notEqual(destination.id,legacy.id);
+  });
   await t.test('saving a prospect creates a tenant-scoped portal contact assigned to the seller',async()=>{
     prospect=(await saveProspect(user,{business_name:'Rey del sabor QA',contact_name:'Rodrigo QA',email,phone})).prospect;
     const rows=(await pool.query('select * from business_manual_leads where business_id=$1 and email=$2',[internal.id,email])).rows;
@@ -79,6 +85,9 @@ test('admin contacts synchronize into the internal Qori CRM', {skip:process.env.
     const contact=(await pool.query('select * from business_manual_leads where id=$1',[synced.id])).rows[0];
     assert.equal(contact.seller_user_id,null);
     assert.equal(contact.metadata.qori_admin.seller_id,outsider.id);
+    const crm=await listLeadCrmRows(internal.id,{search:p.email,seller_id:outsider.id});
+    assert.equal(crm.leads.length,1);assert.equal(crm.leads[0].seller_name,'External seller');
+    assert.equal((await listLeadCrmRows(other.id,{search:p.email,seller_id:outsider.id})).leads.length,0);
   });
   await t.test('backfill is idempotent',async()=>{
     const first=await withTransaction(c=>syncCommercialBusiness(c,businessId));

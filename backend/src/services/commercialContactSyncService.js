@@ -1,9 +1,16 @@
-const { qoriInternalBusiness } = require('./sellerService');
 const { badRequest } = require('../utils/http');
+
+// Admin's CRM belongs to Orbital Innovation. The legacy sales directory uses a
+// different internal account; do not reuse its tenant resolver here.
+async function commercialContactBusiness(client) {
+  return (await client.query(`select id,name,slug from businesses
+    where slug='orbital-innovation-sas' and is_active=true
+      and settings->>'internal_account'='true' limit 1`)).rows[0] || null;
+}
 
 // All callers pass their transaction: an enrollment and its CRM contact commit together.
 async function syncCommercialContact(client, { prospect = null, business = null, sellerId = null, actorId = null }) {
-  const internal = await qoriInternalBusiness(client);
+  const internal = await commercialContactBusiness(client);
   if (!internal || business?.id === internal.id) return null;
   const settings = business?.settings || {};
   const email = String(prospect?.email || settings.contact_email || '').trim().toLowerCase();
@@ -86,4 +93,4 @@ async function syncCommercialBusiness(client, businessId, actorId = null) {
   return syncCommercialContact(client, { business, prospect, sellerId: account ? account.seller_id : prospect?.seller_id || null, actorId });
 }
 
-module.exports = { syncCommercialContact, syncCommercialBusiness };
+module.exports = { commercialContactBusiness, syncCommercialContact, syncCommercialBusiness };

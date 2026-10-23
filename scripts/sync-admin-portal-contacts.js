@@ -1,4 +1,4 @@
-// Dry run by default. --apply commits only the listed admin contacts into Qori's CRM.
+// Dry run by default. --apply commits the listed admin contacts into Orbital Innovation's CRM.
 const { pool } = require('../backend/src/config/db');
 const { syncCommercialContact, syncCommercialBusiness } = require('../backend/src/services/commercialContactSyncService');
 async function main() {
@@ -19,7 +19,7 @@ async function main() {
       const result = businessId
         ? await syncCommercialBusiness(client,businessId)
         : await syncCommercialContact(client,{prospect:entry.prospect,sellerId:entry.prospect.seller_id});
-      if (!result) throw new Error('No se encontró la cuenta interna activa de Qori.');
+      if (!result) throw new Error('No se encontró la cuenta interna activa de Orbital Innovation.');
       await client.query(apply ? 'commit' : 'rollback');
       results.push({name:entry.business?.name || entry.prospect.business_name,...result});
     } catch(error) { await client.query('rollback'); throw error; }
