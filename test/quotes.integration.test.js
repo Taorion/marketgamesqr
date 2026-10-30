@@ -105,11 +105,38 @@ test('quotes: database, images, lifecycle and HTTP authorization',{skip:process.
     assert.equal((await query("select relrowsecurity from pg_class where oid='business_quotes'::regclass")).rows[0].relrowsecurity,true);
     for(const role of ['anon','authenticated']){const exists=(await query('select 1 from pg_roles where rolname=$1',[role])).rowCount;if(exists)assert.equal((await query("select has_table_privilege($1,'business_quotes','select') as allowed",[role])).rows[0].allowed,false);}
   });
+  await t.test('search finds padded quote numbers and titles; state counts stay tenant-scoped',async()=>{
+    const draft=await svc.save(b.id,user.id,payload({title:'Propuesta 100% especial'}));
+    const byNumber=await svc.list(b.id,0,`COT-${String(draft.number).padStart(6,'0')}`);
+    assert.equal(byNumber.total_count,1);assert.equal(byNumber.quotes[0].id,draft.id);
+    const byTitle=await svc.list(b.id,0,'100% especial','DRAFT');
+    assert.equal(byTitle.total_count,1);assert.equal(byTitle.summary.DRAFT,1);
+    assert.equal((await svc.list(b.id,0,'100_ especial')).total_count,0);
+    assert.equal((await svc.list(other.id,0,'')).summary.ALL,0);
+    assert.equal((await svc.list(b.id,0,'','CONVERTED')).quotes.every(q=>q.status==='CONVERTED'),true);
+    await svc.action(b.id,draft.id,'issue');
+    await query("update business_quotes set valid_until=now()-interval '1 second' where id=$1",[draft.id]);
+    const expired=await svc.list(b.id,0,'100% especial','EXPIRED');
+    assert.equal(expired.quotes[0].id,draft.id);assert.equal(expired.summary.EXPIRED,1);
+    assert.equal((await svc.list(b.id,0,'100% especial','SENT')).total_count,0);
+  });
+  await t.test('public document escapes customer text and hides unavailable benefit links',()=>{
+    const vm=require('node:vm'),sandbox={window:{}};
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../quote-public/document.js'),'utf8'),sandbox);
+    const q={...issued,status:'EXPIRED',benefit_url:'https://example.test/benefit',qr_image:null,snapshot:structuredClone(issued.snapshot)};
+    q.snapshot.customer.name='<script>alert(1)</script>';
+    const html=sandbox.window.QuoteDocument.html(q);
+    assert.ok(!html.includes('<script>'));assert.ok(html.includes('&lt;script&gt;'));assert.ok(!html.includes('Abrir mi beneficio'));
+    assert.ok(html.includes('ya no está disponible'));
+    q.status='SENT';assert.ok(sandbox.window.QuoteDocument.html(q).includes('Abrir mi beneficio'));
+  });
   await t.test('real HTTP routes require authentication and authorized role',async()=>{
     const {app}=require('../backend/src/app');server=app.listen(0);await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
     assert.equal((await fetch(`${base}/api/business/quotes`)).status,401);
     const jwt=require('jsonwebtoken');const token=jwt.sign({sub:user.id,password_version:0},process.env.JWT_SECRET);const headers={Authorization:`Bearer ${token}`};
     const result=await fetch(`${base}/api/business/quotes/context`,{headers});assert.equal(result.status,200,await result.text());
+    assert.equal((await fetch(`${base}/api/business/quotes?status=INVALID`,{headers})).status,400);
+    const filtered=await fetch(`${base}/api/business/quotes?status=CONVERTED`,{headers});assert.equal(filtered.status,200);assert.equal((await filtered.json()).total_count,1);
     const contactResponse=await fetch(`${base}/api/business/quotes/contacts?search=Mar%C3%ADa`,{headers});assert.equal(contactResponse.status,200,await contactResponse.text());
     await query("update app_users set role='VALIDATOR' where id=$1",[user.id]);assert.equal((await fetch(`${base}/api/business/quotes`,{headers})).status,403);await query("update app_users set role='BUSINESS_OWNER' where id=$1",[user.id]);
     assert.equal((await fetch(`${base}/api/public/quotes/invalid`)).status,404);
@@ -119,6 +146,8 @@ test('quotes: database, images, lifecycle and HTTP authorization',{skip:process.
     const q=await svc.detail(b.id,issued.id);const bytes=await renderQuotePdf(q),pdf=await PDFDocument.load(bytes);assert.ok(pdf.getPageCount()>=1);
     const dir=path.join(__dirname,'../tmp/quotes-qa');fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'cotizacion-ejemplo.pdf'),bytes);
     const long=structuredClone(q);long.snapshot.items=Array.from({length:12},(_,i)=>({...q.snapshot.items[0],name:`Producto ${i+1} con descripción extensa`,description:'Detalles del producto con información de materiales y condiciones. '.repeat(9)}));long.snapshot.terms='Condiciones de entrega, pago y disponibilidad de productos. '.repeat(60);const longBytes=await renderQuotePdf(long);assert.ok((await PDFDocument.load(longBytes)).getPageCount()>3);fs.writeFileSync(path.join(dir,'cotizacion-larga.pdf'),longBytes);
+    const light=structuredClone(q);light.snapshot.business.color='#ffffcc';light.snapshot.total=999999999999;light.snapshot.terms='Primera condición.\nSegunda condición.\nTercera condición.';
+    const lightBytes=await renderQuotePdf(light);assert.ok((await PDFDocument.load(lightBytes)).getPageCount()>=1);fs.writeFileSync(path.join(dir,'cotizacion-marca-clara.pdf'),lightBytes);
     fs.writeFileSync(path.join(dir,'fixture.json'),JSON.stringify({business_id:b.id,user_id:user.id,email:user.email,password:'Quotes-local-2026!',quote_id:q.id,public_url:issued.public_url,product_id:product.id,activation_id:activation.id},null,2));
   });
 });

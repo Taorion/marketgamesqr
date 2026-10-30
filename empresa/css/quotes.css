@@ -224,3 +224,88 @@
     dialog.qt-dialog.qt-wide { border-radius: 12px !important; }
   }
 }
+
+/* Workspace, lifecycle and editor hierarchy. */
+@layer quotes-contrast {
+  #quotesWorkspace { max-width:1480px !important; margin-inline:auto !important; }
+  #quotesWorkspace .qt-overview { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:14px !important; margin:22px 0 !important; }
+  #quotesWorkspace button.qt-stat { display:grid !important; gap:5px !important; text-align:left !important; padding:20px !important; border:1px solid #d0dae5 !important; border-radius:14px !important; }
+  #quotesWorkspace .qt-stat > span { color:#45566a !important; font-size:13px !important; }
+  #quotesWorkspace .qt-stat > * { text-align:left !important; justify-self:start !important; }
+  #quotesWorkspace .qt-stat > strong { font-size:30px !important; line-height:1.15 !important; }
+  #quotesWorkspace .qt-stat > small { font-size:11px !important; }
+  #quotesWorkspace .qt-stat[aria-pressed=true] { background:#eaf2f9 !important; border-color:#235f8b !important; box-shadow:inset 0 3px #235f8b !important; }
+  #quotesWorkspace .qt-library { padding:24px !important; background:#fff !important; border:1px solid #d4dfe9 !important; border-radius:18px !important; }
+  #quotesWorkspace .qt-library-head { display:flex !important; gap:16px !important; align-items:center !important; justify-content:space-between !important; }
+  #quotesWorkspace .qt-library-head h3 { margin:0 0 5px !important; font-size:22px !important; }
+  #quotesWorkspace .qt-library-head p { margin:0 !important; font-size:13px !important; }
+  #quotesWorkspace .qt-library-head > button { padding:10px 16px !important; cursor:pointer !important; white-space:nowrap !important; flex-shrink:0 !important; }
+  #quotesWorkspace .qt-toolbar { margin:22px 0 16px !important; }
+  #quotesWorkspace .qt-filters { display:flex !important; gap:8px !important; flex-wrap:wrap !important; }
+  #quotesWorkspace .qt-filters button { display:flex !important; align-items:center !important; gap:8px !important; padding:8px 12px !important; font:inherit !important; font-size:12px !important; cursor:pointer !important; border-color:#ccd7e2 !important; border-radius:24px !important; }
+  #quotesWorkspace .qt-filters button span { min-width:20px !important; border-radius:12px !important; padding:1px 5px !important; background:#e9eef4 !important; color:#34465b !important; font-size:11px !important; }
+  #quotesWorkspace .qt-filters button[aria-pressed=true] { background:#173d5d !important; color:#fff !important; border-color:#173d5d !important; }
+  #quotesWorkspace .qt-filters button[aria-pressed=true] span { background:#fff !important; color:#173d5d !important; }
+  #quotesWorkspace .qt-results { margin:18px 0 12px !important; font-size:12px !important; }
+  #quotesWorkspace .qt-card { align-items:center !important; padding:22px !important; gap:20px !important; }
+  #quotesWorkspace .qt-card-copy { min-width:0 !important; overflow-wrap:anywhere !important; }
+  #quotesWorkspace .qt-card-top { display:flex !important; gap:14px !important; align-items:center !important; flex-wrap:wrap !important; margin-bottom:10px !important; }
+  #quotesWorkspace .qt-card h3 { font-size:18px !important; line-height:1.4 !important; margin:0 0 5px !important; }
+  #quotesWorkspace .qt-card .qt-customer { color:#202c3a !important; font-size:14px !important; }
+  #quotesWorkspace .qt-card-meta { display:flex !important; gap:6px 14px !important; flex-wrap:wrap !important; color:#4b5969 !important; font-size:12px !important; line-height:1.6 !important; }
+  #quotesWorkspace .qt-card-end { gap:6px !important; }
+  #quotesWorkspace .qt-card-end > small { font-size:11px !important; }
+  #quotesWorkspace .qt-card-end > strong { font-size:22px !important; white-space:nowrap !important; }
+  #quotesWorkspace .qt-card-end button { margin-top:8px !important; }
+  #quotesWorkspace .qt-benefit-chip { display:inline-flex !important; gap:6px !important; align-items:center !important; margin-top:12px !important; padding:5px 9px !important; background:#eef4f8 !important; color:#34465b !important; font-size:11px !important; border-radius:6px !important; }
+  #quotesWorkspace .qt-benefit-chip .material-symbols-outlined { font-size:18px !important; }
+  #quotesWorkspace .qt-empty { padding:36px 20px !important; background:#f8fafc !important; }
+  #quotesWorkspace .qt-empty-steps { display:flex !important; justify-content:center !important; gap:12px !important; margin-top:26px !important; font-size:12px !important; color:#45566a !important; flex-wrap:wrap !important; }
+  #quotesWorkspace .qt-empty-steps span { padding:8px 12px !important; border:1px solid #d4dfe9 !important; background:white !important; border-radius:8px !important; }
+  #quotesWorkspace .qt-badge[data-status=ACCEPTED], dialog.qt-dialog .qt-badge[data-status=ACCEPTED],
+  #quotesWorkspace .qt-badge[data-status=CONVERTED], dialog.qt-dialog .qt-badge[data-status=CONVERTED] { background:#e6f4eb !important; color:#245439 !important; border-color:#b9d9c6 !important; }
+  #quotesWorkspace .qt-badge[data-status=SENT], dialog.qt-dialog .qt-badge[data-status=SENT] { background:#e9f2fc !important; color:#204d77 !important; border-color:#c1d6ec !important; }
+  #quotesWorkspace .qt-badge[data-status=EXPIRED], dialog.qt-dialog .qt-badge[data-status=EXPIRED] { background:#fff3db !important; color:#6b470f !important; border-color:#e2c996 !important; }
+  #quotesWorkspace .qt-badge[data-status=CANCELLED], dialog.qt-dialog .qt-badge[data-status=CANCELLED],
+  #quotesWorkspace .qt-badge[data-status=DECLINED], dialog.qt-dialog .qt-badge[data-status=DECLINED] { background:#fcece9 !important; color:#852e25 !important; border-color:#e5c5bf !important; }
+  dialog.qt-dialog .qt-detail-summary { padding:20px !important; background:#f0f5fa !important; border:1px solid #cedce9 !important; border-radius:12px !important; margin-bottom:20px !important; }
+  dialog.qt-dialog .qt-detail-summary strong { margin-left:12px !important; font-size:13px !important; }
+  dialog.qt-dialog .qt-detail-summary p { font-size:13px !important; line-height:1.6 !important; margin:12px 0 0 !important; }
+  dialog.qt-dialog .qt-journey { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; list-style:none !important; margin:20px 0 0 !important; padding:0 !important; gap:12px !important; }
+  dialog.qt-dialog .qt-journey li { display:grid !important; gap:4px !important; border-top:3px solid #b3c1ce !important; padding-top:9px !important; font-size:12px !important; color:#4b5969 !important; }
+  dialog.qt-dialog .qt-journey li[data-complete=true] { border-color:#26704c !important; color:#245439 !important; }
+  dialog.qt-dialog .qt-journey small { font-size:10px !important; }
+  dialog.qt-dialog button.qt-danger { color:#852e25 !important; border-color:#cb9c94 !important; margin-left:auto !important; }
+  dialog.qt-dialog .qt-editor-nav { display:flex !important; gap:8px !important; flex-wrap:wrap !important; margin-bottom:20px !important; }
+  dialog.qt-dialog .qt-editor-nav button { flex:1 1 150px !important; text-align:left !important; padding:10px 12px !important; color:#34465b !important; border-color:#bacbdc !important; }
+  dialog.qt-dialog .qt-form-grid h3 { padding-top:6px !important; scroll-margin-top:20px !important; }
+  dialog.qt-dialog .qt-editor-footer { position:sticky !important; bottom:-24px !important; z-index:2 !important; margin:24px -24px -24px !important; padding:16px 24px !important; background:#fff !important; border-top:1px solid #bfcfdf !important; box-shadow:0 -6px 20px #17354f0a !important; }
+  dialog.qt-dialog .qt-editor-footer > div { display:grid !important; gap:2px !important; min-width:0 !important; overflow-wrap:anywhere !important; }
+  dialog.qt-dialog .qt-editor-footer strong { font-size:23px !important; }
+  dialog.qt-dialog .qt-editor-footer :is(small,span) { color:#4b5969 !important; font-size:11px !important; }
+  dialog.qt-dialog .qt-editor-footer button { min-height:46px !important; }
+  dialog.qt-dialog :is(select,textarea):disabled { background:#edf1f5 !important; color:#526171 !important; cursor:not-allowed !important; }
+  dialog.qt-dialog .qt-dialog-message[data-kind=success] { color:#245439 !important; background:#e6f4eb !important; }
+  dialog.qt-dialog [aria-busy=true] { cursor:progress !important; }
+  @media(max-width:900px) { #quotesWorkspace .qt-overview { grid-template-columns:repeat(2,minmax(0,1fr)) !important; } }
+  @media(max-width:700px) {
+    #quotesWorkspace .qt-overview { gap:10px !important; margin:14px 0 !important; }
+    #quotesWorkspace button.qt-stat { padding:14px !important; }
+    #quotesWorkspace .qt-stat > strong { font-size:26px !important; }
+    #quotesWorkspace .qt-library { padding:16px 12px !important; }
+    #quotesWorkspace .qt-library-head { align-items:start !important; }
+    #quotesWorkspace .qt-library-head h3 { font-size:20px !important; }
+    #quotesWorkspace .qt-card { padding:16px !important; align-items:stretch !important; }
+    #quotesWorkspace .qt-card-end { display:grid !important; grid-template-columns:minmax(0,1fr) !important; align-items:center !important; border-top:1px solid #dce4ed !important; padding-top:12px !important; }
+    #quotesWorkspace .qt-card-end > strong { grid-column:1 !important; font-size:20px !important; }
+    #quotesWorkspace .qt-card-end > button { grid-row:auto !important; grid-column:1 !important; margin:8px 0 0 !important; width:100% !important; }
+    dialog.qt-dialog .qt-journey { grid-template-columns:1fr 1fr !important; gap:12px !important; }
+    dialog.qt-dialog .qt-detail-summary { padding:16px !important; }
+    dialog.qt-dialog .qt-editor-nav button { flex:1 1 40% !important; font-size:11px !important; }
+    dialog.qt-dialog .qt-editor-footer { bottom:-14px !important; margin:24px -14px -14px !important; padding:12px 14px !important; flex-direction:row !important; align-items:center !important; gap:10px !important; }
+    dialog.qt-dialog .qt-editor-footer button { width:auto !important; padding:12px !important; max-width:50% !important; }
+    dialog.qt-dialog .qt-editor-footer strong { font-size:19px !important; }
+    dialog.qt-dialog .qt-editor-footer span { font-size:10px !important; }
+    dialog.qt-dialog button.qt-danger { margin-left:0 !important; }
+  }
+}

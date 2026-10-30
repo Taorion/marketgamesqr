@@ -87,6 +87,8 @@
   .quote-document .qd-benefit { background:#eef4f8 !important; border-color:#cbd9e5 !important; border-radius:14px !important; }
   .quote-document .qd-totals .qd-total { background:#20394f !important; border-radius:8px !important; }
   .quote-document .qd-total, .quote-document .qd-total :is(span,strong) { color:#fff !important; }
+  .quote-document .qd-totals strong { min-width:0; overflow-wrap:anywhere; text-align:right; }
+  .quote-document .qd-total span { flex-shrink:0; }
   .quote-document a.qd-button {
     background:#124d78 !important; color:#fff !important; -webkit-text-fill-color:#fff !important;
     border:1px solid #124d78 !important; border-radius:8px !important; opacity:1 !important;
@@ -103,4 +105,16 @@
   .quote-public-bar button:disabled, .quote-public-response button:disabled { background:#eef1f5 !important; color:#5b6675 !important; border-color:#b9c4d0 !important; opacity:1 !important; }
   .quote-public-page :is(button,a,input):focus-visible { outline:3px solid #0d668e !important; outline-offset:3px !important; }
   .quote-public-response input { accent-color:#124d78 !important; }
+  .quote-document .qd-status[data-status=ACCEPTED],.quote-document .qd-status[data-status=CONVERTED] { background:#e6f4eb !important; color:#245439 !important; border-color:#b9d9c6 !important; }
+  .quote-document .qd-status[data-status=EXPIRED] { background:#fff3db !important; color:#6b470f !important; border-color:#e2c996 !important; }
+  .quote-document .qd-contact { display:block !important; width:fit-content; padding:0 !important; margin-bottom:12px; color:#164d78 !important; background:transparent !important; border:0 !important; text-decoration:underline !important; text-underline-offset:3px; font-size:13px; }
+  .quote-public-message:empty { display:none; }
+  .quote-public-message:not(:empty) { padding:16px 20px; box-sizing:border-box; border:1px solid #c8d8e6; border-radius:10px; background:#eaf2f9; color:#27435e; }
+  .quote-public-message[data-kind=success] { background:#e6f4eb; color:#245439; border-color:#b9d9c6; }
+  .quote-public-message[data-kind=error] { background:#fcece9; color:#852e25; border-color:#e5c5bf; }
+  .quote-public-response { border:1px solid #c8d8e6; box-shadow:0 8px 24px #17354f08; }
+  .quote-public-response h2 { margin:0 0 10px; font-size:22px; }
+  .quote-public-response p { color:#4b5969; font-size:14px; }
+  .quote-public-response input { width:20px; height:20px; flex-shrink:0; }
+  @media(max-width:600px) { .quote-public-response { padding:18px; } .quote-public-response button { width:100%; margin:5px 0; } }
 }

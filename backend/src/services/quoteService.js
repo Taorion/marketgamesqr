@@ -42,12 +42,13 @@ function calculate(items) {
 async function products(businessId, search = '') {
   return (await query(`select p.id,p.name,p.description,p.sku,p.unit_price,p.currency,
     exists(select 1 from business_inventory_product_photos ph where ph.product_id=p.id and ph.business_id=p.business_id) as has_photo
-    from business_inventory_products p where p.business_id=$1 and p.status='ACTIVE'
+    from business_inventory_products p where p.business_id=$1 and p.status='ACTIVE' and p.currency='COP'
     and (p.name ilike $2 or p.sku ilike $2) order by p.name,p.id limit 100`, [businessId, `%${search}%`])).rows;
 }
 async function contacts(businessId, search = '') {
   const result = await listLeadCrmRows(businessId, { search, limit:60 });
-  return result.leads.map(c => ({ id:c.id, source_type:c.source_type, name:c.name, email:c.email, phone:c.phone }));
+  return result.leads.map(c => ({ id:c.id, source_type:c.source_type, name:c.name, email:c.email, phone:c.phone,
+    document_id:c.document_id||'', organization:c.organization||'' }));
 }
 async function context(businessId) {
   const [business, activations] = await Promise.all([
@@ -137,12 +138,22 @@ async function detail(businessId,id,client={query}) {
   }
   return result;
 }
-async function list(businessId,offset=0,search='') {
-  const rows = (await query(`select id,number,status,created_at,valid_until,issued_at,accepted_at,first_viewed_at,sale_id,
-    snapshot->>'title' as title,snapshot->'customer'->>'name' as customer_name,snapshot->>'total' as total
-    from business_quotes where business_id=$1 and (snapshot->'customer'->>'name' ilike $3 or number::text ilike $3)
-    order by created_at desc,id desc limit 31 offset $2`,[businessId,offset,`%${search}%`])).rows;
-  return { quotes:rows.slice(0,30).map(q=>({...q,status:displayStatus(q)})),has_more:rows.length>30 };
+async function list(businessId,offset=0,search='',status='ALL') {
+  const number=search.trim().match(/^(?:COT[-\s]*)?0*(\d+)$/i)?.[1]||null;
+  const pattern=`%${search.trim().replace(/[\\%_]/g,'\\$&')}%`;
+  const effective="case when status in ('SENT','ACCEPTED') and valid_until<now() then 'EXPIRED' else status end";
+  const matching=`business_id=$1 and (snapshot->'customer'->>'name' ilike $2 or snapshot->>'title' ilike $2 or number::text=$3)`;
+  const [result,counts]=await Promise.all([
+    query(`select id,number,${effective} as status,created_at,valid_until,issued_at,accepted_at,first_viewed_at,sale_id,
+      snapshot->>'title' as title,snapshot->'customer'->>'name' as customer_name,snapshot->>'total' as total,
+      jsonb_array_length(snapshot->'items') as product_count,snapshot->'benefit'->>'title' as benefit_title
+      from business_quotes where ${matching} and ($4='ALL' or (${effective})=$4)
+      order by created_at desc,id desc limit 31 offset $5`,[businessId,pattern,number,status,offset]),
+    query(`select ${effective} as status,count(*)::int as count from business_quotes where ${matching} group by 1`,[businessId,pattern,number])
+  ]);
+  const summary=Object.fromEntries(counts.rows.map(r=>[r.status,r.count]));
+  summary.ALL=counts.rows.reduce((sum,r)=>sum+r.count,0);
+  return {quotes:result.rows.slice(0,30),has_more:result.rows.length>30,summary,total_count:summary[status]||0};
 }
 async function publicRow(token, client={query}, lock=false) {
   if (!/^[a-f0-9]{64}$/.test(token||'')) throw notFound('Cotización no disponible.');

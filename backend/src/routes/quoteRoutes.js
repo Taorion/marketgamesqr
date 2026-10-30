@@ -27,7 +27,7 @@ router.use(authRequired,requireRoles('BUSINESS_OWNER','BUSINESS_MANAGER','ADMIN'
 router.get('/context',handle(req=>svc.context(req.user.business_id)));
 router.get('/products',handle(req=>svc.products(req.user.business_id,parse(text(120).default(''),req.query.search))));
 router.get('/contacts',requireBusinessFeature('contact_directory'),handle(req=>svc.contacts(req.user.business_id,parse(text(120).default(''),req.query.search))));
-router.get('/',handle(req=>svc.list(req.user.business_id,parse(z.coerce.number().int().min(0).max(100000).default(0),req.query.offset),parse(text(120).default(''),req.query.search))));
+router.get('/',handle(req=>svc.list(req.user.business_id,parse(z.coerce.number().int().min(0).max(100000).default(0),req.query.offset),parse(text(120).default(''),req.query.search),parse(z.enum(['ALL','DRAFT','SENT','ACCEPTED','CONVERTED','EXPIRED','DECLINED','CANCELLED']).default('ALL'),req.query.status))));
 async function save(req,quoteId){const data=parse(quoteSchema,req.body);
   if(data.contact_id)await assertFeatureForRequest(req,req.user.business_id,'contact_directory');
   if(data.activation_id)await assertFeatureForRequest(req,req.user.business_id,'qr_batch_generator');

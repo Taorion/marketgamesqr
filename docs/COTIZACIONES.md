@@ -2,6 +2,10 @@
 
 Entrada: **Opera → Cotizaciones**. Requiere acceso al portal y Productos; vincular Contactos, activaciones o registrar ventas respeta además los permisos de esos módulos. Solo propietarios, administradores y gerentes autorizados pueden operar.
 
+El tablero ofrece resumen por estado, filtros y búsqueda por cliente, título o número completo (`COT-000001`). Los contadores corresponden a la búsqueda actual y abarcan todas sus páginas, siempre dentro del negocio. «Con venta» cuenta cotizaciones convertidas; no representa un saldo financiero ni sustituye el estado actual de la venta.
+
+El editor tiene accesos a sus cuatro secciones y un resumen del total junto a Guardar. Antes de cerrar o recargar con cambios sin guardar, pide confirmación. No hay guardado automático: **Guardar y revisar** conserva el borrador. La vigencia se valida también frente a la activación seleccionada. Solo se ofrecen productos activos en COP.
+
 1. Crear un borrador con un contacto existente o un destinatario escrito, hasta 30 productos activos en COP, cantidades enteras, precios, descuentos e impuestos adicionales.
 2. Seleccionar opcionalmente una activación vigente del mismo negocio. Su acceso puede estar disponible desde la emisión o después del pago registrado. Se conservan las reglas y el consumo de tickets de la activación original.
 3. Revisar y emitir. La marca, las fotos y las condiciones quedan conservadas; para cambiarlas se crea una nueva versión. Se puede descargar PDF y compartir el enlace desde WhatsApp, correo o el menú del dispositivo. Estos botones preparan el envío; el portal no lo envía automáticamente.
@@ -11,6 +15,8 @@ Entrada: **Opera → Cotizaciones**. Requiere acceso al portal y Productos; vinc
 Los borradores y cotizaciones anuladas no tienen acceso público. Los enlaces usan tokens aleatorios de 256 bits; los documentos no se indexan y se sirven sin caché. Una propuesta vencida no admite aceptación ni conversión. La activación debe seguir vigente al abrir el beneficio. El enlace es compartible: no sustituye las reglas de identidad o límites de participación de la activación.
 
 El logo cargado y las fotos JPG/PNG/WebP se normalizan al guardar. Los logos anteriores guardados como URL HTTPS pública se descargan sin redirecciones, con límites de tamaño y tiempo y validación de dirección para evitar acceso a redes privadas. Si no hay foto se muestra «Sin foto». La cotización no es una factura ni un comprobante de pago.
+
+La vista previa muestra el seguimiento de creación, emisión, aceptación y registro de venta. El documento del cliente comunica su estado y oculta el acceso al beneficio cuando la propuesta venció o no fue aceptada. En PDF, el color de marca se conserva como acento y se oscurece cuando es necesario para mantener texto y totales legibles; los importes grandes ajustan su tamaño y las condiciones respetan los saltos de línea.
 
 Persistencia: `business_quotes`, migración `20261030170832_business_quotes` en ambos directorios utilizados por el proyecto. RLS habilitado y permisos de Data API revocados; solo rutas autenticadas y vistas públicas con token. La migración oficial se ejecuta por el comando de inicio de Render.
 
