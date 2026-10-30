@@ -3348,6 +3348,7 @@ async function updateLeadSellerResponsibility(businessId, user, leadId, sourceTy
 }
 
 module.exports = {
+  resolveLead,
   addLeadInterest,
   createLeadActivation,
   markLeadActivationOpened,
