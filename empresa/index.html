@@ -297,6 +297,10 @@
               <span class="material-symbols-outlined">event_note</span>
               <span><strong>Agenda comercial</strong><small>Seguimiento y tareas</small></span>
             </button>
+            <button class="nav-item" data-view="customer-network" type="button">
+              <span class="material-symbols-outlined">person_search</span>
+              <span><strong>Qori Customer</strong><small>Buscar compradores y enviar beneficios</small></span>
+            </button>
             <button class="nav-item" data-view="quotes" type="button">
               <span class="material-symbols-outlined">request_quote</span>
               <span><strong>Cotizaciones</strong><small>Productos, fotos y beneficio QR</small></span>
@@ -7501,6 +7505,9 @@
             </article>
           </section>
 
+          <section class="view-section" data-view="customer-network" id="customerWorkspaceView" hidden>
+            <div id="customerWorkspace"></div>
+          </section>
           <section class="view-section" data-view="quotes" id="quotesView" hidden>
             <div id="quotesWorkspace"></div>
           </section>
@@ -8643,7 +8650,7 @@
   <script src="js/risk-station-core.js?v=risk-core-v3-recycle-products-20260830" defer></script>
   <script src="js/portal-training-access.js?v=training-access-v448-20260908" defer></script>
   <script src="js/inventory-photos.js?v=inventory-photo-v1-20260930" defer></script>
-  <script src="js/app.js?v=customer-portal-20261103&amp;agenda-push=v1-20260929&amp;inventory-photo=v1-20260930&amp;resize-performance=v1-20260930&amp;agenda-edit-modal=v1-20260930&amp;agenda-history=v1-20260930&amp;stamp-cards=v1-20261001&amp;stamp-card-qr=v1-20261002&amp;plan-limits=v1-20261009&amp;lead-context=v2-20261013&amp;contact-detail-scroll=v1-20261013&amp;descubre=v1-20261016&amp;quotes=v2-20261030&amp;customer=v2-20261103" defer></script>
+  <script src="js/app.js?v=customer-workspace-20261103&amp;agenda-push=v1-20260929&amp;inventory-photo=v1-20260930&amp;resize-performance=v1-20260930&amp;agenda-edit-modal=v1-20260930&amp;agenda-history=v1-20260930&amp;stamp-cards=v1-20261001&amp;stamp-card-qr=v1-20261002&amp;plan-limits=v1-20261009&amp;lead-context=v2-20261013&amp;contact-detail-scroll=v1-20261013&amp;descubre=v1-20261016&amp;quotes=v2-20261030&amp;customer=v2-20261103" defer></script>
   <link rel="stylesheet" href="css/stamp-cards.css?v=stamp-self-service-v1-20261019">
   <script src="js/stamp-cards.js?v=stamp-self-service-review-v2-20261019" defer></script>
   <link rel="stylesheet" href="/cotizacion/style.css?v=quotes-review-v8-20261030">
@@ -8659,14 +8666,16 @@
 <script src="js/campaign-command-center-v318.js?v=scoped-observer-v1-20260930" defer></script>
     <script src="js/communications.js?v=communications-history-v333-20260822-unified-email-routing-v359-20260826-qori-public-links-v472-20260910-communications-experience-v485-20260911" defer></script>
   <script src="js/guided-tutorials.js?v=guided-tutorials-v3-phone-header-20260915" defer></script>
+  <link rel="stylesheet" href="css/customer-workspace.css?v=workspace-20261103">
+  <script src="js/customer-workspace.js?v=workspace-20261103" defer></script>
   <link rel="stylesheet" href="css/customer-bridge.css?v=customer-v1-20261028">
-  <link rel="stylesheet" href="css/customer-network.css?v=network-1">
-  <script src="js/customer-network.js?v=portal-network-2" defer></script>
-  <script src="js/customer-bridge.js?v=network-2" defer></script>
+  <link rel="stylesheet" href="css/customer-network.css?v=workspace-20261103">
+  <script src="js/customer-network.js?v=workspace-20261103" defer></script>
+  <script src="js/customer-bridge.js?v=workspace-20261103" defer></script>
   <script src="js/customer-publishing.js?v=gifts-1" defer></script>
-  <script src="js/customer-finance.js?v=finance-1" defer></script>
-  <link rel="stylesheet" href="css/customer-wallet-network.css?v=customer-wallet-20261030">
-  <script src="js/customer-wallet-network.js?v=customer-wallet-20261030" defer></script>
+  <script src="js/customer-finance.js?v=workspace-20261103" defer></script>
+  <link rel="stylesheet" href="css/customer-wallet-network.css?v=workspace-20261103">
+  <script src="js/customer-wallet-network.js?v=workspace-20261103" defer></script>
 </body>
 </html>
 

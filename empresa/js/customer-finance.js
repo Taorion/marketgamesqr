@@ -3,7 +3,7 @@
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const call=(path,method='GET',body)=>api('/api/business/customer'+path,{method,headers:authHeaders(),noClientCache:true,...(body?{body:JSON.stringify(body)}:{})});
  const money=(v,c)=>new Intl.NumberFormat('es-CO',{style:'currency',currency:c||'COP',maximumFractionDigits:0}).format(Number(v));
- function open(saleId=''){
+ function open(saleId='',recipientId=''){
   if(document.getElementById('customerFinanceDialog'))return;
   const d=document.createElement('dialog');d.id='customerFinanceDialog';d.className='customer-network-dialog';
   d.innerHTML='<header><div><span class="kicker">Empresa + Customer</span><h2>Enviar una compra a Customer</h2></div><button data-close aria-label="Cerrar">×</button></header><div class="customer-network-body"><p>Selecciona una venta ya registrada y verifica la cuenta del comprador. Su historial conservará el importe, el estado y las devoluciones de la venta original.</p><p id="deliveryMessage" role="status"></p><form id="deliverySearch"><label>Buscar venta por cliente, documento, producto o referencia<input name="search" value="'+esc(saleId)+'" maxlength="160"></label><button>Buscar ventas</button></form><div id="deliverySales"></div><button id="deliveryMore" hidden>Cargar más ventas</button><div id="deliveryRecipient"></div><details><summary>Compras reportadas por compradores</summary><button id="loadFinanceReports">Consultar reportes</button><div id="financeReports"></div></details></div>';
@@ -18,7 +18,7 @@
   }
   function choose(s){
    const version=++selectionVersion,host=d.querySelector('#deliveryRecipient');
-   host.innerHTML='<h3>Comprador que recibirá esta venta</h3><p>'+esc(s.product_name)+' · '+money(s.sale_amount,s.currency)+'</p><form id="findFinanceBuyer"><label>Correo completo o identificación Qori<input name="query" minlength="3" maxlength="180" required placeholder="cliente@correo.com"></label><button>Buscar cuenta Customer</button></form><div id="financeBuyer"></div>';host.scrollIntoView({block:'nearest',behavior:'smooth'});
+   host.innerHTML='<h3>Comprador que recibirá esta venta</h3><p>'+esc(s.product_name)+' · '+money(s.sale_amount,s.currency)+'</p><form id="findFinanceBuyer"><label>Correo completo o identificación Qori<input name="query" minlength="3" maxlength="180" required value="'+esc(recipientId)+'" '+(recipientId?'readonly':'')+' placeholder="cliente@correo.com"></label><button>Buscar cuenta Customer</button></form><div id="financeBuyer"></div>';host.scrollIntoView({block:'nearest',behavior:'smooth'});
    host.querySelector('form').onsubmit=async e=>{
     e.preventDefault();e.stopPropagation();e.submitter.disabled=true;
     try{
@@ -32,13 +32,14 @@
      };
     }catch(error){message(error.message);}finally{e.submitter.disabled=false;}
    };
+   if(recipientId){const form=host.querySelector('#findFinanceBuyer');form.requestSubmit(form.querySelector('button'));}
   }
   d.querySelector('#deliverySearch').onsubmit=e=>{e.preventDefault();e.stopPropagation();load().catch(e=>message(e.message));};
   d.querySelector('#deliveryMore').onclick=()=>load(true).catch(e=>message(e.message));
   d.querySelector('#loadFinanceReports').onclick=async()=>{try{const r=await call('/reports');d.querySelector('#financeReports').innerHTML=r.reports.map(x=>'<article><strong>Venta '+esc(x.sale_id)+'</strong><p>'+esc(x.report_reason)+'</p></article>').join('')||'<p>Sin reportes.</p>';}catch(e){message(e.message);}};
   load().catch(e=>message(e.message));
  }
- window.QoriCustomerFinance={open};
+ window.QoriCustomerFinance={open,openForCustomer(id){open('',id);}};
  const timer=setInterval(()=>{if(typeof session==='undefined'||!session)return;for(const host of document.querySelectorAll('.view-head'))if(!host.querySelector('[data-customer-finance]')){const b=document.createElement('button');b.className='ghost-button';b.type='button';b.dataset.customerFinance='true';b.textContent='Enviar compra a Customer';b.onclick=()=>open();host.append(b);}},1500);
  window.addEventListener('pagehide',()=>clearInterval(timer));
 })();

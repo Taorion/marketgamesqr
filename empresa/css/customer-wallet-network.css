@@ -1,14 +1,14 @@
-.customer-network-dialog{width:min(720px,calc(100vw - 24px));max-height:calc(100dvh - 40px);overflow-y:auto;border:1px solid #dbe8f5;border-radius:20px;padding:24px;background:#f4f9fe;color:#012268;box-sizing:border-box}
-.customer-network-dialog::backdrop{background:rgb(1 34 104 / .45)}
-.customer-network-dialog header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.customer-network-dialog form,.customer-network-dialog label{display:grid;gap:8px}
-.customer-network-dialog form{margin:14px 0;gap:16px}
-.customer-network-dialog input,.customer-network-dialog textarea{width:100%;box-sizing:border-box;border:1px solid #cadbea;border-radius:10px;padding:12px;font:inherit;background:white;color:#012268}
-.customer-network-dialog textarea{min-height:90px;resize:vertical}
-.customer-network-dialog .cb-check{display:flex;align-items:flex-start;gap:10px}
-.customer-network-dialog .cb-check input{width:20px;flex-shrink:0}
-.customer-network-dialog button{min-height:44px;padding:10px 16px;background:#0341b3;color:white;border:0;border-radius:10px;font:inherit;cursor:pointer}
-.customer-network-dialog button:disabled{opacity:.6;cursor:wait}
-.customer-network-dialog details{margin:18px 0}.customer-network-dialog summary{cursor:pointer;font-weight:700}
-.customer-network-dialog #qnMessage{color:#0341b3;overflow-wrap:anywhere}
-.customer-network-dialog .qn-order{padding:16px;background:white;border-radius:14px;margin:14px 0;overflow-wrap:anywhere}
+.customer-standard-dialog{width:min(720px,calc(100vw - 24px));max-height:calc(100dvh - 40px);overflow-y:auto;border:1px solid #dbe8f5;border-radius:20px;padding:24px;background:#f4f9fe;color:#012268;box-sizing:border-box}
+.customer-standard-dialog::backdrop{background:rgb(1 34 104 / .45)}
+.customer-standard-dialog header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.customer-standard-dialog form,.customer-standard-dialog label{display:grid;gap:8px}
+.customer-standard-dialog form{margin:14px 0;gap:16px}
+.customer-standard-dialog input,.customer-standard-dialog textarea{width:100%;box-sizing:border-box;border:1px solid #cadbea;border-radius:10px;padding:12px;font:inherit;background:white;color:#012268}
+.customer-standard-dialog textarea{min-height:90px;resize:vertical}
+.customer-standard-dialog .cb-check{display:flex;align-items:flex-start;gap:10px}
+.customer-standard-dialog .cb-check input{width:20px;flex-shrink:0}
+.customer-standard-dialog button{min-height:44px;padding:10px 16px;background:#0341b3;color:white;border:0;border-radius:10px;font:inherit;cursor:pointer}
+.customer-standard-dialog button:disabled{opacity:.6;cursor:wait}
+.customer-standard-dialog details{margin:18px 0}.customer-standard-dialog summary{cursor:pointer;font-weight:700}
+.customer-standard-dialog #qnMessage{color:#0341b3;overflow-wrap:anywhere}
+.customer-standard-dialog .qn-order{padding:16px;background:white;border-radius:14px;margin:14px 0;overflow-wrap:anywhere}

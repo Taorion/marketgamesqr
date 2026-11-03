@@ -4,17 +4,17 @@
   const call=(path,method='GET',body)=>api('/api/business/customer'+path,{method,headers:authHeaders(),noClientCache:true,...(body?{body:JSON.stringify(body)}:{})});
   const kinds={STAMP:'Tarjeta de sellos',AFFILIATION:'Afiliación Qori',GIFT:'Giftcard de regalo',ACTIVITY:'Invitación a actividad',TICKET:'Ticket de beneficio'};
   const states={PENDING:'Pendiente de aceptar',ACCEPTED:'Aceptada',REJECTED:'Rechazada',CANCELLED:'Cancelada'};
-  function open(initial=''){
+  function open(initial='',{kind:initialKind='STAMP',history:showHistory=false}={}){
     if(document.getElementById('customerNetworkDialog'))return;
     const d=document.createElement('dialog');d.id='customerNetworkDialog';d.className='customer-network-dialog';
     d.setAttribute('aria-labelledby','customerNetworkTitle');d.innerHTML=`<header><h2 id="customerNetworkTitle">Qori Customer</h2><button type="button" data-close aria-label="Cerrar">×</button></header><div class="customer-network-body">
       <p>Encuentra al comprador aunque todavía no te haya comprado. Asocia tarjetas, afiliaciones, regalos, tickets y actividades a su portal gratuito. El comprador acepta o rechaza cada invitación.</p>
-      <form id="customerNetworkSearch"><label>Correo completo o identificación Qori<input name="query" value="${esc(initial)}" required maxlength="180" autocomplete="off"></label><button>Buscar comprador</button></form>
+      <form id="customerNetworkSearch"><label>Correo completo o identificación Qori<input name="query" value="${esc(initial)}" ${initial?'readonly':''} required maxlength="180" autocomplete="off"></label><button>Buscar comprador</button></form>
       <p id="customerNetworkMessage" role="status"></p><div id="customerNetworkResult"></div>
       <button type="button" class="ghost-button" id="customerLegacyConnection">Conectar historial existente y otras opciones</button></div>`;
     document.body.append(d);d.showModal();d.querySelector('[data-close]').onclick=()=>d.close();d.onclose=()=>d.remove();
     const message=text=>d.querySelector('#customerNetworkMessage').textContent=text;
-    d.querySelector('#customerLegacyConnection').onclick=()=>{d.close();window.QoriCustomerBridge.legacy(initial);};
+    d.querySelector('#customerLegacyConnection').onclick=()=>{d.close();window.QoriCustomerBridge.legacy(buyer?.public_id||initial);};
     let buyer,catalog,requestId=crypto.randomUUID();
     async function history(){
       const data=await call('/invitations/'+buyer.public_id);const host=d.querySelector('#customerNetworkHistory');if(!host)return;
@@ -31,12 +31,13 @@
         ${kind==='TICKET'?'<p>Se muestran tickets personales de activación o posventa ya emitidos para esta persona. Enviar no genera ni duplica el beneficio.</p>':''}`;
     }
     d.querySelector('#customerNetworkSearch').onsubmit=async e=>{
-      e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;d.querySelector('#customerNetworkResult').innerHTML='';
+      e.preventDefault();e.stopPropagation();const button=e.target.querySelector('button');if(button.disabled)return;button.disabled=true;d.querySelector('#customerNetworkResult').innerHTML='';
       try{
         buyer=(await call('/lookup','POST',{query:new FormData(e.target).get('query').trim()})).buyer;
         catalog=await call('/catalog/'+buyer.public_id);requestId=crypto.randomUUID();
         d.querySelector('#customerNetworkResult').innerHTML=`<section><h3>${esc(buyer.full_name||'Comprador Qori')}</h3><p class="customer-network-id">${esc(buyer.public_id)}</p><p>${buyer.relationship_state==='ACCEPTED'?'Ya tienes una conexión confirmada.':'Puedes enviarle una invitación antes de su primera compra.'}</p>
           <form id="customerNetworkSend"><label>Qué quieres enviar<select name="kind">${Object.entries(kinds).map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></label><div id="customerNetworkFields"></div><label>Mensaje para el comprador<textarea name="message" maxlength="1000"></textarea></label><button>Enviar a Qori Customer</button></form></section><h3>Envíos de este negocio</h3><div id="customerNetworkHistory"></div>`;
+        if(kinds[initialKind])d.querySelector('[name="kind"]').value=initialKind;
         fields();d.querySelector('[name="kind"]').onchange=()=>{requestId=crypto.randomUUID();fields();};
         d.querySelector('#customerNetworkSend').onsubmit=async event=>{
           event.preventDefault();const form=event.target,b=form.querySelector('button');b.disabled=true;
@@ -46,8 +47,10 @@
           }catch(error){message(error.message);}finally{b.disabled=false;}
         };
         message('Cuenta encontrada. Solo puedes consultar los envíos de tu negocio.');await history();
+        if(showHistory)d.querySelector('#customerNetworkHistory')?.scrollIntoView({block:'nearest'});
       }catch(error){message(error.message);}finally{button.disabled=false;}
     };
+    if(initial){const form=d.querySelector('#customerNetworkSearch');form.requestSubmit(form.querySelector('button'));}
   }
   window.QoriCustomerInvitations={open};
 })();

@@ -4,7 +4,7 @@
   const params=new URLSearchParams(location.search);
   const call=(path,method='GET',body)=>api(`/api/business/customer${path}`,{method,headers:authHeaders(),noClientCache:true,...(body?{body:JSON.stringify(body)}:{})});
   let pending=params.get('customer')||'',opened=false;
-  function open(){if(window.QoriCustomerInvitations)return window.QoriCustomerInvitations.open(pending);legacyOpen();}
+  function open(){if(window.QoriCustomerWorkspace)return window.QoriCustomerWorkspace.show(pending);if(window.QoriCustomerInvitations)return window.QoriCustomerInvitations.open(pending);legacyOpen();}
   function legacyOpen(){
     if(typeof session==='undefined'||!session){return;}
     if(document.getElementById('customerBridgeDialog'))return;
@@ -25,9 +25,9 @@
     call('/directory').then(({directory:d})=>{if(!d)return;const form=dialog.querySelector('#customerDirectoryForm');for(const name of ['category','city','address','description'])form.elements[name].value=d[name]||'';form.elements.published.checked=d.published;}).catch(()=>{});
     dialog.querySelector('#customerReportsLoad').onclick=async()=>{try{const r=await call('/reports');dialog.querySelector('#customerReports').innerHTML=r.reports.map(x=>`<p><strong>Venta ${esc(x.sale_id)}</strong><br>${esc(x.report_reason)}</p>`).join('')||'<p>Sin reportes.</p>';}catch(e){message(e.message);}};
   }
-  window.QoriCustomerBridge={open(id){pending=id||'';open();},legacy(id){pending=id||'';legacyOpen();}};
+  window.QoriCustomerBridge={open(id){pending=id||'';opened=true;open();},legacy(id){pending=id||'';opened=true;legacyOpen();}};
   const timer=setInterval(()=>{
-    for(const host of document.querySelectorAll('.view-head'))if(!host.querySelector('[data-customer-bridge]')){const button=document.createElement('button');button.type='button';button.className='ghost-button';button.dataset.customerBridge='true';button.textContent='Conectar Qori Customer';button.onclick=open;host.append(button);}
+
     if(pending&&!opened&&typeof session!=='undefined'&&session){opened=true;open();}
   },1500);
   window.addEventListener('pagehide',()=>clearInterval(timer));

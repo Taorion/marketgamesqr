@@ -3,8 +3,8 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const call=(path,method='GET',body)=>api(`/api/business/customer${path}`,{method,headers:authHeaders(),noClientCache:true,...(body?{body:JSON.stringify(body)}:{})});
   function open(){
-    if(typeof session==='undefined'||!session||document.getElementById('customerNetworkDialog'))return;
-    const dialog=document.createElement('dialog');dialog.id='customerNetworkDialog';dialog.className='customer-network-dialog';
+    if(typeof session==='undefined'||!session||document.getElementById('customerStandardDialog'))return;
+    const dialog=document.createElement('dialog');dialog.id='customerStandardDialog';dialog.className='customer-standard-dialog';
     dialog.innerHTML=`<header><h2>Somos Qori</h2><button type="button" data-close aria-label="Cerrar">×</button></header>
       <p>Un establecimiento Qori ofrece sellos, puntos y giftcards. Configura las condiciones y verifica los tres programas antes de publicar en Customer.</p>
       <p id="qnMessage" role="status"></p><div id="qnChecks" aria-live="polite">Revisando programas…</div>
