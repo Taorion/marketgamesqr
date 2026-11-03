@@ -18,10 +18,18 @@ function clearWebSession(res){res.clearCookie(WEB_COOKIE,cookieOptions());}
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 const codeHash = (id, code) => crypto.createHmac('sha256', env.jwtSecret).update(`${id}:${code}`).digest('hex');
 
+function localMailboxEnabled(){
+  return process.env.CUSTOMER_LOCAL_MAILBOX==='true'&&!env.isProduction&&
+    ['127.0.0.1','localhost'].includes(new URL(env.databaseUrl).hostname)&&new URL(env.databaseUrl).pathname==='/qori_customer_qa';
+}
+async function status(){
+  await query('select 1 from customer_accounts limit 1');
+  return {ok:true,registration_available:Boolean(localMailboxEnabled()||(env.resendApiKey&&env.contactMailFrom))};
+}
+
 async function deliverCode(email, code, challengeId) {
   // Local mailbox is explicit, loopback-only and never available in production.
-  const local = process.env.CUSTOMER_LOCAL_MAILBOX === 'true' && !env.isProduction &&
-    ['127.0.0.1', 'localhost'].includes(new URL(env.databaseUrl).hostname) && new URL(env.databaseUrl).pathname === '/qori_customer_qa';
+  const local = localMailboxEnabled();
   if (local) {
     const dir = path.resolve(__dirname, '../../../.local-customer/mailbox');
     await fs.mkdir(dir, { recursive: true });
@@ -85,4 +93,4 @@ async function customerRequired(req, res, next) {
     req.customer = result.rows[0]; res.set('Cache-Control','private, no-store'); next();
   } catch(error) { next(error); }
 }
-module.exports = { requestCode, verifyCode, customerRequired,assertWebRequest,setWebSession,clearWebSession };
+module.exports = { requestCode, verifyCode, customerRequired,assertWebRequest,setWebSession,clearWebSession,status };

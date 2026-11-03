@@ -42,6 +42,8 @@ test('Customer web registration and multi-business loyalty use real canonical da
     }
     assert.match(await (await fetch(base+'/customer/')).text(),/Tu portal de beneficios y finanzas/);
     assert.equal((await (await fetch(base+'/customer/manifest.webmanifest')).json()).start_url,'/customer/');
+    const availability=await (await fetch(base+'/api/customer/status')).json();
+    assert.deepEqual(availability,{ok:true,registration_available:true});
   });
   await t.test('web authentication requires same-origin requests and consent',async()=>{
     assert.equal((await api('/api/customer/auth/web/code',{body:{email:'blocked@example.test'},headers:{Origin:'https://foreign.test'}})).status,403);

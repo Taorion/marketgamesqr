@@ -1699,6 +1699,7 @@ const sidebarSectionByView = Object.freeze({
   "reward-passes": "offer",
   leads: "operate",
   sales: "operate",
+  quotes: "operate",
   validator: "operate",
   redemptions: "optimize",
   affiliates: "optimize",
@@ -3756,6 +3757,7 @@ function saveValidatorSession(value) {
 }
 
 function clearSession(options = {}) {
+  window.Quotes?.close();
   stopActivityPolling();
   stopValidatorScanner();
   stopAffiliateFinderScanner();
@@ -5901,6 +5903,7 @@ function syncCampaignSlugFromName({ force = false } = {}) {
 }
 
 const viewFeatureMap = {
+  quotes: "products",
   "stamp-cards": "portal_access",
   dashboard: "revenue_center",
   "rms-machine": "rms_core",
@@ -7631,6 +7634,7 @@ function setView(view) {
   }
   state.currentView = view;
   if (view === "stamp-cards") window.StampCards?.open();
+  if (view === "quotes") window.Quotes?.open();
   const staleAccountHash = String(window.location.hash || "").replace(/^#/, "");
   if (view !== "account" && ACCOUNT_SECTION_SCREEN[staleAccountHash]) {
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}`);
