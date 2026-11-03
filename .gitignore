@@ -27,6 +27,12 @@ npm-debug.log*
 /.local-agenda-qa/
 /.local-stamps-pg/
 /.local-stamps-qa/
+/.local-customer-pg/
+/.local-customer/
+/apps/customer/.expo/
+/apps/customer/dist/
+/apps/customer/android/
+/apps/customer/ios/
 /supabase/.temp/
 *.log
 

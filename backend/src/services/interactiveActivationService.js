@@ -1300,8 +1300,9 @@ async function getPublicInteractiveActivation(slug, trackingToken = null, tracki
   return publicActivation(activation, questions.rows, scoreRules.rows, touchZones.rows);
 }
 
-async function startInteractiveParticipant(slug, body) {
-  return withTransaction(async (client) => {
+async function startInteractiveParticipant(slug, body, {client:transactionClient}={}) {
+  const transaction=transactionClient?fn=>fn(transactionClient):withTransaction;
+  return transaction(async (client) => {
     const activation = await lockActivationBySlug(client, slug);
     assertActivationOpen(activation);
     enforceParticipantCaptureMode(activation, body);
@@ -1354,8 +1355,9 @@ async function startInteractiveParticipant(slug, body) {
   });
 }
 
-async function completeInteractiveParticipant(slug, body) {
-  return withTransaction(async (client) => {
+async function completeInteractiveParticipant(slug, body, {client:transactionClient}={}) {
+  const transaction=transactionClient?fn=>fn(transactionClient):withTransaction;
+  return transaction(async (client) => {
     const activation = await lockActivationBySlug(client, slug);
     assertActivationOpen(activation);
     enforceParticipantCaptureMode(activation, body);

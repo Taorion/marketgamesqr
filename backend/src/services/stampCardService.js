@@ -117,8 +117,8 @@ async function publicEnroll(programId,data) {
   // Public registration must never return member records or recover a card by document alone.
   return {url:result.url,existing:result.existing};
 }
-async function enroll(businessId,userId,data,{accessKey}={}) {
-  return withTransaction(async client=>{
+async function enroll(businessId,userId,data,{accessKey,client:transactionClient}={}) {
+  return (transactionClient?fn=>fn(transactionClient):withTransaction)(async client=>{
     const program=(await client.query('select * from stamp_programs where id=$1 and business_id=$2 for share',[data.program_id,businessId])).rows[0];
     if (!program || program.status!=='ACTIVE' || program.deleted_at) throw badRequest('El programa debe estar activo.');
     if (accessKey) {

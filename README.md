@@ -1,5 +1,11 @@
 # UNIVERSAL QR / Plataforma de activacion, leads y redencion
 
+## Qori Customer: portal web
+
+La experiencia principal para compradores es `/customer/`, desarrollada en `customer-web/` y conectada a las APIs de Qori Empresa. Incluye cuenta gratuita, beneficios, tickets, programas, regalos, actividades y finanzas personales. La app nativa queda en pausa; su código se conserva, pero no forma parte de la entrega actual.
+
+Alcance, prueba local y límites de validación: [Qori Customer](docs/QORI_CUSTOMER.md). Contratos compartidos: [API Customer](docs/QORI_CUSTOMER_API.md).
+
 ## Resumen ejecutivo
 
 UNIVERSAL QR es una plataforma B2B para crear, validar, redimir y medir QR asociados a campañas, leads, beneficios y ventas atribuidas.

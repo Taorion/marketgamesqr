@@ -25,6 +25,9 @@
     savePanel.innerHTML=`<h2>Guarda tu tarjeta</h2><p>Este enlace es personal. Guárdalo para volver a consultar tus sellos y generar tu beneficio.</p><a class="personal-link" href="${esc(personalUrl)}">${esc(personalUrl)}</a><button type="button">Copiar enlace de mi tarjeta</button><p role="status" class="subtle"></p>`;
     savePanel.querySelector('button').onclick=async()=>{try{await navigator.clipboard.writeText(personalUrl);savePanel.querySelector('[role="status"]').textContent='Enlace copiado. Guárdalo en tus favoritos o notas.';}catch{savePanel.querySelector('[role="status"]').textContent='Mantén pulsado el enlace para copiarlo o añádelo a tus favoritos.';}};
     root.querySelector('.loyalty-card').after(savePanel);
+    const customerPanel=document.createElement('section');customerPanel.className='panel';
+    customerPanel.innerHTML='<h2>Todas tus tarjetas, en un solo Qori</h2><p>Crea tu cuenta gratuita Qori Customer y conecta este negocio para reunir sus programas junto a los de otros establecimientos. Puedes incluir tus tarjetas anteriores al confirmar la conexión.</p><a class="personal-link" href="/customer/">Crear mi cuenta o entrar a Qori Customer →</a>';
+    savePanel.before(customerPanel);
     root.querySelector('#claimBenefit')?.addEventListener('click',()=>mutate('/claim',{cycle_id:c.id}));
     root.querySelector('#renewCard')?.addEventListener('click',()=>mutate('/renew',{}));root.querySelector('#refreshCard').onclick=()=>load();
   }

@@ -1,0 +1,15 @@
+{
+  "scope": "Customer presentation aligned with Qori Empresa",
+  "reference": "empresa/css/portal-clean-v39.css",
+  "theme": "customer-web/qori-theme.css",
+  "preview": "http://127.0.0.1:3051/customer/",
+  "tests": {"passed": 26, "failed": 0, "skipped": 0},
+  "test_log": ".local-customer/customer-design.tap",
+  "css_parse": true,
+  "brand_tokens_verified": true,
+  "local_http_routes_verified": 8,
+  "verified_flows": ["account", "navigation", "finance", "product gifts", "web session"],
+  "browser_visual": "Blocked: CUA getTab reports Cannot read properties of undefined (reading 'timeoutMs')",
+  "mobile_layout_verified": false,
+  "deployed": false
+}

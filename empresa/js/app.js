@@ -18889,6 +18889,10 @@ function validatorKind(data = state.validatorLastValidation) {
   return data?.kind === "reward_pass" ? "reward_pass" : data?.kind === "inventory_product" ? "inventory_product" : data ? "qr" : "";
 }
 
+function validatorIsPaidProductGift(data = state.validatorLastValidation) {
+  return data?.qr_code?.customer_product_gift === true;
+}
+
 function validatorKindLabel(data = state.validatorLastValidation) {
   return validatorKind(data) === "reward_pass" ? "Reward Pass" : validatorKind(data) === "inventory_product" ? "Producto de inventario" : validatorKind(data) === "qr" ? "Ticket QR" : "Sin detectar";
 }
@@ -19161,7 +19165,7 @@ function calculateValidatorCheckoutPreview() {
   state.validatorCheckoutPreview = { subtotal, discount_amount: discount, final_total: finalTotal, gifts, line_items: items, message };
 
   validatorCheckoutBenefitLabel.textContent = benefit.label;
-  validatorCheckoutBenefitRule.textContent = benefit.purchase_required
+  validatorCheckoutBenefitRule.textContent = validatorIsPaidProductGift() ? "Producto ya pagado. Entrega sin cobrar ni registrar otra venta." : benefit.purchase_required
     ? "Compra obligatoria para redimir este ticket."
     : "Puede entregarse solo o aplicarse a una compra.";
   validatorCheckoutSubtotalValue.textContent = money(subtotal);
@@ -19178,13 +19182,15 @@ function calculateValidatorCheckoutPreview() {
 
 function syncValidatorRedemptionMode({ renderItems = true } = {}) {
   const isProductSale = validatorKind() === "inventory_product";
+  const paidGift = validatorIsPaidProductGift();
   const benefit = validatorBenefitDescriptor();
   const sectionHeading = validatorStandardSaleFields?.querySelector(".validator-form-section-head strong");
   const sectionHelp = validatorStandardSaleFields?.querySelector(".validator-form-section-head small");
-  if (sectionHeading) sectionHeading.textContent = isProductSale ? "Registrar venta de producto" : "Aplicar beneficio";
-  if (sectionHelp) sectionHelp.textContent = isProductSale ? "La referencia ya está cargada. Confirma cantidad, cliente y pago." : "Elige el flujo permitido por el ticket. Compra y redención se confirmarán juntas.";
+  if (sectionHeading) sectionHeading.textContent = paidGift ? "Entregar regalo pagado" : isProductSale ? "Registrar venta de producto" : "Aplicar beneficio";
+  if (sectionHelp) sectionHelp.textContent = paidGift ? "Verifica al destinatario y entrega su producto. El pago y la venta ya están registrados." : isProductSale ? "La referencia ya está cargada. Confirma cantidad, cliente y pago." : "Elige el flujo permitido por el ticket. Compra y redención se confirmarán juntas.";
   if (benefit.purchase_required || isProductSale) state.validatorRedemptionMode = "PURCHASE";
-  if (validatorRedemptionModes) validatorRedemptionModes.hidden = isProductSale;
+  if (paidGift) state.validatorRedemptionMode = "STANDALONE";
+  if (validatorRedemptionModes) validatorRedemptionModes.hidden = isProductSale || paidGift;
   validatorStandaloneModeInput.checked = state.validatorRedemptionMode === "STANDALONE";
   validatorPurchaseModeInput.checked = state.validatorRedemptionMode === "PURCHASE";
   validatorStandaloneModeInput.disabled = Boolean(benefit.purchase_required);
@@ -19196,7 +19202,7 @@ function syncValidatorRedemptionMode({ renderItems = true } = {}) {
   calculateValidatorCheckoutPreview();
   const redeemLabel = validatorRedeemButton?.querySelector("span:last-child");
   if (redeemLabel && validatorKind() !== "reward_pass") {
-    redeemLabel.textContent = isProductSale
+    redeemLabel.textContent = paidGift ? "Entregar regalo ya pagado" : isProductSale
       ? "Registrar venta"
       : state.validatorRedemptionMode === "PURCHASE"
       ? "Aplicar beneficio y cerrar compra"
@@ -19435,6 +19441,10 @@ function setValidatorOperationState(mode = "idle", data = state.validatorLastVal
   };
   settings.validated_product = ["Producto reconocido", "Completa la venta", "La referencia y el precio ya fueron cargados. Indica cantidad, cliente y medio de pago.", "Listo para vender", "redeem"];
   settings.completed_product = ["Venta registrada", "Producto y cliente confirmados", "La venta quedó guardada, el inventario actualizado y la referencia conservada.", "Completado", "close"];
+  if (validatorIsPaidProductGift(data)) {
+    settings.validated_standard = ["Regalo pagado", "Entrega el producto al destinatario", "Comprueba su correo y confirma la entrega. No requiere otro pago.", "Listo para entregar", "redeem"];
+    settings.completed_standard = ["Regalo entregado", "El destinatario ya disfrutó su regalo", "Canje registrado. La venta y el pago originales se conservan sin duplicarse.", "Completado", "close"];
+  }
   const [eyebrow, title, copy, badge, step] = settings[mode] || settings.idle;
   validatorOperationEyebrow.textContent = eyebrow;
   validatorOperationTitle.textContent = title;
@@ -34078,7 +34088,24 @@ async function downloadBatchByFormat(batchId, format, template = "sticker", pape
   }
 }
 
+function extractCustomerQrId(rawValue) {
+  try {
+    const url = new URL(String(rawValue || ''), window.location.origin);
+    if (![window.location.origin, QORI_PUBLIC_ORIGIN].includes(url.origin) || url.pathname !== '/empresa/') return '';
+    const id = url.searchParams.get('customer') || '';
+    return /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id) ? id : '';
+  } catch { return ''; }
+}
+
 async function validateValidatorToken(rawValue) {
+  const customerId = extractCustomerQrId(rawValue);
+  if (customerId) {
+    stopValidatorScanner();
+    validatorDetectedType.textContent = 'Comprador Qori identificado';
+    if (window.QoriCustomerBridge?.open) window.QoriCustomerBridge.open(customerId);
+    else setInlineMessage(validatorManualStatus, 'Recarga el portal para conectar Qori Customer.', 'error');
+    return;
+  }
   const stampCardId = extractStampCardQrId(rawValue);
   if (stampCardId) {
     stopValidatorScanner();

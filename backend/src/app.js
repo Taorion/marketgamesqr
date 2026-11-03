@@ -226,6 +226,8 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/customer", require("./routes/customerRoutes").router);
+app.use("/api/business/customer", require("./routes/customerRoutes").businessRouter);
 app.use("/api/qr", qrRoutes);
 app.use("/api/businesses", businessRoutes);
 app.use("/api/games", gameRoutes);
@@ -263,6 +265,9 @@ app.use([
   "/js/flipbook-zoom.js",
 ], portalWebAccessRequired);
 app.use(express.static(qoriWebRoot, staticOptions));
+app.use('/customer',express.static(path.join(projectRoot,'customer-web'),{
+  setHeaders(res,file){setUtf8StaticHeaders(res,file);res.set('Cache-Control','no-cache');}
+}));
 function redirectLegacyValidator(req, res) {
   const target = new URL("/empresa/", `${req.protocol}://${req.get("host")}`);
   if (req.query.token) {
@@ -291,7 +296,7 @@ app.use("/trivia", express.static(path.join(__dirname, "../..", "trivia")));
 app.use("/activacion", express.static(path.join(__dirname, "../..", "activacion")));
 app.use("/captura", express.static(path.join(__dirname, "../..", "captura")));
 app.use("/smart-catalog", express.static(path.join(__dirname, "../..", "smart-catalog")));
-app.use("/vendor/jsqr", express.static(path.join(__dirname, "../../node_modules/jsqr/dist")));
+app.use("/vendor/jsqr", express.static(path.dirname(require.resolve("jsqr"))));
 app.get("/claim/:token", (_req, res) => {
   res.sendFile(path.join(__dirname, "../..", "claim", "index.html"));
 });

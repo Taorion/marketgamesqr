@@ -1,0 +1,9 @@
+#customerBridgeDialog{width:min(560px,calc(100vw - 32px));max-height:85dvh;overflow:auto;border:1px solid #d7e5f4;border-radius:22px;padding:24px;color:#0b1e3d;background:#f4f9fe;box-sizing:border-box}
+#customerBridgeDialog::backdrop{background:#01226888}
+#customerBridgeDialog header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+#customerBridgeDialog form{display:grid;gap:14px;margin:16px 0}
+#customerBridgeDialog label{display:grid;gap:6px;font-weight:600}
+#customerBridgeDialog input:not([type=checkbox]),#customerBridgeDialog textarea{width:100%;box-sizing:border-box;padding:12px;border:1px solid #b8cde5;border-radius:10px;font-size:16px;color:#0b1e3d;background:#fff}
+#customerBridgeDialog .cb-check{display:flex;align-items:flex-start;font-size:14px}
+#customerBridgeDialog button{min-height:44px;padding:10px 14px;background:#0341b3;color:white;border:0;border-radius:12px;cursor:pointer}
+#customerBridgeDialog details{margin-top:18px}#customerBridgeDialog p{overflow-wrap:anywhere;line-height:1.5}

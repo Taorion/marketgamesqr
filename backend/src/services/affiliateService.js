@@ -118,7 +118,7 @@ async function listAffiliates(businessId, user) {
   return affiliates;
 }
 
-async function createAffiliate(businessId, user, body) {
+async function createAffiliate(businessId, user, body, options = {}) {
   ensureBusinessAccess(user, businessId);
   const business = await businessNameFor(businessId);
   if (!business) {
@@ -126,7 +126,7 @@ async function createAffiliate(businessId, user, body) {
   }
 
   const qrToken = createSecureToken();
-  const result = await withTransaction(async (client) => {
+  const result = await (options.client ? fn => fn(options.client) : withTransaction)(async (client) => {
     await assertAffiliateCapacity(client, businessId);
     return client.query(
       `insert into affiliates
