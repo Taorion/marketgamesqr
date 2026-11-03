@@ -1,0 +1,24 @@
+{
+  "environment": "local QA only",
+  "database": "qori_customer_qa at 127.0.0.1:55441",
+  "preview": "http://127.0.0.1:3051/customer/#finances",
+  "tests": { "passed": 80, "failed": 0, "skipped": 0 },
+  "log": ".local-customer/finance-regression.tap",
+  "verified": [
+    "Canonical sale delivery, recipient consent and opt-in automatic receipt",
+    "Tenant and recipient isolation, original seller preservation",
+    "Manual entry merge without duplicated spending, with retained notes and receipts",
+    "Voided sales update customer totals; pending purchases are not paid expenses",
+    "Budgets and private purchase reports",
+    "Recurring payment confirmation is atomic and idempotent",
+    "Historical consent and personal account deletion without deleting enterprise sales",
+    "DOM overview, interactive chart navigation, filtering, manual form, CSV safety and enterprise sending form",
+    "Automatic finance refresh and purchase detail actions on refreshed invitations",
+    "Finance JS and CSS return HTTP 200; anonymous finance-connections returns HTTP 401",
+    "Matching database and Supabase migration hashes; git diff --check"
+  ],
+  "visual_browser": "Blocked: CUA Chrome reported Cannot read properties of undefined (reading 'timeoutMs')",
+  "physical_mobile_tested": false,
+  "deployed": false,
+  "real_payments_or_bank_connections": false
+}

@@ -302,10 +302,11 @@ function safeFilenamePart(value, fallback = "ticket") {
   return normalized || fallback;
 }
 
-async function createPostSaleQr(businessId, user, body) {
-  return withTransaction(async (client) => {
+async function createPostSaleQr(businessId, user, body, {client:transactionClient,recipient}={}) {
+  const transaction=transactionClient?fn=>fn(transactionClient):withTransaction;
+  return transaction(async (client) => {
     const isReferralClaim = body.metadata?.ticket_use_case === "referral" && Boolean(body.metadata?.referral_claim_required);
-    const [reward, campaign, affiliate] = await Promise.all([
+    const [reward, campaign, , affiliate] = await Promise.all([
       assertReward(client, businessId, body.benefit.reward_id),
       assertCampaign(client, businessId, body.campaign_id),
       assertBranch(client, businessId, body.branch_id),
@@ -317,7 +318,7 @@ async function createPostSaleQr(businessId, user, body) {
       client,
       businessId,
       body.campaign_id,
-      isReferralClaim ? {} : {
+      isReferralClaim ? {} : recipient || {
         customer_name: body.customer_name,
         customer_phone: body.customer_phone,
         customer_email: body.customer_email,

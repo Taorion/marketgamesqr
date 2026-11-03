@@ -16,6 +16,9 @@
     "db:reset-demo": "node scripts/reset-demo-companies.js --confirm-reset",
     "seed": "node backend/src/seed.js"
   },
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",

@@ -281,6 +281,10 @@ async function getQrDetails(tokenInput, user) {
 
   await assertStandaloneBusinessFeature(user, qr.business_id, "qr_validator");
 
+  if(qr.metadata?.source==='CUSTOMER_PRODUCT_GIFT'){
+    const ready=await query("select 1 from customer_product_gift_orders o join business_sales s on s.id=o.sale_id join customer_invitations i on i.id=o.invitation_id where o.qr_code_id=$1 and o.business_id=$2 and o.state='ISSUED' and s.sale_status='PAID' and i.state='ACCEPTED'",[qr.id,qr.business_id]);
+    if(!ready.rowCount)return {status:'INVALID',allowed:false,message:'El regalo debe estar pagado y aceptado por su destinatario.'};
+  }
   const now = new Date();
   const isExpired = qr.expires_at && new Date(qr.expires_at) <= now;
   const effectiveStatus = qr.status === "ACTIVE" && isExpired ? "EXPIRED" : qr.status;
@@ -323,6 +327,7 @@ async function getQrDetails(tokenInput, user) {
     message: buildStatusMessage(effectiveStatus),
     qr_code: {
       id: qr.id,
+      customer_product_gift: qr.metadata?.source==='CUSTOMER_PRODUCT_GIFT',
       origin_type: qr.origin_type,
       claim_required: qr.claim_required,
       claimed_at: qr.claimed_at,
@@ -680,6 +685,12 @@ async function redeemQr(tokenInput, user, checkoutPayload = {}) {
       if (!documentKey(qr.player_document_id) || documentKey(checkoutPayload.beneficiary?.document_id) !== documentKey(qr.player_document_id)) {
         throw badRequest("El beneficio de sellos es personal. Verifica el documento del titular de la tarjeta.");
       }
+    }
+    if(qr.metadata?.source==='CUSTOMER_PRODUCT_GIFT'){
+      const paid=await client.query("select o.recipient_id,i.state from customer_product_gift_orders o join business_sales s on s.id=o.sale_id join customer_invitations i on i.id=o.invitation_id where o.qr_code_id=$1 and o.business_id=$2 and o.state='ISSUED' and s.sale_status='PAID'",[qr.id,qr.business_id]);
+      if(!paid.rowCount||paid.rows[0].state!=='ACCEPTED')throw badRequest('El regalo debe estar pagado y aceptado por su destinatario.');
+      if(checkoutPayload.mode!=='STANDALONE')throw badRequest('Este producto ya está pagado. Usa la entrega del beneficio sin compra adicional.');
+      if(String(checkoutPayload.beneficiary?.email||'').trim().toLowerCase()!==String(qr.player_email||'').trim().toLowerCase())throw badRequest('Verifica el correo del destinatario de este regalo.');
     }
     const identity = await resolveBeneficiary(client, {
       businessId: qr.business_id,

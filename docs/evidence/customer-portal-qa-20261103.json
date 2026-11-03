@@ -1,0 +1,30 @@
+{
+  "environment": "local QA only",
+  "database": "qori_customer_qa at 127.0.0.1:55441",
+  "preview": "http://127.0.0.1:3051/customer/",
+  "primary_client": "customer-web",
+  "native_client": "paused, source preserved",
+  "tests": {"passed": 88, "failed": 0, "skipped": 0},
+  "log": ".local-customer/portal-regression.tap",
+  "verified": [
+    "Authenticated portal defaults to unified home; all Customer modules are reachable",
+    "Home uses the account currency and canonical financial summary",
+    "Profile updates currency, timezone and notification preferences using the shared account API",
+    "Directory exposes only public business fields and excludes unpublished or inactive businesses",
+    "Geolocation requested only on explicit click; approximate distance computed locally; city fallback",
+    "Business suggestions persist to the current Customer account",
+    "Personal post-sale ticket association requires recipient ownership and invitation acceptance",
+    "Claim-required, stamp and paid product gift tickets excluded from generic assignment",
+    "Accepted activity invitations preserve Customer participation and canonical earned rewards without a publication",
+    "Activity participation is atomic, account-owned and idempotent; another buyer cannot use the invitation or ticket",
+    "All prior Customer finance, gift, network, identity and wallet regression tests pass",
+    "Local portal, new assets, manifest and public directory return HTTP 200",
+    "Anonymous account endpoint returns HTTP 401",
+    "git diff --check passes"
+  ],
+  "database_migration_required_for_this_change": false,
+  "browser_visual": "Blocked: CUA Chrome getTab failed with Cannot read properties of undefined (reading 'timeoutMs')",
+  "mobile_visual_tested_for_this_change": false,
+  "physical_device_or_pwa_install_tested_for_this_change": false,
+  "deployed": false
+}

@@ -1,0 +1,190 @@
+/* Customer adapts Empresa's portal-clean-v39 visual system.
+   Keep brand tokens, typography and control hierarchy aligned with Empresa.
+   Load after feature styles; no Empresa application selectors or behaviors are imported. */
+:root {
+  --qori-blue-deep: #012268;
+  --qori-primary: #0341b3;
+  --qori-blue-bright: #0480fa;
+  --qori-cyan: #07cefb;
+  --qori-ink: #0b1e3d;
+  --qori-muted: #54708f;
+  --qori-canvas: #f4f9fe;
+  --qori-surface: #fff;
+  --qori-surface-soft: #f7fbff;
+  --qori-primary-soft: #e8f3fb;
+  --qori-cyan-soft: #e8fbff;
+  --qori-line: #cde0f4;
+  --qori-line-strong: #b8d2e9;
+  --qori-radius-control: 9px;
+  --qori-radius-panel: 14px;
+  --qori-sidebar: 208px;
+  --qori-topbar: 58px;
+  --qori-shadow: 0 3px 12px rgba(5,42,107,.045);
+  --qori-gradient: linear-gradient(135deg,#012268 0%,#0341b3 58%,#0480fa 100%);
+  /* Adapter for existing Customer feature components. */
+  --ink: var(--qori-ink);
+  --muted: var(--qori-muted);
+  --green: var(--qori-primary);
+  --gold: var(--qori-cyan);
+  --paper: var(--qori-canvas);
+  --line: var(--qori-line);
+  --radius: var(--qori-radius-panel);
+  font-family: Manrope,"Segoe UI",system-ui,sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+body{background:linear-gradient(135deg,#e8f3fb 0%,#fff 44%,#f7fbff 100%);min-width:0}
+button,input,select,textarea{font:inherit}
+h1,h2,h3,.brand,.portal-tile strong,.offer-art strong{font-family:"Plus Jakarta Sans",Manrope,"Segoe UI",sans-serif;letter-spacing:-.015em}
+h1,h2,h3{color:var(--qori-blue-deep)}
+h2{font-size:21px}p{line-height:1.5}.eyebrow{font-size:10px;letter-spacing:1.2px}
+:is(button,a,input,select,textarea,summary):focus-visible{outline:3px solid var(--qori-blue-bright);outline-offset:3px}
+.brand{display:inline-flex;align-items:center;justify-content:center;line-height:1;letter-spacing:0}
+.brand-logo{display:block;width:156px;height:88px;object-fit:contain}
+.brand-block{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.brand-sub{font-family:Manrope,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.8px;margin:0 0 0 18px;color:var(--qori-muted)}
+.brand-dot{color:var(--qori-cyan)}
+.primary,.secondary,.quiet,.hero-button{border-radius:var(--qori-radius-control);font-weight:700;min-height:44px;padding:11px 16px;font-size:13px}
+.primary,.hero-button{background:var(--qori-gradient);color:#fff;border:1px solid var(--qori-primary);box-shadow:0 3px 8px #01226812}
+.primary:hover,.hero-button:hover{background:var(--qori-blue-deep);color:#fff}
+.secondary{background:#fff;border-color:var(--qori-line-strong);color:var(--qori-blue-deep)}
+.secondary:hover,.quiet:hover{background:var(--qori-primary-soft);color:var(--qori-primary)}
+.quiet{color:var(--qori-primary)}
+.pill{background:var(--qori-primary-soft);color:var(--qori-blue-deep);border-radius:7px;padding:6px 9px}
+.pill.gray{background:#eef2f7;color:#53677f}.pill.gold{background:#fff4da;color:#735009}
+.field input,.field select,.field textarea,input.search,select.filter,.discover-search input{border:1px solid var(--qori-line-strong);border-radius:var(--qori-radius-control);min-height:44px;padding:11px 12px;background:#fff;color:var(--ink)}
+.field input::placeholder,.discover-search input::placeholder{color:#637c98}
+.field input:focus,.field select:focus,.field textarea:focus,.discover-search input:focus{border-color:var(--qori-blue-bright);box-shadow:0 0 0 3px #07cefb1c}
+.check input{accent-color:var(--qori-primary)}
+.panel,.stat,.loyalty-card,.discovery-card,.portal-tile,.finance-insights article{border:1px solid var(--line);border-radius:var(--qori-radius-panel);box-shadow:var(--qori-shadow);background:#fff}
+.panel{padding:22px}.error,.success{border-radius:var(--qori-radius-control)}
+.layout{grid-template-columns:var(--qori-sidebar) minmax(0,1fr)}
+.sidebar{background:#fff;padding:16px 12px;border-right:1px solid var(--line);overflow-y:auto}
+.sidebar nav{gap:7px;margin-top:24px}
+.sidebar .brand-block{align-items:center;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.sidebar .brand-sub{margin-left:0}
+.nav-link{min-height:46px;padding:10px;border:1px solid transparent;border-radius:10px;color:var(--muted);gap:10px;font-size:12px}
+.nav-link:hover{background:var(--qori-surface-soft);color:var(--qori-blue-deep)}
+.nav-link.active{color:#fff;border-color:#58dcff;background:var(--qori-gradient);box-shadow:inset 3px 0 0 #a5f2ff}
+.nav-icon{display:inline-flex;justify-content:center;align-items:center;width:24px;height:24px;flex:0 0 24px}
+.nav-icon svg{width:21px;height:21px;display:block}
+.sidebar-foot{border-top:1px solid var(--line);padding:20px 6px 0;margin-top:auto;color:var(--muted);font-size:11px}
+.sidebar-foot strong{color:var(--qori-blue-deep)}
+.topbar{height:auto;min-height:var(--qori-topbar);background:#ffffffed;padding:10px 28px;gap:12px}
+.topbar .row{gap:12px}.profile-button{padding:3px;border-radius:9px}.avatar{background:var(--qori-primary-soft);color:var(--qori-primary);border:1px solid var(--line);border-radius:10px}
+.content{max-width:1440px;padding:26px 28px 60px}
+.page-heading{margin-bottom:22px;gap:14px}.page-heading h1{font-size:28px;letter-spacing:-.025em}.page-heading p{line-height:1.5}
+.portal-welcome,.discover-hero,.finance-hero,.auth-story{background:var(--qori-gradient);color:#fff}
+.portal-welcome h1,.discover-hero h1,.finance-hero h2,.auth-story h1{color:#fff}
+.portal-welcome,.discover-hero,.finance-hero{border:1px solid #0341b3;border-radius:var(--qori-radius-panel);padding:28px;margin-bottom:24px}
+.portal-welcome{grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px}
+.portal-welcome h1,.discover-hero h1{font-size:clamp(28px,3vw,36px);letter-spacing:-.025em}
+.portal-welcome-note{border-radius:10px;background:#ffffff0f;border-color:#ffffff40;padding:20px}
+.portal-welcome-note strong{font-size:20px}
+.portal-welcome .primary,.auth-story .primary{background:#fff;color:var(--qori-blue-deep);border-color:#fff}
+.portal-welcome .primary:hover{background:var(--qori-cyan-soft)}
+.portal-welcome .secondary{background:transparent;color:#fff;border-color:#ffffff80}
+.portal-welcome .secondary:hover{background:#ffffff15}
+.portal-welcome p,.discover-hero p,.finance-hero p{color:#e1efff}
+.portal-stats,.portal-grid{gap:14px;margin:18px 0 24px}
+.portal-stats strong,.stat strong,.finance-stats strong{color:var(--qori-blue-deep);font-family:"Plus Jakarta Sans",Manrope,sans-serif}
+.portal-stats strong{font-size:30px}.portal-stats>a{gap:9px}
+.portal-tile{padding:20px;color:var(--ink);border-top:3px solid var(--qori-line)}
+.portal-tile:hover{background:var(--qori-surface-soft);border-color:#80b9ef}
+.portal-tile strong{font-size:16px;color:var(--qori-blue-deep)}.portal-tile span{font-size:12px;color:var(--muted)}
+.portal-tile span:last-child{color:var(--qori-primary)}
+.portal-total{font-family:"Plus Jakarta Sans",Manrope,sans-serif;font-size:30px;color:var(--qori-blue-deep)}
+.portal-finance{border-left:3px solid var(--qori-blue-bright);margin-bottom:26px}
+.portal-preferences{border-color:var(--line);border-radius:var(--qori-radius-control)}
+.discover-hero{min-height:240px;gap:24px}
+.discover-hero em,.auth-story h1 em{color:#9beaff}
+.discover-hero .eyebrow{color:#bcefff}
+.discover-orbit{width:142px;height:142px;flex-basis:142px;border:1px solid #ffffff40;outline:none;transform:none;border-radius:20px;background:#ffffff10;font-size:58px}
+.discover-orbit small{letter-spacing:1px}
+.discover-heading .eyebrow{color:var(--muted)}
+.chip{border-radius:8px;padding:9px 13px;min-height:40px}
+.chip.active{background:var(--qori-primary);border-color:var(--qori-primary)}
+.offer-art{background:var(--qori-primary-soft);color:var(--qori-blue-deep);height:180px;padding:20px}
+.offer-art.kind-ACTIVITY{background:var(--qori-gradient);color:#fff}
+.offer-art.kind-AFFILIATION,.offer-art.kind-PRODUCT{background:var(--qori-cyan-soft);color:var(--qori-blue-deep)}
+.offer-art.kind-GIFT{background:#eef0ff;color:#303b78}
+.offer-art:has(img){background:var(--qori-blue-deep);color:#fff}
+.offer-art .pill{background:#fffffff0;color:var(--qori-blue-deep)}
+.offer-art strong{font-size:22px}.offer-copy{padding:18px}.offer-business{color:var(--muted)}
+.offer-copy h3{font-size:17px}.discovery-grid{gap:18px}
+.ecosystem-note{background:var(--qori-primary-soft);border:1px solid var(--line);border-radius:var(--qori-radius-panel);padding:26px;margin-top:28px;gap:24px}
+.ecosystem-note h2{font-size:23px}.offer-detail h1{font-size:28px}
+.scanner-view{background:var(--qori-blue-deep);border-radius:var(--qori-radius-panel)}
+.scanner-frame{border-color:var(--qori-cyan);border-radius:12px}
+.hero{background:var(--qori-primary-soft);border:1px solid var(--line);border-radius:var(--qori-radius-panel);padding:26px}
+.hero h2{font-size:24px}.hero p{color:var(--muted)}
+.hero-emblem{background:#fff;color:var(--qori-primary);border-radius:14px;transform:none}
+.stat{background:#fff;padding:18px}.business-mark{background:var(--qori-primary-soft);color:var(--qori-primary);border-radius:9px}
+.card-art{background:var(--qori-primary-soft);padding:22px;min-height:164px}
+.card-art.points{background:var(--qori-cyan-soft)}.card-art.gift{background:#eef0ff}.card-art.ticket{background:#e8f3fb}
+.card-art h3,.card-art strong{color:var(--qori-blue-deep)}
+.card-art .card-kicker{color:var(--muted)}
+.card-actions{border-top-color:var(--line)}
+.dot{border-color:var(--qori-line-strong);color:var(--muted)}
+.dot.filled{background:var(--qori-primary);border-color:var(--qori-primary);color:#fff}
+.progress{background:var(--qori-primary-soft)}.progress>span,.progress>i{background:var(--qori-primary)}
+.notice{border-color:var(--qori-line-strong);background:var(--qori-cyan-soft);border-radius:var(--qori-radius-panel)}
+.empty{border-color:var(--line);background:#fff;border-radius:var(--qori-radius-panel)}
+.empty .empty-mark{color:var(--qori-primary)}
+.portal-request{border-color:var(--line)}
+.qr-panel,.public-id{background:var(--qori-surface-soft);border-color:var(--line);color:var(--ink)}
+.steps li:before{border-color:var(--qori-line-strong);color:var(--qori-primary)}
+.finance-tabs{gap:24px}.finance-tabs a{color:var(--muted)}
+.finance-tabs a[aria-current]{color:var(--qori-primary);border-color:var(--qori-primary)}
+.finance-period{border-color:var(--line);border-radius:var(--qori-radius-panel);background:#fff}
+.finance-hero a,.finance-hero .eyebrow{color:#bcefff}.finance-hero-note small{color:#d8eaff}
+.finance-track{background:var(--qori-primary-soft)}.finance-track i{background:var(--qori-blue-bright)}
+.finance-chart i{background:var(--qori-primary)}.finance-chart button:hover i,.finance-chart button:focus i{background:#047ba9}
+.finance-insights article{background:var(--qori-surface-soft);padding:18px}
+.movement-icon{background:var(--qori-primary-soft);color:var(--qori-primary);border-radius:9px}
+.movement-icon.income{background:#e2f4ec;color:#176b4b}
+.finance-movement:hover{background:var(--qori-surface-soft)}
+.finance-line button{background:var(--qori-primary-soft);color:var(--qori-blue-deep)}
+.gift-receipt blockquote{border-left-color:var(--qori-blue-bright)}
+.detail-dialog{border-color:var(--qori-line-strong);border-radius:var(--qori-radius-panel);box-shadow:0 20px 70px #01226830}
+.detail-dialog::backdrop{background:#07183285;backdrop-filter:blur(3px)}
+.dialog-head{padding:18px 22px;background:var(--qori-surface-soft);border-color:var(--line)}
+.dialog-close{color:var(--qori-blue-deep);border-radius:9px}
+.dialog-body{padding:22px;max-height:calc(90dvh - 80px);scrollbar-gutter:stable}
+.auth-story{padding:40px clamp(28px,4vw,64px);gap:30px}
+.auth-story .brand{background:#fff;border:1px solid #ffffff80;border-radius:12px;padding:0 6px}
+.auth-story .brand-sub{color:#bcefff;margin-top:7px}
+.auth-story h1{font-size:clamp(32px,3.8vw,48px);letter-spacing:-.025em}
+.auth-story p,.auth-foot{color:#d8eaff}
+.sample-card{background:#fff;color:var(--qori-blue-deep);border:1px solid var(--line);border-radius:var(--qori-radius-panel);transform:none;box-shadow:0 12px 30px #01226825}
+.sample-card h3{color:var(--qori-blue-deep);font-size:22px}.sample-card p{color:var(--muted)}
+.sample-dots span{border-color:var(--qori-line-strong)}
+.sample-dots span:nth-child(-n+4){background:var(--qori-primary);color:#fff}
+.art-note{border:1px solid var(--line);border-radius:9px;transform:none;box-shadow:var(--qori-shadow)}
+.auth-side{background:var(--qori-surface-soft)}.auth-form-wrap h2{font-size:28px}
+.policy{background:#fff;border:1px solid var(--line);border-radius:var(--qori-radius-panel);box-shadow:var(--qori-shadow)}
+.policy h1{font-size:32px}
+@media(max-width:1100px){.layout{grid-template-columns:190px minmax(0,1fr)}.content{padding:24px}.topbar{padding:10px 24px}.portal-welcome{grid-template-columns:1fr}.portal-welcome-note{display:none}}
+@media(max-width:760px){
+  .layout{display:block}
+  .sidebar{height:auto;max-height:none;width:100%;overflow:visible;padding:7px 8px max(7px,env(safe-area-inset-bottom));background:#fff;border-top:1px solid var(--line)}
+  .sidebar nav{margin:0;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+  .nav-link{min-height:54px;padding:6px 2px;gap:3px;font-size:9px;line-height:1.3;justify-content:center;text-align:center}
+  .nav-link.active{box-shadow:inset 0 2px 0 #a5f2ff;border-color:#58dcff}
+  .nav-icon{height:23px;flex-basis:23px}.nav-icon svg{width:20px;height:20px}
+  .topbar{padding:10px 16px;gap:10px;min-height:60px}.topbar .row{gap:8px}.topbar .pill{display:none}
+  .breadcrumb{font-size:11px;line-height:1.4;min-width:0}.profile-button{flex-shrink:0}
+  .content{padding:22px 16px calc(102px + env(safe-area-inset-bottom))}
+  .page-heading{flex-wrap:wrap}.page-heading h1{font-size:25px}
+  .portal-welcome,.discover-hero,.finance-hero,.hero{padding:22px 20px;border-radius:var(--qori-radius-panel)}
+  .portal-welcome h1,.discover-hero h1{font-size:29px}.discover-hero{min-height:0}
+  .portal-welcome .row>*{min-height:46px}
+  .portal-stats{gap:10px}.portal-stats .panel{padding:18px}.portal-stats strong{font-size:28px}
+  .panel{padding:20px}.portal-tile{padding:18px}.portal-grid{gap:12px}
+  .ecosystem-note{padding:22px}.ecosystem-note>div+div{border-color:var(--line)}
+  .field input,.field select,.field textarea,.discover-search input{font-size:16px;min-height:46px}
+  .dialog-head{padding:16px 18px}.dialog-body{padding:18px;max-height:calc(90dvh - 76px)}
+  .auth-story{padding:26px;gap:24px}.auth-story h1{font-size:34px}.auth-side{padding:30px 22px}
+  .auth-form-wrap h2{font-size:26px}.policy{margin:16px;padding:24px}.policy h1{font-size:28px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}

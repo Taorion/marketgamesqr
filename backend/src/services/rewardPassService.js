@@ -487,7 +487,7 @@ async function getTicketContext(user) {
   };
 }
 
-async function createRewardPass(user, payload) {
+async function createRewardPass(user, payload, options = {}) {
   assertManager(user);
   const businessId = userBusinessId(user);
   const subscription = await getBusinessSubscription(businessId);
@@ -501,7 +501,8 @@ async function createRewardPass(user, payload) {
     throw badRequest("El valor inicial debe ser mayor que 0.");
   }
 
-  const created = await withTransaction(async (client) => {
+  const run = options.client ? callback => callback(options.client) : withTransaction;
+  const created = await run(async (client) => {
     const business = await loadBusinessForUpdate(client, businessId);
     const issuanceKey = cleanText(payload.idempotency_key);
     if (issuanceKey) {
@@ -698,6 +699,7 @@ async function createRewardPass(user, payload) {
     return { id: pass.id, idempotent: false };
   });
 
+  if (options.client) return created; // Caller owns commit; never query uncommitted rows on another connection.
   const rewardPass = await getRewardPassById(user, created.id);
   rewardPass.idempotent = Boolean(created.idempotent);
   return rewardPass;
@@ -803,14 +805,15 @@ async function getPublicRewardPassPdf(publicCode) {
   return buildRewardPassPdf(pass, "card");
 }
 
-async function claimRewardPass(publicCode, payload) {
+async function claimRewardPass(publicCode, payload, options = {}) {
   const beneficiaryName = cleanText(payload.beneficiary_name);
   const beneficiaryDocument = cleanText(payload.beneficiary_document);
   if (!beneficiaryName || !beneficiaryDocument) {
     throw badRequest("Nombre y documento del beneficiario son obligatorios para activar la Gift Card oficial.");
   }
 
-  const claimedPublicCode = await withTransaction(async (client) => {
+  const run = options.client ? callback => callback(options.client) : withTransaction;
+  const claimedPublicCode = await run(async (client) => {
     const result = await client.query(
       `select *
        from reward_passes
@@ -859,6 +862,7 @@ async function claimRewardPass(publicCode, payload) {
     });
     return updated.rows[0].public_code;
   });
+  if (options.client) return {public_code:claimedPublicCode};
   return getPublicRewardPass(claimedPublicCode);
 }
 
@@ -957,12 +961,6 @@ async function redeemRewardPass(user, rawToken, payload) {
     }
     pass = await syncEffectiveStatus(client, pass);
     const status = effectiveStatus(pass);
-    if (pass.valid_from && new Date(pass.valid_from) > new Date()) {
-      throw badRequest("Este Reward Pass todavia no esta vigente.");
-    }
-    if (!["active", "partially_redeemed", "extended"].includes(status)) {
-      throw badRequest(statusMessage(status));
-    }
     const idempotencyKey = cleanText(payload.idempotency_key);
     if (idempotencyKey) {
       const existingRedemption = await client.query(
@@ -971,6 +969,9 @@ async function redeemRewardPass(user, rawToken, payload) {
         [pass.company_id, idempotencyKey]
       );
       if (existingRedemption.rowCount) {
+        if (existingRedemption.rows[0].reward_pass_id !== pass.id) {
+          throw badRequest("La referencia de este canje ya corresponde a otra giftcard.");
+        }
         const beneficiaryContact = await ensureRewardPassContact(client, pass);
         await registerRedemptionIntake(client, {
           businessId: pass.company_id,
@@ -989,6 +990,13 @@ async function redeemRewardPass(user, rawToken, payload) {
           idempotent: true,
         };
       }
+    }
+    // A completed redemption must remain retryable after consuming the final balance.
+    if (pass.valid_from && new Date(pass.valid_from) > new Date()) {
+      throw badRequest("Este Reward Pass todavia no esta vigente.");
+    }
+    if (!["active", "partially_redeemed", "extended"].includes(status)) {
+      throw badRequest(statusMessage(status));
     }
     const duplicateInvoice = await client.query(
       `select id from reward_pass_redemptions
