@@ -1,5 +1,7 @@
 # Contrato inicial de Qori Customer
 
+`GET /api/customer/status` comprueba acceso al almacenamiento de cuentas y devuelve `{ok,registration_available}` sin datos personales. La disponibilidad indica que hay transporte de correo configurado (o buzón exclusivo de QA local); no certifica la recepción de un mensaje. Permite verificar el arranque productivo sin enviar códigos a terceros.
+
 El cliente principal es el portal `customer-web/`, con sesión web HttpOnly. Las rutas Bearer de la implementación nativa se conservan por compatibilidad; el desarrollo de esa app queda en pausa.
 
 `GET /api/customer/explore/directory?search=&city=&offset=0` es público. Devuelve `{businesses,next_offset}` con un máximo de 48 negocios publicados por página; cada negocio expone únicamente `id`, `name`, `slug`, `category`, `city`, `address`, `latitude` y `longitude`. Excluye negocios inactivos o sin acceso al portal. No recibe la ubicación del comprador.

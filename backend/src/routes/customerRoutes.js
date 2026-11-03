@@ -21,6 +21,7 @@ const money=z.string().regex(/^\d{1,10}(\.\d{1,2})?$/).refine(v=>finance.minor(v
 const text=(max=160)=>z.string().trim().max(max);
 function parse(schema,value){const r=schema.safeParse(value);if(!r.success)throw badRequest(r.error.issues.map(i=>`${i.path.join('.')}: ${i.message}`).join(' '));return r.data;}
 const handle=fn=>async(req,res,next)=>{try{res.set('Cache-Control','private, no-store');res.json(await fn(req));}catch(e){next(e);}};
+router.get('/status',handle(()=>auth.status()));
 // Use the server-observed address. Never trust an arbitrary X-Forwarded-For header.
 const buckets=new Map();
 router.use((req,_res,next)=>{
