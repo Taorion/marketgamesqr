@@ -118,7 +118,7 @@ router.post('/recurring/:id/record',handle(req=>paymentAgenda.legacyRecord(req.c
 router.get('/relationships',handle(req=>svc.relationships(req.customer.id)));
 router.post('/relationships/:id/decision',handle(req=>svc.decideRelationship(req.customer.id,parse(uuid,req.params.id),parse(z.object({action:z.enum(['ACCEPT','REJECT','REVOKE']),include_history:z.boolean().default(false)}),req.body))));
 const entry=z.object({request_id:uuid,kind:z.enum(['EXPENSE','INCOME']).default('EXPENSE'),amount:money,currency,occurred_at:z.union([z.string().datetime({offset:true}),z.string().date()]),merchant:text(160).min(1),
-  category:category.default('otros'),priority:z.enum(['UNSET','ESSENTIAL','FLEXIBLE']).default('UNSET'),note:text(2000).default(''),payment_method:text(60).default(''),
+  expense_pattern:z.enum(['UNSET','RECURRING','EVENTUAL']).optional(),category:category.default('otros'),priority:z.enum(['UNSET','ESSENTIAL','FLEXIBLE']).default('UNSET'),note:text(2000).default(''),payment_method:text(60).default(''),
   products:z.array(z.object({name:text(160).min(1),quantity:z.number().positive().max(100000),amount:money})).max(100).default([]),
   splits:z.array(z.object({category,amount:money})).max(20).default([]),tags:z.array(text(30).min(1)).max(10).default([])});
 router.post('/entries',handle(req=>svc.saveEntry(req.customer.id,{...parse(entry,req.body),book_id:req.customer.finance_book.id})));
@@ -145,9 +145,9 @@ router.get('/sales/:id',handle(async req=>{
 }));
 router.patch('/sales/:id/note',handle(async req=>{
   const id=parse(uuid,req.params.id);await svc.ownSale(req.customer.id,id);
-  const d=parse(z.object({category,priority:z.enum(['UNSET','ESSENTIAL','FLEXIBLE']),note:text(2000)}).strict(),req.body);
-  await query(`insert into customer_sale_notes(customer_id,sale_id,category,priority,note) values($1,$2,$3,$4,$5)
-    on conflict(customer_id,sale_id) do update set category=excluded.category,priority=excluded.priority,note=excluded.note,updated_at=now()`,[req.customer.id,id,d.category,d.priority,d.note]);return {ok:true};
+  const d=parse(z.object({category,priority:z.enum(['UNSET','ESSENTIAL','FLEXIBLE']),expense_pattern:z.enum(['UNSET','RECURRING','EVENTUAL']).optional(),note:text(2000)}).strict(),req.body);
+  await query(`insert into customer_sale_notes(customer_id,sale_id,category,priority,note,expense_pattern) values($1,$2,$3,$4,$5,coalesce($6,'UNSET'))
+    on conflict(customer_id,sale_id) do update set category=excluded.category,priority=excluded.priority,note=excluded.note,expense_pattern=coalesce($6,customer_sale_notes.expense_pattern),updated_at=now()`,[req.customer.id,id,d.category,d.priority,d.note,d.expense_pattern??null]);return {ok:true};
 }));
 router.post('/sales/:id/report',handle(async req=>{
   const id=parse(uuid,req.params.id),d=parse(z.object({reason:text(1000).min(5)}),req.body);await svc.ownSale(req.customer.id,id);
@@ -195,7 +195,7 @@ router.put('/goals/:id/progress',handle(async req=>{
   const r=await query('update customer_goals set recorded_amount=$3 where id=$1 and customer_id=$2 returning *',[parse(uuid,req.params.id),req.customer.id,d.recorded_amount]);if(!r.rowCount)throw notFound();return {goal:r.rows[0]};
 }));
 router.post('/recurring',handle(async req=>{
-  const d=parse(z.object({name:text(120).min(2),currency,amount:money,kind:z.enum(['EXPENSE','INCOME']),category,next_date:z.string().date(),frequency:z.enum(['week','month','year']),priority:z.enum(['ESSENTIAL','FLEXIBLE']).optional(),reminder_day:z.number().int().min(1).max(31).nullable().optional(),remind_days:z.number().int().min(0).max(30).default(3),reminders_enabled:z.boolean().default(true)}),req.body);
+  const d=parse(z.object({name:text(120).min(2),currency,amount:money,kind:z.enum(['EXPENSE','INCOME']),category,next_date:z.string().date(),frequency:z.enum(['once','week','month','year']),priority:z.enum(['ESSENTIAL','FLEXIBLE']).optional(),reminder_day:z.number().int().min(1).max(31).nullable().optional(),remind_days:z.number().int().min(0).max(30).default(3),reminders_enabled:z.boolean().default(true)}),req.body);
   return paymentAgenda.create(req.customer,d);
 }));
 for(const [route,table] of [['budgets','customer_budgets'],['goals','customer_goals']])router.delete(`/${route}/:id`,handle(async req=>{await query(`delete from ${table} where id=$1 and customer_id=$2`,[parse(uuid,req.params.id),req.customer.id]);return {ok:true};}));

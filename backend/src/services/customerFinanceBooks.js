@@ -137,7 +137,7 @@ async function home(account){
    pending_minor:obligations,essential_minor:safe(essential+debt.due_minor),expected_income_minor:expected,planned_minor:planned,pending_sales_minor:pendingSales,
    grocery,debt,debt_due_minor:debt.due_minor,projected_expenses_minor:safe(spent+obligations+planned+pendingSales+debt.due_minor),available_after_commitments_minor:balance==null?null:safe(balance-obligations-pendingSales-debt.due_minor),
    projected_remaining_minor:balance==null?null:safe(balance+expected-obligations-planned-pendingSales-debt.due_minor),
-   commitments:pending,recurring_count:payments.rules.filter(r=>r.active).length,movements:month.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8),
+   setup:{income_count:payments.rules.filter(r=>r.active&&r.kind==='INCOME').length,expense_count:payments.rules.filter(r=>r.active&&r.kind==='EXPENSE').length+(debt.active_count||0)},expense_groups:{essential_minor:sum(month.filter(r=>r.kind==='EXPENSE'&&r.priority==='ESSENTIAL'),r=>r.amount_minor),flexible_minor:sum(month.filter(r=>r.kind==='EXPENSE'&&r.priority==='FLEXIBLE'),r=>r.amount_minor),unclassified_minor:sum(month.filter(r=>r.kind==='EXPENSE'&&!['ESSENTIAL','FLEXIBLE'].includes(r.priority)),r=>r.amount_minor)},flexible_pending_minor:sum(pending.filter(i=>i.kind==='EXPENSE'&&i.priority==='FLEXIBLE'),amount),commitments:pending,recurring_count:payments.rules.filter(r=>r.active).length,movements:month.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8),
    transfers:transfers.slice(0,30),foreign_currency_count:rows.filter(r=>r.currency!==book.currency).length};
  });
 }

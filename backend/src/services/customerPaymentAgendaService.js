@@ -13,6 +13,7 @@ function cycleDate(anchor,frequency,index){
  return date.toISOString().slice(0,10);
 }
 function dates(anchor,frequency,until,after=''){
+ if(frequency==='once')return anchor<=until&&anchor>after?[anchor]:[];
  const result=[];
  for(let i=0;i<6000;i++){const date=cycleDate(anchor,frequency,i);if(date>until)return result;if(date>after)result.push(date);}
  throw badRequest('La fecha inicial es demasiado antigua.');
@@ -54,7 +55,7 @@ async function archive(account,id){
  if(!r.rowCount)throw notFound();return {ok:true};
 }
 const projection=`i.*,i.scheduled_date::text scheduled_date,i.due_date::text due_date,
- e.amount actual_amount,(e.occurred_at at time zone $2)::date::text paid_on,r.remind_days,r.reminder_day,r.reminders_enabled,r.active,r.priority,r.book_id`;
+ e.amount actual_amount,(e.occurred_at at time zone $2)::date::text paid_on,r.remind_days,r.reminder_day,r.reminders_enabled,r.active,r.priority,r.book_id,r.frequency`;
 async function list(account,{month=today(account).slice(0,7),currency=account.currency||'COP'}={}){
  const start=month+'-01',end=cycleDate(start,'month',1),limit=cycleDate(today(account),'year',2);
  if(start<'2000-01-01'||start>limit)throw badRequest('Consulta un mes entre el año 2000 y los próximos dos años.');
@@ -95,7 +96,7 @@ async function edit(account,id,data){
 async function payment(account,id,data){
  return withTransaction(async db=>{
   const owner=(await db.query('select recurring_id from customer_payment_items where id=$1 and customer_id=$2',[id,account.id])).rows[0];if(!owner)throw notFound();
-  await db.query('select id from customer_recurring where id=$1 and customer_id=$2 for update',[owner.recurring_id,account.id]);
+  const classification=(await db.query('select priority,frequency from customer_recurring where id=$1 and customer_id=$2 for update',[owner.recurring_id,account.id])).rows[0];
   const i=(await db.query('select *,scheduled_date::text scheduled_date from customer_payment_items where id=$1 and customer_id=$2 for update',[id,account.id])).rows[0];if(!i)throw notFound();
   if(data.action==='PAY'&&i.status==='PAID')return {entry_id:i.entry_id,existing:true};
   if(i.revision!==data.revision)throw badRequest('Este pago cambió. Actualiza antes de continuar.');
@@ -110,9 +111,9 @@ async function payment(account,id,data){
     await db.query(`update customer_entries set amount=$3,occurred_at=$4::date::timestamp at time zone $5,updated_at=now() where id=$1 and customer_id=$2`,
      [entryId,account.id,data.amount,data.paid_on,account.timezone]);
    }else{
-    entryId=(await db.query(`insert into customer_entries(customer_id,request_id,kind,amount,currency,occurred_at,merchant,category,priority,note,book_id)
-     values($1,$2,$3,$4,$5,$6::date::timestamp at time zone $7,$8,$9,'ESSENTIAL',$10,(select book_id from customer_recurring where id=$11)) returning id`,
-     [account.id,crypto.randomUUID(),i.kind,data.amount,i.currency,data.paid_on,account.timezone,i.name,i.category,'Obligación de '+i.scheduled_date.slice(0,7)+'. '+i.note,i.recurring_id])).rows[0].id;
+    entryId=(await db.query(`insert into customer_entries(customer_id,request_id,kind,amount,currency,occurred_at,merchant,category,priority,note,book_id,expense_pattern)
+     values($1,$2,$3,$4,$5,$6::date::timestamp at time zone $7,$8,$9,$12,$10,(select book_id from customer_recurring where id=$11),$13) returning id`,
+     [account.id,crypto.randomUUID(),i.kind,data.amount,i.currency,data.paid_on,account.timezone,i.name,i.category,'Obligación de '+i.scheduled_date.slice(0,7)+'. '+i.note,i.recurring_id,classification.priority,classification.frequency==='once'?'EVENTUAL':'RECURRING'])).rows[0].id;
    }
    status='PAID';
    await db.query(`insert into customer_recurring_posts(recurring_id,due_date,entry_id) values($1,$2,$3)
@@ -130,7 +131,7 @@ async function payment(account,id,data){
   await audit(db,account,{...i,actual_amount:oldEntry?.amount,paid_at:oldEntry?.occurred_at},data.action,{...updated,actual_amount:data.amount,paid_on:data.paid_on});
   const pending=(await db.query("select scheduled_date::text date from customer_payment_items where recurring_id=$1 and status='PENDING' order by scheduled_date limit 1",[i.recurring_id])).rows[0];
   const rule=(await db.query('select anchor_date::text anchor,frequency from customer_recurring where id=$1',[i.recurring_id])).rows[0];
-  let next=pending?.date;if(!next){for(let n=0;n<6000;n++){const d=cycleDate(rule.anchor,rule.frequency,n);if(d>i.scheduled_date){next=d;break;}}}
+  let next=pending?.date||(rule.frequency==='once'?rule.anchor:null);if(!next){for(let n=0;n<6000;n++){const d=cycleDate(rule.anchor,rule.frequency,n);if(d>i.scheduled_date){next=d;break;}}}
   await db.query('update customer_recurring set next_date=$2 where id=$1',[i.recurring_id,next||i.scheduled_date]);
   return {item:updated,entry_id:entryId};
  });

@@ -1,6 +1,27 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),path=require('path'),vm=require('vm');
 let JSDOM;try{({JSDOM}=require('jsdom'));}catch{({JSDOM}=require('../.local-customer/qa-tools/node_modules/jsdom'));}
 const source=fs.readFileSync(path.join(__dirname,'../customer-web/payments.js'),'utf8');
+test('eventual form and examples keep necessity independent from recurrence',async()=>{
+ const {w,ctx,calls,errors}=setup();try{
+  ctx.book={name:'Casa',currency:'USD'};w.QoriPayments.ruleForm(ctx,async()=>{},null,'EXPENSE','once');
+  const f=w.document.querySelector('dialog form');assert.equal(f.elements.frequency.value,'once');assert.equal(f.elements.reminder_mode.value,'ADVANCE');assert.equal(f.elements.reminder_day.disabled,true);assert.equal(f.elements.currency.value,'USD');assert.equal(f.elements.currency.closest('label').hidden,true);
+  f.querySelector('[data-payment-example="3"]').click();assert.equal(f.elements.priority.value,'FLEXIBLE');assert.equal(f.elements.frequency.value,'month');
+  f.querySelector('[data-payment-example="4"]').click();assert.equal(f.elements.priority.value,'ESSENTIAL');assert.equal(f.elements.frequency.value,'once');
+  f.elements.amount.value='80';f.elements.priority.value='FLEXIBLE';await submit(w);
+  const sent=calls.find(c=>c.url==='/recurring');assert.equal(sent.body.frequency,'once');assert.equal(sent.body.priority,'FLEXIBLE');assert.equal(sent.body.reminder_day,null);assert.equal(sent.body.currency,'USD');assert.deepEqual(errors,[]);
+ }finally{w.close();}
+});
+test('agenda filters and CSV distinguish one-off essential and recurring flexible payments',async()=>{
+ const {w,ctx,data,page}=setup();try{
+  data.items=[{...item,frequency:'once',priority:'ESSENTIAL'},{...item,id:'second',name:'Suscripción',frequency:'month',priority:'FLEXIBLE'}];
+  await w.QoriPayments.render(page,ctx);
+  const need=page.querySelector('[name=necessity]'),repeat=page.querySelector('[name=repeat]');
+  need.value='FLEXIBLE';need.onchange({target:need});assert.equal(page.querySelectorAll('.payment-item').length,1);assert.match(page.querySelector('#paymentRows').textContent,/Suscripción/);
+  repeat.value='EVENTUAL';repeat.onchange({target:repeat});assert.equal(page.querySelectorAll('.payment-item').length,0);
+  need.value='ESSENTIAL';need.onchange({target:need});assert.equal(page.querySelectorAll('.payment-item').length,1);
+  const exported=w.QoriPayments.csv(data.items,data.today);assert.match(exported,/Frecuencia/);assert.match(exported,/Una sola vez/);assert.match(exported,/Prescindible/);
+ }finally{w.close();}
+});
 const item={id:'item-1',recurring_id:'rule-1',name:'Energía <QA>',kind:'EXPENSE',category:'servicios',currency:'COP',scheduled_date:'2026-11-15',due_date:'2026-11-15',estimated_amount:'120000',billed_amount:null,actual_amount:null,paid_on:null,status:'PENDING',revision:1,remind_days:3,reminders_enabled:true,note:''};
 async function settle(check){for(let i=0;i<80;i++){if(check())return;await new Promise(r=>setImmediate(r));}throw Error('UI did not settle');}
 function setup(){

@@ -59,7 +59,7 @@ test('real customer integration with existing enterprise sale and stamp services
     assert.equal((await api('/api/customer/dashboard',other.token)).purchases,0);
   });
   await t.test('manual expense persists once under retries and cannot mint benefits',async()=>{
-    const body={request_id:crypto.randomUUID(),amount:'12000',currency:'COP',occurred_at:new Date().toISOString(),merchant:'Café Qori QA',category:'alimentacion',note:'Mi nota'};
+    const body={request_id:crypto.randomUUID(),amount:'12000',currency:'COP',occurred_at:new Date().toISOString(),merchant:'Café Qori QA',category:'alimentacion',note:'Mi nota',expense_pattern:'RECURRING'};
     const created=await api('/api/customer/entries',customer.token,body);assert.equal(created.status,200,JSON.stringify(created));manual=created.entry;
     const retry=await api('/api/customer/entries',customer.token,body);assert.equal(retry.entry.id,manual.id);
     assert.equal((await api('/api/customer/dashboard',customer.token)).total_minor,2400000);
@@ -77,6 +77,12 @@ test('real customer integration with existing enterprise sale and stamp services
     const candidates=await api(`/api/customer/entries/${manual.id}/matches`,customer.token);assert.equal(candidates.candidates.length,1);
     assert.equal((await api(`/api/customer/entries/${manual.id}/link`,customer.token,{sale_id:saleId,confirmed:true})).status,200);
     const dashboard=await api('/api/customer/dashboard',customer.token);assert.equal(dashboard.total_minor,1200000);assert.equal(dashboard.movements[0].note,'Mi nota');
+    assert.equal(dashboard.movements[0].expense_pattern,'RECURRING');
+    const classification={category:'alimentacion',priority:'FLEXIBLE',note:'Mi nota',expense_pattern:'EVENTUAL'};
+    assert.equal((await api(`/api/customer/sales/${saleId}/note`,customer.token,classification,'PATCH')).status,200);
+    delete classification.expense_pattern;
+    assert.equal((await api(`/api/customer/sales/${saleId}/note`,customer.token,classification,'PATCH')).status,200);
+    assert.equal((await api('/api/customer/dashboard',customer.token)).movements[0].expense_pattern,'EVENTUAL');
     assert.equal((await query('select sale_amount from business_sales where id=$1',[saleId])).rows[0].sale_amount,'12000.00');
     assert.equal((await api(`/api/customer/sales/${saleId}/note`,customer.token,{category:'hogar',priority:'UNSET',note:'Cambio',sale_amount:1},'PATCH')).status,400);
   });
