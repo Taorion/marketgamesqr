@@ -10,7 +10,8 @@ function setup(){
 }
 test('grocery editor records pending items and actual prices separately before payment confirmation',async()=>{
  const {w,ctx,calls,page}=setup();try{
-  await w.QoriGroceries.render(page,ctx,'groceries/new');const f=page.querySelector('form'),r=f.querySelector('.grocery-item');
+  await w.QoriGroceries.render(page,ctx,'groceries/new');const f=page.querySelector('form');
+  page.querySelector('#groceryQuick').value='Arroz';page.querySelector('#groceryAdd').click();page.querySelector('#groceryMode').click();const r=f.querySelector('.grocery-item');
   r.querySelector('[data-k=name]').value='Arroz';r.querySelector('[data-k=quantity]').value='2';r.querySelector('[data-k=estimated_price]').value='100';r.querySelector('[data-k=in_cart]').checked=true;r.querySelector('[data-k=actual_quantity]').value='2';r.querySelector('[data-k=actual_price]').value='90';f.dispatchEvent(new w.Event('input'));
   assert.match(page.querySelector('#groceryLive').textContent,/200/);assert.match(page.querySelector('#groceryLive').textContent,/180/);assert.equal(calls.length,0);
   f.dispatchEvent(new w.SubmitEvent('submit',{cancelable:true,submitter:f.querySelector('[value=checkout]')}));
@@ -44,5 +45,62 @@ test('application opens a saved grocery list with the selected accounting book',
   let rendered;w.QoriAccounting={selector:()=>{}};w.QoriGroceries={render:(_p,c,r)=>{rendered={c,r};}};
   w.fetch=async url=>({ok:true,status:200,json:async()=>url.endsWith('/me')?{account:{id:'a',full_name:'Buyer',currency:'COP'}}:url.endsWith('/finance-books')?{books:[{...ctx.book,is_default:true}]}:{cards:[],relationships:[]}});
   w.eval(fs.readFileSync(path.join(__dirname,'../customer-web/app.js'),'utf8'));await settle(()=>rendered);assert.equal(rendered.r,'groceries/list');assert.equal(rendered.c.book.id,'book');
+  const active=w.document.querySelector('.sidebar [aria-current=page]');assert.equal(active.getAttribute('href'),'#groceries');assert.equal(active.textContent,'Mercado y hogar');
+ }finally{w.close();}
+});
+
+test('quick capture starts without errors, accepts household needs and saves unfinished input',async()=>{
+ const {w,ctx,calls,page}=setup();try{
+  w.QoriGroceries.editor(page,ctx);const f=page.querySelector('form'),quick=page.querySelector('#groceryQuick');
+  assert.equal(page.querySelectorAll('.grocery-item').length,0);assert.equal(page.querySelector('#groceryLive').textContent,'');
+  assert.equal(page.querySelector('#groceryError').textContent,'');assert.equal(f.querySelector('[value=checkout]').hidden,true);
+  quick.value='Bolsas de basura';quick.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));
+  assert.equal(page.querySelectorAll('.grocery-item').length,1);assert.equal(quick.value,'');assert.equal(calls.length,0);
+  assert.match(page.querySelector('#groceryLive').textContent,/Precio por definir/);
+  assert.match(page.querySelector('#grocerySaveState').textContent,/sin guardar/);
+  quick.value='Jabón';
+  f.dispatchEvent(new w.SubmitEvent('submit',{cancelable:true,submitter:f.querySelector('[value=save]')}));
+  await settle(()=>calls.some(c=>c.body));
+  const data=calls[0].body;assert.deepEqual(Array.from(data.items,i=>i.name),['Bolsas de basura','Jabón']);
+  assert.ok(data.items.every(i=>i.estimated_price===null&&!i.in_cart));assert.equal(calls.length,1);
+  assert.ok(data.items.every(i=>i.quantity===1&&i.unit==='unidad'));
+ }finally{w.close();}
+});
+test('save retry preserves item identities and typed quick capture without creating a second list',async()=>{
+ const {w,ctx,page}=setup();try{
+  const sent=[];ctx.request=async(u,b,m)=>{sent.push({u,b,m});if(sent.length===1)throw Error('Sin conexión');return {list:{...b,id:'saved',revision:1,currency:'COP'}};};
+  w.QoriGroceries.editor(page,ctx);const f=page.querySelector('form');page.querySelector('#groceryQuick').value='Papel higiénico';
+  const submit=()=>f.dispatchEvent(new w.SubmitEvent('submit',{cancelable:true,submitter:f.querySelector('[value=save]')}));
+  submit();await settle(()=>page.querySelector('#groceryError').textContent==='Sin conexión');
+  assert.equal(page.querySelectorAll('.grocery-item').length,1);assert.match(page.querySelector('#grocerySaveState').textContent,/sin guardar/);
+  submit();await settle(()=>sent.length===2);assert.equal(sent[0].b.request_id,sent[1].b.request_id);
+  assert.equal(sent[0].b.items[0].id,sent[1].b.items[0].id);assert.equal(sent[1].b.items.length,1);
+ }finally{w.close();}
+});
+test('planning and shopping preserve estimates and block incomplete checkout',async()=>{
+ const {w,ctx,calls,page}=setup();try{
+  w.QoriGroceries.editor(page,ctx);page.querySelector('#groceryQuick').value='Leche';page.querySelector('#groceryAdd').click();
+  const f=page.querySelector('form'),r=f.querySelector('.grocery-item');
+  const qty=r.querySelector('[data-k=quantity]');qty.value='3';qty.dispatchEvent(new w.Event('input',{bubbles:true}));assert.equal(r.querySelector('[data-k=actual_quantity]').value,'3');
+  page.querySelector('#groceryMode').click();assert.equal(f.querySelector('[value=checkout]').hidden,false);
+  r.querySelector('[data-k=in_cart]').checked=true;f.dispatchEvent(new w.Event('input'));
+  assert.equal(r.querySelector('.grocery-actual').hidden,false);
+  f.dispatchEvent(new w.SubmitEvent('submit',{cancelable:true,submitter:f.querySelector('[value=checkout]')}));
+  await settle(()=>page.querySelector('#groceryError').textContent);assert.equal(calls.length,0);assert.match(page.querySelector('#groceryError').textContent,/precios reales/);
+  page.querySelector('#groceryMode').click();assert.equal(r.querySelector('.grocery-actual').hidden,true);assert.equal(r.querySelector('[data-k=in_cart]').checked,true);
+  r.querySelector('[data-remove-item]').click();assert.equal(page.querySelector('#groceryEmpty').hidden,false);assert.equal(page.querySelector('#groceryLive').textContent,'');
+ }finally{w.close();}
+});
+test('list directory prioritizes pending needs and separates purchased history safely',async()=>{
+ const {w,ctx,page}=setup();try{
+  const item={id:'x',name:'<img src=x> Jabón',quantity:1,unit:'unidad',estimated_price:null,in_cart:false},summary=w.QoriGroceryMath.summary([item]);
+  ctx.request=async()=>({lists:[{id:'past',title:'Compra anterior',status:'PURCHASED',items:[item],summary,currency:'COP',actual:{amount_minor:2000}},{id:'next',title:'Lo que falta',status:'PLANNED',items:[item],summary,currency:'COP'}]});
+  await w.QoriGroceries.render(page,ctx);
+  assert.equal(page.querySelector('h1').textContent,'Mercado y hogar');assert.equal(page.querySelector('img'),null);
+  const pending=page.querySelector('[aria-labelledby=groceryPendingTitle]');
+  assert.match(pending.textContent,/Lo que falta/);assert.doesNotMatch(pending.textContent,/Compra anterior/);
+  assert.match(pending.textContent,/Precios por definir/);assert.equal(page.querySelector('.grocery-history').open,false);
+  assert.match(page.querySelector('.grocery-history').textContent,/Compra anterior/);
+  assert.ok(page.querySelector('.grocery-welcome [href="#groceries/next"]'));
  }finally{w.close();}
 });

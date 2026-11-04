@@ -64,8 +64,9 @@
     scan:'<path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5M7 7h3v3H7zm7 0h3v3h-3zM7 14h3v3H7zm7 0v3h3v-3"/>',
     profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>'
   };
+  navPaths.groceries='<path d="m3 5 2 2 3-3M11 6h10M3 12l2 2 3-3M11 13h10M3 19l2 2 3-3M11 20h10"/>';
   const navIcon=id=>'<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">'+(navPaths[id]||navPaths.profile)+'</svg></span>';
-  function navLink(id,icon,title){const active=route()===id||(id==='purchases'&&route().startsWith('groceries'))||(id==='finances'&&['debts','debt-simulator','history','payments','planning'].includes(route()));return `<a class="nav-link ${active?'active':''}" href="#${id}" ${active?'aria-current="page"':''}>${navIcon(id)}${title}</a>`;}
+  function navLink(id,icon,title){const active=route()===id||(id==='groceries'&&route().startsWith('groceries/'))||(id==='finances'&&['debts','debt-simulator','history','payments','planning'].includes(route()));return `<a class="nav-link ${active?'active':''}" href="#${id}" ${active?'aria-current="page"':''}>${navIcon(id)}${title}</a>`;}
   function renderApp(){
     window.QoriExplore?.stop();
     if(!state.account)return publicRoute()?renderGuest():renderAuth();
@@ -78,7 +79,7 @@
     const page=document.getElementById('page');
     app.querySelector('.sidebar nav').insertAdjacentHTML('beforeend',navLink('invitations','✉','Invitaciones'+(state.invitationCount?' ('+state.invitationCount+')':'')));
     const nav=app.querySelector('.sidebar nav');
-    nav.innerHTML=navLink('home','⌂','Mi dinero')+navLink('finances','◷','Mis finanzas')+navLink('purchases','▤','Compras')+navLink('explore','✦','Beneficios')+navLink('wallet','▤','Mis tarjetas');
+    nav.innerHTML=navLink('home','⌂','Mi dinero')+navLink('finances','◷','Mis finanzas')+navLink('groceries','▤','Mercado y hogar')+navLink('purchases','▤','Compras')+navLink('explore','✦','Beneficios')+navLink('wallet','▤','Mis tarjetas');
     window.QoriAccounting.selector(app,exploreContext());
     if(route()==='home')window.QoriAccounting.render(page,exploreContext());
     else if(route()==='directory')window.QoriPortal.directory(page,exploreContext());
