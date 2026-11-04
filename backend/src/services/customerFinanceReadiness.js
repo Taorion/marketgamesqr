@@ -19,7 +19,8 @@ async function status(){
     svc.dashboard(account,{period:'month'}),
     svc.planning(account),
     require('./customerFinanceDeliveryService').connections(account),
-    require('./customerPurchaseService').list(account)
+    require('./customerPurchaseService').list(account),
+    require('./customerDebtService').list({...account,finance_book:{id:account.id,currency:'COP'}})
    ]);
    cached={ready:true};
   }catch(e){

@@ -99,10 +99,11 @@ async function overview(account,currency=account.currency||'COP'){
  const pending=payments.items.filter(i=>i.status==='PENDING'&&i.kind==='EXPENSE');
  const plans=purchases.plans.filter(p=>p.status==='PLANNED'&&p.currency===currency&&(!p.target_date||p.target_date<=dashboard.range.full_to));
  const sum=(rows,value)=>rows.reduce((n,r)=>{const total=n+value(r);if(!Number.isSafeInteger(total))throw badRequest('El total supera el rango permitido.');return total;},0);
- const obligations=sum(pending,i=>finance.minor(i.billed_amount||i.estimated_amount)),planned=sum(plans,p=>p.estimated_minor);
+ const debt=account.finance_book?.currency===currency?await require('./customerDebtService').summary(account,dashboard.range.full_to):{due_minor:0,dues:[]};
+ const obligations=sum(pending,i=>finance.minor(i.billed_amount||i.estimated_amount))+debt.due_minor,planned=sum(plans,p=>p.estimated_minor);
  return {currency,range:dashboard.range,spent_minor:dashboard.total_minor,income_minor:dashboard.income_minor,
   budget_minor:budget?.amount_minor??null,budget_remaining_minor:budget?.remaining_minor??null,
   obligations_minor:obligations,planned_minor:planned,projected_remaining_minor:budget?budget.remaining_minor-obligations-planned:null,
-  pending_payments:pending.length,planned_purchases:plans.length,insights:dashboard.insights,plans:purchases.plans};
+  debt_due_minor:debt.due_minor,pending_payments:pending.length+debt.dues.length,planned_purchases:plans.length,insights:dashboard.insights,plans:purchases.plans};
 }
 module.exports={list,save,change,complete,candidates,overview};

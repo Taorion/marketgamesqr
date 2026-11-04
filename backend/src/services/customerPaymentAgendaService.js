@@ -100,6 +100,7 @@ async function payment(account,id,data){
   if(data.action==='PAY'&&i.status==='PAID')return {entry_id:i.entry_id,existing:true};
   if(i.revision!==data.revision)throw badRequest('Este pago cambió. Actualiza antes de continuar.');
   const oldEntry=i.entry_id?(await db.query('select * from customer_entries where id=$1 and customer_id=$2 for update',[i.entry_id,account.id])).rows[0]:null;
+  if(oldEntry)await require('./customerService').assertNotDebtEntry(account.id,oldEntry.id,db);
   if(oldEntry?.linked_sale_id)throw badRequest('Este movimiento está asociado a una compra Qori. Revisa su historial.');
   let entryId=i.entry_id,status=i.status;
   if(['PAY','CORRECT'].includes(data.action)){

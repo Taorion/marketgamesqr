@@ -62,6 +62,7 @@ router.post('/explore/resolve',handle(req=>explore.resolveQr(parse(z.object({url
 router.use(auth.customerRequired);
 router.use(require('../services/customerFinanceBooks').middleware);
 router.use(require('./customerFinanceBookRoutes'));
+router.use('/debts',require('./customerDebtRoutes'));
 router.use('/purchases',require('./customerPurchaseRoutes'));
 router.use('/payment-agenda',require('./customerPaymentAgendaRoutes'));
 router.get('/product-gifts',handle(req=>productGifts.list(req.customer)));
@@ -131,7 +132,8 @@ router.get('/entries/:id',handle(async req=>{
   if(!row)throw notFound();
   const receipts=(await query('select id,filename,mime_type from customer_receipts where entry_id=$1 and customer_id=$2',[row.id,req.customer.id])).rows;
   const obligation=(await query('select id from customer_payment_items where entry_id=$1 and customer_id=$2',[row.id,req.customer.id])).rows[0];
-  return {entry:{...row,payment_item_id:obligation?.id},receipts};
+  const debtPayment=(await query('select debt_id from customer_debt_payments where entry_id=$1 and customer_id=$2 and voided_at is null',[row.id,req.customer.id])).rows[0];
+  return {entry:{...row,payment_item_id:obligation?.id,debt_id:debtPayment?.debt_id},receipts};
 }));
 router.get('/sales/:id',handle(async req=>{
   const sale=await svc.ownSale(req.customer.id,parse(uuid,req.params.id));

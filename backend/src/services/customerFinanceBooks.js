@@ -53,10 +53,10 @@ async function guard(account,route,id){
 async function middleware(req,_res,next){
  try{
   const parts=req.path.split('/').filter(Boolean),route=parts[0];
-  if(!['dashboard','planning','entries','sales','budgets','goals','recurring','purchases','payment-agenda','finance-home'].includes(route))return next();
+  if(!['dashboard','planning','entries','sales','budgets','goals','recurring','purchases','payment-agenda','finance-home','debts'].includes(route))return next();
   if(route==='payment-agenda'&&['notifications','push'].includes(parts[1]))return next();
   req.customer={...req.customer,finance_book:await selected(req.customer,req.get('X-Qori-Book')||req.query.book_id)};
-  if(parts[1]&&parts[1]!=='overview')await guard(req.customer,route,parts[1]);
+  if(parts[1]&&parts[1]!=='overview'&&route!=='debts')await guard(req.customer,route,parts[1]);
   next();
  }catch(e){next(e);}
 }
@@ -86,6 +86,7 @@ async function reassign(account,data){
    await db.query('update customer_entries set book_id=$3 where customer_id=$1 and linked_sale_id=$2',[account.id,data.id,target.id]);
    await db.query('update customer_purchase_plans set book_id=$3 where customer_id=$1 and (sale_id=$2 or entry_id in(select id from customer_entries where customer_id=$1 and linked_sale_id=$2))',[account.id,data.id,target.id]);
   }else if(data.kind==='ENTRY'){
+   await require('./customerService').assertNotDebtEntry(account.id,data.id,db);
    const e=(await db.query('select * from customer_entries where customer_id=$1 and id=$2 and deleted_at is null for update',[account.id,data.id])).rows[0];
    if(!e)throw notFound();
    if(e.currency!==target.currency)throw badRequest('La moneda del destino no coincide.');
@@ -94,6 +95,7 @@ async function reassign(account,data){
    await db.query('update customer_entries set book_id=$3 where customer_id=$1 and id=$2',[account.id,e.id,target.id]);
    await db.query('update customer_purchase_plans set book_id=$3 where customer_id=$1 and entry_id=$2',[account.id,e.id,target.id]);
   }else if(data.kind==='RECURRING'){
+   if((await db.query('select 1 from customer_debt_payments p join customer_payment_items i on i.entry_id=p.entry_id where p.customer_id=$1 and i.recurring_id=$2 and p.voided_at is null',[account.id,data.id])).rowCount)throw badRequest('Esta obligación tiene pagos vinculados a una deuda. Anula la vinculación antes de cambiar su contabilidad.');
    const r=(await db.query('select * from customer_recurring where customer_id=$1 and id=$2 for update',[account.id,data.id])).rows[0];
    if(!r)throw notFound();if(r.currency!==target.currency)throw badRequest('La moneda del destino no coincide.');
    await db.query('update customer_recurring set book_id=$3 where customer_id=$1 and id=$2',[account.id,r.id,target.id]);
@@ -115,6 +117,7 @@ async function home(account){
   await db.query('set transaction isolation level repeatable read read only');
   const from=book.opening_date&&book.opening_date<start?book.opening_date:start;
   const rows=await svc.movements(account,from,day,db),paid=rows.filter(r=>r.status==='PAID'&&r.currency===book.currency);
+  const debt=await require('./customerDebtService').summary(account,end,db);
   const pendingSales=sum((await svc.pendingSales(account,db)).filter(r=>r.currency===book.currency),r=>finance.minor(r.amount));
   const month=paid.filter(r=>r.date>=start),since=paid.filter(r=>book.opening_date&&r.date>=book.opening_date);
   const transfers=(await db.query(`select t.*,t.occurred_on::text occurred_on,f.name from_name,b.name to_name from customer_finance_transfers t
@@ -127,9 +130,9 @@ async function home(account){
   const planned=sum(plans.plans.filter(p=>p.status==='PLANNED'&&p.currency===book.currency&&(!p.target_date||p.target_date<=end)),p=>p.estimated_minor);
   const spent=sum(month.filter(r=>r.kind==='EXPENSE'),r=>r.amount_minor),income=sum(month.filter(r=>r.kind==='INCOME'),r=>r.amount_minor);
   return {book,today:day,from:start,to:end,currency:book.currency,balance_minor:balance,income_minor:income,spent_minor:spent,
-   pending_minor:obligations,essential_minor:essential,expected_income_minor:expected,planned_minor:planned,pending_sales_minor:pendingSales,
-   projected_expenses_minor:safe(spent+obligations+planned+pendingSales),available_after_commitments_minor:balance==null?null:safe(balance-obligations-pendingSales),
-   projected_remaining_minor:balance==null?null:safe(balance+expected-obligations-planned-pendingSales),
+   pending_minor:obligations,essential_minor:safe(essential+debt.due_minor),expected_income_minor:expected,planned_minor:planned,pending_sales_minor:pendingSales,
+   debt,debt_due_minor:debt.due_minor,projected_expenses_minor:safe(spent+obligations+planned+pendingSales+debt.due_minor),available_after_commitments_minor:balance==null?null:safe(balance-obligations-pendingSales-debt.due_minor),
+   projected_remaining_minor:balance==null?null:safe(balance+expected-obligations-planned-pendingSales-debt.due_minor),
    commitments:pending,recurring_count:payments.rules.filter(r=>r.active).length,movements:month.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8),
    transfers:transfers.slice(0,30),foreign_currency_count:rows.filter(r=>r.currency!==book.currency).length};
  });
