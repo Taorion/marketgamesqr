@@ -3,6 +3,25 @@ const projection='g.*,g.target_date::text target_date,g.paid_on::text paid_on',d
 async function own(a,id,db={query},lock=false){const r=(await db.query('select '+projection+' from customer_grocery_lists g where g.customer_id=$1 and g.book_id=$2 and g.id=$3'+(lock?' for update':''),[a.id,a.finance_book.id,id])).rows[0];if(!r)throw notFound('Lista no encontrada en esta contabilidad.');return r;}
 async function present(a,g){const summary=M.summary(g.items),actual=g.status==='PURCHASED'?await purchases.actual(a,g):null;const nextBook=g.next_list_id?(await query('select book_id from customer_grocery_lists where customer_id=$1 and id=$2',[a.id,g.next_list_id])).rows[0]?.book_id:null;return {...g,next_list_book_id:nextBook,summary,actual,needs_review:g.status==='PURCHASED'&&(!actual||actual.amount_minor!==summary.actual_minor)};}
 async function list(a){const rows=(await query('select '+projection+' from customer_grocery_lists g where customer_id=$1 and book_id=$2 order by created_at desc',[a.id,a.finance_book.id])).rows;return {lists:await Promise.all(rows.map(g=>present(a,g)))};}
+async function catalog(a){return withTransaction(async db=>{
+ await db.query('set transaction isolation level repeatable read read only');
+ const rows=(await db.query(`select g.*,e.amount source_amount,e.currency source_currency,e.occurred_at source_date,e.linked_sale_id source_sale_id
+ from customer_grocery_lists g left join customer_entries e on e.id=g.entry_id and e.customer_id=g.customer_id and e.book_id=g.book_id and e.deleted_at is null and e.kind='EXPENSE'
+ where g.customer_id=$1 and g.book_id=$2 and g.currency=$3 order by g.updated_at desc,g.id`,[a.id,a.finance_book.id,a.finance_book.currency])).rows;
+ const saleIds=[...new Set(rows.map(g=>g.sale_id||g.source_sale_id).filter(Boolean))];
+ const sales=new Map((await require('./customerService').groceryCatalogSales(a,saleIds,db)).map(s=>[s.id,s]));
+ const products=new Map();
+ for(const g of rows){
+  const total=M.summary(g.items).actual_minor,sale=sales.get(g.sale_id||g.source_sale_id),isSale=!!(g.sale_id||g.source_sale_id);
+  const valid=g.status==='PURCHASED'&&(isSale?sale&&sale.sale_status==='PAID'&&sale.currency===g.currency&&Number(sale.refunded)===0&&finance.minor(sale.sale_amount)===total:g.source_date&&g.source_currency===g.currency&&finance.minor(g.source_amount)===total);
+  const boughtAt=valid?new Date(isSale?(sale.paid_at||sale.created_at):g.source_date).toISOString():null;
+  for(const i of M.normalize(g.items)){
+   const key=M.productKey(i.name,i.unit);let p=products.get(key);if(!p){p={key,name:i.name,unit:i.unit,suggested_quantity:i.quantity,uses:0,last_price:null,last_bought_on:null,last_bought_at:null};products.set(key,p);}p.uses++;
+   if(valid&&i.in_cart&&i.actual_price!=null&&(!p.last_bought_at||boughtAt>p.last_bought_at)){p.last_price=i.actual_price;p.last_bought_at=boughtAt;p.last_bought_on=finance.dateKey(boughtAt,a.timezone||'America/Bogota');p.suggested_quantity=i.actual_quantity??i.quantity;}
+  }
+ }
+ return {currency:a.finance_book.currency,products:[...products.values()].sort((a,b)=>b.uses-a.uses||a.name.localeCompare(b.name,'es')).map(({last_bought_at,...p})=>p)};
+});}
 async function summary(a,end,db={query}){const rows=(await db.query("select items from customer_grocery_lists where customer_id=$1 and book_id=$2 and currency=$3 and status='PLANNED' and (target_date is null or target_date<=$4)",[a.id,a.finance_book.id,a.finance_book.currency,end])).rows;return rows.reduce((r,g)=>{const s=M.summary(g.items);r.estimated_minor+=s.estimated_minor;r.unknown_prices+=s.unknown_prices;r.lists++;return r;},{estimated_minor:0,unknown_prices:0,lists:0});}
 async function save(a,data,id){
  let items=M.preservePlan([],data.items);M.summary(items);
@@ -53,4 +72,4 @@ async function complete(a,id,data){
  });
 }
 async function state(a,id,data){return withTransaction(async db=>{const g=await own(a,id,db,true);if(g.revision!==data.revision||g.status==='PURCHASED')throw badRequest('Esta lista cambió o ya tiene una compra. Conserva su historial y crea otra lista.');return {list:(await db.query('update customer_grocery_lists set status=$3,revision=revision+1,updated_at=now() where customer_id=$1 and id=$2 returning *',[a.id,id,data.archived?'ARCHIVED':'PLANNED'])).rows[0]};});}
-module.exports={own,present,list,summary,save,candidates,complete,state};
+module.exports={catalog,own,present,list,summary,save,candidates,complete,state};

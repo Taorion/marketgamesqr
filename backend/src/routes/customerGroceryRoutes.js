@@ -5,6 +5,7 @@ const fields={title:z.string().trim().min(2).max(160),note:z.string().max(2000).
 const parse=(schema,v)=>{const r=schema.safeParse(v);if(!r.success)throw badRequest('Revisa los datos de la lista: '+r.error.issues.map(i=>i.path.join('.')).join(', '));return r.data;};
 const handle=fn=>async(req,res,next)=>{try{res.set('Cache-Control','private, no-store').json(await fn(req));}catch(e){next(e.code==='GROCERY_INPUT'?badRequest(e.message):e);}};
 router.get('/',handle(req=>svc.list(req.customer)));
+router.get('/catalog',handle(req=>svc.catalog(req.customer)));
 router.post('/',handle(req=>svc.save(req.customer,parse(z.object({...fields,request_id:uuid}),req.body))));
 router.get('/:id',handle(async req=>svc.present(req.customer,await svc.own(req.customer,parse(uuid,req.params.id)))));
 router.put('/:id',handle(req=>svc.save(req.customer,parse(z.object({...fields,revision}),req.body),parse(uuid,req.params.id))));

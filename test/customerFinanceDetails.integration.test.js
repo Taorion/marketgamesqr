@@ -92,5 +92,20 @@ await t.test('canonical Empresa receipts link privately without new sales and fo
   assert.equal(results[0].http_status,200);assert.equal(results[1].list.entry_id,results[0].list.entry_id);assert.equal((await query('select count(*)::int n from customer_entries where customer_id=$1',[buyer.id])).rows[0].n,before+1);
   const next=await api('/groceries/'+results[0].list.next_list_id);assert.deepEqual(next.items.map(i=>i.name),['Arroz','Jabón']);assert.ok(next.items.every(i=>!i.shopping_origin));assert.equal(next.summary.estimated_minor,1500);
  });
+ await t.test('quick catalog uses only latest valid paid unit prices within this pocket',async()=>{
+  const key=require('../customer-web/grocery-math').productKey;
+  let products=(await api('/groceries/catalog')).products;
+  assert.equal(products.find(p=>p.key===key('arroz','unidad')).last_price,'8');
+  assert.equal(products.find(p=>p.key===key('jabón','unidad')).last_price,null);
+  const purchase=async(price,date,name=' ARROZ ')=>{const g=(await api('/groceries',{request_id:uuid(),title:'Referencia de precio',items:[item(name,2,'999',{in_cart:true,actual_quantity:2,actual_price:price})]})).list;return (await api('/groceries/'+g.id+'/complete',{revision:g.revision,confirmed:true,carry_forward:false,merchant:'Mercado QA',paid_on:date})).list;};
+  await purchase('7',new Date(Date.parse(today()+'T12:00:00Z')-86400000).toISOString().slice(0,10));products=(await api('/groceries/catalog')).products;assert.equal(products.find(p=>p.key===key('arroz','unidad')).last_price,'8');
+  const latest=await purchase('12',today());products=(await api('/groceries/catalog')).products;
+  const arroz=products.filter(p=>p.key===key('arroz','unidad'));assert.equal(arroz.length,1);assert.equal(arroz[0].last_price,'12');assert.equal(arroz[0].suggested_quantity,2);assert.equal(arroz[0].last_bought_on,today());
+  await api('/groceries',{request_id:uuid(),title:'Otra medida',items:[{...item('Arroz',1,'100',{in_cart:true,actual_price:'99'}),unit:'kg'}]});
+  products=(await api('/groceries/catalog')).products;assert.equal(products.find(p=>p.key===key('arroz','kg')).last_price,null);
+  await api('/entries/'+latest.entry_id,null,book.id,buyer,'DELETE');products=(await api('/groceries/catalog')).products;assert.equal(products.find(p=>p.key===key('arroz','unidad')).last_price,'8');
+  const foreign=await api('/groceries/catalog',null,book.id,other);assert.equal(foreign.http_status,404);
+  const alternate=(await api('/groceries/catalog',null,otherBook.id)).products;assert.ok(!alternate.some(p=>p.key===key('arroz','unidad')));
+ });
 });
 after(async()=>{if(server)await new Promise(r=>server.close(r));if(buyer)await query('delete from customer_accounts where id=any($1::uuid[])',[[buyer.id,other.id]]);await pool.end();});

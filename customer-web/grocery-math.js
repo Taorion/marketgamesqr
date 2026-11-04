@@ -31,5 +31,7 @@
   for(const old of before.filter(i=>i.shopping_origin!=='EXTRA'))if(!items.some(i=>i.id===old.id))fail('Conserva los artículos previstos; desmárcalos si no los llevas.');
   return items.map(i=>{const old=before.find(p=>p.id===i.id);if(!old)return {...i,shopping_origin:'EXTRA',estimated_price:null};if(old.shopping_origin==='EXTRA')return {...i,shopping_origin:'EXTRA',estimated_price:null};return {...i,name:old.name,unit:old.unit,quantity:old.quantity,estimated_price:old.estimated_price,shopping_origin:'PLANNED'};});
  }
- return {price,qty,amount,normalize,summary,remaining,preservePlan};
+ const productText=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLocaleLowerCase('es').replace(/\s+/g,' ');
+ const productKey=(name,unit)=>JSON.stringify([productText(name),productText(unit)]);
+ return {price,qty,amount,normalize,summary,remaining,preservePlan,productKey,productText};
 });

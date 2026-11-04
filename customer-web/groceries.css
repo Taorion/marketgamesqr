@@ -1,4 +1,12 @@
 /* Mercado y hogar: capture first, details when needed. */
+.grocery-catalog-items{display:grid;gap:12px;max-height:48vh;overflow-y:auto;overscroll-behavior:contain;padding:2px}
+.grocery-catalog-item{border:1px solid #cedbef;border-radius:12px;padding:14px;min-width:0;overflow-wrap:anywhere}
+.grocery-catalog-item>.check{min-height:44px;align-items:center}
+.grocery-catalog-item input[type=checkbox]{width:22px;height:22px;flex-shrink:0}
+.grocery-catalog-item small{display:block;color:var(--muted)}
+.grocery-catalog-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:white;padding:12px 0}
+#groceryCatalog{margin-top:12px;min-height:44px}
+.grocery-catalog-items [hidden],.grocery-catalog-item[hidden]{display:none!important}
 .grocery-origin{display:block;font-size:12px;font-weight:600;color:#315487;margin-bottom:8px}
 .grocery-origin:empty{display:none}
 #groceryForm .grocery-actions{flex-wrap:wrap}

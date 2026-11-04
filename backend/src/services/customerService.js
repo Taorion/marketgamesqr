@@ -41,6 +41,11 @@ async function movements(account,from,to,db={query}) {
     where o.buyer_id=$1 and o.state='ISSUED' and (o.paid_at at time zone $2)::date between $3::date and $4::date${giftFilter}`,giftValues);
   return [...sales.rows.map(r=>finance.salesMovement(r,account.timezone)),...manual.rows.map(r=>finance.manualMovement(r,account.timezone)),...gifts.rows.map(r=>finance.giftPurchaseMovement(r,account.timezone))];
 }
+async function groceryCatalogSales(account,ids,db={query}){
+ if(!ids.length)return [];
+ const values=[account.id,ids],filter=books.allocationScope(account,'SALE','s',values);
+ return (await db.query(saleSql+' and s.id=any($2::uuid[])'+filter,values)).rows;
+}
 async function dashboard(account,options) {
   const range=finance.periodRange(options,account.timezone);
   const earliest=[range.previous_from,`${range.to.slice(0,7)}-01`,finance.periodRange({period:'week',anchor:range.to},account.timezone).from].sort()[0];
@@ -170,4 +175,4 @@ async function exportData(account) {
   output.giftcards=await require('./customerWalletService').giftWallet(account);
   return output;
 }
-module.exports={assertNotDebtEntry,assertNotPaymentEntry,dashboard,planning,movements,pendingSales,pendingSalesDetails,ownSale,relationships,proposeRelationship,decideRelationship,saveEntry,mergeEntry,wallet,ownCard,identification,exportData,normalizeDocument};
+module.exports={groceryCatalogSales,assertNotDebtEntry,assertNotPaymentEntry,dashboard,planning,movements,pendingSales,pendingSalesDetails,ownSale,relationships,proposeRelationship,decideRelationship,saveEntry,mergeEntry,wallet,ownCard,identification,exportData,normalizeDocument};
