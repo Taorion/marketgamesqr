@@ -6,10 +6,11 @@
  const money=(v,c)=>new Intl.NumberFormat('es-CO',{style:'currency',currency:c,maximumFractionDigits:c==='COP'?0:2}).format(Number(v||0)/100);
  async function home(page,ctx) {
   const cards=ctx.cards||[],ready=cards.filter(c=>c.status==='READY').length,pending=ctx.invitationCount||0;
-  page.innerHTML=`<section class="portal-welcome"><div><span class="eyebrow">Tu portal gratuito</span><h1>Hola, ${esc(ctx.account.full_name.split(' ')[0])}.</h1><p>Todo lo que recibes, compras y disfrutas con Qori, en un solo lugar.</p><div class="row"><a class="primary" href="#me">Mi identificación Qori</a><a class="secondary" href="#scan">Escanear un negocio</a></div></div><div class="portal-welcome-note"><strong>¿Aquí son Qori?</strong><p>Comparte tu identificación con el negocio. Recibe sus invitaciones y decide cuáles aceptar.</p></div></section>
+  page.innerHTML=`<section class="portal-welcome"><div><span class="eyebrow">Tu portal gratuito</span><h1>Hola, ${esc(ctx.account.full_name.split(' ')[0])}.</h1><p>Tu dinero, tus compras y los beneficios que te ayudan a aprovecharlo mejor.</p><div class="row"><a class="primary" href="#purchases">Planear mi próxima compra</a><a class="secondary" href="#explore">Encontrar beneficios</a><a class="quiet" href="#me">Mi identificación Qori</a></div></div><div class="portal-welcome-note"><strong>Antes de comprar, mira tu Qori.</strong><p>Revisa tu presupuesto, separa tus próximos pagos y busca beneficios para lo que sí necesitas.</p></div></section>
    <div class="portal-stats"><a class="panel" href="#wallet"><span>Mis tarjetas y tickets</span><strong>${cards.length}</strong><small>Sellos, puntos, giftcards y premios</small></a><a class="panel" href="#benefits"><span>Beneficios disponibles</span><strong>${ready}</strong><small>Consulta las condiciones de cada uno</small></a><a class="panel" href="#invitations"><span>Invitaciones por revisar</span><strong>${pending}</strong><small>Acepta o rechaza lo que recibes</small></a></div>
    <section class="panel portal-finance"><div><span class="eyebrow">Mis finanzas</span><h2>Tu mes, con claridad</h2><p id="portalPaymentReminders"><a href="#payments">Consultar mi agenda de pagos →</a></p><div id="portalFinancialSummary" role="status">Consultando tus movimientos…</div></div><div class="row"><button class="primary" id="portalAddExpense">Registrar gasto</button><a class="secondary" href="#finances">Ver mis finanzas</a></div></section>
    <h2>Tu espacio Qori</h2><div class="portal-grid">
+    ${link('purchases','Mis compras','Planea, compara beneficios y controla lo que realmente pagas')}
     ${link('explore','Descubrir beneficios','Activaciones, programas, descuentos y regalos publicados')}
     ${link('directory','Negocios Qori','Busca por ciudad o por cercanía')}
     ${link('wallet','Mis tarjetas y tickets','Todos tus negocios y programas organizados')}
@@ -26,14 +27,15 @@
     ${link('place-requests','Quiero Qori aquí','Propón un negocio para el ecosistema')}
     ${link('profile','Mi cuenta','Datos, preferencias, privacidad y sesiones')}
    </div><p class="muted small">Abre este portal desde el computador o el celular. También puedes añadirlo a la pantalla de inicio desde el navegador.</p>`;
+  page.querySelector('.portal-welcome').insertAdjacentElement('afterend',page.querySelector('.portal-finance'));
   page.querySelector('#portalAddExpense').onclick=()=>window.QoriFinance.editEntry({...ctx,refreshFinance:()=>page.isConnected?home(page,ctx):Promise.resolve()});
   const reminders=page.querySelector('#portalPaymentReminders');
   ctx.request('/payment-agenda/notifications').then(r=>{if(reminders.isConnected&&r.count)reminders.innerHTML='<a href="#payments">'+r.count+' obligaciones próximas o vencidas · Revisar agenda →</a>';}).catch(()=>{});
   const target=page.querySelector('#portalFinancialSummary');
   try {
-   const d=await ctx.request('/dashboard?period=month&currency='+encodeURIComponent(ctx.account.currency));
+   const d=await ctx.request('/purchases/overview?currency='+encodeURIComponent(ctx.account.currency));
    if(!target.isConnected)return;
-   target.innerHTML=`<strong class="portal-total">${esc(money(d.total_minor,d.currency))}</strong><p>Gastos registrados este mes · ${esc(d.currency)}</p><p class="small muted">Incluye únicamente movimientos registrados en esta moneda. Agrega tus gastos de otros lugares para completar tu historial.</p>`;
+   target.innerHTML=`<strong class="portal-total">${esc(money(d.spent_minor,d.currency))}</strong><p>Gastos registrados este mes · ${esc(d.currency)}</p><p>${esc(money(d.obligations_minor,d.currency))} en pagos pendientes · ${esc(money(d.planned_minor,d.currency))} en compras planeadas</p><p>${d.projected_remaining_minor==null?'Define tu presupuesto para conocer tu margen previsto.':'Margen previsto del presupuesto: '+esc(money(d.projected_remaining_minor,d.currency))}</p><div class="row"><a class="secondary" href="#purchases">Revisar antes de comprar →</a><a class="quiet" href="#planning">Mi presupuesto</a></div><p class="small muted">Previsión basada en tus registros y planes en esta moneda; no representa tu saldo bancario.</p>`;
   }catch(e){if(target.isConnected){target.textContent=e.message+' Puedes reintentar desde Mis finanzas.';target.setAttribute('role','alert');}}
  }
  const distance=(a,b)=>{

@@ -60,6 +60,7 @@ router.get('/explore/publications/:id/qr',handle(req=>explore.shareQr(parse(uuid
 router.get('/explore/businesses/:slug',handle(req=>explore.businessPage(parse(text(160).min(1),req.params.slug))));
 router.post('/explore/resolve',handle(req=>explore.resolveQr(parse(z.object({url:text(2000).min(1)}),req.body).url)));
 router.use(auth.customerRequired);
+router.use('/purchases',require('./customerPurchaseRoutes'));
 router.use('/payment-agenda',require('./customerPaymentAgendaRoutes'));
 router.get('/product-gifts',handle(req=>productGifts.list(req.customer)));
 router.get('/product-gifts/:id',handle(req=>productGifts.order(req.customer,parse(uuid,req.params.id))));

@@ -12,11 +12,11 @@ const account={full_name:'Andrea <QA>',email:'andrea@example.test',currency:'COP
 test('portal defaults to unified home with real private summary, every module and manual expense action',async()=>{
  const w=setup();let expense=0;try{
   w.document.querySelector('#page').remove();
-  w.fetch=async url=>({ok:true,status:200,json:async()=>url.endsWith('/me')?{account}:url.endsWith('/relationships')?{relationships:[]}:url.includes('/dashboard')?{total_minor:1500000,currency:'COP'}:{cards:[{id:'t',status:'READY'}],pending_invitations:2,purchased_gifts:[]}});
+  w.fetch=async url=>({ok:true,status:200,json:async()=>url.endsWith('/me')?{account}:url.endsWith('/relationships')?{relationships:[]}:url.includes('/purchases/overview')?{spent_minor:1500000,obligations_minor:0,planned_minor:0,projected_remaining_minor:null,currency:'COP'}:{cards:[{id:'t',status:'READY'}],pending_invitations:2,purchased_gifts:[]}});
   w.QoriFinance={editEntry(){expense++;}};
   load(w,'customer-web/wallet-model.js');load(w,'customer-web/app.js');await settle(()=>w.document.querySelector('.portal-total'));
   assert.equal(w.document.querySelector('nav [aria-current]').getAttribute('href'),'#home');
-  for(const route of ['explore','directory','wallet','invitations','businesses','earned','history','planning','saved','following','requests','place-requests','profile','product-gifts'])assert.ok(w.document.querySelector('#page a[href="#'+route+'"]'),route);
+  for(const route of ['purchases','explore','directory','wallet','invitations','businesses','earned','history','planning','saved','following','requests','place-requests','profile','product-gifts'])assert.ok(w.document.querySelector('#page a[href="#'+route+'"]'),route);
   assert.match(w.document.querySelector('.portal-total').textContent,/15.000/);
   assert.match(w.document.querySelector('.portal-stats').textContent,/Invitaciones por revisar2/);
   w.document.querySelector('#portalAddExpense').click();assert.equal(expense,1);
@@ -62,7 +62,7 @@ test('home keeps shortcuts usable when finances fail and ignores stale responses
  const w=setup();try{
   const page=w.document.querySelector('#page');let resolve;
   const p=w.QoriPortal.home(page,{account,cards:[],request:()=>new Promise(r=>resolve=r)});
-  page.innerHTML='<h1>Otra sección</h1>';resolve({currency:'COP',total_minor:100});await p;assert.equal(page.textContent,'Otra sección');
+  page.innerHTML='<h1>Otra sección</h1>';resolve({currency:'COP',spent_minor:100,obligations_minor:0,planned_minor:0,projected_remaining_minor:null});await p;assert.equal(page.textContent,'Otra sección');
   await w.QoriPortal.home(page,{account,cards:[],request:async()=>{throw Error('Sin conexión');}});
   assert.match(page.querySelector('#portalFinancialSummary').textContent,/Sin conexión/);assert.ok(page.querySelector('a[href="#wallet"]'));
  }finally{w.close();}

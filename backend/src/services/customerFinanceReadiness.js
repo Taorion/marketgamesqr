@@ -18,7 +18,8 @@ async function status(){
    await Promise.all([
     svc.dashboard(account,{period:'month'}),
     svc.planning(account),
-    require('./customerFinanceDeliveryService').connections(account)
+    require('./customerFinanceDeliveryService').connections(account),
+    require('./customerPurchaseService').list(account)
    ]);
    cached={ready:true};
   }catch(e){

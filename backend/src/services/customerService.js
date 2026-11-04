@@ -91,16 +91,16 @@ async function decideRelationship(customerId,id,data,{client}={}) {
 async function assertNotPaymentEntry(customerId,id){
  if((await query('select 1 from customer_payment_items where customer_id=$1 and entry_id=$2',[customerId,id])).rowCount)throw badRequest('Este movimiento pertenece a tu agenda de pagos. Corrígelo desde Finanzas → Agenda de pagos.');
 }
-async function saveEntry(customerId,data,id) {
+async function saveEntry(customerId,data,id,db={query}) {
   if(id)await assertNotPaymentEntry(customerId,id);
-  if(data.occurred_at.length===10) data={...data,occurred_at:(await query("select $1::date::timestamp at time zone timezone as at from customer_accounts where id=$2",[data.occurred_at,customerId])).rows[0].at.toISOString()};
+  if(data.occurred_at.length===10) data={...data,occurred_at:(await db.query("select $1::date::timestamp at time zone timezone as at from customer_accounts where id=$2",[data.occurred_at,customerId])).rows[0].at.toISOString()};
   const values=[customerId,data.kind,data.amount,data.currency,data.occurred_at,data.merchant,data.category,data.priority,data.note,data.payment_method,JSON.stringify(data.products),JSON.stringify(data.splits),JSON.stringify(data.tags)];
   if(data.splits.length && data.splits.reduce((n,s)=>n+finance.minor(s.amount),0)!==finance.minor(data.amount)) throw badRequest('La distribución no suma el total.');
   if(data.products.length && data.products.reduce((n,p)=>n+finance.minor(p.amount),0)!==finance.minor(data.amount)) throw badRequest('Los productos no suman el total.');
   let result;
-  if(id) result=await query(`update customer_entries set kind=$2,amount=$3,currency=$4,occurred_at=$5,merchant=$6,category=$7,priority=$8,note=$9,payment_method=$10,
+  if(id) result=await db.query(`update customer_entries set kind=$2,amount=$3,currency=$4,occurred_at=$5,merchant=$6,category=$7,priority=$8,note=$9,payment_method=$10,
     products=$11::jsonb,splits=$12::jsonb,tags=$13::jsonb,updated_at=now() where customer_id=$1 and id=$14 and deleted_at is null and linked_sale_id is null returning *`,[...values,id]);
-  else result=await query(`insert into customer_entries(customer_id,kind,amount,currency,occurred_at,merchant,category,priority,note,payment_method,products,splits,tags,request_id)
+  else result=await db.query(`insert into customer_entries(customer_id,kind,amount,currency,occurred_at,merchant,category,priority,note,payment_method,products,splits,tags,request_id)
     values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12::jsonb,$13::jsonb,$14)
     on conflict(customer_id,request_id) do update set request_id=excluded.request_id returning *`,[...values,data.request_id]);
   if(!result.rowCount) throw notFound('Gasto no editable o no encontrado.');return {entry:result.rows[0]};
@@ -143,7 +143,7 @@ async function identification(account) {
   return {public_id:account.public_id,qr_image:await QRCode.toDataURL(url.toString()),url:url.toString()};
 }
 async function exportData(account) {
-  const tables=['customer_payment_items','customer_payment_changes','customer_finance_connections','customer_sale_deliveries','customer_entries','customer_sale_notes','customer_relationships','customer_budgets','customer_goals','customer_recurring','customer_favorites','customer_place_requests','customer_invitations','customer_business_blocks','customer_saved_publications','customer_program_requests','customer_publication_events','customer_activation_participations'];
+  const tables=['customer_purchase_plans','customer_payment_items','customer_payment_changes','customer_finance_connections','customer_sale_deliveries','customer_entries','customer_sale_notes','customer_relationships','customer_budgets','customer_goals','customer_recurring','customer_favorites','customer_place_requests','customer_invitations','customer_business_blocks','customer_saved_publications','customer_program_requests','customer_publication_events','customer_activation_participations'];
   const output={account:{...account,session_id:undefined},purchases:(await query(saleSql,[account.id])).rows.map(r=>finance.salesMovement(r,account.timezone))};
   for(const table of tables) output[table]=(await query(`select * from ${table} where customer_id=$1`,[account.id])).rows;
   output.receipts=(await query("select id,entry_id,filename,mime_type,encode(bytes,'base64') base64 from customer_receipts where customer_id=$1",[account.id])).rows;
