@@ -278,6 +278,9 @@ businessRouter.put('/directory',handle(async req=>{
 }));
 businessRouter.get('/directory',handle(async req=>({directory:(await query('select * from customer_directory where business_id=$1',[req.user.business_id])).rows[0]||null})));
 // Customer routes own their error boundary: never leak SQL, receipt data or internal errors.
-router.use((error,_req,res,_next)=>res.status(error.status||500).json({error:{message:error.status&&error.status<500?error.message:'No pudimos completar la operación. Inténtalo nuevamente.'}}));
+router.use((error,req,res,_next)=>{
+ if(req.path==='/dashboard'&&(!error.status||error.status>=500))require('../services/customerFinanceReadiness').observe(error);
+ return res.status(error.status||500).json({error:{message:error.status&&error.status<500?error.message:'No pudimos completar la operación. Inténtalo nuevamente.'}});
+});
 businessRouter.use((error,_req,res,_next)=>res.status(error.status||500).json({error:{message:error.status&&error.status<500?error.message:'No pudimos completar la operación. Inténtalo nuevamente.'}}));
 module.exports={router,businessRouter,entry};
