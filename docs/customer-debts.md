@@ -1,5 +1,7 @@
 # Mis finanzas: deudas y simulador
 
+El desglose por porcentajes, tipos de crédito y seguros o cargos repartidos se documenta en [Listas de mercado y desglose de créditos](customer-finance-details.md).
+
 Qori Customer reúne el capital pendiente y los pagos de cada deuda dentro de la contabilidad seleccionada. Las rutas del portal son `#debts` y `#debt-simulator`; se accede también desde Mi dinero, Mis finanzas y Agenda.
 
 ## Qué puede hacer el comprador

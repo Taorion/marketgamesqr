@@ -83,6 +83,7 @@ async function complete(account,id,data){
    if(sale.sale_status!=='PAID'||sale.currency!==plan.currency)throw badRequest('Vincula una compra pagada en la misma moneda.');
   }
   const duplicate=(await db.query('select p.id from customer_purchase_plans p left join customer_entries e on e.id=p.entry_id and e.customer_id=p.customer_id where p.customer_id=$1 and p.id<>$2 and (p.entry_id=$3 or coalesce(p.sale_id,e.linked_sale_id)=$4)',[account.id,id,entryId,saleId])).rowCount;
+  if((await db.query('select 1 from customer_grocery_lists g left join customer_entries e on e.id=g.entry_id and e.customer_id=g.customer_id where g.customer_id=$1 and (g.entry_id=$2 or coalesce(g.sale_id,e.linked_sale_id)=$3)',[account.id,entryId,saleId])).rowCount)throw badRequest('Este movimiento ya pertenece a una lista de mercado.');
   if(duplicate)throw badRequest('Este movimiento ya está asociado a otra compra planeada.');
   return {plan:(await db.query("update customer_purchase_plans set status='PURCHASED',entry_id=$3,sale_id=$4,revision=revision+1,updated_at=now() where customer_id=$1 and id=$2 returning "+projection,[account.id,id,entryId,saleId])).rows[0]};
  });
@@ -100,10 +101,11 @@ async function overview(account,currency=account.currency||'COP'){
  const plans=purchases.plans.filter(p=>p.status==='PLANNED'&&p.currency===currency&&(!p.target_date||p.target_date<=dashboard.range.full_to));
  const sum=(rows,value)=>rows.reduce((n,r)=>{const total=n+value(r);if(!Number.isSafeInteger(total))throw badRequest('El total supera el rango permitido.');return total;},0);
  const debt=account.finance_book?.currency===currency?await require('./customerDebtService').summary(account,dashboard.range.full_to):{due_minor:0,dues:[]};
- const obligations=sum(pending,i=>finance.minor(i.billed_amount||i.estimated_amount))+debt.due_minor,planned=sum(plans,p=>p.estimated_minor);
+ const grocery=account.finance_book?.currency===currency?await require('./customerGroceryService').summary(account,dashboard.range.full_to):{estimated_minor:0,unknown_prices:0,lists:0};
+ const obligations=sum(pending,i=>finance.minor(i.billed_amount||i.estimated_amount))+debt.due_minor,planned=grocery.estimated_minor+sum(plans,p=>p.estimated_minor);
  return {currency,range:dashboard.range,spent_minor:dashboard.total_minor,income_minor:dashboard.income_minor,
   budget_minor:budget?.amount_minor??null,budget_remaining_minor:budget?.remaining_minor??null,
   obligations_minor:obligations,planned_minor:planned,projected_remaining_minor:budget?budget.remaining_minor-obligations-planned:null,
-  debt_due_minor:debt.due_minor,pending_payments:pending.length+debt.dues.length,planned_purchases:plans.length,insights:dashboard.insights,plans:purchases.plans};
+  grocery,debt_due_minor:debt.due_minor,pending_payments:pending.length+debt.dues.length,planned_purchases:plans.length,insights:dashboard.insights,plans:purchases.plans};
 }
-module.exports={list,save,change,complete,candidates,overview};
+module.exports={actual,list,save,change,complete,candidates,overview};

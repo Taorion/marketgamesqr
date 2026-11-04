@@ -62,6 +62,7 @@ router.post('/explore/resolve',handle(req=>explore.resolveQr(parse(z.object({url
 router.use(auth.customerRequired);
 router.use(require('../services/customerFinanceBooks').middleware);
 router.use(require('./customerFinanceBookRoutes'));
+router.use('/groceries',require('./customerGroceryRoutes'));
 router.use('/debts',require('./customerDebtRoutes'));
 router.use('/purchases',require('./customerPurchaseRoutes'));
 router.use('/payment-agenda',require('./customerPaymentAgendaRoutes'));

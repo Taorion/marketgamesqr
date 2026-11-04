@@ -6,7 +6,7 @@ const today=a=>finance.dateKey(new Date(),a.timezone||'America/Bogota');
 const decimal=n=>(n/100).toFixed(2);
 const sum=(rows,fn)=>rows.reduce((n,r)=>{const v=n+fn(r);if(!Number.isSafeInteger(v))throw badRequest('Total fuera del rango permitido.');return v;},0);
 function calculate(input){try{return math.compare(input);}catch(e){if(e.code==='DEBT_INPUT')throw badRequest(e.message);throw e;}}
-function input(d){return {principal:d.principal,rate_percent:Number(d.rate_percent),rate_type:d.rate_type,months:Math.max(1,d.months),installment:d.installment,monthly_fee:d.monthly_fee};}
+function input(d){return {principal:d.principal,rate_percent:Number(d.rate_percent),rate_type:d.rate_type,months:Math.max(1,d.months),installment:d.installment,monthly_fee:d.monthly_fee,charges:d.charges||[],credit_type:d.credit_type||'OTHER'};}
 function plan(d){return Number(d.principal)>0?calculate(input(d)).baseline:{rows:[],months:0,interest_minor:0,fees_minor:0,total_minor:0,payment_minor:0,principal_payment_minor:0};}
 function dueDate(d,index){const [y,m]=d.next_due.split('-').map(Number),date=new Date(Date.UTC(y,m-1+index,1,12));date.setUTCDate(Math.min(d.anchor_day,new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()+1,0,12)).getUTCDate()));return date.toISOString().slice(0,10);}
 async function own(account,id,db={query},lock=false){
@@ -29,8 +29,6 @@ function validateDates(account,data){
 }
 async function save(account,data,id){
  validateDates(account,data);
- const estimate=calculate(data),payment=decimal(estimate.baseline.principal_payment_minor);
- math.minor(payment); // A stored installment must also be valid when the debt is read again.
  return withTransaction(async db=>{
   let previous=null;
   if(id){previous=await own(account,id,db,true);if(previous.revision!==data.revision)throw badRequest('La deuda cambió. Actualiza antes de editar.');}
@@ -40,9 +38,11 @@ async function save(account,data,id){
    if(existing){if(existing.book_id!==account.finance_book.id)throw badRequest('Esta deuda ya se guardó en otra contabilidad.');return {debt:existing};}
    if((await db.query('select count(*)::int n from customer_debts where customer_id=$1',[account.id])).rows[0].n>=200)throw badRequest('Puedes guardar hasta 200 deudas.');
   }
-  const values=[account.id,account.finance_book.id,data.name,data.lender,account.finance_book.currency,data.principal,data.rate_percent,data.rate_type,estimate.baseline.months,payment,data.monthly_fee,data.as_of,data.next_due,Number(data.next_due.slice(8)),data.projection_mode,data.note];
-  const debt=id?(await db.query(`update customer_debts set name=$3,lender=$4,currency=$5,principal=$6,rate_percent=$7,rate_type=$8,months=$9,installment=$10,monthly_fee=$11,as_of=$12,next_due=$13,anchor_day=$14,projection_mode=$15,note=$16,status='ACTIVE',revision=revision+1,updated_at=now() where customer_id=$1 and book_id=$2 and id=$17 returning *,as_of::text as_of,next_due::text next_due`,[...values,id])).rows[0]:
-   (await db.query(`insert into customer_debts(customer_id,book_id,name,lender,currency,principal,rate_percent,rate_type,months,installment,monthly_fee,as_of,next_due,anchor_day,projection_mode,note,request_id) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) returning *,as_of::text as_of,next_due::text next_due`,[...values,data.request_id])).rows[0];
+  data={...data,credit_type:data.credit_type??previous?.credit_type??'OTHER',charges:math.normalizeCharges(data.charges??previous?.charges??[])};
+  const estimate=calculate(data),payment=decimal(estimate.baseline.principal_payment_minor);math.minor(payment);
+  const values=[account.id,account.finance_book.id,data.name,data.lender,account.finance_book.currency,data.principal,data.rate_percent,data.rate_type,estimate.baseline.months,payment,data.monthly_fee,data.as_of,data.next_due,Number(data.next_due.slice(8)),data.projection_mode,data.note,data.credit_type,JSON.stringify(data.charges)];
+  const debt=id?(await db.query(`update customer_debts set name=$3,lender=$4,currency=$5,principal=$6,rate_percent=$7,rate_type=$8,months=$9,installment=$10,monthly_fee=$11,as_of=$12,next_due=$13,anchor_day=$14,projection_mode=$15,note=$16,credit_type=$17,charges=$18::jsonb,status='ACTIVE',revision=revision+1,updated_at=now() where customer_id=$1 and book_id=$2 and id=$19 returning *,as_of::text as_of,next_due::text next_due`,[...values,id])).rows[0]:
+   (await db.query(`insert into customer_debts(customer_id,book_id,name,lender,currency,principal,rate_percent,rate_type,months,installment,monthly_fee,as_of,next_due,anchor_day,projection_mode,note,credit_type,charges,request_id) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18::jsonb,$19) returning *,as_of::text as_of,next_due::text next_due`,[...values,data.request_id])).rows[0];
   await event(db,account,debt.id,id?'SNAPSHOT_UPDATED':'CREATED',previous,debt);return {debt};
  });
 }
@@ -67,6 +67,21 @@ async function pay(account,id,data){
   const capital=math.minor(data.principal_paid),interest=math.minor(data.interest_paid),fees=math.minor(data.fees_paid),total=capital+interest+fees,balance=math.minor(old.principal)-capital;
   if(balance<0||total<=0)throw badRequest('Revisa el capital abonado y el importe total.');
   if(data.kind==='SETTLEMENT'&&balance!==0)throw badRequest('Para liquidar debes cubrir todo el capital pendiente.');
+
+  const charges=math.normalizeCharges(old.charges||[]),payable=charges.filter(c=>c.mode!=='FINANCED'),seen=new Set();
+  if(payable.length&&!data.charge_payments)throw badRequest('Confirma el desglose de seguros y cargos antes de guardar.');
+  const chargePayments=(data.charge_payments||[]).map(p=>{
+   const c=payable.find(c=>c.id===p.id);if(!c||seen.has(p.id))throw badRequest('Revisa los cargos del pago.');seen.add(p.id);
+   const amount=math.minor(p.amount);if(c.mode==='SPREAD'&&amount>math.minor(c.amount))throw badRequest('El pago de un cargo repartido no puede superar su saldo pendiente.');
+   return {id:c.id,name:c.name,category:c.category,amount:p.amount};
+  });
+  if(sum(chargePayments,p=>math.minor(p.amount))>fees)throw badRequest('El detalle de cargos supera el total de seguros y cargos pagados.');
+  const nextCharges=charges.map(c=>{
+   if(c.mode!=='SPREAD')return c;
+   const paid=math.minor(chargePayments.find(p=>p.id===c.id)?.amount||'0'),left=math.minor(c.amount)-paid;
+   if(balance===0&&left>0&&c.on_payoff==='DUE')throw badRequest('Queda un seguro o cargo repartido por liquidar. Confirma su pago o actualiza sus condiciones con el extracto.');
+   return {...c,amount:decimal(balance===0?0:left),months:Math.max(1,c.months-(data.kind==='INSTALLMENT'?1:0))};
+  });
   let entryId=data.entry_id||null;
   if(entryId){
    const e=(await db.query('select *, (occurred_at at time zone $3)::date::text paid_date from customer_entries where customer_id=$1 and id=$2 for update',[account.id,entryId,account.timezone])).rows[0];
@@ -79,10 +94,10 @@ async function pay(account,id,data){
    if(!saved.rowCount)throw badRequest('La identidad del pago ya fue usada. Actualiza y vuelve a intentar.');entryId=saved.rows[0].id;
   }
   const remaining=Math.max(1,old.months-(data.kind==='INSTALLMENT'?1:0)),newPayment=balance&&data.strategy==='INSTALLMENT'?math.quota(balance,math.rate(old.rate_percent,old.rate_type),remaining):math.minor(old.installment);
-  const nextMonths=balance?calculate({...input(old),principal:decimal(balance),months:remaining,installment:decimal(newPayment)}).baseline.months:0;
+  const nextMonths=balance?calculate({...input(old),charges:nextCharges,principal:decimal(balance),months:remaining,installment:decimal(newPayment)}).baseline.months:0;
   const nextDue=data.kind==='INSTALLMENT'?dueDate(old,1):old.next_due;
-  const debt=(await db.query(`update customer_debts set principal=$3,installment=$4,months=$5,as_of=$6,next_due=$7,status=$8,revision=revision+1,updated_at=now() where customer_id=$1 and id=$2 returning *,as_of::text as_of,next_due::text next_due`,[account.id,id,decimal(balance),decimal(newPayment),nextMonths,data.paid_on,nextDue,balance?'ACTIVE':'PAID'])).rows[0];
-  const payment=(await db.query(`insert into customer_debt_payments(customer_id,debt_id,request_id,entry_id,owns_entry,kind,principal_paid,interest_paid,fees_paid,paid_on,note,before_value,after_revision) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13) returning *`,[account.id,id,data.request_id,entryId,!data.entry_id,data.kind,data.principal_paid,data.interest_paid,data.fees_paid,data.paid_on,data.note,JSON.stringify(old),debt.revision])).rows[0];
+  const debt=(await db.query(`update customer_debts set principal=$3,installment=$4,months=$5,as_of=$6,next_due=$7,status=$8,charges=$9::jsonb,revision=revision+1,updated_at=now() where customer_id=$1 and id=$2 returning *,as_of::text as_of,next_due::text next_due`,[account.id,id,decimal(balance),decimal(newPayment),nextMonths,data.paid_on,nextDue,balance?'ACTIVE':'PAID',JSON.stringify(nextCharges)])).rows[0];
+  const payment=(await db.query(`insert into customer_debt_payments(customer_id,debt_id,request_id,entry_id,owns_entry,kind,principal_paid,interest_paid,fees_paid,paid_on,note,before_value,after_revision,charge_payments) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13,$14::jsonb) returning *`,[account.id,id,data.request_id,entryId,!data.entry_id,data.kind,data.principal_paid,data.interest_paid,data.fees_paid,data.paid_on,data.note,JSON.stringify(old),debt.revision,JSON.stringify(chargePayments)])).rows[0];
   await event(db,account,id,'PAYMENT_RECORDED',old,debt);return {debt,payment};
  });
 }
@@ -95,7 +110,7 @@ async function voidPayment(account,id,paymentId,data){
   const old=payment.before_value;
   await db.query('update customer_debt_payments set voided_at=now() where id=$1',[paymentId]);
   if(payment.owns_entry)await db.query('update customer_entries set deleted_at=now(),updated_at=now() where id=$1 and customer_id=$2',[payment.entry_id,account.id]);
-  const restored=(await db.query('update customer_debts set principal=$3,installment=$4,months=$5,as_of=$6,next_due=$7,status=$8,revision=revision+1,updated_at=now() where customer_id=$1 and id=$2 returning *',[account.id,id,old.principal,old.installment,old.months,old.as_of,old.next_due,old.status])).rows[0];
+  const restored=(await db.query('update customer_debts set principal=$3,installment=$4,months=$5,as_of=$6,next_due=$7,status=$8,charges=$9::jsonb,revision=revision+1,updated_at=now() where customer_id=$1 and id=$2 returning *',[account.id,id,old.principal,old.installment,old.months,old.as_of,old.next_due,old.status,JSON.stringify(old.charges||[])])).rows[0];
   await event(db,account,id,'PAYMENT_VOIDED',debt,restored);return {debt:restored};
  });
 }

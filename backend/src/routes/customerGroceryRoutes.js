@@ -1,0 +1,14 @@
+const express=require('express'),{z}=require('zod'),{badRequest}=require('../utils/http'),svc=require('../services/customerGroceryService'),router=express.Router();
+const uuid=z.string().uuid(),revision=z.number().int().positive(),price=z.string().regex(/^\d{1,9}(\.\d{1,2})?$/).nullable(),quantity=z.number().positive().max(10000);
+const item=z.object({id:z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/),name:z.string().trim().min(1).max(120),unit:z.string().trim().min(1).max(30).default('unidad'),quantity,estimated_price:price.default(null),in_cart:z.boolean().default(false),actual_quantity:quantity.nullable().default(null),actual_price:price.default(null)});
+const fields={title:z.string().trim().min(2).max(160),note:z.string().max(2000).default(''),target_date:z.string().date().nullable().default(null),items:z.array(item).max(200)};
+const parse=(schema,v)=>{const r=schema.safeParse(v);if(!r.success)throw badRequest('Revisa los datos de la lista: '+r.error.issues.map(i=>i.path.join('.')).join(', '));return r.data;};
+const handle=fn=>async(req,res,next)=>{try{res.set('Cache-Control','private, no-store').json(await fn(req));}catch(e){next(e.code==='GROCERY_INPUT'?badRequest(e.message):e);}};
+router.get('/',handle(req=>svc.list(req.customer)));
+router.post('/',handle(req=>svc.save(req.customer,parse(z.object({...fields,request_id:uuid}),req.body))));
+router.get('/:id',handle(async req=>svc.present(req.customer,await svc.own(req.customer,parse(uuid,req.params.id)))));
+router.put('/:id',handle(req=>svc.save(req.customer,parse(z.object({...fields,revision}),req.body),parse(uuid,req.params.id))));
+router.get('/:id/candidates',handle(req=>svc.candidates(req.customer,parse(uuid,req.params.id))));
+router.post('/:id/complete',handle(req=>svc.complete(req.customer,parse(uuid,req.params.id),parse(z.object({revision,confirmed:z.literal(true),carry_forward:z.boolean(),entry_id:uuid.optional(),sale_id:uuid.optional(),paid_on:z.string().date().optional(),merchant:z.string().trim().min(1).max(160).optional()}).refine(v=>!(v.entry_id&&v.sale_id)),req.body))));
+router.post('/:id/state',handle(req=>svc.state(req.customer,parse(uuid,req.params.id),parse(z.object({revision,archived:z.boolean()}),req.body))));
+module.exports=router;

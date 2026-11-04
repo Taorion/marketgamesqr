@@ -4,7 +4,7 @@ const settle=async fn=>{for(let i=0;i<100;i++){if(fn())return;await new Promise(
 function setup(){
  const w=new JSDOM('<main id="page"></main>',{url:'http://localhost/customer/#debts',runScripts:'outside-only'}).window,calls=[];
  w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLDialogElement.prototype.close=function(){this.remove();};
- for(const f of ['debt-math.js','debts.js'])w.eval(fs.readFileSync(path.join(__dirname,'../customer-web',f),'utf8'));
+ for(const f of ['debt-math.js','debt-components.js','debts.js'])w.eval(fs.readFileSync(path.join(__dirname,'../customer-web',f),'utf8'));
  const debt={id:'11111111-1111-4111-8111-111111111111',name:'Vehículo <seguro>',lender:'Entidad',principal:'1000',rate_percent:12,rate_type:'NAMV',months:12,installment:'88.85',monthly_fee:'10',as_of:'2026-01-01',next_due:'2026-11-05',revision:1,status:'ACTIVE',projection_mode:'AUTO',currency:'COP'};
  debt.plan=w.QoriDebtMath.compare(debt).baseline;
  const ctx={account:{id:'buyer',timezone:'America/Bogota'},book:{id:'book',name:'Ganado',currency:'COP'},refresh:async()=>{},showError:(m,n)=>{if(n)n.textContent=m;},

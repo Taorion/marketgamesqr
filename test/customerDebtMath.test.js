@@ -50,6 +50,6 @@ test('amortization invariants across rates, balances and terms',()=>{
   assert.equal(r.baseline.rows.at(-1).balance_minor,0);
   assert.equal(r.baseline.total_minor,M.minor(principal)+r.baseline.interest_minor);
   assert.equal(r.shorter.net_saved_minor,0);
-  assert.ok(r.baseline.rows.every(x=>Object.values(x).every(Number.isSafeInteger)));
+  assert.ok(r.baseline.rows.every(x=>['month','interest_minor','principal_minor','fee_minor','payment_minor','balance_minor'].every(k=>Number.isSafeInteger(x[k]))));
  }
 });

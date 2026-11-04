@@ -66,7 +66,8 @@
  }
  function summary(d){
   const projected=d.projected_remaining_minor;
-  return '<section class="panel purchase-budget"><div><span class="eyebrow">Antes de comprar · '+esc(d.currency)+'</span><h2>'+(projected==null?'Define tu presupuesto de este mes':projected<0?'Tus planes superan el presupuesto':'Margen previsto en tu presupuesto')+'</h2>'+
+  const incomplete=d.grocery?.unknown_prices?'<p class="book-warning">Hay '+d.grocery.unknown_prices+' artículos de mercado sin precio estimado. Su costo todavía no está incluido en esta proyección.</p>':'';
+  return incomplete+'<section class="panel purchase-budget"><div><span class="eyebrow">Antes de comprar · '+esc(d.currency)+'</span><h2>'+(projected==null?'Define tu presupuesto de este mes':projected<0?'Tus planes superan el presupuesto':'Margen previsto en tu presupuesto')+'</h2>'+
    (projected==null?'<p>Un presupuesto mensual total permite contrastar gastos, obligaciones y compras pendientes.</p><a class="secondary" href="#planning">Crear mi presupuesto</a>':'<strong class="purchase-total">'+money(projected,d.currency)+'</strong>')+
    '<p class="small muted">Presupuesto menos gastos registrados, pagos pendientes hasta fin de mes y compras planeadas para este mes o sin fecha. Es una previsión; no representa tu saldo bancario.</p></div>'+
    '<dl class="purchase-breakdown"><div><dt>Gastos registrados</dt><dd>'+money(d.spent_minor,d.currency)+'</dd></div><div><dt>Pagos pendientes</dt><dd>'+money(d.obligations_minor,d.currency)+'</dd></div><div><dt>Compras planeadas</dt><dd>'+money(d.planned_minor,d.currency)+'</dd></div></dl></section>';
@@ -77,7 +78,7 @@
    const turn=++generation;page.innerHTML='<p role="status">Organizando tus compras y tu presupuesto…</p>';
    try{
     const d=await ctx.request('/purchases/overview?currency='+encodeURIComponent(currency));if(!page.isConnected||turn!==generation)return;
-    page.innerHTML='<div class="page-heading"><div><span class="eyebrow">Compra con intención</span><h1>Mis compras</h1><p>Planea lo que necesitas, encuentra beneficios y registra lo que pagas.</p></div><button class="primary" id="newPurchase">+ Planear compra</button></div>'+
+    page.innerHTML='<div class="page-heading"><div><span class="eyebrow">Compra con intención</span><h1>Mis compras</h1><a class="secondary" href="#groceries">Mi lista de mercado →</a><p>Planea lo que necesitas, encuentra beneficios y registra lo que pagas.</p></div><button class="primary" id="newPurchase">+ Planear compra</button></div>'+
      '<div class="purchase-toolbar">'+select('purchaseCurrency','Ver importes en',{COP:'COP',USD:'USD',EUR:'EUR'},currency)+'<a class="secondary" href="#history">Historial de compras y gastos</a><a class="secondary" href="#payments">Agenda de pagos</a></div>'+summary(d)+
      '<div class="purchase-filters" aria-label="Estado de las compras">'+[['PLANNED','Por comprar'],['PURCHASED','Compradas'],['CANCELLED','Canceladas']].map(([k,v])=>'<button class="secondary" data-filter="'+k+'" aria-pressed="'+(filter===k)+'">'+v+'</button>').join('')+'</div><div id="purchasePlans" class="purchase-plans"></div>';
     page.querySelector('#newPurchase').onclick=()=>edit(ctx,refresh);

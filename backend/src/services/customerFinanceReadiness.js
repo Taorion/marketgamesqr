@@ -20,7 +20,8 @@ async function status(){
     svc.planning(account),
     require('./customerFinanceDeliveryService').connections(account),
     require('./customerPurchaseService').list(account),
-    require('./customerDebtService').list({...account,finance_book:{id:account.id,currency:'COP'}})
+    require('./customerDebtService').list({...account,finance_book:{id:account.id,currency:'COP'}}),
+    require('./customerGroceryService').summary({...account,finance_book:{id:account.id,currency:'COP'}},'2000-01-01')
    ]);
    cached={ready:true};
   }catch(e){
