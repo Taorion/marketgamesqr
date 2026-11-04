@@ -70,7 +70,8 @@
    }
    const savedOnly=route==='saved';if(savedOnly&&!auth())return;
    page.innerHTML='<section class="discover-hero"><div><span class="eyebrow">Descubre · participa · disfruta</span><h1>¿Aquí son Qori?<br><em>Aquí empieza lo bueno.</em></h1><p>Los beneficios de los negocios que te gustan.<br>Y de los que todavía no conoces.</p><div class="row"><a class="hero-button" href="#scan">Escanear un QR ↗</a>'+(ctx.account?'<a class="hero-link" href="#wallet">Mis beneficios →</a>':'<button class="hero-link" id="joinQori">Obtener mi Qori gratis →</button>')+'</div></div><div class="discover-orbit" aria-hidden="true"><span>✦</span><small>TODO LO BUENO<br>EN UN SOLO LUGAR</small></div></section><div class="discover-heading"><div><span class="eyebrow">Tu próximo descubrimiento</span><h2>'+(savedOnly?'Guardados para ti':'Encuentra algo que te encante')+'</h2></div><a class="quiet" href="#following">Mis favoritos</a><a class="quiet" href="'+(savedOnly?'#explore':'#saved')+'">'+(savedOnly?'Ver todos':'♡ Mis guardados')+'</a></div><form id="exploreSearch" class="discover-search"><input name="search" type="search" placeholder="Un café, un regalo, tu próximo plan…" aria-label="Buscar beneficios o negocios" maxlength="100"><input name="city" placeholder="Ciudad" aria-label="Ciudad" maxlength="100"><button class="primary">Buscar</button></form><div class="discover-chips" aria-label="Tipo de beneficio"><button class="chip active" data-kind="">Todo Qori</button>'+Object.entries(names).map(([k,n])=>'<button class="chip" data-kind="'+k+'">'+marks[k]+' '+n+'</button>').join('')+'</div><p id="feedStatus" role="status"></p><div id="discoveryFeed" class="discovery-grid"></div><button id="moreOffers" class="secondary wide" hidden>Ver más beneficios</button><section class="ecosystem-note"><div><span class="eyebrow">De comprador a parte de algo más</span><h2>Un solo Qori.<br>Todos tus negocios.</h2><p>Guarda tus favoritos, participa en activaciones y reúne tus tarjetas, regalos y premios.</p><button class="secondary" id="installQori">Llevar Qori a mi celular</button></div><div><span class="eyebrow">¿Tienes un negocio?</span><h2>Haz que quieran volver.</h2><p>Publica tus activaciones y conecta tus beneficios con compradores desde Qori Empresa.</p><a class="primary" href="/empresa/">Conocer Qori Empresa →</a></div></section>';
-   page.querySelector('#feedStatus').insertAdjacentHTML('beforebegin','<section id="businessResults" hidden><div class="discover-heading"><h2>Negocios Qori</h2><a class="quiet" href="#directory">Ver todos los negocios →</a></div><div id="businessMatches" class="discovery-grid"></div></section>');
+   page.querySelector('.discover-chips').insertAdjacentHTML('beforeend','<a class="chip" href="#directory">Buscar negocios Qori →</a>');
+   page.querySelector('#feedStatus').insertAdjacentHTML('beforebegin','<section id="businessResults" hidden><div class="discover-heading"><h2>Negocios Qori</h2><a class="quiet" href="#directory">Ver todos los negocios →</a></div><p id="businessMatchNotice" class="small muted" hidden></p><div id="businessMatches" class="discovery-grid"></div></section>');
    page.querySelector('#joinQori')?.addEventListener('click',ctx.login);
    page.querySelector('#installQori').onclick=async()=>{if(installEvent){await installEvent.prompt();installEvent=null;}else ctx.dialog('Qori siempre a mano','<p>Abre Qori en el navegador de tu celular. En Android, busca <strong>Instalar aplicación</strong> o <strong>Añadir a pantalla de inicio</strong> en el menú. En iPhone, abre Compartir y selecciona <strong>Añadir a pantalla de inicio</strong>.</p><p>La disponibilidad depende del navegador. También puedes usar Qori desde esta web.</p>');};
    let kind='',offset=0,loading=false,generation=0;
@@ -78,15 +79,25 @@
     const version=++generation;loading=true;const f=new FormData(page.querySelector('#exploreSearch')),params=new URLSearchParams({search:f.get('search'),city:f.get('city'),kind,offset:String(append?offset:0)});
     page.querySelector('#feedStatus').textContent='Buscando beneficios…';
     try{
+     const findBusinesses=async()=>{
+      if(savedOnly||append)return null;
+      const terms={search:String(f.get('search')||'').trim(),city:String(f.get('city')||'').trim()};
+      const places=await ctx.request('/explore/directory?'+new URLSearchParams(terms));
+      if(places.businesses.length||!terms.search||!terms.city)return places;
+      const byName=await ctx.request('/explore/directory?'+new URLSearchParams({search:terms.search}));
+      return {...byName,outside_city_filter:true};
+     };
      const [r,places]=await Promise.all([
       ctx.request(savedOnly?'/discovery/saved?offset='+(append?offset:0):'/explore?'+params),
-      !savedOnly&&!kind&&!append?ctx.request('/explore/directory?'+new URLSearchParams({search:f.get('search'),city:f.get('city')})):null
+      findBusinesses()
      ]);
      if(!page.isConnected||version!==generation)return;
      if(!append){
       const section=page.querySelector('#businessResults'),matches=page.querySelector('#businessMatches');
       const businesses=places?.businesses||[];
       section.hidden=!businesses.length;
+      const notice=page.querySelector('#businessMatchNotice');notice.hidden=!places?.outside_city_filter;
+      notice.textContent=places?.outside_city_filter?'Encontramos estos negocios por nombre. No coinciden con la ciudad seleccionada o todavía no publicaron su ubicación.':'';
       matches.innerHTML=businesses.slice(0,6).map(b=>'<article class="panel"><span class="eyebrow">Este negocio es Qori</span><h3>'+esc(b.name)+'</h3><p>'+esc([b.category,b.city].filter(Boolean).join(' · '))+'</p><a class="primary" href="#business/'+encodeURIComponent(b.slug)+'">Ver negocio →</a></article>').join('');
      }
      const feed=page.querySelector('#discoveryFeed');if(!append)feed.innerHTML='';feed.insertAdjacentHTML('beforeend',r.publications.map(card).join(''));offset=r.next_offset;page.querySelector('#moreOffers').hidden=offset==null;
