@@ -25,11 +25,18 @@ async function selected(account,id){
  return (await query('select *,opening_date::text opening_date from customer_finance_books where customer_id=$1 and is_default',[account.id])).rows[0];
 }
 async function create(account,data){
+ if(data.opening_date&&(data.opening_date>today(account)||data.opening_date<'2000-01-01'))throw badRequest('La fecha del saldo inicial debe ser pasada o de hoy.');
  return withTransaction(async db=>{
   await db.query('select id from customer_accounts where id=$1 for update',[account.id]);
+  const existing=(await db.query('select *,opening_date::text opening_date from customer_finance_books where customer_id=$1 and request_id=$2',[account.id,data.request_id])).rows[0];
+  if(existing)return {book:existing};
   if((await db.query('select count(*)::int n from customer_finance_books where customer_id=$1',[account.id])).rows[0].n>=30)throw badRequest('Puedes crear hasta 30 contabilidades.');
-  return {book:(await db.query('insert into customer_finance_books(customer_id,request_id,name,currency) values($1,$2,$3,$4) on conflict(customer_id,request_id) do update set request_id=excluded.request_id returning *',[account.id,data.request_id,data.name,data.currency])).rows[0]};
+  return {book:(await db.query('insert into customer_finance_books(customer_id,request_id,name,currency,opening_amount,opening_date) values($1,$2,$3,$4,$5,$6) returning *,opening_date::text opening_date',[account.id,data.request_id,data.name,data.currency,data.opening_amount??null,data.opening_date??null])).rows[0]};
  });
+}
+async function rename(account,id,data){
+ const r=await query('update customer_finance_books set name=$3,revision=revision+1,updated_at=now() where customer_id=$1 and id=$2 and revision=$4 returning *,opening_date::text opening_date',[account.id,id,data.name,data.revision]);
+ if(!r.rowCount)throw badRequest('El bolsillo cambió o no está disponible. Actualiza y vuelve a intentar.');return {book:r.rows[0]};
 }
 async function update(account,id,data){
  if(data.opening_date>today(account)||data.opening_date<'2000-01-01')throw badRequest('La fecha del saldo inicial debe ser pasada o de hoy.');
@@ -142,4 +149,4 @@ async function home(account){
    transfers:transfers.slice(0,30),foreign_currency_count:rows.filter(r=>r.currency!==book.currency).length};
  });
 }
-module.exports={scope,allocationScope,ensure,own,list,selected,create,update,sourceBook,assertSource,middleware,transfer,voidTransfer,reassign,home};
+module.exports={scope,allocationScope,ensure,own,list,selected,create,update,rename,sourceBook,assertSource,middleware,transfer,voidTransfer,reassign,home};

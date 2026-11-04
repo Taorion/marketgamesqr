@@ -1,0 +1,53 @@
+.pocket-context,.pocket-guide{display:flex;justify-content:space-between;align-items:center;gap:24px;background:#f1f7ff;border:1px solid #bfd5f1;padding:22px;border-radius:16px;margin-bottom:22px}
+.pocket-context strong{display:block;font-size:24px;color:#012268;overflow-wrap:anywhere;margin-top:7px}
+.pocket-context p,.pocket-guide p{font-size:13px;line-height:1.6;color:#456380;max-width:650px}
+.pocket-context>.row{flex-shrink:0;flex-wrap:wrap}
+.pocket-guide h2{font-size:22px;margin:0 0 10px}
+.pocket-guide-actions{display:grid;gap:14px;flex-shrink:0;font-size:13px}
+.pocket-overview{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 22px}
+.pocket-overview>span{background:white;border:1px solid var(--line);padding:12px 16px;border-radius:12px;font-size:13px}
+.pocket-overview .is-negative{color:#a5202b;background:#fff0f1;border-color:#efc1c6}
+.pocket-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px;margin-bottom:26px}
+.pocket-card{min-width:0;background:white;border:1px solid #d1dfef;border-radius:18px;padding:24px;display:flex;flex-direction:column}
+.pocket-card.is-active{outline:2px solid #0341b3;outline-offset:2px}
+.pocket-card-head{display:flex;gap:12px;align-items:center}
+.pocket-card-head>div{min-width:0}
+.pocket-card-head h2{margin:0 0 5px;font-size:22px;overflow-wrap:anywhere}
+.pocket-card-head span{font-size:12px;color:#526f91}
+.pocket-monogram{display:grid;place-items:center;width:42px;height:42px;flex-shrink:0;border-radius:12px;background:#eaf2ff;font-weight:700;font-size:20px!important;color:#012268!important}
+.pocket-status{font-size:12px;font-weight:700;border-radius:8px;padding:8px 10px;width:fit-content;margin:20px 0 14px;background:#f0f3f8;color:#47607b}
+.pocket-amount-label{font-size:12px;color:#526985}
+.pocket-amount{font-size:clamp(24px,3vw,33px);display:block;overflow-wrap:anywhere;margin-top:7px}
+.pocket-card.is-negative .pocket-status{background:#fff0f1;color:#a5202b}
+.pocket-card.is-negative .pocket-amount{color:#a5202b}
+.pocket-card.is-positive .pocket-status{background:#edf8f1;color:#147343}
+.pocket-card.is-positive .pocket-amount{color:#147343}
+.pocket-card.is-unknown .pocket-amount{color:#526985}
+.pocket-cash-note{font-size:12px;line-height:1.6;min-height:38px;color:#526985}
+.pocket-card dl{margin:8px 0}
+.pocket-card dl>div{display:flex;justify-content:space-between;gap:12px;font-size:13px;border-bottom:1px solid #edf1f7;padding:10px 0}
+.pocket-card dd{margin:0;text-align:right;overflow-wrap:anywhere;min-width:0;font-weight:700}
+.pocket-card .pocket-income{color:#147343}.pocket-card .pocket-expense{color:#a5202b}
+.pocket-card>.primary{margin-top:auto;min-height:46px}
+.pocket-card-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pocket-card-actions button{font-size:12px;min-height:44px}
+.pocket-presets{display:flex;flex-wrap:wrap;gap:8px}
+.pocket-presets button{min-height:44px}
+.pocket-help ol{padding-left:22px;font-size:14px;line-height:1.7}
+.pocket-help li{padding:6px 0}
+.book-switcher{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:end}
+.book-switcher>.field{grid-row:1/3}
+.book-switcher>#addBook{font-size:12px;min-height:34px;padding:6px 10px}
+.pocket-switch-link{font-size:11px;text-align:center;min-height:24px;display:flex;align-items:center;justify-content:center}
+@media(max-width:760px){
+ .pocket-context,.pocket-guide{display:block;padding:18px}
+ .pocket-context>.row,.pocket-guide-actions{margin-top:16px}
+ .pocket-context>.row>*{flex:1 1 130px;text-align:center}
+ .pocket-card{padding:20px}
+ .topbar:has(.book-switcher){height:auto;min-height:84px;flex-wrap:nowrap;align-items:center}
+ .topbar .breadcrumb{flex:1;min-width:0}
+ .book-switcher{max-width:100%;gap:4px 8px}
+ .book-switcher select{width:100%;max-width:100%;min-width:0}
+ .pocket-overview{gap:8px}
+ .pocket-overview>span{padding:10px;font-size:12px}
+}

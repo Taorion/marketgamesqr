@@ -85,6 +85,22 @@ test('independent books, cash projection, obligations, transfers and ownership',
   assert.ok((await api('/finance-home')).transfers.find(t=>t.id===transfer.id).voided_at);
   assert.equal((await api('/finance-books/'+personal.id,{name:'Stale',opening_amount:'99',opening_date:today(),revision:1},null,buyer,'PUT')).http_status,400);
  });
+await t.test('pockets accept signed starting balances atomically and retain unknown balances on rename',async()=>{
+  const data={request_id:crypto.randomUUID(),name:'Familia',currency:'COP',opening_amount:'-25',opening_date:today()};
+  const rs=await Promise.all([api('/finance-books',data),api('/finance-books',data)]);rs.forEach(r=>assert.equal(r.http_status,200,JSON.stringify(r)));assert.equal(rs[0].book.id,rs[1].book.id);
+  const family=rs[0].book;assert.equal((await api('/finance-home',null,family.id)).balance_minor,-2500);
+  const home=await api('/finance-home',null,cattle.id);assert.ok(home.balance_minor>0);
+  const unknown=(await api('/finance-books',{request_id:crypto.randomUUID(),name:'Hijo',currency:'COP'})).book;
+  const renamed=await api('/finance-books/'+unknown.id+'/name',{name:'Educación de mi hijo',revision:unknown.revision},unknown.id,buyer,'PATCH');
+  assert.equal(renamed.http_status,200);assert.equal(renamed.book.opening_amount,null);assert.equal((await api('/finance-home',null,unknown.id)).balance_minor,null);
+  assert.equal((await api('/finance-books/'+unknown.id+'/name',{name:'No debe cambiar',revision:1},null,buyer,'PATCH')).http_status,400);
+  assert.equal((await api('/finance-books/'+unknown.id+'/name',{name:'Ajeno',revision:2},null,other,'PATCH')).http_status,400);
+  assert.equal((await api('/finance-books',{...data,request_id:crypto.randomUUID(),opening_date:undefined})).http_status,400);
+  assert.equal((await api('/finance-books',{...data,request_id:crypto.randomUUID(),opening_amount:undefined})).http_status,400);
+  assert.equal((await api('/finance-books',{...data,request_id:crypto.randomUUID(),opening_date:'2100-01-01'})).http_status,400);
+  await query('delete from customer_finance_books where customer_id=$1 and id=any($2::uuid[])',[buyer.id,[family.id,unknown.id]]);
+ });
+
  await t.test('database prevents foreign-owner associations and denies public data access',async()=>{
   const foreign=(await api('/finance-books',null,null,other)).books[0];
   await assert.rejects(query('update customer_entries set book_id=$1 where id=$2',[foreign.id,expense.id]),e=>e.code==='23503');
