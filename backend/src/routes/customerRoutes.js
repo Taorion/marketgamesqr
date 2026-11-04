@@ -174,7 +174,7 @@ router.get('/receipts/:id',handle(async req=>{
   if(!row)throw notFound();return {receipt:row};
 }));
 router.delete('/receipts/:id',handle(async req=>{await query('delete from customer_receipts where id=$1 and customer_id=$2',[parse(uuid,req.params.id),req.customer.id]);return {ok:true};}));
-router.get('/planning',handle(async req=>({budgets:(await query('select * from customer_budgets where customer_id=$1',[req.customer.id])).rows,goals:(await query('select * from customer_goals where customer_id=$1',[req.customer.id])).rows,recurring:(await query('select *,next_date::text next_date from customer_recurring where customer_id=$1 and active order by next_date',[req.customer.id])).rows})));
+router.get('/planning',handle(req=>svc.planning(req.customer)));
 router.post('/budgets',handle(async req=>{
   const d=parse(z.object({category:z.enum(['ALL',...finance.CATEGORIES]),period:z.enum(['week','month']),currency,amount:money,threshold:z.number().int().min(1).max(100).default(80)}),req.body);
   return {budget:(await query(`insert into customer_budgets(customer_id,category,period,currency,amount,threshold) values($1,$2,$3,$4,$5,$6)
@@ -279,7 +279,7 @@ businessRouter.put('/directory',handle(async req=>{
 businessRouter.get('/directory',handle(async req=>({directory:(await query('select * from customer_directory where business_id=$1',[req.user.business_id])).rows[0]||null})));
 // Customer routes own their error boundary: never leak SQL, receipt data or internal errors.
 router.use((error,req,res,_next)=>{
- if(req.path==='/dashboard'&&(!error.status||error.status>=500))require('../services/customerFinanceReadiness').observe(error);
+ if(['/dashboard','/planning','/finance-connections'].includes(req.path)&&(!error.status||error.status>=500))require('../services/customerFinanceReadiness').observe(error);
  return res.status(error.status||500).json({error:{message:error.status&&error.status<500?error.message:'No pudimos completar la operación. Inténtalo nuevamente.'}});
 });
 businessRouter.use((error,_req,res,_next)=>res.status(error.status||500).json({error:{message:error.status&&error.status<500?error.message:'No pudimos completar la operación. Inténtalo nuevamente.'}}));

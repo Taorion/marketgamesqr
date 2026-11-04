@@ -42,6 +42,15 @@ test('financial overview renders the backend summary and chart actions lead to i
   page.querySelector('[data-day]').click();assert.equal(w.location.hash,'#history');
  }finally{w.close();}
 });
+test('a failed dashboard keeps payment agenda and manual capture reachable without inventing totals',async()=>{
+ const {w,ctx,page}=setup();try{
+  ctx.request=async()=>{throw Error('Resumen no disponible');};
+  load(w,'customer-web/finance.js');await w.QoriFinance.render(page,ctx,'finances');
+  assert.ok(page.querySelector('a[href="#payments"]'));assert.ok(page.querySelector('#retryFinance'));
+  assert.equal(page.querySelector('.finance-hero'),null);
+  page.querySelector('#newExpense').click();assert.ok(w.document.querySelector('#expenseForm'));
+ }finally{w.close();}
+});
 test('history filters preserve real source and CSV safely exports text without formula execution',async()=>{
  const s=setup(),{w,ctx,page}=s;try{
   load(w,'customer-web/finance.js');await w.QoriFinance.render(page,ctx,'history');assert.equal(page.querySelectorAll('[data-movement]').length,2);

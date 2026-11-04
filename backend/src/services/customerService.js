@@ -5,6 +5,14 @@ const { env } = require('../config/env');
 const finance = require('./customerFinance');
 const stamps = require('./stampCardService');
 const normalizeDocument = stamps.normalizeDocument;
+async function planning(account) {
+  const [budgets,goals,recurring]=await Promise.all([
+    query('select * from customer_budgets where customer_id=$1',[account.id]),
+    query('select * from customer_goals where customer_id=$1',[account.id]),
+    query('select r.*,r.next_date::text next_date from customer_recurring r where r.customer_id=$1 and r.active order by r.next_date,r.id',[account.id])
+  ]);
+  return {budgets:budgets.rows,goals:goals.rows,recurring:recurring.rows};
+}
 const saleSql = `select s.*,b.name business_name,r.id relationship_id,n.category,n.priority,n.note personal_note,n.reported_at,
   coalesce((select sum(a.amount) from customer_sale_adjustments a where a.sale_id=s.id),0) refunded
   from business_sales s left join customer_relationships r on r.business_id=s.business_id and r.customer_id=$1
@@ -143,4 +151,4 @@ async function exportData(account) {
   output.giftcards=await require('./customerWalletService').giftWallet(account);
   return output;
 }
-module.exports={assertNotPaymentEntry,dashboard,movements,ownSale,relationships,proposeRelationship,decideRelationship,saveEntry,mergeEntry,wallet,ownCard,identification,exportData,normalizeDocument};
+module.exports={assertNotPaymentEntry,dashboard,planning,movements,ownSale,relationships,proposeRelationship,decideRelationship,saveEntry,mergeEntry,wallet,ownCard,identification,exportData,normalizeDocument};

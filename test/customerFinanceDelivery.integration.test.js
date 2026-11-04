@@ -11,6 +11,24 @@ const accept=(i,auto=true,token=buyer.token)=>api('/api/customer/invitations/'+i
 test('financial delivery preserves canonical sales, consent, automatic capture and personal expense controls',async t=>{
  server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
  buyer=await login('Andrea Finanzas');other=await login('Otra Cuenta');merchant=await business();foreign=await business();sale=await createSale();
+ await t.test('finance loads all dependencies and returns only owned active schedules in date order',async()=>{
+  for(const endpoint of ['dashboard','planning','finance-connections']){
+   const result=await api('/api/customer/'+endpoint,buyer.token);
+   assert.equal(result.status,200,JSON.stringify(result));
+  }
+  assert.deepEqual((await api('/api/customer/planning',buyer.token)).recurring,[]);
+  const dates=['2027-03-31','2027-01-31','2027-02-28'];
+  const schedules=[];
+  for(const next_date of dates){
+   const result=await api('/api/customer/recurring',other.token,{name:'Planning QA',currency:'COP',amount:'100',kind:'EXPENSE',category:'servicios',next_date,frequency:'month'});
+   assert.equal(result.status,200,JSON.stringify(result));schedules.push(result.recurring);
+  }
+  await query('update customer_recurring set active=false where id=$1',[schedules[2].id]);
+  const planning=await api('/api/customer/planning',other.token);
+  assert.equal(planning.status,200,JSON.stringify(planning));
+  assert.deepEqual(planning.recurring.map(r=>r.next_date),['2027-01-31','2027-03-31']);
+  assert.deepEqual((await api('/api/customer/planning',buyer.token)).recurring,[]);
+ });
  await t.test('a new buyer receives a private purchase invitation without another sale or expense',async()=>{
   assert.equal((await send(sale,buyer.account.public_id,foreign.token)).status,404);
   assert.equal((await api('/api/business/customer/sale-deliveries',buyer.token)).status,401);

@@ -58,7 +58,7 @@
     body.querySelectorAll('[data-dismiss]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await ctx.request('/insights/dismiss',{id:b.dataset.dismiss});await refresh();}catch(e){ctx.showError(e.message);b.disabled=false;}});
     bindMovements(body,context,d.movements);
    }
-  }catch(e){if(turn===version&&page.isConnected){ctx.showError(e.message);page.innerHTML='<p>No pudimos cargar tus finanzas.</p><button class="secondary" id="retryFinance">Reintentar</button>';page.querySelector('button').onclick=refresh;}}
+  }catch(e){if(turn===version&&page.isConnected){ctx.showError(e.message);page.innerHTML='<div class="page-heading"><div><h1>Mis finanzas</h1><p>Tu historial y tu planificación personal.</p></div></div>'+nav(route)+'<section class="panel"><h2>No pudimos cargar el resumen financiero</h2><p>Reintenta la consulta. También puedes abrir tu agenda de pagos o registrar un movimiento.</p><div class="row"><button class="secondary" id="retryFinance">Reintentar</button><a class="secondary" href="#payments">Abrir agenda de pagos</a><button class="primary" id="newExpense">Registrar movimiento</button></div></section>';page.querySelector('#retryFinance').onclick=refresh;page.querySelector('#newExpense').onclick=()=>editEntry({...ctx,refreshFinance:refresh});}}
  }
  function bindMovements(root,ctx,rows){root.querySelectorAll('[data-movement]').forEach(b=>b.onclick=()=>openMovement(rows.find(r=>r.id===b.dataset.movement),ctx));}
  function planningView(body,ctx,d,p,c){

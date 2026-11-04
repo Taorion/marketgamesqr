@@ -1,4 +1,4 @@
-// An empty, nonexistent identity exercises the production finance read path.
+// An empty, nonexistent identity exercises every dependency of the Finance page.
 // No account is created, no customer records are returned, and results are cached.
 const svc=require('./customerService');
 let cached=null,expires=0,pending=null,lastError=null;
@@ -14,7 +14,12 @@ async function status(){
  if(pending)return pending.then(r=>({...r,...(lastError?{last_error:lastError}:{})}));
  pending=(async()=>{
   try{
-   await svc.dashboard({id:'00000000-0000-0000-0000-000000000000',timezone:'America/Bogota',currency:'COP'},{period:'month'});
+   const account={id:'00000000-0000-0000-0000-000000000000',timezone:'America/Bogota',currency:'COP'};
+   await Promise.all([
+    svc.dashboard(account,{period:'month'}),
+    svc.planning(account),
+    require('./customerFinanceDeliveryService').connections(account)
+   ]);
    cached={ready:true};
   }catch(e){
    const code=/^[A-Z0-9]{5}$/.test(e.code||'')?e.code:['RangeError','TypeError'].includes(e.name)?e.name:'UNAVAILABLE';
