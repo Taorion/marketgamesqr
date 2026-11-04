@@ -18,6 +18,22 @@ test('early payoff includes the uncollected premium balance when still owed',()=
  assert.throws(()=>D.compare({...loan,charges:[c('x','FIXED','5'),c('x','FIXED','8')]}),/única/);
 });
 const item=(id,quantity,estimated_price,extra={})=>({id,name:id,unit:'kg',quantity,estimated_price,in_cart:false,actual_quantity:null,actual_price:null,...extra});
+
+test('live shopping separates extras from savings and never calls unbought items savings',()=>{
+ const items=[item('arroz',2,'10',{shopping_origin:'PLANNED',in_cart:true,actual_quantity:1,actual_price:'8'}),item('jabon',1,'5',{shopping_origin:'PLANNED'}),item('dulce',1,null,{shopping_origin:'EXTRA',in_cart:true,actual_price:'4'})];
+ const s=G.summary(items);assert.equal(s.estimated_minor,2500);assert.equal(s.actual_minor,1200);assert.equal(s.selected_budget_minor,1000);assert.equal(s.difference_minor,-200);assert.equal(s.budget_remaining_minor,1300);assert.equal(s.unplanned_minor,400);assert.equal(s.unplanned_count,1);assert.equal(s.pending_count,2);
+ assert.ok(G.remaining(items).every(i=>!i.shopping_origin));
+ items[0].actual_quantity=3;const extra=G.summary(items);assert.equal(extra.extra_quantity_minor,800);assert.equal(extra.difference_minor,-800);
+ items[2].in_cart=false;assert.equal(G.summary(items).unplanned_minor,0);assert.equal(G.summary(items).actual_minor,2400);
+ items[0].actual_price=null;assert.equal(G.summary(items).difference_minor,null);assert.equal(G.summary(items).budget_remaining_minor,null);
+});
+test('initial plan cannot be replaced or inflated after shopping starts',()=>{
+ const original=[item('a',2,'10',{shopping_origin:'PLANNED'}),item('b',1,null,{shopping_origin:'EXTRA'})];
+ const incoming=[{...original[0],name:'alterado',quantity:99,estimated_price:'100',shopping_origin:'EXTRA',in_cart:true,actual_price:'9'},{...original[1],shopping_origin:'PLANNED'},item('c',1,'100',{shopping_origin:'PLANNED'})];
+ const saved=G.preservePlan(original,incoming);assert.equal(saved[0].quantity,2);assert.equal(saved[0].estimated_price,'10');assert.equal(saved[0].name,'a');assert.equal(saved[0].actual_price,'9');assert.equal(saved[1].shopping_origin,'EXTRA');assert.equal(saved[2].shopping_origin,'EXTRA');assert.equal(saved[2].estimated_price,null);
+ assert.throws(()=>G.preservePlan(original,[original[1]]),/Conserva/);
+ assert.throws(()=>G.normalize([{...original[0],shopping_origin:'inventado'}]),/origen/);
+});
 test('market estimates include quantities, distinguish missing prices and compare only bought quantities',()=>{
  const data=[item('arroz',2,'100',{in_cart:true,actual_quantity:1,actual_price:'110'}),item('leche',3,'30'),item('huevos',1,null)];
  const s=G.summary(data);assert.equal(s.estimated_minor,29000);assert.equal(s.unknown_prices,1);assert.equal(s.selected_budget_minor,10000);assert.equal(s.actual_minor,11000);assert.equal(s.difference_minor,-1000);

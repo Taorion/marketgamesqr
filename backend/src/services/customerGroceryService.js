@@ -5,10 +5,11 @@ async function present(a,g){const summary=M.summary(g.items),actual=g.status==='
 async function list(a){const rows=(await query('select '+projection+' from customer_grocery_lists g where customer_id=$1 and book_id=$2 order by created_at desc',[a.id,a.finance_book.id])).rows;return {lists:await Promise.all(rows.map(g=>present(a,g)))};}
 async function summary(a,end,db={query}){const rows=(await db.query("select items from customer_grocery_lists where customer_id=$1 and book_id=$2 and currency=$3 and status='PLANNED' and (target_date is null or target_date<=$4)",[a.id,a.finance_book.id,a.finance_book.currency,end])).rows;return rows.reduce((r,g)=>{const s=M.summary(g.items);r.estimated_minor+=s.estimated_minor;r.unknown_prices+=s.unknown_prices;r.lists++;return r;},{estimated_minor:0,unknown_prices:0,lists:0});}
 async function save(a,data,id){
- const items=M.normalize(data.items);M.summary(items);
+ let items=M.preservePlan([],data.items);M.summary(items);
  if(data.target_date&&(data.target_date<'2000-01-01'||data.target_date>'2100-12-31'))throw badRequest('Revisa la fecha prevista.');
  return withTransaction(async db=>{
   if(id){const g=await own(a,id,db,true);if(g.status!=='PLANNED'||g.revision!==data.revision)throw badRequest('La lista cambió. Recarga antes de editar.');
+   items=M.preservePlan(g.items,items);M.summary(items);
    return {list:(await db.query('update customer_grocery_lists set title=$3,target_date=$4,note=$5,items=$6::jsonb,revision=revision+1,updated_at=now() where customer_id=$1 and id=$2 returning *',[a.id,id,data.title,data.target_date,data.note,JSON.stringify(items)])).rows[0]};}
   await db.query('select id from customer_accounts where id=$1 for update',[a.id]);
   const existing=(await db.query('select * from customer_grocery_lists where customer_id=$1 and request_id=$2',[a.id,data.request_id])).rows[0];

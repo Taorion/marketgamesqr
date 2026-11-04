@@ -1,7 +1,7 @@
 const express=require('express'),{z}=require('zod'),{badRequest}=require('../utils/http'),svc=require('../services/customerGroceryService'),router=express.Router();
 const uuid=z.string().uuid(),revision=z.number().int().positive(),price=z.string().regex(/^\d{1,9}(\.\d{1,2})?$/).nullable(),quantity=z.number().positive().max(10000);
 const item=z.object({id:z.string().regex(/^[a-zA-Z0-9_-]{1,80}$/),name:z.string().trim().min(1).max(120),unit:z.string().trim().min(1).max(30).default('unidad'),quantity,estimated_price:price.default(null),in_cart:z.boolean().default(false),actual_quantity:quantity.nullable().default(null),actual_price:price.default(null)});
-const fields={title:z.string().trim().min(2).max(160),note:z.string().max(2000).default(''),target_date:z.string().date().nullable().default(null),items:z.array(item).max(200)};
+const fields={title:z.string().trim().min(2).max(160),note:z.string().max(2000).default(''),target_date:z.string().date().nullable().default(null),items:z.array(item.extend({shopping_origin:z.enum(['PLANNED','EXTRA']).optional()})).max(200)};
 const parse=(schema,v)=>{const r=schema.safeParse(v);if(!r.success)throw badRequest('Revisa los datos de la lista: '+r.error.issues.map(i=>i.path.join('.')).join(', '));return r.data;};
 const handle=fn=>async(req,res,next)=>{try{res.set('Cache-Control','private, no-store').json(await fn(req));}catch(e){next(e.code==='GROCERY_INPUT'?badRequest(e.message):e);}};
 router.get('/',handle(req=>svc.list(req.customer)));

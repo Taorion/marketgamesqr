@@ -77,5 +77,20 @@ await t.test('canonical Empresa receipts link privately without new sales and fo
   assert.equal((await query("select count(*)::int n from information_schema.role_table_grants where table_name='customer_grocery_lists' and grantee in('PUBLIC','anon','authenticated')")).rows[0].n,0);
   const exported=await api('/export');assert.equal(exported.http_status,200,JSON.stringify(exported));assert.equal(exported.customer_grocery_lists.length,5);assert.equal(exported.customer_debts[0].credit_type,'VEHICLE');
  });
+ await t.test('live cart preserves the initial budget and extra origin until one confirmed payment',async()=>{
+  const initial=[item('Arroz',2,'10',{shopping_origin:'PLANNED',in_cart:true,actual_quantity:1,actual_price:'8'}),item('Jabón',1,'5',{shopping_origin:'PLANNED'})];
+  let g=(await api('/groceries',{request_id:uuid(),title:'Modo mercando QA',items:initial})).list;
+  const before=(await query('select count(*)::int n from customer_entries where customer_id=$1',[buyer.id])).rows[0].n;
+  const altered=[{...g.items[0],quantity:99,estimated_price:'999'},g.items[1],item('Dulce',1,'999',{shopping_origin:'PLANNED',in_cart:true,actual_price:'4'})];
+  const r=await api('/groceries/'+g.id,{title:g.title,items:altered,revision:g.revision},book.id,buyer,'PUT');assert.equal(r.http_status,200,JSON.stringify(r));g=r.list;
+  assert.equal(g.items[0].quantity,2);assert.equal(g.items[0].estimated_price,'10');assert.equal(g.items[2].shopping_origin,'EXTRA');assert.equal(g.items[2].estimated_price,null);
+  const read=await api('/groceries/'+g.id);assert.equal(read.summary.actual_minor,1200);assert.equal(read.summary.difference_minor,-200);assert.equal(read.summary.unplanned_minor,400);assert.equal(read.summary.budget_remaining_minor,1300);
+  assert.equal((await query('select count(*)::int n from customer_entries where customer_id=$1',[buyer.id])).rows[0].n,before);
+  assert.equal((await api('/groceries/'+g.id,{title:g.title,items:g.items.slice(1),revision:g.revision},book.id,buyer,'PUT')).http_status,400);
+  assert.equal((await api('/groceries/'+g.id,{title:g.title,items:g.items,revision:g.revision-1},book.id,buyer,'PUT')).http_status,400);
+  const complete={revision:g.revision,confirmed:true,carry_forward:true,merchant:'Mercado QA',paid_on:today()};const results=await Promise.all([api('/groceries/'+g.id+'/complete',complete),api('/groceries/'+g.id+'/complete',complete)]);
+  assert.equal(results[0].http_status,200);assert.equal(results[1].list.entry_id,results[0].list.entry_id);assert.equal((await query('select count(*)::int n from customer_entries where customer_id=$1',[buyer.id])).rows[0].n,before+1);
+  const next=await api('/groceries/'+results[0].list.next_list_id);assert.deepEqual(next.items.map(i=>i.name),['Arroz','Jabón']);assert.ok(next.items.every(i=>!i.shopping_origin));assert.equal(next.summary.estimated_minor,1500);
+ });
 });
 after(async()=>{if(server)await new Promise(r=>server.close(r));if(buyer)await query('delete from customer_accounts where id=any($1::uuid[])',[[buyer.id,other.id]]);await pool.end();});

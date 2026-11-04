@@ -1,4 +1,25 @@
 /* Mercado y hogar: capture first, details when needed. */
+.grocery-origin{display:block;font-size:12px;font-weight:600;color:#315487;margin-bottom:8px}
+.grocery-origin:empty{display:none}
+#groceryForm .grocery-actions{flex-wrap:wrap}
+#groceryForm .grocery-actions #groceryRunning{display:grid;gap:3px;margin-right:auto;min-width:0}
+#groceryRunning strong{font-size:26px;overflow-wrap:anywhere}
+#groceryRunning span,#groceryRunning small{font-size:12px;color:var(--muted)}
+.grocery-recap{background:#f7faff;border:1px solid #c6d8ef;border-radius:16px;padding:20px;margin-bottom:20px;overflow-wrap:anywhere}
+.grocery-recap h2{font-size:22px;line-height:1.4}
+.grocery-recap .money-expense{color:#b42318}
+.grocery-recap .money-income{color:#067647}
+.grocery-recap li{margin:8px 0}
+#groceryForm input[readonly]{background:#f5f7fb;border-color:transparent}
+@media(max-width:760px){
+ #groceryForm.is-shopping .grocery-actions{display:grid;grid-template-columns:1fr 1fr;bottom:calc(72px + env(safe-area-inset-bottom));gap:8px}
+ #groceryForm.is-shopping .grocery-actions #groceryRunning{grid-column:1/-1;width:100%;grid-template-columns:1fr auto;align-items:center}
+ #groceryRunning small{grid-column:1/-1}
+ #groceryForm.is-shopping .grocery-actions>div:not(#groceryRunning){grid-column:1/-1;grid-row:3;flex-wrap:wrap}
+ #groceryForm.is-shopping .grocery-actions #grocerySaveState{max-width:none;flex:1;overflow-wrap:anywhere}
+ #groceryForm.is-shopping .grocery-actions button{font-size:12px;padding:10px;min-width:0}
+ .grocery-recap{padding:14px}
+}
 .grocery-home,.grocery-welcome{display:flex;align-items:center;justify-content:space-between;gap:24px;background:#f0f7ff;border:1px solid #bed7fa;border-radius:18px;padding:24px;margin-bottom:24px}
 .grocery-home h2,.grocery-welcome h2{margin:6px 0 10px;font-size:22px;color:#012268}
 .grocery-home p,.grocery-welcome p{max-width:650px;line-height:1.6}
