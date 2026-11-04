@@ -219,7 +219,7 @@ router.get('/places',handle(async req=>{
 }));
 router.get('/favorites',handle(async req=>({places:(await query('select b.id,b.name from customer_favorites f join businesses b on b.id=f.business_id where f.customer_id=$1',[req.customer.id])).rows})));
 router.post('/favorites/:id',handle(async req=>{
-  const id=parse(uuid,req.params.id);const r=await query('insert into customer_favorites(customer_id,business_id) select $1,business_id from customer_directory where business_id=$2 and published on conflict do nothing',[req.customer.id,id]);return {ok:true};
+  return explore.followBusiness(req.customer,parse(uuid,req.params.id));
 }));
 router.delete('/favorites/:id',handle(async req=>{await query('delete from customer_favorites where customer_id=$1 and business_id=$2',[req.customer.id,parse(uuid,req.params.id)]);return {ok:true};}));
 router.post('/place-requests',handle(async req=>{

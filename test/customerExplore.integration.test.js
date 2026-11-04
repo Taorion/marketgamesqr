@@ -15,6 +15,28 @@ test('public ecosystem connects canonical programs and earned rewards to a verif
  server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
  buyer=await login();other=await login();merchant=await business();foreign=await business();
  program=await stamps.saveProgram(merchant.b.id,merchant.u.id,{name:'Café cada tres visitas',stamps_required:3,benefit_type:'FREE_GIFT',benefit_value:{label:'Un café para ti'},minimum_purchase:1,one_per_day:false,allow_manual:true,card_valid_days:365,ticket_valid_days:30,reward_cost:1000,ticket_cost:1000,terms:'Completa tres visitas pagadas.',status:'ACTIVE'});
+ await t.test('active Empresa businesses are searchable and followable before publishing a Customer profile',async()=>{
+  const name='Rey del Sabór '+crypto.randomUUID();
+  await query('update businesses set name=$2 where id=$1',[foreign.b.id,name]);
+  const find=async()=>api('/api/customer/explore/directory?search='+encodeURIComponent('El '+name.replace('Sabór','Sabor')));
+  let result=await find();assert.equal(result.status,200,JSON.stringify(result));
+  assert.deepEqual(result.businesses.map(b=>b.id),[foreign.b.id]);
+  assert.deepEqual(Object.keys(result.businesses[0]).sort(),['address','category','city','id','latitude','longitude','name','slug'].sort());
+  const profile=await api('/api/customer/explore/businesses/'+foreign.b.slug);
+  assert.equal(profile.status,200);assert.equal(profile.business.name,name);assert.deepEqual(profile.publications,[]);
+  assert.equal(profile.business.settings,undefined);assert.equal(profile.business.email,undefined);
+  assert.equal((await api('/api/customer/favorites/'+foreign.b.id,other.token,{})).status,200);
+  assert.ok((await api('/api/customer/discovery/following',other.token)).businesses.some(b=>b.id===foreign.b.id));
+  await api('/api/customer/favorites/'+foreign.b.id,other.token,null,'DELETE');
+  await query("update businesses set settings=jsonb_set(settings,'{internal_account}','true') where id=$1",[foreign.b.id]);
+  assert.deepEqual((await find()).businesses,[]);assert.equal((await api('/api/customer/explore/businesses/'+foreign.b.slug)).status,404);
+  await query("update businesses set settings=settings-'internal_account',is_active=false where id=$1",[foreign.b.id]);
+  assert.deepEqual((await find()).businesses,[]);assert.equal((await api('/api/customer/favorites/'+foreign.b.id,other.token,{})).status,404);
+  await query('update businesses set is_active=true where id=$1',[foreign.b.id]);
+  await query('insert into customer_directory(business_id,published) values($1,false)',[foreign.b.id]);
+  assert.deepEqual((await find()).businesses,[]);assert.equal((await api('/api/customer/explore/businesses/'+foreign.b.slug)).status,404);
+  assert.equal((await api('/api/customer/favorites/'+foreign.b.id,other.token,{})).status,404);
+ });
  await t.test('one program can publish without requiring points or giftcards; drafts and tenants stay private',async()=>{
   assert.equal((await publish('STAMP',program.id)).status,400);
   const profile={published:true,category:'Café',city:'Bogotá',address:'Solo QA',description:'Nuestro negocio de pruebas'};

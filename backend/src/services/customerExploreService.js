@@ -55,18 +55,46 @@ async function feed({search='',city='',kind='',category='',offset=0,limit=24,bus
  return {publications:rows.slice(0,limit).filter(eligibility).map(publicRow),next_offset:rows.length>limit?offset+limit:null};
 }
 async function get(id){return {publication:publicRow(await detail(id))};}
+// Empresa accounts have a basic public identity. A saved hidden profile remains hidden.
+// Internal seed accounts are never listed automatically.
+const visibleBusinessSql=`b.is_active and (d.published or (d.business_id is null
+ and coalesce(b.settings->>'internal_account','false')<>'true'
+ and coalesce(b.settings->'access'->>'source','')<>'internal_seed'))`;
+const businessSelect=`select b.id,b.name,b.slug,to_jsonb(b) business,d.category,d.city,d.address,d.latitude,d.longitude,d.description
+ from businesses b left join customer_directory d on d.business_id=b.id`;
+function businessAvailable(row){const p=planFromBusiness(row.business);return p.portal_access_allowed&&p.raw_status==='ACTIVE';}
+const searchText=value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+function publicBusiness(row){return {id:row.id,name:row.name,slug:row.slug,category:row.category,city:row.city,address:row.address,latitude:row.latitude,longitude:row.longitude};}
+async function visibleBusiness(field,value){
+ const row=(await query(businessSelect+` where ${visibleBusinessSql} and b.${field}=$1`,[value])).rows[0];
+ if(!row||!businessAvailable(row))throw notFound('Negocio no disponible.');
+ return row;
+}
 async function directory({search='',city='',offset=0}={}){
- const rows=(await query(`select b.id,b.name,b.slug,to_jsonb(b) business,d.category,d.city,d.address,d.latitude,d.longitude
-   from customer_directory d join businesses b on b.id=d.business_id where d.published and b.is_active
-   and ($1='' or b.name ilike '%'||$1||'%' or d.category ilike '%'||$1||'%')
-   and ($2='' or d.city ilike '%'||$2||'%') order by b.name,b.id limit 49 offset $3`,[search,city,offset])).rows;
- return {businesses:rows.slice(0,48).filter(r=>{const p=planFromBusiness(r.business);return p.portal_access_allowed&&p.raw_status==='ACTIVE';})
-   .map(({business,...r})=>r),next_offset:rows.length>48?offset+48:null};
+ const words=searchText(search).split(/\s+/).filter(w=>w&&!['el','la','los','las','de','del','y'].includes(w));
+ const businesses=[];let cursor=offset;
+ while(true){
+  const rows=(await query(businessSelect+` where ${visibleBusinessSql}
+   and not exists(select 1 from unnest($1::text[]) word where strpos(translate(lower(concat_ws(' ',b.name,b.slug,d.category)),'áéíóúüñ','aeiouun'),word)=0)
+   and ($2='' or strpos(translate(lower(coalesce(d.city,'')),'áéíóúüñ','aeiouun'),$2)>0)
+   order by b.name,b.id limit 100 offset $3`,[words,searchText(city),cursor])).rows;
+  for(let i=0;i<rows.length;i++){
+   if(!businessAvailable(rows[i]))continue;
+   if(businesses.length===48)return {businesses,next_offset:cursor+i};
+   businesses.push(publicBusiness(rows[i]));
+  }
+  if(rows.length<100)return {businesses,next_offset:null};
+  cursor+=rows.length;
+ }
 }
 async function businessPage(slug){
- const b=(await query(`select b.*,d.city,d.address,d.description,d.category from businesses b join customer_directory d on d.business_id=b.id where b.slug=$1 and b.is_active and d.published`,[slug])).rows[0];
- if(!b||!planFromBusiness(b).portal_access_allowed||planFromBusiness(b).raw_status!=='ACTIVE')throw notFound('Negocio no disponible.');
- return {business:{id:b.id,slug:b.slug,name:b.name,city:b.city,address:b.address,description:b.description,category:b.category,logo_url:media(b.settings?.logo_url)},...await feed({business:slug,limit:48})};
+ const b=await visibleBusiness('slug',slug);
+ return {business:{id:b.id,slug:b.slug,name:b.name,city:b.city,address:b.address,description:b.description,category:b.category,logo_url:media(b.business.settings?.logo_url)},...await feed({business:slug,limit:48})};
+}
+async function followBusiness(account,id){
+ await visibleBusiness('id',id);
+ await query('insert into customer_favorites(customer_id,business_id) values($1,$2) on conflict do nothing',[account.id,id]);
+ return {ok:true};
 }
 async function catalog(user){
  const [activities,stamps,products]=await Promise.all([
@@ -169,8 +197,8 @@ async function participateResource(account,row,publicationId,body,complete){
 }
 async function shareQr(id){const p=await detail(id),url=publicRow(p).url;return {url,qr_image:await qr.toDataURL(url)};}
 async function following(account){
- const rows=(await query('select b.*,d.city,d.description from customer_favorites f join businesses b on b.id=f.business_id join customer_directory d on d.business_id=b.id where f.customer_id=$1 and b.is_active and d.published order by b.name limit 100',[account.id])).rows;
- return {businesses:rows.filter(b=>planFromBusiness(b).portal_access_allowed&&planFromBusiness(b).raw_status==='ACTIVE').map(b=>({id:b.id,slug:b.slug,name:b.name,city:b.city,description:b.description}))};
+ const rows=(await query(businessSelect+` join customer_favorites f on f.business_id=b.id where f.customer_id=$1 and ${visibleBusinessSql} order by b.name,b.id limit 100`,[account.id])).rows;
+ return {businesses:rows.filter(businessAvailable).map(b=>({id:b.id,slug:b.slug,name:b.name,city:b.city,description:b.description}))};
 }
 async function earned(account){
  const rows=(await query("select cp.publication_id,cp.created_at,ip.status,a.title,b.name business_name,r.reward_label,r.qr_code_id,q.status qr_status,q.expires_at,da.title asset_title,dl.download_token from customer_activation_participations cp join interactive_activation_participants ip on ip.id=cp.participant_id join interactive_activations a on a.id=cp.activation_id join businesses b on b.id=a.company_id left join interactive_activation_rewards r on r.participant_id=cp.participant_id left join qr_codes q on q.id=r.qr_code_id left join interactive_activation_asset_downloads dl on dl.reward_id=r.id left join digital_assets da on da.id=dl.asset_id and da.is_active where cp.customer_id=$1 order by cp.created_at desc limit 100",[account.id])).rows;
@@ -187,4 +215,4 @@ async function resolveQr(input){
  if(!row)throw badRequest('Este QR no corresponde a una publicación disponible. Tus tickets personales se consultan en Mis tarjetas.');
  await detail(row.id);return {hash:'#publication/'+row.id};
 }
-module.exports={directory,feed,get,businessPage,catalog,publish,publicationState,save,event,personal,requestProgram,businessRequests,decideRequest,giftOrder,launch,participate,participateInvitation,shareQr,resolveQr,eligibility,earned,following};
+module.exports={directory,feed,get,businessPage,followBusiness,catalog,publish,publicationState,save,event,personal,requestProgram,businessRequests,decideRequest,giftOrder,launch,participate,participateInvitation,shareQr,resolveQr,eligibility,earned,following};
