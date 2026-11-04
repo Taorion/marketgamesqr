@@ -12,7 +12,7 @@ const baseSql=`select p.*,b.name business_name,b.slug business_slug,to_jsonb(b) 
  a.status activation_status,a.starts_at,a.ends_at,a.public_slug,a.activation_type,a.terms activation_terms,a.reward_config,a.visual_config,
  s.status stamp_status,s.deleted_at stamp_deleted,s.stamps_required,s.benefit_value,s.terms stamp_terms,s.card_valid_days,
  cb.points_terms,cb.accumulation_terms,cb.gift_enabled,cb.gift_min,cb.gift_max,cb.gift_terms,cb.gift_payment_instructions,
- ip.name product_name,ip.status product_status,ip.stock_quantity,ip.currency product_currency,po.price product_price,po.terms product_terms,po.payment_instructions product_payment_instructions,po.valid_days product_valid_days
+ ip.name product_name,ip.status product_status,ip.stock_quantity,ip.currency product_currency,ip.unit_price product_regular_price,po.price product_price,po.terms product_terms,po.payment_instructions product_payment_instructions,po.valid_days product_valid_days
  from customer_publications p join businesses b on b.id=p.business_id
  left join customer_directory d on d.business_id=b.id
  left join interactive_activations a on p.kind='ACTIVITY' and a.id=p.resource_id and a.company_id=p.business_id
@@ -35,7 +35,7 @@ function publicRow(r){
  return {id:r.id,business_id:r.business_id,business_name:r.business_name,business_slug:r.business_slug,kind:r.kind,title:r.title,description:r.description,
   cover_url:media(r.cover_url),logo_url:media(r.business.settings?.logo_url||r.business.settings?.logoUrl),category:r.category||r.business_category||'',city:r.city||'',address:r.address||'',
   terms:r.kind==='PRODUCT'?r.product_terms:r.kind==='STAMP'?r.stamp_terms:r.kind==='ACTIVITY'?r.activation_terms:r.kind==='AFFILIATION'?r.points_terms:r.gift_terms,
-  product_name:r.product_name,product_price:r.product_price,product_valid_days:r.product_valid_days,
+  product_name:r.product_name,product_price:r.product_price,product_currency:r.product_currency,product_regular_price:r.product_regular_price,product_valid_days:r.product_valid_days,
   benefit:typeof benefit==='string'?benefit:'',stamps_required:r.stamps_required||null,card_valid_days:r.card_valid_days||null,
   starts_at:r.starts_at||null,ends_at:r.ends_at||null,gift_min:r.kind==='GIFT'?r.gift_min:null,gift_max:r.kind==='GIFT'?r.gift_max:null,
   payment_instructions:r.kind==='PRODUCT'?r.product_payment_instructions:r.kind==='GIFT'?r.gift_payment_instructions:null,
@@ -215,4 +215,4 @@ async function resolveQr(input){
  if(!row)throw badRequest('Este QR no corresponde a una publicación disponible. Tus tickets personales se consultan en Mis tarjetas.');
  await detail(row.id);return {hash:'#publication/'+row.id};
 }
-module.exports={directory,feed,get,businessPage,followBusiness,catalog,publish,publicationState,save,event,personal,requestProgram,businessRequests,decideRequest,giftOrder,launch,participate,participateInvitation,shareQr,resolveQr,eligibility,earned,following};
+module.exports={detail,directory,feed,get,businessPage,followBusiness,catalog,publish,publicationState,save,event,personal,requestProgram,businessRequests,decideRequest,giftOrder,launch,participate,participateInvitation,shareQr,resolveQr,eligibility,earned,following};

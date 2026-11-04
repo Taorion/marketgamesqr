@@ -27,7 +27,7 @@ async function list(account){
  const rows=(await query('select '+projection+' from customer_purchase_plans where customer_id=$1'+filter+' order by created_at desc,id',values)).rows;
  return {plans:await Promise.all(rows.map(async p=>{
   const paid=await actual(account,p);
-  return {...p,estimated_minor:finance.minor(p.estimated_amount),actual:paid,needs_review:p.status==='PURCHASED'&&!paid,
+  return {...p,source:await require('./customerPurchaseSourceService').current(account,p),estimated_minor:finance.minor(p.estimated_amount),actual:paid,needs_review:p.status==='PURCHASED'&&!paid,
    difference_minor:paid&&paid.currency===p.currency?finance.minor(p.estimated_amount)-paid.amount_minor:null};
  }))};
 }
@@ -41,6 +41,7 @@ async function save(account,data,id){
  return withTransaction(async db=>{
   const plan=await own(db,account,id,true);
   if(plan.status!=='PLANNED'||plan.revision!==data.revision)throw badRequest('Esta compra cambió. Actualiza la lista antes de editar.');
+  if(plan.source_snapshot&&data.currency!==plan.currency)throw badRequest('La referencia publicada conserva su moneda. Crea otro plan para presupuestar en una moneda diferente.');
   return {plan:(await db.query(`update customer_purchase_plans set title=$3,category=$4,currency=$5,estimated_amount=$6,target_date=$7,note=$8,revision=revision+1,updated_at=now()
    where customer_id=$1 and id=$2 returning ${projection}`,[account.id,id,data.title,data.category,data.currency,data.estimated_amount,data.target_date,data.note])).rows[0]};
  });
@@ -108,4 +109,4 @@ async function overview(account,currency=account.currency||'COP'){
   obligations_minor:obligations,planned_minor:planned,projected_remaining_minor:budget?budget.remaining_minor-obligations-planned:null,
   grocery,debt_due_minor:debt.due_minor,pending_payments:pending.length+debt.dues.length,planned_purchases:plans.length,insights:dashboard.insights,plans:purchases.plans};
 }
-module.exports={actual,list,save,change,complete,candidates,overview};
+module.exports={...require('./customerPurchaseSourceService'),actual,list,save,change,complete,candidates,overview};

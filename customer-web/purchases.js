@@ -73,12 +73,12 @@
    '<dl class="purchase-breakdown"><div><dt>Gastos registrados</dt><dd>'+money(d.spent_minor,d.currency)+'</dd></div><div><dt>Pagos pendientes</dt><dd>'+money(d.obligations_minor,d.currency)+'</dd></div><div><dt>Compras planeadas</dt><dd>'+money(d.planned_minor,d.currency)+'</dd></div></dl></section>';
  }
  async function render(page,ctx){
-  let filter='PLANNED',currency=ctx.account.currency||'COP',generation=0;
+  let filter='PLANNED',currency=ctx.book?.currency||ctx.account.currency||'COP',generation=0;
   const refresh=async()=>{
    const turn=++generation;page.innerHTML='<p role="status">Organizando tus compras y tu presupuesto…</p>';
    try{
     const d=await ctx.request('/purchases/overview?currency='+encodeURIComponent(currency));if(!page.isConnected||turn!==generation)return;
-    page.innerHTML='<div class="page-heading"><div><span class="eyebrow">Compra con intención</span><h1>Mis compras</h1><a class="secondary" href="#groceries">Mi lista de mercado →</a><p>Planea lo que necesitas, encuentra beneficios y registra lo que pagas.</p></div><button class="primary" id="newPurchase">+ Planear compra</button></div>'+
+    page.innerHTML='<div class="page-heading"><div><span class="eyebrow">Compra con intención</span><h1>Mis compras</h1><a class="secondary" href="#groceries">Mi lista de mercado →</a><a class="secondary" href="#explore">Buscar productos de Qori Empresa</a><a class="quiet" href="#saved">Mis beneficios guardados</a><p>Planea lo que necesitas, encuentra beneficios y registra lo que pagas.</p></div><button class="primary" id="newPurchase">+ Planear compra</button></div>'+
      '<div class="purchase-toolbar">'+select('purchaseCurrency','Ver importes en',{COP:'COP',USD:'USD',EUR:'EUR'},currency)+'<a class="secondary" href="#history">Historial de compras y gastos</a><a class="secondary" href="#payments">Agenda de pagos</a></div>'+summary(d)+
      '<div class="purchase-filters" aria-label="Estado de las compras">'+[['PLANNED','Por comprar'],['PURCHASED','Compradas'],['CANCELLED','Canceladas']].map(([k,v])=>'<button class="secondary" data-filter="'+k+'" aria-pressed="'+(filter===k)+'">'+v+'</button>').join('')+'</div><div id="purchasePlans" class="purchase-plans"></div>';
     page.querySelector('#newPurchase').onclick=()=>edit(ctx,refresh);
@@ -87,9 +87,10 @@
      const plans=d.plans.filter(p=>p.status===filter&&p.currency===currency),list=page.querySelector('#purchasePlans');
      list.innerHTML=plans.map(p=>'<article class="panel purchase-plan"><div><span class="eyebrow">'+esc(categories[p.category])+' · '+esc(p.target_date||'Sin fecha')+'</span><h2>'+esc(p.title)+'</h2><p>Planeado: <strong>'+money(p.estimated_minor,p.currency)+'</strong></p>'+
       (p.actual?'<p>Pagado: <strong>'+money(p.actual.amount_minor,p.actual.currency)+'</strong></p><p class="small">'+(p.difference_minor==null?'La moneda del movimiento cambió.':p.difference_minor<0?money(-p.difference_minor,p.currency)+' por encima de lo planeado':money(p.difference_minor,p.currency)+' por debajo de lo planeado')+'</p>':'')+
-      (p.needs_review?'<p class="error">El movimiento vinculado ya no está disponible como gasto pagado. Revisa tu historial.</p>':'')+'<p>'+esc(p.note)+'</p></div><div class="purchase-actions">'+
+      (p.needs_review?'<p class="error">El movimiento vinculado ya no está disponible como gasto pagado. Revisa tu historial.</p>':'')+'<p>'+esc(p.note)+'</p>'+(window.QoriProductBudget?.sourceCard(p)||'')+'</div><div class="purchase-actions">'+
       (p.status==='PLANNED'?'<button class="primary" data-opportunities="'+p.id+'">Buscar beneficios</button><button class="secondary" data-paid="'+p.id+'">Registrar compra pagada</button><button class="secondary" data-link="'+p.id+'">Vincular compra registrada</button><button class="quiet" data-edit="'+p.id+'">Editar plan</button><button class="quiet" data-state="'+p.id+'" data-action="CANCEL">Cancelar plan</button>':'<button class="secondary" data-state="'+p.id+'" data-action="REOPEN">Volver a planear</button>')+'</div></article>').join('')||'<section class="panel"><h2>'+(filter==='PLANNED'?'Dale un plan a tu próxima compra':'No hay compras en esta sección')+'</h2><p>'+(filter==='PLANNED'?'Anota qué necesitas y cuánto quieres destinar antes de buscar ofertas.':'Las compras se organizan aquí cuando actualizas su estado.')+'</p></section>';
      const plan=id=>plans.find(p=>p.id===id);
+     list.querySelectorAll('[data-refresh-source]').forEach(b=>b.onclick=()=>window.QoriProductBudget.refreshSource(ctx,refresh,plan(b.dataset.refreshSource)));
      list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>edit(ctx,refresh,plan(b.dataset.edit)));
      list.querySelectorAll('[data-opportunities]').forEach(b=>b.onclick=()=>opportunities(ctx,plan(b.dataset.opportunities)));
      list.querySelectorAll('[data-paid]').forEach(b=>b.onclick=()=>finish(ctx,refresh,plan(b.dataset.paid),false));

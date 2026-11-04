@@ -63,7 +63,7 @@ async function middleware(req,_res,next){
   if(!['dashboard','planning','entries','sales','budgets','goals','recurring','purchases','payment-agenda','finance-home','income-months','wealth','debts','groceries'].includes(route))return next();
   if(route==='payment-agenda'&&['notifications','push'].includes(parts[1]))return next();
   req.customer={...req.customer,finance_book:await selected(req.customer,req.get('X-Qori-Book')||req.query.book_id)};
-  if(parts[1]&&parts[1]!=='overview'&&!['debts','groceries','wealth'].includes(route))await guard(req.customer,route,parts[1]);
+  if(parts[1]&&parts[1]!=='overview'&&!(route==='purchases'&&parts[1]==='from-publication')&&!['debts','groceries','wealth'].includes(route))await guard(req.customer,route,parts[1]);
   next();
  }catch(e){next(e);}
 }
