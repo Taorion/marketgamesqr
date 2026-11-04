@@ -17,6 +17,7 @@ async function status(){
    const account={id:'00000000-0000-0000-0000-000000000000',timezone:'America/Bogota',currency:'COP'};
    await Promise.all([
     svc.dashboard(account,{period:'month'}),
+    require('../config/db').query('select id from customer_wealth_items limit 0'),
     svc.planning(account),
     require('./customerFinanceDeliveryService').connections(account),
     require('./customerPurchaseService').list(account),

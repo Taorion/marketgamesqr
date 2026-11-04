@@ -57,6 +57,9 @@ async function pendingSales(account,db={query}) {
   const values=[account.id],filter=books.allocationScope(account,'SALE','s',values);
   return (await db.query('select currency,sum(sale_amount)::text amount from ('+saleSql+" and s.sale_status='PENDING'"+filter+') pending group by currency',values)).rows;
 }
+async function pendingSalesDetails(account,db={query}) {
+  return (await db.query('select id,currency,sale_amount from ('+saleSql+" and s.sale_status='PENDING') p",[account.id])).rows;
+}
 async function relationships(customerId) {
   return {relationships:(await query(`select r.id,r.state,r.include_history,r.accepted_at,r.expires_at,r.created_at,b.id business_id,b.name,
     right(r.document_key,4) document_suffix,
@@ -159,7 +162,7 @@ async function identification(account) {
   return {public_id:account.public_id,qr_image:await QRCode.toDataURL(url.toString()),url:url.toString()};
 }
 async function exportData(account) {
-  const tables=['customer_grocery_lists','customer_debts','customer_debt_payments','customer_debt_events','customer_debt_scenarios','customer_finance_books','customer_finance_allocations','customer_finance_transfers','customer_purchase_plans','customer_payment_items','customer_payment_changes','customer_finance_connections','customer_sale_deliveries','customer_entries','customer_sale_notes','customer_relationships','customer_budgets','customer_goals','customer_recurring','customer_favorites','customer_place_requests','customer_invitations','customer_business_blocks','customer_saved_publications','customer_program_requests','customer_publication_events','customer_activation_participations'];
+  const tables=['customer_wealth_items','customer_wealth_events','customer_grocery_lists','customer_debts','customer_debt_payments','customer_debt_events','customer_debt_scenarios','customer_finance_books','customer_finance_allocations','customer_finance_transfers','customer_purchase_plans','customer_payment_items','customer_payment_changes','customer_finance_connections','customer_sale_deliveries','customer_entries','customer_sale_notes','customer_relationships','customer_budgets','customer_goals','customer_recurring','customer_favorites','customer_place_requests','customer_invitations','customer_business_blocks','customer_saved_publications','customer_program_requests','customer_publication_events','customer_activation_participations'];
   const output={account:{...account,session_id:undefined},purchases:(await query(saleSql,[account.id])).rows.map(r=>finance.salesMovement(r,account.timezone))};
   for(const table of tables) output[table]=(await query(`select * from ${table} where customer_id=$1`,[account.id])).rows;
   output.receipts=(await query("select id,entry_id,filename,mime_type,encode(bytes,'base64') base64 from customer_receipts where customer_id=$1",[account.id])).rows;
@@ -167,4 +170,4 @@ async function exportData(account) {
   output.giftcards=await require('./customerWalletService').giftWallet(account);
   return output;
 }
-module.exports={assertNotDebtEntry,assertNotPaymentEntry,dashboard,planning,movements,pendingSales,ownSale,relationships,proposeRelationship,decideRelationship,saveEntry,mergeEntry,wallet,ownCard,identification,exportData,normalizeDocument};
+module.exports={assertNotDebtEntry,assertNotPaymentEntry,dashboard,planning,movements,pendingSales,pendingSalesDetails,ownSale,relationships,proposeRelationship,decideRelationship,saveEntry,mergeEntry,wallet,ownCard,identification,exportData,normalizeDocument};

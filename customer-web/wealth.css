@@ -1,0 +1,33 @@
+
+.wealth-totals,.wealth-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:16px}
+.wealth-total{border:1px solid #cbdcf4;background:#f5f9ff;border-radius:16px;padding:22px;min-width:0}
+.wealth-total h3{font-size:19px;margin:10px 0}
+.wealth-number{font-size:clamp(25px,3vw,38px);font-weight:750;overflow-wrap:anywhere;display:block}
+.wealth-total dl>div,.wealth-auto>div{display:flex;justify-content:space-between;gap:16px;margin:12px 0;line-height:1.5}
+.wealth-total dd,.wealth-auto dd{margin:0;text-align:right;font-weight:700;overflow-wrap:anywhere;min-width:0}
+.wealth-result{display:flex;justify-content:space-between;gap:16px;border-top:1px solid var(--line);padding-top:18px;margin-top:20px}
+.wealth-result strong{font-size:25px;overflow-wrap:anywhere}
+.wealth-cards article{border:1px solid var(--line);padding:16px;border-radius:12px;display:grid;gap:8px;min-width:0}
+.wealth-cards span,.wealth-cards small{font-size:12px}
+.wealth-cards strong{font-size:23px;overflow-wrap:anywhere}
+.wealth-book-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px}
+.wealth-book-list a{display:grid;gap:8px;border:1px solid var(--line);padding:16px;border-radius:12px;text-decoration:none}
+.wealth-book-list a strong{font-size:22px;overflow-wrap:anywhere}
+.wealth-items{display:grid;gap:12px}
+.wealth-items article{display:flex;align-items:center;justify-content:space-between;gap:20px;border:1px solid var(--line);padding:20px;border-radius:14px}
+.wealth-items article>div{min-width:0;overflow-wrap:anywhere}.wealth-items article h3{margin:10px 0 4px}
+.wealth-items article>div>strong{font-size:22px}
+.cashflow-chart{height:105px;display:flex;align-items:flex-end;gap:3px;margin-top:24px;border-bottom:1px solid var(--line)}
+.cashflow-chart>div{flex:1;min-width:0;display:flex;align-items:flex-end;gap:1px;position:relative;padding-bottom:22px}
+.cashflow-chart i{display:block;width:50%;background:#178049;border-radius:2px 2px 0 0}
+.cashflow-chart i.out{background:#c22e36}
+.cashflow-chart small{position:absolute;bottom:0;left:0;width:100%;text-align:center;font-size:9px;color:var(--muted)}
+.cashflow-panel summary{cursor:pointer;color:#012268;padding:12px 0}
+.book-balance.cash-negative{background:#fff0f0;border:1px solid #edbdc0;color:#8f1721}
+.book-balance.cash-negative p,.book-balance.cash-negative span,.book-balance.cash-negative button{color:#8f1721}
+.book-balance.cash-negative .book-remaining{background:#fff7f7}
+.wealth-empty{padding:20px;background:#f6f9fd;border-radius:12px}
+.wealth-total .money-expense,.wealth-book-list .money-expense,.cashflow-panel .money-expense,.wealth-auto .money-expense,.wealth-items .money-expense{color:var(--money-out,#b42332)}
+.wealth-total .money-income,.wealth-book-list .money-income,.cashflow-panel .money-income,.wealth-auto .money-income{color:var(--money-in,#147343)}
+.book-balance.cash-negative strong,.book-balance.cash-negative .book-negative{color:#8f1721}
+@media(max-width:760px){.wealth-items article{display:block}.wealth-items .row{margin-top:16px;flex-wrap:wrap}.wealth-result{display:block}.wealth-result strong{display:block;margin-top:10px}.wealth-total{padding:18px}.wealth-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.wealth-cards article{padding:12px}.wealth-cards strong{font-size:19px}.cashflow-chart{gap:2px}}
