@@ -136,9 +136,17 @@ img {
 }
 
 .site-nav a:hover,
-.site-nav a.is-active {
+.site-nav a.is-active,
+.site-nav a.customer-nav-link {
   color: var(--qori-blue-corp);
   background: rgba(4, 128, 250, 0.08);
+}
+
+/* Give the expanded public navigation its own row without crowding access links. */
+@media (min-width: 981px) {
+  .qori-home-shell > .site-header .nav-wrap { flex-wrap: wrap; padding-block: 10px; gap: 0 18px; }
+  .qori-home-shell > .site-header .site-nav { order: 3; flex-basis: 100%; flex-wrap: wrap; }
+  .qori-home-shell > .site-header .header-actions { margin-left: auto; }
 }
 
 .header-actions {
