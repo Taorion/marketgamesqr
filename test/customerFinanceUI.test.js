@@ -25,8 +25,8 @@ test('the app refreshes finances automatically and keeps sale actions when refre
   w.document.body.innerHTML='<main id="app"></main><p id="announcement"></p>';
   Object.defineProperty(w.document,'hidden',{value:false});
   w.setInterval=fn=>{sync=fn;return 0;};
-  w.fetch=async url=>({ok:true,status:200,json:async()=>url.endsWith('/me')?{account:{full_name:'Andrea QA',currency:'COP',timezone:'America/Bogota'}}:url.endsWith('/relationships')?{relationships:[]}:{cards:[],purchased_gifts:[],pending_invitations:1}});
-  w.QoriFinance={render(){renders++;},openSale(){}};
+  w.fetch=async url=>({ok:true,status:200,json:async()=>url.endsWith('/me')?{account:{full_name:'Andrea QA',currency:'COP',timezone:'America/Bogota'}}:url.endsWith('/finance-books')?{books:[{id:'b',name:'Personal',currency:'COP',is_default:true}]}:url.endsWith('/relationships')?{relationships:[]}:{cards:[],purchased_gifts:[],pending_invitations:1}});
+  w.QoriAccounting={selector(){}};w.QoriFinance={render(){renders++;},openSale(){}};
   w.QoriInvitations={render(page,ctx){contexts.push(ctx);}};
   load(w,'customer-web/wallet-model.js');load(w,'customer-web/app.js');await settle(()=>renders===1);
   await sync();assert.equal(renders,2);

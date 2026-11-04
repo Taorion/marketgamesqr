@@ -3,13 +3,15 @@ const { query, withTransaction } = require('../config/db');
 const { badRequest, notFound, forbidden } = require('../utils/http');
 const { env } = require('../config/env');
 const finance = require('./customerFinance');
+const books = require('./customerFinanceBooks');
 const stamps = require('./stampCardService');
 const normalizeDocument = stamps.normalizeDocument;
 async function planning(account) {
+  const values=[account.id],filter=books.scope(account,'',values);
   const [budgets,goals,recurring]=await Promise.all([
-    query('select * from customer_budgets where customer_id=$1',[account.id]),
-    query('select * from customer_goals where customer_id=$1',[account.id]),
-    query('select r.*,r.next_date::text next_date from customer_recurring r where r.customer_id=$1 and r.active order by r.next_date,r.id',[account.id])
+    query('select * from customer_budgets where customer_id=$1'+filter,values),
+    query('select * from customer_goals where customer_id=$1'+filter,values),
+    query('select r.*,r.next_date::text next_date from customer_recurring r where r.customer_id=$1 and r.active'+filter+' order by r.next_date,r.id',values)
   ]);
   return {budgets:budgets.rows,goals:goals.rows,recurring:recurring.rows};
 }
@@ -26,14 +28,17 @@ async function ownSale(customerId,saleId,db={query}) {
   if(!row) throw notFound('Compra no encontrada.');return row;
 }
 async function movements(account,from,to,db={query}) {
-  const sales=await db.query(`${saleSql} and (coalesce(s.paid_at,s.created_at) at time zone $2)::date between $3::date and $4::date`,[account.id,account.timezone,from,to]);
+  const saleValues=[account.id,account.timezone,from,to],saleFilter=books.allocationScope(account,'SALE','s',saleValues);
+  const manualValues=[account.id,account.timezone,from,to],manualFilter=books.scope(account,'e',manualValues);
+  const giftValues=[account.id,account.timezone,from,to],giftFilter=books.allocationScope(account,'GIFT','o',giftValues);
+  const sales=await db.query(`${saleSql} and (coalesce(s.paid_at,s.created_at) at time zone $2)::date between $3::date and $4::date${saleFilter}`,saleValues);
   const manual=await db.query(`select e.*,
     coalesce((select jsonb_agg(jsonb_build_object('id',r.id,'filename',r.filename,'mime_type',r.mime_type)) from customer_receipts r where r.entry_id=e.id and r.customer_id=$1),'[]') receipts
     from customer_entries e where e.customer_id=$1 and e.deleted_at is null
     and (e.occurred_at at time zone $2)::date between $3::date and $4::date
-    and (e.linked_sale_id is null or not exists(${saleSql} and s.id=e.linked_sale_id))`,[account.id,account.timezone,from,to]);
+    and (e.linked_sale_id is null or not exists(${saleSql} and s.id=e.linked_sale_id))${manualFilter}`,manualValues);
   const gifts=await db.query(`select o.*,b.name business_name from customer_gift_orders o join businesses b on b.id=o.business_id
-    where o.buyer_id=$1 and o.state='ISSUED' and (o.paid_at at time zone $2)::date between $3::date and $4::date`,[account.id,account.timezone,from,to]);
+    where o.buyer_id=$1 and o.state='ISSUED' and (o.paid_at at time zone $2)::date between $3::date and $4::date${giftFilter}`,giftValues);
   return [...sales.rows.map(r=>finance.salesMovement(r,account.timezone)),...manual.rows.map(r=>finance.manualMovement(r,account.timezone)),...gifts.rows.map(r=>finance.giftPurchaseMovement(r,account.timezone))];
 }
 async function dashboard(account,options) {
@@ -42,10 +47,15 @@ async function dashboard(account,options) {
   return withTransaction(async db=>{
     await db.query('set transaction isolation level repeatable read read only');
     const rows=await movements(account,earliest,range.to,db);
-    const budgets=(await db.query('select * from customer_budgets where customer_id=$1',[account.id])).rows;
+    const budgetValues=[account.id],budgetFilter=books.scope(account,'',budgetValues);
+    const budgets=(await db.query('select * from customer_budgets where customer_id=$1'+budgetFilter,budgetValues)).rows;
     const dismissals=(await db.query('select insight_key from customer_insight_dismissals where customer_id=$1',[account.id])).rows.map(r=>r.insight_key);
     return finance.summarize(rows,range,options.currency||account.currency,budgets,dismissals);
   });
+}
+async function pendingSales(account,db={query}) {
+  const values=[account.id],filter=books.allocationScope(account,'SALE','s',values);
+  return (await db.query('select currency,sum(sale_amount)::text amount from ('+saleSql+" and s.sale_status='PENDING'"+filter+') pending group by currency',values)).rows;
 }
 async function relationships(customerId) {
   return {relationships:(await query(`select r.id,r.state,r.include_history,r.accepted_at,r.expires_at,r.created_at,b.id business_id,b.name,
@@ -100,9 +110,10 @@ async function saveEntry(customerId,data,id,db={query}) {
   let result;
   if(id) result=await db.query(`update customer_entries set kind=$2,amount=$3,currency=$4,occurred_at=$5,merchant=$6,category=$7,priority=$8,note=$9,payment_method=$10,
     products=$11::jsonb,splits=$12::jsonb,tags=$13::jsonb,updated_at=now() where customer_id=$1 and id=$14 and deleted_at is null and linked_sale_id is null returning *`,[...values,id]);
-  else result=await db.query(`insert into customer_entries(customer_id,kind,amount,currency,occurred_at,merchant,category,priority,note,payment_method,products,splits,tags,request_id)
-    values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12::jsonb,$13::jsonb,$14)
-    on conflict(customer_id,request_id) do update set request_id=excluded.request_id returning *`,[...values,data.request_id]);
+  else result=await db.query(`insert into customer_entries(customer_id,kind,amount,currency,occurred_at,merchant,category,priority,note,payment_method,products,splits,tags,request_id,book_id)
+    values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12::jsonb,$13::jsonb,$14,$15)
+    on conflict(customer_id,request_id) do update set request_id=excluded.request_id returning *`,[...values,data.request_id,data.book_id||null]);
+  if(data.book_id&&result.rows[0]&&result.rows[0].book_id!==data.book_id)throw badRequest('Este movimiento ya se registró en otra contabilidad.');
   if(!result.rowCount) throw notFound('Gasto no editable o no encontrado.');return {entry:result.rows[0]};
 }
 async function mergeEntry(customerId,entryId,saleId) {
@@ -111,6 +122,7 @@ async function mergeEntry(customerId,entryId,saleId) {
     const sale=await ownSale(customerId,saleId,db);
     const entry=(await db.query('select * from customer_entries where id=$1 and customer_id=$2 and deleted_at is null for update',[entryId,customerId])).rows[0];
     if(!entry||entry.kind!=='EXPENSE')throw notFound('Gasto no encontrado.');
+    if(entry.book_id!==await books.sourceBook({id:customerId},'SALE',saleId,db))throw badRequest('Asigna ambos movimientos a la misma contabilidad antes de vincularlos.');
     if(entry.currency!==sale.currency)throw badRequest('Las monedas no coinciden.');
     if(entry.linked_sale_id===saleId)return {ok:true,already_linked:true};
     if(entry.linked_sale_id&&entry.linked_sale_id!==saleId)throw badRequest('El gasto ya está vinculado.');
@@ -143,7 +155,7 @@ async function identification(account) {
   return {public_id:account.public_id,qr_image:await QRCode.toDataURL(url.toString()),url:url.toString()};
 }
 async function exportData(account) {
-  const tables=['customer_purchase_plans','customer_payment_items','customer_payment_changes','customer_finance_connections','customer_sale_deliveries','customer_entries','customer_sale_notes','customer_relationships','customer_budgets','customer_goals','customer_recurring','customer_favorites','customer_place_requests','customer_invitations','customer_business_blocks','customer_saved_publications','customer_program_requests','customer_publication_events','customer_activation_participations'];
+  const tables=['customer_finance_books','customer_finance_allocations','customer_finance_transfers','customer_purchase_plans','customer_payment_items','customer_payment_changes','customer_finance_connections','customer_sale_deliveries','customer_entries','customer_sale_notes','customer_relationships','customer_budgets','customer_goals','customer_recurring','customer_favorites','customer_place_requests','customer_invitations','customer_business_blocks','customer_saved_publications','customer_program_requests','customer_publication_events','customer_activation_participations'];
   const output={account:{...account,session_id:undefined},purchases:(await query(saleSql,[account.id])).rows.map(r=>finance.salesMovement(r,account.timezone))};
   for(const table of tables) output[table]=(await query(`select * from ${table} where customer_id=$1`,[account.id])).rows;
   output.receipts=(await query("select id,entry_id,filename,mime_type,encode(bytes,'base64') base64 from customer_receipts where customer_id=$1",[account.id])).rows;
@@ -151,4 +163,4 @@ async function exportData(account) {
   output.giftcards=await require('./customerWalletService').giftWallet(account);
   return output;
 }
-module.exports={assertNotPaymentEntry,dashboard,planning,movements,ownSale,relationships,proposeRelationship,decideRelationship,saveEntry,mergeEntry,wallet,ownCard,identification,exportData,normalizeDocument};
+module.exports={assertNotPaymentEntry,dashboard,planning,movements,pendingSales,ownSale,relationships,proposeRelationship,decideRelationship,saveEntry,mergeEntry,wallet,ownCard,identification,exportData,normalizeDocument};

@@ -1,0 +1,14 @@
+const express=require('express'),{z}=require('zod'),{badRequest}=require('../utils/http');
+const books=require('../services/customerFinanceBooks'),router=express.Router();
+const uuid=z.string().uuid(),date=z.string().date(),currency=z.enum(['COP','USD','EUR']),name=z.string().trim().min(2).max(80);
+const money=z.string().regex(/^\d{1,10}(\.\d{1,2})?$/).refine(v=>Number(v)>0);
+const parse=(s,v)=>{const r=s.safeParse(v);if(!r.success)throw badRequest('Revisa los datos de la contabilidad.');return r.data;};
+const handle=fn=>async(req,res,next)=>{try{res.set('Cache-Control','private, no-store').json(await fn(req));}catch(e){next(e);}};
+router.get('/finance-books',handle(req=>books.list(req.customer)));
+router.post('/finance-books',handle(req=>books.create(req.customer,parse(z.object({request_id:uuid,name,currency}),req.body))));
+router.put('/finance-books/:id',handle(req=>books.update(req.customer,parse(uuid,req.params.id),parse(z.object({name,revision:z.number().int().positive(),opening_amount:z.string().regex(/^-?\d{1,10}(\.\d{1,2})?$/),opening_date:date}),req.body))));
+router.post('/finance-books/reassign',handle(req=>books.reassign(req.customer,parse(z.object({kind:z.enum(['ENTRY','SALE','RECURRING','GIFT']),id:uuid,book_id:uuid}),req.body))));
+router.get('/finance-home',handle(req=>books.home(req.customer)));
+router.post('/finance-transfers',handle(req=>books.transfer(req.customer,parse(z.object({request_id:uuid,from_book_id:uuid,to_book_id:uuid,amount:money,occurred_on:date,note:z.string().trim().max(1000).default(''),confirmed:z.literal(true)}),req.body))));
+router.delete('/finance-transfers/:id',handle(req=>books.voidTransfer(req.customer,parse(uuid,req.params.id))));
+module.exports=router;

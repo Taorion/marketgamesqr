@@ -2,6 +2,7 @@ const {query,withTransaction}=require('../config/db');
 const {badRequest,notFound}=require('../utils/http');
 const finance=require('./customerFinance'),svc=require('./customerService'),agenda=require('./customerPaymentAgendaService');
 const projection='*,target_date::text target_date';
+const books=require('./customerFinanceBooks');
 async function own(db,account,id,lock=false){
  const row=(await db.query('select '+projection+' from customer_purchase_plans where customer_id=$1 and id=$2'+(lock?' for update':''),[account.id,id])).rows[0];
  if(!row)throw notFound('Compra planeada no encontrada.');return row;
@@ -22,7 +23,8 @@ async function actual(account,plan,db={query}){
  }catch(e){if(e.status===404)return null;throw e;}
 }
 async function list(account){
- const rows=(await query('select '+projection+' from customer_purchase_plans where customer_id=$1 order by created_at desc,id',[account.id])).rows;
+ const values=[account.id],filter=books.scope(account,'',values);
+ const rows=(await query('select '+projection+' from customer_purchase_plans where customer_id=$1'+filter+' order by created_at desc,id',values)).rows;
  return {plans:await Promise.all(rows.map(async p=>{
   const paid=await actual(account,p);
   return {...p,estimated_minor:finance.minor(p.estimated_amount),actual:paid,needs_review:p.status==='PURCHASED'&&!paid,
@@ -31,9 +33,10 @@ async function list(account){
 }
 async function save(account,data,id){
  if(!id){
-  return {plan:(await query(`insert into customer_purchase_plans(customer_id,request_id,title,category,currency,estimated_amount,target_date,note)
-   values($1,$2,$3,$4,$5,$6,$7,$8) on conflict(customer_id,request_id) do update set request_id=excluded.request_id returning ${projection}`,
-   [account.id,data.request_id,data.title,data.category,data.currency,data.estimated_amount,data.target_date,data.note])).rows[0]};
+  const plan=(await query(`insert into customer_purchase_plans(customer_id,request_id,title,category,currency,estimated_amount,target_date,note,book_id)
+   values($1,$2,$3,$4,$5,$6,$7,$8,$9) on conflict(customer_id,request_id) do update set request_id=excluded.request_id returning ${projection}`,
+   [account.id,data.request_id,data.title,data.category,data.currency,data.estimated_amount,data.target_date,data.note,account.finance_book?.id||null])).rows[0];
+  if(account.finance_book&&plan.book_id!==account.finance_book.id)throw badRequest('La compra ya se registró en otra contabilidad.');return {plan};
  }
  return withTransaction(async db=>{
   const plan=await own(db,account,id,true);
@@ -62,18 +65,20 @@ async function complete(account,id,data){
   if(data.entry_id){
    const entry=(await db.query("select * from customer_entries where id=$1 and customer_id=$2 and kind='EXPENSE' and deleted_at is null",[data.entry_id,account.id])).rows[0];
    if(!entry)throw notFound('Gasto no encontrado.');
+   if(entry.book_id!==plan.book_id)throw badRequest('El gasto pertenece a otra contabilidad.');
    if(entry.currency!==plan.currency)throw badRequest('Selecciona una compra en la misma moneda.');
    if(entry.linked_sale_id)saleId=entry.linked_sale_id;else entryId=entry.id;
   }else if(data.sale_id)saleId=data.sale_id;
   else{
    if(data.paid_on>finance.dateKey(new Date(),account.timezone))throw badRequest('La fecha de una compra pagada no puede ser futura.');
    if((await db.query('select 1 from customer_entries where customer_id=$1 and request_id=$2',[account.id,plan.id])).rowCount)throw badRequest('Este plan ya generó un gasto. Vincula el movimiento existente o crea un nuevo plan para otra compra.');
-   const saved=await svc.saveEntry(account.id,{request_id:plan.id,kind:'EXPENSE',amount:data.amount,currency:plan.currency,occurred_at:data.paid_on,
+   const saved=await svc.saveEntry(account.id,{book_id:plan.book_id,request_id:plan.id,kind:'EXPENSE',amount:data.amount,currency:plan.currency,occurred_at:data.paid_on,
     merchant:data.merchant,category:plan.category,priority:'UNSET',note:plan.note,payment_method:'',products:[],splits:[],tags:[]},undefined,db);
    if(saved.entry.deleted_at||saved.entry.linked_sale_id)throw badRequest('Esta compra ya tuvo un gasto. Vincula el movimiento existente para evitar duplicarlo.');
    entryId=saved.entry.id;
   }
   if(saleId){
+   if(await books.sourceBook(account,'SALE',saleId,db)!==plan.book_id)throw badRequest('La venta pertenece a otra contabilidad.');
    const sale=await svc.ownSale(account.id,saleId,db);
    if(sale.sale_status!=='PAID'||sale.currency!==plan.currency)throw badRequest('Vincula una compra pagada en la misma moneda.');
   }

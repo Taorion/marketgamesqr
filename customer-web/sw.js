@@ -9,14 +9,14 @@ self.addEventListener('push',event=>event.waitUntil((async()=>{
   const response=await fetch('/api/customer/payment-agenda/notifications',{credentials:'include',cache:'no-store'});
   if(!response.ok)return;const account=await response.json();
   if(account.public_id!==payload.public_id||!account.count)return;
-  const names=(account.items||[]).slice(0,2).map(i=>String(i.name).slice(0,100));
-  const body=names.length?'Recuerda pagar: '+names.join(', ')+(account.count>names.length?' y '+(account.count-names.length)+' más.':'.'):'Tienes obligaciones próximas o vencidas. Revisa tu agenda.';
-  await self.registration.showNotification('Qori · Tu agenda de pagos',{body,tag:'qori-payment-agenda',icon:'/customer/icon-192.png',data:{url:'/customer/#payments'}});
+  const names=(account.items||[]).slice(0,2).map(i=>String(i.book_name?i.book_name+': '+i.name:i.name).slice(0,100));
+  const body=names.length?'Revisa tu agenda: '+names.join(', ')+(account.count>names.length?' y '+(account.count-names.length)+' más.':'.'):'Tienes obligaciones próximas o vencidas. Revisa tu agenda.';
+  await self.registration.showNotification('Qori · Tu agenda de pagos',{body,tag:'qori-payment-agenda',icon:'/customer/icon-192.png',data:{url:'/customer/'+(account.items?.[0]?.book_id?'?book='+encodeURIComponent(account.items[0].book_id):'')+'#payments'}});
  }catch{}
 })()));
 self.addEventListener('notificationclick',event=>{
  event.notification.close();event.waitUntil((async()=>{
-  const url=new URL('/customer/#payments',self.location.origin).href;
+  const target=new URL(event.notification.data?.url||'/customer/#payments',self.location.origin);if(target.origin!==self.location.origin||target.pathname!=='/customer/')return;const url=target.href;
   const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
   const client=windows.find(c=>new URL(c.url).origin===self.location.origin&&new URL(c.url).pathname.startsWith('/customer/'));
   if(client){await client.navigate(url);await client.focus();}else await self.clients.openWindow(url);

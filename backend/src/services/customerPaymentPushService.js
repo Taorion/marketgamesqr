@@ -39,8 +39,8 @@ async function unsubscribe(account,endpoint){
 async function notices(account){
  const date=agenda.today(account),until=new Date(Date.parse(date+'T12:00:00Z')+30*86400000).toISOString().slice(0,10);
  await withTransaction(db=>agenda.materialize(db,account,until));
- const r=await query(`select i.id,i.name,i.due_date::text due_date,count(*) over()::int total
-  from customer_payment_items i join customer_recurring r on r.id=i.recurring_id
+ const r=await query(`select i.id,i.name,i.kind,i.due_date::text due_date,r.book_id,b.name book_name,count(*) over()::int total
+  from customer_payment_items i join customer_recurring r on r.id=i.recurring_id join customer_finance_books b on b.id=r.book_id
   where i.customer_id=$1 and ${reminders.sql('$2')} order by i.due_date,i.id limit 10`,[account.id,date]);
  return {public_id:account.public_id,count:r.rows[0]?.total||0,items:r.rows.map(({total,...item})=>item)};
 }

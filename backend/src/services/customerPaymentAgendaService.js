@@ -3,6 +3,7 @@ const {query,withTransaction}=require('../config/db');
 const {badRequest,notFound}=require('../utils/http');
 const finance=require('./customerFinance');
 const reminders=require('./customerPaymentReminderRules');
+const books=require('./customerFinanceBooks');
 const today=a=>finance.dateKey(new Date(),a.timezone||'America/Bogota');
 function cycleDate(anchor,frequency,index){
  const [y,m,d]=anchor.split('-').map(Number);
@@ -17,7 +18,8 @@ function dates(anchor,frequency,until,after=''){
  throw badRequest('La fecha inicial es demasiado antigua.');
 }
 async function materialize(db,account,until){
- const rules=(await db.query('select *,coalesce(anchor_date,(select min(due_date) from customer_recurring_posts p where p.recurring_id=customer_recurring.id),next_date)::text anchor,generated_until::text generated from customer_recurring where customer_id=$1 and active order by id for update',[account.id])).rows;
+ const values=[account.id],filter=books.scope(account,'',values);
+ const rules=(await db.query('select *,coalesce(anchor_date,(select min(due_date) from customer_recurring_posts p where p.recurring_id=customer_recurring.id),next_date)::text anchor,generated_until::text generated from customer_recurring where customer_id=$1 and active'+filter+' order by id for update',values)).rows;
  for(const r of rules){
   const due=dates(r.anchor,r.frequency,until,r.generated||'');if(!due.length)continue;
   await db.query(`insert into customer_payment_items(customer_id,recurring_id,scheduled_date,due_date,name,currency,kind,category,estimated_amount)
@@ -32,9 +34,9 @@ async function create(account,data){
  return withTransaction(async db=>{
   await db.query('select id from customer_accounts where id=$1 for update',[account.id]);
   if((await db.query('select count(*)::int n from customer_recurring where customer_id=$1 and active',[account.id])).rows[0].n>=200)throw badRequest('Puedes mantener hasta 200 obligaciones activas.');
-  const r=(await db.query(`insert into customer_recurring(customer_id,name,currency,amount,kind,category,next_date,anchor_date,frequency,remind_days,reminders_enabled,reminder_day)
-   values($1,$2,$3,$4,$5,$6,$7,$7,$8,$9,$10,$11) returning *,next_date::text next_date`,
-   [account.id,data.name,data.currency,data.amount,data.kind,data.category,data.next_date,data.frequency,data.remind_days??3,data.reminders_enabled??true,data.reminder_day??null])).rows[0];
+  const r=(await db.query(`insert into customer_recurring(customer_id,name,currency,amount,kind,category,next_date,anchor_date,frequency,remind_days,reminders_enabled,reminder_day,book_id,priority)
+   values($1,$2,$3,$4,$5,$6,$7,$7,$8,$9,$10,$11,$12,$13) returning *,next_date::text next_date`,
+   [account.id,data.name,data.currency,data.amount,data.kind,data.category,data.next_date,data.frequency,data.remind_days??3,data.reminders_enabled??true,data.reminder_day??null,account.finance_book?.id||null,data.priority||'ESSENTIAL'])).rows[0];
   return {recurring:r};
  });
 }
@@ -43,8 +45,8 @@ async function updateRule(account,id,data){
  if(!current)throw notFound();
  if(data.reminder_day!=null&&current.frequency!=='month')throw badRequest('El día fijo de aviso requiere una obligación mensual.');
  const r=await query(`update customer_recurring set name=$3,amount=$4,remind_days=$5,reminders_enabled=$6,active=$7,
-  reminder_day=case when $8 then $9::smallint else reminder_day end
-  where id=$1 and customer_id=$2 returning *`,[id,account.id,data.name,data.amount,data.remind_days,data.reminders_enabled,data.active,data.reminder_day!==undefined,data.reminder_day??null]);
+  reminder_day=case when $8 then $9::smallint else reminder_day end,priority=coalesce($10,priority)
+  where id=$1 and customer_id=$2 returning *`,[id,account.id,data.name,data.amount,data.remind_days,data.reminders_enabled,data.active,data.reminder_day!==undefined,data.reminder_day??null,data.priority||null]);
  if(!r.rowCount)throw notFound();return {recurring:r.rows[0]};
 }
 async function archive(account,id){
@@ -52,18 +54,20 @@ async function archive(account,id){
  if(!r.rowCount)throw notFound();return {ok:true};
 }
 const projection=`i.*,i.scheduled_date::text scheduled_date,i.due_date::text due_date,
- e.amount actual_amount,(e.occurred_at at time zone $2)::date::text paid_on,r.remind_days,r.reminder_day,r.reminders_enabled,r.active`;
+ e.amount actual_amount,(e.occurred_at at time zone $2)::date::text paid_on,r.remind_days,r.reminder_day,r.reminders_enabled,r.active,r.priority,r.book_id`;
 async function list(account,{month=today(account).slice(0,7),currency=account.currency||'COP'}={}){
  const start=month+'-01',end=cycleDate(start,'month',1),limit=cycleDate(today(account),'year',2);
  if(start<'2000-01-01'||start>limit)throw badRequest('Consulta un mes entre el año 2000 y los próximos dos años.');
  await withTransaction(db=>materialize(db,account,end));
+ const values=[account.id,account.timezone,currency,start,end],filter=books.scope(account,'r',values);
+ const ruleValues=[account.id],ruleFilter=books.scope(account,'',ruleValues);
  const items=(await query(`select ${projection} from customer_payment_items i
   join customer_recurring r on r.id=i.recurring_id left join customer_entries e on e.id=i.entry_id
   where i.customer_id=$1 and i.currency=$3 and i.due_date<$5 and (i.due_date>=$4 or i.status='PENDING')
-  order by i.due_date,i.name,i.id`,[account.id,account.timezone,currency,start,end])).rows;
+  ${filter} order by i.due_date,i.name,i.id`,values)).rows;
  const current=items.filter(i=>i.due_date>=start),expenses=current.filter(i=>i.kind==='EXPENSE'&&i.status!=='SKIPPED');
  const sum=(rows,fn)=>rows.reduce((n,r)=>{const total=n+finance.minor(fn(r));if(!Number.isSafeInteger(total))throw badRequest('El total supera el rango de cálculo permitido. Revisa los valores de tus obligaciones.');return total;},0);
- return {month,currency,today:today(account),items,rules:(await query('select *,anchor_date::text anchor_date,next_date::text next_date from customer_recurring where customer_id=$1 order by active desc,name',[account.id])).rows,
+ return {month,currency,today:today(account),items,rules:(await query('select *,anchor_date::text anchor_date,next_date::text next_date from customer_recurring where customer_id=$1'+ruleFilter+' order by active desc,name',ruleValues)).rows,
   summary:{estimated_minor:sum(expenses,i=>i.estimated_amount),paid_minor:sum(expenses.filter(i=>i.status==='PAID'),i=>i.actual_amount),
    pending_minor:sum(expenses.filter(i=>i.status==='PENDING'),i=>i.billed_amount||i.estimated_amount),
    overdue_minor:sum(items.filter(i=>i.kind==='EXPENSE'&&i.status==='PENDING'&&i.due_date<today(account)),i=>i.billed_amount||i.estimated_amount)},
@@ -105,9 +109,9 @@ async function payment(account,id,data){
     await db.query(`update customer_entries set amount=$3,occurred_at=$4::date::timestamp at time zone $5,updated_at=now() where id=$1 and customer_id=$2`,
      [entryId,account.id,data.amount,data.paid_on,account.timezone]);
    }else{
-    entryId=(await db.query(`insert into customer_entries(customer_id,request_id,kind,amount,currency,occurred_at,merchant,category,priority,note)
-     values($1,$2,$3,$4,$5,$6::date::timestamp at time zone $7,$8,$9,'ESSENTIAL',$10) returning id`,
-     [account.id,crypto.randomUUID(),i.kind,data.amount,i.currency,data.paid_on,account.timezone,i.name,i.category,'Obligación de '+i.scheduled_date.slice(0,7)+'. '+i.note])).rows[0].id;
+    entryId=(await db.query(`insert into customer_entries(customer_id,request_id,kind,amount,currency,occurred_at,merchant,category,priority,note,book_id)
+     values($1,$2,$3,$4,$5,$6::date::timestamp at time zone $7,$8,$9,'ESSENTIAL',$10,(select book_id from customer_recurring where id=$11)) returning id`,
+     [account.id,crypto.randomUUID(),i.kind,data.amount,i.currency,data.paid_on,account.timezone,i.name,i.category,'Obligación de '+i.scheduled_date.slice(0,7)+'. '+i.note,i.recurring_id])).rows[0].id;
    }
    status='PAID';
    await db.query(`insert into customer_recurring_posts(recurring_id,due_date,entry_id) values($1,$2,$3)

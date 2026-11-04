@@ -6,20 +6,20 @@ function setup(hash=''){
  const w=new JSDOM('<div id="app"></div><p id="announcement"></p><main id="page"></main>',{url:'http://localhost/customer/'+hash,runScripts:'outside-only'}).window;
  w.setInterval=()=>0;w.HTMLElement.prototype.scrollIntoView=function(){};
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.remove();};
- load(w,'customer-web/portal.js');return w;
+ load(w,'customer-web/accounting.js');load(w,'customer-web/portal.js');return w;
 }
 const account={full_name:'Andrea <QA>',email:'andrea@example.test',currency:'COP',timezone:'America/Bogota',preferences:{notifications:{purchases:true,benefits:true,budget:true,summary:false}}};
 test('portal defaults to unified home with real private summary, every module and manual expense action',async()=>{
  const w=setup();let expense=0;try{
   w.document.querySelector('#page').remove();
-  w.fetch=async url=>({ok:true,status:200,json:async()=>url.endsWith('/me')?{account}:url.endsWith('/relationships')?{relationships:[]}:url.includes('/purchases/overview')?{spent_minor:1500000,obligations_minor:0,planned_minor:0,projected_remaining_minor:null,currency:'COP'}:{cards:[{id:'t',status:'READY'}],pending_invitations:2,purchased_gifts:[]}});
+  w.fetch=async url=>({ok:true,status:200,json:async()=>url.endsWith('/me')?{account}:url.endsWith('/finance-books')?{books:[{id:'b',name:'Personal',currency:'COP',is_default:true}]}:url.endsWith('/relationships')?{relationships:[]}:url.includes('/finance-home')?{book:{id:'b',name:'Personal',currency:'COP'},from:'2026-11-01',to:'2026-11-30',balance_minor:null,spent_minor:1500000,commitments:[],movements:[],transfers:[],currency:'COP'}:{cards:[{id:'t',status:'READY'}],pending_invitations:2,purchased_gifts:[]}});
   w.QoriFinance={editEntry(){expense++;}};
-  load(w,'customer-web/wallet-model.js');load(w,'customer-web/app.js');await settle(()=>w.document.querySelector('.portal-total'));
+  load(w,'customer-web/wallet-model.js');load(w,'customer-web/app.js');await settle(()=>w.document.querySelector('.book-stats'));
   assert.equal(w.document.querySelector('nav [aria-current]').getAttribute('href'),'#home');
   for(const route of ['purchases','explore','directory','wallet','invitations','businesses','earned','history','planning','saved','following','requests','place-requests','profile','product-gifts'])assert.ok(w.document.querySelector('#page a[href="#'+route+'"]'),route);
-  assert.match(w.document.querySelector('.portal-total').textContent,/15.000/);
-  assert.match(w.document.querySelector('.portal-stats').textContent,/Invitaciones por revisar2/);
-  w.document.querySelector('#portalAddExpense').click();assert.equal(expense,1);
+  assert.match(w.document.querySelector('.book-stats').textContent,/15.000/);
+
+  w.document.querySelector('#bookExpense').click();assert.equal(expense,1);
  }finally{w.close();}
 });
 test('portal account edits currency, timezone and notification preferences through the existing API',async()=>{
@@ -28,6 +28,7 @@ test('portal account edits currency, timezone and notification preferences throu
   w.fetch=async(url,options)=>({ok:true,status:200,json:async()=>{
    if(options.method==='PATCH'){payload=JSON.parse(options.body);return {account:{...account,...payload}};}
    if(url.endsWith('/me'))return {account};
+   if(url.endsWith('/finance-books'))return {books:[{id:'b',name:'Personal',currency:'COP',is_default:true}]};
    if(url.endsWith('/sessions'))return {sessions:[],current:'s'};
    if(url.endsWith('/relationships'))return {relationships:[]};
    return {cards:[],purchased_gifts:[],pending_invitations:0};

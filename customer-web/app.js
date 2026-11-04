@@ -13,13 +13,14 @@
   const route=()=>{const value=location.hash.slice(1);return ['home','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases'].includes(value)||/^(publication|business)\//.test(value)?value:(state.account?'home':'explore');};
   const publicRoute=()=>['explore','scan'].includes(route())||/^(publication|business)\//.test(route());
   const exploreRoute=()=>publicRoute()||['saved','requests','earned','following'].includes(route());
-  const exploreContext=()=>({request,refresh,openCard,dialog,showError,account:state.account,cards:state.cards,invitationCount:state.invitationCount,openSale:id=>window.QoriFinance.openSale(id,exploreContext()),login:()=>renderAuth()});
+  function exploreContext(){const book=state.books?.find(b=>b.id===state.bookId);return {request:(path,body,method)=>request(path,body,method,book?.id),refresh,selectBook,book,books:state.books||[],openCard,dialog,showError,account:state.account?{...state.account,currency:book?.currency||state.account.currency}:null,cards:state.cards,invitationCount:state.invitationCount,openSale:id=>window.QoriFinance.openSale(id,exploreContext()),login:()=>renderAuth()};}
+  async function selectBook(id){closeDialog();state.bookId=id;try{localStorage.setItem('qori-book:'+state.account.id,id);}catch{}await refresh();}
   const announce=text=>{document.getElementById('announcement').textContent=text;};
-  async function request(path,body,method=body?'POST':'GET'){
+  async function request(path,body,method=body?'POST':'GET',bookId=state.bookId){
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
     try{
       const response=await fetch('/api/customer'+path,{method,credentials:'same-origin',cache:'no-store',signal:controller.signal,
-        headers:{'Content-Type':'application/json','X-Qori-Web':'1'},...(body?{body:JSON.stringify(body)}:{})});
+        headers:{'Content-Type':'application/json','X-Qori-Web':'1',...(bookId?{'X-Qori-Book':bookId}:{})},...(body?{body:JSON.stringify(body)}:{})});
       const data=await response.json().catch(()=>({error:{message:'No pudimos leer la respuesta. Inténtalo de nuevo.'}}));
       if(!response.ok){
         if(response.status===401&&!path.startsWith('/auth/')){state.account=null;closeDialog();renderAuth('Tu sesión venció. Entra de nuevo para ver tus tarjetas.');}
@@ -33,8 +34,8 @@
   const field=(name,label,value='',extra='')=>`<label class="field">${label}<input name="${name}" value="${esc(value)}" ${extra}></label>`;
   function renderAuth(error=''){
     const verifying=!!state.challenge;
-    app.innerHTML=`<div class="auth-layout"><section class="auth-story">${brand()}<div><div class="eyebrow">Tu cuenta gratuita de comprador</div><h1>Más lugares.<br>Más beneficios.<br><em>Un solo Qori.</em></h1><p>Tus sellos, puntos y regalos de todos los negocios, organizados en un mismo lugar.</p>
-      <div class="auth-art" aria-hidden="true"><div class="sample-card"><div class="eyebrow">Cada visita cuenta</div><h3>Tu próximo beneficio,<br>más cerca.</h3><div class="sample-dots"><span>✓</span><span>✓</span><span>✓</span><span>✓</span><span>5</span><span>6</span></div><p>Un espacio para cada negocio y sus programas.</p></div><div class="art-note">Todo junto. Cada beneficio en su lugar.</div></div></div><div class="auth-foot">Qori Customer + Qori Empresa<br>Conectados para que volver tenga más valor.</div></section>
+    app.innerHTML=`<div class="auth-layout"><section class="auth-story">${brand()}<div><div class="eyebrow">Tu cuenta gratuita de comprador</div><h1>Tu dinero.<br>Tus planes.<br><em>En orden.</em></h1><p>Organiza ingresos, gastos y compromisos. Separa el dinero personal, el de tu casa y el de tus proyectos.</p>
+      <div class="auth-art" aria-hidden="true"><div class="sample-card"><div class="eyebrow">Qori cuida tu bolsillo</div><h3>Cada peso,<br>en su lugar.</h3><div class="sample-dots"><span>✓</span><span>✓</span><span>✓</span><span>✓</span><span>5</span><span>6</span></div><p>Una contabilidad para cada parte de tu vida.</p></div><div class="art-note">Tus finanzas primero. Tus beneficios contigo.</div></div></div><div class="auth-foot">Qori Customer + Qori Empresa<br>Conectados para que volver tenga más valor.</div></section>
       <main id="main" class="auth-side"><div class="auth-form-wrap"><span class="pill">Gratis para compradores</span><h2>${verifying?'Revisa tu correo':'Tu vida Qori empieza aquí'}</h2>
       <p class="muted small">${verifying?`Enviamos un código de 6 dígitos a <strong>${esc(state.email)}</strong>. Vence en 10 minutos.`:'Crea tu cuenta o entra con tu correo. Sin contraseña, sin tarjeta bancaria y sin mensualidad.'}</p>
       <form id="${verifying?'verifyForm':'emailForm'}" class="stack">${verifying?field('code','Código de verificación','','class="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" minlength="6" required autofocus'):
@@ -44,12 +45,12 @@
       <div class="auth-links"><a href="/empresa/">Soy un negocio</a><a href="privacidad.html">Privacidad y tu cuenta</a></div></div></main></div>`;
     if(verifying)app.querySelector('[name="code"]')?.focus();
   }
-  async function loadAccount(){const data=await request('/me');state.account=data.account;}
+  async function loadAccount(){const data=await request('/me');state.account=data.account;state.bookId=null;try{state.bookId=new URLSearchParams(location.search).get('book')||localStorage.getItem('qori-book:'+state.account.id);}catch{}}
   async function refresh({render=true}={}){
     const version=++renderVersion;
-    const [wallet,links]=await Promise.all([request('/wallet/overview'),request('/relationships')]);
+    const [wallet,links,financial]=await Promise.all([request('/wallet/overview'),request('/relationships'),request('/finance-books')]);
     if(version!==renderVersion||!state.account)return;
-    state.cards=wallet.cards;state.orders=wallet.purchased_gifts;state.updated=wallet.updated_at;state.relationships=links.relationships;
+    state.books=financial.books;if(!state.books.some(b=>b.id===state.bookId))state.bookId=state.books.find(b=>b.is_default)?.id;state.cards=wallet.cards;state.orders=wallet.purchased_gifts;state.updated=wallet.updated_at;state.relationships=links.relationships;
     state.invitationCount=wallet.pending_invitations||0;
     if(render)renderApp();
   }
@@ -69,6 +70,7 @@
     window.QoriExplore?.stop();
     if(!state.account)return publicRoute()?renderGuest():renderAuth();
     if(!state.account.full_name)return onboarding();
+    if(!state.books?.length){app.innerHTML='<main id="main" class="boot"><h1>Mis finanzas</h1><p id="pageError" role="alert">No pudimos cargar tus contabilidades.</p><button class="primary" id="retryBookLoad">Reintentar</button></main>';app.querySelector('#retryBookLoad').onclick=()=>refresh().catch(e=>showError(e.message));return;}
     const name=state.account.full_name.split(' ')[0];
     app.innerHTML=`<div class="layout"><aside class="sidebar">${brand()}<nav aria-label="Mi cuenta">${navLink('wallet','▤','Mis tarjetas')}${navLink('benefits','✦','Beneficios')}${navLink('businesses','⌂','Mis negocios')}${navLink('me','▦','Mi Qori')}</nav><div class="sidebar-foot"><strong>Volver tiene sus beneficios.</strong>Tu cuenta es gratuita.<br>Los puntos y premios pertenecen a cada negocio.<div class="divider"></div><a href="privacidad.html">Privacidad</a></div></aside>
       <div class="workspace"><header class="topbar"><span class="breadcrumb">Qori Customer <span aria-hidden="true">/</span> Tu espacio personal</span><div class="row"><span class="pill">Cuenta gratuita</span><a class="profile-button" href="#profile"><span class="avatar">${esc(name.slice(0,1).toUpperCase())}</span><span>${esc(name)}</span></a></div></header>
@@ -76,8 +78,9 @@
     const page=document.getElementById('page');
     app.querySelector('.sidebar nav').insertAdjacentHTML('beforeend',navLink('invitations','✉','Invitaciones'+(state.invitationCount?' ('+state.invitationCount+')':'')));
     const nav=app.querySelector('.sidebar nav');
-    nav.innerHTML=navLink('home','⌂','Inicio')+navLink('finances','◷','Finanzas')+navLink('purchases','▤','Compras')+navLink('explore','✦','Beneficios')+navLink('wallet','▤','Mis tarjetas');
-    if(route()==='home')window.QoriPortal.home(page,exploreContext());
+    nav.innerHTML=navLink('home','⌂','Mi dinero')+navLink('finances','◷','Análisis')+navLink('purchases','▤','Compras')+navLink('explore','✦','Beneficios')+navLink('wallet','▤','Mis tarjetas');
+    window.QoriAccounting.selector(app,exploreContext());
+    if(route()==='home')window.QoriAccounting.render(page,exploreContext());
     else if(route()==='directory')window.QoriPortal.directory(page,exploreContext());
     else if(route()==='place-requests')window.QoriPortal.placeRequests(page,exploreContext());
     else if(exploreRoute())window.QoriExplore.render(page,exploreContext(),route());
@@ -192,7 +195,7 @@
       state.challenge=(await request('/auth/web/code',{email:state.email})).challenge_id;renderAuth();
     }else if(form.id==='verifyForm'){
       const result=await request('/auth/web/verify',{challenge_id:state.challenge,code:String(f.get('code')).trim(),consent:state.consent});
-      state.account=result.account;state.challenge=null;await refresh();announce('Bienvenido a tu cuenta Qori.');
+      state.account=result.account;state.bookId=null;state.challenge=null;history.replaceState(null,'','#home');await refresh();announce('Bienvenido a tu cuenta Qori.');
     }else if(form.id==='profileForm'){
       const result=await request('/me',{full_name:String(f.get('full_name')).trim(),currency:f.get('currency')||state.account.currency,timezone:f.has('timezone')?String(f.get('timezone')).trim():state.account.timezone,
         preferences:{notifications:f.has('currency')?Object.fromEntries(['purchases','benefits','budget','summary'].map(k=>[k,f.has('notice_'+k)])):state.account.preferences.notifications}},'PATCH');state.account=result.account;renderApp();
@@ -245,7 +248,7 @@
   document.addEventListener('input',event=>{if(event.target.id==='walletSearch'){state.search=event.target.value;renderGroups();}});
   document.addEventListener('change',event=>{if(event.target.id==='walletKind'){state.kind=event.target.value;renderGroups();}});
   window.addEventListener('hashchange',()=>{if(location.hash==='#main')return;closeDialog();renderApp();});
-  async function sync(){if(!state.account||!state.account.full_name||document.hidden||document.querySelector('dialog[open]')||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;try{await refresh({render:false});const inviteLink=app.querySelector('a[href="#invitations"]');if(inviteLink)inviteLink.innerHTML=navIcon('invitations')+'Invitaciones'+(state.invitationCount?' ('+state.invitationCount+')':'');if(route()==='home')window.QoriPortal.home(document.getElementById('page'),exploreContext());else if(['wallet','benefits'].includes(route()))renderWallet(document.getElementById('page'));else if(route()==='businesses')renderBusinesses(document.getElementById('page'));else if(route()==='invitations')window.QoriInvitations.render(document.getElementById('page'),exploreContext());else if(route()==='purchases')window.QoriPurchases.render(document.getElementById('page'),exploreContext());else if(route()==='payments')window.QoriPayments.render(document.getElementById('page'),exploreContext());else if(['finances','history','planning'].includes(route()))window.QoriFinance.render(document.getElementById('page'),exploreContext(),route());}catch(e){showError(e.message);}}
+  async function sync(){if(!state.account||!state.account.full_name||document.hidden||document.querySelector('dialog[open]')||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;try{await refresh({render:false});const inviteLink=app.querySelector('a[href="#invitations"]');if(inviteLink)inviteLink.innerHTML=navIcon('invitations')+'Invitaciones'+(state.invitationCount?' ('+state.invitationCount+')':'');if(route()==='home')window.QoriAccounting.render(document.getElementById('page'),exploreContext());else if(['wallet','benefits'].includes(route()))renderWallet(document.getElementById('page'));else if(route()==='businesses')renderBusinesses(document.getElementById('page'));else if(route()==='invitations')window.QoriInvitations.render(document.getElementById('page'),exploreContext());else if(route()==='purchases')window.QoriPurchases.render(document.getElementById('page'),exploreContext());else if(route()==='payments')window.QoriPayments.render(document.getElementById('page'),exploreContext());else if(['finances','history','planning'].includes(route()))window.QoriFinance.render(document.getElementById('page'),exploreContext(),route());}catch(e){showError(e.message);}}
   window.addEventListener('focus',sync);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync();});setInterval(sync,60000);
   (async()=>{try{await loadAccount();await refresh();}catch(error){if(error.status===401)renderApp();else if(state.account){renderApp();showError(error.message);}else renderAuth(error.message);}})();
 })();

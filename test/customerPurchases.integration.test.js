@@ -66,6 +66,13 @@ test('purchase planning connects budgets, obligations, benefits and real spendin
   const r=await api('/api/customer/purchases/'+ownPlan.id+'/complete',buyer,{revision:1,confirmed:true,sale_id:sale.id});assert.equal(r.http_status,200,JSON.stringify(r));
   assert.equal((await api('/api/customer/dashboard')).total_minor,before);assert.equal(before,8000);
   assert.equal((await query('select count(*)::int n from business_sales where business_id=$1',[b.id])).rows[0].n,1);
+  const book=(await api('/api/customer/finance-books',buyer,{request_id:crypto.randomUUID(),name:'Ganado QA',currency:'COP'})).book;
+  const moved=await api('/api/customer/finance-books/reassign',buyer,{kind:'SALE',id:sale.id,book_id:book.id});assert.equal(moved.http_status,200,JSON.stringify(moved));
+  assert.equal((await api('/api/customer/dashboard')).total_minor,0);
+  assert.equal((await api('/api/customer/dashboard?book_id='+book.id)).total_minor,8000);
+  assert.equal((await api('/api/customer/purchases?book_id='+book.id)).plans.find(p=>p.id===ownPlan.id).actual.amount_minor,8000);
+  assert.equal((await api('/api/customer/sales/'+sale.id)).http_status,404);
+  assert.equal((await api('/api/customer/sales/'+sale.id+'?book_id='+book.id)).http_status,200);
  });
  await t.test('personal plans have RLS, no public grants, export and account deletion coverage',async()=>{
   assert.equal((await query("select relrowsecurity from pg_class where oid='public.customer_purchase_plans'::regclass")).rows[0].relrowsecurity,true);

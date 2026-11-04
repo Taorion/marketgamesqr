@@ -35,11 +35,13 @@
    'DESCRIPTION:Obligación pendiente. Revisa el valor y confirma el pago en Qori Customer.',
    'URL:https://gosqori.com/customer/#payments',...(i.reminders_enabled?['BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Revisar obligación Qori',alarm(i),'END:VALARM']:[]),'END:VEVENT']),'END:VCALENDAR'].join('\r\n')+'\r\n';
  }
- function ruleForm(ctx,refresh,r=null){
+ function ruleForm(ctx,refresh,r=null,initialKind='EXPENSE'){
   const common=field('name','Obligación o concepto',r?.name||'','required minlength="2" maxlength="120"')+field('amount','Estimado por periodo',r?.amount||'','type="number" min=".01" step=".01" required');
-  const creation=select('currency','Moneda',{COP:'COP · Peso colombiano',USD:'USD · Dólar',EUR:'EUR · Euro'},currency||ctx.account.currency)+select('kind','Tipo',{EXPENSE:'Gasto fijo / factura',INCOME:'Ingreso periódico'},'EXPENSE')+select('category','Categoría',cats,'servicios')+select('frequency','Repetir',frequencies,'month')+field('next_date','Primer vencimiento',today(ctx),'type="date" required min="2000-01-01"');
+  const creation=select('currency','Moneda',{COP:'COP · Peso colombiano',USD:'USD · Dólar',EUR:'EUR · Euro'},ctx.book?.currency||currency||ctx.account.currency)+select('kind','Tipo',{EXPENSE:'Gasto fijo / factura',INCOME:'Ingreso periódico'},initialKind)+select('category','Categoría',cats,'servicios')+select('frequency','Repetir',frequencies,'month')+field('next_date','Primer vencimiento',today(ctx),'type="date" required min="2000-01-01"');
   const d=ctx.dialog(r?'Configurar obligación':'Nueva obligación',`<form class="stack">${common}${r?`<p>${esc(frequencies[r.frequency])} · ${esc(r.currency)}. El nombre y estimado nuevos se usarán en periodos que aún no se hayan generado. Puedes editar cada factura desde la agenda.</p><label class="check"><input name="active" type="checkbox" ${r.active?'checked':''}> Generar nuevos periodos</label>`:creation}${field('remind_days','Recordarme desde (días antes)',r?.remind_days??3,'type="number" min="0" max="30" required')}<label class="check"><input name="reminders_enabled" type="checkbox" ${r?.reminders_enabled===false?'':'checked'}> Avisarme de esta obligación</label><p class="small muted">Se agenda por fecha, aunque el mes anterior siga pendiente. Al pagar, confirmarás el valor real.</p><button class="primary">Guardar obligación</button></form>`);
   const form=d.querySelector('form'),advance=form.elements.remind_days.closest('label');
+  form.insertAdjacentHTML('afterbegin',(ctx.book?'<p class="book-context-note">Contabilidad: '+esc(ctx.book.name)+'.</p>':'')+select('priority','Este compromiso es',{ESSENTIAL:'No negociable',FLEXIBLE:'Flexible'},r?.priority||'ESSENTIAL'));
+  if(r&&ctx.book){const move=document.createElement('button');move.type='button';move.className='quiet';move.textContent='Cambiar contabilidad de esta obligación';move.onclick=()=>{d.close();window.QoriAccounting.reassign(ctx,'RECURRING',r.id);};form.append(move);}
   advance.insertAdjacentHTML('beforebegin',select('reminder_mode','Cuándo avisarme',{MONTH_DAY:'Un día específico de cada mes',ADVANCE:'Desde unos días antes y hasta pagar'},r?(r.reminder_day!=null?'MONTH_DAY':'ADVANCE'):'MONTH_DAY')+
    field('reminder_day','Día del mes para el aviso',r?.reminder_day||Number((r?.next_date||today(ctx)).slice(8,10)),'type="number" min="1" max="31" step="1" required')+'<p id="reminderSchedule" class="small muted"></p>');
   const sync=()=>{
@@ -99,7 +101,7 @@
   }catch(e){if(host.isConnected)host.textContent='No pudimos consultar los avisos del dispositivo: '+e.message;}
  }
  async function render(page,ctx){
-  const turn=++version;if(owner!==ctx.account.id){owner=ctx.account.id;month=today(ctx).slice(0,7);currency=ctx.account.currency||'COP';filter='';search='';}
+  const turn=++version;if(owner!==ctx.account.id+':'+(ctx.book?.id||'')){owner=ctx.account.id+':'+(ctx.book?.id||'');month=today(ctx).slice(0,7);currency=ctx.account.currency||'COP';filter='';search='';}
   month||=today(ctx).slice(0,7);currency||=ctx.account.currency||'COP';const refresh=()=>render(page,ctx);
   page.innerHTML='<p role="status">Organizando tus obligaciones…</p>';
   try{
