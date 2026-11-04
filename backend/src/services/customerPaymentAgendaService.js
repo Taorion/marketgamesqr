@@ -2,6 +2,7 @@ const crypto=require('crypto');
 const {query,withTransaction}=require('../config/db');
 const {badRequest,notFound}=require('../utils/http');
 const finance=require('./customerFinance');
+const reminders=require('./customerPaymentReminderRules');
 const today=a=>finance.dateKey(new Date(),a.timezone||'America/Bogota');
 function cycleDate(anchor,frequency,index){
  const [y,m,d]=anchor.split('-').map(Number);
@@ -26,19 +27,24 @@ async function materialize(db,account,until){
  }
 }
 async function create(account,data){
+ if(data.reminder_day!=null&&data.frequency!=='month')throw badRequest('El día fijo de aviso requiere una obligación mensual.');
  if(data.next_date<'2000-01-01'||data.next_date>cycleDate(today(account),'year',2))throw badRequest('Elige una fecha inicial entre el año 2000 y los próximos dos años.');
  return withTransaction(async db=>{
   await db.query('select id from customer_accounts where id=$1 for update',[account.id]);
   if((await db.query('select count(*)::int n from customer_recurring where customer_id=$1 and active',[account.id])).rows[0].n>=200)throw badRequest('Puedes mantener hasta 200 obligaciones activas.');
-  const r=(await db.query(`insert into customer_recurring(customer_id,name,currency,amount,kind,category,next_date,anchor_date,frequency,remind_days,reminders_enabled)
-   values($1,$2,$3,$4,$5,$6,$7,$7,$8,$9,$10) returning *,next_date::text next_date`,
-   [account.id,data.name,data.currency,data.amount,data.kind,data.category,data.next_date,data.frequency,data.remind_days??3,data.reminders_enabled??true])).rows[0];
+  const r=(await db.query(`insert into customer_recurring(customer_id,name,currency,amount,kind,category,next_date,anchor_date,frequency,remind_days,reminders_enabled,reminder_day)
+   values($1,$2,$3,$4,$5,$6,$7,$7,$8,$9,$10,$11) returning *,next_date::text next_date`,
+   [account.id,data.name,data.currency,data.amount,data.kind,data.category,data.next_date,data.frequency,data.remind_days??3,data.reminders_enabled??true,data.reminder_day??null])).rows[0];
   return {recurring:r};
  });
 }
 async function updateRule(account,id,data){
- const r=await query(`update customer_recurring set name=$3,amount=$4,remind_days=$5,reminders_enabled=$6,active=$7
-  where id=$1 and customer_id=$2 returning *`,[id,account.id,data.name,data.amount,data.remind_days,data.reminders_enabled,data.active]);
+ const current=(await query('select frequency from customer_recurring where id=$1 and customer_id=$2',[id,account.id])).rows[0];
+ if(!current)throw notFound();
+ if(data.reminder_day!=null&&current.frequency!=='month')throw badRequest('El día fijo de aviso requiere una obligación mensual.');
+ const r=await query(`update customer_recurring set name=$3,amount=$4,remind_days=$5,reminders_enabled=$6,active=$7,
+  reminder_day=case when $8 then $9::smallint else reminder_day end
+  where id=$1 and customer_id=$2 returning *`,[id,account.id,data.name,data.amount,data.remind_days,data.reminders_enabled,data.active,data.reminder_day!==undefined,data.reminder_day??null]);
  if(!r.rowCount)throw notFound();return {recurring:r.rows[0]};
 }
 async function archive(account,id){
@@ -46,7 +52,7 @@ async function archive(account,id){
  if(!r.rowCount)throw notFound();return {ok:true};
 }
 const projection=`i.*,i.scheduled_date::text scheduled_date,i.due_date::text due_date,
- e.amount actual_amount,(e.occurred_at at time zone $2)::date::text paid_on,r.remind_days,r.reminders_enabled,r.active`;
+ e.amount actual_amount,(e.occurred_at at time zone $2)::date::text paid_on,r.remind_days,r.reminder_day,r.reminders_enabled,r.active`;
 async function list(account,{month=today(account).slice(0,7),currency=account.currency||'COP'}={}){
  const start=month+'-01',end=cycleDate(start,'month',1),limit=cycleDate(today(account),'year',2);
  if(start<'2000-01-01'||start>limit)throw badRequest('Consulta un mes entre el año 2000 y los próximos dos años.');
@@ -61,7 +67,7 @@ async function list(account,{month=today(account).slice(0,7),currency=account.cu
   summary:{estimated_minor:sum(expenses,i=>i.estimated_amount),paid_minor:sum(expenses.filter(i=>i.status==='PAID'),i=>i.actual_amount),
    pending_minor:sum(expenses.filter(i=>i.status==='PENDING'),i=>i.billed_amount||i.estimated_amount),
    overdue_minor:sum(items.filter(i=>i.kind==='EXPENSE'&&i.status==='PENDING'&&i.due_date<today(account)),i=>i.billed_amount||i.estimated_amount)},
-  reminders:items.filter(i=>i.status==='PENDING'&&i.active&&i.reminders_enabled&&i.due_date<=new Date(Date.parse(today(account)+'T12:00:00Z')+i.remind_days*86400000).toISOString().slice(0,10)).map(i=>i.id)};
+  reminders:items.filter(i=>reminders.due(i,today(account))).map(i=>i.id)};
 }
 async function detail(account,id){
  const i=(await query(`select ${projection} from customer_payment_items i join customer_recurring r on r.id=i.recurring_id

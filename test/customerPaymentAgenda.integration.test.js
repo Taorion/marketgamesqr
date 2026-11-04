@@ -71,6 +71,21 @@ test('monthly obligations preserve estimates, payments, history and account isol
   assert.equal((await api('/payment-agenda/notifications')).count,0);
   assert.equal((await api('/payment-agenda/'+item.id)).status,200);
  });
+ await t.test('monthly reminder day can be configured privately, preserves the due date and names only pending obligations',async()=>{
+  const date=agenda.today(other),day=Number(date.slice(8)),nextDay=day===1?2:1;
+  const created=await api('/recurring',other,{name:'Seguridad social',amount:'400000',currency:'COP',kind:'EXPENSE',category:'salud',frequency:'month',next_date:date,remind_days:3,reminders_enabled:true,reminder_day:day});
+  assert.equal(created.status,200,JSON.stringify(created));const rule=created.recurring;assert.equal(rule.reminder_day,day);
+  let notice=await api('/payment-agenda/notifications',other);assert.equal(notice.count,1);assert.equal(notice.items[0].name,'Seguridad social');assert.equal(notice.items[0].amount,undefined);
+  const update={name:rule.name,amount:'400000',remind_days:3,reminders_enabled:true,active:true,reminder_day:nextDay};
+  assert.equal((await api('/recurring/'+rule.id,buyer,update,'PUT')).status,404);
+  assert.equal((await api('/recurring/'+rule.id,other,update,'PUT')).status,200);
+  assert.equal((await api('/payment-agenda/notifications',other)).count,0);
+  await api('/recurring/'+rule.id,other,{...update,reminder_day:day},'PUT');
+  const item=(await api('/payment-agenda',other)).items.find(i=>i.recurring_id===rule.id&&i.due_date===date);assert.ok(item);
+  await api('/payment-agenda/'+item.id+'/payment',other,{revision:item.revision,action:'PAY',amount:'400000',paid_on:date,confirmed:true});
+  assert.equal((await api('/payment-agenda/notifications',other)).count,0);
+  assert.equal((await api('/recurring',other,{name:'Semanal',amount:'1',currency:'COP',kind:'EXPENSE',category:'otros',frequency:'week',next_date:date,reminder_day:5})).status,400);
+ });
  await t.test('push delivery is private, deduplicated, and suppressed when the session is gone',async()=>{
   await query('update customer_recurring set active=true,reminders_enabled=true where id=$1',[rule.id]);
   const sub=(await query("insert into customer_payment_push_subscriptions(customer_id,session_id,endpoint,p256dh,auth) values($1,$2,$3,'qa','qa') returning id",[buyer.id,buyer.session_id,'https://fcm.googleapis.com/qa-'+crypto.randomUUID()])).rows[0];

@@ -9,7 +9,9 @@ self.addEventListener('push',event=>event.waitUntil((async()=>{
   const response=await fetch('/api/customer/payment-agenda/notifications',{credentials:'include',cache:'no-store'});
   if(!response.ok)return;const account=await response.json();
   if(account.public_id!==payload.public_id||!account.count)return;
-  await self.registration.showNotification('Qori · Tu agenda de pagos',{body:'Tienes obligaciones próximas o vencidas. Revisa tu agenda.',tag:'qori-payment-agenda',icon:'/customer/icon-192.png',data:{url:'/customer/#payments'}});
+  const names=(account.items||[]).slice(0,2).map(i=>String(i.name).slice(0,100));
+  const body=names.length?'Recuerda pagar: '+names.join(', ')+(account.count>names.length?' y '+(account.count-names.length)+' más.':'.'):'Tienes obligaciones próximas o vencidas. Revisa tu agenda.';
+  await self.registration.showNotification('Qori · Tu agenda de pagos',{body,tag:'qori-payment-agenda',icon:'/customer/icon-192.png',data:{url:'/customer/#payments'}});
  }catch{}
 })()));
 self.addEventListener('notificationclick',event=>{

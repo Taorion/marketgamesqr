@@ -190,11 +190,11 @@ router.put('/goals/:id/progress',handle(async req=>{
   const r=await query('update customer_goals set recorded_amount=$3 where id=$1 and customer_id=$2 returning *',[parse(uuid,req.params.id),req.customer.id,d.recorded_amount]);if(!r.rowCount)throw notFound();return {goal:r.rows[0]};
 }));
 router.post('/recurring',handle(async req=>{
-  const d=parse(z.object({name:text(120).min(2),currency,amount:money,kind:z.enum(['EXPENSE','INCOME']),category,next_date:z.string().date(),frequency:z.enum(['week','month','year']),remind_days:z.number().int().min(0).max(30).default(3),reminders_enabled:z.boolean().default(true)}),req.body);
+  const d=parse(z.object({name:text(120).min(2),currency,amount:money,kind:z.enum(['EXPENSE','INCOME']),category,next_date:z.string().date(),frequency:z.enum(['week','month','year']),reminder_day:z.number().int().min(1).max(31).nullable().optional(),remind_days:z.number().int().min(0).max(30).default(3),reminders_enabled:z.boolean().default(true)}),req.body);
   return paymentAgenda.create(req.customer,d);
 }));
 for(const [route,table] of [['budgets','customer_budgets'],['goals','customer_goals']])router.delete(`/${route}/:id`,handle(async req=>{await query(`delete from ${table} where id=$1 and customer_id=$2`,[parse(uuid,req.params.id),req.customer.id]);return {ok:true};}));
-router.put('/recurring/:id',handle(req=>paymentAgenda.updateRule(req.customer,parse(uuid,req.params.id),parse(z.object({name:text(120).min(2),amount:money,remind_days:z.number().int().min(0).max(30),reminders_enabled:z.boolean(),active:z.boolean()}),req.body))));
+router.put('/recurring/:id',handle(req=>paymentAgenda.updateRule(req.customer,parse(uuid,req.params.id),parse(z.object({name:text(120).min(2),amount:money,reminder_day:z.number().int().min(1).max(31).nullable().optional(),remind_days:z.number().int().min(0).max(30),reminders_enabled:z.boolean(),active:z.boolean()}),req.body))));
 router.delete('/recurring/:id',handle(req=>paymentAgenda.archive(req.customer,parse(uuid,req.params.id))));
 router.post('/insights/dismiss',handle(async req=>{const d=parse(z.object({id:text(240).min(1)}),req.body);await query('insert into customer_insight_dismissals(customer_id,insight_key) values($1,$2) on conflict do nothing',[req.customer.id,d.id]);return {ok:true};}));
 router.get('/wallet',handle(async req=>({...await svc.wallet(req.customer.id),giftcards:await wallet.giftWallet(req.customer)})));

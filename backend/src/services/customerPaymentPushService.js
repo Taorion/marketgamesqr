@@ -3,6 +3,7 @@ const {query,withTransaction}=require('../config/db'),{env}=require('../config/e
 const {badRequest}=require('../utils/http');
 const {validateSubscription,pushConfigured}=require('./agendaPushService');
 const agenda=require('./customerPaymentAgendaService');
+const reminders=require('./customerPaymentReminderRules');
 let keys=null;
 function configured(){return process.env.CUSTOMER_PAYMENT_PUSH_ENABLED!=='false'&&process.env.NODE_ENV!=='test';}
 async function getKeys(){
@@ -38,8 +39,10 @@ async function unsubscribe(account,endpoint){
 async function notices(account){
  const date=agenda.today(account),until=new Date(Date.parse(date+'T12:00:00Z')+30*86400000).toISOString().slice(0,10);
  await withTransaction(db=>agenda.materialize(db,account,until));
- const r=await query("select count(*)::int n from customer_payment_items i join customer_recurring r on r.id=i.recurring_id where i.customer_id=$1 and i.status='PENDING' and r.active and r.reminders_enabled and i.due_date<=$2::date+r.remind_days",[account.id,date]);
- return {public_id:account.public_id,count:r.rows[0].n};
+ const r=await query(`select i.id,i.name,i.due_date::text due_date,count(*) over()::int total
+  from customer_payment_items i join customer_recurring r on r.id=i.recurring_id
+  where i.customer_id=$1 and ${reminders.sql('$2')} order by i.due_date,i.id limit 10`,[account.id,date]);
+ return {public_id:account.public_id,count:r.rows[0]?.total||0,items:r.rows.map(({total,...item})=>item)};
 }
 async function deliver(subscription,payload){
  const config=await getKeys();
@@ -53,8 +56,7 @@ async function enqueue(){
   join customer_accounts a on a.id=s.customer_id join customer_sessions cs on cs.id=s.session_id and cs.customer_id=a.id and cs.expires_at>now()
   where s.active and extract(hour from now() at time zone a.timezone)>=9
    and exists(select 1 from customer_payment_items i join customer_recurring r on r.id=i.recurring_id
-    where i.customer_id=a.id and i.status='PENDING' and r.active and r.reminders_enabled
-     and i.due_date<=(now() at time zone a.timezone)::date+r.remind_days)
+    where i.customer_id=a.id and ${reminders.sql('now() at time zone a.timezone')})
   on conflict(subscription_id,notice_date) do nothing`);
 }
 async function processNext(send=deliver){
@@ -67,8 +69,7 @@ async function processNext(send=deliver){
   join customer_sessions cs on cs.id=s.session_id and cs.customer_id=a.id and cs.expires_at>now()
   where s.id=$1 and s.active and $2::date=(now() at time zone a.timezone)::date
   and exists(select 1 from customer_payment_items i join customer_recurring r on r.id=i.recurring_id
-   where i.customer_id=a.id and i.status='PENDING' and r.active and r.reminders_enabled
-    and i.due_date<=(now() at time zone a.timezone)::date+r.remind_days)`,[row.subscription_id,row.notice_date])).rows[0];
+   where i.customer_id=a.id and ${reminders.sql('now() at time zone a.timezone')})`,[row.subscription_id,row.notice_date])).rows[0];
  try{
   if(sub)await send({endpoint:sub.endpoint,keys:{p256dh:sub.p256dh,auth:sub.auth}},
    {title:'Qori · Tu agenda de pagos',body:'Tienes obligaciones próximas o vencidas. Revisa tu agenda.',public_id:sub.public_id,url:'/customer/#payments',tag:'qori-payment-agenda'});

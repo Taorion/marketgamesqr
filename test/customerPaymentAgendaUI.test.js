@@ -24,12 +24,21 @@ test('editing a bill preserves its original estimate and only changes this occur
  const {w,ctx,calls,page}=setup();try{await w.QoriPayments.render(page,ctx);page.querySelector('[data-bill]').click();const f=w.document.querySelector('dialog form');f.elements.billed_amount.value='125000';f.elements.due_date.value='2026-11-20';f.elements.note.value='Factura recibida';await submit(w);const sent=calls.find(c=>c.method==='PUT');assert.equal(sent.url,'/payment-agenda/item-1');assert.equal(sent.body.estimated_amount,undefined);assert.equal(sent.body.billed_amount,'125000');assert.equal(sent.body.due_date,'2026-11-20');}finally{w.close();}
 });
 test('a new recurring obligation records its first due date, estimate and reminder preference',async()=>{
- const {w,ctx,calls,page}=setup();try{await w.QoriPayments.render(page,ctx);page.querySelector('#newObligation').click();const f=w.document.querySelector('dialog form');f.elements.name.value='Arriendo';f.elements.amount.value='1000000';f.elements.next_date.value='2026-11-05';f.elements.remind_days.value='5';f.elements.reminders_enabled.checked=false;await submit(w);const sent=calls.find(c=>c.url==='/recurring');assert.equal(sent.body.frequency,'month');assert.equal(sent.body.remind_days,5);assert.equal(sent.body.reminders_enabled,false);assert.equal(sent.body.next_date,'2026-11-05');}finally{w.close();}
+ const {w,ctx,calls,page}=setup();try{await w.QoriPayments.render(page,ctx);page.querySelector('#newObligation').click();const f=w.document.querySelector('dialog form');f.elements.name.value='Arriendo';f.elements.amount.value='1000000';f.elements.next_date.value='2026-11-05';f.elements.next_date.onchange();f.elements.remind_days.value='5';f.elements.reminders_enabled.checked=false;await submit(w);const sent=calls.find(c=>c.url==='/recurring');assert.equal(sent.body.frequency,'month');assert.equal(sent.body.remind_days,5);assert.equal(sent.body.reminders_enabled,false);assert.equal(sent.body.next_date,'2026-11-05');assert.equal(sent.body.reminder_day,5);}finally{w.close();}
 });
 test('paid obligations allow correction, retain history and export safe spreadsheets and calendar events',async()=>{
  const {w,ctx,page,data}=setup();try{Object.assign(data.items[0],{status:'PAID',actual_amount:'128500',paid_on:'2026-11-02',revision:2});await w.QoriPayments.render(page,ctx);assert.ok(page.querySelector('[data-pay=CORRECT]'));assert.equal(page.querySelector('[data-pay=PAY]'),null);assert.match(page.textContent,/8.500/);
   const csv=w.QoriPayments.csv([{...item,name:'=FORMULA()',status:'PAID',actual_amount:'128500',paid_on:'2026-11-02'}],data.today);assert.match(csv,/"'=FORMULA/);assert.match(csv,/8500.00/);
   const ics=w.QoriPayments.calendar([item,data.items[0]]);assert.equal((ics.match(/BEGIN:VEVENT/g)||[]).length,1);assert.match(ics,/DTSTART;VALUE=DATE:20261115/);assert.match(ics,/TRIGGER:-P3D/);
+ }finally{w.close();}
+});
+test('monthly reminder day is editable per obligation and the exported alarm uses that day',async()=>{
+ const {w,ctx,calls,page}=setup();try{
+  await w.QoriPayments.render(page,ctx);page.querySelector('[data-rule]').click();
+  const f=w.document.querySelector('dialog form');f.elements.reminder_mode.value='MONTH_DAY';f.elements.reminder_mode.onchange();f.elements.reminder_day.value='5';f.elements.reminder_day.oninput();
+  assert.match(w.document.querySelector('#reminderSchedule').textContent,/día 5/);
+  await submit(w);const sent=calls.find(c=>c.method==='PUT');assert.equal(sent.url,'/recurring/rule-1');assert.equal(sent.body.reminder_day,5);assert.equal(sent.body.next_date,undefined);
+  const ics=w.QoriPayments.calendar([{...item,reminder_day:5}]);assert.match(ics,/TRIGGER:-PT231H/);
  }finally{w.close();}
 });
 test('notification permission is requested only from the enable button',async()=>{
@@ -43,8 +52,8 @@ test('notification permission is requested only from the enable button',async()=
  }finally{w.close();}
 });
 test('service worker suppresses other-account, settled and signed-out reminders',async()=>{
- const handlers={},shown=[],source=fs.readFileSync(path.join(__dirname,'../customer-web/sw.js'),'utf8');let response={public_id:'current',count:1},ok=true;
+ const handlers={},shown=[],source=fs.readFileSync(path.join(__dirname,'../customer-web/sw.js'),'utf8');let response={public_id:'current',count:1,items:[{name:'Seguridad social'}]},ok=true;
  vm.runInNewContext(source,{URL,caches:{},fetch:async()=>({ok,json:async()=>response}),self:{location:{origin:'https://gosqori.com'},addEventListener:(n,f)=>handlers[n]=f,registration:{showNotification:async(...args)=>shown.push(args)}}});
  async function send(public_id){let promise;handlers.push({data:{json:()=>({public_id})},waitUntil:p=>promise=p});await promise;}
- await send('other');assert.equal(shown.length,0);response.count=0;await send('current');assert.equal(shown.length,0);response.count=1;ok=false;await send('current');assert.equal(shown.length,0);ok=true;await send('current');assert.equal(shown.length,1);assert.equal(shown[0][1].data.url,'/customer/#payments');
+ await send('other');assert.equal(shown.length,0);response.count=0;await send('current');assert.equal(shown.length,0);response.count=1;ok=false;await send('current');assert.equal(shown.length,0);ok=true;await send('current');assert.equal(shown.length,1);assert.equal(shown[0][1].data.url,'/customer/#payments');assert.match(shown[0][1].body,/Seguridad social/);
 });
