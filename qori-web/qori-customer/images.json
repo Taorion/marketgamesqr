@@ -1,0 +1,591 @@
+{
+  "hogar": {
+    "source": "Alivio sereno en un hogar colombiano-1.png",
+    "width": 1774,
+    "height": 887,
+    "variants": [
+      {
+        "file": "hogar-640.webp",
+        "width": 640,
+        "height": 320,
+        "bytes": 28158
+      },
+      {
+        "file": "hogar-1280.webp",
+        "width": 1280,
+        "height": 640,
+        "bytes": 78240
+      }
+    ]
+  },
+  "mercado": {
+    "source": "Compra consciente en el mercado-2.png",
+    "width": 1774,
+    "height": 887,
+    "variants": [
+      {
+        "file": "mercado-640.webp",
+        "width": 640,
+        "height": 320,
+        "bytes": 35332
+      },
+      {
+        "file": "mercado-1280.webp",
+        "width": 1280,
+        "height": 640,
+        "bytes": 87834
+      }
+    ]
+  },
+  "rural": {
+    "source": "Emprendedora rural con celular y cuadernos-3.png",
+    "width": 1774,
+    "height": 887,
+    "variants": [
+      {
+        "file": "rural-640.webp",
+        "width": 640,
+        "height": 320,
+        "bytes": 36076
+      },
+      {
+        "file": "rural-1280.webp",
+        "width": 1280,
+        "height": 640,
+        "bytes": 97632
+      }
+    ]
+  },
+  "cafe": {
+    "source": "Café colombiano y un mensaje íntimo-5.png",
+    "width": 1774,
+    "height": 887,
+    "variants": [
+      {
+        "file": "cafe-640.webp",
+        "width": 640,
+        "height": 320,
+        "bytes": 29842
+      },
+      {
+        "file": "cafe-1280.webp",
+        "width": 1280,
+        "height": 640,
+        "bytes": 73378
+      }
+    ]
+  },
+  "recibos": {
+    "source": "Recibos y registro digital cronológico-11.png",
+    "width": 1448,
+    "height": 1086,
+    "variants": [
+      {
+        "file": "recibos-640.webp",
+        "width": 640,
+        "height": 480,
+        "bytes": 28768
+      },
+      {
+        "file": "recibos-1280.webp",
+        "width": 1280,
+        "height": 960,
+        "bytes": 70258
+      }
+    ]
+  },
+  "negocios": {
+    "source": "Tiendas del barrio conectadas al móvil-12.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "negocios-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 25402
+      },
+      {
+        "file": "negocios-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 63826
+      }
+    ]
+  },
+  "traslados": {
+    "source": "Transferencia azul entre bandejas-9.png",
+    "width": 1448,
+    "height": 1086,
+    "variants": [
+      {
+        "file": "traslados-640.webp",
+        "width": 640,
+        "height": 480,
+        "bytes": 13410
+      },
+      {
+        "file": "traslados-1280.webp",
+        "width": 1280,
+        "height": 960,
+        "bytes": 35360
+      }
+    ]
+  },
+  "dinero-separado": {
+    "source": "Tres finanzas separadas_ cartera, casa y ganado-8.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "dinero-separado-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 21348
+      },
+      {
+        "file": "dinero-separado-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 54124
+      }
+    ]
+  },
+  "ajuste-compras": {
+    "source": "Ajuste de saldos en compras-9.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "ajuste-compras-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 30314
+      },
+      {
+        "file": "ajuste-compras-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 70770
+      }
+    ]
+  },
+  "billetera": {
+    "source": "Billetera azul con calendario y bolsillos-2.png",
+    "width": 1122,
+    "height": 1402,
+    "variants": [
+      {
+        "file": "billetera-640.webp",
+        "width": 640,
+        "height": 800,
+        "bytes": 29494
+      },
+      {
+        "file": "billetera-1122.webp",
+        "width": 1122,
+        "height": 1402,
+        "bytes": 62464
+      }
+    ]
+  },
+  "regalar-cafe": {
+    "source": "Café de regalo entre dos móviles-14.png",
+    "width": 1254,
+    "height": 1254,
+    "variants": [
+      {
+        "file": "regalar-cafe-640.webp",
+        "width": 640,
+        "height": 640,
+        "bytes": 31454
+      },
+      {
+        "file": "regalar-cafe-1254.webp",
+        "width": 1254,
+        "height": 1254,
+        "bytes": 72944
+      }
+    ]
+  },
+  "recordatorio": {
+    "source": "Calendario azul con el cinco destacado-7.png",
+    "width": 1254,
+    "height": 1254,
+    "variants": [
+      {
+        "file": "recordatorio-640.webp",
+        "width": 640,
+        "height": 640,
+        "bytes": 23802
+      },
+      {
+        "file": "recordatorio-1254.webp",
+        "width": 1254,
+        "height": 1254,
+        "bytes": 58418
+      }
+    ]
+  },
+  "agenda-portal": {
+    "source": "Calendario de obligaciones mensuales-2.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "agenda-portal-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 26178
+      },
+      {
+        "file": "agenda-portal-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 61442
+      }
+    ]
+  },
+  "compromisos": {
+    "source": "Calendario destacado con hogar, energía y salud-6.png",
+    "width": 1448,
+    "height": 1086,
+    "variants": [
+      {
+        "file": "compromisos-640.webp",
+        "width": 640,
+        "height": 480,
+        "bytes": 19348
+      },
+      {
+        "file": "compromisos-1280.webp",
+        "width": 1280,
+        "height": 960,
+        "bytes": 47446
+      }
+    ]
+  },
+  "movimientos": {
+    "source": "Cartera azul con movimientos ordenados-3.png",
+    "width": 1448,
+    "height": 1086,
+    "variants": [
+      {
+        "file": "movimientos-640.webp",
+        "width": 640,
+        "height": 480,
+        "bytes": 26304
+      },
+      {
+        "file": "movimientos-1280.webp",
+        "width": 1280,
+        "height": 960,
+        "bytes": 66108
+      }
+    ]
+  },
+  "lista-mercado": {
+    "source": "Compras planeadas con lista y presupuesto-10.png",
+    "width": 1448,
+    "height": 1086,
+    "variants": [
+      {
+        "file": "lista-mercado-640.webp",
+        "width": 640,
+        "height": 480,
+        "bytes": 30900
+      },
+      {
+        "file": "lista-mercado-1280.webp",
+        "width": 1280,
+        "height": 960,
+        "bytes": 76114
+      }
+    ]
+  },
+  "ingresos-gastos": {
+    "source": "Flujo de ingresos y gastos-4.png",
+    "width": 1448,
+    "height": 1086,
+    "variants": [
+      {
+        "file": "ingresos-gastos-640.webp",
+        "width": 640,
+        "height": 480,
+        "bytes": 21404
+      },
+      {
+        "file": "ingresos-gastos-1280.webp",
+        "width": 1280,
+        "height": 960,
+        "bytes": 52616
+      }
+    ]
+  },
+  "historial": {
+    "source": "Historial de movimientos-7.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "historial-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 29358
+      },
+      {
+        "file": "historial-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 68738
+      }
+    ]
+  },
+  "mi-dinero": {
+    "source": "Mi dinero_ panel financiero conceptual-1.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "mi-dinero-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 28990
+      },
+      {
+        "file": "mi-dinero-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 71694
+      }
+    ]
+  },
+  "afiliaciones": {
+    "source": "Mis afiliaciones y puntos independientes-12.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "afiliaciones-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 22828
+      },
+      {
+        "file": "afiliaciones-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 52066
+      }
+    ]
+  },
+  "contabilidades": {
+    "source": "Mis contabilidades_ Personal, Casa y Ganado-5.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "contabilidades-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 24188
+      },
+      {
+        "file": "contabilidades-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 56774
+      }
+    ]
+  },
+  "regalos": {
+    "source": "Mis regalos_ café confirmado-14.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "regalos-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 15652
+      },
+      {
+        "file": "regalos-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 36784
+      }
+    ]
+  },
+  "sellos": {
+    "source": "Mis tarjetas de sellos-11.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "sellos-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 25612
+      },
+      {
+        "file": "sellos-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 59406
+      }
+    ]
+  },
+  "organizador": {
+    "source": "Organizador personal con tres tarjetas-13.png",
+    "width": 1448,
+    "height": 1086,
+    "variants": [
+      {
+        "file": "organizador-640.webp",
+        "width": 640,
+        "height": 480,
+        "bytes": 31768
+      },
+      {
+        "file": "organizador-1280.webp",
+        "width": 1280,
+        "height": 960,
+        "bytes": 80228
+      }
+    ]
+  },
+  "proyeccion-portal": {
+    "source": "Panel de proyección mensual-3.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "proyeccion-portal-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 27124
+      },
+      {
+        "file": "proyeccion-portal-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 60796
+      }
+    ]
+  },
+  "invitaciones": {
+    "source": "Portal de actividades e invitaciones-13.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "invitaciones-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 27102
+      },
+      {
+        "file": "invitaciones-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 61330
+      }
+    ]
+  },
+  "compras-portal": {
+    "source": "Portal de compras planeadas-6.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "compras-portal-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 25864
+      },
+      {
+        "file": "compras-portal-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 60184
+      }
+    ]
+  },
+  "pagos-portal": {
+    "source": "Portal Qori con calendario y estados-4.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "pagos-portal-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 25482
+      },
+      {
+        "file": "pagos-portal-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 59654
+      }
+    ]
+  },
+  "giftcards": {
+    "source": "Portal Qori de tarjetas regalo-10.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "giftcards-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 25858
+      },
+      {
+        "file": "giftcards-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 64310
+      }
+    ]
+  },
+  "beneficios": {
+    "source": "Portal web de beneficios Qori-8.png",
+    "width": 1536,
+    "height": 1024,
+    "variants": [
+      {
+        "file": "beneficios-640.webp",
+        "width": 640,
+        "height": 427,
+        "bytes": 29840
+      },
+      {
+        "file": "beneficios-1280.webp",
+        "width": 1280,
+        "height": 853,
+        "bytes": 72516
+      }
+    ]
+  },
+  "proyeccion": {
+    "source": "Proyección mensual_ cartera, compras y saldo-5.png",
+    "width": 1448,
+    "height": 1086,
+    "variants": [
+      {
+        "file": "proyeccion-640.webp",
+        "width": 640,
+        "height": 480,
+        "bytes": 20440
+      },
+      {
+        "file": "proyeccion-1280.webp",
+        "width": 1280,
+        "height": 960,
+        "bytes": 53628
+      }
+    ]
+  }
+}
