@@ -60,7 +60,7 @@ async function guard(account,route,id){
 async function middleware(req,_res,next){
  try{
   const parts=req.path.split('/').filter(Boolean),route=parts[0];
-  if(!['dashboard','planning','entries','sales','budgets','goals','recurring','purchases','payment-agenda','finance-home','wealth','debts','groceries'].includes(route))return next();
+  if(!['dashboard','planning','entries','sales','budgets','goals','recurring','purchases','payment-agenda','finance-home','income-months','wealth','debts','groceries'].includes(route))return next();
   if(route==='payment-agenda'&&['notifications','push'].includes(parts[1]))return next();
   req.customer={...req.customer,finance_book:await selected(req.customer,req.get('X-Qori-Book')||req.query.book_id)};
   if(parts[1]&&parts[1]!=='overview'&&!['debts','groceries','wealth'].includes(route))await guard(req.customer,route,parts[1]);
@@ -141,7 +141,9 @@ async function home(account){
   const planned=grocery.estimated_minor+sum(plans.plans.filter(p=>p.status==='PLANNED'&&p.currency===book.currency&&(!p.target_date||p.target_date<=end)),p=>p.estimated_minor);
   const spent=sum(month.filter(r=>r.kind==='EXPENSE'),r=>r.amount_minor),income=sum(month.filter(r=>r.kind==='INCOME'),r=>r.amount_minor);
   const cashflow=require('./customerWealthService').cashflow(book,paid,transfers,day);
-  return {cashflow,book,today:day,from:start,to:end,currency:book.currency,balance_minor:balance,income_minor:income,spent_minor:spent,
+  const monthlyIncome=payments.rules.filter(r=>r.active&&r.kind==='INCOME'&&r.frequency==='month'&&r.currency===book.currency&&(r.anchor_date||r.next_date)<=end);
+  const income_plan={monthly_sources:monthlyIncome.length,monthly_minor:sum(monthlyIncome,r=>finance.minor(r.amount))};
+  return {income_plan,cashflow,book,today:day,from:start,to:end,currency:book.currency,balance_minor:balance,income_minor:income,spent_minor:spent,
    pending_minor:obligations,essential_minor:safe(essential+debt.due_minor),expected_income_minor:expected,planned_minor:planned,pending_sales_minor:pendingSales,
    grocery,debt,debt_due_minor:debt.due_minor,projected_expenses_minor:safe(spent+obligations+planned+pendingSales+debt.due_minor),available_after_commitments_minor:balance==null?null:safe(balance-obligations-pendingSales-debt.due_minor),
    projected_remaining_minor:balance==null?null:safe(balance+expected-obligations-planned-pendingSales-debt.due_minor),

@@ -1,0 +1,33 @@
+.income-home{border-color:#bcdcca;background:#f3fbf6}
+.income-home h2{font-size:21px;color:#155b38}
+.income-home-value{display:block;font-size:26px;color:#147343;overflow-wrap:anywhere;margin:12px 0}
+.income-home .row{flex-wrap:wrap;margin-top:16px}
+.income-declaration{background:#f0faf4;border-color:#b5dcc4}
+.income-base{display:block;font-size:clamp(30px,4vw,42px);color:#147343;overflow-wrap:anywhere;margin:14px 0}
+.income-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:18px 0 24px}
+.income-metrics article{min-width:0;background:white;border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.income-metrics span,.income-metrics small{font-size:12px;color:#526983;line-height:1.5}
+.income-metrics strong{font-size:25px;overflow-wrap:anywhere}
+.income-positive{color:#147343}.income-negative{color:#b42332}
+.income-sources,.income-receipts{display:grid;gap:12px}
+.income-sources article,.income-receipt{border:1px solid #d1e1d8;border-radius:14px;padding:20px;display:flex;align-items:center;justify-content:space-between;gap:18px;margin:12px 0}
+.income-sources article>div,.income-receipt>div{min-width:0;overflow-wrap:anywhere}
+.income-sources h3,.income-receipt h3{font-size:18px;margin:0 0 8px}
+.income-sources strong,.income-receipt strong{font-size:23px;color:#147343}
+.income-receipt-actions{display:flex;flex-wrap:wrap;gap:10px;max-width:340px}
+.monthly-closes{scroll-margin-top:24px}
+.monthly-closes form{display:flex;gap:10px;align-items:end}
+.monthly-closes table{width:100%;font-size:13px}
+.monthly-closes caption{text-align:left;padding:12px 0;color:#526983}
+.monthly-closes th,.monthly-closes td{padding:14px 12px;text-align:right;white-space:nowrap;border-bottom:1px solid #e2e9f2}
+.monthly-closes th:first-child{text-align:left}
+.monthly-closes th small{display:block;font-weight:400;font-size:10px;color:#526983;margin-top:7px}
+.monthly-insights{margin-top:25px;border-top:1px solid var(--line);padding-top:20px}
+.monthly-chart{display:flex;gap:8px;margin:24px 0 10px}
+.monthly-chart>div{flex:1;min-width:0;text-align:center}
+.monthly-plot{height:120px;position:relative}
+.monthly-plot:before{content:"";position:absolute;top:50%;left:0;right:0;border-top:1px solid #bfcadd}
+.monthly-plot i{position:absolute;left:20%;right:20%;min-width:2px;border-radius:3px}
+.monthly-plot i.positive{bottom:50%;background:#178049}.monthly-plot i.negative{top:50%;background:#c22e36}
+.monthly-chart span{font-size:11px;color:#526983}
+@media(max-width:760px){.income-metrics{grid-template-columns:1fr}.income-sources article,.income-receipt{display:block;padding:18px}.income-sources button,.income-receipt-actions{margin-top:16px}.income-receipt-actions{max-width:none}.income-receipt-actions>*{flex:1 1 140px}.monthly-closes .finance-section-head{flex-wrap:wrap}.monthly-closes form{width:100%}.monthly-closes form>.field{flex:1}.monthly-chart{gap:3px}.income-home .row>*{flex:1 1 180px}}

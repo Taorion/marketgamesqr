@@ -195,7 +195,7 @@ router.put('/goals/:id/progress',handle(async req=>{
   const r=await query('update customer_goals set recorded_amount=$3 where id=$1 and customer_id=$2 returning *',[parse(uuid,req.params.id),req.customer.id,d.recorded_amount]);if(!r.rowCount)throw notFound();return {goal:r.rows[0]};
 }));
 router.post('/recurring',handle(async req=>{
-  const d=parse(z.object({name:text(120).min(2),currency,amount:money,kind:z.enum(['EXPENSE','INCOME']),category,next_date:z.string().date(),frequency:z.enum(['once','week','month','year']),priority:z.enum(['ESSENTIAL','FLEXIBLE']).optional(),reminder_day:z.number().int().min(1).max(31).nullable().optional(),remind_days:z.number().int().min(0).max(30).default(3),reminders_enabled:z.boolean().default(true)}),req.body);
+  const d=parse(z.object({request_id:uuid.optional(),name:text(120).min(2),currency,amount:money,kind:z.enum(['EXPENSE','INCOME']),category,next_date:z.string().date(),frequency:z.enum(['once','week','month','year']),priority:z.enum(['ESSENTIAL','FLEXIBLE']).optional(),reminder_day:z.number().int().min(1).max(31).nullable().optional(),remind_days:z.number().int().min(0).max(30).default(3),reminders_enabled:z.boolean().default(true)}),req.body);
   return paymentAgenda.create(req.customer,d);
 }));
 for(const [route,table] of [['budgets','customer_budgets'],['goals','customer_goals']])router.delete(`/${route}/:id`,handle(async req=>{await query(`delete from ${table} where id=$1 and customer_id=$2`,[parse(uuid,req.params.id),req.customer.id]);return {ok:true};}));

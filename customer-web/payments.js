@@ -9,7 +9,7 @@
  const frequencies={once:'Una sola vez',month:'Cada mes',week:'Cada semana',year:'Cada año'};
  const priorities={ESSENTIAL:'Obligatorio / necesario',FLEXIBLE:'Prescindible / ajustable'};
  const reminderLabel=r=>!r.reminders_enabled?'Avisos desactivados':r.reminder_day!=null?'Aviso el día '+r.reminder_day+' de cada mes':'Avisos desde '+r.remind_days+' días antes';
- const status=(i,date)=>i.status==='PAID'?'Pagado':i.status==='SKIPPED'?'Omitido':i.due_date<date?'Vencido':i.due_date===date?'Vence hoy':'Pendiente';
+ const status=(i,date)=>i.status==='PAID'?(i.kind==='INCOME'?'Recibido':'Pagado'):i.status==='SKIPPED'?'Omitido':i.due_date<date?'Vencido':i.due_date===date?'Vence hoy':'Pendiente';
  const monthlyReminder=(date,day)=>{const [y,m]=date.split('-').map(Number);return date.slice(0,7)+'-'+String(Math.min(day,new Date(Date.UTC(y,m,0,12)).getUTCDate())).padStart(2,'0');};
  const alarm=i=>{
   if(i.reminder_day==null)return 'TRIGGER:-P'+i.remind_days+'D';
@@ -37,14 +37,15 @@
    'URL:https://gosqori.com/customer/#payments',...(i.reminders_enabled?['BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Revisar obligación Qori',alarm(i),'END:VALARM']:[]),'END:VEVENT']),'END:VCALENDAR'].join('\r\n')+'\r\n';
  }
  function ruleForm(ctx,refresh,r=null,initialKind='EXPENSE',initialFrequency='month'){
+  const request_id=crypto.randomUUID();
   const common=field('name','¿Qué vas a pagar o recibir?',r?.name||'','required minlength="2" maxlength="120"')+field('amount','¿Cuánto calculas que será?',r?.amount||'','type="number" min=".01" step=".01" required');
   const creation=select('currency','Moneda',{COP:'COP · Peso colombiano',USD:'USD · Dólar',EUR:'EUR · Euro'},ctx.book?.currency||currency||ctx.account.currency)+select('kind','Tipo',{EXPENSE:'Pago pendiente',INCOME:'Ingreso por recibir'},initialKind)+select('category','Categoría',cats,'servicios')+select('frequency','¿Se repite?',frequencies,initialFrequency)+field('next_date','¿Para cuándo?',today(ctx),'type="date" required min="2000-01-01"');
-  const d=ctx.dialog(r?'Configurar pago o ingreso':'Planear un pago o ingreso',`<form class="stack">${common}${r?`<p>${esc(frequencies[r.frequency])} · ${esc(r.currency)}. ${r.frequency==='once'?'Este pago ocurre una sola vez. Cambia su importe o fecha con Editar factura en la agenda.':'El nombre y estimado nuevos se usarán en periodos que aún no se hayan generado. Puedes editar cada factura desde la agenda.'}</p><label class="check"><input name="active" type="checkbox" ${r.active?'checked':''}> ${r.frequency==='once'?'Mantener activo':'Generar nuevos periodos'}</label>`:creation}${field('remind_days','Recordarme desde (días antes)',r?.remind_days??3,'type="number" min="0" max="30" required')}<label class="check"><input name="reminders_enabled" type="checkbox" ${r?.reminders_enabled===false?'':'checked'}> Avisarme de esta obligación</label><p class="small muted">El estimado te ayuda a planear. Solo al confirmar el pago se registrará el valor real como gasto.</p><button class="primary">Guardar obligación</button></form>`);
+  const d=ctx.dialog(r?'Configurar pago o ingreso':'Planear un pago o ingreso',`<form class="stack">${common}${r?`<p>${esc(frequencies[r.frequency])} · ${esc(r.currency)}. ${r.frequency==='once'?'Este pago ocurre una sola vez. Cambia su importe o fecha con Editar factura en la agenda.':'El nombre y estimado nuevos se usarán en periodos que aún no se hayan generado. Puedes editar cada factura desde la agenda.'}</p><label class="check"><input name="active" type="checkbox" ${r.active?'checked':''}> ${r.frequency==='once'?'Mantener activo':'Generar nuevos periodos'}</label>`:creation}${field('remind_days','Recordarme desde (días antes)',r?.remind_days??3,'type="number" min="0" max="30" required')}<label class="check"><input name="reminders_enabled" type="checkbox" ${r?.reminders_enabled===false?'':'checked'}> Avisarme de esta obligación</label><p class="small muted" data-payment-note>El estimado te ayuda a planear. Solo al confirmar el pago se registrará el valor real como gasto.</p><button class="primary">Guardar obligación</button></form>`);
   const form=d.querySelector('form'),advance=form.elements.remind_days.closest('label');
   if(r?.frequency==='once'){form.elements.name.readOnly=true;form.elements.amount.readOnly=true;}
   const extra=document.createElement('details');extra.className='money-options';extra.innerHTML='<summary>Avisos y recordatorios</summary>';advance.before(extra);extra.append(advance,form.elements.reminders_enabled.closest('label'));
   if(ctx.book&&form.elements.currency){form.elements.currency.closest('label').hidden=true;form.elements.currency.value=ctx.book.currency;}
-  form.insertAdjacentHTML('afterbegin',(ctx.book?'<p class="book-context-note">Contabilidad: '+esc(ctx.book.name)+'.</p>':'')+select('priority','¿Qué tan necesario es?',priorities,r?.priority||'ESSENTIAL')+'<p class="small muted">La frecuencia y la necesidad son distintas: una suscripción puede repetirse y ser prescindible; una reparación puede ser eventual y necesaria.</p>');
+  form.insertAdjacentHTML('afterbegin',(ctx.book?'<p class="book-context-note">Contabilidad: '+esc(ctx.book.name)+'.</p>':'')+select('priority','¿Qué tan necesario es?',priorities,r?.priority||'ESSENTIAL')+'<p class="small muted" data-priority-help>La frecuencia y la necesidad son distintas: una suscripción puede repetirse y ser prescindible; una reparación puede ser eventual y necesaria.</p>');
   if(r&&ctx.book){const move=document.createElement('button');move.type='button';move.className='quiet';move.textContent='Cambiar contabilidad de esta obligación';move.onclick=()=>{d.close();window.QoriAccounting.reassign(ctx,'RECURRING',r.id);};form.append(move);}
   advance.insertAdjacentHTML('beforebegin',select('reminder_mode','Cuándo avisarme',{MONTH_DAY:'Un día específico de cada mes',ADVANCE:'Desde unos días antes y hasta pagar'},r?(r.reminder_day!=null?'MONTH_DAY':'ADVANCE'):'MONTH_DAY')+
    field('reminder_day','Día del mes para el aviso',r?.reminder_day||Number((r?.next_date||today(ctx)).slice(8,10)),'type="number" min="1" max="31" step="1" required')+'<p id="reminderSchedule" class="small muted"></p>');
@@ -58,21 +59,40 @@
   if(!r){form.elements.frequency.onchange=sync;form.elements.next_date.onchange=()=>{if(form.elements.next_date.value)form.elements.reminder_day.value=Number(form.elements.next_date.value.slice(8,10));sync();};}
   sync();
   const kindField=form.elements.kind,priorityField=form.elements.priority.closest('label');const showPriority=()=>{priorityField.hidden=(kindField?.value||r?.kind||initialKind)==='INCOME';};if(kindField)kindField.onchange=showPriority;showPriority();
+  const copyKind=()=>{
+   const incoming=(kindField?.value||r?.kind||initialKind)==='INCOME';
+   const label=(name,text)=>{const el=form.elements[name]?.closest('label');if(el?.firstChild?.nodeType===3)el.firstChild.textContent=text;};
+   if(incoming){label('name','Motivo del ingreso');label('amount','Valor esperado por período');label('next_date','Primera fecha en que esperas recibirlo');}
+   else{label('name','¿Qué vas a pagar o recibir?');label('amount','¿Cuánto calculas que será?');label('next_date','¿Para cuándo?');}
+   form.querySelector('[data-priority-help]').hidden=incoming;
+   if(form.elements.category)form.elements.category.closest('label').hidden=incoming;
+   if(incoming&&r){const note=form.elements.active.closest('label').previousElementSibling;if(note?.tagName==='P')note.textContent=frequencies[r.frequency]+' · '+r.currency+'. Los nuevos valores se aplican a períodos aún no generados. Ajusta cada cobro visible desde Mis ingresos.';}
+   form.querySelector('[data-payment-note]').textContent=incoming?'Declarar este ingreso no aumenta tu saldo. Confirma cada recepción con su fecha e importe reales.':'El estimado te ayuda a planear. Solo al confirmar el pago se registrará el valor real como gasto.';
+   const title=d.querySelector('h2');if(title)title.textContent=incoming?(r?'Configurar ingreso recurrente':'Declarar un ingreso'):(r?'Configurar pago o ingreso':'Planear un pago o ingreso');
+   form.querySelector('button.primary').textContent=incoming?'Guardar ingreso previsto':'Guardar obligación';
+  };
+  if(kindField)kindField.onchange=()=>{showPriority();copyKind();};copyKind();
+  if(!r&&initialKind==='INCOME'){
+   form.elements.category.value='otros';
+   const examples=document.createElement('div');examples.className='money-presets';examples.innerHTML='<p class="small">¿De dónde viene este ingreso?</p>'+['Salario','Arriendo de propiedad','Pensión','Honorarios','Otro ingreso'].map((name,i)=>'<button type="button" class="quiet" data-income-example="'+i+'">'+name+'</button>').join('');
+   form.elements.name.closest('label').before(examples);
+   examples.querySelectorAll('button').forEach(b=>b.onclick=()=>{form.elements.name.value=b.textContent;form.elements.kind.value='INCOME';form.elements.frequency.value='month';form.elements.category.value='otros';showPriority();copyKind();sync();form.elements.amount.focus();});
+  }
   if(!r&&initialKind==='EXPENSE'){
    const presets=[['Arriendo','hogar','ESSENTIAL','month'],['Servicios','servicios','ESSENTIAL','month'],['Seguridad social','salud','ESSENTIAL','month'],['Suscripción','entretenimiento','FLEXIBLE','month'],['Reparación','hogar','ESSENTIAL','once']];
    const examples=document.createElement('div');examples.className='money-presets';examples.innerHTML='<p class="small">Empieza con un ejemplo o escribe el tuyo:</p>'+presets.map((p,i)=>'<button type="button" class="quiet" data-payment-example="'+i+'">'+p[0]+'</button>').join('');form.querySelector('[name=name]').closest('label').before(examples);
    examples.querySelectorAll('button').forEach(b=>b.onclick=()=>{const p=presets[Number(b.dataset.paymentExample)];form.elements.name.value=p[0];form.elements.category.value=p[1];form.elements.priority.value=p[2];form.elements.frequency.value=p[3];sync();form.elements.amount.focus();});
   }
-  submit(d,ctx,(f,form)=>ctx.request('/recurring'+(r?'/'+r.id:''),{...f,reminder_day:form.elements.reminder_mode.value==='MONTH_DAY'?Number(f.reminder_day):null,remind_days:Number(f.remind_days),reminders_enabled:form.elements.reminders_enabled.checked,...(r?{active:form.elements.active.checked}:{})},r?'PUT':'POST'),refresh);
+  submit(d,ctx,(f,form)=>ctx.request('/recurring'+(r?'/'+r.id:''),{...f,...(!r?{request_id}:{}),reminder_day:form.elements.reminder_mode.value==='MONTH_DAY'?Number(f.reminder_day):null,remind_days:Number(f.remind_days),reminders_enabled:form.elements.reminders_enabled.checked,...(r?{active:form.elements.active.checked}:{})},r?'PUT':'POST'),refresh);
  }
  function editBill(ctx,refresh,i){
-  const d=ctx.dialog('Factura de '+i.name,`<p>Periodo ${esc(i.scheduled_date.slice(0,7))} · Estimado original: ${money(i.estimated_amount,i.currency)}. Esta corrección solo afecta esta factura.</p><form class="stack">${field('due_date','Fecha de vencimiento',i.due_date,'type="date" required')}${field('billed_amount','Valor de la factura (deja vacío mientras sea estimado)',i.billed_amount||'','type="number" min=".01" step=".01"')}<label class="field">Referencia o nota<textarea name="note" maxlength="2000">${esc(i.note)}</textarea></label><button class="primary">Guardar factura</button></form>`);
+  const d=ctx.dialog((i.kind==='INCOME'?'Ingreso de ':'Factura de ')+i.name,`<p>Periodo ${esc(i.scheduled_date.slice(0,7))} · Estimado original: ${money(i.estimated_amount,i.currency)}. Esta corrección solo afecta esta factura.</p><form class="stack">${field('due_date',i.kind==='INCOME'?'Fecha esperada de recepción':'Fecha de vencimiento',i.due_date,'type="date" required')}${field('billed_amount',i.kind==='INCOME'?'Valor por recibir (opcional)':'Valor de la factura (deja vacío mientras sea estimado)',i.billed_amount||'','type="number" min=".01" step=".01"')}<label class="field">Referencia o nota<textarea name="note" maxlength="2000">${esc(i.note)}</textarea></label><button class="primary">Guardar importe</button></form>`);
   submit(d,ctx,f=>ctx.request('/payment-agenda/'+i.id,{...f,billed_amount:f.billed_amount||null,revision:i.revision},'PUT'),refresh);
  }
  function pay(ctx,refresh,i,action='PAY'){
   const confirm=['PAY','CORRECT'].includes(action);
-  const title={PAY:'Registrar pago',CORRECT:'Corregir pago',REOPEN:'Anular registro de pago',SKIP:'Omitir este periodo',RESTORE:'Restaurar obligación'}[action];
-  const d=ctx.dialog(title,`<p>${esc(i.name)} · Vence ${esc(i.due_date)}</p><form class="stack">${confirm?field('amount','Valor real '+(i.kind==='INCOME'?'recibido':'pagado')+' ('+i.currency+')',i.actual_amount||i.billed_amount||i.estimated_amount,'type="number" min=".01" step=".01" required')+field('paid_on','Fecha real del pago',i.paid_on||today(ctx),'type="date" required max="'+today(ctx)+'"'):'<p>'+(action==='REOPEN'?'El movimiento dejará de sumar en tus gastos y la obligación volverá a pendiente. Se conserva el registro de la corrección. No se devuelve dinero.':action==='SKIP'?'Este periodo no contará como pago pendiente. No se registra ningún gasto.':'Volverá a aparecer entre tus obligaciones pendientes.')+'</p>'}<label class="check"><input type="checkbox" name="confirmed" required> ${confirm?'Confirmo que este pago o ingreso ya ocurrió.':'Confirmo este cambio.'}</label><button class="primary">${title}</button></form>`);
+  const title={PAY:i.kind==='INCOME'?'Registrar ingreso recibido':'Registrar pago',CORRECT:i.kind==='INCOME'?'Corregir ingreso recibido':'Corregir pago',REOPEN:i.kind==='INCOME'?'Anular ingreso recibido':'Anular registro de pago',SKIP:'Omitir este periodo',RESTORE:'Restaurar obligación'}[action];
+  const d=ctx.dialog(title,`<p>${esc(i.name)} · Vence ${esc(i.due_date)}</p><form class="stack">${confirm?field('amount','Valor real '+(i.kind==='INCOME'?'recibido':'pagado')+' ('+i.currency+')',i.actual_amount||i.billed_amount||i.estimated_amount,'type="number" min=".01" step=".01" required')+field('paid_on',i.kind==='INCOME'?'Fecha real de recepción':'Fecha real del pago',i.paid_on||today(ctx),'type="date" required max="'+today(ctx)+'"'):'<p>'+(action==='REOPEN'?(i.kind==='INCOME'?'El ingreso dejará de sumar a tu saldo y volverá a estar por recibir. Los cierres mensuales se recalcularán.':'El movimiento dejará de sumar en tus gastos y la obligación volverá a pendiente. Se conserva el registro de la corrección. No se devuelve dinero.'):action==='SKIP'?'Este periodo no contará como pago pendiente. No se registra ningún gasto.':'Volverá a aparecer entre tus obligaciones pendientes.')+'</p>'}<label class="check"><input type="checkbox" name="confirmed" required> ${confirm?'Confirmo que este pago o ingreso ya ocurrió.':'Confirmo este cambio.'}</label><button class="primary">${title}</button></form>`);
   submit(d,ctx,f=>ctx.request('/payment-agenda/'+i.id+'/payment',{...f,action,revision:i.revision,confirmed:true}),refresh);
  }
  async function history(ctx,i){
@@ -141,5 +161,5 @@
    pushControls(page.querySelector('#paymentPush'),ctx);
   }catch(e){if(turn===version&&page.isConnected){page.innerHTML='<p role="alert">No pudimos cargar tu agenda.</p><button class="secondary">Reintentar</button>';page.querySelector('button').onclick=refresh;ctx.showError(e.message);}}
  }
- window.QoriPayments={render,csv,calendar,ruleForm};
+ window.QoriPayments={render,csv,calendar,ruleForm,pay,editBill,history};
 })();

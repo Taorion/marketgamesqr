@@ -34,10 +34,14 @@ async function create(account,data){
  if(data.next_date<'2000-01-01'||data.next_date>cycleDate(today(account),'year',2))throw badRequest('Elige una fecha inicial entre el año 2000 y los próximos dos años.');
  return withTransaction(async db=>{
   await db.query('select id from customer_accounts where id=$1 for update',[account.id]);
+  if(data.request_id){
+   const existing=(await db.query('select *,next_date::text next_date from customer_recurring where id=$1',[data.request_id])).rows[0];
+   if(existing){if(existing.customer_id!==account.id||existing.book_id!==(account.finance_book?.id||null)||existing.kind!==data.kind)throw badRequest('Esta solicitud ya fue utilizada.');return {recurring:existing};}
+  }
   if((await db.query('select count(*)::int n from customer_recurring where customer_id=$1 and active',[account.id])).rows[0].n>=200)throw badRequest('Puedes mantener hasta 200 obligaciones activas.');
-  const r=(await db.query(`insert into customer_recurring(customer_id,name,currency,amount,kind,category,next_date,anchor_date,frequency,remind_days,reminders_enabled,reminder_day,book_id,priority)
-   values($1,$2,$3,$4,$5,$6,$7,$7,$8,$9,$10,$11,$12,$13) returning *,next_date::text next_date`,
-   [account.id,data.name,data.currency,data.amount,data.kind,data.category,data.next_date,data.frequency,data.remind_days??3,data.reminders_enabled??true,data.reminder_day??null,account.finance_book?.id||null,data.priority||'ESSENTIAL'])).rows[0];
+  const r=(await db.query(`insert into customer_recurring(customer_id,name,currency,amount,kind,category,next_date,anchor_date,frequency,remind_days,reminders_enabled,reminder_day,book_id,priority,id)
+   values($1,$2,$3,$4,$5,$6,$7,$7,$8,$9,$10,$11,$12,$13,$14) returning *,next_date::text next_date`,
+   [account.id,data.name,data.currency,data.amount,data.kind,data.category,data.next_date,data.frequency,data.remind_days??3,data.reminders_enabled??true,data.reminder_day??null,account.finance_book?.id||null,data.priority||'ESSENTIAL',data.request_id||crypto.randomUUID()])).rows[0];
   return {recurring:r};
  });
 }

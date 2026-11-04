@@ -9,6 +9,7 @@ router.post('/finance-books',handle(req=>books.create(req.customer,parse(z.objec
 router.patch('/finance-books/:id/name',handle(req=>books.rename(req.customer,parse(uuid,req.params.id),parse(z.object({name,revision:z.number().int().positive()}),req.body))));
 router.put('/finance-books/:id',handle(req=>books.update(req.customer,parse(uuid,req.params.id),parse(z.object({name,revision:z.number().int().positive(),opening_amount:z.string().regex(/^-?\d{1,10}(\.\d{1,2})?$/),opening_date:date}),req.body))));
 router.post('/finance-books/reassign',handle(req=>books.reassign(req.customer,parse(z.object({kind:z.enum(['ENTRY','SALE','RECURRING','GIFT']),id:uuid,book_id:uuid}),req.body))));
+router.get('/income-months',handle(req=>require('../services/customerMonthlyFinance').report(req.customer,parse(z.object({year:z.coerce.number().int().min(2000).max(9999).optional()}),req.query).year)));
 router.get('/finance-home',handle(req=>books.home(req.customer)));
 router.post('/finance-transfers',handle(req=>books.transfer(req.customer,parse(z.object({request_id:uuid,from_book_id:uuid,to_book_id:uuid,amount:money,occurred_on:date,note:z.string().trim().max(1000).default(''),confirmed:z.literal(true)}),req.body))));
 router.delete('/finance-transfers/:id',handle(req=>books.voidTransfer(req.customer,parse(uuid,req.params.id))));
