@@ -10,7 +10,7 @@
   const state={account:null,cards:[],relationships:[],orders:[],updated:null,search:'',kind:'ALL',status:'ACTIVE',challenge:null,email:'',consent:false,loading:false};
   let renderVersion=0,dialogVersion=0,returnFocus=null;
   const brand=()=>'<div class="brand-block"><a class="brand" href="/customer/" aria-label="Qori Customer"><img class="brand-logo" src="/img/qori-logo.png" alt="Qori" width="156" height="88"></a><span class="brand-sub">Customer</span></div>';
-  const route=()=>{const value=location.hash.slice(1);return ['home','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning'].includes(value)||/^(publication|business)\//.test(value)?value:(state.account?'home':'explore');};
+  const route=()=>{const value=location.hash.slice(1);return ['home','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments'].includes(value)||/^(publication|business)\//.test(value)?value:(state.account?'home':'explore');};
   const publicRoute=()=>['explore','scan'].includes(route())||/^(publication|business)\//.test(route());
   const exploreRoute=()=>publicRoute()||['saved','requests','earned','following'].includes(route());
   const exploreContext=()=>({request,refresh,openCard,dialog,showError,account:state.account,cards:state.cards,invitationCount:state.invitationCount,openSale:id=>window.QoriFinance.openSale(id,exploreContext()),login:()=>renderAuth()});
@@ -81,6 +81,7 @@
     else if(route()==='place-requests')window.QoriPortal.placeRequests(page,exploreContext());
     else if(exploreRoute())window.QoriExplore.render(page,exploreContext(),route());
     else if(['wallet','benefits'].includes(route())){renderWallet(page);}
+    else if(route()==='payments')window.QoriPayments.render(page,exploreContext());
     else if(['finances','history','planning'].includes(route()))window.QoriFinance.render(page,exploreContext(),route());
     else if(route()==='invitations')window.QoriInvitations.render(page,exploreContext());
     else if(route()==='product-gifts')window.QoriProductGifts.render(page,exploreContext());
@@ -242,7 +243,7 @@
   document.addEventListener('input',event=>{if(event.target.id==='walletSearch'){state.search=event.target.value;renderGroups();}});
   document.addEventListener('change',event=>{if(event.target.id==='walletKind'){state.kind=event.target.value;renderGroups();}});
   window.addEventListener('hashchange',()=>{if(location.hash==='#main')return;closeDialog();renderApp();});
-  async function sync(){if(!state.account||!state.account.full_name||document.hidden||document.querySelector('dialog[open]')||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;try{await refresh({render:false});const inviteLink=app.querySelector('a[href="#invitations"]');if(inviteLink)inviteLink.innerHTML=navIcon('invitations')+'Invitaciones'+(state.invitationCount?' ('+state.invitationCount+')':'');if(route()==='home')window.QoriPortal.home(document.getElementById('page'),exploreContext());else if(['wallet','benefits'].includes(route()))renderWallet(document.getElementById('page'));else if(route()==='businesses')renderBusinesses(document.getElementById('page'));else if(route()==='invitations')window.QoriInvitations.render(document.getElementById('page'),exploreContext());else if(['finances','history','planning'].includes(route()))window.QoriFinance.render(document.getElementById('page'),exploreContext(),route());}catch(e){showError(e.message);}}
+  async function sync(){if(!state.account||!state.account.full_name||document.hidden||document.querySelector('dialog[open]')||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;try{await refresh({render:false});const inviteLink=app.querySelector('a[href="#invitations"]');if(inviteLink)inviteLink.innerHTML=navIcon('invitations')+'Invitaciones'+(state.invitationCount?' ('+state.invitationCount+')':'');if(route()==='home')window.QoriPortal.home(document.getElementById('page'),exploreContext());else if(['wallet','benefits'].includes(route()))renderWallet(document.getElementById('page'));else if(route()==='businesses')renderBusinesses(document.getElementById('page'));else if(route()==='invitations')window.QoriInvitations.render(document.getElementById('page'),exploreContext());else if(route()==='payments')window.QoriPayments.render(document.getElementById('page'),exploreContext());else if(['finances','history','planning'].includes(route()))window.QoriFinance.render(document.getElementById('page'),exploreContext(),route());}catch(e){showError(e.message);}}
   window.addEventListener('focus',sync);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync();});setInterval(sync,60000);
   (async()=>{try{await loadAccount();await refresh();}catch(error){if(error.status===401)renderApp();else if(state.account){renderApp();showError(error.message);}else renderAuth(error.message);}})();
 })();

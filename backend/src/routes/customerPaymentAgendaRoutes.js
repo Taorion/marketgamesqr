@@ -1,0 +1,16 @@
+const express=require('express'),{z}=require('zod');
+const agenda=require('../services/customerPaymentAgendaService'),push=require('../services/customerPaymentPushService');
+const {badRequest}=require('../utils/http');
+const router=express.Router(),uuid=z.string().uuid(),date=z.string().date(),revision=z.number().int().positive();
+const money=z.string().regex(/^\d{1,10}(\.\d{1,2})?$/).refine(v=>Number(v)>0);
+const parse=(s,v)=>{const r=s.safeParse(v);if(!r.success)throw badRequest(r.error.issues.map(i=>i.path.join('.')+': '+i.message).join(' '));return r.data;};
+const handle=fn=>async(req,res,next)=>{try{res.set('Cache-Control','private, no-store');res.json(await fn(req));}catch(e){next(e);}};
+router.get('/',handle(req=>agenda.list(req.customer,parse(z.object({month:z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),currency:z.enum(['COP','USD','EUR']).optional()}),req.query))));
+router.get('/notifications',handle(req=>push.notices(req.customer)));
+router.get('/push',handle(req=>push.settings(req.customer)));
+router.post('/push',handle(req=>push.subscribe(req.customer,req.body.subscription)));
+router.delete('/push',handle(req=>push.unsubscribe(req.customer,parse(z.object({endpoint:z.string().max(2048)}),req.body).endpoint)));
+router.get('/:id',handle(req=>agenda.detail(req.customer,parse(uuid,req.params.id))));
+router.put('/:id',handle(req=>agenda.edit(req.customer,parse(uuid,req.params.id),parse(z.object({revision,due_date:date,billed_amount:money.nullable(),note:z.string().trim().max(2000)}),req.body))));
+router.post('/:id/payment',handle(req=>agenda.payment(req.customer,parse(uuid,req.params.id),parse(z.object({revision,action:z.enum(['PAY','CORRECT','REOPEN','SKIP','RESTORE']),amount:money.optional(),paid_on:date.optional(),confirmed:z.literal(true)}),req.body))));
+module.exports=router;

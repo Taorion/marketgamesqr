@@ -8,7 +8,7 @@
   const cards=ctx.cards||[],ready=cards.filter(c=>c.status==='READY').length,pending=ctx.invitationCount||0;
   page.innerHTML=`<section class="portal-welcome"><div><span class="eyebrow">Tu portal gratuito</span><h1>Hola, ${esc(ctx.account.full_name.split(' ')[0])}.</h1><p>Todo lo que recibes, compras y disfrutas con Qori, en un solo lugar.</p><div class="row"><a class="primary" href="#me">Mi identificación Qori</a><a class="secondary" href="#scan">Escanear un negocio</a></div></div><div class="portal-welcome-note"><strong>¿Aquí son Qori?</strong><p>Comparte tu identificación con el negocio. Recibe sus invitaciones y decide cuáles aceptar.</p></div></section>
    <div class="portal-stats"><a class="panel" href="#wallet"><span>Mis tarjetas y tickets</span><strong>${cards.length}</strong><small>Sellos, puntos, giftcards y premios</small></a><a class="panel" href="#benefits"><span>Beneficios disponibles</span><strong>${ready}</strong><small>Consulta las condiciones de cada uno</small></a><a class="panel" href="#invitations"><span>Invitaciones por revisar</span><strong>${pending}</strong><small>Acepta o rechaza lo que recibes</small></a></div>
-   <section class="panel portal-finance"><div><span class="eyebrow">Mis finanzas</span><h2>Tu mes, con claridad</h2><div id="portalFinancialSummary" role="status">Consultando tus movimientos…</div></div><div class="row"><button class="primary" id="portalAddExpense">Registrar gasto</button><a class="secondary" href="#finances">Ver mis finanzas</a></div></section>
+   <section class="panel portal-finance"><div><span class="eyebrow">Mis finanzas</span><h2>Tu mes, con claridad</h2><p id="portalPaymentReminders"><a href="#payments">Consultar mi agenda de pagos →</a></p><div id="portalFinancialSummary" role="status">Consultando tus movimientos…</div></div><div class="row"><button class="primary" id="portalAddExpense">Registrar gasto</button><a class="secondary" href="#finances">Ver mis finanzas</a></div></section>
    <h2>Tu espacio Qori</h2><div class="portal-grid">
     ${link('explore','Descubrir beneficios','Activaciones, programas, descuentos y regalos publicados')}
     ${link('directory','Negocios Qori','Busca por ciudad o por cercanía')}
@@ -18,6 +18,7 @@
     ${link('businesses','Mis negocios y giftcards','Conexiones, compras de giftcards y programas')}
     ${link('earned','Mis actividades','Participaciones y beneficios obtenidos')}
     ${link('history','Historial de gastos','Compras de Empresa y movimientos registrados por ti')}
+    ${link('payments','Agenda de pagos','Obligaciones mensuales, vencimientos, pagos y recordatorios')}
     ${link('planning','Presupuestos y metas','Organiza gastos, objetivos y pagos recurrentes')}
     ${link('saved','Guardados','Publicaciones que quieres aprovechar')}
     ${link('following','Negocios que sigo','Vuelve a tus negocios favoritos')}
@@ -26,6 +27,8 @@
     ${link('profile','Mi cuenta','Datos, preferencias, privacidad y sesiones')}
    </div><p class="muted small">Abre este portal desde el computador o el celular. También puedes añadirlo a la pantalla de inicio desde el navegador.</p>`;
   page.querySelector('#portalAddExpense').onclick=()=>window.QoriFinance.editEntry({...ctx,refreshFinance:()=>page.isConnected?home(page,ctx):Promise.resolve()});
+  const reminders=page.querySelector('#portalPaymentReminders');
+  ctx.request('/payment-agenda/notifications').then(r=>{if(reminders.isConnected&&r.count)reminders.innerHTML='<a href="#payments">'+r.count+' obligaciones próximas o vencidas · Revisar agenda →</a>';}).catch(()=>{});
   const target=page.querySelector('#portalFinancialSummary');
   try {
    const d=await ctx.request('/dashboard?period=month&currency='+encodeURIComponent(ctx.account.currency));

@@ -80,7 +80,11 @@ async function decideRelationship(customerId,id,data,{client}={}) {
     return {ok:true};
   });
 }
+async function assertNotPaymentEntry(customerId,id){
+ if((await query('select 1 from customer_payment_items where customer_id=$1 and entry_id=$2',[customerId,id])).rowCount)throw badRequest('Este movimiento pertenece a tu agenda de pagos. Corrígelo desde Finanzas → Agenda de pagos.');
+}
 async function saveEntry(customerId,data,id) {
+  if(id)await assertNotPaymentEntry(customerId,id);
   if(data.occurred_at.length===10) data={...data,occurred_at:(await query("select $1::date::timestamp at time zone timezone as at from customer_accounts where id=$2",[data.occurred_at,customerId])).rows[0].at.toISOString()};
   const values=[customerId,data.kind,data.amount,data.currency,data.occurred_at,data.merchant,data.category,data.priority,data.note,data.payment_method,JSON.stringify(data.products),JSON.stringify(data.splits),JSON.stringify(data.tags)];
   if(data.splits.length && data.splits.reduce((n,s)=>n+finance.minor(s.amount),0)!==finance.minor(data.amount)) throw badRequest('La distribución no suma el total.');
@@ -94,6 +98,7 @@ async function saveEntry(customerId,data,id) {
   if(!result.rowCount) throw notFound('Gasto no editable o no encontrado.');return {entry:result.rows[0]};
 }
 async function mergeEntry(customerId,entryId,saleId) {
+  await assertNotPaymentEntry(customerId,entryId);
   return withTransaction(async db=>{
     const sale=await ownSale(customerId,saleId,db);
     const entry=(await db.query('select * from customer_entries where id=$1 and customer_id=$2 and deleted_at is null for update',[entryId,customerId])).rows[0];
@@ -130,7 +135,7 @@ async function identification(account) {
   return {public_id:account.public_id,qr_image:await QRCode.toDataURL(url.toString()),url:url.toString()};
 }
 async function exportData(account) {
-  const tables=['customer_finance_connections','customer_sale_deliveries','customer_entries','customer_sale_notes','customer_relationships','customer_budgets','customer_goals','customer_recurring','customer_favorites','customer_place_requests','customer_invitations','customer_business_blocks','customer_saved_publications','customer_program_requests','customer_publication_events','customer_activation_participations'];
+  const tables=['customer_payment_items','customer_payment_changes','customer_finance_connections','customer_sale_deliveries','customer_entries','customer_sale_notes','customer_relationships','customer_budgets','customer_goals','customer_recurring','customer_favorites','customer_place_requests','customer_invitations','customer_business_blocks','customer_saved_publications','customer_program_requests','customer_publication_events','customer_activation_participations'];
   const output={account:{...account,session_id:undefined},purchases:(await query(saleSql,[account.id])).rows.map(r=>finance.salesMovement(r,account.timezone))};
   for(const table of tables) output[table]=(await query(`select * from ${table} where customer_id=$1`,[account.id])).rows;
   output.receipts=(await query("select id,entry_id,filename,mime_type,encode(bytes,'base64') base64 from customer_receipts where customer_id=$1",[account.id])).rows;
@@ -138,4 +143,4 @@ async function exportData(account) {
   output.giftcards=await require('./customerWalletService').giftWallet(account);
   return output;
 }
-module.exports={dashboard,movements,ownSale,relationships,proposeRelationship,decideRelationship,saveEntry,mergeEntry,wallet,ownCard,identification,exportData,normalizeDocument};
+module.exports={assertNotPaymentEntry,dashboard,movements,ownSale,relationships,proposeRelationship,decideRelationship,saveEntry,mergeEntry,wallet,ownCard,identification,exportData,normalizeDocument};

@@ -13,6 +13,7 @@ const web = require('../services/customerWebService');
 const network = require('../services/customerNetworkService');
 const explore = require('../services/customerExploreService');
 const financeDelivery = require('../services/customerFinanceDeliveryService');
+const paymentAgenda = require('../services/customerPaymentAgendaService');
 const productGifts = require('../services/customerProductGiftService');
 const {publicInteractiveParticipantSchema,publicInteractiveCompleteSchema}=require('../utils/validators');
 const router = express.Router(), businessRouter = express.Router();
@@ -21,7 +22,7 @@ const money=z.string().regex(/^\d{1,10}(\.\d{1,2})?$/).refine(v=>finance.minor(v
 const text=(max=160)=>z.string().trim().max(max);
 function parse(schema,value){const r=schema.safeParse(value);if(!r.success)throw badRequest(r.error.issues.map(i=>`${i.path.join('.')}: ${i.message}`).join(' '));return r.data;}
 const handle=fn=>async(req,res,next)=>{try{res.set('Cache-Control','private, no-store');res.json(await fn(req));}catch(e){next(e);}};
-router.get('/status',handle(()=>auth.status()));
+router.get('/status',handle(async()=>({...await auth.status(),payment_agenda_available:true,payment_notifications_available:await require('../services/customerPaymentPushService').ready()})));
 // Use the server-observed address. Never trust an arbitrary X-Forwarded-For header.
 const buckets=new Map();
 router.use((req,_res,next)=>{
@@ -59,6 +60,7 @@ router.get('/explore/publications/:id/qr',handle(req=>explore.shareQr(parse(uuid
 router.get('/explore/businesses/:slug',handle(req=>explore.businessPage(parse(text(160).min(1),req.params.slug))));
 router.post('/explore/resolve',handle(req=>explore.resolveQr(parse(z.object({url:text(2000).min(1)}),req.body).url)));
 router.use(auth.customerRequired);
+router.use('/payment-agenda',require('./customerPaymentAgendaRoutes'));
 router.get('/product-gifts',handle(req=>productGifts.list(req.customer)));
 router.get('/product-gifts/:id',handle(req=>productGifts.order(req.customer,parse(uuid,req.params.id))));
 router.post('/product-gifts',handle(req=>{
@@ -107,7 +109,7 @@ const period=z.object({period:z.enum(['day','week','month','year','custom']).def
 router.get('/dashboard',handle(req=>svc.dashboard(req.customer,parse(period,req.query))));
 router.get('/finance-connections',handle(req=>financeDelivery.connections(req.customer)));
 router.put('/finance-connections/:id',handle(req=>financeDelivery.connection(req.customer,parse(uuid,req.params.id),parse(z.object({auto_receive:z.boolean()}),req.body).auto_receive)));
-router.post('/recurring/:id/record',handle(req=>financeDelivery.recordRecurring(req.customer,parse(uuid,req.params.id),parse(z.object({expected_date:z.string().date(),paid_on:z.string().date(),confirmed:z.literal(true)}),req.body))));
+router.post('/recurring/:id/record',handle(req=>paymentAgenda.legacyRecord(req.customer,parse(uuid,req.params.id),parse(z.object({expected_date:z.string().date(),paid_on:z.string().date(),amount:money.optional(),confirmed:z.literal(true)}),req.body))));
 router.get('/relationships',handle(req=>svc.relationships(req.customer.id)));
 router.post('/relationships/:id/decision',handle(req=>svc.decideRelationship(req.customer.id,parse(uuid,req.params.id),parse(z.object({action:z.enum(['ACCEPT','REJECT','REVOKE']),include_history:z.boolean().default(false)}),req.body))));
 const entry=z.object({request_id:uuid,kind:z.enum(['EXPENSE','INCOME']).default('EXPENSE'),amount:money,currency,occurred_at:z.union([z.string().datetime({offset:true}),z.string().date()]),merchant:text(160).min(1),
@@ -117,6 +119,7 @@ const entry=z.object({request_id:uuid,kind:z.enum(['EXPENSE','INCOME']).default(
 router.post('/entries',handle(req=>svc.saveEntry(req.customer.id,parse(entry,req.body))));
 router.put('/entries/:id',handle(req=>svc.saveEntry(req.customer.id,parse(entry,req.body),parse(uuid,req.params.id))));
 router.delete('/entries/:id',handle(async req=>{
+  await svc.assertNotPaymentEntry(req.customer.id,parse(uuid,req.params.id));
   const r=await query('update customer_entries set deleted_at=now(),updated_at=now() where id=$1 and customer_id=$2 and linked_sale_id is null returning id',[parse(uuid,req.params.id),req.customer.id]);
   if(!r.rowCount)throw notFound('Gasto no encontrado o vinculado a una venta.');await query('delete from customer_receipts where entry_id=$1 and customer_id=$2',[req.params.id,req.customer.id]);return {ok:true};
 }));
@@ -124,7 +127,8 @@ router.get('/entries/:id',handle(async req=>{
   const row=(await query('select * from customer_entries where id=$1 and customer_id=$2 and deleted_at is null',[parse(uuid,req.params.id),req.customer.id])).rows[0];
   if(!row)throw notFound();
   const receipts=(await query('select id,filename,mime_type from customer_receipts where entry_id=$1 and customer_id=$2',[row.id,req.customer.id])).rows;
-  return {entry:row,receipts};
+  const obligation=(await query('select id from customer_payment_items where entry_id=$1 and customer_id=$2',[row.id,req.customer.id])).rows[0];
+  return {entry:{...row,payment_item_id:obligation?.id},receipts};
 }));
 router.get('/sales/:id',handle(async req=>{
   const sale=await svc.ownSale(req.customer.id,parse(uuid,req.params.id));
@@ -170,7 +174,7 @@ router.get('/receipts/:id',handle(async req=>{
   if(!row)throw notFound();return {receipt:row};
 }));
 router.delete('/receipts/:id',handle(async req=>{await query('delete from customer_receipts where id=$1 and customer_id=$2',[parse(uuid,req.params.id),req.customer.id]);return {ok:true};}));
-router.get('/planning',handle(async req=>({budgets:(await query('select * from customer_budgets where customer_id=$1',[req.customer.id])).rows,goals:(await query('select * from customer_goals where customer_id=$1',[req.customer.id])).rows,recurring:(await query('select *,next_date::text next_date from customer_recurring where customer_id=$1 order by next_date',[req.customer.id])).rows})));
+router.get('/planning',handle(async req=>({budgets:(await query('select * from customer_budgets where customer_id=$1',[req.customer.id])).rows,goals:(await query('select * from customer_goals where customer_id=$1',[req.customer.id])).rows,recurring:(await query('select *,next_date::text next_date from customer_recurring where customer_id=$1 and active order by next_date',[req.customer.id])).rows})));
 router.post('/budgets',handle(async req=>{
   const d=parse(z.object({category:z.enum(['ALL',...finance.CATEGORIES]),period:z.enum(['week','month']),currency,amount:money,threshold:z.number().int().min(1).max(100).default(80)}),req.body);
   return {budget:(await query(`insert into customer_budgets(customer_id,category,period,currency,amount,threshold) values($1,$2,$3,$4,$5,$6)
@@ -185,10 +189,12 @@ router.put('/goals/:id/progress',handle(async req=>{
   const r=await query('update customer_goals set recorded_amount=$3 where id=$1 and customer_id=$2 returning *',[parse(uuid,req.params.id),req.customer.id,d.recorded_amount]);if(!r.rowCount)throw notFound();return {goal:r.rows[0]};
 }));
 router.post('/recurring',handle(async req=>{
-  const d=parse(z.object({name:text(120).min(2),currency,amount:money,kind:z.enum(['EXPENSE','INCOME']),category,next_date:z.string().date(),frequency:z.enum(['week','month','year'])}),req.body);
-  return {recurring:(await query('insert into customer_recurring(customer_id,name,currency,amount,kind,category,next_date,frequency) values($1,$2,$3,$4,$5,$6,$7,$8) returning *',[req.customer.id,d.name,d.currency,d.amount,d.kind,d.category,d.next_date,d.frequency])).rows[0]};
+  const d=parse(z.object({name:text(120).min(2),currency,amount:money,kind:z.enum(['EXPENSE','INCOME']),category,next_date:z.string().date(),frequency:z.enum(['week','month','year']),remind_days:z.number().int().min(0).max(30).default(3),reminders_enabled:z.boolean().default(true)}),req.body);
+  return paymentAgenda.create(req.customer,d);
 }));
-for(const [route,table] of [['budgets','customer_budgets'],['goals','customer_goals'],['recurring','customer_recurring']])router.delete(`/${route}/:id`,handle(async req=>{await query(`delete from ${table} where id=$1 and customer_id=$2`,[parse(uuid,req.params.id),req.customer.id]);return {ok:true};}));
+for(const [route,table] of [['budgets','customer_budgets'],['goals','customer_goals']])router.delete(`/${route}/:id`,handle(async req=>{await query(`delete from ${table} where id=$1 and customer_id=$2`,[parse(uuid,req.params.id),req.customer.id]);return {ok:true};}));
+router.put('/recurring/:id',handle(req=>paymentAgenda.updateRule(req.customer,parse(uuid,req.params.id),parse(z.object({name:text(120).min(2),amount:money,remind_days:z.number().int().min(0).max(30),reminders_enabled:z.boolean(),active:z.boolean()}),req.body))));
+router.delete('/recurring/:id',handle(req=>paymentAgenda.archive(req.customer,parse(uuid,req.params.id))));
 router.post('/insights/dismiss',handle(async req=>{const d=parse(z.object({id:text(240).min(1)}),req.body);await query('insert into customer_insight_dismissals(customer_id,insight_key) values($1,$2) on conflict do nothing',[req.customer.id,d.id]);return {ok:true};}));
 router.get('/wallet',handle(async req=>({...await svc.wallet(req.customer.id),giftcards:await wallet.giftWallet(req.customer)})));
 router.get('/wallet/affiliations/:id',handle(req=>wallet.affiliateCard(req.customer,parse(uuid,req.params.id))));
