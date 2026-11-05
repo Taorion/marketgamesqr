@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const settle=async fn=>{for(let n=0;n<100;n++){if(fn())return;await new Promise(r=>setTimeout(r,5));}throw Error('UI did not settle');};
 function setup(){
  const w=new JSDOM('<main></main>',{url:'https://example.test/customer/#home',runScripts:'outside-only'}).window;w.HTMLDialogElement.prototype.close=function(){this.remove();};
- for(const file of ['daily-money.js','product-budget.js'])w.eval(fs.readFileSync('customer-web/'+file,'utf8'));
+ for(const file of ['quick-receipt.js','daily-money.js','product-budget.js'])w.eval(fs.readFileSync('customer-web/'+file,'utf8'));
  const calls=[],ctx={book:{id:'book',name:'Casa <privada>',currency:'COP'},account:{timezone:'America/Bogota'},refresh:async()=>{},showError:(m,n)=>{if(n)n.textContent=m;},request:async(u,b,m)=>{calls.push({u,b,m});return {};},dialog:(t,h)=>{const d=w.document.createElement('dialog');d.innerHTML='<h2>'+t+'</h2><div class="dialog-body">'+h+'</div>';w.document.body.append(d);return d;}};
  return {w,ctx,calls};
 }

@@ -32,6 +32,12 @@ test('real HTTP sessions isolate two people, their books and stale browser reque
   assert.equal((await api(b,'/receipts/'+receipt.id)).status,404);
   await api(b,'/receipts/'+receipt.id,{method:'DELETE'});
   assert.equal((await api(a,'/receipts/'+receipt.id)).status,200);
+  const file={filename:'receipt.pdf',mime_type:'application/pdf',base64:Buffer.from('%PDF-1.4 RETRY_RECEIPT').toString('base64')};
+  const copies=await Promise.all([api(a,'/entries/'+own.id+'/receipts',{book:ba.id,body:file}),api(a,'/entries/'+own.id+'/receipts',{book:ba.id,body:file})]);
+  for(const copy of copies)assert.equal(copy.status,200);
+  assert.equal(copies[0].data.receipt.id,copies[1].data.receipt.id);
+  assert.equal((await api(b,'/entries/'+own.id+'/receipts',{book:bb.id,body:file})).status,404);
+  assert.equal((await api(a,'/entries/'+own.id+'/receipts',{book:ba.id,body:{...file,base64:Buffer.from('invalid').toString('base64')}})).status,400);
   const exported=await api(b,'/export');assert.equal(exported.status,200);
   assert.equal(exported.data.account.id,b.id);assert.equal(exported.data.account.session_id,undefined);
   assert.ok(exported.data.customer_entries.every(row=>row.customer_id===b.id));

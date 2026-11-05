@@ -180,7 +180,11 @@ router.post('/entries/:id/receipts',handle(async req=>{
   const valid=d.mime_type==='application/pdf'?bytes.subarray(0,5).toString()==='%PDF-':d.mime_type==='image/png'?bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])):bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
   if(!valid||bytes.length>5242880)throw badRequest('Adjunta un JPG, PNG o PDF válido de hasta 5 MB.');
   const result=await withTransaction(async db=>{
-    await db.query('select id from customer_entries where id=$1 for update',[id]);
+    const locked=await db.query('select id from customer_entries where id=$1 and customer_id=$2 and deleted_at is null for update',[id,req.customer.id]);
+    if(!locked.rowCount)throw notFound();
+    // A lost upload response must not create a second copy on retry.
+    const existing=await db.query('select id,filename,mime_type from customer_receipts where entry_id=$1 and customer_id=$2 and mime_type=$3 and bytes=$4 limit 1',[id,req.customer.id,d.mime_type,bytes]);
+    if(existing.rowCount)return existing.rows[0];
     const count=(await db.query('select count(*)::int n from customer_receipts where entry_id=$1',[id])).rows[0].n;
     if(count>=5)throw badRequest('Máximo cinco recibos por gasto.');
     return (await db.query('insert into customer_receipts(customer_id,entry_id,filename,mime_type,bytes) values($1,$2,$3,$4,$5) returning id,filename,mime_type',[req.customer.id,id,d.filename.replace(/[\r\n\\/]/g,'_'),d.mime_type,bytes])).rows[0];
