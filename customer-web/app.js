@@ -10,7 +10,7 @@
   const state={account:null,cards:[],relationships:[],orders:[],updated:null,search:'',kind:'ALL',status:'ACTIVE',challenge:null,email:'',consent:false,loading:false};
   let renderVersion=0,dialogVersion=0,returnFocus=null;
   const brand=()=>'<div class="brand-block"><a class="brand" href="/customer/" aria-label="Qori Customer"><img class="brand-logo" src="/img/qori-logo-fabrica-ingresos.png?v=brand-20261104" alt="Qori · Tu fábrica de ingresos" width="156" height="88"></a><span class="brand-sub">Customer</span></div>';
-  const route=()=>{const value=location.hash.slice(1);return ['home','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases','debts','debt-simulator','groceries','wealth','pockets','income','dreams','recover-benefits','gift-shop'].includes(value)||/^(publication|business|groceries|dreams)\//.test(value)?value:(state.account?'home':'explore');};
+  const route=()=>{const value=location.hash.slice(1);return ['home','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases','debts','debt-simulator','groceries','wealth','pockets','income','dreams','recover-benefits','gift-shop','notifications','calculator'].includes(value)||/^(publication|business|groceries|dreams)\//.test(value)?value:(state.account?'home':'explore');};
   const publicRoute=()=>['explore','scan','gift-shop'].includes(route())||/^(publication|business)\//.test(route());
   const exploreRoute=()=>publicRoute()||['saved','requests','earned','following'].includes(route());
   function exploreContext(){const book=state.books?.find(b=>b.id===state.bookId);return {request:(path,body,method)=>request(path,body,method,book?.id),refresh,selectBook,book,books:state.books||[],openCard,dialog,showError,account:state.account?{...state.account,currency:book?.currency||state.account.currency}:null,cards:state.cards,invitationCount:state.invitationCount,openSale:id=>window.QoriFinance.openSale(id,exploreContext()),login:()=>renderAuth()};}
@@ -51,7 +51,7 @@
     const [wallet,links,financial,identity]=await Promise.all([request('/wallet/overview'),request('/relationships'),request('/finance-books'),request('/me')]);
     if(version!==renderVersion||!state.account)return;
     state.account=identity.account;state.books=financial.books;if(!state.books.some(b=>b.id===state.bookId))state.bookId=state.books.find(b=>b.is_default)?.id;state.cards=wallet.cards;state.orders=wallet.purchased_gifts;state.updated=wallet.updated_at;state.relationships=links.relationships;
-    state.invitationCount=wallet.pending_invitations||0;
+    state.pendingBenefits=wallet.pending_benefits||[];state.invitationCount=wallet.pending_invitations||0;
     if(render)renderApp();
   }
   const navPaths={
@@ -75,13 +75,17 @@
     if(!state.books?.length){app.innerHTML='<main id="main" class="boot"><h1>Mis finanzas</h1><p id="pageError" role="alert">No pudimos cargar tus contabilidades.</p><button class="primary" id="retryBookLoad">Reintentar</button></main>';app.querySelector('#retryBookLoad').onclick=()=>refresh().catch(e=>showError(e.message));return;}
     const name=state.account.full_name.split(' ')[0];
     app.innerHTML=`<div class="layout"><aside class="sidebar">${brand()}<nav aria-label="Mi cuenta">${navLink('wallet','▤','Mis tarjetas')}${navLink('benefits','✦','Beneficios')}${navLink('businesses','⌂','Mis negocios')}${navLink('me','▦','Mi Qori')}</nav><div class="sidebar-foot"><strong>Volver tiene sus beneficios.</strong>Tu cuenta es gratuita.<br>Los puntos y premios pertenecen a cada negocio.<div class="divider"></div><a href="privacidad.html">Privacidad</a></div></aside>
-      <div class="workspace"><header class="topbar"><span class="breadcrumb">Qori Customer <span aria-hidden="true">/</span> Tu espacio personal</span><div class="row"><a class="gift-inbox" href="#invitations" aria-label="Mis invitaciones">${navIcon('invitations')}Invitaciones${state.invitationCount?' ('+state.invitationCount+')':''}</a><a class="profile-button" href="#profile"><span class="avatar">${esc(name.slice(0,1).toUpperCase())}</span><span>${esc(name)}</span></a></div></header>
+      <div class="workspace"><header class="topbar"><span class="breadcrumb">Qori Customer <span aria-hidden="true">/</span> Tu espacio personal</span><div class="row"><a class="gift-inbox" href="#notifications" aria-label="Notificaciones">${navIcon('invitations')}<span data-benefit-badge>Avisos</span></a><a class="gift-inbox" href="#invitations" aria-label="Mis invitaciones">${navIcon('invitations')}Invitaciones${state.invitationCount?' ('+state.invitationCount+')':''}</a><a class="profile-button" href="#profile"><span class="avatar">${esc(name.slice(0,1).toUpperCase())}</span><span>${esc(name)}</span></a></div></header>
       <main id="main" class="content"><p id="pageError" class="error" role="alert" tabindex="-1"></p><div id="page"></div></main></div></div>`;
     const page=document.getElementById('page');
     const nav=app.querySelector('.sidebar nav');
     nav.innerHTML=navLink('home','⌂','Mi dinero')+navLink('finances','◷','Mis finanzas')+navLink('groceries','▤','Mercado y hogar')+navLink('purchases','▤','Compras')+navLink('dreams','✧','Sueños')+navLink('explore','✦','Beneficios')+navLink('wallet','▤','Mis tarjetas');
     window.QoriAccounting.selector(app,exploreContext());
-    if(route()==='gift-shop')window.QoriGiftShop.render(page,exploreContext());
+    window.QoriNotifications?.watch(exploreContext());
+    if(route()==='calculator')window.QoriCalculator.render(page,exploreContext());
+    else if(route()==='history')window.QoriMovementHistory.render(page,exploreContext());
+    else if(route()==='notifications')window.QoriNotifications.render(page,exploreContext());
+    else if(route()==='gift-shop')window.QoriGiftShop.render(page,exploreContext());
     else if(route()==='recover-benefits')window.QoriBenefitRecovery.render(page,exploreContext());
     else if(route()==='home')window.QoriAccounting.render(page,exploreContext());
     else if(route()==='directory')window.QoriPortal.directory(page,exploreContext());
@@ -120,6 +124,7 @@
       <div class="toolbar"><input class="search" id="walletSearch" type="search" placeholder="Buscar un negocio o programa…" aria-label="Buscar negocio o programa" value="${esc(state.search)}"><select class="filter" id="walletKind" aria-label="Tipo de tarjeta">${[['ALL','Todas las tarjetas'],['STAMP','Sellos'],['POINTS','Puntos Qori'],['GIFT','Giftcards'],['TICKET','Tickets']].map(([value,label])=>`<option value="${value}" ${state.kind===value?'selected':''}>${label}</option>`).join('')}</select></div><div id="cardGroups"></div><p class="last-update">Actualizado ${state.updated?new Date(state.updated).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}):''}. Los cambios se reflejan al actualizar o volver a esta página.</p>`;
     page.insertAdjacentHTML('afterbegin','<div class="account-shortcuts"><a class="secondary" href="#earned">Mis actividades</a><a class="secondary" href="#benefits">Disponibles</a><a class="secondary" href="#finances">Mis finanzas</a><a class="secondary" href="#history">Mis movimientos</a><a class="secondary" href="#product-gifts">Mis regalos</a><a class="secondary" href="#requests">Mis solicitudes</a><a class="secondary" href="#me">Mi QR Qori</a></div>');
     page.insertAdjacentHTML('afterbegin',window.QoriBenefitRecovery?.banner()||'');
+    if(state.invitationCount)page.insertAdjacentHTML('afterbegin','<section class="panel"><h2>Tienes beneficios por aceptar</h2><p>Revisa tus '+state.invitationCount+' invitaciones para agregar las nuevas tarjetas y regalos.</p>'+state.pendingBenefits.map(i=>'<p><strong>'+esc(i.business_name)+'</strong> · '+esc(i.title)+'</p>').join('')+'<a class="primary" href="#invitations">Ver beneficios recibidos</a></section>');
     if(state.recoveryMessage){const note=document.createElement('p');note.className='success';note.setAttribute('role','status');note.textContent=state.recoveryMessage;page.prepend(note);state.recoveryMessage=null;}
     renderGroups();
   }

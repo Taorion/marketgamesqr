@@ -6,6 +6,12 @@ self.addEventListener('fetch',event=>{const url=new URL(event.request.url);if(ev
 self.addEventListener('push',event=>event.waitUntil((async()=>{
  try{
   const payload=event.data?.json();if(!payload?.public_id)return;
+  if(payload.type==='BENEFIT'){
+   const r=await fetch('/api/customer/notifications',{credentials:'include',cache:'no-store'});if(!r.ok)return;
+   const inbox=await r.json();if(inbox.public_id!==payload.public_id)return;
+   const n=inbox.items.find(n=>n.id===payload.notification_id&&!n.read_at);if(!n)return;
+   await self.registration.showNotification('Qori · '+n.title,{body:n.business_name+': '+n.body,tag:'qori-benefit-'+n.id,icon:'/customer/icon-192.png',data:{url:'/customer/#notifications'}});return;
+  }
   const response=await fetch('/api/customer/payment-agenda/notifications',{credentials:'include',cache:'no-store'});
   if(!response.ok)return;const account=await response.json();
   if(account.public_id!==payload.public_id||!account.count)return;

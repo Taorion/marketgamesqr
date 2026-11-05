@@ -62,6 +62,8 @@ router.post('/explore/resolve',handle(req=>explore.resolveQr(parse(z.object({url
 router.use(auth.customerRequired);
 router.use(require('../services/customerFinanceBooks').middleware);
 router.use(require('./customerFinanceBookRoutes'));
+router.get('/notifications',handle(req=>require('../services/customerBenefitNotificationService').list(req.customer)));
+router.post('/notifications/:id/read',handle(req=>require('../services/customerBenefitNotificationService').mark(req.customer,parse(uuid,req.params.id))));
 router.use('/benefit-recovery',require('./customerBenefitRecoveryRoutes'));
 router.use('/dreams',require('./customerDreamRoutes'));
 router.use('/groceries',require('./customerGroceryRoutes'));
@@ -113,6 +115,13 @@ router.delete('/me',handle(async req=>{
 }));
 router.get('/identification',handle(req=>svc.identification(req.customer)));
 const period=z.object({period:z.enum(['day','week','month','year','custom']).default('month'),anchor:z.string().date().optional(),from:z.string().date().optional(),to:z.string().date().optional(),currency:currency.optional()});
+router.get('/movements',handle(req=>require('../services/customerMovementHistoryService').list(req.customer,parse(z.object({
+ from:z.string().date().optional(),to:z.string().date().optional(),currency:currency.default('COP'),search:text(160).default(''),
+ category:category.optional(),source:z.enum(['QORI','MANUAL']).optional(),kind:z.enum(['INCOME','EXPENSE']).optional(),status:z.enum(['PAID','PENDING','VOIDED']).optional(),
+ priority:z.enum(['UNSET','ESSENTIAL','FLEXIBLE']).optional(),expense_pattern:z.enum(['UNSET','RECURRING','EVENTUAL']).optional(),payment_method:text(80).optional(),
+ min_amount:z.string().regex(/^\d{1,10}(\.\d{1,2})?$/).optional(),max_amount:z.string().regex(/^\d{1,10}(\.\d{1,2})?$/).optional(),
+ sort:z.enum(['date_desc','date_asc','name_asc','name_desc','amount_asc','amount_desc']).default('date_desc'),offset:z.coerce.number().int().min(0).max(1000000).default(0),limit:z.coerce.number().int().min(1).max(200).default(50)
+ }),req.query))));
 router.get('/dashboard',handle(req=>svc.dashboard(req.customer,parse(period,req.query))));
 router.get('/finance-connections',handle(req=>financeDelivery.connections(req.customer)));
 router.put('/finance-connections/:id',handle(req=>financeDelivery.connection(req.customer,parse(uuid,req.params.id),parse(z.object({auto_receive:z.boolean()}),req.body).auto_receive)));
@@ -248,6 +257,8 @@ businessRouter.get('/relationships',handle(async req=>({relationships:(await que
 businessRouter.get('/reports',handle(async req=>({reports:(await query(`select n.sale_id,n.reported_at,n.report_reason from customer_sale_notes n join business_sales s on s.id=n.sale_id
   where s.business_id=$1 and n.reported_at is not null order by n.reported_at desc limit 100`,[req.user.business_id])).rows})));
 businessRouter.use(requireRoles('BUSINESS_OWNER','BUSINESS_MANAGER'));
+businessRouter.get('/benefit-deliveries/:publicId',handle(req=>require('../services/customerBenefitDeliveryService').businessCatalog(req.user,parse(uuid,req.params.publicId))));
+businessRouter.post('/benefit-deliveries',handle(req=>require('../services/customerBenefitDeliveryService').businessSend(req.user,parse(z.object({public_id:uuid,kind:z.enum(['STAMP','AFFILIATION','GIFT','TICKET']),resource_id:uuid,document_id:text(80).min(3),identity_checked:z.literal(true)}),req.body))));
 businessRouter.get('/sale-deliveries',handle(req=>financeDelivery.businessSales(req.user,parse(z.object({search:text(160).default(''),offset:z.coerce.number().int().min(0).max(100000).default(0)}),req.query))));
 businessRouter.post('/sale-deliveries',handle(req=>financeDelivery.send(req.user,parse(z.object({sale_id:uuid,public_id:uuid,request_id:uuid,identity_checked:z.literal(true)}),req.body))));
 businessRouter.get('/product-gifts',handle(req=>productGifts.businessOrders(req.user)));

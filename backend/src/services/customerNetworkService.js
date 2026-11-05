@@ -87,11 +87,12 @@ async function send(user,data,{client}={}){
   });
 }
 const inboxSql=`select i.id,i.business_id,b.name business_name,i.kind,i.title,i.message,i.terms,i.state,i.result_id,i.created_at,i.expires_at,
-  case when i.kind in ('GIFT','SALE') then i.payload->>'amount' end amount,i.payload->>'currency' currency,(i.payload ? 'product_gift_order_id') purchased_product,right(r.document_key,4) document_suffix,r.state relationship_state,
+  case when i.kind in ('GIFT','SALE') then i.payload->>'amount' end amount,i.payload->>'currency' currency,(i.payload ? 'existing_benefit') existing_benefit,(i.payload ? 'product_gift_order_id') purchased_product,right(r.document_key,4) document_suffix,r.state relationship_state,
   (i.expires_at<=now()) expired,a.public_slug,a.status activity_status,a.ends_at activity_ends_at
   from customer_invitations i join businesses b on b.id=i.business_id left join customer_relationships r on r.id=i.relationship_id
   left join interactive_activations a on i.kind='ACTIVITY' and a.id=i.resource_id and a.company_id=i.business_id`;
 async function inbox(account){
+  await require('./customerBenefitDeliveryService').sync(account);
   const rows=(await query(inboxSql+' where i.customer_id=$1 order by i.created_at desc limit 200',[account.id])).rows;
   return {invitations:rows.map(({public_slug,...row})=>({...row,
     activity_url:row.state==='ACCEPTED'&&row.activity_status==='active'&&(!row.activity_ends_at||new Date(row.activity_ends_at)>new Date())?new URL('/activacion/'+encodeURIComponent(public_slug)+'?customer_invitation='+row.id,env.publicAppUrl).toString():null})),
@@ -106,6 +107,7 @@ async function decide(account,id,data){
     if(row.state!=='PENDING'||new Date(row.expires_at)<=new Date())throw badRequest('La invitación ya no está pendiente o venció.');
     if(data.action==='REJECT'){await db.query("update customer_invitations set state='REJECTED',decided_at=now() where id=$1",[id]);return {ok:true};}
     if(!account.full_name||account.full_name.trim().length<2)throw badRequest('Completa tu nombre en Mi cuenta antes de aceptar.');
+    if(row.payload?.existing_benefit)return require('./customerBenefitDeliveryService').accept(db,account,row,data);
     if(row.kind==='SALE')return require('./customerFinanceDeliveryService').accept(db,account,row,data);
     if(row.kind==='TICKET'&&row.payload?.product_gift_order_id){
       await require('./customerProductGiftService').validateGiftTicket(db,account,row);
@@ -168,4 +170,4 @@ async function ticket(account,id){
   if(row.status==='ACTIVE'&&(!row.expires_at||new Date(row.expires_at)>new Date())){card.qr_image=await QRCode.toDataURL(new URL('/empresa/?view=validator&token='+encodeURIComponent(token),env.publicAppUrl).toString());card.benefit_url=new URL('/claim/'+encodeURIComponent(token),env.publicAppUrl).toString();}
   return {card};
 }
-module.exports={lookup,catalog,send,inbox,decide,block,tickets,ticket};
+module.exports={ticketSql,lookup,catalog,send,inbox,decide,block,tickets,ticket};

@@ -131,6 +131,10 @@ async function enroll(businessId,userId,data,{accessKey,client:transactionClient
     const existing=(await client.query('select * from stamp_members where program_id=$1 and document_key=$2',[program.id,document])).rows[0];
     const publicToken=accessKey?crypto.createHash('sha256').update(`stamp-registration:${program.id}:${document}:${accessKey}`).digest('hex'):crypto.randomBytes(32).toString('hex');
     if (existing) {
+      // Only an authenticated business can complete a missing contact on its existing card.
+      if(userId && data.email && !existing.email){
+        existing.email=(await client.query("update stamp_members set email=$3 where id=$1 and business_id=$2 and (email is null or trim(email)='') returning email",[existing.id,businessId,data.email.trim().toLowerCase()])).rows[0]?.email||existing.email;
+      }
       if (accessKey && existing.public_token!==publicToken) throw badRequest('No pudimos completar la inscripción. Si ya tienes tarjeta, abre tu enlace personal o pide al negocio que te lo comparta.');
       return { member:existing,url:publicUrl(existing.public_token),existing:true };
     }

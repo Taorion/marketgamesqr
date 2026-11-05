@@ -94,4 +94,4 @@ function start(){
  let running,stopped=false;const run=()=>{if(!running&&!stopped)running=tick().catch(e=>console.error('Customer payment reminders:',e.code||e.name)).finally(()=>running=null);};
  const timer=setInterval(run,60000);timer.unref?.();getKeys().then(run).catch(e=>console.error('Customer payment push setup:',e.code||e.name));return async()=>{stopped=true;clearInterval(timer);await running;};
 }
-module.exports={configured,ready,settings,subscribe,unsubscribe,notices,enqueue,processNext,tick,start};
+module.exports={deliver,configured,ready,settings,subscribe,unsubscribe,notices,enqueue,processNext,tick,start};

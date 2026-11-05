@@ -168,4 +168,4 @@ async function acceptGift(account,id,data) {
   });
   return giftDetail(account,id);
 }
-module.exports={readiness,assertReady,savePrograms,affiliateCard,claimAffiliate,createGiftOrder,giftOrder,cancelGiftOrder,businessOrders,confirmGiftPayment,giftWallet,giftDetail,acceptGift};
+module.exports={receivedSql,readiness,assertReady,savePrograms,affiliateCard,claimAffiliate,createGiftOrder,giftOrder,cancelGiftOrder,businessOrders,confirmGiftPayment,giftWallet,giftDetail,acceptGift};

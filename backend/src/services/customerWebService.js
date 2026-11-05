@@ -5,6 +5,7 @@ const {giftWallet}=require('./customerWalletService');
 // A compact overview: QR generation and full history are loaded only on opening
 // an owned card. IDs, not names, distinguish businesses and their programs.
 async function overview(account){
+  await require('./customerBenefitDeliveryService').sync(account);
   const [stamps,affiliates,gifts,tickets,pending]=await Promise.all([
     query(`select m.id,m.business_id,m.program_id,b.name business_name,b.settings->>'logo_url' business_logo,
       p.name title,p.status program_status,p.deleted_at,b.is_active business_active,
@@ -40,6 +41,6 @@ async function overview(account){
   cards.push(...gifts.received.map(row=>({...row,kind:'GIFT',title:'Mi giftcard',
     status:['cancelled','expired','fully_redeemed'].includes(row.status)?'ARCHIVED':row.claim_required?'PENDING':'READY'})));
   cards.push(...tickets);
-  return {cards,purchased_gifts:gifts.purchased,pending_invitations:pending.rows[0].n,updated_at:new Date().toISOString(),free_for_buyers:true};
+  return {cards,purchased_gifts:gifts.purchased,pending_invitations:pending.rows[0].n,pending_benefits:(await query("select i.id,i.title,b.name business_name from customer_invitations i join businesses b on b.id=i.business_id where i.customer_id=$1 and i.state='PENDING' and i.expires_at>now() order by i.created_at desc limit 10",[account.id])).rows,updated_at:new Date().toISOString(),free_for_buyers:true};
 }
 module.exports={overview};

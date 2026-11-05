@@ -3,3 +3,5 @@
 @media(max-width:600px){.topbar:has(.gift-inbox){height:auto}.topbar:has(.gift-inbox) .book-switcher{flex-basis:100%;width:100%}.topbar:has(.gift-inbox)>.row{margin-left:auto}.topbar:has(.gift-inbox) .book-switcher .field{flex:1}.topbar:has(.gift-inbox) .book-switcher select{width:100%;max-width:100%}}
 @media(max-width:600px){.topbar:has(.gift-inbox){flex-wrap:wrap}.topbar:has(.gift-inbox)>.breadcrumb{flex:1 0 100%;width:100%}}
 @media(max-width:600px){.topbar:has(.gift-inbox) .book-switcher{grid-template-columns:minmax(170px,1fr) auto}}
+
+.topbar:has(.gift-inbox)>.row{flex-wrap:wrap;gap:8px;min-width:0}.topbar:has(.gift-inbox) .gift-inbox{max-width:100%;white-space:normal}
