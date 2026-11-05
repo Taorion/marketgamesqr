@@ -10,11 +10,11 @@
   const state={account:null,cards:[],relationships:[],orders:[],updated:null,search:'',kind:'ALL',status:'ACTIVE',challenge:null,email:'',consent:false,loading:false};
   let renderVersion=0,dialogVersion=0,returnFocus=null;
   const brand=()=>'<div class="brand-block"><a class="brand" href="/customer/" aria-label="Qori Customer"><img class="brand-logo" src="/img/qori-logo-fabrica-ingresos.png?v=brand-20261104" alt="Qori · Tu fábrica de ingresos" width="156" height="88"></a><span class="brand-sub">Customer</span></div>';
-  const route=()=>{const value=location.hash.slice(1);return ['home','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases','debts','debt-simulator','groceries','wealth','pockets','income'].includes(value)||/^(publication|business|groceries)\//.test(value)?value:(state.account?'home':'explore');};
+  const route=()=>{const value=location.hash.slice(1);return ['home','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases','debts','debt-simulator','groceries','wealth','pockets','income','dreams'].includes(value)||/^(publication|business|groceries|dreams)\//.test(value)?value:(state.account?'home':'explore');};
   const publicRoute=()=>['explore','scan'].includes(route())||/^(publication|business)\//.test(route());
   const exploreRoute=()=>publicRoute()||['saved','requests','earned','following'].includes(route());
   function exploreContext(){const book=state.books?.find(b=>b.id===state.bookId);return {request:(path,body,method)=>request(path,body,method,book?.id),refresh,selectBook,book,books:state.books||[],openCard,dialog,showError,account:state.account?{...state.account,currency:book?.currency||state.account.currency}:null,cards:state.cards,invitationCount:state.invitationCount,openSale:id=>window.QoriFinance.openSale(id,exploreContext()),login:()=>renderAuth()};}
-  async function selectBook(id,nextRoute){closeDialog();state.bookId=id;const url=new URL(location.href);url.searchParams.set("book",id);if(nextRoute)url.hash=nextRoute;else if(route().startsWith('groceries/'))url.hash='groceries';history.replaceState(null,"",url.href);try{localStorage.setItem('qori-book:'+state.account.id,id);}catch{}await refresh();}
+  async function selectBook(id,nextRoute){closeDialog();state.bookId=id;const url=new URL(location.href);url.searchParams.set("book",id);if(nextRoute)url.hash=nextRoute;else if(route().startsWith('groceries/'))url.hash='groceries';else if(route().startsWith('dreams/'))url.hash='dreams';history.replaceState(null,"",url.href);try{localStorage.setItem('qori-book:'+state.account.id,id);}catch{}await refresh();}
   const announce=text=>{document.getElementById('announcement').textContent=text;};
   async function request(path,body,method=body?'POST':'GET',bookId=state.bookId){
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
@@ -64,9 +64,10 @@
     scan:'<path d="M8 3H3v5m13-5h5v5M3 16v5h5m8 0h5v-5M7 7h3v3H7zm7 0h3v3h-3zM7 14h3v3H7zm7 0v3h3v-3"/>',
     profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>'
   };
+  navPaths.dreams='<path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/>';
   navPaths.groceries='<path d="m3 5 2 2 3-3M11 6h10M3 12l2 2 3-3M11 13h10M3 19l2 2 3-3M11 20h10"/>';
   const navIcon=id=>'<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">'+(navPaths[id]||navPaths.profile)+'</svg></span>';
-  function navLink(id,icon,title){const active=route()===id||(id==='home'&&route()==='pockets')||(id==='groceries'&&route().startsWith('groceries/'))||(id==='finances'&&['income','wealth','debts','debt-simulator','history','payments','planning'].includes(route()));return `<a class="nav-link ${active?'active':''}" href="#${id}" ${active?'aria-current="page"':''}>${navIcon(id)}${title}</a>`;}
+  function navLink(id,icon,title){const active=route()===id||(id==='home'&&route()==='pockets')||(id==='dreams'&&route().startsWith('dreams/'))||(id==='groceries'&&route().startsWith('groceries/'))||(id==='finances'&&['income','wealth','debts','debt-simulator','history','payments','planning'].includes(route()));return `<a class="nav-link ${active?'active':''}" href="#${id}" ${active?'aria-current="page"':''}>${navIcon(id)}${title}</a>`;}
   function renderApp(){
     window.QoriExplore?.stop();
     if(!state.account)return publicRoute()?renderGuest():renderAuth();
@@ -79,7 +80,7 @@
     const page=document.getElementById('page');
     app.querySelector('.sidebar nav').insertAdjacentHTML('beforeend',navLink('invitations','✉','Invitaciones'+(state.invitationCount?' ('+state.invitationCount+')':'')));
     const nav=app.querySelector('.sidebar nav');
-    nav.innerHTML=navLink('home','⌂','Mi dinero')+navLink('finances','◷','Mis finanzas')+navLink('groceries','▤','Mercado y hogar')+navLink('purchases','▤','Compras')+navLink('explore','✦','Beneficios')+navLink('wallet','▤','Mis tarjetas');
+    nav.innerHTML=navLink('home','⌂','Mi dinero')+navLink('finances','◷','Mis finanzas')+navLink('groceries','▤','Mercado y hogar')+navLink('purchases','▤','Compras')+navLink('dreams','✧','Sueños')+navLink('explore','✦','Beneficios')+navLink('wallet','▤','Mis tarjetas');
     window.QoriAccounting.selector(app,exploreContext());
     if(route()==='home')window.QoriAccounting.render(page,exploreContext());
     else if(route()==='directory')window.QoriPortal.directory(page,exploreContext());
@@ -87,6 +88,7 @@
     else if(exploreRoute())window.QoriExplore.render(page,exploreContext(),route());
     else if(['wallet','benefits'].includes(route())){renderWallet(page);}
     else if(route().startsWith('groceries'))window.QoriGroceries.render(page,exploreContext(),route());
+    else if(route()==='dreams'||route().startsWith('dreams/'))window.QoriDreams.render(page,exploreContext(),route());
     else if(route()==='income')window.QoriIncome.render(page,exploreContext());
     else if(route()==='pockets')window.QoriPockets.render(page,exploreContext());
     else if(route()==='wealth')window.QoriWealth.render(page,exploreContext());

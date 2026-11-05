@@ -64,3 +64,13 @@ test('switching pockets from a saved grocery list opens the new pocket list dire
   await current.selectBook('business');assert.equal(route,'groceries');assert.equal(current.book.id,'business');assert.equal(w.location.hash,'#groceries');
  }finally{w.close();}
 });
+
+test('switching pockets from a saved dream opens the new pocket list directory',async()=>{
+ const {w,ctx}=setup();try{
+  w.history.replaceState(null,'','?book=personal#dreams/private-list');w.document.body.innerHTML='<div id="app"></div><p id="announcement"></p>';w.setInterval=()=>0;
+  let current,route;w.QoriAccounting={selector:()=>{}};w.QoriDreams={render:(_p,c,r)=>{current=c;route=r;}};
+  w.fetch=async url=>({ok:true,status:200,json:async()=>url.endsWith('/me')?{account:{id:'a',full_name:'Buyer',currency:'COP'}}:url.endsWith('/finance-books')?{books:ctx.books.map((b,i)=>({...b,is_default:!i}))}:{cards:[],relationships:[]}});
+  w.eval(fs.readFileSync(path.join(__dirname,'../customer-web/app.js'),'utf8'));await settle(()=>current);
+  await current.selectBook('business');assert.equal(route,'dreams');assert.equal(current.book.id,'business');assert.equal(w.location.hash,'#dreams');
+ }finally{w.close();}
+});

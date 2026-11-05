@@ -62,6 +62,7 @@ router.post('/explore/resolve',handle(req=>explore.resolveQr(parse(z.object({url
 router.use(auth.customerRequired);
 router.use(require('../services/customerFinanceBooks').middleware);
 router.use(require('./customerFinanceBookRoutes'));
+router.use('/dreams',require('./customerDreamRoutes'));
 router.use('/groceries',require('./customerGroceryRoutes'));
 router.use('/debts',require('./customerDebtRoutes'));
 router.use('/purchases',require('./customerPurchaseRoutes'));
@@ -192,7 +193,7 @@ router.post('/goals',handle(async req=>{
 }));
 router.put('/goals/:id/progress',handle(async req=>{
   const d=parse(z.object({recorded_amount:z.string().regex(/^\d{1,10}(\.\d{1,2})?$/)}),req.body);
-  const r=await query('update customer_goals set recorded_amount=$3 where id=$1 and customer_id=$2 returning *',[parse(uuid,req.params.id),req.customer.id,d.recorded_amount]);if(!r.rowCount)throw notFound();return {goal:r.rows[0]};
+  const r=await query('update customer_goals set recorded_amount=$3,revision=revision+1,updated_at=now() where id=$1 and customer_id=$2 returning *',[parse(uuid,req.params.id),req.customer.id,d.recorded_amount]);if(!r.rowCount)throw notFound();return {goal:r.rows[0]};
 }));
 router.post('/recurring',handle(async req=>{
   const d=parse(z.object({request_id:uuid.optional(),name:text(120).min(2),currency,amount:money,kind:z.enum(['EXPENSE','INCOME']),category,next_date:z.string().date(),frequency:z.enum(['once','week','month','year']),priority:z.enum(['ESSENTIAL','FLEXIBLE']).optional(),reminder_day:z.number().int().min(1).max(31).nullable().optional(),remind_days:z.number().int().min(0).max(30).default(3),reminders_enabled:z.boolean().default(true)}),req.body);

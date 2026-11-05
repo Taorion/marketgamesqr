@@ -1,0 +1,17 @@
+const express=require('express'),{z}=require('zod'),{badRequest}=require('../utils/http');
+const service=require('../services/customerDreamService'),router=express.Router(),uuid=z.string().uuid();
+const amount=z.string().regex(/^\d{1,12}(\.\d{1,2})?$/),revision=z.number().int().nonnegative();
+const item=z.object({id:uuid,name:z.string().trim().min(1).max(120),quantity:z.number().positive().max(10000),price:amount,basis:z.enum(['TOTAL','PERSON','PERSON_DAY','NIGHT','ROOM_NIGHT'])});
+const budget=z.object({people:z.number().int().min(1).max(100).default(1),nights:z.number().int().min(0).max(3650).default(0),rooms:z.number().int().min(1).max(100).default(1),food_days:z.number().int().min(1).max(3651).default(1),lodging_basis:z.enum(['ROOM_NIGHT','PERSON_NIGHT','TOTAL']).default('ROOM_NIGHT'),lodging_price:amount.default('0'),food_daily:amount.default('0'),free_total:amount.default('0'),base_amount:amount.default('0'),contingency_percent:z.number().min(0).max(100).default(0),items:z.array(item).max(100).default([])});
+const fields={name:z.string().trim().min(2).max(120),goal_type:z.enum(['TRIP','CAR','HOME','OTHER']),budget_json:budget,target_date:z.string().date().nullable().default(null),monthly_amount:amount.default('0'),paused:z.boolean().default(false)};
+const parse=(s,v)=>{const r=s.safeParse(v);if(!r.success)throw badRequest('Revisa los datos del sueño: '+r.error.issues.map(i=>i.path.join('.')).join(', '));return r.data;};
+const handle=fn=>async(req,res,next)=>{try{res.set('Cache-Control','private, no-store').json(await fn(req));}catch(e){next(e.code==='DREAM_INPUT'?badRequest(e.message):e);}};
+router.get('/',handle(req=>service.list(req.customer)));
+router.put('/plan',handle(req=>service.configure(req.customer,parse(z.object({revision,monthly_amount:amount}),req.body))));
+router.put('/order',handle(req=>service.reorder(req.customer,parse(z.object({revision,ids:z.array(uuid).max(100)}),req.body))));
+router.post('/',handle(req=>service.save(req.customer,parse(z.object({...fields,request_id:uuid}),req.body))));
+router.get('/:id',handle(req=>service.detail(req.customer,parse(uuid,req.params.id))));
+router.put('/:id',handle(req=>service.save(req.customer,parse(z.object({...fields,revision}),req.body),parse(uuid,req.params.id))));
+router.post('/:id/progress',handle(req=>service.progress(req.customer,parse(uuid,req.params.id),parse(z.object({revision,request_id:uuid,recorded_amount:amount,occurred_on:z.string().date(),note:z.string().trim().max(1000).default('')}),req.body))));
+router.post('/:id/archive',handle(req=>service.archive(req.customer,parse(uuid,req.params.id),parse(z.object({revision}),req.body))));
+module.exports=router;
