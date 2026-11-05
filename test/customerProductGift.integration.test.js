@@ -22,7 +22,7 @@ test('a paid coffee gift uses Empresa tickets, one sale and the intended Custome
   await api('/api/business/customer/directory',merchant.token,{published:true,category:'Café',city:'Bogotá',address:'QA',description:'Café de prueba'},'PUT');
   assert.equal((await api('/api/business/customer/publications',foreign.token,pubBody)).status,404);
   const r=await api('/api/business/customer/publications',merchant.token,pubBody);assert.equal(r.status,200,JSON.stringify(r));publication=r.publication;
-  const feed=await api('/api/customer/explore?kind=PRODUCT');assert.ok(feed.publications.some(p=>p.id===publication.id));assert.equal(Number(publication.product_price),8000);
+  const feed=await api('/api/customer/explore?kind=PRODUCT',buyer.token);assert.ok(feed.publications.some(p=>p.id===publication.id));assert.equal(Number(publication.product_price),8000);
  });
  await t.test('unpaid order cannot deliver, mint a QR, spend inventory or charge the recipient',async()=>{
   const body={...orderBody(),amount:'1',recipient_id:outsider.account.id};

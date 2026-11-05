@@ -8,7 +8,7 @@
   const statusNames={ACTIVE:'En progreso',READY:'Beneficio disponible',ARCHIVED:'Finalizada',EXPIRED:'Vencida',PAUSED:'En pausa',PENDING:'Por aceptar',REVIEW:'En revisión'};
   const giftNames={PENDING_PAYMENT:'Pendiente de pago al negocio',ISSUED:'Emitida',CANCELLED:'Cancelada'};
   const state={account:null,cards:[],relationships:[],orders:[],updated:null,search:'',kind:'ALL',status:'ACTIVE',challenge:null,email:'',consent:false,loading:false};
-  let renderVersion=0,dialogVersion=0,returnFocus=null;
+  let renderVersion=0,dialogVersion=0,returnFocus=null,booting=true;
   const sessionGuard=window.QoriSessionGuard.create(()=>clearPrivateState('La sesión cambió en este navegador. Entra de nuevo para continuar.'));
   function broadcastSession(){try{localStorage.setItem('qori-session-change',crypto.randomUUID());}catch{}navigator.serviceWorker?.controller?.postMessage({type:'QORI_SESSION_CHANGED'});}
   function clearPrivateState(message=''){
@@ -21,9 +21,9 @@
     navigator.serviceWorker?.getRegistration('/customer/').then(r=>r?.getNotifications()).then(items=>items?.forEach(n=>n.close())).catch(()=>{});
   }
   const brand=()=>'<div class="brand-block"><a class="brand" href="/customer/" aria-label="Qori Customer"><img class="brand-logo" src="/img/qori-logo-fabrica-ingresos.png?v=brand-20261104" alt="Qori · Tu fábrica de ingresos" width="156" height="88"></a><span class="brand-sub">Customer</span></div>';
-  const route=()=>{const value=location.hash.slice(1);return ['home','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases','debts','debt-simulator','groceries','wealth','pockets','income','dreams','recover-benefits','gift-shop','notifications','calculator'].includes(value)||/^(publication|business|groceries|dreams)\//.test(value)?value:(state.account?'home':'explore');};
-  const publicRoute=()=>['explore','scan','gift-shop'].includes(route())||/^(publication|business)\//.test(route());
-  const exploreRoute=()=>publicRoute()||['saved','requests','earned','following'].includes(route());
+  const route=()=>{const value=location.hash.slice(1);return ['home','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases','debts','debt-simulator','groceries','wealth','pockets','income','dreams','recover-benefits','gift-shop','notifications','calculator'].includes(value)||/^(publication|business|groceries|dreams)\//.test(value)?value:'home';};
+  const catalogRoute=()=>['explore','scan','gift-shop'].includes(route())||/^(publication|business)\//.test(route());
+  const exploreRoute=()=>catalogRoute()||['saved','requests','earned','following'].includes(route());
   function exploreContext(){const book=state.books?.find(b=>b.id===state.bookId),session=sessionGuard.snapshot();return {request:(path,body,method)=>request(path,body,method,book?.id,session),refresh,selectBook,book,books:state.books||[],openCard,dialog,showError,account:state.account?{...state.account,currency:book?.currency||state.account.currency}:null,cards:state.cards,invitationCount:state.invitationCount,openSale:id=>window.QoriFinance.openSale(id,exploreContext()),login:()=>renderAuth()};}
   async function selectBook(id,nextRoute){closeDialog();state.bookId=id;const url=new URL(location.href);url.searchParams.set("book",id);if(nextRoute)url.hash=nextRoute;else if(route().startsWith('groceries/'))url.hash='groceries';else if(route().startsWith('dreams/'))url.hash='dreams';history.replaceState(null,"",url.href);try{if(window.QoriCookies?.preferencesAllowed())localStorage.setItem('qori-book:'+state.account.id,id);}catch{}await refresh();}
   const announce=text=>{document.getElementById('announcement').textContent=text;};
@@ -35,7 +35,7 @@
       const data=await response.json().catch(()=>({error:{message:'No pudimos leer la respuesta. Inténtalo de nuevo.'}}));
       sessionGuard.check(ticket,response);
       if(!response.ok){
-        if(response.status===401&&!path.startsWith('/auth/'))clearPrivateState('Tu sesión venció. Entra de nuevo para ver tus datos.');
+        if(response.status===401&&state.account&&!path.startsWith('/auth/'))clearPrivateState('Tu sesión venció. Entra de nuevo para ver tus datos.');
         const error=Error(data.error?.message||'No pudimos completar la operación.');error.status=response.status;throw error;
       }
       return data;
@@ -48,11 +48,11 @@
     const verifying=!!state.challenge;
     app.innerHTML=`<div class="auth-layout"><section class="auth-story">${brand()}<div><div class="eyebrow">Tu cuenta gratuita de comprador</div><h1>Tu dinero.<br>Tus planes.<br><em>En orden.</em></h1><p>Organiza ingresos, gastos y compromisos. Separa el dinero personal, el de tu casa y el de tus proyectos.</p>
       <div class="auth-art" aria-hidden="true"><div class="sample-card"><div class="eyebrow">Qori cuida tu bolsillo</div><h3>Cada peso,<br>en su lugar.</h3><div class="sample-dots"><span>✓</span><span>✓</span><span>✓</span><span>✓</span><span>5</span><span>6</span></div><p>Una contabilidad para cada parte de tu vida.</p></div><div class="art-note">Tus finanzas primero. Tus beneficios contigo.</div></div></div><div class="auth-foot">Qori Customer + Qori Empresa<br>Conectados para que volver tenga más valor.</div></section>
-      <main id="main" class="auth-side"><div class="auth-form-wrap"><span class="pill">Gratis para compradores</span><h2>${verifying?'Revisa tu correo':'Tu vida Qori empieza aquí'}</h2>
-      <p class="muted small">${verifying?`Enviamos un código de 6 dígitos a <strong>${esc(state.email)}</strong>. Vence en 10 minutos.`:'Crea tu cuenta o entra con tu correo. Sin contraseña, sin tarjeta bancaria y sin mensualidad.'}</p>
+      <main id="main" class="auth-side"><div class="auth-form-wrap"><span class="pill">${verifying?'Paso 2 · Verifica tu correo':'Paso 1 · Tu correo'}</span><h2>${verifying?'Revisa tu correo':'Tu vida Qori empieza aquí'}</h2>
+      <p class="muted small">${verifying?`Enviamos un código de 6 dígitos a <strong>${esc(state.email)}</strong>. Vence en 10 minutos. Aún no has iniciado sesión; introduce el código para continuar.`:'Crea tu cuenta o entra con tu correo. Sin contraseña, sin tarjeta bancaria y sin mensualidad.'}</p>
       <form id="${verifying?'verifyForm':'emailForm'}" class="stack">${verifying?field('code','Código de verificación','','class="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" minlength="6" required autofocus'):
         `${field('email','Tu correo electrónico',state.email,'type="email" autocomplete="email" placeholder="tu@correo.com" maxlength="180" required')}<label class="check"><input type="checkbox" name="consent" required ${state.consent?'checked':''}><span>Quiero crear o usar mi cuenta gratuita y he leído <a href="privacidad.html" target="_blank" rel="noopener">cómo se usan mis datos</a>.</span></label>`}
-      <p class="error" id="authError" role="alert">${esc(error)}</p><button class="primary wide" type="submit">${verifying?'Verificar y entrar':'Continuar con mi correo'} <span aria-hidden="true">→</span></button></form>
+      <p class="error" id="authError" role="alert">${esc(error)}</p><button class="primary wide" type="submit">${verifying?'Validar código e iniciar sesión':'Enviar código de verificación'} <span aria-hidden="true">→</span></button></form>
       ${verifying?'<div class="row"><button class="quiet" data-action="change-email">Cambiar correo</button><button class="quiet" data-action="resend">Reenviar código</button></div>':'<div class="divider"></div><p class="small muted">¿Ya tienes cuenta Qori Customer? Usa el mismo correo y encontrarás tus tarjetas.</p>'}
       <div class="auth-links"><a href="/empresa/">Soy un negocio</a><a href="privacidad.html">Privacidad y tu cuenta</a><button type="button" class="qcp-settings-link" data-cookie-settings>Configurar cookies</button></div></div></main></div>`;
     if(verifying)app.querySelector('[name="code"]')?.focus();
@@ -82,7 +82,8 @@
   function navLink(id,icon,title){const active=route()===id||(id==='wallet'&&['recover-benefits','product-gifts'].includes(route()))||(id==='explore'&&route()==='gift-shop')||(id==='home'&&route()==='pockets')||(id==='dreams'&&route().startsWith('dreams/'))||(id==='groceries'&&route().startsWith('groceries/'))||(id==='finances'&&['income','wealth','debts','debt-simulator','history','payments','planning'].includes(route()));return `<a class="nav-link ${active?'active':''}" href="#${id}" ${active?'aria-current="page"':''}>${navIcon(id)}${title}</a>`;}
   function renderApp(){
     window.QoriExplore?.stop();
-    if(!state.account)return publicRoute()?renderGuest():renderAuth();
+    if(booting)return;
+    if(!state.account)return renderAuth();
     if(!state.account.full_name)return onboarding();
     if(!state.books?.length){app.innerHTML='<main id="main" class="boot"><h1>Mis finanzas</h1><p id="pageError" role="alert">No pudimos cargar tus contabilidades.</p><button class="primary" id="retryBookLoad">Reintentar</button></main>';app.querySelector('#retryBookLoad').onclick=()=>refresh().catch(e=>showError(e.message));return;}
     const name=state.account.full_name.split(' ')[0];
@@ -119,13 +120,8 @@
     else if(route()==='me')renderIdentity(page);
     else {renderProfile(page);page.insertAdjacentHTML('afterbegin','<div class="account-shortcuts"><a class="secondary" href="#me">Mi QR Qori</a><a class="secondary" href="#businesses">Mis negocios y giftcards</a><a class="secondary" href="#finances">Mis finanzas</a><a class="secondary" href="#history">Mis movimientos</a><a class="secondary" href="#product-gifts">Mis regalos</a><a class="secondary" href="#requests">Mis solicitudes</a><a class="secondary" href="#saved">Guardados</a><a class="secondary" href="#following">Negocios que sigo</a></div>');}
   }
-  function renderGuest(){
-    app.innerHTML='<div class="layout guest"><aside class="sidebar">'+brand()+'<nav aria-label="Qori">'+navLink('explore','✦','Explorar')+navLink('scan','⌗','Escanear')+navLink('wallet','▤','Mis tarjetas')+navLink('invitations','✉','Invitaciones')+navLink('profile','○','Mi cuenta')+'</nav><div class="sidebar-foot">Todos tus beneficios.<br>Una cuenta gratuita.<div class="divider"></div><a href="/empresa/">Soy un negocio</a></div></aside><div class="workspace"><header class="topbar"><span class="breadcrumb">Qori Customer · Descubre lo bueno</span><button class="primary guest-login" id="guestLogin">Entrar / Registrarme</button></header><main id="main" class="content"><p id="pageError" class="error" role="alert"></p><div id="page"></div></main></div></div>';
-    document.getElementById('guestLogin').onclick=()=>renderAuth();
-    if(route()==='gift-shop')window.QoriGiftShop.render(document.getElementById('page'),exploreContext());else window.QoriExplore.render(document.getElementById('page'),exploreContext(),route());
-  }
   function onboarding(){
-    app.innerHTML=`<main id="main" class="auth-side boot"><div class="auth-form-wrap">${brand()}<h2>Hagamos tu cuenta más tuya.</h2><p class="muted">Tu correo ya está verificado. ¿Cómo te llamas?</p><form id="profileForm" class="stack">${field('full_name','Tu nombre completo',state.account.full_name,'autocomplete="name" minlength="2" maxlength="100" required')}<details class="recovery-onboarding"><summary>Ya tengo tarjetas o beneficios en negocios Qori</summary><p>Indica tu cédula para recuperar los registros que coincidan con tu correo verificado.</p>${window.QoriBenefitRecovery.documentFields(state.account,true)}<label class="check"><input type="checkbox" name="recover_consent"><span>Autorizo conectar mis beneficios anteriores cuando se verifiquen mis datos.</span></label></details><p id="pageError" class="error" role="alert"></p><button class="primary">Entrar a mi portal →</button></form><p class="small muted">${esc(state.account.email)}</p></div></main>`;
+    app.innerHTML=`<main id="main" class="auth-side boot"><div class="auth-form-wrap">${brand()}<span class="pill">Correo verificado</span><h2>Completa tu registro.</h2><p class="muted">Tu correo ya está verificado. ¿Cómo te llamas?</p><form id="profileForm" class="stack">${field('full_name','Tu nombre completo',state.account.full_name,'autocomplete="name" minlength="2" maxlength="100" required')}<details class="recovery-onboarding"><summary>Ya tengo tarjetas o beneficios en negocios Qori</summary><p>Indica tu cédula para recuperar los registros que coincidan con tu correo verificado.</p>${window.QoriBenefitRecovery.documentFields(state.account,true)}<label class="check"><input type="checkbox" name="recover_consent"><span>Autorizo conectar mis beneficios anteriores cuando se verifiquen mis datos.</span></label></details><p id="pageError" class="error" role="alert"></p><button class="primary">Entrar a mi portal →</button></form><p class="small muted">${esc(state.account.email)}</p></div></main>`;
   }
   function renderWallet(page){
     const benefits=route()==='benefits',count=model.counts(state.cards),pending=state.relationships.filter(r=>r.state==='PENDING'&&new Date(r.expires_at)>new Date());
@@ -278,5 +274,5 @@
   window.addEventListener('focus',verifyVisibleSession);document.addEventListener('visibilitychange',()=>{if(!document.hidden)verifyVisibleSession();});setInterval(sync,60000);
   window.addEventListener('pagehide',()=>{if(state.account)clearPrivateState();});
   window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});
-  (async()=>{try{await loadAccount();await refresh();}catch(error){if(error.status===401)renderApp();else if(state.account){renderApp();showError(error.message);}else renderAuth(error.message);}})();
+  (async()=>{try{await loadAccount();booting=false;await refresh();}catch(error){booting=false;if(error.status===401)renderAuth();else if(state.account){renderApp();showError(error.message);}else renderAuth(error.message);}})();
 })();

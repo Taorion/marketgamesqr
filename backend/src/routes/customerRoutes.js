@@ -47,7 +47,8 @@ router.post('/auth/web/verify',async(req,res,next)=>{
     res.json({account:result.account,session:{expires_at:result.session.expires_at}});
   }catch(e){next(e);}
 });
-// The catalog contains only explicitly published offers. Personal actions stay authenticated.
+// Every Customer feature, including discovery, requires a verified session.
+router.use(auth.customerRequired);
 router.use('/explore', (req,_res,next)=>{
   const key='explore:'+req.ip,now=Date.now(),b=buckets.get(key)||{count:0,until:now+60000};
   if(b.until<now){b.count=0;b.until=now+60000;}b.count++;buckets.set(key,b);
@@ -59,7 +60,6 @@ router.get('/explore/publications/:id',handle(req=>explore.get(parse(uuid,req.pa
 router.get('/explore/publications/:id/qr',handle(req=>explore.shareQr(parse(uuid,req.params.id))));
 router.get('/explore/businesses/:slug',handle(req=>explore.businessPage(parse(text(160).min(1),req.params.slug))));
 router.post('/explore/resolve',handle(req=>explore.resolveQr(parse(z.object({url:text(2000).min(1)}),req.body).url)));
-router.use(auth.customerRequired);
 router.use(require('../services/customerFinanceBooks').middleware);
 router.use(require('./customerFinanceBookRoutes'));
 router.get('/notifications',handle(req=>require('../services/customerBenefitNotificationService').list(req.customer)));
