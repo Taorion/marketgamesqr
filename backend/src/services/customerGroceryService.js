@@ -72,4 +72,9 @@ async function complete(a,id,data){
  });
 }
 async function state(a,id,data){return withTransaction(async db=>{const g=await own(a,id,db,true);if(g.revision!==data.revision||g.status==='PURCHASED')throw badRequest('Esta lista cambió o ya tiene una compra. Conserva su historial y crea otra lista.');return {list:(await db.query('update customer_grocery_lists set status=$3,revision=revision+1,updated_at=now() where customer_id=$1 and id=$2 returning *',[a.id,id,data.archived?'ARCHIVED':'PLANNED'])).rows[0]};});}
-module.exports={catalog,own,present,list,summary,save,candidates,complete,state};
+async function rename(a,id,data){return withTransaction(async db=>{
+ const g=await own(a,id,db,true);
+ if(g.revision!==data.revision)throw badRequest('La lista cambió. Recarga antes de cambiar el nombre.');
+ return {list:(await db.query('update customer_grocery_lists set title=$4,revision=revision+1,updated_at=now() where customer_id=$1 and book_id=$2 and id=$3 returning id,title,revision',[a.id,a.finance_book.id,id,data.title])).rows[0]};
+});}
+module.exports={catalog,own,present,list,summary,save,candidates,complete,state,rename};

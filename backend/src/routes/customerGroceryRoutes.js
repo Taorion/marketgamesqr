@@ -9,6 +9,7 @@ router.get('/catalog',handle(req=>svc.catalog(req.customer)));
 router.post('/',handle(req=>svc.save(req.customer,parse(z.object({...fields,request_id:uuid}),req.body))));
 router.get('/:id',handle(async req=>svc.present(req.customer,await svc.own(req.customer,parse(uuid,req.params.id)))));
 router.put('/:id',handle(req=>svc.save(req.customer,parse(z.object({...fields,revision}),req.body),parse(uuid,req.params.id))));
+router.patch('/:id/title',handle(req=>svc.rename(req.customer,parse(uuid,req.params.id),parse(z.object({title:fields.title,revision}).strict(),req.body))));
 router.get('/:id/candidates',handle(req=>svc.candidates(req.customer,parse(uuid,req.params.id))));
 router.post('/:id/complete',handle(req=>svc.complete(req.customer,parse(uuid,req.params.id),parse(z.object({revision,confirmed:z.literal(true),carry_forward:z.boolean(),entry_id:uuid.optional(),sale_id:uuid.optional(),paid_on:z.string().date().optional(),merchant:z.string().trim().min(1).max(160).optional()}).refine(v=>!(v.entry_id&&v.sale_id)),req.body))));
 router.post('/:id/state',handle(req=>svc.state(req.customer,parse(uuid,req.params.id),parse(z.object({revision,archived:z.boolean()}),req.body))));

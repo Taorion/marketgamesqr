@@ -26,3 +26,16 @@ test('quick picker prevents duplicates by name and unit and adds selected items 
   page.querySelector('#groceryMode').click();assert.ok(page.querySelector('#groceryCatalog').hidden);
  }finally{w.close();}
 });
+test('list names are visible when creating and editing; every list has a safe rename action',async()=>{
+ const {w,ctx}=setup();try{
+  const page=w.document.querySelector('main');w.QoriGroceries.editor(page,ctx);
+  const title=page.querySelector('#groceryListName');assert.ok(title);assert.equal(title.closest('details'),null);
+  title.value='Mercado de la familia <img src=x>';title.dispatchEvent(new w.Event('input',{bubbles:true}));assert.equal(page.querySelector('h1').textContent,title.value);assert.equal(page.querySelector('img'),null);
+  const summary={estimated_minor:0,unknown_prices:0},lists=['PLANNED','ARCHIVED','PURCHASED'].map((status,i)=>({id:'list-'+i,title:'Lista '+i,revision:2,status,items:[],currency:'COP',summary}));
+  let sent,refreshed=false;ctx.request=async(u,b,m)=>{if(b){sent={u,b,m};return {list:{id:'list-2',title:b.title,revision:3}};}return {lists};};ctx.refresh=async()=>{refreshed=true;};
+  await w.QoriGroceries.render(page,ctx,'groceries');assert.equal(page.querySelectorAll('[data-rename]').length,3);
+  page.querySelector('[data-rename="list-2"]').click();const form=w.document.querySelector('#groceryRenameForm');assert.equal(form.elements.title.value,'Lista 2');
+  form.elements.title.value='  Compras del paseo  ';await form.onsubmit(new w.Event('submit',{cancelable:true}));
+  assert.equal(sent.u,'/groceries/list-2/title');assert.equal(sent.m,'PATCH');assert.equal(sent.b.title,'Compras del paseo');assert.equal(sent.b.revision,2);assert.equal(refreshed,true);assert.equal(w.document.querySelector('dialog'),null);
+ }finally{w.close();}
+});

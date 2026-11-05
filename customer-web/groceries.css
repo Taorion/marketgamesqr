@@ -102,3 +102,7 @@
  .grocery-item-top>.quiet{padding:8px}
 }
 
+
+.grocery-name .field{margin:0}.grocery-name p{margin:10px 0 0}.grocery-name input{font-size:18px;font-weight:600;max-width:100%;min-width:0}.grocery-name{margin-bottom:0!important}.grocery-name input:focus{outline:2px solid #0480fa;outline-offset:2px}
+
+.grocery-list-title{overflow-wrap:anywhere}
