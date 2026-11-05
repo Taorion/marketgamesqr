@@ -9,7 +9,7 @@
   const giftNames={PENDING_PAYMENT:'Pendiente de pago al negocio',ISSUED:'Emitida',CANCELLED:'Cancelada'};
   const state={account:null,cards:[],relationships:[],orders:[],updated:null,search:'',kind:'ALL',status:'ACTIVE',challenge:null,email:'',consent:false,loading:false};
   let renderVersion=0,dialogVersion=0,returnFocus=null;
-  const brand=()=>'<div class="brand-block"><a class="brand" href="/customer/" aria-label="Qori Customer"><img class="brand-logo" src="/img/qori-logo.png" alt="Qori" width="156" height="88"></a><span class="brand-sub">Customer</span></div>';
+  const brand=()=>'<div class="brand-block"><a class="brand" href="/customer/" aria-label="Qori Customer"><img class="brand-logo" src="/img/qori-logo-fabrica-ingresos.png?v=brand-20261104" alt="Qori · Tu fábrica de ingresos" width="156" height="88"></a><span class="brand-sub">Customer</span></div>';
   const route=()=>{const value=location.hash.slice(1);return ['home','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases','debts','debt-simulator','groceries','wealth','pockets','income'].includes(value)||/^(publication|business|groceries)\//.test(value)?value:(state.account?'home':'explore');};
   const publicRoute=()=>['explore','scan'].includes(route())||/^(publication|business)\//.test(route());
   const exploreRoute=()=>publicRoute()||['saved','requests','earned','following'].includes(route());
