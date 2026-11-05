@@ -4,7 +4,7 @@ const wait=async fn=>{for(let n=0;n<100;n++){if(fn())return;await new Promise(r=
 function setup(){
  const w=new JSDOM('<main></main>',{url:'https://example.test/customer/',runScripts:'outside-only'}).window,calls=[];
  w.HTMLDialogElement.prototype.close=function(){this.remove();};
- for(const f of ['quick-receipt.js','daily-money.js'])w.eval(fs.readFileSync('customer-web/'+f,'utf8'));
+ for(const f of ['quick-receipt.js','expense-items.js','daily-money.js'])w.eval(fs.readFileSync('customer-web/'+f,'utf8'));
  const ctx={book:{id:'private-book',name:'Casa',currency:'COP'},account:{timezone:'America/Bogota'},refresh:async()=>{},showError:(m,n)=>{n.textContent=m;},request:async(u,b)=>{calls.push({u,b});return {entry:{id:'private-entry'}};},dialog:(_,html)=>{const d=w.document.createElement('dialog');d.innerHTML=html;w.document.body.append(d);return d;}};
  w.QoriDailyMoney.open(ctx,'EXPENSE');const f=w.document.querySelector('form');f.elements.amount.value='12000';f.elements.merchant.value='Mercado';
  const submit=()=>f.dispatchEvent(new w.SubmitEvent('submit',{cancelable:true,submitter:f.querySelector('[type=submit]')}));
