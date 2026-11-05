@@ -42,5 +42,6 @@
    }catch(e){ctx.showError(e.message);b.disabled=false;}});
   }catch(e){if(page.isConnected){page.querySelector('[data-notices]').textContent='No pudimos cargar tus avisos. Pulsa Actualizar para reintentar.';ctx.showError(e.message);}}
  }
- window.QoriNotifications={render,watch};
+ function stop(){clearInterval(timer);timer=null;context=null;accountId=null;lastCount=null;}
+ window.QoriNotifications={render,watch,stop};
 })();

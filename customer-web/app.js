@@ -9,26 +9,38 @@
   const giftNames={PENDING_PAYMENT:'Pendiente de pago al negocio',ISSUED:'Emitida',CANCELLED:'Cancelada'};
   const state={account:null,cards:[],relationships:[],orders:[],updated:null,search:'',kind:'ALL',status:'ACTIVE',challenge:null,email:'',consent:false,loading:false};
   let renderVersion=0,dialogVersion=0,returnFocus=null;
+  const sessionGuard=window.QoriSessionGuard.create(()=>clearPrivateState('La sesión cambió en este navegador. Entra de nuevo para continuar.'));
+  function broadcastSession(){try{localStorage.setItem('qori-session-change',crypto.randomUUID());}catch{}navigator.serviceWorker?.controller?.postMessage({type:'QORI_SESSION_CHANGED'});}
+  function clearPrivateState(message=''){
+    sessionGuard.reset();renderVersion++;closeDialog();returnFocus=null;
+    window.QoriExplore?.stop();window.QoriNotifications?.stop();
+    navigator.serviceWorker?.controller?.postMessage({type:'QORI_SESSION_CHANGED'});
+    for(const key of Object.keys(state))delete state[key];
+    Object.assign(state,{account:null,cards:[],relationships:[],orders:[],books:[],bookId:null,updated:null,search:'',kind:'ALL',status:'ACTIVE',challenge:null,email:'',consent:false,loading:false});
+    announce('');renderAuth(message);
+    navigator.serviceWorker?.getRegistration('/customer/').then(r=>r?.getNotifications()).then(items=>items?.forEach(n=>n.close())).catch(()=>{});
+  }
   const brand=()=>'<div class="brand-block"><a class="brand" href="/customer/" aria-label="Qori Customer"><img class="brand-logo" src="/img/qori-logo-fabrica-ingresos.png?v=brand-20261104" alt="Qori · Tu fábrica de ingresos" width="156" height="88"></a><span class="brand-sub">Customer</span></div>';
   const route=()=>{const value=location.hash.slice(1);return ['home','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases','debts','debt-simulator','groceries','wealth','pockets','income','dreams','recover-benefits','gift-shop','notifications','calculator'].includes(value)||/^(publication|business|groceries|dreams)\//.test(value)?value:(state.account?'home':'explore');};
   const publicRoute=()=>['explore','scan','gift-shop'].includes(route())||/^(publication|business)\//.test(route());
   const exploreRoute=()=>publicRoute()||['saved','requests','earned','following'].includes(route());
-  function exploreContext(){const book=state.books?.find(b=>b.id===state.bookId);return {request:(path,body,method)=>request(path,body,method,book?.id),refresh,selectBook,book,books:state.books||[],openCard,dialog,showError,account:state.account?{...state.account,currency:book?.currency||state.account.currency}:null,cards:state.cards,invitationCount:state.invitationCount,openSale:id=>window.QoriFinance.openSale(id,exploreContext()),login:()=>renderAuth()};}
+  function exploreContext(){const book=state.books?.find(b=>b.id===state.bookId),session=sessionGuard.snapshot();return {request:(path,body,method)=>request(path,body,method,book?.id,session),refresh,selectBook,book,books:state.books||[],openCard,dialog,showError,account:state.account?{...state.account,currency:book?.currency||state.account.currency}:null,cards:state.cards,invitationCount:state.invitationCount,openSale:id=>window.QoriFinance.openSale(id,exploreContext()),login:()=>renderAuth()};}
   async function selectBook(id,nextRoute){closeDialog();state.bookId=id;const url=new URL(location.href);url.searchParams.set("book",id);if(nextRoute)url.hash=nextRoute;else if(route().startsWith('groceries/'))url.hash='groceries';else if(route().startsWith('dreams/'))url.hash='dreams';history.replaceState(null,"",url.href);try{localStorage.setItem('qori-book:'+state.account.id,id);}catch{}await refresh();}
   const announce=text=>{document.getElementById('announcement').textContent=text;};
-  async function request(path,body,method=body?'POST':'GET',bookId=state.bookId){
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+  async function request(path,body,method=body?'POST':'GET',bookId=state.bookId,session=sessionGuard.snapshot()){
+    const ticket=sessionGuard.start(session),controller=ticket.controller,timer=setTimeout(()=>controller.abort(),20000);
     try{
       const response=await fetch('/api/customer'+path,{method,credentials:'same-origin',cache:'no-store',signal:controller.signal,
-        headers:{'Content-Type':'application/json','X-Qori-Web':'1',...(bookId?{'X-Qori-Book':bookId}:{})},...(body?{body:JSON.stringify(body)}:{})});
+        headers:{'Content-Type':'application/json','X-Qori-Web':'1',...(session.accountId?{'X-Qori-Account':session.accountId}:{}),...(bookId?{'X-Qori-Book':bookId}:{})},...(body?{body:JSON.stringify(body)}:{})});
       const data=await response.json().catch(()=>({error:{message:'No pudimos leer la respuesta. Inténtalo de nuevo.'}}));
+      sessionGuard.check(ticket,response);
       if(!response.ok){
-        if(response.status===401&&!path.startsWith('/auth/')){state.account=null;closeDialog();renderAuth('Tu sesión venció. Entra de nuevo para ver tus tarjetas.');}
+        if(response.status===401&&!path.startsWith('/auth/'))clearPrivateState('Tu sesión venció. Entra de nuevo para ver tus datos.');
         const error=Error(data.error?.message||'No pudimos completar la operación.');error.status=response.status;throw error;
       }
       return data;
     }catch(error){if(error.name==='AbortError')throw Error('La conexión está tardando. Inténtalo de nuevo.');if(error instanceof TypeError)throw Error('No pudimos conectar. Revisa tu conexión y vuelve a intentarlo.');throw error;}
-    finally{clearTimeout(timer);}
+    finally{clearTimeout(timer);sessionGuard.finish(ticket);}
   }
   function showError(message,target=document.getElementById('pageError')){if(target){target.textContent=message;target.focus?.();}announce(message);}
   const field=(name,label,value='',extra='')=>`<label class="field">${label}<input name="${name}" value="${esc(value)}" ${extra}></label>`;
@@ -45,7 +57,7 @@
       <div class="auth-links"><a href="/empresa/">Soy un negocio</a><a href="privacidad.html">Privacidad y tu cuenta</a></div></div></main></div>`;
     if(verifying)app.querySelector('[name="code"]')?.focus();
   }
-  async function loadAccount(){const data=await request('/me');state.account=data.account;state.bookId=null;try{state.bookId=new URLSearchParams(location.search).get('book')||localStorage.getItem('qori-book:'+state.account.id);}catch{}}
+  async function loadAccount(){const data=await request('/me');sessionGuard.adopt(data.account.id);state.account=data.account;state.bookId=null;try{state.bookId=new URLSearchParams(location.search).get('book')||localStorage.getItem('qori-book:'+state.account.id);}catch{}}
   async function refresh({render=true}={}){
     const version=++renderVersion;
     const [wallet,links,financial,identity]=await Promise.all([request('/wallet/overview'),request('/relationships'),request('/finance-books'),request('/me')]);
@@ -211,6 +223,7 @@
       state.challenge=(await request('/auth/web/code',{email:state.email})).challenge_id;renderAuth();
     }else if(form.id==='verifyForm'){
       const result=await request('/auth/web/verify',{challenge_id:state.challenge,code:String(f.get('code')).trim(),consent:state.consent});
+      sessionGuard.adopt(result.account.id);broadcastSession();
       const destination=['recover-benefits','gift-shop','product-gifts','invitations'].includes(route())||route().startsWith('publication/')?'#'+route():'#home';state.account=result.account;state.bookId=null;state.challenge=null;history.replaceState(null,'',destination);await refresh();announce('Bienvenido a tu cuenta Qori.');
     }else if(form.id==='profileForm'){
       const recoveryDoc=String(f.get('document_id')||'').trim();if(recoveryDoc&&!state.account.declared_document_key&&(!f.get('document_confirmation')||String(f.get('document_confirmation')).toLowerCase().replace(/[^a-z0-9]/g,'')!==recoveryDoc.toLowerCase().replace(/[^a-z0-9]/g,'')))throw Error('Escribe la misma cédula dos veces. Después no podrás cambiarla.');if(recoveryDoc&&!f.has('recover_consent'))throw Error('Autoriza la recuperación de beneficios o deja la cédula vacía para continuar.');
@@ -222,7 +235,7 @@
     }else if(form.id==='giftAcceptForm'){
       await request(`/wallet/gifts/${form.dataset.id}/accept`,{full_name:f.get('full_name'),document_id:f.get('document_id'),document_confirmation:f.get('document_confirmation')||undefined,terms_accepted:f.has('terms_accepted')});await refresh({render:false});await openCard('GIFT',form.dataset.id);
     }else if(form.id==='deleteAccountForm'){
-      await request('/me',{confirmation:f.get('confirmation')},'DELETE');state.account=null;state.cards=[];state.relationships=[];closeDialog();renderAuth('Tu cuenta personal fue eliminada.');
+      await request('/me',{confirmation:f.get('confirmation')},'DELETE');clearPrivateState('Tu cuenta personal fue eliminada.');broadcastSession();
     }
   }
   document.addEventListener('submit',async event=>{
@@ -254,7 +267,7 @@
       }else if(action==='gift-order'){
         const result=await request('/gift-orders/'+id),o=result.order;
         dialog('Tu solicitud de giftcard',`<h3>${esc(o.business_name)}</h3><p>${money(o.amount)} · ${giftNames[o.state]||esc(o.state)}</p><p>Para ${esc(o.recipient_name)}</p><p class="small muted">${esc(o.payment_instructions||'Consulta el pago directamente con el negocio. La giftcard se emite cuando confirma que lo recibió.')}</p>`);
-      }else if(action==='logout'){await request('/logout',{});state.account=null;state.cards=[];state.relationships=[];renderAuth();}
+      }else if(action==='logout'){await request('/logout',{});clearPrivateState();broadcastSession();}
       else if(action==='revoke-session'){await request('/sessions/'+id,null,'DELETE');renderProfile(document.getElementById('page'));}
       else if(action==='export'){
         const data=await request('/export'),url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
@@ -266,6 +279,10 @@
   document.addEventListener('change',event=>{if(event.target.id==='walletKind'){state.kind=event.target.value;renderGroups();}});
   window.addEventListener('hashchange',()=>{if(location.hash==='#main')return;closeDialog();renderApp();});
   async function sync(){if(!state.account||!state.account.full_name||document.hidden||document.querySelector('dialog[open]')||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;try{await refresh({render:false});const inviteLink=app.querySelector('a[href="#invitations"]');if(inviteLink)inviteLink.innerHTML=navIcon('invitations')+'Invitaciones'+(state.invitationCount?' ('+state.invitationCount+')':'');if(route()==='home')window.QoriAccounting.render(document.getElementById('page'),exploreContext());else if(['wallet','benefits'].includes(route()))renderWallet(document.getElementById('page'));else if(route()==='businesses')renderBusinesses(document.getElementById('page'));else if(route()==='invitations')window.QoriInvitations.render(document.getElementById('page'),exploreContext());else if(route()==='purchases')window.QoriPurchases.render(document.getElementById('page'),exploreContext());else if(route()==='payments')window.QoriPayments.render(document.getElementById('page'),exploreContext());else if(route()==='debts')window.QoriDebts.render(document.getElementById('page'),exploreContext(),route());else if(['finances','history','planning'].includes(route()))window.QoriFinance.render(document.getElementById('page'),exploreContext(),route());}catch(e){showError(e.message);}}
-  window.addEventListener('focus',sync);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync();});setInterval(sync,60000);
+  window.addEventListener('storage',event=>{if(event.key==='qori-session-change')clearPrivateState('La sesión cambió en otra pestaña. Entra de nuevo para continuar.');});
+  async function verifyVisibleSession(){if(state.account)try{await request('/me');await sync();}catch(error){if(error.status!==401&&error.code!=='SESSION_CHANGED')clearPrivateState('No pudimos verificar tu sesión. Vuelve a entrar.');}}
+  window.addEventListener('focus',verifyVisibleSession);document.addEventListener('visibilitychange',()=>{if(!document.hidden)verifyVisibleSession();});setInterval(sync,60000);
+  window.addEventListener('pagehide',()=>{if(state.account)clearPrivateState();});
+  window.addEventListener('pageshow',event=>{if(event.persisted)location.reload();});
   (async()=>{try{await loadAccount();await refresh();}catch(error){if(error.status===401)renderApp();else if(state.account){renderApp();showError(error.message);}else renderAuth(error.message);}})();
 })();

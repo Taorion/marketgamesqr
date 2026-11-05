@@ -81,6 +81,8 @@ async function verifyCode(id, code, deviceName, {webConsent=false}={}) {
   return result;
 }
 async function customerRequired(req, res, next) {
+  res.set('Cache-Control','private, no-store');
+  res.vary('Cookie');res.vary('Authorization');res.vary('X-Qori-Account');
   try {
     const bearer = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.headers.authorization || '')?.[1];
     const cookie=webToken(req);
@@ -90,7 +92,13 @@ async function customerRequired(req, res, next) {
     const result = await query(`select a.*,s.id as session_id from customer_sessions s join customer_accounts a on a.id=s.customer_id
       where s.token_hash=$1 and s.expires_at>now()`,[hash(token)]);
     if (!result.rows[0]) throw unauthorized('Tu sesión venció. Vuelve a entrar.');
-    req.customer = result.rows[0]; res.set('Cache-Control','private, no-store'); next();
+    const account=result.rows[0],expected=req.get('X-Qori-Account');
+    // This is a consistency check, never an identity source. The session owns access.
+    if(expected&&expected!==account.id){
+      res.set('X-Qori-Session-Changed','1');
+      throw Object.assign(new Error('La sesión cambió. Abre de nuevo tu cuenta para continuar.'),{status:409});
+    }
+    req.customer = account;res.set('X-Qori-Customer',account.id);next();
   } catch(error) { next(error); }
 }
 module.exports = { deliverBenefitCode:(email,code,id)=>deliverCode(email,code,id,true),requestCode, verifyCode, customerRequired,assertWebRequest,setWebSession,clearWebSession,status };
