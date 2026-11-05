@@ -1,4 +1,5 @@
 const {recovered}=require('./customerBenefitOwnership');
+const identity=require('./customerIdentityService');
 const {query,withTransaction}=require('../config/db');
 const {badRequest,notFound,forbidden,tooManyRequests}=require('../utils/http');
 const {env}=require('../config/env');
@@ -98,6 +99,7 @@ async function inbox(account){
 }
 async function decide(account,id,data){
   return withTransaction(async db=>{
+    await db.query('select id from customer_accounts where id=$1 for update',[account.id]);
     const row=(await db.query('select * from customer_invitations where id=$1 and customer_id=$2 for update',[id,account.id])).rows[0];
     if(!row)throw notFound('Invitación no encontrada.');
     if(row.state==='ACCEPTED'&&data.action==='ACCEPT')return {ok:true,result_id:row.result_id,existing:true};
@@ -120,7 +122,8 @@ async function decide(account,id,data){
       if(row.kind==='AFFILIATION')await assertStandaloneBusinessFeature(user,user.business_id,'affiliates');
       const relation=(await db.query('select * from customer_relationships where id=$1 and customer_id=$2 and business_id=$3 for update',[row.relationship_id,account.id,row.business_id])).rows[0];
       if(!relation||['REVOKED','REJECTED'].includes(relation.state))throw badRequest('Solicita al negocio una nueva conexión.');
-      if(relation.state==='PENDING')await svc.decideRelationship(account.id,relation.id,{action:'ACCEPT',include_history:data.include_history},{client:db});
+      if(relation.state==='PENDING')await svc.decideRelationship(account.id,relation.id,{...data,action:'ACCEPT',include_history:data.include_history},{client:db});
+      else await identity.lockDocument(account.id,data,db,{expected:relation.document_key});
       if(row.kind==='STAMP')resultId=(await stamps.enroll(user.business_id,user.id,{program_id:row.resource_id,name:account.full_name,document_id:relation.document_key,email:account.email,consent:true},{client:db})).member.id;
       else{
         await db.query('select pg_advisory_xact_lock(hashtext($1))',[`customer-affiliate:${user.business_id}:${relation.document_key}`]);
@@ -128,6 +131,7 @@ async function decide(account,id,data){
         resultId=existing?.id||(await affiliates.createAffiliate(user.business_id,user,{full_name:account.full_name,document_id:relation.document_key,email:account.email},{client:db})).id;
       }
     }else if(row.kind==='GIFT'){
+      await identity.lockDocument(account.id,data,db);
       if(!data.document_id||data.document_id.trim().length<3)throw badRequest('Escribe el documento que presentarás al usar tu giftcard.');
       await assertStandaloneBusinessFeature(user,user.business_id,'gift_cards');
       resultId=(await gifts.createRewardPass(user,{buyer_name:'Regalo del negocio',beneficiary_name:account.full_name,beneficiary_document:data.document_id,

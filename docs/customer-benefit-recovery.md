@@ -25,3 +25,11 @@ Pruebas HTTP sobre PostgreSQL local aislado: consentimiento, propiedad de cuatro
 Pantalla comprobada con datos ficticios en Chrome local a 1440, 390 y 360 px; sin desbordamiento horizontal. No constituye prueba en un dispositivo físico ni recuperación autenticada de una cuenta real.
 
 La consulta del caso reportado de POLLIPUNTOS en Rey del sabor confirmó un registro elegible con correo histórico. No se asociaron cuentas reales ni se enviaron correos durante esta validación; la titular debe completar la verificación.
+
+## Cédula maestra y recuperación única
+
+Desde la migración `20261105124802_qori_customer_master_document`, el primer registro requiere `document_id` y `document_confirmation` coincidentes al normalizar espacios, puntos y guiones. La cédula queda fijada aun cuando no se encuentren beneficios. No existe edición ni borrado del documento desde Customer. La base de datos también rechaza cambiar un documento ya registrado o reiniciar una recuperación completada.
+
+La primera recuperación que obtiene beneficios fija `benefit_recovery_completed_at`. Solo se repite la respuesta de una solicitud ya procesada con la misma identidad; una nueva solicitud o un código pendiente no ejecutan una segunda recuperación. Si aún no hay resultados, se puede continuar verificando el correo histórico con la misma cédula. Nuevas invitaciones y regalos continúan funcionando; las conexiones con documento y las aceptaciones de giftcards deben respetar la cédula maestra. La primera aceptación que registra documento también exige doble escritura.
+
+El bloqueo no sustituye la prueba de propiedad por correo ni convierte la cédula declarada en verificación oficial de identidad. Se conserva el alcance por recurso. Las cuentas anteriores conservan sus beneficios: documentos históricos contradictorios se marcan para revisión sin elegir uno automáticamente ni retirar recursos. Las verificaciones de correo pendientes anteriores a esta migración se invalidan para exigir el nuevo flujo.

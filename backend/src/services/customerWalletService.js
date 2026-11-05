@@ -158,6 +158,7 @@ async function giftDetail(account,id) {
 }
 async function acceptGift(account,id,data) {
   await withTransaction(async db=>{
+    await require('./customerIdentityService').lockDocument(account.id,data,db);
     const row=await ownGift(account,id,db,true);
     if(!row.order_id)throw badRequest('Esta tarjeta ya está vinculada por tu relación con el negocio.');
     if(row.claimed_at)return; // A consumed retry cannot change recipient identity.

@@ -81,7 +81,7 @@ test('public ecosystem connects canonical programs and earned rewards to a verif
   const r=await api('/api/business/customer/program-requests/'+req.request.id+'/decision',merchant.token,{action:'INVITE',identity_checked:true});assert.equal(r.status,200,JSON.stringify(r));
   assert.equal((await api('/api/customer/wallet/overview',buyer.token)).cards.length,0);
   const invitation=(await api('/api/customer/invitations',buyer.token)).invitations[0];assert.ok(invitation);
-  assert.equal((await api('/api/customer/invitations/'+invitation.id+'/decision',buyer.token,{action:'ACCEPT',terms_accepted:true})).status,200);
+  assert.equal((await api('/api/customer/invitations/'+invitation.id+'/decision',buyer.token,{action:'ACCEPT',terms_accepted:true,document_id:'DISCOVERY-001',document_confirmation:'DISCOVERY-001'})).status,200);
   assert.equal((await api('/api/customer/wallet/overview',buyer.token)).cards.length,1);
   assert.equal((await query('select count(*)::int n from business_sales where business_id=$1',[merchant.b.id])).rows[0].n,0);
  });

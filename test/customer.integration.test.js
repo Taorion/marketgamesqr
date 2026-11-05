@@ -44,7 +44,7 @@ test('real customer integration with existing enterprise sale and stamp services
     assert.equal(proposal.status,200,JSON.stringify(proposal));
     assert.equal((await api(`/api/customer/relationships/${proposal.relationship.id}/decision`,other.token,{action:'ACCEPT',include_history:true})).status,404);
     assert.equal((await api('/api/customer/wallet',customer.token)).cards.length,0);
-    assert.equal((await api(`/api/customer/relationships/${proposal.relationship.id}/decision`,customer.token,{action:'ACCEPT',include_history:true})).status,200);
+    assert.equal((await api(`/api/customer/relationships/${proposal.relationship.id}/decision`,customer.token,{action:'ACCEPT',include_history:true,document_id:'CC-QA123',document_confirmation:'CC-QA123'})).status,200);
     assert.equal((await api('/api/customer/wallet',customer.token)).cards[0].id,member.id);
   });
   const saleBody={customer_name:'Comprador QA',customer_document_id:'CC-QA123',sale_amount:12000,currency:'COP',product_name:'Café',payment_method:'CASH',acquisition_source:'STORE_WALK_IN',idempotency_key:crypto.randomUUID()};
@@ -144,7 +144,7 @@ test('real customer integration with existing enterprise sale and stamp services
     const received=await api(`/api/customer/wallet/gifts/${pass.id}`,other.token);assert.equal(received.status,200,JSON.stringify(received));assert.equal(received.card.claim_required,true);assert.equal(received.card.qr_image,undefined);
     assert.equal((await api('/api/customer/wallet/overview',other.token)).cards.find(c=>c.id===pass.id).status,'PENDING');
     assert.equal(JSON.stringify(received).includes(pass.security_pin),false);
-    const claim=await api(`/api/customer/wallet/gifts/${pass.id}/accept`,other.token,{full_name:'Destinatario QA',document_id:'QA-RECIPIENT',terms_accepted:true});assert.equal(claim.status,200,JSON.stringify(claim));assert.ok(claim.card.qr_image);
+    const claim=await api(`/api/customer/wallet/gifts/${pass.id}/accept`,other.token,{full_name:'Destinatario QA',document_id:'QA-RECIPIENT',document_confirmation:'QA-RECIPIENT',terms_accepted:true});assert.equal(claim.status,200,JSON.stringify(claim));assert.ok(claim.card.qr_image);
     await api(`/api/customer/wallet/gifts/${pass.id}/accept`,other.token,{full_name:'Intento de cambio',document_id:'OTHER',terms_accepted:true});
     assert.equal((await query('select beneficiary_document from reward_passes where id=$1',[pass.id])).rows[0].beneficiary_document,'QA-RECIPIENT');
     const payload={purchase_value_cop:10000,redeemed_value_cop:10000,invoice_number:'QA-'+crypto.randomUUID(),document_checked:'QA-RECIPIENT',branch_id:branch.id,idempotency_key:crypto.randomUUID()};

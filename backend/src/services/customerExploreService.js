@@ -142,6 +142,7 @@ async function personal(account){return {saved:(await query('select publication_
 async function requestProgram(account,id,data){
  const row=await detail(id);if(!['STAMP','AFFILIATION'].includes(row.kind))throw badRequest('Esta publicación no recibe solicitudes de afiliación.');
  if((await query('select 1 from customer_business_blocks where customer_id=$1 and business_id=$2',[account.id,row.business_id])).rowCount)throw badRequest('Primero permite invitaciones de este negocio.');
+ await require('./customerIdentityService').assertCompatible(account.id,data.document_id,{query});
  const r=(await query(`insert into customer_program_requests(customer_id,publication_id,business_id,document_id,message) values($1,$2,$3,$4,$5)
  on conflict(customer_id,publication_id) where state in ('PENDING','INVITED') do update set publication_id=excluded.publication_id returning id,state`,[account.id,id,row.business_id,data.document_id,data.message])).rows[0];
  await event(account,id,'REQUEST');return {request:r};

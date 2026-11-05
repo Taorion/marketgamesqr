@@ -1,4 +1,5 @@
 const {owned}=require('./customerBenefitOwnership');
+const identity=require('./customerIdentityService');
 const QRCode = require('qrcode');
 const { query, withTransaction } = require('../config/db');
 const { badRequest, notFound, forbidden } = require('../utils/http');
@@ -79,6 +80,7 @@ async function proposeRelationship(user,data,{client}={}) {
   return (client?fn=>fn(client):withTransaction)(async db=>{
     const buyer=(await db.query('select id,full_name from customer_accounts where public_id=$1',[data.public_id])).rows[0];
     if(!buyer) throw notFound('Identificación Qori no encontrada.');
+    await identity.assertCompatible(buyer.id,document,db);
     if((await db.query('select 1 from customer_business_blocks where customer_id=$1 and business_id=$2',[buyer.id,user.business_id])).rowCount)throw forbidden('Este comprador no recibe solicitudes de este negocio.');
     // The operator verifies the document in person; the buyer must separately consent.
     // A Qori identity can connect before the first purchase or local enrollment.
@@ -92,6 +94,7 @@ async function proposeRelationship(user,data,{client}={}) {
 }
 async function decideRelationship(customerId,id,data,{client}={}) {
   return (client?fn=>fn(client):withTransaction)(async db=>{
+    await db.query('select id from customer_accounts where id=$1 for update',[customerId]);
     const r=(await db.query('select * from customer_relationships where id=$1 and customer_id=$2 for update',[id,customerId])).rows[0];
     if(!r) throw notFound();
     if(data.action==='REVOKE') {
@@ -100,6 +103,7 @@ async function decideRelationship(customerId,id,data,{client}={}) {
     }
     if(r.state!=='PENDING'||new Date(r.expires_at)<=new Date()) throw badRequest('La solicitud ya no está pendiente o venció.');
     if(data.action==='ACCEPT') {
+      await identity.lockDocument(customerId,data,db,{expected:r.document_key});
       await db.query('select pg_advisory_xact_lock(hashtext($1))',[`relationship:${r.business_id}:${r.document_key}`]);
       const collision=await db.query("select id from customer_relationships where business_id=$1 and document_key=$2 and state='ACCEPTED'",[r.business_id,r.document_key]);
       if(collision.rowCount||(await db.query('select 1 from customer_recovered_benefits where business_id=$1 and document_key=$2 and customer_id<>$3',[r.business_id,r.document_key,customerId])).rowCount) throw badRequest('Esta relación ya tiene una cuenta vinculada. Solicita revisión al negocio.');

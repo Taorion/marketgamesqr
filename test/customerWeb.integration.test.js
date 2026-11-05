@@ -31,7 +31,7 @@ async function business(){return (await query(`insert into businesses(name,slug,
 async function enrollment(businessId,document){const p=await stamps.saveProgram(businessId,null,rules);return (await stamps.enroll(businessId,null,{program_id:p.id,name:'Cliente web',document_id:document,email:buyer.email,consent:true})).member;}
 async function connect(businessId,document){
   const proposed=await links.proposeRelationship({id:operator.id,business_id:businessId},{public_id:buyer.data.account.public_id,document_id:document,identity_checked:true});
-  return api(`/api/customer/relationships/${proposed.relationship.id}/decision`,{cookie:buyer.cookie,body:{action:'ACCEPT',include_history:true}});
+  return api(`/api/customer/relationships/${proposed.relationship.id}/decision`,{cookie:buyer.cookie,body:{action:'ACCEPT',include_history:true,document_id:document,document_confirmation:document}});
 }
 test('Customer web registration and multi-business loyalty use real canonical data',async t=>{
   server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));base=`http://127.0.0.1:${server.address().port}`;

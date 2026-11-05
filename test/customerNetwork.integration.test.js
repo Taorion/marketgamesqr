@@ -24,7 +24,7 @@ async function business(){
   return {b,u,token:jwt.sign({sub:u.id,password_version:0},process.env.JWT_SECRET)};
 }
 const send=(kind,extra={},token=token1)=>api('/api/business/customer/invitations',token,{request_id:crypto.randomUUID(),public_id:buyer.account.public_id,kind,...extra});
-const accept=(id,extra={},token=buyer.token)=>api('/api/customer/invitations/'+id+'/decision',token,{action:'ACCEPT',terms_accepted:true,...extra});
+const accept=(id,extra={},token=buyer.token)=>api('/api/customer/invitations/'+id+'/decision',token,{action:'ACCEPT',terms_accepted:true,document_id:'NEW-QORI-01',document_confirmation:'NEW-QORI-01',...extra});
 test('Qori businesses reach a new buyer through an owned invitation inbox',async t=>{
   server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
   buyer=await login();other=await login();const first=await business(),second=await business();

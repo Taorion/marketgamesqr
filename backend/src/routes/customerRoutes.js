@@ -91,7 +91,7 @@ router.post('/explore/publications/:id/gift-order',handle(req=>explore.giftOrder
 router.get('/invitations',handle(req=>network.inbox(req.customer)));
 router.post('/invitations/:id/participants',handle(req=>explore.participateInvitation(req.customer,parse(uuid,req.params.id),parse(publicInteractiveParticipantSchema,req.body),false)));
 router.post('/invitations/:id/complete',handle(req=>explore.participateInvitation(req.customer,parse(uuid,req.params.id),parse(publicInteractiveCompleteSchema,req.body),true)));
-router.post('/invitations/:id/decision',handle(req=>network.decide(req.customer,parse(uuid,req.params.id),parse(z.object({action:z.enum(['ACCEPT','REJECT']),include_history:z.boolean().default(false),auto_receive:z.boolean().default(false),document_id:text(80).optional(),terms_accepted:z.literal(true).optional()}).refine(d=>d.action==='REJECT'||d.terms_accepted===true,'Confirma las condiciones de la invitación.'),req.body))));
+router.post('/invitations/:id/decision',handle(req=>network.decide(req.customer,parse(uuid,req.params.id),parse(z.object({action:z.enum(['ACCEPT','REJECT']),include_history:z.boolean().default(false),auto_receive:z.boolean().default(false),document_id:text(80).optional(),document_confirmation:text(80).optional(),terms_accepted:z.literal(true).optional()}).refine(d=>d.action==='REJECT'||d.terms_accepted===true,'Confirma las condiciones de la invitación.'),req.body))));
 router.put('/business-blocks/:id',handle(req=>network.block(req.customer,parse(uuid,req.params.id),parse(z.object({blocked:z.boolean()}),req.body).blocked)));
 router.get('/wallet/tickets/:id',handle(req=>network.ticket(req.customer,parse(uuid,req.params.id))));
 router.get('/wallet/overview',handle(req=>web.overview(req.customer)));
@@ -118,7 +118,7 @@ router.get('/finance-connections',handle(req=>financeDelivery.connections(req.cu
 router.put('/finance-connections/:id',handle(req=>financeDelivery.connection(req.customer,parse(uuid,req.params.id),parse(z.object({auto_receive:z.boolean()}),req.body).auto_receive)));
 router.post('/recurring/:id/record',handle(req=>paymentAgenda.legacyRecord(req.customer,parse(uuid,req.params.id),parse(z.object({expected_date:z.string().date(),paid_on:z.string().date(),amount:money.optional(),confirmed:z.literal(true)}),req.body))));
 router.get('/relationships',handle(req=>svc.relationships(req.customer.id)));
-router.post('/relationships/:id/decision',handle(req=>svc.decideRelationship(req.customer.id,parse(uuid,req.params.id),parse(z.object({action:z.enum(['ACCEPT','REJECT','REVOKE']),include_history:z.boolean().default(false)}),req.body))));
+router.post('/relationships/:id/decision',handle(req=>svc.decideRelationship(req.customer.id,parse(uuid,req.params.id),parse(z.object({action:z.enum(['ACCEPT','REJECT','REVOKE']),include_history:z.boolean().default(false),document_id:text(80).optional(),document_confirmation:text(80).optional()}),req.body))));
 const entry=z.object({request_id:uuid,kind:z.enum(['EXPENSE','INCOME']).default('EXPENSE'),amount:money,currency,occurred_at:z.union([z.string().datetime({offset:true}),z.string().date()]),merchant:text(160).min(1),
   expense_pattern:z.enum(['UNSET','RECURRING','EVENTUAL']).optional(),category:category.default('otros'),priority:z.enum(['UNSET','ESSENTIAL','FLEXIBLE']).default('UNSET'),note:text(2000).default(''),payment_method:text(60).default(''),
   products:z.array(z.object({name:text(160).min(1),quantity:z.number().positive().max(100000),amount:money})).max(100).default([]),
@@ -208,7 +208,7 @@ router.get('/wallet',handle(async req=>({...await svc.wallet(req.customer.id),gi
 router.get('/wallet/affiliations/:id',handle(req=>wallet.affiliateCard(req.customer,parse(uuid,req.params.id))));
 router.post('/wallet/affiliations/:id/claim',handle(req=>wallet.claimAffiliate(req.customer,parse(uuid,req.params.id),parse(z.object({reward_rule_id:uuid}),req.body).reward_rule_id)));
 router.get('/wallet/gifts/:id',handle(req=>wallet.giftDetail(req.customer,parse(uuid,req.params.id))));
-router.post('/wallet/gifts/:id/accept',handle(req=>wallet.acceptGift(req.customer,parse(uuid,req.params.id),parse(z.object({full_name:text(160).min(2),document_id:text(80).min(3),terms_accepted:z.literal(true)}),req.body))));
+router.post('/wallet/gifts/:id/accept',handle(req=>wallet.acceptGift(req.customer,parse(uuid,req.params.id),parse(z.object({full_name:text(160).min(2),document_id:text(80).min(3),document_confirmation:text(80).optional(),terms_accepted:z.literal(true)}),req.body))));
 router.post('/gift-orders',handle(req=>wallet.createGiftOrder(req.customer,parse(z.object({request_id:uuid,business_id:uuid,buyer_name:text(160).min(2),recipient_name:text(160).min(2),recipient_email:z.string().trim().email().max(180),amount:money,message:text(500).default(''),terms_accepted:z.literal(true)}),req.body))));
 router.get('/gift-orders/:id',handle(req=>wallet.giftOrder(req.customer,parse(uuid,req.params.id))));
 router.post('/gift-orders/:id/cancel',handle(req=>wallet.cancelGiftOrder(req.customer,parse(uuid,req.params.id))));

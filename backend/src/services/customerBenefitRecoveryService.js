@@ -1,6 +1,7 @@
 const crypto=require('crypto'),{query,withTransaction}=require('../config/db'),{env}=require('../config/env');
 const {badRequest,tooManyRequests}=require('../utils/http');
-const normalize=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const {normalize,lockDocument}=require('./customerIdentityService');
+const completed=()=>badRequest('La conexión inicial de beneficios ya se completó. Tu cédula no se puede cambiar ni iniciar otra recuperación.');
 const codeHash=(id,code)=>crypto.createHmac('sha256',env.jwtSecret).update('customer-benefit-recovery:'+id+':'+code).digest('hex');
 const sources=`select business_id,id resource_id,'STAMP'::text kind,lower(trim(email)) email from stamp_members where document_key=$1
  union all select business_id,id,'AFFILIATION',lower(trim(email)) from affiliates where regexp_replace(lower(document_id),'[^a-z0-9]','','g')=$1 and status<>'DELETED'
@@ -23,18 +24,19 @@ async function connect(a,document,email,method,db,allowed){
     on conflict(kind,resource_id) do update set resource_id=excluded.resource_id where customer_recovered_benefits.customer_id=excluded.customer_id returning id`,[a.id,b.id,b.kind,b.resource_id,document,method,email]);
   if(r.rowCount){recovered_count++;connected.set(b.id,{business_id:b.id,business_name:b.name});}
  }
- await db.query('update customer_accounts set declared_document_key=$2 where id=$1',[a.id,document]);
+ if(recovered_count)await db.query('update customer_accounts set benefit_recovery_completed_at=now() where id=$1 and benefit_recovery_completed_at is null',[a.id]);
  return {connected:[...connected.values()],recovered_count,document_suffix:document.slice(-4),verification:method,message:recovered_count?'Tus beneficios anteriores ya están conectados.':'No pudimos recuperar beneficios automáticamente con estos datos. Puedes verificar el correo registrado en el negocio o pedirle que confirme tu conexión.'};
 }
 async function recover(a,d){const document=normalize(d.document_id);if(document.length<3)throw badRequest('Escribe una cédula válida.');return withTransaction(async db=>{
- await db.query('select id from customer_accounts where id=$1 for update',[a.id]);
+ const identity=await lockDocument(a.id,d,db);
  const old=(await db.query('select result from customer_benefit_recovery_runs where customer_id=$1 and request_id=$2',[a.id,d.request_id])).rows[0];if(old)return old.result;
+ if(identity.benefit_recovery_completed_at)throw completed();
  const n=(await db.query("select count(*)::int n from customer_benefit_recovery_runs where customer_id=$1 and created_at>now()-interval '15 minutes'",[a.id])).rows[0].n;if(n>=10)throw tooManyRequests('Espera unos minutos antes de volver a buscar.');
  const result=await connect(a,document,a.email,'ACCOUNT_EMAIL',db);
  await db.query("insert into customer_benefit_recovery_runs(customer_id,request_id,document_key,proof_method,result) values($1,$2,$3,'ACCOUNT_EMAIL',$4::jsonb)",[a.id,d.request_id,document,JSON.stringify(result)]);return result;
 });}
 async function requestCode(a,d){const document=normalize(d.document_id),email=d.email.trim().toLowerCase();if(document.length<3)throw badRequest('Escribe una cédula válida.');const id=crypto.randomUUID(),code=String(crypto.randomInt(0,1000000)).padStart(6,'0');
- const rows=await withTransaction(async db=>{await db.query('select id from customer_accounts where id=$1 for update',[a.id]);await db.query('select pg_advisory_xact_lock(hashtext($1))',['benefit-recovery-email:'+email]);
+ const rows=await withTransaction(async db=>{const identity=await lockDocument(a.id,d,db);if(identity.benefit_recovery_completed_at)throw completed();await db.query('select pg_advisory_xact_lock(hashtext($1))',['benefit-recovery-email:'+email]);
  const n=(await db.query("select count(*)::int n from customer_benefit_recovery_challenges where (customer_id=$1 or email=$2) and created_at>now()-interval '15 minutes'",[a.id,email])).rows[0].n;if(n>=5)throw tooManyRequests('Espera unos minutos antes de solicitar otro código.');
  const found=await candidates(a,document,email,db);await db.query('update customer_benefit_recovery_challenges set consumed_at=now() where customer_id=$1 and consumed_at is null',[a.id]);
  await db.query("insert into customer_benefit_recovery_challenges(id,customer_id,document_key,email,code_hash,resource_ids,expires_at) values($1,$2,$3,$4,$5,$6,now()+interval '10 minutes')",[id,a.id,document,email,codeHash(id,code),found.map(b=>b.resource_id)]);return found;});
@@ -44,8 +46,10 @@ async function requestCode(a,d){const document=normalize(d.document_id),email=d.
 async function verifyCode(a,d){const result=await withTransaction(async db=>{
  await db.query('select id from customer_accounts where id=$1 for update',[a.id]);const c=(await db.query('select * from customer_benefit_recovery_challenges where id=$1 and customer_id=$2 for update',[d.challenge_id,a.id])).rows[0];
  if(!c||new Date(c.expires_at)<=new Date())return {invalid:true};
+ const identity=await lockDocument(a.id,{document_id:c.document_key},db);
  const expected=Buffer.from(c.code_hash,'hex'),actual=Buffer.from(codeHash(c.id,d.code),'hex');
  if(c.consumed_at)return !crypto.timingSafeEqual(expected,actual)||!c.result?{invalid:true}:c.result;
+ if(identity.benefit_recovery_completed_at)throw completed();
  if(c.attempts>=5)return {invalid:true};
  await db.query('update customer_benefit_recovery_challenges set attempts=attempts+1 where id=$1',[c.id]);
  if(!crypto.timingSafeEqual(expected,actual)||!c.resource_ids.length)return {invalid:true};
@@ -53,5 +57,5 @@ async function verifyCode(a,d){const result=await withTransaction(async db=>{
  await db.query('update customer_benefit_recovery_challenges set consumed_at=now(),result=$2::jsonb where id=$1',[c.id,JSON.stringify(output)]);
  await db.query("insert into customer_benefit_recovery_runs(customer_id,request_id,document_key,proof_method,result) values($1,$2,$3,'HISTORICAL_EMAIL',$4::jsonb)",[a.id,c.id,c.document_key,JSON.stringify(output)]);return output;
  });if(result.invalid)throw badRequest('El código no es válido, venció o ya no está disponible. Solicita uno nuevo.');return result;}
-async function status(a){return {document_id:(await query('select declared_document_key from customer_accounts where id=$1',[a.id])).rows[0]?.declared_document_key||'',email:a.email};}
+async function status(a){const r=(await query('select declared_document_key,document_locked_at,document_review_required,benefit_recovery_completed_at from customer_accounts where id=$1',[a.id])).rows[0];return {document_id:r?.declared_document_key||'',document_locked:!!r?.declared_document_key,review_required:!!r?.document_review_required,completed:!!r?.benefit_recovery_completed_at,email:a.email};}
 module.exports={recover,requestCode,verifyCode,status,candidates};
