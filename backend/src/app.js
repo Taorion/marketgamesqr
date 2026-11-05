@@ -51,6 +51,8 @@ const rewardPassPublicClaimLimit = rateLimit({
 const projectRoot = path.join(__dirname, "../..");
 const qoriWebRoot = path.join(projectRoot, "qori-web");
 const staticOptions = { setHeaders: setUtf8StaticHeaders };
+// Privacy controls must revalidate with the server, even when a page still has an old asset URL.
+const privacyStaticFiles = new Set(['css/legal.css','css/cookie-consent.css','js/cookie-consent.js'].map(file=>path.resolve(qoriWebRoot,file)));
 const utf8StaticExtensions = new Set([".css", ".html", ".js", ".json", ".svg", ".txt"]);
 const longCacheStaticExtensions = new Set([
   ".css",
@@ -80,7 +82,7 @@ function setUtf8StaticHeaders(res, filePath) {
       res.setHeader("Content-Type", `${currentType}; charset=utf-8`);
     }
   }
-  if (ext === ".html") {
+  if (ext === ".html" || privacyStaticFiles.has(path.resolve(filePath))) {
     res.setHeader("Cache-Control", "no-cache, must-revalidate");
   } else if (longCacheStaticExtensions.has(ext)) {
     res.setHeader("Cache-Control", "public, max-age=2592000, stale-while-revalidate=604800");
