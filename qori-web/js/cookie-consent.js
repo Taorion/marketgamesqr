@@ -22,7 +22,7 @@
  }
  function showBanner(){
   if(current()||banner?.isConnected)return;banner=document.createElement('section');banner.className='qori-cookies qori-cookie-banner';banner.setAttribute('role','region');banner.setAttribute('aria-label','Aviso de cookies');
-  banner.innerHTML='<div><h2>Tu privacidad también cuenta.</h2><p>Usamos almacenamiento necesario para el acceso seguro. Con tu permiso, también recordamos el bolsillo que elegiste en Customer. Puedes rechazar lo opcional y continuar.</p><p><a href="/cookies/">Ver política de cookies</a> · <a href="/privacidad/">Privacidad</a></p></div><div class="qcp-actions"><button type="button" data-accept>Aceptar opcionales</button><button type="button" data-reject>Rechazar opcionales</button><button type="button" data-config>Configurar</button></div>';
+  banner.innerHTML='<div><h2>Cookies: tú decides</h2><p>Usamos almacenamiento necesario para el acceso seguro. Con tu permiso, también recordamos el bolsillo que elegiste en Customer. Puedes rechazar lo opcional y continuar.</p><p><a href="/cookies/">Ver política de cookies</a> · <a href="/privacidad/">Privacidad</a></p></div><div class="qcp-actions"><button type="button" data-accept>Aceptar opcionales</button><button type="button" data-reject>Rechazar opcionales</button><button type="button" data-config>Configurar</button></div>';
   document.body.append(banner);banner.querySelector('[data-accept]').onclick=()=>save(true);banner.querySelector('[data-reject]').onclick=()=>save(false);banner.querySelector('[data-config]').onclick=open;
  }
  window.QoriCookies={open,preferencesAllowed:()=>!!current()?.preferences};
