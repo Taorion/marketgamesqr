@@ -39,6 +39,7 @@ function periodRange(options, timezone, now = new Date()) {
 }
 function productsForSale(sale) {
   const list = sale.metadata?.products || sale.metadata?.line_items || [];
+  if(Array.isArray(list)&&!list.length&&sale.product_name)return [{key:`${sale.business_id}:sale:${sale.id}`,name:sale.product_name,quantity:Number(sale.quantity)||1,amount_minor:minor(sale.sale_amount),matched:!!sale.inventory_product_id}];
   return Array.isArray(list) ? list.filter(p => (p.name||p.product_name) && Number(p.quantity)>0 && p.line_total!=null).map((p,index) => ({
     key: p.inventory_product_id ? `${sale.business_id}:${p.inventory_product_id}` : `${sale.business_id}:unmatched:${sale.id}:${index}`,
     name:p.name||p.product_name, quantity:Number(p.quantity), amount_minor:minor(p.line_total),
@@ -56,7 +57,7 @@ function salesMovement(row, timezone) {
     category:row.category||'otros',priority:row.priority||'UNSET',expense_pattern:row.expense_pattern||'UNSET',note:row.personal_note||'',payment_method:row.payment_method,
     products:rawProducts.map(p=>({...p,amount_minor:allocationExact?p.amount_minor:null})),products_exact:allocationExact,
     discount_minor:minor(row.metadata?.benefit_application?.discount_amount||0),reported_at:row.reported_at,
-    relationship_id:row.relationship_id,branch_id:row.branch_id };
+    relationship_id:row.relationship_id,branch_id:row.branch_id,automatically_recorded:!!row.automatically_recorded };
 }
 function giftPurchaseMovement(row,timezone) {
   return {id:`gift:${row.id}`,gift_order_id:row.id,source:'QORI',kind:'EXPENSE',business_id:row.business_id,merchant:row.business_name,

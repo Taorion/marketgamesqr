@@ -124,7 +124,7 @@ async function decide(account,id,data){
       if(row.kind==='AFFILIATION')await assertStandaloneBusinessFeature(user,user.business_id,'affiliates');
       const relation=(await db.query('select * from customer_relationships where id=$1 and customer_id=$2 and business_id=$3 for update',[row.relationship_id,account.id,row.business_id])).rows[0];
       if(!relation||['REVOKED','REJECTED'].includes(relation.state))throw badRequest('Solicita al negocio una nueva conexión.');
-      if(relation.state==='PENDING')await svc.decideRelationship(account.id,relation.id,{...data,action:'ACCEPT',include_history:data.include_history},{client:db});
+      if(relation.state==='PENDING')await svc.decideRelationship(account.id,relation.id,{...data,action:'ACCEPT',include_history:data.include_history,capture_purchases:false},{client:db});
       else await identity.lockDocument(account.id,data,db,{expected:relation.document_key});
       if(row.kind==='STAMP')resultId=(await stamps.enroll(user.business_id,user.id,{program_id:row.resource_id,name:account.full_name,document_id:relation.document_key,email:account.email,consent:true},{client:db})).member.id;
       else{
@@ -156,6 +156,7 @@ async function block(account,businessId,blocked){
 const ticketSql=`select q.id,q.business_id,b.name business_name,q.token,
   case when q.metadata->>'source'='CUSTOMER_PRODUCT_GIFT' and not exists(select 1 from business_sales paid where paid.id=q.sale_id and paid.sale_status='PAID') then 'CANCELLED' else q.status end status,q.expires_at,
   q.metadata->>'customer_gift_sender' sender_name,q.metadata->>'customer_gift_message' gift_message,
+  case when q.metadata->>'source'='CUSTOMER_PRODUCT_GIFT' then 'USER_GIFT' else 'TICKET' end benefit_category,
   coalesce(q.metadata->>'reward_label',rw.name,'Ticket Qori') title from qr_codes q join businesses b on b.id=q.business_id
   left join rewards rw on rw.id=q.reward_id left join players p on p.id=q.player_id
   where (${recovered('TICKET','q')} or exists(select 1 from customer_activation_participations cp join interactive_activation_rewards ar on ar.participant_id=cp.participant_id where cp.customer_id=$1 and ar.qr_code_id=q.id)

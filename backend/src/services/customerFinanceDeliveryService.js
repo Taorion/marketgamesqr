@@ -4,9 +4,10 @@ const {badRequest,notFound}=require('../utils/http');
 const finance=require('./customerFinance');
 async function businessSales(user,{search='',offset=0}={}){
  const rows=(await query(`select s.id,s.product_name,s.sale_amount,s.currency,s.sale_status,s.customer_name,s.customer_document_id,s.created_at,s.paid_at,
-   a.full_name recipient_name,i.state delivery_state,i.id invitation_id
+   coalesce(a.full_name,ca.full_name) recipient_name,i.state delivery_state,i.id invitation_id,(ac.sale_id is not null) automatically_recorded
    from business_sales s left join customer_sale_deliveries d on d.sale_id=s.id
    left join customer_accounts a on a.id=d.customer_id left join customer_invitations i on i.id=d.invitation_id
+   left join customer_sale_captures ac on ac.sale_id=s.id and ac.business_id=s.business_id left join customer_accounts ca on ca.id=ac.customer_id
    where s.business_id=$1 and ($2='' or s.customer_name ilike '%'||$2||'%' or s.customer_document_id ilike '%'||$2||'%' or s.product_name ilike '%'||$2||'%' or s.id::text=$2)
    order by s.created_at desc,s.id limit 51 offset $3`,[user.business_id,search,offset])).rows;
  return {sales:rows.slice(0,50),next_offset:rows.length>50?offset+50:null};
@@ -17,6 +18,7 @@ async function send(user,data){
   if(!sale)throw notFound('Venta no encontrada en este negocio.');
   const buyer=(await db.query('select id,public_id,full_name from customer_accounts where public_id=$1',[data.public_id])).rows[0];
   if(!buyer)throw notFound('Cuenta Customer no encontrada.');
+  if((await db.query('select 1 from customer_sale_captures where sale_id=$1 and customer_id<>$2',[sale.id,buyer.id])).rowCount)throw badRequest('Esta compra ya pertenece a otra cuenta Customer.');
   const existing=(await db.query('select d.customer_id,i.id,i.state from customer_sale_deliveries d join customer_invitations i on i.id=d.invitation_id where d.sale_id=$1',[sale.id])).rows[0];
   if(existing){
    if(existing.customer_id!==buyer.id)throw badRequest('Esta venta ya fue enviada a otra cuenta. No se puede reasignar desde aquí.');
@@ -28,7 +30,8 @@ async function send(user,data){
   const gift=(await db.query('select buyer_id from customer_product_gift_orders where sale_id=$1',[sale.id])).rows[0];
   if(links.some(r=>r.customer_id!==buyer.id)||(gift&&gift.buyer_id!==buyer.id))throw badRequest('La identidad de esta venta pertenece a otra cuenta Customer. Revisa la atribución original.');
   const auto=(await db.query('select auto_receive from customer_finance_connections where customer_id=$1 and business_id=$2 for share',[buyer.id,user.business_id])).rows[0]?.auto_receive;
-  const alreadyVisible=links.some(r=>r.customer_id===buyer.id&&(r.include_history||new Date(sale.created_at)>=new Date(r.accepted_at)))||gift?.buyer_id===buyer.id;
+  let alreadyVisible=false;
+  try{await require('./customerService').ownSale(buyer.id,sale.id,db);alreadyVisible=true;}catch(error){if(error.status!==404)throw error;}
   const state=auto||alreadyVisible?'ACCEPTED':'PENDING';
   // Canonical sale remains the only financial record. The invitation only grants its recipient access.
   const invitation=(await db.query(`insert into customer_invitations(business_id,customer_id,created_by,request_id,kind,resource_id,title,message,terms,payload,state,result_id,decided_at)
@@ -47,7 +50,13 @@ async function accept(db,account,invitation,data){
  await db.query('insert into customer_finance_connections(customer_id,business_id,auto_receive) values($1,$2,$3) on conflict(customer_id,business_id) do update set auto_receive=excluded.auto_receive,updated_at=now()',[account.id,invitation.business_id,!!data.auto_receive]);
  return {ok:true,result_id:invitation.resource_id};
 }
-async function connections(account){return {connections:(await query('select c.business_id,b.name,c.auto_receive,c.updated_at from customer_finance_connections c join businesses b on b.id=c.business_id where c.customer_id=$1 order by b.name',[account.id])).rows};}
+async function connections(account){return {connections:(await query(`select b.id business_id,b.name,coalesce(c.auto_receive,false) auto_receive,
+ coalesce(c.auto_capture,exists(select 1 from customer_relationships r where r.customer_id=$1 and r.business_id=b.id and r.state='ACCEPTED')) auto_capture,
+ exists(select 1 from customer_relationships r where r.customer_id=$1 and r.business_id=b.id and r.state='ACCEPTED') verified_identity,
+ coalesce(c.book_id,(select id from customer_finance_books where customer_id=$1 and is_default)) book_id,c.capture_consented_at,c.updated_at
+ from businesses b left join customer_finance_connections c on c.business_id=b.id and c.customer_id=$1
+ where c.customer_id=$1 or exists(select 1 from customer_relationships r where r.customer_id=$1 and r.business_id=b.id and r.state='ACCEPTED')
+ order by b.name,b.id`,[account.id])).rows};}
 async function connection(account,businessId,auto){
  const r=await query('update customer_finance_connections set auto_receive=$3,updated_at=now() where customer_id=$1 and business_id=$2 returning business_id',[account.id,businessId,auto]);
  if(!r.rowCount)throw notFound();return {ok:true};

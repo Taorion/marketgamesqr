@@ -55,6 +55,11 @@ test('a paid coffee gift uses Empresa tickets, one sale and the intended Custome
   assert.equal((await api('/api/customer/dashboard',recipient.token)).total_minor,0);
   assert.equal((await api('/api/customer/sales/'+sale.id,recipient.token)).status,404);
   assert.equal((await api('/api/customer/product-gifts/'+orderId,buyer.token)).order.qr_code_id,undefined);
+  assert.equal((await api('/api/customer/product-gifts',buyer.token)).orders[0].sale_id,sale.id);
+  const receipt=await api('/api/customer/purchase-receipts/'+sale.id,buyer.token);assert.equal(receipt.status,200);assert.equal(Number(receipt.receipt.amount),8000);assert.equal(receipt.receipt.products[0].name,'Café americano');assert.equal(receipt.receipt.qr_code_id,undefined);
+  assert.equal((await api('/api/customer/purchase-receipts/'+sale.id,recipient.token)).status,404);
+  assert.equal((await api('/api/customer/purchase-receipts/'+sale.id,outsider.token)).status,404);
+  assert.equal((await api('/api/customer/notifications',buyer.token)).items.filter(n=>n.kind==='SALE'&&n.resource_id===sale.id).length,1);
  });
  await t.test('only the recipient accepts the gift and receives its usable existing ticket',async()=>{
   const inbox=await api('/api/customer/invitations',recipient.token);assert.equal(inbox.invitations.length,1);assert.match(inbox.invitations[0].message,/Andrea Compradora/);
@@ -67,7 +72,7 @@ test('a paid coffee gift uses Empresa tickets, one sale and the intended Custome
   assert.equal((await api('/api/customer/product-gifts',recipient.token)).received[0].ticket_id,issued.qr_code_id);
   assert.equal((await api('/api/customer/product-gifts',buyer.token)).orders[0].ticket_id,undefined);
   assert.equal((await api('/api/customer/wallet/tickets/'+issued.qr_code_id,buyer.token)).status,404);
-  assert.equal((await api('/api/customer/wallet/overview',recipient.token)).cards[0].kind,'TICKET');
+  assert.equal((await api('/api/customer/wallet/overview',recipient.token)).cards[0].kind,'TICKET');assert.equal((await api('/api/customer/wallet/overview',recipient.token)).cards[0].benefit_category,'USER_GIFT');
  });
  await t.test('Validator delivers the already-paid coffee once without another sale or inventory deduction',async()=>{
   const ticket=(await query('select token from qr_codes where id=$1',[issued.qr_code_id])).rows[0];

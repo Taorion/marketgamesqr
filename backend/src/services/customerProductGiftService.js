@@ -18,7 +18,7 @@ async function list(account){
   query(orderSql+' where o.buyer_id=$1 order by o.created_at desc limit 100',[account.id]),
   query(orderSql+" where o.recipient_id=$1 and o.state='ISSUED' order by o.paid_at desc limit 100",[account.id])
  ]);
- return {orders:sent.rows.map(receipt),received:received.rows.map(o=>({...receipt(o),invitation_id:o.invitation_id,ticket_id:o.invitation_state==='ACCEPTED'?o.qr_code_id:null}))};
+ return {orders:sent.rows.map(o=>({...receipt(o),sale_id:o.sale_id})),received:received.rows.map(o=>({...receipt(o),invitation_id:o.invitation_id,ticket_id:o.invitation_state==='ACCEPTED'?o.qr_code_id:null}))};
 }
 async function create(account,id,data){
  return withTransaction(async db=>{
@@ -77,6 +77,7 @@ async function confirm(user,id,data){
   await db.query("update business_sales set sale_status='PAID',paid_at=now(),payment_method=$2,idempotency_key=$3,inventory_product_id=$4,quantity=1,unit_cost=$5,product_cost_total=$5,gross_profit=sale_amount-$5,net_profit=sale_amount-$5,created_by_user_id=$6 where id=$1",[result.sale.id,data.payment_method,'customer-product-gift:'+o.id,product.id,product.cost_price||0,user.id]);
   const invite=(await db.query("insert into customer_invitations(business_id,customer_id,created_by,request_id,kind,resource_id,title,message,terms,payload,expires_at) values($1,$2,$3,$4,'TICKET',$5,$6,$7,$8,$9::jsonb,$10) returning id",[user.business_id,recipient.id,user.id,o.id,result.qr_code.id,o.snapshot.product_name,o.buyer_name+' te regaló '+o.snapshot.product_name+(o.message?'. '+o.message:''),o.snapshot.terms,JSON.stringify({product_gift_order_id:o.id}),result.qr_code.expires_at])).rows[0];
   await db.query("update customer_product_gift_orders set state='ISSUED',sale_id=$2,qr_code_id=$3,invitation_id=$4,paid_at=now(),confirmed_by=$5,payment_reference=$6,payment_method=$7 where id=$1",[id,result.sale.id,result.qr_code.id,invite.id,user.id,data.payment_reference,data.payment_method]);
+  await require('./customerBenefitNotificationService').insert(db,{customer_id:o.buyer_id,business_id:user.business_id,event_key:'gift-purchase:'+o.id,kind:'SALE',title:'Tu regalo fue pagado y enviado',body:'El ticket fue enviado a '+o.recipient_name+'. Tu comprobante quedó en tus compras.',resource_id:result.sale.id});
   return {ok:true,order_id:id,sale_id:result.sale.id};
  });
 }

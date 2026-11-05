@@ -18,13 +18,14 @@ async function planning(account) {
   return {budgets:budgets.rows,goals:goals.rows,recurring:recurring.rows};
 }
 const saleSql = `select s.*,b.name business_name,r.id relationship_id,n.category,n.priority,n.expense_pattern,n.note personal_note,n.reported_at,
+  exists(select 1 from customer_sale_captures capture where capture.sale_id=s.id and capture.customer_id=$1) automatically_recorded,
   coalesce((select sum(a.amount) from customer_sale_adjustments a where a.sale_id=s.id),0) refunded
   from business_sales s left join customer_relationships r on r.business_id=s.business_id and r.customer_id=$1
     and r.document_key=regexp_replace(lower(s.customer_document_id),'[^a-z0-9]','','g')
     and r.state='ACCEPTED' and (r.include_history or s.created_at>=r.accepted_at)
   join businesses b on b.id=s.business_id
   left join customer_sale_notes n on n.customer_id=$1 and n.sale_id=s.id
-  where ((r.customer_id=$1 and not exists(select 1 from customer_sale_deliveries exclusive where exclusive.sale_id=s.id and exclusive.customer_id<>$1)) or exists(select 1 from customer_sale_deliveries sd join customer_invitations si on si.id=sd.invitation_id and si.state='ACCEPTED' where sd.sale_id=s.id and sd.customer_id=$1) or exists(select 1 from customer_product_gift_orders pg where pg.sale_id=s.id and pg.buyer_id=$1 and pg.state='ISSUED'))`;
+  where ((r.customer_id=$1 and not exists(select 1 from customer_finance_connections fc where fc.customer_id=$1 and fc.business_id=s.business_id and fc.auto_capture is not null) and not exists(select 1 from customer_sale_deliveries exclusive where exclusive.sale_id=s.id and exclusive.customer_id<>$1)) or exists(select 1 from customer_sale_captures ac where ac.sale_id=s.id and ac.customer_id=$1 and exists(select 1 from customer_relationships ar where ar.customer_id=$1 and ar.business_id=s.business_id and ar.state='ACCEPTED')) or exists(select 1 from customer_sale_deliveries sd join customer_invitations si on si.id=sd.invitation_id and si.state='ACCEPTED' where sd.sale_id=s.id and sd.customer_id=$1) or exists(select 1 from customer_product_gift_orders pg where pg.sale_id=s.id and pg.buyer_id=$1 and pg.state='ISSUED'))`;
 async function ownSale(customerId,saleId,db={query}) {
   const row=(await db.query(`${saleSql} and s.id=$2`,[customerId,saleId])).rows[0];
   if(!row) throw notFound('Compra no encontrada.');return row;
@@ -110,6 +111,7 @@ async function decideRelationship(customerId,id,data,{client}={}) {
       if(collision.rowCount||(await db.query('select 1 from customer_recovered_benefits where business_id=$1 and document_key=$2 and customer_id<>$3',[r.business_id,r.document_key,customerId])).rowCount) throw badRequest('Esta relación ya tiene una cuenta vinculada. Solicita revisión al negocio.');
     }
     await db.query('update customer_relationships set state=$2,accepted_at=case when $2=\'ACCEPTED\' then now() else null end,include_history=$3 where id=$1',[id,data.action==='ACCEPT'?'ACCEPTED':'REJECTED',data.include_history]);
+    if(data.action==='ACCEPT')await require('./customerAutomaticPurchaseService').configure(db,(await db.query('select * from customer_accounts where id=$1',[customerId])).rows[0],r.business_id,{enabled:data.capture_purchases!==false,book_id:data.book_id},{initial:true,includeHistory:data.include_history});
     return {ok:true};
   });
 }
@@ -166,7 +168,7 @@ async function identification(account) {
   return {public_id:account.public_id,qr_image:await QRCode.toDataURL(url.toString()),url:url.toString()};
 }
 async function exportData(account) {
-  const tables=['customer_benefit_notifications','customer_recovered_benefits','customer_benefit_recovery_runs','customer_dream_plans','customer_goal_events','customer_wealth_items','customer_wealth_events','customer_grocery_lists','customer_debts','customer_debt_payments','customer_debt_events','customer_debt_scenarios','customer_finance_books','customer_finance_allocations','customer_finance_transfers','customer_purchase_plans','customer_payment_items','customer_payment_changes','customer_finance_connections','customer_sale_deliveries','customer_entries','customer_sale_notes','customer_relationships','customer_budgets','customer_goals','customer_recurring','customer_favorites','customer_place_requests','customer_invitations','customer_business_blocks','customer_saved_publications','customer_program_requests','customer_publication_events','customer_activation_participations'];
+  const tables=['customer_sale_captures','customer_benefit_notifications','customer_recovered_benefits','customer_benefit_recovery_runs','customer_dream_plans','customer_goal_events','customer_wealth_items','customer_wealth_events','customer_grocery_lists','customer_debts','customer_debt_payments','customer_debt_events','customer_debt_scenarios','customer_finance_books','customer_finance_allocations','customer_finance_transfers','customer_purchase_plans','customer_payment_items','customer_payment_changes','customer_finance_connections','customer_sale_deliveries','customer_entries','customer_sale_notes','customer_relationships','customer_budgets','customer_goals','customer_recurring','customer_favorites','customer_place_requests','customer_invitations','customer_business_blocks','customer_saved_publications','customer_program_requests','customer_publication_events','customer_activation_participations'];
   const output={account:{...account,session_id:undefined},purchases:(await query(saleSql,[account.id])).rows.map(r=>finance.salesMovement(r,account.timezone))};
   for(const table of tables) output[table]=(await query(`select * from ${table} where customer_id=$1`,[account.id])).rows;
   output.receipts=(await query("select id,entry_id,filename,mime_type,encode(bytes,'base64') base64 from customer_receipts where customer_id=$1",[account.id])).rows;

@@ -41,6 +41,6 @@ async function overview(account){
   cards.push(...gifts.received.map(row=>({...row,kind:'GIFT',title:'Mi giftcard',
     status:['cancelled','expired','fully_redeemed'].includes(row.status)?'ARCHIVED':row.claim_required?'PENDING':'READY'})));
   cards.push(...tickets);
-  return {cards,purchased_gifts:gifts.purchased,pending_invitations:pending.rows[0].n,pending_benefits:(await query("select i.id,i.title,b.name business_name from customer_invitations i join businesses b on b.id=i.business_id where i.customer_id=$1 and i.state='PENDING' and i.expires_at>now() order by i.created_at desc limit 10",[account.id])).rows,updated_at:new Date().toISOString(),free_for_buyers:true};
+  return {cards,purchased_gifts:gifts.purchased,pending_invitations:pending.rows[0].n,pending_benefits:(await query("select i.id,i.title,i.business_id,i.kind,(i.payload ? 'product_gift_order_id') purchased_product,b.name business_name from customer_invitations i join businesses b on b.id=i.business_id where i.customer_id=$1 and i.state='PENDING' and i.expires_at>now() order by i.created_at desc limit 100",[account.id])).rows,updated_at:new Date().toISOString(),free_for_buyers:true};
 }
 module.exports={overview};

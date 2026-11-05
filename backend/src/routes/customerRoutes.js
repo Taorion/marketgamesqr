@@ -124,10 +124,15 @@ router.get('/movements',handle(req=>require('../services/customerMovementHistory
  }),req.query))));
 router.get('/dashboard',handle(req=>svc.dashboard(req.customer,parse(period,req.query))));
 router.get('/finance-connections',handle(req=>financeDelivery.connections(req.customer)));
+router.put('/finance-connections/:id/capture',handle(req=>{
+ const d=parse(z.object({enabled:z.boolean(),book_id:uuid.optional(),confirmed:z.literal(true)}),req.body);
+ return withTransaction(db=>require('../services/customerAutomaticPurchaseService').configure(db,req.customer,parse(uuid,req.params.id),d));
+}));
+router.get('/purchase-receipts/:id',handle(req=>require('../services/customerAutomaticPurchaseService').receipt(req.customer,parse(uuid,req.params.id))));
 router.put('/finance-connections/:id',handle(req=>financeDelivery.connection(req.customer,parse(uuid,req.params.id),parse(z.object({auto_receive:z.boolean()}),req.body).auto_receive)));
 router.post('/recurring/:id/record',handle(req=>paymentAgenda.legacyRecord(req.customer,parse(uuid,req.params.id),parse(z.object({expected_date:z.string().date(),paid_on:z.string().date(),amount:money.optional(),confirmed:z.literal(true)}),req.body))));
 router.get('/relationships',handle(req=>svc.relationships(req.customer.id)));
-router.post('/relationships/:id/decision',handle(req=>svc.decideRelationship(req.customer.id,parse(uuid,req.params.id),parse(z.object({action:z.enum(['ACCEPT','REJECT','REVOKE']),include_history:z.boolean().default(false),document_id:text(80).optional(),document_confirmation:text(80).optional()}),req.body))));
+router.post('/relationships/:id/decision',handle(req=>svc.decideRelationship(req.customer.id,parse(uuid,req.params.id),parse(z.object({action:z.enum(['ACCEPT','REJECT','REVOKE']),include_history:z.boolean().default(false),capture_purchases:z.boolean().optional(),book_id:uuid.optional(),document_id:text(80).optional(),document_confirmation:text(80).optional()}),req.body))));
 const entry=z.object({request_id:uuid,kind:z.enum(['EXPENSE','INCOME']).default('EXPENSE'),amount:money,currency,occurred_at:z.union([z.string().datetime({offset:true}),z.string().date()]),merchant:text(160).min(1),
   expense_pattern:z.enum(['UNSET','RECURRING','EVENTUAL']).optional(),category:category.default('otros'),priority:z.enum(['UNSET','ESSENTIAL','FLEXIBLE']).default('UNSET'),note:text(2000).default(''),payment_method:text(60).default(''),
   products:z.array(z.object({name:text(160).min(1),quantity:z.number().positive().max(100000),amount:money})).max(100).default([]),
