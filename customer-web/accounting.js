@@ -41,6 +41,7 @@
  }
  function selector(root,ctx){
   const el=root.querySelector('.breadcrumb');if(!el)return;
+  el.classList.add('book-context');el.closest('.topbar').classList.add('customer-account-header');
   el.innerHTML='<div class="book-switcher">'+select('activeBook','Bolsillo activo',ctx.books.map(b=>[b.id,b.name+' · '+b.currency]),ctx.book.id)+'<button class="secondary" id="addBook" aria-label="Crear bolsillo">+ Crear</button><a class="pocket-switch-link" href="#pockets">Mis bolsillos →</a></div>';
   el.querySelector('select').onchange=e=>ctx.selectBook(e.target.value);
   el.querySelector('#addBook').onclick=()=>createBook(ctx);
