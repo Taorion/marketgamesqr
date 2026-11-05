@@ -5,6 +5,8 @@ const { authRequired, requireRoles } = require('../middleware/auth');
 const { requirePortalAccess } = require('../middleware/subscription');
 const { badRequest, notFound, tooManyRequests } = require('../utils/http');
 const auth = require('../services/customerAuthService');
+const passwordAuth = require('../services/customerPasswordService');
+const oauth = require('../services/customerOAuthService');
 const svc = require('../services/customerService');
 const finance = require('../services/customerFinance');
 const stamps = require('../services/stampCardService');
@@ -47,8 +49,29 @@ router.post('/auth/web/verify',async(req,res,next)=>{
     res.json({account:result.account,session:{expires_at:result.session.expires_at}});
   }catch(e){next(e);}
 });
+router.get('/auth/options',handle(()=>oauth.options()));
+router.post('/auth/web/password/code',handle(req=>{
+  auth.assertWebRequest(req);
+  const d=parse(z.object({email:z.string().trim().email().max(180),password:z.string().max(128),confirmation:z.string().max(128),consent:z.literal(true)}),req.body);
+  return passwordAuth.request(d.email,d.password,d.confirmation);
+}));
+router.post('/auth/web/password/login',async(req,res,next)=>{
+  try{auth.assertWebRequest(req);const d=parse(z.object({email:z.string().trim().email().max(180),password:z.string().max(128)}),req.body);
+    const result=await passwordAuth.login(d.email,d.password);auth.setWebSession(res,result);res.set('Cache-Control','private, no-store').json({account:result.account,session:{expires_at:result.session.expires_at}});
+  }catch(e){next(e);}
+});
+router.post('/auth/web/oauth/:provider/start',async(req,res,next)=>{try{res.set('Cache-Control','no-store').json(await oauth.start(req,res,req.params.provider));}catch(e){next(e);}});
+router.get('/auth/web/oauth/pending',handle(req=>oauth.pending(req)));
+router.get('/auth/web/oauth/:provider/callback',async(req,res)=>{
+  res.set('Cache-Control','no-store');res.set('Referrer-Policy','no-referrer');
+  try{res.redirect(303,await oauth.callback(req,res,req.params.provider));}
+  catch{oauth.clear(res);res.redirect(303,'/customer/?auth_error=oauth#login');}
+});
 // Every Customer feature, including discovery, requires a verified session.
 router.use(auth.customerRequired);
+router.get('/auth/security',handle(req=>oauth.security(req.customer)));
+router.post('/auth/oauth/link',async(req,res,next)=>{try{res.set('Cache-Control','no-store').json(await oauth.link(req,res));}catch(e){next(e);}});
+router.post('/auth/oauth/:provider/start',async(req,res,next)=>{try{res.set('Cache-Control','no-store').json(await oauth.start(req,res,req.params.provider,req.customer.id));}catch(e){next(e);}});
 router.use('/explore', (req,_res,next)=>{
   const key='explore:'+req.ip,now=Date.now(),b=buckets.get(key)||{count:0,until:now+60000};
   if(b.until<now){b.count=0;b.until=now+60000;}b.count++;buckets.set(key,b);

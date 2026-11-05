@@ -5,7 +5,8 @@ function setup(hash=''){
  w.QoriExplore={stop(){},render(){throw Error('Guest reached Explore');}};w.QoriNotifications={stop(){},watch(){}};w.QoriBenefitRecovery={documentFields:()=>''};w.QoriPortal={preferences:()=>''};
  w.QoriAccounting={selector(){},render(page){page.innerHTML='<h1 id="private-home">Mi dinero</h1>';}};
  w.fetch=async(url,options={})=>{calls.push(url);let status=200,data={},body=options.body?JSON.parse(options.body):{};
-  if(url==='/api/customer/auth/web/code')data={challenge_id:'challenge'};
+  if(url==='/api/customer/auth/options')data={providers:[{provider:'google',label:'Google',enabled:false},{provider:'microsoft',label:'Microsoft',enabled:false}]};
+  else if(url==='/api/customer/auth/web/code')data={challenge_id:'challenge'};
   else if(url==='/api/customer/auth/web/verify'){if(body.code==='123456'){verified=true;data={account:{id:'buyer',full_name:name,currency:'COP',email:'new@example.test',preferences:{notifications:{}}}};}else{status=401;data={error:{message:'Código inválido o vencido.'}};}}
   else if(!verified){status=401;data={error:{message:'Inicia sesión en Qori.'}};}
   else if(url==='/api/customer/me'){if(options.method==='PATCH')name=body.full_name;data={account:{id:'buyer',full_name:name,currency:'COP',email:'new@example.test',preferences:{notifications:{}}}};}
@@ -14,18 +15,18 @@ function setup(hash=''){
   else if(url==='/api/customer/relationships')data={relationships:[]};
   return {ok:status<400,status,headers:new w.Headers(verified?{'X-Qori-Customer':'buyer'}:{}),json:async()=>data};
  };
- for(const p of ['wallet-model.js','session-guard.js','app.js'])w.eval(fs.readFileSync('customer-web/'+p,'utf8'));
+ for(const p of ['wallet-model.js','session-guard.js','auth-access.js','app.js'])w.eval(fs.readFileSync('customer-web/'+p,'utf8'));
  const submit=id=>{const f=w.document.getElementById(id);f.dispatchEvent(new w.SubmitEvent('submit',{cancelable:true,bubbles:true,submitter:f.querySelector('[type=submit],button.primary')}));};
  return {w,calls,submit};
 }
 test('default and direct feature URLs always open login without guest navigation or catalog requests',async()=>{
  for(const route of ['', '#explore','#scan','#gift-shop','#publication/offer','#business/shop','#home','#finances']){
-  const {w,calls}=setup(route);try{await wait(()=>w.document.querySelector('#emailForm'));assert.equal(w.document.querySelector('.layout,.sidebar,#guestLogin'),null);assert.deepEqual(calls,['/api/customer/me']);}finally{w.close();}
+  const {w,calls}=setup(route);try{await wait(()=>w.document.querySelector('#passwordLoginForm'));assert.equal(w.document.querySelector('.layout,.sidebar,#guestLogin'),null);assert.ok(calls.every(u=>['/api/customer/me','/api/customer/auth/options'].includes(u)));assert.ok(w.document.querySelector('[name=password]')); }finally{w.close();}
  }
 });
 test('email alone and wrong code never open the platform; route changes preserve verification until a valid login',async()=>{
  const {w,calls,submit}=setup();try{
-  await wait(()=>w.document.querySelector('#emailForm'));const f=w.document.querySelector('#emailForm');f.elements.email.value='new@example.test';f.elements.consent.checked=true;submit('emailForm');await wait(()=>w.document.querySelector('#verifyForm'));
+  await wait(()=>w.document.querySelector('#passwordLoginForm'));w.document.querySelector('[data-auth-mode=code]').click();const f=w.document.querySelector('#emailForm');f.elements.email.value='new@example.test';f.elements.consent.checked=true;submit('emailForm');await wait(()=>w.document.querySelector('#verifyForm'));
   assert.match(w.document.body.textContent,/Aún no has iniciado sesión/);w.location.hash='explore';await new Promise(r=>setTimeout(r,20));assert.ok(w.document.querySelector('#verifyForm'));assert.equal(w.document.querySelector('.layout'),null);
   w.document.querySelector('[name=code]').value='000000';submit('verifyForm');await wait(()=>w.document.querySelector('#authError')?.textContent.includes('inválido'));assert.equal(w.document.querySelector('.sidebar'),null);assert.equal(calls.some(u=>u.includes('/explore')),false);
   w.document.querySelector('[name=code]').value='123456';submit('verifyForm');await wait(()=>w.document.querySelector('#profileForm'));assert.match(w.document.body.textContent,/Completa tu registro/);assert.equal(w.document.querySelector('.sidebar'),null);
