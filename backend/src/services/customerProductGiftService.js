@@ -13,7 +13,13 @@ async function offer(id,db={query}){const row=(await db.query(offerSql,[id])).ro
 const orderSql="select o.*,b.name business_name,i.state invitation_state,q.status ticket_status,q.expires_at,s.sale_status from customer_product_gift_orders o join businesses b on b.id=o.business_id left join customer_invitations i on i.id=o.invitation_id left join qr_codes q on q.id=o.qr_code_id left join business_sales s on s.id=o.sale_id";
 function receipt(o){return {id:o.id,business_id:o.business_id,business_name:o.business_name,publication_id:o.publication_id,title:o.snapshot.title,product_name:o.snapshot.product_name,buyer_name:o.buyer_name,recipient_name:o.recipient_name,amount:o.amount,message:o.message,state:o.state,invitation_state:o.invitation_state,ticket_status:o.ticket_status,sale_status:o.sale_status,expires_at:o.expires_at,created_at:o.created_at,paid_at:o.paid_at,terms:o.snapshot.terms,payment_instructions:o.snapshot.payment_instructions};}
 async function order(account,id){const row=(await query(orderSql+' where o.id=$1 and (o.buyer_id=$2 or (o.recipient_id=$2 and o.state=\'ISSUED\'))',[id,account.id])).rows[0];if(!row)throw notFound('Regalo no encontrado.');return {order:receipt(row)};}
-async function list(account){return {orders:(await query(orderSql+' where o.buyer_id=$1 order by o.created_at desc limit 100',[account.id])).rows.map(receipt)};}
+async function list(account){
+ const [sent,received]=await Promise.all([
+  query(orderSql+' where o.buyer_id=$1 order by o.created_at desc limit 100',[account.id]),
+  query(orderSql+" where o.recipient_id=$1 and o.state='ISSUED' order by o.paid_at desc limit 100",[account.id])
+ ]);
+ return {orders:sent.rows.map(receipt),received:received.rows.map(o=>({...receipt(o),invitation_id:o.invitation_id,ticket_id:o.invitation_state==='ACCEPTED'?o.qr_code_id:null}))};
+}
 async function create(account,id,data){
  return withTransaction(async db=>{
   await db.query('select pg_advisory_xact_lock(hashtext($1))',['product-gift:'+account.id+':'+data.request_id]);
@@ -34,7 +40,13 @@ async function create(account,id,data){
  });
 }
 async function cancel(account,id){const r=await query("update customer_product_gift_orders set state='CANCELLED' where id=$1 and buyer_id=$2 and state='PENDING_PAYMENT' returning id",[id,account.id]);if(!r.rowCount)throw badRequest('Solo puedes cancelar un regalo pendiente de pago.');return {ok:true};}
-async function businessOrders(user){return {orders:(await query(orderSql+' where o.business_id=$1 order by o.created_at desc limit 100',[user.business_id])).rows.map(receipt)};}
+async function businessOrders(user){
+ const [orders,branches]=await Promise.all([
+  query(orderSql+" where o.business_id=$1 order by (o.state='PENDING_PAYMENT') desc,o.created_at desc limit 100",[user.business_id]),
+  query('select id,name from branches where business_id=$1 and is_active order by name',[user.business_id])
+ ]);
+ return {orders:orders.rows.map(receipt),branches:branches.rows};
+}
 async function confirm(user,id,data){
  await assertStandaloneBusinessFeature(user,user.business_id,'qr_batch_generator');
  if(data.payment_received!==true)throw badRequest('Confirma que recibiste el pago.');

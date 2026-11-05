@@ -30,6 +30,9 @@ test('a paid coffee gift uses Empresa tickets, one sale and the intended Custome
   assert.equal((await api('/api/customer/product-gifts',buyer.token,body)).order.id,orderId);
   assert.equal((await api('/api/customer/product-gifts/'+orderId,outsider.token)).status,404);
   assert.equal((await api('/api/customer/invitations',recipient.token)).invitations.length,0);
+  assert.deepEqual((await api('/api/customer/product-gifts',recipient.token)).received,[]);
+  const queue=await api('/api/business/customer/product-gifts',merchant.token);assert.equal(queue.orders[0].id,orderId);assert.equal(queue.branches.length,1);
+  assert.equal((await api('/api/business/customer/product-gifts',foreign.token)).orders.length,0);
   assert.equal((await api('/api/customer/wallet/overview',recipient.token)).cards.length,0);
   assert.equal((await query('select count(*)::int n from business_sales where business_id=$1',[merchant.b.id])).rows[0].n,0);
   assert.equal(Number((await query('select stock_quantity from business_inventory_products where id=$1',[product.id])).rows[0].stock_quantity),10);
@@ -55,10 +58,14 @@ test('a paid coffee gift uses Empresa tickets, one sale and the intended Custome
  });
  await t.test('only the recipient accepts the gift and receives its usable existing ticket',async()=>{
   const inbox=await api('/api/customer/invitations',recipient.token);assert.equal(inbox.invitations.length,1);assert.match(inbox.invitations[0].message,/Andrea Compradora/);
+  const pending=(await api('/api/customer/product-gifts',recipient.token)).received;assert.equal(pending.length,1);assert.equal(pending[0].invitation_id,issued.invitation_id);assert.equal(pending[0].ticket_id,null);
+  assert.equal((await api('/api/customer/product-gifts',outsider.token)).received.length,0);
   assert.equal((await api('/api/customer/invitations/'+issued.invitation_id+'/decision',outsider.token,{action:'ACCEPT',terms_accepted:true})).status,404);
   assert.equal((await api('/api/customer/wallet/tickets/'+issued.qr_code_id,recipient.token)).status,404);
   assert.equal((await api('/api/customer/invitations/'+issued.invitation_id+'/decision',recipient.token,{action:'ACCEPT',terms_accepted:true})).status,200);
   const detail=await api('/api/customer/wallet/tickets/'+issued.qr_code_id,recipient.token);assert.equal(detail.status,200,JSON.stringify(detail));assert.ok(detail.card.qr_image);assert.equal(detail.card.sender_name,'Andrea Compradora');
+  assert.equal((await api('/api/customer/product-gifts',recipient.token)).received[0].ticket_id,issued.qr_code_id);
+  assert.equal((await api('/api/customer/product-gifts',buyer.token)).orders[0].ticket_id,undefined);
   assert.equal((await api('/api/customer/wallet/tickets/'+issued.qr_code_id,buyer.token)).status,404);
   assert.equal((await api('/api/customer/wallet/overview',recipient.token)).cards[0].kind,'TICKET');
  });

@@ -3,7 +3,7 @@
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const call=(path,method='GET',body)=>api('/api/business/customer'+path,{method,headers:authHeaders(),noClientCache:true,...(body?{body:JSON.stringify(body)}:{})});
  const names={ACTIVITY:'Activación',STAMP:'Tarjeta de sellos',AFFILIATION:'Programa de afiliados',GIFT:'Giftcards',PRODUCT:'Producto para regalar'};
- function open(){
+ function open(options={}){
   if(document.getElementById('customerPublishingDialog'))return;
   const d=document.createElement('dialog');d.id='customerPublishingDialog';d.className='customer-network-dialog';d.setAttribute('aria-labelledby','publishingTitle');
   d.innerHTML='<header><div><span class="kicker">Tu negocio en el ecosistema</span><h2 id="publishingTitle">Publicar en Qori Customer</h2></div><button data-close aria-label="Cerrar">×</button></header><div class="customer-network-body"><p>Convierte tus programas en descubrimientos. Los compradores podrán encontrarlos, compartirlos, participar y solicitar sus tarjetas desde su cuenta gratuita.</p><p id="publishingMessage" role="status"></p><div id="publishingContent">Cargando tus programas…</div></div>';
@@ -31,7 +31,7 @@
    const form=d.querySelector('#publishOffer');
    function resource(){
     const kind=form.elements.kind.value,items=kind==='ACTIVITY'?data.activities:kind==='STAMP'?data.stamps:kind==='PRODUCT'?data.products:null;
-    d.querySelector('#publishResource').innerHTML=items?'<label>Programa activo<select name="resource_id" required><option value="">Seleccionar</option>'+items.map(p=>'<option value="'+p.id+'">'+esc(p.title||p.name)+'</option>').join('')+'</select></label>'+(!items.length?'<p>Crea y activa este programa en su módulo de Qori Empresa.</p>':''):'<p>Publicaremos las condiciones configuradas de '+names[kind]+'. Puedes configurarlas en “Somos Qori”.</p>';
+    d.querySelector('#publishResource').innerHTML=items?'<label>'+(kind==='PRODUCT'?'Producto de tu inventario':'Programa activo')+'<select name="resource_id" required><option value="">Seleccionar</option>'+items.map(p=>'<option value="'+p.id+'">'+esc(p.title||p.name)+'</option>').join('')+'</select></label>'+(!items.length?(kind==='PRODUCT'?'<p>Agrega un producto activo en Inventario, con precio en COP y existencias. Después vuelve aquí para publicarlo.</p>':'<p>Crea y activa este programa en su módulo de Qori Empresa.</p>'):''):'<p>Publicaremos las condiciones configuradas de '+names[kind]+'. Puedes configurarlas en “Somos Qori”.</p>';
    }
    const baseResource=resource;
    function giftResource(){
@@ -45,7 +45,7 @@
      '<p>Qori emitirá un ticket de Empresa cuando confirmes el pago. Se registrará una venta y se descontará una unidad de inventario.</p>');
     form.elements.resource_id.onchange=()=>{const item=data.products.find(p=>p.id===form.elements.resource_id.value);if(item)form.elements.product_price.value=item.unit_price;};
    }
-   giftResource();form.elements.kind.onchange=giftResource;
+   if(options.kind)form.elements.kind.value=options.kind;giftResource();form.elements.kind.onchange=giftResource;
    form.onsubmit=async e=>{e.preventDefault();const button=e.submitter;button.disabled=true;try{const values=Object.fromEntries(new FormData(form));await call('/publications','POST',values);await load();message(values.status==='PUBLISHED'?'Tu beneficio ya se puede descubrir en Qori Customer.':'Borrador guardado.');}catch(e){message(e.message);}finally{button.disabled=false;}};
    d.querySelector('#publishProfile').onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;try{const f=Object.fromEntries(new FormData(e.target));await call('/directory','PUT',{...f,published:f.published==='on'});await load();message('Perfil público actualizado.');}catch(e){message(e.message);}finally{b.disabled=false;}};
    d.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const p=data.publications.find(p=>p.id===b.dataset.edit);form.elements.kind.value=p.kind;giftResource();for(const key of ['resource_id','title','description','cover_url','category','product_price','payment_instructions','product_valid_days'])if(form.elements[key])form.elements[key].value=p[key]||'';if(p.kind==='PRODUCT')form.elements.product_terms.value=p.terms||'';form.elements.status.value=p.status==='PUBLISHED'?'PUBLISHED':'DRAFT';form.scrollIntoView({block:'start',behavior:'smooth'});form.elements.title.focus();});
