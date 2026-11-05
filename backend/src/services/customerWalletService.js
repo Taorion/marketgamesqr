@@ -1,3 +1,4 @@
+const {owned,recovered}=require('./customerBenefitOwnership');
 const {query,withTransaction}=require('../config/db');
 const {badRequest,notFound}=require('../utils/http');
 const {getBusinessSubscription,assertStandaloneBusinessFeature}=require('./subscriptionService');
@@ -51,9 +52,7 @@ async function savePrograms(user,data) {
     [user.business_id,data.points_terms,data.accumulation_terms,data.gift_enabled,data.gift_min,data.gift_max,data.gift_terms,data.gift_payment_instructions]);
   return readiness(user.business_id);
 }
-const affiliateOwned=`select a.* from affiliates a join customer_relationships r on r.business_id=a.business_id
-  and r.document_key=regexp_replace(lower(a.document_id),'[^a-z0-9]','','g') and r.state='ACCEPTED'
-  where a.id=$1 and r.customer_id=$2 and a.status<>'DELETED' and (r.include_history or a.created_at>=r.accepted_at or exists(select 1 from customer_invitations i where i.customer_id=r.customer_id and i.kind='AFFILIATION' and i.state='ACCEPTED' and i.result_id=a.id))`;
+const affiliateOwned=`select a.* from affiliates a where a.id=$1 and a.status<>'DELETED' and ${owned('AFFILIATION','a','$2')}`;
 async function ownAffiliate(account,id){const row=(await query(affiliateOwned,[id,account.id])).rows[0];if(!row)throw notFound('Tarjeta no encontrada.');return row;}
 function scopedActor(businessId){return {id:null,business_id:businessId,role:'BUSINESS_OWNER'};}
 async function affiliateCard(account,id) {
@@ -129,7 +128,7 @@ async function confirmGiftPayment(user,id,data) {
 }
 const receivedSql=`select rp.*,b.name business_name,o.id order_id,o.message gift_message,o.buyer_name sender_name
   from reward_passes rp join businesses b on b.id=rp.company_id left join customer_gift_orders o on o.reward_pass_id=rp.id
-  where ((o.state='ISSUED' and (o.recipient_customer_id=$1 or (o.recipient_customer_id is null and o.recipient_email=$2)))
+  where ((o.id is null and ${recovered('GIFT','rp','$1','company_id')}) or (o.state='ISSUED' and (o.recipient_customer_id=$1 or (o.recipient_customer_id is null and o.recipient_email=$2)))
     or exists(select 1 from customer_invitations i where i.customer_id=$1 and i.kind='GIFT' and i.state='ACCEPTED' and i.result_id=rp.id and i.business_id=rp.company_id)
     or (o.id is null and exists(select 1 from customer_relationships r where r.business_id=rp.company_id and r.customer_id=$1 and r.state='ACCEPTED'
       and r.document_key=regexp_replace(lower(rp.beneficiary_document),'[^a-z0-9]','','g') and (r.include_history or rp.created_at>=r.accepted_at))))`;

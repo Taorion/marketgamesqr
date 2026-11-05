@@ -27,7 +27,7 @@ async function status(){
   return {ok:true,registration_available:Boolean(localMailboxEnabled()||(env.resendApiKey&&env.contactMailFrom))};
 }
 
-async function deliverCode(email, code, challengeId) {
+async function deliverCode(email, code, challengeId, recovery=false) {
   // Local mailbox is explicit, loopback-only and never available in production.
   const local = localMailboxEnabled();
   if (local) {
@@ -40,8 +40,8 @@ async function deliverCode(email, code, challengeId) {
   const result = await fetch('https://api.resend.com/emails', {
     method: 'POST', signal: AbortSignal.timeout(15000),
     headers: { Authorization: `Bearer ${env.resendApiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: env.contactMailFrom, to: [email], subject: 'Tu código de acceso a Qori',
-      text: `Tu código de acceso es ${code}. Vence en 10 minutos. No lo compartas. Si no lo solicitaste, ignora este mensaje.` })
+    body: JSON.stringify({ from: env.contactMailFrom, to: [email], subject: recovery?'Recupera tus beneficios en Qori':'Tu código de acceso a Qori',
+      text: recovery?`Tu código para recuperar tus beneficios anteriores en Qori Customer es ${code}. Vence en 10 minutos. Úsalo únicamente en la cuenta donde solicitaste la recuperación. No lo compartas. Si no lo solicitaste, ignora este mensaje.`:`Tu código de acceso es ${code}. Vence en 10 minutos. No lo compartas. Si no lo solicitaste, ignora este mensaje.` })
   });
   if (!result.ok) { const error = new Error('No pudimos enviar el código. Inténtalo más tarde.'); error.status = 503; throw error; }
 }
@@ -93,4 +93,4 @@ async function customerRequired(req, res, next) {
     req.customer = result.rows[0]; res.set('Cache-Control','private, no-store'); next();
   } catch(error) { next(error); }
 }
-module.exports = { requestCode, verifyCode, customerRequired,assertWebRequest,setWebSession,clearWebSession,status };
+module.exports = { deliverBenefitCode:(email,code,id)=>deliverCode(email,code,id,true),requestCode, verifyCode, customerRequired,assertWebRequest,setWebSession,clearWebSession,status };

@@ -1,3 +1,4 @@
+const {recovered}=require('./customerBenefitOwnership');
 const {query,withTransaction}=require('../config/db');
 const {badRequest,notFound,forbidden,tooManyRequests}=require('../utils/http');
 const {env}=require('../config/env');
@@ -151,11 +152,11 @@ const ticketSql=`select q.id,q.business_id,b.name business_name,q.token,
   q.metadata->>'customer_gift_sender' sender_name,q.metadata->>'customer_gift_message' gift_message,
   coalesce(q.metadata->>'reward_label',rw.name,'Ticket Qori') title from qr_codes q join businesses b on b.id=q.business_id
   left join rewards rw on rw.id=q.reward_id left join players p on p.id=q.player_id
-  where (exists(select 1 from customer_activation_participations cp join interactive_activation_rewards ar on ar.participant_id=cp.participant_id where cp.customer_id=$1 and ar.qr_code_id=q.id)
+  where (${recovered('TICKET','q')} or exists(select 1 from customer_activation_participations cp join interactive_activation_rewards ar on ar.participant_id=cp.participant_id where cp.customer_id=$1 and ar.qr_code_id=q.id)
     or exists(select 1 from customer_invitations i where i.customer_id=$1 and i.kind='TICKET' and i.state='ACCEPTED' and i.result_id=q.id)
     or exists(select 1 from customer_relationships r where r.customer_id=$1 and r.business_id=q.business_id and r.state='ACCEPTED'
       and r.document_key=regexp_replace(lower(p.document_id),'[^a-z0-9]','','g') and (r.include_history or q.created_at>=r.accepted_at)))
-  and (q.origin_type='INTERACTIVE_ACTIVATION' or (q.origin_type='POST_SALE' and ${assignableTicket} and exists(select 1 from customer_invitations ti where ti.customer_id=$1 and ti.kind='TICKET' and ti.state='ACCEPTED' and ti.result_id=q.id)) or exists(select 1 from customer_product_gift_orders pg join customer_invitations gi on gi.id=pg.invitation_id and gi.state='ACCEPTED' where pg.qr_code_id=q.id and pg.recipient_id=$1 and pg.state='ISSUED'))`;
+  and (q.origin_type='INTERACTIVE_ACTIVATION' or (q.origin_type='POST_SALE' and ${assignableTicket}) or exists(select 1 from customer_product_gift_orders pg join customer_invitations gi on gi.id=pg.invitation_id and gi.state='ACCEPTED' where pg.qr_code_id=q.id and pg.recipient_id=$1 and pg.state='ISSUED'))`;
 async function tickets(account){return (await query(ticketSql+' order by q.created_at desc limit 200',[account.id])).rows.map(({token,...r})=>({...r,kind:'TICKET',status:r.status==='ACTIVE'&&(!r.expires_at||new Date(r.expires_at)>new Date())?'READY':'ARCHIVED'}));}
 async function ticket(account,id){
   const row=(await query(ticketSql+' and q.id=$2',[account.id,id])).rows[0];if(!row)throw notFound('Ticket no encontrado.');

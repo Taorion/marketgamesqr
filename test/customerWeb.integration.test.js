@@ -40,10 +40,11 @@ test('Customer web registration and multi-business loyalty use real canonical da
     for(const route of ['/customer/','/customer/app.js','/customer/portal.js','/customer/portal.css','/customer/styles.css','/customer/wallet-model.js','/customer/privacidad.html']){
       const response=await fetch(base+route);assert.equal(response.status,200,route);assert.match(response.headers.get('cache-control'),/no-cache/);
     }
-    assert.match(await (await fetch(base+'/customer/')).text(),/Tu portal de beneficios y finanzas/);
+    assert.match(await (await fetch(base+'/customer/')).text(),/Qori Customer · Mi dinero, compras y beneficios/);
     assert.equal((await (await fetch(base+'/customer/manifest.webmanifest')).json()).start_url,'/customer/');
     const availability=await (await fetch(base+'/api/customer/status')).json();
-    assert.deepEqual(availability,{ok:true,registration_available:true});
+    assert.equal(availability.ok,true);
+    assert.equal(availability.registration_available,true);
   });
   await t.test('web authentication requires same-origin requests and consent',async()=>{
     assert.equal((await api('/api/customer/auth/web/code',{body:{email:'blocked@example.test'},headers:{Origin:'https://foreign.test'}})).status,403);

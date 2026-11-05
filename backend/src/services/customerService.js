@@ -1,3 +1,4 @@
+const {owned}=require('./customerBenefitOwnership');
 const QRCode = require('qrcode');
 const { query, withTransaction } = require('../config/db');
 const { badRequest, notFound, forbidden } = require('../utils/http');
@@ -94,13 +95,14 @@ async function decideRelationship(customerId,id,data,{client}={}) {
     const r=(await db.query('select * from customer_relationships where id=$1 and customer_id=$2 for update',[id,customerId])).rows[0];
     if(!r) throw notFound();
     if(data.action==='REVOKE') {
+      await db.query('delete from customer_recovered_benefits where customer_id=$1 and business_id=$2',[customerId,r.business_id]);
       await db.query("update customer_relationships set state='REVOKED' where id=$1",[id]);return {ok:true};
     }
     if(r.state!=='PENDING'||new Date(r.expires_at)<=new Date()) throw badRequest('La solicitud ya no está pendiente o venció.');
     if(data.action==='ACCEPT') {
       await db.query('select pg_advisory_xact_lock(hashtext($1))',[`relationship:${r.business_id}:${r.document_key}`]);
       const collision=await db.query("select id from customer_relationships where business_id=$1 and document_key=$2 and state='ACCEPTED'",[r.business_id,r.document_key]);
-      if(collision.rowCount) throw badRequest('Esta relación ya tiene una cuenta vinculada. Solicita revisión al negocio.');
+      if(collision.rowCount||(await db.query('select 1 from customer_recovered_benefits where business_id=$1 and document_key=$2 and customer_id<>$3',[r.business_id,r.document_key,customerId])).rowCount) throw badRequest('Esta relación ya tiene una cuenta vinculada. Solicita revisión al negocio.');
     }
     await db.query('update customer_relationships set state=$2,accepted_at=case when $2=\'ACCEPTED\' then now() else null end,include_history=$3 where id=$1',[id,data.action==='ACCEPT'?'ACCEPTED':'REJECTED',data.include_history]);
     return {ok:true};
@@ -146,28 +148,20 @@ async function mergeEntry(customerId,entryId,saleId) {
   });
 }
 async function wallet(customerId) {
-  const members=(await query(`select m.id,m.public_token,b.name business_name,p.name program_name from stamp_members m
-    join customer_relationships r on r.business_id=m.business_id and r.document_key=m.document_key and r.state='ACCEPTED'
-    join businesses b on b.id=m.business_id join stamp_programs p on p.id=m.program_id
-    where r.customer_id=$1 and (r.include_history or m.created_at>=r.accepted_at or exists(select 1 from customer_invitations i where i.customer_id=r.customer_id and i.kind='STAMP' and i.state='ACCEPTED' and i.result_id=m.id)) order by m.created_at desc`,[customerId])).rows;
-  const affiliations=(await query(`select a.id,a.full_name,a.points_total,a.status,a.business_id,b.name business_name
-    from affiliates a join businesses b on b.id=a.business_id join customer_relationships r on r.business_id=a.business_id
-    and r.document_key=regexp_replace(lower(a.document_id),'[^a-z0-9]','','g') and r.state='ACCEPTED'
-    where r.customer_id=$1 and a.status<>'DELETED' and (r.include_history or a.created_at>=r.accepted_at or exists(select 1 from customer_invitations i where i.customer_id=r.customer_id and i.kind='AFFILIATION' and i.state='ACCEPTED' and i.result_id=a.id))`,[customerId])).rows;
-  return {cards:await Promise.all(members.map(async m=>({id:m.id,...await stamps.publicCard(m.public_token)}))),affiliations};
+ const members=(await query(`select m.id,m.public_token,b.name business_name,p.name program_name from stamp_members m join businesses b on b.id=m.business_id join stamp_programs p on p.id=m.program_id where ${owned('STAMP','m')} order by m.created_at desc`,[customerId])).rows;
+ const affiliations=(await query(`select a.id,a.full_name,a.points_total,a.status,a.business_id,b.name business_name from affiliates a join businesses b on b.id=a.business_id where a.status<>'DELETED' and ${owned('AFFILIATION','a')}`,[customerId])).rows;
+ return {cards:await Promise.all(members.map(async m=>({id:m.id,...await stamps.publicCard(m.public_token)}))),affiliations};
 }
 async function ownCard(customerId,id) {
-  const row=(await query(`select m.public_token from stamp_members m join customer_relationships r
-    on r.business_id=m.business_id and r.document_key=m.document_key and r.state='ACCEPTED'
-    where m.id=$1 and r.customer_id=$2 and (r.include_history or m.created_at>=r.accepted_at or exists(select 1 from customer_invitations i where i.customer_id=r.customer_id and i.kind='STAMP' and i.state='ACCEPTED' and i.result_id=m.id))`,[id,customerId])).rows[0];
-  if(!row) throw notFound('Tarjeta no encontrada.');return row.public_token;
+ const row=(await query(`select m.public_token from stamp_members m where m.id=$1 and ${owned('STAMP','m','$2')}`,[id,customerId])).rows[0];
+ if(!row)throw notFound('Tarjeta no encontrada.');return row.public_token;
 }
 async function identification(account) {
   const url=new URL('/empresa/',env.publicAppUrl);url.searchParams.set('customer',account.public_id);
   return {public_id:account.public_id,qr_image:await QRCode.toDataURL(url.toString()),url:url.toString()};
 }
 async function exportData(account) {
-  const tables=['customer_dream_plans','customer_goal_events','customer_wealth_items','customer_wealth_events','customer_grocery_lists','customer_debts','customer_debt_payments','customer_debt_events','customer_debt_scenarios','customer_finance_books','customer_finance_allocations','customer_finance_transfers','customer_purchase_plans','customer_payment_items','customer_payment_changes','customer_finance_connections','customer_sale_deliveries','customer_entries','customer_sale_notes','customer_relationships','customer_budgets','customer_goals','customer_recurring','customer_favorites','customer_place_requests','customer_invitations','customer_business_blocks','customer_saved_publications','customer_program_requests','customer_publication_events','customer_activation_participations'];
+  const tables=['customer_recovered_benefits','customer_benefit_recovery_runs','customer_dream_plans','customer_goal_events','customer_wealth_items','customer_wealth_events','customer_grocery_lists','customer_debts','customer_debt_payments','customer_debt_events','customer_debt_scenarios','customer_finance_books','customer_finance_allocations','customer_finance_transfers','customer_purchase_plans','customer_payment_items','customer_payment_changes','customer_finance_connections','customer_sale_deliveries','customer_entries','customer_sale_notes','customer_relationships','customer_budgets','customer_goals','customer_recurring','customer_favorites','customer_place_requests','customer_invitations','customer_business_blocks','customer_saved_publications','customer_program_requests','customer_publication_events','customer_activation_participations'];
   const output={account:{...account,session_id:undefined},purchases:(await query(saleSql,[account.id])).rows.map(r=>finance.salesMovement(r,account.timezone))};
   for(const table of tables) output[table]=(await query(`select * from ${table} where customer_id=$1`,[account.id])).rows;
   output.receipts=(await query("select id,entry_id,filename,mime_type,encode(bytes,'base64') base64 from customer_receipts where customer_id=$1",[account.id])).rows;
