@@ -29,15 +29,22 @@ async function checkout(ctx,list){
 function editor(page,ctx,list=null){
  cleanup();
  const request_id=crypto.randomUUID(),c=ctx.book.currency;
- let started=!!list?.items?.some(i=>i.shopping_origin||i.in_cart),shopping=started,dirty=false,version=0,timer=null,saving=null,saveError='';
+ let started=!!list?.items?.some(i=>i.shopping_origin||i.in_cart),shopping=started,dirty=false,version=0,timer=null,saving=null,saveError='',savedAt=null,manualSaved=false;
  page.innerHTML='<div class="page-heading"><div><span class="eyebrow">MERCADO Y HOGAR · '+esc(ctx.book.name)+' · '+esc(c)+'</span><h1 class="grocery-list-title">'+esc(list?.title||'¿Qué hace falta?')+'</h1><p>Tu lista para el mercado, el aseo y los menesteres de casa.</p></div><a href="#groceries">Ver todas mis listas</a></div>'+nav+'<ol class="grocery-steps" aria-label="Cómo funciona"><li><b>1</b><span>Anota lo que falta<small>Los precios pueden esperar.</small></span></li><li><b>2</b><span>Marca lo que llevas<small>Completa el precio en la tienda.</small></span></li><li><b>3</b><span>Confirma y compara<small>Solo al pagar se registra el gasto.</small></span></li></ol><form id="groceryForm" class="stack"><section class="panel grocery-name">'+field('title','Nombre de la lista',list?.title||'Mi próximo mercado','required minlength="2" maxlength="160" id="groceryListName" autocomplete="off"')+'<p class="small muted">Ponle un nombre: Mercado semanal, Aseo de la casa, Paseo familiar…</p></section><section class="panel grocery-capture"><label class="field" for="groceryQuick">¿Qué agregamos a la lista?</label><div class="grocery-quick"><input id="groceryQuick" maxlength="120" placeholder="Ej. huevos, detergente, bolsas de basura" autocomplete="off"><button class="primary" id="groceryAdd" type="button">+ Agregar</button></div><p class="small muted">Escribe un artículo y pulsa Agregar o Enter. Cantidad inicial: 1 unidad.</p><button type="button" class="secondary" id="groceryCatalog">Elegir productos frecuentes</button><p id="groceryAdded" class="small" role="status"></p></section><details class="panel grocery-settings"><summary>Fecha y notas de esta lista</summary><div class="grocery-fields">'+field('target_date','Cuándo planeas comprar (opcional)',list?.target_date||'','type="date"')+'<label class="field">Notas<textarea name="note" maxlength="2000">'+esc(list?.note||'')+'</textarea></label></div></details><div class="grocery-mode"><div><h2>Mi lista de compras</h2><p id="groceryModeHint" class="small muted"></p></div><button type="button" class="secondary" id="groceryMode" aria-pressed="false">Activar Modo mercando</button></div><div id="groceryLive" aria-live="polite"></div><p id="groceryEmpty" class="grocery-empty">Tu lista empieza con lo que te hace falta. Agrégalo arriba; no necesitas saber cuánto cuesta todavía.</p><div id="groceryItems"></div><p class="small muted">Guardar la lista no descuenta dinero. Los artículos que no compres pueden quedar para la próxima vez.</p><div class="grocery-actions"><div id="groceryRunning" role="status"></div><button type="button" class="secondary" id="groceryQuickJump">+ Producto extra</button><div><span id="grocerySaveState" role="status"></span><button class="primary" type="submit" value="save">Guardar lista</button></div><button class="secondary" type="submit" value="checkout">Terminar mercado</button></div><p id="groceryError" role="alert" class="error"></p></form>';
  const f=page.querySelector('form'),host=page.querySelector('#groceryItems'),quick=page.querySelector('#groceryQuick');
+ const feedback=document.createElement('div');feedback.id='grocerySaveFeedback';feedback.className='grocery-save-feedback';feedback.hidden=true;feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');feedback.setAttribute('aria-atomic','true');page.querySelector('.grocery-actions').prepend(feedback);
  function update(){
   page.querySelector('.page-heading h1').textContent=f.elements.title.value.trim()||'Mi lista de mercado';
   f.classList.toggle('is-shopping',shopping);page.querySelector('#groceryMode').setAttribute('aria-pressed',String(shopping));page.querySelector('#groceryMode').textContent=shopping?'Pausar Modo mercando':started?'Continuar Modo mercando':'Activar Modo mercando';
   page.querySelector('#groceryModeHint').textContent=shopping?'Modo mercando activo · marca cada producto al meterlo al carrito y escribe su precio real.':started?'Mercado pausado. Tu presupuesto inicial se conserva.':'Revisa lo que falta. Abre “Cantidad y precio estimado” si quieres presupuestarlo.';
   f.querySelector('[value=checkout]').hidden=!shopping;page.querySelector('#groceryEmpty').hidden=!!host.children.length;
-  page.querySelector('#grocerySaveState').textContent=saveError?'Sin guardar · '+saveError:saving?'Guardando…':dirty?'Cambios sin guardar':list?'Lista guardada':'Nueva lista · aún sin guardar';
+  const savedTime=savedAt?new Intl.DateTimeFormat('es-CO',{hour:'2-digit',minute:'2-digit',timeZone:ctx.account.timezone||'America/Bogota'}).format(savedAt):'';
+  page.querySelector('#grocerySaveState').textContent=saveError?'No se guardó · '+saveError:saving?'Guardando tu lista…':dirty?'Tienes cambios sin guardar':list?(savedTime?'Último guardado: '+savedTime:'Lista guardada'):'Nueva lista · aún sin guardar';
+  const saved=manualSaved&&!dirty&&!saving&&!saveError;
+  feedback.hidden=!saved;
+  if(saved){const count=list.items.length;feedback.innerHTML='<span class="grocery-save-check" aria-hidden="true">✓</span><div><strong>¡Lista guardada!</strong><span>'+esc(list.title)+' · '+count+' '+(count===1?'artículo':'artículos')+(savedTime?' · '+esc(savedTime):'')+'</span></div>';}
+  else feedback.textContent='';
+  const saveButton=f.querySelector('[value=save]');saveButton.textContent=saving?'Guardando…':saved?'✓ Guardada':list?'Guardar cambios':'Guardar lista';saveButton.classList.toggle('grocery-is-saved',saved);
   page.querySelector('#groceryCatalog').hidden=started;page.querySelector('#groceryQuickJump').hidden=!shopping;page.querySelector('#groceryRunning').hidden=!shopping;
   page.querySelector('label[for=groceryQuick]').textContent=shopping?'+ Añadir producto no planeado':'¿Qué agregamos a la lista?';
   page.querySelector('#groceryAdd').textContent=shopping?'+ Al carrito':'+ Agregar';
@@ -47,11 +54,12 @@ function editor(page,ctx,list=null){
    s.rows.forEach((r,i)=>{const el=host.children[i];el.querySelector('[data-item-hint]').textContent=r.quantity+' '+r.unit+' · '+money(r.estimated_minor,c);el.querySelector('[data-line-total]').textContent=shopping&&r.in_cart?'En el carrito: '+money(r.actual_minor,c):'';});
   }catch{page.querySelector('#groceryRunning').textContent='Completa el precio para actualizar el total';page.querySelector('#groceryLive').innerHTML='<p class="book-context-note">Revisa los datos del artículo que estás editando para actualizar el presupuesto.</p>';}
  }
- function changed(){dirty=true;version++;saveError='';clearTimeout(timer);if(started)timer=setTimeout(()=>{if(f.isConnected)persist().catch(()=>{});},650);}
+ function changed(){dirty=true;manualSaved=false;version++;saveError='';clearTimeout(timer);if(started)timer=setTimeout(()=>{if(f.isConnected)persist().catch(()=>{});},650);}
  async function persist(){
   clearTimeout(timer);if(saving){await saving;if(dirty)return persist();return list;}if(!dirty&&list)return list;
   saving=(async()=>{do{const captured=version,items=read(f);if(!items.length)throw Error('Agrega al menos un artículo a tu lista.');const data={title:f.elements.title.value,target_date:f.elements.target_date.value||null,note:f.elements.note.value,items,...(list?{revision:list.revision}:{request_id})};
    const creating=!list,saved=await ctx.request('/groceries'+(list?'/'+list.id:''),data,list?'PUT':'POST');list=saved.list;if(!list)throw Error('No pudimos guardar la lista.');dirty=version!==captured||(creating&&(JSON.stringify(M.normalize(list.items))!==JSON.stringify(items)||list.title!==data.title||list.note!==data.note||list.target_date!==data.target_date));saveError='';if(f.isConnected)page.querySelector('#groceryError').textContent='';
+   savedAt=new Date();
    if(f.isConnected&&location.hash==='#groceries/new')history.replaceState(null,'','#groceries/'+list.id);
   }while(dirty&&f.isConnected);return list;})();update();
   try{return await saving;}catch(e){dirty=true;saveError=e.message;if(f.isConnected)ctx.showError('No se guardaron los últimos cambios: '+e.message+'. Pulsa Guardar lista para reintentar.',page.querySelector('#groceryError'));throw e;}finally{saving=null;if(f.isConnected)update();}
@@ -73,7 +81,7 @@ function editor(page,ctx,list=null){
    const items=read(f),s=M.summary(items);if(action==='checkout'&&s.missing_actual)throw Error('Marca lo que llevas y completa sus precios reales antes de confirmar.');
    await persist();update();
    if(action==='checkout'){if(location.hash!=='#groceries/'+list.id)history.replaceState(null,'','#groceries/'+list.id);finish(ctx,list);}
-   else{location.hash='groceries/'+list.id;await ctx.refresh();}
+   else if(f.isConnected){manualSaved=true;page.querySelector('#groceryAdded').textContent='';history.replaceState(null,'','#groceries/'+list.id);update();}
   }catch(error){ctx.showError(error.message,page.querySelector('#groceryError'));}finally{buttons.forEach(x=>x.disabled=false);f.inert=false;f.removeAttribute('aria-busy');}
  };
 }

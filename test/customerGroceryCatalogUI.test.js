@@ -39,3 +39,19 @@ test('list names are visible when creating and editing; every list has a safe re
   assert.equal(sent.u,'/groceries/list-2/title');assert.equal(sent.m,'PATCH');assert.equal(sent.b.title,'Compras del paseo');assert.equal(sent.b.revision,2);assert.equal(refreshed,true);assert.equal(w.document.querySelector('dialog'),null);
  }finally{w.close();}
 });
+test('save shows progress then a persistent success; editing clears it and a failed retry never claims success',async()=>{
+ const {w,ctx}=setup();try{
+  const page=w.document.querySelector('main');let resolveSave,rejectSave,payload,refreshes=0;
+  ctx.refresh=async()=>{refreshes++;};ctx.request=async(_u,b)=>{payload=b;return new Promise((resolve,reject)=>{resolveSave=resolve;rejectSave=reject;});};
+  w.QoriGroceries.editor(page,ctx);const f=page.querySelector('form'),save=f.querySelector('[value=save]'),feedback=page.querySelector('#grocerySaveFeedback');
+  f.elements.title.value='Mercado <img src=x>';page.querySelector('#groceryQuick').value='Arroz';
+  const pending=f.onsubmit(new w.SubmitEvent('submit',{cancelable:true,submitter:save}));
+  assert.equal(save.textContent,'Guardando…');assert.equal(save.disabled,true);assert.equal(feedback.hidden,true);
+  resolveSave({list:{...payload,id:'saved-list',revision:1,currency:'COP'}});await pending;
+  assert.equal(feedback.hidden,false);assert.match(feedback.textContent,/¡Lista guardada!/);assert.match(feedback.textContent,/Mercado <img src=x> · 1 artículo/);assert.equal(feedback.querySelector('img'),null);
+  assert.equal(save.textContent,'✓ Guardada');assert.equal(save.disabled,false);assert.equal(refreshes,0);assert.equal(f.isConnected,true);assert.equal(w.location.hash,'#groceries/saved-list');
+  f.elements.title.value='Mercado de mañana';f.elements.title.dispatchEvent(new w.Event('input',{bubbles:true}));assert.equal(feedback.hidden,true);assert.equal(save.textContent,'Guardar cambios');assert.match(page.querySelector('#grocerySaveState').textContent,/cambios sin guardar/);
+  const retry=f.onsubmit(new w.SubmitEvent('submit',{cancelable:true,submitter:save}));rejectSave(Error('Sin conexión'));await retry;
+  assert.equal(feedback.hidden,true);assert.equal(save.textContent,'Guardar cambios');assert.equal(save.disabled,false);assert.match(page.querySelector('#grocerySaveState').textContent,/No se guardó/);assert.equal(f.elements.title.value,'Mercado de mañana');assert.equal(page.querySelectorAll('.grocery-item').length,1);
+ }finally{w.close();}
+});
