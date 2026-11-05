@@ -32,7 +32,7 @@ test('asset form sends a valuation, not a cash movement, and retries use one ide
 test('cashflow communicates signed results, daily closing balances and a partial month',()=>{
  const {w,page}=setup();try{
   const data={from:'2026-11-03',to:'2026-11-04',partial_month:true,opening_minor:10000,income_minor:1000,expense_minor:15000,net_minor:-14000,transfers_in_minor:2000,transfers_out_minor:0,closing_minor:-2000,days:[{date:'2026-11-04',income_minor:1000,expense_minor:15000,transfer_minor:2000,balance_minor:-2000}]};
-  page.innerHTML=w.QoriWealth.flow(data,'COP');assert.match(page.textContent,/mitad de mes/);assert.ok(page.querySelector('.wealth-result.money-expense'));assert.equal(page.querySelectorAll('tbody tr').length,1);assert.match(page.querySelector('tbody td:last-child').textContent,/-.*20/);
+  page.innerHTML=w.QoriWealth.flow(data,'COP');assert.doesNotMatch(page.textContent,/mitad de mes|2026-11-/);assert.match(page.querySelector('.finance-section-head p').textContent,/Noviembre de 2026/);assert.match(page.textContent,/Saldo de partidaAl 3 de noviembre/);assert.match(page.querySelector('caption').textContent,/Movimientos desde el 3 de noviembre/);assert.match(page.querySelector('.wealth-result span').textContent,/Saldo al 4 de noviembre/);assert.ok(page.querySelector('.wealth-result.money-expense'));assert.equal(page.querySelectorAll('tbody tr').length,1);assert.match(page.querySelector('tbody td:last-child').textContent,/-.*20/);
  }finally{w.close();}
 });
 test('patrimony loading failure offers a retry without displaying invented zero values',async()=>{
