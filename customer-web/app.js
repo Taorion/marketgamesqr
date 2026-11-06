@@ -103,7 +103,7 @@
       <main id="main" class="content"><p id="pageError" class="error" role="alert" tabindex="-1"></p><div id="page"></div></main></div></div>`;
     const page=document.getElementById('page');
     const nav=app.querySelector('.sidebar nav');
-    nav.innerHTML=navLink('home','⌂','Mi dinero')+navLink('finances','◷','Mis finanzas')+navLink('groceries','▤','Mercado y hogar')+navLink('purchases','▤','Compras')+navLink('dreams','✧','Sueños')+navLink('explore','✦','Beneficios')+navLink('wallet','▤','Mis tarjetas');
+    nav.innerHTML=navLink('home','⌂','Mi dinero')+navLink('finances','◷','Mis finanzas')+navLink('groceries','▤','Mercado y hogar')+navLink('purchases','▤','Antojos')+navLink('dreams','✧','Sueños')+navLink('explore','✦','Beneficios')+navLink('wallet','▤','Mis tarjetas');
     window.QoriAccounting.selector(app,exploreContext());
     window.QoriNotifications?.watch(exploreContext());
     if(route()==='calculator')window.QoriCalculator.render(page,exploreContext());

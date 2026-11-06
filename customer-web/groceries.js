@@ -1,7 +1,7 @@
 (()=>{'use strict';const M=window.QoriGroceryMath,esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),money=(n,c)=>n==null?'Por definir':new Intl.NumberFormat('es-CO',{style:'currency',currency:c,maximumFractionDigits:2}).format(n/100);
 let cleanup=()=>{};
 const field=(name,label,value='',attrs='')=>'<label class="field">'+label+'<input name="'+name+'" value="'+esc(value)+'" '+attrs+'></label>';
-const nav='<nav class="finance-tabs"><a href="#home">Mi dinero</a><a href="#purchases">Mis compras</a><a href="#groceries" aria-current="page">Mercado y hogar</a><a href="#explore">Buscar beneficios</a></nav>';
+const nav='<nav class="finance-tabs"><a href="#home">Mi dinero</a><a href="#purchases">Antojos</a><a href="#groceries" aria-current="page">Mercado y hogar</a><a href="#explore">Buscar beneficios</a></nav>';
 const today=ctx=>new Intl.DateTimeFormat('en-CA',{timeZone:ctx.account.timezone||'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 function stats(s,c,done=false){return '<div class="grocery-stats"><article><span>Lista completa · estimado</span><strong>'+money(s.estimated_minor,c)+'</strong><small>'+s.unknown_prices+' artículos sin precio estimado</small></article><article><span>Presupuesto de lo '+(done?'comprado':'marcado')+'</span><strong>'+money(s.selected_budget_minor,c)+'</strong><small>Solo la cantidad comprada, hasta la prevista</small></article><article><span>'+ (done?'Importe detallado de la compra':'Precios reales anotados')+'</span><strong>'+money(s.actual_minor,c)+'</strong><small>'+s.missing_actual+' precios reales pendientes</small></article></div>';}
 function row(item={}){

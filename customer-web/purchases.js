@@ -15,12 +15,12 @@
  }
  function edit(ctx,refresh,plan=null){
   const request_id=crypto.randomUUID();
-  const d=ctx.dialog(plan?'Editar compra planeada':'¿Qué necesitas comprar?','<form id="purchasePlanForm" class="stack">'+
-   field('title','Compra o producto',plan?.title||'','required maxlength="160" placeholder="Ej. mercado de la semana"')+
-   '<div class="purchase-fields">'+field('estimated_amount','Máximo que quieres destinar',plan?.estimated_amount||'','required type="number" min=".01" step=".01"')+
-   select('currency','Moneda',{COP:'COP',USD:'USD',EUR:'EUR'},plan?.currency||ctx.account.currency||'COP')+'</div>'+
-   select('category','Categoría',categories,plan?.category||'otros')+field('target_date','Fecha prevista (opcional)',plan?.target_date||'','type="date"')+
-   '<label class="field">Notas<textarea name="note" maxlength="2000">'+esc(plan?.note)+'</textarea></label><p class="small muted">Planear no registra un gasto ni reserva dinero. Las compras sin fecha se incluyen en la previsión de este mes.</p><button type="submit" class="primary">Guardar plan de compra</button></form>');
+  const d=ctx.dialog(plan?'Editar antojo':'¿Qué se te antoja?','<form id="purchasePlanForm" class="stack">'+
+   field('title','Nombre de tu antojo',plan?.title||'','required maxlength="160" placeholder="Ej. unos audífonos, una cena especial"')+
+   '<div class="purchase-fields">'+field('estimated_amount','Presupuesto para este antojo',plan?.estimated_amount||'','required type="number" min=".01" step=".01"')+
+   select('currency','Moneda',{COP:'COP',USD:'USD',EUR:'EUR'},plan?.currency||ctx.book?.currency||ctx.account.currency||'COP')+'</div>'+
+   select('category','Categoría',categories,plan?.category||'otros')+field('target_date','¿Para cuándo lo quieres? (opcional)',plan?.target_date||'','type="date"')+
+   '<label class="field">Notas<textarea name="note" maxlength="2000">'+esc(plan?.note)+'</textarea></label><p class="small muted">Planear no registra un gasto ni reserva dinero. Los antojos sin fecha se incluyen en la previsión de este mes.</p><button type="submit" class="primary">Guardar antojo</button></form>');
   bindForm(d,ctx,f=>ctx.request('/purchases'+(plan?'/'+plan.id:''),{...f,target_date:f.target_date||null,...(plan?{revision:plan.revision}:{request_id})},plan?'PUT':'POST'),refresh);
  }
  async function finish(ctx,refresh,plan,existing){
@@ -36,7 +36,7 @@
      field('amount','Importe realmente pagado · '+plan.currency,plan.estimated_amount,'required type="number" min=".01" step=".01"')+
      field('paid_on','Fecha de pago',today(ctx),'required type="date" max="'+today(ctx)+'"');
    }
-   d.querySelector('.dialog-body').innerHTML='<form id="purchaseCompleteForm" class="stack">'+html+'<label class="check"><input type="checkbox" required>Confirmo que esta compra ya está pagada.</label><p id="dialogError" class="error" role="alert"></p><button type="submit" class="primary">'+(existing?'Vincular sin duplicar':'Guardar gasto y completar compra')+'</button></form>';
+   d.querySelector('.dialog-body').innerHTML='<form id="purchaseCompleteForm" class="stack">'+html+'<label class="check"><input type="checkbox" required>Confirmo que esta compra ya está pagada.</label><p id="dialogError" class="error" role="alert"></p><button type="submit" class="primary">'+(existing?'Vincular sin duplicar':'Guardar gasto y cumplir antojo')+'</button></form>';
    bindForm(d,ctx,f=>{
     let body={revision:plan.revision,confirmed:true};
     if(existing){if(!f.movement)throw Error('Selecciona una compra registrada.');const [type,id]=f.movement.split(':');body[type==='entry'?'entry_id':'sale_id']=id;}
@@ -46,7 +46,7 @@
   }catch(e){ctx.showError(e.message,d.querySelector('.dialog-body'));}
  }
  async function opportunities(ctx,plan){
-  const d=ctx.dialog('Beneficios para tu compra','<form id="purchaseBenefitSearch" class="purchase-fields">'+field('search','Qué buscas',plan.title,'maxlength="100" required')+'<button type="submit" class="primary">Buscar</button></form><p class="small muted">Consulta precio, vigencia y condiciones antes de comprar. Un beneficio solo te conviene si responde a lo que necesitas.</p><div id="purchaseOpportunities" role="status"></div><div class="row"><a class="secondary" href="#wallet">Mis beneficios disponibles</a><a class="secondary" href="#saved">Mis guardados</a></div>');
+  const d=ctx.dialog('Beneficios para tu antojo','<form id="purchaseBenefitSearch" class="purchase-fields">'+field('search','Qué buscas',plan.title,'maxlength="100" required')+'<button type="submit" class="primary">Buscar</button></form><p class="small muted">Consulta precio, vigencia y condiciones antes de comprar. Un beneficio solo te conviene si responde a lo que necesitas.</p><div id="purchaseOpportunities" role="status"></div><div class="row"><a class="secondary" href="#wallet">Mis beneficios disponibles</a><a class="secondary" href="#saved">Mis guardados</a></div>');
   d.querySelectorAll('a').forEach(a=>a.onclick=()=>d.close());let version=0;
   const search=async()=>{
    const turn=++version,target=d.querySelector('#purchaseOpportunities'),params=new URLSearchParams({search:d.querySelector('[name=search]').value});
@@ -68,27 +68,27 @@
   const projected=d.projected_remaining_minor;
   const incomplete=d.grocery?.unknown_prices?'<p class="book-warning">Hay '+d.grocery.unknown_prices+' artículos de mercado sin precio estimado. Su costo todavía no está incluido en esta proyección.</p>':'';
   return incomplete+'<section class="panel purchase-budget"><div><span class="eyebrow">Antes de comprar · '+esc(d.currency)+'</span><h2>'+(projected==null?'Define tu presupuesto de este mes':projected<0?'Tus planes superan el presupuesto':'Margen previsto en tu presupuesto')+'</h2>'+
-   (projected==null?'<p>Un presupuesto mensual total permite contrastar gastos, obligaciones y compras pendientes.</p><a class="secondary" href="#planning">Crear mi presupuesto</a>':'<strong class="purchase-total">'+money(projected,d.currency)+'</strong>')+
-   '<p class="small muted">Presupuesto menos gastos registrados, pagos pendientes hasta fin de mes y compras planeadas para este mes o sin fecha. Es una previsión; no representa tu saldo bancario.</p></div>'+
-   '<dl class="purchase-breakdown"><div><dt>Gastos registrados</dt><dd>'+money(d.spent_minor,d.currency)+'</dd></div><div><dt>Pagos pendientes</dt><dd>'+money(d.obligations_minor,d.currency)+'</dd></div><div><dt>Compras planeadas</dt><dd>'+money(d.planned_minor,d.currency)+'</dd></div></dl></section>';
+   (projected==null?'<p>Un presupuesto mensual total permite contrastar gastos, obligaciones y antojos y mercado pendientes.</p><a class="secondary" href="#planning">Crear mi presupuesto</a>':'<strong class="purchase-total">'+money(projected,d.currency)+'</strong>')+
+   '<p class="small muted">Presupuesto menos gastos registrados, pagos pendientes hasta fin de mes y antojos y mercado planeados para este mes o sin fecha. Es una previsión; no representa tu saldo bancario.</p></div>'+
+   '<dl class="purchase-breakdown"><div><dt>Gastos registrados</dt><dd>'+money(d.spent_minor,d.currency)+'</dd></div><div><dt>Pagos pendientes</dt><dd>'+money(d.obligations_minor,d.currency)+'</dd></div><div><dt>Antojos y mercado</dt><dd>'+money(d.planned_minor,d.currency)+'</dd></div></dl></section>';
  }
  async function render(page,ctx){
   let filter='PLANNED',currency=ctx.book?.currency||ctx.account.currency||'COP',generation=0;
   const refresh=async()=>{
-   const turn=++generation;page.innerHTML='<p role="status">Organizando tus compras y tu presupuesto…</p>';
+   const turn=++generation;page.innerHTML='<p role="status">Organizando tus antojos y tu presupuesto…</p>';
    try{
     const d=await ctx.request('/purchases/overview?currency='+encodeURIComponent(currency));if(!page.isConnected||turn!==generation)return;
-    page.innerHTML='<div class="page-heading"><div><span class="eyebrow">Compra con intención</span><h1>Mis compras</h1><a class="secondary" href="#groceries">Mi lista de mercado →</a><a class="secondary" href="#explore">Buscar productos de Qori Empresa</a><a class="quiet" href="#saved">Mis beneficios guardados</a><p>Planea lo que necesitas, encuentra beneficios y registra lo que pagas.</p></div><button class="primary" id="newPurchase">+ Planear compra</button></div>'+
+    page.innerHTML='<div class="page-heading"><div><span class="eyebrow">Dale un plan a eso que quieres</span><h1>Antojos</h1><a class="secondary" href="#groceries">Mi lista de mercado →</a><a class="secondary" href="#explore">Buscar productos de Qori Empresa</a><a class="quiet" href="#saved">Mis beneficios guardados</a><p>Guarda eso que quieres, define cuánto gastar y elige cuándo darte el gusto. Qori te ayuda a ver cómo encaja en tu presupuesto.</p></div><button class="primary" id="newPurchase">+ Nuevo antojo</button></div>'+
      '<div class="purchase-toolbar">'+select('purchaseCurrency','Ver importes en',{COP:'COP',USD:'USD',EUR:'EUR'},currency)+'<a class="secondary" href="#history">Historial de compras y gastos</a><a class="secondary" href="#payments">Agenda de pagos</a></div>'+summary(d)+
-     '<div class="purchase-filters" aria-label="Estado de las compras">'+[['PLANNED','Por comprar'],['PURCHASED','Compradas'],['CANCELLED','Canceladas']].map(([k,v])=>'<button class="secondary" data-filter="'+k+'" aria-pressed="'+(filter===k)+'">'+v+'</button>').join('')+'</div><div id="purchasePlans" class="purchase-plans"></div>';
+     '<div class="purchase-filters" aria-label="Estado de tus antojos">'+[['PLANNED','Por cumplir'],['PURCHASED','Cumplidos'],['CANCELLED','Descartados']].map(([k,v])=>'<button class="secondary" data-filter="'+k+'" aria-pressed="'+(filter===k)+'">'+v+'</button>').join('')+'</div><div id="purchasePlans" class="purchase-plans"></div>';
     page.querySelector('#newPurchase').onclick=()=>edit(ctx,refresh);
     page.querySelector('[name=purchaseCurrency]').onchange=e=>{currency=e.target.value;refresh();};
     const draw=()=>{
      const plans=d.plans.filter(p=>p.status===filter&&p.currency===currency),list=page.querySelector('#purchasePlans');
-     list.innerHTML=plans.map(p=>'<article class="panel purchase-plan"><div><span class="eyebrow">'+esc(categories[p.category])+' · '+esc(p.target_date||'Sin fecha')+'</span><h2>'+esc(p.title)+'</h2><p>Planeado: <strong>'+money(p.estimated_minor,p.currency)+'</strong></p>'+
+     list.innerHTML=plans.map(p=>'<article class="panel purchase-plan"><div><span class="eyebrow">'+esc(categories[p.category])+' · '+esc(p.target_date||'Sin fecha')+'</span><h2>'+esc(p.title)+'</h2><p>Presupuestado: <strong>'+money(p.estimated_minor,p.currency)+'</strong></p>'+
       (p.actual?'<p>Pagado: <strong>'+money(p.actual.amount_minor,p.actual.currency)+'</strong></p><p class="small">'+(p.difference_minor==null?'La moneda del movimiento cambió.':p.difference_minor<0?money(-p.difference_minor,p.currency)+' por encima de lo planeado':money(p.difference_minor,p.currency)+' por debajo de lo planeado')+'</p>':'')+
       (p.needs_review?'<p class="error">El movimiento vinculado ya no está disponible como gasto pagado. Revisa tu historial.</p>':'')+'<p>'+esc(p.note)+'</p>'+(window.QoriProductBudget?.sourceCard(p)||'')+'</div><div class="purchase-actions">'+
-      (p.status==='PLANNED'?'<button class="primary" data-opportunities="'+p.id+'">Buscar beneficios</button><button class="secondary" data-paid="'+p.id+'">Registrar compra pagada</button><button class="secondary" data-link="'+p.id+'">Vincular compra registrada</button><button class="quiet" data-edit="'+p.id+'">Editar plan</button><button class="quiet" data-state="'+p.id+'" data-action="CANCEL">Cancelar plan</button>':'<button class="secondary" data-state="'+p.id+'" data-action="REOPEN">Volver a planear</button>')+'</div></article>').join('')||'<section class="panel"><h2>'+(filter==='PLANNED'?'Dale un plan a tu próxima compra':'No hay compras en esta sección')+'</h2><p>'+(filter==='PLANNED'?'Anota qué necesitas y cuánto quieres destinar antes de buscar ofertas.':'Las compras se organizan aquí cuando actualizas su estado.')+'</p></section>';
+      (p.status==='PLANNED'?'<button class="primary" data-opportunities="'+p.id+'">Buscar beneficios</button><button class="secondary" data-paid="'+p.id+'">Registrar compra pagada</button><button class="secondary" data-link="'+p.id+'">Vincular compra registrada</button><button class="quiet" data-edit="'+p.id+'">Editar antojo</button><button class="quiet" data-state="'+p.id+'" data-action="CANCEL">Descartar antojo</button>':'<button class="secondary" data-state="'+p.id+'" data-action="REOPEN">Volver a planear</button>')+'</div></article>').join('')||'<section class="panel"><h2>'+(filter==='PLANNED'?'Tu próximo antojo empieza con un plan':'No hay antojos en esta sección')+'</h2><p>'+(filter==='PLANNED'?'Una cena, unos zapatos o ese detalle que te gusta: ponle nombre, presupuesto y una fecha.':'Tus antojos aparecen aquí cuando los cumples o los descartas.')+'</p></section>';
      const plan=id=>plans.find(p=>p.id===id);
      list.querySelectorAll('[data-refresh-source]').forEach(b=>b.onclick=()=>window.QoriProductBudget.refreshSource(ctx,refresh,plan(b.dataset.refreshSource)));
      list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>edit(ctx,refresh,plan(b.dataset.edit)));
@@ -102,7 +102,7 @@
     };
     page.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;page.querySelectorAll('[data-filter]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));draw();});
     draw();
-   }catch(e){if(page.isConnected){page.innerHTML='<section class="panel"><h1>Mis compras</h1><p>No pudimos cargar tu planificación.</p><button id="retryPurchases" class="primary">Reintentar</button><a class="secondary" href="#history">Ver historial</a></section>';ctx.showError(e.message);page.querySelector('#retryPurchases').onclick=refresh;}}
+   }catch(e){if(page.isConnected){page.innerHTML='<section class="panel"><h1>Antojos</h1><p>No pudimos cargar tu planificación.</p><button id="retryPurchases" class="primary">Reintentar</button><a class="secondary" href="#history">Ver historial</a></section>';ctx.showError(e.message);page.querySelector('#retryPurchases').onclick=refresh;}}
   };await refresh();
  }
  window.QoriPurchases={render,edit,summary};
