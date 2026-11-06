@@ -4,6 +4,37 @@ const {planFromBusiness,assertStandaloneBusinessFeature}=require('./subscription
 const {createPostSaleQr}=require('./strategicQrService');
 const {syncSaleProductsWithCatalog}=require('./productCatalogService');
 const finance=require('./customerFinance');
+const crypto=require('crypto');
+async function businessCatalog(user){
+ await assertStandaloneBusinessFeature(user,user.business_id,'qr_batch_generator');
+ const [products,branches]=await Promise.all([
+  query("select id,name,unit_price,stock_quantity from business_inventory_products where business_id=$1 and status='ACTIVE' and currency='COP' and stock_quantity>=1 order by name,id",[user.business_id]),
+  query('select id,name from branches where business_id=$1 and is_active order by name',[user.business_id])
+ ]);
+ return {products:products.rows,branches:branches.rows};
+}
+async function createFromBusiness(user,data){
+ await assertStandaloneBusinessFeature(user,user.business_id,'qr_batch_generator');
+ const fingerprint=crypto.createHash('sha256').update(JSON.stringify({product:data.product_id,recipient:data.recipient_public_id,buyer:data.buyer_public_id||null,buyer_name:data.buyer_name||'',amount:finance.minor(data.amount),terms:data.terms,message:data.message,valid_days:data.valid_days})).digest('hex');
+ return withTransaction(async db=>{
+  await db.query('select pg_advisory_xact_lock(hashtext($1))',['business-product-gift:'+user.business_id+':'+data.request_id]);
+  const prior=(await db.query(orderSql+" where o.business_id=$1 and o.request_id=$2 and o.snapshot->>'source'='BUSINESS'",[user.business_id,data.request_id])).rows[0];
+  if(prior){if(prior.snapshot.fingerprint!==fingerprint)throw badRequest('Esta solicitud ya tiene otros datos. Abre un nuevo regalo para cambiarlos.');return {order:receipt(prior)};}
+  const recipient=(await db.query('select id,full_name from customer_accounts where public_id=$1',[data.recipient_public_id])).rows[0];
+  if(!recipient?.full_name)throw notFound('Cuenta destinataria no disponible.');
+  const buyer=data.buyer_public_id?(await db.query('select id,full_name from customer_accounts where public_id=$1',[data.buyer_public_id])).rows[0]:null;
+  if(data.buyer_public_id&&(!buyer?.full_name||data.buyer_authorized!==true))throw badRequest('Encuentra al comprador y confirma su autorización para registrar esta compra en Customer.');
+  if(buyer?.id===recipient.id)throw badRequest('El comprador y el destinatario del regalo deben ser personas distintas.');
+  if(!buyer&&!String(data.buyer_name||'').trim())throw badRequest('Indica quién compra el regalo.');
+  if((await db.query('select 1 from customer_business_blocks where business_id=$1 and customer_id=any($2::uuid[])',[user.business_id,[recipient.id,...(buyer?[buyer.id]:[])]] )).rowCount)throw badRequest('Una de estas cuentas no recibe solicitudes de este negocio.');
+  const p=(await db.query("select id,name,stock_quantity from business_inventory_products where business_id=$1 and id=$2 and status='ACTIVE' and currency='COP'",[user.business_id,data.product_id])).rows[0];
+  if(!p||Number(p.stock_quantity)<1)throw badRequest('Selecciona un producto disponible del inventario de este negocio.');
+  const snapshot={source:'BUSINESS',fingerprint,guest_buyer:!buyer,title:'Regalo de '+(buyer?.full_name||data.buyer_name),product_name:p.name,terms:data.terms,payment_instructions:'Pago directo al negocio. El ticket se entrega cuando el negocio confirma el pago.',valid_days:data.valid_days};
+  const row=(await db.query(`insert into customer_product_gift_orders(business_id,product_id,buyer_id,recipient_id,request_id,buyer_name,recipient_name,amount,message,snapshot)
+   values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb) returning *`,[user.business_id,p.id,buyer?.id||null,recipient.id,data.request_id,buyer?.full_name||data.buyer_name,recipient.full_name,data.amount,data.message,JSON.stringify(snapshot)])).rows[0];
+  return {order:receipt(row)};
+ });
+}
 const offerSql="select pub.*,to_jsonb(b) business,b.name business_name,b.slug business_slug,d.published directory_published,ip.name product_name,ip.status product_status,ip.stock_quantity,ip.cost_price,ip.currency,po.price,po.terms,po.payment_instructions,po.valid_days from customer_publications pub join businesses b on b.id=pub.business_id join customer_directory d on d.business_id=b.id join customer_product_offers po on po.publication_id=pub.id join business_inventory_products ip on ip.id=pub.resource_id and ip.business_id=pub.business_id where pub.id=$1 and pub.kind='PRODUCT'";
 function available(row){
  const plan=row&&planFromBusiness(row.business);
@@ -56,7 +87,7 @@ async function confirm(user,id,data){
   if(o.state==='ISSUED')return {ok:true,existing:true,order_id:o.id,sale_id:o.sale_id};
   if(o.state!=='PENDING_PAYMENT')throw badRequest('La solicitud ya no está pendiente.');
   if(finance.minor(o.amount)!==finance.minor(data.amount))throw badRequest('El importe recibido debe coincidir con el precio de esta solicitud.');
-  const buyer=(await db.query('select id,email from customer_accounts where id=$1',[o.buyer_id])).rows[0];
+  const buyer=o.buyer_id?(await db.query('select id,email from customer_accounts where id=$1',[o.buyer_id])).rows[0]:(o.snapshot.source==='BUSINESS'&&o.snapshot.guest_buyer?{email:null}:null);
   const recipient=(await db.query('select id,email,full_name from customer_accounts where id=$1',[o.recipient_id])).rows[0];
   if(!buyer||!recipient)throw badRequest('Una de las cuentas ya no está disponible. Resuelve el pago directamente con el comprador.');
   if((await db.query('select 1 from customer_business_blocks where customer_id=$1 and business_id=$2',[recipient.id,user.business_id])).rowCount)throw badRequest('El destinatario no recibe regalos de este negocio. Resuelve el pago con el comprador.');
@@ -70,14 +101,15 @@ async function confirm(user,id,data){
    expiration_days:o.snapshot.valid_days,notes:'Producto de regalo pagado. Referencia: '+data.payment_reference,
    benefit:{benefit_type:'FREE_GIFT',benefit_label:o.snapshot.product_name,benefit_value:{label:o.snapshot.product_name,purchase_required:false,quantity:1,conditions:o.snapshot.terms,product_scope:{mode:'gift_product',inventory_product_id:product.id,product_name:o.snapshot.product_name}}},
    metadata:{source:'CUSTOMER_PRODUCT_GIFT',customer_product_gift_order_id:o.id,customer_gift_sender:o.buyer_name,customer_gift_message:o.message,
-    qr_creation_context:'business_owner_generic_ticket',ticket_use_case:'product_gift',ticket_use_case_label:'Regalo comprado en Customer',
-    origin_label:'Regalo comprado en Qori Customer',reward_label:o.snapshot.product_name,attribution_source:'MANUAL',attribution_subject:'Qori Customer · regalos',
+    qr_creation_context:'business_owner_generic_ticket',ticket_use_case:'product_gift',ticket_use_case_label:'Ticket de regalo pagado',
+    origin_label:o.snapshot.source==='BUSINESS'?'Regalo creado en Qori Empresa':'Regalo comprado en Qori Customer',reward_label:o.snapshot.product_name,attribution_source:'MANUAL',attribution_subject:'Qori Customer · regalos',
     products:catalog.products,product_catalog_sync:true,payment_reference:data.payment_reference}
   },{client:db,recipient:{customer_name:recipient.full_name,customer_email:recipient.email}});
   await db.query("update business_sales set sale_status='PAID',paid_at=now(),payment_method=$2,idempotency_key=$3,inventory_product_id=$4,quantity=1,unit_cost=$5,product_cost_total=$5,gross_profit=sale_amount-$5,net_profit=sale_amount-$5,created_by_user_id=$6 where id=$1",[result.sale.id,data.payment_method,'customer-product-gift:'+o.id,product.id,product.cost_price||0,user.id]);
   const invite=(await db.query("insert into customer_invitations(business_id,customer_id,created_by,request_id,kind,resource_id,title,message,terms,payload,expires_at) values($1,$2,$3,$4,'TICKET',$5,$6,$7,$8,$9::jsonb,$10) returning id",[user.business_id,recipient.id,user.id,o.id,result.qr_code.id,o.snapshot.product_name,o.buyer_name+' te regaló '+o.snapshot.product_name+(o.message?'. '+o.message:''),o.snapshot.terms,JSON.stringify({product_gift_order_id:o.id}),result.qr_code.expires_at])).rows[0];
   await db.query("update customer_product_gift_orders set state='ISSUED',sale_id=$2,qr_code_id=$3,invitation_id=$4,paid_at=now(),confirmed_by=$5,payment_reference=$6,payment_method=$7 where id=$1",[id,result.sale.id,result.qr_code.id,invite.id,user.id,data.payment_reference,data.payment_method]);
-  await require('./customerBenefitNotificationService').insert(db,{customer_id:o.buyer_id,business_id:user.business_id,event_key:'gift-purchase:'+o.id,kind:'SALE',title:'Tu regalo fue pagado y enviado',body:'El ticket fue enviado a '+o.recipient_name+'. Tu comprobante quedó en tus compras.',resource_id:result.sale.id});
+  await require('./customerBenefitNotificationService').insert(db,{customer_id:recipient.id,business_id:user.business_id,event_key:'invitation:'+invite.id+':PENDING',kind:'TICKET',title:'Tienes una nueva invitación',body:o.snapshot.product_name,invitation_id:invite.id});
+  if(o.buyer_id)await require('./customerBenefitNotificationService').insert(db,{customer_id:o.buyer_id,business_id:user.business_id,event_key:'gift-purchase:'+o.id,kind:'SALE',title:'Tu regalo fue pagado y enviado',body:'El ticket fue enviado a '+o.recipient_name+'. Tu comprobante quedó en tus compras.',resource_id:result.sale.id});
   return {ok:true,order_id:id,sale_id:result.sale.id};
  });
 }
@@ -86,4 +118,4 @@ async function validateGiftTicket(db,account,invitation){
  if(!row||row.ticket_status!=='ACTIVE'||row.sale_status!=='PAID'||new Date(row.expires_at)<=new Date())throw badRequest('Este regalo ya no está disponible. Consulta con el negocio.');
  return row;
 }
-module.exports={offer,available,create,order,list,cancel,businessOrders,confirm,validateGiftTicket};
+module.exports={offer,available,create,order,list,cancel,businessOrders,confirm,validateGiftTicket,businessCatalog,createFromBusiness};

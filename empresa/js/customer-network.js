@@ -9,7 +9,7 @@
     const d=document.createElement('dialog');d.id='customerNetworkDialog';d.className='customer-network-dialog';
     d.setAttribute('aria-labelledby','customerNetworkTitle');d.innerHTML=`<header><h2 id="customerNetworkTitle">Qori Customer</h2><button type="button" data-close aria-label="Cerrar">×</button></header><div class="customer-network-body">
       <p>Encuentra al comprador aunque todavía no te haya comprado. Asocia tarjetas, afiliaciones, regalos, tickets y actividades a su portal gratuito. El comprador acepta o rechaza cada invitación.</p>
-      <form id="customerNetworkSearch"><label>Correo completo o identificación Qori<input name="query" value="${esc(initial)}" ${initial?'readonly':''} required maxlength="180" autocomplete="off"></label><button>Buscar comprador</button></form>
+      <form id="customerNetworkSearch"><label>Cédula, correo completo o identificación Qori<input name="query" value="${esc(initial)}" ${initial?'readonly':''} required maxlength="180" autocomplete="off"></label><button>Buscar comprador</button></form>
       <p id="customerNetworkMessage" role="status"></p><div id="customerNetworkResult"></div>
       <button type="button" class="ghost-button" id="customerLegacyConnection">Conectar historial existente y otras opciones</button></div>`;
     document.body.append(d);d.showModal();d.querySelector('[data-close]').onclick=()=>d.close();d.onclose=()=>d.remove();

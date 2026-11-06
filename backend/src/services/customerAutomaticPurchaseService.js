@@ -18,7 +18,7 @@ async function configure(db,account,businessId,data,{initial=false,includeHistor
    left join customer_finance_allocations fa on fa.customer_id=$1 and fa.kind='SALE' and fa.source_id=s.id
    where s.business_id=$2 and s.sale_status in ('PAID','VOIDED')
    and not exists(select 1 from customer_sale_deliveries d where d.sale_id=s.id and d.customer_id<>$1)
-   and not exists(select 1 from customer_product_gift_orders g where g.sale_id=s.id and g.buyer_id<>$1)
+   and not exists(select 1 from customer_product_gift_orders g where g.sale_id=s.id and g.buyer_id is distinct from $1::uuid)
    on conflict(sale_id) do nothing`,[account.id,businessId,initial?target.id:oldBook]);
   await db.query("insert into customer_finance_allocations(customer_id,kind,source_id,book_id) select customer_id,'SALE',sale_id,book_id from customer_sale_captures where customer_id=$1 and business_id=$2 on conflict do nothing",[account.id,businessId]);
  }

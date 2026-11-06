@@ -16,13 +16,16 @@ async function buyerByPublicId(id,db={query}){
 }
 async function lookup(user,term){
   const value=term.trim().toLowerCase();
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)&&! /^[a-f0-9-]{36}$/.test(value))throw badRequest('Escribe el correo completo o la identificación Qori.');
-  const buyer=(await query(`select a.public_id,a.full_name,
+  const document=/^[0-9][0-9.\s-]{2,79}$/.test(value)?identity.normalize(value):null;
+  if(!document&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)&&! /^[a-f0-9-]{36}$/.test(value))throw badRequest('Escribe la cédula, el correo completo o la identificación Qori.');
+  const buyers=(await query(`select a.public_id,a.full_name,a.document_review_required,
+    exists(select 1 from customer_business_blocks bl where bl.customer_id=a.id and bl.business_id=$2) blocked,
     (select r.state from customer_relationships r where r.customer_id=a.id and r.business_id=$2 order by (r.state='ACCEPTED') desc,r.created_at desc limit 1) relationship_state
-    from customer_accounts a where (a.email=$1 or a.public_id::text=$1)
-    and not exists(select 1 from customer_business_blocks bl where bl.customer_id=a.id and bl.business_id=$2)`,[value,user.business_id])).rows[0];
-  if(!buyer)throw notFound('No encontramos una cuenta disponible con esa identificación.');
-  return {buyer};
+    from customer_accounts a where (a.email=$1 or a.public_id::text=$1 or ($3::text is not null and a.declared_document_key=$3 and a.document_locked_at is not null)) limit 2`,[value,user.business_id,document])).rows;
+  if(buyers.length>1)throw badRequest('Hay más de una cuenta con esa cédula. Busca por el correo completo del destinatario para evitar una entrega equivocada.');
+  const buyer=buyers[0];
+  if(!buyer||buyer.blocked||(document&&buyer.document_review_required))throw notFound('No encontramos una cuenta disponible con esa identificación.');
+  return {buyer:{public_id:buyer.public_id,full_name:buyer.full_name,relationship_state:buyer.relationship_state}};
 }
 const ticketOwnership=`(lower(trim(p.email))=$2 or exists(select 1 from customer_relationships r where r.customer_id=$3 and r.business_id=q.business_id
   and r.state='ACCEPTED' and r.document_key=regexp_replace(lower(p.document_id),'[^a-z0-9]','','g')))`;
