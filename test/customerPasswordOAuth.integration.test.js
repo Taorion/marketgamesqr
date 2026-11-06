@@ -20,6 +20,7 @@ test('password registration requires email proof; recovery preserves identity, r
  assert.equal(JSON.stringify(verified.data).includes('password_hash'),false);assert.match(verified.headers.get('set-cookie'),/HttpOnly/);assert.match(verified.headers.get('set-cookie'),/SameSite=Strict/);
  const stored=(await query('select password_hash from customer_password_credentials where customer_id=$1',[ids[0]])).rows[0].password_hash;assert.notEqual(stored,pass);assert.match(stored,/^scrypt\$/);
  const login=await api('/auth/web/password/login',{email:e,password:pass});assert.equal(login.status,200);assert.equal(login.data.account.id,ids[0]);assert.equal(login.data.token,undefined);
+ assert.equal((await api('/dashboard',null,cookie(login))).status,403,'Password login cannot skip document registration');
  const bad=await api('/auth/web/password/login',{email:e,password:pass+'bad'}),unknown=await api('/auth/web/password/login',{email:email(),password:pass});assert.equal(bad.status,401);assert.deepEqual(bad.data,unknown.data);
  assert.equal((await api('/auth/web/password/login',{email:e,password:pass},null,false)).status,403);
  const reset=await api('/auth/web/password/code',{email:e,password:pass+' nueva',confirmation:pass+' nueva',consent:true});assert.equal(reset.status,200);
@@ -52,6 +53,7 @@ test('Google and Microsoft signed identity flows resist replay, wrong browser/cl
   await assert.rejects(oauth.link(lr,response()),e=>e.status===401);
   const second=await begin(provider);claims.nonce=second.url.searchParams.get('nonce');assert.equal(await oauth.callback(second.req,second.res,provider),'/customer/#home');assert.ok(second.res.cookies.qori_customer_session);
   const owner=(await query('select customer_id from customer_sessions where token_hash=$1',[crypto.createHash('sha256').update(second.res.cookies.qori_customer_session).digest('hex')])).rows[0];assert.equal(owner.customer_id,old.id);
+  assert.equal((await api('/dashboard',null,'qori_customer_session='+second.res.cookies.qori_customer_session)).status,403,provider+' cannot skip document registration');
   const another=await verifiedAccount(email()),conflict=await begin(provider,another.id);claims.nonce=conflict.url.searchParams.get('nonce');await assert.rejects(oauth.callback(conflict.req,conflict.res,provider),e=>e.status===403);
   const nonce=claims.nonce;
   for(const bad of [{aud:'other-client'},{iss:'https://evil.test'},{nonce:'wrong'},{exp:Math.floor(Date.now()/1000)-120}]){

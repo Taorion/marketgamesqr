@@ -108,7 +108,18 @@ async function customerRequired(req, res, next) {
       res.set('X-Qori-Session-Changed','1');
       throw Object.assign(new Error('La sesión cambió. Abre de nuevo tu cuenta para continuar.'),{status:409});
     }
-    req.customer = account;res.set('X-Qori-Customer',account.id);next();
+    req.customer = account;res.set('X-Qori-Customer',account.id);
+    // Email/password/OAuth prove access to the session, not completed registration.
+    // Pending registrations can manage their own identity/session, but no portal data.
+    if(!account.full_name?.trim()||!account.declared_document_key){
+      const path=req.path.replace(/\/+$/,'').toLowerCase(),method=req.method;
+      const allowed=(path==='/me'&&['GET','PATCH','DELETE'].includes(method))||
+        (method==='GET'&&['/sessions','/export','/auth/security'].includes(path))||
+        (method==='POST'&&(path==='/logout'||path==='/auth/oauth/link'||/^\/auth\/oauth\/(google|microsoft)\/start$/.test(path)))||
+        (method==='DELETE'&&/^\/sessions\/[0-9a-f-]{36}$/.test(path));
+      if(!allowed)throw forbidden('Completa tu registro con tu nombre y tu cédula confirmada para entrar a Qori Customer.',{code:'REGISTRATION_INCOMPLETE'});
+    }
+    next();
   } catch(error) { next(error); }
 }
 module.exports = { createSession,deliverBenefitCode:(email,code,id)=>deliverCode(email,code,id,true),requestCode, verifyCode, customerRequired,assertWebRequest,setWebSession,clearWebSession,status };

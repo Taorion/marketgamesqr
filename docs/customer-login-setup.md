@@ -4,6 +4,10 @@ Correo y contraseña, código de correo y OAuth con Google/Microsoft comparten l
 
 La contraseña se establece únicamente después de verificar un código de correo de un solo uso. El cambio revoca todas las sesiones anteriores. Los hashes scrypt y las identidades externas se guardan en tablas privadas con RLS y sin permisos de Data API para PUBLIC, anon o authenticated. No se incluyen en respuestas de cuenta ni exportaciones.
 
+El registro solo está completo cuando la cuenta tiene nombre y cédula confirmada. Verificar el correo crea una sesión de registro pendiente: puede completar sus datos, gestionar su acceso, exportar sus propios datos o eliminar la cuenta, pero no acceder a finanzas, tarjetas, invitaciones ni exploración. La misma regla se comprueba en el servidor para código, contraseña y OAuth. Las cuentas anteriores sin cédula deben completar este paso; sus datos se conservan.
+
+`PATCH /api/customer/me` exige `document_id` y `document_confirmation` cuando aún no existe la cédula maestra. Guarda nombre y documento en una sola transacción; dos peticiones simultáneas no pueden fijar documentos distintos. Una vez guardada, la cédula no se puede cambiar desde el perfil. Autorizar la recuperación de beneficios sigue siendo una decisión separada y opcional: registrar la cédula no conecta historiales ni concede beneficios por sí solo.
+
 ## Configuración del operador
 
 Las credenciales son del servidor. Configurarlas en las variables de entorno del servicio Render; nunca en JavaScript público, Git ni mensajes de chat. `/api/customer/auth/options` comunica únicamente si cada proveedor está habilitado. Los botones permanecen deshabilitados mientras falten credenciales.

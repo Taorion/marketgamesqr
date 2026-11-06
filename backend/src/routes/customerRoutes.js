@@ -124,8 +124,15 @@ router.get('/wallet/cards/:id',handle(async req=>stamps.publicCard(await svc.own
 router.get('/me',handle(req=>({account:req.customer,categories:finance.CATEGORIES})));
 router.patch('/me',handle(async req=>{
   const d=parse(z.object({full_name:text(100).min(2),currency,timezone:text(60).refine(v=>{try{new Intl.DateTimeFormat('en',{timeZone:v});return true;}catch{return false;}},'Zona horaria inválida.'),
+    document_id:text(80).min(3).optional(),document_confirmation:text(80).min(3).optional(),
     preferences:z.object({notifications:z.object({purchases:z.boolean(),benefits:z.boolean(),budget:z.boolean(),summary:z.boolean()})})}),req.body);
-  return {account:(await query("update customer_accounts set full_name=$2,currency=$3,timezone=$4,preferences=preferences||$5::jsonb where id=$1 returning *",[req.customer.id,d.full_name,d.currency,d.timezone,JSON.stringify(d.preferences)])).rows[0]};
+  return withTransaction(async db=>{
+    const identity=require('../services/customerIdentityService');
+    const current=(await db.query('select declared_document_key from customer_accounts where id=$1 for update',[req.customer.id])).rows[0];
+    if(!current?.declared_document_key&&!d.document_id)throw badRequest('La cédula es obligatoria para completar tu registro. Escríbela y confírmala.');
+    if(!current?.declared_document_key||(d.document_id&&identity.normalize(d.document_id)!==current.declared_document_key))await identity.lockDocument(req.customer.id,d,db);
+    return {account:(await db.query("update customer_accounts set full_name=$2,currency=$3,timezone=$4,preferences=preferences||$5::jsonb where id=$1 returning *",[req.customer.id,d.full_name,d.currency,d.timezone,JSON.stringify(d.preferences)])).rows[0]};
+  });
 }));
 router.get('/sessions',handle(async req=>({sessions:(await query('select id,device_name,created_at,expires_at from customer_sessions where customer_id=$1 order by created_at desc',[req.customer.id])).rows,current:req.customer.session_id})));
 router.delete('/sessions/:id',handle(async req=>{await query('delete from customer_sessions where id=$1 and customer_id=$2',[parse(uuid,req.params.id),req.customer.id]);return {ok:true};}));
