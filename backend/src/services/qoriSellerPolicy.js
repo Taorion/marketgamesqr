@@ -1,10 +1,11 @@
-// Program requirement for promotional work; not a taxpayer-specific DIAN ruling.
-const VERSION='2026-11-07-ciiu7310';
+// No tax code is imposed until the SaaS commission-sales activity is classified.
+const VERSION='2026-11-07-saas-classification-pending';
 const CIIU=Object.freeze({
- code:'7310',name:'Publicidad',
- scope:'Promoción y mercadeo de Qori para atraer negocios interesados.',
- rut_requirement:'El RUT debe incluir 7310 como actividad principal, secundaria u otra actividad, según la actividad real y los ingresos. Qori verifica el documento antes de aprobar.',
- source_url:'https://www.dian.gov.co/Prensa/Aprendelo-en-un-DIAN-X3/Paginas/Abece-Actividad-Servicios-Publicitarios.aspx',
- verified_on:'2026-11-07'
+ code:null,name:'Clasificación pendiente de validación por Qori',status:'PENDING_VALIDATION',
+ scope:'Comercialización de suscripciones SaaS de Qori por comisión; Qori contrata, factura y cobra al negocio.',
+ rut_requirement:'Qori está validando el CIIU correspondiente a esta actividad. No se exige 7310 ni debes cambiar tu RUT, firmar o autenticar el contrato por ahora. La apertura de nuevas postulaciones y su aprobación están temporalmente pendientes de esta definición.',
+ source_url:'https://normograma.dian.gov.co/dian/compilacion/docs/oficio_dian_14298_2026.htm',
+ reviewed_on:'2026-11-07'
 });
-module.exports={VERSION,CIIU};
+function classificationReady(){return CIIU.status==='VALIDATED'&&/^\d{4}$/.test(CIIU.code||'');}
+module.exports={VERSION,CIIU,classificationReady};

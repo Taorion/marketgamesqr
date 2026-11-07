@@ -5,7 +5,8 @@ const {query,withTransaction}=require('../config/db');
 const {env}=require('../config/env');
 const {badRequest,forbidden,notFound}=require('../utils/http');
 const {validate}=require('../utils/validators');
-const {VERSION,CIIU}=require('./qoriSellerPolicy');
+const {VERSION,CIIU,classificationReady}=require('./qoriSellerPolicy');
+function requireClassification(){if(!classificationReady())throw badRequest('La clasificación CIIU para comercializar suscripciones SaaS por comisión está pendiente de validación por Qori. No se exige 7310. Las nuevas postulaciones y aprobaciones se habilitarán al definir este requisito.');}
 const kinds=['IDENTITY','RUT','BANK','CONTRACT'];
 const uuid=z.string().uuid();
 const text=n=>z.string().trim().max(n);
@@ -26,6 +27,7 @@ function validDocument(bytes){
  throw badRequest('Carga un PDF, JPG o PNG válido.');
 }
 async function register(payload,ip){
+ requireClassification();
  const d=validate(z.object({full_name:text(160).min(5),email:z.string().trim().email().max(180),password:z.string().min(12).max(120),password_confirm:z.string().min(12).max(120),document_key:z.string().trim().regex(/^\d{5,15}$/),phone:text(40).min(7),city:text(120).min(2),ciiu:z.literal(CIIU.code).default(CIIU.code),terms_accepted:z.literal(true),privacy_accepted:z.literal(true),adult_confirmed:z.literal(true)}).strict().refine(d=>d.password===d.password_confirm,'Las contraseñas no coinciden.'),payload);
  const passwordHash=await bcrypt.hash(d.password,12);
  return withTransaction(async db=>{
@@ -46,6 +48,7 @@ async function application(user){
 }
 async function openApplication(user,payload,ip){
  if((user.platform_role||user.role)!=='QORI_SELLER')throw forbidden('Este expediente corresponde a una cuenta Seller.');
+ requireClassification();
  const d=validate(z.object({document_key:z.string().trim().regex(/^\d{5,15}$/),phone:text(40).min(7),city:text(120).min(2),ciiu:z.literal(CIIU.code).default(CIIU.code),terms_accepted:z.literal(true),privacy_accepted:z.literal(true),adult_confirmed:z.literal(true)}).strict(),payload);
  return withTransaction(async db=>{
   await db.query('select id from app_users where id=$1 for update',[user.id]);
@@ -82,6 +85,7 @@ async function document(user,id){
  });
 }
 async function submit(user,payload,ip){
+ requireClassification();
  validate(z.object({signed_and_notarized:z.literal(true),documents_truthful:z.literal(true),ciiu_terms_accepted:z.literal(true)}).strict(),payload);
  return withTransaction(async db=>{
   const a=(await db.query('select * from qori_seller_applications where user_id=$1 for update',[user.id])).rows[0];
@@ -100,9 +104,10 @@ async function review(user,id,payload){
   const a=(await db.query('select * from qori_seller_applications where user_id=$1 for update',[id])).rows[0];
   if(!a||id===user.id)throw badRequest('Solicitud no disponible para revisión.');
   if(d.status==='APPROVED'){
+   requireClassification();
    if(a.status!=='SUBMITTED')throw badRequest('Solo se aprueban solicitudes enviadas a revisión.');
-   if(a.ciiu!==CIIU.code||a.terms_version!==VERSION)throw badRequest('Solicita correcciones: el postulante debe aceptar el requisito CIIU 7310 y presentar el contrato actualizado.');
-   if(![d.identity_checked,d.ciiu_checked,d.bank_ownership_checked,d.notarized_contract_checked,d.legal_terms_checked].every(Boolean))throw badRequest('Verifica identidad, CIIU 7310 en el RUT, titularidad bancaria, autenticación notarial y condiciones contractuales.');
+   if(a.ciiu!==CIIU.code||a.terms_version!==VERSION)throw badRequest('Solicita correcciones: el postulante debe aceptar la clasificación validada por Qori y presentar el contrato actualizado.');
+   if(![d.identity_checked,d.ciiu_checked,d.bank_ownership_checked,d.notarized_contract_checked,d.legal_terms_checked].every(Boolean))throw badRequest('Verifica identidad, clasificación validada en el RUT, titularidad bancaria, autenticación notarial y condiciones contractuales.');
    if((await db.query('select count(*)::int n from qori_seller_documents where user_id=$1',[id])).rows[0].n!==4)throw badRequest('La documentación está incompleta.');
   }else if(d.status==='SUSPENDED'&&a.status!=='APPROVED')throw badRequest('Solo puedes suspender un Embajador aprobado.');
   await db.query('update qori_seller_applications set status=$2,review_note=$3,reviewed_by=$4,reviewed_at=now(),updated_at=now() where user_id=$1',[id,d.status,d.note,user.id]);
@@ -134,7 +139,7 @@ async function adminQueue(user){
   query(`select c.seller_id,u.full_name,u.email,sum(c.amount_cop) pending_cop,coalesce(sum(c.amount_cop) filter(where c.due_on<=(now() at time zone 'America/Bogota')::date),0) due_cop from qori_seller_commissions c join app_users u on u.id=c.seller_id where c.status='PENDING' group by c.seller_id,u.full_name,u.email order by min(c.due_on)`),
   query('select p.*,u.full_name from qori_seller_payouts p join app_users u on u.id=p.seller_id order by p.created_at desc limit 100')
  ]);
- return {applications:applications.rows,balances:balances.rows,payouts:payouts.rows};
+ return {ciiu_requirement:CIIU,applications:applications.rows,balances:balances.rows,payouts:payouts.rows};
 }
 async function pay(user,payload){
  superadmin(user);

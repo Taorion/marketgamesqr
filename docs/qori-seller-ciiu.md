@@ -1,33 +1,36 @@
-# CIIU definido para Qori Seller
+﻿# CIIU de Qori Seller: venta de suscripciones SaaS por comisión
 
-Fecha de revisión: 7 de noviembre de 2026.
-Política: 2026-11-07-ciiu7310.
+Revisión: 7 de noviembre de 2026. Estado: PENDING_VALIDATION.
 
-## Decisión del programa
+## Corrección del alcance
 
-7310 — Publicidad, para el trabajo de promoción y mercadeo de Qori orientado a atraer negocios interesados. Se define a partir de la actividad descrita para el Embajador: presentar Qori, explicar la oferta y promover el registro por su enlace; Qori contrata y cobra directamente.
+El usuario precisó que el vendedor comercializa suscripciones SaaS. La anterior elección de 7310 — Publicidad asumía una actividad promocional más limitada y no acredita la clasificación tributaria de este modelo comercial. Se retira como requisito. No se sustituye por otro código sin sustento suficiente.
 
-Esta correspondencia es una interpretación de las notas oficiales aplicada al alcance del programa, no un concepto particular emitido por DIAN para Qori. Recibir una comisión, por sí solo, no determina un CIIU. Si la actividad efectivamente realizada cambia, debe revisarse la correspondencia antes de usar esta política.
+Actividad que debe clasificarse: persona independiente que busca negocios, presenta planes y acompaña la contratación de suscripciones SaaS de Qori. Orbital Innovation S.A.S. presta el servicio, contrata, factura y cobra al negocio. El vendedor recibe 10% de cada pago de plan y de cada compra de paquetes de tickets de los negocios atribuidos; no adquiere licencias para revenderlas por cuenta propia ni recauda al comprador.
 
-El RUT debe incluir 7310 como principal, secundaria u otra actividad según corresponda. La actividad principal depende de los mayores ingresos; no se exige que 7310 sea principal para todo Embajador. Mostrar el requisito en Qori no actualiza el RUT ni acredita su contenido.
+## Investigación y límite de la conclusión
 
-## Fundamento oficial consultado
+- La clase 4610 de Rev. 4 describe intermediación y comisionistas en comercio al por mayor. La referencia a comisión por sí sola no permite concluir que abarque esta intermediación de un servicio SaaS. [DANE 4610](https://clasificaciones.dane.gov.co/ciiu4-0/clasificacion/19696/).
+- La clase 4651 incluye comercio mayorista de programas informáticos. No establece por sí sola la clasificación del agente independiente de suscripciones. [DIAN comercio al por mayor](https://www.dian.gov.co/Prensa/Aprendelo-en-un-DIAN-X3/Paginas/Abece-Actividad-Economica-Comercio-al-por-Mayor.aspx).
+- En Rev. 4, 5820 distingue edición de programas del suministro en línea de aplicaciones, que remite a 6311. Esto clasifica actividades diferentes y no resuelve por sí solo el vendedor intermediario. [DANE 5820](https://clasificaciones.dane.gov.co/ciiu4-0/clasificacion/23781/).
+- La publicación final de CIIU Rev. 5 A.C., de agosto de 2026, incluye intermediación para edición de programas en 5829 (p. 525), y excluye esa intermediación de 8240 (p. 626). Es una referencia que debe examinarse, no prueba de que 5829 esté disponible o sea exigible en el RUT de estos vendedores. [DANE Rev. 5](https://www.dane.gov.co/files/sen/nomenclatura/ciiu/CIIU_Rev_5_AC.pdf).
+- El Concepto DIAN 014298 de agosto de 2026 sigue remitiendo a la adopción tributaria de Rev. 4 mediante Resolución 227 de 2025 y exige correspondencia con la actividad real. No contiene una decisión específica sobre Qori. [Concepto DIAN](https://normograma.dian.gov.co/dian/compilacion/docs/oficio_dian_14298_2026.htm).
 
-- DIAN, Abecé de servicios publicitarios: 7310 comprende promoción de productos y servicios de mercadeo para atraer y retener clientes.
-  https://www.dian.gov.co/Prensa/Aprendelo-en-un-DIAN-X3/Paginas/Abece-Actividad-Servicios-Publicitarios.aspx
-- Resolución DIAN 000227 de 2025, artículos 1.1.5.1 a 1.1.5.4: clasificación tributaria, actividad principal por ingresos y actualización del RUT.
-  https://normograma.dian.gov.co/dian/compilacion/docs/resolucion_dian_0227_2025.htm
-- Concepto DIAN 014298 de 2026, 14 de agosto: la clasificación debe corresponder al hecho económico; remite a las disposiciones anteriores. No decide un caso particular de Qori.
-  https://normograma.dian.gov.co/dian/compilacion/docs/oficio_dian_14298_2026.htm
-- DANE publica CIIU Rev. 5 A.C. mediante Resolución 0992 de 2026. Se distinguió ese cambio estadístico de la normativa tributaria consultada; no se sustituyó automáticamente el requisito de RUT por un código nuevo de intermediación.
-  https://www.dane.gov.co/index.php/sistema-estadistico-nacional-sen/normas-y-estandares/nomenclaturas-y-clasificaciones/clasificaciones/clasificacion-industrial-internacional-uniforme-de-todas-las-actividades-economicas-ciiu
+Conclusión: no se encontró sustento suficiente para imponer un único CIIU tributario a este modelo de comisión SaaS. Debe obtenerse orientación de clasificación del DANE y validación de su aplicación al RUT con el responsable contable/tributario de Qori. El aspirante no elige el código en la plataforma.
 
-## Implementación y revisión
+## Consulta preparada, no enviada
 
-qoriSellerPolicy.js centraliza el código, nombre, versión y fuente. El alta y la apertura de expedientes existentes asignan 7310 en servidor; un código diferente enviado por el cliente se rechaza. El portal presenta texto informativo, sin campo CIIU editable.
+Solicitamos orientación para clasificar en la CIIU aplicable al RUT colombiano la siguiente actividad: persona independiente que comercializa suscripciones SaaS de un tercero a negocios y cobra una comisión recurrente del 10% sobre cada pago confirmado. El proveedor del SaaS conserva la propiedad del software, celebra el contrato, factura, cobra y presta el servicio. El vendedor presenta planes y facilita la contratación; no desarrolla ni aloja software, no compra licencias para revender, no recibe pagos de los clientes y no presta un servicio publicitario separado. También percibe 10% por compras de paquetes de uso de la plataforma de los negocios atribuidos. ¿Qué clase corresponde al servicio del vendedor, con qué nota explicativa y qué revisión/código debe registrar actualmente en el RUT? ¿Cómo incide la adopción de la CIIU Rev. 5 por DANE frente a la clasificación tributaria de la DIAN?
 
-Para enviar documentos, el postulante acepta expresamente el requisito y confirma el RUT y contrato actualizados. El administrador debe comprobar 7310 en el documento, además de la identidad, titularidad bancaria y contrato firmado/autenticado.
+## Estado operativo
 
-No se modifican automáticamente expedientes históricos ni aprobaciones. Para nuevas aprobaciones de expedientes anteriores se solicitan correcciones; la nueva aceptación guarda el código y la versión previos en auditoría. La verificación documental sigue siendo humana: el sistema no afirma haber leído o validado automáticamente el RUT.
+- El portal no pide escribir ni seleccionar CIIU, ni actualizar el RUT a 7310.
+- Nuevas postulaciones, apertura de expedientes y envíos a aprobación quedan temporalmente deshabilitados; el servidor también bloquea la aprobación incluso con todas las casillas marcadas. Esto evita insertar un código inventado en la columna obligatoria del expediente.
+- El contrato se entrega como borrador informativo, con aviso de no firmar ni autenticar.
+- No se modifican los códigos, contratos, aceptaciones o aprobaciones históricos. Los vendedores ya aprobados mantienen CRM, comisiones y pagos según sus controles existentes.
+- No hay migraciones ni cambios de datos de producción.
+- Las 14 pruebas de integración y DOM pasan, incluyendo ausencia de altas nuevas durante la validación, aprobación bloqueada, conservación de expediente y comisiones/pagos de un vendedor previamente aprobado.
 
-Validación local: 14 pruebas de integración y DOM aprobadas; incluyen código fijo sin entrada manual, rechazo de un código alterado, bloqueo de nueva aprobación con condiciones antiguas y conservación de la declaración anterior hasta aceptación explícita.
+## Rehabilitación pendiente
+
+Con el criterio tributario validado, actualizar la política versionada y su fuente; reflejar el código en el contrato y los avisos, habilitar los controles del portal y probar altas, reaceptación de expedientes anteriores y aprobación documental. No basta cambiar un indicador: el contrato debe dejar de ser borrador y el usuario debe aceptar las condiciones definitivas. No usar un código de desarrollo de software de Orbital como código automático del vendedor.
