@@ -5,7 +5,7 @@ const sellers=require('../backend/src/services/qoriSellerService'),credits=requi
 let server,base,seller,admin,merchant,product,gift,createdGift;
 const unique=()=>crypto.randomUUID(),sign=u=>jwt.sign({sub:u.id,password_version:0},env.jwtSecret);
 async function api(path,token,body,method=body?'POST':'GET'){const r=await fetch(base+path,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,...await r.json()};}
-const registerData=()=>({full_name:'Embajador Prueba Segura',email:unique()+'@example.test',password:'LocalSoloPruebas!2026',password_confirm:'LocalSoloPruebas!2026',document_key:String(Date.now()).slice(-13),phone:'3105550000',city:'Bogotá',ciiu:'7490',terms_accepted:true,privacy_accepted:true,adult_confirmed:true});
+const registerData=()=>({full_name:'Embajador Prueba Segura',email:unique()+'@example.test',password:'LocalSoloPruebas!2026',password_confirm:'LocalSoloPruebas!2026',document_key:String(Date.now()).slice(-13),phone:'3105550000',city:'Bogotá',terms_accepted:true,privacy_accepted:true,adult_confirmed:true});
 const signupData=()=>({company_name:'Café Pensé en Ti QA',contact_name:'Propietario Prueba',nit:unique().replaceAll('-','').slice(0,15),email:unique()+'@example.test',phone:'3105550000',city:'Bogotá',address:'Sede local QA',password:'SoloPruebas!2026',password_confirm:'SoloPruebas!2026',terms_accepted:true,privacy_accepted:true,commercial_advisor_id:seller.id});
 async function customer(email){const a=(await query('insert into customer_accounts(email,full_name,declared_document_key,document_locked_at) values($1,$2,$3,now()) returning *',[email||unique()+'@example.test','Destinataria Prueba',String(Date.now())+Math.floor(Math.random()*1000)])).rows[0],token=crypto.randomBytes(32).toString('base64url');await query("insert into customer_sessions(customer_id,token_hash,expires_at) values($1,$2,now()+interval '1 day')",[a.id,crypto.createHash('sha256').update(token).digest('hex')]);return {...a,token};}
 async function purchase(code='QR50',amount=75000,metadata={}){return (await query('insert into qr_credit_purchase_orders(business_id,created_by_user_id,package_code,package_size,package_title,price_cop,external_reference,metadata) values($1,$2,$3,$4,$3,$5,$6,$7::jsonb) returning *',[merchant.business_id,merchant.id,code,code==='QR50'?50:code==='GF5'?5:0,amount,unique(),JSON.stringify(metadata)])).rows[0];}
@@ -14,13 +14,17 @@ test('Seller launch: approval, privacy, free balances, payments, receipts and co
  assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
  admin=(await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Superadmin QA','QORI_SUPERADMIN') returning *",[unique()+'@example.test'])).rows[0];admin.token=sign(admin);
  await t.test('pending applicants cannot enter CRM, create referrals or self-approve',async()=>{
+  assert.equal((await api('/api/seller/terms')).ciiu_requirement.code,'7310');
+  assert.equal((await api('/api/seller/register',null,{...registerData(),ciiu:'7490'})).status,400);
   const d=registerData(),r=await api('/api/seller/register',null,d);assert.equal(r.status,200,JSON.stringify(r));seller=(await query('select * from app_users where email=$1',[d.email])).rows[0];seller.token=sign(seller);
+  assert.equal((await api('/api/seller/application',seller.token)).application.ciiu,'7310');
+  const contract=await fetch(base+'/api/seller/contract',{headers:{Authorization:'Bearer '+seller.token}});assert.equal(contract.status,200);assert.match(await contract.text(),/7310 — Publicidad/);
   assert.equal((await api('/api/seller/application',seller.token)).application.status,'DRAFT');
   assert.equal((await api('/api/admin/commercial/bootstrap',seller.token)).status,403);
   assert.equal((await api('/api/seller/dashboard',seller.token)).status,403);
   assert.equal((await api('/api/pense-en-ti/advisor/'+seller.id)).status,403);
   assert.equal((await api('/api/seller/admin/queue',seller.token)).status,403);
-  assert.equal((await api('/api/seller/application/submit',seller.token,{signed_and_notarized:true,documents_truthful:true})).status,400);
+  assert.equal((await api('/api/seller/application/submit',seller.token,{signed_and_notarized:true,documents_truthful:true,ciiu_terms_accepted:true})).status,400);
  });
  await t.test('four encrypted documents, private downloads, explicit review, read audits',async()=>{
   const {PDFDocument}=require('pdf-lib'),pdf=await PDFDocument.create();pdf.addPage().drawText('LOCAL QA DOCUMENT');const bytes=Buffer.from(await pdf.save());
@@ -29,7 +33,15 @@ test('Seller launch: approval, privacy, free balances, payments, receipts and co
   const outsider=(await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Otro vendedor','QORI_SELLER') returning *",[unique()+'@example.test'])).rows[0];
   assert.equal((await api('/api/seller/documents/'+doc.id,sign(outsider))).status,403);assert.equal((await api('/api/seller/documents/'+doc.id)).status,401);
   const downloaded=await fetch(base+'/api/seller/documents/'+doc.id,{headers:{Authorization:'Bearer '+admin.token}});assert.equal(downloaded.status,200);assert.ok(Buffer.from(await downloaded.arrayBuffer()).equals(bytes));assert.match(downloaded.headers.get('content-disposition'),/attachment/);
-  assert.equal((await api('/api/seller/application/submit',seller.token,{signed_and_notarized:true,documents_truthful:true})).status,200);
+  assert.equal((await api('/api/seller/application/submit',seller.token,{signed_and_notarized:true,documents_truthful:true})).status,400);
+  await query("update qori_seller_applications set ciiu='7490',terms_version='2026-11-07',status='SUBMITTED' where user_id=$1",[seller.id]);
+  const oldApproval={status:'APPROVED',note:'Revisión de expediente anterior para prueba.',identity_checked:true,ciiu_checked:true,bank_ownership_checked:true,notarized_contract_checked:true,legal_terms_checked:true};
+  assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,oldApproval)).status,400);
+  assert.equal((await api('/api/seller/application',seller.token)).application.ciiu,'7490','Reading must preserve historical declarations');
+  assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,{status:'CHANGES_REQUESTED',note:'Adjunta RUT con 7310 y contrato actualizado.'})).status,200);
+  assert.equal((await api('/api/seller/application/submit',seller.token,{signed_and_notarized:true,documents_truthful:true,ciiu_terms_accepted:true})).status,200);
+  const accepted=(await api('/api/seller/application',seller.token)).application;assert.equal(accepted.ciiu,'7310');assert.equal(accepted.terms_version,'2026-11-07-ciiu7310');
+  const audit=(await query("select detail from qori_commercial_audit where entity_id=$1 and action='SELLER_APPLICATION_SUBMITTED' order by created_at desc limit 1",[seller.id])).rows[0];assert.equal(audit.detail.previous_ciiu,'7490');
   assert.equal((await api('/api/seller/documents/CONTRACT',seller.token,{filename:'x.pdf',content_base64:bytes.toString('base64')},'PUT')).status,403);
   const review={status:'APPROVED',note:'Documentos y condiciones revisados en QA.'};assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,review)).status,400);
   assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,{...review,identity_checked:true,ciiu_checked:true,bank_ownership_checked:true,notarized_contract_checked:true,legal_terms_checked:true})).status,200);

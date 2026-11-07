@@ -56,7 +56,7 @@ Tablas privadas con RLS y sin permisos anon/authenticated; acceso solo desde ser
 
 El trabajador de correo usa RESEND_API_KEY y CONTACT_MAIL_FROM/MARKETING_MAIL_FROM, solo en producción. Cola transaccional con idempotencia, lease y hasta ocho intentos. Monitorizar last_error/attempts y resolver configuración antes de reintentar manualmente. No incluye reenvíos masivos ni exportación de documentos.
 
-Administración: /seller/#admin con cuenta QORI_SUPERADMIN; existe acceso desde /admin/. Revisar los cuatro documentos, compatibilidad de actividad real/CIIU, firma autenticada y titularidad bancaria. Registrar motivos de corrección/rechazo/suspensión y soporte bancario del pago.
+Administración: /seller/#admin con cuenta QORI_SUPERADMIN; existe acceso desde /admin/. Revisar los cuatro documentos, CIIU 7310 — Publicidad en el RUT para la actividad promocional, firma autenticada y titularidad bancaria. El código puede figurar como principal, secundario u otra actividad según ingresos y actividad real. Registrar motivos de corrección/rechazo/suspensión y soporte bancario del pago. Fundamento y tratamiento de expedientes anteriores: [CIIU de Qori Seller](qori-seller-ciiu.md).
 
 Contrato: Orbital Innovation S.A.S., NIT 9021022727, representante Sandra Lizeth Casallas Regalado, domicilio y teléfono confirmados por la usuaria. El documento no garantiza inmunidad frente a reclamaciones ni excluye una relación laboral o agencia si los hechos configuran sus elementos. Debe mantenerse coherencia entre operación real y condiciones, y obtener revisión profesional colombiana antes de usarlo como política contractual definitiva.
 

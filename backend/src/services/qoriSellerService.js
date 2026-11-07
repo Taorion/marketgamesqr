@@ -5,7 +5,7 @@ const {query,withTransaction}=require('../config/db');
 const {env}=require('../config/env');
 const {badRequest,forbidden,notFound}=require('../utils/http');
 const {validate}=require('../utils/validators');
-const VERSION='2026-11-07';
+const {VERSION,CIIU}=require('./qoriSellerPolicy');
 const kinds=['IDENTITY','RUT','BANK','CONTRACT'];
 const uuid=z.string().uuid();
 const text=n=>z.string().trim().max(n);
@@ -26,7 +26,7 @@ function validDocument(bytes){
  throw badRequest('Carga un PDF, JPG o PNG válido.');
 }
 async function register(payload,ip){
- const d=validate(z.object({full_name:text(160).min(5),email:z.string().trim().email().max(180),password:z.string().min(12).max(120),password_confirm:z.string().min(12).max(120),document_key:z.string().trim().regex(/^\d{5,15}$/),phone:text(40).min(7),city:text(120).min(2),ciiu:z.string().regex(/^\d{4}$/),terms_accepted:z.literal(true),privacy_accepted:z.literal(true),adult_confirmed:z.literal(true)}).strict().refine(d=>d.password===d.password_confirm,'Las contraseñas no coinciden.'),payload);
+ const d=validate(z.object({full_name:text(160).min(5),email:z.string().trim().email().max(180),password:z.string().min(12).max(120),password_confirm:z.string().min(12).max(120),document_key:z.string().trim().regex(/^\d{5,15}$/),phone:text(40).min(7),city:text(120).min(2),ciiu:z.literal(CIIU.code).default(CIIU.code),terms_accepted:z.literal(true),privacy_accepted:z.literal(true),adult_confirmed:z.literal(true)}).strict().refine(d=>d.password===d.password_confirm,'Las contraseñas no coinciden.'),payload);
  const passwordHash=await bcrypt.hash(d.password,12);
  return withTransaction(async db=>{
   await db.query('select pg_advisory_xact_lock(hashtext($1))',['signup-email:'+d.email.toLowerCase()]);
@@ -42,11 +42,11 @@ async function register(payload,ip){
 async function application(user){
  const a=(await query('select user_id,document_key,phone,city,ciiu,status,terms_version,accepted_at,review_note,submitted_at,reviewed_at from qori_seller_applications where user_id=$1',[user.id])).rows[0]||null;
  const docs=(await query('select id,kind,filename,mime_type,byte_size,sha256,created_at from qori_seller_documents where user_id=$1 order by kind',[user.id])).rows;
- return {application:a,documents:docs,user:{id:user.id,full_name:user.full_name,email:user.email,role:user.platform_role||user.role},legacy:!a};
+ return {ciiu_requirement:CIIU,terms_version:VERSION,application:a,documents:docs,user:{id:user.id,full_name:user.full_name,email:user.email,role:user.platform_role||user.role},legacy:!a};
 }
 async function openApplication(user,payload,ip){
  if((user.platform_role||user.role)!=='QORI_SELLER')throw forbidden('Este expediente corresponde a una cuenta Seller.');
- const d=validate(z.object({document_key:z.string().trim().regex(/^\d{5,15}$/),phone:text(40).min(7),city:text(120).min(2),ciiu:z.string().regex(/^\d{4}$/),terms_accepted:z.literal(true),privacy_accepted:z.literal(true),adult_confirmed:z.literal(true)}).strict(),payload);
+ const d=validate(z.object({document_key:z.string().trim().regex(/^\d{5,15}$/),phone:text(40).min(7),city:text(120).min(2),ciiu:z.literal(CIIU.code).default(CIIU.code),terms_accepted:z.literal(true),privacy_accepted:z.literal(true),adult_confirmed:z.literal(true)}).strict(),payload);
  return withTransaction(async db=>{
   await db.query('select id from app_users where id=$1 for update',[user.id]);
   if((await db.query('select 1 from qori_seller_applications where user_id=$1',[user.id])).rowCount)throw badRequest('Ya tienes un expediente abierto.');
@@ -81,15 +81,15 @@ async function document(user,id){
   return {filename:row.filename,mime:row.mime_type,bytes:decrypt(row.encrypted_content)};
  });
 }
-async function submit(user,payload){
- validate(z.object({signed_and_notarized:z.literal(true),documents_truthful:z.literal(true)}).strict(),payload);
+async function submit(user,payload,ip){
+ validate(z.object({signed_and_notarized:z.literal(true),documents_truthful:z.literal(true),ciiu_terms_accepted:z.literal(true)}).strict(),payload);
  return withTransaction(async db=>{
   const a=(await db.query('select * from qori_seller_applications where user_id=$1 for update',[user.id])).rows[0];
   if(!a||!['DRAFT','CHANGES_REQUESTED'].includes(a.status))throw badRequest('Esta solicitud no admite un nuevo envío.');
   const docs=(await db.query('select kind,sha256 from qori_seller_documents where user_id=$1',[user.id])).rows;
   if(kinds.some(k=>!docs.some(d=>d.kind===k)))throw badRequest('Debes cargar cédula, RUT, certificado bancario y contrato firmado y autenticado.');
-  await db.query("update qori_seller_applications set status='SUBMITTED',submitted_at=now(),updated_at=now() where user_id=$1",[user.id]);
-  await audit(db,user,'SELLER_APPLICATION_SUBMITTED',user.id,{documents:docs,terms_version:a.terms_version});
+  await db.query("update qori_seller_applications set status='SUBMITTED',ciiu=$2,terms_version=$3,accepted_at=now(),accepted_ip=$4,submitted_at=now(),updated_at=now() where user_id=$1",[user.id,CIIU.code,VERSION,ip||null]);
+  await audit(db,user,'SELLER_APPLICATION_SUBMITTED',user.id,{documents:docs,terms_version:VERSION,ciiu:CIIU.code,previous_ciiu:a.ciiu,previous_terms_version:a.terms_version,ciiu_terms_accepted:true});
   return {ok:true};
  });
 }
@@ -101,7 +101,8 @@ async function review(user,id,payload){
   if(!a||id===user.id)throw badRequest('Solicitud no disponible para revisión.');
   if(d.status==='APPROVED'){
    if(a.status!=='SUBMITTED')throw badRequest('Solo se aprueban solicitudes enviadas a revisión.');
-   if(![d.identity_checked,d.ciiu_checked,d.bank_ownership_checked,d.notarized_contract_checked,d.legal_terms_checked].every(Boolean))throw badRequest('Verifica identidad, CIIU, titularidad bancaria, autenticación notarial y condiciones contractuales.');
+   if(a.ciiu!==CIIU.code||a.terms_version!==VERSION)throw badRequest('Solicita correcciones: el postulante debe aceptar el requisito CIIU 7310 y presentar el contrato actualizado.');
+   if(![d.identity_checked,d.ciiu_checked,d.bank_ownership_checked,d.notarized_contract_checked,d.legal_terms_checked].every(Boolean))throw badRequest('Verifica identidad, CIIU 7310 en el RUT, titularidad bancaria, autenticación notarial y condiciones contractuales.');
    if((await db.query('select count(*)::int n from qori_seller_documents where user_id=$1',[id])).rows[0].n!==4)throw badRequest('La documentación está incompleta.');
   }else if(d.status==='SUSPENDED'&&a.status!=='APPROVED')throw badRequest('Solo puedes suspender un Embajador aprobado.');
   await db.query('update qori_seller_applications set status=$2,review_note=$3,reviewed_by=$4,reviewed_at=now(),updated_at=now() where user_id=$1',[id,d.status,d.note,user.id]);

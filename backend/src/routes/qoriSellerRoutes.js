@@ -13,7 +13,7 @@ router.post('/application',handle(req=>s.openApplication(req.user,req.body,req.i
 router.get('/contract',async(req,res,next)=>{try{res.set({'Cache-Control':'private, no-store','Content-Type':'text/html; charset=utf-8','Content-Disposition':'attachment; filename="Contrato-Qori-Seller.html"'}).send(await require('../services/qoriSellerContract').document(req.user));}catch(e){next(e);}});
 router.put('/documents/:kind',rateLimit({keyPrefix:'seller-document-upload',max:20,windowMs:3600000}),handle(req=>s.upload(req.user,req.params.kind,req.body)));
 router.get('/documents/:id',async(req,res,next)=>{try{const d=await s.document(req.user,req.params.id);res.set({'Cache-Control':'private, no-store','Content-Type':d.mime,'Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(d.filename)}`,'X-Content-Type-Options':'nosniff'}).send(d.bytes);}catch(e){next(e);}});
-router.post('/application/submit',handle(req=>s.submit(req.user,req.body)));
+router.post('/application/submit',handle(req=>s.submit(req.user,req.body,req.ip)));
 router.get('/dashboard',handle(req=>s.dashboard(req.user)));
 router.get('/admin/queue',handle(req=>s.adminQueue(req.user)));
 router.post('/admin/applications/:id/review',handle(req=>s.review(req.user,req.params.id,req.body)));
