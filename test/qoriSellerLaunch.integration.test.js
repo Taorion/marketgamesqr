@@ -14,22 +14,25 @@ test('Seller launch: approval, privacy, free balances, payments, receipts and co
  assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
  admin=(await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Superadmin QA','QORI_SUPERADMIN') returning *",[unique()+'@example.test'])).rows[0];admin.token=sign(admin);
  await t.test('pending applicants cannot enter CRM, create referrals or self-approve',async()=>{
-  const terms=await api('/api/seller/terms');assert.equal(terms.ciiu_requirement.code,null);assert.equal(terms.ciiu_requirement.status,'PENDING_VALIDATION');assert.equal(terms.enrollment_enabled,false);assert.equal(terms.contract_ready,false);
-  assert.equal((await api('/api/seller/register',null,{...registerData(),ciiu:'7490'})).status,400);
-  const d=registerData(),r=await api('/api/seller/register',null,d);assert.equal(r.status,400,JSON.stringify(r));assert.match(r.error.message,/pendiente de validación/);assert.equal((await query('select 1 from app_users where email=$1',[d.email])).rowCount,0);
-  // Historical fixture only: no production signup can bypass the pending classification.
-  seller=(await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa',$2,'QORI_SELLER') returning *",[d.email,d.full_name])).rows[0];seller.token=sign(seller);
-  assert.equal((await api('/api/seller/application',seller.token,{document_key:d.document_key,phone:d.phone,city:d.city,terms_accepted:true,privacy_accepted:true,adult_confirmed:true})).status,400);
-  await query("insert into qori_seller_applications(user_id,document_key,phone,city,ciiu,terms_version) values($1,$2,$3,$4,'7310','2026-11-07-ciiu7310')",[seller.id,d.document_key,d.phone,d.city]);
-  await query('insert into qori_sales_profiles(user_id,phone,created_by) values($1,$2,$1)',[seller.id,d.phone]);
-  assert.equal((await api('/api/seller/application',seller.token)).application.ciiu,'7310');
-  const contract=await fetch(base+'/api/seller/contract',{headers:{Authorization:'Bearer '+seller.token}});assert.equal(contract.status,200);const contractHtml=await contract.text();assert.match(contractHtml,/venta de suscripciones SaaS/);assert.match(contractHtml,/NO FIRMAR NI AUTENTICAR/);assert.ok(!contractHtml.includes('CIIU requerido para la actividad del programa: 7310'));
+  const terms=await api('/api/seller/terms');assert.equal(terms.ciiu_requirement.code,'4610');assert.equal(terms.ciiu_requirement.status,'DEFINED_BY_QORI');assert.equal(terms.enrollment_enabled,true);assert.equal(terms.contract_ready,true);
+  assert.equal((await api('/api/seller/register',null,{...registerData(),ciiu:'7310'})).status,400);
+  const d=registerData(),r=await api('/api/seller/register',null,d);assert.equal(r.status,200,JSON.stringify(r));seller=(await query('select * from app_users where email=$1',[d.email])).rows[0];seller.token=sign(seller);
+  assert.equal((await api('/api/seller/application',seller.token)).application.ciiu,'4610');
+  const contract=await fetch(base+'/api/seller/contract',{headers:{Authorization:'Bearer '+seller.token}});assert.equal(contract.status,200);assert.match(await contract.text(),/4610 — Comercio al por mayor a cambio de una retribución o por contrata/);
   assert.equal((await api('/api/seller/application',seller.token)).application.status,'DRAFT');
   assert.equal((await api('/api/admin/commercial/bootstrap',seller.token)).status,403);
   assert.equal((await api('/api/seller/dashboard',seller.token)).status,403);
   assert.equal((await api('/api/pense-en-ti/advisor/'+seller.id)).status,403);
   assert.equal((await api('/api/seller/admin/queue',seller.token)).status,403);
   assert.equal((await api('/api/seller/application/submit',seller.token,{signed_and_notarized:true,documents_truthful:true,ciiu_terms_accepted:true})).status,400);
+ });
+ await t.test('existing Seller opens an application with server-defined 4610',async()=>{
+  const d=registerData(),u=(await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa',$2,'QORI_SELLER') returning *",[d.email,d.full_name])).rows[0],token=sign(u);
+  assert.equal((await api('/api/seller/application',token)).legacy,true);
+  const body={document_key:d.document_key,phone:d.phone,city:d.city,terms_accepted:true,privacy_accepted:true,adult_confirmed:true};
+  assert.equal((await api('/api/seller/application',token,{...body,ciiu:'7310'})).status,400);
+  assert.equal((await api('/api/seller/application',token,body)).status,200);
+  const a=(await api('/api/seller/application',token)).application;assert.equal(a.ciiu,'4610');assert.equal(a.status,'DRAFT');assert.equal(a.terms_version,'2026-11-07-ciiu4610');
  });
  await t.test('four encrypted documents, private downloads, explicit review, read audits',async()=>{
   const {PDFDocument}=require('pdf-lib'),pdf=await PDFDocument.create();pdf.addPage().drawText('LOCAL QA DOCUMENT');const bytes=Buffer.from(await pdf.save());
@@ -39,16 +42,17 @@ test('Seller launch: approval, privacy, free balances, payments, receipts and co
   assert.equal((await api('/api/seller/documents/'+doc.id,sign(outsider))).status,403);assert.equal((await api('/api/seller/documents/'+doc.id)).status,401);
   const downloaded=await fetch(base+'/api/seller/documents/'+doc.id,{headers:{Authorization:'Bearer '+admin.token}});assert.equal(downloaded.status,200);assert.ok(Buffer.from(await downloaded.arrayBuffer()).equals(bytes));assert.match(downloaded.headers.get('content-disposition'),/attachment/);
   assert.equal((await api('/api/seller/application/submit',seller.token,{signed_and_notarized:true,documents_truthful:true})).status,400);
-  await query("update qori_seller_applications set status='SUBMITTED' where user_id=$1",[seller.id]);
-  const review={status:'APPROVED',note:'Documentos y condiciones revisados en QA.',identity_checked:true,ciiu_checked:true,bank_ownership_checked:true,notarized_contract_checked:true,legal_terms_checked:true};
-  const blocked=await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,review);assert.equal(blocked.status,400);assert.match(blocked.error.message,/pendiente de validación/);
-  assert.equal((await api('/api/seller/application',seller.token)).application.ciiu,'7310','Historical values must not be rewritten');
-  assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,{status:'CHANGES_REQUESTED',note:'Conserva tus documentos mientras Qori valida la clasificación.'})).status,200);
-  assert.equal((await api('/api/seller/application/submit',seller.token,{signed_and_notarized:true,documents_truthful:true,ciiu_terms_accepted:true})).status,400);
-  const unchanged=(await api('/api/seller/application',seller.token)).application;assert.equal(unchanged.ciiu,'7310');assert.equal(unchanged.terms_version,'2026-11-07-ciiu7310');assert.equal(unchanged.status,'CHANGES_REQUESTED');
-  assert.equal((await query("select 1 from qori_commercial_audit where entity_id=$1 and action='SELLER_APPLICATION_SUBMITTED'",[seller.id])).rowCount,0);
-  // Model a previously approved seller to verify accrued commissions/payments remain available.
-  await query("update qori_seller_applications set status='APPROVED' where user_id=$1",[seller.id]);
+  await query("update qori_seller_applications set ciiu='7310',terms_version='2026-11-07',status='SUBMITTED' where user_id=$1",[seller.id]);
+  const oldApproval={status:'APPROVED',note:'Revisión de expediente anterior para prueba.',identity_checked:true,ciiu_checked:true,bank_ownership_checked:true,notarized_contract_checked:true,legal_terms_checked:true};
+  assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,oldApproval)).status,400);
+  assert.equal((await api('/api/seller/application',seller.token)).application.ciiu,'7310','Reading must preserve historical declarations');
+  assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,{status:'CHANGES_REQUESTED',note:'Adjunta RUT con 4610 y contrato actualizado.'})).status,200);
+  assert.equal((await api('/api/seller/application/submit',seller.token,{signed_and_notarized:true,documents_truthful:true,ciiu_terms_accepted:true})).status,200);
+  const accepted=(await api('/api/seller/application',seller.token)).application;assert.equal(accepted.ciiu,'4610');assert.equal(accepted.terms_version,'2026-11-07-ciiu4610');
+  const audit=(await query("select detail from qori_commercial_audit where entity_id=$1 and action='SELLER_APPLICATION_SUBMITTED' order by created_at desc limit 1",[seller.id])).rows[0];assert.equal(audit.detail.previous_ciiu,'7310');
+  assert.equal((await api('/api/seller/documents/CONTRACT',seller.token,{filename:'x.pdf',content_base64:bytes.toString('base64')},'PUT')).status,403);
+  const review={status:'APPROVED',note:'Documentos y condiciones revisados en QA.'};assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,review)).status,400);
+  assert.equal((await api('/api/seller/admin/applications/'+seller.id+'/review',admin.token,{...review,identity_checked:true,ciiu_checked:true,bank_ownership_checked:true,notarized_contract_checked:true,legal_terms_checked:true})).status,200);
   assert.equal((await api('/api/admin/commercial/bootstrap',seller.token)).status,200);
   assert.ok((await query("select 1 from qori_commercial_audit where entity_id=$1 and action='SELLER_DOCUMENT_DOWNLOADED'",[seller.id])).rowCount);
  });

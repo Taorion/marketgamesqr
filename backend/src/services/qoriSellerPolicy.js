@@ -1,11 +1,12 @@
-// No tax code is imposed until the SaaS commission-sales activity is classified.
-const VERSION='2026-11-07-saas-classification-pending';
+// Code selected explicitly by Qori; this is not a taxpayer-specific DIAN ruling.
+const VERSION='2026-11-07-ciiu4610';
 const CIIU=Object.freeze({
- code:null,name:'Clasificación pendiente de validación por Qori',status:'PENDING_VALIDATION',
+ code:'4610',name:'Comercio al por mayor a cambio de una retribución o por contrata',status:'DEFINED_BY_QORI',
  scope:'Comercialización de suscripciones SaaS de Qori por comisión; Qori contrata, factura y cobra al negocio.',
- rut_requirement:'Qori está validando el CIIU correspondiente a esta actividad. No se exige 7310 ni debes cambiar tu RUT, firmar o autenticar el contrato por ahora. La apertura de nuevas postulaciones y su aprobación están temporalmente pendientes de esta definición.',
- source_url:'https://normograma.dian.gov.co/dian/compilacion/docs/oficio_dian_14298_2026.htm',
- reviewed_on:'2026-11-07'
+ rut_requirement:'El RUT debe incluir 4610 como actividad principal, secundaria u otra actividad, según la actividad real y los ingresos. Qori verifica el documento antes de aprobar.',
+ source_url:'https://normograma.dian.gov.co/dian/compilacion/docs/resolucion_dian_0227_2025.htm',
+ decision_basis:'Código definido expresamente por Qori para su programa Seller.',
+ defined_on:'2026-11-07'
 });
-function classificationReady(){return CIIU.status==='VALIDATED'&&/^\d{4}$/.test(CIIU.code||'');}
+function classificationReady(){return CIIU.status==='DEFINED_BY_QORI'&&/^\d{4}$/.test(CIIU.code||'');}
 module.exports={VERSION,CIIU,classificationReady};

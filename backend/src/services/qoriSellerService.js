@@ -6,7 +6,7 @@ const {env}=require('../config/env');
 const {badRequest,forbidden,notFound}=require('../utils/http');
 const {validate}=require('../utils/validators');
 const {VERSION,CIIU,classificationReady}=require('./qoriSellerPolicy');
-function requireClassification(){if(!classificationReady())throw badRequest('La clasificación CIIU para comercializar suscripciones SaaS por comisión está pendiente de validación por Qori. No se exige 7310. Las nuevas postulaciones y aprobaciones se habilitarán al definir este requisito.');}
+function requireClassification(){if(!classificationReady())throw badRequest('Qori debe definir el requisito CIIU antes de habilitar nuevas postulaciones y aprobaciones.');}
 const kinds=['IDENTITY','RUT','BANK','CONTRACT'];
 const uuid=z.string().uuid();
 const text=n=>z.string().trim().max(n);
@@ -106,8 +106,8 @@ async function review(user,id,payload){
   if(d.status==='APPROVED'){
    requireClassification();
    if(a.status!=='SUBMITTED')throw badRequest('Solo se aprueban solicitudes enviadas a revisión.');
-   if(a.ciiu!==CIIU.code||a.terms_version!==VERSION)throw badRequest('Solicita correcciones: el postulante debe aceptar la clasificación validada por Qori y presentar el contrato actualizado.');
-   if(![d.identity_checked,d.ciiu_checked,d.bank_ownership_checked,d.notarized_contract_checked,d.legal_terms_checked].every(Boolean))throw badRequest('Verifica identidad, clasificación validada en el RUT, titularidad bancaria, autenticación notarial y condiciones contractuales.');
+   if(a.ciiu!==CIIU.code||a.terms_version!==VERSION)throw badRequest('Solicita correcciones: el postulante debe aceptar el requisito CIIU definido por Qori y presentar el contrato actualizado.');
+   if(![d.identity_checked,d.ciiu_checked,d.bank_ownership_checked,d.notarized_contract_checked,d.legal_terms_checked].every(Boolean))throw badRequest('Verifica identidad, CIIU 4610 en el RUT, titularidad bancaria, autenticación notarial y condiciones contractuales.');
    if((await db.query('select count(*)::int n from qori_seller_documents where user_id=$1',[id])).rows[0].n!==4)throw badRequest('La documentación está incompleta.');
   }else if(d.status==='SUSPENDED'&&a.status!=='APPROVED')throw badRequest('Solo puedes suspender un Embajador aprobado.');
   await db.query('update qori_seller_applications set status=$2,review_note=$3,reviewed_by=$4,reviewed_at=now(),updated_at=now() where user_id=$1',[id,d.status,d.note,user.id]);

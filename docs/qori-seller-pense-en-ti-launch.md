@@ -1,4 +1,4 @@
-# Lanzamiento Pensé en ti y Gana con Qori
+﻿# Lanzamiento Pensé en ti y Gana con Qori
 
 ## Propuesta y circuito de crecimiento
 
@@ -56,7 +56,7 @@ Tablas privadas con RLS y sin permisos anon/authenticated; acceso solo desde ser
 
 El trabajador de correo usa RESEND_API_KEY y CONTACT_MAIL_FROM/MARKETING_MAIL_FROM, solo en producción. Cola transaccional con idempotencia, lease y hasta ocho intentos. Monitorizar last_error/attempts y resolver configuración antes de reintentar manualmente. No incluye reenvíos masivos ni exportación de documentos.
 
-Administración: /seller/#admin con cuenta QORI_SUPERADMIN; existe acceso desde /admin/. Nuevas postulaciones y aprobaciones están pendientes de validar el CIIU para comercializar suscripciones SaaS por comisión. Se retiró el requisito 7310 — Publicidad y no debe solicitarse actualizar el RUT a ese código. El contrato es un borrador que no debe firmarse ni autenticarse por ahora. Los expedientes históricos, las comisiones y los pagos de vendedores ya aprobados conservan su flujo. Investigación, consulta preparada y pasos de rehabilitación: [CIIU de Qori Seller](qori-seller-ciiu.md).
+Administración: /seller/#admin con cuenta QORI_SUPERADMIN; existe acceso desde /admin/. Postulaciones y aprobaciones habilitadas con el CIIU 4610 definido por Qori para comercializar suscripciones SaaS por comisión. Revisar los cuatro documentos, 4610 en el RUT, firma autenticada y titularidad bancaria. Puede figurar como principal, secundario u otra actividad según la realidad económica. Para expedientes anteriores, solicitar correcciones y aceptación del contrato actualizado, conservando el historial. Detalle: [CIIU de Qori Seller](qori-seller-ciiu.md).
 
 Contrato: Orbital Innovation S.A.S., NIT 9021022727, representante Sandra Lizeth Casallas Regalado, domicilio y teléfono confirmados por la usuaria. El documento no garantiza inmunidad frente a reclamaciones ni excluye una relación laboral o agencia si los hechos configuran sus elementos. Debe mantenerse coherencia entre operación real y condiciones, y obtener revisión profesional colombiana antes de usarlo como política contractual definitiva.
 
