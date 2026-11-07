@@ -15,6 +15,7 @@ function trafficLabel(quantity) {
 }
 
 async function ensureCreditAccount(client, businessId) {
+  await client.query("insert into business_qr_credit_accounts(business_id) values($1) on conflict(business_id) do nothing",[businessId]);
   const existing = await client.query(
     "select * from business_qr_credit_accounts where business_id = $1 for update",
     [businessId]
@@ -73,6 +74,15 @@ async function getSubscriptionQuota(client, businessId) {
   };
 }
 
+async function resetIncludedTickets(client, {business_id,quantity,period_key,created_by_user_id=null}) {
+ const account=await ensureCreditAccount(client,business_id);
+ if(account.included_period_key===period_key)return {account,granted:false};
+ const oldIncluded=Math.min(Number(account.included_balance||0),Number(account.qr_balance||0));
+ const balance=Number(account.qr_balance)-oldIncluded+quantity;
+ const updated=(await client.query('update business_qr_credit_accounts set qr_balance=$2,included_balance=$3,included_period_key=$4,updated_at=now() where business_id=$1 returning *',[business_id,balance,quantity,period_key])).rows[0];
+ await client.query("insert into business_qr_credit_ledger(business_id,account_id,entry_type,delta_qr,balance_after,public_label,notes,created_by_user_id) values($1,$2,'MANUAL_ADJUSTMENT',$3,$4,$5,$6,$7)",[business_id,account.id,quantity-oldIncluded,balance,'Tickets incluidos del periodo','Reposición sin acumulación. Periodo '+period_key,created_by_user_id]);
+ return {account:updated,granted:true};
+}
 async function addQrCredits(client, payload) {
   const packageSize = Number(payload.package_size);
   assertValidPackage(packageSize);
@@ -262,6 +272,7 @@ async function consumeQrCredits(client, businessId, quantity, qrCodeId = null, u
   const updated = await client.query(
     `update business_qr_credit_accounts
      set qr_balance = $2,
+         included_balance = greatest(0, included_balance - ($3 - qr_used_total)),
          qr_used_total = $3,
          updated_at = now()
      where business_id = $1
@@ -400,6 +411,7 @@ function mapPublicCreditAccount(row) {
 }
 
 module.exports = {
+  resetIncludedTickets,
   QR_PACKAGES,
   INTERNAL_UNIT_PRICE_COP,
   addQrCredits,

@@ -8,7 +8,7 @@ const { findPackageOffer } = require("./packageCatalog");
 const {
   addQrCredits,
   ensureCreditAccount,
-  grantFirstSubscriptionCourtesyTickets,
+  resetIncludedTickets,
   mapPublicCreditAccount,
   trafficLabel,
 } = require("./qrCreditService");
@@ -421,7 +421,8 @@ async function createCreditCheckout(user, body) {
   if (!offer) {
     throw badRequest("Paquete QR no disponible.");
   }
-  await assertActiveSubscriptionForTicketPurchase(user);
+  const access=await assertActiveSubscriptionForTicketPurchase(user);
+  if(offer.code==='GF5'&&access.plan.code!=='PENSE_EN_TI')throw badRequest('Este paquete de emisiones corresponde a Pensé en ti.');
   if (!offer.subscriber_allowed) {
     throw badRequest("Paquete QR no disponible para suscriptores.");
   }
@@ -447,7 +448,7 @@ async function createCreditCheckout(user, body) {
       items: [
         {
           id: offer.code,
-          title: `${offer.title} - ${trafficLabel(offer.package_size)}`,
+          title: offer.kind==='GIFTCARDS'?offer.title:`${offer.title} - ${trafficLabel(offer.package_size)}`,
           quantity: 1,
           unit_price: Number(offer.price_cop),
           currency_id: "COP",
@@ -1280,6 +1281,13 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
     return finalizeApprovedPortalSubscription(client, order, payment, signup);
   }
 
+  if(order.package_code==='GF5') {
+    validateApprovedPayment(order,payment);
+    if(order.credited_at)return {order:mapPurchaseOrder(order),credited:false,duplicate:true};
+    await client.query('insert into qori_giftcard_credit_accounts(business_id,balance,purchased) values($1,5,5) on conflict(business_id) do update set balance=qori_giftcard_credit_accounts.balance+5,purchased=qori_giftcard_credit_accounts.purchased+5',[order.business_id]);
+    const r=await client.query("update qr_credit_purchase_orders set status='APPROVED',mercado_pago_payment_id=$2,payment_payload=$3,credited_at=now(),updated_at=now() where id=$1 returning *",[order.id,String(payment.id),payment]);
+    return {order:mapPurchaseOrder(r.rows[0]),credited:true,giftcards_added:5};
+  }
   const account = await addQrCredits(client, {
     business_id: order.business_id,
     package_size: order.package_size,
@@ -1288,7 +1296,7 @@ async function finalizeApprovedCreditPurchase(client, order, payment, options = 
     created_by_user_id: order.created_by_user_id,
   });
 
-  if (isBaseAccessPackage(order.package_size)) {
+  if (isBaseAccessPackage(order.package_size) && (await client.query('select plan_code from businesses where id=$1',[order.business_id])).rows[0]?.plan_code !== 'PENSE_EN_TI') {
     await activateTicketBaseAccess(client, order.business_id, order.created_by_user_id, {
       source: signup?.type || "ticket_purchase",
     });
@@ -1367,32 +1375,11 @@ async function finalizeApprovedPortalSubscription(client, order, payment, signup
       created_by_user_id: order.created_by_user_id,
     });
   }
-  const previousSubscriptionOrder = await client.query(
-    `select id
-     from qr_credit_purchase_orders
-     where business_id = $1
-       and id <> $2
-       and status = 'APPROVED'
-       and (metadata->'signup'->>'type') in (
-         'portal_monthly_subscription',
-         'portal_annual_subscription',
-         'portal_monthly_subscription_auto_renewal'
-       )
-     limit 1`,
-    [order.business_id, order.id]
-  );
-  if (!previousSubscriptionOrder.rowCount) {
-    const welcomeTickets = Number(plan.limits?.welcome_courtesy_tickets || signup.courtesy_tickets_quantity || 0);
-    const courtesy = await grantFirstSubscriptionCourtesyTickets(client, {
-      business_id: order.business_id,
-      created_by_user_id: order.created_by_user_id,
-      quantity: welcomeTickets,
-      public_label: `${welcomeTickets} tickets de bienvenida del plan ${plan.name}`,
-      notes: `Tickets de bienvenida por primera suscripcion al plan ${plan.name}.`,
-    });
-    account = courtesy.account || account;
-    courtesyTicketsGranted = Boolean(courtesy.granted);
-  }
+  const included = await resetIncludedTickets(client, {
+    business_id:order.business_id, quantity:Number(plan.limits?.welcome_courtesy_tickets||0),
+    period_key:order.id,created_by_user_id:order.created_by_user_id
+  });
+  account=included.account; courtesyTicketsGranted=included.granted;
   const updated = await client.query(
     `update qr_credit_purchase_orders
      set status = 'APPROVED',
@@ -1484,6 +1471,7 @@ function mapPurchaseOrder(row) {
 
 module.exports = {
   __testing: {
+    finalizeApprovedCreditPurchase,
     finalizeApprovedPortalSubscription,
     monthlyChargeForBusiness,
     approvedPaymentIdFromAuthorizedInvoice,

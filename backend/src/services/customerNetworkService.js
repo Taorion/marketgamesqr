@@ -95,6 +95,7 @@ const inboxSql=`select i.id,i.business_id,b.name business_name,i.kind,i.title,i.
   from customer_invitations i join businesses b on b.id=i.business_id left join customer_relationships r on r.id=i.relationship_id
   left join interactive_activations a on i.kind='ACTIVITY' and a.id=i.resource_id and a.company_id=i.business_id`;
 async function inbox(account){
+  await require("./giftDeliveryService").sync(account);
   await require('./customerBenefitDeliveryService').sync(account);
   const rows=(await query(inboxSql+' where i.customer_id=$1 order by i.created_at desc limit 200',[account.id])).rows;
   return {invitations:rows.map(({public_slug,...row})=>({...row,

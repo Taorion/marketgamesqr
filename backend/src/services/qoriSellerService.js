@@ -1,0 +1,159 @@
+const crypto=require('crypto');
+const bcrypt=require('bcryptjs');
+const {z}=require('zod');
+const {query,withTransaction}=require('../config/db');
+const {env}=require('../config/env');
+const {badRequest,forbidden,notFound}=require('../utils/http');
+const {validate}=require('../utils/validators');
+const VERSION='2026-11-07';
+const kinds=['IDENTITY','RUT','BANK','CONTRACT'];
+const uuid=z.string().uuid();
+const text=n=>z.string().trim().max(n);
+function superadmin(u){if((u.platform_role||u.role)!=='QORI_SUPERADMIN')throw forbidden('Solo Qori Superadmin puede revisar documentos y registrar pagos.');}
+async function audit(db,user,action,id,detail={}){await db.query("insert into qori_commercial_audit(actor_id,action,entity_type,entity_id,detail) values($1,$2,'seller',$3,$4::jsonb)",[user.id,action,id,JSON.stringify(detail)]);}
+async function requireApproved(user,db={query}){
+ if(!['QORI_SELLER','QORI_SUPERADMIN'].includes(user.platform_role||user.role))throw forbidden('Necesitas acceso Qori Seller.');
+ const a=(await db.query('select status from qori_seller_applications where user_id=$1',[user.id])).rows[0];
+ if(a&&a.status!=='APPROVED')throw forbidden('Tu solicitud de Embajador debe estar aprobada para gestionar negocios y comisiones.');
+}
+function encryptionKey(){return crypto.createHash('sha256').update('qori-seller-document-v1\0'+(process.env.SELLER_DOCUMENT_ENCRYPTION_KEY||env.jwtSecret)).digest();}
+function encrypt(bytes){const nonce=crypto.randomBytes(12),cipher=crypto.createCipheriv('aes-256-gcm',encryptionKey(),nonce);return Buffer.concat([nonce,cipher.update(bytes),cipher.final(),cipher.getAuthTag()]);}
+function decrypt(bytes){const d=crypto.createDecipheriv('aes-256-gcm',encryptionKey(),bytes.subarray(0,12));d.setAuthTag(bytes.subarray(-16));return Buffer.concat([d.update(bytes.subarray(12,-16)),d.final()]);}
+function validDocument(bytes){
+ if(bytes.subarray(0,5).toString()==='%PDF-' && bytes.subarray(-2048).includes(Buffer.from('%%EOF')))return 'application/pdf';
+ if(bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))return 'image/png';
+ if(bytes[0]===255&&bytes[1]===216&&bytes[2]===255)return 'image/jpeg';
+ throw badRequest('Carga un PDF, JPG o PNG válido.');
+}
+async function register(payload,ip){
+ const d=validate(z.object({full_name:text(160).min(5),email:z.string().trim().email().max(180),password:z.string().min(12).max(120),password_confirm:z.string().min(12).max(120),document_key:z.string().trim().regex(/^\d{5,15}$/),phone:text(40).min(7),city:text(120).min(2),ciiu:z.string().regex(/^\d{4}$/),terms_accepted:z.literal(true),privacy_accepted:z.literal(true),adult_confirmed:z.literal(true)}).strict().refine(d=>d.password===d.password_confirm,'Las contraseñas no coinciden.'),payload);
+ const passwordHash=await bcrypt.hash(d.password,12);
+ return withTransaction(async db=>{
+  await db.query('select pg_advisory_xact_lock(hashtext($1))',['signup-email:'+d.email.toLowerCase()]);
+  if((await db.query('select 1 from app_users where lower(email)=lower($1)',[d.email])).rowCount)throw badRequest('Este correo ya tiene cuenta. Inicia sesión o solicita a Qori habilitar el perfil Seller.');
+  if((await db.query('select 1 from qori_seller_applications where document_key=$1',[d.document_key])).rowCount)throw badRequest('Ya existe una solicitud con ese documento. Recupera tu cuenta.');
+  const u=(await db.query("insert into app_users(email,password_hash,full_name,role,is_active) values(lower($1),$2,$3,'QORI_SELLER',true) returning id",[d.email,passwordHash,d.full_name])).rows[0];
+  await db.query("insert into qori_seller_applications(user_id,document_key,phone,city,ciiu,terms_version,accepted_ip) values($1,$2,$3,$4,$5,$6,$7)",[u.id,d.document_key,d.phone,d.city,d.ciiu,VERSION,ip]);
+  await db.query('insert into qori_sales_profiles(user_id,phone,created_by) values($1,$2,$1)',[u.id,d.phone]);
+  await audit(db,u,'SELLER_APPLICATION_CREATED',u.id,{terms_version:VERSION,privacy_accepted:true,adult_confirmed:true});
+  return {ok:true,message:'Cuenta de postulación creada. Inicia sesión para descargar el contrato y completar tus documentos.'};
+ });
+}
+async function application(user){
+ const a=(await query('select user_id,document_key,phone,city,ciiu,status,terms_version,accepted_at,review_note,submitted_at,reviewed_at from qori_seller_applications where user_id=$1',[user.id])).rows[0]||null;
+ const docs=(await query('select id,kind,filename,mime_type,byte_size,sha256,created_at from qori_seller_documents where user_id=$1 order by kind',[user.id])).rows;
+ return {application:a,documents:docs,user:{id:user.id,full_name:user.full_name,email:user.email,role:user.platform_role||user.role},legacy:!a};
+}
+async function openApplication(user,payload,ip){
+ if((user.platform_role||user.role)!=='QORI_SELLER')throw forbidden('Este expediente corresponde a una cuenta Seller.');
+ const d=validate(z.object({document_key:z.string().trim().regex(/^\d{5,15}$/),phone:text(40).min(7),city:text(120).min(2),ciiu:z.string().regex(/^\d{4}$/),terms_accepted:z.literal(true),privacy_accepted:z.literal(true),adult_confirmed:z.literal(true)}).strict(),payload);
+ return withTransaction(async db=>{
+  await db.query('select id from app_users where id=$1 for update',[user.id]);
+  if((await db.query('select 1 from qori_seller_applications where user_id=$1',[user.id])).rowCount)throw badRequest('Ya tienes un expediente abierto.');
+  await db.query('insert into qori_seller_applications(user_id,document_key,phone,city,ciiu,terms_version,accepted_ip) values($1,$2,$3,$4,$5,$6,$7)',[user.id,d.document_key,d.phone,d.city,d.ciiu,VERSION,ip]);
+  await audit(db,user,'SELLER_APPLICATION_CREATED',user.id,{terms_version:VERSION,privacy_accepted:true,adult_confirmed:true});
+  return {ok:true};
+ });
+}
+async function upload(user,kind,payload){
+ if(!kinds.includes(kind))throw badRequest('Tipo de documento inválido.');
+ const d=validate(z.object({filename:text(160).min(3),content_base64:z.string().min(16).max(11184816)}).strict(),payload);
+ if(!/^[A-Za-z0-9+/]+={0,2}$/.test(d.content_base64))throw badRequest('Archivo inválido.');
+ const bytes=Buffer.from(d.content_base64,'base64');if(bytes.length>8*1024*1024)throw badRequest('El límite es 8 MB por documento.');
+ const mime=validDocument(bytes),hash=crypto.createHash('sha256').update(bytes).digest('hex');
+ return withTransaction(async db=>{
+  const a=(await db.query('select status from qori_seller_applications where user_id=$1 for update',[user.id])).rows[0];
+  if(!a||!['DRAFT','CHANGES_REQUESTED'].includes(a.status))throw forbidden('Solo puedes cargar documentos antes de enviar la solicitud o cuando Qori solicita correcciones.');
+  await db.query(`insert into qori_seller_documents(user_id,kind,filename,mime_type,byte_size,sha256,encrypted_content)
+   values($1,$2,$3,$4,$5,$6,$7) on conflict(user_id,kind) do update set filename=excluded.filename,mime_type=excluded.mime_type,byte_size=excluded.byte_size,sha256=excluded.sha256,encrypted_content=excluded.encrypted_content,created_at=now()`,
+   [user.id,kind,d.filename.replace(/[^\p{L}\p{N} ._()-]/gu,'_'),mime,bytes.length,hash,encrypt(bytes)]);
+  await audit(db,user,'SELLER_DOCUMENT_UPLOADED',user.id,{kind,sha256:hash,byte_size:bytes.length});
+  return {ok:true};
+ });
+}
+async function document(user,id){
+ validate(uuid,id);
+ return withTransaction(async db=>{
+  const row=(await db.query('select * from qori_seller_documents where id=$1',[id])).rows[0];
+  if(!row)throw notFound('Documento no encontrado.');
+  if(row.user_id!==user.id)superadmin(user);
+  await audit(db,user,'SELLER_DOCUMENT_DOWNLOADED',row.user_id,{document_id:row.id,kind:row.kind});
+  return {filename:row.filename,mime:row.mime_type,bytes:decrypt(row.encrypted_content)};
+ });
+}
+async function submit(user,payload){
+ validate(z.object({signed_and_notarized:z.literal(true),documents_truthful:z.literal(true)}).strict(),payload);
+ return withTransaction(async db=>{
+  const a=(await db.query('select * from qori_seller_applications where user_id=$1 for update',[user.id])).rows[0];
+  if(!a||!['DRAFT','CHANGES_REQUESTED'].includes(a.status))throw badRequest('Esta solicitud no admite un nuevo envío.');
+  const docs=(await db.query('select kind,sha256 from qori_seller_documents where user_id=$1',[user.id])).rows;
+  if(kinds.some(k=>!docs.some(d=>d.kind===k)))throw badRequest('Debes cargar cédula, RUT, certificado bancario y contrato firmado y autenticado.');
+  await db.query("update qori_seller_applications set status='SUBMITTED',submitted_at=now(),updated_at=now() where user_id=$1",[user.id]);
+  await audit(db,user,'SELLER_APPLICATION_SUBMITTED',user.id,{documents:docs,terms_version:a.terms_version});
+  return {ok:true};
+ });
+}
+async function review(user,id,payload){
+ superadmin(user);validate(uuid,id);
+ const d=validate(z.object({status:z.enum(['APPROVED','CHANGES_REQUESTED','REJECTED','SUSPENDED']),note:text(2000).min(15),identity_checked:z.boolean().default(false),ciiu_checked:z.boolean().default(false),bank_ownership_checked:z.boolean().default(false),notarized_contract_checked:z.boolean().default(false),legal_terms_checked:z.boolean().default(false)}).strict(),payload);
+ return withTransaction(async db=>{
+  const a=(await db.query('select * from qori_seller_applications where user_id=$1 for update',[id])).rows[0];
+  if(!a||id===user.id)throw badRequest('Solicitud no disponible para revisión.');
+  if(d.status==='APPROVED'){
+   if(a.status!=='SUBMITTED')throw badRequest('Solo se aprueban solicitudes enviadas a revisión.');
+   if(![d.identity_checked,d.ciiu_checked,d.bank_ownership_checked,d.notarized_contract_checked,d.legal_terms_checked].every(Boolean))throw badRequest('Verifica identidad, CIIU, titularidad bancaria, autenticación notarial y condiciones contractuales.');
+   if((await db.query('select count(*)::int n from qori_seller_documents where user_id=$1',[id])).rows[0].n!==4)throw badRequest('La documentación está incompleta.');
+  }else if(d.status==='SUSPENDED'&&a.status!=='APPROVED')throw badRequest('Solo puedes suspender un Embajador aprobado.');
+  await db.query('update qori_seller_applications set status=$2,review_note=$3,reviewed_by=$4,reviewed_at=now(),updated_at=now() where user_id=$1',[id,d.status,d.note,user.id]);
+  await audit(db,user,'SELLER_APPLICATION_'+d.status,id,d);
+  return {ok:true};
+ });
+}
+function nextThursday(now=new Date()){
+ const date=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
+ const d=new Date(date+'T12:00:00Z'),day=d.getUTCDay();d.setUTCDate(d.getUTCDate()+((4-day+7)%7||7));return d.toISOString().slice(0,10);
+}
+async function dashboard(user){
+ await requireApproved(user);
+ const [totals,ledger,payouts,accounts]=await Promise.all([
+  query(`select coalesce(sum(amount_cop) filter(where status='PENDING'),0) pending_cop,
+   coalesce(sum(amount_cop) filter(where status='PAID'),0) paid_cop,
+   coalesce(sum(amount_cop) filter(where status='PENDING' and due_on<=(now() at time zone 'America/Bogota')::date),0) due_cop,
+   count(distinct business_id)::int paying_businesses from qori_seller_commissions where seller_id=$1`,[user.id]),
+  query(`select c.*,b.name business_name,o.package_title from qori_seller_commissions c join businesses b on b.id=c.business_id join qr_credit_purchase_orders o on o.id=c.order_id where seller_id=$1 order by c.created_at desc,c.id limit 200`,[user.id]),
+  query('select * from qori_seller_payouts where seller_id=$1 order by created_at desc limit 100',[user.id]),
+  query(`select b.id,b.name,b.plan_code,b.subscription_status,a.created_at from qori_sales_accounts a join businesses b on b.id=a.business_id where a.seller_id=$1 order by a.created_at desc limit 200`,[user.id])
+ ]);
+ return {totals:totals.rows[0],commissions:ledger.rows,payouts:payouts.rows,accounts:accounts.rows,next_payment_date:nextThursday(),referral_url:env.publicAppUrl+'/pense-en-ti/?seller='+user.id,plan_referral_url:env.publicAppUrl+'/paquetes/?advisor='+user.id,rate:0.10};
+}
+async function adminQueue(user){
+ superadmin(user);
+ const [applications,balances,payouts]=await Promise.all([
+  query(`select a.*,u.full_name,u.email,coalesce((select jsonb_agg(jsonb_build_object('id',d.id,'kind',d.kind,'filename',d.filename,'sha256',d.sha256)) from qori_seller_documents d where d.user_id=a.user_id),'[]'::jsonb) documents from qori_seller_applications a join app_users u on u.id=a.user_id order by (a.status='SUBMITTED') desc,a.created_at desc limit 200`),
+  query(`select c.seller_id,u.full_name,u.email,sum(c.amount_cop) pending_cop,coalesce(sum(c.amount_cop) filter(where c.due_on<=(now() at time zone 'America/Bogota')::date),0) due_cop from qori_seller_commissions c join app_users u on u.id=c.seller_id where c.status='PENDING' group by c.seller_id,u.full_name,u.email order by min(c.due_on)`),
+  query('select p.*,u.full_name from qori_seller_payouts p join app_users u on u.id=p.seller_id order by p.created_at desc limit 100')
+ ]);
+ return {applications:applications.rows,balances:balances.rows,payouts:payouts.rows};
+}
+async function pay(user,payload){
+ superadmin(user);
+ const d=validate(z.object({seller_id:uuid,request_id:uuid,transfer_reference:text(160).min(6),paid_on:z.string().date(),expected_gross_cop:z.coerce.number().positive(),withholding_cop:z.coerce.number().min(0).default(0),transfer_verified:z.literal(true),bank_ownership_checked:z.literal(true)}).strict(),payload);
+ return withTransaction(async db=>{
+  await db.query('select pg_advisory_xact_lock(hashtext($1))',['seller-payout:'+d.seller_id]);
+  const prior=(await db.query('select * from qori_seller_payouts where request_id=$1',[d.request_id])).rows[0];
+  if(prior){if(prior.seller_id!==d.seller_id||prior.transfer_reference!==d.transfer_reference)throw badRequest('La solicitud ya corresponde a otro pago.');return {payout:prior};}
+  const day=(await db.query("select (now() at time zone 'America/Bogota')::date::text today")).rows[0].today;
+  if(d.paid_on>day||new Date(d.paid_on+'T12:00:00Z').getUTCDay()!==4)throw badRequest('Registra la fecha real de transferencia: un jueves, sin fechas futuras.');
+  const approved=(await db.query("select a.status,u.is_active from qori_seller_applications a join app_users u on u.id=a.user_id where a.user_id=$1 for update of a",[d.seller_id])).rows[0];
+  if(!approved||approved.status!=='APPROVED'||!approved.is_active)throw badRequest('El pago exige un expediente de Embajador aprobado y una cuenta activa.');
+  const rows=(await db.query("select id,amount_cop from qori_seller_commissions where seller_id=$1 and status='PENDING' and due_on<=$2 order by id for update",[d.seller_id,d.paid_on])).rows;
+  const cents=rows.reduce((s,r)=>s+Math.round(Number(r.amount_cop)*100),0);
+  if(cents<=0||cents!==Math.round(d.expected_gross_cop*100))throw badRequest('El saldo cambió o no hay comisiones exigibles. Actualiza antes de registrar el pago.');
+  if(d.withholding_cop>=cents/100)throw badRequest('La retención debe ser menor que el valor bruto.');
+  const p=(await db.query('insert into qori_seller_payouts(seller_id,request_id,gross_cop,withholding_cop,transfer_reference,paid_on,recorded_by) values($1,$2,$3,$4,$5,$6,$7) returning *',[d.seller_id,d.request_id,cents/100,d.withholding_cop,d.transfer_reference,d.paid_on,user.id])).rows[0];
+  await db.query("update qori_seller_commissions set status='PAID',payout_id=$2 where id=any($1::uuid[])",[rows.map(r=>r.id),p.id]);
+  await audit(db,user,'SELLER_PAYOUT_RECORDED',d.seller_id,{payout_id:p.id,gross_cop:p.gross_cop,withholding_cop:p.withholding_cop,transfer_reference:p.transfer_reference});
+  return {payout:p};
+ });
+}
+module.exports={VERSION,register,openApplication,application,upload,document,submit,review,requireApproved,dashboard,adminQueue,pay,nextThursday};

@@ -6,6 +6,7 @@ const { startAgendaPushWorker } = require("./services/agendaPushService");
 const stopAgendaPushWorker = startAgendaPushWorker();
 const stopCustomerBenefits = require('./services/customerBenefitNotificationService').start();
 const stopCustomerPayments = require('./services/customerPaymentPushService').start();
+const stopGiftDelivery = require('./services/giftDeliveryService').start();
 
 const server = app.listen(env.port, () => {
   console.log(`Sales Machine Portal RMS running on http://localhost:${env.port}`);
@@ -16,6 +17,7 @@ async function shutdown() {
   await stopAgendaPushWorker();
   await stopCustomerPayments();
   await stopCustomerBenefits();
+  await stopGiftDelivery();
   server.close(async () => {
     await pool.end();
     process.exit(0);

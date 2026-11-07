@@ -171,7 +171,7 @@ function getRewardPassTicketCostFromSettings(settings = {}) {
 
 async function loadBusinessForUpdate(client, businessId) {
   const result = await client.query(
-    `select id, name, slug, settings
+    `select id, name, slug, settings, plan_code
      from businesses
      where id = $1 and is_active = true
      for update`,
@@ -186,7 +186,7 @@ async function loadBusinessForUpdate(client, businessId) {
 
 async function loadBusiness(businessId) {
   const result = await query(
-    `select id, name, slug, settings
+    `select id, name, slug, settings, plan_code
      from businesses
      where id = $1 and is_active = true`,
     [businessId]
@@ -480,7 +480,8 @@ async function getTicketContext(user) {
   };
   return {
     business_name: business.name,
-    reward_pass_ticket_cost: getRewardPassTicketCostFromSettings(business.settings || {}),
+    reward_pass_ticket_cost: business.plan_code==='PENSE_EN_TI'?0:getRewardPassTicketCostFromSettings(business.settings || {}),
+    giftcard_balance: business.plan_code==='PENSE_EN_TI'?Number((await query('select balance from qori_giftcard_credit_accounts where business_id=$1',[businessId])).rows[0]?.balance||0):null,
     ticket_balance: Number(account.qr_balance || 0),
     qr_purchased_total: Number(account.qr_purchased_total || 0),
     qr_used_total: Number(account.qr_used_total || 0),
@@ -531,7 +532,12 @@ async function createRewardPass(user, payload, options = {}) {
         throw forbidden(`Tu plan ${subscription.plan.name} permite emitir ${monthlyGiftCardLimit} tarjetas de regalo al mes. Alcanzaste el limite mensual.`);
       }
     }
-    const ticketCost = getRewardPassTicketCostFromSettings(business.settings || {});
+    const freeGift = business.plan_code === 'PENSE_EN_TI';
+    if(freeGift) {
+      const capacity=await client.query('update qori_giftcard_credit_accounts set balance=balance-1,used=used+1 where business_id=$1 and balance>0 returning balance',[businessId]);
+      if(!capacity.rowCount)throw badRequest('Agotaste tus emisiones de Gift Card. Compra un paquete desde Pensé en ti.');
+    }
+    const ticketCost = freeGift ? 0 : getRewardPassTicketCostFromSettings(business.settings || {});
     const account = await ensureCreditAccount(client, businessId);
     const balanceBefore = Number(account.qr_balance || 0);
     if (balanceBefore < ticketCost) {
@@ -650,6 +656,7 @@ async function createRewardPass(user, payload, options = {}) {
     await client.query(
       `update business_qr_credit_accounts
        set qr_balance = $2,
+           included_balance = greatest(0, included_balance-$3),
            qr_used_total = qr_used_total + $3,
            updated_at = now()
        where business_id = $1`,

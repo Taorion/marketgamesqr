@@ -87,7 +87,9 @@ const QR_PACKAGE_OFFERS = rawPackageOffers.map((offer) => ({
   payment_url: `/paquetes/?package=${offer.code}`,
 }));
 
+const GIFTCARD_PACK={code:'GF5',public_code:'GF5',package_size:5,unit_price_cop:BASE_TICKET_PRICE_COP,price_cop:5*BASE_TICKET_PRICE_COP,title:'5 emisiones de Gift Card',subscriber_allowed:true,kind:'GIFTCARDS'};
 function findPackageOffer(code) {
+  if(String(code).toUpperCase()==='GF5')return GIFTCARD_PACK;
   return QR_PACKAGE_OFFERS.find((offer) => offer.code === String(code || "").trim().toUpperCase());
 }
 

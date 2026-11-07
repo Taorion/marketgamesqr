@@ -1,0 +1,1 @@
+(()=>{const a=document.createElement('a');a.href='/seller/#admin';a.textContent='Qori Seller · Documentos y comisiones ↗';a.style.cssText='display:block;text-align:center;padding:12px;background:#eef4ff;color:#1747b4;font:600 14px system-ui';document.body.append(a);})();

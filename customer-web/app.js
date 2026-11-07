@@ -75,6 +75,7 @@
     if(version!==renderVersion||!state.account)return;
     state.account=identity.account;
     if(!registrationComplete()){if(render)renderApp();return;}
+    if(window.QoriBenefitReturn?.())return;
     const [wallet,links,financial]=await Promise.all([request('/wallet/overview'),request('/relationships'),request('/finance-books')]);
     if(version!==renderVersion||!state.account)return;
     state.account=identity.account;state.books=financial.books;if(!state.books.some(b=>b.id===state.bookId))state.bookId=state.books.find(b=>b.is_default)?.id;state.cards=wallet.cards;state.orders=wallet.purchased_gifts;state.updated=wallet.updated_at;state.relationships=links.relationships;

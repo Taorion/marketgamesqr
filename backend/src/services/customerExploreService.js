@@ -27,7 +27,7 @@ function eligibility(row){
  if(row.kind==='ACTIVITY')return !!plan.features.qr_batch_generator&&row.activation_status==='active'&&(!row.starts_at||new Date(row.starts_at)<=now)&&(!row.ends_at||new Date(row.ends_at)>now);
  if(row.kind==='STAMP')return row.stamp_status==='ACTIVE'&&!row.stamp_deleted;
  if(row.kind==='AFFILIATION')return !!plan.features.affiliates&&String(row.points_terms||'').trim().length>=10;
- if(row.kind==='PRODUCT')return !!plan.features.qr_batch_generator&&row.product_status==='ACTIVE'&&row.product_currency==='COP'&&Number(row.stock_quantity)>=1&&Number(row.product_price)>0;
+ if(row.kind==='PRODUCT')return !!plan.features.product_gifts&&row.product_status==='ACTIVE'&&row.product_currency==='COP'&&Number(row.stock_quantity)>=1&&Number(row.product_price)>0;
  return !!plan.features.gift_cards&&row.gift_enabled&&String(row.gift_terms||'').trim().length>=10&&String(row.gift_payment_instructions||'').trim().length>=10;
 }
 function publicRow(r){

@@ -98,7 +98,7 @@ router.get('/product-gifts/:id',handle(req=>productGifts.order(req.customer,pars
 router.post('/product-gifts',handle(req=>{
   const key='gift-order:'+req.customer.id,now=Date.now(),b=buckets.get(key)||{count:0,until:now+60000};
   if(b.until<now){b.count=0;b.until=now+60000;}b.count++;buckets.set(key,b);if(b.count>20)throw tooManyRequests('Espera un minuto antes de continuar.');
-  const d=parse(z.object({publication_id:uuid,request_id:uuid,recipient:text(180).min(3),message:text(500).default(''),terms_accepted:z.literal(true)}),req.body);
+  const d=parse(z.object({publication_id:uuid,request_id:uuid,recipient:text(180).min(3),recipient_name:text(120).optional(),message:text(500).default(''),terms_accepted:z.literal(true)}),req.body);
   return productGifts.create(req.customer,d.publication_id,d);
 }));
 router.post('/product-gifts/:id/cancel',handle(req=>productGifts.cancel(req.customer,parse(uuid,req.params.id))));
@@ -303,9 +303,9 @@ businessRouter.post('/sale-deliveries',handle(req=>financeDelivery.send(req.user
 businessRouter.get('/product-gifts',handle(req=>productGifts.businessOrders(req.user)));
 businessRouter.get('/product-gifts/catalog',handle(req=>productGifts.businessCatalog(req.user)));
 businessRouter.post('/product-gifts',handle(req=>productGifts.createFromBusiness(req.user,parse(z.object({
- request_id:uuid,product_id:uuid,recipient_public_id:uuid,buyer_public_id:uuid.optional(),buyer_name:text(160).min(2).optional(),buyer_authorized:z.literal(true).optional(),
+ request_id:uuid,product_id:uuid,recipient_public_id:uuid.optional(),recipient_email:z.string().trim().email().max(180).optional(),recipient_name:text(160).min(2).optional(),buyer_email:z.string().trim().email().max(180).optional(),buyer_public_id:uuid.optional(),buyer_name:text(160).min(2).optional(),buyer_authorized:z.literal(true).optional(),
  amount:money,valid_days:z.coerce.number().int().min(1).max(365).default(30),terms:text(4000).min(10),message:text(500).default('')
-}).strict().refine(d=>!!d.buyer_public_id||!!d.buyer_name,'Indica quién compra el regalo.'),req.body))));
+}).strict().refine(d=>!!d.buyer_public_id||!!d.buyer_name,'Indica quién compra el regalo.').refine(d=>!!d.recipient_public_id||!!(d.recipient_email&&d.recipient_name),'Indica una cuenta o el nombre y correo del destinatario.'),req.body))));
 businessRouter.post('/product-gifts/:id/confirm-payment',handle(req=>productGifts.confirm(req.user,parse(uuid,req.params.id),parse(z.object({amount:money,payment_reference:text(120).min(3),payment_method:text(80).min(2),payment_received:z.literal(true),branch_id:uuid.optional()}),req.body))));
 businessRouter.get('/publications',handle(req=>explore.catalog(req.user)));
 businessRouter.post('/publications',handle(req=>explore.publish(req.user,parse(z.object({

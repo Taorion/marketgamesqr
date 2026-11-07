@@ -1,4 +1,4 @@
-const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),{JSDOM}=require('../.local-customer/qa-tools/node_modules/jsdom');
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),{JSDOM}=require('jsdom');
 const wait=async fn=>{for(let i=0;i<120;i++){if(fn())return;await new Promise(r=>setTimeout(r,5));}throw Error('UI did not settle');};
 function setup(hash=''){
  const w=new JSDOM('<div id="app"><p>Abriendo tu espacio…</p></div><div id="announcement"></div>',{url:'https://example.test/customer/'+hash,runScripts:'outside-only'}).window,calls=[];let verified=false,name='',documentKey=null;

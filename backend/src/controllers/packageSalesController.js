@@ -76,6 +76,7 @@ async function listPublicSubscriptionPlans(_req, res, next) {
     const plans = listPlans();
     const publicPlanCodes = [PLAN_CODES.DESPEGA, PLAN_CODES.STARTER, PLAN_CODES.GROWTH, PLAN_CODES.PRO];
     res.json({
+      free_plan: plans.find(plan=>plan.code===PLAN_CODES.PENSE_EN_TI),
       prepaid_plan: null,
       portal_base_plan: null,
       plans: plans.filter((plan) => publicPlanCodes.includes(plan.code) && plan.public_signup_available !== false && !plan.testing_plan),
@@ -144,6 +145,7 @@ async function createPortalSignup(req, res, next) {
       );
 
       const user = userResult.rows[0];
+      if(commercialAdvisor)await assignPaidSignup(client,commercialAdvisor,business.id,null);
       const order = await createPortalSignupCheckout(client, {
         business_id: business.id,
         user_id: user.id,
@@ -154,8 +156,7 @@ async function createPortalSignup(req, res, next) {
         sales_advisor_code: body.sales_advisor_code || null,
       });
 
-      if (commercialAdvisor) await assignPaidSignup(client, commercialAdvisor, business.id, order.id);
-      else await createSignupAttribution(client, {
+      if (!commercialAdvisor) await createSignupAttribution(client, {
         purchase_order_id: order.id,
         client_business_id: business.id,
         sales_advisor_code: body.sales_advisor_code || null,

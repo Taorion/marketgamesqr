@@ -5,7 +5,7 @@ const { query, withTransaction } = require('../config/db');
 const { env } = require('../config/env');
 const { unauthorized, tooManyRequests, forbidden } = require('../utils/http');
 const WEB_COOKIE='qori_customer_session';
-const cookieOptions=()=>({httpOnly:true,secure:env.isProduction,sameSite:'strict',path:'/api/customer'});
+const cookieOptions=()=>({httpOnly:true,secure:env.isProduction,sameSite:'strict',path:'/'});
 function webToken(req){return (req.headers.cookie||'').split(';').map(v=>v.trim()).find(v=>v.startsWith(WEB_COOKIE+'='))?.slice(WEB_COOKIE.length+1);}
 function assertWebRequest(req){
   const origin=req.get('Origin');
@@ -13,8 +13,8 @@ function assertWebRequest(req){
   const sameOrigin=`${req.protocol}://${req.get('host')}`;
   if(req.get('X-Qori-Web')!=='1'||!origin||![expected,sameOrigin].includes(origin))throw forbidden('Abre Qori Customer para continuar con esta operación.');
 }
-function setWebSession(res,result){res.cookie(WEB_COOKIE,result.token,{...cookieOptions(),expires:new Date(result.session.expires_at)});}
-function clearWebSession(res){res.clearCookie(WEB_COOKIE,cookieOptions());}
+function setWebSession(res,result){res.cookie(WEB_COOKIE,result.token,{...cookieOptions(),expires:new Date(result.session.expires_at)});res.clearCookie(WEB_COOKIE,{...cookieOptions(),path:'/api/customer'});}
+function clearWebSession(res){res.clearCookie(WEB_COOKIE,{...cookieOptions(),path:'/api/customer'});res.clearCookie(WEB_COOKIE,cookieOptions());}
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 const codeHash = (id, code) => crypto.createHmac('sha256', env.jwtSecret).update(`${id}:${code}`).digest('hex');
 

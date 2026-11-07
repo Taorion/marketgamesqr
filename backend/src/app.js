@@ -228,7 +228,10 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use(require('./middleware/customerBenefitGate').gate);
 app.use("/api/customer", require("./routes/customerRoutes").router);
+app.use("/api/seller", require("./routes/qoriSellerRoutes"));
+app.use("/api/pense-en-ti", require("./routes/penseEnTiRoutes"));
 app.use("/api/business/customer", require("./routes/customerRoutes").businessRouter);
 app.use("/api/qr", qrRoutes);
 app.use("/api/businesses", businessRoutes);
@@ -288,6 +291,8 @@ app.get("/empresa/agenda-sw.js", (_req, res) => {
 });
 app.use("/empresa", express.static(path.join(__dirname, "../..", "empresa"), staticOptions));
 app.use("/admin", express.static(path.join(__dirname, "../..", "admin"), staticOptions));
+app.use("/seller", express.static(path.join(projectRoot,"seller"), staticOptions));
+app.use("/pense-en-ti", express.static(path.join(projectRoot,"pense-en-ti"), staticOptions));
 app.use("/paquetes", express.static(path.join(__dirname, "../..", "paquetes"), staticOptions));
 app.use("/terminos", express.static(path.join(__dirname, "../..", "terminos"), staticOptions));
 app.use("/privacidad", express.static(path.join(__dirname, "../..", "privacidad"), staticOptions));

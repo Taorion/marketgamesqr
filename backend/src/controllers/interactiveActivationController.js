@@ -195,7 +195,21 @@ async function publicGet(req, res, next) {
 async function publicStart(req, res, next) {
   try {
     const body = validate(publicInteractiveParticipantSchema, req.body);
-    res.status(201).json(await startInteractiveParticipant(req.params.slug, body));
+    const result=await require('../config/db').withTransaction(async client=>{
+      const a=(await client.query('select id from interactive_activations where public_slug=$1',[req.params.slug])).rows[0];
+      if(!a)throw require('../utils/http').notFound();
+      await client.query('select pg_advisory_xact_lock(hashtext($1))',['customer-play:'+req.customer.id+':'+a.id]);
+      const prior=(await client.query('select result,participant_id from customer_activation_participations where customer_id=$1 and activation_id=$2',[req.customer.id,a.id])).rows[0];
+      if(prior){if(prior.result)return prior.result;const p=(await client.query('select * from interactive_activation_participants where id=$1',[prior.participant_id])).rows[0];return {participant:p,game_session_token:p.game_session_token};}
+      const nonce=require('crypto').randomUUID();
+      const r=await startInteractiveParticipant(req.params.slug,{...body,metadata:{...body.metadata,customer_provenance:nonce}},{client});
+      const p=(await client.query('select metadata from interactive_activation_participants where id=$1',[r.participant.id])).rows[0];
+      if(p?.metadata?.customer_provenance!==nonce)throw forbidden('Esa participación anterior no está vinculada a tu cuenta. Consulta con el negocio.');
+      const safe={...r};delete safe.credit_account;
+      await client.query('insert into customer_activation_participations(customer_id,activation_id,participant_id,result) values($1,$2,$3,$4::jsonb)',[req.customer.id,a.id,r.participant.id,r.rewarded?JSON.stringify(safe):null]);
+      return safe;
+    });
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }
@@ -204,7 +218,14 @@ async function publicStart(req, res, next) {
 async function publicComplete(req, res, next) {
   try {
     const body = validate(publicInteractiveCompleteSchema, req.body);
-    res.status(201).json(await completeInteractiveParticipant(req.params.slug, body));
+    const result=await require('../config/db').withTransaction(async client=>{
+      const own=(await client.query('select cp.* from customer_activation_participations cp join interactive_activations a on a.id=cp.activation_id where cp.customer_id=$1 and a.public_slug=$2 for update of cp',[req.customer.id,req.params.slug])).rows[0];
+      if(!own||body.participant_id&&body.participant_id!==own.participant_id)throw require('../utils/http').forbidden('Inicia esta actividad desde tu propia cuenta Customer.');
+      const r=await completeInteractiveParticipant(req.params.slug,{...body,participant_id:own.participant_id},{client});
+      delete r.credit_account;
+      await client.query('update customer_activation_participations set result=$3::jsonb where customer_id=$1 and activation_id=$2',[req.customer.id,own.activation_id,JSON.stringify(r)]);return r;
+    });
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }

@@ -62,15 +62,17 @@ async function authRequired(req, _res, next) {
     const [scheme, token] = header.split(" ");
     if (scheme !== "Bearer" || !token) throw unauthorized("Missing bearer token.");
     const requestPath = String(req.originalUrl || req.url || "").split("?")[0];
+    const sellerRequest = requestPath.startsWith("/api/seller/");
     const adminRequest = requestPath.startsWith("/api/admin/");
     const selfService = (req.method === "GET" && requestPath === "/api/auth/me") || (req.method === "POST" && requestPath === "/api/auth/password/change");
-    const user = await authenticatedUserFromToken(token, { allowCommercialAccess: adminRequest || selfService });
+    const user = await authenticatedUserFromToken(token, { allowCommercialAccess: adminRequest || sellerRequest || selfService });
     req.user = user;
-    if (["QORI_SUPERADMIN", "QORI_SELLER"].includes(user.platform_role) && adminRequest) {
+    if (["QORI_SUPERADMIN", "QORI_SELLER"].includes(user.platform_role) && (adminRequest || sellerRequest)) {
       req.user = { ...user, role: user.platform_role, business_role: user.role };
     }
     if (req.user.role === "QORI_SELLER") {
-      if (!requestPath.startsWith("/api/admin/commercial/") && !selfService) throw forbidden("Tu cuenta comercial solo puede gestionar su cartera en Admin Qori.");
+      if (!requestPath.startsWith("/api/admin/commercial/") && !sellerRequest && !selfService) throw forbidden("Tu cuenta comercial solo puede gestionar su cartera en Qori Seller.");
+      if(adminRequest)await require('../services/qoriSellerService').requireApproved(req.user);
     }
     if (req.user.role === "BUSINESS_SELLER" && !businessSellerSelfServiceAllowed(req)) {
       throw forbidden("Tu cuenta de vendedor solo puede acceder a Mi desempeno y a tu perfil personal.");

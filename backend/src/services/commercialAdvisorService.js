@@ -7,6 +7,7 @@ async function advisorById(id, client = { query }) {
   const result = await client.query(`select id,full_name from app_users
     where id=$1 and is_active and (role in ('QORI_SELLER','QORI_SUPERADMIN') or platform_role in ('QORI_SUPERADMIN','QORI_SELLER')) for share`, [id]);
   if (!result.rowCount) throw badRequest("El asesor ya no está disponible. Solicita otro enlace o elige Llegué por mi cuenta.");
+  await require('./qoriSellerService').requireApproved({...result.rows[0],role:'QORI_SELLER'},client);
   return { id: result.rows[0].id, name: result.rows[0].full_name };
 }
 async function assignPaidSignup(client, advisor, businessId, orderId) {

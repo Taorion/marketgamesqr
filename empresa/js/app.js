@@ -46334,10 +46334,12 @@ function renderRewardPassCampaignOptions() {
 
 function renderRewardPassContext() {
   const context = state.rewardPassContext?.context || state.rewardPassContext || {};
-  const cost = toNumber(context.reward_pass_ticket_cost || 1);
-  const balance = toNumber(context.ticket_balance || context.qr_balance || 0);
+  const cost = toNumber(context.reward_pass_ticket_cost ?? 1);
+  const balance = toNumber(context.ticket_balance ?? context.qr_balance ?? 0);
   if (rewardPassTicketContext) {
-    rewardPassTicketContext.textContent = `Costo de emision: ${cost} ticket${cost === 1 ? "" : "s"} Qori. Saldo actual: ${balance.toLocaleString("es-CO")} tickets.`;
+    rewardPassTicketContext.textContent = context.giftcard_balance!=null
+      ? `Pensé en ti: ${Number(context.giftcard_balance)} emisiones de Gift Card disponibles. Cada Gift Card usa una emisión de este saldo independiente.`
+      : `Costo de emision: ${cost} ticket${cost === 1 ? "" : "s"} Qori. Saldo actual: ${balance.toLocaleString("es-CO")} tickets.`;
   }
 }
 
