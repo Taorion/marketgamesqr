@@ -9,20 +9,20 @@
  }
  function mount(form,currency){
   const host=form.querySelector('#dailyItems'),amount=form.elements.amount;
-  host.innerHTML='<fieldset class="expense-mode"><legend>¿Cómo quieres registrar este gasto?</legend><label><input type="radio" name="expense_mode" value="TOTAL" checked> Solo total y motivo</label><label><input type="radio" name="expense_mode" value="ITEMS"> Total con artículos</label></fieldset><div data-item-detail hidden><p class="small muted">Desglosa el pago: nombre, cantidad y precio por unidad. Puedes incluir conceptos como transporte o propina. Qori guardará un solo gasto.</p><div data-item-rows></div><button type="button" class="secondary" data-add-item>+ Agregar artículo</button><div class="expense-reconciliation" role="status" aria-live="polite"><p>Total del pago <strong data-paid-total></strong></p><p>Suma de artículos <strong data-items-total></strong></p><p data-items-difference></p></div><button type="button" class="quiet" data-use-items-total>Usar la suma como total del pago</button></div>';
-  const rows=host.querySelector('[data-item-rows]'),detail=host.querySelector('[data-item-detail]'),add=host.querySelector('[data-add-item]');let frozen=false,sequence=0;
+  host.innerHTML='<fieldset class="expense-mode"><legend>¿Cómo quieres registrar este gasto?</legend><label><input type="radio" name="expense_mode" value="TOTAL" checked> Solo total y motivo</label><label><input type="radio" name="expense_mode" value="ITEMS"> Artículo por artículo</label></fieldset><div data-item-detail hidden><p class="small muted">Escribe el nombre, la cantidad y el precio por unidad. El total se calcula automáticamente. Puedes incluir conceptos como transporte o propina. Qori guardará un solo gasto.</p><div data-item-rows></div><button type="button" class="secondary" data-add-item>+ Agregar artículo</button><div class="expense-reconciliation" role="status" aria-live="polite"><p>Total calculado <strong data-items-total></strong></p><p data-items-difference></p></div></div>';
+  const rows=host.querySelector('[data-item-rows]'),detail=host.querySelector('[data-item-detail]'),add=host.querySelector('[data-add-item]');let frozen=false,sequence=0,wasDetailed=false,manualAmount=amount.value;
   const detailed=()=>form.elements.expense_mode.value==='ITEMS';
   const money=n=>new Intl.NumberFormat('es-CO',{style:'currency',currency,minimumFractionDigits:0,maximumFractionDigits:2}).format(Number(n)/100);
   const all=()=>[...rows.querySelectorAll('.expense-item')];
   function total(){return all().reduce((sum,r)=>sum+lineTotal(r.querySelector('[data-price]').value,r.querySelector('[data-quantity]').value),0n);}
   function update(){
-   let sum=0n,complete=true,paid=null;
+   let sum=0n,complete=true;
    for(const r of all()){try{const n=lineTotal(r.querySelector('[data-price]').value,r.querySelector('[data-quantity]').value);sum+=n;r.querySelector('output').textContent=money(n);}catch{complete=false;r.querySelector('output').textContent='Por completar';}}
-   try{paid=cents(amount.value);}catch{}
-   host.querySelector('[data-paid-total]').textContent=paid==null?'Por indicar':money(paid);
+   const withinLimit=sum<=999999999999n;
+   if(detailed())amount.value=complete&&withinLimit?decimal(sum):'';
    host.querySelector('[data-items-total]').textContent=money(sum)+(complete?'':' · parcial');
-   const diff=host.querySelector('[data-items-difference]');diff.className=complete&&paid===sum?'expense-balanced':'expense-unbalanced';
-   diff.textContent=!complete?'Completa los precios y cantidades.':paid==null?'Indica el total que pagaste.':paid===sum?'El desglose coincide con el total.':paid>sum?'Faltan '+money(paid-sum)+' por discriminar.':'Los artículos superan el pago en '+money(sum-paid)+'.';
+   const diff=host.querySelector('[data-items-difference]');diff.className=complete&&withinLimit?'expense-balanced':'expense-unbalanced';
+   diff.textContent=!complete?'Completa los precios y cantidades.':!withinLimit?'El total supera el importe máximo permitido.':'Este total se guardará automáticamente como un solo gasto.';
    add.disabled=frozen||all().length>=100;
   }
   function addRow(){
@@ -31,16 +31,15 @@
    rows.append(r);r.oninput=update;r.querySelector('[data-remove-item]').onclick=()=>{r.remove();if(!all().length)addRow();update();};update();return r;
   }
   function disable(value){frozen=value;host.querySelectorAll('input,button').forEach(c=>c.disabled=value||(!detailed()&&detail.contains(c)));update();}
-  function mode(){detail.hidden=!detailed();if(detailed()&&!all().length)addRow();disable(frozen);}
+  function mode(){const active=detailed();if(active&&!wasDetailed)manualAmount=amount.value;if(!active&&wasDetailed)amount.value=manualAmount;wasDetailed=active;amount.required=!active;amount.readOnly=active;amount.closest('label').hidden=active;detail.hidden=!active;if(active&&!all().length)addRow();disable(frozen);}
   host.querySelectorAll('[name=expense_mode]').forEach(r=>r.onchange=mode);
   add.onclick=()=>{const r=addRow();r?.querySelector('[data-name]').focus();};amount.addEventListener('input',update);
-  host.querySelector('[data-use-items-total]').onclick=()=>{try{const sum=total();if(sum>999999999999n)throw Error();amount.value=decimal(sum);update();}catch{host.querySelector('[data-items-difference]').textContent='Completa los artículos con precios válidos antes de usar su suma.';}};
   mode();
   return {disable,products(){
    if(!detailed())return [];
    const products=all().map((r,i)=>{const name=r.querySelector('[data-name]').value.trim();if(!name)throw Error('Escribe el nombre del artículo '+(i+1)+'.');return {name,quantity:Number(r.querySelector('[data-quantity]').value),amount:decimal(lineTotal(r.querySelector('[data-price]').value,r.querySelector('[data-quantity]').value))};});
    if(!products.length)throw Error('Agrega al menos un artículo.');
-   if(total()!==cents(amount.value))throw Error('Los artículos deben sumar exactamente el total pagado. Revisa la diferencia del desglose.');
+   const sum=total();if(sum>999999999999n)throw Error('El total supera el importe máximo permitido.');amount.value=decimal(sum);
    return products;
   }};
  }
