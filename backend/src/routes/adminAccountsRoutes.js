@@ -1,0 +1,10 @@
+const router=require('express').Router(),service=require('../services/adminAccountsService');
+const {requireSuperadmin}=require('../services/commercialAuthorization');
+router.use((req,res,next)=>{try{requireSuperadmin(req.user);res.set('Cache-Control','private, no-store');next();}catch(e){next(e);}});
+const handle=fn=>async(req,res,next)=>{try{res.json(await fn(req));}catch(e){next(e);}};
+router.get('/bootstrap',handle(r=>service.bootstrap(r.user)));
+router.get('/:kind',handle(r=>service.list(r.user,r.params.kind,r.query)));
+router.get('/:kind/:id',handle(r=>service.detail(r.user,r.params.kind,r.params.id)));
+router.patch('/customers/:id',handle(r=>service.updateCustomer(r.user,r.params.id,r.body)));
+router.patch('/businesses/:id',handle(r=>service.updateBusiness(r.user,r.params.id,r.body)));
+module.exports=router;

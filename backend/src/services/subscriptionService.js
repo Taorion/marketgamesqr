@@ -1223,13 +1223,13 @@ async function getBusinessSubscription(businessId) {
   };
 }
 
-async function setBusinessSubscription(businessId, payload) {
+async function setBusinessSubscription(businessId, payload, db = { query }) {
   const planCode = normalizePlanCode(payload.plan_code);
   if (planCode === PLAN_CODES.DESCUBRE) {
     throw badRequest("Descubre es una muestra única por NIT o cédula. No se puede reasignar ni renovar desde cambios de plan. Para una primera muestra usa Inscribir gratis · Descubre.");
   }
   const status = payload.subscription_status || "ACTIVE";
-  const current = await query(
+  const current = await db.query(
     `select id, name, settings
      from businesses
      where id = $1 and is_active = true`,
@@ -1252,7 +1252,7 @@ async function setBusinessSubscription(businessId, payload) {
   )) {
     throw badRequest("Este negocio tiene acceso premium vitalicio. No se puede cambiar su plan, estado ni vencimiento desde este flujo.");
   }
-  const result = await query(
+  const result = await db.query(
     `update businesses
      set plan_code = $2,
          plan_type = case when $2 in ('DESPEGA', 'STARTER', 'GROWTH', 'PRO', 'GLOBAL') then 'premium_monthly' else plan_type end,

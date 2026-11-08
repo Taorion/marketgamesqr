@@ -213,6 +213,7 @@ function renderShell() {
   loginPanel.classList.toggle("hidden", logged);
   workspace.classList.toggle("hidden", !logged);
   if (!logged) {
+    window.QoriAccounts?.clear();
     window.QoriCommercial?.clear();
     document.body.classList.remove("commercial-mode", "legacy-visible");
   }
@@ -464,8 +465,15 @@ async function loadWorkspace() {
       document.body.classList.toggle("legacy-visible");
       if (document.body.classList.contains("legacy-visible")) await loadLegacyWorkspace();
     } });
+    await window.QoriAccounts?.load({api,user:identity.user,
+      showTeam:()=>{const button=document.querySelector('[data-action="tab"][data-id="team"]');button?.click();document.getElementById('commercialWorkspace').scrollIntoView({behavior:'smooth'});},
+      showLegacy:async businessId=>{if(businessId)state.selectedBusinessId=businessId;document.body.classList.add('legacy-visible');await loadLegacyWorkspace();document.getElementById('convenios').scrollIntoView({behavior:'smooth'});},
+      showSellerAdmin:()=>{sessionStorage.setItem('qori-seller-token',session.token);location.assign('/seller/#admin');},
+      download:async(path,filename)=>{const activeSession=session;const response=await fetch(path,{headers:{Authorization:`Bearer ${session.token}`}});if(!response.ok)throw new Error('No se pudo descargar el documento.');const blob=await response.blob();if(session!==activeSession)return;const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+    });
     return;
   }
+  window.QoriAccounts?.clear();
   await loadLegacyWorkspace();
 }
 
@@ -494,7 +502,9 @@ async function loadBusinesses() {
 }
 
 async function loadUsers() {
-  const data = await api("/api/admin/users");
+  const businessId = state.selectedBusinessId;
+  const data = await api("/api/admin/users" + (businessId ? `?business_id=${encodeURIComponent(businessId)}` : ""));
+  if (businessId !== state.selectedBusinessId) return;
   state.users = data.users || [];
   renderUsers();
 }
@@ -825,6 +835,7 @@ async function loadBusinessSummary(businessId) {
   const [data, credits] = await Promise.all([
     api(`/api/admin/businesses/${businessId}/summary`),
     api(`/api/admin/businesses/${businessId}/credits`),
+    loadUsers(),
   ]);
   if(generation!==businessGeneration||businessId!==state.selectedBusinessId)return;
   subscriptionForm.querySelectorAll("input,select,button").forEach(el=>el.disabled=false);

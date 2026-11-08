@@ -547,13 +547,16 @@ async function patchUser(req, res, next) {
 async function listUsers(req, res, next) {
   try {
     requireMarketAdmin(req.user);
+    const businessId = req.query.business_id ? validate(z.string().uuid(), req.query.business_id) : null;
     const result = await query(
       `select u.id, u.business_id, b.name as business_name, u.email, u.full_name, u.role, u.platform_role,
               u.can_redeem_cross_business, u.is_active, u.created_at
        from app_users u
        left join businesses b on b.id = u.business_id
+       where ($1::uuid is null or u.business_id=$1)
        order by u.created_at desc
-       limit 120`
+       limit case when $1::uuid is null then 120 else null end`,
+      [businessId]
     );
     res.json({ users: result.rows });
   } catch (error) {

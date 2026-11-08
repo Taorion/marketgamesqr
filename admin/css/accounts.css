@@ -1,0 +1,14 @@
+.commercial-mode:not(.legacy-visible) .workspace>#accountsWorkspace:not([hidden]){display:block}
+#accountsWorkspace{min-width:0;border-bottom:2px solid var(--border);padding:12px 0 30px;margin-bottom:30px}
+#accountsWorkspace[hidden]{display:none!important}
+.accounts-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}
+.accounts-summary button{display:grid;gap:8px;text-align:left;border:1px solid var(--border);border-radius:16px;padding:20px;background:white;color:var(--text);font:inherit;cursor:pointer;min-width:0}
+.accounts-summary button[aria-current=page]{background:#012268;color:white;border-color:#012268}
+.accounts-summary strong{font-size:2rem}.accounts-summary small{font-size:.8rem}
+.accounts-tools{margin:14px 0}#accountsRows small{display:block;overflow-wrap:anywhere;margin-top:5px}
+#accountsRows td{max-width:330px;overflow-wrap:anywhere}.accounts-dialog{width:min(880px,calc(100vw - 24px));max-height:90dvh;overflow:auto;box-sizing:border-box}
+.accounts-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;background:white;padding:8px 0 14px;z-index:1}
+.accounts-dialog-head h2{overflow-wrap:anywhere}.accounts-dialog-head button{flex-shrink:0}
+.accounts-dialog .toolbar{flex-wrap:wrap}.accounts-details p,.accounts-history p{overflow-wrap:anywhere}
+.accounts-history article{padding:12px 0;border-bottom:1px solid var(--border)}
+@media(max-width:640px){.accounts-summary{grid-template-columns:1fr}.accounts-summary button{grid-template-columns:1fr auto}.accounts-summary small{grid-column:1/-1}.accounts-dialog .grid-form{grid-template-columns:1fr}.accounts-dialog{padding:16px}.accounts-dialog-head h2{font-size:1.2rem}#accountsWorkspace .commercial-heading{align-items:stretch;flex-direction:column}}

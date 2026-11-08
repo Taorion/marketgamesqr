@@ -86,6 +86,8 @@ async function verifyCode(id, code, deviceName, {webConsent=false}={}) {
   return result;
 }
 async function createSession(db,account,deviceName){
+  const current=(await db.query('select is_active from customer_accounts where id=$1 for update',[account.id])).rows[0];
+  if(!current?.is_active)throw forbidden('Tu cuenta Customer está suspendida. Contacta a Qori para revisar el acceso.');
   const token=crypto.randomBytes(32).toString('base64url');
   const session=(await db.query("insert into customer_sessions(customer_id,token_hash,device_name,expires_at) values($1,$2,$3,now()+interval '30 days') returning id,expires_at",[account.id,hash(token),deviceName])).rows[0];
   return {token,session,account};
@@ -100,7 +102,7 @@ async function customerRequired(req, res, next) {
     if (!token) throw unauthorized('Inicia sesión en Qori.');
     if(!bearer&&!['GET','HEAD','OPTIONS'].includes(req.method))assertWebRequest(req);
     const result = await query(`select a.*,s.id as session_id from customer_sessions s join customer_accounts a on a.id=s.customer_id
-      where s.token_hash=$1 and s.expires_at>now()`,[hash(token)]);
+      where s.token_hash=$1 and s.expires_at>now() and a.is_active=true`,[hash(token)]);
     if (!result.rows[0]) throw unauthorized('Tu sesión venció. Vuelve a entrar.');
     const account=result.rows[0],expected=req.get('X-Qori-Account');
     // This is a consistency check, never an identity source. The session owns access.

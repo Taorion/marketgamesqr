@@ -36,7 +36,7 @@ test('Google and Microsoft signed identity flows resist replay, wrong browser/cl
  process.env.CUSTOMER_GOOGLE_CLIENT_ID='google-test';process.env.CUSTOMER_GOOGLE_CLIENT_SECRET='google-secret';process.env.CUSTOMER_MICROSOFT_CLIENT_ID='microsoft-test';process.env.CUSTOMER_MICROSOFT_CLIENT_SECRET='microsoft-secret';
  const {privateKey,publicKey}=crypto.generateKeyPairSync('rsa',{modulusLength:2048}),jwk={...publicKey.export({format:'jwk'}),kid:'test-key',use:'sig',alg:'RS256'},tid='11111111-2222-3333-4444-555555555555';let claims,exchanged;
  global.fetch=async(url,init)=>{if(String(url).includes('/certs')||String(url).includes('/keys'))return new Response(JSON.stringify({keys:[jwk]}));if(String(url).includes('/token')){exchanged=init.body;return new Response(JSON.stringify({id_token:jwt.sign(claims,privateKey,{algorithm:'RS256',keyid:'test-key',expiresIn:300})}));}return originalFetch(url,init);};
- const response=()=>({cookies:{},cookie(k,v){this.cookies[k]=v;},clearCookie(k){delete this.cookies[k];}});
+ const response=()=>({cookies:{},cookie(k,v){this.cookies[k]=v;},clearCookie(k,options){if(options?.path!=='/api/customer')delete this.cookies[k];}});
  function req(cookies={},body={}){return {headers:{cookie:Object.entries(cookies).map(([k,v])=>k+'='+v).join('; ')},body,protocol:'http',get:n=>n==='Origin'?new URL(require('../backend/src/config/env').env.publicAppUrl).origin:n==='X-Qori-Web'?'1':new URL(base).host};}
  async function begin(provider,customerId=null){const res=response(),start=await oauth.start(req({}, {consent:true}),res,provider,customerId),url=new URL(start.url);return {res,url,req:{...req(res.cookies),query:{state:url.searchParams.get('state'),code:'provider-code'}}};}
  async function verifiedAccount(e){const sent=await auth.requestCode(e),result=await auth.verifyCode(sent.challenge_id,await mail(sent.challenge_id),'QA',{webConsent:true});if(!ids.includes(result.account.id))ids.push(result.account.id);return {...result.account,session_id:result.session.id};}
@@ -53,6 +53,9 @@ test('Google and Microsoft signed identity flows resist replay, wrong browser/cl
   await assert.rejects(oauth.link(lr,response()),e=>e.status===401);
   const second=await begin(provider);claims.nonce=second.url.searchParams.get('nonce');assert.equal(await oauth.callback(second.req,second.res,provider),'/customer/#home');assert.ok(second.res.cookies.qori_customer_session);
   const owner=(await query('select customer_id from customer_sessions where token_hash=$1',[crypto.createHash('sha256').update(second.res.cookies.qori_customer_session).digest('hex')])).rows[0];assert.equal(owner.customer_id,old.id);
+  await query('update customer_accounts set is_active=false where id=$1',[old.id]);
+  const blocked=await begin(provider);claims.nonce=blocked.url.searchParams.get('nonce');await assert.rejects(oauth.callback(blocked.req,blocked.res,provider),e=>e.status===403);assert.equal(blocked.res.cookies.qori_customer_session,undefined);
+  await query('update customer_accounts set is_active=true where id=$1',[old.id]);
   assert.equal((await api('/dashboard',null,'qori_customer_session='+second.res.cookies.qori_customer_session)).status,403,provider+' cannot skip document registration');
   const another=await verifiedAccount(email()),conflict=await begin(provider,another.id);claims.nonce=conflict.url.searchParams.get('nonce');await assert.rejects(oauth.callback(conflict.req,conflict.res,provider),e=>e.status===403);
   const nonce=claims.nonce;
