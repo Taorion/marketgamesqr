@@ -56,5 +56,27 @@ test('cash boxes partition canonical money with private ownership and atomic wri
   await assert.rejects(query("insert into customer_cash_allocations(customer_id,book_id,kind,source_id,cash_box_id) values($1,$2,'ENTRY',$3,$4)",[b.id,personal.id,uuid(),cash.id]),e=>e.code==='23503');
   const data=ok(await api('/export'));assert.equal(data.customer_cash_boxes.length,3);assert.equal(data.customer_cash_transfers.length,1);assert.ok(data.customer_cash_events.length>=8);
  });
+ await t.test('wallet designation preserves the chosen cash box and rejects foreign or second wallets',async()=>{
+  assert.equal((await api('/cash-boxes/wallet',{box_id:bank.id},second.id)).http,404);ok(await api('/cash-boxes/wallet',{box_id:cash.id}));ok(await api('/cash-boxes/wallet',{box_id:cash.id}));assert.equal((await api('/cash-boxes/wallet',{box_id:bank.id})).http,400);
+  assert.equal(ok(await api('/cash-boxes')).boxes.find(b=>b.id===cash.id).is_wallet,true);assert.equal(ok(await api('/cash-boxes')).total_minor,120000);
+  await assert.rejects(query('update customer_cash_boxes set is_wallet=true where id=$1',[bank.id]),e=>e.code==='23505');
+ });
+ const prepare=(amount,expected)=>({request_id:uuid(),amount,expected_balance_minor:expected,source_box_id:bank.id,confirmed:true});
+ await t.test('preparing cash transfers only the difference and concurrent retries cannot duplicate it',async()=>{
+  const d=prepare('200',10000),r=await Promise.all([api('/cash-boxes/wallet/prepare',d),api('/cash-boxes/wallet/prepare',d)]);ok(r[0]);ok(r[1]);assert.equal(r[0].transfer_id,r[1].transfer_id);const x=ok(await api('/cash-boxes'));assert.equal(x.total_minor,120000);assert.equal(x.boxes.find(b=>b.id===cash.id).balance_minor,20000);assert.equal(x.boxes.find(b=>b.id===bank.id).balance_minor,100000);
+ });
+ await t.test('wallet spending lowers both balances once and a later outing preserves the remaining cash',async()=>{
+  const d=entry('EXPENSE','30',cash.id);ok(await api('/entries',d));ok(await api('/entries',d));let x=ok(await api('/cash-boxes'));assert.equal(x.total_minor,117000);assert.equal(x.boxes.find(b=>b.id===cash.id).balance_minor,17000);
+  ok(await api('/cash-boxes/wallet/prepare',prepare('250',17000)));x=ok(await api('/cash-boxes'));assert.equal(x.total_minor,117000);assert.equal(x.boxes.find(b=>b.id===cash.id).balance_minor,25000);assert.equal(x.boxes.find(b=>b.id===bank.id).balance_minor,92000);
+ });
+ await t.test('stale counts, insufficient sources and foreign boxes leave all balances untouched',async()=>{
+  assert.equal((await api('/cash-boxes/wallet/prepare',prepare('300',17000))).http,400);assert.equal((await api('/cash-boxes/wallet/prepare',prepare('9999',25000))).http,400);
+  const foreign=ok(await api('/cash-boxes',null,second.id)).boxes[0];assert.equal((await api('/cash-boxes/wallet/prepare',{...prepare('300',25000),source_box_id:foreign.id})).http,404);assert.equal((await api('/cash-boxes/wallet/prepare',{...prepare('300',25000),source_box_id:cash.id})).http,400);
+  assert.equal((await api('/cash-boxes/wallet/prepare',{...prepare('300',25000),confirmed:false})).http,400);assert.equal(ok(await api('/cash-boxes')).total_minor,117000);assert.equal(ok(await api('/cash-boxes')).boxes.find(b=>b.id===cash.id).balance_minor,25000);
+ });
+ await t.test('no-op preparation retries cannot reset a subsequent spend; returning cash keeps pocket money',async()=>{
+  const same=prepare('250',25000);assert.equal(ok(await api('/cash-boxes/wallet/prepare',same)).transfer_id,null);ok(await api('/entries',entry('EXPENSE','10',cash.id)));ok(await api('/cash-boxes/wallet/prepare',same));let x=ok(await api('/cash-boxes'));assert.equal(x.total_minor,116000);assert.equal(x.boxes.find(b=>b.id===cash.id).balance_minor,24000);
+  ok(await api('/cash-boxes/wallet/prepare',prepare('0',24000)));x=ok(await api('/cash-boxes'));assert.equal(x.total_minor,116000);assert.equal(x.boxes.find(b=>b.id===cash.id).balance_minor,0);assert.equal(x.boxes.find(b=>b.id===bank.id).balance_minor,116000);
+ });
 });
 after(async()=>{if(server)await new Promise(r=>server.close(r));await query('delete from customer_accounts where id=any($1::uuid[])',[ids]);await query('delete from businesses where id=any($1::uuid[])',[businessIds]);await pool.end();});

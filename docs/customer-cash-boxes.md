@@ -26,3 +26,15 @@ Las cuatro tablas privadas tienen RLS y carecen de permisos para PUBLIC, anon y 
 25 pruebas aprobadas entre customerCashBoxes.integration, customerCashBoxesUI, customerExpenseItemsUI y customerDailyBudgetUI. Incluyen PostgreSQL local aislado, propiedad, rollback, idempotencia concurrente, saldos, movimientos, traslados, compras canónicas, RLS, exportación y navegación autenticada con cambio de bolsillo mediante DOM.
 
 Las suites antiguas customerFinanceBooksUI y customerFinanceDetailsUI conservan siete fallos también reproducidos contra HEAD anterior: fixtures sin SessionGuard y expectativas desactualizadas del flujo de mercado. No se modificaron estos módulos ajenos para ocultar esas fallas. La navegación visual no pudo comprobarse porque el host de acceso al navegador no estaba disponible; las pruebas DOM no prueban el diseño en un dispositivo físico.
+
+## Billetera de efectivo
+
+El modo `#cash-wallet`, accesible desde Mi dinero y Mis cajas, permite elegir una caja existente como billetera o crear una caja vacía para ese propósito. Cada bolsillo tiene una sola caja designada como billetera; cambiar su nombre conserva esa designación. La sección de tarjetas y beneficios mantiene su acceso original.
+
+«Voy a salir: preparar efectivo» pide el total que se llevará, una caja de origen o devolución y confirmación del traslado físico. Solo se traslada la diferencia respecto al saldo vigente. Ejemplo: quedan 30.000 y se desea llevar 80.000; se trasladan 50.000. Una cantidad menor devuelve el sobrante a la caja elegida. Preparar efectivo nunca crea ingresos ni gastos, ni cambia el total del bolsillo. Requiere saldo inicial conocido y fondos suficientes en la caja de origen.
+
+«Gasté de mi billetera» abre el formulario diario con la caja de billetera seleccionada. El gasto canónico se guarda una sola vez y disminuye tanto el efectivo de la billetera como el total real del bolsillo. Se conserva el total automático por artículos y el manejo de comprobantes. El efectivo restante no se reinicia al preparar otra salida.
+
+La preparación se ejecuta bajo bloqueo del bolsillo, comprueba el saldo esperado y conserva un identificador de solicitud en el historial incluso cuando no hay traslado. Los reintentos no restauran un saldo anterior después de un gasto. La migración `20261108153035_qori_customer_cash_wallet.sql` agrega una marca privada e índices únicos; conserva la autorización y RLS de las tablas existentes. Los asesores del stack local no estuvieron disponibles en 54322; la validación se hizo directamente contra PostgreSQL de pruebas en 55441.
+
+La extensión se prueba con casos de propiedad, billetera única, preparación concurrente, diferencias exactas, saldos insuficientes, devolución de sobrante y gasto posterior a un reintento sin cambios. Las pruebas DOM cubren configuración, elección de caja, gasto, confirmación, reintentos, cambios de bolsillo y navegación autenticada.
