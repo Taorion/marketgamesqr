@@ -99,13 +99,15 @@
   if(ctx.book)d.querySelector('form').insertAdjacentHTML('afterbegin','<p class="book-context-note">Se guardará en '+esc(ctx.book.name)+'.</p>');
   d.querySelector('[name=occurred_at]').max=today(ctx);
   const form=d.querySelector('form'),classify=()=>{const income=form.elements.kind.value==='INCOME';for(const name of ['priority','expense_pattern'])form.elements[name].closest('label').hidden=income;};form.elements.kind.addEventListener('change',classify);classify();
+  const cash=ctx.book?window.QoriCashBoxes?.entryPicker(form,ctx,entry?.kind||initialKind,entry?entry.cash_box_id||null:undefined):null;
+  form.elements.kind.addEventListener('change',()=>cash?.setKind(form.elements.kind.value));
   const addProduct=p=>{const node=document.createElement('div');node.className='finance-line';node.innerHTML=field('p_name','Producto',p.name||'','maxlength="160" required')+field('p_quantity','Cantidad',p.quantity||1,'type="number" min=".001" step=".001" required')+field('p_amount','Total',p.amount||'','type="number" min=".01" step=".01" required')+'<button type="button" aria-label="Quitar producto">×</button>';node.querySelector('button').onclick=()=>node.remove();d.querySelector('#expenseProducts').append(node);};
   const addSplit=s=>{const node=document.createElement('div');node.className='finance-line';node.innerHTML=cat(s.category)+field('s_amount','Total de la categoría',s.amount||'','type="number" min=".01" step=".01" required')+'<button type="button" aria-label="Quitar categoría">×</button>';node.querySelector('button').onclick=()=>node.remove();d.querySelector('#expenseSplits').append(node);};
   (entry?.products||[]).forEach(addProduct);(entry?.splits||[]).forEach(addSplit);
   d.querySelector('#addExpenseProduct').onclick=()=>addProduct({});d.querySelector('#addExpenseSplit').onclick=()=>addSplit({});
   submit(d,ctx,async f=>{
    const form=d.querySelector('form'),products=[...d.querySelectorAll('#expenseProducts>.finance-line')].map(n=>({name:n.querySelector('[name=p_name]').value,quantity:Number(n.querySelector('[name=p_quantity]').value),amount:n.querySelector('[name=p_amount]').value})),splits=[...d.querySelectorAll('#expenseSplits>.finance-line')].map(n=>({category:n.querySelector('select').value,amount:n.querySelector('input').value}));
-   return ctx.request('/entries'+(id?'/'+id:''),{request_id:requestId,kind:f.kind,merchant:f.merchant,amount:f.amount,currency:f.currency,occurred_at:f.occurred_at,category:form.querySelector('[name=category]').value,priority:f.priority,expense_pattern:f.expense_pattern,payment_method:f.payment_method,note:f.note,tags:f.tags.split(',').map(t=>t.trim()).filter(Boolean),products,splits},id?'PUT':'POST');
+   return ctx.request('/entries'+(id?'/'+id:''),{request_id:requestId,kind:f.kind,cash_box_id:cash?.value(),merchant:f.merchant,amount:f.amount,currency:f.currency,occurred_at:f.occurred_at,category:form.querySelector('[name=category]').value,priority:f.priority,expense_pattern:f.expense_pattern,payment_method:f.payment_method,note:f.note,tags:f.tags.split(',').map(t=>t.trim()).filter(Boolean),products,splits},id?'PUT':'POST');
   });
  }
  async function openSale(id,ctx){return openMovement({sale_id:id,source:'QORI'},ctx);}

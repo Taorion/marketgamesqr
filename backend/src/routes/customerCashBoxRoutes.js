@@ -1,0 +1,12 @@
+const router=require('express').Router(),{z}=require('zod'),{validate}=require('../utils/validators'),svc=require('../services/customerCashBoxService');
+const uuid=z.string().uuid(),name=z.string().trim().min(2).max(80),amount=z.string().regex(/^-?\d{1,10}(\.\d{1,2})?$/),positive=z.string().regex(/^\d{1,10}(\.\d{1,2})?$/).refine(v=>Number(v)>0),revision=z.number().int().positive();
+const handle=fn=>async(req,res,next)=>{try{res.set('Cache-Control','private, no-store').json(await fn(req));}catch(e){if(e.code==='23505')e=Object.assign(Error('Ya tienes una caja con ese nombre en este bolsillo.'),{status:400});next(e);}};
+router.get('/',handle(r=>svc.overview(r.customer,validate(z.object({offset:z.coerce.number().int().min(0).max(1000000).default(0)}).strict(),r.query))));
+router.get('/options',handle(async r=>({boxes:(await require('../config/db').query('select id,name from customer_cash_boxes where customer_id=$1 and book_id=$2 order by created_at,id',[r.customer.id,r.customer.finance_book.id])).rows})));
+router.post('/',handle(r=>svc.create(r.customer,validate(z.object({request_id:uuid,name}).strict(),r.body))));
+router.patch('/:id',handle(r=>svc.rename(r.customer,validate(uuid,r.params.id),validate(z.object({name,revision}).strict(),r.body))));
+router.put('/opening',handle(r=>svc.opening(r.customer,validate(z.object({revision,opening_date:z.string().date(),unassigned_amount:amount,boxes:z.array(z.object({id:uuid,amount}).strict()).max(50),confirmed:z.literal(true)}).strict(),r.body))));
+router.put('/assignment',handle(r=>svc.assign(r.customer,validate(z.object({kind:z.enum(['ENTRY','SALE','GIFT']),id:uuid,cash_box_id:uuid.nullable(),revision:z.number().int().min(0)}).strict(),r.body))));
+router.post('/transfers',handle(r=>svc.transfer(r.customer,validate(z.object({request_id:uuid,from_box_id:uuid.nullable(),to_box_id:uuid.nullable(),amount:positive,occurred_on:z.string().date(),note:z.string().trim().max(500).default('')}).strict(),r.body))));
+router.delete('/transfers/:id',handle(r=>svc.voidTransfer(r.customer,validate(uuid,r.params.id))));
+module.exports=router;

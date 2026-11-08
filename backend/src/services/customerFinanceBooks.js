@@ -60,10 +60,10 @@ async function guard(account,route,id){
 async function middleware(req,_res,next){
  try{
   const parts=req.path.split('/').filter(Boolean),route=parts[0];
-  if(!['movements','dashboard','planning','entries','sales','budgets','goals','recurring','purchases','payment-agenda','finance-home','income-months','wealth','debts','groceries','dreams'].includes(route))return next();
+  if(!['cash-boxes','movements','dashboard','planning','entries','sales','budgets','goals','recurring','purchases','payment-agenda','finance-home','income-months','wealth','debts','groceries','dreams'].includes(route))return next();
   if(route==='payment-agenda'&&['notifications','push'].includes(parts[1]))return next();
   req.customer={...req.customer,finance_book:await selected(req.customer,req.get('X-Qori-Book')||req.query.book_id)};
-  if(parts[1]&&parts[1]!=='overview'&&!(route==='purchases'&&parts[1]==='from-publication')&&!['debts','groceries','wealth','dreams'].includes(route))await guard(req.customer,route,parts[1]);
+  if(parts[1]&&parts[1]!=='overview'&&!(route==='purchases'&&parts[1]==='from-publication')&&!['cash-boxes','debts','groceries','wealth','dreams'].includes(route))await guard(req.customer,route,parts[1]);
   next();
  }catch(e){next(e);}
 }
@@ -116,6 +116,8 @@ async function reassign(account,data){
    if(!gift)throw notFound();if(target.currency!=='COP')throw badRequest('La moneda del destino no coincide.');
    await db.query("insert into customer_finance_allocations(customer_id,kind,source_id,book_id) values($1,'GIFT',$2,$3) on conflict(customer_id,kind,source_id) do update set book_id=excluded.book_id",[account.id,data.id,target.id]);
   }
+  await db.query("delete from customer_cash_allocations c using customer_entries e where c.customer_id=$1 and c.kind='ENTRY' and e.customer_id=c.customer_id and e.id=c.source_id and e.book_id<>c.book_id",[account.id]);
+  if(['SALE','GIFT'].includes(data.kind))await db.query('delete from customer_cash_allocations where customer_id=$1 and kind=$2 and source_id=$3 and book_id<>$4',[account.id,data.kind,data.id,target.id]);
   return {ok:true};
  });
 }

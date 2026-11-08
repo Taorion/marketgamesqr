@@ -84,6 +84,7 @@ router.get('/explore/publications/:id/qr',handle(req=>explore.shareQr(parse(uuid
 router.get('/explore/businesses/:slug',handle(req=>explore.businessPage(parse(text(160).min(1),req.params.slug))));
 router.post('/explore/resolve',handle(req=>explore.resolveQr(parse(z.object({url:text(2000).min(1)}),req.body).url)));
 router.use(require('../services/customerFinanceBooks').middleware);
+router.use('/cash-boxes',require('./customerCashBoxRoutes'));
 router.use(require('./customerFinanceBookRoutes'));
 router.get('/notifications',handle(req=>require('../services/customerBenefitNotificationService').list(req.customer)));
 router.post('/notifications/:id/read',handle(req=>require('../services/customerBenefitNotificationService').mark(req.customer,parse(uuid,req.params.id))));
@@ -164,11 +165,12 @@ router.post('/recurring/:id/record',handle(req=>paymentAgenda.legacyRecord(req.c
 router.get('/relationships',handle(req=>svc.relationships(req.customer.id)));
 router.post('/relationships/:id/decision',handle(req=>svc.decideRelationship(req.customer.id,parse(uuid,req.params.id),parse(z.object({action:z.enum(['ACCEPT','REJECT','REVOKE']),include_history:z.boolean().default(false),capture_purchases:z.boolean().optional(),book_id:uuid.optional(),document_id:text(80).optional(),document_confirmation:text(80).optional()}),req.body))));
 const entry=z.object({request_id:uuid,kind:z.enum(['EXPENSE','INCOME']).default('EXPENSE'),amount:money,currency,occurred_at:z.union([z.string().datetime({offset:true}),z.string().date()]),merchant:text(160).min(1),
+  cash_box_id:uuid.nullable().optional(),
   expense_pattern:z.enum(['UNSET','RECURRING','EVENTUAL']).optional(),category:category.default('otros'),priority:z.enum(['UNSET','ESSENTIAL','FLEXIBLE']).default('UNSET'),note:text(2000).default(''),payment_method:text(60).default(''),
   products:z.array(z.object({name:text(160).min(1),quantity:z.number().positive().max(100000),amount:money})).max(100).default([]),
   splits:z.array(z.object({category,amount:money})).max(20).default([]),tags:z.array(text(30).min(1)).max(10).default([])});
-router.post('/entries',handle(req=>svc.saveEntry(req.customer.id,{...parse(entry,req.body),book_id:req.customer.finance_book.id})));
-router.put('/entries/:id',handle(req=>svc.saveEntry(req.customer.id,{...parse(entry,req.body),book_id:req.customer.finance_book.id},parse(uuid,req.params.id))));
+router.post('/entries',handle(req=>require('../services/customerCashBoxService').saveEntry(req.customer,parse(entry,req.body))));
+router.put('/entries/:id',handle(req=>require('../services/customerCashBoxService').saveEntry(req.customer,parse(entry,req.body),parse(uuid,req.params.id))));
 router.delete('/entries/:id',handle(async req=>{
   await svc.assertNotPaymentEntry(req.customer.id,parse(uuid,req.params.id));
   const r=await query('update customer_entries set deleted_at=now(),updated_at=now() where id=$1 and customer_id=$2 and linked_sale_id is null returning id',[parse(uuid,req.params.id),req.customer.id]);
@@ -180,7 +182,8 @@ router.get('/entries/:id',handle(async req=>{
   const receipts=(await query('select id,filename,mime_type from customer_receipts where entry_id=$1 and customer_id=$2',[row.id,req.customer.id])).rows;
   const obligation=(await query('select id from customer_payment_items where entry_id=$1 and customer_id=$2',[row.id,req.customer.id])).rows[0];
   const debtPayment=(await query('select debt_id from customer_debt_payments where entry_id=$1 and customer_id=$2 and voided_at is null',[row.id,req.customer.id])).rows[0];
-  return {entry:{...row,payment_item_id:obligation?.id,debt_id:debtPayment?.debt_id},receipts};
+  const allocation=(await query("select cash_box_id from customer_cash_allocations where customer_id=$1 and book_id=$2 and kind='ENTRY' and source_id=$3",[req.customer.id,row.book_id,row.id])).rows[0];
+  return {entry:{...row,cash_box_id:allocation?.cash_box_id||null,payment_item_id:obligation?.id,debt_id:debtPayment?.debt_id},receipts};
 }));
 router.get('/sales/:id',handle(async req=>{
   const sale=await svc.ownSale(req.customer.id,parse(uuid,req.params.id));
