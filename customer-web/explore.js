@@ -110,17 +110,27 @@
    page.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{kind=b.dataset.kind;page.querySelectorAll('[data-kind]').forEach(x=>x.classList.toggle('active',x===b));fill();});
    if(savedOnly){page.querySelector('#exploreSearch').hidden=true;page.querySelector('.discover-chips').hidden=true;}
    page.querySelector('#moreOffers').onclick=()=>{if(!loading)fill(true);};await fill();
-  }catch(e){fail(e);if(page.isConnected)page.insertAdjacentHTML('beforeend','<a class="secondary" href="#explore">Volver a Explorar</a>');}
+  }catch(e){if(page.isConnected){page.innerHTML='<section class="panel"><h2>No pudimos abrir este beneficio</h2><p role="alert">'+esc(e.message)+'</p><button class="primary" id="retryExplore">Volver a intentar</button><a class="secondary" href="#explore">Volver a Explorar</a></section>';page.querySelector('#retryExplore').onclick=()=>render(page,ctx,route);}}
  }
  function scanner(page,ctx){
   page.innerHTML='<div class="page-heading"><div><h1>Escanea. Descubre. Disfruta.</h1><p>Apunta al QR público de una activación o programa Qori.</p></div></div><section class="scanner-panel panel"><div class="scanner-view"><video id="qoriCamera" playsinline muted></video><div class="scanner-frame" aria-hidden="true"></div></div><p id="scanStatus" role="status">Activa tu cámara para escanear.</p><button class="primary" id="startCamera">Abrir cámara</button><button class="secondary" id="stopCamera" hidden>Detener cámara</button><hr><form id="scanLink" class="stack">'+field('url','También puedes pegar el enlace del QR','required maxlength="2000" placeholder="https://gosqori.com/…"')+'<button class="secondary">Abrir beneficio</button></form><label class="field">O selecciona una imagen del QR<input id="qrFile" type="file" accept="image/*"></label><p class="small muted">Los tickets personales para canjear están en Mis tarjetas.</p></section>';
-  let stream,raf,running=false,decoding=false,last=0;const video=page.querySelector('video'),status=page.querySelector('#scanStatus'),canvas=document.createElement('canvas'),context=canvas.getContext('2d',{willReadFrequently:true});
+  let stream,raf,running=false,decoding=false,last=0,resolving=false,disposed=false,context;const video=page.querySelector('video'),status=page.querySelector('#scanStatus'),canvas=document.createElement('canvas'),form=page.querySelector('#scanLink'),submit=form.querySelector('button');
+  form.append(status);
   function stop(){running=false;cancelAnimationFrame(raf);stream?.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;page.querySelector('#startCamera').hidden=false;page.querySelector('#stopCamera').hidden=true;}
-  cleanup=()=>{stop();window.removeEventListener('pagehide',stop);};window.addEventListener('pagehide',stop);
-  async function resolve(value){try{const r=await ctx.request('/explore/resolve',{url:value});stop();location.hash=r.hash;}catch(e){status.textContent=e.message;}}
+  cleanup=()=>{disposed=true;stop();window.removeEventListener('pagehide',stop);};window.addEventListener('pagehide',stop);
+  async function resolve(value){
+   if(resolving||disposed)return;resolving=true;submit.disabled=true;submit.textContent='Abriendo beneficio…';status.textContent='Estamos comprobando el enlace…';form.setAttribute('aria-busy','true');
+   try{
+    const r=await ctx.request('/explore/resolve',{url:String(value||'').trim()});if(disposed||!page.isConnected)return;
+    if(typeof r.url==='string'&&/^\/sellos\/inscripcion\.html\?programa=[a-f0-9-]{36}$/.test(r.url)){stop();location.assign(r.url);return;}
+    if(typeof r.hash==='string'&&/^#publication\/[a-f0-9-]{36}$/.test(r.hash)){stop();location.hash=r.hash;return;}
+    throw Error('No pudimos reconocer el destino del beneficio. Inténtalo de nuevo.');
+   }catch(e){if(!disposed&&page.isConnected)status.textContent=e.message;}
+   finally{resolving=false;if(!disposed&&page.isConnected){submit.disabled=false;submit.textContent='Abrir beneficio';form.removeAttribute('aria-busy');}}
+  }
   async function decoder(){if(window.jsQR)return;let script=document.querySelector('script[data-qr-decoder]');if(!script){script=document.createElement('script');script.src='/vendor/jsqr/jsQR.js';script.dataset.qrDecoder='1';document.head.append(script);await new Promise((r,j)=>{script.onload=r;script.onerror=()=>{script.remove();j(Error('No pudimos cargar el lector.'));};});}if(!window.jsQR)throw Error('El lector está cargando.');}
-  function read(source,w,h){const ratio=Math.min(1,900/Math.max(w,h));canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);context.drawImage(source,0,0,canvas.width,canvas.height);const pixels=context.getImageData(0,0,canvas.width,canvas.height);return window.jsQR(pixels.data,pixels.width,pixels.height)?.data;}
-  function tick(now){if(!running)return;if(now-last>450&&video.readyState>=2&&!decoding){last=now;const value=read(video,video.videoWidth,video.videoHeight);if(value){decoding=true;resolve(value).finally(()=>setTimeout(()=>{decoding=false;},2500));}}raf=requestAnimationFrame(tick);}
+  function read(source,w,h){context??=canvas.getContext('2d',{willReadFrequently:true});if(!context)throw Error('No pudimos leer la imagen. Pega el enlace del QR.');const ratio=Math.min(1,900/Math.max(w,h));canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);context.drawImage(source,0,0,canvas.width,canvas.height);const pixels=context.getImageData(0,0,canvas.width,canvas.height);return window.jsQR(pixels.data,pixels.width,pixels.height)?.data;}
+  function tick(now){if(!running)return;try{if(now-last>450&&video.readyState>=2&&!decoding){last=now;const value=read(video,video.videoWidth,video.videoHeight);if(value){decoding=true;resolve(value).finally(()=>setTimeout(()=>{decoding=false;},2500));}}raf=requestAnimationFrame(tick);}catch(e){stop();status.textContent=e.message;}}
   page.querySelector('#startCamera').onclick=async e=>{e.target.disabled=true;try{await decoder();stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});if(!page.isConnected){stop();return;}video.srcObject=stream;await video.play();running=true;e.target.hidden=true;page.querySelector('#stopCamera').hidden=false;status.textContent='Centra el QR dentro del recuadro.';raf=requestAnimationFrame(tick);}catch{status.textContent='No pudimos abrir la cámara. Revisa sus permisos o pega el enlace del QR.';stop();}finally{e.target.disabled=false;}};
   page.querySelector('#stopCamera').onclick=()=>{stop();status.textContent='Cámara detenida.';};
   page.querySelector('#scanLink').onsubmit=e=>{e.preventDefault();e.stopPropagation();resolve(new FormData(e.target).get('url'));};

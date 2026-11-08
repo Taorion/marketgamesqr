@@ -206,13 +206,19 @@ async function earned(account){
  return {participations:rows.map(({download_token,...r})=>({...r,download_url:r.asset_title&&download_token?new URL('/api/public/activations/download/'+encodeURIComponent(download_token),env.publicAppUrl).toString():null}))};
 }
 async function resolveQr(input){
- let url;try{url=new URL(input,env.publicAppUrl);}catch{throw badRequest('No reconocemos este enlace.');}
+ let url;try{url=new URL(input.trim(),env.publicAppUrl);}catch{throw badRequest('No reconocemos este enlace.');}
  const allowed=new Set([new URL(env.publicAppUrl).origin,'https://gosqori.com','https://www.gosqori.com']);
- if(!allowed.has(url.origin))throw badRequest('Escanea un QR público de Qori.');
+ if(!allowed.has(url.origin)||url.username||url.password)throw badRequest('Escanea un QR público de Qori.');
+ // An enrollment QR is a public program link, independent of catalog publication.
+ if(url.pathname==='/sellos/inscripcion.html'){
+  const program=(url.searchParams.get('programa')||'').trim().toLowerCase();
+  if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(program))throw badRequest('El enlace de inscripción está incompleto. Pide al negocio que lo comparta nuevamente.');
+  await require('./stampCardService').publicProgram(program);
+  return {url:'/sellos/inscripcion.html?programa='+program};
+ }
  const match=url.hash.match(/^#publication\/([a-f0-9-]{36})$/i);if(match){await detail(match[1]);return {hash:'#publication/'+match[1]};}
  const slug=url.pathname.match(/^\/activacion\/([^/]+)\/?$/)?.[1];
- const program=url.pathname==='/sellos/inscripcion.html'?url.searchParams.get('programa'):null;
- const row=(await query(`select p.id from customer_publications p left join interactive_activations a on p.kind='ACTIVITY' and a.id=p.resource_id where (a.public_slug=$1 or (p.kind='STAMP' and p.resource_id::text=$2)) and p.status='PUBLISHED' limit 1`,[slug||'',program||''])).rows[0];
+ const row=(await query(`select p.id from customer_publications p join interactive_activations a on p.kind='ACTIVITY' and a.id=p.resource_id where a.public_slug=$1 and p.status='PUBLISHED' limit 1`,[slug||''])).rows[0];
  if(!row)throw badRequest('Este QR no corresponde a una publicación disponible. Tus tickets personales se consultan en Mis tarjetas.');
  await detail(row.id);return {hash:'#publication/'+row.id};
 }

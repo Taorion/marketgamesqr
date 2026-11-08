@@ -3,7 +3,7 @@ process.env.DATABASE_URL='postgresql://postgres@127.0.0.1:55441/qori_customer_qa
 const {query,pool}=require('../backend/src/config/db'),{app}=require('../backend/src/app'),jwt=require('jsonwebtoken'),stamps=require('../backend/src/services/stampCardService'),explore=require('../backend/src/services/customerExploreService');
 let server,base,buyer,other,merchant,foreign,program,publication,activity,activityPub;
 async function api(url,token=buyer?.token,body,method=body?'POST':'GET'){const r=await fetch(base+url,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,...await r.json()};}
-async function login(){const email=crypto.randomUUID()+'@example.test',c=await api('/api/customer/auth/code',null,{email}),mail=JSON.parse(await fs.readFile(path.join(__dirname,'../.local-customer/mailbox',c.challenge_id+'.json'),'utf8')),r=await api('/api/customer/auth/verify',null,{challenge_id:c.challenge_id,code:mail.code});await query("update customer_accounts set full_name='Explorador Qori' where id=$1",[r.account.id]);r.account.full_name='Explorador Qori';return r;}
+async function login(document=crypto.randomUUID()){const email=crypto.randomUUID()+'@example.test',c=await api('/api/customer/auth/code',null,{email}),mail=JSON.parse(await fs.readFile(path.join(__dirname,'../.local-customer/mailbox',c.challenge_id+'.json'),'utf8')),r=await api('/api/customer/auth/verify',null,{challenge_id:c.challenge_id,code:mail.code});await query("update customer_accounts set full_name='Explorador Qori',declared_document_key=$2 where id=$1",[r.account.id,document.toLowerCase().replace(/[^a-z0-9]/g,'')]);r.account.full_name='Explorador Qori';return r;}
 async function business(){
  const b=(await query("insert into businesses(name,slug,plan_code,subscription_status,settings) values('Negocio Discovery',$1,'PRO','ACTIVE',$2::jsonb) returning *",[crypto.randomUUID(),JSON.stringify({subscription:{lifetime_access:true,monthly_payment_required:false}})])).rows[0];
  const u=(await query("insert into app_users(business_id,email,password_hash,full_name,role) values($1,$2,'qa','Operador','BUSINESS_OWNER') returning *",[b.id,crypto.randomUUID()+'@example.test'])).rows[0];
@@ -13,7 +13,7 @@ async function business(){
 const publish=(kind,resource_id,title='Beneficio de prueba',extra={})=>api('/api/business/customer/publications',merchant.token,{kind,resource_id,title,description:'Beneficio publicado para QA.',...extra});
 test('authenticated ecosystem connects canonical programs and earned rewards to a verified buyer',async t=>{
  server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));base='http://127.0.0.1:'+server.address().port;
- buyer=await login();other=await login();merchant=await business();foreign=await business();
+ buyer=await login('DISCOVERY-001');other=await login('OTHER-01');merchant=await business();foreign=await business();
  program=await stamps.saveProgram(merchant.b.id,merchant.u.id,{name:'Café cada tres visitas',stamps_required:3,benefit_type:'FREE_GIFT',benefit_value:{label:'Un café para ti'},minimum_purchase:1,one_per_day:false,allow_manual:true,card_valid_days:365,ticket_valid_days:30,reward_cost:1000,ticket_cost:1000,terms:'Completa tres visitas pagadas.',status:'ACTIVE'});
  await t.test('active Empresa businesses are searchable and followable before publishing a Customer profile',async()=>{
   const name='Rey del Sabór '+crypto.randomUUID();
@@ -67,7 +67,7 @@ test('authenticated ecosystem connects canonical programs and earned rewards to 
   assert.equal((await api('/api/customer/discovery/following',other.token)).businesses.length,0);
   assert.equal((await api('/api/customer/explore/resolve',buyer.token,{url:publication.url})).hash,'#publication/'+publication.id);
   assert.equal((await api('/api/customer/explore/resolve',buyer.token,{url:'https://evil.example/customer/#publication/'+publication.id})).status,400);
-  assert.equal((await api('/api/customer/explore/resolve',buyer.token,{url:'http://127.0.0.1:3051/sellos/inscripcion.html?programa='+program.id})).hash,'#publication/'+publication.id);
+  assert.equal((await api('/api/customer/explore/resolve',buyer.token,{url:'http://127.0.0.1:3051/sellos/inscripcion.html?programa='+program.id})).url,'/sellos/inscripcion.html?programa='+program.id);
   assert.match((await api('/api/customer/explore/publications/'+publication.id+'/qr')).qr_image,/^data:image\/png/);
   await api('/api/customer/explore/publications/'+publication.id+'/events',buyer.token,{type:'SHARE'});await api('/api/customer/explore/publications/'+publication.id+'/events',buyer.token,{type:'SHARE'});
   const metrics=(await api('/api/business/customer/publications',merchant.token)).publications[0].metrics;assert.equal(metrics.SHARE,1);
