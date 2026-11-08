@@ -101,16 +101,21 @@ async function customerRequired(req, res, next) {
     const token=bearer || (/^[A-Za-z0-9_-]{43}$/.test(cookie||'')?cookie:null);
     if (!token) throw unauthorized('Inicia sesión en Qori.');
     if(!bearer&&!['GET','HEAD','OPTIONS'].includes(req.method))assertWebRequest(req);
-    const result = await query(`select a.*,s.id as session_id from customer_sessions s join customer_accounts a on a.id=s.customer_id
+    const result = await query(`select a.*,s.id as session_id,s.expires_at as session_expires_at from customer_sessions s join customer_accounts a on a.id=s.customer_id
       where s.token_hash=$1 and s.expires_at>now() and a.is_active=true`,[hash(token)]);
     if (!result.rows[0]) throw unauthorized('Tu sesión venció. Vuelve a entrar.');
-    const account=result.rows[0],expected=req.get('X-Qori-Account');
+    const {session_expires_at,...account}=result.rows[0],expected=req.get('X-Qori-Account');
     // This is a consistency check, never an identity source. The session owns access.
     if(expected&&expected!==account.id){
       res.set('X-Qori-Session-Changed','1');
       throw Object.assign(new Error('La sesión cambió. Abre de nuevo tu cuenta para continuar.'),{status:409});
     }
     req.customer = account;res.set('X-Qori-Customer',account.id);
+    // Existing web sessions used Path=/api/customer. Refresh their cookie scope
+    // before returning to /sellos or another protected benefit page. Keep expiry.
+    if(!bearer&&req.method==='GET'&&req.baseUrl==='/api/customer'&&req.path==='/me'){
+      setWebSession(res,{token,session:{expires_at:session_expires_at}});
+    }
     // Email/password/OAuth prove access to the session, not completed registration.
     // Pending registrations can manage their own identity/session, but no portal data.
     if(!account.full_name?.trim()||!account.declared_document_key){
