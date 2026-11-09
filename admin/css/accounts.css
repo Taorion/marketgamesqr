@@ -11,4 +11,10 @@
 .accounts-dialog-head h2{overflow-wrap:anywhere}.accounts-dialog-head button{flex-shrink:0}
 .accounts-dialog .toolbar{flex-wrap:wrap}.accounts-details p,.accounts-history p{overflow-wrap:anywhere}
 .accounts-history article{padding:12px 0;border-bottom:1px solid var(--border)}
+.accounts-balance-summary{min-width:180px}.accounts-balance-summary strong{white-space:nowrap}
+.accounts-balances{min-width:0}.accounts-balance-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px;margin:16px 0}
+.accounts-balance-grid article{min-width:0;padding:16px;border:1px solid var(--border);border-radius:14px;background:#f8fafc}
+.accounts-balance-grid h4{margin:0 0 12px;font-size:1rem}.accounts-balance-total{display:block;font-size:1.55rem;overflow-wrap:anywhere;color:#012268}
+.accounts-balance-grid dl{margin:14px 0}.accounts-balance-grid dl>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;padding:8px 0;border-bottom:1px solid var(--border)}
+.accounts-balance-grid dt{flex:1 1 130px}.accounts-balance-grid dd{margin:0;font-weight:700}.accounts-balance-grid p{font-size:.85rem;line-height:1.5}
 @media(max-width:640px){.accounts-summary{grid-template-columns:1fr}.accounts-summary button{grid-template-columns:1fr auto}.accounts-summary small{grid-column:1/-1}.accounts-dialog .grid-form{grid-template-columns:1fr}.accounts-dialog{padding:16px}.accounts-dialog-head h2{font-size:1.2rem}#accountsWorkspace .commercial-heading{align-items:stretch;flex-direction:column}}

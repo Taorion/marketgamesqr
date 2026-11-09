@@ -1,13 +1,15 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),{JSDOM}=require('jsdom');
 const tick=()=>new Promise(r=>setImmediate(r));async function until(f){for(let n=0;n<80;n++){if(f())return;await tick();}throw Error('UI did not settle');}
+const balances={tickets:{available:63,included:13,additional:50,credited_total:50,used_total:7},giftcards:{available:65,mode:'PREPAID',feature_enabled:true,credit_balance:65,credits_purchased:50,credits_used:5,issued_month:5,monthly_remaining:null,total_remaining:null,tickets_per_card:0,pending_cop:26000,issued_count:5,issued_cop:105000,redeemed_cop:9000,expired_cop:30000,cancelled_cop:40000},access_allowed:true,as_of:'2026-11-09T12:00:00Z'};
 function setup(role='QORI_SUPERADMIN'){
  const w=new JSDOM('<section id="accountsWorkspace" hidden></section>',{url:'https://example.test/admin/',runScripts:'outside-only'}).window,calls=[];
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
  const ctx={user:{role},showTeam(){},showLegacy(){},showSellerAdmin(){},download:async()=>{},api:async(path,opts={})=>{const body=opts.body&&JSON.parse(opts.body);calls.push({path,body});
   if(path.endsWith('bootstrap'))return {counts:Object.fromEntries(['sellers','businesses','customers'].map(k=>[k,{total:1,active:1}])),versions:{sellers:[{code:'SELLER',name:'Seller'}],businesses:[{code:'PENSE_EN_TI',name:'Pensé en ti'}],customers:[{code:'CUSTOMER_FREE',name:'Customer gratis'}]}};
   if(body)return {ok:true};
+  if(path.includes('/businesses/c1'))return {record:{id:'c1',name:'Empresa QA',plan_code:'PENSE_EN_TI',subscription_status:'ACTIVE',is_active:true,plan:{name:'Pensé en ti',monthly_price_cop:0},users:[],balances},history:[]};
   if(path.includes('/customers/c1'))return {record:{id:'c1',full_name:'Ana <script>',email:'qa@example.test',is_active:true,admin_revision:2,sessions:1},history:[]};
-  return {total:1,has_more:false,rows:[{id:'c1',name:'Ana <img src=x>',email:'qa@example.test',version:path.includes('/customers')?'CUSTOMER_FREE':'PENSE_EN_TI',is_active:true,created_at:'2026-11-07'}]};
+  return {total:1,has_more:false,rows:[{id:'c1',name:'Ana <img src=x>',email:'qa@example.test',version:path.includes('/customers')?'CUSTOMER_FREE':'PENSE_EN_TI',is_active:true,created_at:'2026-11-07',balances}]};
  }};w.eval(fs.readFileSync('admin/js/accounts.js','utf8'));return {w,calls,ctx};
 }
 test('Customer management is reachable, escapes names and sends explicit revision/reason',async()=>{
@@ -15,4 +17,12 @@ test('Customer management is reachable, escapes names and sends explicit revisio
 });
 test('Seller role never loads admin accounts and logout clears sensitive detail',async()=>{
  const {w,calls,ctx}=setup('QORI_SELLER');try{await w.QoriAccounts.load(ctx);assert.equal(calls.length,0);assert.equal(w.document.querySelector('section').hidden,true);ctx.user.role='QORI_SUPERADMIN';await w.QoriAccounts.load(ctx);w.QoriAccounts.clear();assert.equal(w.document.querySelector('section').innerHTML,'');}finally{w.close();}
+});
+test('business balances are visible in list and detail; Customer has no business balance column',async()=>{
+ const {w,calls,ctx}=setup();try{
+  await w.QoriAccounts.load(ctx);const list=w.document.querySelector('#accountsRows');assert.match(list.textContent,/63 tickets/);assert.match(list.textContent,/65 giftcards para emitir/);assert.match(list.textContent,/26.000/);
+  list.querySelector('[data-detail]').click();await until(()=>w.document.querySelector('dialog'));
+  const detail=w.document.querySelector('[aria-label="Saldos del negocio"]');assert.ok(detail);assert.match(detail.textContent,/Incluidos restantes13/);assert.match(detail.textContent,/Adicionales restantes50/);assert.match(detail.textContent,/Saldo vencido/);assert.match(detail.textContent,/Saldo cancelado/);assert.match(detail.textContent,/Sin límite/);assert.equal(calls.filter(c=>c.body).length,0);
+  w.document.querySelector('[data-close]').click();w.document.querySelector('[data-kind=customers]').click();await until(()=>w.document.querySelector('[data-detail]'));assert.doesNotMatch(w.document.querySelector('#accountsRows thead').textContent,/Tickets y giftcards/);
+ }finally{w.close();}
 });

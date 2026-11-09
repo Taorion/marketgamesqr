@@ -1438,6 +1438,8 @@ async function buildRewardPassPdf(pass, kind = "card") {
 }
 
 module.exports = {
+  REWARD_PASS_EFFECTIVE_STATUS_SQL,
+  getRewardPassTicketCostFromSettings,
   DEFAULT_TERMS,
   DEFAULT_TICKET_COST,
   buildRewardPassPdf,

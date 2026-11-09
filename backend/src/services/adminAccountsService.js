@@ -4,6 +4,7 @@ const {validate}=require('../utils/validators');
 const {badRequest,notFound}=require('../utils/http');
 const {requireSuperadmin}=require('./commercialAuthorization');
 const subscriptions=require('./subscriptionService');
+const {businessBalances}=require('./adminBusinessBalances');
 const uuid=z.string().uuid(),reason=z.string().trim().min(10).max(1000);
 const customerFields='id,email,full_name,declared_document_key,is_active,admin_revision,created_at,verified_at';
 const definitions={
@@ -18,6 +19,7 @@ async function list(user,kind,params={}){
  requireSuperadmin(user);const d=definition(kind),p=validate(z.object({search:z.string().trim().max(160).default(''),state:z.enum(['','ACTIVE','SUSPENDED']).default(''),version:z.string().max(40).default(''),offset:z.coerce.number().int().min(0).max(1000000).default(0)}).strict(),params);
  const args=[p.search,p.state,p.version],where=`${d.where} and ($1='' or ${d.search} ilike '%'||$1||'%') and ($2='' or ${d.active}=($2='ACTIVE')) and ($3='' or ${d.version}=$3)`;
  const [rows,count]=await Promise.all([query(`select ${d.fields} from ${d.from} where ${where} order by ${d.date} desc,${d.id} limit 50 offset $4`,[...args,p.offset]),query(`select count(*)::int total from ${d.from} where ${where}`,args)]);
+ if(kind==='businesses'){const balances=await businessBalances(rows.rows.map(b=>b.id));rows.rows.forEach(b=>{b.balances=balances.get(b.id);});}
  return {rows:rows.rows,total:count.rows[0].total,has_more:p.offset+rows.rowCount<count.rows[0].total};
 }
 async function detail(user,kind,id){
@@ -27,6 +29,7 @@ async function detail(user,kind,id){
   const row=(await query('select * from businesses where id=$1',[id])).rows[0];if(row){record={id:row.id,name:row.name,slug:row.slug,is_active:row.is_active,plan_code:row.plan_code,subscription_status:row.subscription_status,subscription_current_period_ends_at:row.subscription_current_period_ends_at,updated_at:row.updated_at,plan:subscriptions.planFromBusiness(row)};
    record.users=(await query('select id,full_name,email,role,is_active from app_users where business_id=$1 order by created_at,id',[id])).rows;
    record.credits=(await query('select qr_balance,included_balance,qr_used_total from business_qr_credit_accounts where business_id=$1',[id])).rows[0]||null;
+   record.balances=(await businessBalances([id])).get(id);
   }
  }
  if(kind==='sellers'){
