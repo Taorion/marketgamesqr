@@ -44,4 +44,3 @@ async function close(user,id,payload){
  });
 }
 module.exports={preview,close};
-

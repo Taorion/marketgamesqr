@@ -31,4 +31,3 @@ test('Admin validates payment and subscription in the close dialog; Seller has n
 test('Admin cannot submit closure when the live review has no active paid subscription',async()=>{
  const {w,calls,ctx}=setup('QORI_SUPERADMIN',false);try{await w.QoriCommercial.load(ctx);w.document.querySelector('[data-action=tab][data-id=prospects]').click();await until(()=>w.document.querySelector('[data-action=close-prospect]'));w.document.querySelector('[data-action=close-prospect]').click();await until(()=>w.document.querySelector('dialog'));assert.match(w.document.querySelector('dialog').textContent,/No se puede cerrar/);assert.equal(w.document.querySelector('dialog [type=submit]'),null);assert.equal(calls.some(c=>c.body),false);}finally{w.close();}
 });
-

@@ -9,4 +9,3 @@ Validar cierre exige dos confirmaciones administrativas y motivo: pago revisado 
 La acción guarda closed_at, closed_by y closed_payment_order_id en el prospecto y un evento PROSPECT_CLOSURE_VALIDATED con el soporte del pago y la suscripción. Es idempotente y no crea cobros, recargas ni comisiones. Las inscripciones existentes no se cierran automáticamente. El cierre es un hecho histórico validado en esa fecha; la vigencia posterior de la suscripción se sigue mostrando por separado.
 
 Migración: 20261109203424_qori_admin_verified_sales_closure.sql. Mantiene RLS y ausencia de permisos públicos sobre qori_sales_prospects. Pruebas locales: 29 aprobadas entre commercialClosure.integration, commercialClosureUI, qoriSellerUI, adminAccountsBoot.integration y qoriSellerLaunch.integration. La prueba DOM no sustituye revisión visual en navegador.
-
