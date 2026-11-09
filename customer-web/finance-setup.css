@@ -1,0 +1,9 @@
+.finance-setup{min-height:100dvh;padding:clamp(16px,4vw,48px);background:#f3f6fc;display:grid;place-items:center;box-sizing:border-box}
+.finance-setup-card{width:100%;max-width:620px;min-width:0;padding:clamp(20px,4vw,40px);border:1px solid #dbe3f0;border-radius:24px;background:#fff;box-shadow:0 16px 48px #0122680c;box-sizing:border-box}
+.finance-setup h1{font-size:clamp(26px,5vw,36px);line-height:1.12;color:#012268}.finance-setup h2{font-size:23px;color:#012268}
+.finance-setup p{line-height:1.6}.finance-setup form{display:grid;gap:14px}.finance-setup [hidden]{display:none!important}
+.finance-setup input[type=number]{width:100%;min-width:0;box-sizing:border-box;font-size:22px;padding:16px;border:1px solid #9aaac5;border-radius:12px}
+.finance-setup input:focus-visible,.finance-setup button:focus-visible{outline:3px solid #4a77d0;outline-offset:3px}
+.finance-setup .check{display:flex;align-items:flex-start;gap:10px}.finance-setup .check input{flex:0 0 auto;margin-top:5px}
+.finance-setup-steps{display:flex;gap:10px;padding:0;list-style:none;margin:24px 0}.finance-setup-steps li{flex:1;padding:10px;border-radius:10px;background:#eef2f8;font-size:14px}.finance-setup-steps [aria-current]{background:#012268;color:#fff}
+.finance-setup-amount{font-size:clamp(28px,6vw,42px);overflow-wrap:anywhere;color:#012268}.finance-setup button{white-space:normal;min-height:44px}.finance-setup .brand{max-width:100%}

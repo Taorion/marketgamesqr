@@ -25,6 +25,9 @@ test('verified email stays pending until mandatory document is confirmed; only c
  const registered=await api('/me',{...profile,document_id:'123456789',document_confirmation:'123456789'},cookie,'PATCH');assert.equal(registered.status,200);
  assert.equal(registered.data.account.declared_document_key,'123456789');assert.ok(registered.data.account.document_locked_at);
  assert.equal(registered.data.account.benefit_recovery_completed_at,null,'Registration does not authorize benefit recovery');
+ assert.equal((await api('/explore',null,cookie)).status,403);
+ const setup=await api('/finance-setup',null,cookie);assert.equal(setup.status,200);
+ assert.equal((await api('/finance-setup',{request_id:crypto.randomUUID(),balance:'0',currency:setup.data.currency,expected_date:setup.data.today,confirmed:true},cookie)).status,200);
  assert.equal((await api('/explore?search=absent-registration-qa',null,cookie)).status,200);
  assert.equal((await api('/finance-books',null,cookie)).status,200);
  assert.equal((await api('/me',{...profile,full_name:'Cambiar nombre'},cookie,'PATCH')).status,200);

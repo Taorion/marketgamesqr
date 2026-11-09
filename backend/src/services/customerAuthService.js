@@ -126,6 +126,15 @@ async function customerRequired(req, res, next) {
         (method==='DELETE'&&/^\/sessions\/[0-9a-f-]{36}$/.test(path));
       if(!allowed)throw forbidden('Completa tu registro con tu nombre y tu cédula confirmada para entrar a Qori Customer.',{code:'REGISTRATION_INCOMPLETE'});
     }
+    if(account.finance_setup_state==='PENDING'){
+      const path=req.path.replace(/\/+$/,'').toLowerCase(),method=req.method;
+      const allowed=(path==='/me'&&['GET','PATCH','DELETE'].includes(method))||
+        (path==='/finance-setup'&&['GET','POST'].includes(method))||
+        (method==='GET'&&['/sessions','/export','/auth/security'].includes(path))||
+        (method==='POST'&&(path==='/logout'||path==='/benefit-recovery'||path==='/auth/oauth/link'||/^\/auth\/oauth\/(google|microsoft)\/start$/.test(path)))||
+        (method==='DELETE'&&/^\/sessions\/[0-9a-f-]{36}$/.test(path));
+      if(!allowed)throw forbidden('Prepara tus finanzas y confirma tu saldo actual para entrar a Qori Customer.',{code:'FINANCE_SETUP_REQUIRED'});
+    }
     next();
   } catch(error) { next(error); }
 }

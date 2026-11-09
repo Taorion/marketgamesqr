@@ -74,7 +74,7 @@
     const identity=await request('/me');
     if(version!==renderVersion||!state.account)return;
     state.account=identity.account;
-    if(!registrationComplete()){if(render)renderApp();return;}
+    if(!registrationComplete()||state.account.finance_setup_state==='PENDING'){if(render)renderApp();return;}
     if(window.QoriBenefitReturn?.())return;
     const [wallet,links,financial]=await Promise.all([request('/wallet/overview'),request('/relationships'),request('/finance-books')]);
     if(version!==renderVersion||!state.account)return;
@@ -102,6 +102,7 @@
     if(location.hash==='#oauth-connect')return renderAuth();
     if(!state.account)return renderAuth();
     if(!registrationComplete())return onboarding();
+    if(state.account.finance_setup_state==='PENDING')return window.QoriFinanceSetup.render(app,{request,refresh,brand});
     if(!state.books?.length){app.innerHTML='<main id="main" class="boot"><h1>Mis finanzas</h1><p id="pageError" role="alert">No pudimos cargar tus contabilidades.</p><button class="primary" id="retryBookLoad">Reintentar</button></main>';app.querySelector('#retryBookLoad').onclick=()=>refresh().catch(e=>showError(e.message));return;}
     const name=state.account.full_name.split(' ')[0];
     app.innerHTML=`<div class="layout"><aside class="sidebar">${brand()}<nav aria-label="Mi cuenta">${navLink('wallet','▤','Mis tarjetas')}${navLink('benefits','✦','Beneficios')}${navLink('businesses','⌂','Mis negocios')}${navLink('me','▦','Mi Qori')}</nav><div class="sidebar-foot"><strong>Volver tiene sus beneficios.</strong>Tu cuenta es gratuita.<br>Los puntos y premios pertenecen a cada negocio.<div class="divider"></div><a href="privacidad.html">Privacidad</a><br><button type="button" class="qcp-settings-link" data-cookie-settings>Configurar cookies</button></div></aside>
@@ -141,7 +142,7 @@
     else {renderProfile(page);page.insertAdjacentHTML('afterbegin','<div class="account-shortcuts"><a class="secondary" href="#me">Mi QR Qori</a><a class="secondary" href="#businesses">Mis negocios y giftcards</a><a class="secondary" href="#finances">Mis finanzas</a><a class="secondary" href="#history">Mis movimientos</a><a class="secondary" href="#product-gifts">Mis regalos</a><a class="secondary" href="#requests">Mis solicitudes</a><a class="secondary" href="#saved">Guardados</a><a class="secondary" href="#following">Negocios que sigo</a></div>');}
   }
   function onboarding(){
-    app.innerHTML=`<main id="main" class="auth-side boot"><div class="auth-form-wrap">${brand()}<span class="pill">Último paso · Tus datos</span><h2>Completa tu registro.</h2><p class="muted">Tu nombre y tu cédula son obligatorios para abrir tu cuenta Qori Customer. Confirma tu cédula antes de continuar: después no podrás cambiarla.</p><form id="profileForm" class="stack">${field('full_name','Tu nombre completo',state.account.full_name,'autocomplete="name" minlength="2" maxlength="100" required')}${window.QoriBenefitRecovery.documentFields(state.account)}<details class="recovery-onboarding"><summary>Conectar mis beneficios anteriores (opcional)</summary><p>Buscaremos los registros que coincidan con tu cédula y tu correo verificado. También puedes hacerlo después.</p><label class="check"><input type="checkbox" name="recover_consent"><span>Autorizo conectar mis beneficios anteriores cuando se verifiquen mis datos.</span></label></details><p id="pageError" class="error" role="alert" tabindex="-1"></p><button class="primary" type="submit">Completar registro y entrar →</button></form><p class="small muted">${esc(state.account.email)}</p><button type="button" class="quiet" data-action="logout">Cerrar sesión y continuar después</button></div></main>`;
+    app.innerHTML=`<main id="main" class="auth-side boot"><div class="auth-form-wrap">${brand()}<span class="pill">Tus datos de registro</span><h2>Completa tu registro.</h2><p class="muted">Tu nombre y tu cédula son obligatorios para abrir tu cuenta Qori Customer. Confirma tu cédula antes de continuar: después no podrás cambiarla.</p><form id="profileForm" class="stack">${field('full_name','Tu nombre completo',state.account.full_name,'autocomplete="name" minlength="2" maxlength="100" required')}${window.QoriBenefitRecovery.documentFields(state.account)}<details class="recovery-onboarding"><summary>Conectar mis beneficios anteriores (opcional)</summary><p>Buscaremos los registros que coincidan con tu cédula y tu correo verificado. También puedes hacerlo después.</p><label class="check"><input type="checkbox" name="recover_consent"><span>Autorizo conectar mis beneficios anteriores cuando se verifiquen mis datos.</span></label></details><p id="pageError" class="error" role="alert" tabindex="-1"></p><button class="primary" type="submit">Continuar a preparar mis finanzas →</button></form><p class="small muted">${esc(state.account.email)}</p><button type="button" class="quiet" data-action="logout">Cerrar sesión y continuar después</button></div></main>`;
   }
   function renderWallet(page){
     const benefits=route()==='benefits',count=model.counts(state.cards),pending=state.relationships.filter(r=>r.state==='PENDING'&&new Date(r.expires_at)>new Date());

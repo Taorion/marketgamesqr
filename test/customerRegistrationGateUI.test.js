@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('fs'),{JSDOM}=require('jsdom');
 const wait=async fn=>{for(let i=0;i<120;i++){if(fn())return;await new Promise(r=>setTimeout(r,5));}throw Error('UI did not settle');};
 function setup(hash=''){
- const w=new JSDOM('<div id="app"><p>Abriendo tu espacio…</p></div><div id="announcement"></div>',{url:'https://example.test/customer/'+hash,runScripts:'outside-only'}).window,calls=[];let verified=false,name='',documentKey=null;
+ const w=new JSDOM('<div id="app"><p>Abriendo tu espacio…</p></div><div id="announcement"></div>',{url:'https://example.test/customer/'+hash,runScripts:'outside-only'}).window,calls=[];let verified=false,name='',documentKey=null,financeState='PENDING';
  w.QoriExplore={stop(){},render(){throw Error('Guest reached Explore');}};w.QoriNotifications={stop(){},watch(){}};w.QoriBenefitRecovery={documentFields:()=>''};w.QoriPortal={preferences:()=>''};
  w.QoriAccounting={selector(){},render(page){page.innerHTML='<h1 id="private-home">Mi dinero</h1>';}};
  w.fetch=async(url,options={})=>{calls.push(url);let status=200,data={},body=options.body?JSON.parse(options.body):{};
@@ -9,13 +9,14 @@ function setup(hash=''){
   else if(url==='/api/customer/auth/web/code')data={challenge_id:'challenge'};
   else if(url==='/api/customer/auth/web/verify'){if(body.code==='123456'){verified=true;data={account:{id:'buyer',full_name:name,currency:'COP',email:'new@example.test',preferences:{notifications:{}}}};}else{status=401;data={error:{message:'Código inválido o vencido.'}};}}
   else if(!verified){status=401;data={error:{message:'Inicia sesión en Qori.'}};}
-  else if(url==='/api/customer/me'){if(options.method==='PATCH'){name=body.full_name;documentKey=body.document_id;}data={account:{id:'buyer',full_name:name,declared_document_key:documentKey,currency:'COP',email:'new@example.test',preferences:{notifications:{}}}};}
+  else if(url==='/api/customer/me'){if(options.method==='PATCH'){name=body.full_name;documentKey=body.document_id;}data={account:{id:'buyer',full_name:name,declared_document_key:documentKey,finance_setup_state:financeState,currency:'COP',email:'new@example.test',preferences:{notifications:{}}}};}
+  else if(url==='/api/customer/finance-setup'){if(options.method==='POST')financeState='COMPLETE';data={state:financeState,currency:'COP',today:'2026-11-08',pocket_name:'Personal'};}
   else if(url==='/api/customer/finance-books')data={books:[{id:'personal',is_default:true,name:'Personal',currency:'COP'}]};
   else if(url==='/api/customer/wallet/overview')data={cards:[],purchased_gifts:[],pending_benefits:[],pending_invitations:0};
   else if(url==='/api/customer/relationships')data={relationships:[]};
   return {ok:status<400,status,headers:new w.Headers(verified?{'X-Qori-Customer':'buyer'}:{}),json:async()=>data};
  };
- for(const p of ['wallet-model.js','session-guard.js','benefit-recovery.js','auth-access.js','app.js'])w.eval(fs.readFileSync('customer-web/'+p,'utf8'));
+ for(const p of ['wallet-model.js','session-guard.js','benefit-recovery.js','auth-access.js','finance-setup.js','app.js'])w.eval(fs.readFileSync('customer-web/'+p,'utf8'));
  const submit=id=>{const f=w.document.getElementById(id);f.dispatchEvent(new w.SubmitEvent('submit',{cancelable:true,bubbles:true,submitter:f.querySelector('[type=submit],button.primary')}));};
  return {w,calls,submit};
 }
@@ -34,7 +35,7 @@ test('email alone and wrong code never open the platform; route changes preserve
   for(const name of ['document_id','document_confirmation']){const input=w.document.querySelector('[name='+name+']');assert.ok(input.required);assert.equal(input.closest('details'),null);}
   w.document.querySelector('[name=full_name]').value='Persona Verificada';submit('profileForm');await wait(()=>w.document.querySelector('#pageError').textContent.includes('obligatoria'));assert.equal(w.document.querySelector('.sidebar'),null);
   w.document.querySelector('[name=document_id]').value='123456789';w.document.querySelector('[name=document_confirmation]').value='987654321';submit('profileForm');await wait(()=>w.document.querySelector('#pageError').textContent.includes('misma cédula'));assert.equal(w.document.querySelector('.sidebar'),null);
-  w.document.querySelector('[name=document_confirmation]').value='123456789';submit('profileForm');await wait(()=>w.document.querySelector('#private-home'));assert.ok(w.document.querySelector('.sidebar'));
+  w.document.querySelector('[name=document_confirmation]').value='123456789';submit('profileForm');await wait(()=>w.document.querySelector('#financeSetupAmount'));assert.equal(w.document.querySelector('.sidebar'),null);w.document.querySelector('[name=balance]').value='0';submit('financeSetupAmount');w.document.querySelector('[name=confirmed]').checked=true;submit('financeSetupConfirm');await wait(()=>w.document.querySelector('#private-home'));assert.ok(w.document.querySelector('.sidebar'));
   assert.equal(calls.some(u=>u.endsWith('/benefit-recovery')),false,'Benefit recovery consent is optional and separate');
  }finally{w.close();}
 });
