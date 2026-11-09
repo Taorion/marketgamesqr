@@ -22,7 +22,7 @@
     navigator.serviceWorker?.getRegistration('/customer/').then(r=>r?.getNotifications()).then(items=>items?.forEach(n=>n.close())).catch(()=>{});
   }
   const brand=()=>'<div class="brand-block"><a class="brand" href="/customer/" aria-label="Qori Customer"><img class="brand-logo" src="/img/qori-logo-fabrica-ingresos.png?v=brand-20261104" alt="Qori · Tu fábrica de ingresos" width="156" height="88"></a><span class="brand-sub">Customer</span></div>';
-  const route=()=>{const value=location.hash.slice(1);return ['home','cash-boxes','cash-wallet','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases','debts','debt-simulator','groceries','wealth','pockets','income','dreams','recover-benefits','gift-shop','notifications','calculator'].includes(value)||/^(publication|business|groceries|dreams)\//.test(value)?value:'home';};
+  const route=()=>{const value=location.hash.slice(1);return ['home','savings','cash-boxes','cash-wallet','directory','place-requests','explore','scan','wallet','benefits','businesses','invitations','me','profile','saved','requests','earned','following','product-gifts','finances','history','planning','payments','purchases','debts','debt-simulator','groceries','wealth','pockets','income','dreams','recover-benefits','gift-shop','notifications','calculator'].includes(value)||/^(publication|business|groceries|dreams)\//.test(value)?value:'home';};
   const catalogRoute=()=>['explore','scan','gift-shop'].includes(route())||/^(publication|business)\//.test(route());
   const exploreRoute=()=>catalogRoute()||['saved','requests','earned','following'].includes(route());
   function exploreContext(){const book=state.books?.find(b=>b.id===state.bookId),session=sessionGuard.snapshot();return {request:(path,body,method)=>request(path,body,method,book?.id,session),refresh,selectBook,book,books:state.books||[],openCard,dialog,showError,account:state.account?{...state.account,currency:book?.currency||state.account.currency}:null,cards:state.cards,invitationCount:state.invitationCount,openSale:id=>window.QoriFinance.openSale(id,exploreContext()),login:()=>renderAuth()};}
@@ -95,7 +95,7 @@
   navPaths.dreams='<path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/>';
   navPaths.groceries='<path d="m3 5 2 2 3-3M11 6h10M3 12l2 2 3-3M11 13h10M3 19l2 2 3-3M11 20h10"/>';
   const navIcon=id=>'<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" focusable="false">'+(navPaths[id]||navPaths.profile)+'</svg></span>';
-  function navLink(id,icon,title){const active=route()===id||(id==='wallet'&&['recover-benefits','product-gifts'].includes(route()))||(id==='explore'&&route()==='gift-shop')||(id==='home'&&['pockets','cash-boxes','cash-wallet'].includes(route()))||(id==='dreams'&&route().startsWith('dreams/'))||(id==='groceries'&&route().startsWith('groceries/'))||(id==='finances'&&['income','wealth','debts','debt-simulator','history','payments','planning'].includes(route()));return `<a class="nav-link ${active?'active':''}" href="#${id}" ${active?'aria-current="page"':''}>${navIcon(id)}${title}</a>`;}
+  function navLink(id,icon,title){const active=route()===id||(id==='wallet'&&['recover-benefits','product-gifts'].includes(route()))||(id==='explore'&&route()==='gift-shop')||(id==='home'&&['pockets','savings','cash-boxes','cash-wallet'].includes(route()))||(id==='dreams'&&route().startsWith('dreams/'))||(id==='groceries'&&route().startsWith('groceries/'))||(id==='finances'&&['income','wealth','debts','debt-simulator','history','payments','planning'].includes(route()));return `<a class="nav-link ${active?'active':''}" href="#${id}" ${active?'aria-current="page"':''}>${navIcon(id)}${title}</a>`;}
   function renderApp(){
     window.QoriExplore?.stop();
     if(booting)return;
@@ -120,6 +120,7 @@
     else if(route()==='home')window.QoriAccounting.render(page,exploreContext());
     else if(route()==='cash-boxes')window.QoriCashBoxes.render(page,exploreContext());
     else if(route()==='cash-wallet')window.QoriCashWallet.render(page,exploreContext());
+    else if(route()==='savings')window.QoriSavings.render(page,exploreContext());
     else if(route()==='directory')window.QoriPortal.directory(page,exploreContext());
     else if(route()==='place-requests')window.QoriPortal.placeRequests(page,exploreContext());
     else if(exploreRoute())window.QoriExplore.render(page,exploreContext(),route());

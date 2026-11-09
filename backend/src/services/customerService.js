@@ -17,7 +17,7 @@ async function planning(account) {
   ]);
   return {budgets:budgets.rows,goals:goals.rows,recurring:recurring.rows};
 }
-const saleSql = `select s.*,b.name business_name,r.id relationship_id,n.category,n.priority,n.expense_pattern,n.note personal_note,n.reported_at,
+const saleSql = `select s.*,b.name business_name,r.id relationship_id,n.category,n.priority,n.is_ant_expense,n.expense_pattern,n.note personal_note,n.reported_at,
   exists(select 1 from customer_sale_captures capture where capture.sale_id=s.id and capture.customer_id=$1) automatically_recorded,
   coalesce((select sum(a.amount) from customer_sale_adjustments a where a.sale_id=s.id),0) refunded
   from business_sales s left join customer_relationships r on r.business_id=s.business_id and r.customer_id=$1
@@ -130,10 +130,10 @@ async function saveEntry(customerId,data,id,db={query}) {
   if(data.products.length && data.products.reduce((n,p)=>n+finance.minor(p.amount),0)!==finance.minor(data.amount)) throw badRequest('Los productos no suman el total.');
   let result;
   if(id) result=await db.query(`update customer_entries set kind=$2,amount=$3,currency=$4,occurred_at=$5,merchant=$6,category=$7,priority=$8,note=$9,payment_method=$10,
-    products=$11::jsonb,splits=$12::jsonb,tags=$13::jsonb,expense_pattern=coalesce($15,expense_pattern),updated_at=now() where customer_id=$1 and id=$14 and deleted_at is null and linked_sale_id is null returning *`,[...values,id,data.expense_pattern??null]);
-  else result=await db.query(`insert into customer_entries(customer_id,kind,amount,currency,occurred_at,merchant,category,priority,note,payment_method,products,splits,tags,request_id,book_id,expense_pattern)
-    values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12::jsonb,$13::jsonb,$14,$15,$16)
-    on conflict(customer_id,request_id) do update set request_id=excluded.request_id returning *`,[...values,data.request_id,data.book_id||null,data.expense_pattern||'UNSET']);
+    products=$11::jsonb,splits=$12::jsonb,tags=$13::jsonb,expense_pattern=coalesce($15,expense_pattern),is_ant_expense=case when $2='EXPENSE' and $8='FLEXIBLE' then coalesce($16,is_ant_expense) else false end,updated_at=now() where customer_id=$1 and id=$14 and deleted_at is null and linked_sale_id is null returning *`,[...values,id,data.expense_pattern??null,data.is_ant_expense??null]);
+  else result=await db.query(`insert into customer_entries(customer_id,kind,amount,currency,occurred_at,merchant,category,priority,note,payment_method,products,splits,tags,request_id,book_id,expense_pattern,is_ant_expense)
+    values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb,$12::jsonb,$13::jsonb,$14,$15,$16,$17)
+    on conflict(customer_id,request_id) do update set request_id=excluded.request_id returning *`,[...values,data.request_id,data.book_id||null,data.expense_pattern||'UNSET',data.kind==='EXPENSE'&&data.priority==='FLEXIBLE'&&!!data.is_ant_expense]);
   if(data.book_id&&result.rows[0]&&result.rows[0].book_id!==data.book_id)throw badRequest('Este movimiento ya se registró en otra contabilidad.');
   if(!result.rowCount) throw notFound('Gasto no editable o no encontrado.');return {entry:result.rows[0]};
 }
@@ -148,9 +148,9 @@ async function mergeEntry(customerId,entryId,saleId) {
     if(entry.linked_sale_id===saleId)return {ok:true,already_linked:true};
     if(entry.linked_sale_id&&entry.linked_sale_id!==saleId)throw badRequest('El gasto ya está vinculado.');
     await db.query('update customer_entries set linked_sale_id=$3,updated_at=now() where id=$1 and customer_id=$2',[entryId,customerId,saleId]);
-    await db.query(`insert into customer_sale_notes(customer_id,sale_id,category,priority,note,expense_pattern) values($1,$2,$3,$4,$5,$6)
-      on conflict(customer_id,sale_id) do update set category=excluded.category,priority=excluded.priority,expense_pattern=excluded.expense_pattern,
-      note=case when customer_sale_notes.note='' then excluded.note else customer_sale_notes.note || E'\n' || excluded.note end`,[customerId,saleId,entry.category,entry.priority,entry.note,entry.expense_pattern]);
+    await db.query(`insert into customer_sale_notes(customer_id,sale_id,category,priority,note,expense_pattern,is_ant_expense) values($1,$2,$3,$4,$5,$6,$7)
+      on conflict(customer_id,sale_id) do update set category=excluded.category,priority=excluded.priority,expense_pattern=excluded.expense_pattern,is_ant_expense=excluded.is_ant_expense,
+      note=case when customer_sale_notes.note='' then excluded.note else customer_sale_notes.note || E'\n' || excluded.note end`,[customerId,saleId,entry.category,entry.priority,entry.note,entry.expense_pattern,entry.priority==='FLEXIBLE'&&!!entry.is_ant_expense]);
     return {ok:true};
   });
 }

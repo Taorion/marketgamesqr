@@ -99,6 +99,7 @@
   if(ctx.book)d.querySelector('form').insertAdjacentHTML('afterbegin','<p class="book-context-note">Se guardará en '+esc(ctx.book.name)+'.</p>');
   d.querySelector('[name=occurred_at]').max=today(ctx);
   const form=d.querySelector('form'),classify=()=>{const income=form.elements.kind.value==='INCOME';for(const name of ['priority','expense_pattern'])form.elements[name].closest('label').hidden=income;};form.elements.kind.addEventListener('change',classify);classify();
+  const classification=window.QoriSavings?.classification(form,{ant:!!entry?.is_ant_expense});
   const cash=ctx.book?window.QoriCashBoxes?.entryPicker(form,ctx,entry?.kind||initialKind,entry?entry.cash_box_id||null:undefined):null;
   form.elements.kind.addEventListener('change',()=>cash?.setKind(form.elements.kind.value));
   const addProduct=p=>{const node=document.createElement('div');node.className='finance-line';node.innerHTML=field('p_name','Producto',p.name||'','maxlength="160" required')+field('p_quantity','Cantidad',p.quantity||1,'type="number" min=".001" step=".001" required')+field('p_amount','Total',p.amount||'','type="number" min=".01" step=".01" required')+'<button type="button" aria-label="Quitar producto">×</button>';node.querySelector('button').onclick=()=>node.remove();d.querySelector('#expenseProducts').append(node);};
@@ -107,7 +108,7 @@
   d.querySelector('#addExpenseProduct').onclick=()=>addProduct({});d.querySelector('#addExpenseSplit').onclick=()=>addSplit({});
   submit(d,ctx,async f=>{
    const form=d.querySelector('form'),products=[...d.querySelectorAll('#expenseProducts>.finance-line')].map(n=>({name:n.querySelector('[name=p_name]').value,quantity:Number(n.querySelector('[name=p_quantity]').value),amount:n.querySelector('[name=p_amount]').value})),splits=[...d.querySelectorAll('#expenseSplits>.finance-line')].map(n=>({category:n.querySelector('select').value,amount:n.querySelector('input').value}));
-   return ctx.request('/entries'+(id?'/'+id:''),{request_id:requestId,kind:f.kind,cash_box_id:cash?.value(),merchant:f.merchant,amount:f.amount,currency:f.currency,occurred_at:f.occurred_at,category:form.querySelector('[name=category]').value,priority:f.priority,expense_pattern:f.expense_pattern,payment_method:f.payment_method,note:f.note,tags:f.tags.split(',').map(t=>t.trim()).filter(Boolean),products,splits},id?'PUT':'POST');
+   return ctx.request('/entries'+(id?'/'+id:''),{request_id:requestId,kind:f.kind,cash_box_id:cash?.value(),merchant:f.merchant,amount:f.amount,currency:f.currency,occurred_at:f.occurred_at,category:form.querySelector('[name=category]').value,priority:f.priority,is_ant_expense:classification?.values().is_ant_expense,expense_pattern:f.expense_pattern,payment_method:f.payment_method,note:f.note,tags:f.tags.split(',').map(t=>t.trim()).filter(Boolean),products,splits},id?'PUT':'POST');
   });
  }
  async function openSale(id,ctx){return openMovement({sale_id:id,source:'QORI'},ctx);}
@@ -137,7 +138,7 @@
      try{const base64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result.split(',')[1]);reader.onerror=reject;reader.readAsDataURL(file);});await ctx.request('/entries/'+row.entry_id+'/receipts',{filename:file.name,mime_type:file.type,base64});d.close();await openMovement(row,ctx);}catch(error){ctx.showError(error.message,body.querySelector('#dialogError'));e.target.disabled=false;}
     };
    }else{
-    const form=body.querySelector('#saleNote');form.onsubmit=async e=>{e.preventDefault();e.stopPropagation();e.submitter.disabled=true;try{await ctx.request('/sales/'+r.sale_id+'/note',Object.fromEntries(new FormData(form)),'PATCH');d.close();await ctx.refreshFinance?.();}catch(error){ctx.showError(error.message,body.querySelector('#dialogError'));e.submitter.disabled=false;}};
+    const form=body.querySelector('#saleNote'),classification=window.QoriSavings?.classification(form,{ant:!!r.is_ant_expense});form.onsubmit=async e=>{e.preventDefault();e.stopPropagation();e.submitter.disabled=true;try{await ctx.request('/sales/'+r.sale_id+'/note',{...Object.fromEntries(new FormData(form)),...(classification?.values()||{})},'PATCH');d.close();await ctx.refreshFinance?.();}catch(error){ctx.showError(error.message,body.querySelector('#dialogError'));e.submitter.disabled=false;}};
     body.querySelector('#reportSale').onclick=()=>{const report=ctx.dialog('Reportar compra','<form class="stack"><label class="field">Qué ocurrió<textarea name="reason" minlength="5" maxlength="1000" required></textarea></label><p>El negocio podrá leer este reporte para revisar su venta.</p><button class="primary">Enviar reporte al negocio</button></form>');submit(report,ctx,f=>ctx.request('/sales/'+r.sale_id+'/report',f));};
    }
    if(!manual){body.insertAdjacentHTML('beforeend','<button class="primary" id="purchaseReceipt">Ver comprobante de compra</button>');body.querySelector('#purchaseReceipt').onclick=()=>window.QoriBusinessWallet.receipt(ctx,r.sale_id);}

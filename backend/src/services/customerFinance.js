@@ -54,7 +54,7 @@ function salesMovement(row, timezone) {
   return { id:`sale:${row.id}`,sale_id:row.id,source:'QORI',kind:'EXPENSE',business_id:row.business_id,merchant:row.business_name,
     amount_minor:paid?amount:0,purchase_minor:amount+refunded,refunded_minor:refunded,pending_minor:paid||row.sale_status==='VOIDED'?0:amount,
     currency:row.currency,status:row.sale_status,occurred_at:row.paid_at||row.created_at,date:dateKey(row.paid_at||row.created_at,timezone),
-    category:row.category||'otros',priority:row.priority||'UNSET',expense_pattern:row.expense_pattern||'UNSET',note:row.personal_note||'',payment_method:row.payment_method,
+    category:row.category||'otros',priority:row.priority||'UNSET',is_ant_expense:!!row.is_ant_expense,expense_pattern:row.expense_pattern||'UNSET',note:row.personal_note||'',payment_method:row.payment_method,
     products:rawProducts.map(p=>({...p,amount_minor:allocationExact?p.amount_minor:null})),products_exact:allocationExact,
     discount_minor:minor(row.metadata?.benefit_application?.discount_amount||0),reported_at:row.reported_at,
     relationship_id:row.relationship_id,branch_id:row.branch_id,automatically_recorded:!!row.automatically_recorded };
@@ -68,7 +68,7 @@ function giftPurchaseMovement(row,timezone) {
 function manualMovement(row,timezone) {
   return { id:`manual:${row.id}`,entry_id:row.id,source:'MANUAL',kind:row.kind,merchant:row.merchant,amount_minor:minor(row.amount),
     purchase_minor:minor(row.amount),pending_minor:0,refunded_minor:0,currency:row.currency,status:'PAID',occurred_at:row.occurred_at,
-    date:dateKey(row.occurred_at,timezone),category:row.category,priority:row.priority,expense_pattern:row.expense_pattern||'UNSET',note:row.note,payment_method:row.payment_method,
+    date:dateKey(row.occurred_at,timezone),category:row.category,priority:row.priority,is_ant_expense:!!row.is_ant_expense,expense_pattern:row.expense_pattern||'UNSET',note:row.note,payment_method:row.payment_method,
     tags:row.tags,receipts:row.receipts||[],splits:(row.splits||[]).map(s=>({...s,amount_minor:minor(s.amount)})),
     products:(row.products||[]).map((p,i)=>({key:`manual:${row.id}:${i}`,name:p.name,quantity:p.quantity,amount_minor:minor(p.amount),matched:false})),products_exact:true };
 }

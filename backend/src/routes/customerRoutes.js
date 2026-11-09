@@ -85,6 +85,7 @@ router.get('/explore/businesses/:slug',handle(req=>explore.businessPage(parse(te
 router.post('/explore/resolve',handle(req=>explore.resolveQr(parse(z.object({url:text(2000).min(1)}),req.body).url)));
 router.use(require('../services/customerFinanceBooks').middleware);
 router.use('/cash-boxes',require('./customerCashBoxRoutes'));
+router.get('/savings-potential',handle(req=>require('../services/customerSavingsService').overview(req.customer,parse(z.object({year:z.coerce.number().int().min(2000).max(2200).optional()}).strict(),req.query).year)));
 router.use(require('./customerFinanceBookRoutes'));
 router.get('/notifications',handle(req=>require('../services/customerBenefitNotificationService').list(req.customer)));
 router.post('/notifications/:id/read',handle(req=>require('../services/customerBenefitNotificationService').mark(req.customer,parse(uuid,req.params.id))));
@@ -165,7 +166,7 @@ router.post('/recurring/:id/record',handle(req=>paymentAgenda.legacyRecord(req.c
 router.get('/relationships',handle(req=>svc.relationships(req.customer.id)));
 router.post('/relationships/:id/decision',handle(req=>svc.decideRelationship(req.customer.id,parse(uuid,req.params.id),parse(z.object({action:z.enum(['ACCEPT','REJECT','REVOKE']),include_history:z.boolean().default(false),capture_purchases:z.boolean().optional(),book_id:uuid.optional(),document_id:text(80).optional(),document_confirmation:text(80).optional()}),req.body))));
 const entry=z.object({request_id:uuid,kind:z.enum(['EXPENSE','INCOME']).default('EXPENSE'),amount:money,currency,occurred_at:z.union([z.string().datetime({offset:true}),z.string().date()]),merchant:text(160).min(1),
-  cash_box_id:uuid.nullable().optional(),
+  cash_box_id:uuid.nullable().optional(),is_ant_expense:z.boolean().optional(),
   expense_pattern:z.enum(['UNSET','RECURRING','EVENTUAL']).optional(),category:category.default('otros'),priority:z.enum(['UNSET','ESSENTIAL','FLEXIBLE']).default('UNSET'),note:text(2000).default(''),payment_method:text(60).default(''),
   products:z.array(z.object({name:text(160).min(1),quantity:z.number().positive().max(100000),amount:money})).max(100).default([]),
   splits:z.array(z.object({category,amount:money})).max(20).default([]),tags:z.array(text(30).min(1)).max(10).default([])});
@@ -194,9 +195,9 @@ router.get('/sales/:id',handle(async req=>{
 }));
 router.patch('/sales/:id/note',handle(async req=>{
   const id=parse(uuid,req.params.id);await svc.ownSale(req.customer.id,id);
-  const d=parse(z.object({category,priority:z.enum(['UNSET','ESSENTIAL','FLEXIBLE']),expense_pattern:z.enum(['UNSET','RECURRING','EVENTUAL']).optional(),note:text(2000)}).strict(),req.body);
-  await query(`insert into customer_sale_notes(customer_id,sale_id,category,priority,note,expense_pattern) values($1,$2,$3,$4,$5,coalesce($6,'UNSET'))
-    on conflict(customer_id,sale_id) do update set category=excluded.category,priority=excluded.priority,note=excluded.note,expense_pattern=coalesce($6,customer_sale_notes.expense_pattern),updated_at=now()`,[req.customer.id,id,d.category,d.priority,d.note,d.expense_pattern??null]);return {ok:true};
+  const d=parse(z.object({category,is_ant_expense:z.boolean().optional(),priority:z.enum(['UNSET','ESSENTIAL','FLEXIBLE']),expense_pattern:z.enum(['UNSET','RECURRING','EVENTUAL']).optional(),note:text(2000)}).strict(),req.body);
+  await query(`insert into customer_sale_notes(customer_id,sale_id,category,priority,note,expense_pattern,is_ant_expense) values($1,$2,$3,$4,$5,coalesce($6,'UNSET'),case when $4='FLEXIBLE' then coalesce($7,false) else false end)
+    on conflict(customer_id,sale_id) do update set category=excluded.category,priority=excluded.priority,note=excluded.note,expense_pattern=coalesce($6,customer_sale_notes.expense_pattern),is_ant_expense=case when $4='FLEXIBLE' then coalesce($7,customer_sale_notes.is_ant_expense) else false end,updated_at=now()`,[req.customer.id,id,d.category,d.priority,d.note,d.expense_pattern??null,d.is_ant_expense??null]);return {ok:true};
 }));
 router.post('/sales/:id/report',handle(async req=>{
   const id=parse(uuid,req.params.id),d=parse(z.object({reason:text(1000).min(5)}),req.body);await svc.ownSale(req.customer.id,id);
