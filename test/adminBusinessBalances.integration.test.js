@@ -36,5 +36,21 @@ test('Admin balances use real credits, plan caps and canonical giftcard money wi
   await assert.rejects(admin.list({...user,role:'QORI_SELLER'},'businesses'),/403|permiso|autoriz|acceso|administrador/i);
   await query('update business_qr_credit_accounts set qr_balance=62,included_balance=12,qr_used_total=8 where business_id=$1',[free.id]);assert.equal((await balances(free)).tickets.available,62);
  });
+ await t.test('Clientes shows balances after real ticket consumption and giftcard issuance, scoped to the seller',async()=>{
+  const commercial=require('../backend/src/services/commercialAdminService');
+  const {withTransaction}=require('../backend/src/config/db');
+  await query('update businesses set is_active=true where id=$1',[free.id]);
+  await query("insert into branches(business_id,name,slug) values($1,'Sede QA','qa')",[free.id]);
+  const seller=(await query("insert into app_users(email,full_name,role,password_hash) values($1,'Saldo Seller','QORI_SELLER','qa') returning *",[uuid()+'@example.test'])).rows[0];
+  await query('insert into qori_sales_accounts(business_id,seller_id,assigned_by) values($1,$2,$3)',[free.id,seller.id,user.id]);
+  const read=async who=>(await commercial.list(who,'customers',{search:free.slug})).rows;
+  assert.equal((await read(user))[0].balances.tickets.available,62);
+  await withTransaction(db=>require('../backend/src/services/qrCreditService').consumeQrCredits(db,free.id,3));
+  await require('../backend/src/services/rewardPassService').createRewardPass({...user,role:'BUSINESS_OWNER',business_id:free.id},{buyer_name:'QA Saldo',initial_value_cop:10000,branch_authorization_scope:'ALL_BRANCHES',terms:'Prueba local',idempotency_key:uuid()});
+  const updated=(await read(user))[0];assert.equal(updated.balances.tickets.available,59);assert.equal(updated.balances.giftcards.available,64);assert.equal(updated.balances.giftcards.issued_count,6);
+  assert.equal((await read(seller))[0].balances.tickets.available,59);
+  assert.equal((await read({...seller,id:uuid()})).length,0);
+  await withTransaction(db=>require('../backend/src/services/qrCreditService').consumeQrCredits(db,free.id,59));assert.equal((await read(user))[0].balances.tickets.available,0);
+ });
 });
 after(()=>pool.end());

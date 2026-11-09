@@ -4,6 +4,13 @@ Admin → Cuentas Qori → Empresas y empresarios muestra tickets disponibles,
 capacidad de emisión de giftcards y saldo vigente por canjear en COP.
 Administrar abre el desglose; Actualizar cuentas vuelve a consultar los saldos.
 
+La pestaña comercial Clientes muestra también el saldo restante real en todas
+las versiones, con consumo acumulado y fecha de consulta. Actualizar saldos vuelve
+a consultar la API. Ver saldos y acceso separa el remanente de los límites del plan.
+La capacidad inicial de Descubre ya no aparece como saldo en las filas de clientes.
+Los saldos se calculan solo para los negocios de la página previamente autorizada
+(cartera del vendedor o alcance del superadmin).
+
 - Tickets: `qr_balance` ya incluye `included_balance`. El saldo adicional es la
   diferencia e incluye compras y ajustes. `qr_purchased_total` históricamente
   también contiene abonos de cortesía; por eso se presenta como recargas y abonos.

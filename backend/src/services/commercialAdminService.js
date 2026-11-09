@@ -270,6 +270,10 @@ async function list(user, kind, params = {}) {
     const { settings, ...publicRow } = row;
     return { ...publicRow, contact_email: settings?.contact_email || null, subscription: planFromBusiness(row), commercial: settings?.qori_commercial || null };
   });
+  if(kind === 'customers') {
+    const balances=await require('./adminBusinessBalances').businessBalances(rows.map(row=>row.id));
+    rows.forEach(row=>{row.balances=balances.get(row.id);});
+  }
   return { rows, has_more: result.rows.length > 50, next_offset: offset + rows.length };
 }
 async function saveProspect(user,payload,id=null) {
