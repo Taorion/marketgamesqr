@@ -7,6 +7,7 @@ test('Seller reports canonical Freemium dates, paid conversion and tenant-safe p
  assert.equal((await query('select current_database() n')).rows[0].n,'qori_customer_qa');
  async function seller(){return (await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa','Seller lifecycle QA','QORI_SELLER') returning *",[id()+'@example.test'])).rows[0];}
  const a=await seller(),other=await seller();
+ for(const u of [a,other])await query("insert into qori_seller_applications(user_id,document_key,phone,city,ciiu,terms_version,status) values($1,$2,'3105550000','Bogotá','4610','2026-11-07-ciiu4610','APPROVED')",[u.id,id()]);
  async function business(code,end,settings={},status='ACTIVE',owner=a){
   const b=(await query("insert into businesses(name,slug,plan_code,plan_type,subscription_status,subscription_started_at,subscription_current_period_ends_at,settings) values($1,$2,$3,'premium_monthly',$4,$5,$6,$7::jsonb) returning *",['QA '+code,id(),code,status,date(-20),end,JSON.stringify({private_marker:'DO_NOT_EXPOSE',...settings})])).rows[0];
   await query('insert into qori_sales_accounts(business_id,seller_id,assigned_by) values($1,$2,$2)',[b.id,owner.id]);return b;
@@ -28,6 +29,6 @@ test('Seller reports canonical Freemium dates, paid conversion and tenant-safe p
  server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
  assert.equal((await fetch(base+'/api/seller/accounts')).status,401);
  const response=await fetch(base+'/api/seller/accounts?seller_id='+other.id,{headers:{Authorization:'Bearer '+jwt.sign({sub:a.id,password_version:0},process.env.JWT_SECRET)}});assert.equal(response.status,200);assert.equal((await response.json()).accounts.some(b=>b.id===foreign.id),false);
- await query("insert into qori_seller_applications(user_id,document_key,phone,city,ciiu,terms_version) values($1,$2,'3100000000','Bogota','4610','qa')",[other.id,id()]);await assert.rejects(()=>svc.accounts(other),/aprobada/);
+ await query("update qori_seller_applications set status='SUSPENDED' where user_id=$1",[other.id]);await assert.rejects(()=>svc.accounts(other),e=>e.status===403&&e.details.code==='SELLER_APPROVAL_REQUIRED');
 });
 after(async()=>{if(server){server.closeAllConnections();await new Promise(r=>server.close(r));}await pool.end();});

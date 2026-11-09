@@ -14,8 +14,12 @@ function superadmin(u){if((u.platform_role||u.role)!=='QORI_SUPERADMIN')throw fo
 async function audit(db,user,action,id,detail={}){await db.query("insert into qori_commercial_audit(actor_id,action,entity_type,entity_id,detail) values($1,$2,'seller',$3,$4::jsonb)",[user.id,action,id,JSON.stringify(detail)]);}
 async function requireApproved(user,db={query}){
  if(!['QORI_SELLER','QORI_SUPERADMIN'].includes(user.platform_role||user.role))throw forbidden('Necesitas acceso Qori Seller.');
+ if((user.platform_role||user.role)==='QORI_SUPERADMIN')return;
  const a=(await db.query('select status from qori_seller_applications where user_id=$1',[user.id])).rows[0];
- if(a&&a.status!=='APPROVED')throw forbidden('Tu solicitud de Embajador debe estar aprobada para gestionar negocios y comisiones.');
+ if(a?.status!=='APPROVED'){
+  const error=forbidden('Tu acceso a Qori Seller está bloqueado hasta que Qori apruebe tu solicitud de Embajador.');
+  error.details={code:'SELLER_APPROVAL_REQUIRED',application_status:a?.status||'NOT_STARTED'};throw error;
+ }
 }
 function encryptionKey(){return crypto.createHash('sha256').update('qori-seller-document-v1\0'+(process.env.SELLER_DOCUMENT_ENCRYPTION_KEY||env.jwtSecret)).digest();}
 function encrypt(bytes){const nonce=crypto.randomBytes(12),cipher=crypto.createCipheriv('aes-256-gcm',encryptionKey(),nonce);return Buffer.concat([nonce,cipher.update(bytes),cipher.final(),cipher.getAuthTag()]);}
@@ -44,7 +48,7 @@ async function register(payload,ip){
 async function application(user){
  const a=(await query('select user_id,document_key,phone,city,ciiu,status,terms_version,accepted_at,review_note,submitted_at,reviewed_at from qori_seller_applications where user_id=$1',[user.id])).rows[0]||null;
  const docs=(await query('select id,kind,filename,mime_type,byte_size,sha256,created_at from qori_seller_documents where user_id=$1 order by kind',[user.id])).rows;
- return {ciiu_requirement:CIIU,terms_version:VERSION,application:a,documents:docs,user:{id:user.id,full_name:user.full_name,email:user.email,role:user.platform_role||user.role},legacy:!a};
+ return {ciiu_requirement:CIIU,terms_version:VERSION,application:a,documents:docs,user:{id:user.id,full_name:user.full_name,email:user.email,role:user.platform_role||user.role},legacy:!a,access:{approved:(user.platform_role||user.role)==='QORI_SUPERADMIN'||a?.status==='APPROVED',application_status:a?.status||'NOT_STARTED'}};
 }
 async function openApplication(user,payload,ip){
  if((user.platform_role||user.role)!=='QORI_SELLER')throw forbidden('Este expediente corresponde a una cuenta Seller.');

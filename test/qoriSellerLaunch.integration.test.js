@@ -17,6 +17,14 @@ test('Seller launch: approval, privacy, free balances, payments, receipts and co
   const terms=await api('/api/seller/terms');assert.equal(terms.ciiu_requirement.code,'4610');assert.equal(terms.ciiu_requirement.status,'DEFINED_BY_QORI');assert.equal(terms.enrollment_enabled,true);assert.equal(terms.contract_ready,true);
   assert.equal((await api('/api/seller/register',null,{...registerData(),ciiu:'7310'})).status,400);
   const d=registerData(),r=await api('/api/seller/register',null,d);assert.equal(r.status,200,JSON.stringify(r));seller=(await query('select * from app_users where email=$1',[d.email])).rows[0];seller.token=sign(seller);
+  const login=await api('/api/auth/login',null,{email:d.email,password:d.password});assert.equal(login.status,200);assert.ok(login.token);
+  for(const status of ['DRAFT','SUBMITTED','CHANGES_REQUESTED','REJECTED','SUSPENDED']){
+   await query('update qori_seller_applications set status=$2 where user_id=$1',[seller.id,status]);
+   assert.equal((await api('/api/seller/application',login.token)).access.approved,false);
+   for(const path of ['/api/seller/dashboard','/api/seller/accounts','/api/admin/commercial/bootstrap','/api/admin/commercial/customers','/api/admin/commercial/prospects','/api/pense-en-ti/advisor/'+seller.id])assert.equal((await api(path,login.token)).status,403,path+' '+status);
+   assert.equal((await api('/api/admin/commercial/prospects',login.token,{business_name:'No autorizado'})).status,403);
+  }
+  await query("update qori_seller_applications set status='DRAFT' where user_id=$1",[seller.id]);
   assert.equal((await api('/api/seller/application',seller.token)).application.ciiu,'4610');
   const contract=await fetch(base+'/api/seller/contract',{headers:{Authorization:'Bearer '+seller.token}});assert.equal(contract.status,200);assert.match(await contract.text(),/4610 — Comercio al por mayor a cambio de una retribución o por contrata/);
   assert.equal((await api('/api/seller/application',seller.token)).application.status,'DRAFT');
@@ -29,6 +37,9 @@ test('Seller launch: approval, privacy, free balances, payments, receipts and co
  await t.test('existing Seller opens an application with server-defined 4610',async()=>{
   const d=registerData(),u=(await query("insert into app_users(email,password_hash,full_name,role) values($1,'qa',$2,'QORI_SELLER') returning *",[d.email,d.full_name])).rows[0],token=sign(u);
   assert.equal((await api('/api/seller/application',token)).legacy,true);
+  assert.equal((await api('/api/seller/application',token)).access.approved,false);
+  for(const path of ['/api/seller/dashboard','/api/seller/accounts','/api/admin/commercial/bootstrap','/api/pense-en-ti/advisor/'+u.id])assert.equal((await api(path,token)).status,403,path);
+  assert.equal((await api('/api/seller/admin/queue',admin.token)).status,200,'superadmin review remains available');
   const body={document_key:d.document_key,phone:d.phone,city:d.city,terms_accepted:true,privacy_accepted:true,adult_confirmed:true};
   assert.equal((await api('/api/seller/application',token,{...body,ciiu:'7310'})).status,400);
   assert.equal((await api('/api/seller/application',token,body)).status,200);
